@@ -1,4 +1,4 @@
-import { mountAiWorkspace } from "./chat.js?v=20";
+import { mountAiWorkspace } from "./chat.js?v=22";
 
 const HOST_ID = "ha-ai-workspace-overlay";
 

@@ -1,11 +1,17 @@
-import { mountAiWorkspace } from "./chat.js?v=20";
+import { mountAiWorkspace } from "./chat.js?v=22";
 
 class HaAiWorkspacePanel extends HTMLElement {
   constructor() {
     super();
     this._mounted = false;
     this._narrow = false;
+    this._mq = window.matchMedia("(max-width: 870px)");
     this.attachShadow({ mode: "open" });
+    this._onMq = () => {
+      this._syncChrome();
+      this._ui?.setNarrow?.(this._overlayNav());
+    };
+    this._mq.addEventListener("change", this._onMq);
   }
 
   set hass(hass) {
@@ -17,6 +23,7 @@ class HaAiWorkspacePanel extends HTMLElement {
   set narrow(narrow) {
     this._narrow = Boolean(narrow);
     this._syncChrome();
+    this._ui?.setNarrow?.(this._overlayNav());
   }
 
   set route(route) {
@@ -36,16 +43,23 @@ class HaAiWorkspacePanel extends HTMLElement {
     this._mount();
   }
 
+  _overlayNav() {
+    return Boolean(this._narrow) || this._mq.matches;
+  }
+
   _syncChrome() {
     const root = this.shadowRoot;
     if (!root) return;
+    const overlay = this._overlayNav();
     const bar = root.querySelector("ha-top-app-bar-fixed");
     const menu = root.querySelector("ha-menu-button");
+    const chats = root.querySelector(".chats-menu");
     if (bar) bar.narrow = this._narrow;
     if (menu) {
       menu.narrow = this._narrow;
       if (this._hass) menu.hass = this._hass;
     }
+    if (chats) chats.hidden = !overlay;
   }
 
   _mount() {
@@ -76,16 +90,24 @@ class HaAiWorkspacePanel extends HTMLElement {
           min-height: 0;
           overflow: hidden;
         }
+        .chats-menu[hidden] {
+          display: none !important;
+        }
       </style>
       <ha-top-app-bar-fixed>
         <ha-menu-button slot="navigationIcon"></ha-menu-button>
         <h1 class="page-title" slot="title">AI Workspace</h1>
+        <ha-icon-button class="chats-menu" slot="actionItems" label="Chats" hidden>
+          <ha-icon icon="mdi:forum-outline"></ha-icon>
+        </ha-icon-button>
         <div class="content"></div>
       </ha-top-app-bar-fixed>
     `;
     this._syncChrome();
     this._ui = mountAiWorkspace(this.shadowRoot.querySelector(".content"), {
       routed: true,
+      narrow: this._overlayNav(),
+      chrome: "panel",
       getToken: () => this._hass?.auth?.data?.access_token || "",
       navigate: (path, options = {}) => {
         const hass = this._hass;
@@ -99,6 +121,9 @@ class HaAiWorkspacePanel extends HTMLElement {
         event.detail = { replace: Boolean(options.replace) };
         window.dispatchEvent(event);
       },
+    });
+    this.shadowRoot.querySelector(".chats-menu")?.addEventListener("click", () => {
+      this._ui?.toggleNav?.();
     });
   }
 }

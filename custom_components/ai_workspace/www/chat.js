@@ -5,11 +5,22 @@ export function mountAiWorkspace(root, options = {}) {
   const getToken = options.getToken || (() => "");
   const navigate = options.navigate;
   const routed = Boolean(options.routed) && !compact;
+  const NAV_KEY = "ai_workspace_nav_collapsed";
+  const mqNarrow = window.matchMedia("(max-width: 870px)");
   root.innerHTML = `
-    <link rel="stylesheet" href="/ai_workspace/static/chat.css?v=20">
+    <link rel="stylesheet" href="/ai_workspace/static/chat.css?v=22">
     <div class="wrap${compact ? " compact" : ""}">
+      <button type="button" class="nav-scrim" hidden aria-label="Close chats"></button>
       <aside>
+        <div class="nav-toolbar">
+          <ha-icon-button class="nav-toggle" label="Hide chats">
+            <ha-icon icon="mdi:dock-left"></ha-icon>
+          </ha-icon-button>
+        </div>
         <div class="brand">AI Workspace</div>
+        <ha-icon-button class="new-chat-icon" label="New chat">
+          <ha-icon icon="mdi:plus"></ha-icon>
+        </ha-icon-button>
         <ha-button class="new-chat" size="s" variant="brand" appearance="filled">
           <ha-svg-icon slot="start" path="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"></ha-svg-icon>
           New chat
@@ -19,7 +30,12 @@ export function mountAiWorkspace(root, options = {}) {
       </aside>
       <section class="chat welcome">
         <header>
-          <h1 class="title">New chat</h1>
+          <div class="header-row">
+            <ha-icon-button class="nav-toggle chat-nav-toggle" label="Show chats">
+              <ha-icon icon="mdi:forum-outline"></ha-icon>
+            </ha-icon-button>
+            <h1 class="title">New chat</h1>
+          </div>
           <p class="banner" hidden></p>
         </header>
         ${compact ? '<a class="workspace-link" href="/ai-workspace">Open full workspace</a>' : ""}
@@ -40,6 +56,9 @@ export function mountAiWorkspace(root, options = {}) {
     </div>
   `;
 
+  const wrap = root.querySelector(".wrap");
+  const scrim = root.querySelector(".nav-scrim");
+  if (options.chrome === "panel") wrap.classList.add("has-app-bar");
   const chatEl = root.querySelector(".chat");
   const logEl = root.querySelector(".log");
   const sessionsEl = root.querySelector(".sessions");
@@ -56,6 +75,62 @@ export function mountAiWorkspace(root, options = {}) {
   }
   let sessionId = compact ? localStorage.getItem("ai_workspace_session") || "" : "";
   const workspaceLink = root.querySelector(".workspace-link");
+
+  function isNarrow() {
+    return Boolean(options.narrow) || mqNarrow.matches;
+  }
+
+  function syncToggleLabels() {
+    const collapsed = wrap.classList.contains("nav-collapsed");
+    const open = wrap.classList.contains("nav-open");
+    const label = wrap.classList.contains("narrow")
+      ? (open ? "Hide chats" : "Show chats")
+      : (collapsed ? "Show chats" : "Hide chats");
+    root.querySelectorAll(".nav-toggle").forEach((btn) => {
+      btn.label = label;
+    });
+  }
+
+  function setNavOpen(open) {
+    wrap.classList.toggle("nav-open", Boolean(open));
+    if (scrim) scrim.hidden = !open;
+    syncToggleLabels();
+  }
+
+  function closeNavIfOverlay() {
+    if (isNarrow() || mqNarrow.matches) setNavOpen(false);
+  }
+
+  function setNarrow(narrow) {
+    if (compact) return;
+    options.narrow = Boolean(narrow);
+    const overlay = isNarrow();
+    wrap.classList.toggle("narrow", overlay);
+    if (overlay) {
+      wrap.classList.remove("nav-collapsed");
+      setNavOpen(false);
+    } else {
+      wrap.classList.toggle("nav-collapsed", localStorage.getItem(NAV_KEY) === "1");
+      setNavOpen(false);
+    }
+    syncToggleLabels();
+  }
+
+  function toggleNav() {
+    if (compact) return;
+    if (isNarrow() || mqNarrow.matches) {
+      wrap.classList.add("narrow");
+      wrap.classList.remove("nav-collapsed");
+      setNavOpen(!wrap.classList.contains("nav-open"));
+      return;
+    }
+    const collapsed = !wrap.classList.contains("nav-collapsed");
+    wrap.classList.toggle("nav-collapsed", collapsed);
+    localStorage.setItem(NAV_KEY, collapsed ? "1" : "0");
+    syncToggleLabels();
+  }
+
+  setNarrow(options.narrow);
 
   function sessionIdFromPath(pathname = location.pathname) {
     const match = pathname.match(/^\/ai-workspace(?:\/conversations)?\/([0-9a-fA-F-]{8,})\/?$/);
@@ -403,7 +478,10 @@ export function mountAiWorkspace(root, options = {}) {
       label.textContent = session.title;
       item.appendChild(label);
       if (session.id === sessionId) item.classList.add("selected");
-      item.addEventListener("click", () => openSession(session.id));
+      item.addEventListener("click", () => {
+        closeNavIfOverlay();
+        openSession(session.id);
+      });
       sessionsEl.appendChild(item);
     }
   }
@@ -585,15 +663,31 @@ export function mountAiWorkspace(root, options = {}) {
     form.requestSubmit();
   });
 
-  root.querySelector(".new-chat")?.addEventListener("click", () => {
+  function startNewChat() {
     sessionId = "";
     if (compact) localStorage.removeItem("ai_workspace_session");
+    closeNavIfOverlay();
     goToSession("");
     titleEl.textContent = "New chat";
     showEmpty();
     loadSessions();
     messageEl.focus();
+  }
+
+  root.querySelectorAll(".nav-toggle").forEach((btn) => {
+    btn.addEventListener("click", (event) => {
+      event.preventDefault();
+      toggleNav();
+    });
   });
+  scrim?.addEventListener("click", () => setNavOpen(false));
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && wrap.classList.contains("nav-open")) setNavOpen(false);
+  });
+  mqNarrow.addEventListener("change", () => setNarrow(options.narrow));
+
+  root.querySelector(".new-chat")?.addEventListener("click", startNewChat);
+  root.querySelector(".new-chat-icon")?.addEventListener("click", startNewChat);
 
   if (!compact && routed) {
     window.addEventListener("location-changed", applyRoute);
@@ -608,5 +702,5 @@ export function mountAiWorkspace(root, options = {}) {
     loadSessions();
   }
   resizeComposer();
-  return { openSession, applyRoute };
+  return { openSession, applyRoute, setNarrow, toggleNav };
 }
