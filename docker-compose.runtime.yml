@@ -18,6 +18,7 @@ services:
       CURSOR_MODEL: ${CURSOR_MODEL:-composer-2.5}
       MCP_URL: ${MCP_URL:?set MCP_URL in .env}
       MCP_TOKEN: ${MCP_TOKEN:-}
+      MCP_CONFIG_PATH: /config/mcp.json
       AUTH_MODE: ingress
       DATA_DIR: /data
       PORT: "8090"
@@ -25,6 +26,7 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - ai-workspace-data:/data
+      - ./mcp.json:/config/mcp.json:ro
     ports:
       - "127.0.0.1:8090:8090"
     restart: unless-stopped

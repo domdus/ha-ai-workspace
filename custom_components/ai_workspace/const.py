@@ -48,3 +48,4 @@ Home Assistant is reached only through the connected MCP tools. Use those tools 
 
 Be concise. If a tool fails, say so. Ask before doing something hard to undo, such as deleting automations, unlocking doors, or turning off many devices at once."""
 COMPOSE_RUNTIME_URL = "http://ai-workspace:8090"
+HOST_RUNTIME_URL = "http://127.0.0.1:8090"

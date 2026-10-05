@@ -58,9 +58,14 @@
       "cursor": {
         "title": "Cursor Runtime",
         "data": {
-          "runtime_url": "Runtime URL (optional, advanced)",
+          "runtime_url": "Cursor Runtime URL",
           "enable_sidebar": "Show AI Workspace in the sidebar",
           "enable_overlay": "Show floating AI button on every page"
+        },
+        "data_description": {
+          "runtime_url": "Where this Home Assistant reaches the Cursor container. Leave empty to auto-detect. Host networking (Synology): http://127.0.0.1:8090. Same Docker network: http://ai-workspace:8090. Home Assistant OS finds the app for you.",
+          "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
+          "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration."
         },
         "sections": {
           "mcp": {
@@ -150,8 +155,14 @@
       "cursor": {
         "title": "Cursor Runtime",
         "data": {
+          "runtime_url": "Cursor Runtime URL",
           "enable_sidebar": "Show AI Workspace in the sidebar",
           "enable_overlay": "Show floating AI button on every page"
+        },
+        "data_description": {
+          "runtime_url": "Where this Home Assistant reaches the Cursor container. Leave empty to auto-detect. Host networking (Synology): http://127.0.0.1:8090. Same Docker network: http://ai-workspace:8090. Home Assistant OS finds the app for you.",
+          "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
+          "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration."
         },
         "data_description": {
           "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",

@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import logging
 import os
-from pathlib import Path
 
 from aiohttp import ClientError, ClientTimeout
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import ADDON_PORT, ADDON_SLUG, COMPOSE_RUNTIME_URL
+from .const import ADDON_PORT, ADDON_SLUG, COMPOSE_RUNTIME_URL, HOST_RUNTIME_URL
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -57,12 +56,19 @@ async def async_probe_runtime(hass: HomeAssistant, base: str) -> bool:
 
 async def async_resolve_runtime_url(hass: HomeAssistant, configured: str) -> str:
     if configured:
-        return configured.rstrip("/")
+        base = configured.rstrip("/")
+        if await async_probe_runtime(hass, base):
+            return base
+        _LOGGER.warning("AI Workspace runtime at %s did not answer", base)
+        return base
     found = hassio_runtime_url(hass)
-    if found and await async_probe_runtime(hass, found):
-        return found
-    if not os.environ.get("SUPERVISOR_TOKEN") and Path("/.dockerenv").exists():
-        if await async_probe_runtime(hass, COMPOSE_RUNTIME_URL):
-            return COMPOSE_RUNTIME_URL
+    for candidate in (found, HOST_RUNTIME_URL, COMPOSE_RUNTIME_URL):
+        if not candidate:
+            continue
+        if os.environ.get("SUPERVISOR_TOKEN") and candidate == COMPOSE_RUNTIME_URL:
+            continue
+        if await async_probe_runtime(hass, candidate):
+            _LOGGER.info("AI Workspace runtime using %s", candidate)
+            return candidate
     return found or ""
 
