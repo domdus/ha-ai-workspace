@@ -3,8 +3,10 @@
 #   cp runtime.env.example .env   # CURSOR_API_KEY + MCP_URL
 #   docker compose -f docker-compose.runtime.yml up -d --build
 #
-# Host-network HA (Synology): Runtime URL in HACS is http://127.0.0.1:8090
-# MCP_URL uses host.docker.internal so this container can reach HA on the host.
+# Host network (Synology Container HA): Cursor and HA-MCP use the host's
+# network. The API listens on 127.0.0.1:8090 only — not the LAN.
+# HACS Runtime URL: http://127.0.0.1:8090
+# MCP_URL: http://127.0.0.1:8123/api/webhook/<id>
 
 name: ai-workspace-runtime
 
@@ -13,22 +15,18 @@ services:
     container_name: ai-workspace
     image: ai-workspace-runtime:0.3.0
     build: ./ai_workspace
+    network_mode: host
     environment:
       CURSOR_API_KEY: ${CURSOR_API_KEY:?set CURSOR_API_KEY}
       CURSOR_MODEL: ${CURSOR_MODEL:-composer-2.5}
       MCP_URL: ${MCP_URL:?set MCP_URL in .env}
       MCP_TOKEN: ${MCP_TOKEN:-}
-      MCP_CONFIG_PATH: /config/mcp.json
       AUTH_MODE: ingress
       DATA_DIR: /data
+      HOST: "127.0.0.1"
       PORT: "8090"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     volumes:
       - ai-workspace-data:/data
-      - ./mcp.json:/config/mcp.json:ro
-    ports:
-      - "127.0.0.1:8090:8090"
     restart: unless-stopped
 
 volumes:

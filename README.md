@@ -109,9 +109,8 @@ Edit `.env`:
 ```bash
 CURSOR_API_KEY=          # https://cursor.com/dashboard/integrations
 CURSOR_MODEL=composer-2.5
-# How *this* container reaches HA-MCP (not your browser).
-# Home Assistant on host networking (typical Synology):
-MCP_URL=http://host.docker.internal:8123/api/webhook/<ha-mcp-webhook-id>
+# How *this* container reaches HA-MCP (host network = this machine).
+MCP_URL=http://127.0.0.1:8123/api/webhook/<ha-mcp-webhook-id>
 ```
 
 Use the HA-MCP webhook from that integration. Built-in MCP is `/api/mcp` plus `MCP_TOKEN`. Leave `MCP_TOKEN` empty for an HA-MCP webhook.
@@ -120,12 +119,9 @@ Use the HA-MCP webhook from that integration. Built-in MCP is `/api/mcp` plus `M
 docker compose -f docker-compose.runtime.yml up -d --build
 ```
 
-Port **8090** is bound to `127.0.0.1` only. Do not publish it on the LAN.
+The compose file uses **host network**. Port **8090** is bound to `127.0.0.1` only. Do not publish it on the LAN.
 
-Then **Configure → Chat Backend → Cursor Runtime app**, Runtime URL:
-
-- Home Assistant **host** network: `http://127.0.0.1:8090`
-- Home Assistant on a Docker **bridge** network: `http://ai-workspace:8090` (same Docker network as HA)
+Then **Configure → Chat Backend → Cursor Runtime app**, Runtime URL `http://127.0.0.1:8090`.
 
 Cursor’s key and model stay in `.env` on that container.
 
