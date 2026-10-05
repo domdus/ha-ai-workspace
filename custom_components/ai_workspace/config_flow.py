@@ -30,6 +30,7 @@ from .const import (
     DEFAULT_MODEL,
     DEFAULT_SYSTEM_PROMPT,
     DOMAIN,
+    HOST_RUNTIME_URL,
     MCP_COOLVER,
     MCP_CUSTOM,
     MCP_HA,
@@ -62,6 +63,7 @@ _OPTION_KEYS = (
     CONF_MCP_URL,
     CONF_MCP_TOKEN,
     CONF_SYSTEM_PROMPT,
+    CONF_RUNTIME_URL,
     CONF_ENABLE_OVERLAY,
     CONF_ENABLE_SIDEBAR,
 )
@@ -202,7 +204,12 @@ def _cursor_form(defaults: dict, *, runtime_url: bool = False, hass: HomeAssista
         vol.Required(SECTION_MCP): section(_mcp_schema(defaults, hass), {"collapsed": False}),
     }
     if runtime_url:
-        schema[vol.Optional(CONF_RUNTIME_URL, default=defaults.get(CONF_RUNTIME_URL, ""))] = cv.string
+        schema[
+            vol.Optional(
+                CONF_RUNTIME_URL,
+                default=str(defaults.get(CONF_RUNTIME_URL) or HOST_RUNTIME_URL),
+            )
+        ] = _MCP_SELECTOR
     schema.update(_ui_schema(defaults))
     return vol.Schema(schema)
 
@@ -319,10 +326,20 @@ class AiWorkspaceOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_cursor(self, user_input=None):
         current = self._current()
+        errors = {}
+        discovered = hassio_runtime_url(self.hass) or ""
         if user_input is not None:
-            return self._save({**_normalize(_flatten(user_input), current, self.hass), CONF_MODE: MODE_CURSOR})
+            flat = _normalize(_flatten(user_input), current, self.hass)
+            configured = str(flat.get(CONF_RUNTIME_URL) or discovered or current.get(CONF_RUNTIME_URL) or "").strip()
+            runtime = await async_resolve_runtime_url(self.hass, configured)
+            if not runtime:
+                errors["base"] = "no_runtime"
+            else:
+                return self._save({**flat, CONF_MODE: MODE_CURSOR, CONF_RUNTIME_URL: runtime})
+            current = {**current, **flat}
         defaults = await _defaults_with_mcp(self.hass, current)
         return self.async_show_form(
             step_id="cursor",
-            data_schema=_cursor_form(defaults, hass=self.hass),
+            data_schema=_cursor_form(defaults, runtime_url=not discovered, hass=self.hass),
+            errors=errors,
         )
