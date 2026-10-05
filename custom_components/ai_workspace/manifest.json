@@ -1,0 +1,13 @@
+{
+  "domain": "ai_workspace",
+  "name": "AI Workspace",
+  "codeowners": [],
+  "config_flow": true,
+  "dependencies": ["http", "frontend", "panel_custom"],
+  "documentation": "https://github.com/domdus/ha-ai-workspace",
+  "integration_type": "service",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/domdus/ha-ai-workspace/issues",
+  "requirements": [],
+  "version": "0.3.0"
+}

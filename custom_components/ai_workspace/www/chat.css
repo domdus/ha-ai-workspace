@@ -1,0 +1,471 @@
+:host {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+
+:host, .wrap {
+  color: var(--primary-text-color);
+  font-family: var(--ha-font-family-body);
+  font-size: var(--ha-font-size-m);
+  line-height: 1.45;
+  --ai-chat-width: 720px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+.wrap {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--primary-background-color);
+}
+
+.wrap.compact {
+  grid-template-columns: 1fr;
+}
+
+aside {
+  border-inline-end: 1px solid var(--divider-color);
+  background: var(--sidebar-background-color);
+  padding: var(--ha-space-3);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.compact aside {
+  display: none;
+}
+
+.brand {
+  flex: 0 0 auto;
+  font-weight: var(--ha-font-weight-heading);
+  font-size: var(--ha-font-size-l);
+  margin-bottom: var(--ha-space-3);
+  color: var(--sidebar-text-color);
+}
+
+.wrap:not(.compact) .brand {
+  display: none;
+}
+
+ha-button.new-chat {
+  flex: 0 0 auto;
+  width: 100%;
+}
+
+.chats-label {
+  flex: 0 0 auto;
+  margin: var(--ha-space-6) 0 var(--ha-space-3);
+  padding: 0 var(--ha-space-3);
+  color: var(--secondary-text-color);
+  font-size: var(--ha-font-size-s);
+  font-weight: var(--ha-font-weight-medium);
+  line-height: 1.2;
+}
+
+.sessions {
+  flex: 1 1 auto;
+  min-height: 0;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sessions ha-list-item-button {
+  flex: 0 0 auto;
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  border-radius: var(--ha-border-radius-sm);
+  position: relative;
+  color: var(--sidebar-text-color);
+  --ha-row-item-min-height: var(--ha-space-8);
+  --ha-row-item-padding-block: 0;
+  --ha-row-item-padding-inline: var(--ha-space-3);
+  --ha-row-item-gap: 0;
+}
+
+.sessions ha-list-item-button::part(start) {
+  display: none;
+}
+
+.sessions ha-list-item-button::part(headline) {
+  color: var(--sidebar-text-color);
+  font-weight: var(--ha-font-weight-normal);
+}
+
+.sessions ha-list-item-button::part(base):hover {
+  background-color: var(--ha-color-fill-neutral-quiet-hover);
+}
+
+.sessions ha-list-item-button .item-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--ha-font-size-m);
+  font-weight: var(--ha-font-weight-normal);
+}
+
+.sessions ha-list-item-button.selected::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--ha-border-radius-sm);
+  background-color: var(--sidebar-selected-icon-color);
+  opacity: var(--dark-divider-opacity);
+  pointer-events: none;
+}
+
+.sessions ha-list-item-button.selected::part(headline) {
+  color: var(--sidebar-selected-icon-color);
+}
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overflow-anchor: none;
+  overscroll-behavior: contain;
+  scroll-padding-bottom: var(--ha-space-20);
+}
+
+.chat.welcome {
+  overflow: hidden;
+}
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: var(--ha-space-3) var(--ha-space-4) var(--ha-space-2);
+  width: min(calc(var(--ai-chat-width) + 2 * var(--ha-space-4)), 100%);
+  margin-inline: auto;
+  background: var(--primary-background-color);
+}
+
+.wrap:not(.compact) .chat.welcome header {
+  visibility: hidden;
+  height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+h1 {
+  font-size: var(--ha-font-size-l);
+  font-weight: var(--ha-font-weight-heading);
+  margin: 0;
+}
+
+.banner {
+  margin: var(--ha-space-2) 0 0;
+  color: var(--error-color);
+}
+
+.stage {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.chat.welcome .stage {
+  justify-content: center;
+  padding: var(--ha-space-6) var(--ha-space-4) var(--ha-space-12);
+}
+
+.log {
+  flex: 0 0 auto;
+  overflow: visible;
+  padding: var(--ha-space-3) var(--ha-space-4) var(--ha-space-2);
+  width: min(calc(var(--ai-chat-width) + 2 * var(--ha-space-4)), 100%);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ha-space-4);
+}
+
+.wrap:not(.compact) .chat.welcome .log {
+  padding-bottom: var(--ha-space-1);
+}
+
+.bubble {
+  max-width: 100%;
+  padding: var(--ha-space-2) var(--ha-space-3);
+  border-radius: var(--ha-border-radius-xl);
+  overflow-wrap: anywhere;
+  animation: bubble-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.bubble.instant {
+  animation: none;
+}
+
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.bubble.user {
+  align-self: flex-end;
+  max-width: 85%;
+  background: rgba(var(--rgb-primary-color), 0.18);
+  color: var(--primary-text-color);
+  white-space: pre-wrap;
+}
+
+.bubble.assistant {
+  align-self: stretch;
+  max-width: 100%;
+  background: transparent;
+  padding: var(--ha-space-1) 0 var(--ha-space-2);
+}
+
+.bubble.assistant ha-markdown.text {
+  display: block;
+}
+
+.bubble.assistant ha-markdown.text[hidden] {
+  display: none;
+}
+
+.bubble.error { color: var(--error-color); }
+
+.activity {
+  margin: 0 0 var(--ha-space-2);
+  font-size: var(--ha-font-size-s);
+  color: var(--secondary-text-color);
+}
+
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ha-space-1);
+  margin: 0 0 var(--ha-space-2);
+}
+
+.tools:empty {
+  display: none;
+}
+
+.tools span {
+  font-size: var(--ha-font-size-s);
+  color: var(--secondary-text-color);
+  background: var(--chip-background-color);
+  border-radius: var(--ha-border-radius-pill);
+  padding: 2px var(--ha-space-2);
+  animation: chip-in 240ms ease both;
+}
+
+.bubble.instant .tools span {
+  animation: none;
+}
+
+.tools span.done {
+  opacity: 0.72;
+}
+
+.tools span.busy {
+  color: var(--primary-text-color);
+  background-color: var(--chip-background-color);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(var(--rgb-primary-color), 0.35) 50%,
+    transparent 100%
+  );
+  background-size: 220% 100%;
+  animation: chip-in 240ms ease both, shine 1.6s linear infinite;
+}
+
+.bubble.instant .tools span.busy {
+  animation: shine 1.6s linear infinite;
+}
+
+@keyframes chip-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.activity.shine {
+  background-image: linear-gradient(
+    90deg,
+    var(--secondary-text-color) 0%,
+    var(--secondary-text-color) 38%,
+    var(--primary-text-color) 50%,
+    var(--secondary-text-color) 62%,
+    var(--secondary-text-color) 100%
+  );
+  background-size: 220% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: shine 1.6s linear infinite;
+}
+
+@keyframes shine {
+  from { background-position: 100% 0; }
+  to { background-position: -120% 0; }
+}
+
+.status {
+  display: none;
+}
+
+.composer {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  padding: var(--ha-space-4);
+  width: min(calc(var(--ai-chat-width) + 2 * var(--ha-space-4)), 100%);
+  margin-inline: auto;
+  margin-top: auto;
+  background: var(--primary-background-color);
+}
+
+.chat:not(.welcome) .composer::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 40px;
+  background: linear-gradient(to bottom, transparent, var(--primary-background-color));
+  pointer-events: none;
+}
+
+.chat.welcome .composer {
+  position: static;
+  margin-top: 0;
+  background: transparent;
+}
+
+.composer-box {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ha-space-1);
+  width: 100%;
+  background: var(--input-fill-color);
+  border: 1px solid var(--divider-color);
+  border-radius: var(--ha-border-radius-3xl);
+  padding: var(--ha-space-1) var(--ha-space-1) var(--ha-space-1) var(--ha-space-4);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.composer-box:focus-within {
+  border-color: var(--primary-color);
+}
+
+textarea {
+  display: block;
+  flex: 1;
+  resize: none;
+  min-height: 36px;
+  max-height: 160px;
+  height: 36px;
+  line-height: 20px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 8px 0;
+  overflow-y: auto;
+  color: var(--primary-text-color);
+  font: inherit;
+}
+
+textarea::placeholder {
+  color: var(--secondary-text-color);
+  line-height: 20px;
+}
+
+textarea:focus {
+  outline: none;
+}
+
+.send {
+  flex: 0 0 auto;
+  --ha-icon-button-size: 36px;
+}
+
+.empty {
+  color: var(--secondary-text-color);
+  margin: 0 auto var(--ha-space-4);
+  text-align: center;
+  font-size: var(--ha-font-size-xl);
+  font-weight: var(--ha-font-weight-heading);
+  line-height: 1.3;
+  max-width: 28ch;
+}
+
+.compact .empty {
+  font-size: var(--ha-font-size-m);
+  font-weight: var(--ha-font-weight-medium);
+  margin: auto var(--ha-space-4);
+}
+
+.workspace-link {
+  display: block;
+  margin: var(--ha-space-2) var(--ha-space-4) 0;
+  color: var(--primary-color);
+  text-decoration: none;
+  font-size: var(--ha-font-size-s);
+}
+
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble,
+  .tools span {
+    animation: none;
+  }
+
+  .activity.shine {
+    animation: none;
+    background: none;
+    color: var(--secondary-text-color);
+    -webkit-text-fill-color: var(--secondary-text-color);
+  }
+
+  .tools span.busy {
+    animation: none;
+    background-image: none;
+  }
+}
