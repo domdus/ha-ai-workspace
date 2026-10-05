@@ -1,0 +1,33 @@
+# Cursor SDK sidecar (not Home Assistant). Same Docker host as HA.
+#
+#   cp runtime.env.example .env   # CURSOR_API_KEY + MCP_URL
+#   docker compose -f docker-compose.runtime.yml up -d --build
+#
+# Host-network HA (Synology): Runtime URL in HACS is http://127.0.0.1:8090
+# MCP_URL uses host.docker.internal so this container can reach HA on the host.
+
+name: ai-workspace-runtime
+
+services:
+  ai-workspace:
+    container_name: ai-workspace
+    image: ai-workspace-runtime:0.3.0
+    build: ./ai_workspace
+    environment:
+      CURSOR_API_KEY: ${CURSOR_API_KEY:?set CURSOR_API_KEY}
+      CURSOR_MODEL: ${CURSOR_MODEL:-composer-2.5}
+      MCP_URL: ${MCP_URL:?set MCP_URL in .env}
+      MCP_TOKEN: ${MCP_TOKEN:-}
+      AUTH_MODE: ingress
+      DATA_DIR: /data
+      PORT: "8090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ai-workspace-data:/data
+    ports:
+      - "127.0.0.1:8090:8090"
+    restart: unless-stopped
+
+volumes:
+  ai-workspace-data:

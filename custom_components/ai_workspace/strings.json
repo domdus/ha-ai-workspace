@@ -1,0 +1,178 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Chat Backend",
+        "description": "Choose how chat should run.",
+        "menu_options": {
+          "api": "Cloud API Provider",
+          "cursor": "Cursor Runtime app"
+        }
+      },
+      "api": {
+        "title": "Cloud API Provider",
+        "data": {
+          "enable_sidebar": "Show AI Workspace in the sidebar",
+          "enable_overlay": "Show floating AI button on every page"
+        },
+        "sections": {
+          "provider": {
+            "name": "Provider",
+            "data": {
+              "api_provider": "Provider",
+              "api_key": "API key",
+              "model": "Model",
+              "api_base": "API base URL (OpenAI-compatible only)"
+            },
+            "data_description": {
+              "api_provider": "OpenAI or Claude.",
+              "api_key": "Provider API key. Not a Home Assistant token.",
+              "model": "OpenAI default is gpt-4.1. Claude default is claude-sonnet-4-5.",
+              "api_base": "Only if Provider is OpenAI-compatible. Official OpenAI and Claude leave this empty."
+            }
+          },
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "MCP type",
+              "mcp_url": "MCP URL",
+              "mcp_token": "MCP token"
+            },
+            "data_description": {
+              "mcp_kind": "Built-in MCP Server must be added under Devices & services first. HA-MCP is the sidecar. Vibecode is the Agent app. Custom is any MCP HTTP URL.",
+              "mcp_url": "Leave empty to auto-detect. HA-MCP on this machine is usually http://127.0.0.1:8086/mcp. Built-in MCP is this Home Assistant /api/mcp. On Home Assistant OS, a running HA-MCP app is found for you.",
+              "mcp_token": "Built-in: Home Assistant long-lived access token, or leave empty to use your current login in this chat. HA-MCP: usually empty. Vibecode: Agent Key. Custom: optional Bearer token."
+            }
+          },
+          "prompt": {
+            "name": "System prompt",
+            "data": {
+              "system_prompt": "System prompt"
+            },
+            "data_description": {
+              "system_prompt": "How the model should behave in this installation. Leave empty to use the built-in Home Assistant prompt. Provider and model id are always added for you."
+            }
+          }
+        }
+      },
+      "cursor": {
+        "title": "Cursor Runtime",
+        "data": {
+          "runtime_url": "Runtime URL (optional, advanced)",
+          "enable_sidebar": "Show AI Workspace in the sidebar",
+          "enable_overlay": "Show floating AI button on every page"
+        },
+        "sections": {
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "MCP type",
+              "mcp_url": "MCP URL",
+              "mcp_token": "MCP token"
+            },
+            "data_description": {
+              "mcp_kind": "Built-in MCP Server must be added under Devices & services first. HA-MCP is the sidecar. Vibecode is the Agent app. Custom is any MCP HTTP URL.",
+              "mcp_url": "Leave empty to auto-detect. HA-MCP on this machine is usually http://127.0.0.1:8086/mcp. Built-in MCP is this Home Assistant /api/mcp. On Home Assistant OS, a running HA-MCP app is found for you.",
+              "mcp_token": "Built-in: Home Assistant long-lived access token, or leave empty to use your current login in this chat. HA-MCP: usually empty. Vibecode: Agent Key. Custom: optional Bearer token."
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "no_runtime": "The Cursor runtime is not reachable. Install and start the AI Workspace Runtime app, or pick Cloud API Provider instead.",
+      "required": "This field is required."
+    },
+    "abort": {
+      "already_configured": "AI Workspace is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Chat Backend",
+        "description": "Choose how chat should run.",
+        "menu_options": {
+          "api": "Cloud API Provider",
+          "cursor": "Cursor Runtime app"
+        }
+      },
+      "api": {
+        "title": "Cloud API Provider",
+        "data": {
+          "enable_sidebar": "Show AI Workspace in the sidebar",
+          "enable_overlay": "Show floating AI button on every page"
+        },
+        "data_description": {
+          "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
+          "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration."
+        },
+        "sections": {
+          "provider": {
+            "name": "Provider",
+            "data": {
+              "api_provider": "Provider",
+              "api_key": "API key",
+              "model": "Model",
+              "api_base": "API base URL (OpenAI-compatible only)"
+            },
+            "data_description": {
+              "api_provider": "OpenAI or Claude.",
+              "api_key": "Provider API key. Not a Home Assistant token.",
+              "model": "OpenAI default is gpt-4.1. Claude default is claude-sonnet-4-5.",
+              "api_base": "Only if Provider is OpenAI-compatible. Official OpenAI and Claude leave this empty."
+            }
+          },
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "MCP type",
+              "mcp_url": "MCP URL",
+              "mcp_token": "MCP token"
+            },
+            "data_description": {
+              "mcp_kind": "Built-in MCP Server must be added under Devices & services first. HA-MCP is the sidecar. Vibecode is the Agent app. Custom is any MCP HTTP URL.",
+              "mcp_url": "Leave empty to auto-detect. HA-MCP on this machine is usually http://127.0.0.1:8086/mcp. Built-in MCP is this Home Assistant /api/mcp. On Home Assistant OS, a running HA-MCP app is found for you.",
+              "mcp_token": "Built-in: Home Assistant long-lived access token, or leave empty to use your current login in this chat. HA-MCP: usually empty. Vibecode: Agent Key. Custom: optional Bearer token."
+            }
+          },
+          "prompt": {
+            "name": "System prompt",
+            "data": {
+              "system_prompt": "System prompt"
+            },
+            "data_description": {
+              "system_prompt": "How the model should behave in this installation. Leave empty to use the built-in Home Assistant prompt. Provider and model id are always added for you."
+            }
+          }
+        }
+      },
+      "cursor": {
+        "title": "Cursor Runtime",
+        "data": {
+          "enable_sidebar": "Show AI Workspace in the sidebar",
+          "enable_overlay": "Show floating AI button on every page"
+        },
+        "data_description": {
+          "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
+          "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration."
+        },
+        "sections": {
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "MCP type",
+              "mcp_url": "MCP URL",
+              "mcp_token": "MCP token"
+            },
+            "data_description": {
+              "mcp_kind": "Built-in MCP Server must be added under Devices & services first. HA-MCP is the sidecar. Vibecode is the Agent app. Custom is any MCP HTTP URL.",
+              "mcp_url": "Leave empty to auto-detect. HA-MCP on this machine is usually http://127.0.0.1:8086/mcp. Built-in MCP is this Home Assistant /api/mcp. On Home Assistant OS, a running HA-MCP app is found for you.",
+              "mcp_token": "Built-in: Home Assistant long-lived access token, or leave empty to use your current login in this chat. HA-MCP: usually empty. Vibecode: Agent Key. Custom: optional Bearer token."
+            }
+          }
+        }
+      }
+    }
+  }
+}

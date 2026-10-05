@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Workspace</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <div class="app">
+    <aside>
+      <div class="brand">AI Workspace</div>
+      <button id="new-chat" type="button">Neuer Chat</button>
+      <ul id="sessions"></ul>
+    </aside>
+    <section class="chat">
+      <header>
+        <h1 id="title">Neuer Chat</h1>
+        <p id="banner" hidden></p>
+      </header>
+      <div id="log"></div>
+      <p id="status" hidden></p>
+      <form id="composer">
+        <label class="sr" for="message">Nachricht</label>
+        <textarea id="message" rows="2" placeholder="Warum lief die Balkonbewässerung gestern nicht?"></textarea>
+        <button id="send" type="submit">Senden</button>
+      </form>
+    </section>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
