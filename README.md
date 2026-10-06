@@ -10,7 +10,7 @@
 
 An agent chat that can see **your** Home Assistant installation through MCP.
 
-The UI is a HACS integration. The agent is a **cloud API** (OpenAI or Claude) or the **Cursor SDK** in a small Runtime next to Home Assistant.
+The UI is a HACS integration. The agent is a **cloud API** (OpenAI or Claude) or the **Cursor SDK Runtime** used in Home Assistant by the integration.
 
 ## Requirements
 
@@ -23,7 +23,7 @@ Any **MCP server** the agent can call. AI Workspace does not bundle Home Assista
 
 Leave it running. Keep the connect URL or Agent Key if it shows one — paste it only if auto-detect misses it later.
 
-You also need [HACS](https://hacs.xyz) and either an **OpenAI / Claude API key** (Cloud) or a **Cursor API key** (Runtime).
+You also need [HACS](https://hacs.xyz) and either an **OpenAI / Claude API key** (Cloud) or a **Cursor API key** (SDK Runtime).
 
 ## Cloud API (OpenAI or Claude)
 
@@ -45,9 +45,19 @@ OpenAI or Claude key, MCP type from Requirements. Leave MCP URL empty if it show
 
 Open **AI Workspace** (`/ai-workspace`) and ask: `List my lights and one automation.`
 
-## Cursor Runtime
+## Cursor SDK Runtime
 
-Needs the Cursor SDK next to Home Assistant. HACS as in Cloud step 1 first.
+Same agent as **Cursor IDE**, without the desktop: MCP tools, multi-step work, spawn and resume agents. Headless — no editor, no Composer UI — used in Home Assistant by the integration.
+
+### Home Assistant OS / Supervised
+
+Add this repo to Apps and install **AI Workspace Runtime**:
+
+[![Add repository](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fdomdus%2Fha-ai-workspace)
+
+Paste the Cursor API key on the app, **Start**, then **Add integration → Cursor Runtime app**. Runtime URL is filled in when the app is running.
+
+Home Assistant 2026.2 renamed “Add-ons” to “Apps”.
 
 ### Home Assistant Container
 
@@ -102,23 +112,13 @@ Then **Settings → Devices & services → Add integration → AI Workspace → 
 - MCP type: from Requirements. Leave MCP URL empty if it shows as detected.
 - Save. Open **AI Workspace** (`/ai-workspace`).
 
-### Home Assistant OS / Supervised
-
-Add this repo to Apps and install **AI Workspace Runtime**:
-
-[![Add repository](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fdomdus%2Fha-ai-workspace)
-
-Paste the Cursor API key on the app, **Start**, then **Add integration → Cursor Runtime app**. Runtime URL is filled in when the app is running.
-
-Home Assistant 2026.2 renamed “Add-ons” to “Apps”.
-
 ## Configure later
 
 **Settings → Devices & services → AI Workspace → Configure**
 
 | Option | What it does |
 |---|---|
-| **Chat Backend** | **Cloud API Provider** or **Cursor Runtime app** |
+| **Chat Backend** | **Cloud API Provider** or **Cursor SDK Runtime** |
 | **Provider** | Cloud: OpenAI or Claude, API key, optional model. Cursor: optional model overrides `CURSOR_MODEL` |
 | **MCP type** | Built-in MCP Server, HA-MCP, HA Vibecode Agent, or custom URL |
 | **MCP URL** | Empty uses auto-detect. Paste the HA-MCP webhook / custom URL only if needed |
@@ -127,7 +127,7 @@ Home Assistant 2026.2 renamed “Add-ons” to “Apps”.
 | **Show floating AI button on every page** | Bottom-right **AI**. Hidden on Settings |
 | **Show AI Workspace in the sidebar** | Sidebar item. `/ai-workspace` still works if this is off |
 
-MCP is set on this form for both backends and sent to the Runtime on each chat. The Cursor API key stays on the Runtime.
+MCP is set on this form for both backends and sent to the SDK Runtime on each chat. The Cursor API key stays on the Runtime.
 
 ## Remove it
 
