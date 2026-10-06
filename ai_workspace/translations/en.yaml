@@ -4,7 +4,7 @@ configuration:
     description: User API key from Cursor Dashboard → Integrations
   model:
     name: Model
-    description: Cursor model id, for example composer-2.5
+    description: Default Cursor model id, for example composer-2.5. The HACS form can override this.
   mcp_kind:
     name: MCP type
     description: >-
@@ -13,6 +13,7 @@ configuration:
   mcp_url:
     name: MCP URL
     description: >-
+      Optional fallback if the HACS integration is not sending MCP on chat.
       Leave empty for the default of that type. Built-in uses this Home Assistant
       /api/mcp. HA-MCP needs its connect URL. Vibecode defaults to
       http://127.0.0.1:8099.

@@ -11,9 +11,16 @@ from app.store import Session
 class FakeCursor:
     def __init__(self) -> None:
         self.info = ProviderInfo("cursor", "Cursor", True, None)
+        self.last_images = None
+        self.last_message = None
+        self.last_mcp = None
+        self.last_model = None
 
-    async def send(self, session: Session, message: str, on_agent_id):
-        del message
+    async def send(self, session: Session, message: str, on_agent_id, images=None, mcp=None, model=None):
+        self.last_message = message
+        self.last_images = images
+        self.last_mcp = mcp
+        self.last_model = model
         on_agent_id("agent-local-1")
         yield {"type": "status", "text": "Thinking..."}
         yield {"type": "text", "delta": "Moisture is 18%."}
@@ -61,6 +68,28 @@ def test_chat_keeps_agent_id_and_transcript(tmp_path: Path) -> None:
         assert other.status_code == 404
 
 
+class FakeCursorTitled(FakeCursor):
+    async def suggest_title(self, user: str, assistant: str = "") -> str | None:
+        del user, assistant
+        return "Garden moisture"
+
+
+def test_chat_summarizes_title_after_first_reply(tmp_path: Path) -> None:
+    app = create_app(settings(tmp_path), {"cursor": FakeCursorTitled()})
+    with TestClient(app) as client:
+        created = client.post("/api/sessions", json={"provider": "cursor"})
+        session_id = created.json()["id"]
+        streamed = client.post(
+            f"/api/sessions/{session_id}/chat",
+            json={"message": "Why is the garden so dry?"},
+        )
+        assert streamed.status_code == 200
+        assert "event: title" in streamed.text
+        assert "Garden moisture" in streamed.text
+        detail = client.get(f"/api/sessions/{session_id}")
+        assert detail.json()["title"] == "Garden moisture"
+
+
 def test_ingress_requires_a_user(tmp_path: Path) -> None:
     app = create_app(settings(tmp_path, "ingress"), {"cursor": FakeCursor()})
     with TestClient(app) as client:
@@ -69,3 +98,99 @@ def test_ingress_requires_a_user(tmp_path: Path) -> None:
         ok = client.get("/api/sessions", headers={"X-Remote-User-Id": "ha-user"})
         assert ok.status_code == 200
         assert ok.json() == []
+
+
+def test_rename_and_delete_session(tmp_path: Path) -> None:
+    app = create_app(settings(tmp_path), {"cursor": FakeCursor()})
+    with TestClient(app) as client:
+        created = client.post("/api/sessions", json={"provider": "cursor"})
+        session_id = created.json()["id"]
+        renamed = client.patch(f"/api/sessions/{session_id}", json={"title": "Kitchen leak"})
+        assert renamed.status_code == 200
+        assert renamed.json()["title"] == "Kitchen leak"
+        assert client.get("/api/sessions").json()[0]["title"] == "Kitchen leak"
+        deleted = client.delete(f"/api/sessions/{session_id}")
+        assert deleted.status_code == 204
+PNG_1PX = (
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+)
+
+
+def test_chat_accepts_image_without_text(tmp_path: Path) -> None:
+    provider = FakeCursor()
+    app = create_app(settings(tmp_path), {"cursor": provider})
+    with TestClient(app) as client:
+        created = client.post("/api/sessions", json={"provider": "cursor"})
+        session_id = created.json()["id"]
+        streamed = client.post(
+            f"/api/sessions/{session_id}/chat",
+            json={
+                "message": "",
+                "images": [{"name": "kitchen.png", "mime": "image/png", "data": PNG_1PX}],
+            },
+        )
+        assert streamed.status_code == 200
+        assert provider.last_images
+        assert provider.last_images[0]["mime"] == "image/png"
+        detail = client.get(f"/api/sessions/{session_id}")
+        user = detail.json()["messages"][0]
+        assert user["content"] == "Look at this image."
+        assert user["events"][0]["type"] == "image"
+        assert user["events"][0]["src"].startswith("data:image/png;base64,")
+
+
+def test_chat_accepts_yaml_file_without_text(tmp_path: Path) -> None:
+    provider = FakeCursor()
+    app = create_app(settings(tmp_path), {"cursor": provider})
+    yaml_text = "id: porch_light\nalias: Porch light\n"
+    with TestClient(app) as client:
+        created = client.post("/api/sessions", json={"provider": "cursor"})
+        session_id = created.json()["id"]
+        streamed = client.post(
+            f"/api/sessions/{session_id}/chat",
+            json={
+                "message": "",
+                "files": [{"name": "porch.yaml", "mime": "", "text": yaml_text}],
+            },
+        )
+        assert streamed.status_code == 200
+        assert "porch.yaml" in provider.last_message
+        assert "porch_light" in provider.last_message
+        detail = client.get(f"/api/sessions/{session_id}")
+        user = detail.json()["messages"][0]
+        assert user["content"] == "Look at this file."
+        assert user["events"][0] == {"type": "file", "name": "porch.yaml"}
+        assert "porch_light" not in user["content"]
+
+
+def test_chat_accepts_mcp_and_model_from_request(tmp_path: Path) -> None:
+    provider = FakeCursor()
+    app = create_app(settings(tmp_path), {"cursor": provider})
+    with TestClient(app) as client:
+        created = client.post("/api/sessions", json={"provider": "cursor"})
+        session_id = created.json()["id"]
+        streamed = client.post(
+            f"/api/sessions/{session_id}/chat",
+            json={
+                "message": "list lights",
+                "model": "composer-2.6",
+                "mcp": {
+                    "servers": {
+                        "mcp": {"type": "http", "url": "http://127.0.0.1:8123/api/webhook/mcp_test"}
+                    }
+                },
+            },
+        )
+        assert streamed.status_code == 200
+        assert provider.last_model == "composer-2.6"
+        assert provider.last_mcp["servers"]["mcp"]["url"].endswith("/mcp_test")
+
+
+def test_empty_chat_without_images_is_rejected(tmp_path: Path) -> None:
+    app = create_app(settings(tmp_path), {"cursor": FakeCursor()})
+    with TestClient(app) as client:
+        created = client.post("/api/sessions", json={"provider": "cursor"})
+        session_id = created.json()["id"]
+        streamed = client.post(f"/api/sessions/{session_id}/chat", json={"message": "  "})
+        assert streamed.status_code == 400
+

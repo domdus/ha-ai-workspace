@@ -1,9 +1,9 @@
 FROM python:3.12-slim-bookworm
 
 LABEL \
-  io.hass.name="AI Workspace Runtime" \
-  io.hass.description="Cursor agent runtime for LAN MCP" \
-  io.hass.version="0.3.0" \
+  io.hass.name="Cursor SDK" \
+  io.hass.description="Cursor SDK sidecar for Home Assistant AI Workspace" \
+  io.hass.version="dev" \
   io.hass.type="addon" \
   io.hass.arch="amd64|aarch64"
 

@@ -7,7 +7,7 @@ from aiohttp import ClientError, ClientTimeout
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import ADDON_PORT, ADDON_SLUG, COMPOSE_RUNTIME_URL, HOST_RUNTIME_URL
+from .const import ADDON_PORT, ADDON_SLUG, COMPOSE_RUNTIME_URLS, HOST_RUNTIME_URL
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -62,10 +62,10 @@ async def async_resolve_runtime_url(hass: HomeAssistant, configured: str) -> str
         _LOGGER.warning("AI Workspace runtime at %s did not answer", base)
         return base
     found = hassio_runtime_url(hass)
-    for candidate in (found, HOST_RUNTIME_URL, COMPOSE_RUNTIME_URL):
+    for candidate in (found, HOST_RUNTIME_URL, *COMPOSE_RUNTIME_URLS):
         if not candidate:
             continue
-        if os.environ.get("SUPERVISOR_TOKEN") and candidate == COMPOSE_RUNTIME_URL:
+        if os.environ.get("SUPERVISOR_TOKEN") and candidate in COMPOSE_RUNTIME_URLS:
             continue
         if await async_probe_runtime(hass, candidate):
             _LOGGER.info("AI Workspace runtime using %s", candidate)

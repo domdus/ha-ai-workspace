@@ -63,6 +63,56 @@ def server_to_sdk(name: str, raw: Any) -> dict[str, Any]:
     raise McpConfigError(f"MCP server {name} needs a url or a command")
 
 
+_HA_MCP_NAMES = {"home-assistant", "mcp", "ha", "ha-mcp"}
+
+
+def mcp_servers_from_url(url: str, token: str = "") -> dict[str, dict[str, Any]]:
+    if not url:
+        return {}
+    raw: dict[str, Any] = {"url": url}
+    secret = str(token or "").strip()
+    if secret:
+        raw["headers"] = {"Authorization": f"Bearer {secret}"}
+    return {"mcp": server_to_sdk("mcp", raw)}
+
+
+def servers_from_chat_mcp(mcp: Any) -> dict[str, dict[str, Any]]:
+    if mcp is None:
+        return {}
+    if hasattr(mcp, "model_dump"):
+        mcp = mcp.model_dump()
+    if not isinstance(mcp, dict):
+        return {}
+    out: dict[str, dict[str, Any]] = {}
+    raw_servers = mcp.get("servers")
+    if isinstance(raw_servers, dict):
+        for name, cfg in raw_servers.items():
+            out[str(name)] = server_to_sdk(str(name), cfg)
+    url = str(mcp.get("url") or "").strip()
+    token = str(mcp.get("token") or "").strip()
+    if url and not out:
+        out = mcp_servers_from_url(url, token)
+    return out
+
+
+def merge_mcp_servers(
+    file_servers: dict[str, dict[str, Any]],
+    request_servers: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    if not request_servers:
+        return dict(file_servers)
+    incoming_ha = bool(_HA_MCP_NAMES & set(request_servers))
+    merged: dict[str, dict[str, Any]] = {}
+    for name, cfg in file_servers.items():
+        if incoming_ha and name in _HA_MCP_NAMES:
+            continue
+        if name in request_servers:
+            continue
+        merged[name] = cfg
+    merged.update(request_servers)
+    return merged
+
+
 def load_mcp_servers(path: Path) -> dict[str, dict[str, Any]]:
     if not path.is_file():
         return {}

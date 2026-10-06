@@ -64,13 +64,17 @@ class Store:
     def close(self) -> None:
         self._conn.close()
 
-    def create_session(self, user_id: str, provider: str) -> Session:
+    def create_session(self, user_id: str, provider: str, session_id: str | None = None) -> Session:
+        if session_id:
+            existing = self.get_session(user_id, session_id)
+            if existing is not None:
+                return existing
         now = _now()
         session = Session(
-            id=uuid.uuid4().hex,
+            id=session_id or uuid.uuid4().hex,
             user_id=user_id,
             provider=provider,
-            title="Neuer Chat",
+            title="New Chat",
             agent_id=None,
             created_at=now,
             updated_at=now,
@@ -118,16 +122,45 @@ class Store:
         )
         self._conn.commit()
 
+    def rename_session(self, user_id: str, session_id: str, title: str) -> Session | None:
+        session = self.get_session(user_id, session_id)
+        if session is None:
+            return None
+        label = (title or "").strip().replace("\n", " ")[:80] or session.title
+        self._conn.execute(
+            "UPDATE sessions SET title = ? WHERE id = ? AND user_id = ?",
+            (label, session_id, user_id),
+        )
+        self._conn.commit()
+        return self.get_session(user_id, session_id)
+
     def rename_if_default(self, session_id: str, title: str) -> None:
         self._conn.execute(
             """
             UPDATE sessions
             SET title = ?, updated_at = ?
-            WHERE id = ? AND title = 'Neuer Chat'
+            WHERE id = ? AND title IN ('New Chat', 'New chat', 'Neuer Chat')
             """,
             (title[:80], _now(), session_id),
         )
         self._conn.commit()
+
+    def apply_generated_title(self, user_id: str, session_id: str, first_user: str, title: str) -> str | None:
+        session = self.get_session(user_id, session_id)
+        if session is None:
+            return None
+        snippet = (first_user or "").replace("\n", " ").strip()[:80]
+        if session.title not in {"New Chat", "New chat", "Neuer Chat", snippet}:
+            return None
+        label = (title or "").strip().replace("\n", " ")[:80]
+        if not label:
+            return None
+        self._conn.execute(
+            "UPDATE sessions SET title = ?, updated_at = ? WHERE id = ? AND user_id = ?",
+            (label, _now(), session_id, user_id),
+        )
+        self._conn.commit()
+        return label
 
     def touch(self, session_id: str) -> None:
         self._conn.execute(

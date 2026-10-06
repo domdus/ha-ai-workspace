@@ -1,4 +1,5 @@
-import { mountAiWorkspace } from "./chat.js?v=22";
+import { mountAiWorkspace } from "./chat.js?v=46";
+import { stringsFor } from "./i18n.js?v=46";
 
 class HaAiWorkspacePanel extends HTMLElement {
   constructor() {
@@ -65,6 +66,7 @@ class HaAiWorkspacePanel extends HTMLElement {
   _mount() {
     if (this._mounted || !this._hass || !this.shadowRoot) return;
     this._mounted = true;
+    const ui = stringsFor(this._hass.locale?.language || this._hass.language);
     this.shadowRoot.innerHTML = `
       <style>
         :host {
@@ -73,13 +75,7 @@ class HaAiWorkspacePanel extends HTMLElement {
           min-height: 0;
         }
         ha-top-app-bar-fixed {
-          height: 100vh;
-        }
-        .page-title {
-          font-size: inherit;
-          font-weight: inherit;
-          line-height: inherit;
-          margin: 0;
+          height: 100%;
         }
         .content {
           box-sizing: border-box;
@@ -90,21 +86,41 @@ class HaAiWorkspacePanel extends HTMLElement {
           min-height: 0;
           overflow: hidden;
         }
+        .content:not(.ready) > .wrap {
+          visibility: hidden;
+        }
         .chats-menu[hidden] {
           display: none !important;
         }
+        .page-title {
+          font-size: inherit;
+          font-weight: inherit;
+          line-height: inherit;
+          margin: 0;
+        }
       </style>
+      <link rel="stylesheet" href="/ai_workspace/static/chat.css?v=46">
       <ha-top-app-bar-fixed>
         <ha-menu-button slot="navigationIcon"></ha-menu-button>
-        <h1 class="page-title" slot="title">AI Workspace</h1>
-        <ha-icon-button class="chats-menu" slot="actionItems" label="Chats" hidden>
+        <h1 class="page-title" slot="title">${ui.title}</h1>
+        <ha-icon-button class="chats-menu" slot="actionItems" label="${ui.chats}" hidden>
           <ha-icon icon="mdi:forum-outline"></ha-icon>
         </ha-icon-button>
         <div class="content"></div>
       </ha-top-app-bar-fixed>
     `;
     this._syncChrome();
-    this._ui = mountAiWorkspace(this.shadowRoot.querySelector(".content"), {
+    const content = this.shadowRoot.querySelector(".content");
+    const css = this.shadowRoot.querySelector("link");
+    const reveal = () => content?.classList.add("ready");
+    if (css?.sheet) {
+      reveal();
+    } else {
+      css?.addEventListener("load", reveal, { once: true });
+      css?.addEventListener("error", reveal, { once: true });
+      window.setTimeout(reveal, 400);
+    }
+    this._ui = mountAiWorkspace(content, {
       routed: true,
       narrow: this._overlayNav(),
       chrome: "panel",

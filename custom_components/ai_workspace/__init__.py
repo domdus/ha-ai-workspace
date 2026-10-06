@@ -57,7 +57,7 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Optional(CONF_MCP_KIND, default=""): cv.string,
                 vol.Optional(CONF_MCP_TOKEN, default=""): cv.string,
                 vol.Optional(CONF_CURSOR_API_KEY, default=""): cv.string,
-                vol.Optional(CONF_MODEL, default=DEFAULT_MODEL): cv.string,
+                vol.Optional(CONF_MODEL, default=""): cv.string,
                 vol.Optional(CONF_RUNTIME_URL, default=""): cv.string,
                 vol.Optional(CONF_MODE, default=""): cv.string,
                 vol.Optional(CONF_API_PROVIDER, default="openai"): cv.string,
@@ -88,7 +88,7 @@ def _model_for_mode(data: dict) -> str:
     model = str(data.get(CONF_MODEL) or "").strip()
     mode = _mode(data)
     if mode == MODE_CURSOR:
-        return model or DEFAULT_MODEL
+        return model
     if not model or model == DEFAULT_MODEL:
         return ""
     return model
@@ -140,7 +140,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     mode = settings.mode
     configured = str(data.get(CONF_RUNTIME_URL) or "").strip().rstrip("/")
     runtime_url = ""
-    if mode == MODE_CURSOR:
+    if mode == MODE_CURSOR or configured:
         runtime_url = await async_resolve_runtime_url(hass, configured)
     hass.data[DOMAIN] = {
         "entry": entry,
@@ -167,7 +167,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN].update({"store": store, "providers": {"api": provider}, "locks": {}})
         _LOGGER.info("AI Workspace using API provider %s", settings.api_provider)
     elif runtime_url:
-        _LOGGER.info("AI Workspace chat API proxied to %s", runtime_url)
+        from .store import Store
+
+        await hass.async_add_executor_job(settings.ensure_dirs)
+        store = await hass.async_add_executor_job(Store, settings.data_dir / "ai-workspace.sqlite")
+        hass.data[DOMAIN].update({"store": store, "locks": {}})
+        _LOGGER.info("AI Workspace chats stored locally; Cursor Runtime at %s", runtime_url)
     else:
         try:
             import cursor_sdk  # noqa: F401
