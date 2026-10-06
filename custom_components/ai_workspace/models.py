@@ -32,6 +32,8 @@ class ChatProvider(Protocol):
         message: str,
         on_agent_id: Callable[[str], None],
         access_token: str | None = None,
+        frontend_origin: str | None = None,
+        images: list | None = None,
     ): ...
 
 

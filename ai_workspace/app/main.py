@@ -5,31 +5,83 @@ import json
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
+from app.files import attach_files_to_message, file_events, parse_client_files
+from app.images import caption_for, image_events, parse_client_images
+from app.prompt import CURSOR_IDENTITY
 from app.redact import redact
 from app.settings import Settings
 from app.store import Session, Store
+from app.titles import clean_title
 
 logger = logging.getLogger(__name__)
 STATIC = Path(__file__).resolve().parent / "static"
 
 
+def _configure_logging() -> None:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(levelname)s:\t%(name)s: %(message)s",
+        force=True,
+    )
+    logging.getLogger("app").setLevel(logging.INFO)
+    logging.getLogger("app.providers.cursor").setLevel(logging.INFO)
+
+
 class SessionCreate(BaseModel):
     provider: str = "cursor"
+    id: str | None = None
+
+
+class SessionUpdate(BaseModel):
+    title: str = Field(min_length=1, max_length=80)
+
+
+class ChatImage(BaseModel):
+    name: str = "image.jpg"
+    mime: str = "image/jpeg"
+    data: str = ""
+
+
+class ChatFile(BaseModel):
+    name: str = "file.txt"
+    mime: str = "text/plain"
+    text: str = Field(default="", max_length=300000)
+
+
+class ChatMcp(BaseModel):
+    servers: dict[str, Any] = Field(default_factory=dict)
+    url: str = ""
+    token: str = ""
 
 
 class ChatRequest(BaseModel):
-    message: str = Field(min_length=1, max_length=20000)
+    message: str = Field(default="", max_length=320000)
+    origin: str = ""
+    images: list[ChatImage] = Field(default_factory=list)
+    files: list[ChatFile] = Field(default_factory=list)
+    mcp: ChatMcp | None = None
+    model: str = ""
+
+
+def _with_ui_context(message: str, origin: str = "") -> str:
+    text = CURSOR_IDENTITY.strip()
+    origin = str(origin or "").strip().rstrip("/")
+    if origin.startswith("http://") or origin.startswith("https://"):
+        text = f"{text}\nThis user's Home Assistant UI is {origin}."
+    return f"{text}\n\n{message}"
 
 
 router = APIRouter()
 
 
 def create_app(settings: Settings | None = None, providers: dict | None = None) -> FastAPI:
+    _configure_logging()
     app = FastAPI(title="AI Workspace", lifespan=lifespan)
     app.state.settings = settings or Settings.from_env()
     app.state.providers_override = providers
@@ -52,6 +104,7 @@ async def lifespan(app: FastAPI):
 
         runtime = CursorRuntime(settings)
         app.state.providers = build_providers(settings, runtime)
+        logger.info("cursor runtime model=%s mcp_config=%s", settings.model, settings.mcp_config_path)
     app.state.runtime = runtime
     try:
         yield
@@ -113,10 +166,10 @@ def list_sessions(request: Request) -> list[dict]:
 
 @router.post("/api/sessions", status_code=201)
 def create_session(request: Request, body: SessionCreate) -> dict:
-    if body.provider not in request.app.state.providers:
-        raise HTTPException(status_code=400, detail="Unknown provider.")
+    providers = request.app.state.providers
+    provider = body.provider if body.provider in providers else next(iter(providers), "cursor")
     store: Store = request.app.state.store
-    session = store.create_session(_user_id(request), body.provider)
+    session = store.create_session(_user_id(request), provider, body.id)
     return _session_dict(session)
 
 
@@ -128,6 +181,15 @@ def get_session(request: Request, session_id: str) -> dict:
         **_session_dict(session),
         "messages": [_message_dict(item) for item in store.list_messages(session.id)],
     }
+
+
+@router.patch("/api/sessions/{session_id}")
+def rename_session(request: Request, session_id: str, body: SessionUpdate) -> dict:
+    store: Store = request.app.state.store
+    session = store.rename_session(_user_id(request), session_id, body.title)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Chat not found.")
+    return _session_dict(session)
 
 
 @router.delete("/api/sessions/{session_id}", status_code=204)
@@ -148,15 +210,37 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
     session = _session_or_404(store, _user_id(request), session_id)
     provider = request.app.state.providers.get(session.provider)
     if provider is None:
+        provider = next((item for item in request.app.state.providers.values() if item.info.available), None)
+    if provider is None:
         raise HTTPException(status_code=400, detail="Unknown provider.")
     lock: asyncio.Lock = request.app.state.locks.setdefault(session.id, asyncio.Lock())
     if lock.locked():
         raise HTTPException(status_code=409, detail="This chat is already waiting on the agent.")
-    message = body.message.strip()
+    images = parse_client_images([item.model_dump() for item in body.images])
+    files = parse_client_files([item.model_dump() for item in body.files])
+    message = caption_for(body.message, len(images), len(files))
     if not message:
         raise HTTPException(status_code=400, detail="Message is empty.")
-    store.add_message(session.id, "user", message)
+    logger.info(
+        "chat session=%s model=%s mcp=%s files=%s",
+        session.id,
+        body.model.strip() or settings.model,
+        bool(body.mcp and (body.mcp.servers or body.mcp.url)),
+        len(files),
+    )
+    store.add_message(
+        session.id,
+        "user",
+        message,
+        json.dumps(image_events(images) + file_events(files), ensure_ascii=False),
+    )
     store.rename_if_default(session.id, message.replace("\n", " ").strip())
+    outbound = _with_ui_context(attach_files_to_message(message, files), body.origin)
+    title_task = None
+    if len(store.list_messages(session.id)) <= 1:
+        suggest = getattr(provider, "suggest_title", None)
+        if callable(suggest):
+            title_task = asyncio.create_task(suggest(message, ""))
 
     def on_agent_id(agent_id: str) -> None:
         store.set_agent_id(session.id, agent_id)
@@ -171,7 +255,14 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
         final: str | None = None
         try:
             try:
-                async for event in provider.send(session, message, on_agent_id):
+                async for event in provider.send(
+                    session,
+                    outbound,
+                    on_agent_id,
+                    images=images,
+                    mcp=body.mcp.model_dump() if body.mcp else None,
+                    model=body.model.strip(),
+                ):
                     if event.get("type") == "text":
                         parts.append(str(event.get("delta") or ""))
                     elif event.get("type") == "result":
@@ -183,6 +274,7 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
                                 "name": event.get("name"),
                                 "phase": event.get("phase"),
                                 "text": event.get("text"),
+                                **({"id": event["id"]} if event.get("id") else {}),
                             }
                         )
                     elif event.get("type") == "error":
@@ -203,6 +295,19 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
                 yield _sse("status", {"type": "status", "text": "Done."})
         finally:
             lock.release()
+        if error is None and title_task is not None:
+            try:
+                raw = await asyncio.wait_for(title_task, timeout=12)
+            except Exception:
+                logger.debug("title generation failed", exc_info=True)
+                if not title_task.done():
+                    title_task.cancel()
+                raw = None
+            label = store.apply_generated_title(_user_id(request), session.id, message, clean_title(raw or ""))
+            if label:
+                yield _sse("title", {"type": "title", "title": label})
+        elif title_task is not None and not title_task.done():
+            title_task.cancel()
 
     return StreamingResponse(
         generate(),

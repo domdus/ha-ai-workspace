@@ -16,6 +16,8 @@ class UnavailableProvider:
         message: str,
         on_agent_id: Callable[[str], None],
         access_token: str | None = None,
+        frontend_origin: str | None = None,
+        images: list | None = None,
     ) -> AsyncIterator[dict]:
-        del session, message, on_agent_id, access_token
+        del session, message, on_agent_id, access_token, frontend_origin, images
         yield {"type": "error", "message": self.info.reason or "This provider is not available."}

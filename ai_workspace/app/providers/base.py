@@ -30,4 +30,7 @@ class ChatProvider(Protocol):
         session: Session,
         message: str,
         on_agent_id: Callable[[str], None],
+        images: list | None = None,
+        mcp: dict | None = None,
+        model: str | None = None,
     ) -> AsyncIterator[dict]: ...

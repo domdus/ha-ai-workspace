@@ -3,7 +3,9 @@ from __future__ import annotations
 import logging
 from typing import Any, AsyncIterator, Callable
 
+from .const import with_ui_context
 from .events import map_sdk_message
+from .images import cursor_payload
 from .models import ProviderInfo, Settings
 from .redact import redact
 from .store import Session
@@ -51,13 +53,19 @@ class CursorRuntime:
         if cached is not None:
             return cached
         client = await self.client()
-        options = AgentOptions(
-            model=self.settings.model,
-            api_key=self.settings.cursor_api_key,
-            name=f"ha-{session.id[:8]}",
-            local=LocalAgentOptions(cwd=str(self.settings.workspace_dir)),
-            mcp_servers=mcp_servers,
-        )
+        kwargs = {
+            "model": self.settings.model,
+            "api_key": self.settings.cursor_api_key,
+            "name": f"ha-{session.id[:8]}",
+            "local": LocalAgentOptions(cwd=str(self.settings.workspace_dir)),
+            "mcp_servers": mcp_servers,
+            "tools": ["mcp"],
+        }
+        try:
+            options = AgentOptions(**kwargs)
+        except TypeError:
+            kwargs.pop("tools", None)
+            options = AgentOptions(**kwargs)
         agent = None
         if session.agent_id:
             try:
@@ -98,16 +106,19 @@ class CursorProvider:
         message: str,
         on_agent_id: Callable[[str], None],
         access_token: str | None = None,
+        frontend_origin: str | None = None,
+        images: list[dict] | None = None,
     ) -> AsyncIterator[dict]:
         del access_token
+        outbound = with_ui_context(message, frontend_origin or "")
         if not self.settings.cursor_api_key:
             yield {"type": "error", "message": _MISSING_KEY}
             return
         mcp_servers = self.settings.mcp_servers
         if not mcp_servers:
-            yield {"type": "status", "text": "No MCP servers configured."}
+            logger.warning("no MCP servers configured")
         else:
-            yield {"type": "status", "text": f"MCP: {', '.join(sorted(mcp_servers))}"}
+            logger.info("mcp servers: %s", ", ".join(sorted(mcp_servers)))
         try:
             agent = await self.runtime.open_agent(session, mcp_servers)
         except Exception as exc:
@@ -117,7 +128,7 @@ class CursorProvider:
         if agent_id:
             on_agent_id(str(agent_id))
         try:
-            run = await agent.send(message)
+            run = await agent.send(cursor_payload(outbound, images))
         except Exception as exc:
             yield {"type": "error", "message": _public_error(exc, self.settings.cursor_api_key, self.settings.mcp_token)}
             return

@@ -35,12 +35,12 @@
             "name": "MCP",
             "data": {
               "mcp_kind": "MCP type",
-              "mcp_url": "MCP URL",
+              "mcp_url": "MCP URL{mcp_url_mark}",
               "mcp_token": "MCP token"
             },
             "data_description": {
               "mcp_kind": "Built-in MCP Server must be added under Devices & services first. HA-MCP is the sidecar. Vibecode is the Agent app. Custom is any MCP HTTP URL.",
-              "mcp_url": "Leave empty to auto-detect. HA-MCP on this machine is usually http://127.0.0.1:8086/mcp. Built-in MCP is this Home Assistant /api/mcp. On Home Assistant OS, a running HA-MCP app is found for you.",
+              "mcp_url": "{mcp_url_note}",
               "mcp_token": "Built-in: Home Assistant long-lived access token, or leave empty to use your current login in this chat. HA-MCP: usually empty. Vibecode: Agent Key. Custom: optional Bearer token."
             }
           },
@@ -58,12 +58,14 @@
       "cursor": {
         "title": "Cursor Runtime",
         "data": {
-          "runtime_url": "Cursor Runtime URL",
+          "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
+          "model": "Model",
           "enable_sidebar": "Show AI Workspace in the sidebar",
           "enable_overlay": "Show floating AI button on every page"
         },
         "data_description": {
-          "runtime_url": "Where this Home Assistant reaches the Cursor container. Leave empty to auto-detect. Host networking (Synology): http://127.0.0.1:8090. Same Docker network: http://ai-workspace:8090. Home Assistant OS finds the app for you.",
+          "runtime_url": "{runtime_url_note}",
+          "model": "Optional Cursor model id, for example composer-2.6. Leave empty to use CURSOR_MODEL on the Runtime container.",
           "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
           "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration."
         },
@@ -72,12 +74,12 @@
             "name": "MCP",
             "data": {
               "mcp_kind": "MCP type",
-              "mcp_url": "MCP URL",
+              "mcp_url": "MCP URL{mcp_url_mark}",
               "mcp_token": "MCP token"
             },
             "data_description": {
               "mcp_kind": "Built-in MCP Server must be added under Devices & services first. HA-MCP is the sidecar. Vibecode is the Agent app. Custom is any MCP HTTP URL.",
-              "mcp_url": "Leave empty to auto-detect. HA-MCP on this machine is usually http://127.0.0.1:8086/mcp. Built-in MCP is this Home Assistant /api/mcp. On Home Assistant OS, a running HA-MCP app is found for you.",
+              "mcp_url": "{mcp_url_note}",
               "mcp_token": "Built-in: Home Assistant long-lived access token, or leave empty to use your current login in this chat. HA-MCP: usually empty. Vibecode: Agent Key. Custom: optional Bearer token."
             }
           }
@@ -132,12 +134,12 @@
             "name": "MCP",
             "data": {
               "mcp_kind": "MCP type",
-              "mcp_url": "MCP URL",
+              "mcp_url": "MCP URL{mcp_url_mark}",
               "mcp_token": "MCP token"
             },
             "data_description": {
               "mcp_kind": "Built-in MCP Server must be added under Devices & services first. HA-MCP is the sidecar. Vibecode is the Agent app. Custom is any MCP HTTP URL.",
-              "mcp_url": "Leave empty to auto-detect. HA-MCP on this machine is usually http://127.0.0.1:8086/mcp. Built-in MCP is this Home Assistant /api/mcp. On Home Assistant OS, a running HA-MCP app is found for you.",
+              "mcp_url": "{mcp_url_note}",
               "mcp_token": "Built-in: Home Assistant long-lived access token, or leave empty to use your current login in this chat. HA-MCP: usually empty. Vibecode: Agent Key. Custom: optional Bearer token."
             }
           },
@@ -155,16 +157,14 @@
       "cursor": {
         "title": "Cursor Runtime",
         "data": {
-          "runtime_url": "Cursor Runtime URL",
+          "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
+          "model": "Model",
           "enable_sidebar": "Show AI Workspace in the sidebar",
           "enable_overlay": "Show floating AI button on every page"
         },
         "data_description": {
-          "runtime_url": "Where this Home Assistant reaches the Cursor container. Leave empty to auto-detect. Host networking (Synology): http://127.0.0.1:8090. Same Docker network: http://ai-workspace:8090. Home Assistant OS finds the app for you.",
-          "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
-          "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration."
-        },
-        "data_description": {
+          "runtime_url": "{runtime_url_note}",
+          "model": "Optional Cursor model id, for example composer-2.6. Leave empty to use CURSOR_MODEL on the Runtime container.",
           "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
           "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration."
         },
@@ -173,16 +173,33 @@
             "name": "MCP",
             "data": {
               "mcp_kind": "MCP type",
-              "mcp_url": "MCP URL",
+              "mcp_url": "MCP URL{mcp_url_mark}",
               "mcp_token": "MCP token"
             },
             "data_description": {
               "mcp_kind": "Built-in MCP Server must be added under Devices & services first. HA-MCP is the sidecar. Vibecode is the Agent app. Custom is any MCP HTTP URL.",
-              "mcp_url": "Leave empty to auto-detect. HA-MCP on this machine is usually http://127.0.0.1:8086/mcp. Built-in MCP is this Home Assistant /api/mcp. On Home Assistant OS, a running HA-MCP app is found for you.",
+              "mcp_url": "{mcp_url_note}",
               "mcp_token": "Built-in: Home Assistant long-lived access token, or leave empty to use your current login in this chat. HA-MCP: usually empty. Vibecode: Agent Key. Custom: optional Bearer token."
             }
           }
         }
+      }
+    }
+  },
+  "selector": {
+    "api_provider": {
+      "options": {
+        "openai": "OpenAI",
+        "anthropic": "Claude (Anthropic)",
+        "compatible": "OpenAI-compatible (custom base URL)"
+      }
+    },
+    "mcp_kind": {
+      "options": {
+        "ha": "Home Assistant MCP Server (built-in)",
+        "ha_mcp": "HA-MCP",
+        "coolver": "HA Vibecode Agent (Coolver)",
+        "custom": "Custom MCP URL"
       }
     }
   }

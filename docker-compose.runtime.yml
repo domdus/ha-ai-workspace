@@ -1,33 +1,35 @@
 # Cursor SDK sidecar (not Home Assistant). Same Docker host as HA.
 #
-#   cp runtime.env.example .env   # CURSOR_API_KEY + MCP_URL
+#   cp runtime.env.example .env   # CURSOR_API_KEY (MCP_URL is optional)
 #   docker compose -f docker-compose.runtime.yml up -d --build
 #
 # Host network (Synology Container HA): Cursor and HA-MCP use the host's
 # network. The API listens on 127.0.0.1:8090 only — not the LAN.
 # HACS Runtime URL: http://127.0.0.1:8090
-# MCP_URL: http://127.0.0.1:8123/api/webhook/<id>
+# The HACS integration sends MCP URL on each chat. MCP_URL here is only a
+# fallback if you talk to this container without the integration.
+# Do not set MCP_CONFIG_PATH to an empty bind-mount — that hides MCP_URL.
 
-name: ai-workspace-runtime
+name: cursor-sdk
 
 services:
-  ai-workspace:
-    container_name: ai-workspace
-    image: ai-workspace-runtime:0.3.0
+  cursor-sdk:
+    container_name: cursor-sdk
+    image: cursor-sdk
     build: ./ai_workspace
     network_mode: host
     environment:
       CURSOR_API_KEY: ${CURSOR_API_KEY:?set CURSOR_API_KEY}
       CURSOR_MODEL: ${CURSOR_MODEL:-composer-2.5}
-      MCP_URL: ${MCP_URL:?set MCP_URL in .env}
+      MCP_URL: ${MCP_URL:-}
       MCP_TOKEN: ${MCP_TOKEN:-}
       AUTH_MODE: ingress
       DATA_DIR: /data
       HOST: "127.0.0.1"
       PORT: "8090"
     volumes:
-      - ai-workspace-data:/data
+      - cursor-sdk-data:/data
     restart: unless-stopped
 
 volumes:
-  ai-workspace-data:
+  cursor-sdk-data:

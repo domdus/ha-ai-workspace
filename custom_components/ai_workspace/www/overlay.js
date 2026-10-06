@@ -1,4 +1,5 @@
-import { mountAiWorkspace } from "./chat.js?v=22";
+import { mountAiWorkspace } from "./chat.js?v=46";
+import { stringsFor } from "./i18n.js?v=46";
 
 const HOST_ID = "ha-ai-workspace-overlay";
 
@@ -17,6 +18,7 @@ function ensureHost() {
   host = document.createElement("div");
   host.id = HOST_ID;
   document.body.appendChild(host);
+  const ui = stringsFor(hassObj()?.locale?.language || hassObj()?.language);
   const shadow = host.attachShadow({ mode: "open" });
   shadow.innerHTML = `
     <style>
@@ -53,14 +55,14 @@ function ensureHost() {
       .body { flex: 1; min-height: 0; height: 100%; }
       .hidden { display: none !important; }
     </style>
-    <ha-button class="fab" size="l" variant="brand" appearance="accent" title="AI Workspace">
+    <ha-button class="fab" size="l" variant="brand" appearance="accent" title="${ui.title}">
       <ha-icon slot="start" icon="mdi:robot"></ha-icon>
       AI
     </ha-button>
     <aside class="drawer">
       <div class="bar">
-        <span>AI Workspace</span>
-        <ha-icon-button class="close" label="Close">
+        <span>${ui.title}</span>
+        <ha-icon-button class="close" label="${ui.close}">
           <ha-icon icon="mdi:close"></ha-icon>
         </ha-icon-button>
       </div>

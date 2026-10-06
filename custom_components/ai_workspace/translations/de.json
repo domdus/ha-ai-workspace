@@ -1,0 +1,206 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Chat-Backend",
+        "description": "Wähle, wie der Chat laufen soll.",
+        "menu_options": {
+          "api": "Cloud-API-Anbieter",
+          "cursor": "Cursor-Runtime-App"
+        }
+      },
+      "api": {
+        "title": "Cloud-API-Anbieter",
+        "data": {
+          "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
+          "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen"
+        },
+        "sections": {
+          "provider": {
+            "name": "Anbieter",
+            "data": {
+              "api_provider": "Anbieter",
+              "api_key": "API-Schlüssel",
+              "model": "Modell",
+              "api_base": "API-Basis-URL (nur OpenAI-kompatibel)"
+            },
+            "data_description": {
+              "api_provider": "OpenAI oder Claude.",
+              "api_key": "API-Schlüssel des Anbieters. Kein Home-Assistant-Token.",
+              "model": "OpenAI-Standard ist gpt-4.1. Claude-Standard ist claude-sonnet-4-5.",
+              "api_base": "Nur wenn der Anbieter OpenAI-kompatibel ist. Offizielles OpenAI und Claude lassen das leer."
+            }
+          },
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "MCP-Typ",
+              "mcp_url": "MCP-URL{mcp_url_mark}",
+              "mcp_token": "MCP-Token"
+            },
+            "data_description": {
+              "mcp_kind": "Der eingebaute MCP-Server muss zuerst unter Geräte & Dienste hinzugefügt werden. HA-MCP ist der Sidecar. Vibecode ist die Agent-App. Benutzerdefiniert ist jede MCP-HTTP-URL.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Eingebaut: langlebiges Home-Assistant-Zugriffstoken, oder leer lassen, um die aktuelle Anmeldung in diesem Chat zu nutzen. HA-MCP: meist leer. Vibecode: Agent Key. Benutzerdefiniert: optionales Bearer-Token."
+            }
+          },
+          "prompt": {
+            "name": "System-Prompt",
+            "data": {
+              "system_prompt": "System-Prompt"
+            },
+            "data_description": {
+              "system_prompt": "Wie sich das Modell in dieser Installation verhalten soll. Leer lassen für den eingebauten Home-Assistant-Prompt. Anbieter und Modell-ID werden immer ergänzt."
+            }
+          }
+        }
+      },
+      "cursor": {
+        "title": "Cursor Runtime",
+        "data": {
+          "runtime_url": "Cursor-Runtime-URL{runtime_url_mark}",
+          "model": "Modell",
+          "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
+          "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen"
+        },
+        "data_description": {
+          "runtime_url": "{runtime_url_note}",
+          "model": "Optionale Cursor-Modell-ID, zum Beispiel composer-2.6. Leer lassen, um CURSOR_MODEL auf dem Runtime-Container zu nutzen.",
+          "enable_sidebar": "Der Seitenleisteneintrag AI Workspace. Die Seite bleibt unter /ai-workspace erreichbar, wenn das aus ist.",
+          "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt."
+        },
+        "sections": {
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "MCP-Typ",
+              "mcp_url": "MCP-URL{mcp_url_mark}",
+              "mcp_token": "MCP-Token"
+            },
+            "data_description": {
+              "mcp_kind": "Der eingebaute MCP-Server muss zuerst unter Geräte & Dienste hinzugefügt werden. HA-MCP ist der Sidecar. Vibecode ist die Agent-App. Benutzerdefiniert ist jede MCP-HTTP-URL.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Eingebaut: langlebiges Home-Assistant-Zugriffstoken, oder leer lassen, um die aktuelle Anmeldung in diesem Chat zu nutzen. HA-MCP: meist leer. Vibecode: Agent Key. Benutzerdefiniert: optionales Bearer-Token."
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "no_runtime": "Die Cursor-Runtime ist nicht erreichbar. Installiere und starte die AI-Workspace-Runtime-App, oder wähle stattdessen Cloud-API-Anbieter.",
+      "required": "Dieses Feld ist erforderlich."
+    },
+    "abort": {
+      "already_configured": "AI Workspace ist bereits eingerichtet"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Chat-Backend",
+        "description": "Wähle, wie der Chat laufen soll.",
+        "menu_options": {
+          "api": "Cloud-API-Anbieter",
+          "cursor": "Cursor-Runtime-App"
+        }
+      },
+      "api": {
+        "title": "Cloud-API-Anbieter",
+        "data": {
+          "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
+          "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen"
+        },
+        "data_description": {
+          "enable_sidebar": "Der Seitenleisteneintrag AI Workspace. Die Seite bleibt unter /ai-workspace erreichbar, wenn das aus ist.",
+          "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt."
+        },
+        "sections": {
+          "provider": {
+            "name": "Anbieter",
+            "data": {
+              "api_provider": "Anbieter",
+              "api_key": "API-Schlüssel",
+              "model": "Modell",
+              "api_base": "API-Basis-URL (nur OpenAI-kompatibel)"
+            },
+            "data_description": {
+              "api_provider": "OpenAI oder Claude.",
+              "api_key": "API-Schlüssel des Anbieters. Kein Home-Assistant-Token.",
+              "model": "OpenAI-Standard ist gpt-4.1. Claude-Standard ist claude-sonnet-4-5.",
+              "api_base": "Nur wenn der Anbieter OpenAI-kompatibel ist. Offizielles OpenAI und Claude lassen das leer."
+            }
+          },
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "MCP-Typ",
+              "mcp_url": "MCP-URL{mcp_url_mark}",
+              "mcp_token": "MCP-Token"
+            },
+            "data_description": {
+              "mcp_kind": "Der eingebaute MCP-Server muss zuerst unter Geräte & Dienste hinzugefügt werden. HA-MCP ist der Sidecar. Vibecode ist die Agent-App. Benutzerdefiniert ist jede MCP-HTTP-URL.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Eingebaut: langlebiges Home-Assistant-Zugriffstoken, oder leer lassen, um die aktuelle Anmeldung in diesem Chat zu nutzen. HA-MCP: meist leer. Vibecode: Agent Key. Benutzerdefiniert: optionales Bearer-Token."
+            }
+          },
+          "prompt": {
+            "name": "System-Prompt",
+            "data": {
+              "system_prompt": "System-Prompt"
+            },
+            "data_description": {
+              "system_prompt": "Wie sich das Modell in dieser Installation verhalten soll. Leer lassen für den eingebauten Home-Assistant-Prompt. Anbieter und Modell-ID werden immer ergänzt."
+            }
+          }
+        }
+      },
+      "cursor": {
+        "title": "Cursor Runtime",
+        "data": {
+          "runtime_url": "Cursor-Runtime-URL{runtime_url_mark}",
+          "model": "Modell",
+          "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
+          "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen"
+        },
+        "data_description": {
+          "runtime_url": "{runtime_url_note}",
+          "model": "Optionale Cursor-Modell-ID, zum Beispiel composer-2.6. Leer lassen, um CURSOR_MODEL auf dem Runtime-Container zu nutzen.",
+          "enable_sidebar": "Der Seitenleisteneintrag AI Workspace. Die Seite bleibt unter /ai-workspace erreichbar, wenn das aus ist.",
+          "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt."
+        },
+        "sections": {
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "MCP-Typ",
+              "mcp_url": "MCP-URL{mcp_url_mark}",
+              "mcp_token": "MCP-Token"
+            },
+            "data_description": {
+              "mcp_kind": "Der eingebaute MCP-Server muss zuerst unter Geräte & Dienste hinzugefügt werden. HA-MCP ist der Sidecar. Vibecode ist die Agent-App. Benutzerdefiniert ist jede MCP-HTTP-URL.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Eingebaut: langlebiges Home-Assistant-Zugriffstoken, oder leer lassen, um die aktuelle Anmeldung in diesem Chat zu nutzen. HA-MCP: meist leer. Vibecode: Agent Key. Benutzerdefiniert: optionales Bearer-Token."
+            }
+          }
+        }
+      }
+    }
+  },
+  "selector": {
+    "api_provider": {
+      "options": {
+        "openai": "OpenAI",
+        "anthropic": "Claude (Anthropic)",
+        "compatible": "OpenAI-kompatibel (eigene Basis-URL)"
+      }
+    },
+    "mcp_kind": {
+      "options": {
+        "ha": "Home Assistant MCP-Server (eingebaut)",
+        "ha_mcp": "HA-MCP",
+        "coolver": "HA Vibecode Agent (Coolver)",
+        "custom": "Benutzerdefinierte MCP-URL"
+      }
+    }
+  }
+}

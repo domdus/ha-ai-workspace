@@ -10,6 +10,7 @@ from aiohttp import ClientError, ClientSession, ClientTimeout
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
+from .images import anthropic_user_content, openai_user_content
 from .const import (
     API_ANTHROPIC,
     API_COMPATIBLE,
@@ -20,6 +21,7 @@ from .const import (
     MCP_COOLVER,
     MCP_CUSTOM,
     MCP_HA,
+    ui_link_instructions,
 )
 from .coolver import CoolverClient
 from .mcp_client import McpError, McpHttpClient
@@ -27,6 +29,7 @@ from .mcp_resolve import async_resolve_mcp_url
 from .models import ProviderInfo, Settings
 from .redact import redact
 from .store import Session, Store
+from .titles import clean_title, title_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -247,10 +250,10 @@ class ApiProvider:
             return DEFAULT_ANTHROPIC_MODEL
         return DEFAULT_API_MODEL
 
-    def _system(self) -> str:
+    def _system(self, origin: str = "") -> str:
         identity = _IDENTITY.format(label=self._label(), model=self._model())
         body = (self.settings.system_prompt or "").strip() or DEFAULT_SYSTEM_PROMPT
-        return f"{identity}\n\n{body}"
+        return f"{identity}\n\n{body}\n\n{ui_link_instructions(origin)}"
 
     def _public(self, exc: BaseException) -> str:
         return redact(str(exc), [self.settings.api_key, self.settings.cursor_api_key, self.settings.mcp_token])
@@ -261,7 +264,11 @@ class ApiProvider:
         message: str,
         on_agent_id: Callable[[str], None],
         access_token: str | None = None,
+        frontend_origin: str | None = None,
+        images: list[dict] | None = None,
     ) -> AsyncIterator[dict]:
+        origin = str(frontend_origin or "").strip()
+        pictures = list(images or [])
         on_agent_id("api")
         if not self.info.available:
             yield {"type": "error", "message": self.info.reason}
@@ -294,14 +301,62 @@ class ApiProvider:
         history = await self.hass.async_add_executor_job(self.store.list_messages, session.id)
         try:
             if self.settings.api_provider == API_ANTHROPIC:
-                async for event in self._anthropic(http, history, message, mcp, mcp_tools):
+                async for event in self._anthropic(http, history, message, mcp, mcp_tools, origin, pictures):
                     yield event
             else:
-                async for event in self._openai(http, history, message, mcp, mcp_tools):
+                async for event in self._openai(http, history, message, mcp, mcp_tools, origin, pictures):
                     yield event
         except (McpError, ClientError, TimeoutError, OSError, json.JSONDecodeError, RuntimeError) as exc:
             logger.exception("api provider failed")
             yield {"type": "error", "message": self._public(exc)}
+
+    async def suggest_title(self, user: str, assistant: str = "") -> str | None:
+        if not self.settings.api_key:
+            return None
+        prompt = title_prompt(user, assistant)
+        http = self._http()
+        try:
+            if self.settings.api_provider == API_ANTHROPIC:
+                data = await self._post(
+                    http,
+                    f"{self._base()}/messages",
+                    {
+                        "x-api-key": self.settings.api_key,
+                        "anthropic-version": "2023-06-01",
+                        "Content-Type": "application/json",
+                    },
+                    {
+                        "model": self._model(),
+                        "max_tokens": 32,
+                        "system": "You write short chat titles. Reply with the title only.",
+                        "messages": [{"role": "user", "content": prompt}],
+                    },
+                    timeout=8,
+                    attempts=1,
+                )
+                blocks = data.get("content") or []
+                raw = "".join(str(b.get("text") or "") for b in blocks if b.get("type") == "text")
+            else:
+                data = await self._post(
+                    http,
+                    f"{self._base()}/chat/completions",
+                    {"Authorization": f"Bearer {self.settings.api_key}", "Content-Type": "application/json"},
+                    {
+                        "model": self._model(),
+                        "max_tokens": 32,
+                        "messages": [
+                            {"role": "system", "content": "You write short chat titles. Reply with the title only."},
+                            {"role": "user", "content": prompt},
+                        ],
+                    },
+                    timeout=8,
+                    attempts=1,
+                )
+                raw = str(((data.get("choices") or [{}])[0].get("message") or {}).get("content") or "")
+        except Exception:
+            logger.debug("title generation failed", exc_info=True)
+            return None
+        return clean_title(raw) or None
 
     async def _openai(
         self,
@@ -310,10 +365,12 @@ class ApiProvider:
         message: str,
         mcp: McpHttpClient,
         mcp_tools: list[dict],
+        origin: str = "",
+        images: list[dict] | None = None,
     ) -> AsyncIterator[dict]:
-        messages: list[dict[str, Any]] = [{"role": "system", "content": self._system()}]
+        messages: list[dict[str, Any]] = [{"role": "system", "content": self._system(origin)}]
         messages.extend(_history_messages(history))
-        messages.append({"role": "user", "content": message})
+        messages.append({"role": "user", "content": openai_user_content(message, images or [])})
         tools = _openai_tools(mcp_tools)
         url = f"{self._base()}/chat/completions"
         headers = {"Authorization": f"Bearer {self.settings.api_key}", "Content-Type": "application/json"}
@@ -358,9 +415,11 @@ class ApiProvider:
         message: str,
         mcp: McpHttpClient,
         mcp_tools: list[dict],
+        origin: str = "",
+        images: list[dict] | None = None,
     ) -> AsyncIterator[dict]:
         messages: list[dict[str, Any]] = list(_history_messages(history))
-        messages.append({"role": "user", "content": message})
+        messages.append({"role": "user", "content": anthropic_user_content(message, images or [])})
         tools = _anthropic_tools(mcp_tools)
         url = f"{self._base()}/messages"
         headers = {
@@ -372,7 +431,7 @@ class ApiProvider:
             payload: dict[str, Any] = {
                 "model": self._model(),
                 "max_tokens": 4096,
-                "system": self._system(),
+                "system": self._system(origin),
                 "messages": messages,
             }
             if tools:
@@ -411,15 +470,24 @@ class ApiProvider:
             return
         yield {"type": "error", "message": "The model kept calling tools without finishing."}
 
-    async def _post(self, http: ClientSession, url: str, headers: dict, payload: dict) -> dict:
+    async def _post(
+        self,
+        http: ClientSession,
+        url: str,
+        headers: dict,
+        payload: dict,
+        timeout: float = 120,
+        attempts: int = 4,
+    ) -> dict:
         last = ""
-        for attempt in range(4):
-            resp = await http.post(url, json=payload, headers=headers, timeout=ClientTimeout(total=120))
+        retries = max(1, attempts)
+        for attempt in range(retries):
+            resp = await http.post(url, json=payload, headers=headers, timeout=ClientTimeout(total=timeout))
             text = await resp.text()
             last = text
             if resp.status == 429:
                 wait = _retry_wait(resp, text)
-                if wait is not None and attempt < 3:
+                if wait is not None and attempt < retries - 1:
                     logger.warning("api rate limited, retry in %.2fs", wait)
                     await asyncio.sleep(wait)
                     continue

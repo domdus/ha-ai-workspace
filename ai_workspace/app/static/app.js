@@ -69,12 +69,20 @@ async function loadProviders() {
   }
 }
 
+function applySessionTitle(id, title) {
+  if (!id || !title) return;
+  if (sessionId === id) titleEl.textContent = title;
+  const button = sessionsEl.querySelector(`li[data-session-id="${id}"] button`);
+  if (button) button.textContent = title;
+}
+
 async function loadSessions() {
   const response = await fetch(api("api/sessions"));
   const sessions = await response.json();
   sessionsEl.replaceChildren();
   for (const session of sessions) {
     const item = document.createElement("li");
+    item.dataset.sessionId = session.id;
     const button = document.createElement("button");
     button.type = "button";
     button.textContent = session.title;
@@ -82,6 +90,7 @@ async function loadSessions() {
     button.addEventListener("click", () => openSession(session.id));
     item.appendChild(button);
     sessionsEl.appendChild(item);
+    if (session.id === sessionId) titleEl.textContent = session.title;
   }
 }
 
@@ -186,6 +195,10 @@ form.addEventListener("submit", async (event) => {
       } else if (name === "done") {
         if (data.answer) assistant.querySelector(".text").textContent = data.answer;
         setStatus("Done.");
+        streaming = false;
+        sendBtn.disabled = false;
+      } else if (name === "title" && data.title) {
+        applySessionTitle(sessionId, data.title);
       }
       logEl.scrollTop = logEl.scrollHeight;
     });
