@@ -315,9 +315,6 @@ export function mountAiWorkspace(root, options = {}) {
               <ha-icon icon="mdi:forum-outline"></ha-icon>
             </ha-icon-button>
             <h1 class="title">${t("new_chat")}</h1>
-            ${compact ? `<ha-icon-button class="header-new-chat" label="${t("new_chat")}">
-              <ha-icon icon="mdi:plus"></ha-icon>
-            </ha-icon-button>` : ""}
           </div>
           <p class="banner" hidden></p>
         </header>
@@ -1844,7 +1841,6 @@ export function mountAiWorkspace(root, options = {}) {
 
   root.querySelector(".new-chat")?.addEventListener("click", startNewChat);
   root.querySelector(".new-chat-icon")?.addEventListener("click", startNewChat);
-  root.querySelector(".header-new-chat")?.addEventListener("click", startNewChat);
 
   if (!compact && routed) {
     window.addEventListener("location-changed", applyRoute);
