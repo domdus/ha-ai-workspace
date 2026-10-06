@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.6
+
+- Overlay shortcut is the robot icon only
+- MCP type lists the servers this Home Assistant can reach, and still allows a custom MCP URL
+
 ## 1.0.5
 
 - Pass composer-2.5 as Cursor `ModelSelection` with Fast on (same default as the IDE picker and `model="composer-2.5"`)

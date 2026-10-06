@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 from pathlib import Path
@@ -229,7 +230,12 @@ def _unique(urls: list[str]) -> list[str]:
     return out
 
 
-async def async_probe_mcp(hass: HomeAssistant, url: str, headers: dict[str, str] | None = None) -> bool:
+async def async_probe_mcp(
+    hass: HomeAssistant,
+    url: str,
+    headers: dict[str, str] | None = None,
+    timeout: float = 2,
+) -> bool:
     session = async_get_clientsession(hass)
     extra = {key: value for key, value in (headers or {}).items() if value}
     try:
@@ -241,7 +247,7 @@ async def async_probe_mcp(hass: HomeAssistant, url: str, headers: dict[str, str]
                 "Content-Type": "application/json",
                 **extra,
             },
-            timeout=ClientTimeout(total=2),
+            timeout=ClientTimeout(total=timeout),
         )
     except (ClientError, TimeoutError, OSError, ValueError):
         return False
@@ -250,6 +256,61 @@ async def async_probe_mcp(hass: HomeAssistant, url: str, headers: dict[str, str]
     if status in {401, 403}:
         return True
     return 200 <= status < 400
+
+
+def configured_mcp_kinds(hass: HomeAssistant) -> set[str]:
+    """MCP providers already added under Devices & services."""
+    entries = getattr(getattr(hass, "config_entries", None), "async_entries", None)
+    if not callable(entries):
+        return set()
+    try:
+        items = entries()
+    except TypeError:
+        return set()
+    found: set[str] = set()
+    for entry in items:
+        domain = str(getattr(entry, "domain", "") or "").replace("-", "_").lower()
+        if domain == "mcp_server":
+            found.add(MCP_HA)
+        elif "vibecode" in domain or "coolver" in domain:
+            found.add(MCP_COOLVER)
+        elif "mcp" in domain and domain not in {"mcp_server", "ai_workspace"}:
+            found.add(MCP_HA_MCP)
+    return found
+
+
+async def async_detect_mcp_kinds(hass: HomeAssistant) -> list[str]:
+    """Providers this Home Assistant can reach. Custom URL is added by the form."""
+    found = configured_mcp_kinds(hass)
+    probes: list[tuple[str, str]] = []
+    if MCP_HA not in found:
+        probes.extend((MCP_HA, url) for url in hass_mcp_server_urls(hass))
+    probes.extend(
+        (MCP_HA_MCP, url)
+        for url in _unique(
+            [
+                *_entry_mcp_urls(hass),
+                *_hassio_mcp_urls(hass),
+                *_compose_mcp_urls(),
+                *_sidecar_loopback_urls(),
+                *loopback_alternates(DEFAULT_MCP_URL),
+            ]
+        )
+    )
+    probes.extend(
+        (MCP_COOLVER, url)
+        for url in _unique([DEFAULT_COOLVER_URL, *loopback_alternates(DEFAULT_COOLVER_URL)])
+    )
+
+    async def _hit(kind: str, url: str) -> str | None:
+        if await async_probe_mcp(hass, url, timeout=1):
+            return kind
+        return None
+
+    for kind in await asyncio.gather(*(_hit(kind, url) for kind, url in probes)):
+        if kind:
+            found.add(kind)
+    return [kind for kind in (MCP_HA, MCP_HA_MCP, MCP_COOLVER) if kind in found]
 
 
 async def async_resolve_mcp_url(
