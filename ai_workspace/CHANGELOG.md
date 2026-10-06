@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1
+
+- Register the sidebar panel before loading chat JS so a hard refresh of `/ai-workspace` is not a blank page
+
 ## 1.0.0
 
 - HACS integration and Cursor Runtime sidecar for Home Assistant Container and OS

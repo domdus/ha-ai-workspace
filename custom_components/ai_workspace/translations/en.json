@@ -65,7 +65,7 @@
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
-          "model": "Optional Cursor model id, for example composer-2.6. Leave empty to use CURSOR_MODEL on the Runtime container.",
+          "model": "Optional Cursor model id, for example composer-2.5. Leave empty to use CURSOR_MODEL on the Runtime container.",
           "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
           "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration."
         },
@@ -173,7 +173,7 @@
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
-          "model": "Optional Cursor model id, for example composer-2.6. Leave empty to use CURSOR_MODEL on the Runtime container.",
+          "model": "Optional Cursor model id, for example composer-2.5. Leave empty to use CURSOR_MODEL on the Runtime container.",
           "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
           "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration."
         },

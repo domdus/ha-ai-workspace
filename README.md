@@ -12,6 +12,10 @@ An agent chat that can see **your** Home Assistant installation through MCP.
 
 The UI is a HACS integration. The agent is a **cloud API** (OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible) or the **Cursor SDK Runtime** used in Home Assistant by the integration.
 
+<p align="center">
+  <img src="docs/ai-workspace.png" alt="AI Workspace in the Home Assistant sidebar" width="820">
+</p>
+
 ## Requirements
 
 Any **MCP server** the agent can call. AI Workspace does not bundle Home Assistant access. Common options:
@@ -22,6 +26,10 @@ Any **MCP server** the agent can call. AI Workspace does not bundle Home Assista
 - A **custom MCP URL** if you already run something else
 
 Leave it running. Keep the connect URL or Agent Key if it shows one — paste it only if auto-detect misses it later.
+
+<p align="center">
+  <img src="docs/integration_ai_workspace_mcp.png" alt="MCP type on the AI Workspace form" width="820">
+</p>
 
 You also need [HACS](https://hacs.xyz) and either a **provider API key** (Cloud) or a **Cursor API key** (SDK Runtime).
 
@@ -41,13 +49,25 @@ Or **HACS → Integrations → ⋮ → Custom repositories** → `https://github
 
 Provider key, MCP type from Requirements. Leave MCP URL empty if it shows as detected. Leave API base empty unless you picked OpenAI-compatible (or Qwen in mainland China). Save.
 
+<p align="center">
+  <img src="docs/integration_ai_workspace_cloud_api.png" alt="Cloud API Provider: OpenAI key and model" width="820">
+</p>
+
 ### 3. Start using it
 
 Open **AI Workspace** (`/ai-workspace`) and ask: `List my lights and one automation.`
 
+<p align="center">
+  <img src="docs/ai-workspace_prompt.png" alt="Chat listing automations as Home Assistant links" width="820">
+</p>
+
 ## Cursor SDK Runtime
 
 Same agent as **Cursor IDE**, without the desktop: MCP tools, multi-step work, spawn and resume agents. Headless — no editor, no Composer UI — used in Home Assistant by the integration.
+
+<p align="center">
+  <img src="docs/integration_ai_workspace_cursor.png" alt="Cursor Runtime app: model and Runtime URL" width="820">
+</p>
 
 ### Home Assistant OS / Supervised
 
@@ -111,6 +131,10 @@ Then **Settings → Devices & services → Add integration → AI Workspace → 
 ## Configure later
 
 **Settings → Devices & services → AI Workspace → Configure**
+
+<p align="center">
+  <img src="docs/integration_ai_workspace_system_prompt.png" alt="System prompt, sidebar, and floating AI button" width="820">
+</p>
 
 | Option | What it does |
 |---|---|
