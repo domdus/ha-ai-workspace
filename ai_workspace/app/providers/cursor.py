@@ -62,11 +62,13 @@ class CursorRuntime:
         from cursor_sdk import AgentOptions, LocalAgentOptions
 
         kwargs: dict[str, Any] = {
-            "model": (model or "").strip() or self.settings.model,
             "api_key": self.settings.cursor_api_key,
             "name": name,
             "local": LocalAgentOptions(cwd=str(self.settings.workspace_dir)),
         }
+        resolved = (model or "").strip() or (self.settings.model or "").strip()
+        if resolved:
+            kwargs["model"] = resolved
         if mcp_servers:
             kwargs["mcp_servers"] = mcp_servers
         if tools is not None:
@@ -175,7 +177,7 @@ class CursorProvider:
         logger.info("cursor model=%s", used_model)
         yield {"type": "status", "text": "Thinking..."}
         try:
-            agent = await self.runtime.open_agent(session, mcp_servers, model=model)
+            agent = await self.runtime.open_agent(session, mcp_servers, model=used_model)
         except Exception as exc:
             yield {"type": "error", "message": _public_error(exc, self.settings.cursor_api_key)}
             return
@@ -183,7 +185,7 @@ class CursorProvider:
         if agent_id:
             on_agent_id(str(agent_id))
         try:
-            run = await _start_run(agent, message, images, mcp_servers, model)
+            run = await _start_run(agent, message, images, mcp_servers)
         except Exception as exc:
             yield {"type": "error", "message": _public_error(exc, self.settings.cursor_api_key)}
             return
@@ -258,19 +260,17 @@ def _run_error_text(result: Any, run_id: str, model: str, stream_error: str | No
     suffix = f" ({run_id})" if run_id else ""
     if used and used.lower() not in {"auto", "default", "auto-smart"}:
         return (
-            f"Run failed{suffix}. Cursor returned no details. Named model {used} often fails "
-            "this way when the account is limited to Auto — set CURSOR_MODEL=auto and recreate the container."
+            f"Run failed{suffix}. Cursor returned no details for model {used}. "
+            "User API keys often only allow Auto — set Model to auto in the AI Workspace integration."
         )
     return f"Run failed{suffix}."
 
 
-async def _start_run(agent: Any, message: str, images: list[dict] | None, mcp_servers: dict, model: str | None):
+async def _start_run(agent: Any, message: str, images: list[dict] | None, mcp_servers: dict):
     payload = cursor_payload(message, images)
     options: dict[str, Any] = {}
     if mcp_servers:
         options["mcp_servers"] = mcp_servers
-    if (model or "").strip():
-        options["model"] = model.strip()
     if options:
         try:
             return await agent.send(payload, options)

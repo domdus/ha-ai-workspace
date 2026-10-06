@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.4
+
+- Stop overlay session import from crashing Home Assistant with a SQLite error
+- Cursor named-model failures no longer tell you to recreate the Runtime container; set Model to auto in the integration if the API key only allows Auto
+
 ## 1.0.3
 
 - Keep a single New Chat control in the overlay header, next to close
