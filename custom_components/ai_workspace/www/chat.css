@@ -444,28 +444,21 @@ h1 {
   text-underline-offset: 2px;
 }
 
-.msg-actions {
-  display: none;
-  align-items: center;
-  margin-top: 2px;
-}
-
-.bubble.has-text:not(.streaming) .msg-actions {
+.chat-actions {
   display: flex;
-}
-
-.bubble.assistant .msg-actions {
+  align-items: center;
+  margin-top: calc(-1 * var(--ha-space-2));
   margin-left: -8px;
 }
 
-.copy-msg {
+.copy-chat {
   --mdc-icon-button-size: 32px;
   --mdc-icon-size: 18px;
   color: var(--secondary-text-color);
 }
 
-.copy-msg:hover,
-.copy-msg:focus-visible {
+.copy-chat:hover,
+.copy-chat:focus-visible {
   color: var(--primary-text-color);
 }
 

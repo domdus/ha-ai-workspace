@@ -1,4 +1,4 @@
-import { stringsFor } from "./i18n.js?v=46";
+import { stringsFor } from "./i18n.js?v=47";
 
 const API = "/api/ai_workspace";
 const HELPER_DOMAINS = new Set([
@@ -166,7 +166,7 @@ export function mountAiWorkspace(root, options = {}) {
     .filter(Boolean)
     .join(" ");
   root.innerHTML = `
-    <link rel="stylesheet" href="/ai_workspace/static/chat.css?v=46">
+    <link rel="stylesheet" href="/ai_workspace/static/chat.css?v=47">
     <div class="${wrapClass}">
       <button type="button" class="nav-scrim" hidden aria-label="${t("close")}"></button>
       <aside>
@@ -657,58 +657,87 @@ export function mountAiWorkspace(root, options = {}) {
       bubble.appendChild(text);
       bubble.classList.add("has-text");
     }
-    addCopyAction(bubble);
     logEl.appendChild(bubble);
+    syncCopyChat();
     if (opts.follow !== false) scrollChatToBottom(opts.smooth !== false);
     return bubble;
   }
 
-  function copyableText(bubble) {
-    const md = bubble.querySelector("ha-markdown.text");
-    if (md) return String(md.content || "").trim();
-    const text = bubble.querySelector("div.text");
-    return String(text?.textContent || "").trim();
+  function transcriptText() {
+    const parts = [];
+    for (const bubble of logEl.querySelectorAll(".bubble")) {
+      const role = bubble.classList.contains("user") ? t("you") : t("assistant");
+      const md = bubble.querySelector("ha-markdown.text");
+      const textEl = bubble.querySelector("div.text");
+      const body = md
+        ? String(md.content || "").trim()
+        : String(textEl?.textContent || "").trim();
+      const attachments = [
+        ...[...bubble.querySelectorAll(".bubble-images img")].map((img) => img.alt || "image"),
+        ...[...bubble.querySelectorAll(".bubble-files .file-chip")].map((el) => el.textContent.trim()),
+      ].filter(Boolean);
+      if (!body && !attachments.length) continue;
+      const lines = [];
+      if (attachments.length) lines.push(attachments.map((name) => `[${name}]`).join(" "));
+      if (body) lines.push(body);
+      parts.push(`${role}:\n${lines.join("\n")}`);
+    }
+    return parts.join("\n\n");
   }
 
-  function addCopyAction(bubble) {
-    if (!bubble || bubble.querySelector(".msg-actions")) return;
-    const row = document.createElement("div");
-    row.className = "msg-actions";
-    const btn = document.createElement("ha-icon-button");
-    btn.className = "copy-msg";
-    btn.type = "button";
-    btn.label = t("copy");
-    const icon = document.createElement("ha-icon");
-    icon.setAttribute("icon", "mdi:content-copy");
-    btn.appendChild(icon);
-    btn.addEventListener("click", async (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      const text = copyableText(bubble);
-      if (!text) return;
-      try {
-        if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
-        else throw new Error("clipboard");
-      } catch (_err) {
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        ta.setAttribute("readonly", "");
-        ta.style.position = "fixed";
-        ta.style.opacity = "0";
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        ta.remove();
+  async function copyText(text) {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return;
       }
-      icon.setAttribute("icon", "mdi:check");
-      btn.label = t("copied");
-      window.setTimeout(() => {
-        icon.setAttribute("icon", "mdi:content-copy");
-        btn.label = t("copy");
-      }, 1600);
-    });
-    row.appendChild(btn);
-    bubble.appendChild(row);
+      throw new Error("clipboard");
+    } catch (_err) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+    }
+  }
+
+  function syncCopyChat() {
+    let row = logEl.querySelector(".chat-actions");
+    const hasChat = Boolean(logEl.querySelector(".bubble.has-text, .bubble .bubble-files, .bubble .bubble-images"));
+    if (!hasChat) {
+      row?.remove();
+      return;
+    }
+    if (!row) {
+      row = document.createElement("div");
+      row.className = "chat-actions";
+      const btn = document.createElement("ha-icon-button");
+      btn.className = "copy-chat";
+      btn.type = "button";
+      btn.label = t("copy_chat");
+      const icon = document.createElement("ha-icon");
+      icon.setAttribute("icon", "mdi:content-copy");
+      btn.appendChild(icon);
+      btn.addEventListener("click", async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const text = transcriptText();
+        if (!text) return;
+        await copyText(text);
+        icon.setAttribute("icon", "mdi:check");
+        btn.label = t("copied");
+        window.setTimeout(() => {
+          icon.setAttribute("icon", "mdi:content-copy");
+          btn.label = t("copy_chat");
+        }, 1600);
+      });
+      row.appendChild(btn);
+    }
+    logEl.appendChild(row);
   }
 
   function nearBottom() {
@@ -1484,6 +1513,7 @@ export function mountAiWorkspace(root, options = {}) {
       streaming = false;
       settleTools(assistant);
       assistant.classList.remove("streaming");
+      syncCopyChat();
       resizeComposer();
       messageEl.focus();
     }

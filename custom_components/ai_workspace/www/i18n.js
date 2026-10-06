@@ -33,7 +33,10 @@ export const I18N = {
     calling_n: "Calling {n} {noun}",
     called_n: "Called {n} {noun}",
     copy: "Copy",
+    copy_chat: "Copy chat",
     copied: "Copied",
+    you: "You",
+    assistant: "Assistant",
   },
   de: {
     title: "AI Workspace",
@@ -69,7 +72,10 @@ export const I18N = {
     calling_n: "Rufe {n} {noun} auf",
     called_n: "{n} {noun} aufgerufen",
     copy: "Kopieren",
+    copy_chat: "Chat kopieren",
     copied: "Kopiert",
+    you: "Du",
+    assistant: "Assistent",
   },
   fr: {
     title: "AI Workspace",
