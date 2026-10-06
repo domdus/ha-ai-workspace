@@ -1,10 +1,15 @@
+import json
+from pathlib import Path
+
 DOMAIN = "ai_workspace"
 PANEL_URL = "ai-workspace"
 PANEL_ELEMENT = "ha-ai-workspace-panel"
 STATIC_URL = "/ai_workspace/static"
-FRONTEND_CACHE = "51"
-OVERLAY_JS = f"{STATIC_URL}/overlay.js?v={FRONTEND_CACHE}"
-PANEL_JS = f"{STATIC_URL}/panel.js?v={FRONTEND_CACHE}"
+VERSION = json.loads(
+    (Path(__file__).parent / "manifest.json").read_text(encoding="utf-8")
+)["version"]
+OVERLAY_JS = f"{STATIC_URL}/overlay.js?v={VERSION}"
+PANEL_JS = f"{STATIC_URL}/panel.js?v={VERSION}"
 DEFAULT_MODEL = "composer-2.5"
 DEFAULT_API_MODEL = "gpt-4.1"
 DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-5"

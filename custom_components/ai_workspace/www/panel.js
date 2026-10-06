@@ -1,5 +1,8 @@
-import { mountAiWorkspace } from "./chat.js?v=51";
-import { stringsFor } from "./i18n.js?v=51";
+const CACHE = new URL(import.meta.url).search;
+const [{ mountAiWorkspace }, { stringsFor }] = await Promise.all([
+  import(`./chat.js${CACHE}`),
+  import(`./i18n.js${CACHE}`),
+]);
 
 class HaAiWorkspacePanel extends HTMLElement {
   constructor() {
@@ -99,7 +102,7 @@ class HaAiWorkspacePanel extends HTMLElement {
           margin: 0;
         }
       </style>
-      <link rel="stylesheet" href="/ai_workspace/static/chat.css?v=51">
+      <link rel="stylesheet" href="/ai_workspace/static/chat.css${CACHE}">
       <ha-top-app-bar-fixed>
         <ha-menu-button slot="navigationIcon"></ha-menu-button>
         <h1 class="page-title" slot="title">${ui.title}</h1>
