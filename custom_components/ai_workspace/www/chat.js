@@ -1,4 +1,5 @@
-import { stringsFor } from "./i18n.js?v=51";
+const CACHE = new URL(import.meta.url).search;
+const { stringsFor } = await import(`./i18n.js${CACHE}`);
 
 const API = "/api/ai_workspace";
 const HELPER_DOMAINS = new Set([
@@ -192,7 +193,7 @@ export function mountAiWorkspace(root, options = {}) {
     .filter(Boolean)
     .join(" ");
   root.innerHTML = `
-    <link rel="stylesheet" href="/ai_workspace/static/chat.css?v=51">
+    <link rel="stylesheet" href="/ai_workspace/static/chat.css${CACHE}">
     <div class="${wrapClass}">
       <button type="button" class="nav-scrim" hidden aria-label="${t("close")}"></button>
       <aside>

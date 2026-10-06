@@ -1,4 +1,10 @@
-*Use Cursor, Claude, or ChatGPT in Home Assistant from your couch.*
+<p align="center">
+  <img src="ai_workspace/logo.png" alt="AI Workspace" width="420">
+</p>
+
+<p align="center"><em>Use Cursor, Claude, or ChatGPT in Home Assistant from your couch.</em></p>
+
+---
 
 # AI Workspace
 

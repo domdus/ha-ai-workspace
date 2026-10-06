@@ -1,5 +1,8 @@
-import { mountAiWorkspace } from "./chat.js?v=51";
-import { stringsFor } from "./i18n.js?v=51";
+const CACHE = new URL(import.meta.url).search;
+const [{ mountAiWorkspace }, { stringsFor }] = await Promise.all([
+  import(`./chat.js${CACHE}`),
+  import(`./i18n.js${CACHE}`),
+]);
 
 const HOST_ID = "ha-ai-workspace-overlay";
 

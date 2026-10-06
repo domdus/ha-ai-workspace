@@ -5,6 +5,8 @@ from typing import Any
 
 from aiohttp import ClientError, ClientSession, ClientTimeout
 
+from .const import VERSION
+
 _PROTOCOL = "2025-03-26"
 
 
@@ -43,7 +45,7 @@ class McpHttpClient:
             {
                 "protocolVersion": _PROTOCOL,
                 "capabilities": {},
-                "clientInfo": {"name": "ai-workspace", "version": "0.3.0"},
+                "clientInfo": {"name": "ai-workspace", "version": VERSION},
             },
         )
         await self.call("notifications/initialized", notify=True)

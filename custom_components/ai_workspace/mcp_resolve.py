@@ -20,6 +20,7 @@ from .const import (
     MCP_HA,
     MCP_HA_MCP,
     MCP_KINDS,
+    VERSION,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -31,7 +32,7 @@ _INIT = {
     "params": {
         "protocolVersion": "2025-03-26",
         "capabilities": {},
-        "clientInfo": {"name": "ai-workspace", "version": "0.3.0"},
+        "clientInfo": {"name": "ai-workspace", "version": VERSION},
     },
 }
 
