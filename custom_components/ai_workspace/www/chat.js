@@ -1,4 +1,4 @@
-import { stringsFor } from "./i18n.js?v=47";
+import { stringsFor } from "./i18n.js?v=51";
 
 const API = "/api/ai_workspace";
 const HELPER_DOMAINS = new Set([
@@ -135,8 +135,34 @@ function rewriteHaHref(raw) {
   }
   const path = rewriteHaPath(url.pathname);
   const suffix = `${path}${url.search}${url.hash}`;
-  if (trimmed.startsWith("/")) return suffix;
+  if (
+    trimmed.startsWith("/") ||
+    url.origin === window.location.origin ||
+    haAppPath(path)
+  ) {
+    return suffix.startsWith("/") ? suffix : `/${suffix}`;
+  }
   return `${url.origin}${suffix}`;
+}
+
+function haAppPath(path) {
+  const value = String(path || "");
+  return (
+    value.startsWith("/config/") ||
+    value.startsWith("/lovelace") ||
+    value.startsWith("/dashboard") ||
+    value.startsWith("/history") ||
+    value.startsWith("/logbook") ||
+    value.startsWith("/developer-tools") ||
+    value.startsWith("/profile") ||
+    value.startsWith("/media-browser") ||
+    value.startsWith("/energy") ||
+    value.startsWith("/map") ||
+    value.startsWith("/todo") ||
+    value.startsWith("/ai-workspace") ||
+    value.startsWith("/hassio") ||
+    value.startsWith("/supervisor")
+  );
 }
 
 export function mountAiWorkspace(root, options = {}) {
@@ -166,7 +192,7 @@ export function mountAiWorkspace(root, options = {}) {
     .filter(Boolean)
     .join(" ");
   root.innerHTML = `
-    <link rel="stylesheet" href="/ai_workspace/static/chat.css?v=47">
+    <link rel="stylesheet" href="/ai_workspace/static/chat.css?v=51">
     <div class="${wrapClass}">
       <button type="button" class="nav-scrim" hidden aria-label="${t("close")}"></button>
       <aside>
@@ -183,7 +209,6 @@ export function mountAiWorkspace(root, options = {}) {
           <ha-svg-icon slot="start" path="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"></ha-svg-icon>
           ${t("new_chat")}
         </ha-button>
-        <div class="chats-label">${t("chats")}</div>
         <div class="sessions" role="list"></div>
       </aside>
       <section class="chat welcome">
@@ -364,6 +389,17 @@ export function mountAiWorkspace(root, options = {}) {
     if (attachBtn) attachBtn.disabled = streaming || pending.length >= MAX_ATTACH;
   }
 
+  function keepComposerFocus() {
+    return window.matchMedia("(pointer: fine)").matches && !mqNarrow.matches;
+  }
+
+  function hideKeyboard() {
+    messageEl.blur();
+    sendBtn.blur();
+    const active = document.activeElement;
+    if (active && active !== document.body && typeof active.blur === "function") active.blur();
+  }
+
   function clearMotion() {
     box.style.transition = "";
     box.style.transform = "";
@@ -477,8 +513,17 @@ export function mountAiWorkspace(root, options = {}) {
     return "done";
   }
 
+  function chipName(name) {
+    return String(name || "").replace(/\bmcp\b/gi, "MCP").replace(/\s*\.\.\.\s*$/, "");
+  }
+
   function chipLabel(text) {
-    return String(text).replace(/\bmcp\b/gi, "MCP");
+    const raw = String(text || "").trim();
+    const calling = raw.match(/^Calling\s+(.+?)\s*$/i);
+    if (calling) return t("calling_tool", { name: chipName(calling[1]) });
+    const finished = raw.match(/^Finished\s+(.+?)\s*$/i);
+    if (finished) return t("finished_tool", { name: chipName(finished[1]) });
+    return chipName(raw);
   }
 
   function settleChip(chip, text) {
@@ -576,11 +621,8 @@ export function mountAiWorkspace(root, options = {}) {
 
   function settleTools(root) {
     root?.querySelectorAll(".tools span.busy").forEach((chip) => {
-      const text = chip.textContent || "";
-      const finished = /^calling\b/i.test(text)
-        ? text.replace(/^Calling\s+/i, "Finished ").replace(/\.\.\.\s*$/, "")
-        : text;
-      settleChip(chip, finished);
+      const name = chip.dataset.tool || chip.textContent || "";
+      settleChip(chip, t("finished_tool", { name: chipName(name) }));
     });
     root?.querySelectorAll(".tools").forEach(syncToolsSummary);
   }
@@ -658,6 +700,7 @@ export function mountAiWorkspace(root, options = {}) {
       bubble.classList.add("has-text");
     }
     logEl.appendChild(bubble);
+    retargetHaLinks(bubble);
     syncCopyChat();
     if (opts.follow !== false) scrollChatToBottom(opts.smooth !== false);
     return bubble;
@@ -708,8 +751,9 @@ export function mountAiWorkspace(root, options = {}) {
   function syncCopyChat() {
     let row = logEl.querySelector(".chat-actions");
     const hasChat = Boolean(logEl.querySelector(".bubble.has-text, .bubble .bubble-files, .bubble .bubble-images"));
-    if (!hasChat) {
-      row?.remove();
+    const busy = streaming || Boolean(logEl.querySelector(".bubble.streaming"));
+    if (!hasChat || busy) {
+      if (row) row.hidden = true;
       return;
     }
     if (!row) {
@@ -737,7 +781,57 @@ export function mountAiWorkspace(root, options = {}) {
       });
       row.appendChild(btn);
     }
+    row.hidden = false;
     logEl.appendChild(row);
+  }
+
+  function haLinkPath(href) {
+    const next = rewriteHaHref(href);
+    try {
+      const url = new URL(next, window.location.origin);
+      if (url.origin === window.location.origin || haAppPath(url.pathname)) {
+        return `${url.pathname}${url.search}${url.hash}`;
+      }
+    } catch (_err) {
+      /* keep */
+    }
+    return String(next).startsWith("/") ? next : "";
+  }
+
+  function retargetLink(anchor) {
+    if (!anchor || anchor.tagName !== "A") return;
+    const href = anchor.getAttribute("href") || "";
+    if (!href || href.startsWith("#") || href.startsWith("mailto:")) return;
+    const path = haLinkPath(href);
+    if (!path) return;
+    anchor.setAttribute("href", path);
+    anchor.removeAttribute("target");
+  }
+
+  function retargetHaLinks(scope) {
+    const root = scope || logEl;
+    root.querySelectorAll?.("a[href]")?.forEach(retargetLink);
+    root.querySelectorAll?.("ha-markdown")?.forEach((md) => {
+      md.querySelectorAll("a[href]").forEach(retargetLink);
+      md.shadowRoot?.querySelectorAll("a[href]").forEach(retargetLink);
+    });
+  }
+
+  function openHaPath(path) {
+    if (typeof navigate === "function") {
+      navigate(path);
+      return;
+    }
+    const hass = hassObj();
+    if (typeof hass?.navigate === "function") {
+      hass.navigate(path);
+      return;
+    }
+    const state = history.state && typeof history.state === "object" ? history.state : { root: true };
+    history.pushState(state, "", path);
+    const event = new Event("location-changed", { bubbles: true, composed: true });
+    event.detail = { replace: false };
+    window.dispatchEvent(event);
   }
 
   function nearBottom() {
@@ -758,6 +852,7 @@ export function mountAiWorkspace(root, options = {}) {
     const bubble = streamNode.closest(".bubble");
     bubble?.classList.toggle("has-text", Boolean(streamFull));
     if (streamFull && bubble && !bubble.querySelector(".tools span.busy")) setActivity(bubble, "");
+    if (bubble) retargetHaLinks(bubble);
   }
 
   function takeStreamChunk(dt) {
@@ -791,7 +886,7 @@ export function mountAiWorkspace(root, options = {}) {
       streamFull += takeStreamChunk(dt);
     }
     writeStreamVisible();
-    if (pinBottom) scrollChatToBottom();
+    if (pinBottom) followBottom();
     if (streamBuf) {
       streamDrainRaf = requestAnimationFrame(pumpStream);
       return;
@@ -842,24 +937,25 @@ export function mountAiWorkspace(root, options = {}) {
     if (followRaf) return;
     followLast = performance.now();
     const tick = (now) => {
-      const dt = Math.min(0.05, (now - followLast) / 1000);
+      const dt = Math.min(0.032, (now - followLast) / 1000);
       followLast = now;
       const max = Math.max(0, chatEl.scrollHeight - chatEl.clientHeight);
       const dist = max - chatEl.scrollTop;
-      if (!pinBottom) {
+      const keep = pinBottom && (streaming || Boolean(streamBuf) || dist > 0.5);
+      if (!keep) {
         followRaf = 0;
         return;
       }
-      if (dist <= 0.5) {
-        programmaticScroll = true;
-        chatEl.scrollTop = max;
-        programmaticScroll = false;
-        followRaf = 0;
-        return;
-      }
-      const alpha = 1 - Math.exp(-dt * (streaming ? 7 : 12));
       programmaticScroll = true;
-      chatEl.scrollTop += dist * alpha;
+      if (dist <= 0.5) {
+        chatEl.scrollTop = max;
+      } else {
+        const k = streaming || streamBuf ? 2.6 : 10;
+        const alpha = 1 - Math.exp(-dt * k);
+        let step = dist * alpha;
+        if (streaming || streamBuf) step = Math.min(step, Math.max(6, dist * 0.16));
+        chatEl.scrollTop += step;
+      }
       programmaticScroll = false;
       followRaf = requestAnimationFrame(tick);
     };
@@ -941,6 +1037,7 @@ export function mountAiWorkspace(root, options = {}) {
     sessionMenu.dataset.sessionId = session.id;
     sessionMenu.setAttribute("role", "menu");
     sessionMenu.append(
+      sessionAction(session.pinned ? t("unpin") : t("pin"), "", () => pinSession(session)),
       sessionAction(t("rename"), "", () => renameSession(session)),
       sessionAction(t("delete"), "danger", () => deleteSession(session)),
     );
@@ -957,6 +1054,20 @@ export function mountAiWorkspace(root, options = {}) {
     sessionMenu.style.top = `${Math.max(8, top)}px`;
     sessionMenu.style.left = `${left}px`;
     anchor.setAttribute("aria-expanded", "true");
+  }
+
+  async function pinSession(session) {
+    const pinned = !session.pinned;
+    const response = await fetch(`${API}/sessions/${session.id}`, {
+      method: "PATCH",
+      headers: headers(),
+      body: JSON.stringify({ pinned }),
+    });
+    if (!response.ok) {
+      setBanner(await response.text());
+      return;
+    }
+    loadSessions();
   }
 
   async function renameSession(session) {
@@ -999,54 +1110,70 @@ export function mountAiWorkspace(root, options = {}) {
     if (label) label.textContent = labelText;
   }
 
+  function sessionLabel(text) {
+    const label = document.createElement("div");
+    label.className = "chats-label";
+    label.textContent = text;
+    return label;
+  }
+
+  function sessionRow(session) {
+    const row = document.createElement("div");
+    row.className = "session-row";
+    row.dataset.sessionId = session.id;
+    row.role = "listitem";
+    if (session.id === sessionId) titleEl.textContent = displayTitle(session.title);
+    const item = document.createElement("ha-list-item-button");
+    item.className = "session";
+    item.setAttribute("interactive", "");
+    item.setAttribute("ha-list-item", "");
+    const label = document.createElement("span");
+    label.className = "item-text";
+    label.slot = "headline";
+    label.textContent = displayTitle(session.title);
+    item.appendChild(label);
+    if (session.id === sessionId) {
+      item.classList.add("selected");
+      row.classList.add("selected");
+    }
+    item.addEventListener("click", () => {
+      closeSessionMenu();
+      closeNavIfOverlay();
+      openSession(session.id);
+    });
+    const more = document.createElement("button");
+    more.type = "button";
+    more.className = "session-more";
+    more.setAttribute("aria-label", "Chat actions");
+    more.setAttribute("aria-haspopup", "menu");
+    more.setAttribute("aria-expanded", "false");
+    const dots = document.createElement("ha-icon");
+    dots.setAttribute("icon", "mdi:dots-horizontal");
+    more.appendChild(dots);
+    more.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openSessionMenu(more, session);
+    });
+    row.append(item, more);
+    return row;
+  }
+
   async function loadSessions() {
     if (compact || !sessionsEl) return;
     closeSessionMenu();
     const response = await fetch(`${API}/sessions`, { headers: headers() });
     if (!response.ok) return;
     const sessions = await response.json();
+    const pinned = sessions.filter((session) => session.pinned);
+    const rest = sessions.filter((session) => !session.pinned);
     sessionsEl.replaceChildren();
-    for (const session of sessions) {
-      const row = document.createElement("div");
-      row.className = "session-row";
-      row.dataset.sessionId = session.id;
-      row.role = "listitem";
-      if (session.id === sessionId) titleEl.textContent = displayTitle(session.title);
-      const item = document.createElement("ha-list-item-button");
-      item.className = "session";
-      item.setAttribute("interactive", "");
-      item.setAttribute("ha-list-item", "");
-      const label = document.createElement("span");
-      label.className = "item-text";
-      label.slot = "headline";
-      label.textContent = displayTitle(session.title);
-      item.appendChild(label);
-      if (session.id === sessionId) {
-        item.classList.add("selected");
-        row.classList.add("selected");
-      }
-      item.addEventListener("click", () => {
-        closeSessionMenu();
-        closeNavIfOverlay();
-        openSession(session.id);
-      });
-      const more = document.createElement("button");
-      more.type = "button";
-      more.className = "session-more";
-      more.setAttribute("aria-label", "Chat actions");
-      more.setAttribute("aria-haspopup", "menu");
-      more.setAttribute("aria-expanded", "false");
-      const dots = document.createElement("ha-icon");
-      dots.setAttribute("icon", "mdi:dots-horizontal");
-      more.appendChild(dots);
-      more.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        openSessionMenu(more, session);
-      });
-      row.append(item, more);
-      sessionsEl.appendChild(row);
+    if (pinned.length) {
+      sessionsEl.appendChild(sessionLabel(t("pinned")));
+      for (const session of pinned) sessionsEl.appendChild(sessionRow(session));
     }
+    sessionsEl.appendChild(sessionLabel(t("chats")));
+    for (const session of rest) sessionsEl.appendChild(sessionRow(session));
   }
 
   async function openSession(id, fromUrl = false) {
@@ -1411,6 +1538,8 @@ export function mountAiWorkspace(root, options = {}) {
     const files = attachments.filter((item) => item.kind === "file");
     if ((!text && !attachments.length) || streaming) return;
     stopSpeech();
+    if (keepComposerFocus()) messageEl.focus();
+    else hideKeyboard();
     streaming = true;
     sendBtn.disabled = true;
     pending = [];
@@ -1515,7 +1644,8 @@ export function mountAiWorkspace(root, options = {}) {
       assistant.classList.remove("streaming");
       syncCopyChat();
       resizeComposer();
-      messageEl.focus();
+      if (keepComposerFocus()) messageEl.focus();
+      else hideKeyboard();
     }
   });
 
@@ -1581,19 +1711,13 @@ export function mountAiWorkspace(root, options = {}) {
     if (!link) return;
     const href = link.getAttribute("href") || "";
     if (!href || href.startsWith("#") || href.startsWith("mailto:")) return;
-    const next = rewriteHaHref(href);
-    let path = next;
-    try {
-      const url = new URL(next, window.location.origin);
-      if (url.origin === window.location.origin) path = `${url.pathname}${url.search}${url.hash}`;
-    } catch (_err) {
-      /* keep */
-    }
-    if (!String(path).startsWith("/")) return;
+    const path = haLinkPath(href);
+    if (!path) return;
     event.preventDefault();
     event.stopPropagation();
-    if (typeof hassObj()?.navigate === "function") hassObj().navigate(path);
-    else window.location.assign(path);
+    event.stopImmediatePropagation();
+    retargetLink(link);
+    openHaPath(path);
   }, true);
 
   root.querySelector(".new-chat")?.addEventListener("click", startNewChat);
@@ -1612,5 +1736,7 @@ export function mountAiWorkspace(root, options = {}) {
     loadSessions();
   }
   resizeComposer();
+  const linkWatch = new MutationObserver(() => retargetHaLinks(logEl));
+  linkWatch.observe(logEl, { subtree: true, childList: true, attributes: true, attributeFilter: ["href", "target"] });
   return { openSession, applyRoute, setNarrow, toggleNav };
 }

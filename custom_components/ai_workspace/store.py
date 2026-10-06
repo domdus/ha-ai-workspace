@@ -20,6 +20,7 @@ class Session:
     agent_id: str | None
     created_at: str
     updated_at: str
+    pinned: bool = False
 
 
 @dataclass
@@ -59,6 +60,9 @@ class Store:
             );
             """
         )
+        cols = {row[1] for row in self._conn.execute("PRAGMA table_info(sessions)")}
+        if "pinned" not in cols:
+            self._conn.execute("ALTER TABLE sessions ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0")
         self._conn.commit()
 
     def close(self) -> None:
@@ -99,7 +103,7 @@ class Store:
 
     def list_sessions(self, user_id: str) -> list[Session]:
         rows = self._conn.execute(
-            "SELECT * FROM sessions WHERE user_id = ? ORDER BY updated_at DESC",
+            "SELECT * FROM sessions WHERE user_id = ? ORDER BY pinned DESC, updated_at DESC",
             (user_id,),
         ).fetchall()
         return [_session(row) for row in rows]
@@ -126,6 +130,17 @@ class Store:
         self._conn.execute(
             "UPDATE sessions SET title = ? WHERE id = ? AND user_id = ?",
             (label, session_id, user_id),
+        )
+        self._conn.commit()
+        return self.get_session(user_id, session_id)
+
+    def set_pinned(self, user_id: str, session_id: str, pinned: bool) -> Session | None:
+        session = self.get_session(user_id, session_id)
+        if session is None:
+            return None
+        self._conn.execute(
+            "UPDATE sessions SET pinned = ? WHERE id = ? AND user_id = ?",
+            (1 if pinned else 0, session_id, user_id),
         )
         self._conn.commit()
         return self.get_session(user_id, session_id)
@@ -242,4 +257,5 @@ def _session(row: sqlite3.Row) -> Session:
         agent_id=row["agent_id"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
+        pinned=bool(row["pinned"]) if "pinned" in row.keys() else False,
     )

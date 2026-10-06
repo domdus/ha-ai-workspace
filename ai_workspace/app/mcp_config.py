@@ -5,8 +5,26 @@ import os
 import re
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse, urlunparse
 
 _ENV = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
+_LOOPBACK = {"127.0.0.1", "localhost", "::1"}
+
+
+def rewrite_loopback_url(url: str, host: str | None = None) -> str:
+    """Map 127.0.0.1 MCP URLs to the Docker host when the runtime is not on host network."""
+    target = (host if host is not None else os.environ.get("REWRITE_LOOPBACK_HOST") or "").strip()
+    if not target or not url:
+        return url
+    parsed = urlparse(url)
+    if (parsed.hostname or "").lower() not in _LOOPBACK:
+        return url
+    user = parsed.username or ""
+    if parsed.password:
+        user = f"{user}:{parsed.password}"
+    auth = f"{user}@" if user else ""
+    port = f":{parsed.port}" if parsed.port else ""
+    return urlunparse(parsed._replace(netloc=f"{auth}{target}{port}"))
 
 
 class McpConfigError(ValueError):
@@ -39,7 +57,10 @@ def server_to_sdk(name: str, raw: Any) -> dict[str, Any]:
         if not url:
             raise McpConfigError(f"MCP server {name} has type {kind} but no url")
         transport = "sse" if kind == "sse" else "http"
-        server: dict[str, Any] = {"type": transport, "url": _stringify(url, f"{name}.url")}
+        server: dict[str, Any] = {
+            "type": transport,
+            "url": rewrite_loopback_url(_stringify(url, f"{name}.url")),
+        }
         headers = raw.get("headers")
         if headers is not None:
             if not isinstance(headers, dict):

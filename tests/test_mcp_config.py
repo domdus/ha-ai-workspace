@@ -7,6 +7,7 @@ from app.mcp_config import (
     McpConfigError,
     load_mcp_servers,
     merge_mcp_servers,
+    rewrite_loopback_url,
     servers_from_chat_mcp,
 )
 
@@ -59,6 +60,16 @@ def test_request_replaces_ha_mcp_and_keeps_extra() -> None:
     assert "home-assistant" not in merged
     assert merged["mcp"]["url"] == "http://127.0.0.1:8123/api/webhook/mcp_new"
     assert merged["github"]["url"] == "http://github-mcp/mcp"
+
+
+def test_rewrite_loopback_mcp_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert rewrite_loopback_url("http://127.0.0.1:8123/api/webhook/x") == "http://127.0.0.1:8123/api/webhook/x"
+    monkeypatch.setenv("REWRITE_LOOPBACK_HOST", "host.docker.internal")
+    request = servers_from_chat_mcp(
+        {"servers": {"mcp": {"type": "http", "url": "http://127.0.0.1:8123/api/webhook/x"}}}
+    )
+    assert request["mcp"]["url"] == "http://host.docker.internal:8123/api/webhook/x"
+    assert rewrite_loopback_url("http://ha-mcp:8086/mcp") == "http://ha-mcp:8086/mcp"
 
 
 def test_empty_request_keeps_file_servers() -> None:

@@ -31,6 +31,7 @@ from .const import (
     CONF_MODEL,
     CONF_RUNTIME_URL,
     CONF_SYSTEM_PROMPT,
+    CLOUD_ONLY_MODELS,
     DEFAULT_ANTHROPIC_MODEL,
     DEFAULT_API_MODEL,
     DEFAULT_MODEL,
@@ -85,7 +86,7 @@ _MCP_URL_NOTE = (
 )
 _RUNTIME_URL_NOTE = (
     "Where this Home Assistant reaches the Cursor SDK container. Leave empty to auto-detect. "
-    "Host networking: http://127.0.0.1:8090. Same Docker network: http://cursor-sdk:8090."
+    "Loopback publish: http://127.0.0.1:8090. Same Docker network: http://cursor-sdk:8090."
 )
 
 
@@ -270,10 +271,20 @@ def _api_form(defaults: dict, *, hass: HomeAssistant | None = None) -> vol.Schem
     )
 
 
+def _cursor_model(current: dict) -> str:
+    model = str(current.get(CONF_MODEL) or "").strip()
+    if not model or model in CLOUD_ONLY_MODELS:
+        return ""
+    if current.get(CONF_MODE) != MODE_CURSOR and model == DEFAULT_ANTHROPIC_MODEL:
+        return ""
+    return model
+
+
 def _cursor_form(defaults: dict, *, runtime_url: bool = False, hass: HomeAssistant | None = None) -> vol.Schema:
     schema: dict = {
         vol.Required(SECTION_MCP): section(_mcp_schema(defaults, hass), {"collapsed": False}),
-        vol.Optional(CONF_MODEL, default=str(defaults.get(CONF_MODEL) or "").strip()): cv.string,
+        vol.Required(SECTION_PROMPT): section(_prompt_schema(defaults), {"collapsed": False}),
+        vol.Optional(CONF_MODEL, default=_cursor_model(defaults)): cv.string,
     }
     if runtime_url:
         schema[
@@ -327,6 +338,7 @@ class AiWorkspaceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     **self._ui,
                     **flat,
                     CONF_MODE: MODE_CURSOR,
+                    CONF_MODEL: _cursor_model({**self._ui, **flat, CONF_MODE: MODE_CURSOR}),
                     CONF_RUNTIME_URL: runtime,
                 }
                 await self.async_set_unique_id(DOMAIN)
@@ -416,7 +428,14 @@ class AiWorkspaceOptionsFlow(config_entries.OptionsFlow):
             if not runtime:
                 errors["base"] = "no_runtime"
             else:
-                return self._save({**flat, CONF_MODE: MODE_CURSOR, CONF_RUNTIME_URL: runtime})
+                return self._save(
+                    {
+                        **flat,
+                        CONF_MODE: MODE_CURSOR,
+                        CONF_MODEL: _cursor_model({**current, **flat, CONF_MODE: MODE_CURSOR}),
+                        CONF_RUNTIME_URL: runtime,
+                    }
+                )
             current = {**current, **flat}
         defaults, mcp_auto = await _defaults_with_mcp(self.hass, current)
         return self.async_show_form(

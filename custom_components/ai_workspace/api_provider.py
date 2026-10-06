@@ -22,6 +22,7 @@ from .const import (
     MCP_CUSTOM,
     MCP_HA,
     ui_link_instructions,
+    with_language_rule,
 )
 from .coolver import CoolverClient
 from .mcp_client import McpError, McpHttpClient
@@ -253,7 +254,7 @@ class ApiProvider:
     def _system(self, origin: str = "") -> str:
         identity = _IDENTITY.format(label=self._label(), model=self._model())
         body = (self.settings.system_prompt or "").strip() or DEFAULT_SYSTEM_PROMPT
-        return f"{identity}\n\n{body}\n\n{ui_link_instructions(origin)}"
+        return with_language_rule(f"{identity}\n\n{body}\n\n{ui_link_instructions(origin)}")
 
     def _public(self, exc: BaseException) -> str:
         return redact(str(exc), [self.settings.api_key, self.settings.cursor_api_key, self.settings.mcp_token])

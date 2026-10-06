@@ -11,7 +11,7 @@ from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import DOMAIN, MCP_COOLVER, MODE_API, MODE_CURSOR
+from .const import CLOUD_ONLY_MODELS, DEFAULT_SYSTEM_PROMPT, DOMAIN, MCP_COOLVER, MODE_API, MODE_CURSOR, with_language_rule
 from .files import attach_files_to_message, file_events, parse_client_files
 from .images import caption_for, image_events, parse_client_images
 
@@ -38,6 +38,7 @@ def _session_dict(session: Session) -> dict:
         "agent_id": session.agent_id,
         "created_at": session.created_at,
         "updated_at": session.updated_at,
+        "pinned": bool(getattr(session, "pinned", False)),
     }
 
 
@@ -155,6 +156,8 @@ def _runtime_agent_overrides(hass: HomeAssistant) -> dict[str, Any]:
     if servers and kind != MCP_COOLVER:
         extra["mcp"] = {"servers": servers}
     model = str(getattr(settings, "model", "") or "").strip()
+    if model in CLOUD_ONLY_MODELS:
+        model = ""
     if model:
         extra["model"] = model
     return extra
@@ -179,6 +182,11 @@ async def _runtime_chat(
         "message": attach_files_to_message(message, files or []),
         "origin": origin,
     }
+    prompt = with_language_rule(
+        str(getattr(_runtime(hass).get("settings"), "system_prompt", "") or "").strip() or DEFAULT_SYSTEM_PROMPT
+    )
+    if prompt:
+        payload["message"] = f"{prompt}\n\n{payload['message']}"
     if images:
         payload["images"] = [
             {"name": item["name"], "mime": item["mime"], "data": item["data"]} for item in images
@@ -282,15 +290,6 @@ def _send_provider(data: dict[str, Any], session: Session):
     if ready is not None:
         return ready
     return providers.get(session.provider)
-
-
-def _start_title_task(provider, message: str, count: int):
-    if count > 1 or provider is None:
-        return None
-    suggest = getattr(provider, "suggest_title", None)
-    if not callable(suggest):
-        return None
-    return asyncio.create_task(suggest(message, ""))
 
 
 async def _title_from_task(task, timeout: float = 12) -> str:
@@ -480,10 +479,17 @@ class SessionView(HomeAssistantView):
         hass: HomeAssistant = _hass(request)
         store: Store = _runtime(hass)["store"]
         body = await request.json()
-        title = str(body.get("title") or "")
-        session = await hass.async_add_executor_job(store.rename_session, _user_id(request), session_id, title)
+        title = str(body.get("title") or "").strip()
+        pinned = body.get("pinned")
+        session = await hass.async_add_executor_job(store.get_session, _user_id(request), session_id)
         if session is None:
             raise web.HTTPNotFound(text="Chat not found.")
+        if pinned is not None:
+            session = await hass.async_add_executor_job(
+                store.set_pinned, _user_id(request), session_id, bool(pinned)
+            )
+        if title:
+            session = await hass.async_add_executor_job(store.rename_session, _user_id(request), session_id, title)
         return self.json(_session_dict(session))
 
     async def delete(self, request: web.Request, session_id: str) -> web.Response:
@@ -544,7 +550,7 @@ class ChatView(HomeAssistantView):
         )
         await hass.async_add_executor_job(store.rename_if_default, session.id, message.replace("\n", " ").strip())
         count = await hass.async_add_executor_job(lambda: len(store.list_messages(session.id)))
-        title_task = _start_title_task(provider, message, count)
+        suggest = getattr(provider, "suggest_title", None) if count <= 1 else None
         outbound = attach_files_to_message(message, files)
 
         def on_agent_id(agent_id: str) -> None:
@@ -635,8 +641,8 @@ class ChatView(HomeAssistantView):
                 await response.write(_sse("status", {"type": "status", "text": "Done."}))
         finally:
             lock.release()
-        if error is None:
-            title = await _title_from_task(title_task)
+        if error is None and callable(suggest):
+            title = await _title_from_task(asyncio.create_task(suggest(message, "")))
             if title:
                 applied = await hass.async_add_executor_job(
                     store.apply_generated_title, _user_id(request), session.id, message, title
@@ -646,8 +652,6 @@ class ChatView(HomeAssistantView):
                         await response.write(_sse("title", {"type": "title", "title": applied}))
                     except Exception:
                         logger.debug("title event skipped", exc_info=True)
-        elif title_task is not None and not title_task.done():
-            title_task.cancel()
         return response
 
 

@@ -26,6 +26,7 @@ from .const import (
     CONF_MODEL,
     CONF_RUNTIME_URL,
     CONF_SYSTEM_PROMPT,
+    CLOUD_ONLY_MODELS,
     DEFAULT_MODEL,
     DOMAIN,
     MODE_API,
@@ -88,6 +89,8 @@ def _model_for_mode(data: dict) -> str:
     model = str(data.get(CONF_MODEL) or "").strip()
     mode = _mode(data)
     if mode == MODE_CURSOR:
+        if model in CLOUD_ONLY_MODELS:
+            return ""
         return model
     if not model or model == DEFAULT_MODEL:
         return ""
