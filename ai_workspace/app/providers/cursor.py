@@ -89,6 +89,7 @@ class CursorRuntime:
         cached = self._agents.get(session.id)
         previous = self._mcp_by_session.get(session.id)
         if cached is not None and previous == fingerprint:
+            logger.info("reuse agent session=%s", session.id)
             return cached
         if cached is not None:
             logger.info("mcp servers or model changed, replacing agent session=%s", session.id)
@@ -99,15 +100,24 @@ class CursorRuntime:
         resume_id = session.agent_id if previous in (None, fingerprint) else None
         if resume_id:
             try:
+                logger.info("resume agent session=%s agent=%s", session.id, resume_id)
                 agent = await client.resume_agent(resume_id, options)
             except AgentNotFoundError:
                 logger.info("agent %s missing, creating a new one", resume_id)
                 agent = None
         if agent is None:
+            logger.info("create agent session=%s model=%s", session.id, resolved_model)
             agent = await client.create_agent(options)
         self._agents[session.id] = agent
         self._mcp_by_session[session.id] = fingerprint
         return agent
+
+    async def warm(self) -> None:
+        try:
+            await self.client()
+            logger.info("cursor bridge ready")
+        except Exception:
+            logger.warning("cursor bridge warmup failed", exc_info=True)
 
     def drop(self, session_id: str) -> None:
         self._agents.pop(session_id, None)
@@ -163,6 +173,7 @@ class CursorProvider:
             )
         used_model = (model or "").strip() or self.settings.model
         logger.info("cursor model=%s", used_model)
+        yield {"type": "status", "text": "Thinking..."}
         try:
             agent = await self.runtime.open_agent(session, mcp_servers, model=model)
         except Exception as exc:
@@ -178,7 +189,6 @@ class CursorProvider:
             return
         run_id = getattr(run, "id", "")
         logger.info("run started session=%s agent=%s run=%s model=%s", session.id, agent_id, run_id, used_model)
-        yield {"type": "status", "text": "Thinking..."}
         stream_error: str | None = None
         try:
             async for sdk_message in run.messages():

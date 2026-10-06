@@ -119,6 +119,7 @@ class CursorProvider:
             logger.warning("no MCP servers configured")
         else:
             logger.info("mcp servers: %s", ", ".join(sorted(mcp_servers)))
+        yield {"type": "status", "text": "Thinking..."}
         try:
             agent = await self.runtime.open_agent(session, mcp_servers)
         except Exception as exc:
@@ -134,7 +135,6 @@ class CursorProvider:
             return
         run_id = getattr(run, "id", "")
         logger.info("run started session=%s agent=%s run=%s", session.id, agent_id, run_id)
-        yield {"type": "status", "text": "Thinking..."}
         try:
             async for sdk_message in run.messages():
                 for event in map_sdk_message(sdk_message):

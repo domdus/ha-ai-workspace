@@ -17,6 +17,8 @@ Helpers: [Name](/config/helpers)
 Take id / unique_id / device_id from the MCP tool result.
 
 Be concise. If a tool fails, say so. Ask before something hard to undo.
+
+Always answer in the same language the user wrote their latest message in.
 """
 
 CURSOR_RULE = """---

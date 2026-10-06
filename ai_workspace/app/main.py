@@ -13,7 +13,6 @@ from pydantic import BaseModel, Field
 
 from app.files import attach_files_to_message, file_events, parse_client_files
 from app.images import caption_for, image_events, parse_client_images
-from app.prompt import CURSOR_IDENTITY
 from app.redact import redact
 from app.settings import Settings
 from app.store import Session, Store
@@ -39,7 +38,8 @@ class SessionCreate(BaseModel):
 
 
 class SessionUpdate(BaseModel):
-    title: str = Field(min_length=1, max_length=80)
+    title: str | None = Field(default=None, max_length=80)
+    pinned: bool | None = None
 
 
 class ChatImage(BaseModel):
@@ -70,11 +70,10 @@ class ChatRequest(BaseModel):
 
 
 def _with_ui_context(message: str, origin: str = "") -> str:
-    text = CURSOR_IDENTITY.strip()
     origin = str(origin or "").strip().rstrip("/")
     if origin.startswith("http://") or origin.startswith("https://"):
-        text = f"{text}\nThis user's Home Assistant UI is {origin}."
-    return f"{text}\n\n{message}"
+        return f"This user's Home Assistant UI is {origin}.\n\n{message}"
+    return message
 
 
 router = APIRouter()
@@ -105,10 +104,15 @@ async def lifespan(app: FastAPI):
         runtime = CursorRuntime(settings)
         app.state.providers = build_providers(settings, runtime)
         logger.info("cursor runtime model=%s mcp_config=%s", settings.model, settings.mcp_config_path)
+        if settings.cursor_api_key:
+            app.state.warmup = asyncio.create_task(runtime.warm())
     app.state.runtime = runtime
     try:
         yield
     finally:
+        warmup = getattr(app.state, "warmup", None)
+        if warmup is not None:
+            warmup.cancel()
         store.close()
         if runtime is not None:
             await runtime.aclose()
@@ -186,7 +190,14 @@ def get_session(request: Request, session_id: str) -> dict:
 @router.patch("/api/sessions/{session_id}")
 def rename_session(request: Request, session_id: str, body: SessionUpdate) -> dict:
     store: Store = request.app.state.store
-    session = store.rename_session(_user_id(request), session_id, body.title)
+    user_id = _user_id(request)
+    session = store.get_session(user_id, session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Chat not found.")
+    if body.pinned is not None:
+        session = store.set_pinned(user_id, session_id, body.pinned)
+    if body.title:
+        session = store.rename_session(user_id, session_id, body.title)
     if session is None:
         raise HTTPException(status_code=404, detail="Chat not found.")
     return _session_dict(session)
@@ -236,11 +247,8 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
     )
     store.rename_if_default(session.id, message.replace("\n", " ").strip())
     outbound = _with_ui_context(attach_files_to_message(message, files), body.origin)
-    title_task = None
-    if len(store.list_messages(session.id)) <= 1:
-        suggest = getattr(provider, "suggest_title", None)
-        if callable(suggest):
-            title_task = asyncio.create_task(suggest(message, ""))
+    suggest = getattr(provider, "suggest_title", None)
+    want_title = len(store.list_messages(session.id)) <= 1 and callable(suggest)
 
     def on_agent_id(agent_id: str) -> None:
         store.set_agent_id(session.id, agent_id)
@@ -295,19 +303,15 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
                 yield _sse("status", {"type": "status", "text": "Done."})
         finally:
             lock.release()
-        if error is None and title_task is not None:
+        if error is None and want_title:
             try:
-                raw = await asyncio.wait_for(title_task, timeout=12)
+                raw = await asyncio.wait_for(suggest(message, ""), timeout=12)
             except Exception:
                 logger.debug("title generation failed", exc_info=True)
-                if not title_task.done():
-                    title_task.cancel()
                 raw = None
             label = store.apply_generated_title(_user_id(request), session.id, message, clean_title(raw or ""))
             if label:
                 yield _sse("title", {"type": "title", "title": label})
-        elif title_task is not None and not title_task.done():
-            title_task.cancel()
 
     return StreamingResponse(
         generate(),
@@ -339,6 +343,7 @@ def _session_dict(session: Session) -> dict:
         "agent_id": session.agent_id,
         "created_at": session.created_at,
         "updated_at": session.updated_at,
+        "pinned": bool(getattr(session, "pinned", False)),
     }
 
 

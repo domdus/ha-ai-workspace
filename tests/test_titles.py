@@ -43,3 +43,19 @@ def test_rename_does_not_change_chat_order(tmp_path) -> None:
     assert [item.id for item in sessions] == [newer.id, older.id]
     assert sessions[1].title == "Renamed older chat"
     store.close()
+
+
+def test_pinned_chats_sort_above_unpinned(tmp_path) -> None:
+    store = Store(tmp_path / "db.sqlite")
+    older = store.create_session("local", "cursor")
+    newer = store.create_session("local", "cursor")
+    store.add_message(older.id, "user", "first")
+    store.add_message(newer.id, "user", "second")
+    store.set_pinned("local", older.id, True)
+    sessions = store.list_sessions("local")
+    assert [item.id for item in sessions] == [older.id, newer.id]
+    assert sessions[0].pinned is True
+    store.set_pinned("local", older.id, False)
+    sessions = store.list_sessions("local")
+    assert [item.id for item in sessions] == [newer.id, older.id]
+    store.close()

@@ -1,5 +1,5 @@
-import { mountAiWorkspace } from "./chat.js?v=47";
-import { stringsFor } from "./i18n.js?v=47";
+import { mountAiWorkspace } from "./chat.js?v=51";
+import { stringsFor } from "./i18n.js?v=51";
 
 const HOST_ID = "ha-ai-workspace-overlay";
 
@@ -85,6 +85,19 @@ function ensureHost() {
       mountAiWorkspace(body, {
         compact: true,
         getToken: () => hassObj()?.auth?.data?.access_token || "",
+        navigate: (path) => {
+          drawer.classList.remove("open");
+          const hass = hassObj();
+          if (typeof hass?.navigate === "function") {
+            hass.navigate(path);
+            return;
+          }
+          const state = history.state && typeof history.state === "object" ? history.state : { root: true };
+          history.pushState(state, "", path);
+          const event = new Event("location-changed", { bubbles: true, composed: true });
+          event.detail = { replace: false };
+          window.dispatchEvent(event);
+        },
       });
     }
   });

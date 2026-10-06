@@ -2,12 +2,23 @@ DOMAIN = "ai_workspace"
 PANEL_URL = "ai-workspace"
 PANEL_ELEMENT = "ha-ai-workspace-panel"
 STATIC_URL = "/ai_workspace/static"
-FRONTEND_CACHE = "47"
+FRONTEND_CACHE = "51"
 OVERLAY_JS = f"{STATIC_URL}/overlay.js?v={FRONTEND_CACHE}"
 PANEL_JS = f"{STATIC_URL}/panel.js?v={FRONTEND_CACHE}"
 DEFAULT_MODEL = "composer-2.5"
 DEFAULT_API_MODEL = "gpt-4.1"
 DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-5"
+CLOUD_ONLY_MODELS = frozenset(
+    {
+        DEFAULT_API_MODEL,
+        "gpt-4.1",
+        "gpt-4o",
+        "gpt-4o-mini",
+        "gpt-4-turbo",
+        "gpt-4",
+        "gpt-3.5-turbo",
+    }
+)
 DEFAULT_TITLE = "AI Workspace"
 CONF_MCP_URL = "mcp_url"
 CONF_MCP_KIND = "mcp_kind"
@@ -46,7 +57,19 @@ DEFAULT_SYSTEM_PROMPT = """You help with this Home Assistant installation: autom
 
 Home Assistant is reached only through the connected MCP tools. Use those tools to inspect or change anything. Do not invent entity ids, states, or history. Prefer a specific tool over a full-installation overview when the question is narrow.
 
-Be concise. If a tool fails, say so. Ask before doing something hard to undo, such as deleting automations, unlocking doors, or turning off many devices at once."""
+Be concise. If a tool fails, say so. Ask before doing something hard to undo, such as deleting automations, unlocking doors, or turning off many devices at once.
+
+Always answer in the same language the user wrote their latest message in."""
+LANGUAGE_INSTRUCTION = (
+    "Always answer in the same language the user wrote their latest message in."
+)
+
+
+def with_language_rule(text: str) -> str:
+    body = str(text or "").rstrip()
+    if LANGUAGE_INSTRUCTION in body:
+        return body
+    return f"{body}\n\n{LANGUAGE_INSTRUCTION}" if body else LANGUAGE_INSTRUCTION
 HA_LINK_INSTRUCTIONS = """When you mention automations, scripts, scenes, devices, helpers, or entities, include a Markdown link the user can open in this Home Assistant UI. Use root-relative paths that start with /. Never use 127.0.0.1, localhost, or an MCP URL in those links — those are only how tools reach Home Assistant from Docker.
 
 URL rules (wrong ids open a blank editor):

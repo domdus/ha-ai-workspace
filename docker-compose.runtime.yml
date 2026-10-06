@@ -1,35 +1,35 @@
-# Cursor SDK sidecar (not Home Assistant). Same Docker host as HA.
+# AI Workspace Cursor Runtime — same Docker host as Home Assistant.
+# This is not a second Home Assistant. Copy this file, replace the key, start it.
 #
-#   cp runtime.env.example .env   # CURSOR_API_KEY (MCP_URL is optional)
-#   docker compose -f docker-compose.runtime.yml up -d --build
+#   curl -fsSL -o docker-compose.yml https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docker-compose.runtime.yml
+#   # set CURSOR_API_KEY below (https://cursor.com/dashboard/integrations)
+#   docker compose up -d
 #
-# Host network (Synology Container HA): Cursor and HA-MCP use the host's
-# network. The API listens on 127.0.0.1:8090 only — not the LAN.
-# HACS Runtime URL: http://127.0.0.1:8090
-# The HACS integration sends MCP URL on each chat. MCP_URL here is only a
-# fallback if you talk to this container without the integration.
-# Do not set MCP_CONFIG_PATH to an empty bind-mount — that hides MCP_URL.
+# Home Assistant → Runtime URL: http://127.0.0.1:8090
+# 8090 is published on loopback only (not the LAN).
+# Bridge network so Synology Container Manager can stop and start this container.
 
-name: cursor-sdk
+name: ai-workspace-runtime
 
 services:
   cursor-sdk:
     container_name: cursor-sdk
-    image: cursor-sdk
-    build: ./ai_workspace
-    network_mode: host
+    image: ghcr.io/domdus/ha-ai-workspace-runtime:latest
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "127.0.0.1:8090:8090"
     environment:
-      CURSOR_API_KEY: ${CURSOR_API_KEY:?set CURSOR_API_KEY}
-      CURSOR_MODEL: ${CURSOR_MODEL:-composer-2.5}
-      MCP_URL: ${MCP_URL:-}
-      MCP_TOKEN: ${MCP_TOKEN:-}
+      CURSOR_API_KEY: "paste-your-cursor-api-key"
+      CURSOR_MODEL: composer-2.5
       AUTH_MODE: ingress
       DATA_DIR: /data
-      HOST: "127.0.0.1"
+      HOST: "0.0.0.0"
       PORT: "8090"
+      REWRITE_LOOPBACK_HOST: host.docker.internal
     volumes:
-      - cursor-sdk-data:/data
+      - ai-workspace-data:/data
     restart: unless-stopped
 
 volumes:
-  cursor-sdk-data:
+  ai-workspace-data:
