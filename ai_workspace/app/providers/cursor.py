@@ -261,12 +261,15 @@ def _run_error_text(result: Any, run_id: str, model: str, stream_error: str | No
     if used and used.lower() not in {"auto", "default", "auto-smart"}:
         return (
             f"Run failed{suffix}. Cursor returned no details for model {used}. "
-            "User API keys often only allow Auto — set Model to auto in the AI Workspace integration."
+            "That id is passed to the Cursor SDK as AgentOptions.model "
+            "(same as CURSOR_MODEL on the Runtime). Check Runtime logs for 'cursor model='."
         )
     return f"Run failed{suffix}."
 
 
 async def _start_run(agent: Any, message: str, images: list[dict] | None, mcp_servers: dict):
+    # Model is set on AgentOptions at create/resume (CURSOR_MODEL or HA JSON `model`).
+    # Do not pass it again on send — that path failed runs that worked with env-only.
     payload = cursor_payload(message, images)
     options: dict[str, Any] = {}
     if mcp_servers:
