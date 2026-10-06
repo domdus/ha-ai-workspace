@@ -27,6 +27,102 @@ function looksLikeEntityId(id) {
   return /^[a-z][a-z0-9_]*\.[a-zA-Z0-9_]+$/.test(String(id || ""));
 }
 
+function harvestEntityConfig(config, out) {
+  if (!config || out.size >= 40) return;
+  if (typeof config === "string") {
+    if (looksLikeEntityId(config)) out.add(config);
+    return;
+  }
+  if (Array.isArray(config)) {
+    for (const item of config) harvestEntityConfig(item, out);
+    return;
+  }
+  if (typeof config !== "object") return;
+  for (const key of ["entity", "camera", "media_player", "climate", "light", "switch"]) {
+    harvestEntityConfig(config[key], out);
+  }
+  for (const key of ["entities", "cards", "sections", "badges", "chips", "features", "views"]) {
+    harvestEntityConfig(config[key], out);
+  }
+}
+
+function walkVisibleEntities(node, out, depth) {
+  if (!node || depth > 24 || out.size >= 40) return;
+  if (node.id === "ha-ai-workspace-overlay") return;
+  const attr = node.getAttribute?.("entity-id") || node.getAttribute?.("data-entity-id") || node.getAttribute?.("data-entity");
+  if (looksLikeEntityId(attr)) out.add(attr);
+  if (looksLikeEntityId(node.entityId)) out.add(node.entityId);
+  if (looksLikeEntityId(node.entity_id)) out.add(node.entity_id);
+  if (node.config) harvestEntityConfig(node.config, out);
+  const next = node.shadowRoot ? [...node.shadowRoot.children, ...node.children] : [...(node.children || [])];
+  for (const child of next) walkVisibleEntities(child, out, depth + 1);
+}
+
+function haPanelRoot() {
+  const main = document.querySelector("home-assistant")?.shadowRoot?.querySelector("home-assistant-main");
+  const tree = main?.shadowRoot;
+  const drawer = tree?.querySelector("ha-drawer");
+  const from = drawer?.shadowRoot || tree;
+  return from?.querySelector("partial-panel-resolver") || from?.querySelector("ha-panel-lovelace") || main;
+}
+
+function haPageContext() {
+  const path = `${location.pathname}${location.search}`;
+  if (!path.startsWith("/") || path.startsWith("/ai-workspace")) return null;
+  const hass = hassObj();
+  const parts = location.pathname.split("/").filter(Boolean);
+  const dashboardPath = parts[0] || "";
+  const viewPath = parts.slice(1).join("/");
+  const panel = hass?.panels?.[dashboardPath];
+  const areas = hass?.areas || {};
+  const areaMatch = /(?:^|\/)areas-([^/?#]+)/.exec(location.pathname);
+  let areaId = "";
+  let areaName = "";
+  if (areaMatch) {
+    const slug = areaMatch[1];
+    for (const [id, area] of Object.entries(areas)) {
+      if (id === slug || id.replace(/_/g, "-") === slug || String(area?.name || "").toLowerCase().replace(/\s+/g, "-") === slug) {
+        areaId = id;
+        areaName = area?.name || "";
+        break;
+      }
+    }
+    if (!areaName) {
+      areaId = slug.replace(/-/g, "_");
+      areaName = areas[areaId]?.name || slug.replace(/-/g, " ");
+    }
+  }
+  let viewTitle = "";
+  let dashboardTitle = panel?.title || "";
+  try {
+    const lovelace = document.querySelector("home-assistant")
+      ?.shadowRoot?.querySelector("home-assistant-main")
+      ?.shadowRoot?.querySelector("ha-panel-lovelace")?.lovelace;
+    if (!dashboardTitle && lovelace?.config?.title) dashboardTitle = lovelace.config.title;
+    const views = lovelace?.config?.views || [];
+    const view = views.find((item) => item.path === parts[1] || item.path === viewPath)
+      || (parts.length < 2 ? views[0] : null);
+    viewTitle = view?.title || "";
+  } catch {
+    viewTitle = "";
+  }
+  const entities = new Set();
+  const root = haPanelRoot();
+  if (root) walkVisibleEntities(root, entities, 0);
+  const title = String(document.title || "")
+    .replace(/\s*[–—-]\s*Home Assistant\s*$/i, "")
+    .trim();
+  return {
+    path,
+    title,
+    dashboard: dashboardTitle || dashboardPath,
+    view: viewTitle || viewPath,
+    area: areaName,
+    area_id: areaId,
+    entities: [...entities],
+  };
+}
+
 function lookupEntity(id) {
   const hass = hassObj();
   if (!hass || !id) return null;
@@ -219,6 +315,9 @@ export function mountAiWorkspace(root, options = {}) {
               <ha-icon icon="mdi:forum-outline"></ha-icon>
             </ha-icon-button>
             <h1 class="title">${t("new_chat")}</h1>
+            ${compact ? `<ha-icon-button class="header-new-chat" label="${t("new_chat")}">
+              <ha-icon icon="mdi:plus"></ha-icon>
+            </ha-icon-button>` : ""}
           </div>
           <p class="banner" hidden></p>
         </header>
@@ -271,7 +370,8 @@ export function mountAiWorkspace(root, options = {}) {
   if (plusIcon && !plusIcon.path) {
     plusIcon.path = "M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z";
   }
-  let sessionId = compact ? localStorage.getItem("ai_workspace_session") || "" : "";
+  let sessionId = "";
+  let routeGen = 0;
   const workspaceLink = root.querySelector(".workspace-link");
 
   function isNarrow() {
@@ -1177,8 +1277,23 @@ export function mountAiWorkspace(root, options = {}) {
     for (const session of rest) sessionsEl.appendChild(sessionRow(session));
   }
 
+  async function createSession() {
+    const created = await fetch(`${API}/sessions`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ provider: defaultProvider }),
+    });
+    if (!created.ok) throw new Error(await created.text());
+    const session = await created.json();
+    sessionId = session.id;
+    goToSession(sessionId, true);
+    if (compact) localStorage.setItem("ai_workspace_session", sessionId);
+    return session;
+  }
+
   async function openSession(id, fromUrl = false) {
     if (!id) {
+      routeGen += 1;
       sessionId = "";
       titleEl.textContent = t("new_chat");
       showEmpty();
@@ -1187,10 +1302,9 @@ export function mountAiWorkspace(root, options = {}) {
       return;
     }
     if (fromUrl && id === sessionId) return;
-    sessionId = id;
-    if (compact) localStorage.setItem("ai_workspace_session", id);
-    if (!fromUrl) goToSession(id);
+    const gen = ++routeGen;
     const response = await fetch(`${API}/sessions/${id}`, { headers: headers() });
+    if (gen !== routeGen) return;
     if (!response.ok) {
       sessionId = "";
       titleEl.textContent = t("new_chat");
@@ -1199,6 +1313,9 @@ export function mountAiWorkspace(root, options = {}) {
       await loadSessions();
       return;
     }
+    sessionId = id;
+    if (compact) localStorage.setItem("ai_workspace_session", id);
+    if (!fromUrl) goToSession(id);
     const session = await response.json();
     titleEl.textContent = displayTitle(session.title);
     logEl.replaceChildren();
@@ -1543,6 +1660,7 @@ export function mountAiWorkspace(root, options = {}) {
     else hideKeyboard();
     streaming = true;
     sendBtn.disabled = true;
+    routeGen += 1;
     pending = [];
     renderThumbs();
     messageEl.value = "";
@@ -1561,29 +1679,31 @@ export function mountAiWorkspace(root, options = {}) {
     setActivity(assistant, t("thinking"));
     try {
       if (!sessionId) {
-        const created = await fetch(`${API}/sessions`, {
-          method: "POST",
-          headers: headers(),
-          body: JSON.stringify({ provider: defaultProvider }),
-        });
-        if (!created.ok) throw new Error(await created.text());
-        const session = await created.json();
-        sessionId = session.id;
-        goToSession(sessionId, true);
-        if (compact) localStorage.setItem("ai_workspace_session", sessionId);
+        await createSession();
         titleEl.textContent = (text || attachments[0]?.name || "File").slice(0, 80);
       }
       setStatus(t("thinking"));
-      const response = await fetch(`${API}/sessions/${sessionId}/chat`, {
-        method: "POST",
-        headers: headers(),
-        body: JSON.stringify({
+      const payload = JSON.stringify({
           message: text,
           origin: window.location.origin,
+          page: haPageContext(),
           images: images.map((img) => ({ name: img.name, mime: img.mime, data: img.data })),
           files: files.map((file) => ({ name: file.name, mime: file.mime, text: file.text })),
-        }),
+        });
+      let response = await fetch(`${API}/sessions/${sessionId}/chat`, {
+        method: "POST",
+        headers: headers(),
+        body: payload,
       });
+      if (response.status === 404) {
+        await createSession();
+        titleEl.textContent = (text || attachments[0]?.name || "File").slice(0, 80);
+        response = await fetch(`${API}/sessions/${sessionId}/chat`, {
+          method: "POST",
+          headers: headers(),
+          body: payload,
+        });
+      }
       if (!response.ok || !response.body) {
         const node = assistant.querySelector(".text");
         node.content = await response.text();
@@ -1668,6 +1788,7 @@ export function mountAiWorkspace(root, options = {}) {
   });
 
   function startNewChat() {
+    routeGen += 1;
     sessionId = "";
     pending = [];
     renderThumbs();
@@ -1723,6 +1844,7 @@ export function mountAiWorkspace(root, options = {}) {
 
   root.querySelector(".new-chat")?.addEventListener("click", startNewChat);
   root.querySelector(".new-chat-icon")?.addEventListener("click", startNewChat);
+  root.querySelector(".header-new-chat")?.addEventListener("click", startNewChat);
 
   if (!compact && routed) {
     window.addEventListener("location-changed", applyRoute);
@@ -1730,7 +1852,7 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   loadProviders();
-  const startId = compact ? sessionId : sessionIdFromPath();
+  const startId = compact ? localStorage.getItem("ai_workspace_session") || "" : sessionIdFromPath();
   if (startId) openSession(startId, true);
   else {
     showEmpty();
@@ -1739,5 +1861,5 @@ export function mountAiWorkspace(root, options = {}) {
   resizeComposer();
   const linkWatch = new MutationObserver(() => retargetHaLinks(logEl));
   linkWatch.observe(logEl, { subtree: true, childList: true, attributes: true, attributeFilter: ["href", "target"] });
-  return { openSession, applyRoute, setNarrow, toggleNav };
+  return { openSession, applyRoute, setNarrow, toggleNav, startNewChat };
 }

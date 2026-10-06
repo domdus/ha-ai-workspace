@@ -358,6 +358,18 @@ header {
   white-space: nowrap;
 }
 
+.header-new-chat {
+  display: none;
+  flex: 0 0 auto;
+  --ha-icon-button-size: 40px;
+  color: var(--primary-text-color);
+  margin-inline-start: auto;
+}
+
+.compact .header-new-chat {
+  display: inline-flex;
+}
+
 h1 {
   font-size: var(--ha-font-size-l);
   font-weight: var(--ha-font-weight-heading);

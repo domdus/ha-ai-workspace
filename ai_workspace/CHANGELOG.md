@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2
+
+- Overlay sidebar starts a new chat when the remembered session is gone, instead of "Chat not found"
+- New Chat control in the overlay drawer
+- Overlay chat includes the current dashboard path, name, and visible entities
+
 ## 1.0.1
 
 - Register the sidebar panel before loading chat JS so a hard refresh of `/ai-workspace` is not a blank page

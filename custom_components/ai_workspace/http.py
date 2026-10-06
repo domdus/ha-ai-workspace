@@ -11,7 +11,17 @@ from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import CLOUD_ONLY_MODELS, DEFAULT_SYSTEM_PROMPT, DOMAIN, MCP_COOLVER, MODE_API, MODE_CURSOR, with_language_rule
+from .const import (
+    CLOUD_ONLY_MODELS,
+    DEFAULT_SYSTEM_PROMPT,
+    DOMAIN,
+    MCP_COOLVER,
+    MODE_API,
+    MODE_CURSOR,
+    format_ui_page,
+    parse_ui_page,
+    with_language_rule,
+)
 from .files import attach_files_to_message, file_events, parse_client_files
 from .images import caption_for, image_events, parse_client_images
 
@@ -537,6 +547,7 @@ class ChatView(HomeAssistantView):
         if not message:
             raise web.HTTPBadRequest(text="Message is empty.")
         origin = _frontend_origin(request, body)
+        page_note = format_ui_page(parse_ui_page(body.get("page")))
         lock: asyncio.Lock = data["locks"].setdefault(session.id, asyncio.Lock())
         if lock.locked():
             raise web.HTTPConflict(text="This chat is already waiting on the agent.")
@@ -552,6 +563,8 @@ class ChatView(HomeAssistantView):
         count = await hass.async_add_executor_job(lambda: len(store.list_messages(session.id)))
         suggest = getattr(provider, "suggest_title", None) if count <= 1 else None
         outbound = attach_files_to_message(message, files)
+        if page_note:
+            outbound = f"{page_note}\n\n{outbound}"
 
         def on_agent_id(agent_id: str) -> None:
             store.set_agent_id(session.id, agent_id)
@@ -569,7 +582,7 @@ class ChatView(HomeAssistantView):
                 ):
                     yield event
                 return
-            async for event in _runtime_chat(hass, request, session, message, origin, images, files):
+            async for event in _runtime_chat(hass, request, session, outbound, origin, images, []):
                 yield event
 
         await lock.acquire()
