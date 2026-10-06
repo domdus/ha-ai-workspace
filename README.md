@@ -81,50 +81,25 @@ Home Assistant 2026.2 renamed “Add-ons” to “Apps”.
 
 ### Home Assistant Container
 
-Official Docker image (no Apps store). Same Docker **host** as Home Assistant. Copy [`docker-compose.runtime.yml`](docker-compose.runtime.yml), replace the Cursor API key ([Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) — not a Home Assistant token), then `docker compose up -d`.
+Official image on the same Docker **host** as Home Assistant ([`docker-compose.runtime.yml`](docker-compose.runtime.yml)). Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) — not a Home Assistant token.
 
 ```bash
 mkdir -p ai-workspace-runtime && cd ai-workspace-runtime
 curl -fsSL -o docker-compose.yml https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docker-compose.runtime.yml
-```
-
-Edit `CURSOR_API_KEY`, then:
-
-```yaml
-# docker-compose.yml  — also in this repo as docker-compose.runtime.yml
-name: ai-workspace-runtime
-
-services:
-  cursor-sdk:
-    container_name: cursor-sdk
-    image: ghcr.io/domdus/ha-ai-workspace-runtime:latest
-    network_mode: host
-    environment:
-      CURSOR_API_KEY: "paste-your-cursor-api-key"
-      CURSOR_MODEL: composer-2.5
-      AUTH_MODE: ingress
-      DATA_DIR: /data
-      HOST: "127.0.0.1"
-      PORT: "8090"
-    volumes:
-      - ai-workspace-data:/data
-    restart: unless-stopped
-
-volumes:
-  ai-workspace-data:
-```
-
-```bash
+# set CURSOR_API_KEY in docker-compose.yml
+docker rm -f cursor-sdk 2>/dev/null || true
 docker compose up -d
+curl -sS http://127.0.0.1:8090/api/health
 ```
 
-Host network, same as a typical Home Assistant Container. `HOST: 127.0.0.1` keeps **8090** off the LAN. Check: `curl -sS http://127.0.0.1:8090/api/health`.
+Host network, same as a typical Home Assistant Container, so MCP at `127.0.0.1` on this machine works. `HOST: 127.0.0.1` keeps **8090** off the LAN.
 
-If an old `cursor-sdk` container is still running, `docker rm -f cursor-sdk` first.
+**Model:** `CURSOR_MODEL` on the container is only the fallback. Set **Model** on the integration (`composer-2.5`, …). Each chat POST to the Runtime includes JSON `model`; the Runtime passes it to the Cursor SDK as `AgentOptions(model=…)` — the same field `CURSOR_MODEL` used to fill. It is not appended to the system prompt.
 
 Then **Settings → Devices & services → Add integration → AI Workspace → Cursor Runtime app.**
 
 - Runtime URL: leave empty (it should find `http://127.0.0.1:8090`).
+- Model: `composer-2.5` (or leave empty to use `CURSOR_MODEL` on the container).
 - MCP type: from Requirements. Leave MCP URL empty if it shows as detected.
 - Save. Open **AI Workspace** (`/ai-workspace`).
 
@@ -139,7 +114,7 @@ Then **Settings → Devices & services → Add integration → AI Workspace → 
 | Option | What it does |
 |---|---|
 | **Chat Backend** | **Cloud API Provider** or **Cursor SDK Runtime** |
-| **Provider** | Cloud: OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible; API key; optional model and base URL. Cursor: optional model overrides `CURSOR_MODEL` |
+| **Provider** | Cloud: OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible; API key; optional model and base URL. Cursor: Model is sent to the SDK as `AgentOptions.model` (overrides `CURSOR_MODEL` if set) |
 | **MCP type** | Built-in MCP Server, HA-MCP, HA Vibecode Agent, or custom URL |
 | **MCP URL** | Empty uses auto-detect. Paste the HA-MCP webhook / custom URL only if needed |
 | **MCP token** | Built-in: long-lived token or empty for this login. HA-MCP: usually empty. Vibecode: Agent Key |

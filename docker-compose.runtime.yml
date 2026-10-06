@@ -7,6 +7,8 @@
 #
 # Host network so 127.0.0.1 MCP on this machine works. HOST 127.0.0.1 keeps 8090 off the LAN.
 # Home Assistant → Runtime URL: http://127.0.0.1:8090
+# CURSOR_MODEL is only the fallback when the integration Model field is empty.
+# A value in the integration is sent as JSON `model` on each chat, then to AgentOptions.model.
 
 name: ai-workspace-runtime
 

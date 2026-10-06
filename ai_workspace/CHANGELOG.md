@@ -3,7 +3,8 @@
 ## 1.0.4
 
 - Stop overlay session import from crashing Home Assistant with a SQLite error
-- Cursor named-model failures no longer tell you to recreate the Runtime container; set Model to auto in the integration if the API key only allows Auto
+- Cursor named-model failures report the SDK model id; check Runtime logs for `cursor model=`
+- README: integration Model is JSON `model` → Cursor `AgentOptions.model`, same as `CURSOR_MODEL`
 
 ## 1.0.3
 

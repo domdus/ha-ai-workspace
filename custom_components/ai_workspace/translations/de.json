@@ -65,7 +65,7 @@
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
-          "model": "Optionale Cursor-Modell-ID, zum Beispiel composer-2.5. Leer lassen, um CURSOR_MODEL auf dem Runtime-Container zu nutzen.",
+          "model": "Cursor-SDK-Modell-ID, zum Beispiel composer-2.5. Geht als JSON-Feld model an die Runtime, dann an AgentOptions.model — nicht in den System-Prompt. Leer nutzt CURSOR_MODEL am Container.",
           "enable_sidebar": "Der Seitenleisteneintrag AI Workspace. Die Seite bleibt unter /ai-workspace erreichbar, wenn das aus ist.",
           "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt."
         },
@@ -173,7 +173,7 @@
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
-          "model": "Optionale Cursor-Modell-ID, zum Beispiel composer-2.5. Leer lassen, um CURSOR_MODEL auf dem Runtime-Container zu nutzen.",
+          "model": "Cursor-SDK-Modell-ID, zum Beispiel composer-2.5. Geht als JSON-Feld model an die Runtime, dann an AgentOptions.model — nicht in den System-Prompt. Leer nutzt CURSOR_MODEL am Container.",
           "enable_sidebar": "Der Seitenleisteneintrag AI Workspace. Die Seite bleibt unter /ai-workspace erreichbar, wenn das aus ist.",
           "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt."
         },
