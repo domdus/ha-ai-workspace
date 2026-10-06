@@ -2,7 +2,7 @@
   <img src="ai_workspace/logo.png" alt="AI Workspace" width="420">
 </p>
 
-<p align="center"><em>Use Cursor, Claude, or ChatGPT in Home Assistant from your couch.</em></p>
+<p align="center"><em>Use Cursor, Claude, or ChatGPT AI in Home Assistant from your couch.</em></p>
 
 ---
 
