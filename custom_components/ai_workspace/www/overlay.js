@@ -56,6 +56,7 @@ async function ensureHost() {
         font-weight: var(--ha-font-weight-heading);
         font-size: var(--ha-font-size-m);
       }
+      .bar-actions { display: flex; align-items: center; }
       .body { flex: 1; min-height: 0; height: 100%; }
       .hidden { display: none !important; }
     </style>
@@ -66,9 +67,14 @@ async function ensureHost() {
     <aside class="drawer">
       <div class="bar">
         <span>${ui.title}</span>
-        <ha-icon-button class="close" label="${ui.close}">
-          <ha-icon icon="mdi:close"></ha-icon>
-        </ha-icon-button>
+        <div class="bar-actions">
+          <ha-icon-button class="new-chat" label="${ui.new_chat}">
+            <ha-icon icon="mdi:plus"></ha-icon>
+          </ha-icon-button>
+          <ha-icon-button class="close" label="${ui.close}">
+            <ha-icon icon="mdi:close"></ha-icon>
+          </ha-icon-button>
+        </div>
       </div>
       <div class="body"></div>
     </aside>
@@ -77,16 +83,17 @@ async function ensureHost() {
   const drawer = shadow.querySelector(".drawer");
   const body = shadow.querySelector(".body");
   const close = shadow.querySelector(".close");
-  let mounted = false;
+  const newChat = shadow.querySelector(".new-chat");
+  let chatApi = null;
+  let mounting = null;
   const sync = () => {
     fab.classList.toggle("hidden", hideFab());
     if (hideFab()) drawer.classList.remove("open");
   };
-  fab.addEventListener("click", () => {
-    drawer.classList.add("open");
-    if (!mounted) {
-      mounted = true;
-      mountAiWorkspace(body, {
+  const mountChat = () => {
+    if (chatApi) return Promise.resolve(chatApi);
+    if (!mounting) {
+      const api = mountAiWorkspace(body, {
         compact: true,
         getToken: () => hassObj()?.auth?.data?.access_token || "",
         navigate: (path) => {
@@ -103,7 +110,19 @@ async function ensureHost() {
           window.dispatchEvent(event);
         },
       });
+      chatApi = api;
+      mounting = Promise.resolve(api);
     }
+    return mounting;
+  };
+  fab.addEventListener("click", () => {
+    drawer.classList.add("open");
+    mountChat();
+  });
+  newChat.addEventListener("click", async () => {
+    drawer.classList.add("open");
+    const api = await mountChat();
+    api.startNewChat();
   });
   close.addEventListener("click", () => drawer.classList.remove("open"));
   window.addEventListener("location-changed", sync);

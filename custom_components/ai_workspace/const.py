@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 
 DOMAIN = "ai_workspace"
@@ -157,6 +158,63 @@ def ui_link_instructions(origin: str = "") -> str:
 
 def with_ui_context(message: str, origin: str = "") -> str:
     return f"{ui_link_instructions(origin)}\n\n{message}"
+
+
+_ENTITY_ID = re.compile(r"^[a-z][a-z0-9_]*\.[a-zA-Z0-9_]+$")
+_PAGE_TEXT = 120
+
+
+def parse_ui_page(raw: object) -> dict[str, object]:
+    if not isinstance(raw, dict):
+        return {}
+    path = str(raw.get("path") or "").strip()[:200]
+    if not path.startswith("/") or path.startswith("/ai-workspace"):
+        return {}
+    page: dict[str, object] = {"path": path}
+    for key in ("title", "dashboard", "view", "area", "area_id"):
+        value = str(raw.get(key) or "").strip().replace("\n", " ")[:_PAGE_TEXT]
+        if value:
+            page[key] = value
+    entities: list[str] = []
+    seen: set[str] = set()
+    for item in raw.get("entities") or []:
+        entity = str(item or "").strip()
+        if not _ENTITY_ID.match(entity) or entity in seen:
+            continue
+        seen.add(entity)
+        entities.append(entity)
+        if len(entities) >= 40:
+            break
+    if entities:
+        page["entities"] = entities
+    return page
+
+
+def format_ui_page(page: dict[str, object] | None) -> str:
+    if not page:
+        return ""
+    lines = [
+        "The user is currently looking at this Home Assistant UI page "
+        "(the dashboard or view behind the chat, not the chat itself):",
+        f"- Path: {page['path']}",
+    ]
+    for key, label in (
+        ("title", "Page title"),
+        ("dashboard", "Dashboard"),
+        ("view", "View"),
+        ("area", "Area"),
+    ):
+        value = page.get(key)
+        if value:
+            lines.append(f"- {label}: {value}")
+    entities = page.get("entities") or []
+    if isinstance(entities, list) and entities:
+        lines.append("- Entities visible on this view: " + ", ".join(str(item) for item in entities))
+    lines.append(
+        "If they say the lights, this room, or this dashboard, they mean this view "
+        "unless they say otherwise. Use MCP tools for live state. Do not invent extra entities."
+    )
+    return "\n".join(lines)
 
 
 COMPOSE_RUNTIME_URL = "http://cursor-sdk:8090"
