@@ -1,5 +1,5 @@
-import { mountAiWorkspace } from "./chat.js?v=46";
-import { stringsFor } from "./i18n.js?v=46";
+import { mountAiWorkspace } from "./chat.js?v=47";
+import { stringsFor } from "./i18n.js?v=47";
 
 class HaAiWorkspacePanel extends HTMLElement {
   constructor() {
@@ -99,7 +99,7 @@ class HaAiWorkspacePanel extends HTMLElement {
           margin: 0;
         }
       </style>
-      <link rel="stylesheet" href="/ai_workspace/static/chat.css?v=46">
+      <link rel="stylesheet" href="/ai_workspace/static/chat.css?v=47">
       <ha-top-app-bar-fixed>
         <ha-menu-button slot="navigationIcon"></ha-menu-button>
         <h1 class="page-title" slot="title">${ui.title}</h1>

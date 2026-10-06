@@ -1,5 +1,5 @@
-import { mountAiWorkspace } from "./chat.js?v=46";
-import { stringsFor } from "./i18n.js?v=46";
+import { mountAiWorkspace } from "./chat.js?v=47";
+import { stringsFor } from "./i18n.js?v=47";
 
 const HOST_ID = "ha-ai-workspace-overlay";
 
