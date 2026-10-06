@@ -1,8 +1,6 @@
 const CACHE = new URL(import.meta.url).search;
-const [{ mountAiWorkspace }, { stringsFor }] = await Promise.all([
-  import(`./chat.js${CACHE}`),
-  import(`./i18n.js${CACHE}`),
-]);
+const loadChat = () =>
+  Promise.all([import(`./chat.js${CACHE}`), import(`./i18n.js${CACHE}`)]);
 
 const HOST_ID = "ha-ai-workspace-overlay";
 
@@ -15,8 +13,11 @@ function hideFab() {
   return path.includes("/ai-workspace") || path.startsWith("/config");
 }
 
-function ensureHost() {
+async function ensureHost() {
   let host = document.getElementById(HOST_ID);
+  if (host) return host;
+  const [{ mountAiWorkspace }, { stringsFor }] = await loadChat();
+  host = document.getElementById(HOST_ID);
   if (host) return host;
   host = document.createElement("div");
   host.id = HOST_ID;

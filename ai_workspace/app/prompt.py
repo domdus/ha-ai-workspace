@@ -6,9 +6,9 @@ This workspace is empty. Home Assistant configuration is not on disk.
 
 Always use the connected Home Assistant MCP tools (home-assistant / ha-mcp) for automations, entities, devices, scripts, history, and house state. Do not use grep, glob, read, or shell to look for automations.yaml or HA config. If MCP is missing or fails, say so — do not search the workspace instead.
 
-When you mention automations, scripts, scenes, devices, helpers, or entities, include a Markdown link with a root-relative path starting with /. Never use 127.0.0.1, localhost, or an MCP URL in those links.
+When you mention automations, scripts, scenes, devices, helpers, or entities, every name MUST be a Markdown link with a root-relative path starting with /. Never list plain names. Never ask if the user wants links. Never use 127.0.0.1, localhost, or an MCP URL in those links.
 
-Automation editor: [Name](/config/automation/edit/{id}) using the config id / unique_id (often a numeric timestamp such as 1687972788597), NEVER entity_id. Wrong: /config/automation/edit/automation.07_00_am_wochenende Right: /config/automation/edit/1687972788597
+Automation editor: [Name](/config/automation/edit/{id}) using the config id / unique_id from the tool (yaml id such as balcony_irrigation, or a numeric timestamp such as 1687972788597), NEVER entity_id. Wrong: /config/automation/edit/automation.balcony_irrigation Right: /config/automation/edit/balcony_irrigation
 Scripts: [Name](/config/script/edit/{id}) using unique_id or object_id, not script.xxx.
 Scenes: [Name](/config/scene/edit/{id}).
 Devices: [Name](/config/devices/device/{device_id}) using the hex device_id, never an entity_id.

@@ -1,16 +1,27 @@
 const CACHE = new URL(import.meta.url).search;
-const [{ mountAiWorkspace }, { stringsFor }] = await Promise.all([
-  import(`./chat.js${CACHE}`),
-  import(`./i18n.js${CACHE}`),
-]);
 
 class HaAiWorkspacePanel extends HTMLElement {
   constructor() {
     super();
     this._mounted = false;
+    this._mounting = false;
     this._narrow = false;
     this._mq = window.matchMedia("(max-width: 870px)");
     this.attachShadow({ mode: "open" });
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host {
+          display: block;
+          height: 100%;
+          min-height: 0;
+          background: var(--primary-background-color);
+        }
+      </style>
+    `;
+    this._mods = Promise.all([
+      import(`./chat.js${CACHE}`),
+      import(`./i18n.js${CACHE}`),
+    ]);
     this._onMq = () => {
       this._syncChrome();
       this._ui?.setNarrow?.(this._overlayNav());
@@ -66,8 +77,19 @@ class HaAiWorkspacePanel extends HTMLElement {
     if (chats) chats.hidden = !overlay;
   }
 
-  _mount() {
-    if (this._mounted || !this._hass || !this.shadowRoot) return;
+  async _mount() {
+    if (this._mounted || this._mounting || !this._hass || !this.shadowRoot) return;
+    this._mounting = true;
+    let mountAiWorkspace;
+    let stringsFor;
+    try {
+      [{ mountAiWorkspace }, { stringsFor }] = await this._mods;
+    } catch (err) {
+      this._mounting = false;
+      console.error("AI Workspace failed to load", err);
+      return;
+    }
+    if (this._mounted) return;
     this._mounted = true;
     const ui = stringsFor(this._hass.locale?.language || this._hass.language);
     this.shadowRoot.innerHTML = `
