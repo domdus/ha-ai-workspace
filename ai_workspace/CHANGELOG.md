@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.3
+
+- Keep a single New Chat control in the overlay header, next to close
+
 ## 1.0.2
 
 - Overlay sidebar starts a new chat when the remembered session is gone, instead of "Chat not found"
