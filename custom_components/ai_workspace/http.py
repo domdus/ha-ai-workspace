@@ -21,6 +21,7 @@ from .const import (
     format_ui_page,
     parse_ui_page,
     with_language_rule,
+    with_ui_context,
 )
 from .files import attach_files_to_message, file_events, parse_client_files
 from .images import caption_for, image_events, parse_client_images
@@ -189,7 +190,7 @@ async def _runtime_chat(
     await _ensure_runtime_session(hass, request, session)
     http: ClientSession = async_get_clientsession(hass)
     payload: dict[str, Any] = {
-        "message": attach_files_to_message(message, files or []),
+        "message": with_ui_context(attach_files_to_message(message, files or []), origin),
         "origin": origin,
     }
     prompt = with_language_rule(

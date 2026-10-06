@@ -149,7 +149,7 @@ function configId(info) {
 
 function pathForEntity(entityId, info) {
   const domain = String(entityId || "").split(".")[0];
-  if (HELPER_DOMAINS.has(domain)) return "/config/helpers";
+  if (HELPER_DOMAINS.has(domain)) return `/config/entities/entity/${entityId}`;
   if (domain === "automation") {
     const id = configId(info);
     if (id && !looksLikeEntityId(id)) return `/config/automation/edit/${id}`;
@@ -181,7 +181,7 @@ function rewriteHaPath(pathname) {
     const entityId = looksLikeEntityId(raw) ? raw : `${kind}.${raw}`;
     const info = lookupEntity(entityId);
     const domain = entityId.split(".")[0];
-    if (HELPER_DOMAINS.has(domain)) return "/config/helpers";
+    if (HELPER_DOMAINS.has(domain)) return `/config/entities/entity/${entityId}`;
     if (looksLikeEntityId(raw) || info?.state || info?.entry) {
       if (domain === "automation" || kind === "automation") {
         const id = configId(info);
@@ -260,6 +260,69 @@ function haAppPath(path) {
     value.startsWith("/hassio") ||
     value.startsWith("/supervisor")
   );
+}
+
+function escapeRe(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function rememberUniqueName(map, name, path) {
+  const text = String(name || "").trim();
+  if (text.length < 3) return;
+  const key = text.toLowerCase();
+  const prev = map.get(key);
+  if (prev && prev.path !== path) map.set(key, null);
+  else if (!prev) map.set(key, { name: text, path });
+}
+
+function haLinkCatalog() {
+  const names = [];
+  const ids = [];
+  const hass = hassObj();
+  if (!hass) return { names, ids };
+  const nameToPath = new Map();
+  for (const [entityId, state] of Object.entries(hass.states || {})) {
+    const info = { entityId, state, entry: hass.entities?.[entityId] };
+    const path = pathForEntity(entityId, info);
+    ids.push({ match: entityId, path });
+    rememberUniqueName(nameToPath, state?.attributes?.friendly_name, path);
+  }
+  for (const device of Object.values(hass.devices || {})) {
+    const id = device?.id;
+    if (!id) continue;
+    const path = `/config/devices/device/${id}`;
+    rememberUniqueName(nameToPath, device.name_by_user || device.name, path);
+  }
+  for (const row of nameToPath.values()) {
+    if (row) names.push(row);
+  }
+  names.sort((a, b) => b.name.length - a.name.length);
+  ids.sort((a, b) => b.match.length - a.match.length);
+  return { names, ids };
+}
+
+function linkifyHaMentions(content) {
+  let text = String(content || "");
+  if (!text) return text;
+  const held = [];
+  const hold = (chunk) => {
+    const token = `\u0000HA${held.length}\u0000`;
+    held.push(chunk);
+    return token;
+  };
+  text = text.replace(/```[\s\S]*?```/g, hold);
+  text = text.replace(/`[^`\n]+`/g, hold);
+  text = text.replace(/\[[^\]]+\]\([^)\s]+\)/g, hold);
+  const { names, ids } = haLinkCatalog();
+  for (const item of names) {
+    const re = new RegExp(`(?<![\\w./#\\u0000])${escapeRe(item.name)}(?![\\w./\\u0000])`, "gi");
+    text = text.replace(re, (matched) => hold(`[${matched}](${item.path})`));
+  }
+  for (const item of ids) {
+    const re = new RegExp(`(?<![\\w./#\\u0000])${escapeRe(item.match)}(?![\\w./\\u0000])`, "g");
+    text = text.replace(re, (matched) => hold(`[${matched}](${item.path})`));
+  }
+  return text.replace(/\u0000HA(\d+)\u0000/g, (_m, index) => held[Number(index)] || "");
 }
 
 export function mountAiWorkspace(root, options = {}) {
@@ -600,7 +663,7 @@ export function mountAiWorkspace(root, options = {}) {
     }
     text = text.replace(/\]\(([^)]+)\)/g, (_m, url) => `](${rewriteHaHref(url)})`);
     text = text.replace(/https?:\/\/[^\s)<]+/g, (url) => rewriteHaHref(url));
-    return text;
+    return linkifyHaMentions(text);
   }
 
   function chipClass(event) {

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.5
+
+- Pass composer-2.5 as Cursor `ModelSelection` with Fast on (same default as the IDE picker and `model="composer-2.5"`)
+- Retry once when Cursor returns an empty run; do not suggest model ids that are not in the catalog
+- Cursor Runtime chats include the HA UI link rules on every message so automation names stay tappable
+- Assistant replies link automations, entities, helpers, and devices to their Home Assistant edit pages even when the model lists plain names
+
 ## 1.0.4
 
 - Stop overlay session import from crashing Home Assistant with a SQLite error
