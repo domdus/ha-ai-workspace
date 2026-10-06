@@ -250,19 +250,31 @@ async def _import_runtime_sessions(hass: HomeAssistant, request: web.Request, st
     for item in items:
         if not isinstance(item, dict):
             continue
-        sid = str(item.get("id") or "")
-        if not sid:
+        raw = item.get("id")
+        if raw is None:
+            raw = item.get("session_id")
+        if isinstance(raw, (int, float)):
+            sid = str(int(raw)) if float(raw).is_integer() else ""
+        elif isinstance(raw, str):
+            sid = raw.strip()
+        else:
+            sid = ""
+        if not sid or len(sid) > 128:
             continue
-        added = await hass.async_add_executor_job(
-            store.import_session,
-            user_id,
-            sid,
-            str(item.get("provider") or "cursor"),
-            str(item.get("title") or "New Chat"),
-            str(item.get("agent_id") or "") or None,
-            str(item.get("created_at") or ""),
-            str(item.get("updated_at") or ""),
-        )
+        try:
+            added = await hass.async_add_executor_job(
+                store.import_session,
+                user_id,
+                sid,
+                str(item.get("provider") or "cursor"),
+                str(item.get("title") or "New Chat"),
+                str(item.get("agent_id") or "") or None,
+                str(item.get("created_at") or ""),
+                str(item.get("updated_at") or ""),
+            )
+        except Exception:
+            logger.debug("runtime session import skipped", exc_info=True)
+            continue
         if not added:
             existing = await hass.async_add_executor_job(store.list_messages, sid)
             if existing:
@@ -448,7 +460,10 @@ class SessionsView(HomeAssistantView):
         hass: HomeAssistant = _hass(request)
         store: Store = _runtime(hass)["store"]
         user_id = _user_id(request)
-        await _import_runtime_sessions(hass, request, store, user_id)
+        try:
+            await _import_runtime_sessions(hass, request, store, user_id)
+        except Exception:
+            logger.debug("runtime session import skipped", exc_info=True)
         sessions = await hass.async_add_executor_job(store.list_sessions, user_id)
         return self.json([_session_dict(item) for item in sessions])
 
