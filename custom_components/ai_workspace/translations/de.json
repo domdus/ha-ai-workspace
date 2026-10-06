@@ -22,13 +22,13 @@
               "api_provider": "Anbieter",
               "api_key": "API-Schlüssel",
               "model": "Modell",
-              "api_base": "API-Basis-URL (nur OpenAI-kompatibel)"
+              "api_base": "API-Basis-URL"
             },
             "data_description": {
-              "api_provider": "OpenAI oder Claude.",
+              "api_provider": "OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok oder OpenAI-kompatibel.",
               "api_key": "API-Schlüssel des Anbieters. Kein Home-Assistant-Token.",
-              "model": "OpenAI-Standard ist gpt-4.1. Claude-Standard ist claude-sonnet-4-5.",
-              "api_base": "Nur wenn der Anbieter OpenAI-kompatibel ist. Offizielles OpenAI und Claude lassen das leer."
+              "model": "Leer lässt den Standard des Anbieters.",
+              "api_base": "Leer für den gewählten Anbieter. Pflicht bei OpenAI-kompatibel (OpenRouter, Ollama, LM Studio). Qwen in China: https://dashscope.aliyuncs.com/compatible-mode/v1"
             }
           },
           "mcp": {
@@ -130,13 +130,13 @@
               "api_provider": "Anbieter",
               "api_key": "API-Schlüssel",
               "model": "Modell",
-              "api_base": "API-Basis-URL (nur OpenAI-kompatibel)"
+              "api_base": "API-Basis-URL"
             },
             "data_description": {
-              "api_provider": "OpenAI oder Claude.",
+              "api_provider": "OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok oder OpenAI-kompatibel.",
               "api_key": "API-Schlüssel des Anbieters. Kein Home-Assistant-Token.",
-              "model": "OpenAI-Standard ist gpt-4.1. Claude-Standard ist claude-sonnet-4-5.",
-              "api_base": "Nur wenn der Anbieter OpenAI-kompatibel ist. Offizielles OpenAI und Claude lassen das leer."
+              "model": "Leer lässt den Standard des Anbieters.",
+              "api_base": "Leer für den gewählten Anbieter. Pflicht bei OpenAI-kompatibel (OpenRouter, Ollama, LM Studio). Qwen in China: https://dashscope.aliyuncs.com/compatible-mode/v1"
             }
           },
           "mcp": {
@@ -209,6 +209,10 @@
       "options": {
         "openai": "OpenAI",
         "anthropic": "Claude (Anthropic)",
+        "gemini": "Google Gemini",
+        "deepseek": "DeepSeek",
+        "qwen": "Qwen (Alibaba)",
+        "xai": "Grok (xAI)",
         "compatible": "OpenAI-kompatibel (eigene Basis-URL)"
       }
     },

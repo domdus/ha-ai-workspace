@@ -11,19 +11,79 @@ VERSION = json.loads(
 OVERLAY_JS = f"{STATIC_URL}/overlay.js?v={VERSION}"
 PANEL_JS = f"{STATIC_URL}/panel.js?v={VERSION}"
 DEFAULT_MODEL = "composer-2.5"
-DEFAULT_API_MODEL = "gpt-4.1"
-DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-5"
+API_OPENAI = "openai"
+API_ANTHROPIC = "anthropic"
+API_GEMINI = "gemini"
+API_DEEPSEEK = "deepseek"
+API_QWEN = "qwen"
+API_XAI = "xai"
+API_COMPATIBLE = "compatible"
+API_PROVIDERS = {
+    API_OPENAI: "OpenAI",
+    API_ANTHROPIC: "Claude (Anthropic)",
+    API_GEMINI: "Google Gemini",
+    API_DEEPSEEK: "DeepSeek",
+    API_QWEN: "Qwen (Alibaba)",
+    API_XAI: "Grok (xAI)",
+    API_COMPATIBLE: "OpenAI-compatible (custom base URL)",
+}
+API_SHORT_LABELS = {
+    API_OPENAI: "OpenAI",
+    API_ANTHROPIC: "Claude",
+    API_GEMINI: "Gemini",
+    API_DEEPSEEK: "DeepSeek",
+    API_QWEN: "Qwen",
+    API_XAI: "Grok",
+    API_COMPATIBLE: "OpenAI-compatible",
+}
+_API_DEFAULT_MODEL = {
+    API_OPENAI: "gpt-4.1",
+    API_ANTHROPIC: "claude-sonnet-4-5",
+    API_GEMINI: "gemini-3.8-flash",
+    API_DEEPSEEK: "deepseek-chat",
+    API_QWEN: "qwen-plus",
+    API_XAI: "grok-4",
+    API_COMPATIBLE: "gpt-4.1",
+}
+_API_DEFAULT_BASE = {
+    API_OPENAI: "https://api.openai.com/v1",
+    API_ANTHROPIC: "https://api.anthropic.com/v1",
+    API_GEMINI: "https://generativelanguage.googleapis.com/v1beta/openai",
+    API_DEEPSEEK: "https://api.deepseek.com/v1",
+    API_QWEN: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+    API_XAI: "https://api.x.ai/v1",
+}
+DEFAULT_API_MODEL = _API_DEFAULT_MODEL[API_OPENAI]
+DEFAULT_ANTHROPIC_MODEL = _API_DEFAULT_MODEL[API_ANTHROPIC]
 CLOUD_ONLY_MODELS = frozenset(
     {
-        DEFAULT_API_MODEL,
+        *_API_DEFAULT_MODEL.values(),
         "gpt-4.1",
         "gpt-4o",
         "gpt-4o-mini",
         "gpt-4-turbo",
         "gpt-4",
         "gpt-3.5-turbo",
+        "claude-opus-4-5",
+        "claude-haiku-4-5",
+        "gemini-2.5-pro",
+        "gemini-2.5-flash",
+        "deepseek-reasoner",
+        "qwen-max",
+        "qwen-turbo",
+        "grok-3",
     }
 )
+
+
+def default_api_model(kind: str) -> str:
+    return _API_DEFAULT_MODEL.get(kind, DEFAULT_API_MODEL)
+
+
+def default_api_base(kind: str) -> str:
+    return _API_DEFAULT_BASE.get(kind, "")
+
+
 DEFAULT_TITLE = "AI Workspace"
 CONF_MCP_URL = "mcp_url"
 CONF_MCP_KIND = "mcp_kind"
@@ -40,9 +100,6 @@ CONF_API_BASE = "api_base"
 CONF_SYSTEM_PROMPT = "system_prompt"
 MODE_CURSOR = "cursor"
 MODE_API = "api"
-API_OPENAI = "openai"
-API_ANTHROPIC = "anthropic"
-API_COMPATIBLE = "compatible"
 ADDON_SLUG = "ai_workspace"
 ADDON_PORT = 8090
 MCP_HA = "ha"
