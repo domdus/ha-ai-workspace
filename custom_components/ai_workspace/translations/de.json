@@ -39,7 +39,7 @@
               "mcp_token": "MCP-Token"
             },
             "data_description": {
-              "mcp_kind": "Der eingebaute MCP-Server muss zuerst unter Geräte & Dienste hinzugefügt werden. HA-MCP ist der Sidecar. Vibecode ist die Agent-App. Benutzerdefiniert ist jede MCP-HTTP-URL.",
+              "mcp_kind": "Es werden nur MCP-Server gelistet, die diese Home-Assistant-Instanz erreicht. Benutzerdefiniert ist jede MCP-HTTP-URL.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Eingebaut: langlebiges Home-Assistant-Zugriffstoken, oder leer lassen, um die aktuelle Anmeldung in diesem Chat zu nutzen. HA-MCP: meist leer. Vibecode: Agent Key. Benutzerdefiniert: optionales Bearer-Token."
             }
@@ -78,7 +78,7 @@
               "mcp_token": "MCP-Token"
             },
             "data_description": {
-              "mcp_kind": "Der eingebaute MCP-Server muss zuerst unter Geräte & Dienste hinzugefügt werden. HA-MCP ist der Sidecar. Vibecode ist die Agent-App. Benutzerdefiniert ist jede MCP-HTTP-URL.",
+              "mcp_kind": "Es werden nur MCP-Server gelistet, die diese Home-Assistant-Instanz erreicht. Benutzerdefiniert ist jede MCP-HTTP-URL.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Eingebaut: langlebiges Home-Assistant-Zugriffstoken, oder leer lassen, um die aktuelle Anmeldung in diesem Chat zu nutzen. HA-MCP: meist leer. Vibecode: Agent Key. Benutzerdefiniert: optionales Bearer-Token."
             }
@@ -147,7 +147,7 @@
               "mcp_token": "MCP-Token"
             },
             "data_description": {
-              "mcp_kind": "Der eingebaute MCP-Server muss zuerst unter Geräte & Dienste hinzugefügt werden. HA-MCP ist der Sidecar. Vibecode ist die Agent-App. Benutzerdefiniert ist jede MCP-HTTP-URL.",
+              "mcp_kind": "Es werden nur MCP-Server gelistet, die diese Home-Assistant-Instanz erreicht. Benutzerdefiniert ist jede MCP-HTTP-URL.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Eingebaut: langlebiges Home-Assistant-Zugriffstoken, oder leer lassen, um die aktuelle Anmeldung in diesem Chat zu nutzen. HA-MCP: meist leer. Vibecode: Agent Key. Benutzerdefiniert: optionales Bearer-Token."
             }
@@ -186,7 +186,7 @@
               "mcp_token": "MCP-Token"
             },
             "data_description": {
-              "mcp_kind": "Der eingebaute MCP-Server muss zuerst unter Geräte & Dienste hinzugefügt werden. HA-MCP ist der Sidecar. Vibecode ist die Agent-App. Benutzerdefiniert ist jede MCP-HTTP-URL.",
+              "mcp_kind": "Es werden nur MCP-Server gelistet, die diese Home-Assistant-Instanz erreicht. Benutzerdefiniert ist jede MCP-HTTP-URL.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Eingebaut: langlebiges Home-Assistant-Zugriffstoken, oder leer lassen, um die aktuelle Anmeldung in diesem Chat zu nutzen. HA-MCP: meist leer. Vibecode: Agent Key. Benutzerdefiniert: optionales Bearer-Token."
             }

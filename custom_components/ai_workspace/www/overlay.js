@@ -32,6 +32,17 @@ async function ensureHost() {
         bottom: var(--ha-space-4);
         z-index: 9;
       }
+      .fab::part(base) {
+        width: 56px;
+        height: 56px;
+        min-width: 56px;
+        padding: 0;
+        border-radius: 999px;
+        justify-content: center;
+      }
+      .fab::part(start) { margin: 0; }
+      .fab::part(label),
+      .fab::part(end) { display: none; }
       .drawer {
         position: fixed;
         top: 0;
@@ -60,10 +71,7 @@ async function ensureHost() {
       .body { flex: 1; min-height: 0; height: 100%; }
       .hidden { display: none !important; }
     </style>
-    <ha-button class="fab" size="l" variant="brand" appearance="accent" title="${ui.title}">
-      <ha-icon slot="start" icon="mdi:robot"></ha-icon>
-      AI
-    </ha-button>
+    <ha-button class="fab" size="l" variant="brand" appearance="accent" title="${ui.title}"><ha-icon slot="start" icon="mdi:robot"></ha-icon></ha-button>
     <aside class="drawer">
       <div class="bar">
         <span>${ui.title}</span>

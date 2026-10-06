@@ -113,6 +113,15 @@ MCP_KINDS = {
     MCP_COOLVER: "HA Vibecode Agent (Coolver)",
     MCP_CUSTOM: "Custom MCP URL",
 }
+_MCP_KIND_ORDER = (MCP_HA, MCP_HA_MCP, MCP_COOLVER)
+
+
+def mcp_kind_options(detected: set[str] | frozenset[str] | list[str], current: str = "") -> list[str]:
+    """Detected MCP providers, the saved choice, and always Custom URL."""
+    found = set(detected)
+    options = [kind for kind in _MCP_KIND_ORDER if kind in found or kind == current]
+    options.append(MCP_CUSTOM)
+    return options
 DEFAULT_MCP_URL = "http://127.0.0.1:8086/mcp"
 COMPOSE_MCP_URL = "http://ha-mcp:8086/mcp"
 DEFAULT_COOLVER_URL = "http://127.0.0.1:8099"

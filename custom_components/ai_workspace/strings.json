@@ -39,7 +39,7 @@
               "mcp_token": "MCP token"
             },
             "data_description": {
-              "mcp_kind": "Built-in MCP Server must be added under Devices & services first. HA-MCP is the sidecar. Vibecode is the Agent app. Custom is any MCP HTTP URL.",
+              "mcp_kind": "Only MCP servers this Home Assistant can reach are listed. Custom is any MCP HTTP URL.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Built-in: Home Assistant long-lived access token, or leave empty to use your current login in this chat. HA-MCP: usually empty. Vibecode: Agent Key. Custom: optional Bearer token."
             }
@@ -76,7 +76,7 @@
               "mcp_token": "MCP token"
             },
             "data_description": {
-              "mcp_kind": "Built-in MCP Server must be added under Devices & services first. HA-MCP is the sidecar. Vibecode is the Agent app. Custom is any MCP HTTP URL.",
+              "mcp_kind": "Only MCP servers this Home Assistant can reach are listed. Custom is any MCP HTTP URL.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Built-in: Home Assistant long-lived access token, or leave empty to use your current login in this chat. HA-MCP: usually empty. Vibecode: Agent Key. Custom: optional Bearer token."
             }
@@ -145,7 +145,7 @@
               "mcp_token": "MCP token"
             },
             "data_description": {
-              "mcp_kind": "Built-in MCP Server must be added under Devices & services first. HA-MCP is the sidecar. Vibecode is the Agent app. Custom is any MCP HTTP URL.",
+              "mcp_kind": "Only MCP servers this Home Assistant can reach are listed. Custom is any MCP HTTP URL.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Built-in: Home Assistant long-lived access token, or leave empty to use your current login in this chat. HA-MCP: usually empty. Vibecode: Agent Key. Custom: optional Bearer token."
             }
@@ -182,7 +182,7 @@
               "mcp_token": "MCP token"
             },
             "data_description": {
-              "mcp_kind": "Built-in MCP Server must be added under Devices & services first. HA-MCP is the sidecar. Vibecode is the Agent app. Custom is any MCP HTTP URL.",
+              "mcp_kind": "Only MCP servers this Home Assistant can reach are listed. Custom is any MCP HTTP URL.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Built-in: Home Assistant long-lived access token, or leave empty to use your current login in this chat. HA-MCP: usually empty. Vibecode: Agent Key. Custom: optional Bearer token."
             }

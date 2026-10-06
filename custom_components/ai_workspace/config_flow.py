@@ -43,9 +43,10 @@ from .const import (
     MODE_API,
     MODE_CURSOR,
     default_api_model,
+    mcp_kind_options,
 )
 from .discovery import async_probe_runtime, async_resolve_runtime_url, hassio_runtime_url
-from .mcp_resolve import async_probe_mcp, async_resolve_mcp_url, default_mcp_url, mcp_kind_of
+from .mcp_resolve import async_detect_mcp_kinds, async_probe_mcp, async_resolve_mcp_url, default_mcp_url, mcp_kind_of
 
 SECTION_PROVIDER = "provider"
 SECTION_MCP = "mcp"
@@ -69,9 +70,6 @@ _TOKEN_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD
 _PROMPT_SELECTOR = TextSelector(TextSelectorConfig(multiline=True))
 _PROVIDER_SELECTOR = SelectSelector(
     SelectSelectorConfig(options=list(API_PROVIDERS), mode="dropdown", translation_key="api_provider")
-)
-_MCP_KIND_SELECTOR = SelectSelector(
-    SelectSelectorConfig(options=list(MCP_KINDS), mode="dropdown", translation_key="mcp_kind")
 )
 _MCP_URL_NOTE = (
     "Leave empty to auto-detect. HA-MCP is often a webhook under /api/webhook/… on this "
@@ -189,16 +187,62 @@ def _normalize(user_input: dict, current: dict | None = None, hass: HomeAssistan
     return out
 
 
-def _mcp_schema(defaults: dict | None = None, hass: HomeAssistant | None = None):
+def _mcp_kind_selector(kinds: list[str]) -> SelectSelector:
+    return SelectSelector(
+        SelectSelectorConfig(options=kinds, mode="dropdown", translation_key="mcp_kind")
+    )
+
+
+def _explicit_mcp_kind(current: dict) -> str:
+    kind = str(current.get(CONF_MCP_KIND) or "").strip()
+    if kind in MCP_KINDS:
+        return kind
+    url = str(current.get(CONF_MCP_URL) or "").strip()
+    if url:
+        return mcp_kind_of({CONF_MCP_URL: url})
+    return ""
+
+
+def _default_mcp_kind(current: dict, kinds: list[str]) -> str:
+    explicit = _explicit_mcp_kind(current)
+    if explicit in kinds:
+        return explicit
+    for kind in kinds:
+        if kind != MCP_CUSTOM:
+            return kind
+    return MCP_CUSTOM
+
+
+async def _form_mcp_kinds(hass: HomeAssistant, current: dict) -> list[str]:
+    detected = await async_detect_mcp_kinds(hass)
+    return mcp_kind_options(detected, _explicit_mcp_kind(current))
+
+
+def _mcp_schema(
+    defaults: dict | None = None,
+    hass: HomeAssistant | None = None,
+    kinds: list[str] | None = None,
+):
     current = defaults or {}
-    kind = mcp_kind_of(current)
+    options = kinds or mcp_kind_options([], _explicit_mcp_kind(current))
     return vol.Schema(
         {
-            vol.Required(CONF_MCP_KIND, default=kind if kind in MCP_KINDS else "ha_mcp"): _MCP_KIND_SELECTOR,
+            vol.Required(CONF_MCP_KIND, default=_default_mcp_kind(current, options)): _mcp_kind_selector(
+                options
+            ),
             vol.Optional(CONF_MCP_URL, default=_mcp_url_for_form(current, hass)): _MCP_SELECTOR,
             vol.Optional(CONF_MCP_TOKEN, default=""): _TOKEN_SELECTOR,
         }
     )
+
+
+async def _prepare_mcp_form(hass: HomeAssistant, current: dict) -> tuple[dict, bool, list[str]]:
+    kinds = await _form_mcp_kinds(hass, current)
+    data = dict(current)
+    if not _explicit_mcp_kind(data):
+        data[CONF_MCP_KIND] = _default_mcp_kind(data, kinds)
+    defaults, mcp_auto = await _defaults_with_mcp(hass, data)
+    return defaults, mcp_auto, kinds
 
 
 async def _defaults_with_mcp(hass: HomeAssistant, current: dict) -> tuple[dict, bool]:
@@ -250,13 +294,13 @@ def _flatten(user_input: dict) -> dict:
     return out
 
 
-def _api_form(defaults: dict, *, hass: HomeAssistant | None = None) -> vol.Schema:
+def _api_form(defaults: dict, *, kinds: list[str], hass: HomeAssistant | None = None) -> vol.Schema:
     return vol.Schema(
         {
             vol.Required(SECTION_PROVIDER): section(
                 _provider_schema(defaults), {"collapsed": False}
             ),
-            vol.Required(SECTION_MCP): section(_mcp_schema(defaults, hass), {"collapsed": False}),
+            vol.Required(SECTION_MCP): section(_mcp_schema(defaults, hass, kinds), {"collapsed": False}),
             vol.Required(SECTION_PROMPT): section(_prompt_schema(defaults), {"collapsed": False}),
             **_ui_schema(defaults),
         }
@@ -270,9 +314,15 @@ def _cursor_model(current: dict) -> str:
     return model
 
 
-def _cursor_form(defaults: dict, *, runtime_url: bool = False, hass: HomeAssistant | None = None) -> vol.Schema:
+def _cursor_form(
+    defaults: dict,
+    *,
+    kinds: list[str],
+    runtime_url: bool = False,
+    hass: HomeAssistant | None = None,
+) -> vol.Schema:
     schema: dict = {
-        vol.Required(SECTION_MCP): section(_mcp_schema(defaults, hass), {"collapsed": False}),
+        vol.Required(SECTION_MCP): section(_mcp_schema(defaults, hass, kinds), {"collapsed": False}),
         vol.Required(SECTION_PROMPT): section(_prompt_schema(defaults), {"collapsed": False}),
         vol.Optional(CONF_MODEL, default=_cursor_model(defaults)): cv.string,
     }
@@ -333,10 +383,10 @@ class AiWorkspaceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 }
                 await self.async_set_unique_id(DOMAIN)
                 return self.async_create_entry(title="AI Workspace", data=data)
-        defaults, mcp_auto = await _defaults_with_mcp(self.hass, self._ui)
+        defaults, mcp_auto, kinds = await _prepare_mcp_form(self.hass, self._ui)
         return self.async_show_form(
             step_id="cursor",
-            data_schema=_cursor_form(defaults, runtime_url=True, hass=self.hass),
+            data_schema=_cursor_form(defaults, kinds=kinds, runtime_url=True, hass=self.hass),
             errors=errors,
             description_placeholders=await _cursor_placeholders(self.hass, defaults, mcp_auto),
         )
@@ -351,10 +401,10 @@ class AiWorkspaceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 await self.async_set_unique_id(DOMAIN)
                 return self.async_create_entry(title="AI Workspace", data=data)
             user_input = {**self._ui, **flat}
-        defaults, mcp_auto = await _defaults_with_mcp(self.hass, user_input or self._ui)
+        defaults, mcp_auto, kinds = await _prepare_mcp_form(self.hass, user_input or self._ui)
         return self.async_show_form(
             step_id="api",
-            data_schema=_api_form(defaults, hass=self.hass),
+            data_schema=_api_form(defaults, kinds=kinds, hass=self.hass),
             errors=errors,
             description_placeholders=_form_placeholders(
                 mcp_url=str(defaults.get(CONF_MCP_URL) or ""),
@@ -396,10 +446,10 @@ class AiWorkspaceOptionsFlow(config_entries.OptionsFlow):
             if not errors:
                 return self._save({**flat, CONF_MODE: MODE_API})
             current = merged
-        defaults, mcp_auto = await _defaults_with_mcp(self.hass, current)
+        defaults, mcp_auto, kinds = await _prepare_mcp_form(self.hass, current)
         return self.async_show_form(
             step_id="api",
-            data_schema=_api_form(defaults, hass=self.hass),
+            data_schema=_api_form(defaults, kinds=kinds, hass=self.hass),
             errors=errors,
             description_placeholders=_form_placeholders(
                 mcp_url=str(defaults.get(CONF_MCP_URL) or ""),
@@ -427,10 +477,10 @@ class AiWorkspaceOptionsFlow(config_entries.OptionsFlow):
                     }
                 )
             current = {**current, **flat}
-        defaults, mcp_auto = await _defaults_with_mcp(self.hass, current)
+        defaults, mcp_auto, kinds = await _prepare_mcp_form(self.hass, current)
         return self.async_show_form(
             step_id="cursor",
-            data_schema=_cursor_form(defaults, runtime_url=True, hass=self.hass),
+            data_schema=_cursor_form(defaults, kinds=kinds, runtime_url=True, hass=self.hass),
             errors=errors,
             description_placeholders=await _cursor_placeholders(self.hass, defaults, mcp_auto),
         )
