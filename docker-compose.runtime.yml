@@ -5,9 +5,8 @@
 #   # set CURSOR_API_KEY below (https://cursor.com/dashboard/integrations)
 #   docker compose up -d
 #
+# Host network so 127.0.0.1 MCP on this machine works. HOST 127.0.0.1 keeps 8090 off the LAN.
 # Home Assistant → Runtime URL: http://127.0.0.1:8090
-# 8090 is published on loopback only (not the LAN).
-# Bridge network so Synology Container Manager can stop and start this container.
 
 name: ai-workspace-runtime
 
@@ -15,18 +14,14 @@ services:
   cursor-sdk:
     container_name: cursor-sdk
     image: ghcr.io/domdus/ha-ai-workspace-runtime:latest
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    ports:
-      - "127.0.0.1:8090:8090"
+    network_mode: host
     environment:
       CURSOR_API_KEY: "paste-your-cursor-api-key"
       CURSOR_MODEL: composer-2.5
       AUTH_MODE: ingress
       DATA_DIR: /data
-      HOST: "0.0.0.0"
+      HOST: "127.0.0.1"
       PORT: "8090"
-      REWRITE_LOOPBACK_HOST: host.docker.internal
     volumes:
       - ai-workspace-data:/data
     restart: unless-stopped

@@ -16,9 +16,9 @@ from homeassistant.helpers.selector import (
 )
 
 from .const import (
-    API_ANTHROPIC,
     API_COMPATIBLE,
     API_OPENAI,
+    API_PROVIDERS,
     CONF_API_BASE,
     CONF_API_KEY,
     CONF_API_PROVIDER,
@@ -32,8 +32,6 @@ from .const import (
     CONF_RUNTIME_URL,
     CONF_SYSTEM_PROMPT,
     CLOUD_ONLY_MODELS,
-    DEFAULT_ANTHROPIC_MODEL,
-    DEFAULT_API_MODEL,
     DEFAULT_MODEL,
     DEFAULT_SYSTEM_PROMPT,
     DOMAIN,
@@ -44,15 +42,10 @@ from .const import (
     MCP_KINDS,
     MODE_API,
     MODE_CURSOR,
+    default_api_model,
 )
 from .discovery import async_probe_runtime, async_resolve_runtime_url, hassio_runtime_url
 from .mcp_resolve import async_probe_mcp, async_resolve_mcp_url, default_mcp_url, mcp_kind_of
-
-_PROVIDERS = {
-    API_OPENAI: "OpenAI",
-    API_ANTHROPIC: "Claude (Anthropic)",
-    API_COMPATIBLE: "OpenAI-compatible (custom base URL)",
-}
 
 SECTION_PROVIDER = "provider"
 SECTION_MCP = "mcp"
@@ -75,7 +68,7 @@ _MCP_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.URL))
 _TOKEN_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
 _PROMPT_SELECTOR = TextSelector(TextSelectorConfig(multiline=True))
 _PROVIDER_SELECTOR = SelectSelector(
-    SelectSelectorConfig(options=list(_PROVIDERS), mode="dropdown", translation_key="api_provider")
+    SelectSelectorConfig(options=list(API_PROVIDERS), mode="dropdown", translation_key="api_provider")
 )
 _MCP_KIND_SELECTOR = SelectSelector(
     SelectSelectorConfig(options=list(MCP_KINDS), mode="dropdown", translation_key="mcp_kind")
@@ -149,11 +142,10 @@ def _provider_schema(defaults: dict | None = None):
     current = defaults or {}
     kind = current.get(CONF_API_PROVIDER, API_OPENAI)
     model = str(current.get(CONF_MODEL) or "").strip()
-    if model == DEFAULT_MODEL:
-        model = ""
-    if not model:
-        model = DEFAULT_ANTHROPIC_MODEL if kind == API_ANTHROPIC else DEFAULT_API_MODEL
-    providers = dict(_PROVIDERS)
+    others = {default_api_model(name) for name in API_PROVIDERS if name != kind}
+    if not model or model == DEFAULT_MODEL or model in others:
+        model = default_api_model(kind)
+    providers = dict(API_PROVIDERS)
     return vol.Schema(
         {
             vol.Required(
@@ -274,8 +266,6 @@ def _api_form(defaults: dict, *, hass: HomeAssistant | None = None) -> vol.Schem
 def _cursor_model(current: dict) -> str:
     model = str(current.get(CONF_MODEL) or "").strip()
     if not model or model in CLOUD_ONLY_MODELS:
-        return ""
-    if current.get(CONF_MODE) != MODE_CURSOR and model == DEFAULT_ANTHROPIC_MODEL:
         return ""
     return model
 

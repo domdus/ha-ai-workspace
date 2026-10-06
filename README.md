@@ -10,7 +10,7 @@
 
 An agent chat that can see **your** Home Assistant installation through MCP.
 
-The UI is a HACS integration. The agent is a **cloud API** (OpenAI or Claude) or the **Cursor SDK Runtime** used in Home Assistant by the integration.
+The UI is a HACS integration. The agent is a **cloud API** (OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible) or the **Cursor SDK Runtime** used in Home Assistant by the integration.
 
 ## Requirements
 
@@ -23,11 +23,11 @@ Any **MCP server** the agent can call. AI Workspace does not bundle Home Assista
 
 Leave it running. Keep the connect URL or Agent Key if it shows one — paste it only if auto-detect misses it later.
 
-You also need [HACS](https://hacs.xyz) and either an **OpenAI / Claude API key** (Cloud) or a **Cursor API key** (SDK Runtime).
+You also need [HACS](https://hacs.xyz) and either a **provider API key** (Cloud) or a **Cursor API key** (SDK Runtime).
 
-## Cloud API (OpenAI or Claude)
+## Cloud API
 
-Fastest path. No extra container.
+Fastest path. No extra container. **OpenAI**, **Claude**, **Gemini**, **DeepSeek**, **Qwen**, **Grok**, or **OpenAI-compatible** (OpenRouter, LM Studio, Ollama at `http://127.0.0.1:11434/v1`, …). The model must support tool calls or it cannot drive MCP.
 
 ### 1. Install AI Workspace from HACS
 
@@ -39,7 +39,7 @@ Or **HACS → Integrations → ⋮ → Custom repositories** → `https://github
 
 **Settings → Devices & services → Add integration → AI Workspace → Cloud API Provider.**
 
-OpenAI or Claude key, MCP type from Requirements. Leave MCP URL empty if it shows as detected. Save.
+Provider key, MCP type from Requirements. Leave MCP URL empty if it shows as detected. Leave API base empty unless you picked OpenAI-compatible (or Qwen in mainland China). Save.
 
 ### 3. Start using it
 
@@ -78,18 +78,14 @@ services:
   cursor-sdk:
     container_name: cursor-sdk
     image: ghcr.io/domdus/ha-ai-workspace-runtime:latest
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    ports:
-      - "127.0.0.1:8090:8090"
+    network_mode: host
     environment:
       CURSOR_API_KEY: "paste-your-cursor-api-key"
       CURSOR_MODEL: composer-2.5
       AUTH_MODE: ingress
       DATA_DIR: /data
-      HOST: "0.0.0.0"
+      HOST: "127.0.0.1"
       PORT: "8090"
-      REWRITE_LOOPBACK_HOST: host.docker.internal
     volumes:
       - ai-workspace-data:/data
     restart: unless-stopped
@@ -102,7 +98,7 @@ volumes:
 docker compose up -d
 ```
 
-No host network (Container Manager can stop this). Port **8090** is on `127.0.0.1` only — not the LAN. Check: `curl -sS http://127.0.0.1:8090/api/health`.
+Host network, same as a typical Home Assistant Container. `HOST: 127.0.0.1` keeps **8090** off the LAN. Check: `curl -sS http://127.0.0.1:8090/api/health`.
 
 If an old `cursor-sdk` container is still running, `docker rm -f cursor-sdk` first.
 
@@ -119,7 +115,7 @@ Then **Settings → Devices & services → Add integration → AI Workspace → 
 | Option | What it does |
 |---|---|
 | **Chat Backend** | **Cloud API Provider** or **Cursor SDK Runtime** |
-| **Provider** | Cloud: OpenAI or Claude, API key, optional model. Cursor: optional model overrides `CURSOR_MODEL` |
+| **Provider** | Cloud: OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible; API key; optional model and base URL. Cursor: optional model overrides `CURSOR_MODEL` |
 | **MCP type** | Built-in MCP Server, HA-MCP, HA Vibecode Agent, or custom URL |
 | **MCP URL** | Empty uses auto-detect. Paste the HA-MCP webhook / custom URL only if needed |
 | **MCP token** | Built-in: long-lived token or empty for this login. HA-MCP: usually empty. Vibecode: Agent Key |

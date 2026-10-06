@@ -13,14 +13,14 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .images import anthropic_user_content, openai_user_content
 from .const import (
     API_ANTHROPIC,
-    API_COMPATIBLE,
     API_OPENAI,
-    DEFAULT_ANTHROPIC_MODEL,
-    DEFAULT_API_MODEL,
+    API_SHORT_LABELS,
     DEFAULT_SYSTEM_PROMPT,
     MCP_COOLVER,
     MCP_CUSTOM,
     MCP_HA,
+    default_api_base,
+    default_api_model,
     ui_link_instructions,
     with_language_rule,
 )
@@ -225,12 +225,7 @@ class ApiProvider:
         )
 
     def _label(self) -> str:
-        kind = self.settings.api_provider
-        if kind == API_ANTHROPIC:
-            return "Claude"
-        if kind == API_COMPATIBLE:
-            return "OpenAI-compatible"
-        return "OpenAI"
+        return API_SHORT_LABELS.get(self.settings.api_provider, "OpenAI")
 
     def _http(self) -> ClientSession:
         return async_get_clientsession(self.hass)
@@ -239,17 +234,13 @@ class ApiProvider:
         configured = (self.settings.api_base or "").strip().rstrip("/")
         if configured:
             return configured
-        if self.settings.api_provider == API_ANTHROPIC:
-            return "https://api.anthropic.com/v1"
-        return "https://api.openai.com/v1"
+        return default_api_base(self.settings.api_provider) or "https://api.openai.com/v1"
 
     def _model(self) -> str:
         model = (self.settings.model or "").strip()
         if model:
             return model
-        if self.settings.api_provider == API_ANTHROPIC:
-            return DEFAULT_ANTHROPIC_MODEL
-        return DEFAULT_API_MODEL
+        return default_api_model(self.settings.api_provider)
 
     def _system(self, origin: str = "") -> str:
         identity = _IDENTITY.format(label=self._label(), model=self._model())
@@ -379,7 +370,8 @@ class ApiProvider:
             payload: dict[str, Any] = {"model": self._model(), "messages": messages}
             if tools:
                 payload["tools"] = tools
-                payload["parallel_tool_calls"] = False
+                if self.settings.api_provider == API_OPENAI:
+                    payload["parallel_tool_calls"] = False
             data = await self._post(http, url, headers, payload)
             choice = ((data.get("choices") or [{}])[0].get("message")) or {}
             tool_calls = choice.get("tool_calls") or []
