@@ -68,7 +68,7 @@ class CursorRuntime:
         }
         resolved = (model or "").strip() or (self.settings.model or "").strip()
         if resolved:
-            kwargs["model"] = resolved
+            kwargs["model"] = _sdk_model(resolved)
         if mcp_servers:
             kwargs["mcp_servers"] = mcp_servers
         if tools is not None:
@@ -77,14 +77,19 @@ class CursorRuntime:
             return AgentOptions(**kwargs)
         except TypeError:
             kwargs.pop("tools", None)
-            return AgentOptions(**kwargs)
+            try:
+                return AgentOptions(**kwargs)
+            except TypeError:
+                if resolved:
+                    kwargs["model"] = resolved
+                return AgentOptions(**kwargs)
 
     async def open_agent(self, session: Session, mcp_servers: dict, model: str | None = None) -> Any:
         from cursor_sdk import AgentNotFoundError
 
         resolved_model = (model or "").strip() or self.settings.model
         fingerprint = json.dumps(
-            {"mcp": mcp_servers, "model": resolved_model},
+            {"mcp": mcp_servers, "model": _model_fingerprint(resolved_model)},
             sort_keys=True,
             default=str,
         )
@@ -108,7 +113,7 @@ class CursorRuntime:
                 logger.info("agent %s missing, creating a new one", resume_id)
                 agent = None
         if agent is None:
-            logger.info("create agent session=%s model=%s", session.id, resolved_model)
+            logger.info("create agent session=%s model=%s", session.id, _model_fingerprint(resolved_model))
             agent = await client.create_agent(options)
         self._agents[session.id] = agent
         self._mcp_by_session[session.id] = fingerprint
@@ -193,12 +198,20 @@ class CursorProvider:
         logger.info("run started session=%s agent=%s run=%s model=%s", session.id, agent_id, run_id, used_model)
         stream_error: str | None = None
         try:
-            async for sdk_message in run.messages():
-                for event in map_sdk_message(sdk_message):
+            async for event in _iter_messages(run):
+                if event.get("type") == "error" and not stream_error:
+                    stream_error = str(event.get("message") or "")
+                yield event
+            result = await run.wait()
+            if _empty_failed_run(result) and not stream_error:
+                logger.info("retrying empty cursor run session=%s model=%s", session.id, used_model)
+                run = await _start_run(agent, message, images, mcp_servers)
+                run_id = getattr(run, "id", "") or run_id
+                async for event in _iter_messages(run):
                     if event.get("type") == "error" and not stream_error:
                         stream_error = str(event.get("message") or "")
                     yield event
-            result = await run.wait()
+                result = await run.wait()
         except Exception as exc:
             yield {"type": "error", "message": _public_error(exc, self.settings.cursor_api_key)}
             return
@@ -206,12 +219,16 @@ class CursorProvider:
         final = getattr(result, "result", None) or ""
         if status == "error":
             logger.warning(
-                "cursor run error run=%s model=%s duration=%s result=%r",
+                "cursor run error run=%s request=%s model=%s duration=%s usage=%r error=%r result=%r",
                 run_id,
+                _request_id(result),
                 getattr(result, "model", used_model),
                 getattr(result, "duration_ms", None),
+                getattr(result, "usage", None),
+                getattr(result, "error", None),
                 result,
             )
+            await _log_conversation(run, run_id)
             yield {
                 "type": "error",
                 "message": _run_error_text(result, run_id, used_model, stream_error),
@@ -248,23 +265,135 @@ def _model_id(value: Any) -> str:
     return str(value).strip()
 
 
+def _sdk_model(ident: str) -> Any:
+    name = (ident or "").strip()
+    if not name:
+        return None
+    if name.lower() not in {"composer-2.5", "composer-2"}:
+        return name
+    # IDE catalog: composer-2.5 default variant is Fast on (same as model="composer-2.5").
+    try:
+        from cursor_sdk import ModelParameterValue, ModelSelection
+
+        return ModelSelection(
+            id="composer-2.5",
+            params=[ModelParameterValue(id="fast", value="true")],
+        )
+    except Exception:
+        return {
+            "id": "composer-2.5",
+            "params": [{"id": "fast", "value": "true"}],
+        }
+
+
+def _model_fingerprint(ident: str) -> Any:
+    value = _sdk_model(ident)
+    if value is None:
+        return ident
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        return value
+    params = []
+    for item in getattr(value, "params", None) or []:
+        if isinstance(item, dict):
+            params.append({"id": item.get("id"), "value": item.get("value")})
+        else:
+            params.append({"id": getattr(item, "id", None), "value": getattr(item, "value", None)})
+    return {"id": _model_id(value) or ident, "params": params}
+
+
+def _nested_text(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        text = value.strip()
+        if text.lower() in {"", "error", "none"}:
+            return ""
+        if text.startswith("<") or "object at 0x" in text:
+            return ""
+        return text
+    if isinstance(value, dict):
+        for key in ("message", "msg", "detail", "reason", "code"):
+            text = _nested_text(value.get(key))
+            if text:
+                return text
+        return ""
+    for key in ("message", "msg", "detail", "reason", "code"):
+        text = _nested_text(getattr(value, key, None))
+        if text:
+            return text
+    return _nested_text(str(value))
+
+
+def _request_id(result: Any) -> str:
+    for name in ("request_id", "requestId"):
+        value = getattr(result, name, None)
+        if value:
+            return str(value).strip()
+        if isinstance(result, dict) and result.get(name):
+            return str(result.get(name)).strip()
+    return ""
+
+
+def _empty_failed_run(result: Any) -> bool:
+    status = str(getattr(result, "status", "") or "").lower()
+    text = str(getattr(result, "result", None) or "").strip()
+    if text:
+        return False
+    if status == "error":
+        return True
+    if status in {"finished", "success", ""} and getattr(result, "usage", None) is None:
+        return True
+    return False
+
+
 def _run_error_text(result: Any, run_id: str, model: str, stream_error: str | None = None) -> str:
     for attr in ("result", "error", "message", "error_message", "failure_reason"):
-        value = getattr(result, attr, None)
-        text = str(value or "").strip()
-        if text and text.lower() not in {"error", "none"}:
+        text = _nested_text(getattr(result, attr, None))
+        if text:
             return text
     if stream_error:
         return stream_error
     used = _model_id(getattr(result, "model", None)) or model
     suffix = f" ({run_id})" if run_id else ""
-    if used and used.lower() not in {"auto", "default", "auto-smart"}:
-        return (
-            f"Run failed{suffix}. Cursor returned no details for model {used}. "
-            "That id is passed to the Cursor SDK as AgentOptions.model "
-            "(same as CURSOR_MODEL on the Runtime). Check Runtime logs for 'cursor model='."
-        )
-    return f"Run failed{suffix}."
+    request = _request_id(result)
+    bits = [f"Run failed{suffix}."]
+    if used:
+        bits.append(f"Cursor ended the {used} run with no assistant text.")
+    if request:
+        bits.append(f"request_id={request}")
+    bits.append("Retry the message.")
+    return " ".join(bits)
+
+
+async def _iter_messages(run: Any) -> AsyncIterator[dict]:
+    async for sdk_message in run.messages():
+        for event in map_sdk_message(sdk_message):
+            yield event
+
+
+async def _log_conversation(run: Any, run_id: str) -> None:
+    try:
+        supports = getattr(run, "supports", None)
+        if callable(supports) and not supports("conversation"):
+            return
+        convo = getattr(run, "conversation", None)
+        if convo is None:
+            return
+        data = convo() if callable(convo) else convo
+        if hasattr(data, "__await__"):
+            data = await data
+        items = data if isinstance(data, list) else getattr(data, "messages", None) or []
+        kinds = []
+        for item in items:
+            if isinstance(item, dict):
+                kinds.append(str(item.get("type") or item.get("role") or "?"))
+            else:
+                kinds.append(str(getattr(item, "type", None) or getattr(item, "role", None) or type(item).__name__))
+        logger.warning("cursor conversation run=%s turns=%s", run_id, kinds)
+    except Exception:
+        logger.debug("cursor conversation unavailable run=%s", run_id, exc_info=True)
 
 
 async def _start_run(agent: Any, message: str, images: list[dict] | None, mcp_servers: dict):
