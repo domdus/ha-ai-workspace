@@ -1,4 +1,4 @@
-Use Cursor, Claude, or ChatGPT in Home Assistant from your couch.
+*Use Cursor, Claude, or ChatGPT in Home Assistant from your couch.*
 
 # AI Workspace
 
