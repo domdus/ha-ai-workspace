@@ -6,7 +6,7 @@
         "description": "Choose how chat should run.",
         "menu_options": {
           "api": "Cloud API Provider",
-          "cursor": "Cursor Runtime app"
+          "cursor": "Cursor Runtime App"
         }
       },
       "api": {
@@ -20,9 +20,9 @@
             "name": "Provider",
             "data": {
               "api_provider": "Provider",
-              "api_key": "API key",
+              "api_key": "API Key",
               "model": "Model",
-              "api_base": "API base URL"
+              "api_base": "API Base URL"
             },
             "data_description": {
               "api_provider": "OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible.",
@@ -34,9 +34,9 @@
           "mcp": {
             "name": "MCP",
             "data": {
-              "mcp_kind": "MCP type",
+              "mcp_kind": "MCP Type",
               "mcp_url": "MCP URL{mcp_url_mark}",
-              "mcp_token": "MCP token"
+              "mcp_token": "MCP Token"
             },
             "data_description": {
               "mcp_kind": "Only MCP servers this Home Assistant can reach are listed. Custom is any MCP HTTP URL.",
@@ -45,9 +45,9 @@
             }
           },
           "prompt": {
-            "name": "System prompt",
+            "name": "System Prompt",
             "data": {
-              "system_prompt": "System prompt"
+              "system_prompt": "System Prompt"
             },
             "data_description": {
               "system_prompt": "Tone and behavior only. Leave empty for the built-in prompt. MCP tools and editor links are always added; they are not part of this field."
@@ -73,9 +73,9 @@
           "mcp": {
             "name": "MCP",
             "data": {
-              "mcp_kind": "MCP type",
+              "mcp_kind": "MCP Type",
               "mcp_url": "MCP URL{mcp_url_mark}",
-              "mcp_token": "MCP token"
+              "mcp_token": "MCP Token"
             },
             "data_description": {
               "mcp_kind": "Only MCP servers this Home Assistant can reach are listed. Custom is any MCP HTTP URL.",
@@ -84,9 +84,9 @@
             }
           },
           "prompt": {
-            "name": "System prompt",
+            "name": "System Prompt",
             "data": {
-              "system_prompt": "System prompt"
+              "system_prompt": "System Prompt"
             },
             "data_description": {
               "system_prompt": "Tone and behavior only. Leave empty for the built-in prompt. MCP tools and editor links are always added; they are not part of this field."
@@ -110,7 +110,7 @@
         "description": "Choose how chat should run.",
         "menu_options": {
           "api": "Cloud API Provider",
-          "cursor": "Cursor Runtime app"
+          "cursor": "Cursor Runtime App"
         }
       },
       "api": {
@@ -128,9 +128,9 @@
             "name": "Provider",
             "data": {
               "api_provider": "Provider",
-              "api_key": "API key",
+              "api_key": "API Key",
               "model": "Model",
-              "api_base": "API base URL"
+              "api_base": "API Base URL"
             },
             "data_description": {
               "api_provider": "OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible.",
@@ -142,9 +142,9 @@
           "mcp": {
             "name": "MCP",
             "data": {
-              "mcp_kind": "MCP type",
+              "mcp_kind": "MCP Type",
               "mcp_url": "MCP URL{mcp_url_mark}",
-              "mcp_token": "MCP token"
+              "mcp_token": "MCP Token"
             },
             "data_description": {
               "mcp_kind": "Only MCP servers this Home Assistant can reach are listed. Custom is any MCP HTTP URL.",
@@ -153,9 +153,9 @@
             }
           },
           "prompt": {
-            "name": "System prompt",
+            "name": "System Prompt",
             "data": {
-              "system_prompt": "System prompt"
+              "system_prompt": "System Prompt"
             },
             "data_description": {
               "system_prompt": "Tone and behavior only. Leave empty for the built-in prompt. MCP tools and editor links are always added; they are not part of this field."
@@ -181,9 +181,9 @@
           "mcp": {
             "name": "MCP",
             "data": {
-              "mcp_kind": "MCP type",
+              "mcp_kind": "MCP Type",
               "mcp_url": "MCP URL{mcp_url_mark}",
-              "mcp_token": "MCP token"
+              "mcp_token": "MCP Token"
             },
             "data_description": {
               "mcp_kind": "Only MCP servers this Home Assistant can reach are listed. Custom is any MCP HTTP URL.",
@@ -192,9 +192,9 @@
             }
           },
           "prompt": {
-            "name": "System prompt",
+            "name": "System Prompt",
             "data": {
-              "system_prompt": "System prompt"
+              "system_prompt": "System Prompt"
             },
             "data_description": {
               "system_prompt": "Tone and behavior only. Leave empty for the built-in prompt. MCP tools and editor links are always added; they are not part of this field."

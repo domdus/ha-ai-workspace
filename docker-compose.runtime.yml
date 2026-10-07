@@ -1,9 +1,9 @@
 # AI Workspace Cursor Runtime — same Docker host as Home Assistant.
 # This is not a second Home Assistant. Copy this file, replace the key, start it.
 #
-#   curl -fsSL -o docker-compose.yml https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docker-compose.runtime.yml
-#   # set CURSOR_API_KEY below (https://cursor.com/dashboard/integrations)
-#   docker compose up -d
+#   # from a checkout of this repo, set CURSOR_API_KEY below
+#   # https://cursor.com/dashboard/integrations
+#   docker compose -f docker-compose.runtime.yml up -d --build
 #
 # Host network so 127.0.0.1 MCP on this machine works. HOST 127.0.0.1 keeps 8090 off the LAN.
 # Home Assistant → Runtime URL: http://127.0.0.1:8090
@@ -15,7 +15,8 @@ name: ai-workspace-runtime
 services:
   cursor-sdk:
     container_name: cursor-sdk
-    image: ghcr.io/domdus/ha-ai-workspace-runtime:latest
+    build: ./ai_workspace
+    image: cursor-sdk
     network_mode: host
     environment:
       CURSOR_API_KEY: "paste-your-cursor-api-key"

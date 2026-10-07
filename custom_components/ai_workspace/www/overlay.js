@@ -63,7 +63,7 @@ async function ensureHost() {
         align-items: center;
         justify-content: space-between;
         padding: var(--ha-space-2) var(--ha-space-3);
-        border-bottom: 1px solid var(--divider-color);
+        border-bottom: 1px solid var(--ha-color-border-neutral-normal, var(--divider-color));
         font-weight: var(--ha-font-weight-heading);
         font-size: var(--ha-font-size-m);
       }
