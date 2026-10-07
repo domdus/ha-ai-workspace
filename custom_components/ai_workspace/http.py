@@ -23,6 +23,7 @@ from .const import (
     with_language_rule,
     with_ui_context,
 )
+from .chat_scope import other_chat_note
 from .files import attach_files_to_message, file_events, parse_client_files
 from .images import caption_for, image_events, parse_client_images
 
@@ -193,6 +194,7 @@ async def _runtime_chat(
     http: ClientSession = async_get_clientsession(hass)
     payload: dict[str, Any] = {
         "message": with_ui_context(attach_files_to_message(message, files or []), origin),
+        "question": message,
         "origin": origin,
     }
     prompt = with_language_rule(
@@ -593,6 +595,9 @@ class ChatView(HomeAssistantView):
 
         language = str(body.get("language") or "").strip()
         user_id = _user_id(request)
+        note = await hass.async_add_executor_job(other_chat_note, store, user_id, session.id, message)
+        if note:
+            outbound = f"{outbound}\n\n{note}"
         access_token = _bearer(request)
         runtime_headers = _runtime_headers(request)
 
@@ -670,7 +675,7 @@ class ChatView(HomeAssistantView):
                         elif event.get("type") == "error":
                             error = str(event.get("message") or "The agent failed.")
                         elif event.get("type") == "title":
-                            label = str(event.get("title") or "").strip()
+                            label = clean_title(str(event.get("title") or ""))
                             applied = None
                             if label:
                                 applied = await hass.async_add_executor_job(
@@ -723,7 +728,7 @@ class ChatView(HomeAssistantView):
                 if held:
                     lock.release()
             if error is None and callable(suggest):
-                title = await _title_from_task(asyncio.create_task(suggest(message, answer)))
+                title = await _title_from_task(asyncio.create_task(suggest(message, "")))
                 if title:
                     applied = await hass.async_add_executor_job(
                         store.apply_generated_title, user_id, session.id, message, title

@@ -67,6 +67,7 @@ class ChatRequest(BaseModel):
     files: list[ChatFile] = Field(default_factory=list)
     mcp: ChatMcp | None = None
     model: str = ""
+    question: str = Field(default="", max_length=8000)
 
 
 def _with_ui_context(message: str, origin: str = "") -> str:
@@ -230,6 +231,7 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
     images = parse_client_images([item.model_dump() for item in body.images])
     files = parse_client_files([item.model_dump() for item in body.files])
     message = caption_for(body.message, len(images), len(files))
+    question = (body.question or "").strip() or message
     if not message:
         raise HTTPException(status_code=400, detail="Message is empty.")
     logger.info(
@@ -245,7 +247,7 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
         message,
         json.dumps(image_events(images) + file_events(files), ensure_ascii=False),
     )
-    store.rename_if_default(session.id, message.replace("\n", " ").strip())
+    store.rename_if_default(session.id, question.replace("\n", " ").strip())
     outbound = _with_ui_context(attach_files_to_message(message, files), body.origin)
     suggest = getattr(provider, "suggest_title", None)
     want_title = len(store.list_messages(session.id)) <= 1 and callable(suggest)
@@ -309,11 +311,11 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
             lock.release()
         if error is None and want_title:
             try:
-                raw = await asyncio.wait_for(suggest(message, ""), timeout=12)
+                raw = await asyncio.wait_for(suggest(question, ""), timeout=12)
             except Exception:
                 logger.debug("title generation failed", exc_info=True)
                 raw = None
-            label = store.apply_generated_title(_user_id(request), session.id, message, clean_title(raw or ""))
+            label = store.apply_generated_title(_user_id(request), session.id, question, clean_title(raw or ""))
             if label:
                 yield _sse("title", {"type": "title", "title": label})
 
