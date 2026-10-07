@@ -72,6 +72,16 @@ def test_rewrite_loopback_mcp_url(monkeypatch: pytest.MonkeyPatch) -> None:
     assert rewrite_loopback_url("http://ha-mcp:8086/mcp") == "http://ha-mcp:8086/mcp"
 
 
+def test_loopback_request_keeps_reachable_file_server() -> None:
+    file_servers = {"ha-mcp": {"type": "http", "url": "http://ha-mcp:8086/mcp"}}
+    request = servers_from_chat_mcp(
+        {"servers": {"mcp": {"type": "http", "url": "http://127.0.0.1:8123/api/webhook/mcp_new"}}}
+    )
+    merged = merge_mcp_servers(file_servers, request)
+    assert list(merged) == ["ha-mcp"]
+    assert merged["ha-mcp"]["url"] == "http://ha-mcp:8086/mcp"
+
+
 def test_empty_request_keeps_file_servers() -> None:
     file_servers = {"home-assistant": {"type": "http", "url": "http://old"}}
     assert merge_mcp_servers(file_servers, {}) == file_servers

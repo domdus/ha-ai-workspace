@@ -116,21 +116,37 @@ def servers_from_chat_mcp(mcp: Any) -> dict[str, dict[str, Any]]:
     return out
 
 
+def _is_loopback(url: str) -> bool:
+    return (urlparse(str(url or "")).hostname or "").lower() in _LOOPBACK
+
+
 def merge_mcp_servers(
     file_servers: dict[str, dict[str, Any]],
     request_servers: dict[str, dict[str, Any]],
 ) -> dict[str, dict[str, Any]]:
     if not request_servers:
         return dict(file_servers)
-    incoming_ha = bool(_HA_MCP_NAMES & set(request_servers))
+    # 127.0.0.1 inside Home Assistant is not 127.0.0.1 inside the runtime container.
+    # Keep a docker-network server from mcp.json instead of that loopback URL.
+    request_ha = {name: cfg for name, cfg in request_servers.items() if name in _HA_MCP_NAMES}
+    request_ha_loopback = bool(request_ha) and all(_is_loopback(str(cfg.get("url") or "")) for cfg in request_ha.values())
+    file_ha_reachable = any(
+        name in _HA_MCP_NAMES and cfg.get("url") and not _is_loopback(str(cfg.get("url") or ""))
+        for name, cfg in file_servers.items()
+    )
+    skip_request_ha = request_ha_loopback and file_ha_reachable
+    incoming_ha = bool(request_ha) and not skip_request_ha
     merged: dict[str, dict[str, Any]] = {}
     for name, cfg in file_servers.items():
         if incoming_ha and name in _HA_MCP_NAMES:
             continue
-        if name in request_servers:
+        if name in request_servers and not (skip_request_ha and name in _HA_MCP_NAMES):
             continue
         merged[name] = cfg
-    merged.update(request_servers)
+    for name, cfg in request_servers.items():
+        if skip_request_ha and name in _HA_MCP_NAMES:
+            continue
+        merged[name] = cfg
     return merged
 
 

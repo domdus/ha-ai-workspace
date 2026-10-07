@@ -41,8 +41,8 @@
   overflow: hidden;
 }
 
-aside {
-  border-inline-end: 1px solid var(--ha-color-border-neutral-normal, var(--divider-color));
+.wrap > aside {
+  border-inline-end: 1px solid var(--divider-color);
   background: var(--sidebar-background-color);
   padding: var(--ha-space-3);
   display: flex;
@@ -121,7 +121,7 @@ aside {
   display: none;
 }
 
-.brand {
+.wrap > aside .brand {
   flex: 0 0 auto;
   font-weight: var(--ha-font-weight-heading);
   font-size: var(--ha-font-size-l);
@@ -140,16 +140,12 @@ ha-button.new-chat {
 
 .sessions .chats-label {
   flex: 0 0 auto;
-  margin: var(--ha-space-4) 0 var(--ha-space-2);
+  margin: var(--ha-space-6) 0 var(--ha-space-3);
   padding: 0 var(--ha-space-3);
   color: var(--secondary-text-color);
   font-size: var(--ha-font-size-s);
   font-weight: var(--ha-font-weight-medium);
   line-height: 1.2;
-}
-
-.sessions .chats-label:first-child {
-  margin-top: var(--ha-space-2);
 }
 
 .sessions {
@@ -350,6 +346,7 @@ header {
   background: var(--primary-background-color);
 }
 
+.wrap.compact .chat.welcome header,
 .wrap:not(.compact):not(.narrow) .chat.welcome header {
   visibility: hidden;
   height: 0;
@@ -407,7 +404,7 @@ h1 {
   gap: var(--ha-space-4);
 }
 
-.wrap:not(.compact) .chat.welcome .log {
+.chat.welcome .log {
   padding-bottom: var(--ha-space-1);
 }
 
@@ -940,12 +937,6 @@ textarea:focus {
   max-width: 28ch;
 }
 
-.compact .empty {
-  font-size: var(--ha-font-size-m);
-  font-weight: var(--ha-font-weight-medium);
-  margin: auto var(--ha-space-4);
-}
-
 .workspace-link {
   display: block;
   margin: var(--ha-space-2) var(--ha-space-4) 0;
@@ -1011,6 +1002,10 @@ textarea:focus {
 @media (max-width: 870px) {
   :host, .wrap {
     --ai-inline-pad: max(var(--ha-space-6, 24px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+  }
+
+  .composer {
+    padding-inline: max(var(--ha-space-4, 16px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
   }
 
   .wrap:not(.compact) {

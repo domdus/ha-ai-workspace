@@ -19,11 +19,13 @@ from .const import (
     API_COMPATIBLE,
     API_OPENAI,
     API_PROVIDERS,
+    CONF_ALLOW_USERS,
     CONF_API_BASE,
     CONF_API_KEY,
     CONF_API_PROVIDER,
     CONF_ENABLE_OVERLAY,
     CONF_ENABLE_SIDEBAR,
+    CONF_ENABLE_DICTATE,
     CONF_MCP_KIND,
     CONF_MCP_TOKEN,
     CONF_MCP_URL,
@@ -64,6 +66,8 @@ _OPTION_KEYS = (
     CONF_RUNTIME_URL,
     CONF_ENABLE_OVERLAY,
     CONF_ENABLE_SIDEBAR,
+    CONF_ENABLE_DICTATE,
+    CONF_ALLOW_USERS,
 )
 _MCP_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.URL))
 _TOKEN_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
@@ -132,6 +136,14 @@ def _ui_schema(defaults: dict | None = None):
         vol.Optional(
             CONF_ENABLE_OVERLAY,
             default=current.get(CONF_ENABLE_OVERLAY, True),
+        ): cv.boolean,
+        vol.Optional(
+            CONF_ENABLE_DICTATE,
+            default=current.get(CONF_ENABLE_DICTATE, True),
+        ): cv.boolean,
+        vol.Optional(
+            CONF_ALLOW_USERS,
+            default=current.get(CONF_ALLOW_USERS, False),
         ): cv.boolean,
     }
 

@@ -93,6 +93,8 @@ CONF_CURSOR_API_KEY = "cursor_api_key"
 CONF_MODEL = "model"
 CONF_ENABLE_OVERLAY = "enable_overlay"
 CONF_ENABLE_SIDEBAR = "enable_sidebar"
+CONF_ENABLE_DICTATE = "enable_dictate"
+CONF_ALLOW_USERS = "allow_users"
 CONF_RUNTIME_URL = "runtime_url"
 CONF_MODE = "mode"
 CONF_API_PROVIDER = "api_provider"
@@ -196,7 +198,10 @@ def language_instruction(code: str = "") -> str:
 _CHAT_SCOPE = (
     "This chat is separate from the user's other chats. "
     "Do not assume what was said in them. "
-    "Use another chat only when the message includes a read-only excerpt from it."
+    "Use another chat only when the message includes a read-only excerpt from it. "
+    "When the user confirms an action, do it and then answer. Do not ask again. "
+    "Do not repeat a tool call you already made in this turn. "
+    "If a device is already in the requested state, say so."
 )
 
 

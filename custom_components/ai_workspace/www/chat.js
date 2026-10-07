@@ -653,11 +653,18 @@ export function mountAiWorkspace(root, options = {}) {
 
   function headers(extra = {}) {
     const token = getToken();
+    if (!token) return null;
     return {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      Authorization: `Bearer ${token}`,
       ...extra,
     };
+  }
+
+  function apiFetch(url, options = {}) {
+    const hdrs = headers(options.headers);
+    if (!hdrs) return Promise.resolve(null);
+    return fetch(url, { ...options, headers: hdrs });
   }
 
   function prettyStatus(text) {
@@ -1297,8 +1304,8 @@ export function mountAiWorkspace(root, options = {}) {
   let defaultProvider = "api";
 
   async function loadProviders() {
-    const response = await fetch(`${API}/providers`, { headers: headers() });
-    if (!response.ok) return;
+    const response = await apiFetch(`${API}/providers`);
+    if (!response?.ok) return;
     const items = await response.json();
     const ready = items.find((item) => item.available) || items[0];
     if (ready?.id) defaultProvider = ready.id;
@@ -1366,12 +1373,11 @@ export function mountAiWorkspace(root, options = {}) {
 
   async function pinSession(session) {
     const pinned = !session.pinned;
-    const response = await fetch(`${API}/sessions/${session.id}`, {
+    const response = await apiFetch(`${API}/sessions/${session.id}`, {
       method: "PATCH",
-      headers: headers(),
       body: JSON.stringify({ pinned }),
     });
-    if (!response.ok) {
+    if (!response?.ok) {
       setBanner(await response.text());
       return;
     }
@@ -1383,23 +1389,19 @@ export function mountAiWorkspace(root, options = {}) {
     if (next == null) return;
     const title = next.trim().replace(/\s+/g, " ").slice(0, 80);
     if (!title || title === session.title) return;
-    const response = await fetch(`${API}/sessions/${session.id}`, {
+    const response = await apiFetch(`${API}/sessions/${session.id}`, {
       method: "PATCH",
-      headers: headers(),
       body: JSON.stringify({ title }),
     });
-    if (!response.ok) return;
+    if (!response?.ok) return;
     if (session.id === sessionId) titleEl.textContent = title;
     await loadSessions();
   }
 
   async function deleteSession(session) {
     if (!window.confirm(t("delete_confirm", { title: session.title }))) return;
-    const response = await fetch(`${API}/sessions/${session.id}`, {
-      method: "DELETE",
-      headers: headers(),
-    });
-    if (!response.ok && response.status !== 204) return;
+    const response = await apiFetch(`${API}/sessions/${session.id}`, { method: "DELETE" });
+    if (!response || (!response.ok && response.status !== 204)) return;
     if (session.id === sessionId) startNewChat();
     else await loadSessions();
   }
@@ -1470,8 +1472,8 @@ export function mountAiWorkspace(root, options = {}) {
   async function loadSessions() {
     if (compact || !sessionsEl) return;
     closeSessionMenu();
-    const response = await fetch(`${API}/sessions`, { headers: headers() });
-    if (!response.ok) return;
+    const response = await apiFetch(`${API}/sessions`);
+    if (!response?.ok) return;
     const sessions = await response.json();
     const pinned = sessions.filter((session) => session.pinned);
     const rest = sessions.filter((session) => !session.pinned);
@@ -1486,12 +1488,11 @@ export function mountAiWorkspace(root, options = {}) {
 
   async function createSession() {
     const mark = streamToken;
-    const created = await fetch(`${API}/sessions`, {
+    const created = await apiFetch(`${API}/sessions`, {
       method: "POST",
-      headers: headers(),
       body: JSON.stringify({ provider: defaultProvider }),
     });
-    if (!created.ok) throw new Error(await created.text());
+    if (!created?.ok) throw new Error(created ? await created.text() : "Not signed in");
     const session = await created.json();
     if (mark !== streamToken) return null;
     sessionId = session.id;
@@ -1514,9 +1515,9 @@ export function mountAiWorkspace(root, options = {}) {
     }
     if (fromUrl && id === sessionId) return;
     const gen = ++routeGen;
-    const response = await fetch(`${API}/sessions/${id}`, { headers: headers() });
+    const response = await apiFetch(`${API}/sessions/${id}`);
     if (gen !== routeGen) return;
-    if (!response.ok) {
+    if (!response?.ok) {
       sessionId = "";
       titleEl.textContent = t("new_chat");
       showEmpty();
@@ -1587,9 +1588,9 @@ export function mountAiWorkspace(root, options = {}) {
       if (gen !== watchGen || sessionId !== id || liveStream) return false;
       let session;
       try {
-        const pendingResponse = await fetch(`${API}/sessions/${id}`, { headers: headers() });
+        const pendingResponse = await apiFetch(`${API}/sessions/${id}`);
         if (gen !== watchGen || sessionId !== id || liveStream) return false;
-        if (!pendingResponse.ok) return false;
+        if (!pendingResponse?.ok) return false;
         session = await pendingResponse.json();
       } catch (error) {
         if (!isDisconnect(error) && attempt > 2) return false;
@@ -1871,7 +1872,7 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   function startSpeech() {
-    if (!SpeechRecognitionAPI) return;
+    if (!SpeechRecognitionAPI || micBtn?.hidden) return;
     if (!window.isSecureContext) {
       showMicHelp();
       return;
@@ -1923,13 +1924,28 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   if (micBtn && SpeechRecognitionAPI) {
-    micBtn.hidden = false;
     micBtn.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
       if (listening) stopSpeech();
       else startSpeech();
     });
+  }
+
+  async function loadDictate() {
+    if (!micBtn || !SpeechRecognitionAPI) return;
+    let show = true;
+    try {
+      const response = await apiFetch(`${API}/ui`);
+      if (response?.ok) {
+        const body = await response.json();
+        show = body.dictate !== false;
+      }
+    } catch (_err) {
+      show = true;
+    }
+    micBtn.hidden = !show;
+    if (!show) stopSpeech();
   }
 
   form.addEventListener("submit", async (event) => {
@@ -2003,23 +2019,22 @@ export function mountAiWorkspace(root, options = {}) {
           images: images.map((img) => ({ name: img.name, mime: img.mime, data: img.data })),
           files: files.map((file) => ({ name: file.name, mime: file.mime, text: file.text })),
         });
-      let response = await fetch(`${API}/sessions/${chatId}/chat`, {
+      let response = await apiFetch(`${API}/sessions/${chatId}/chat`, {
         method: "POST",
-        headers: headers(),
         body: payload,
         signal: abort.signal,
       });
-      if (token !== streamToken) return;
+      if (!response || token !== streamToken) return;
       if (response.status === 404) {
         const created = await createSession();
         if (token !== streamToken || !created) return;
         titleEl.textContent = (text || attachments[0]?.name || "File").slice(0, 80);
-        response = await fetch(`${API}/sessions/${sessionId}/chat`, {
+        response = await apiFetch(`${API}/sessions/${sessionId}/chat`, {
           method: "POST",
-          headers: headers(),
           body: payload,
           signal: abort.signal,
         });
+        if (!response) return;
       }
       if (!response.ok || !response.body) {
         const node = assistant.querySelector(".text");
@@ -2256,6 +2271,7 @@ export function mountAiWorkspace(root, options = {}) {
   });
 
   loadProviders();
+  loadDictate();
   const startId = compact ? localStorage.getItem("ai_workspace_session") || "" : sessionIdFromPath();
   if (startId) openSession(startId, true);
   else {

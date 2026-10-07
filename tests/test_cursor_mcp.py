@@ -137,4 +137,5 @@ def test_run_error_text_mentions_empty_output_when_cursor_is_silent() -> None:
     assert "composer-2.5" in text
     assert "run-040cda8d" in text
     assert "no assistant text" in text
+    assert "budget limit" in text
     assert "composer-2.6" not in text

@@ -13,7 +13,9 @@
         "title": "Cloud-API-Anbieter",
         "data": {
           "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
-          "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen"
+          "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen",
+          "enable_dictate": "Diktier-Schaltfläche anzeigen",
+          "allow_users": "Normale Benutzer erlauben"
         },
         "sections": {
           "provider": {
@@ -61,13 +63,17 @@
           "runtime_url": "Cursor-Runtime-URL{runtime_url_mark}",
           "model": "Modell",
           "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
-          "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen"
+          "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen",
+          "enable_dictate": "Diktier-Schaltfläche anzeigen",
+          "allow_users": "Normale Benutzer erlauben"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "model": "Cursor-SDK-Modell-ID, zum Beispiel composer-2.5. Geht als JSON-Feld model an die Runtime, dann an AgentOptions.model — nicht in den System-Prompt. Leer nutzt CURSOR_MODEL am Container.",
           "enable_sidebar": "Der Seitenleisteneintrag AI Workspace. Die Seite bleibt unter /ai-workspace erreichbar, wenn das aus ist.",
-          "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt."
+          "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt.",
+          "enable_dictate": "Mikrofon im Eingabefeld. Browser erlauben das Diktieren nur über https://.",
+          "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren."
         },
         "sections": {
           "mcp": {
@@ -117,11 +123,15 @@
         "title": "Cloud-API-Anbieter",
         "data": {
           "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
-          "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen"
+          "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen",
+          "enable_dictate": "Diktier-Schaltfläche anzeigen",
+          "allow_users": "Normale Benutzer erlauben"
         },
         "data_description": {
           "enable_sidebar": "Der Seitenleisteneintrag AI Workspace. Die Seite bleibt unter /ai-workspace erreichbar, wenn das aus ist.",
-          "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt."
+          "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt.",
+          "enable_dictate": "Mikrofon im Eingabefeld. Browser erlauben das Diktieren nur über https://.",
+          "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren."
         },
         "sections": {
           "provider": {
@@ -169,13 +179,17 @@
           "runtime_url": "Cursor-Runtime-URL{runtime_url_mark}",
           "model": "Modell",
           "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
-          "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen"
+          "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen",
+          "enable_dictate": "Diktier-Schaltfläche anzeigen",
+          "allow_users": "Normale Benutzer erlauben"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "model": "Cursor-SDK-Modell-ID, zum Beispiel composer-2.5. Geht als JSON-Feld model an die Runtime, dann an AgentOptions.model — nicht in den System-Prompt. Leer nutzt CURSOR_MODEL am Container.",
           "enable_sidebar": "Der Seitenleisteneintrag AI Workspace. Die Seite bleibt unter /ai-workspace erreichbar, wenn das aus ist.",
-          "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt."
+          "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt.",
+          "enable_dictate": "Mikrofon im Eingabefeld. Browser erlauben das Diktieren nur über https://.",
+          "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren."
         },
         "sections": {
           "mcp": {

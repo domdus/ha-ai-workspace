@@ -8,9 +8,36 @@ function hassObj() {
   return document.querySelector("home-assistant")?.hass;
 }
 
+let usersAllowed = null;
+let accessFlight = null;
+
 function hideFab() {
+  const user = hassObj()?.user;
+  if (!user?.is_admin && usersAllowed !== true) return true;
   const path = location.pathname;
   return path.includes("/ai-workspace") || path.startsWith("/config");
+}
+
+function refreshAccess(onReady) {
+  const hass = hassObj();
+  const user = hass?.user;
+  if (!user || user.is_admin || usersAllowed !== null || accessFlight) return;
+  const token = hass.auth?.data?.access_token || "";
+  if (!token) return;
+  accessFlight = fetch("/api/ai_workspace/ui", {
+    headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+  })
+    .then((resp) => (resp.ok ? resp.json() : { allowed: false }))
+    .then((data) => {
+      usersAllowed = data.allowed === true;
+    })
+    .catch(() => {
+      usersAllowed = false;
+    })
+    .finally(() => {
+      accessFlight = null;
+      onReady();
+    });
 }
 
 async function ensureHost() {
@@ -37,13 +64,13 @@ async function ensureHost() {
         --ha-space-2: 0px;
       }
       .fab ha-icon {
-        --mdc-icon-size: 30px;
+        --mdc-icon-size: 26px;
         margin: 0;
       }
       .fab::part(base) {
-        width: 56px;
-        height: 56px;
-        min-width: 56px;
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
         padding: 0;
         border-radius: 999px;
         display: inline-flex;
@@ -66,21 +93,79 @@ async function ensureHost() {
         height: 100%;
         z-index: 10;
         background: var(--primary-background-color);
+        border-left: 1px solid var(--divider-color);
         box-shadow: var(--ha-card-box-shadow);
-        display: none;
+        display: flex;
         flex-direction: column;
         color: var(--primary-text-color);
         font-family: var(--ha-font-family-body);
+        transform: translateX(100%);
+        opacity: 0;
+        pointer-events: none;
+        visibility: hidden;
+        transition:
+          transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
+          opacity 200ms ease,
+          visibility 0s linear 240ms;
       }
-      .drawer.open { display: flex; }
+      .drawer.open {
+        transform: none;
+        opacity: 1;
+        pointer-events: auto;
+        visibility: visible;
+        transition:
+          transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
+          opacity 200ms ease,
+          visibility 0s linear 0s;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .drawer { transition: none; }
+      }
       .bar {
+        box-sizing: border-box;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: var(--ha-space-2) var(--ha-space-3);
-        border-bottom: 1px solid var(--ha-color-border-neutral-normal, var(--divider-color));
+        flex: none;
+        height: calc(var(--header-height, 56px) + env(safe-area-inset-top, 0px));
+        padding: env(safe-area-inset-top, 0px) var(--ha-space-2) 0 var(--ha-space-6, 24px);
+        background: var(--app-header-background-color, var(--sidebar-background-color));
+        border-bottom: 1px solid var(--divider-color);
         font-weight: var(--ha-font-weight-heading);
         font-size: var(--ha-font-size-m);
+      }
+      .bar ha-icon-button {
+        --mdc-icon-button-size: 40px;
+        --ha-icon-button-size: 40px;
+      }
+      .bar .new-chat {
+        color: var(--primary-color);
+        --mdc-icon-button-icon-color: var(--primary-color);
+      }
+      .bar .new-chat ha-icon {
+        color: var(--primary-color);
+      }
+      .bar .brand {
+        display: flex;
+        align-items: center;
+        align-self: stretch;
+        gap: var(--ha-space-2);
+        min-width: 0;
+        margin: 0;
+        line-height: 1;
+      }
+      .brand ha-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        flex: none;
+        --mdc-icon-size: 24px;
+        color: var(--primary-color);
+      }
+      .brand span {
+        line-height: 1;
       }
       .bar-actions { display: flex; align-items: center; }
       .body { flex: 1; min-height: 0; height: 100%; }
@@ -90,13 +175,7 @@ async function ensureHost() {
           right: var(--ha-space-3);
           bottom: var(--ha-space-3);
         }
-        .fab ha-icon { --mdc-icon-size: 26px; }
-        .fab::part(base) {
-          width: 48px;
-          height: 48px;
-          min-width: 48px;
-        }
-        .drawer { width: 100%; }
+        .drawer { width: 100%; border-left: 0; }
         .bar {
           padding-inline: max(var(--ha-space-6, 24px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
         }
@@ -105,7 +184,10 @@ async function ensureHost() {
     <ha-button class="fab" size="l" variant="brand" appearance="accent" title="${ui.title}"><ha-icon slot="start" icon="mdi:robot"></ha-icon></ha-button>
     <aside class="drawer">
       <div class="bar">
-        <span>${ui.title}</span>
+        <div class="brand">
+          <ha-icon icon="mdi:robot"></ha-icon>
+          <span>${ui.title}</span>
+        </div>
         <div class="bar-actions">
           <ha-icon-button class="new-chat" label="${ui.new_chat}">
             <ha-icon icon="mdi:plus"></ha-icon>
@@ -125,9 +207,72 @@ async function ensureHost() {
   const newChat = shadow.querySelector(".new-chat");
   let chatApi = null;
   let mounting = null;
+  let placeToken = 0;
+  const cornerFabs = () => {
+    const boxes = [];
+    const visit = (el, origin) => {
+      const style = el.ownerDocument.defaultView.getComputedStyle(el);
+      if (style.display === "none" || style.visibility === "hidden") return;
+      const rect = el.getBoundingClientRect();
+      if (rect.width < 8 || rect.height < 8) return;
+      boxes.push({
+        top: origin.top + rect.top,
+        bottom: origin.top + rect.bottom,
+        left: origin.left + rect.left,
+        right: origin.left + rect.right,
+      });
+    };
+    const walk = (root, origin) => {
+      if (!root?.querySelectorAll) return;
+      for (const el of root.querySelectorAll("ha-fab")) visit(el, origin);
+      for (const el of root.querySelectorAll("*")) {
+        if (el.id === HOST_ID) continue;
+        if (el.shadowRoot) walk(el.shadowRoot, origin);
+        if (el.tagName !== "IFRAME") continue;
+        let doc = null;
+        try {
+          doc = el.contentDocument;
+        } catch (err) {
+          doc = null;
+        }
+        if (!doc) continue;
+        const frame = el.getBoundingClientRect();
+        walk(doc, { top: origin.top + frame.top, left: origin.left + frame.left });
+      }
+    };
+    walk(document, { top: 0, left: 0 });
+    return boxes;
+  };
+  const placeFab = () => {
+    fab.style.bottom = "";
+    if (fab.classList.contains("hidden")) return;
+    const mine = fab.getBoundingClientRect();
+    const hit = cornerFabs().filter(
+      (box) => box.left < mine.right && box.right > mine.left && box.top < mine.bottom && box.bottom > mine.top
+    );
+    if (!hit.length) return;
+    const top = Math.min(...hit.map((box) => box.top));
+    fab.style.bottom = `${Math.round(window.innerHeight - top + 12)}px`;
+  };
+  const schedulePlace = () => {
+    const token = ++placeToken;
+    placeFab();
+    for (const delay of [400, 1200]) {
+      window.setTimeout(() => {
+        if (token === placeToken) placeFab();
+      }, delay);
+    }
+  };
+  let userWaits = 0;
   const sync = () => {
+    refreshAccess(sync);
+    if (!hassObj()?.user && userWaits < 40) {
+      userWaits += 1;
+      window.setTimeout(sync, 200);
+    }
     fab.classList.toggle("hidden", hideFab());
     if (hideFab()) drawer.classList.remove("open");
+    schedulePlace();
   };
   const mountChat = () => {
     if (chatApi) return Promise.resolve(chatApi);
@@ -166,6 +311,7 @@ async function ensureHost() {
   close.addEventListener("click", () => drawer.classList.remove("open"));
   window.addEventListener("location-changed", sync);
   window.addEventListener("popstate", sync);
+  window.addEventListener("resize", schedulePlace);
   sync();
   return host;
 }

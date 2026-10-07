@@ -19,6 +19,8 @@ from .const import (
     CONF_CURSOR_API_KEY,
     CONF_ENABLE_OVERLAY,
     CONF_ENABLE_SIDEBAR,
+    CONF_ALLOW_USERS,
+    CONF_ENABLE_DICTATE,
     CONF_MCP_KIND,
     CONF_MCP_TOKEN,
     CONF_MCP_URL,
@@ -67,6 +69,8 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Optional(CONF_SYSTEM_PROMPT, default=""): cv.string,
                 vol.Optional(CONF_ENABLE_SIDEBAR, default=True): cv.boolean,
                 vol.Optional(CONF_ENABLE_OVERLAY, default=True): cv.boolean,
+                vol.Optional(CONF_ENABLE_DICTATE, default=True): cv.boolean,
+                vol.Optional(CONF_ALLOW_USERS, default=False): cv.boolean,
             }
         )
     },
@@ -113,6 +117,8 @@ def _settings(hass: HomeAssistant, entry: ConfigEntry, mcp_url: str | None = Non
         mcp_servers=mcp_servers_from_url(mcp_url if mcp_url is not None else configured, token),
         enable_overlay=bool(data.get(CONF_ENABLE_OVERLAY, True)),
         enable_sidebar=bool(data.get(CONF_ENABLE_SIDEBAR, True)),
+        enable_dictate=bool(data.get(CONF_ENABLE_DICTATE, True)),
+        allow_users=bool(data.get(CONF_ALLOW_USERS, False)),
         mode=_mode(data),
         api_provider=str(data.get(CONF_API_PROVIDER) or "openai").strip() or "openai",
         api_key=str(data.get(CONF_API_KEY) or "").strip(),
@@ -207,10 +213,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
         hass.data[f"{DOMAIN}_static"] = True
 
-    try:
-        frontend.async_remove_panel(hass, PANEL_URL)
-    except (KeyError, ValueError, AttributeError):
-        pass
+    _remove_panel(hass)
     await panel_custom.async_register_panel(
         hass,
         webcomponent_name=PANEL_ELEMENT,
@@ -231,6 +234,16 @@ async def _reload(hass: HomeAssistant, entry: ConfigEntry) -> None:
     await hass.config_entries.async_reload(entry.entry_id)
 
 
+def _remove_panel(hass: HomeAssistant) -> None:
+    panels = hass.data.get("frontend_panels")
+    if not isinstance(panels, dict) or PANEL_URL not in panels:
+        return
+    try:
+        frontend.async_remove_panel(hass, PANEL_URL)
+    except (KeyError, ValueError, AttributeError):
+        pass
+
+
 def _set_overlay_js(hass: HomeAssistant, enabled: bool) -> None:
     remove = getattr(frontend, "remove_extra_js_url", None)
     stale = f"{STATIC_URL}/overlay.js"
@@ -247,10 +260,7 @@ def _set_overlay_js(hass: HomeAssistant, enabled: bool) -> None:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     data = hass.data.pop(DOMAIN, None)
     _set_overlay_js(hass, False)
-    try:
-        frontend.async_remove_panel(hass, PANEL_URL)
-    except (KeyError, ValueError, AttributeError):
-        pass
+    _remove_panel(hass)
     if data and data.get("runtime"):
         await data["runtime"].aclose()
     if data and data.get("store"):
