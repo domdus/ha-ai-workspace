@@ -32,15 +32,30 @@ async function ensureHost() {
         bottom: var(--ha-space-4);
         z-index: 9;
       }
+      .fab {
+        --ha-space-1: 0px;
+        --ha-space-2: 0px;
+      }
+      .fab ha-icon {
+        --mdc-icon-size: 30px;
+        margin: 0;
+      }
       .fab::part(base) {
         width: 56px;
         height: 56px;
         min-width: 56px;
         padding: 0;
         border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
         justify-content: center;
       }
-      .fab::part(start) { margin: 0; }
+      .fab::part(start) {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
       .fab::part(label),
       .fab::part(end) { display: none; }
       .drawer {
@@ -70,6 +85,12 @@ async function ensureHost() {
       .bar-actions { display: flex; align-items: center; }
       .body { flex: 1; min-height: 0; height: 100%; }
       .hidden { display: none !important; }
+      @media (max-width: 870px) {
+        .drawer { width: 100%; }
+        .bar {
+          padding-inline: max(var(--ha-space-6, 24px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+        }
+      }
     </style>
     <ha-button class="fab" size="l" variant="brand" appearance="accent" title="${ui.title}"><ha-icon slot="start" icon="mdi:robot"></ha-icon></ha-button>
     <aside class="drawer">

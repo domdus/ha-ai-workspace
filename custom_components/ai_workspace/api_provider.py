@@ -242,10 +242,10 @@ class ApiProvider:
             return model
         return default_api_model(self.settings.api_provider)
 
-    def _system(self, origin: str = "") -> str:
+    def _system(self, origin: str = "", language: str = "") -> str:
         identity = _IDENTITY.format(label=self._label(), model=self._model())
         body = (self.settings.system_prompt or "").strip() or DEFAULT_SYSTEM_PROMPT
-        return with_language_rule(f"{identity}\n\n{body}\n\n{ui_link_instructions(origin)}")
+        return with_language_rule(f"{identity}\n\n{body}\n\n{ui_link_instructions(origin)}", language)
 
     def _public(self, exc: BaseException) -> str:
         return redact(str(exc), [self.settings.api_key, self.settings.cursor_api_key, self.settings.mcp_token])
@@ -258,8 +258,10 @@ class ApiProvider:
         access_token: str | None = None,
         frontend_origin: str | None = None,
         images: list[dict] | None = None,
+        language: str = "",
     ) -> AsyncIterator[dict]:
         origin = str(frontend_origin or "").strip()
+        language = str(language or "")
         pictures = list(images or [])
         on_agent_id("api")
         if not self.info.available:
@@ -293,10 +295,10 @@ class ApiProvider:
         history = await self.hass.async_add_executor_job(self.store.list_messages, session.id)
         try:
             if self.settings.api_provider == API_ANTHROPIC:
-                async for event in self._anthropic(http, history, message, mcp, mcp_tools, origin, pictures):
+                async for event in self._anthropic(http, history, message, mcp, mcp_tools, origin, pictures, language):
                     yield event
             else:
-                async for event in self._openai(http, history, message, mcp, mcp_tools, origin, pictures):
+                async for event in self._openai(http, history, message, mcp, mcp_tools, origin, pictures, language):
                     yield event
         except (McpError, ClientError, TimeoutError, OSError, json.JSONDecodeError, RuntimeError) as exc:
             logger.exception("api provider failed")
@@ -359,8 +361,9 @@ class ApiProvider:
         mcp_tools: list[dict],
         origin: str = "",
         images: list[dict] | None = None,
+        language: str = "",
     ) -> AsyncIterator[dict]:
-        messages: list[dict[str, Any]] = [{"role": "system", "content": self._system(origin)}]
+        messages: list[dict[str, Any]] = [{"role": "system", "content": self._system(origin, language)}]
         messages.extend(_history_messages(history))
         messages.append({"role": "user", "content": openai_user_content(message, images or [])})
         tools = _openai_tools(mcp_tools)
@@ -410,6 +413,7 @@ class ApiProvider:
         mcp_tools: list[dict],
         origin: str = "",
         images: list[dict] | None = None,
+        language: str = "",
     ) -> AsyncIterator[dict]:
         messages: list[dict[str, Any]] = list(_history_messages(history))
         messages.append({"role": "user", "content": anthropic_user_content(message, images or [])})
@@ -424,7 +428,7 @@ class ApiProvider:
             payload: dict[str, Any] = {
                 "model": self._model(),
                 "max_tokens": 4096,
-                "system": self._system(origin),
+                "system": self._system(origin, language),
                 "messages": messages,
             }
             if tools:

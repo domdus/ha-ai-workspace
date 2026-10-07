@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, AsyncIterator, Callable
 
-from .const import with_ui_context
+from .const import language_instruction, with_ui_context
 from .events import map_sdk_message
 from .images import cursor_payload
 from .models import ProviderInfo, Settings
@@ -108,9 +108,13 @@ class CursorProvider:
         access_token: str | None = None,
         frontend_origin: str | None = None,
         images: list[dict] | None = None,
+        language: str = "",
     ) -> AsyncIterator[dict]:
         del access_token
         outbound = with_ui_context(message, frontend_origin or "")
+        rule = language_instruction(language)
+        if rule:
+            outbound = f"{rule}\n\n{outbound}"
         if not self.settings.cursor_api_key:
             yield {"type": "error", "message": _MISSING_KEY}
             return

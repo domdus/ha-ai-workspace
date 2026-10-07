@@ -838,7 +838,10 @@ export function mountAiWorkspace(root, options = {}) {
     if (opts.animate === false || reduceMotion) bubble.classList.add("instant");
     const pics = addBubbleImages(bubble, events);
     const files = addBubbleFiles(bubble, events);
-    const chips = (events || []).filter((event) => event && event.type !== "image" && event.type !== "file");
+    const chips = (events || []).filter(
+      (event) => event && event.type !== "image" && event.type !== "file" && event.type !== "error",
+    );
+    if ((events || []).some((event) => event && event.type === "error")) bubble.classList.add("error");
     if (chips.length) {
       const tools = document.createElement("div");
       tools.className = "tools";
@@ -1352,6 +1355,7 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   async function openSession(id, fromUrl = false) {
+    watchGen += 1;
     if (!id) {
       routeGen += 1;
       sessionId = "";
@@ -1377,15 +1381,88 @@ export function mountAiWorkspace(root, options = {}) {
     if (compact) localStorage.setItem("ai_workspace_session", id);
     if (!fromUrl) goToSession(id);
     const session = await response.json();
+    paintSession(session);
+    await loadSessions();
+    if (session.pending) watchPending(id);
+  }
+
+  function paintSession(session) {
     titleEl.textContent = displayTitle(session.title);
     logEl.replaceChildren();
-    if (!session.messages.length) showEmpty();
+    const messages = session.messages || [];
+    if (!messages.length) showEmpty();
     else setWelcome(false, false);
-    for (const message of session.messages) {
+    for (const message of messages) {
       addBubble(message.role, message.content, message.events, { animate: false, follow: false });
     }
     scrollChatToBottom(false);
-    await loadSessions();
+  }
+
+  function needsPaint(session) {
+    const messages = session.messages || [];
+    const bubbles = [...logEl.querySelectorAll(".bubble")];
+    if (bubbles.length !== messages.length) return true;
+    if (!messages.length) return false;
+    const lastBubble = bubbles[bubbles.length - 1];
+    if (lastBubble.classList.contains("streaming") || lastBubble.classList.contains("error")) return true;
+    const node = lastBubble.querySelector(".text");
+    const shown = String(node?.content || node?.textContent || "").trim();
+    const stored = String(messages[messages.length - 1].content || "").trim();
+    if (!stored) return Boolean(shown);
+    return shown.length + 8 < stored.length;
+  }
+
+  function ensureThinkingBubble() {
+    let bubble = logEl.querySelector(".bubble.assistant.streaming");
+    if (!bubble) {
+      bubble = addBubble("assistant", "", [], { animate: false, follow: false });
+      bubble.classList.add("streaming");
+    }
+    bubble.classList.remove("error");
+    if (!bubble.querySelector(".text")?.content) setActivity(bubble, t("thinking"));
+    streaming = true;
+    resizeComposer();
+  }
+
+  function isDisconnect(error) {
+    const name = String(error?.name || "");
+    const message = String(error?.message || error || "");
+    return name === "AbortError" || /failed to fetch|load failed|network|abort|cancel|disconnected|reset/i.test(message);
+  }
+
+  let watchGen = 0;
+  let liveStream = false;
+
+  async function watchPending(id) {
+    if (!id || liveStream) return false;
+    const gen = ++watchGen;
+    for (let attempt = 0; attempt < 240; attempt += 1) {
+      if (gen !== watchGen || sessionId !== id || liveStream) return false;
+      let session;
+      try {
+        const pendingResponse = await fetch(`${API}/sessions/${id}`, { headers: headers() });
+        if (gen !== watchGen || sessionId !== id || liveStream) return false;
+        if (!pendingResponse.ok) return false;
+        session = await pendingResponse.json();
+      } catch (error) {
+        if (!isDisconnect(error) && attempt > 2) return false;
+        await new Promise((resolve) => window.setTimeout(resolve, 2000));
+        continue;
+      }
+      if (session.pending) {
+        ensureThinkingBubble();
+        await new Promise((resolve) => window.setTimeout(resolve, 2000));
+        continue;
+      }
+      if (needsPaint(session)) paintSession(session);
+      else logEl.querySelector(".bubble.assistant.streaming")?.classList.remove("streaming");
+      streaming = false;
+      resizeComposer();
+      syncCopyChat();
+      await loadSessions();
+      return true;
+    }
+    return false;
   }
 
   async function readSSE(response, onEvent) {
@@ -1719,6 +1796,7 @@ export function mountAiWorkspace(root, options = {}) {
     if (keepComposerFocus()) messageEl.focus();
     else hideKeyboard();
     streaming = true;
+    watchGen += 1;
     sendBtn.disabled = true;
     routeGen += 1;
     pending = [];
@@ -1737,6 +1815,9 @@ export function mountAiWorkspace(root, options = {}) {
     const tools = document.createElement("div");
     tools.className = "tools";
     setActivity(assistant, t("thinking"));
+    let recover = false;
+    let sawDone = false;
+    liveStream = true;
     try {
       if (!sessionId) {
         await createSession();
@@ -1746,6 +1827,7 @@ export function mountAiWorkspace(root, options = {}) {
       const payload = JSON.stringify({
           message: text,
           origin: window.location.origin,
+          language: speechLanguage(),
           page: haPageContext(),
           images: images.map((img) => ({ name: img.name, mime: img.mime, data: img.data })),
           files: files.map((file) => ({ name: file.name, mime: file.mime, text: file.text })),
@@ -1795,6 +1877,7 @@ export function mountAiWorkspace(root, options = {}) {
           settleTools(assistant);
           setActivity(assistant, "");
         } else if (name === "done") {
+          sawDone = true;
           if (data.answer) queueStreamAnswer(data.answer);
           settleTools(assistant);
           setActivity(assistant, "");
@@ -1807,22 +1890,47 @@ export function mountAiWorkspace(root, options = {}) {
       });
       await waitForStream();
       streamNode = null;
-      await loadSessions();
+      if (!sawDone) recover = true;
+      else await loadSessions();
     } catch (error) {
-      revealAllNow();
-      assistant.classList.add("error");
-      const node = assistant.querySelector(".text");
-      if (!streamFull) {
-        node.content = String(error);
-        node.hidden = !node.content;
-        assistant.classList.add("has-text");
+      if (sessionId && (isDisconnect(error) || document.visibilityState === "hidden")) {
+        recover = true;
+        assistant.classList.remove("error");
+        setActivity(assistant, t("thinking"));
+      } else {
+        revealAllNow();
+        assistant.classList.add("error");
+        const node = assistant.querySelector(".text");
+        if (!streamFull) {
+          node.content = String(error?.message || error);
+          node.hidden = !node.content;
+          assistant.classList.add("has-text");
+        }
+        settleTools(assistant);
+        setActivity(assistant, "");
       }
-      settleTools(assistant);
-      setActivity(assistant, "");
     } finally {
-      streaming = false;
-      settleTools(assistant);
-      assistant.classList.remove("streaming");
+      liveStream = false;
+      if (recover && sessionId) {
+        assistant.classList.remove("error");
+        const found = await watchPending(sessionId);
+        if (!found) {
+          streaming = false;
+          assistant.classList.remove("streaming");
+          if (!streamFull) {
+            assistant.classList.add("error");
+            const node = assistant.querySelector(".text");
+            if (node && !node.content) {
+              node.content = t("thinking");
+              node.hidden = false;
+            }
+          }
+        }
+      } else {
+        streaming = false;
+        settleTools(assistant);
+        assistant.classList.remove("streaming");
+      }
       syncCopyChat();
       resizeComposer();
       if (keepComposerFocus()) messageEl.focus();
@@ -1849,6 +1957,7 @@ export function mountAiWorkspace(root, options = {}) {
 
   function startNewChat() {
     routeGen += 1;
+    watchGen += 1;
     sessionId = "";
     pending = [];
     renderThumbs();
@@ -1909,6 +2018,12 @@ export function mountAiWorkspace(root, options = {}) {
     window.addEventListener("location-changed", applyRoute);
     window.addEventListener("popstate", applyRoute);
   }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && sessionId) watchPending(sessionId);
+  });
+  window.addEventListener("pageshow", () => {
+    if (sessionId) watchPending(sessionId);
+  });
 
   loadProviders();
   const startId = compact ? localStorage.getItem("ai_workspace_session") || "" : sessionIdFromPath();
