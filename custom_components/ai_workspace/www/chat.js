@@ -365,7 +365,7 @@ export function mountAiWorkspace(root, options = {}) {
         <ha-icon-button class="new-chat-icon" label="${t("new_chat")}">
           <ha-icon icon="mdi:plus"></ha-icon>
         </ha-icon-button>
-        <ha-button class="new-chat" size="s" variant="brand" appearance="filled">
+        <ha-button class="new-chat" size="s">
           <ha-svg-icon slot="start" path="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"></ha-svg-icon>
           ${t("new_chat")}
         </ha-button>
@@ -398,9 +398,9 @@ export function mountAiWorkspace(root, options = {}) {
               <ha-icon-button class="mic" type="button" label="${t("dictate")}" hidden>
                 <ha-icon icon="mdi:microphone"></ha-icon>
               </ha-icon-button>
-              <ha-icon-button class="send" type="submit" label="${t("send")}">
-                <ha-icon icon="mdi:arrow-up"></ha-icon>
-              </ha-icon-button>
+              <ha-button class="send" size="s" appearance="accent" aria-label="${t("send")}">
+                <ha-icon slot="start" icon="mdi:arrow-up"></ha-icon>
+              </ha-button>
               </div>
             </div>
           </form>
