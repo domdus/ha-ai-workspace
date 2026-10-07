@@ -261,6 +261,7 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
         tools: list[dict] = []
         error: str | None = None
         final: str | None = None
+        disconnected = False
         try:
             try:
                 async for event in provider.send(
@@ -287,9 +288,12 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
                         )
                     elif event.get("type") == "error":
                         error = str(event.get("message") or "The agent failed.")
-                    yield _sse(str(event["type"]), event)
+                    if disconnected:
+                        continue
                     if await request.is_disconnected():
-                        break
+                        disconnected = True
+                        continue
+                    yield _sse(str(event["type"]), event)
             except Exception as exc:
                 logger.exception("chat failed session=%s", session.id)
                 error = _public(settings, exc)
@@ -298,7 +302,7 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
             if error and not answer:
                 answer = error
             store.add_message(session.id, "assistant", answer, json.dumps(tools, ensure_ascii=False))
-            if error is None:
+            if error is None and not disconnected:
                 yield _sse("done", {"type": "done", "answer": answer})
                 yield _sse("status", {"type": "status", "text": "Done."})
         finally:

@@ -11,6 +11,7 @@
   line-height: 1.45;
   --ai-chat-width: 720px;
   --ai-nav-width: 256px;
+  --ai-inline-pad: var(--ha-space-4);
 }
 
 *, *::before, *::after {
@@ -339,8 +340,8 @@ header {
   position: sticky;
   top: 0;
   z-index: 2;
-  padding: var(--ha-space-3) var(--ha-space-4) var(--ha-space-2);
-  width: min(calc(var(--ai-chat-width) + 2 * var(--ha-space-4)), 100%);
+  padding: var(--ha-space-3) var(--ai-inline-pad) var(--ha-space-2);
+  width: min(calc(var(--ai-chat-width) + 2 * var(--ai-inline-pad)), 100%);
   margin-inline: auto;
   background: var(--primary-background-color);
 }
@@ -387,14 +388,15 @@ h1 {
 
 .chat.welcome .stage {
   justify-content: center;
-  padding: var(--ha-space-6) var(--ha-space-4) var(--ha-space-12);
+  padding-block: var(--ha-space-6) var(--ha-space-12);
+  padding-inline: 0;
 }
 
 .log {
   flex: 0 0 auto;
   overflow: visible;
-  padding: var(--ha-space-3) var(--ha-space-4) calc(8rem + var(--ha-space-8));
-  width: min(calc(var(--ai-chat-width) + 2 * var(--ha-space-4)), 100%);
+  padding: var(--ha-space-3) var(--ai-inline-pad) calc(8rem + var(--ha-space-8));
+  width: min(calc(var(--ai-chat-width) + 2 * var(--ai-inline-pad)), 100%);
   margin-inline: auto;
   display: flex;
   flex-direction: column;
@@ -644,8 +646,8 @@ h1 {
   z-index: 3;
   display: flex;
   justify-content: center;
-  padding: var(--ha-space-4);
-  width: min(calc(var(--ai-chat-width) + 2 * var(--ha-space-4)), 100%);
+  padding: var(--ha-space-4) var(--ai-inline-pad);
+  width: min(calc(var(--ai-chat-width) + 2 * var(--ai-inline-pad)), 100%);
   margin-inline: auto;
   margin-top: auto;
   background: var(--primary-background-color);
@@ -954,6 +956,10 @@ textarea:focus {
 }
 
 @media (max-width: 870px) {
+  :host, .wrap {
+    --ai-inline-pad: max(var(--ha-space-6, 24px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+  }
+
   .wrap:not(.compact) {
     grid-template-columns: 1fr !important;
   }

@@ -182,6 +182,8 @@ async def _runtime_chat(
     origin: str = "",
     images: list[dict] | None = None,
     files: list[dict] | None = None,
+    language: str = "",
+    headers: dict[str, str] | None = None,
 ) -> AsyncIterator[dict]:
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
@@ -194,7 +196,8 @@ async def _runtime_chat(
         "origin": origin,
     }
     prompt = with_language_rule(
-        str(getattr(_runtime(hass).get("settings"), "system_prompt", "") or "").strip() or DEFAULT_SYSTEM_PROMPT
+        str(getattr(_runtime(hass).get("settings"), "system_prompt", "") or "").strip() or DEFAULT_SYSTEM_PROMPT,
+        language,
     )
     if prompt:
         payload["message"] = f"{prompt}\n\n{payload['message']}"
@@ -207,7 +210,7 @@ async def _runtime_chat(
         resp = await http.post(
             f"{base}/api/sessions/{session.id}/chat",
             json=payload,
-            headers={**_runtime_headers(request), "Accept": "text/event-stream"},
+            headers={**(headers or _runtime_headers(request)), "Accept": "text/event-stream"},
             timeout=ClientTimeout(total=None, sock_read=600),
         )
     except Exception as exc:
@@ -499,7 +502,13 @@ class SessionView(HomeAssistantView):
         if session is None:
             raise web.HTTPNotFound(text="Chat not found.")
         messages = await hass.async_add_executor_job(store.list_messages, session.id)
-        return self.json({**_session_dict(session), "messages": [_message_dict(item) for item in messages]})
+        pending = False
+        lock = _runtime(hass).get("locks", {}).get(session.id)
+        if lock is not None:
+            pending = lock.locked()
+        return self.json(
+            {**_session_dict(session), "pending": pending, "messages": [_message_dict(item) for item in messages]}
+        )
 
     async def patch(self, request: web.Request, session_id: str) -> web.Response:
         hass: HomeAssistant = _hass(request)
@@ -582,6 +591,11 @@ class ChatView(HomeAssistantView):
         if page_note:
             outbound = f"{page_note}\n\n{outbound}"
 
+        language = str(body.get("language") or "").strip()
+        user_id = _user_id(request)
+        access_token = _bearer(request)
+        runtime_headers = _runtime_headers(request)
+
         def on_agent_id(agent_id: str) -> None:
             store.set_agent_id(session.id, agent_id)
             session.agent_id = agent_id
@@ -592,16 +606,26 @@ class ChatView(HomeAssistantView):
                     session,
                     outbound,
                     on_agent_id,
-                    access_token=_bearer(request),
+                    access_token=access_token,
                     frontend_origin=origin,
                     images=images,
+                    language=language,
                 ):
                     yield event
                 return
-            async for event in _runtime_chat(hass, request, session, outbound, origin, images, []):
+            async for event in _runtime_chat(
+                hass,
+                request,
+                session,
+                outbound,
+                origin,
+                images,
+                [],
+                language,
+                runtime_headers,
+            ):
                 yield event
 
-        await lock.acquire()
         response = web.StreamResponse(
             status=200,
             headers={
@@ -610,77 +634,115 @@ class ChatView(HomeAssistantView):
                 "X-Accel-Buffering": "no",
             },
         )
-        await response.prepare(request)
-        parts: list[str] = []
-        tools: list[dict] = []
-        error: str | None = None
-        final: str | None = None
-        try:
+        client_gone = False
+
+        async def produce() -> None:
+            nonlocal client_gone
+            parts: list[str] = []
+            tools: list[dict] = []
+            error: str | None = None
+            final: str | None = None
+            answer = ""
+            held = False
+            await lock.acquire()
+            held = True
             try:
-                async for event in events():
-                    if event.get("type") == "text":
-                        parts.append(str(event.get("delta") or ""))
-                    elif event.get("type") == "result":
-                        final = str(event.get("text") or "")
-                        continue
-                    elif event.get("type") == "tool":
-                        tools.append(
-                            {
-                                "name": event.get("name"),
-                                "phase": event.get("phase"),
-                                "text": event.get("text"),
-                                **({"id": event["id"]} if event.get("id") else {}),
-                            }
-                        )
-                    elif event.get("type") == "error":
-                        error = str(event.get("message") or "The agent failed.")
-                    elif event.get("type") == "title":
-                        label = str(event.get("title") or "").strip()
-                        applied = None
-                        if label:
-                            applied = await hass.async_add_executor_job(
-                                store.apply_generated_title,
-                                _user_id(request),
-                                session.id,
-                                message,
-                                label,
-                            )
-                        if not applied:
+                try:
+                    await response.prepare(request)
+                except Exception:
+                    client_gone = True
+                try:
+                    async for event in events():
+                        if event.get("type") == "text":
+                            parts.append(str(event.get("delta") or ""))
+                        elif event.get("type") == "result":
+                            final = str(event.get("text") or "")
                             continue
-                        event = {"type": "title", "title": applied}
-                    await response.write(_sse(str(event["type"]), event))
-                    if request.transport is None or request.transport.is_closing():
-                        break
-            except Exception as exc:
-                logger.exception("chat failed session=%s", session.id)
-                error = redact(str(exc), [settings.cursor_api_key, settings.api_key, settings.mcp_token])
-                await response.write(_sse("error", {"type": "error", "message": error}))
-            answer = (final or "".join(parts)).strip()
-            if error and not answer:
-                answer = error
-            await hass.async_add_executor_job(
-                store.add_message,
-                session.id,
-                "assistant",
-                answer,
-                json.dumps(tools, ensure_ascii=False),
-            )
-            if error is None:
-                await response.write(_sse("done", {"type": "done", "answer": answer}))
-                await response.write(_sse("status", {"type": "status", "text": "Done."}))
-        finally:
-            lock.release()
-        if error is None and callable(suggest):
-            title = await _title_from_task(asyncio.create_task(suggest(message, "")))
-            if title:
-                applied = await hass.async_add_executor_job(
-                    store.apply_generated_title, _user_id(request), session.id, message, title
+                        elif event.get("type") == "tool":
+                            tools.append(
+                                {
+                                    "name": event.get("name"),
+                                    "phase": event.get("phase"),
+                                    "text": event.get("text"),
+                                    **({"id": event["id"]} if event.get("id") else {}),
+                                }
+                            )
+                        elif event.get("type") == "error":
+                            error = str(event.get("message") or "The agent failed.")
+                        elif event.get("type") == "title":
+                            label = str(event.get("title") or "").strip()
+                            applied = None
+                            if label:
+                                applied = await hass.async_add_executor_job(
+                                    store.apply_generated_title,
+                                    user_id,
+                                    session.id,
+                                    message,
+                                    label,
+                                )
+                            if not applied:
+                                continue
+                            event = {"type": "title", "title": applied}
+                        if client_gone:
+                            continue
+                        try:
+                            if request.transport is None or request.transport.is_closing():
+                                client_gone = True
+                                continue
+                            await response.write(_sse(str(event["type"]), event))
+                        except Exception:
+                            client_gone = True
+                except Exception as exc:
+                    logger.exception("chat failed session=%s", session.id)
+                    error = redact(str(exc), [settings.cursor_api_key, settings.api_key, settings.mcp_token])
+                    if not client_gone:
+                        try:
+                            await response.write(_sse("error", {"type": "error", "message": error}))
+                        except Exception:
+                            client_gone = True
+                answer = (final or "".join(parts)).strip()
+                if error and not answer:
+                    answer = error
+                stored_events = list(tools)
+                if error:
+                    stored_events.append({"type": "error", "message": error})
+                await hass.async_add_executor_job(
+                    store.add_message,
+                    session.id,
+                    "assistant",
+                    answer,
+                    json.dumps(stored_events, ensure_ascii=False),
                 )
-                if applied:
+                if error is None and not client_gone:
                     try:
-                        await response.write(_sse("title", {"type": "title", "title": applied}))
+                        await response.write(_sse("done", {"type": "done", "answer": answer}))
+                        await response.write(_sse("status", {"type": "status", "text": "Done."}))
                     except Exception:
-                        logger.debug("title event skipped", exc_info=True)
+                        client_gone = True
+            finally:
+                if held:
+                    lock.release()
+            if error is None and callable(suggest):
+                title = await _title_from_task(asyncio.create_task(suggest(message, answer)))
+                if title:
+                    applied = await hass.async_add_executor_job(
+                        store.apply_generated_title, user_id, session.id, message, title
+                    )
+                    if applied and not client_gone:
+                        try:
+                            await response.write(_sse("title", {"type": "title", "title": applied}))
+                        except Exception:
+                            logger.debug("title event skipped", exc_info=True)
+
+        jobs: set[asyncio.Task] = data.setdefault("chat_jobs", set())
+        task = asyncio.create_task(produce(), name=f"ai_workspace_chat_{session.id}")
+        jobs.add(task)
+        task.add_done_callback(jobs.discard)
+        try:
+            await asyncio.shield(task)
+        except asyncio.CancelledError:
+            client_gone = True
+            raise
         return response
 
 

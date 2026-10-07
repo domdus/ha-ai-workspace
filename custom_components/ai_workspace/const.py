@@ -131,17 +131,74 @@ Home Assistant is reached only through the connected MCP tools. Use those tools 
 
 Be concise. If a tool fails, say so. Ask before doing something hard to undo, such as deleting automations, unlocking doors, or turning off many devices at once.
 
-Always answer in the same language the user wrote their latest message in."""
+"""
 LANGUAGE_INSTRUCTION = (
     "Always answer in the same language the user wrote their latest message in."
 )
+_LANGUAGE_NAMES = {
+    "ar": "Arabic",
+    "bg": "Bulgarian",
+    "ca": "Catalan",
+    "cs": "Czech",
+    "da": "Danish",
+    "de": "German",
+    "el": "Greek",
+    "en": "English",
+    "eo": "Esperanto",
+    "es": "Spanish",
+    "et": "Estonian",
+    "fi": "Finnish",
+    "fr": "French",
+    "he": "Hebrew",
+    "hr": "Croatian",
+    "hu": "Hungarian",
+    "id": "Indonesian",
+    "it": "Italian",
+    "ja": "Japanese",
+    "ko": "Korean",
+    "lt": "Lithuanian",
+    "lv": "Latvian",
+    "nb": "Norwegian",
+    "nl": "Dutch",
+    "pl": "Polish",
+    "pt": "Portuguese",
+    "ro": "Romanian",
+    "ru": "Russian",
+    "sk": "Slovak",
+    "sl": "Slovenian",
+    "sv": "Swedish",
+    "th": "Thai",
+    "tr": "Turkish",
+    "uk": "Ukrainian",
+    "vi": "Vietnamese",
+    "zh": "Chinese",
+}
 
 
-def with_language_rule(text: str) -> str:
+def language_name(code: str) -> str:
+    primary = str(code or "").replace("_", "-").split("-")[0].strip().lower()
+    return _LANGUAGE_NAMES.get(primary, "")
+
+
+def language_instruction(code: str = "") -> str:
+    name = language_name(code)
+    if not name:
+        return LANGUAGE_INSTRUCTION
+    fallback = (
+        f"If that message does not make the language clear, answer in {name}, "
+        "the language set in Home Assistant."
+    )
+    if name != "English":
+        fallback += " Do not assume English."
+    return f"{LANGUAGE_INSTRUCTION} {fallback}"
+
+
+def with_language_rule(text: str, language: str = "") -> str:
     body = str(text or "").rstrip()
     if LANGUAGE_INSTRUCTION in body:
-        return body
-    return f"{body}\n\n{LANGUAGE_INSTRUCTION}" if body else LANGUAGE_INSTRUCTION
+        body = body.replace(LANGUAGE_INSTRUCTION, "").rstrip()
+    rule = language_instruction(language)
+    return f"{body}\n\n{rule}".strip() if body else rule
 HA_LINK_INSTRUCTIONS = """Every automation, script, scene, device, helper, or entity you mention must be a Markdown link. Do not list plain names. Do not ask whether the user wants links. Use root-relative paths that start with /. Never use 127.0.0.1, localhost, or an MCP URL in those links — those are only how tools reach Home Assistant from Docker.
 
 URL rules (wrong ids open a blank editor):

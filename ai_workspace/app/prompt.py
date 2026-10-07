@@ -18,7 +18,7 @@ Take id / unique_id / device_id from the MCP tool result. Example table cell: [B
 
 Be concise. If a tool fails, say so. Ask before something hard to undo.
 
-Always answer in the same language the user wrote their latest message in.
+Always answer in the same language the user wrote their latest message in. If that message does not make the language clear, answer in the Home Assistant language named in the message. Do not assume English.
 """
 
 CURSOR_RULE = """---
