@@ -5,7 +5,7 @@
 <p align="center"><em>Use Cursor, Claude, or ChatGPT AI in Home Assistant from your couch.</em></p>
 
 <p align="center">
-  <img src="docs/ai_workspace.gif" alt="AI Workspace chat in Home Assistant" width="360">
+  <img src="docs/ai_workspace.gif" alt="AI Workspace chat in Home Assistant" width="300">
 </p>
 
 # AI Workspace
