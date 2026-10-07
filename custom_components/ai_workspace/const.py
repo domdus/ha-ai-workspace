@@ -193,12 +193,20 @@ def language_instruction(code: str = "") -> str:
     return f"{LANGUAGE_INSTRUCTION} {fallback}"
 
 
+_CHAT_SCOPE = (
+    "This chat is separate from the user's other chats. "
+    "Do not assume what was said in them. "
+    "Use another chat only when the message includes a read-only excerpt from it."
+)
+
+
 def with_language_rule(text: str, language: str = "") -> str:
     body = str(text or "").rstrip()
     if LANGUAGE_INSTRUCTION in body:
         body = body.replace(LANGUAGE_INSTRUCTION, "").rstrip()
     rule = language_instruction(language)
-    return f"{body}\n\n{rule}".strip() if body else rule
+    scoped = f"{body}\n\n{_CHAT_SCOPE}".strip() if body else _CHAT_SCOPE
+    return f"{scoped}\n\n{rule}".strip()
 HA_LINK_INSTRUCTIONS = """Every automation, script, scene, device, helper, or entity you mention must be a Markdown link. Do not list plain names. Do not ask whether the user wants links. Use root-relative paths that start with /. Never use 127.0.0.1, localhost, or an MCP URL in those links — those are only how tools reach Home Assistant from Docker.
 
 URL rules (wrong ids open a blank editor):

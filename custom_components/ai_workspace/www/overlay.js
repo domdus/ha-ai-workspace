@@ -86,6 +86,16 @@ async function ensureHost() {
       .body { flex: 1; min-height: 0; height: 100%; }
       .hidden { display: none !important; }
       @media (max-width: 870px) {
+        .fab {
+          right: var(--ha-space-3);
+          bottom: var(--ha-space-3);
+        }
+        .fab ha-icon { --mdc-icon-size: 26px; }
+        .fab::part(base) {
+          width: 48px;
+          height: 48px;
+          min-width: 48px;
+        }
         .drawer { width: 100%; }
         .bar {
           padding-inline: max(var(--ha-space-6, 24px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));

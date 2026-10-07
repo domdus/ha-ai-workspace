@@ -387,6 +387,10 @@ export function mountAiWorkspace(root, options = {}) {
           <p class="status" hidden></p>
           <form class="composer">
             <div class="composer-box">
+              <div class="next-row" hidden>
+                <p class="next-copy"></p>
+                <button type="button" class="next-remove"></button>
+              </div>
               <div class="attach-row" hidden></div>
               <div class="composer-row">
               <label class="sr" for="ai-message">${t("message")}</label>
@@ -425,6 +429,9 @@ export function mountAiWorkspace(root, options = {}) {
   const attachBtn = root.querySelector(".attach");
   const fileInput = root.querySelector(".file-input");
   const attachRow = root.querySelector(".attach-row");
+  const nextRow = root.querySelector(".next-row");
+  const nextCopy = root.querySelector(".next-copy");
+  const nextRemove = root.querySelector(".next-remove");
   const box = form.querySelector(".composer-box");
   const plusIcon = root.querySelector(".new-chat ha-svg-icon");
   if (plusIcon && !plusIcon.path) {
@@ -522,6 +529,7 @@ export function mountAiWorkspace(root, options = {}) {
     if (id === sessionId) return;
     if (id) openSession(id, true);
     else {
+      abandonStream();
       sessionId = "";
       titleEl.textContent = t("new_chat");
       showEmpty();
@@ -529,6 +537,7 @@ export function mountAiWorkspace(root, options = {}) {
     }
   }
   let streaming = false;
+  let nextTurn = null;
   const MAX_ATTACH = 4;
   const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
   const MAX_FILE_BYTES = 256 * 1024;
@@ -539,15 +548,16 @@ export function mountAiWorkspace(root, options = {}) {
   let pinBottom = true;
   let followRaf = 0;
   let followLast = 0;
-  let programmaticScroll = false;
   let motionTimer = 0;
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function resizeComposer() {
     messageEl.style.height = "auto";
     messageEl.style.height = `${Math.min(Math.max(messageEl.scrollHeight, 36), 160)}px`;
-    sendBtn.disabled = streaming || (!messageEl.value.trim() && !pending.length);
-    if (attachBtn) attachBtn.disabled = streaming || pending.length >= MAX_ATTACH;
+    const hasDraft = Boolean(messageEl.value.trim() || pending.length);
+    sendBtn.disabled = !hasDraft;
+    if (attachBtn) attachBtn.disabled = pending.length >= MAX_ATTACH;
+    messageEl.placeholder = streaming ? t("placeholder_next") : t("placeholder");
   }
 
   function keepComposerFocus() {
@@ -559,6 +569,50 @@ export function mountAiWorkspace(root, options = {}) {
     sendBtn.blur();
     const active = document.activeElement;
     if (active && active !== document.body && typeof active.blur === "function") active.blur();
+    clearKeyboardLock();
+  }
+
+  function composerFocused() {
+    return root.activeElement === messageEl || messageEl.matches(":focus");
+  }
+
+  let pinningScroll = false;
+
+  function resetOuterScroll() {
+    if (pinningScroll) return;
+    pinningScroll = true;
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    let node = root.host || null;
+    while (node) {
+      if (node.scrollTop) node.scrollTop = 0;
+      const next = node.parentElement || node.getRootNode?.()?.host || null;
+      node = next === node ? null : next;
+    }
+    pinningScroll = false;
+  }
+
+  function clearKeyboardLock() {
+    wrap.classList.remove("keyboard-open");
+    wrap.style.height = "";
+  }
+
+  function syncKeyboardInset() {
+    if (keepComposerFocus()) return;
+    const vv = window.visualViewport;
+    const inset = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
+    const open = composerFocused() && inset > 80;
+    if (!open) {
+      clearKeyboardLock();
+      return;
+    }
+    resetOuterScroll();
+    const top = wrap.getBoundingClientRect().top;
+    const visibleBottom = (vv?.offsetTop || 0) + (vv?.height || window.innerHeight);
+    const available = Math.max(180, visibleBottom - Math.max(0, top));
+    wrap.classList.add("keyboard-open");
+    wrap.style.height = `${Math.round(available)}px`;
   }
 
   function clearMotion() {
@@ -998,8 +1052,32 @@ export function mountAiWorkspace(root, options = {}) {
     window.dispatchEvent(event);
   }
 
+  function distanceFromBottom() {
+    return chatEl.scrollHeight - chatEl.scrollTop - chatEl.clientHeight;
+  }
+
   function nearBottom() {
-    return chatEl.scrollHeight - chatEl.scrollTop - chatEl.clientHeight < 96;
+    return distanceFromBottom() < 32;
+  }
+
+  let scrollLock = 0;
+
+  function writeScrollTop(value) {
+    scrollLock += 1;
+    chatEl.scrollTop = value;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollLock = Math.max(0, scrollLock - 1);
+      });
+    });
+  }
+
+  function releaseFollow() {
+    pinBottom = false;
+    if (followRaf) {
+      cancelAnimationFrame(followRaf);
+      followRaf = 0;
+    }
   }
 
   let streamNode = null;
@@ -1008,6 +1086,76 @@ export function mountAiWorkspace(root, options = {}) {
   let streamDrainRaf = 0;
   let streamDrainLast = 0;
   let streamWaiters = [];
+  let streamToken = 0;
+  let streamAbort = null;
+
+  function renderNext() {
+    if (!nextRow || !nextCopy) return;
+    if (!nextTurn) {
+      nextRow.hidden = true;
+      nextCopy.replaceChildren();
+      return;
+    }
+    const names = nextTurn.attachments.map((item) => item.name).filter(Boolean);
+    const label = [nextTurn.text, names.join(", ")].filter(Boolean).join(" · ");
+    const text = document.createElement("span");
+    text.className = "next-text";
+    text.textContent = label;
+    const hint = document.createElement("span");
+    hint.className = "next-hint";
+    hint.textContent = t("queued_hint");
+    nextCopy.replaceChildren(text, hint);
+    if (nextRemove) {
+      nextRemove.textContent = t("queued_remove");
+      nextRemove.setAttribute("aria-label", t("queued_remove"));
+    }
+    nextRow.hidden = false;
+  }
+
+  function queueTurn(text, attachments) {
+    nextTurn = { text, attachments: attachments.slice() };
+    pending = [];
+    messageEl.value = "";
+    stopSpeech();
+    renderThumbs();
+    renderNext();
+    resizeComposer();
+    if (keepComposerFocus()) messageEl.focus({ preventScroll: true });
+  }
+
+  function flushNext() {
+    if (!nextTurn || streaming) return;
+    const turn = nextTurn;
+    nextTurn = null;
+    renderNext();
+    messageEl.value = turn.text;
+    pending = turn.attachments.slice();
+    renderThumbs();
+    form.requestSubmit();
+  }
+
+  function abandonStream() {
+    streamToken += 1;
+    if (streamAbort) {
+      streamAbort.abort();
+      streamAbort = null;
+    }
+    if (streamDrainRaf) {
+      cancelAnimationFrame(streamDrainRaf);
+      streamDrainRaf = 0;
+    }
+    streamBuf = "";
+    streamFull = "";
+    streamNode = null;
+    const waiters = streamWaiters;
+    streamWaiters = [];
+    waiters.forEach((fn) => fn());
+    streaming = false;
+    liveStream = false;
+    nextTurn = null;
+    renderNext();
+    resizeComposer();
+  }
 
   function writeStreamVisible() {
     if (!streamNode) return;
@@ -1110,32 +1258,28 @@ export function mountAiWorkspace(root, options = {}) {
         followRaf = 0;
         return;
       }
-      programmaticScroll = true;
       if (dist <= 0.5) {
-        chatEl.scrollTop = max;
+        writeScrollTop(max);
       } else {
         const k = streaming || streamBuf ? 2.6 : 10;
         const alpha = 1 - Math.exp(-dt * k);
         let step = dist * alpha;
         if (streaming || streamBuf) step = Math.min(step, Math.max(6, dist * 0.16));
-        chatEl.scrollTop += step;
+        writeScrollTop(chatEl.scrollTop + step);
       }
-      programmaticScroll = false;
       followRaf = requestAnimationFrame(tick);
     };
     followRaf = requestAnimationFrame(tick);
   }
 
   function scrollChatToBottom(smooth = true) {
-    pinBottom = true;
+    if (!pinBottom) return;
     if (!smooth || reduceMotion) {
       if (followRaf) {
         cancelAnimationFrame(followRaf);
         followRaf = 0;
       }
-      programmaticScroll = true;
-      chatEl.scrollTop = Math.max(0, chatEl.scrollHeight - chatEl.clientHeight);
-      programmaticScroll = false;
+      writeScrollTop(Math.max(0, chatEl.scrollHeight - chatEl.clientHeight));
       return;
     }
     followBottom();
@@ -1341,6 +1485,7 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   async function createSession() {
+    const mark = streamToken;
     const created = await fetch(`${API}/sessions`, {
       method: "POST",
       headers: headers(),
@@ -1348,6 +1493,7 @@ export function mountAiWorkspace(root, options = {}) {
     });
     if (!created.ok) throw new Error(await created.text());
     const session = await created.json();
+    if (mark !== streamToken) return null;
     sessionId = session.id;
     goToSession(sessionId, true);
     if (compact) localStorage.setItem("ai_workspace_session", sessionId);
@@ -1355,6 +1501,7 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   async function openSession(id, fromUrl = false) {
+    if (id !== sessionId) abandonStream();
     watchGen += 1;
     if (!id) {
       routeGen += 1;
@@ -1669,7 +1816,7 @@ export function mountAiWorkspace(root, options = {}) {
   attachBtn?.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
-    if (streaming || pending.length >= MAX_ATTACH) return;
+    if (pending.length >= MAX_ATTACH) return;
     fileInput?.click();
   });
   fileInput?.addEventListener("change", async () => {
@@ -1724,7 +1871,7 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   function startSpeech() {
-    if (!SpeechRecognitionAPI || streaming) return;
+    if (!SpeechRecognitionAPI) return;
     if (!window.isSecureContext) {
       showMicHelp();
       return;
@@ -1787,16 +1934,36 @@ export function mountAiWorkspace(root, options = {}) {
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const text = messageEl.value.trim();
-    const attachments = pending.slice();
+    let text = messageEl.value.trim();
+    let attachments = pending.slice();
+    if (streaming) {
+      if (!text && !attachments.length) return;
+      queueTurn(text, attachments);
+      return;
+    }
+    if (!text && !attachments.length) {
+      if (!nextTurn) return;
+      text = nextTurn.text;
+      attachments = nextTurn.attachments.slice();
+      nextTurn = null;
+      renderNext();
+      messageEl.value = text;
+      pending = attachments.slice();
+    }
     const images = attachments.filter((item) => item.kind === "image");
     const files = attachments.filter((item) => item.kind === "file");
-    if ((!text && !attachments.length) || streaming) return;
+    if (!text && !attachments.length) return;
+    abandonStream();
+    const token = streamToken;
+    const abort = new AbortController();
+    streamAbort = abort;
     stopSpeech();
     if (keepComposerFocus()) messageEl.focus();
     else hideKeyboard();
     streaming = true;
     watchGen += 1;
+    clearKeyboardLock();
+    resetOuterScroll();
     sendBtn.disabled = true;
     routeGen += 1;
     pending = [];
@@ -1817,12 +1984,16 @@ export function mountAiWorkspace(root, options = {}) {
     setActivity(assistant, t("thinking"));
     let recover = false;
     let sawDone = false;
+    let chatId = "";
     liveStream = true;
     try {
       if (!sessionId) {
-        await createSession();
+        const created = await createSession();
+        if (token !== streamToken || !created) return;
         titleEl.textContent = (text || attachments[0]?.name || "File").slice(0, 80);
       }
+      if (token !== streamToken) return;
+      chatId = sessionId;
       setStatus(t("thinking"));
       const payload = JSON.stringify({
           message: text,
@@ -1832,18 +2003,22 @@ export function mountAiWorkspace(root, options = {}) {
           images: images.map((img) => ({ name: img.name, mime: img.mime, data: img.data })),
           files: files.map((file) => ({ name: file.name, mime: file.mime, text: file.text })),
         });
-      let response = await fetch(`${API}/sessions/${sessionId}/chat`, {
+      let response = await fetch(`${API}/sessions/${chatId}/chat`, {
         method: "POST",
         headers: headers(),
         body: payload,
+        signal: abort.signal,
       });
+      if (token !== streamToken) return;
       if (response.status === 404) {
-        await createSession();
+        const created = await createSession();
+        if (token !== streamToken || !created) return;
         titleEl.textContent = (text || attachments[0]?.name || "File").slice(0, 80);
         response = await fetch(`${API}/sessions/${sessionId}/chat`, {
           method: "POST",
           headers: headers(),
           body: payload,
+          signal: abort.signal,
         });
       }
       if (!response.ok || !response.body) {
@@ -1855,6 +2030,7 @@ export function mountAiWorkspace(root, options = {}) {
         return;
       }
       await readSSE(response, (name, data) => {
+        if (token !== streamToken) return;
         if (name === "text") {
           appendAssistantText(assistant.querySelector(".text"), data.delta || "");
           return;
@@ -1881,10 +2057,8 @@ export function mountAiWorkspace(root, options = {}) {
           if (data.answer) queueStreamAnswer(data.answer);
           settleTools(assistant);
           setActivity(assistant, "");
-          streaming = false;
-          resizeComposer();
         } else if (name === "title" && data.title) {
-          applySessionTitle(sessionId, data.title);
+          applySessionTitle(chatId, data.title);
         }
         scrollChatToBottom();
       });
@@ -1893,7 +2067,8 @@ export function mountAiWorkspace(root, options = {}) {
       if (!sawDone) recover = true;
       else await loadSessions();
     } catch (error) {
-      if (sessionId && (isDisconnect(error) || document.visibilityState === "hidden")) {
+      if (token !== streamToken) return;
+      if (chatId && (isDisconnect(error) || document.visibilityState === "hidden") && sessionId === chatId) {
         recover = true;
         assistant.classList.remove("error");
         setActivity(assistant, t("thinking"));
@@ -1910,10 +2085,13 @@ export function mountAiWorkspace(root, options = {}) {
         setActivity(assistant, "");
       }
     } finally {
+      if (token !== streamToken) return;
       liveStream = false;
-      if (recover && sessionId) {
+      let followUp = true;
+      if (recover && sessionId === chatId) {
         assistant.classList.remove("error");
-        const found = await watchPending(sessionId);
+        const found = await watchPending(chatId);
+        followUp = found;
         if (!found) {
           streaming = false;
           assistant.classList.remove("streaming");
@@ -1933,16 +2111,60 @@ export function mountAiWorkspace(root, options = {}) {
       }
       syncCopyChat();
       resizeComposer();
+      if (followUp && sessionId === chatId && nextTurn) {
+        flushNext();
+        return;
+      }
       if (keepComposerFocus()) messageEl.focus();
       else hideKeyboard();
     }
   });
 
+  let lastScrollTop = 0;
   chatEl.addEventListener("scroll", () => {
-    if (programmaticScroll) return;
-    pinBottom = nearBottom();
+    const top = chatEl.scrollTop;
+    const movedUp = top < lastScrollTop - 2;
+    lastScrollTop = top;
+    if (scrollLock) return;
+    if (movedUp) {
+      releaseFollow();
+      return;
+    }
+    if (!nearBottom()) return;
+    const resume = !pinBottom && (streaming || streamBuf);
+    pinBottom = true;
+    if (resume) followBottom();
   }, { passive: true });
 
+  let lastTouchY = 0;
+  chatEl.addEventListener("touchstart", (event) => {
+    lastTouchY = event.touches[0]?.clientY || 0;
+  }, { passive: true });
+  chatEl.addEventListener("touchmove", (event) => {
+    const y = event.touches[0]?.clientY || 0;
+    if (y > lastTouchY + 6) releaseFollow();
+    lastTouchY = y;
+  }, { passive: true });
+  chatEl.addEventListener("wheel", (event) => {
+    if (event.deltaY < 0) releaseFollow();
+  }, { passive: true });
+
+  messageEl.addEventListener("focus", () => {
+    if (keepComposerFocus()) return;
+    syncKeyboardInset();
+    requestAnimationFrame(syncKeyboardInset);
+    window.setTimeout(syncKeyboardInset, 80);
+    window.setTimeout(syncKeyboardInset, 320);
+  });
+  messageEl.addEventListener("blur", () => {
+    window.setTimeout(() => {
+      if (!composerFocused()) clearKeyboardLock();
+    }, 60);
+  });
+  window.visualViewport?.addEventListener("resize", syncKeyboardInset);
+  window.visualViewport?.addEventListener("scroll", () => {
+    if (wrap.classList.contains("keyboard-open")) syncKeyboardInset();
+  });
   messageEl.addEventListener("input", resizeComposer);
   messageEl.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -1954,8 +2176,16 @@ export function mountAiWorkspace(root, options = {}) {
     event.preventDefault();
     form.requestSubmit();
   });
+  nextRemove?.addEventListener("click", (event) => {
+    event.preventDefault();
+    nextTurn = null;
+    renderNext();
+    resizeComposer();
+    if (keepComposerFocus()) messageEl.focus({ preventScroll: true });
+  });
 
   function startNewChat() {
+    abandonStream();
     routeGen += 1;
     watchGen += 1;
     sessionId = "";
@@ -1967,7 +2197,7 @@ export function mountAiWorkspace(root, options = {}) {
     titleEl.textContent = t("new_chat");
     showEmpty();
     loadSessions();
-    messageEl.focus();
+    if (keepComposerFocus()) messageEl.focus({ preventScroll: true });
   }
 
   root.querySelectorAll(".nav-toggle").forEach((btn) => {

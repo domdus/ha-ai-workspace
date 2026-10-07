@@ -5,6 +5,8 @@ from app.titles import clean_title, is_placeholder_title, title_prompt
 def test_clean_title_strips_quotes_and_prefix() -> None:
     assert clean_title('Title: "Garage lights"\nMore') == "Garage lights"
     assert clean_title("  Kitchen leak.  ") == "Kitchen leak"
+    assert clean_title("**headline**") == "headline"
+    assert clean_title("Status **of** lights") == "Status of lights"
 
 
 def test_placeholder_is_first_user_message() -> None:
@@ -14,10 +16,12 @@ def test_placeholder_is_first_user_message() -> None:
     assert not is_placeholder_title("Kitchen leak", "Why no water?")
 
 
-def test_title_prompt_stays_short() -> None:
+def test_title_prompt_uses_the_question_only() -> None:
     prompt = title_prompt("Can you check the garage light automation?", "It did not fire.")
     assert "garage light" in prompt
     assert "3 to 6 words" in prompt
+    assert "It did not fire." not in prompt
+    assert "Assistant:" not in prompt
 
 
 def test_apply_generated_title_skips_manual_rename(tmp_path) -> None:
