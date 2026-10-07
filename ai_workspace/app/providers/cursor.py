@@ -361,6 +361,7 @@ def _run_error_text(result: Any, run_id: str, model: str, stream_error: str | No
     bits = [f"Run failed{suffix}."]
     if used:
         bits.append(f"Cursor ended the {used} run with no assistant text.")
+    bits.append("The Cursor account may have reached its usage or budget limit.")
     if request:
         bits.append(f"request_id={request}")
     bits.append("Retry the message.")

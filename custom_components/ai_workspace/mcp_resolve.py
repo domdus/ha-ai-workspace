@@ -230,14 +230,22 @@ def _unique(urls: list[str]) -> list[str]:
     return out
 
 
+def _builtin_mcp(url: str) -> bool:
+    path = (urlparse(url).path or "").rstrip("/")
+    return path == "/api/mcp"
+
+
 async def async_probe_mcp(
     hass: HomeAssistant,
     url: str,
     headers: dict[str, str] | None = None,
     timeout: float = 2,
 ) -> bool:
-    session = async_get_clientsession(hass)
     extra = {key: value for key, value in (headers or {}).items() if value}
+    # A token-less call to /api/mcp is a failed login and can ban 127.0.0.1.
+    if _builtin_mcp(url) and not extra.get("Authorization"):
+        return False
+    session = async_get_clientsession(hass)
     try:
         resp = await session.post(
             url.rstrip("/"),

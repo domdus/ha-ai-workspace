@@ -47,6 +47,8 @@ class Settings:
     mcp_servers: dict[str, dict[str, Any]]
     enable_overlay: bool = True
     enable_sidebar: bool = True
+    enable_dictate: bool = True
+    allow_users: bool = False
     mode: str = "cursor"
     api_provider: str = "openai"
     api_key: str = ""

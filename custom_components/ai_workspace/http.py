@@ -387,10 +387,22 @@ def _bearer(request: web.Request) -> str:
     return ""
 
 
-def _user_id(request: web.Request) -> str:
-    user = request["hass_user"]
+def _signed_in(request: web.Request):
+    user = request.get("hass_user")
     if user is None:
         raise web.HTTPUnauthorized(text="Sign in through Home Assistant.")
+    return user
+
+
+def _allow_users(request: web.Request) -> bool:
+    settings = _runtime(_hass(request)).get("settings")
+    return bool(getattr(settings, "allow_users", False))
+
+
+def _user_id(request: web.Request) -> str:
+    user = _signed_in(request)
+    if not getattr(user, "is_admin", False) and not _allow_users(request):
+        raise web.HTTPForbidden(text="Administrator only.")
     return str(user.id)
 
 
@@ -418,12 +430,29 @@ def _frontend_origin(request: web.Request, body: dict) -> str:
     return ""
 
 
+class UiView(HomeAssistantView):
+    url = "/api/ai_workspace/ui"
+    name = "api:ai_workspace:ui"
+    requires_auth = True
+
+    async def get(self, request: web.Request) -> web.Response:
+        user = _signed_in(request)
+        settings = _runtime(_hass(request))["settings"]
+        return self.json(
+            {
+                "dictate": bool(settings.enable_dictate),
+                "allowed": bool(getattr(user, "is_admin", False) or settings.allow_users),
+            }
+        )
+
+
 class HealthView(HomeAssistantView):
     url = "/api/ai_workspace/health"
     name = "api:ai_workspace:health"
     requires_auth = True
 
     async def get(self, request: web.Request) -> web.Response:
+        _user_id(request)
         proxied = await _proxy(request, "health")
         if proxied is not None:
             return proxied
@@ -440,6 +469,7 @@ class HealthView(HomeAssistantView):
                 "mode": settings.mode,
                 "cursor": bool(info and info.id == "cursor" and info.available),
                 "overlay": settings.enable_overlay,
+                "dictate": settings.enable_dictate,
             }
         )
 
@@ -450,6 +480,7 @@ class ProvidersView(HomeAssistantView):
     requires_auth = True
 
     async def get(self, request: web.Request) -> web.Response:
+        _user_id(request)
         proxied = await _proxy(request, "providers")
         if proxied is not None:
             return proxied
@@ -753,6 +784,7 @@ class ChatView(HomeAssistantView):
 
 def register_views(hass: HomeAssistant) -> None:
     hass.http.register_view(HealthView)
+    hass.http.register_view(UiView)
     hass.http.register_view(ProvidersView)
     hass.http.register_view(SessionsView)
     hass.http.register_view(SessionView)

@@ -13,7 +13,9 @@
         "title": "Cloud API Provider",
         "data": {
           "enable_sidebar": "Show AI Workspace in the sidebar",
-          "enable_overlay": "Show floating AI button on every page"
+          "enable_overlay": "Show floating AI button on every page",
+          "enable_dictate": "Show dictate button",
+          "allow_users": "Allow normal users"
         },
         "sections": {
           "provider": {
@@ -60,12 +62,16 @@
         "data": {
           "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
           "enable_sidebar": "Show AI Workspace in the sidebar",
-          "enable_overlay": "Show floating AI button on every page"
+          "enable_overlay": "Show floating AI button on every page",
+          "enable_dictate": "Show dictate button",
+          "allow_users": "Allow normal users"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
-          "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration."
+          "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
+          "enable_dictate": "Microphone in the message box. Browsers allow dictation only over https://.",
+          "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only."
         },
         "sections": {
           "mcp": {
@@ -115,11 +121,15 @@
         "title": "Cloud API Provider",
         "data": {
           "enable_sidebar": "Show AI Workspace in the sidebar",
-          "enable_overlay": "Show floating AI button on every page"
+          "enable_overlay": "Show floating AI button on every page",
+          "enable_dictate": "Show dictate button",
+          "allow_users": "Allow normal users"
         },
         "data_description": {
           "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
-          "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration."
+          "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
+          "enable_dictate": "Microphone in the message box. Browsers allow dictation only over https://.",
+          "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only."
         },
         "sections": {
           "provider": {
@@ -166,12 +176,16 @@
         "data": {
           "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
           "enable_sidebar": "Show AI Workspace in the sidebar",
-          "enable_overlay": "Show floating AI button on every page"
+          "enable_overlay": "Show floating AI button on every page",
+          "enable_dictate": "Show dictate button",
+          "allow_users": "Allow normal users"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
-          "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration."
+          "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
+          "enable_dictate": "Microphone in the message box. Browsers allow dictation only over https://.",
+          "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only."
         },
         "sections": {
           "mcp": {

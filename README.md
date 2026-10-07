@@ -4,7 +4,9 @@
 
 <p align="center"><em>Use Cursor, Claude, or ChatGPT AI in Home Assistant from your couch.</em></p>
 
----
+<p align="center">
+  <img src="docs/ai_workspace.gif" alt="AI Workspace chat in Home Assistant" width="450">
+</p>
 
 # AI Workspace
 
@@ -166,6 +168,7 @@ It does not control Home Assistant edit links. Those are added on every reply, s
 | **MCP token** | Built-in: long-lived token or empty for this login. HA-MCP: usually empty. Vibecode: Agent Key |
 | **System prompt** | Behaviour above. Empty uses the built-in prompt |
 | **Show floating AI button on every page** | Bottom-right robot icon. Hidden on Settings |
+| **Show dictate button** | Microphone in the prompt. On by default. Browsers allow it only over https://. |
 | **Show AI Workspace in the sidebar** | Sidebar item. `/ai-workspace` still works if this is off |
 
 MCP is set on this form for both backends and sent to the SDK Runtime on each chat. The Cursor API key stays on the Runtime.

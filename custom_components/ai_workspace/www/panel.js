@@ -169,4 +169,6 @@ class HaAiWorkspacePanel extends HTMLElement {
   }
 }
 
-customElements.define("ha-ai-workspace-panel", HaAiWorkspacePanel);
+if (!customElements.get("ha-ai-workspace-panel")) {
+  customElements.define("ha-ai-workspace-panel", HaAiWorkspacePanel);
+}
