@@ -146,13 +146,14 @@ After the Runtime is up and running: **Settings → Devices & services → Add i
 
 **Settings → Devices & services → AI Workspace → Configure**
 
+This is the standing instruction for the assistant. Use it for your own needs: how you name rooms, which automations to leave alone, how short answers should be, or any other strategy or requirement. What you write here replaces the built-in prompt. Leave the field empty to keep that built-in text, which covers helping with this Home Assistant and asking before it changes the house. The same text is used for Cloud API and Cursor Runtime.
+
+It does not control Home Assistant edit links. Those are added on every reply, so automations, entities, helpers, and devices stay tappable.
+
 <p align="center">
   <img src="docs/integration_ai_workspace_system_prompt.png" alt="System prompt, sidebar, and floating AI button" width="820">
 </p>
 
-This is the standing instruction for the assistant: what it helps with, how short to be, and when to ask before it changes the house. Leave it empty to use the built-in prompt. The same text is used for Cloud API and Cursor Runtime.
-
-It does not control Home Assistant edit links. Those are added on every reply, so automations, entities, helpers, and devices stay tappable.
 
 ## Options
 
