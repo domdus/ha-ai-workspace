@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "AI Workspace",
-        "description": "Shared chat settings. After this, add the first agent (Cursor, OpenAI, OpenRouter, Ollama, and others) under AI Agents.",
+        "description": "Shared chat settings. After this, add the first agent (Cursor, OpenAI, OpenRouter, Ollama, and others) under AI Workspace agents.",
         "data": {
           "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
           "stt_engine": "Speech to text",
@@ -239,7 +239,7 @@
     "step": {
       "init": {
         "title": "AI Workspace",
-        "description": "Shared chat settings. Connections are added on AI Workspace. Agents are added on AI Agents.",
+        "description": "Shared chat settings. Connections are added on AI Workspace. Agents are added on AI Workspace agents.",
         "data": {
           "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
           "stt_engine": "Speech to text",

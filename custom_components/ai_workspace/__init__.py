@@ -478,6 +478,8 @@ async def _ensure_agents_entry(hass: HomeAssistant, hub: ConfigEntry) -> ConfigE
     found = agents_entry(hass, hub.entry_id)
     if found is not None:
         _as_system(hass, found)
+        if found.title != AGENTS_TITLE:
+            hass.config_entries.async_update_entry(found, title=AGENTS_TITLE)
         return found
     created = ConfigEntry(
         version=1,
