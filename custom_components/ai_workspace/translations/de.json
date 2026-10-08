@@ -54,22 +54,6 @@
             "data_description": {
               "system_prompt": "Nur Ton und Verhalten. Leer lassen für den eingebauten Prompt. MCP-Tools und Editor-Links werden immer ergänzt und gehören nicht in dieses Feld."
             }
-          },
-          "more": {
-            "name": "Weitere Verbindungen",
-            "description": "{more_note}",
-            "data": {
-              "mcp_remove": "Verbindung entfernen",
-              "mcp_add_name": "Name",
-              "mcp_add_url": "MCP-URL",
-              "mcp_add_token": "Token"
-            },
-            "data_description": {
-              "mcp_remove": "Eine auswählen und speichern, um sie zu entfernen. Alle behalten lässt sie stehen.",
-              "mcp_add_name": "Ein kurzer Name, zum Beispiel Directus. Der Assistent unterscheidet daran die Verbindungen. Denselben Namen noch einmal verwenden, um die Verbindung zu ersetzen.",
-              "mcp_add_url": "Die Adresse eines weiteren MCP-Servers. Leer lassen, wenn keiner hinzugefügt wird.",
-              "mcp_add_token": "Nur wenn dieser Server einen Schlüssel verlangt. Leer lassen, um den gespeicherten Schlüssel zu behalten."
-            }
           }
         }
       },
@@ -112,22 +96,6 @@
             },
             "data_description": {
               "system_prompt": "Nur Ton und Verhalten. Leer lassen für den eingebauten Prompt. MCP-Tools und Editor-Links werden immer ergänzt und gehören nicht in dieses Feld."
-            }
-          },
-          "more": {
-            "name": "Weitere Verbindungen",
-            "description": "{more_note}",
-            "data": {
-              "mcp_remove": "Verbindung entfernen",
-              "mcp_add_name": "Name",
-              "mcp_add_url": "MCP-URL",
-              "mcp_add_token": "Token"
-            },
-            "data_description": {
-              "mcp_remove": "Eine auswählen und speichern, um sie zu entfernen. Alle behalten lässt sie stehen.",
-              "mcp_add_name": "Ein kurzer Name, zum Beispiel Directus. Der Assistent unterscheidet daran die Verbindungen. Denselben Namen noch einmal verwenden, um die Verbindung zu ersetzen.",
-              "mcp_add_url": "Die Adresse eines weiteren MCP-Servers. Leer lassen, wenn keiner hinzugefügt wird.",
-              "mcp_add_token": "Nur wenn dieser Server einen Schlüssel verlangt. Leer lassen, um den gespeicherten Schlüssel zu behalten."
             }
           }
         }
@@ -202,22 +170,6 @@
             "data_description": {
               "system_prompt": "Nur Ton und Verhalten. Leer lassen für den eingebauten Prompt. MCP-Tools und Editor-Links werden immer ergänzt und gehören nicht in dieses Feld."
             }
-          },
-          "more": {
-            "name": "Weitere Verbindungen",
-            "description": "{more_note}",
-            "data": {
-              "mcp_remove": "Verbindung entfernen",
-              "mcp_add_name": "Name",
-              "mcp_add_url": "MCP-URL",
-              "mcp_add_token": "Token"
-            },
-            "data_description": {
-              "mcp_remove": "Eine auswählen und speichern, um sie zu entfernen. Alle behalten lässt sie stehen.",
-              "mcp_add_name": "Ein kurzer Name, zum Beispiel Directus. Der Assistent unterscheidet daran die Verbindungen. Denselben Namen noch einmal verwenden, um die Verbindung zu ersetzen.",
-              "mcp_add_url": "Die Adresse eines weiteren MCP-Servers. Leer lassen, wenn keiner hinzugefügt wird.",
-              "mcp_add_token": "Nur wenn dieser Server einen Schlüssel verlangt. Leer lassen, um den gespeicherten Schlüssel zu behalten."
-            }
           }
         }
       },
@@ -261,22 +213,38 @@
             "data_description": {
               "system_prompt": "Nur Ton und Verhalten. Leer lassen für den eingebauten Prompt. MCP-Tools und Editor-Links werden immer ergänzt und gehören nicht in dieses Feld."
             }
+          }
+        }
+      }
+    }
+  },
+  "config_subentries": {
+    "mcp": {
+      "initiate_flow": {
+        "user": "Verbindung hinzufügen",
+        "reconfigure": "Verbindung bearbeiten"
+      },
+      "entry_type": "Verbindung",
+      "abort": {
+        "reconfigure_successful": "Verbindung aktualisiert."
+      },
+      "error": {
+        "required": "Dieses Feld ist erforderlich.",
+        "already_configured": "Eine Verbindung mit diesem Namen gibt es schon."
+      },
+      "step": {
+        "connection": {
+          "title": "Verbindung",
+          "description": "Ein weiterer MCP-Server, den der Assistent im selben Chat nutzen kann.",
+          "data": {
+            "name": "Name",
+            "url": "Adresse",
+            "token": "Schlüssel"
           },
-          "more": {
-            "name": "Weitere Verbindungen",
-            "description": "{more_note}",
-            "data": {
-              "mcp_remove": "Verbindung entfernen",
-              "mcp_add_name": "Name",
-              "mcp_add_url": "MCP-URL",
-              "mcp_add_token": "Token"
-            },
-            "data_description": {
-              "mcp_remove": "Eine auswählen und speichern, um sie zu entfernen. Alle behalten lässt sie stehen.",
-              "mcp_add_name": "Ein kurzer Name, zum Beispiel Directus. Der Assistent unterscheidet daran die Verbindungen. Denselben Namen noch einmal verwenden, um die Verbindung zu ersetzen.",
-              "mcp_add_url": "Die Adresse eines weiteren MCP-Servers. Leer lassen, wenn keiner hinzugefügt wird.",
-              "mcp_add_token": "Nur wenn dieser Server einen Schlüssel verlangt. Leer lassen, um den gespeicherten Schlüssel zu behalten."
-            }
+          "data_description": {
+            "name": "Ein kurzer Name, zum Beispiel Directus. Der Assistent unterscheidet daran diese Verbindung von den anderen.",
+            "url": "Die MCP-Adresse, beginnend mit https:// oder http://.",
+            "token": "Nur wenn dieser Server einen Schlüssel verlangt. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten."
           }
         }
       }

@@ -101,6 +101,7 @@ EFFORTS = {
     EFFORT_HIGH_FAST: "High fast",
 }
 SUBENTRY_AGENT = "agent"
+SUBENTRY_MCP = "mcp"
 ROLE_HUB = "hub"
 ROLE_PROVIDER = "provider"
 CONF_ROLE = "role"
@@ -134,10 +135,6 @@ CONF_MCP_URL = "mcp_url"
 CONF_MCP_KIND = "mcp_kind"
 CONF_MCP_TOKEN = "mcp_token"
 CONF_MCP_EXTRA = "mcp_extra"
-CONF_MCP_ADD_NAME = "mcp_add_name"
-CONF_MCP_ADD_URL = "mcp_add_url"
-CONF_MCP_ADD_TOKEN = "mcp_add_token"
-CONF_MCP_REMOVE = "mcp_remove"
 CONF_CURSOR_API_KEY = "cursor_api_key"
 CONF_MODEL = "model"
 CONF_ENABLE_OVERLAY = "enable_overlay"

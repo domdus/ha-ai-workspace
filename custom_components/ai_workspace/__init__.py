@@ -2,13 +2,19 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from types import MappingProxyType
 
 import voluptuous as vol
 from homeassistant.components import frontend, panel_custom
 from homeassistant.components.http import StaticPathConfig
 import asyncio
 
-from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry, ConfigEntryState
+from homeassistant.config_entries import (
+    SOURCE_IMPORT,
+    ConfigEntry,
+    ConfigEntryState,
+    ConfigSubentry,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
@@ -51,6 +57,7 @@ from .const import (
     MODE_CURSOR,
     ROLE_PROVIDER,
     SUBENTRY_AGENT,
+    SUBENTRY_MCP,
     OVERLAY_JS,
     PANEL_ELEMENT,
     PANEL_JS,
@@ -59,7 +66,7 @@ from .const import (
 )
 from .discovery import async_resolve_runtime_url
 from .http import register_views
-from .mcp_config import mcp_servers_from_saved
+from .mcp_config import clean_mcp_extra, mcp_servers_from_saved
 from .mcp_resolve import async_resolve_mcp_url, mcp_kind_of
 from .models import Settings
 
@@ -99,6 +106,59 @@ def _merged(entry: ConfigEntry) -> dict:
     return {**entry.data, **entry.options}
 
 
+def _extra_connections(entry: ConfigEntry) -> list[dict[str, str]]:
+    found: list[dict[str, str]] = []
+    for sub in getattr(entry, "subentries", {}).values():
+        if getattr(sub, "subentry_type", "") != SUBENTRY_MCP:
+            continue
+        raw = dict(getattr(sub, "data", {}) or {})
+        name = str(raw.get("name") or getattr(sub, "title", "") or "").strip()
+        url = str(raw.get("url") or "").strip()
+        if not name or not url:
+            continue
+        found.append({"name": name, "url": url, "token": str(raw.get("token") or "").strip()})
+    if found:
+        return found
+    return clean_mcp_extra(_merged(entry).get(CONF_MCP_EXTRA))
+
+
+def _migrate_mcp_connections(hass: HomeAssistant, hub: ConfigEntry) -> None:
+    """Move connections that used to live on the form onto the service."""
+    if hub.data.get("mcp_connections_migrated"):
+        return
+    extras = clean_mcp_extra(_merged(hub).get(CONF_MCP_EXTRA))
+    existing = {
+        str(sub.unique_id or "")
+        for sub in hub.subentries.values()
+        if getattr(sub, "subentry_type", "") == SUBENTRY_MCP
+    }
+    for item in extras:
+        if item["name"] in existing:
+            continue
+        hass.config_entries.async_add_subentry(
+            hub,
+            ConfigSubentry(
+                data=MappingProxyType(
+                    {"name": item["name"], "url": item["url"], "token": item["token"]}
+                ),
+                subentry_type=SUBENTRY_MCP,
+                title=item["name"],
+                unique_id=item["name"],
+            ),
+        )
+    data = dict(hub.data)
+    data.pop(CONF_MCP_EXTRA, None)
+    data["mcp_connections_migrated"] = True
+    options = dict(hub.options)
+    changed_options = CONF_MCP_EXTRA in options
+    options.pop(CONF_MCP_EXTRA, None)
+    hass.config_entries.async_update_entry(
+        hub,
+        data=data,
+        options=options if changed_options else hub.options,
+    )
+
+
 def _mode(data: dict) -> str:
     configured = str(data.get(CONF_MODE) or "").strip()
     if configured in {MODE_API, MODE_CURSOR}:
@@ -134,7 +194,7 @@ def _settings(hass: HomeAssistant, entry: ConfigEntry, mcp_url: str | None = Non
         mcp_servers=mcp_servers_from_saved(
             mcp_url if mcp_url is not None else configured,
             token,
-            data.get(CONF_MCP_EXTRA),
+            _extra_connections(entry),
         ),
         enable_overlay=bool(data.get(CONF_ENABLE_OVERLAY, True)),
         enable_sidebar=bool(data.get(CONF_ENABLE_SIDEBAR, True)),
@@ -297,6 +357,7 @@ async def _migrate_provider_entries(hass: HomeAssistant, hub: ConfigEntry) -> No
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if is_provider(entry):
         return await _setup_provider(hass, entry)
+    _migrate_mcp_connections(hass, entry)
     await _ensure_shared(hass, entry)
     entry.async_on_unload(entry.add_update_listener(_reload))
     await _migrate_provider_entries(hass, entry)
@@ -329,6 +390,11 @@ async def _reload(hass: HomeAssistant, entry: ConfigEntry) -> None:
     if (hass.data.get(DOMAIN) or {}).get("migrating"):
         return
     await hass.config_entries.async_reload(entry.entry_id)
+    if is_provider(entry):
+        return
+    for child in provider_entries(hass, entry.entry_id):
+        if child.state is ConfigEntryState.LOADED:
+            await hass.config_entries.async_reload(child.entry_id)
 
 
 def _remove_panel(hass: HomeAssistant) -> None:

@@ -10,6 +10,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
+    Selector,
     TextSelector,
     TextSelectorConfig,
     TextSelectorType,
@@ -30,12 +31,7 @@ from .const import (
     CONF_ENABLE_OVERLAY,
     CONF_ENABLE_SIDEBAR,
     CONF_ENABLE_DICTATE,
-    CONF_MCP_ADD_NAME,
-    CONF_MCP_ADD_TOKEN,
-    CONF_MCP_ADD_URL,
-    CONF_MCP_EXTRA,
     CONF_MCP_KIND,
-    CONF_MCP_REMOVE,
     CONF_MCP_TOKEN,
     CONF_MCP_URL,
     CONF_MODE,
@@ -62,24 +58,24 @@ from .const import (
     ROLE_HUB,
     ROLE_PROVIDER,
     STT_BROWSER,
+    SUBENTRY_MCP,
     TTS_OFF,
     default_api_model,
     mcp_kind_options,
 )
 from .voice import async_speech_engines
 from .discovery import async_probe_runtime, async_resolve_runtime_url, hassio_runtime_url
-from .mcp_config import clean_mcp_extra, server_slug
+from .mcp_flow import McpConnectionFlow
 from .mcp_resolve import async_detect_mcp_kinds, async_probe_mcp, async_resolve_mcp_url, default_mcp_url, mcp_kind_of
 
 SECTION_PROVIDER = "provider"
 SECTION_MCP = "mcp"
-SECTION_MORE = "more"
 SECTION_PROMPT = "prompt"
+SECTION_VOICE = "voice"
 _PARENT_KEYS = (
     CONF_MCP_KIND,
     CONF_MCP_URL,
     CONF_MCP_TOKEN,
-    CONF_MCP_EXTRA,
     CONF_SYSTEM_PROMPT,
     CONF_RUNTIME_URL,
     CONF_ENABLE_OVERLAY,
@@ -126,58 +122,12 @@ def _mcp_url_note(url: str, auto: bool) -> str:
     return "Auto-detected MCP URL. Keep this unless you use a different MCP."
 
 
-def _more_note(current: dict | None) -> str:
-    names = [item["name"] for item in clean_mcp_extra((current or {}).get(CONF_MCP_EXTRA))]
-    if not names:
-        return (
-            "None yet. The connection above is enough for this Home Assistant. "
-            "Add another MCP server here when the assistant should use something else too, "
-            "such as a website or another tool. Save, then open Configure again to add the next one."
-        )
-    return (
-        "Already added: "
-        + ", ".join(names)
-        + ". Fill the fields to add another, or pick one to remove, then save. "
-        + "Use the same name to replace a connection. Leave the token empty to keep its saved key."
-    )
-
-
-def _apply_mcp_extra(out: dict, saved: dict) -> dict[str, str]:
-    errors: dict[str, str] = {}
-    present = any(key in out for key in (CONF_MCP_ADD_URL, CONF_MCP_ADD_NAME, CONF_MCP_ADD_TOKEN, CONF_MCP_REMOVE))
-    if not present:
-        out[CONF_MCP_EXTRA] = clean_mcp_extra(out.get(CONF_MCP_EXTRA) or saved.get(CONF_MCP_EXTRA))
-        return errors
-    extras = clean_mcp_extra(saved.get(CONF_MCP_EXTRA))
-    remove = str(out.pop(CONF_MCP_REMOVE, "") or "").strip()
-    name = str(out.pop(CONF_MCP_ADD_NAME, "") or "").strip()
-    url = str(out.pop(CONF_MCP_ADD_URL, "") or "").strip()
-    token = str(out.pop(CONF_MCP_ADD_TOKEN, "") or "").strip()
-    if remove and remove != "keep":
-        extras = [item for item in extras if item["name"] != remove]
-    if url or name or token:
-        if not url.startswith(("http://", "https://")):
-            errors[CONF_MCP_ADD_URL] = "required"
-        slug = server_slug(name, url)
-        if not slug:
-            errors[CONF_MCP_ADD_NAME] = "required"
-        if not errors:
-            previous = next((item for item in extras if item["name"] == slug), None)
-            if previous and not token:
-                token = previous["token"]
-            extras = [item for item in extras if item["name"] != slug]
-            extras.append({"name": slug, "url": url, "token": token})
-    out[CONF_MCP_EXTRA] = extras
-    return errors
-
-
 def _form_placeholders(
     *,
     mcp_url: str = "",
     mcp_auto: bool = False,
     runtime_auto: bool = False,
     runtime_live: bool = False,
-    current: dict | None = None,
 ) -> dict[str, str]:
     if runtime_live:
         runtime_note = "✅ Runtime found."
@@ -190,7 +140,6 @@ def _form_placeholders(
         "mcp_url_note": _mcp_url_note(mcp_url, mcp_auto),
         "runtime_url_mark": " (Auto-detected)" if runtime_auto else "",
         "runtime_url_note": runtime_note,
-        "more_note": _more_note(current),
     }
 
 
@@ -264,7 +213,6 @@ def _normalize(user_input: dict, current: dict | None = None, hass: HomeAssistan
     elif kind == MCP_COOLVER and port != 8099:
         url = default_mcp_url(hass, kind)
     out[CONF_MCP_URL] = url
-    out["_mcp_extra_errors"] = _apply_mcp_extra(out, saved)
     return out
 
 
@@ -353,7 +301,6 @@ async def _cursor_placeholders(hass: HomeAssistant, defaults: dict, mcp_auto: bo
         mcp_auto=mcp_auto,
         runtime_auto=bool(discovered),
         runtime_live=live,
-        current=defaults,
     )
 
 
@@ -369,7 +316,7 @@ def _prompt_schema(defaults: dict | None = None):
 
 def _flatten(user_input: dict) -> dict:
     out = dict(user_input)
-    for key in (SECTION_PROVIDER, SECTION_MCP, SECTION_MORE, SECTION_PROMPT):
+    for key in (SECTION_PROVIDER, SECTION_MCP, SECTION_PROMPT, SECTION_VOICE):
         nested = out.pop(key, None)
         if isinstance(nested, dict):
             out.update(nested)
@@ -435,46 +382,65 @@ def _api_errors(user_input: dict) -> dict:
     return errors
 
 
-def _more_schema(current: dict) -> vol.Schema:
-    extras = clean_mcp_extra(current.get(CONF_MCP_EXTRA))
-    fields: dict = {
-        vol.Optional(CONF_MCP_ADD_NAME, default=""): cv.string,
-        vol.Optional(CONF_MCP_ADD_URL, default=""): cv.string,
-        vol.Optional(CONF_MCP_ADD_TOKEN, default=""): _TOKEN_SELECTOR,
-    }
-    if extras:
-        options = [{"value": "keep", "label": "Keep all"}]
-        options.extend({"value": item["name"], "label": item["name"]} for item in extras)
-        fields = {
-            vol.Optional(CONF_MCP_REMOVE, default="keep"): SelectSelector(
-                SelectSelectorConfig(options=options, mode="dropdown")
-            ),
-            **fields,
+class _SideBySide(Selector):
+    """Two fields on one row. The form stores them under the field name."""
+
+    selector_type = "grid"
+    CONFIG_SCHEMA = vol.Schema({})
+
+    def __init__(self, nested: vol.Schema, column_min_width: str = "240px") -> None:
+        super().__init__({})
+        self._nested = nested
+        self._width = column_min_width
+
+    def __call__(self, value):
+        if not isinstance(value, dict):
+            value = {}
+        return self._nested(value)
+
+    def serialize(self) -> dict:
+        from probatio import to_field_list
+
+        return {
+            "type": "grid",
+            "column_min_width": self._width,
+            "schema": to_field_list(self._nested, custom_serializer=cv.custom_serializer),
         }
-    return vol.Schema(fields)
 
 
-async def _shared_form(hass, defaults: dict, kinds: list[str]) -> vol.Schema:
-    stt = await async_speech_engines(hass, "stt")
-    tts = await async_speech_engines(hass, "tts")
+def _voice_schema(defaults: dict, stt: list, tts: list) -> vol.Schema:
     return vol.Schema(
         {
-            vol.Required(SECTION_MCP): section(_mcp_schema(defaults, hass, kinds), {"collapsed": False}),
-            vol.Required(SECTION_MORE): section(_more_schema(defaults), {"collapsed": True}),
-            vol.Required(SECTION_PROMPT): section(_prompt_schema(defaults), {"collapsed": False}),
-            vol.Optional(
-                CONF_RUNTIME_URL,
-                default=str(defaults.get(CONF_RUNTIME_URL) or ""),
-            ): _MCP_SELECTOR,
             vol.Optional(CONF_STT_ENGINE, default=str(defaults.get(CONF_STT_ENGINE) or STT_BROWSER)): SelectSelector(
                 SelectSelectorConfig(options=stt, mode="dropdown")
             ),
             vol.Optional(CONF_TTS_ENGINE, default=str(defaults.get(CONF_TTS_ENGINE) or TTS_OFF)): SelectSelector(
                 SelectSelectorConfig(options=tts, mode="dropdown")
             ),
+        }
+    )
+
+
+async def _shared_form(hass, defaults: dict, kinds: list[str]) -> vol.Schema:
+    stt = await async_speech_engines(hass, "stt")
+    tts = await async_speech_engines(hass, "tts")
+    voice = {
+        CONF_STT_ENGINE: str(defaults.get(CONF_STT_ENGINE) or STT_BROWSER),
+        CONF_TTS_ENGINE: str(defaults.get(CONF_TTS_ENGINE) or TTS_OFF),
+    }
+    return vol.Schema(
+        {
+            vol.Required(SECTION_MCP): section(_mcp_schema(defaults, hass, kinds), {"collapsed": False}),
+            vol.Required(SECTION_PROMPT): section(_prompt_schema(defaults), {"collapsed": False}),
+            vol.Optional(
+                CONF_RUNTIME_URL,
+                default=str(defaults.get(CONF_RUNTIME_URL) or ""),
+            ): _MCP_SELECTOR,
+            vol.Optional(SECTION_VOICE, default=voice): _SideBySide(_voice_schema(defaults, stt, tts)),
             vol.Optional(CONF_SPEAK_REPLIES, default=bool(defaults.get(CONF_SPEAK_REPLIES, False))): cv.boolean,
             **_ui_schema(defaults),
-        }
+        },
+        extra=vol.ALLOW_EXTRA,
     )
 
 
@@ -485,7 +451,6 @@ def _shared_errors(flat: dict) -> dict:
         errors[CONF_MCP_URL] = "required"
     if kind == MCP_COOLVER and not str(flat.get(CONF_MCP_TOKEN) or "").strip():
         errors[CONF_MCP_TOKEN] = "required"
-    errors.update(flat.pop("_mcp_extra_errors", {}) or {})
     return errors
 
 
@@ -577,7 +542,9 @@ class AiWorkspaceConfigFlow(ProviderSteps, config_entries.ConfigFlow, domain=DOM
                     entry = self._get_reconfigure_entry()
                     data["providers_migrated"] = bool(entry.data.get("providers_migrated"))
                     data["agents_migrated"] = bool(entry.data.get("agents_migrated"))
+                    data["mcp_connections_migrated"] = bool(entry.data.get("mcp_connections_migrated"))
                     return self.async_update_reload_and_abort(entry, data=data)
+                data["mcp_connections_migrated"] = True
                 await self.async_set_unique_id(DOMAIN)
                 return self.async_create_entry(title="AI Workspace", data=data)
             user_input = {**self._ui, **flat}
@@ -589,9 +556,15 @@ class AiWorkspaceConfigFlow(ProviderSteps, config_entries.ConfigFlow, domain=DOM
             description_placeholders=_form_placeholders(
                 mcp_url=str(defaults.get(CONF_MCP_URL) or ""),
                 mcp_auto=mcp_auto,
-                current=defaults,
             ),
         )
+
+    @classmethod
+    @callback
+    def async_get_supported_subentry_types(cls, config_entry):
+        if is_provider(config_entry):
+            return {}
+        return {SUBENTRY_MCP: McpConnectionFlow}
 
     async def async_step_cursor(self, user_input=None):
         errors = {}
@@ -603,7 +576,6 @@ class AiWorkspaceConfigFlow(ProviderSteps, config_entries.ConfigFlow, domain=DOM
             if not runtime:
                 errors["base"] = "no_runtime"
             else:
-                flat.pop("_mcp_extra_errors", None)
                 data = {
                     **self._ui,
                     **flat,
@@ -627,7 +599,6 @@ class AiWorkspaceConfigFlow(ProviderSteps, config_entries.ConfigFlow, domain=DOM
             flat = _normalize(_flatten(user_input), self._ui, self.hass)
             errors = _api_errors(flat)
             if not errors:
-                flat.pop("_mcp_extra_errors", None)
                 data = {**self._ui, **flat, CONF_MODE: MODE_API}
                 await self.async_set_unique_id(DOMAIN)
                 return self.async_create_entry(title="AI Workspace", data=data)
@@ -640,14 +611,12 @@ class AiWorkspaceConfigFlow(ProviderSteps, config_entries.ConfigFlow, domain=DOM
             description_placeholders=_form_placeholders(
                 mcp_url=str(defaults.get(CONF_MCP_URL) or ""),
                 mcp_auto=mcp_auto,
-                current=defaults,
             ),
         )
 
     async def async_step_import(self, user_input):
         await self.async_set_unique_id(DOMAIN)
         data = _normalize({**user_input}, hass=self.hass)
-        data.pop("_mcp_extra_errors", None)
         data.setdefault(CONF_MODE, MODE_CURSOR if data.get(CONF_RUNTIME_URL) else MODE_API)
         self._abort_if_unique_id_configured(updates=data)
         return self.async_create_entry(title="AI Workspace", data=data)
@@ -685,7 +654,6 @@ class AiWorkspaceOptionsFlow(config_entries.OptionsFlow):
             description_placeholders=_form_placeholders(
                 mcp_url=str(defaults.get(CONF_MCP_URL) or ""),
                 mcp_auto=mcp_auto,
-                current=defaults,
             ),
         )
 
@@ -707,7 +675,6 @@ class AiWorkspaceOptionsFlow(config_entries.OptionsFlow):
             description_placeholders=_form_placeholders(
                 mcp_url=str(defaults.get(CONF_MCP_URL) or ""),
                 mcp_auto=mcp_auto,
-                current=defaults,
             ),
         )
 
