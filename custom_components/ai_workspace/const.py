@@ -270,7 +270,7 @@ def with_language_rule(text: str, language: str = "") -> str:
     rule = language_instruction(language)
     scoped = f"{body}\n\n{_CHAT_SCOPE}".strip() if body else _CHAT_SCOPE
     return f"{scoped}\n\n{rule}".strip()
-HA_LINK_INSTRUCTIONS = """Every automation, script, scene, device, helper, or entity you mention must be a Markdown link. Do not list plain names. Do not ask whether the user wants links. Use root-relative paths that start with /. Never use 127.0.0.1, localhost, or an MCP URL in those links — those are only how tools reach Home Assistant from Docker.
+HA_LINK_INSTRUCTIONS = """Every automation, script, scene, device, helper, entity, or dashboard/view you mention must be a Markdown link. Do not list plain names or bare paths. Do not ask whether the user wants links. Use root-relative paths that start with /. Never use 127.0.0.1, localhost, or an MCP URL in those links — those are only how tools reach Home Assistant from Docker.
 
 URL rules (wrong ids open a blank editor):
 - Automations: [Name](/config/automation/edit/{id}) where {id} is the automation config id / unique_id from the tool. That may be a yaml id (balcony_irrigation) or a numeric timestamp (1687972788597). NEVER use entity_id. Wrong: /config/automation/edit/automation.balcony_irrigation Right: /config/automation/edit/balcony_irrigation
@@ -279,6 +279,7 @@ URL rules (wrong ids open a blank editor):
 - Devices: [Name](/config/devices/device/{device_id}) using the hex device_id (for example ce88feb75016ee2f89ed363b4995a1c8), never an entity_id.
 - Entities: [Name](/config/entities/entity/{entity_id}) using the full entity_id (light.kitchen).
 - Helpers (input_boolean, input_number, counter, timer, schedule, …): [Name](/config/entities/entity/{entity_id}) using the helper entity_id, not a generic /config/helpers list.
+- Dashboards and views: [Media](/lovelace/media) or [Overview](/lovelace/0). Never write a bare /lovelace/... path without a Markdown link.
 Take id, unique_id, and device_id from the MCP tool result. If a tool only returned entity_id for an automation, look up its id before linking.
 
 Never list plain names. Never put names in a markdown table unless every name cell is already a Markdown link. Example: | [Bewässerung](/config/automation/edit/balcony_irrigation) | on |"""
