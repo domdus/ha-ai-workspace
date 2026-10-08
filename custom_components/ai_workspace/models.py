@@ -49,6 +49,7 @@ class Settings:
     enable_sidebar: bool = True
     enable_dictate: bool = True
     allow_users: bool = False
+    house_map: bool = False
     mode: str = "cursor"
     api_provider: str = "openai"
     api_key: str = ""

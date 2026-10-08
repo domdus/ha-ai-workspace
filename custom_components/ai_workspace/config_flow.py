@@ -32,6 +32,7 @@ from .const import (
     CONF_ENABLE_OVERLAY,
     CONF_ENABLE_SIDEBAR,
     CONF_ENABLE_DICTATE,
+    CONF_HOUSE_MAP,
     CONF_MCP_KIND,
     CONF_MCP_TOKEN,
     CONF_MCP_URL,
@@ -93,6 +94,7 @@ _PARENT_KEYS = (
     CONF_ENABLE_SIDEBAR,
     CONF_ENABLE_DICTATE,
     CONF_ALLOW_USERS,
+    CONF_HOUSE_MAP,
     CONF_STT_ENGINE,
     CONF_TTS_ENGINE,
     CONF_SPEAK_REPLIES,
@@ -172,6 +174,10 @@ def _ui_schema(defaults: dict | None = None):
         vol.Optional(
             CONF_ALLOW_USERS,
             default=current.get(CONF_ALLOW_USERS, False),
+        ): cv.boolean,
+        vol.Optional(
+            CONF_HOUSE_MAP,
+            default=current.get(CONF_HOUSE_MAP, False),
         ): cv.boolean,
     }
 

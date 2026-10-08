@@ -45,6 +45,7 @@ from .const import (
     CONF_ENABLE_SIDEBAR,
     CONF_ALLOW_USERS,
     CONF_ENABLE_DICTATE,
+    CONF_HOUSE_MAP,
     CONF_MCP_EXTRA,
     CONF_MCP_KIND,
     CONF_MCP_TOKEN,
@@ -107,6 +108,7 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Optional(CONF_ENABLE_OVERLAY, default=True): cv.boolean,
                 vol.Optional(CONF_ENABLE_DICTATE, default=True): cv.boolean,
                 vol.Optional(CONF_ALLOW_USERS, default=False): cv.boolean,
+                vol.Optional(CONF_HOUSE_MAP, default=False): cv.boolean,
                 vol.Optional(CONF_STT_ENGINE, default=STT_BROWSER): cv.string,
                 vol.Optional(CONF_TTS_ENGINE, default=TTS_OFF): cv.string,
                 vol.Optional(CONF_SPEAK_REPLIES, default=False): cv.boolean,
@@ -229,6 +231,16 @@ def _settings(hass: HomeAssistant, entry: ConfigEntry, mcp_url: str | None = Non
     else:
         token = str(data.get(CONF_MCP_TOKEN) or "").strip()
         configured = str(data.get(CONF_MCP_URL) or "").strip()
+    servers = mcp_servers_from_saved(
+        mcp_url if mcp_url is not None else configured,
+        token,
+        extras,
+    )
+    house_map = bool(data.get(CONF_HOUSE_MAP, False))
+    if house_map:
+        from .house_map import mcp_server_config
+
+        servers = {**servers, "house-map": mcp_server_config(hass, token)}
     return Settings(
         data_dir=root,
         workspace_dir=root / "workspace",
@@ -237,15 +249,12 @@ def _settings(hass: HomeAssistant, entry: ConfigEntry, mcp_url: str | None = Non
         model=_model_for_mode(data),
         mcp_kind=mcp_kind_of(data),
         mcp_token=token,
-        mcp_servers=mcp_servers_from_saved(
-            mcp_url if mcp_url is not None else configured,
-            token,
-            extras,
-        ),
+        mcp_servers=servers,
         enable_overlay=bool(data.get(CONF_ENABLE_OVERLAY, True)),
         enable_sidebar=bool(data.get(CONF_ENABLE_SIDEBAR, True)),
         enable_dictate=bool(data.get(CONF_ENABLE_DICTATE, True)),
         allow_users=bool(data.get(CONF_ALLOW_USERS, False)),
+        house_map=house_map,
         mode=_mode(data),
         api_provider=str(data.get(CONF_API_PROVIDER) or "openai").strip() or "openai",
         api_key=str(data.get(CONF_API_KEY) or "").strip(),
@@ -360,6 +369,9 @@ async def _ensure_shared(hass: HomeAssistant, hub: ConfigEntry) -> dict:
         require_admin=True,
     )
     _set_overlay_js(hass, settings.enable_overlay)
+    from .house_map import async_setup_house_map
+
+    await async_setup_house_map(hass, store, bool(settings.house_map))
     return hass.data[DOMAIN]
 
 
@@ -699,6 +711,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if child.state is ConfigEntryState.LOADED:
             await hass.config_entries.async_unload(child.entry_id)
     data = hass.data.pop(DOMAIN, None)
+    if data and callable(data.get("house_map_unsub")):
+        data["house_map_unsub"]()
     _set_overlay_js(hass, False)
     _remove_panel(hass)
     if data and data.get("runtime"):

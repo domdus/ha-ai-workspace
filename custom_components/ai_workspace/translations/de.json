@@ -15,7 +15,8 @@
           "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
           "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen",
           "enable_dictate": "Diktier-Schaltfläche anzeigen",
-          "allow_users": "Normale Benutzer erlauben"
+          "allow_users": "Normale Benutzer erlauben",
+          "house_map": "Haus-Karte (Cache)"
         },
         "sections": {
           "provider": {
@@ -65,7 +66,8 @@
           "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
           "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen",
           "enable_dictate": "Diktier-Schaltfläche anzeigen",
-          "allow_users": "Normale Benutzer erlauben"
+          "allow_users": "Normale Benutzer erlauben",
+          "house_map": "Haus-Karte (Cache)"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
@@ -73,7 +75,8 @@
           "enable_sidebar": "Der Seitenleisteneintrag AI Workspace. Die Seite bleibt unter /ai-workspace erreichbar, wenn das aus ist.",
           "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt.",
           "enable_dictate": "Mikrofon im Eingabefeld. Browser erlauben das Diktieren nur über https://.",
-          "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren."
+          "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren.",
+          "house_map": "Beschleunigt neue Chats und spart Tokens: Namen von Entitäten, Bereichen, Automationen und Dashboards kommen aus einem lokalen Index, bevor große MCP-Abfragen laufen. Standardmäßig aus. Der Index ist kein Live-Zustand."
         },
         "sections": {
           "mcp": {
@@ -125,13 +128,15 @@
           "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
           "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen",
           "enable_dictate": "Diktier-Schaltfläche anzeigen",
-          "allow_users": "Normale Benutzer erlauben"
+          "allow_users": "Normale Benutzer erlauben",
+          "house_map": "Haus-Karte (Cache)"
         },
         "data_description": {
           "enable_sidebar": "Der Seitenleisteneintrag AI Workspace. Die Seite bleibt unter /ai-workspace erreichbar, wenn das aus ist.",
           "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt.",
           "enable_dictate": "Mikrofon im Eingabefeld. Browser erlauben das Diktieren nur über https://.",
-          "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren."
+          "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren.",
+          "house_map": "Beschleunigt neue Chats und spart Tokens: Namen von Entitäten, Bereichen, Automationen und Dashboards kommen aus einem lokalen Index, bevor große MCP-Abfragen laufen. Standardmäßig aus. Der Index ist kein Live-Zustand."
         },
         "sections": {
           "provider": {
@@ -181,7 +186,8 @@
           "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
           "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen",
           "enable_dictate": "Diktier-Schaltfläche anzeigen",
-          "allow_users": "Normale Benutzer erlauben"
+          "allow_users": "Normale Benutzer erlauben",
+          "house_map": "Haus-Karte (Cache)"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
@@ -189,7 +195,8 @@
           "enable_sidebar": "Der Seitenleisteneintrag AI Workspace. Die Seite bleibt unter /ai-workspace erreichbar, wenn das aus ist.",
           "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt.",
           "enable_dictate": "Mikrofon im Eingabefeld. Browser erlauben das Diktieren nur über https://.",
-          "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren."
+          "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren.",
+          "house_map": "Beschleunigt neue Chats und spart Tokens: Namen von Entitäten, Bereichen, Automationen und Dashboards kommen aus einem lokalen Index, bevor große MCP-Abfragen laufen. Standardmäßig aus. Der Index ist kein Live-Zustand."
         },
         "sections": {
           "mcp": {

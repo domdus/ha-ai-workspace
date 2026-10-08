@@ -118,6 +118,10 @@ class CursorProvider:
         if not self.settings.cursor_api_key:
             yield {"type": "error", "message": _MISSING_KEY}
             return
+        if self.settings.house_map:
+            from .house_map import HOUSE_MAP_INSTRUCTIONS
+
+            outbound = f"{HOUSE_MAP_INSTRUCTIONS}\n\n{outbound}"
         mcp_servers = self.settings.mcp_servers
         if not mcp_servers:
             logger.warning("no MCP servers configured")
