@@ -135,13 +135,13 @@ After the Runtime is up and running: **Settings → Devices & services → Add i
 - Save. Home Assistant then asks for the first agent. Choose **Cursor**.
 - Model: `composer-2.5`, `grok-4`, `gpt-4.1`, `claude-sonnet-4-5` (or leave empty to use `CURSOR_MODEL` on the container).
 - Paste the Cursor API key, unless the Runtime already has one.
-- Open **AI Workspace** (`/ai-workspace`). More agents are added on the **AI Agents** device.
+- Open **AI Workspace** (`/ai-workspace`). More agents are added with **Add agent**.
 
 ## More than one connection
 
 The first connection is this Home Assistant. After setup it is a row on the **AI Workspace** device, with the same shape as any connection you add later. When the assistant should also reach another MCP server, such as a website, a CMS, or another tool you already run, add that row too.
 
-**Settings → Devices & services → AI Workspace.** Under the AI Workspace device, choose **Add connection**. Give it a short name and its address. Open a row to change it, or remove it from that row. The assistant can use every connection in one chat, whether the agent is a cloud model or Cursor.
+**Settings → Devices & services → AI Workspace.** Use **Add connection** for another MCP server, and **Add agent** for another provider. Give a connection a short name and its address. Open a row to change it, or remove it from that row. The assistant can use every connection in one chat, whether the agent is a cloud model or Cursor.
 
 ## System Prompt
 
@@ -159,8 +159,8 @@ A tool that sends back the whole house is shortened before the model reads it. T
 
 | Option | What it does |
 |---|---|
-| **AI Workspace** | Shared chat settings, and one row per MCP connection. Add a connection on this device |
-| **AI Agents** | One row per Cursor, OpenAI, Claude, Gemini, OpenRouter, Ollama, Azure, or other provider. Effort is Fast, High, or High fast when the model supports it |
+| **AI Workspace** | Shared chat settings, and one row per MCP connection. **Add connection** puts another row here |
+| **AI Agents** | One row per Cursor, OpenAI, Claude, Gemini, OpenRouter, Ollama, Azure, or other provider. **Add agent** puts another row here. Effort is Fast, High, or High fast when the model supports it |
 | **Copy key from** | Uses the key already stored by OpenRouter, OpenAI, Claude, Gemini, Ollama, or Azure in Home Assistant. That integration stays |
 | **MCP type** | Asked once, when you add AI Workspace: built-in MCP Server, HA-MCP, HA Vibecode Agent, or a custom URL. It is saved as the first connection row |
 | **MCP URL** | Empty uses auto-detect. Paste the HA-MCP webhook or a custom URL only if needed |
@@ -173,12 +173,12 @@ A tool that sends back the whole house is shortened before the model reads it. T
 | **Show dictate button** | Microphone in the prompt. On by default |
 | **Show AI Workspace in the sidebar** | Sidebar item. `/ai-workspace` still works if this is off |
 
-The integration page has two entries. **AI Workspace** is the shared chat setup and the connection rows. **AI Agents** is one row per provider. You add the integration once.
+The integration page has two entries. **AI Workspace** is the shared chat setup and the connection rows. **AI Agents** is one row per provider. You add the integration once. **Add connection** and **Add agent** at the top of that page add a row, not another copy of those two entries.
 
 The first connection is chosen on that first screen, then it is a row with the others. Every connection is sent with each chat. The Cursor API key stays on the Cursor agent. The Runtime URL stays on AI Workspace.
 
 ## Remove it
 
-1. **Settings → Devices & services → AI Workspace → Delete.** That removes AI Agents as well.
+1. **Settings → Devices & services → AI Workspace → Delete.** That removes AI Agents as well. AI Agents has no Delete of its own.
 2. HACS → AI Workspace → **Remove**, restart.
 3. Runtime: remove the **app**, or `docker compose down` in the Runtime compose folder (`docker rm -f cursor-sdk` if an old container remains).

@@ -11,6 +11,7 @@ import asyncio
 
 from homeassistant.config_entries import (
     SOURCE_IMPORT,
+    SOURCE_SYSTEM,
     ConfigEntry,
     ConfigEntryState,
     ConfigSubentry,
@@ -451,19 +452,25 @@ async def _ensure_agents_entry(hass: HomeAssistant, hub: ConfigEntry) -> ConfigE
     """Create AI Agents without a second trip through Add integration.
 
     single_config_entry blocks another config flow once AI Workspace exists.
-    Adding the entry directly still gives it its own device and its own rows.
+    A system source hides Delete and Disable on that row. Removing AI Workspace
+    still removes this entry.
     """
     found = agents_entry(hass, hub.entry_id)
     if found is not None:
+        if found.source != SOURCE_SYSTEM:
+            found.source = SOURCE_SYSTEM
+            hass.config_entries.async_update_entry(
+                found, data={**dict(found.data), "system_entry": True}
+            )
         return found
     created = ConfigEntry(
         version=1,
         minor_version=1,
         domain=DOMAIN,
         title=AGENTS_TITLE,
-        data={CONF_ROLE: ROLE_AGENTS, CONF_HUB_ID: hub.entry_id},
+        data={CONF_ROLE: ROLE_AGENTS, CONF_HUB_ID: hub.entry_id, "system_entry": True},
         options={},
-        source="user",
+        source=SOURCE_SYSTEM,
         unique_id=f"{hub.entry_id}-agents",
         discovery_keys=MappingProxyType({}),
         subentries_data=None,
@@ -683,10 +690,23 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    if is_provider(entry) or is_agents(entry):
+    bucket = hass.data.setdefault(DOMAIN, {})
+    if is_provider(entry):
         return
-    agents = agents_entry(hass, entry.entry_id)
-    if agents is not None:
-        await hass.config_entries.async_remove(agents.entry_id)
-    for child in list(provider_entries(hass, entry.entry_id)):
-        await hass.config_entries.async_remove(child.entry_id)
+    if is_agents(entry):
+        if bucket.get("removing_hub"):
+            return
+        hub_id = str(entry.data.get(CONF_HUB_ID) or "")
+        hub = hass.config_entries.async_get_entry(hub_id) if hub_id else hub_entry(hass)
+        if hub is not None and not hub.disabled_by:
+            hass.async_create_task(_ensure_agents_entry(hass, hub))
+        return
+    bucket["removing_hub"] = True
+    try:
+        agents = agents_entry(hass, entry.entry_id)
+        if agents is not None:
+            await hass.config_entries.async_remove(agents.entry_id)
+        for child in list(provider_entries(hass, entry.entry_id)):
+            await hass.config_entries.async_remove(child.entry_id)
+    finally:
+        bucket.pop("removing_hub", None)
