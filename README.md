@@ -10,7 +10,7 @@
 
 # AI Workspace
 
-An agent chat that can see **your** Home Assistant installation through MCP.
+Work on **your** Home Assistant installation through MCP.
 
 This is a HACS integration. The agent is a **cloud API** (OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible) or Cursor AI via the **Cursor SDK Runtime** used in Home Assistant by the integration.
 
