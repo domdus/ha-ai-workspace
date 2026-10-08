@@ -5,7 +5,7 @@
 <p align="center"><em>Use AI inside Home Assistant from your couch.</em></p>
 
 <p align="center">
-  <img src="docs/ai_workspace.webp" alt="AI Workspace chat demo" width="300">
+  <img src="docs/ai_workspace.gif" alt="AI Workspace chat demo" width="300">
 </p>
 
 # AI Workspace
