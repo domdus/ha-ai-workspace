@@ -147,13 +147,14 @@ def _mcp_rows(entry: ConfigEntry) -> list[dict]:
                 "url": url,
                 "token": str(raw.get("token") or "").strip(),
                 "primary": bool(raw.get("primary")),
+                "enabled": bool(raw.get("enabled", True)),
             }
         )
     return found
 
 
 def _primary_and_extras(entry: ConfigEntry) -> tuple[dict | None, list[dict[str, str]]]:
-    rows = _mcp_rows(entry)
+    rows = [row for row in _mcp_rows(entry) if row.get("enabled", True)]
     primary = next((row for row in rows if row.get("primary")), None)
     extras = [
         {"name": row["name"], "url": row["url"], "token": row["token"]}
@@ -446,7 +447,7 @@ def _add_agent_subentry(hass: HomeAssistant, agents: ConfigEntry, agent_id: str,
     for sub in agents.subentries.values():
         if getattr(sub, "subentry_type", "") == SUBENTRY_AGENT and str(sub.unique_id or "") == agent_id:
             return sub
-    payload = {key: value for key, value in raw.items() if key not in {"enabled", "role", "hub_id"}}
+    payload = {key: value for key, value in raw.items() if key not in {"role", "hub_id"}}
     payload[CONF_AGENT_ID] = agent_id
     hass.config_entries.async_add_subentry(
         agents,
@@ -641,6 +642,8 @@ async def _setup_agents(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     runtime = bucket.get("runtime_url") or ""
     providers = {}
     for agent in entry_agents(entry):
+        if not agent.enabled:
+            continue
         providers[agent.id] = _one_provider(hass, bucket["settings"], agent, runtime)
     bucket["providers"] = providers
     entry.async_on_unload(entry.add_update_listener(_reload))

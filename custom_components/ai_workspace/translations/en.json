@@ -506,12 +506,14 @@
           "data": {
             "name": "Name",
             "url": "Address",
-            "token": "Token"
+            "token": "Token",
+            "enabled": "Enabled"
           },
           "data_description": {
             "name": "A short name, such as Directus. The assistant uses it to tell this connection from the others.",
             "url": "The MCP address, starting with https:// or http://.",
-            "token": "Only if that server asks for a key. Leave empty when editing to keep the saved key."
+            "token": "Only if that server asks for a key. Leave empty when editing to keep the saved key.",
+            "enabled": "Off keeps the row but the assistant does not use this connection."
           }
         }
       }
@@ -550,7 +552,7 @@
             "cursor_api_key": "From cursor.com/dashboard/integrations. Leave blank when editing to keep the saved key.",
             "model": "Empty uses Composer.",
             "effort": "Fast, High, or High fast. Composer uses Fast unless you pick High.",
-            "enabled": "Shown in the chat agent list when on."
+            "enabled": "Off hides this agent from chat and Assist."
           }
         },
         "cloud": {
@@ -568,7 +570,7 @@
             "api_key": "Not a Home Assistant token.",
             "model": "Empty uses the provider default.",
             "effort": "Fast, High, or High fast when the model supports it.",
-            "enabled": "Shown in the chat agent list when on."
+            "enabled": "Off hides this agent from chat and Assist."
           }
         },
         "ollama": {
@@ -584,7 +586,7 @@
             "api_base": "Usually http://127.0.0.1:11434/v1",
             "model": "Empty uses llama3.2.",
             "effort": "Used when the model supports it.",
-            "enabled": "Shown in the chat agent list when on."
+            "enabled": "Off hides this agent from chat and Assist."
           }
         },
         "azure": {
@@ -604,7 +606,7 @@
             "model": "The deployment name.",
             "azure_api_version": "Default 2024-10-21.",
             "effort": "Used when the deployment supports it.",
-            "enabled": "Shown in the chat agent list when on."
+            "enabled": "Off hides this agent from chat and Assist."
           }
         },
         "compatible": {
@@ -622,7 +624,7 @@
             "api_base": "Base URL of the server, including /v1 when it uses that path.",
             "model": "Model name on that server.",
             "effort": "Used when the server supports it.",
-            "enabled": "Shown in the chat agent list when on."
+            "enabled": "Off hides this agent from chat and Assist."
           }
         },
         "provider": {

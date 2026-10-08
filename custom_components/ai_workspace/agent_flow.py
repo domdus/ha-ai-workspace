@@ -9,6 +9,8 @@ from homeassistant import config_entries
 from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig, TextSelector, TextSelectorConfig, TextSelectorType
 
 from .agents import borrow_by_id, borrowed_setups
+from homeassistant.helpers import config_validation as cv
+
 from .const import (
     API_AZURE,
     API_COMPATIBLE,
@@ -23,6 +25,7 @@ from .const import (
     CONF_CURSOR_API_KEY,
     CONF_AGENT_ID,
     CONF_EFFORT,
+    CONF_ENABLED,
     CONF_HUB_ID,
     CONF_MODE,
     CONF_ROLE,
@@ -99,6 +102,7 @@ def _fields_schema(step: str, current: dict, borrows: list[dict[str, str]]) -> v
         fields[vol.Optional(CONF_API_KEY, default="")] = _PASSWORD
         fields[vol.Optional(CONF_MODEL, default=model)] = str
     fields.update(_effort_field(current))
+    fields[vol.Optional(CONF_ENABLED, default=bool(current.get(CONF_ENABLED, True)))] = cv.boolean
     return vol.Schema(fields)
 
 
@@ -263,6 +267,7 @@ class ProviderSteps:
                         if provider == API_AZURE
                         else ""
                     ),
+                    CONF_ENABLED: bool(merged.get(CONF_ENABLED, current.get(CONF_ENABLED, True))),
                     CONF_ROLE: ROLE_PROVIDER,
                     CONF_HUB_ID: str(getattr(self, "_hub_id", "") or ""),
                     CONF_AGENT_ID: str(getattr(self, "_agent_id", "") or ""),
