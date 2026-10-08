@@ -334,7 +334,9 @@ class AgentSubentryFlow(ProviderSteps, config_entries.ConfigSubentryFlow):
             same = str(sub.data.get(CONF_API_PROVIDER) or "") == provider
             title = sub.title if same else _title(provider, titles)
             data[CONF_AGENT_ID] = self._agent_id or str(sub.data.get(CONF_AGENT_ID) or sub.unique_id or sub.subentry_id)
-            return self.async_update_reload_and_abort(
+            # Entry has update listeners — reload_and_abort is forbidden; update
+            # fires _reload the same way MCP connection edits do.
+            return self.async_update_and_abort(
                 self._get_entry(),
                 sub,
                 title=title,
