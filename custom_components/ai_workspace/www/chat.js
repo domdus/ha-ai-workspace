@@ -2205,14 +2205,26 @@ export function mountAiWorkspace(root, options = {}) {
     });
   }
 
+  function setMicShown(show) {
+    if (!micBtn) return;
+    const browserOnly = !voice.stt || voice.stt === "browser";
+    const visible = Boolean(show) && !(browserOnly && !SpeechRecognitionAPI);
+    micBtn.classList.toggle("is-hidden", !visible);
+    if (visible) micBtn.removeAttribute("hidden");
+    else micBtn.setAttribute("hidden", "");
+    micBtn.hidden = !visible;
+    if (!visible) stopSpeech();
+  }
+
   async function loadDictate() {
     if (!micBtn) return;
-    let show = true;
+    // Stay hidden until /ui explicitly allows the mic (also covers the overlay drawer).
+    let show = false;
     try {
       const response = await apiFetch(`${API}/ui`);
       if (response?.ok) {
         const body = await response.json();
-        show = body.dictate !== false;
+        show = body.dictate === true;
         voice = {
           dictate: show,
           stt: body.stt || "browser",
@@ -2220,11 +2232,9 @@ export function mountAiWorkspace(root, options = {}) {
         };
       }
     } catch (_err) {
-      show = true;
+      show = false;
     }
-    const browserOnly = !voice.stt || voice.stt === "browser";
-    micBtn.hidden = !show || (browserOnly && !SpeechRecognitionAPI);
-    if (micBtn.hidden) stopSpeech();
+    setMicShown(show);
   }
 
   form.addEventListener("submit", async (event) => {
@@ -2572,5 +2582,5 @@ export function mountAiWorkspace(root, options = {}) {
   resizeComposer();
   const linkWatch = new MutationObserver(() => retargetHaLinks(logEl));
   linkWatch.observe(logEl, { subtree: true, childList: true, attributes: true, attributeFilter: ["href", "target"] });
-  return { openSession, applyRoute, setNarrow, toggleNav, startNewChat };
+  return { openSession, applyRoute, setNarrow, toggleNav, startNewChat, loadDictate };
 }

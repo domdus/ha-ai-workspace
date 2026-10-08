@@ -1076,7 +1076,8 @@ textarea:focus {
   opacity: 0.45;
 }
 
-.mic[hidden] {
+.mic[hidden],
+.mic.is-hidden {
   display: none !important;
 }
 
