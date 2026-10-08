@@ -1,4 +1,4 @@
-"""Add and edit one agent row on the AI Agents entry."""
+"""Add and edit one agent row on the AI Workspace entry."""
 
 from __future__ import annotations
 
@@ -149,7 +149,7 @@ def _hub_cursor_key(flow) -> str:
 
 
 def _provider_names(flow) -> tuple[set[str], set[str]]:
-    from .agents import agents_entry, entry_agents, is_agents, provider_entries
+    from .agents import agents_entry, entry_agents, hub_entry, is_provider, provider_entries
 
     titles: set[str] = set()
     uniques: set[str] = set()
@@ -164,8 +164,8 @@ def _provider_names(flow) -> tuple[set[str], set[str]]:
             parent = getter()
         except Exception:
             parent = None
-    if parent is None or not is_agents(parent):
-        parent = agents_entry(flow.hass)
+    if parent is None or is_provider(parent):
+        parent = agents_entry(flow.hass) or hub_entry(flow.hass)
     if parent is not None:
         for agent in entry_agents(parent):
             titles.add(agent.title)
