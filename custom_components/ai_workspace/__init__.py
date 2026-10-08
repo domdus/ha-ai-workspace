@@ -670,6 +670,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _sync_subentry_devices(hass, entry)
     agents = agents_entry(hass, entry.entry_id)
     if agents and not agents.disabled_by:
+        # Fold may have loaded AI Agents while platforms were deferred — reopen so
+        # conversation (+ Assist pipeline) attach after the hub finishes.
         if hass.is_running:
             hass.async_create_task(_open_agents(hass, agents.entry_id))
         else:
@@ -725,12 +727,45 @@ async def _setup_agents(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         providers[agent.id] = _one_provider(hass, bucket["settings"], agent, runtime)
     bucket["providers"] = providers
     entry.async_on_unload(entry.add_update_listener(_reload))
-    if not hass.is_running or (hass.data.get(DOMAIN) or {}).get("defer_platforms"):
+    # Only skip while the hub is mid-fold; cold start must still attach conversation.
+    if (hass.data.get(DOMAIN) or {}).get("defer_platforms"):
         return True
-    hass.data[DOMAIN].setdefault("agents_platforms", set()).add(entry.entry_id)
-    await hass.config_entries.async_forward_entry_setups(entry, _PLATFORMS)
+    await _attach_agent_platforms(hass, entry)
     _sync_subentry_devices(hass, entry)
     return True
+
+
+def _conversation_platform_loaded(hass: HomeAssistant, entry_id: str) -> bool:
+    """True when conversation still tracks this entry (including after a skipped unload)."""
+    try:
+        from homeassistant.components.conversation import DATA_COMPONENT
+    except ImportError:
+        return False
+    component = hass.data.get(DATA_COMPONENT)
+    if component is None:
+        return False
+    return entry_id in getattr(component, "_platforms", {})
+
+
+async def _attach_agent_platforms(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Attach conversation platforms, clearing any stuck EntityComponent state."""
+    ready = hass.data.setdefault(DOMAIN, {}).setdefault("agents_platforms", set())
+    # If a prior unload was skipped, forward raises "has already been setup" and
+    # no entities (or Assist pipelines) come back — unload only when stuck.
+    if entry.entry_id in ready or _conversation_platform_loaded(hass, entry.entry_id):
+        try:
+            await hass.config_entries.async_unload_platforms(entry, _PLATFORMS)
+        except ValueError:
+            pass
+        except Exception:
+            _LOGGER.debug("AI Agents platform unload before attach skipped", exc_info=True)
+    ready.discard(entry.entry_id)
+    ready.add(entry.entry_id)
+    await hass.config_entries.async_forward_entry_setups(entry, _PLATFORMS)
+    _LOGGER.info(
+        "AI Agents conversation ready (%s agent(s))",
+        len(entry_agents(entry)),
+    )
 
 
 async def _reload(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -778,10 +813,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return unloaded
     if is_agents(entry):
         ready = (hass.data.get(DOMAIN) or {}).get("agents_platforms") or set()
-        if entry.entry_id not in ready:
-            return True
         ready.discard(entry.entry_id)
-        return await hass.config_entries.async_unload_platforms(entry, _PLATFORMS)
+        try:
+            return await hass.config_entries.async_unload_platforms(entry, _PLATFORMS)
+        except ValueError:
+            # Conversation platform was never attached (or already cleared).
+            return True
     agents = agents_entry(hass, entry.entry_id)
     if agents and agents.state is ConfigEntryState.LOADED:
         await hass.config_entries.async_unload(agents.entry_id)

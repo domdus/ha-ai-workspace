@@ -12,7 +12,6 @@ from homeassistant.components.conversation.chat_log import AssistantContent
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import MATCH_ALL
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .agents import Agent, agent_from_entry, entry_agents, is_agents, is_provider
@@ -73,6 +72,7 @@ async def async_setup_entry(
     """Expose each agent to Assist."""
     if is_agents(entry):
         agents = entry_agents(entry)
+        _LOGGER.info("Exposing %s Assist agent(s) for %s", len(agents), entry.title)
         for agent in agents:
             _sync_agent_entity(hass, agent.id, agent.enabled)
         async_add_entities([AiWorkspaceConversationEntity(entry, agent) for agent in agents])
@@ -88,21 +88,17 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
     _attr_supported_features = conversation.ConversationEntityFeature.CONTROL
     _attr_icon = "mdi:robot"
     _attr_should_poll = False
+    # Device linkage comes from _sync_subentry_devices (one device per agent row).
+    # Do not set DeviceInfo here — it fights the subentry device and can strand setup.
 
     def __init__(self, entry: ConfigEntry, agent: Agent) -> None:
         self._agent_id = agent.id
         self._agent_enabled = agent.enabled
+        self._subentry_id = agent.subentry_id
         self._attr_unique_id = agent.id
         self._attr_name = agent.title or entry.title or "AI Workspace"
         if agent.subentry_id:
             self._attr_config_subentry_id = agent.subentry_id
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"agent:{agent.id}")},
-            name=str(self._attr_name),
-            manufacturer="AI Workspace",
-            model="Agent",
-            entry_type=DeviceEntryType.SERVICE,
-        )
 
     @property
     def supported_languages(self) -> list[str] | str:
@@ -111,6 +107,7 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
         _sync_agent_entity(self.hass, self._agent_id, self._agent_enabled)
+        self._link_agent_device()
         if not self._agent_enabled:
             return
         from .assist_pipelines import async_ensure_assist_pipeline
@@ -118,10 +115,54 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
         name = self.name if isinstance(self.name, str) else self._attr_name
         await async_ensure_assist_pipeline(self.hass, self.entity_id, str(name or "AI Workspace"))
 
+    def _link_agent_device(self) -> None:
+        """Put the conversation entity on the agent device so Disable device works."""
+        from homeassistant.helpers import device_registry as dr
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(self.hass)
+        entry = registry.async_get(self.entity_id)
+        if entry is None:
+            return
+        config_entry_id = entry.config_entry_id or (
+            self.platform.config_entry.entry_id if self.platform and self.platform.config_entry else None
+        )
+        devices = dr.async_get(self.hass)
+        device = None
+        get_by_id = getattr(devices, "async_get_device_by_identifier", None)
+        if callable(get_by_id) and config_entry_id:
+            device = get_by_id((DOMAIN, f"agent:{self._agent_id}"), config_entry_id)
+        else:
+            device = devices.async_get_device(identifiers={(DOMAIN, f"agent:{self._agent_id}")})
+        updates: dict[str, Any] = {}
+        if device is not None and entry.device_id != device.id:
+            updates["device_id"] = device.id
+        if self._subentry_id and entry.config_subentry_id != self._subentry_id:
+            updates["config_subentry_id"] = self._subentry_id
+        if updates:
+            try:
+                registry.async_update_entity(self.entity_id, **updates)
+            except TypeError:
+                updates.pop("config_subentry_id", None)
+                if updates:
+                    registry.async_update_entity(self.entity_id, **updates)
+
     async def async_will_remove_from_hass(self) -> None:
+        # Reloads unload the entity but the agent subentry stays — keep the pipeline.
+        from .agents import entry_agents
         from .assist_pipelines import async_remove_assist_pipeline
 
-        await async_remove_assist_pipeline(self.hass, self.entity_id)
+        entry = None
+        if self.registry_entry is not None:
+            entry = self.hass.config_entries.async_get_entry(self.registry_entry.config_entry_id)
+        if entry is None and self.platform is not None:
+            entry = self.platform.config_entry
+        still_configured = bool(
+            entry is not None
+            and any(agent.id == self._agent_id for agent in entry_agents(entry))
+        )
+        if not still_configured:
+            await async_remove_assist_pipeline(self.hass, self.entity_id)
         await super().async_will_remove_from_hass()
 
     async def _async_handle_message(
