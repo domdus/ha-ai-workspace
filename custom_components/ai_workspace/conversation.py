@@ -63,6 +63,7 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
     """Native Assist agent that uses the same model as the sidebar chat."""
 
     _attr_supports_streaming = True
+    _attr_supported_features = conversation.ConversationEntityFeature.CONTROL
     _attr_icon = "mdi:robot"
     _attr_should_poll = False
 
