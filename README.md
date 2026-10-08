@@ -128,12 +128,14 @@ Start that project the same way you start Home Assistant.
 
 ### Add the integration
 
-After the Runtime is up and running: **Settings → Devices & services → Add integration → AI Workspace → Cursor Runtime app.**
+After the Runtime is up and running: **Settings → Devices & services → Add integration → AI Workspace.**
 
 - Runtime URL: leave empty (it should find `http://127.0.0.1:8090`).
-- Model: `composer-2.5`, `grok-4`, `gpt-4.1`, `claude-sonnet-4-5` (or leave empty to use `CURSOR_MODEL` on the container).
 - MCP type: from Requirements. Leave MCP URL empty if it shows as detected.
-- Save. Open **AI Workspace** (`/ai-workspace`).
+- Save. Home Assistant then asks for the first agent. Choose **Cursor**.
+- Model: `composer-2.5`, `grok-4`, `gpt-4.1`, `claude-sonnet-4-5` (or leave empty to use `CURSOR_MODEL` on the container).
+- Paste the Cursor API key, unless the Runtime already has one.
+- Open **AI Workspace** (`/ai-workspace`). More agents are added on the **AI Agents** device.
 
 ## More than one connection
 
@@ -171,7 +173,9 @@ A tool that sends back the whole house is shortened before the model reads it. T
 | **Show dictate button** | Microphone in the prompt. On by default |
 | **Show AI Workspace in the sidebar** | Sidebar item. `/ai-workspace` still works if this is off |
 
-MCP is set on this form for both backends. Every connection is sent with each chat. The Cursor API key stays on the Runtime.
+The integration page has two devices. **AI Workspace** is the shared chat setup and the connection rows. **AI Agents** is one row per provider. You add the integration once.
+
+The first connection is chosen on that first screen, then it is a row with the others. Every connection is sent with each chat. The Cursor API key stays on the Cursor agent. The Runtime URL stays on AI Workspace.
 
 ## Remove it
 

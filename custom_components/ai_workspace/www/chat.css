@@ -715,7 +715,9 @@ h1 {
 }
 
 .agent-picker[hidden] {
-  display: none;
+  display: block !important;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .agent-trigger {
