@@ -704,8 +704,10 @@ export function mountAiWorkspace(root, options = {}) {
       const label = document.createElement("span");
       label.className = "label";
       el.appendChild(label);
-      const anchor = bubble.querySelector(".text") || bubble.lastChild;
-      bubble.insertBefore(el, anchor);
+    }
+    // Keep the status chip under tools and text so it never shifts the answer.
+    if (el.parentElement !== bubble || bubble.lastElementChild !== el) {
+      bubble.appendChild(el);
     }
     let label = el.querySelector(".label");
     if (!label) {
@@ -2272,7 +2274,11 @@ export function mountAiWorkspace(root, options = {}) {
           return;
         }
         if (name === "tool" && data.text) {
-          if (!tools.parentElement) assistant.insertBefore(tools, assistant.querySelector(".activity") || assistant.querySelector(".text"));
+          if (!tools.parentElement) {
+            const textNode = assistant.querySelector(".text");
+            if (textNode) assistant.insertBefore(tools, textNode);
+            else assistant.appendChild(tools);
+          }
           addChip(tools, data, true);
           if (assistant.querySelector(".tools span.busy")) setActivity(assistant, "");
         } else if (name === "status") {
