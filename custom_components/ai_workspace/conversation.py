@@ -52,11 +52,12 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Expose each agent to Assist."""
-    if is_agents(entry):
-        async_add_entities([AiWorkspaceConversationEntity(entry, agent) for agent in entry_agents(entry)])
-        return
     if is_provider(entry):
         async_add_entities([AiWorkspaceConversationEntity(entry, agent_from_entry(entry))])
+        return
+    if is_agents(entry):
+        return
+    async_add_entities([AiWorkspaceConversationEntity(entry, agent) for agent in entry_agents(entry)])
 
 
 class AiWorkspaceConversationEntity(conversation.ConversationEntity):
