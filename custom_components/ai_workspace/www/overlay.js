@@ -299,13 +299,15 @@ async function ensureHost() {
     }
     return mounting;
   };
-  fab.addEventListener("click", () => {
+  fab.addEventListener("click", async () => {
     drawer.classList.add("open");
-    mountChat();
+    const api = await mountChat();
+    api.loadDictate?.();
   });
   newChat.addEventListener("click", async () => {
     drawer.classList.add("open");
     const api = await mountChat();
+    api.loadDictate?.();
     api.startNewChat();
   });
   close.addEventListener("click", () => drawer.classList.remove("open"));
