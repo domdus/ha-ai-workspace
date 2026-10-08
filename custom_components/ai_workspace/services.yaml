@@ -1,0 +1,3 @@
+remove:
+  name: Remove AI Workspace
+  description: Remove AI Workspace and AI Agents. Use this when Delete is hidden on the integration page.
