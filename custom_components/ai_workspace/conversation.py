@@ -46,6 +46,24 @@ async def _login_token(hass: HomeAssistant, user_id: str) -> str | None:
         return None
 
 
+def _sync_agent_entity(hass: HomeAssistant, agent_id: str, enabled: bool) -> None:
+    """Mirror the agent Enabled flag onto the conversation entity."""
+    from homeassistant.helpers import entity_registry as er
+
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id("conversation", DOMAIN, agent_id)
+    if not entity_id:
+        return
+    entry = registry.async_get(entity_id)
+    if entry is None:
+        return
+    if enabled:
+        if entry.disabled_by is er.RegistryEntryDisabler.INTEGRATION:
+            registry.async_update_entity(entity_id, disabled_by=None)
+    elif entry.disabled_by is None:
+        registry.async_update_entity(entity_id, disabled_by=er.RegistryEntryDisabler.INTEGRATION)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -53,7 +71,10 @@ async def async_setup_entry(
 ) -> None:
     """Expose each agent to Assist."""
     if is_agents(entry):
-        async_add_entities([AiWorkspaceConversationEntity(entry, agent) for agent in entry_agents(entry)])
+        agents = entry_agents(entry)
+        for agent in agents:
+            _sync_agent_entity(hass, agent.id, agent.enabled)
+        async_add_entities([AiWorkspaceConversationEntity(entry, agent) for agent in agents])
         return
     if is_provider(entry):
         async_add_entities([AiWorkspaceConversationEntity(entry, agent_from_entry(entry))])
@@ -69,6 +90,7 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
 
     def __init__(self, entry: ConfigEntry, agent: Agent) -> None:
         self._agent_id = agent.id
+        self._agent_enabled = agent.enabled
         self._attr_unique_id = agent.id
         self._attr_name = agent.title or entry.title or "AI Workspace"
         if agent.subentry_id:
@@ -80,6 +102,9 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
+        _sync_agent_entity(self.hass, self._agent_id, self._agent_enabled)
+        if not self._agent_enabled:
+            return
         from .assist_pipelines import async_ensure_assist_pipeline
 
         name = self.name if isinstance(self.name, str) else self._attr_name
