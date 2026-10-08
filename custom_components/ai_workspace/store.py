@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 import threading
 import uuid
@@ -68,6 +69,16 @@ class Store:
                 events TEXT NOT NULL DEFAULT '[]',
                 created_at TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS house_map (
+                kind TEXT NOT NULL,
+                item_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                area_id TEXT NOT NULL DEFAULT '',
+                domain TEXT NOT NULL DEFAULT '',
+                extra TEXT NOT NULL DEFAULT '',
+                PRIMARY KEY (kind, item_id)
+            );
+            CREATE INDEX IF NOT EXISTS house_map_name ON house_map(name);
             """
         )
         cols = {row[1] for row in self._conn.execute("PRAGMA table_info(sessions)")}
@@ -313,6 +324,66 @@ class Store:
             self._conn.execute("DELETE FROM sessions WHERE id = ?", (_text(session_id),))
             self._conn.commit()
         return True
+
+    def replace_house_map(self, rows: list[tuple[str, str, str, str, str, str]]) -> None:
+        with self._lock:
+            self._conn.execute("DELETE FROM house_map")
+            if rows:
+                self._conn.executemany(
+                    """
+                    INSERT OR REPLACE INTO house_map (kind, item_id, name, area_id, domain, extra)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    rows,
+                )
+            self._conn.commit()
+
+    def search_house_map(self, query: str, kind: str = "any", limit: int = 24) -> list[dict]:
+        tokens = [part.lower() for part in _text(query).replace(",", " ").split() if part.strip()]
+        if not tokens:
+            return []
+        kind = _text(kind).lower() or "any"
+        limit = max(1, min(int(limit or 24), 40))
+        clauses = []
+        params: list[object] = []
+        if kind and kind != "any":
+            clauses.append("kind = ?")
+            params.append(kind)
+        for token in tokens[:8]:
+            like = f"%{token}%"
+            clauses.append("(lower(name) LIKE ? OR lower(item_id) LIKE ? OR lower(area_id) LIKE ? OR lower(domain) LIKE ?)")
+            params.extend([like, like, like, like])
+        sql = (
+            "SELECT kind, item_id, name, area_id, domain, extra FROM house_map WHERE "
+            + " AND ".join(clauses)
+            + " ORDER BY kind, name LIMIT ?"
+        )
+        params.append(limit)
+        with self._lock:
+            found = self._conn.execute(sql, params).fetchall()
+        out: list[dict] = []
+        for row in found:
+            item = {
+                "kind": row["kind"],
+                "id": row["item_id"],
+                "name": row["name"],
+            }
+            if row["area_id"]:
+                item["area_id"] = row["area_id"]
+            if row["domain"]:
+                item["domain"] = row["domain"]
+            extra = _text(row["extra"])
+            if extra:
+                try:
+                    payload = json.loads(extra)
+                except json.JSONDecodeError:
+                    payload = None
+                if isinstance(payload, dict):
+                    for key, value in payload.items():
+                        if value not in (None, ""):
+                            item[str(key)] = value
+            out.append(item)
+        return out
 
 
 def _session(row: sqlite3.Row) -> Session:

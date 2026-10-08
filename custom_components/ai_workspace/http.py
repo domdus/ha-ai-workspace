@@ -208,10 +208,15 @@ async def _runtime_chat(
         "question": message,
         "origin": origin,
     }
+    settings = _runtime(hass).get("settings")
     prompt = with_language_rule(
-        str(getattr(_runtime(hass).get("settings"), "system_prompt", "") or "").strip() or DEFAULT_SYSTEM_PROMPT,
+        str(getattr(settings, "system_prompt", "") or "").strip() or DEFAULT_SYSTEM_PROMPT,
         language,
     )
+    if getattr(settings, "house_map", False):
+        from .house_map import HOUSE_MAP_INSTRUCTIONS
+
+        prompt = f"{prompt}\n\n{HOUSE_MAP_INSTRUCTIONS}".strip()
     if prompt:
         payload["message"] = f"{prompt}\n\n{payload['message']}"
     if images:
@@ -932,6 +937,81 @@ class SpeakView(HomeAssistantView):
         return self.json({"url": url})
 
 
+class HouseMapMcpView(HomeAssistantView):
+    """Minimal MCP HTTP endpoint for the local house map search tool."""
+
+    url = "/api/ai_workspace/house_map/mcp"
+    name = "api:ai_workspace:house_map:mcp"
+    requires_auth = True
+
+    async def post(self, request: web.Request) -> web.Response:
+        hass = _hass(request)
+        _user_id(request)
+        settings = _runtime(hass).get("settings")
+        if not getattr(settings, "house_map", False):
+            return web.json_response(
+                {"jsonrpc": "2.0", "id": None, "error": {"code": -32000, "message": "House map cache is off."}},
+                status=404,
+            )
+        try:
+            body = await request.json()
+        except json.JSONDecodeError:
+            return web.json_response(
+                {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Parse error"}},
+                status=400,
+            )
+        if not isinstance(body, dict):
+            return web.json_response(
+                {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid request"}},
+                status=400,
+            )
+        req_id = body.get("id")
+        method = str(body.get("method") or "")
+        params = body.get("params") if isinstance(body.get("params"), dict) else {}
+        from .house_map import TOOL_NAME, HouseMapClient
+
+        store: Store = _runtime(hass)["store"]
+        client = HouseMapClient(hass, store)
+
+        if method == "notifications/initialized" or method.startswith("notifications/"):
+            return web.Response(status=202)
+
+        if method == "initialize":
+            result = {
+                "protocolVersion": "2025-03-26",
+                "capabilities": {"tools": {}},
+                "serverInfo": {"name": "ai-workspace-house-map", "version": "1"},
+            }
+        elif method == "tools/list":
+            result = {"tools": await client.list_tools()}
+        elif method == "tools/call":
+            name = str(params.get("name") or "")
+            arguments = params.get("arguments") if isinstance(params.get("arguments"), dict) else {}
+            try:
+                payload = await client.call_tool(name or TOOL_NAME, arguments)
+            except Exception as exc:
+                return web.json_response(
+                    {"jsonrpc": "2.0", "id": req_id, "error": {"code": -32000, "message": str(exc)[:300]}},
+                    status=200,
+                )
+            text = json.dumps(payload, ensure_ascii=False)
+            result = {"content": [{"type": "text", "text": text}], "structuredContent": payload}
+        elif method == "ping":
+            result = {}
+        else:
+            return web.json_response(
+                {
+                    "jsonrpc": "2.0",
+                    "id": req_id,
+                    "error": {"code": -32601, "message": f"Method not found: {method}"},
+                },
+                status=200,
+            )
+        if req_id is None:
+            return web.Response(status=202)
+        return web.json_response({"jsonrpc": "2.0", "id": req_id, "result": result})
+
+
 def register_views(hass: HomeAssistant) -> None:
     hass.http.register_view(HealthView)
     hass.http.register_view(UiView)
@@ -941,3 +1021,4 @@ def register_views(hass: HomeAssistant) -> None:
     hass.http.register_view(SessionsView)
     hass.http.register_view(SessionView)
     hass.http.register_view(ChatView)
+    hass.http.register_view(HouseMapMcpView)

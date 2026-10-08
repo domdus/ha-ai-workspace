@@ -172,6 +172,7 @@ A tool that sends back the whole house is shortened before the model reads it. T
 | **Text to speech** | Piper or another Home Assistant voice. Spoken replies play on plain http:// |
 | **Show dictate button** | Microphone in the prompt. On by default |
 | **Show AI Workspace in the sidebar** | Sidebar item. `/ai-workspace` still works if this is off |
+| **House map cache** | Off by default. Speeds up and saves tokens on new chats by looking up entity, area, automation, and dashboard names in a local index before broad MCP calls. Not live state |
 
 The integration page has two entries. **AI Workspace** is the shared chat setup and the connection rows. **AI Workspace agents** is one row per provider and lists under it. You add the integration once. Neither row has Delete. **Add connection** and **Add agent** at the top of that page add a row, not another copy of those two entries.
 
