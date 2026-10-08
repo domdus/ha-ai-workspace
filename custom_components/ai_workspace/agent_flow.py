@@ -285,7 +285,7 @@ class ProviderSteps:
 
 
 class AgentSubentryFlow(ProviderSteps, config_entries.ConfigSubentryFlow):
-    """One agent under AI Workspace agents. The form asks only for that provider."""
+    """One agent under AI Agents. The form asks only for that provider."""
 
     def _host(self):
         """Agents always live on the agents entry, even if the header picker chose the hub."""
