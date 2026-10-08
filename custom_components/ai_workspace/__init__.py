@@ -482,7 +482,7 @@ def _move_conversation_entity(hass: HomeAssistant, agent_id: str, agents_id: str
 
 
 async def _ensure_agents_entry(hass: HomeAssistant, hub: ConfigEntry) -> ConfigEntry | None:
-    """Create AI Workspace agents without a second trip through Add integration."""
+    """Create AI Agents without a second trip through Add integration."""
     found = agents_entry(hass, hub.entry_id)
     if found is not None:
         _as_system(hass, found)
@@ -506,7 +506,7 @@ async def _ensure_agents_entry(hass: HomeAssistant, hub: ConfigEntry) -> ConfigE
 
 
 async def _fold_devices(hass: HomeAssistant, hub: ConfigEntry) -> None:
-    """AI Workspace for connections, AI Workspace agents for providers."""
+    """AI Workspace for connections, AI Agents for providers."""
     agents = await _ensure_agents_entry(hass, hub)
     if agents is None:
         return

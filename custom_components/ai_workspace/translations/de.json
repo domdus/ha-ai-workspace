@@ -246,14 +246,218 @@
           "data": {
             "name": "Name",
             "url": "Adresse",
-            "token": "Schlüssel"
+            "token": "Schlüssel",
+            "enabled": "Enabled"
           },
           "data_description": {
             "name": "Ein kurzer Name, zum Beispiel Directus. Der Assistent unterscheidet daran diese Verbindung von den anderen.",
             "url": "Die MCP-Adresse, beginnend mit https:// oder http://.",
-            "token": "Nur wenn dieser Server einen Schlüssel verlangt. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten."
+            "token": "Nur wenn dieser Server einen Schlüssel verlangt. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
+            "enabled": "Aus: die Zeile bleibt, der Assistent nutzt diese Verbindung nicht."
           }
         }
+      }
+    },
+    "agent": {
+      "initiate_flow": {
+        "user": "Agent hinzufügen",
+        "reconfigure": "Agent bearbeiten"
+      },
+      "entry_type": "Agent",
+      "error": {
+        "no_runtime": "The Cursor runtime is not reachable. Start it and set its URL on AI Workspace.",
+        "required": "This field is required."
+      },
+      "step": {
+        "agent": {
+          "title": "Agent",
+          "description": "Choose the agent. The next screen asks only for what that agent needs.",
+          "data": {
+            "api_provider": "Agent"
+          },
+          "data_description": {
+            "api_provider": "Cursor, or a cloud or local model."
+          }
+        },
+        "cursor": {
+          "title": "Cursor",
+          "description": "Cursor API key, model, and effort. The runtime URL stays on AI Workspace.",
+          "data": {
+            "cursor_api_key": "Cursor API key",
+            "model": "Model",
+            "effort": "Effort",
+            "enabled": "Enabled"
+          },
+          "data_description": {
+            "cursor_api_key": "From cursor.com/dashboard/integrations. Leave blank when editing to keep the saved key.",
+            "model": "Empty uses Composer.",
+            "effort": "Fast, High, or High fast. Composer uses Fast unless you pick High.",
+            "enabled": "Aus: Agent verschwindet aus Chat und Assist."
+          }
+        },
+        "cloud": {
+          "title": "Cloud agent",
+          "description": "This agent keeps its own key. Copy one from an integration that is already set up, or paste a new one. Leave the key blank when editing to keep the saved key.",
+          "data": {
+            "borrow": "Copy key from",
+            "api_key": "API key",
+            "model": "Model",
+            "effort": "Effort",
+            "enabled": "Enabled"
+          },
+          "data_description": {
+            "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
+            "api_key": "Not a Home Assistant token.",
+            "model": "Empty uses the provider default.",
+            "effort": "Fast, High, or High fast when the model supports it.",
+            "enabled": "Aus: Agent verschwindet aus Chat und Assist."
+          }
+        },
+        "ollama": {
+          "title": "Ollama",
+          "description": "Point this at the Ollama server.",
+          "data": {
+            "api_base": "Ollama URL",
+            "model": "Model",
+            "effort": "Effort",
+            "enabled": "Enabled"
+          },
+          "data_description": {
+            "api_base": "Usually http://127.0.0.1:11434/v1",
+            "model": "Empty uses llama3.2.",
+            "effort": "Used when the model supports it.",
+            "enabled": "Aus: Agent verschwindet aus Chat und Assist."
+          }
+        },
+        "azure": {
+          "title": "Azure OpenAI",
+          "description": "Azure endpoint, deployment, and key.",
+          "data": {
+            "api_key": "Azure API key",
+            "api_base": "Endpoint",
+            "model": "Deployment",
+            "azure_api_version": "API version",
+            "effort": "Effort",
+            "enabled": "Enabled"
+          },
+          "data_description": {
+            "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key.",
+            "api_base": "https://YOUR.openai.azure.com",
+            "model": "The deployment name.",
+            "azure_api_version": "Default 2024-10-21.",
+            "effort": "Used when the deployment supports it.",
+            "enabled": "Aus: Agent verschwindet aus Chat und Assist."
+          }
+        },
+        "compatible": {
+          "title": "OpenAI-compatible",
+          "description": "A custom server that speaks the OpenAI API.",
+          "data": {
+            "api_key": "API key",
+            "api_base": "API base URL",
+            "model": "Model",
+            "effort": "Effort",
+            "enabled": "Enabled"
+          },
+          "data_description": {
+            "api_key": "Leave blank when editing to keep the saved key.",
+            "api_base": "Base URL of the server, including /v1 when it uses that path.",
+            "model": "Model name on that server.",
+            "effort": "Used when the server supports it.",
+            "enabled": "Aus: Agent verschwindet aus Chat und Assist."
+          }
+        },
+        "provider": {
+          "title": "Provider",
+          "description": "Choose the provider. The next screen asks only for what that provider needs.",
+          "data": {
+            "api_provider": "Provider"
+          },
+          "data_description": {
+            "api_provider": "Cursor, or a cloud or local model. "
+          }
+        },
+        "provider_cursor": {
+          "title": "Cursor",
+          "description": "Cursor API key, model, and effort. The runtime URL stays on AI Workspace.",
+          "data": {
+            "cursor_api_key": "Cursor API key",
+            "model": "Model",
+            "effort": "Effort"
+          },
+          "data_description": {
+            "cursor_api_key": "From cursor.com/dashboard/integrations. Leave blank when editing to keep the saved key.",
+            "model": "Empty uses Composer.",
+            "effort": "Fast, High, or High fast. Composer uses Fast unless you pick High."
+          }
+        },
+        "provider_cloud": {
+          "title": "Cloud agent",
+          "description": "This agent keeps its own key. Copy one from an integration that is already set up, or paste a new one. Leave the key blank when editing to keep the saved key.",
+          "data": {
+            "borrow": "Copy key from",
+            "api_key": "API key",
+            "model": "Model",
+            "effort": "Effort"
+          },
+          "data_description": {
+            "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
+            "api_key": "Not a Home Assistant token.",
+            "model": "Empty uses the provider default.",
+            "effort": "Fast, High, or High fast when the model supports it."
+          }
+        },
+        "provider_ollama": {
+          "title": "Ollama",
+          "description": "Point this at the Ollama server.",
+          "data": {
+            "api_base": "Ollama URL",
+            "model": "Model",
+            "effort": "Effort"
+          },
+          "data_description": {
+            "api_base": "Usually http://127.0.0.1:11434/v1",
+            "model": "Empty uses llama3.2.",
+            "effort": "Used when the model supports it."
+          }
+        },
+        "provider_azure": {
+          "title": "Azure OpenAI",
+          "description": "Azure endpoint, deployment, and key.",
+          "data": {
+            "api_key": "Azure API key",
+            "api_base": "Endpoint",
+            "model": "Deployment",
+            "azure_api_version": "API version",
+            "effort": "Effort"
+          },
+          "data_description": {
+            "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key.",
+            "api_base": "https://YOUR.openai.azure.com",
+            "model": "The deployment name.",
+            "azure_api_version": "Default 2024-10-21.",
+            "effort": "Used when the deployment supports it."
+          }
+        },
+        "provider_compatible": {
+          "title": "OpenAI-compatible",
+          "description": "A custom server that speaks the OpenAI API.",
+          "data": {
+            "api_key": "API key",
+            "api_base": "API base URL",
+            "model": "Model",
+            "effort": "Effort"
+          },
+          "data_description": {
+            "api_key": "Leave blank when editing to keep the saved key.",
+            "api_base": "Base URL of the server, including /v1 when it uses that path.",
+            "model": "Model name on that server.",
+            "effort": "Used when the server supports it."
+          }
+        }
+      },
+      "abort": {
+        "reconfigure_successful": "Agent updated."
       }
     }
   },

@@ -43,7 +43,7 @@ Keep the connect URL or Agent Key if it shows one — paste it only if auto-dete
 
 ## Option A: Cloud API Provider (Quick Setup)
 
-Fastest path. No extra container. Add **AI Workspace** once. It adds an **AI Workspace agents** entry beside it. Add an agent there for **OpenAI**, **Claude**, **Gemini**, **DeepSeek**, **Qwen**, **Grok**, **OpenRouter**, **Azure OpenAI**, **local Ollama**, or **OpenAI-compatible** (LM Studio and others). The model must support tool calls or it cannot drive MCP. If that provider is already configured in Home Assistant, the agent form can copy its key.
+Fastest path. No extra container. Add **AI Workspace** once. It adds an **AI Agents** entry beside it. Add an agent there for **OpenAI**, **Claude**, **Gemini**, **DeepSeek**, **Qwen**, **Grok**, **OpenRouter**, **Azure OpenAI**, **local Ollama**, or **OpenAI-compatible** (LM Studio and others). The model must support tool calls or it cannot drive MCP. If that provider is already configured in Home Assistant, the agent form can copy its key.
 
 ### 1. Install AI Workspace from HACS
 
@@ -58,7 +58,7 @@ Or **HACS → Integrations → ⋮ → Custom repositories** → `https://github
 - MCP type: from Requirements. Leave MCP URL empty if it shows as detected.
 - Save. Home Assistant then asks for the first **agent**.
 - Pick the provider. Paste the key, or choose **Copy key from** when OpenRouter, OpenAI, Claude, Gemini, or Ollama is already set up.
-- Add more agents on **AI Workspace agents**. The chat shows a provider list when more than one is set up.
+- Add more agents on **AI Agents**. The chat shows a provider list when more than one is set up.
 - Open **AI Workspace** (`/ai-workspace`).
 
 ### 3. Start using it
@@ -166,7 +166,7 @@ A tool that sends back the whole house is shortened before the model reads it. T
 | Option | What it does |
 |---|---|
 | **AI Workspace** | Shared chat settings, and one row per MCP connection. **Add connection** puts another row here |
-| **AI Workspace agents** | One row per Cursor, OpenAI, Claude, Gemini, OpenRouter, Ollama, Azure, or other provider. **Add agent** puts another row here. Effort is Fast, High, or High fast when the model supports it |
+| **AI Agents** | One row per Cursor, OpenAI, Claude, Gemini, OpenRouter, Ollama, Azure, or other provider. **Add agent** puts another row here. Effort is Fast, High, or High fast when the model supports it |
 | **Copy key from** | Uses the key already stored by OpenRouter, OpenAI, Claude, Gemini, Ollama, or Azure in Home Assistant. That integration stays |
 | **MCP type** | Asked once, when you add AI Workspace: built-in MCP Server, HA-MCP, HA Vibecode Agent, or a custom URL. It is saved as the first connection row |
 | **MCP URL** | Empty uses auto-detect. Paste the HA-MCP webhook or a custom URL only if needed |
@@ -181,7 +181,7 @@ A tool that sends back the whole house is shortened before the model reads it. T
 | **House map cache** | Off by default. Speeds up and saves tokens on new chats by looking up entity, area, automation, and dashboard names in a local index before broad MCP calls. Not live state |
 | **Assist** | Each agent also becomes a Voice assistants entry next to Home Assistant, ready to use. No second form under Manage assistants |
 
-The integration page has two entries. **AI Workspace** is the shared chat setup and the connection rows. **AI Workspace agents** is one row per provider. You add the integration once. Neither row has Delete. Prefer **Add connection** / **Add agent** on each entry's ⋮ menu — that skips the entry picker. Header buttons may ask which entry; either choice still lands on the right row.
+The integration page has two entries. **AI Workspace** is the shared chat setup and the connection rows. **AI Agents** is one row per provider. You add the integration once. Neither row has Delete. Prefer **Add connection** / **Add agent** on each entry's ⋮ menu — that skips the entry picker. Header buttons may ask which entry; either choice still lands on the right row.
 
 The first connection is chosen on that first screen, then it is a row with the others. Every connection is sent with each chat. The Cursor API key stays on the Cursor agent. The Runtime URL stays on AI Workspace.
 
