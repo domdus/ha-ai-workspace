@@ -12,6 +12,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.files import attach_files_to_message, file_events, parse_client_files
+from app.mcp_fit import proxy_mcp
 from app.images import caption_for, image_events, parse_client_images
 from app.redact import redact
 from app.settings import Settings
@@ -67,6 +68,8 @@ class ChatRequest(BaseModel):
     files: list[ChatFile] = Field(default_factory=list)
     mcp: ChatMcp | None = None
     model: str = ""
+    effort: str = ""
+    api_key: str = ""
     question: str = Field(default="", max_length=8000)
 
 
@@ -144,6 +147,11 @@ def _sse(event: str, payload: dict) -> str:
 
 def _public(settings: Settings, exc: BaseException) -> str:
     return redact(str(exc), [settings.cursor_api_key])
+
+
+@router.api_route("/api/mcp-fit/{secret}/{digest}", methods=["GET", "POST", "DELETE"])
+async def mcp_fit(request: Request, secret: str, digest: str):
+    return await proxy_mcp(request, secret, digest)
 
 
 @router.get("/api/health")
@@ -273,6 +281,8 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
                     images=images,
                     mcp=body.mcp.model_dump() if body.mcp else None,
                     model=body.model.strip(),
+                    effort=body.effort.strip(),
+                    api_key=body.api_key.strip(),
                 ):
                     if event.get("type") == "text":
                         parts.append(str(event.get("delta") or ""))

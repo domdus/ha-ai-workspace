@@ -13,9 +13,15 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .images import anthropic_user_content, openai_user_content
 from .const import (
     API_ANTHROPIC,
+    API_AZURE,
+    API_OLLAMA,
     API_OPENAI,
     API_SHORT_LABELS,
+    DEFAULT_AZURE_API_VERSION,
     DEFAULT_SYSTEM_PROMPT,
+    EFFORT_FAST,
+    EFFORT_HIGH,
+    EFFORT_HIGH_FAST,
     MCP_COOLVER,
     MCP_CUSTOM,
     MCP_HA,
@@ -26,11 +32,13 @@ from .const import (
 )
 from .coolver import CoolverClient
 from .mcp_client import McpError, McpHttpClient
+from .mcp_config import public_tool_names
 from .mcp_resolve import async_resolve_mcp_url
 from .models import ProviderInfo, Settings
 from .redact import redact
 from .store import Session, Store
 from .titles import clean_title, title_prompt
+from .tool_result import fit_tool_result
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +49,6 @@ _IDENTITY = (
 )
 _MAX_ROUNDS = 8
 _DESC_MAX = 180
-_RESULT_MAX = 2500
 _HISTORY_MAX = 12
 _PROPS_MAX = 16
 _WAIT = re.compile(r"try again in ([\d.]+)\s*(ms|s)", re.I)
@@ -145,12 +152,47 @@ def _slim_mcp_tools(mcp_tools: list[dict]) -> list[dict]:
     return out
 
 
+class McpBundle:
+    """One call_tool for every connected MCP server."""
+
+    def __init__(self) -> None:
+        self._clients: dict[str, Any] = {}
+        self._routes: dict[str, tuple[str, str]] = {}
+        self._groups: list[tuple[str, list[str]]] = []
+        self._pending: list[tuple[str, list[dict]]] = []
+        self.tools: list[dict] = []
+
+    def add(self, server: str, client: Any, tools: list[dict]) -> None:
+        names = [str(tool.get("name") or "") for tool in tools if tool.get("name")]
+        self._clients[server] = client
+        self._groups.append((server, names))
+        self._pending.append((server, tools))
+
+    def finish(self) -> None:
+        self._routes = public_tool_names(self._groups)
+        merged: list[dict] = []
+        for server, tools in self._pending:
+            for tool in tools:
+                raw = str(tool.get("name") or "")
+                public = next((name for name, route in self._routes.items() if route == (server, raw)), raw)
+                copied = dict(tool)
+                copied["name"] = public
+                if public != raw:
+                    note = f"From {server}. "
+                    copied["description"] = note + str(copied.get("description") or "")
+                merged.append(copied)
+        self.tools = merged
+
+    async def call_tool(self, name: str, arguments: dict[str, Any] | None = None) -> Any:
+        route = self._routes.get(name)
+        if route is None:
+            raise McpError(f"No connection has a tool named {name}.")
+        server, raw = route
+        return await self._clients[server].call_tool(raw, arguments or {})
+
+
 def _tool_body(result: Any) -> str:
-    if isinstance(result, str):
-        raw = result
-    else:
-        raw = json.dumps(result, ensure_ascii=False)
-    return _clip(raw, _RESULT_MAX)
+    return fit_tool_result(result)
 
 
 def _tool_label(name: str) -> str:
@@ -189,10 +231,26 @@ def _anthropic_tools(mcp_tools: list[dict]) -> list[dict]:
     return out
 
 
+def _failed_reply(row) -> bool:
+    if row.role != "assistant":
+        return False
+    try:
+        events = json.loads(row.events or "[]")
+    except json.JSONDecodeError:
+        return False
+    if not isinstance(events, list):
+        return False
+    errors = [str(item.get("message") or "") for item in events if isinstance(item, dict) and item.get("type") == "error"]
+    if not errors:
+        return False
+    content = str(row.content or "").strip()
+    return not content or content in errors
+
+
 def _history_messages(rows) -> list[dict[str, str]]:
     messages = []
     for row in rows:
-        if row.role not in {"user", "assistant"}:
+        if row.role not in {"user", "assistant"} or _failed_reply(row):
             continue
         content = _clip(row.content or "", 2000)
         if not content:
@@ -211,15 +269,19 @@ class ApiProvider:
         self.settings = settings
         self.store = store
         reason = None
-        if not settings.api_key:
-            reason = "Set an API key on the AI Workspace integration (OpenAI, Claude, or compatible)."
+        needs_key = settings.api_provider != API_OLLAMA
+        if needs_key and not settings.api_key:
+            reason = "Add an API key on this agent."
+        elif settings.api_provider == API_AZURE and not (settings.api_base and settings.model):
+            reason = "Azure needs the endpoint and the deployment name."
         elif self.settings.mcp_kind == MCP_CUSTOM and not settings.mcp_servers:
             reason = "Set an MCP URL on the AI Workspace integration."
         elif self.settings.mcp_kind == MCP_COOLVER and not settings.mcp_token:
             reason = "Set the Vibecode Agent Key on the AI Workspace integration."
+        label = settings.agent_title or f"{self._label()} ({self._model()})"
         self.info = ProviderInfo(
-            id="api",
-            label=f"{self._label()} ({self._model()})",
+            id=settings.agent_id or "api",
+            label=label,
             available=reason is None,
             reason=reason,
         )
@@ -235,6 +297,37 @@ class ApiProvider:
         if configured:
             return configured
         return default_api_base(self.settings.api_provider) or "https://api.openai.com/v1"
+
+    def _chat_url(self) -> str:
+        if self.settings.api_provider == API_AZURE:
+            version = (self.settings.azure_api_version or DEFAULT_AZURE_API_VERSION).strip()
+            return (
+                f"{self._base()}/openai/deployments/{self._model()}/chat/completions"
+                f"?api-version={version}"
+            )
+        return f"{self._base()}/chat/completions"
+
+    def _auth_headers(self) -> dict[str, str]:
+        headers = {"Content-Type": "application/json"}
+        key = self.settings.api_key
+        if not key:
+            return headers
+        if self.settings.api_provider == API_AZURE:
+            headers["api-key"] = key
+        else:
+            headers["Authorization"] = f"Bearer {key}"
+        return headers
+
+    def _effort_body(self, payload: dict[str, Any]) -> None:
+        effort = (self.settings.effort or "").strip()
+        if effort not in {EFFORT_FAST, EFFORT_HIGH, EFFORT_HIGH_FAST}:
+            return
+        level = "low" if effort == EFFORT_FAST else "high"
+        provider = self.settings.api_provider
+        if provider == API_ANTHROPIC:
+            payload["output_config"] = {"effort": "max" if effort == EFFORT_HIGH_FAST else level}
+            return
+        payload["reasoning_effort"] = level
 
     def _model(self) -> str:
         model = (self.settings.model or "").strip()
@@ -263,35 +356,54 @@ class ApiProvider:
         origin = str(frontend_origin or "").strip()
         language = str(language or "")
         pictures = list(images or [])
-        on_agent_id("api")
+        on_agent_id(self.info.id)
         if not self.info.available:
             yield {"type": "error", "message": self.info.reason}
             return
-        server = next(iter(self.settings.mcp_servers.values()), {}) if self.settings.mcp_servers else {}
-        configured = str(server.get("url") or "")
-        headers = dict(server.get("headers") or {})
+        bundle = McpBundle()
+        http = self._http()
+        primary = next(iter(self.settings.mcp_servers.values()), {}) if self.settings.mcp_servers else {}
+        configured = str(primary.get("url") or "")
+        headers = dict(primary.get("headers") or {})
         token = (self.settings.mcp_token or "").strip()
         if self.settings.mcp_kind == MCP_HA:
             token = token or str(access_token or "").strip()
         if token and "Authorization" not in headers:
             headers["Authorization"] = f"Bearer {token}"
         mcp_url = await async_resolve_mcp_url(self.hass, self.settings.mcp_kind, configured, token)
-        if not mcp_url:
+        extra_clients: list[tuple[str, str, dict[str, str]]] = []
+        for name, cfg in (self.settings.mcp_servers or {}).items():
+            if name == "mcp" or not cfg.get("url"):
+                continue
+            extra_clients.append((name, str(cfg.get("url") or ""), dict(cfg.get("headers") or {})))
+        if not mcp_url and not extra_clients:
             yield {"type": "error", "message": "MCP URL is missing."}
             return
-        http = self._http()
-        if self.settings.mcp_kind == MCP_COOLVER:
-            mcp: McpHttpClient | CoolverClient = CoolverClient(http, mcp_url, headers)
-        else:
-            mcp = McpHttpClient(http, mcp_url, headers)
-        logger.info("api chat provider=%s model=%s mcp=%s", self.settings.api_provider, self._model(), mcp_url)
         yield {"type": "status", "text": "Working"}
         try:
-            await mcp.initialize()
-            mcp_tools = await mcp.list_tools()
+            if mcp_url:
+                if self.settings.mcp_kind == MCP_COOLVER:
+                    primary_client: McpHttpClient | CoolverClient = CoolverClient(http, mcp_url, headers)
+                else:
+                    primary_client = McpHttpClient(http, mcp_url, headers)
+                await primary_client.initialize()
+                bundle.add("home-assistant", primary_client, await primary_client.list_tools())
+            for name, url, extra_headers in extra_clients:
+                client = McpHttpClient(http, url, extra_headers)
+                await client.initialize()
+                bundle.add(name, client, await client.list_tools())
+            bundle.finish()
         except McpError as exc:
             yield {"type": "error", "message": self._public(exc)}
             return
+        logger.info(
+            "api chat provider=%s model=%s mcp=%s",
+            self.settings.api_provider,
+            self._model(),
+            ", ".join(bundle._clients) or "none",
+        )
+        mcp = bundle
+        mcp_tools = bundle.tools
         history = await self.hass.async_add_executor_job(self.store.list_messages, session.id)
         try:
             if self.settings.api_provider == API_ANTHROPIC:
@@ -305,7 +417,7 @@ class ApiProvider:
             yield {"type": "error", "message": self._public(exc)}
 
     async def suggest_title(self, user: str, assistant: str = "") -> str | None:
-        if not self.settings.api_key:
+        if not self.info.available:
             return None
         prompt = title_prompt(user, assistant)
         http = self._http()
@@ -331,18 +443,19 @@ class ApiProvider:
                 blocks = data.get("content") or []
                 raw = "".join(str(b.get("text") or "") for b in blocks if b.get("type") == "text")
             else:
+                title_body = {
+                    "model": self._model(),
+                    "max_tokens": 32,
+                    "messages": [
+                        {"role": "system", "content": "You write short chat titles. Reply with the title only."},
+                        {"role": "user", "content": prompt},
+                    ],
+                }
                 data = await self._post(
                     http,
-                    f"{self._base()}/chat/completions",
-                    {"Authorization": f"Bearer {self.settings.api_key}", "Content-Type": "application/json"},
-                    {
-                        "model": self._model(),
-                        "max_tokens": 32,
-                        "messages": [
-                            {"role": "system", "content": "You write short chat titles. Reply with the title only."},
-                            {"role": "user", "content": prompt},
-                        ],
-                    },
+                    self._chat_url(),
+                    self._auth_headers(),
+                    title_body,
                     timeout=8,
                     attempts=1,
                 )
@@ -357,7 +470,7 @@ class ApiProvider:
         http: ClientSession,
         history,
         message: str,
-        mcp: McpHttpClient,
+        mcp: McpBundle,
         mcp_tools: list[dict],
         origin: str = "",
         images: list[dict] | None = None,
@@ -367,10 +480,11 @@ class ApiProvider:
         messages.extend(_history_messages(history))
         messages.append({"role": "user", "content": openai_user_content(message, images or [])})
         tools = _openai_tools(mcp_tools)
-        url = f"{self._base()}/chat/completions"
-        headers = {"Authorization": f"Bearer {self.settings.api_key}", "Content-Type": "application/json"}
+        url = self._chat_url()
+        headers = self._auth_headers()
         for _ in range(_MAX_ROUNDS):
             payload: dict[str, Any] = {"model": self._model(), "messages": messages}
+            self._effort_body(payload)
             if tools:
                 payload["tools"] = tools
                 if self.settings.api_provider == API_OPENAI:
@@ -409,7 +523,7 @@ class ApiProvider:
         http: ClientSession,
         history,
         message: str,
-        mcp: McpHttpClient,
+        mcp: McpBundle,
         mcp_tools: list[dict],
         origin: str = "",
         images: list[dict] | None = None,
@@ -431,6 +545,7 @@ class ApiProvider:
                 "system": self._system(origin, language),
                 "messages": messages,
             }
+            self._effort_body(payload)
             if tools:
                 payload["tools"] = tools
             data = await self._post(http, url, headers, payload)

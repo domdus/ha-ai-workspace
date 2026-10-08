@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 from typing import Any, AsyncIterator, Callable
@@ -7,6 +8,7 @@ from typing import Any, AsyncIterator, Callable
 from app.events import map_sdk_message
 from app.images import cursor_payload
 from app.mcp_config import McpConfigError, load_mcp_servers, merge_mcp_servers, servers_from_chat_mcp
+from app.mcp_fit import FitRegistry
 from app.providers.base import ProviderInfo
 from app.redact import redact
 from app.settings import Settings
@@ -31,6 +33,7 @@ class CursorRuntime:
         self._agents: dict[str, Any] = {}
         self._mcp_by_session: dict[str, str] = {}
         self._start_lock = None
+        self.fit = FitRegistry(settings.data_dir / "mcp-fit-secret")
 
     def _lock(self):
         import asyncio
@@ -58,17 +61,19 @@ class CursorRuntime:
         mcp_servers: dict,
         tools: list[str] | None = None,
         model: str | None = None,
+        effort: str = "",
+        api_key: str = "",
     ) -> Any:
         from cursor_sdk import AgentOptions, LocalAgentOptions
 
+        resolved = (model or "").strip() or (self.settings.model or "").strip()
         kwargs: dict[str, Any] = {
-            "api_key": self.settings.cursor_api_key,
+            "api_key": (api_key or "").strip() or self.settings.cursor_api_key,
             "name": name,
             "local": LocalAgentOptions(cwd=str(self.settings.workspace_dir)),
         }
-        resolved = (model or "").strip() or (self.settings.model or "").strip()
         if resolved:
-            kwargs["model"] = _sdk_model(resolved)
+            kwargs["model"] = _sdk_model(resolved, effort)
         if mcp_servers:
             kwargs["mcp_servers"] = mcp_servers
         if tools is not None:
@@ -84,12 +89,26 @@ class CursorRuntime:
                     kwargs["model"] = resolved
                 return AgentOptions(**kwargs)
 
-    async def open_agent(self, session: Session, mcp_servers: dict, model: str | None = None) -> Any:
+    async def open_agent(
+        self,
+        session: Session,
+        mcp_servers: dict,
+        model: str | None = None,
+        effort: str = "",
+        api_key: str = "",
+    ) -> Any:
         from cursor_sdk import AgentNotFoundError
 
         resolved_model = (model or "").strip() or self.settings.model
+        resolved_key = (api_key or "").strip() or self.settings.cursor_api_key
+        key_tag = hashlib.sha256(resolved_key.encode()).hexdigest()[:16] if resolved_key else ""
         fingerprint = json.dumps(
-            {"mcp": mcp_servers, "model": _model_fingerprint(resolved_model)},
+            {
+                "mcp": mcp_servers,
+                "model": _model_fingerprint(resolved_model, effort),
+                "effort": effort,
+                "key": key_tag,
+            },
             sort_keys=True,
             default=str,
         )
@@ -102,7 +121,9 @@ class CursorRuntime:
             logger.info("mcp servers or model changed, replacing agent session=%s", session.id)
             self._agents.pop(session.id, None)
         client = await self.client()
-        options = self._agent_options(f"ha-{session.id[:8]}", mcp_servers, model=resolved_model)
+        options = self._agent_options(
+            f"ha-{session.id[:8]}", mcp_servers, model=resolved_model, effort=effort, api_key=resolved_key
+        )
         agent = None
         resume_id = session.agent_id if previous in (None, fingerprint) else None
         if resume_id:
@@ -125,6 +146,9 @@ class CursorRuntime:
             logger.info("cursor bridge ready")
         except Exception:
             logger.warning("cursor bridge warmup failed", exc_info=True)
+
+    def wrap_mcp(self, servers: dict) -> dict:
+        return self.fit.wrap(servers, f"http://127.0.0.1:{self.settings.port}")
 
     def drop(self, session_id: str) -> None:
         self._agents.pop(session_id, None)
@@ -158,8 +182,11 @@ class CursorProvider:
         images: list[dict] | None = None,
         mcp: dict | None = None,
         model: str | None = None,
+        effort: str = "",
+        api_key: str = "",
     ) -> AsyncIterator[dict]:
-        if not self.settings.cursor_api_key:
+        key = (api_key or "").strip() or self.settings.cursor_api_key
+        if not key:
             yield {"type": "error", "message": _MISSING_KEY}
             return
         try:
@@ -178,11 +205,14 @@ class CursorProvider:
                     for name, cfg in sorted(mcp_servers.items())
                 ),
             )
+        mcp_servers = self.runtime.wrap_mcp(mcp_servers)
         used_model = (model or "").strip() or self.settings.model
         logger.info("cursor model=%s", used_model)
         yield {"type": "status", "text": "Thinking..."}
         try:
-            agent = await self.runtime.open_agent(session, mcp_servers, model=used_model)
+            agent = await self.runtime.open_agent(
+                session, mcp_servers, model=used_model, effort=effort, api_key=key
+            )
         except Exception as exc:
             yield {"type": "error", "message": _public_error(exc, self.settings.cursor_api_key)}
             return
@@ -265,29 +295,32 @@ def _model_id(value: Any) -> str:
     return str(value).strip()
 
 
-def _sdk_model(ident: str) -> Any:
+def _sdk_model(ident: str, effort: str = "") -> Any:
     name = (ident or "").strip()
     if not name:
         return None
-    if name.lower() not in {"composer-2.5", "composer-2"}:
+    effort = (effort or "").strip()
+    composer = name.lower() in {"composer-2.5", "composer-2"}
+    if not composer and not effort:
         return name
-    # IDE catalog: composer-2.5 default variant is Fast on (same as model="composer-2.5").
+    fast = "false" if effort == "high" else "true"
+    params = [{"id": "fast", "value": fast}]
+    if effort in {"high", "high_fast"}:
+        params.append({"id": "effort", "value": "high"})
+    model_id = "composer-2.5" if composer else name
     try:
         from cursor_sdk import ModelParameterValue, ModelSelection
 
         return ModelSelection(
-            id="composer-2.5",
-            params=[ModelParameterValue(id="fast", value="true")],
+            id=model_id,
+            params=[ModelParameterValue(id=item["id"], value=item["value"]) for item in params],
         )
     except Exception:
-        return {
-            "id": "composer-2.5",
-            "params": [{"id": "fast", "value": "true"}],
-        }
+        return {"id": model_id, "params": params}
 
 
-def _model_fingerprint(ident: str) -> Any:
-    value = _sdk_model(ident)
+def _model_fingerprint(ident: str, effort: str = "") -> Any:
+    value = _sdk_model(ident, effort)
     if value is None:
         return ident
     if isinstance(value, str):

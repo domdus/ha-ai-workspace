@@ -136,6 +136,18 @@ class Store:
             ).fetchone()
         return _session(row) if row else None
 
+    def set_provider(self, user_id: str, session_id: str, provider: str) -> None:
+        user_id = _text(user_id)
+        session_id = _text(session_id)
+        if not user_id or not session_id:
+            return
+        with self._lock:
+            self._conn.execute(
+                "UPDATE sessions SET provider = ?, updated_at = ? WHERE id = ? AND user_id = ?",
+                (_text(provider) or "api", _now(), session_id, user_id),
+            )
+            self._conn.commit()
+
     def set_agent_id(self, session_id: str, agent_id: str) -> None:
         session_id = _text(session_id)
         if not session_id:

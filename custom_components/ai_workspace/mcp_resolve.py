@@ -4,7 +4,7 @@ import asyncio
 import logging
 import os
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 
 from aiohttp import ClientError, ClientTimeout
 from homeassistant.core import HomeAssistant
@@ -194,6 +194,22 @@ def _hassio_mcp_urls(hass: HomeAssistant) -> list[str]:
     return out
 
 
+_COMPONENT_DOMAIN = "ha_mcp_tools"
+_COMPONENT_PORT = 9584
+_DOCKER_HA_HOSTS = ("homeassistant", "home-assistant")
+
+
+def _same_network_urls(url: str) -> list[str]:
+    """Loopback is this container. A sibling container reaches Home Assistant by its service name."""
+    parsed = urlparse(url)
+    host = (parsed.hostname or "").lower()
+    if host not in {"127.0.0.1", "localhost", "::1"}:
+        return [url]
+    port = f":{parsed.port}" if parsed.port else ""
+    names = [urlunparse(parsed._replace(netloc=f"{name}{port}")) for name in _DOCKER_HA_HOSTS]
+    return [*names, url]
+
+
 def _entry_mcp_urls(hass: HomeAssistant) -> list[str]:
     entries = getattr(getattr(hass, "config_entries", None), "async_entries", None)
     if not callable(entries):
@@ -203,19 +219,32 @@ def _entry_mcp_urls(hass: HomeAssistant) -> list[str]:
         items = entries()
     except TypeError:
         items = []
+    api_base = hass_mcp_server_url(hass).rsplit("/api/mcp", 1)[0]
     for entry in items:
-        domain = str(getattr(entry, "domain", "") or "")
-        if "mcp" not in domain.replace("-", "_") or domain == "mcp_server":
+        domain = str(getattr(entry, "domain", "") or "").replace("-", "_").lower()
+        if "mcp" not in domain or domain == "mcp_server":
             continue
         blob = {**getattr(entry, "data", {}), **getattr(entry, "options", {})}
+        if str(blob.get("entry_type") or "") == "tools":
+            continue
+        locals_: list[str] = []
         for key in ("url", "mcp_url", "webhook_url", "listen_url", "connect_url", "server_url"):
             value = blob.get(key)
             if isinstance(value, str) and value.startswith("http"):
-                out.append(value.strip())
+                locals_.append(value.strip())
         webhook_id = blob.get("webhook_id")
         if webhook_id:
-            out.append(f"{hass_mcp_server_url(hass).rsplit('/api/mcp', 1)[0]}/api/webhook/{webhook_id}")
+            locals_.append(f"{api_base}/api/webhook/{webhook_id}")
+        secret = str(blob.get("secret_path") or "").strip()
+        if domain == _COMPONENT_DOMAIN and secret.startswith("/"):
+            locals_.append(f"http://127.0.0.1:{_COMPONENT_PORT}{secret}")
+        for local in locals_:
+            out.extend(_same_network_urls(local))
     return out
+
+
+def _loopback_host(url: str) -> bool:
+    return (urlparse(url).hostname or "").lower() in {"127.0.0.1", "localhost", "::1"}
 
 
 def _unique(urls: list[str]) -> list[str]:
@@ -351,7 +380,9 @@ async def async_resolve_mcp_url(
     else:
         skip_builtin = "/api/mcp" in urlparse(configured).path if configured else False
         start = [] if skip_builtin else [configured]
+        component = [url for url in _entry_mcp_urls(hass) if not _loopback_host(url)]
         candidates = [
+            *component,
             *start,
             *loopback_alternates(configured),
             *_entry_mcp_urls(hass),

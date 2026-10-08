@@ -33,4 +33,6 @@ class ChatProvider(Protocol):
         images: list | None = None,
         mcp: dict | None = None,
         model: str | None = None,
+        effort: str = "",
+        api_key: str = "",
     ) -> AsyncIterator[dict]: ...
