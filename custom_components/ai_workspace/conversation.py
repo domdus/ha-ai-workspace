@@ -12,7 +12,6 @@ from homeassistant.components.conversation.chat_log import AssistantContent
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import MATCH_ALL
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .agents import Agent, agent_from_entry, entry_agents, is_agents, is_provider
@@ -73,7 +72,6 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
         self._attr_name = agent.title or entry.title or "AI Workspace"
         if agent.subentry_id:
             self._attr_config_subentry_id = agent.subentry_id
-        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, entry.entry_id)})
 
     @property
     def supported_languages(self) -> list[str] | str:

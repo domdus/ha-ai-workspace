@@ -70,7 +70,6 @@ from .const import (
     MODE_API,
     MODE_CURSOR,
     ROLE_AGENTS,
-    VERSION,
     SUBENTRY_AGENT,
     SUBENTRY_MCP,
     OVERLAY_JS,
@@ -357,16 +356,18 @@ async def _build_settings(hass: HomeAssistant, hub: ConfigEntry) -> Settings:
     return _settings(hass, hub, mcp_url)
 
 
-def _register_device(hass: HomeAssistant, entry: ConfigEntry, model: str) -> None:
+def _drop_loose_devices(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Drop devices that are not one of the connection or agent rows.
+
+    Home Assistant files those under "Devices that don't belong to a sub-entry".
+    """
     from homeassistant.helpers import device_registry as dr
 
-    dr.async_get(hass).async_get_or_create(
-        config_entry_id=entry.entry_id,
-        identifiers={(DOMAIN, entry.entry_id)},
-        name=entry.title,
-        model=model,
-        sw_version=VERSION,
-    )
+    registry = dr.async_get(hass)
+    for device in dr.async_entries_for_config_entry(registry, entry.entry_id):
+        if device.config_subentry_id:
+            continue
+        registry.async_remove_device(device.id)
 
 
 def _migrate_primary_mcp(hass: HomeAssistant, hub: ConfigEntry) -> None:
@@ -547,7 +548,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _migrate_mcp_connections(hass, entry)
     _migrate_primary_mcp(hass, entry)
     await _ensure_shared(hass, entry)
-    _register_device(hass, entry, "MCP connections")
+    _drop_loose_devices(hass, entry)
     entry.async_on_unload(entry.add_update_listener(_reload))
     hass.data[DOMAIN]["migrating"] = True
     hass.data[DOMAIN]["defer_platforms"] = True
@@ -599,7 +600,7 @@ async def _setup_agents(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if hub is None or hub.disabled_by:
         return False
     bucket = await _ensure_shared(hass, hub)
-    _register_device(hass, entry, "Providers")
+    _drop_loose_devices(hass, entry)
     if not bucket.get("runtime_url"):
         configured = str(_merged(hub).get(CONF_RUNTIME_URL) or "").strip().rstrip("/")
         bucket["runtime_url"] = await async_resolve_runtime_url(hass, configured) if configured else ""
