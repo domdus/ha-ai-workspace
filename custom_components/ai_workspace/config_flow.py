@@ -492,8 +492,13 @@ class AiWorkspaceConfigFlow(ProviderSteps, config_entries.ConfigFlow, domain=DOM
         if created is None or is_provider(created) or is_agents(created):
             return result
         try:
+            from . import _ensure_agents_entry
+
+            agents_created = await _ensure_agents_entry(self.hass, created)
+            if agents_created is None:
+                return result
             started = await self.hass.config_entries.subentries.async_init(
-                (created.entry_id, SUBENTRY_AGENT),
+                (agents_created.entry_id, SUBENTRY_AGENT),
                 context={"source": SOURCE_USER},
             )
         except Exception:
@@ -598,7 +603,10 @@ class AiWorkspaceConfigFlow(ProviderSteps, config_entries.ConfigFlow, domain=DOM
     @classmethod
     @callback
     def async_get_supported_subentry_types(cls, config_entry):
-        if is_agents(config_entry) or is_provider(config_entry):
+        # Both entries advertise both types. Home Assistant's header Add buttons
+        # list every domain entry and do not filter by type; advertising both
+        # avoids "Invalid handler". Flows still save on the correct parent.
+        if is_provider(config_entry):
             return {}
         return {
             SUBENTRY_MCP: McpConnectionFlow,

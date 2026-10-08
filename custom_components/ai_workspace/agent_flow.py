@@ -149,7 +149,7 @@ def _hub_cursor_key(flow) -> str:
 
 
 def _provider_names(flow) -> tuple[set[str], set[str]]:
-    from .agents import agents_entry, entry_agents, hub_entry, is_provider, provider_entries
+    from .agents import agents_entry, entry_agents, is_agents, provider_entries
 
     titles: set[str] = set()
     uniques: set[str] = set()
@@ -164,8 +164,8 @@ def _provider_names(flow) -> tuple[set[str], set[str]]:
             parent = getter()
         except Exception:
             parent = None
-    if parent is None or is_provider(parent):
-        parent = agents_entry(flow.hass) or hub_entry(flow.hass)
+    if parent is None or not is_agents(parent):
+        parent = agents_entry(flow.hass)
     if parent is not None:
         for agent in entry_agents(parent):
             titles.add(agent.title)
@@ -280,7 +280,16 @@ class ProviderSteps:
 
 
 class AgentSubentryFlow(ProviderSteps, config_entries.ConfigSubentryFlow):
-    """One agent under AI Agents. The form asks only for that provider."""
+    """One agent under AI Workspace agents. The form asks only for that provider."""
+
+    def _host(self):
+        """Agents always live on the agents entry, even if the header picker chose the hub."""
+        from .agents import agents_entry, is_agents
+
+        entry = self._get_entry()
+        if is_agents(entry):
+            return entry
+        return agents_entry(self.hass) or entry
 
     async def async_step_user(self, user_input=None):
         del user_input
@@ -288,7 +297,7 @@ class AgentSubentryFlow(ProviderSteps, config_entries.ConfigSubentryFlow):
         self._current = {}
         self._provider = MODE_CURSOR
         self._agent_id = ""
-        parent = self._get_entry()
+        parent = self._host()
         self._hub_id = str(parent.data.get("hub_id") or "")
         return await self.async_step_provider()
 
@@ -304,7 +313,12 @@ class AgentSubentryFlow(ProviderSteps, config_entries.ConfigSubentryFlow):
         return await self.async_step_provider()
 
     async def _finish_provider(self, provider: str, data: dict[str, Any]):
+        from types import MappingProxyType
+
+        from homeassistant.config_entries import ConfigSubentry
         from homeassistant.util.ulid import ulid
+
+        from .const import SUBENTRY_AGENT
 
         data.pop(CONF_ROLE, None)
         data.pop(CONF_HUB_ID, None)
@@ -325,7 +339,21 @@ class AgentSubentryFlow(ProviderSteps, config_entries.ConfigSubentryFlow):
         titles.discard("")
         agent_id = ulid()
         data[CONF_AGENT_ID] = agent_id
-        return self.async_create_entry(title=_title(provider, titles), data=data, unique_id=agent_id)
+        title = _title(provider, titles)
+        host = self._host()
+        if host.entry_id != self._get_entry().entry_id:
+            self.hass.config_entries.async_add_subentry(
+                host,
+                ConfigSubentry(
+                    data=MappingProxyType(data),
+                    subentry_type=SUBENTRY_AGENT,
+                    title=title,
+                    unique_id=agent_id,
+                ),
+            )
+            self.hass.async_create_task(self.hass.config_entries.async_reload(host.entry_id))
+            return self.async_abort(reason="reconfigure_successful")
+        return self.async_create_entry(title=title, data=data, unique_id=agent_id)
 
 
 class ProviderOptionsFlow(ProviderSteps, config_entries.OptionsFlow):

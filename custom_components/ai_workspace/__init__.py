@@ -16,6 +16,7 @@ from homeassistant.config_entries import (
     ConfigEntryState,
     ConfigSubentry,
 )
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
@@ -32,7 +33,10 @@ from .agents import (
     provider_entries,
 )
 from .const import (
+    AGENTS_TITLE,
     CONF_AGENT_ID,
+    CONF_HUB_ID,
+    CONF_ROLE,
     CONF_API_BASE,
     CONF_API_KEY,
     CONF_API_PROVIDER,
@@ -67,6 +71,7 @@ from .const import (
     MCP_HA_MCP,
     MODE_API,
     MODE_CURSOR,
+    ROLE_AGENTS,
     SUBENTRY_AGENT,
     SUBENTRY_MCP,
     OVERLAY_JS,
@@ -475,89 +480,105 @@ def _move_conversation_entity(hass: HomeAssistant, agent_id: str, agents_id: str
         registry.async_update_entity(entity_id, config_subentry_id=subentry_id)
 
 
-async def _fold_agents_onto_hub(hass: HomeAssistant, hub: ConfigEntry) -> None:
-    """Keep one config entry so header Add buttons skip the entry picker.
+async def _ensure_agents_entry(hass: HomeAssistant, hub: ConfigEntry) -> ConfigEntry | None:
+    """Create AI Workspace agents without a second trip through Add integration."""
+    found = agents_entry(hass, hub.entry_id)
+    if found is not None:
+        _as_system(hass, found)
+        if found.title != AGENTS_TITLE:
+            hass.config_entries.async_update_entry(found, title=AGENTS_TITLE)
+        return found
+    created = ConfigEntry(
+        version=1,
+        minor_version=1,
+        domain=DOMAIN,
+        title=AGENTS_TITLE,
+        data={CONF_ROLE: ROLE_AGENTS, CONF_HUB_ID: hub.entry_id, "system_entry": True},
+        options={},
+        source=SOURCE_SYSTEM,
+        unique_id=f"{hub.entry_id}-agents",
+        discovery_keys=MappingProxyType({}),
+        subentries_data=None,
+    )
+    await hass.config_entries.async_add(created)
+    return created
 
-    Home Assistant's integration page (through 2026.9) lists every domain entry
-    for those buttons and does not filter by subentry type. A second agents
-    entry forced a useless picker and "Invalid handler" on the wrong row.
-    Agents and connections are both subentries on AI Workspace.
-    """
-    agents = agents_entry(hass, hub.entry_id)
-    providers = list(provider_entries(hass, hub.entry_id))
-    need_legacy = not entry_agents(hub) and not hub.data.get("agents_migrated")
-    if agents is None and not providers and not need_legacy and hub.data.get("agents_on_hub"):
+
+async def _fold_devices(hass: HomeAssistant, hub: ConfigEntry) -> None:
+    """AI Workspace for connections, AI Workspace agents for providers."""
+    agents = await _ensure_agents_entry(hass, hub)
+    if agents is None:
         return
-
     bucket = hass.data[DOMAIN]
     bucket["migrating"] = True
-    bucket["folding_agents"] = True
     try:
         moved: list[tuple[str, object]] = []
-        for child in providers:
-            raw = {**child.data, **child.options}
-            agent_id = str(raw.get(CONF_AGENT_ID) or child.unique_id or child.entry_id)
-            sub = _add_agent_subentry(hass, hub, agent_id, child.title, raw)
-            if sub is not None:
-                moved.append((agent_id, sub))
+        # Undo 1.0.14 one-block layout: agent rows belong on the agents entry.
+        for sub in list(getattr(hub, "subentries", {}).values()):
+            if getattr(sub, "subentry_type", "") != SUBENTRY_AGENT:
+                continue
+            raw = dict(sub.data)
+            agent_id = str(raw.get(CONF_AGENT_ID) or sub.unique_id or sub.subentry_id)
+            created = _add_agent_subentry(hass, agents, agent_id, sub.title, raw)
+            if created is not None:
+                moved.append((agent_id, created))
+            hass.config_entries.async_remove_subentry(hub, sub.subentry_id)
 
-        if agents is not None:
-            for sub in list(getattr(agents, "subentries", {}).values()):
-                if getattr(sub, "subentry_type", "") != SUBENTRY_AGENT:
-                    continue
-                raw = dict(sub.data)
-                agent_id = str(raw.get(CONF_AGENT_ID) or sub.unique_id or sub.subentry_id)
-                created = _add_agent_subentry(hass, hub, agent_id, sub.title, raw)
-                if created is not None:
-                    moved.append((agent_id, created))
-
-        if need_legacy and not entry_agents(hub):
-            payload = legacy_agent_data(_merged(hub))
-            worth = bool(
-                payload
-                and (
-                    str(payload.get(CONF_CURSOR_API_KEY) or "").strip()
-                    or str(payload.get(CONF_API_KEY) or "").strip()
-                    or str(payload.get(CONF_API_PROVIDER) or "") == "ollama"
+        if not hub.data.get("devices_migrated"):
+            for child in list(provider_entries(hass, hub.entry_id)):
+                raw = {**child.data, **child.options}
+                agent_id = str(raw.get(CONF_AGENT_ID) or child.unique_id or child.entry_id)
+                sub = _add_agent_subentry(hass, agents, agent_id, child.title, raw)
+                if sub is not None:
+                    moved.append((agent_id, sub))
+            if not moved and not hub.data.get("agents_migrated") and not entry_agents(agents):
+                payload = legacy_agent_data(_merged(hub))
+                worth = bool(
+                    payload
+                    and (
+                        str(payload.get(CONF_CURSOR_API_KEY) or "").strip()
+                        or str(payload.get(CONF_API_KEY) or "").strip()
+                        or str(payload.get(CONF_API_PROVIDER) or "") == "ollama"
+                    )
                 )
-            )
-            if worth and payload:
-                created = _add_agent_subentry(hass, hub, "legacy", legacy_title(payload), payload)
-                if created is not None:
-                    moved.append(("legacy", created))
+                if worth and payload:
+                    created = _add_agent_subentry(hass, agents, "legacy", legacy_title(payload), payload)
+                    if created is not None:
+                        moved.append(("legacy", created))
+            for child in list(provider_entries(hass, hub.entry_id)):
+                await hass.config_entries.async_remove(child.entry_id)
 
         for agent_id, sub in moved:
-            _move_conversation_entity(hass, agent_id, hub.entry_id, sub.subentry_id)
+            _move_conversation_entity(hass, agent_id, agents.entry_id, sub.subentry_id)
 
-        for child in list(provider_entries(hass, hub.entry_id)):
-            await hass.config_entries.async_remove(child.entry_id)
-
-        if agents is not None:
-            if agents.state is ConfigEntryState.LOADED:
-                await hass.config_entries.async_unload(agents.entry_id)
-            await hass.config_entries.async_remove(agents.entry_id)
-
-        hass.config_entries.async_update_entry(
-            hub,
-            data={
-                **dict(hub.data),
-                "providers_migrated": True,
-                "agents_migrated": True,
-                "devices_migrated": True,
-                "agents_on_hub": True,
-            },
-        )
+        data = {
+            **dict(hub.data),
+            "providers_migrated": True,
+            "agents_migrated": True,
+            "devices_migrated": True,
+        }
+        data.pop("agents_on_hub", None)
+        if moved or hub.data.get("agents_on_hub") or not hub.data.get("devices_migrated"):
+            hass.config_entries.async_update_entry(hub, data=data)
     finally:
-        bucket.pop("folding_agents", None)
         bucket["migrating"] = False
+
+
+async def _open_agents(hass: HomeAssistant, entry_id: str) -> None:
+    agents = hass.config_entries.async_get_entry(entry_id)
+    if agents is None or agents.disabled_by:
+        return
+    if agents.state is ConfigEntryState.LOADED:
+        await hass.config_entries.async_reload(entry_id)
+    elif agents.state is ConfigEntryState.NOT_LOADED:
+        await hass.config_entries.async_setup(entry_id)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if is_provider(entry):
         return await _setup_provider(hass, entry)
     if is_agents(entry):
-        # Leftover row from older builds; hub setup folds and removes it.
-        return True
+        return await _setup_agents(hass, entry)
     _as_system(hass, entry)
     hass.data.setdefault(DOMAIN, {})["migrating"] = True
     _migrate_mcp_connections(hass, entry)
@@ -565,20 +586,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await _ensure_shared(hass, entry)
     _drop_loose_devices(hass, entry)
     entry.async_on_unload(entry.add_update_listener(_reload))
-    await _fold_agents_onto_hub(hass, entry)
+    hass.data[DOMAIN]["migrating"] = True
+    hass.data[DOMAIN]["defer_platforms"] = True
+    try:
+        await _fold_devices(hass, entry)
+    finally:
+        hass.data[DOMAIN]["defer_platforms"] = False
+    agents = agents_entry(hass, entry.entry_id)
+    if agents and not agents.disabled_by:
+        if hass.is_running:
+            hass.async_create_task(_open_agents(hass, agents.entry_id))
+        else:
+            agent_id = agents.entry_id
 
-    bucket = hass.data[DOMAIN]
-    if not bucket.get("runtime_url"):
-        configured = str(_merged(entry).get(CONF_RUNTIME_URL) or "").strip().rstrip("/")
-        bucket["runtime_url"] = await async_resolve_runtime_url(hass, configured) if configured else ""
-    runtime = bucket.get("runtime_url") or ""
-    providers = {}
-    for agent in entry_agents(entry):
-        providers[agent.id] = _one_provider(hass, bucket["settings"], agent, runtime)
-    bucket["providers"] = providers
+            async def _schedule(_event) -> None:
+                await _open_agents(hass, agent_id)
 
-    await hass.config_entries.async_forward_entry_setups(entry, _PLATFORMS)
-    names = ", ".join(providers) or "none yet"
+            hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _schedule)
+    names = ", ".join(hass.data.get(DOMAIN, {}).get("providers", {})) or "none yet"
     _LOGGER.info("AI Workspace providers: %s", names)
     return True
 
@@ -603,10 +628,38 @@ async def _setup_provider(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
+async def _setup_agents(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    hub_id = str(entry.data.get(CONF_HUB_ID) or "")
+    hub = hass.config_entries.async_get_entry(hub_id) if hub_id else hub_entry(hass)
+    if hub is None or hub.disabled_by:
+        return False
+    bucket = await _ensure_shared(hass, hub)
+    _drop_loose_devices(hass, entry)
+    if not bucket.get("runtime_url"):
+        configured = str(_merged(hub).get(CONF_RUNTIME_URL) or "").strip().rstrip("/")
+        bucket["runtime_url"] = await async_resolve_runtime_url(hass, configured) if configured else ""
+    runtime = bucket.get("runtime_url") or ""
+    providers = {}
+    for agent in entry_agents(entry):
+        providers[agent.id] = _one_provider(hass, bucket["settings"], agent, runtime)
+    bucket["providers"] = providers
+    entry.async_on_unload(entry.add_update_listener(_reload))
+    if not hass.is_running or (hass.data.get(DOMAIN) or {}).get("defer_platforms"):
+        return True
+    hass.data[DOMAIN].setdefault("agents_platforms", set()).add(entry.entry_id)
+    await hass.config_entries.async_forward_entry_setups(entry, _PLATFORMS)
+    return True
+
+
 async def _reload(hass: HomeAssistant, entry: ConfigEntry) -> None:
     if (hass.data.get(DOMAIN) or {}).get("migrating"):
         return
     await hass.config_entries.async_reload(entry.entry_id)
+    if is_provider(entry) or is_agents(entry):
+        return
+    agents = agents_entry(hass, entry.entry_id)
+    if agents and agents.state is ConfigEntryState.LOADED:
+        await hass.config_entries.async_reload(agents.entry_id)
 
 
 def _remove_panel(hass: HomeAssistant) -> None:
@@ -642,11 +695,17 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             bucket.get("providers", {}).pop(agent_from_entry(entry).id, None)
         return unloaded
     if is_agents(entry):
-        return True
+        ready = (hass.data.get(DOMAIN) or {}).get("agents_platforms") or set()
+        if entry.entry_id not in ready:
+            return True
+        ready.discard(entry.entry_id)
+        return await hass.config_entries.async_unload_platforms(entry, _PLATFORMS)
+    agents = agents_entry(hass, entry.entry_id)
+    if agents and agents.state is ConfigEntryState.LOADED:
+        await hass.config_entries.async_unload(agents.entry_id)
     for child in list(provider_entries(hass, entry.entry_id)):
         if child.state is ConfigEntryState.LOADED:
             await hass.config_entries.async_unload(child.entry_id)
-    unloaded = await hass.config_entries.async_unload_platforms(entry, _PLATFORMS)
     data = hass.data.pop(DOMAIN, None)
     if data and callable(data.get("house_map_unsub")):
         data["house_map_unsub"]()
@@ -656,12 +715,20 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await data["runtime"].aclose()
     if data and data.get("store"):
         data["store"].close()
-    return unloaded
+    return True
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     bucket = hass.data.setdefault(DOMAIN, {})
-    if is_provider(entry) or is_agents(entry):
+    if is_provider(entry):
+        return
+    if is_agents(entry):
+        if bucket.get("removing_hub"):
+            return
+        hub_id = str(entry.data.get(CONF_HUB_ID) or "")
+        hub = hass.config_entries.async_get_entry(hub_id) if hub_id else hub_entry(hass)
+        if hub is not None and not hub.disabled_by:
+            hass.async_create_task(_ensure_agents_entry(hass, hub))
         return
     bucket["removing_hub"] = True
     try:
