@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from types import MappingProxyType
+
 import voluptuous as vol
 from homeassistant import config_entries
+from homeassistant.config_entries import ConfigSubentry
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.selector import (
     TextSelector,
@@ -34,6 +37,15 @@ class McpConnectionFlow(config_entries.ConfigSubentryFlow):
     def __init__(self) -> None:
         self._editing = False
 
+    def _host(self):
+        """Connections always live on the hub, even if the header picker chose agents."""
+        from .agents import hub_entry, is_agents
+
+        entry = self._get_entry()
+        if is_agents(entry):
+            return hub_entry(self.hass) or entry
+        return entry
+
     def _saved(self) -> tuple[object, dict]:
         entry = self._get_entry()
         subentry = self._get_reconfigure_subentry()
@@ -46,9 +58,8 @@ class McpConnectionFlow(config_entries.ConfigSubentryFlow):
         current, data = self._saved()
         return {"name": current.title, "url": data.get("url") or ""}
 
-    def _taken(self, slug: str, current_id: str | None) -> bool:
-        entry = self._get_entry()
-        for sub in entry.subentries.values():
+    def _taken(self, host, slug: str, current_id: str | None) -> bool:
+        for sub in host.subentries.values():
             if getattr(sub, "subentry_type", "") != SUBENTRY_MCP:
                 continue
             if current_id and sub.subentry_id == current_id:
@@ -69,10 +80,12 @@ class McpConnectionFlow(config_entries.ConfigSubentryFlow):
         errors: dict[str, str] = {}
         current_id = None
         previous_token = ""
+        host = self._host()
         if self._editing:
             current, data = self._saved()
             current_id = current.subentry_id
             previous_token = str(data.get("token") or "")
+            host = self._get_entry()
         if user_input is not None:
             name = str(user_input.get("name") or "").strip()
             url = str(user_input.get("url") or "").strip()
@@ -82,7 +95,7 @@ class McpConnectionFlow(config_entries.ConfigSubentryFlow):
             slug = server_slug(name, url)
             if not name or not slug:
                 errors["name"] = "required"
-            elif self._taken(slug, current_id):
+            elif self._taken(host, slug, current_id):
                 errors["name"] = "already_configured"
             if not errors:
                 if self._editing and not token:
@@ -97,6 +110,18 @@ class McpConnectionFlow(config_entries.ConfigSubentryFlow):
                         unique_id=slug,
                         data=payload,
                     )
+                if host.entry_id != self._get_entry().entry_id:
+                    self.hass.config_entries.async_add_subentry(
+                        host,
+                        ConfigSubentry(
+                            data=MappingProxyType(payload),
+                            subentry_type=SUBENTRY_MCP,
+                            title=name,
+                            unique_id=slug,
+                        ),
+                    )
+                    self.hass.async_create_task(self.hass.config_entries.async_reload(host.entry_id))
+                    return self.async_abort(reason="reconfigure_successful")
                 return self.async_create_entry(title=name, data=payload, unique_id=slug)
         return self.async_show_form(
             step_id="connection",
