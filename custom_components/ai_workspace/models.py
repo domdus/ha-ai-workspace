@@ -50,6 +50,7 @@ class Settings:
     enable_dictate: bool = True
     allow_users: bool = False
     house_map: bool = False
+    keep_chats: int = 30
     mode: str = "cursor"
     api_provider: str = "openai"
     api_key: str = ""

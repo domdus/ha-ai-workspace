@@ -9,6 +9,8 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.selector import (
+    NumberSelector,
+    NumberSelectorConfig,
     SelectSelector,
     SelectSelectorConfig,
     Selector,
@@ -33,6 +35,8 @@ from .const import (
     CONF_ENABLE_SIDEBAR,
     CONF_ENABLE_DICTATE,
     CONF_HOUSE_MAP,
+    CONF_KEEP_CHATS,
+    DEFAULT_KEEP_CHATS,
     CONF_MCP_KIND,
     CONF_MCP_TOKEN,
     CONF_MCP_URL,
@@ -95,6 +99,7 @@ _PARENT_KEYS = (
     CONF_ENABLE_DICTATE,
     CONF_ALLOW_USERS,
     CONF_HOUSE_MAP,
+    CONF_KEEP_CHATS,
     CONF_STT_ENGINE,
     CONF_TTS_ENGINE,
     CONF_SPEAK_REPLIES,
@@ -179,6 +184,10 @@ def _ui_schema(defaults: dict | None = None):
             CONF_HOUSE_MAP,
             default=current.get(CONF_HOUSE_MAP, False),
         ): cv.boolean,
+        vol.Optional(
+            CONF_KEEP_CHATS,
+            default=int(current.get(CONF_KEEP_CHATS, DEFAULT_KEEP_CHATS) or DEFAULT_KEEP_CHATS),
+        ): NumberSelector(NumberSelectorConfig(min=1, max=500, mode="box", step=1)),
     }
 
 
@@ -230,6 +239,12 @@ def _normalize(user_input: dict, current: dict | None = None, hass: HomeAssistan
     elif kind == MCP_COOLVER and port != 8099:
         url = default_mcp_url(hass, kind)
     out[CONF_MCP_URL] = url
+    if CONF_KEEP_CHATS in out or CONF_KEEP_CHATS in saved:
+        try:
+            keep = int(out.get(CONF_KEEP_CHATS, saved.get(CONF_KEEP_CHATS, DEFAULT_KEEP_CHATS)))
+        except (TypeError, ValueError):
+            keep = DEFAULT_KEEP_CHATS
+        out[CONF_KEEP_CHATS] = max(1, min(keep, 500))
     return out
 
 
