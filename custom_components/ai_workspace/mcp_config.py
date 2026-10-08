@@ -134,6 +134,46 @@ def mcp_servers_from_saved(url: str, token: str, extra: Any) -> dict[str, dict[s
     return servers
 
 
+def _needs_ha_bearer(name: str, url: str, mcp_kind: str = "") -> bool:
+    """True for Home Assistant APIs that reject unauthenticated calls (and spam the log)."""
+    path = (urlparse(str(url or "")).path or "").lower()
+    key = str(name or "").strip().lower()
+    if key == "house-map" or "/api/ai_workspace/house_map/" in path:
+        return True
+    if "/api/mcp" in path:
+        return True
+    if mcp_kind == "ha" and key in {"mcp", "home-assistant", "ha", "ha-mcp"}:
+        return True
+    return False
+
+
+def with_mcp_auth(
+    servers: dict[str, dict[str, Any]] | None,
+    *,
+    access_token: str = "",
+    mcp_token: str = "",
+    mcp_kind: str = "",
+) -> dict[str, dict[str, Any]]:
+    """Attach a Bearer token to HA MCP endpoints; drop house-map when none is available."""
+    token = str(mcp_token or "").strip() or str(access_token or "").strip()
+    out: dict[str, dict[str, Any]] = {}
+    for name, cfg in (servers or {}).items():
+        raw = dict(cfg or {})
+        url = str(raw.get("url") or "")
+        if not _needs_ha_bearer(name, url, mcp_kind):
+            out[name] = raw
+            continue
+        if not token:
+            # Calling these without auth floods HA with "invalid authentication" warnings.
+            continue
+        headers = dict(raw.get("headers") or {})
+        if "Authorization" not in headers:
+            headers["Authorization"] = f"Bearer {token}"
+            raw["headers"] = headers
+        out[name] = raw
+    return out
+
+
 def public_tool_names(groups: list[tuple[str, list[str]]]) -> dict[str, tuple[str, str]]:
     """Name the model sees -> (server, tool on that server)."""
     counts = Counter(name for _server, tools in groups for name in tools)

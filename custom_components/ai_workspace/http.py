@@ -24,6 +24,7 @@ from .const import (
     with_language_rule,
     with_ui_context,
 )
+from .mcp_config import with_mcp_auth
 from .chat_scope import other_chat_note
 from .files import attach_files_to_message, file_events, parse_client_files
 from .images import caption_for, image_events, parse_client_images
@@ -164,7 +165,7 @@ async def _iter_sse(resp) -> AsyncIterator[tuple[str, dict]]:
             yield event, payload if isinstance(payload, dict) else {"type": event}
 
 
-def _runtime_agent_overrides(hass: HomeAssistant) -> dict[str, Any]:
+def _runtime_agent_overrides(hass: HomeAssistant, access_token: str | None = None) -> dict[str, Any]:
     settings = _runtime(hass).get("settings")
     extra: dict[str, Any] = {}
     if settings is None:
@@ -173,6 +174,12 @@ def _runtime_agent_overrides(hass: HomeAssistant) -> dict[str, Any]:
     kind = str(getattr(settings, "mcp_kind", "") or "")
     if kind == MCP_COOLVER:
         servers.pop("mcp", None)
+    servers = with_mcp_auth(
+        servers,
+        access_token=str(access_token or ""),
+        mcp_token=str(getattr(settings, "mcp_token", "") or ""),
+        mcp_kind=kind,
+    )
     if servers:
         extra["mcp"] = {"servers": servers}
     model = str(getattr(settings, "model", "") or "").strip()
@@ -196,6 +203,7 @@ async def _runtime_chat(
     model: str = "",
     effort: str = "",
     api_key: str = "",
+    access_token: str | None = None,
 ) -> AsyncIterator[dict]:
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
@@ -223,7 +231,12 @@ async def _runtime_chat(
         payload["images"] = [
             {"name": item["name"], "mime": item["mime"], "data": item["data"]} for item in images
         ]
-    payload.update(_runtime_agent_overrides(hass))
+    token = str(access_token or "").strip()
+    if not token:
+        from .conversation import _login_token
+
+        token = str(await _login_token(hass, user_id) or "").strip()
+    payload.update(_runtime_agent_overrides(hass, access_token=token))
     if model:
         payload["model"] = model
     if effort:
@@ -282,6 +295,7 @@ async def async_agent_events(
             model=str(getattr(provider, "model", "") or ""),
             effort=str(getattr(provider, "effort", "") or ""),
             api_key=str(getattr(provider, "api_key", "") or ""),
+            access_token=access_token,
         ):
             yield event
         return
@@ -807,6 +821,7 @@ class ChatView(HomeAssistantView):
                     model=str(getattr(provider, "model", "") or ""),
                     effort=str(getattr(provider, "effort", "") or ""),
                     api_key=str(getattr(provider, "api_key", "") or ""),
+                    access_token=access_token,
                 ):
                     yield event
                 return

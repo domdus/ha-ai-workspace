@@ -6,6 +6,7 @@ from typing import Any, AsyncIterator, Callable
 from .const import language_instruction, with_ui_context
 from .events import map_sdk_message
 from .images import cursor_payload
+from .mcp_config import with_mcp_auth
 from .models import ProviderInfo, Settings
 from .redact import redact
 from .store import Session
@@ -110,7 +111,6 @@ class CursorProvider:
         images: list[dict] | None = None,
         language: str = "",
     ) -> AsyncIterator[dict]:
-        del access_token
         outbound = with_ui_context(message, frontend_origin or "")
         rule = language_instruction(language)
         if rule:
@@ -122,7 +122,12 @@ class CursorProvider:
             from .house_map import HOUSE_MAP_INSTRUCTIONS
 
             outbound = f"{HOUSE_MAP_INSTRUCTIONS}\n\n{outbound}"
-        mcp_servers = self.settings.mcp_servers
+        mcp_servers = with_mcp_auth(
+            self.settings.mcp_servers,
+            access_token=str(access_token or ""),
+            mcp_token=str(self.settings.mcp_token or ""),
+            mcp_kind=str(self.settings.mcp_kind or ""),
+        )
         if not mcp_servers:
             logger.warning("no MCP servers configured")
         else:
