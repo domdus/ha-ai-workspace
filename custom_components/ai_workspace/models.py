@@ -56,6 +56,13 @@ class Settings:
     system_prompt: str = ""
     mcp_kind: str = "ha_mcp"
     mcp_token: str = ""
+    effort: str = ""
+    azure_api_version: str = "2024-10-21"
+    stt_engine: str = "browser"
+    tts_engine: str = "off"
+    speak_replies: bool = False
+    agent_id: str = ""
+    agent_title: str = ""
 
     def ensure_dirs(self) -> None:
         self.data_dir.mkdir(parents=True, exist_ok=True)

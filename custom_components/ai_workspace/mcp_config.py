@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 import os
 import re
+from collections import Counter
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 _ENV = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
 
@@ -86,3 +88,60 @@ def load_mcp_servers(path: Path) -> dict[str, dict[str, Any]]:
     if not isinstance(servers, dict):
         raise McpConfigError("mcpServers must be an object")
     return {str(name): server_to_sdk(str(name), cfg) for name, cfg in servers.items()}
+
+
+_RESERVED_NAMES = {"mcp", "home-assistant", "ha", "ha-mcp"}
+_SLUG = re.compile(r"[^a-z0-9]+")
+
+
+def clean_mcp_extra(raw: Any) -> list[dict[str, str]]:
+    if not isinstance(raw, list):
+        return []
+    found: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("name") or "").strip()
+        url = str(item.get("url") or "").strip()
+        if not name or not url or name in seen:
+            continue
+        seen.add(name)
+        found.append({"name": name, "url": url, "token": str(item.get("token") or "").strip()})
+    return found
+
+
+def server_slug(name: str, url: str) -> str:
+    raw = str(name or "").strip().lower()
+    if not raw:
+        raw = (urlparse(str(url or "")).hostname or "connection").lower()
+    slug = _SLUG.sub("-", raw).strip("-")[:40]
+    if slug in _RESERVED_NAMES:
+        slug = f"{slug}-extra"
+    return slug
+
+
+def mcp_servers_from_saved(url: str, token: str, extra: Any) -> dict[str, dict[str, Any]]:
+    servers = mcp_servers_from_url(url, token)
+    for item in clean_mcp_extra(extra):
+        name = item["name"]
+        if name in servers:
+            name = f"{name}-2"
+        raw: dict[str, Any] = {"url": item["url"]}
+        if item["token"]:
+            raw["headers"] = {"Authorization": f"Bearer {item['token']}"}
+        servers[name] = server_to_sdk(name, raw)
+    return servers
+
+
+def public_tool_names(groups: list[tuple[str, list[str]]]) -> dict[str, tuple[str, str]]:
+    """Name the model sees -> (server, tool on that server)."""
+    counts = Counter(name for _server, tools in groups for name in tools)
+    routes: dict[str, tuple[str, str]] = {}
+    for server, tools in groups:
+        for name in tools:
+            public = f"{server}__{name}" if counts[name] > 1 else name
+            if public in routes:
+                public = f"{server}__{name}"
+            routes[public] = (server, name)
+    return routes

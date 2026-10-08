@@ -395,6 +395,7 @@ export function mountAiWorkspace(root, options = {}) {
               <div class="composer-row">
               <label class="sr" for="ai-message">${t("message")}</label>
               <textarea id="ai-message" class="message" rows="1" placeholder="${t("placeholder")}"></textarea>
+              <div class="composer-actions">
               <input class="file-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif,.yaml,.yml,.json,.txt,.md,.csv,.xml,.toml,.html,.css,.js,.ts,.py,.log,.cfg,.ini,.conf" multiple hidden>
               <ha-icon-button class="attach" type="button" label="${t("attach")}">
                 <ha-icon icon="mdi:paperclip"></ha-icon>
@@ -403,9 +404,17 @@ export function mountAiWorkspace(root, options = {}) {
                 <ha-icon icon="mdi:microphone"></ha-icon>
               </ha-icon-button>
               <ha-button class="send" size="s" appearance="accent" aria-label="${t("send")}">
-                <ha-icon slot="start" icon="mdi:arrow-up"></ha-icon>
+                <ha-icon icon="mdi:arrow-up"></ha-icon>
               </ha-button>
               </div>
+              </div>
+            </div>
+            <div class="agent-picker" hidden>
+              <button type="button" class="agent-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="${t("agent")}">
+                <span class="agent-trigger-label"></span>
+                <ha-icon icon="mdi:chevron-down"></ha-icon>
+              </button>
+              <div class="agent-menu" role="listbox" hidden></div>
             </div>
           </form>
         </div>
@@ -424,6 +433,10 @@ export function mountAiWorkspace(root, options = {}) {
   const form = root.querySelector(".composer");
   const messageEl = root.querySelector(".message");
   const sendBtn = root.querySelector(".send");
+  const agentPicker = root.querySelector(".agent-picker");
+  const agentTrigger = root.querySelector(".agent-trigger");
+  const agentLabel = root.querySelector(".agent-trigger-label");
+  const agentMenu = root.querySelector(".agent-menu");
   const micBtn = root.querySelector(".mic");
   const micIcon = micBtn?.querySelector("ha-icon");
   const attachBtn = root.querySelector(".attach");
@@ -1302,17 +1315,81 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   let defaultProvider = "api";
+  let agentId = "";
+  let voice = { dictate: true, stt: "browser", speak: false };
+
+  function selectedAgent() {
+    return agentId || defaultProvider;
+  }
+
+  function closeAgentMenu() {
+    if (!agentMenu || !agentTrigger) return;
+    agentMenu.hidden = true;
+    agentTrigger.setAttribute("aria-expanded", "false");
+  }
+
+  function agentChoices(items) {
+    return items.filter((item) => item.available);
+  }
 
   async function loadProviders() {
     const response = await apiFetch(`${API}/providers`);
     if (!response?.ok) return;
     const items = await response.json();
-    const ready = items.find((item) => item.available) || items[0];
-    if (ready?.id) defaultProvider = ready.id;
-    if (ready && !ready.available) {
+    const ready = agentChoices(items);
+    const previous = agentId || localStorage.getItem("ai_workspace_agent") || "";
+    const pick = ready.find((item) => item.id === previous) || ready[0];
+    agentId = pick?.id || "";
+    if (agentPicker && agentMenu && agentLabel) {
+      agentPicker.hidden = ready.length < 2;
+      agentLabel.textContent = pick?.label || "";
+      agentMenu.replaceChildren();
+      for (const item of items) {
+        const option = document.createElement("button");
+        option.type = "button";
+        option.className = "agent-option";
+        option.setAttribute("role", "option");
+        option.dataset.id = item.id;
+        option.disabled = !item.available;
+        option.setAttribute("aria-selected", item.id === agentId ? "true" : "false");
+        const name = document.createElement("span");
+        name.className = "agent-option-name";
+        name.textContent = item.label;
+        option.appendChild(name);
+        if (item.id === agentId) {
+          const mark = document.createElement("ha-icon");
+          mark.setAttribute("icon", "mdi:check");
+          option.appendChild(mark);
+        }
+        option.addEventListener("click", () => {
+          if (!item.available) return;
+          agentId = item.id;
+          localStorage.setItem("ai_workspace_agent", agentId);
+          defaultProvider = agentId;
+          agentLabel.textContent = item.label;
+          for (const other of agentMenu.querySelectorAll(".agent-option")) {
+            const on = other.dataset.id === agentId;
+            other.setAttribute("aria-selected", on ? "true" : "false");
+            const mark = other.querySelector("ha-icon");
+            if (on && !mark) {
+              const icon = document.createElement("ha-icon");
+              icon.setAttribute("icon", "mdi:check");
+              other.appendChild(icon);
+            } else if (!on && mark) {
+              mark.remove();
+            }
+          }
+          closeAgentMenu();
+        });
+        agentMenu.appendChild(option);
+      }
+    }
+    const chosen = items.find((item) => item.id === selectedAgent()) || ready[0] || items[0];
+    if (chosen?.id) defaultProvider = chosen.id;
+    if (chosen && !chosen.available) {
       bannerEl.hidden = false;
-      bannerEl.textContent = ready.reason || t("configure_provider");
-    } else {
+      bannerEl.textContent = chosen.reason || t("configure_provider");
+    } else if (bannerEl && !bannerEl.classList.contains("hold")) {
       bannerEl.hidden = true;
     }
   }
@@ -1458,7 +1535,7 @@ export function mountAiWorkspace(root, options = {}) {
     more.setAttribute("aria-haspopup", "menu");
     more.setAttribute("aria-expanded", "false");
     const dots = document.createElement("ha-icon");
-    dots.setAttribute("icon", "mdi:dots-horizontal");
+    dots.setAttribute("icon", "mdi:dots-vertical");
     more.appendChild(dots);
     more.addEventListener("click", (event) => {
       event.preventDefault();
@@ -1490,7 +1567,7 @@ export function mountAiWorkspace(root, options = {}) {
     const mark = streamToken;
     const created = await apiFetch(`${API}/sessions`, {
       method: "POST",
-      body: JSON.stringify({ provider: defaultProvider }),
+      body: JSON.stringify({ provider: selectedAgent() }),
     });
     if (!created?.ok) throw new Error(created ? await created.text() : "Not signed in");
     const session = await created.json();
@@ -1923,29 +2000,172 @@ export function mountAiWorkspace(root, options = {}) {
     }
   }
 
-  if (micBtn && SpeechRecognitionAPI) {
+  agentTrigger?.addEventListener("click", () => {
+    if (!agentMenu) return;
+    const open = agentMenu.hidden;
+    agentMenu.hidden = !open;
+    agentTrigger.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+  root.addEventListener("click", (event) => {
+    if (!agentPicker || agentPicker.hidden || agentMenu?.hidden) return;
+    if (event.composedPath().includes(agentPicker)) return;
+    closeAgentMenu();
+  });
+  root.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeAgentMenu();
+  });
+
+  let capture = null;
+  let replyAudio = null;
+
+  function encodeWav(chunks, sampleRate) {
+    const length = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+    const buffer = new ArrayBuffer(44 + length * 2);
+    const view = new DataView(buffer);
+    const write = (offset, text) => {
+      for (let i = 0; i < text.length; i += 1) view.setUint8(offset + i, text.charCodeAt(i));
+    };
+    write(0, "RIFF");
+    view.setUint32(4, 36 + length * 2, true);
+    write(8, "WAVE");
+    write(12, "fmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    write(36, "data");
+    view.setUint32(40, length * 2, true);
+    let offset = 44;
+    for (const chunk of chunks) {
+      for (let i = 0; i < chunk.length; i += 1) {
+        const sample = Math.max(-1, Math.min(1, chunk[i]));
+        view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+        offset += 2;
+      }
+    }
+    return new Blob([buffer], { type: "audio/wav" });
+  }
+
+  async function startEngineSpeech() {
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+      showMicHelp();
+      return;
+    }
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1 } });
+    const ctx = new AudioContext();
+    const source = ctx.createMediaStreamSource(stream);
+    const proc = ctx.createScriptProcessor(4096, 1, 1);
+    const gain = ctx.createGain();
+    gain.gain.value = 0;
+    const chunks = [];
+    proc.onaudioprocess = (event) => {
+      chunks.push(new Float32Array(event.inputBuffer.getChannelData(0)));
+    };
+    source.connect(proc);
+    proc.connect(gain);
+    gain.connect(ctx.destination);
+    listening = true;
+    micBtn.classList.add("listening");
+    micBtn.label = t("stop_dictate");
+    capture = {
+      async stop() {
+        proc.disconnect();
+        source.disconnect();
+        stream.getTracks().forEach((track) => track.stop());
+        await ctx.close();
+        return encodeWav(chunks, ctx.sampleRate || 16000);
+      },
+    };
+  }
+
+  async function finishEngineSpeech() {
+    const active = capture;
+    capture = null;
+    stopSpeech();
+    if (!active) return;
+    let wav;
+    try {
+      wav = await active.stop();
+    } catch (_err) {
+      showMicHelp();
+      return;
+    }
+    const response = await apiFetch(`${API}/stt`, {
+      method: "POST",
+      headers: { "Content-Type": "audio/wav", "X-Speech-Language": speechLanguage() },
+      body: wav,
+    });
+    if (!response?.ok) {
+      showMicHelp();
+      return;
+    }
+    const body = await response.json();
+    const said = String(body.text || "").trim();
+    if (!said) return;
+    const base = messageEl.value.trim();
+    messageEl.value = [base, said].filter(Boolean).join(" ");
+    resizeComposer();
+  }
+
+  async function speakReply(text) {
+    if (!voice.speak || !String(text || "").trim()) return;
+    try {
+      const response = await apiFetch(`${API}/tts`, {
+        method: "POST",
+        body: JSON.stringify({ text, language: speechLanguage() }),
+      });
+      if (!response?.ok) return;
+      const body = await response.json();
+      if (!body.url) return;
+      replyAudio?.pause();
+      replyAudio = new Audio(body.url);
+      await replyAudio.play();
+    } catch (_err) {
+      /* playback can be blocked until the next tap */
+    }
+  }
+
+  if (micBtn) {
     micBtn.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      if (listening) stopSpeech();
-      else startSpeech();
+      const engine = voice.stt && voice.stt !== "browser";
+      if (listening) {
+        if (engine) finishEngineSpeech();
+        else stopSpeech();
+        return;
+      }
+      if (engine) {
+        startEngineSpeech().catch(() => showMicHelp());
+        return;
+      }
+      startSpeech();
     });
   }
 
   async function loadDictate() {
-    if (!micBtn || !SpeechRecognitionAPI) return;
+    if (!micBtn) return;
     let show = true;
     try {
       const response = await apiFetch(`${API}/ui`);
       if (response?.ok) {
         const body = await response.json();
         show = body.dictate !== false;
+        voice = {
+          dictate: show,
+          stt: body.stt || "browser",
+          speak: body.speak === true,
+        };
       }
     } catch (_err) {
       show = true;
     }
-    micBtn.hidden = !show;
-    if (!show) stopSpeech();
+    const browserOnly = !voice.stt || voice.stt === "browser";
+    micBtn.hidden = !show || (browserOnly && !SpeechRecognitionAPI);
+    if (micBtn.hidden) stopSpeech();
   }
 
   form.addEventListener("submit", async (event) => {
@@ -2018,6 +2238,7 @@ export function mountAiWorkspace(root, options = {}) {
           page: haPageContext(),
           images: images.map((img) => ({ name: img.name, mime: img.mime, data: img.data })),
           files: files.map((file) => ({ name: file.name, mime: file.mime, text: file.text })),
+          agent: selectedAgent(),
         });
       let response = await apiFetch(`${API}/sessions/${chatId}/chat`, {
         method: "POST",
@@ -2080,7 +2301,10 @@ export function mountAiWorkspace(root, options = {}) {
       await waitForStream();
       streamNode = null;
       if (!sawDone) recover = true;
-      else await loadSessions();
+      else {
+        await loadSessions();
+        await speakReply(streamFull);
+      }
     } catch (error) {
       if (token !== streamToken) return;
       if (chatId && (isDisconnect(error) || document.visibilityState === "hidden") && sessionId === chatId) {

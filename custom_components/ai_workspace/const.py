@@ -18,6 +18,9 @@ API_GEMINI = "gemini"
 API_DEEPSEEK = "deepseek"
 API_QWEN = "qwen"
 API_XAI = "xai"
+API_OPENROUTER = "openrouter"
+API_OLLAMA = "ollama"
+API_AZURE = "azure"
 API_COMPATIBLE = "compatible"
 API_PROVIDERS = {
     API_OPENAI: "OpenAI",
@@ -26,6 +29,9 @@ API_PROVIDERS = {
     API_DEEPSEEK: "DeepSeek",
     API_QWEN: "Qwen (Alibaba)",
     API_XAI: "Grok (xAI)",
+    API_OPENROUTER: "OpenRouter",
+    API_OLLAMA: "Local Ollama",
+    API_AZURE: "Azure OpenAI",
     API_COMPATIBLE: "OpenAI-compatible (custom base URL)",
 }
 API_SHORT_LABELS = {
@@ -35,6 +41,9 @@ API_SHORT_LABELS = {
     API_DEEPSEEK: "DeepSeek",
     API_QWEN: "Qwen",
     API_XAI: "Grok",
+    API_OPENROUTER: "OpenRouter",
+    API_OLLAMA: "Ollama",
+    API_AZURE: "Azure OpenAI",
     API_COMPATIBLE: "OpenAI-compatible",
 }
 _API_DEFAULT_MODEL = {
@@ -44,6 +53,9 @@ _API_DEFAULT_MODEL = {
     API_DEEPSEEK: "deepseek-chat",
     API_QWEN: "qwen-plus",
     API_XAI: "grok-4",
+    API_OPENROUTER: "openai/gpt-4.1",
+    API_OLLAMA: "llama3.2",
+    API_AZURE: "",
     API_COMPATIBLE: "gpt-4.1",
 }
 _API_DEFAULT_BASE = {
@@ -53,6 +65,8 @@ _API_DEFAULT_BASE = {
     API_DEEPSEEK: "https://api.deepseek.com/v1",
     API_QWEN: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
     API_XAI: "https://api.x.ai/v1",
+    API_OPENROUTER: "https://openrouter.ai/api/v1",
+    API_OLLAMA: "http://127.0.0.1:11434/v1",
 }
 DEFAULT_API_MODEL = _API_DEFAULT_MODEL[API_OPENAI]
 DEFAULT_ANTHROPIC_MODEL = _API_DEFAULT_MODEL[API_ANTHROPIC]
@@ -73,8 +87,38 @@ CLOUD_ONLY_MODELS = frozenset(
         "qwen-max",
         "qwen-turbo",
         "grok-3",
+        "openai/gpt-4.1",
+        "llama3.2",
     }
 )
+EFFORT_FAST = "fast"
+EFFORT_HIGH = "high"
+EFFORT_HIGH_FAST = "high_fast"
+EFFORTS = {
+    "": "Default",
+    EFFORT_FAST: "Fast",
+    EFFORT_HIGH: "High",
+    EFFORT_HIGH_FAST: "High fast",
+}
+SUBENTRY_AGENT = "agent"
+ROLE_HUB = "hub"
+ROLE_PROVIDER = "provider"
+CONF_ROLE = "role"
+CONF_HUB_ID = "hub_id"
+CONF_AGENT_ID = "agent_id"
+STT_BROWSER = "browser"
+TTS_OFF = "off"
+DEFAULT_AZURE_API_VERSION = "2024-10-21"
+BORROW_DOMAINS = {
+    "open_router": API_OPENROUTER,
+    "openai_conversation": API_OPENAI,
+    "anthropic": API_ANTHROPIC,
+    "google_generative_ai_conversation": API_GEMINI,
+    "ollama": API_OLLAMA,
+    "azure_openai_sdk_conversation": API_AZURE,
+    "azure_openai": API_AZURE,
+    "azure_openai_conversation": API_AZURE,
+}
 
 
 def default_api_model(kind: str) -> str:
@@ -89,12 +133,24 @@ DEFAULT_TITLE = "AI Workspace"
 CONF_MCP_URL = "mcp_url"
 CONF_MCP_KIND = "mcp_kind"
 CONF_MCP_TOKEN = "mcp_token"
+CONF_MCP_EXTRA = "mcp_extra"
+CONF_MCP_ADD_NAME = "mcp_add_name"
+CONF_MCP_ADD_URL = "mcp_add_url"
+CONF_MCP_ADD_TOKEN = "mcp_add_token"
+CONF_MCP_REMOVE = "mcp_remove"
 CONF_CURSOR_API_KEY = "cursor_api_key"
 CONF_MODEL = "model"
 CONF_ENABLE_OVERLAY = "enable_overlay"
 CONF_ENABLE_SIDEBAR = "enable_sidebar"
 CONF_ENABLE_DICTATE = "enable_dictate"
 CONF_ALLOW_USERS = "allow_users"
+CONF_EFFORT = "effort"
+CONF_ENABLED = "enabled"
+CONF_STT_ENGINE = "stt_engine"
+CONF_TTS_ENGINE = "tts_engine"
+CONF_SPEAK_REPLIES = "speak_replies"
+CONF_AZURE_API_VERSION = "azure_api_version"
+CONF_BORROW = "borrow"
 CONF_RUNTIME_URL = "runtime_url"
 CONF_MODE = "mode"
 CONF_API_PROVIDER = "api_provider"
@@ -129,7 +185,7 @@ COMPOSE_MCP_URL = "http://ha-mcp:8086/mcp"
 DEFAULT_COOLVER_URL = "http://127.0.0.1:8099"
 DEFAULT_SYSTEM_PROMPT = """You help with this Home Assistant installation: automations, entities, dashboards, and what ran or failed.
 
-Home Assistant is reached only through the connected MCP tools. Use those tools to inspect or change anything. Do not invent entity ids, states, or history. Prefer a specific tool over a full-installation overview when the question is narrow.
+Home Assistant is reached only through the connected MCP tools. Use those tools to inspect or change anything. Do not invent entity ids, states, or history. Prefer a specific tool over a full-installation overview when the question is narrow. A large entity listing may come back as an area map of ids. Use that map, then ask a tool for one area or one entity before you claim its state. If more than one connection is set up, use the tool from the connection that matches the question.
 
 Be concise. If a tool fails, say so. Ask before doing something hard to undo, such as deleting automations, unlocking doors, or turning off many devices at once.
 

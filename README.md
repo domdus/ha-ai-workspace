@@ -2,17 +2,19 @@
   <img src="ai_workspace/logo.png" alt="AI Workspace" width="420">
 </p>
 
-<p align="center"><em>Use Cursor, Claude, or ChatGPT AI in Home Assistant from your couch.</em></p>
+<p align="center"><em>Use AI inside Home Assistant from your couch.</em></p>
 
 <p align="center">
-  <img src="docs/ai_workspace.gif" alt="AI Workspace chat in Home Assistant" width="300">
+  <video src="https://github.com/user-attachments/assets/40926258-222b-42b4-a8bc-8c78308d4db9" width="300" autoplay loop muted playsinline></video>
 </p>
 
 # AI Workspace
 
 An agent chat that can see **your** Home Assistant installation through MCP.
 
-This is a HACS integration. The agent is a **cloud API** (OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible) or the **Cursor SDK Runtime** used in Home Assistant by the integration.
+This is a HACS integration. The agent is a **cloud API** (OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible) or Cursor AI via the **Cursor SDK Runtime** used in Home Assistant by the integration.
+
+What the agent can do relies on the MCP server you connect. Automations, dashboards, history, and devices are that server's tools. Home Assistant applies each change itself, so a new automation or dashboard is there without a restart. Access stays on that MCP connection, and the tools stay the ones Home Assistant already speaks. That is safer and more reliable than a second tool set maintained beside Home Assistant.
 
 <p align="center">
   <img src="docs/ai-workspace.png" alt="AI Workspace in the Home Assistant sidebar" width="820">
@@ -22,10 +24,10 @@ This is a HACS integration. The agent is a **cloud API** (OpenAI, Claude, Gemini
 
 - **Provider API key** (Cloud) or a **Cursor API key** (SDK Runtime)
 
-Choose one MCP server, any of your choice.
+Start with one MCP server. You can add more later, and the assistant uses all of them in the same chat.
 
 - **Home Assistant MCP Server** (HA built-in)
-- **[HA-MCP](https://github.com/homeassistant-ai/ha-mcp)**
+- **[HA-MCP](https://github.com/homeassistant-ai/ha-mcp)** — install the [custom component](https://github.com/homeassistant-ai/ha-mcp-integration) and its connect URL is picked up from that entry. Docker and the app are the other ways to run the same server.
 - **[HA Vibecode Agent](https://github.com/Coolver/home-assistant-vibecode-agent)**
 - A **custom MCP URL** if you already run something else
 
@@ -39,7 +41,7 @@ Keep the connect URL or Agent Key if it shows one — paste it only if auto-dete
 
 ## Option A: Cloud API Provider (Quick Setup)
 
-Fastest path. No extra container. **OpenAI**, **Claude**, **Gemini**, **DeepSeek**, **Qwen**, **Grok**, or **OpenAI-compatible** (OpenRouter, LM Studio, Ollama at `http://127.0.0.1:11434/v1`, …). The model must support tool calls or it cannot drive MCP.
+Fastest path. No extra container. Add **AI Workspace** once, then add an agent for **OpenAI**, **Claude**, **Gemini**, **DeepSeek**, **Qwen**, **Grok**, **OpenRouter**, **Azure OpenAI**, **local Ollama**, or **OpenAI-compatible** (LM Studio and others). The model must support tool calls or it cannot drive MCP. If that provider is already configured in Home Assistant, the agent form can copy its key.
 
 ### 1. Install AI Workspace from HACS
 
@@ -49,12 +51,13 @@ Or **HACS → Integrations → ⋮ → Custom repositories** → `https://github
 
 ### 2. Add the integration
 
-**Settings → Devices & services → Add integration → AI Workspace → Cloud API Provider.**
+**Settings → Devices & services → Add integration → AI Workspace.**
 
-- Provider key: paste the API key for the provider you picked.
-- API base: leave empty unless you picked OpenAI-compatible (or Qwen in mainland China).
 - MCP type: from Requirements. Leave MCP URL empty if it shows as detected.
-- Save. Open **AI Workspace** (`/ai-workspace`).
+- Save. Home Assistant then asks for the first **agent**.
+- Pick the provider. Paste the key, or choose **Copy key from** when OpenRouter, OpenAI, Claude, Gemini, or Ollama is already set up.
+- Add more providers from the AI Workspace integration page. Each one is its own service and can be turned off there. The chat shows a provider list when more than one is on.
+- Open **AI Workspace** (`/ai-workspace`).
 
 <p align="center">
   <img src="docs/integration_ai_workspace_cloud_api.png" alt="Cloud API Provider: OpenAI key and model" width="820">
@@ -144,6 +147,10 @@ After the Runtime is up and running: **Settings → Devices & services → Add i
 - MCP type: from Requirements. Leave MCP URL empty if it shows as detected.
 - Save. Open **AI Workspace** (`/ai-workspace`).
 
+## More than one connection
+
+The first connection is this Home Assistant. Open **Configure** on AI Workspace when the assistant should also reach another MCP server, such as a website, a CMS, or another tool you already run. Under **More connections**, give it a short name and its address, then save. Open Configure again to add the next one. The assistant can use every connection in one chat, whether the provider is a cloud model or Cursor. To remove one, pick it in that same section and save.
+
 ## System Prompt
 
 **Settings → Devices & services → AI Workspace → Configure**
@@ -157,21 +164,28 @@ It does not control Home Assistant edit links. Those are added on every reply, s
 </p>
 
 
+## Large listings
+
+A tool that sends back the whole house is shortened before the model reads it. The entities are grouped by area, as ids only, and the model can ask again for one area or one entity to load states and attributes. A shorter list keeps each entity's state and drops the bulky attributes. One entity, one room, or one automation still arrives whole. What the model receives is always valid JSON. Nothing is cut off in the middle of an object. This is automatic for Cloud API and Cursor Runtime.
+
 ## Options
 
 | Option | What it does |
 |---|---|
-| **Chat Backend** | **Cloud API Provider** or **Cursor SDK Runtime** |
-| **Provider** | Cloud: OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible; API key; optional model and base URL. Cursor: Model overrides `CURSOR_MODEL` on the Runtime when set |
-| **MCP type** | Built-in MCP Server, HA-MCP, HA Vibecode Agent, or custom URL |
-| **MCP URL** | Empty uses auto-detect. Paste the HA-MCP webhook / custom URL only if needed |
+| **Agents** | One AI Workspace service for the shared settings. Each Cursor, OpenAI, Claude, Gemini, OpenRouter, Ollama, Azure, or other provider is its own service beside it, and can be turned off with the service switch. Effort is Fast, High, or High fast when the model supports it |
+| **Copy key from** | Uses the key already stored by OpenRouter, OpenAI, Claude, Gemini, Ollama, or Azure in Home Assistant. That integration stays |
+| **MCP type** | The first connection: built-in MCP Server, HA-MCP, HA Vibecode Agent, or a custom URL |
+| **MCP URL** | Empty uses auto-detect. Paste the HA-MCP webhook or a custom URL only if needed |
 | **MCP token** | Built-in: long-lived token or empty for this login. HA-MCP: usually empty. Vibecode: Agent Key |
+| **More connections** | Extra MCP servers the assistant can use together with the first one. A short name and an address. Save, then open Configure again to add another |
 | **System prompt** | Behaviour above. Empty uses the built-in prompt |
 | **Show floating AI button on every page** | Bottom-right robot icon. Hidden on Settings |
-| **Show dictate button** | Microphone in the prompt. On by default. Browsers allow it only over https://. |
+| **Speech to text** | Browser speech, or a Home Assistant engine such as Whisper. The microphone itself needs https:// or localhost. Browsers block it on a plain http:// LAN address |
+| **Text to speech** | Piper or another Home Assistant voice. Spoken replies play on plain http:// |
+| **Show dictate button** | Microphone in the prompt. On by default |
 | **Show AI Workspace in the sidebar** | Sidebar item. `/ai-workspace` still works if this is off |
 
-MCP is set on this form for both backends and sent to the SDK Runtime on each chat. The Cursor API key stays on the Runtime.
+MCP is set on this form for both backends. Every connection is sent with each chat. The Cursor API key stays on the Runtime.
 
 ## Remove it
 

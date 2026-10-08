@@ -2,11 +2,67 @@
   "config": {
     "step": {
       "user": {
-        "title": "Chat Backend",
-        "description": "Choose how chat should run.",
-        "menu_options": {
-          "api": "Cloud API Provider",
-          "cursor": "Cursor Runtime App"
+        "title": "AI Workspace",
+        "description": "Shared settings for every provider. After this, add the first provider (Cursor, OpenAI, OpenRouter, Ollama, and others). Each provider is its own service on this page and can be turned off with the service switch. Each one is also listed in Assist. The sidebar chat stays.",
+        "data": {
+          "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
+          "stt_engine": "Speech to text",
+          "tts_engine": "Text to speech",
+          "speak_replies": "Speak replies",
+          "enable_sidebar": "Show AI Workspace in the sidebar",
+          "enable_overlay": "Show floating AI button on every page",
+          "enable_dictate": "Show dictate button",
+          "allow_users": "Allow normal users"
+        },
+        "data_description": {
+          "runtime_url": "{runtime_url_note}",
+          "stt_engine": "Browser uses the device speech engine and needs https:// or localhost. A Home Assistant engine (Whisper, and others under Settings) transcribes a recording from this page. The browser still has to allow the microphone, which it only does on https:// or localhost.",
+          "tts_engine": "Piper and other Home Assistant voices. Speaking the reply works on plain http://. Off leaves replies as text.",
+          "speak_replies": "Play the assistant reply with the text-to-speech engine above.",
+          "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
+          "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
+          "enable_dictate": "Microphone in the message box.",
+          "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only."
+        },
+        "sections": {
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "MCP Type",
+              "mcp_url": "MCP URL{mcp_url_mark}",
+              "mcp_token": "MCP Token"
+            },
+            "data_description": {
+              "mcp_kind": "Only MCP servers this Home Assistant can reach are listed. Custom is any MCP HTTP URL.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Built-in: Home Assistant long-lived access token, or leave empty to use your current login in this chat. HA-MCP: usually empty. Vibecode: Agent Key. Custom: optional Bearer token."
+            }
+          },
+          "prompt": {
+            "name": "System Prompt",
+            "data": {
+              "system_prompt": "System Prompt"
+            },
+            "data_description": {
+              "system_prompt": "Tone and behavior only. Leave empty for the built-in prompt. MCP tools and editor links are always added; they are not part of this field."
+            }
+          },
+          "more": {
+            "name": "More connections",
+            "description": "{more_note}",
+            "data": {
+              "mcp_remove": "Remove a connection",
+              "mcp_add_name": "Name",
+              "mcp_add_url": "MCP URL",
+              "mcp_add_token": "Token"
+            },
+            "data_description": {
+              "mcp_remove": "Pick one and save to drop it. Keep all leaves them in place.",
+              "mcp_add_name": "A short name, such as Directus. The assistant uses it to tell connections apart. Use the same name again to replace that connection.",
+              "mcp_add_url": "The address of another MCP server. Leave empty if you are not adding one.",
+              "mcp_add_token": "Only if that server asks for a key. Leave empty to keep the saved key."
+            }
+          }
         }
       },
       "api": {
@@ -54,6 +110,22 @@
             "data_description": {
               "system_prompt": "Tone and behavior only. Leave empty for the built-in prompt. MCP tools and editor links are always added; they are not part of this field."
             }
+          },
+          "more": {
+            "name": "More connections",
+            "description": "{more_note}",
+            "data": {
+              "mcp_remove": "Remove a connection",
+              "mcp_add_name": "Name",
+              "mcp_add_url": "MCP URL",
+              "mcp_add_token": "Token"
+            },
+            "data_description": {
+              "mcp_remove": "Pick one and save to drop it. Keep all leaves them in place.",
+              "mcp_add_name": "A short name, such as Directus. The assistant uses it to tell connections apart. Use the same name again to replace that connection.",
+              "mcp_add_url": "The address of another MCP server. Leave empty if you are not adding one.",
+              "mcp_add_token": "Only if that server asks for a key. Leave empty to keep the saved key."
+            }
           }
         }
       },
@@ -61,7 +133,6 @@
         "title": "Cursor Runtime",
         "data": {
           "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
-          "model": "Model",
           "enable_sidebar": "Show AI Workspace in the sidebar",
           "enable_overlay": "Show floating AI button on every page",
           "enable_dictate": "Show dictate button",
@@ -69,7 +140,6 @@
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
-          "model": "Cursor SDK model id, for example composer-2.5. Sent to the Runtime as JSON model, then AgentOptions.model — not the system prompt. Empty uses CURSOR_MODEL on the container.",
           "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
           "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
           "enable_dictate": "Microphone in the message box. Browsers allow dictation only over https://.",
@@ -97,12 +167,116 @@
             "data_description": {
               "system_prompt": "Tone and behavior only. Leave empty for the built-in prompt. MCP tools and editor links are always added; they are not part of this field."
             }
+          },
+          "more": {
+            "name": "More connections",
+            "description": "{more_note}",
+            "data": {
+              "mcp_remove": "Remove a connection",
+              "mcp_add_name": "Name",
+              "mcp_add_url": "MCP URL",
+              "mcp_add_token": "Token"
+            },
+            "data_description": {
+              "mcp_remove": "Pick one and save to drop it. Keep all leaves them in place.",
+              "mcp_add_name": "A short name, such as Directus. The assistant uses it to tell connections apart. Use the same name again to replace that connection.",
+              "mcp_add_url": "The address of another MCP server. Leave empty if you are not adding one.",
+              "mcp_add_token": "Only if that server asks for a key. Leave empty to keep the saved key."
+            }
           }
+        }
+      },
+      "provider": {
+        "title": "Provider",
+        "description": "Choose the provider. The next screen asks only for what that provider needs.",
+        "data": {
+          "api_provider": "Provider"
+        },
+        "data_description": {
+          "api_provider": "Cursor, or a cloud or local model. Turn it off later with the service switch."
+        }
+      },
+      "provider_cursor": {
+        "title": "Cursor",
+        "description": "Cursor API key, model, and effort. The runtime URL stays on AI Workspace.",
+        "data": {
+          "cursor_api_key": "Cursor API key",
+          "model": "Model",
+          "effort": "Effort"
+        },
+        "data_description": {
+          "cursor_api_key": "From cursor.com/dashboard/integrations. Leave blank when editing to keep the saved key.",
+          "model": "Empty uses Composer.",
+          "effort": "Fast, High, or High fast. Composer uses Fast unless you pick High."
+        }
+      },
+      "provider_cloud": {
+        "title": "Cloud agent",
+        "description": "This agent keeps its own key. Copy one from an integration that is already set up, or paste a new one. Leave the key blank when editing to keep the saved key.",
+        "data": {
+          "borrow": "Copy key from",
+          "api_key": "API key",
+          "model": "Model",
+          "effort": "Effort"
+        },
+        "data_description": {
+          "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
+          "api_key": "Not a Home Assistant token.",
+          "model": "Empty uses the provider default.",
+          "effort": "Fast, High, or High fast when the model supports it."
+        }
+      },
+      "provider_ollama": {
+        "title": "Ollama",
+        "description": "Point this at the Ollama server.",
+        "data": {
+          "api_base": "Ollama URL",
+          "model": "Model",
+          "effort": "Effort"
+        },
+        "data_description": {
+          "api_base": "Usually http://127.0.0.1:11434/v1",
+          "model": "Empty uses llama3.2.",
+          "effort": "Used when the model supports it."
+        }
+      },
+      "provider_azure": {
+        "title": "Azure OpenAI",
+        "description": "Azure endpoint, deployment, and key.",
+        "data": {
+          "api_key": "Azure API key",
+          "api_base": "Endpoint",
+          "model": "Deployment",
+          "azure_api_version": "API version",
+          "effort": "Effort"
+        },
+        "data_description": {
+          "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key.",
+          "api_base": "https://YOUR.openai.azure.com",
+          "model": "The deployment name.",
+          "azure_api_version": "Default 2024-10-21.",
+          "effort": "Used when the deployment supports it."
+        }
+      },
+      "provider_compatible": {
+        "title": "OpenAI-compatible",
+        "description": "A custom server that speaks the OpenAI API.",
+        "data": {
+          "api_key": "API key",
+          "api_base": "API base URL",
+          "model": "Model",
+          "effort": "Effort"
+        },
+        "data_description": {
+          "api_key": "Leave blank when editing to keep the saved key.",
+          "api_base": "Base URL of the server, including /v1 when it uses that path.",
+          "model": "Model name on that server.",
+          "effort": "Used when the server supports it."
         }
       }
     },
     "error": {
-      "no_runtime": "The Cursor runtime is not reachable. Install and start the AI Workspace Runtime app, or pick Cloud API Provider instead.",
+      "no_runtime": "The Cursor runtime is not reachable. Start it and set its URL on AI Workspace.",
       "required": "This field is required."
     },
     "abort": {
@@ -112,11 +286,67 @@
   "options": {
     "step": {
       "init": {
-        "title": "Chat Backend",
-        "description": "Choose how chat should run.",
-        "menu_options": {
-          "api": "Cloud API Provider",
-          "cursor": "Cursor Runtime App"
+        "title": "AI Workspace",
+        "description": "Shared by every provider. Providers are added as their own services on this page. Turn one off with its service switch. Each one is also listed in Assist. The sidebar chat stays.",
+        "data": {
+          "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
+          "stt_engine": "Speech to text",
+          "tts_engine": "Text to speech",
+          "speak_replies": "Speak replies",
+          "enable_sidebar": "Show AI Workspace in the sidebar",
+          "enable_overlay": "Show floating AI button on every page",
+          "enable_dictate": "Show dictate button",
+          "allow_users": "Allow normal users"
+        },
+        "data_description": {
+          "runtime_url": "{runtime_url_note}",
+          "stt_engine": "Browser uses the device speech engine and needs https:// or localhost. A Home Assistant engine (Whisper, and others under Settings) transcribes a recording from this page. The browser still has to allow the microphone, which it only does on https:// or localhost.",
+          "tts_engine": "Piper and other Home Assistant voices. Speaking the reply works on plain http://. Off leaves replies as text.",
+          "speak_replies": "Play the assistant reply with the text-to-speech engine above.",
+          "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
+          "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
+          "enable_dictate": "Microphone in the message box.",
+          "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only."
+        },
+        "sections": {
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "MCP Type",
+              "mcp_url": "MCP URL{mcp_url_mark}",
+              "mcp_token": "MCP Token"
+            },
+            "data_description": {
+              "mcp_kind": "Only MCP servers this Home Assistant can reach are listed. Custom is any MCP HTTP URL.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Built-in: Home Assistant long-lived access token, or leave empty to use your current login in this chat. HA-MCP: usually empty. Vibecode: Agent Key. Custom: optional Bearer token."
+            }
+          },
+          "prompt": {
+            "name": "System Prompt",
+            "data": {
+              "system_prompt": "System Prompt"
+            },
+            "data_description": {
+              "system_prompt": "Tone and behavior only. Leave empty for the built-in prompt. MCP tools and editor links are always added; they are not part of this field."
+            }
+          },
+          "more": {
+            "name": "More connections",
+            "description": "{more_note}",
+            "data": {
+              "mcp_remove": "Remove a connection",
+              "mcp_add_name": "Name",
+              "mcp_add_url": "MCP URL",
+              "mcp_add_token": "Token"
+            },
+            "data_description": {
+              "mcp_remove": "Pick one and save to drop it. Keep all leaves them in place.",
+              "mcp_add_name": "A short name, such as Directus. The assistant uses it to tell connections apart. Use the same name again to replace that connection.",
+              "mcp_add_url": "The address of another MCP server. Leave empty if you are not adding one.",
+              "mcp_add_token": "Only if that server asks for a key. Leave empty to keep the saved key."
+            }
+          }
         }
       },
       "api": {
@@ -170,6 +400,22 @@
             "data_description": {
               "system_prompt": "Tone and behavior only. Leave empty for the built-in prompt. MCP tools and editor links are always added; they are not part of this field."
             }
+          },
+          "more": {
+            "name": "More connections",
+            "description": "{more_note}",
+            "data": {
+              "mcp_remove": "Remove a connection",
+              "mcp_add_name": "Name",
+              "mcp_add_url": "MCP URL",
+              "mcp_add_token": "Token"
+            },
+            "data_description": {
+              "mcp_remove": "Pick one and save to drop it. Keep all leaves them in place.",
+              "mcp_add_name": "A short name, such as Directus. The assistant uses it to tell connections apart. Use the same name again to replace that connection.",
+              "mcp_add_url": "The address of another MCP server. Leave empty if you are not adding one.",
+              "mcp_add_token": "Only if that server asks for a key. Leave empty to keep the saved key."
+            }
           }
         }
       },
@@ -177,7 +423,6 @@
         "title": "Cursor Runtime",
         "data": {
           "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
-          "model": "Model",
           "enable_sidebar": "Show AI Workspace in the sidebar",
           "enable_overlay": "Show floating AI button on every page",
           "enable_dictate": "Show dictate button",
@@ -185,7 +430,6 @@
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
-          "model": "Cursor SDK model id, for example composer-2.5. Sent to the Runtime as JSON model, then AgentOptions.model — not the system prompt. Empty uses CURSOR_MODEL on the container.",
           "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
           "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
           "enable_dictate": "Microphone in the message box. Browsers allow dictation only over https://.",
@@ -213,6 +457,227 @@
             "data_description": {
               "system_prompt": "Tone and behavior only. Leave empty for the built-in prompt. MCP tools and editor links are always added; they are not part of this field."
             }
+          },
+          "more": {
+            "name": "More connections",
+            "description": "{more_note}",
+            "data": {
+              "mcp_remove": "Remove a connection",
+              "mcp_add_name": "Name",
+              "mcp_add_url": "MCP URL",
+              "mcp_add_token": "Token"
+            },
+            "data_description": {
+              "mcp_remove": "Pick one and save to drop it. Keep all leaves them in place.",
+              "mcp_add_name": "A short name, such as Directus. The assistant uses it to tell connections apart. Use the same name again to replace that connection.",
+              "mcp_add_url": "The address of another MCP server. Leave empty if you are not adding one.",
+              "mcp_add_token": "Only if that server asks for a key. Leave empty to keep the saved key."
+            }
+          }
+        }
+      },
+      "provider": {
+        "title": "Provider",
+        "description": "Choose the provider. The next screen asks only for what that provider needs.",
+        "data": {
+          "api_provider": "Provider"
+        },
+        "data_description": {
+          "api_provider": "Cursor, or a cloud or local model. Turn it off later with the service switch."
+        }
+      },
+      "provider_cursor": {
+        "title": "Cursor",
+        "description": "Cursor API key, model, and effort. The runtime URL stays on AI Workspace.",
+        "data": {
+          "cursor_api_key": "Cursor API key",
+          "model": "Model",
+          "effort": "Effort"
+        },
+        "data_description": {
+          "cursor_api_key": "From cursor.com/dashboard/integrations. Leave blank when editing to keep the saved key.",
+          "model": "Empty uses Composer.",
+          "effort": "Fast, High, or High fast. Composer uses Fast unless you pick High."
+        }
+      },
+      "provider_cloud": {
+        "title": "Cloud agent",
+        "description": "This agent keeps its own key. Copy one from an integration that is already set up, or paste a new one. Leave the key blank when editing to keep the saved key.",
+        "data": {
+          "borrow": "Copy key from",
+          "api_key": "API key",
+          "model": "Model",
+          "effort": "Effort"
+        },
+        "data_description": {
+          "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
+          "api_key": "Not a Home Assistant token.",
+          "model": "Empty uses the provider default.",
+          "effort": "Fast, High, or High fast when the model supports it."
+        }
+      },
+      "provider_ollama": {
+        "title": "Ollama",
+        "description": "Point this at the Ollama server.",
+        "data": {
+          "api_base": "Ollama URL",
+          "model": "Model",
+          "effort": "Effort"
+        },
+        "data_description": {
+          "api_base": "Usually http://127.0.0.1:11434/v1",
+          "model": "Empty uses llama3.2.",
+          "effort": "Used when the model supports it."
+        }
+      },
+      "provider_azure": {
+        "title": "Azure OpenAI",
+        "description": "Azure endpoint, deployment, and key.",
+        "data": {
+          "api_key": "Azure API key",
+          "api_base": "Endpoint",
+          "model": "Deployment",
+          "azure_api_version": "API version",
+          "effort": "Effort"
+        },
+        "data_description": {
+          "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key.",
+          "api_base": "https://YOUR.openai.azure.com",
+          "model": "The deployment name.",
+          "azure_api_version": "Default 2024-10-21.",
+          "effort": "Used when the deployment supports it."
+        }
+      },
+      "provider_compatible": {
+        "title": "OpenAI-compatible",
+        "description": "A custom server that speaks the OpenAI API.",
+        "data": {
+          "api_key": "API key",
+          "api_base": "API base URL",
+          "model": "Model",
+          "effort": "Effort"
+        },
+        "data_description": {
+          "api_key": "Leave blank when editing to keep the saved key.",
+          "api_base": "Base URL of the server, including /v1 when it uses that path.",
+          "model": "Model name on that server.",
+          "effort": "Used when the server supports it."
+        }
+      }
+    },
+    "error": {
+      "no_runtime": "The Cursor runtime is not reachable. Start it and set its URL on AI Workspace.",
+      "required": "This field is required."
+    }
+  },
+  "config_subentries": {
+    "agent": {
+      "initiate_flow": {
+        "user": "Add agent",
+        "reconfigure": "Edit agent"
+      },
+      "entry_type": "Agent",
+      "error": {
+        "no_runtime": "The Cursor runtime is not reachable. Start it and set its URL on AI Workspace.",
+        "required": "This field is required."
+      },
+      "step": {
+        "agent": {
+          "title": "Agent",
+          "description": "Choose the agent. The next screen asks only for what that agent needs.",
+          "data": {
+            "api_provider": "Agent"
+          },
+          "data_description": {
+            "api_provider": "Cursor, or a cloud or local model."
+          }
+        },
+        "cursor": {
+          "title": "Cursor",
+          "description": "Cursor API key, model, and effort. The runtime URL stays on AI Workspace.",
+          "data": {
+            "cursor_api_key": "Cursor API key",
+            "model": "Model",
+            "effort": "Effort",
+            "enabled": "Enabled"
+          },
+          "data_description": {
+            "cursor_api_key": "From cursor.com/dashboard/integrations. Leave blank when editing to keep the saved key.",
+            "model": "Empty uses Composer.",
+            "effort": "Fast, High, or High fast. Composer uses Fast unless you pick High.",
+            "enabled": "Shown in the chat agent list when on."
+          }
+        },
+        "cloud": {
+          "title": "Cloud agent",
+          "description": "This agent keeps its own key. Copy one from an integration that is already set up, or paste a new one. Leave the key blank when editing to keep the saved key.",
+          "data": {
+            "borrow": "Copy key from",
+            "api_key": "API key",
+            "model": "Model",
+            "effort": "Effort",
+            "enabled": "Enabled"
+          },
+          "data_description": {
+            "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
+            "api_key": "Not a Home Assistant token.",
+            "model": "Empty uses the provider default.",
+            "effort": "Fast, High, or High fast when the model supports it.",
+            "enabled": "Shown in the chat agent list when on."
+          }
+        },
+        "ollama": {
+          "title": "Ollama",
+          "description": "Point this at the Ollama server.",
+          "data": {
+            "api_base": "Ollama URL",
+            "model": "Model",
+            "effort": "Effort",
+            "enabled": "Enabled"
+          },
+          "data_description": {
+            "api_base": "Usually http://127.0.0.1:11434/v1",
+            "model": "Empty uses llama3.2.",
+            "effort": "Used when the model supports it.",
+            "enabled": "Shown in the chat agent list when on."
+          }
+        },
+        "azure": {
+          "title": "Azure OpenAI",
+          "description": "Azure endpoint, deployment, and key.",
+          "data": {
+            "api_key": "Azure API key",
+            "api_base": "Endpoint",
+            "model": "Deployment",
+            "azure_api_version": "API version",
+            "effort": "Effort",
+            "enabled": "Enabled"
+          },
+          "data_description": {
+            "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key.",
+            "api_base": "https://YOUR.openai.azure.com",
+            "model": "The deployment name.",
+            "azure_api_version": "Default 2024-10-21.",
+            "effort": "Used when the deployment supports it.",
+            "enabled": "Shown in the chat agent list when on."
+          }
+        },
+        "compatible": {
+          "title": "OpenAI-compatible",
+          "description": "A custom server that speaks the OpenAI API.",
+          "data": {
+            "api_key": "API key",
+            "api_base": "API base URL",
+            "model": "Model",
+            "effort": "Effort",
+            "enabled": "Enabled"
+          },
+          "data_description": {
+            "api_key": "Leave blank when editing to keep the saved key.",
+            "api_base": "Base URL of the server, including /v1 when it uses that path.",
+            "model": "Model name on that server.",
+            "effort": "Used when the server supports it.",
+            "enabled": "Shown in the chat agent list when on."
           }
         }
       }
@@ -227,7 +692,33 @@
         "deepseek": "DeepSeek",
         "qwen": "Qwen (Alibaba)",
         "xai": "Grok (xAI)",
+        "openrouter": "OpenRouter",
+        "ollama": "Local Ollama",
+        "azure": "Azure OpenAI",
         "compatible": "OpenAI-compatible (custom base URL)"
+      }
+    },
+    "agent_provider": {
+      "options": {
+        "cursor": "Cursor",
+        "openai": "OpenAI",
+        "anthropic": "Claude (Anthropic)",
+        "gemini": "Google Gemini",
+        "deepseek": "DeepSeek",
+        "qwen": "Qwen (Alibaba)",
+        "xai": "Grok (xAI)",
+        "openrouter": "OpenRouter",
+        "ollama": "Local Ollama",
+        "azure": "Azure OpenAI",
+        "compatible": "OpenAI-compatible (custom base URL)"
+      }
+    },
+    "effort": {
+      "options": {
+        "": "Default",
+        "fast": "Fast",
+        "high": "High",
+        "high_fast": "High fast"
       }
     },
     "mcp_kind": {

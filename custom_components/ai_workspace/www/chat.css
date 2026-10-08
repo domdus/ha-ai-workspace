@@ -148,11 +148,15 @@ ha-button.new-chat {
   line-height: 1.2;
 }
 
+.sessions .chats-label:first-child {
+  margin-top: 0;
+}
+
 .sessions {
   flex: 1 1 auto;
   min-height: 0;
   list-style: none;
-  padding: 0;
+  padding: var(--ha-space-6) 0 0;
   margin: 0;
   overflow-x: hidden;
   overflow-y: auto;
@@ -646,7 +650,8 @@ h1 {
   bottom: 0;
   z-index: 3;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: stretch;
   padding: var(--ha-space-4) var(--ai-inline-pad);
   width: min(calc(var(--ai-chat-width) + 2 * var(--ai-inline-pad)), 100%);
   margin-inline: auto;
@@ -694,6 +699,142 @@ h1 {
   align-items: flex-end;
   gap: var(--ha-space-1);
   width: 100%;
+}
+
+.composer-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ha-space-1);
+  flex: 0 0 auto;
+}
+
+.agent-picker {
+  position: relative;
+  align-self: flex-start;
+  margin: var(--ha-space-2) 0 0 var(--ha-space-3);
+}
+
+.agent-picker[hidden] {
+  display: none;
+}
+
+.agent-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: min(70vw, 280px);
+  margin: 0;
+  padding: 4px 8px 4px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--secondary-text-color);
+  font: inherit;
+  font-size: var(--ha-font-size-s, 0.85rem);
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.agent-trigger-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-trigger ha-icon {
+  --mdc-icon-size: 16px;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  transition: transform 160ms ease;
+}
+
+.agent-trigger[aria-expanded="true"] ha-icon {
+  transform: rotate(180deg);
+}
+
+.agent-trigger:hover,
+.agent-trigger[aria-expanded="true"] {
+  background: var(
+    --ha-color-fill-neutral-quiet-hover,
+    color-mix(in srgb, var(--primary-text-color) 8%, transparent)
+  );
+  color: var(--primary-text-color);
+}
+
+.agent-menu {
+  position: absolute;
+  z-index: 20;
+  bottom: calc(100% + 6px);
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 220px;
+  max-width: min(320px, 80vw);
+  margin: 0;
+  padding: 6px;
+  border: 1px solid var(--ha-color-border-neutral-normal, var(--divider-color));
+  border-radius: 14px;
+  background: var(--card-background-color, var(--ha-card-background, var(--primary-background-color)));
+  color: var(--primary-text-color);
+  box-shadow: 0 10px 32px color-mix(in srgb, var(--primary-text-color) 18%, transparent);
+}
+
+.agent-menu[hidden] {
+  display: none;
+}
+
+.agent-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--ha-font-size-s, 0.85rem);
+  line-height: 1.3;
+  text-align: start;
+  cursor: pointer;
+}
+
+.agent-option-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-option ha-icon {
+  --mdc-icon-size: 16px;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: var(--primary-color);
+}
+
+.agent-option:hover,
+.agent-option:focus-visible {
+  background: var(
+    --ha-color-fill-neutral-quiet-hover,
+    color-mix(in srgb, var(--primary-text-color) 8%, transparent)
+  );
+  outline: none;
+}
+
+.agent-option[aria-selected="true"] {
+  background: color-mix(in srgb, var(--primary-color) 14%, transparent);
+}
+
+.agent-option:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .next-row {
@@ -881,15 +1022,24 @@ textarea:focus {
   min-width: 36px;
   padding: 0;
   justify-content: center;
+  align-items: center;
 }
 
-.send::part(start) {
+.send::part(start),
+.send::part(end) {
+  display: none;
+}
+
+.send::part(label) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   margin: 0;
 }
 
-.send::part(label),
-.send::part(end) {
-  display: none;
+.send ha-icon {
+  margin: 0;
 }
 
 .mic {
