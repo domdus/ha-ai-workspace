@@ -574,6 +574,7 @@ export function mountAiWorkspace(root, options = {}) {
   const TEXT_EXT = /\.(ya?ml|json|toml|ini|cfg|conf|env|txt|md|markdown|csv|tsv|xml|html?|css|js|mjs|cjs|tsx?|jsx|py|sh|bash|sql|log)$/i;
   let pending = [];
   let attachNoticeTimer = 0;
+  let micNoticeTimer = 0;
   let pinBottom = true;
   let followRaf = 0;
   let followLast = 0;
@@ -1419,10 +1420,12 @@ export function mountAiWorkspace(root, options = {}) {
     const chosen = items.find((item) => item.id === selectedAgent()) || ready[0] || items[0];
     if (chosen?.id) defaultProvider = chosen.id;
     if (chosen && !chosen.available) {
+      clearMicHelp();
       bannerEl.hidden = false;
       bannerEl.textContent = chosen.reason || t("configure_provider");
-    } else if (bannerEl && !bannerEl.classList.contains("hold")) {
+    } else if (bannerEl && !bannerEl.classList.contains("hold") && !bannerEl.classList.contains("mic-help")) {
       bannerEl.hidden = true;
+      bannerEl.textContent = "";
     }
   }
 
@@ -1644,6 +1647,7 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   function paintSession(session) {
+    clearMicHelp();
     titleEl.textContent = displayTitle(session.title);
     logEl.replaceChildren();
     const messages = session.messages || [];
@@ -1981,10 +1985,26 @@ export function mountAiWorkspace(root, options = {}) {
     }
   }
 
+  function clearMicHelp() {
+    if (micNoticeTimer) {
+      clearTimeout(micNoticeTimer);
+      micNoticeTimer = 0;
+    }
+    if (!bannerEl?.classList.contains("mic-help")) return;
+    bannerEl.classList.remove("mic-help");
+    bannerEl.hidden = true;
+    bannerEl.textContent = "";
+  }
+
   function showMicHelp() {
     if (!bannerEl) return;
+    bannerEl.classList.add("mic-help");
     bannerEl.hidden = false;
     bannerEl.textContent = window.isSecureContext ? t("mic_blocked") : t("mic_needs_https");
+    if (micNoticeTimer) clearTimeout(micNoticeTimer);
+    micNoticeTimer = window.setTimeout(() => {
+      clearMicHelp();
+    }, 6000);
   }
 
   function startSpeech() {
@@ -2471,6 +2491,7 @@ export function mountAiWorkspace(root, options = {}) {
 
   function startNewChat() {
     abandonStream();
+    clearMicHelp();
     routeGen += 1;
     watchGen += 1;
     sessionId = "";
