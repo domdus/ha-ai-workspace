@@ -178,6 +178,7 @@ A tool that sends back the whole house is shortened before the model reads it. T
 | **Text to speech** | Piper or another Home Assistant voice. Spoken replies play on plain http:// |
 | **Show dictate button** | Microphone in the prompt. On by default |
 | **Show AI Workspace in the sidebar** | Sidebar item. `/ai-workspace` still works if this is off |
+| **Chats to keep** | Newest unpinned chats per person (default 30). Pinned chats are always kept |
 | **Name index** | Off by default. Speeds up and saves tokens on new chats by looking up entity, area, automation, and dashboard names in a local name index before broad MCP calls. Not live state |
 | **Assist** | Each agent also becomes a Voice assistants entry next to Home Assistant, ready to use. No second form under Manage assistants |
 

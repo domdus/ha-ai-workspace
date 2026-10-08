@@ -325,6 +325,39 @@ class Store:
             self._conn.commit()
         return True
 
+    def prune_sessions(self, user_id: str, keep: int) -> list[str]:
+        """Drop oldest unpinned chats beyond keep. Pinned chats are never removed."""
+        user_id = _text(user_id)
+        try:
+            keep = int(keep)
+        except (TypeError, ValueError):
+            keep = 30
+        keep = max(1, min(keep, 500))
+        if not user_id:
+            return []
+        with self._lock:
+            rows = self._conn.execute(
+                """
+                SELECT id FROM sessions
+                WHERE user_id = ? AND COALESCE(pinned, 0) = 0
+                ORDER BY updated_at DESC, created_at DESC, id DESC
+                """,
+                (user_id,),
+            ).fetchall()
+            if len(rows) <= keep:
+                return []
+            drop = [str(row["id"]) for row in rows[keep:]]
+            for session_id in drop:
+                self._conn.execute("DELETE FROM messages WHERE session_id = ?", (session_id,))
+                self._conn.execute("DELETE FROM sessions WHERE id = ? AND user_id = ?", (session_id, user_id))
+            self._conn.commit()
+        return drop
+
+    def list_user_ids(self) -> list[str]:
+        with self._lock:
+            rows = self._conn.execute("SELECT DISTINCT user_id FROM sessions").fetchall()
+        return [str(row["user_id"]) for row in rows if row["user_id"]]
+
     def replace_house_map(self, rows: list[tuple[str, str, str, str, str, str]]) -> None:
         with self._lock:
             self._conn.execute("DELETE FROM house_map")

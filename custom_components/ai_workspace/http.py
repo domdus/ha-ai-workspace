@@ -388,6 +388,56 @@ def _send_provider(data: dict[str, Any], session: Session):
     return providers.get(session.provider)
 
 
+async def _cleanup_pruned_sessions(
+    hass: HomeAssistant,
+    session_ids: list[str],
+    request: web.Request | None = None,
+) -> None:
+    if not session_ids:
+        return
+    data = hass.data.get(DOMAIN) or {}
+    runtime = data.get("runtime")
+    for session_id in session_ids:
+        if runtime:
+            try:
+                runtime.drop(session_id)
+            except Exception:
+                logger.debug("runtime drop skipped for pruned chat", exc_info=True)
+    base = str((data.get("runtime_url") or "")).rstrip("/")
+    if not base or request is None:
+        return
+    http: ClientSession = async_get_clientsession(hass)
+    headers = _runtime_headers(request)
+    for session_id in session_ids:
+        try:
+            await http.delete(
+                f"{base}/api/sessions/{session_id}",
+                headers=headers,
+                timeout=ClientTimeout(total=5),
+            )
+        except Exception:
+            logger.debug("runtime prune delete skipped", exc_info=True)
+
+
+async def _prune_user_chats(
+    hass: HomeAssistant,
+    store: Store,
+    user_id: str,
+    request: web.Request | None = None,
+) -> None:
+    settings = (hass.data.get(DOMAIN) or {}).get("settings")
+    keep = int(getattr(settings, "keep_chats", 30) or 30)
+    deleted = await hass.async_add_executor_job(store.prune_sessions, user_id, keep)
+    await _cleanup_pruned_sessions(hass, deleted, request)
+
+
+async def _prune_all_chats(hass: HomeAssistant, store: Store, keep: int) -> None:
+    user_ids = await hass.async_add_executor_job(store.list_user_ids)
+    for user_id in user_ids:
+        deleted = await hass.async_add_executor_job(store.prune_sessions, user_id, keep)
+        await _cleanup_pruned_sessions(hass, deleted, None)
+
+
 async def _title_from_task(task, timeout: float = 12) -> str:
     if task is None:
         return ""
@@ -576,6 +626,7 @@ class SessionsView(HomeAssistantView):
             await _import_runtime_sessions(hass, request, store, user_id)
         except Exception:
             logger.debug("runtime session import skipped", exc_info=True)
+        await _prune_user_chats(hass, store, user_id, request)
         sessions = await hass.async_add_executor_job(store.list_sessions, user_id)
         return self.json([_session_dict(item) for item in sessions])
 
@@ -592,13 +643,15 @@ class SessionsView(HomeAssistantView):
             provider = next(iter(list_assist_agents(hass)), {}).get("id", "")
         provider = provider or next(iter(providers), "") or "api"
         store: Store = data["store"]
+        user_id = _user_id(request)
         session_id = None
         chosen = providers.get(provider)
         if getattr(chosen, "kind", "") == "cursor":
-            session_id = await _create_runtime_session(hass, _user_id(request))
+            session_id = await _create_runtime_session(hass, user_id)
         session = await hass.async_add_executor_job(
-            store.create_session, _user_id(request), provider, session_id
+            store.create_session, user_id, provider, session_id
         )
+        await _prune_user_chats(hass, store, user_id, request)
         return self.json(_session_dict(session), status_code=201)
 
 
@@ -631,12 +684,16 @@ class SessionView(HomeAssistantView):
         session = await hass.async_add_executor_job(store.get_session, _user_id(request), session_id)
         if session is None:
             raise web.HTTPNotFound(text="Chat not found.")
+        user_id = _user_id(request)
         if pinned is not None:
             session = await hass.async_add_executor_job(
-                store.set_pinned, _user_id(request), session_id, bool(pinned)
+                store.set_pinned, user_id, session_id, bool(pinned)
             )
+            if not bool(pinned):
+                await _prune_user_chats(hass, store, user_id, request)
+                session = await hass.async_add_executor_job(store.get_session, user_id, session_id) or session
         if title:
-            session = await hass.async_add_executor_job(store.rename_session, _user_id(request), session_id, title)
+            session = await hass.async_add_executor_job(store.rename_session, user_id, session_id, title)
         return self.json(_session_dict(session))
 
     async def delete(self, request: web.Request, session_id: str) -> web.Response:

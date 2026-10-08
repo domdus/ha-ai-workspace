@@ -46,6 +46,8 @@ from .const import (
     CONF_ALLOW_USERS,
     CONF_ENABLE_DICTATE,
     CONF_HOUSE_MAP,
+    CONF_KEEP_CHATS,
+    DEFAULT_KEEP_CHATS,
     CONF_MCP_EXTRA,
     CONF_MCP_KIND,
     CONF_MCP_TOKEN,
@@ -109,6 +111,7 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Optional(CONF_ENABLE_DICTATE, default=True): cv.boolean,
                 vol.Optional(CONF_ALLOW_USERS, default=False): cv.boolean,
                 vol.Optional(CONF_HOUSE_MAP, default=False): cv.boolean,
+                vol.Optional(CONF_KEEP_CHATS, default=DEFAULT_KEEP_CHATS): cv.positive_int,
                 vol.Optional(CONF_STT_ENGINE, default=STT_BROWSER): cv.string,
                 vol.Optional(CONF_TTS_ENGINE, default=TTS_OFF): cv.string,
                 vol.Optional(CONF_SPEAK_REPLIES, default=False): cv.boolean,
@@ -239,6 +242,14 @@ def _model_for_mode(data: dict) -> str:
     return model
 
 
+def _keep_chats(data: dict) -> int:
+    try:
+        keep = int(data.get(CONF_KEEP_CHATS, DEFAULT_KEEP_CHATS) or DEFAULT_KEEP_CHATS)
+    except (TypeError, ValueError):
+        keep = DEFAULT_KEEP_CHATS
+    return max(1, min(keep, 500))
+
+
 def _settings(hass: HomeAssistant, entry: ConfigEntry, mcp_url: str | None = None) -> Settings:
     data = _merged(entry)
     root = Path(hass.config.path(DOMAIN))
@@ -273,6 +284,7 @@ def _settings(hass: HomeAssistant, entry: ConfigEntry, mcp_url: str | None = Non
         enable_dictate=bool(data.get(CONF_ENABLE_DICTATE, True)),
         allow_users=bool(data.get(CONF_ALLOW_USERS, False)),
         house_map=house_map,
+        keep_chats=_keep_chats(data),
         mode=_mode(data),
         api_provider=str(data.get(CONF_API_PROVIDER) or "openai").strip() or "openai",
         api_key=str(data.get(CONF_API_KEY) or "").strip(),
@@ -344,6 +356,9 @@ async def _ensure_shared(hass: HomeAssistant, hub: ConfigEntry) -> dict:
     existing = hass.data.get(DOMAIN)
     if existing and getattr(existing.get("entry"), "entry_id", None) == hub.entry_id and existing.get("store"):
         existing["settings"] = await _build_settings(hass, hub)
+        from .http import _prune_all_chats
+
+        await _prune_all_chats(hass, existing["store"], existing["settings"].keep_chats)
         return existing
     data = _merged(hub)
     settings = await _build_settings(hass, hub)
@@ -390,6 +405,9 @@ async def _ensure_shared(hass: HomeAssistant, hub: ConfigEntry) -> dict:
     from .house_map import async_setup_house_map
 
     await async_setup_house_map(hass, store, bool(settings.house_map))
+    from .http import _prune_all_chats
+
+    await _prune_all_chats(hass, store, settings.keep_chats)
     return hass.data[DOMAIN]
 
 
