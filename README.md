@@ -173,12 +173,12 @@ A tool that sends back the whole house is shortened before the model reads it. T
 | **Show dictate button** | Microphone in the prompt. On by default |
 | **Show AI Workspace in the sidebar** | Sidebar item. `/ai-workspace` still works if this is off |
 
-The integration page has two entries. **AI Workspace** is the shared chat setup and the connection rows. **AI Agents** is one row per provider. You add the integration once. **Add connection** and **Add agent** at the top of that page add a row, not another copy of those two entries.
+The integration page has two entries. **AI Workspace** is the shared chat setup and the connection rows. **AI Agents** is one row per provider. You add the integration once. Neither row has Delete. **Add connection** and **Add agent** at the top of that page add a row, not another copy of those two entries.
 
 The first connection is chosen on that first screen, then it is a row with the others. Every connection is sent with each chat. The Cursor API key stays on the Cursor agent. The Runtime URL stays on AI Workspace.
 
 ## Remove it
 
-1. **Settings → Devices & services → AI Workspace → Delete.** That removes AI Agents as well. AI Agents has no Delete of its own.
+1. **Developer tools → Actions → AI Workspace: Remove AI Workspace.** That removes AI Agents as well. Both rows hide Delete on purpose.
 2. HACS → AI Workspace → **Remove**, restart.
 3. Runtime: remove the **app**, or `docker compose down` in the Runtime compose folder (`docker rm -f cursor-sdk` if an old container remains).

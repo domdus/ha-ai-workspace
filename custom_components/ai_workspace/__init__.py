@@ -266,7 +266,27 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
                 DOMAIN, context={"source": SOURCE_IMPORT}, data=config[DOMAIN]
             )
         )
+
+    async def _remove_integration(_call) -> None:
+        hub = hub_entry(hass)
+        if hub is None:
+            return
+        await hass.config_entries.async_remove(hub.entry_id)
+
+    hass.services.async_register(DOMAIN, "remove", _remove_integration)
     return True
+
+
+def _as_system(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Hide Delete and Disable on the integration page (Home Assistant system source)."""
+    data = dict(entry.data)
+    if entry.source == SOURCE_SYSTEM and data.get("system_entry"):
+        return
+    if entry.source != SOURCE_SYSTEM:
+        entry.source = SOURCE_SYSTEM
+    if not data.get("system_entry"):
+        data["system_entry"] = True
+    hass.config_entries.async_update_entry(entry, data=data)
 
 
 def _one_provider(hass: HomeAssistant, settings: Settings, agent, runtime_url: str):
@@ -452,16 +472,12 @@ async def _ensure_agents_entry(hass: HomeAssistant, hub: ConfigEntry) -> ConfigE
     """Create AI Agents without a second trip through Add integration.
 
     single_config_entry blocks another config flow once AI Workspace exists.
-    A system source hides Delete and Disable on that row. Removing AI Workspace
-    still removes this entry.
+    A system source hides Delete and Disable on that row. The remove service
+    on AI Workspace still removes this entry with the hub.
     """
     found = agents_entry(hass, hub.entry_id)
     if found is not None:
-        if found.source != SOURCE_SYSTEM:
-            found.source = SOURCE_SYSTEM
-            hass.config_entries.async_update_entry(
-                found, data={**dict(found.data), "system_entry": True}
-            )
+        _as_system(hass, found)
         return found
     created = ConfigEntry(
         version=1,
@@ -551,6 +567,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return await _setup_provider(hass, entry)
     if is_agents(entry):
         return await _setup_agents(hass, entry)
+    _as_system(hass, entry)
     hass.data.setdefault(DOMAIN, {})["migrating"] = True
     _migrate_mcp_connections(hass, entry)
     _migrate_primary_mcp(hass, entry)
