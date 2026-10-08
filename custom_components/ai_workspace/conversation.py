@@ -1,4 +1,4 @@
-"""Assist conversation agents. One entity per provider service."""
+"""Assist conversation agents. One entity per agent row."""
 
 from __future__ import annotations
 
@@ -12,9 +12,10 @@ from homeassistant.components.conversation.chat_log import AssistantContent
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import MATCH_ALL
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .agents import agent_from_entry, is_provider
+from .agents import Agent, agent_from_entry, entry_agents, is_agents, is_provider
 from .const import DOMAIN
 from .http import _create_runtime_session, async_agent_events
 from .store import Store
@@ -51,10 +52,12 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Expose this provider to Assist. A disabled service is not set up."""
-    if not is_provider(entry):
+    """Expose each agent to Assist."""
+    if is_agents(entry):
+        async_add_entities([AiWorkspaceConversationEntity(entry, agent) for agent in entry_agents(entry)])
         return
-    async_add_entities([AiWorkspaceConversationEntity(entry)])
+    if is_provider(entry):
+        async_add_entities([AiWorkspaceConversationEntity(entry, agent_from_entry(entry))])
 
 
 class AiWorkspaceConversationEntity(conversation.ConversationEntity):
@@ -64,11 +67,13 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
     _attr_icon = "mdi:robot"
     _attr_should_poll = False
 
-    def __init__(self, entry: ConfigEntry) -> None:
-        agent = agent_from_entry(entry)
+    def __init__(self, entry: ConfigEntry, agent: Agent) -> None:
         self._agent_id = agent.id
         self._attr_unique_id = agent.id
-        self._attr_name = entry.title or agent.title or "AI Workspace"
+        self._attr_name = agent.title or entry.title or "AI Workspace"
+        if agent.subentry_id:
+            self._attr_config_subentry_id = agent.subentry_id
+        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, entry.entry_id)})
 
     @property
     def supported_languages(self) -> list[str] | str:

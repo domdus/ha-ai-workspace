@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "AI Workspace",
-        "description": "Shared settings for every provider. After this, add the first provider (Cursor, OpenAI, OpenRouter, Ollama, and others). Each provider is its own service on this page and can be turned off with the service switch. Each one is also listed in Assist. The sidebar chat stays.",
+        "description": "Shared chat settings. After this, add the first agent (Cursor, OpenAI, OpenRouter, Ollama, and others) under AI Agents.",
         "data": {
           "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
           "stt_engine": "Speech to text",
@@ -145,7 +145,7 @@
           "api_provider": "Provider"
         },
         "data_description": {
-          "api_provider": "Cursor, or a cloud or local model. Turn it off later with the service switch."
+          "api_provider": "Cursor, or a cloud or local model. "
         }
       },
       "provider_cursor": {
@@ -239,7 +239,7 @@
     "step": {
       "init": {
         "title": "AI Workspace",
-        "description": "Shared by every provider. Providers are added as their own services on this page. Turn one off with its service switch. Each one is also listed in Assist. The sidebar chat stays.",
+        "description": "Shared chat settings. Connections are added on AI Workspace. Agents are added on AI Agents.",
         "data": {
           "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
           "stt_engine": "Speech to text",
@@ -387,7 +387,7 @@
           "api_provider": "Provider"
         },
         "data_description": {
-          "api_provider": "Cursor, or a cloud or local model. Turn it off later with the service switch."
+          "api_provider": "Cursor, or a cloud or local model. "
         }
       },
       "provider_cursor": {
@@ -491,7 +491,7 @@
       "step": {
         "connection": {
           "title": "Connection",
-          "description": "Another MCP server the assistant can use in the same chat.",
+          "description": "An MCP server the assistant can use in the same chat.",
           "data": {
             "name": "Name",
             "url": "Address",
@@ -613,7 +613,98 @@
             "effort": "Used when the server supports it.",
             "enabled": "Shown in the chat agent list when on."
           }
+        },
+        "provider": {
+          "title": "Provider",
+          "description": "Choose the provider. The next screen asks only for what that provider needs.",
+          "data": {
+            "api_provider": "Provider"
+          },
+          "data_description": {
+            "api_provider": "Cursor, or a cloud or local model. "
+          }
+        },
+        "provider_cursor": {
+          "title": "Cursor",
+          "description": "Cursor API key, model, and effort. The runtime URL stays on AI Workspace.",
+          "data": {
+            "cursor_api_key": "Cursor API key",
+            "model": "Model",
+            "effort": "Effort"
+          },
+          "data_description": {
+            "cursor_api_key": "From cursor.com/dashboard/integrations. Leave blank when editing to keep the saved key.",
+            "model": "Empty uses Composer.",
+            "effort": "Fast, High, or High fast. Composer uses Fast unless you pick High."
+          }
+        },
+        "provider_cloud": {
+          "title": "Cloud agent",
+          "description": "This agent keeps its own key. Copy one from an integration that is already set up, or paste a new one. Leave the key blank when editing to keep the saved key.",
+          "data": {
+            "borrow": "Copy key from",
+            "api_key": "API key",
+            "model": "Model",
+            "effort": "Effort"
+          },
+          "data_description": {
+            "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
+            "api_key": "Not a Home Assistant token.",
+            "model": "Empty uses the provider default.",
+            "effort": "Fast, High, or High fast when the model supports it."
+          }
+        },
+        "provider_ollama": {
+          "title": "Ollama",
+          "description": "Point this at the Ollama server.",
+          "data": {
+            "api_base": "Ollama URL",
+            "model": "Model",
+            "effort": "Effort"
+          },
+          "data_description": {
+            "api_base": "Usually http://127.0.0.1:11434/v1",
+            "model": "Empty uses llama3.2.",
+            "effort": "Used when the model supports it."
+          }
+        },
+        "provider_azure": {
+          "title": "Azure OpenAI",
+          "description": "Azure endpoint, deployment, and key.",
+          "data": {
+            "api_key": "Azure API key",
+            "api_base": "Endpoint",
+            "model": "Deployment",
+            "azure_api_version": "API version",
+            "effort": "Effort"
+          },
+          "data_description": {
+            "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key.",
+            "api_base": "https://YOUR.openai.azure.com",
+            "model": "The deployment name.",
+            "azure_api_version": "Default 2024-10-21.",
+            "effort": "Used when the deployment supports it."
+          }
+        },
+        "provider_compatible": {
+          "title": "OpenAI-compatible",
+          "description": "A custom server that speaks the OpenAI API.",
+          "data": {
+            "api_key": "API key",
+            "api_base": "API base URL",
+            "model": "Model",
+            "effort": "Effort"
+          },
+          "data_description": {
+            "api_key": "Leave blank when editing to keep the saved key.",
+            "api_base": "Base URL of the server, including /v1 when it uses that path.",
+            "model": "Model name on that server.",
+            "effort": "Used when the server supports it."
+          }
         }
+      },
+      "abort": {
+        "reconfigure_successful": "Agent updated."
       }
     }
   },
