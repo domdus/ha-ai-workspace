@@ -46,22 +46,6 @@
             "data_description": {
               "system_prompt": "Tone and behavior only. Leave empty for the built-in prompt. MCP tools and editor links are always added; they are not part of this field."
             }
-          },
-          "more": {
-            "name": "More connections",
-            "description": "{more_note}",
-            "data": {
-              "mcp_remove": "Remove a connection",
-              "mcp_add_name": "Name",
-              "mcp_add_url": "MCP URL",
-              "mcp_add_token": "Token"
-            },
-            "data_description": {
-              "mcp_remove": "Pick one and save to drop it. Keep all leaves them in place.",
-              "mcp_add_name": "A short name, such as Directus. The assistant uses it to tell connections apart. Use the same name again to replace that connection.",
-              "mcp_add_url": "The address of another MCP server. Leave empty if you are not adding one.",
-              "mcp_add_token": "Only if that server asks for a key. Leave empty to keep the saved key."
-            }
           }
         }
       },
@@ -110,22 +94,6 @@
             "data_description": {
               "system_prompt": "Tone and behavior only. Leave empty for the built-in prompt. MCP tools and editor links are always added; they are not part of this field."
             }
-          },
-          "more": {
-            "name": "More connections",
-            "description": "{more_note}",
-            "data": {
-              "mcp_remove": "Remove a connection",
-              "mcp_add_name": "Name",
-              "mcp_add_url": "MCP URL",
-              "mcp_add_token": "Token"
-            },
-            "data_description": {
-              "mcp_remove": "Pick one and save to drop it. Keep all leaves them in place.",
-              "mcp_add_name": "A short name, such as Directus. The assistant uses it to tell connections apart. Use the same name again to replace that connection.",
-              "mcp_add_url": "The address of another MCP server. Leave empty if you are not adding one.",
-              "mcp_add_token": "Only if that server asks for a key. Leave empty to keep the saved key."
-            }
           }
         }
       },
@@ -166,22 +134,6 @@
             },
             "data_description": {
               "system_prompt": "Tone and behavior only. Leave empty for the built-in prompt. MCP tools and editor links are always added; they are not part of this field."
-            }
-          },
-          "more": {
-            "name": "More connections",
-            "description": "{more_note}",
-            "data": {
-              "mcp_remove": "Remove a connection",
-              "mcp_add_name": "Name",
-              "mcp_add_url": "MCP URL",
-              "mcp_add_token": "Token"
-            },
-            "data_description": {
-              "mcp_remove": "Pick one and save to drop it. Keep all leaves them in place.",
-              "mcp_add_name": "A short name, such as Directus. The assistant uses it to tell connections apart. Use the same name again to replace that connection.",
-              "mcp_add_url": "The address of another MCP server. Leave empty if you are not adding one.",
-              "mcp_add_token": "Only if that server asks for a key. Leave empty to keep the saved key."
             }
           }
         }
@@ -330,22 +282,6 @@
             "data_description": {
               "system_prompt": "Tone and behavior only. Leave empty for the built-in prompt. MCP tools and editor links are always added; they are not part of this field."
             }
-          },
-          "more": {
-            "name": "More connections",
-            "description": "{more_note}",
-            "data": {
-              "mcp_remove": "Remove a connection",
-              "mcp_add_name": "Name",
-              "mcp_add_url": "MCP URL",
-              "mcp_add_token": "Token"
-            },
-            "data_description": {
-              "mcp_remove": "Pick one and save to drop it. Keep all leaves them in place.",
-              "mcp_add_name": "A short name, such as Directus. The assistant uses it to tell connections apart. Use the same name again to replace that connection.",
-              "mcp_add_url": "The address of another MCP server. Leave empty if you are not adding one.",
-              "mcp_add_token": "Only if that server asks for a key. Leave empty to keep the saved key."
-            }
           }
         }
       },
@@ -400,22 +336,6 @@
             "data_description": {
               "system_prompt": "Tone and behavior only. Leave empty for the built-in prompt. MCP tools and editor links are always added; they are not part of this field."
             }
-          },
-          "more": {
-            "name": "More connections",
-            "description": "{more_note}",
-            "data": {
-              "mcp_remove": "Remove a connection",
-              "mcp_add_name": "Name",
-              "mcp_add_url": "MCP URL",
-              "mcp_add_token": "Token"
-            },
-            "data_description": {
-              "mcp_remove": "Pick one and save to drop it. Keep all leaves them in place.",
-              "mcp_add_name": "A short name, such as Directus. The assistant uses it to tell connections apart. Use the same name again to replace that connection.",
-              "mcp_add_url": "The address of another MCP server. Leave empty if you are not adding one.",
-              "mcp_add_token": "Only if that server asks for a key. Leave empty to keep the saved key."
-            }
           }
         }
       },
@@ -456,22 +376,6 @@
             },
             "data_description": {
               "system_prompt": "Tone and behavior only. Leave empty for the built-in prompt. MCP tools and editor links are always added; they are not part of this field."
-            }
-          },
-          "more": {
-            "name": "More connections",
-            "description": "{more_note}",
-            "data": {
-              "mcp_remove": "Remove a connection",
-              "mcp_add_name": "Name",
-              "mcp_add_url": "MCP URL",
-              "mcp_add_token": "Token"
-            },
-            "data_description": {
-              "mcp_remove": "Pick one and save to drop it. Keep all leaves them in place.",
-              "mcp_add_name": "A short name, such as Directus. The assistant uses it to tell connections apart. Use the same name again to replace that connection.",
-              "mcp_add_url": "The address of another MCP server. Leave empty if you are not adding one.",
-              "mcp_add_token": "Only if that server asks for a key. Leave empty to keep the saved key."
             }
           }
         }
@@ -571,6 +475,36 @@
     }
   },
   "config_subentries": {
+    "mcp": {
+      "initiate_flow": {
+        "user": "Add connection",
+        "reconfigure": "Edit connection"
+      },
+      "entry_type": "Connection",
+      "abort": {
+        "reconfigure_successful": "Connection updated."
+      },
+      "error": {
+        "required": "This field is required.",
+        "already_configured": "A connection with this name is already there."
+      },
+      "step": {
+        "connection": {
+          "title": "Connection",
+          "description": "Another MCP server the assistant can use in the same chat.",
+          "data": {
+            "name": "Name",
+            "url": "Address",
+            "token": "Token"
+          },
+          "data_description": {
+            "name": "A short name, such as Directus. The assistant uses it to tell this connection from the others.",
+            "url": "The MCP address, starting with https:// or http://.",
+            "token": "Only if that server asks for a key. Leave empty when editing to keep the saved key."
+          }
+        }
+      }
+    },
     "agent": {
       "initiate_flow": {
         "user": "Add agent",

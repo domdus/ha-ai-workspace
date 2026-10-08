@@ -149,7 +149,9 @@ After the Runtime is up and running: **Settings → Devices & services → Add i
 
 ## More than one connection
 
-The first connection is this Home Assistant. Open **Configure** on AI Workspace when the assistant should also reach another MCP server, such as a website, a CMS, or another tool you already run. Under **More connections**, give it a short name and its address, then save. Open Configure again to add the next one. The assistant can use every connection in one chat, whether the provider is a cloud model or Cursor. To remove one, pick it in that same section and save.
+The first connection is this Home Assistant. It stays on **Configure**. When the assistant should also reach another MCP server, such as a website, a CMS, or another tool you already run, add it on the AI Workspace service itself.
+
+**Settings → Devices & services → AI Workspace.** Under that service, choose **Add connection**. Give it a short name and its address. Each one shows as its own row. Open a row to change it, or remove it from that row. The assistant can use every connection in one chat, whether the provider is a cloud model or Cursor.
 
 ## System Prompt
 
@@ -177,7 +179,7 @@ A tool that sends back the whole house is shortened before the model reads it. T
 | **MCP type** | The first connection: built-in MCP Server, HA-MCP, HA Vibecode Agent, or a custom URL |
 | **MCP URL** | Empty uses auto-detect. Paste the HA-MCP webhook or a custom URL only if needed |
 | **MCP token** | Built-in: long-lived token or empty for this login. HA-MCP: usually empty. Vibecode: Agent Key |
-| **More connections** | Extra MCP servers the assistant can use together with the first one. A short name and an address. Save, then open Configure again to add another |
+| **Add connection** | Extra MCP servers on the AI Workspace service, beside Configure. A short name and an address. Each one is its own row |
 | **System prompt** | Behaviour above. Empty uses the built-in prompt |
 | **Show floating AI button on every page** | Bottom-right robot icon. Hidden on Settings |
 | **Speech to text** | Browser speech, or a Home Assistant engine such as Whisper. The microphone itself needs https:// or localhost. Browsers block it on a plain http:// LAN address |
