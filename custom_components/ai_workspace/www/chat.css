@@ -494,7 +494,14 @@ h1 {
 .activity {
   margin: var(--ha-space-2) 0 0;
   font-size: var(--ha-font-size-s);
+  line-height: 1.3;
+  min-height: calc(1.3 * 1em);
   color: var(--secondary-text-color);
+}
+
+.activity.idle {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .tools {
