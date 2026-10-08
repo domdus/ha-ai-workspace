@@ -13,7 +13,7 @@
           "enable_overlay": "Show floating AI button on every page",
           "enable_dictate": "Show dictate button",
           "allow_users": "Allow normal users",
-          "house_map": "House map cache"
+          "house_map": "Name index"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
@@ -24,7 +24,7 @@
           "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
           "enable_dictate": "Microphone in the message box.",
           "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only.",
-          "house_map": "Speeds up and saves tokens on new chats by looking up entity, area, automation, and dashboard names in a local index before broad MCP calls. Off by default. The index is not live state."
+          "house_map": "Speeds up and saves tokens on new chats by looking up entity, area, automation, and dashboard names in a local name index before broad MCP calls. Off by default. The index is not live state."
         },
         "sections": {
           "mcp": {
@@ -58,7 +58,7 @@
           "enable_overlay": "Show floating AI button on every page",
           "enable_dictate": "Show dictate button",
           "allow_users": "Allow normal users",
-          "house_map": "House map cache"
+          "house_map": "Name index"
         },
         "sections": {
           "provider": {
@@ -108,7 +108,7 @@
           "enable_overlay": "Show floating AI button on every page",
           "enable_dictate": "Show dictate button",
           "allow_users": "Allow normal users",
-          "house_map": "House map cache"
+          "house_map": "Name index"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
@@ -116,7 +116,7 @@
           "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
           "enable_dictate": "Microphone in the message box. Browsers allow dictation only over https://.",
           "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only.",
-          "house_map": "Speeds up and saves tokens on new chats by looking up entity, area, automation, and dashboard names in a local index before broad MCP calls. Off by default. The index is not live state."
+          "house_map": "Speeds up and saves tokens on new chats by looking up entity, area, automation, and dashboard names in a local name index before broad MCP calls. Off by default. The index is not live state."
         },
         "sections": {
           "mcp": {
@@ -254,7 +254,7 @@
           "enable_overlay": "Show floating AI button on every page",
           "enable_dictate": "Show dictate button",
           "allow_users": "Allow normal users",
-          "house_map": "House map cache"
+          "house_map": "Name index"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
@@ -265,7 +265,7 @@
           "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
           "enable_dictate": "Microphone in the message box.",
           "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only.",
-          "house_map": "Speeds up and saves tokens on new chats by looking up entity, area, automation, and dashboard names in a local index before broad MCP calls. Off by default. The index is not live state."
+          "house_map": "Speeds up and saves tokens on new chats by looking up entity, area, automation, and dashboard names in a local name index before broad MCP calls. Off by default. The index is not live state."
         },
         "sections": {
           "mcp": {
@@ -299,14 +299,14 @@
           "enable_overlay": "Show floating AI button on every page",
           "enable_dictate": "Show dictate button",
           "allow_users": "Allow normal users",
-          "house_map": "House map cache"
+          "house_map": "Name index"
         },
         "data_description": {
           "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
           "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
           "enable_dictate": "Microphone in the message box. Browsers allow dictation only over https://.",
           "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only.",
-          "house_map": "Speeds up and saves tokens on new chats by looking up entity, area, automation, and dashboard names in a local index before broad MCP calls. Off by default. The index is not live state."
+          "house_map": "Speeds up and saves tokens on new chats by looking up entity, area, automation, and dashboard names in a local name index before broad MCP calls. Off by default. The index is not live state."
         },
         "sections": {
           "provider": {
@@ -356,7 +356,7 @@
           "enable_overlay": "Show floating AI button on every page",
           "enable_dictate": "Show dictate button",
           "allow_users": "Allow normal users",
-          "house_map": "House map cache"
+          "house_map": "Name index"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
@@ -364,7 +364,7 @@
           "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
           "enable_dictate": "Microphone in the message box. Browsers allow dictation only over https://.",
           "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only.",
-          "house_map": "Speeds up and saves tokens on new chats by looking up entity, area, automation, and dashboard names in a local index before broad MCP calls. Off by default. The index is not live state."
+          "house_map": "Speeds up and saves tokens on new chats by looking up entity, area, automation, and dashboard names in a local name index before broad MCP calls. Off by default. The index is not live state."
         },
         "sections": {
           "mcp": {

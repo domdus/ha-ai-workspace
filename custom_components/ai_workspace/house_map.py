@@ -20,14 +20,14 @@ _LOGGER = logging.getLogger(__name__)
 
 TOOL_NAME = "search_house_map"
 TOOL_DESCRIPTION = (
-    "Search a local cache of this Home Assistant for entity ids, areas, automations, "
+    "Search a local name index of this Home Assistant for entity ids, areas, automations, "
     "and dashboards by name. Use this before broad MCP listings when you need ids. "
     "It is not live state — call MCP after this for current state or to change anything."
 )
 HOUSE_MAP_INSTRUCTIONS = (
     "A local tool search_house_map looks up entity ids, areas, automations, and dashboards "
-    "from a cached index. For naming questions on a new chat, call search_house_map first, "
-    "then MCP for live state or changes. The map is not live state."
+    "from a name index. For naming questions on a new chat, call search_house_map first, "
+    "then MCP for live state or changes. The index is not live state."
 )
 
 _REFRESH_SECONDS = 15 * 60

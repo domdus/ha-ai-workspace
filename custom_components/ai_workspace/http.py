@@ -950,7 +950,7 @@ class HouseMapMcpView(HomeAssistantView):
         settings = _runtime(hass).get("settings")
         if not getattr(settings, "house_map", False):
             return web.json_response(
-                {"jsonrpc": "2.0", "id": None, "error": {"code": -32000, "message": "House map cache is off."}},
+                {"jsonrpc": "2.0", "id": None, "error": {"code": -32000, "message": "Name index is off."}},
                 status=404,
             )
         try:
