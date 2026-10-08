@@ -131,7 +131,21 @@ _PRIMARY_TITLES = {
 }
 
 
-def _mcp_rows(entry: ConfigEntry) -> list[dict]:
+def _subentry_device_active(hass: HomeAssistant, entry_id: str, subentry_id: str | None) -> bool:
+    """False when the user disabled the device for this row."""
+    if not subentry_id:
+        return True
+    from homeassistant.helpers import device_registry as dr
+
+    registry = dr.async_get(hass)
+    for device in dr.async_entries_for_config_entry(registry, entry_id):
+        if device.config_subentry_id != subentry_id:
+            continue
+        return device.disabled_by is None
+    return True
+
+
+def _mcp_rows(hass: HomeAssistant, entry: ConfigEntry) -> list[dict]:
     found: list[dict] = []
     for sub in getattr(entry, "subentries", {}).values():
         if getattr(sub, "subentry_type", "") != SUBENTRY_MCP:
@@ -141,20 +155,23 @@ def _mcp_rows(entry: ConfigEntry) -> list[dict]:
         url = str(raw.get("url") or "").strip()
         if not name or not url:
             continue
+        enabled = bool(raw.get("enabled", True)) and _subentry_device_active(
+            hass, entry.entry_id, sub.subentry_id
+        )
         found.append(
             {
                 "name": name,
                 "url": url,
                 "token": str(raw.get("token") or "").strip(),
                 "primary": bool(raw.get("primary")),
-                "enabled": bool(raw.get("enabled", True)),
+                "enabled": enabled,
             }
         )
     return found
 
 
-def _primary_and_extras(entry: ConfigEntry) -> tuple[dict | None, list[dict[str, str]]]:
-    rows = [row for row in _mcp_rows(entry) if row.get("enabled", True)]
+def _primary_and_extras(hass: HomeAssistant, entry: ConfigEntry) -> tuple[dict | None, list[dict[str, str]]]:
+    rows = [row for row in _mcp_rows(hass, entry) if row.get("enabled", True)]
     primary = next((row for row in rows if row.get("primary")), None)
     extras = [
         {"name": row["name"], "url": row["url"], "token": row["token"]}
@@ -225,7 +242,7 @@ def _model_for_mode(data: dict) -> str:
 def _settings(hass: HomeAssistant, entry: ConfigEntry, mcp_url: str | None = None) -> Settings:
     data = _merged(entry)
     root = Path(hass.config.path(DOMAIN))
-    primary, extras = _primary_and_extras(entry)
+    primary, extras = _primary_and_extras(hass, entry)
     if primary:
         token = primary["token"]
         configured = primary["url"]
@@ -377,7 +394,7 @@ async def _ensure_shared(hass: HomeAssistant, hub: ConfigEntry) -> dict:
 
 
 async def _build_settings(hass: HomeAssistant, hub: ConfigEntry) -> Settings:
-    primary, _extras = _primary_and_extras(hub)
+    primary, _extras = _primary_and_extras(hass, hub)
     if primary:
         return _settings(hass, hub, primary["url"])
     data = _merged(hub)
@@ -390,18 +407,74 @@ async def _build_settings(hass: HomeAssistant, hub: ConfigEntry) -> Settings:
     return _settings(hass, hub, mcp_url)
 
 
-def _drop_loose_devices(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Drop devices that are not one of the connection or agent rows.
-
-    Home Assistant files those under "Devices that don't belong to a sub-entry".
-    """
+def _sync_subentry_devices(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """One service device per connection/agent row so Disable device works."""
     from homeassistant.helpers import device_registry as dr
 
     registry = dr.async_get(hass)
-    for device in dr.async_entries_for_config_entry(registry, entry.entry_id):
-        if device.config_subentry_id:
+    wanted: set[str] = set()
+    for sub in getattr(entry, "subentries", {}).values():
+        stype = getattr(sub, "subentry_type", "")
+        if stype == SUBENTRY_MCP:
+            ident = f"mcp:{sub.subentry_id}"
+            model = "Connection"
+        elif stype == SUBENTRY_AGENT:
+            unique = str(sub.unique_id or sub.subentry_id)
+            ident = f"agent:{unique}"
+            model = "Agent"
+        else:
             continue
-        registry.async_remove_device(device.id)
+        wanted.add(sub.subentry_id)
+        device = registry.async_get_or_create(
+            config_entry_id=entry.entry_id,
+            config_subentry_id=sub.subentry_id,
+            identifiers={(DOMAIN, ident)},
+            name=str(sub.title or model),
+            manufacturer="AI Workspace",
+            model=model,
+            entry_type=dr.DeviceEntryType.SERVICE,
+        )
+        if device.config_entry_id != entry.entry_id or device.config_subentry_id != sub.subentry_id:
+            registry.async_update_device(
+                device.id,
+                new_config_entry_id=entry.entry_id,
+                new_config_subentry_id=sub.subentry_id,
+                name=str(sub.title or model),
+                manufacturer="AI Workspace",
+                model=model,
+                entry_type=dr.DeviceEntryType.SERVICE,
+            )
+    for device in list(dr.async_entries_for_config_entry(registry, entry.entry_id)):
+        if not device.config_subentry_id or device.config_subentry_id not in wanted:
+            registry.async_remove_device(device.id)
+
+
+def _listen_device_disable(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Refresh chat tools / providers when a row device is disabled or enabled."""
+    from homeassistant.helpers import device_registry as dr
+
+    entry_id = entry.entry_id
+
+    async def _updated(event) -> None:
+        if event.data.get("action") != "update":
+            return
+        changes = event.data.get("changes") or {}
+        if "disabled_by" not in changes:
+            return
+        registry = dr.async_get(hass)
+        device = registry.async_get(event.data.get("device_id"))
+        if device is None or device.config_entry_id != entry_id:
+            return
+        if is_agents(entry):
+            await hass.config_entries.async_reload(entry_id)
+            return
+        bucket = hass.data.get(DOMAIN)
+        hub = hass.config_entries.async_get_entry(entry_id)
+        if bucket is None or hub is None:
+            return
+        bucket["settings"] = await _build_settings(hass, hub)
+
+    entry.async_on_unload(hass.bus.async_listen(dr.EVENT_DEVICE_REGISTRY_UPDATED, _updated))
 
 
 def _migrate_primary_mcp(hass: HomeAssistant, hub: ConfigEntry) -> None:
@@ -585,7 +658,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _migrate_mcp_connections(hass, entry)
     _migrate_primary_mcp(hass, entry)
     await _ensure_shared(hass, entry)
-    _drop_loose_devices(hass, entry)
+    _sync_subentry_devices(hass, entry)
+    _listen_device_disable(hass, entry)
     entry.async_on_unload(entry.add_update_listener(_reload))
     hass.data[DOMAIN]["migrating"] = True
     hass.data[DOMAIN]["defer_platforms"] = True
@@ -593,6 +667,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await _fold_devices(hass, entry)
     finally:
         hass.data[DOMAIN]["defer_platforms"] = False
+    _sync_subentry_devices(hass, entry)
     agents = agents_entry(hass, entry.entry_id)
     if agents and not agents.disabled_by:
         if hass.is_running:
@@ -635,7 +710,8 @@ async def _setup_agents(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if hub is None or hub.disabled_by:
         return False
     bucket = await _ensure_shared(hass, hub)
-    _drop_loose_devices(hass, entry)
+    _sync_subentry_devices(hass, entry)
+    _listen_device_disable(hass, entry)
     if not bucket.get("runtime_url"):
         configured = str(_merged(hub).get(CONF_RUNTIME_URL) or "").strip().rstrip("/")
         bucket["runtime_url"] = await async_resolve_runtime_url(hass, configured) if configured else ""
@@ -644,6 +720,8 @@ async def _setup_agents(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     for agent in entry_agents(entry):
         if not agent.enabled:
             continue
+        if not _subentry_device_active(hass, entry.entry_id, agent.subentry_id):
+            continue
         providers[agent.id] = _one_provider(hass, bucket["settings"], agent, runtime)
     bucket["providers"] = providers
     entry.async_on_unload(entry.add_update_listener(_reload))
@@ -651,6 +729,7 @@ async def _setup_agents(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return True
     hass.data[DOMAIN].setdefault("agents_platforms", set()).add(entry.entry_id)
     await hass.config_entries.async_forward_entry_setups(entry, _PLATFORMS)
+    _sync_subentry_devices(hass, entry)
     return True
 
 
