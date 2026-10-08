@@ -690,31 +690,45 @@ export function mountAiWorkspace(root, options = {}) {
     return raw;
   }
 
-  function setActivity(bubble, text) {
-    if (!bubble) return;
-    const pretty = prettyStatus(text);
+  function ensureActivitySlot(bubble) {
     let el = bubble.querySelector(".activity");
-    if (!pretty) {
-      el?.remove();
-      return;
-    }
     if (!el) {
       el = document.createElement("p");
-      el.className = "activity shine";
+      el.className = "activity idle";
+      el.setAttribute("aria-hidden", "true");
       const label = document.createElement("span");
       label.className = "label";
+      label.textContent = "\u00a0";
       el.appendChild(label);
+      bubble.appendChild(el);
     }
     // Keep the status chip under tools and text so it never shifts the answer.
     if (el.parentElement !== bubble || bubble.lastElementChild !== el) {
       bubble.appendChild(el);
     }
+    return el;
+  }
+
+  function setActivity(bubble, text) {
+    if (!bubble) return;
+    const pretty = prettyStatus(text);
+    const el = ensureActivitySlot(bubble);
     let label = el.querySelector(".label");
     if (!label) {
       label = document.createElement("span");
       label.className = "label";
       el.replaceChildren(label);
     }
+    if (!pretty) {
+      // Keep the line height while streaming so show/hide does not jump the scroll.
+      el.className = "activity idle";
+      el.setAttribute("aria-hidden", "true");
+      label.textContent = "\u00a0";
+      if (!bubble.classList.contains("streaming")) el.remove();
+      return;
+    }
+    el.className = "activity shine";
+    el.removeAttribute("aria-hidden");
     label.textContent = pretty;
   }
 
@@ -1646,6 +1660,7 @@ export function mountAiWorkspace(root, options = {}) {
       bubble.classList.add("streaming");
     }
     bubble.classList.remove("error");
+    ensureActivitySlot(bubble);
     if (!bubble.querySelector(".text")?.content) setActivity(bubble, t("thinking"));
     streaming = true;
     resizeComposer();
@@ -1682,7 +1697,13 @@ export function mountAiWorkspace(root, options = {}) {
         continue;
       }
       if (needsPaint(session)) paintSession(session);
-      else logEl.querySelector(".bubble.assistant.streaming")?.classList.remove("streaming");
+      else {
+        const live = logEl.querySelector(".bubble.assistant.streaming");
+        if (live) {
+          live.classList.remove("streaming");
+          setActivity(live, "");
+        }
+      }
       streaming = false;
       resizeComposer();
       syncCopyChat();
@@ -2219,6 +2240,7 @@ export function mountAiWorkspace(root, options = {}) {
     streamBuf = "";
     const tools = document.createElement("div");
     tools.className = "tools";
+    ensureActivitySlot(assistant);
     setActivity(assistant, t("thinking"));
     let recover = false;
     let sawDone = false;
@@ -2340,6 +2362,7 @@ export function mountAiWorkspace(root, options = {}) {
         if (!found) {
           streaming = false;
           assistant.classList.remove("streaming");
+          setActivity(assistant, "");
           if (!streamFull) {
             assistant.classList.add("error");
             const node = assistant.querySelector(".text");
@@ -2353,6 +2376,7 @@ export function mountAiWorkspace(root, options = {}) {
         streaming = false;
         settleTools(assistant);
         assistant.classList.remove("streaming");
+        setActivity(assistant, "");
       }
       syncCopyChat();
       resizeComposer();
