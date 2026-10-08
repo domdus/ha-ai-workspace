@@ -173,7 +173,7 @@ A tool that sends back the whole house is shortened before the model reads it. T
 | **Show dictate button** | Microphone in the prompt. On by default |
 | **Show AI Workspace in the sidebar** | Sidebar item. `/ai-workspace` still works if this is off |
 
-The integration page has two devices. **AI Workspace** is the shared chat setup and the connection rows. **AI Agents** is one row per provider. You add the integration once.
+The integration page has two entries. **AI Workspace** is the shared chat setup and the connection rows. **AI Agents** is one row per provider. You add the integration once.
 
 The first connection is chosen on that first screen, then it is a row with the others. Every connection is sent with each chat. The Cursor API key stays on the Cursor agent. The Runtime URL stays on AI Workspace.
 
