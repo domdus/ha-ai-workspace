@@ -301,6 +301,20 @@ function haLinkCatalog() {
   return { names, ids };
 }
 
+function linkifyHaPaths(text) {
+  // Bare HA UI paths the model sometimes writes without Markdown, e.g. /lovelace/media
+  return String(text || "").replace(
+    /(?<![\w./#\u0000[])(\/(?:config|lovelace|dashboard|history|logbook|developer-tools|profile|media-browser|energy|map|todo|ai-workspace|hassio|supervisor)[^\s)\]<>"'`]*)/g,
+    (raw) => {
+      let path = raw;
+      while (/[.,;:!?]$/.test(path)) path = path.slice(0, -1);
+      const base = path.split(/[?#]/)[0];
+      if (!haAppPath(base)) return raw;
+      return `[${path}](${path})${raw.slice(path.length)}`;
+    },
+  );
+}
+
 function linkifyHaMentions(content) {
   let text = String(content || "");
   if (!text) return text;
@@ -312,6 +326,8 @@ function linkifyHaMentions(content) {
   };
   text = text.replace(/```[\s\S]*?```/g, hold);
   text = text.replace(/`[^`\n]+`/g, hold);
+  text = text.replace(/\[[^\]]+\]\([^)\s]+\)/g, hold);
+  text = linkifyHaPaths(text);
   text = text.replace(/\[[^\]]+\]\([^)\s]+\)/g, hold);
   const { names, ids } = haLinkCatalog();
   for (const item of names) {
