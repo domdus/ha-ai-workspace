@@ -33,15 +33,11 @@ Start with one MCP server. You can add more later, and the assistant uses all of
 
 Keep the connect URL or Agent Key if it shows one — paste it only if auto-detect misses it later.
 
-<p align="center">
-  <img src="docs/integration_ai_workspace_mcp.png" alt="MCP type on the AI Workspace form" width="820">
-</p>
-
 ---
 
 ## Option A: Cloud API Provider (Quick Setup)
 
-Fastest path. No extra container. Add **AI Workspace** once, then add an agent for **OpenAI**, **Claude**, **Gemini**, **DeepSeek**, **Qwen**, **Grok**, **OpenRouter**, **Azure OpenAI**, **local Ollama**, or **OpenAI-compatible** (LM Studio and others). The model must support tool calls or it cannot drive MCP. If that provider is already configured in Home Assistant, the agent form can copy its key.
+Fastest path. No extra container. Add **AI Workspace** once. It adds an **AI Agents** device beside it. Add an agent there for **OpenAI**, **Claude**, **Gemini**, **DeepSeek**, **Qwen**, **Grok**, **OpenRouter**, **Azure OpenAI**, **local Ollama**, or **OpenAI-compatible** (LM Studio and others). The model must support tool calls or it cannot drive MCP. If that provider is already configured in Home Assistant, the agent form can copy its key.
 
 ### 1. Install AI Workspace from HACS
 
@@ -56,12 +52,8 @@ Or **HACS → Integrations → ⋮ → Custom repositories** → `https://github
 - MCP type: from Requirements. Leave MCP URL empty if it shows as detected.
 - Save. Home Assistant then asks for the first **agent**.
 - Pick the provider. Paste the key, or choose **Copy key from** when OpenRouter, OpenAI, Claude, Gemini, or Ollama is already set up.
-- Add more providers from the AI Workspace integration page. Each one is its own service and can be turned off there. The chat shows a provider list when more than one is on.
+- Add more agents on the **AI Agents** device. The chat shows a provider list when more than one is set up.
 - Open **AI Workspace** (`/ai-workspace`).
-
-<p align="center">
-  <img src="docs/integration_ai_workspace_cloud_api.png" alt="Cloud API Provider: OpenAI key and model" width="820">
-</p>
 
 ### 3. Start using it
 
@@ -75,10 +67,6 @@ This integration works with **Cursor AI** using the SDK, without the desktop IDE
 MCP tools, multi-step work, spawn and resume agents. Headless — no editor, no Composer UI.
 
 Install AI Workspace from HACS first ([step 1](#1-install-ai-workspace-from-hacs)). Then install the **Cursor SDK Runtime** once, for the Home Assistant you run.
-
-<p align="center">
-  <img src="docs/integration_ai_workspace_cursor.png" alt="Cursor Runtime app: model and Runtime URL" width="820">
-</p>
 
 ### Home Assistant OS / Supervised (Add-on)
 
@@ -149,9 +137,9 @@ After the Runtime is up and running: **Settings → Devices & services → Add i
 
 ## More than one connection
 
-The first connection is this Home Assistant. It stays on **Configure**. When the assistant should also reach another MCP server, such as a website, a CMS, or another tool you already run, add it on the AI Workspace service itself.
+The first connection is this Home Assistant. After setup it is a row on the **AI Workspace** device, with the same shape as any connection you add later. When the assistant should also reach another MCP server, such as a website, a CMS, or another tool you already run, add that row too.
 
-**Settings → Devices & services → AI Workspace.** Under that service, choose **Add connection**. Give it a short name and its address. Each one shows as its own row. Open a row to change it, or remove it from that row. The assistant can use every connection in one chat, whether the provider is a cloud model or Cursor.
+**Settings → Devices & services → AI Workspace.** Under the AI Workspace device, choose **Add connection**. Give it a short name and its address. Open a row to change it, or remove it from that row. The assistant can use every connection in one chat, whether the agent is a cloud model or Cursor.
 
 ## System Prompt
 
@@ -161,11 +149,6 @@ This is the standing instruction for the assistant. Use it for your own needs: h
 
 It does not control Home Assistant edit links. Those are added on every reply, so automations, entities, helpers, and devices stay tappable.
 
-<p align="center">
-  <img src="docs/integration_ai_workspace_system_prompt.png" alt="System prompt, sidebar, and floating AI button" width="820">
-</p>
-
-
 ## Large listings
 
 A tool that sends back the whole house is shortened before the model reads it. The entities are grouped by area, as ids only, and the model can ask again for one area or one entity to load states and attributes. A shorter list keeps each entity's state and drops the bulky attributes. One entity, one room, or one automation still arrives whole. What the model receives is always valid JSON. Nothing is cut off in the middle of an object. This is automatic for Cloud API and Cursor Runtime.
@@ -174,12 +157,13 @@ A tool that sends back the whole house is shortened before the model reads it. T
 
 | Option | What it does |
 |---|---|
-| **Agents** | One AI Workspace service for the shared settings. Each Cursor, OpenAI, Claude, Gemini, OpenRouter, Ollama, Azure, or other provider is its own service beside it, and can be turned off with the service switch. Effort is Fast, High, or High fast when the model supports it |
+| **AI Workspace** | Shared chat settings, and one row per MCP connection. Add a connection on this device |
+| **AI Agents** | One row per Cursor, OpenAI, Claude, Gemini, OpenRouter, Ollama, Azure, or other provider. Effort is Fast, High, or High fast when the model supports it |
 | **Copy key from** | Uses the key already stored by OpenRouter, OpenAI, Claude, Gemini, Ollama, or Azure in Home Assistant. That integration stays |
-| **MCP type** | The first connection: built-in MCP Server, HA-MCP, HA Vibecode Agent, or a custom URL |
+| **MCP type** | Asked once, when you add AI Workspace: built-in MCP Server, HA-MCP, HA Vibecode Agent, or a custom URL. It is saved as the first connection row |
 | **MCP URL** | Empty uses auto-detect. Paste the HA-MCP webhook or a custom URL only if needed |
 | **MCP token** | Built-in: long-lived token or empty for this login. HA-MCP: usually empty. Vibecode: Agent Key |
-| **Add connection** | Extra MCP servers on the AI Workspace service, beside Configure. A short name and an address. Each one is its own row |
+| **Add connection** | Another MCP server on the AI Workspace device. A short name and an address |
 | **System prompt** | Behaviour above. Empty uses the built-in prompt |
 | **Show floating AI button on every page** | Bottom-right robot icon. Hidden on Settings |
 | **Speech to text** | Browser speech, or a Home Assistant engine such as Whisper. The microphone itself needs https:// or localhost. Browsers block it on a plain http:// LAN address |
@@ -191,6 +175,6 @@ MCP is set on this form for both backends. Every connection is sent with each ch
 
 ## Remove it
 
-1. **Settings → Devices & services → AI Workspace → Delete.**
+1. **Settings → Devices & services → AI Workspace → Delete.** That removes AI Agents as well.
 2. HACS → AI Workspace → **Remove**, restart.
 3. Runtime: remove the **app**, or `docker compose down` in the Runtime compose folder (`docker rm -f cursor-sdk` if an old container remains).

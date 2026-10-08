@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from urllib.parse import urlparse
 
 import voluptuous as vol
@@ -18,8 +19,8 @@ from homeassistant.helpers.selector import (
 
 from homeassistant.util.ulid import ulid
 
-from .agent_flow import ProviderOptionsFlow, ProviderSteps, _provider_names, _title
-from .agents import hub_entry, is_provider
+from .agent_flow import AgentSubentryFlow, ProviderOptionsFlow, ProviderSteps, _provider_names, _title
+from .agents import hub_entry, is_agents, is_provider
 from .const import (
     API_COMPATIBLE,
     API_OPENAI,
@@ -58,6 +59,7 @@ from .const import (
     ROLE_HUB,
     ROLE_PROVIDER,
     STT_BROWSER,
+    SUBENTRY_AGENT,
     SUBENTRY_MCP,
     TTS_OFF,
     default_api_model,
@@ -67,6 +69,15 @@ from .voice import async_speech_engines
 from .discovery import async_probe_runtime, async_resolve_runtime_url, hassio_runtime_url
 from .mcp_flow import McpConnectionFlow
 from .mcp_resolve import async_detect_mcp_kinds, async_probe_mcp, async_resolve_mcp_url, default_mcp_url, mcp_kind_of
+
+_LOGGER = logging.getLogger(__name__)
+_HUB_FLAGS = (
+    "providers_migrated",
+    "agents_migrated",
+    "mcp_connections_migrated",
+    "primary_mcp_migrated",
+    "devices_migrated",
+)
 
 SECTION_PROVIDER = "provider"
 SECTION_MCP = "mcp"
@@ -421,27 +432,35 @@ def _voice_schema(defaults: dict, stt: list, tts: list) -> vol.Schema:
     )
 
 
-async def _shared_form(hass, defaults: dict, kinds: list[str]) -> vol.Schema:
+async def _shared_form(hass, defaults: dict, kinds: list[str], *, include_mcp: bool = True) -> vol.Schema:
     stt = await async_speech_engines(hass, "stt")
     tts = await async_speech_engines(hass, "tts")
     voice = {
         CONF_STT_ENGINE: str(defaults.get(CONF_STT_ENGINE) or STT_BROWSER),
         CONF_TTS_ENGINE: str(defaults.get(CONF_TTS_ENGINE) or TTS_OFF),
     }
-    return vol.Schema(
-        {
-            vol.Required(SECTION_MCP): section(_mcp_schema(defaults, hass, kinds), {"collapsed": False}),
-            vol.Required(SECTION_PROMPT): section(_prompt_schema(defaults), {"collapsed": False}),
-            vol.Optional(
-                CONF_RUNTIME_URL,
-                default=str(defaults.get(CONF_RUNTIME_URL) or ""),
-            ): _MCP_SELECTOR,
-            vol.Optional(SECTION_VOICE, default=voice): _SideBySide(_voice_schema(defaults, stt, tts)),
-            vol.Optional(CONF_SPEAK_REPLIES, default=bool(defaults.get(CONF_SPEAK_REPLIES, False))): cv.boolean,
-            **_ui_schema(defaults),
-        },
-        extra=vol.ALLOW_EXTRA,
-    )
+    fields: dict = {}
+    if include_mcp:
+        fields[vol.Required(SECTION_MCP)] = section(_mcp_schema(defaults, hass, kinds), {"collapsed": False})
+    fields[vol.Required(SECTION_PROMPT)] = section(_prompt_schema(defaults), {"collapsed": False})
+    fields[
+        vol.Optional(
+            CONF_RUNTIME_URL,
+            default=str(defaults.get(CONF_RUNTIME_URL) or ""),
+        )
+    ] = _MCP_SELECTOR
+    fields[vol.Optional(SECTION_VOICE, default=voice)] = _SideBySide(_voice_schema(defaults, stt, tts))
+    fields[vol.Optional(CONF_SPEAK_REPLIES, default=bool(defaults.get(CONF_SPEAK_REPLIES, False)))] = cv.boolean
+    fields.update(_ui_schema(defaults))
+    return vol.Schema(fields, extra=vol.ALLOW_EXTRA)
+
+
+def _keep_saved_mcp(flat: dict, saved: dict, sent: bool) -> dict:
+    if sent:
+        return flat
+    for key in (CONF_MCP_KIND, CONF_MCP_URL, CONF_MCP_TOKEN):
+        flat[key] = saved.get(key, "")
+    return flat
 
 
 def _shared_errors(flat: dict) -> dict:
@@ -464,16 +483,25 @@ class AiWorkspaceConfigFlow(ProviderSteps, config_entries.ConfigFlow, domain=DOM
         from homeassistant.config_entries import SOURCE_USER, FlowType
 
         created = result.get("result")
-        if created is None or is_provider(created):
+        if created is None or is_provider(created) or is_agents(created):
             return result
         try:
-            started = await self.hass.config_entries.flow.async_init(
-                DOMAIN,
-                context={"source": SOURCE_USER, "hub_id": created.entry_id},
+            from . import _ensure_agents_entry
+
+            agents_created = await _ensure_agents_entry(self.hass, created)
+            if agents_created is None:
+                return result
+            started = await self.hass.config_entries.subentries.async_init(
+                (agents_created.entry_id, SUBENTRY_AGENT),
+                context={"source": SOURCE_USER},
             )
         except Exception:
+            _LOGGER.debug("First agent form skipped", exc_info=True)
             return result
-        result["next_flow"] = (FlowType.CONFIG_FLOW, started["flow_id"])
+        flow_type = getattr(FlowType, "CONFIG_SUBENTRIES_FLOW", None)
+        if flow_type is None:
+            flow_type = getattr(FlowType, "CONFIG_SUBENTRIES", FlowType.CONFIG_FLOW)
+        result["next_flow"] = (flow_type, started["flow_id"])
         return result
 
     async def _begin_provider(self):
@@ -526,32 +554,39 @@ class AiWorkspaceConfigFlow(ProviderSteps, config_entries.ConfigFlow, domain=DOM
         return self.async_create_entry(title=title, data=info)
 
     async def async_step_user(self, user_input=None):
-        adding = self.context.get("hub_id") or (
-            self.source != "reconfigure" and hub_entry(self.hass) is not None
-        )
-        if adding:
-            return await self._begin_provider()
+        if self.source != "reconfigure" and hub_entry(self.hass) is not None:
+            return self.async_abort(reason="already_configured")
         errors = {}
+        include_mcp = self.source != "reconfigure"
+        saved = self._ui
+        if self.source == "reconfigure":
+            entry = self._get_reconfigure_entry()
+            saved = {**entry.data, **entry.options, **self._ui}
         if user_input is not None:
-            flat = _normalize(_flatten(user_input), self._ui, self.hass)
-            errors = _shared_errors(flat)
+            sent_mcp = SECTION_MCP in user_input or CONF_MCP_URL in user_input
+            flat = _keep_saved_mcp(
+                _normalize(_flatten(user_input), saved, self.hass),
+                saved,
+                sent_mcp or include_mcp,
+            )
+            errors = _shared_errors(flat) if include_mcp else {}
             if not errors:
                 data = {key: flat.get(key) for key in _PARENT_KEYS}
                 data[CONF_ROLE] = ROLE_HUB
                 if self.source == "reconfigure":
                     entry = self._get_reconfigure_entry()
-                    data["providers_migrated"] = bool(entry.data.get("providers_migrated"))
-                    data["agents_migrated"] = bool(entry.data.get("agents_migrated"))
-                    data["mcp_connections_migrated"] = bool(entry.data.get("mcp_connections_migrated"))
+                    for flag in _HUB_FLAGS:
+                        if entry.data.get(flag):
+                            data[flag] = True
                     return self.async_update_reload_and_abort(entry, data=data)
                 data["mcp_connections_migrated"] = True
                 await self.async_set_unique_id(DOMAIN)
                 return self.async_create_entry(title="AI Workspace", data=data)
-            user_input = {**self._ui, **flat}
-        defaults, mcp_auto, kinds = await _prepare_mcp_form(self.hass, user_input or self._ui)
+            user_input = {**saved, **flat}
+        defaults, mcp_auto, kinds = await _prepare_mcp_form(self.hass, user_input or saved)
         return self.async_show_form(
             step_id="user",
-            data_schema=await _shared_form(self.hass, defaults, kinds),
+            data_schema=await _shared_form(self.hass, defaults, kinds, include_mcp=include_mcp),
             errors=errors,
             description_placeholders=_form_placeholders(
                 mcp_url=str(defaults.get(CONF_MCP_URL) or ""),
@@ -562,9 +597,16 @@ class AiWorkspaceConfigFlow(ProviderSteps, config_entries.ConfigFlow, domain=DOM
     @classmethod
     @callback
     def async_get_supported_subentry_types(cls, config_entry):
+        if is_agents(config_entry):
+            return {SUBENTRY_AGENT: AgentSubentryFlow}
         if is_provider(config_entry):
             return {}
         return {SUBENTRY_MCP: McpConnectionFlow}
+
+    @classmethod
+    @callback
+    def async_supports_options_flow(cls, config_entry):
+        return not is_agents(config_entry)
 
     async def async_step_cursor(self, user_input=None):
         errors = {}
@@ -641,15 +683,16 @@ class AiWorkspaceOptionsFlow(config_entries.OptionsFlow):
         current = self._current()
         errors = {}
         if user_input is not None:
-            flat = _normalize(_flatten(user_input), current, self.hass)
-            errors = _shared_errors(flat)
+            sent_mcp = SECTION_MCP in user_input or CONF_MCP_URL in user_input
+            flat = _keep_saved_mcp(_normalize(_flatten(user_input), current, self.hass), current, sent_mcp)
+            errors = {}
             if not errors:
                 return self._save(flat)
             current = {**current, **flat}
         defaults, mcp_auto, kinds = await _prepare_mcp_form(self.hass, current)
         return self.async_show_form(
             step_id="init",
-            data_schema=await _shared_form(self.hass, defaults, kinds),
+            data_schema=await _shared_form(self.hass, defaults, kinds, include_mcp=False),
             errors=errors,
             description_placeholders=_form_placeholders(
                 mcp_url=str(defaults.get(CONF_MCP_URL) or ""),

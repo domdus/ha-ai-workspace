@@ -1,4 +1,4 @@
-"""Add and edit one provider service beside the AI Workspace entry."""
+"""Add and edit one agent row on the AI Agents entry."""
 
 from __future__ import annotations
 
@@ -149,14 +149,27 @@ def _hub_cursor_key(flow) -> str:
 
 
 def _provider_names(flow) -> tuple[set[str], set[str]]:
-    from .agents import provider_entries
+    from .agents import agents_entry, entry_agents, is_agents, provider_entries
 
-    titles = set()
-    uniques = set()
+    titles: set[str] = set()
+    uniques: set[str] = set()
     for entry in provider_entries(flow.hass):
         titles.add(entry.title)
         if entry.unique_id:
             uniques.add(entry.unique_id)
+    parent = None
+    getter = getattr(flow, "_get_entry", None)
+    if callable(getter):
+        try:
+            parent = getter()
+        except Exception:
+            parent = None
+    if parent is None or not is_agents(parent):
+        parent = agents_entry(flow.hass)
+    if parent is not None:
+        for agent in entry_agents(parent):
+            titles.add(agent.title)
+            uniques.add(agent.id)
     return titles, uniques
 
 
@@ -266,8 +279,57 @@ class ProviderSteps:
         raise NotImplementedError
 
 
+class AgentSubentryFlow(ProviderSteps, config_entries.ConfigSubentryFlow):
+    """One agent under AI Agents. The form asks only for that provider."""
+
+    async def async_step_user(self, user_input=None):
+        del user_input
+        self._editing = False
+        self._current = {}
+        self._provider = MODE_CURSOR
+        self._agent_id = ""
+        parent = self._get_entry()
+        self._hub_id = str(parent.data.get("hub_id") or "")
+        return await self.async_step_provider()
+
+    async def async_step_reconfigure(self, user_input=None):
+        del user_input
+        self._editing = True
+        sub = self._get_reconfigure_subentry()
+        raw = dict(sub.data)
+        self._current = raw
+        self._provider = str(raw.get(CONF_API_PROVIDER) or MODE_CURSOR)
+        self._agent_id = str(raw.get(CONF_AGENT_ID) or sub.unique_id or sub.subentry_id)
+        self._hub_id = str(self._get_entry().data.get("hub_id") or "")
+        return await self.async_step_provider()
+
+    async def _finish_provider(self, provider: str, data: dict[str, Any]):
+        from homeassistant.util.ulid import ulid
+
+        data.pop(CONF_ROLE, None)
+        data.pop(CONF_HUB_ID, None)
+        titles, _uniques = _provider_names(self)
+        if getattr(self, "_editing", False):
+            sub = self._get_reconfigure_subentry()
+            titles.discard(sub.title)
+            same = str(sub.data.get(CONF_API_PROVIDER) or "") == provider
+            title = sub.title if same else _title(provider, titles)
+            data[CONF_AGENT_ID] = self._agent_id or str(sub.data.get(CONF_AGENT_ID) or sub.unique_id or sub.subentry_id)
+            return self.async_update_reload_and_abort(
+                self._get_entry(),
+                sub,
+                title=title,
+                data=data,
+                unique_id=data[CONF_AGENT_ID],
+            )
+        titles.discard("")
+        agent_id = ulid()
+        data[CONF_AGENT_ID] = agent_id
+        return self.async_create_entry(title=_title(provider, titles), data=data, unique_id=agent_id)
+
+
 class ProviderOptionsFlow(ProviderSteps, config_entries.OptionsFlow):
-    """Edit one provider. Disabling it is the service switch, not a checkbox."""
+    """Edit a provider that has not been folded into AI Agents yet."""
 
     async def async_step_init(self, user_input=None):
         del user_input

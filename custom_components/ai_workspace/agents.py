@@ -1,4 +1,4 @@
-"""Provider services saved as their own config entries beside AI Workspace."""
+"""Agents saved as rows on the AI Agents entry."""
 
 from __future__ import annotations
 
@@ -34,6 +34,7 @@ from .const import (
     EFFORTS,
     MODE_API,
     MODE_CURSOR,
+    ROLE_AGENTS,
     ROLE_PROVIDER,
     SUBENTRY_AGENT,
     CONF_ROLE,
@@ -60,6 +61,7 @@ class Agent:
     enabled: bool = True
     azure_api_version: str = DEFAULT_AZURE_API_VERSION
     cursor_api_key: str = ""
+    subentry_id: str = ""
 
     def label(self) -> str:
         name = self.title or API_SHORT_LABELS.get(self.provider, "Cursor" if self.mode == MODE_CURSOR else "Agent")
@@ -111,19 +113,40 @@ def entry_agents(entry: ConfigEntry) -> list[Agent]:
     for sub in getattr(entry, "subentries", {}).values():
         if getattr(sub, "subentry_type", "") != SUBENTRY_AGENT:
             continue
-        found.append(agent_from_mapping(sub.subentry_id, sub.title, sub.data))
+        raw = getattr(sub, "data", {}) or {}
+        agent_id = _text(raw.get(CONF_AGENT_ID)) or _text(getattr(sub, "unique_id", "")) or sub.subentry_id
+        agent = agent_from_mapping(agent_id, sub.title, raw)
+        agent.subentry_id = sub.subentry_id
+        found.append(agent)
     return found
+
+
+def is_agents(entry: ConfigEntry) -> bool:
+    return entry.data.get(CONF_ROLE) == ROLE_AGENTS
 
 
 def is_provider(entry: ConfigEntry) -> bool:
     raw = entry.data
+    if raw.get(CONF_ROLE) == ROLE_AGENTS:
+        return False
     return raw.get(CONF_ROLE) == ROLE_PROVIDER or bool(raw.get(CONF_HUB_ID))
 
 
 def hub_entry(hass: HomeAssistant) -> ConfigEntry | None:
     for entry in hass.config_entries.async_entries("ai_workspace"):
-        if not is_provider(entry):
-            return entry
+        if is_provider(entry) or is_agents(entry):
+            continue
+        return entry
+    return None
+
+
+def agents_entry(hass: HomeAssistant, hub_id: str | None = None) -> ConfigEntry | None:
+    for entry in hass.config_entries.async_entries("ai_workspace"):
+        if not is_agents(entry):
+            continue
+        if hub_id and str(entry.data.get(CONF_HUB_ID) or "") not in {"", hub_id}:
+            continue
+        return entry
     return None
 
 

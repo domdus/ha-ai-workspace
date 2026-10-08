@@ -3,6 +3,7 @@
   "name": "AI Workspace",
   "codeowners": [],
   "config_flow": true,
+  "single_config_entry": true,
   "dependencies": ["http", "frontend", "panel_custom", "conversation"],
   "documentation": "https://github.com/domdus/ha-ai-workspace",
   "integration_type": "service",
