@@ -77,6 +77,19 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
     def supported_languages(self) -> list[str] | str:
         return MATCH_ALL
 
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        from .assist_pipelines import async_ensure_assist_pipeline
+
+        name = self.name if isinstance(self.name, str) else self._attr_name
+        await async_ensure_assist_pipeline(self.hass, self.entity_id, str(name or "AI Workspace"))
+
+    async def async_will_remove_from_hass(self) -> None:
+        from .assist_pipelines import async_remove_assist_pipeline
+
+        await async_remove_assist_pipeline(self.hass, self.entity_id)
+        await super().async_will_remove_from_hass()
+
     async def _async_handle_message(
         self,
         user_input: conversation.ConversationInput,

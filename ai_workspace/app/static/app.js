@@ -53,7 +53,7 @@ function showEmpty() {
   logEl.replaceChildren();
   const note = document.createElement("p");
   note.className = "empty";
-  note.textContent = "Frag irgendwas, schau was letzte Nacht gelaufen ist, debugge oder baue eine Automatisierung.";
+  note.textContent = "Stelle Fragen, debugge oder baue eine Automatisierung.";
   logEl.appendChild(note);
 }
 

@@ -5,7 +5,7 @@
 <p align="center"><em>Use AI inside Home Assistant from your couch.</em></p>
 
 <p align="center">
-  <video src="https://github.com/user-attachments/assets/40926258-222b-42b4-a8bc-8c78308d4db9" width="300" autoplay loop muted playsinline></video>
+  <img src="docs/ai_workspace.webp" alt="AI Workspace chat demo" width="300">
 </p>
 
 # AI Workspace
@@ -173,6 +173,7 @@ A tool that sends back the whole house is shortened before the model reads it. T
 | **Show dictate button** | Microphone in the prompt. On by default |
 | **Show AI Workspace in the sidebar** | Sidebar item. `/ai-workspace` still works if this is off |
 | **House map cache** | Off by default. Speeds up and saves tokens on new chats by looking up entity, area, automation, and dashboard names in a local index before broad MCP calls. Not live state |
+| **Assist** | Each agent also becomes a Voice assistants entry next to Home Assistant, ready to use. No second form under Manage assistants |
 
 The integration page has two entries. **AI Workspace** is the shared chat setup and the connection rows. **AI Workspace agents** is one row per provider and lists under it. You add the integration once. Neither row has Delete. **Add connection** and **Add agent** at the top of that page add a row, not another copy of those two entries.
 
