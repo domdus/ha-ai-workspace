@@ -10,6 +10,19 @@
 
 # AI Workspace
 
+<p align="center">
+  <a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Custom-41BDF5.svg" alt="HACS"></a>
+  <a href="https://www.home-assistant.io/"><img src="https://img.shields.io/badge/Home%20Assistant-2024.8+-41BDF5.svg" alt="Home Assistant"></a>
+  <a href="https://github.com/domdus/ha-ai-workspace/releases"><img src="https://img.shields.io/github/v/release/domdus/ha-ai-workspace" alt="Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/domdus/ha-ai-workspace.svg" alt="License"></a>
+  <br>
+  <a href="https://github.com/domdus/ha-ai-workspace/commits/main"><img src="https://img.shields.io/github/commit-activity/m/domdus/ha-ai-workspace.svg" alt="Activity"></a>
+  <a href="https://github.com/domdus/ha-ai-workspace/actions/workflows/runtime-image.yml"><img src="https://img.shields.io/github/actions/workflow/status/domdus/ha-ai-workspace/runtime-image.yml?branch=main&label=Runtime%20image" alt="Runtime image"></a>
+  <a href="https://github.com/domdus/ha-ai-workspace/pkgs/container/ha-ai-workspace-runtime"><img src="https://img.shields.io/badge/GHCR-runtime-teal" alt="GHCR"></a>
+  <img src="https://img.shields.io/badge/MCP-client-purple" alt="MCP">
+  <img src="https://img.shields.io/badge/Assist-ready-green" alt="Assist">
+</p>
+
 Work on **your** Home Assistant installation through MCP.
 
 This is a HACS integration. The agent is a **cloud API** (OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible) or Cursor AI via the **Cursor SDK Runtime** used in Home Assistant by the integration.
@@ -152,10 +165,6 @@ This is the standing instruction for the assistant. Use it for your own needs: h
 
 It does not control Home Assistant edit links. Those are added on every reply, so automations, entities, helpers, and devices stay tappable.
 
-## Large listings
-
-A tool that sends back the whole house is shortened before the model reads it. The entities are grouped by area, as ids only, and the model can ask again for one area or one entity to load states and attributes. A shorter list keeps each entity's state and drops the bulky attributes. One entity, one room, or one automation still arrives whole. What the model receives is always valid JSON. Nothing is cut off in the middle of an object. This is automatic for Cloud API and Cursor Runtime.
-
 ## Options
 
 | Option | What it does |
@@ -177,8 +186,21 @@ A tool that sends back the whole house is shortened before the model reads it. T
 | **Config catalog** | Off by default. Optional local name/id index. Leave it off when live MCP already looks up the house. Not live state, history, or traces |
 | **Assist** | Each agent also becomes a Voice assistants entry next to Home Assistant, ready to use. No second form under Manage assistants |
 
+## Optimization: Large listings
+
+A tool that sends back the whole house is shortened before the model reads it. The entities are grouped by area, as ids only, and the model can ask again for one area or one entity to load states and attributes. A shorter list keeps each entity's state and drops the bulky attributes. One entity, one room, or one automation still arrives whole. What the model receives is always valid JSON. Nothing is cut off in the middle of an object. This is automatic for Cloud API and Cursor Runtime.
+
 ## Remove it
 
 1. **Developer tools → Actions → AI Workspace: Remove AI Workspace.** That removes the agents entry as well. Both rows hide Delete on purpose.
 2. HACS → AI Workspace → **Remove**, restart.
 3. Runtime: remove the **app**, or `docker compose down` in the Runtime compose folder (`docker rm -f cursor-sdk` if an old container remains).
+
+## Community
+
+- **[GitHub Discussions](https://github.com/domdus/ha-ai-workspace/discussions)** — Ask questions, share ideas
+- **[Issue Tracker](https://github.com/domdus/ha-ai-workspace/issues)** — Report bugs, request features, or suggest tool behavior improvements.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
