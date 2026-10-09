@@ -31,3 +31,14 @@ def test_editable_system_prompt_omits_editor_link_rules() -> None:
     const = _const()
     assert "/config/automation/edit/" not in const.DEFAULT_SYSTEM_PROMPT
     assert "Markdown link" not in const.DEFAULT_SYSTEM_PROMPT
+
+
+def test_small_talk_stays_plain() -> None:
+    const = _const()
+    text = const.ui_link_instructions("http://127.0.0.1:8123")
+    assert "small talk" in text
+    assert "Do not link the words Home Assistant" in text
+    assert "Never write that origin" in text
+    assert "This user's Home Assistant UI is" not in text
+    assert "Call tools without announcing them" in text
+    assert "small talk" in const.DEFAULT_SYSTEM_PROMPT

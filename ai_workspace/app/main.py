@@ -76,7 +76,10 @@ class ChatRequest(BaseModel):
 def _with_ui_context(message: str, origin: str = "") -> str:
     origin = str(origin or "").strip().rstrip("/")
     if origin.startswith("http://") or origin.startswith("https://"):
-        return f"This user's Home Assistant UI is {origin}.\n\n{message}"
+        return (
+            f"The browser origin is {origin}. Never write that origin, 127.0.0.1, or localhost "
+            f"in a reply unless the user asks for the address.\n\n{message}"
+        )
     return message
 
 
