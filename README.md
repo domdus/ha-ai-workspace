@@ -8,7 +8,7 @@
   <img src="docs/ai_workspace.gif" alt="AI Workspace chat demo" width="300">
 </p>
 
-# AI Workspace
+<h1 align="center">AI Workspace</h1>
 
 <p align="center">
   <a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Custom-41BDF5.svg" alt="HACS"></a>
