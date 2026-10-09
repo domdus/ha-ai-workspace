@@ -97,13 +97,7 @@ Home Assistant 2026.2 renamed “Add-ons” to “Apps”.
 
 ### Option B: Home Assistant Container (Docker)
 
-If Home Assistant runs in Docker, without the Supervisor, it needs one extra container next to Home Assistant. Pull the runtime image (`linux/amd64` and `linux/arm64`):
-
-```bash
-docker pull ghcr.io/domdus/ha-ai-workspace-runtime:latest
-```
-
-Paste your Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) into [`docker-compose.runtime.yml`](docker-compose.runtime.yml):
+If Home Assistant runs in Docker, without the Supervisor, it needs one extra container next to Home Assistant. Paste your Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) into [`docker-compose.runtime.yml`](docker-compose.runtime.yml):
 
 ```yaml
 name: ai-workspace-runtime
