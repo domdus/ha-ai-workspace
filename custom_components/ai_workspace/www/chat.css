@@ -677,6 +677,65 @@ h1 {
   pointer-events: none;
 }
 
+.scroll-bottom {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  top: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--ha-color-border-neutral-normal, var(--divider-color));
+  border-radius: 50%;
+  background: var(--card-background-color, var(--ha-card-background, var(--primary-background-color)));
+  color: var(--primary-text-color);
+  box-shadow: none;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 12px));
+  transition: opacity 180ms ease;
+}
+
+.scroll-bottom.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.scroll-bottom:hover {
+  background: var(
+    --ha-color-fill-neutral-quiet-hover,
+    color-mix(in srgb, var(--primary-text-color) 6%, var(--card-background-color, var(--primary-background-color)))
+  );
+}
+
+.scroll-bottom:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.scroll-bottom:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.scroll-bottom ha-icon {
+  --mdc-icon-size: 20px;
+  --iron-icon-width: 20px;
+  --iron-icon-height: 20px;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+
+.chat.welcome .scroll-bottom {
+  display: none;
+}
+
 .chat.welcome .composer {
   position: static;
   margin-top: 0;

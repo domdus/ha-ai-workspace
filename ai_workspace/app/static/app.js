@@ -76,6 +76,18 @@ function applySessionTitle(id, title) {
   if (button) button.textContent = title;
 }
 
+function promptTitle(text) {
+  const clean = String(text || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/[*_`#]+/g, "")
+    .replace(/[?!.]+$/g, "");
+  if (!clean) return "";
+  const words = clean.split(" ");
+  if (clean.length > 50 || words.length > 8) return "";
+  return clean;
+}
+
 async function loadSessions() {
   const response = await fetch(api("api/sessions"));
   const sessions = await response.json();
@@ -160,7 +172,7 @@ form.addEventListener("submit", async (event) => {
       const session = await created.json();
       sessionId = session.id;
       location.hash = sessionId;
-      titleEl.textContent = text.slice(0, 80);
+      titleEl.textContent = promptTitle(text) || "Neuer Chat";
     }
     addBubble("user", text);
     const assistant = addBubble("assistant", "");

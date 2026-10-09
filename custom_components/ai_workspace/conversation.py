@@ -18,7 +18,7 @@ from .agents import Agent, agent_from_entry, entry_agents, is_agents, is_provide
 from .const import DOMAIN
 from .http import _create_runtime_session, async_agent_events
 from .store import Store
-from .titles import title_from_prompt
+from .titles import accept_generated_title, needs_title_summary, title_from_prompt
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -208,13 +208,16 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
         outbound = f"{extra}\n\n{text}" if extra else text
         origin = str(self.hass.config.external_url or self.hass.config.internal_url or "").rstrip("/")
         language = str(user_input.language or "")
+        suggest = None
+        error: str | None = None
 
         async with lock:
             await self.hass.async_add_executor_job(store.add_message, session.id, "user", text, "[]")
             await self.hass.async_add_executor_job(store.rename_if_default, session.id, title_from_prompt(text))
+            count = await self.hass.async_add_executor_job(lambda: len(store.list_messages(session.id)))
+            suggest = getattr(provider, "suggest_title", None) if count <= 1 and needs_title_summary(text) else None
             parts: list[str] = []
             tools: list[dict[str, Any]] = []
-            error: str | None = None
             final: str | None = None
 
             access_token = await _login_token(self.hass, user_id)
@@ -278,6 +281,16 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
                 json.dumps(stored, ensure_ascii=False),
             )
 
+        if error is None and callable(suggest):
+            try:
+                title = accept_generated_title(text, await suggest(text, "") or "")
+            except Exception:
+                _LOGGER.debug("Assist title skipped", exc_info=True)
+                title = ""
+            if title:
+                await self.hass.async_add_executor_job(
+                    store.apply_generated_title, user_id, session.id, title_from_prompt(text), title
+                )
         return conversation.async_get_result_from_chat_log(user_input, chat_log)
 
     def _reply(self, chat_log: conversation.ChatLog, text: str) -> None:

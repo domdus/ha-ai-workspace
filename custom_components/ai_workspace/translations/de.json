@@ -16,7 +16,7 @@
           "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen",
           "enable_dictate": "Diktier-Schaltfläche anzeigen",
           "allow_users": "Normale Benutzer erlauben",
-          "house_map": "Namensindex",
+          "house_map": "Konfigurationskatalog",
           "keep_chats": "Chats behalten"
         },
         "sections": {
@@ -68,7 +68,7 @@
           "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen",
           "enable_dictate": "Diktier-Schaltfläche anzeigen",
           "allow_users": "Normale Benutzer erlauben",
-          "house_map": "Namensindex",
+          "house_map": "Konfigurationskatalog",
           "keep_chats": "Chats behalten"
         },
         "data_description": {
@@ -78,7 +78,7 @@
           "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt.",
           "enable_dictate": "Mikrofon im Eingabefeld. Browser erlauben das Diktieren nur über https://.",
           "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren.",
-          "house_map": "Beschleunigt neue Chats und spart Tokens: Namen von Entitäten, Bereichen, Automationen und Dashboards kommen aus einem lokalen Namensindex, bevor große MCP-Abfragen laufen. Standardmäßig aus. Der Index ist kein Live-Zustand.",
+          "house_map": "Lokaler Konfigurationskatalog mit Namen, IDs, Automations-Triggern und zugehörigen Entitäten. Vor breiten MCP-Aufrufen nutzen. Standardmäßig aus. Kein Live-Zustand, keine Historie, keine Traces.",
           "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30."
         },
         "sections": {
@@ -132,7 +132,7 @@
           "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen",
           "enable_dictate": "Diktier-Schaltfläche anzeigen",
           "allow_users": "Normale Benutzer erlauben",
-          "house_map": "Namensindex",
+          "house_map": "Konfigurationskatalog",
           "keep_chats": "Chats behalten"
         },
         "data_description": {
@@ -140,7 +140,7 @@
           "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt.",
           "enable_dictate": "Mikrofon im Eingabefeld. Browser erlauben das Diktieren nur über https://.",
           "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren.",
-          "house_map": "Beschleunigt neue Chats und spart Tokens: Namen von Entitäten, Bereichen, Automationen und Dashboards kommen aus einem lokalen Namensindex, bevor große MCP-Abfragen laufen. Standardmäßig aus. Der Index ist kein Live-Zustand.",
+          "house_map": "Lokaler Konfigurationskatalog mit Namen, IDs, Automations-Triggern und zugehörigen Entitäten. Vor breiten MCP-Aufrufen nutzen. Standardmäßig aus. Kein Live-Zustand, keine Historie, keine Traces.",
           "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30."
         },
         "sections": {
@@ -192,7 +192,7 @@
           "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen",
           "enable_dictate": "Diktier-Schaltfläche anzeigen",
           "allow_users": "Normale Benutzer erlauben",
-          "house_map": "Namensindex",
+          "house_map": "Konfigurationskatalog",
           "keep_chats": "Chats behalten"
         },
         "data_description": {
@@ -202,7 +202,7 @@
           "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt.",
           "enable_dictate": "Mikrofon im Eingabefeld. Browser erlauben das Diktieren nur über https://.",
           "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren.",
-          "house_map": "Beschleunigt neue Chats und spart Tokens: Namen von Entitäten, Bereichen, Automationen und Dashboards kommen aus einem lokalen Namensindex, bevor große MCP-Abfragen laufen. Standardmäßig aus. Der Index ist kein Live-Zustand.",
+          "house_map": "Lokaler Konfigurationskatalog mit Namen, IDs, Automations-Triggern und zugehörigen Entitäten. Vor breiten MCP-Aufrufen nutzen. Standardmäßig aus. Kein Live-Zustand, keine Historie, keine Traces.",
           "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30."
         },
         "sections": {

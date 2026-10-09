@@ -246,11 +246,12 @@ class Store:
             self._conn.commit()
 
     def apply_generated_title(self, user_id: str, session_id: str, first_user: str, title: str) -> str | None:
+        from .titles import is_placeholder_title
+
         session = self.get_session(user_id, session_id)
         if session is None:
             return None
-        del first_user
-        if session.title not in {"New Chat", "New chat", "Neuer Chat"}:
+        if not is_placeholder_title(session.title, first_user):
             return None
         label = (title or "").strip().replace("\n", " ")[:80]
         if not label:
@@ -384,8 +385,10 @@ class Store:
             params.append(kind)
         for token in tokens[:8]:
             like = f"%{token}%"
-            clauses.append("(lower(name) LIKE ? OR lower(item_id) LIKE ? OR lower(area_id) LIKE ? OR lower(domain) LIKE ?)")
-            params.extend([like, like, like, like])
+            clauses.append(
+                "(lower(name) LIKE ? OR lower(item_id) LIKE ? OR lower(area_id) LIKE ? OR lower(domain) LIKE ? OR lower(extra) LIKE ?)"
+            )
+            params.extend([like, like, like, like, like])
         sql = (
             "SELECT kind, item_id, name, area_id, domain, extra FROM house_map WHERE "
             + " AND ".join(clauses)

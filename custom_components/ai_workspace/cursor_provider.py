@@ -10,6 +10,7 @@ from .mcp_config import with_mcp_auth
 from .models import ProviderInfo, Settings
 from .redact import redact
 from .store import Session
+from .titles import clean_title, title_prompt
 from .unavailable import UnavailableProvider
 
 logger = logging.getLogger(__name__)
@@ -119,9 +120,9 @@ class CursorProvider:
             yield {"type": "error", "message": _MISSING_KEY}
             return
         if self.settings.house_map:
-            from .house_map import HOUSE_MAP_INSTRUCTIONS
+            from .house_map import CATALOG_INSTRUCTIONS
 
-            outbound = f"{HOUSE_MAP_INSTRUCTIONS}\n\n{outbound}"
+            outbound = f"{CATALOG_INSTRUCTIONS}\n\n{outbound}"
         mcp_servers = with_mcp_auth(
             self.settings.mcp_servers,
             access_token=str(access_token or ""),
@@ -166,6 +167,36 @@ class CursorProvider:
             return
         if final:
             yield {"type": "result", "text": str(final), "run_id": str(run_id), "status": str(status)}
+
+    async def suggest_title(self, user: str, assistant: str = "") -> str | None:
+        if not self.settings.cursor_api_key:
+            return None
+        try:
+            from cursor_sdk import AgentOptions, LocalAgentOptions
+
+            client = await self.runtime.client()
+            kwargs: dict[str, Any] = {
+                "api_key": self.settings.cursor_api_key,
+                "name": "ha-title",
+                "local": LocalAgentOptions(cwd=str(self.settings.workspace_dir)),
+                "tools": [],
+            }
+            if self.settings.model:
+                kwargs["model"] = self.settings.model
+            try:
+                options = AgentOptions(**kwargs)
+            except TypeError:
+                kwargs.pop("tools", None)
+                options = AgentOptions(**kwargs)
+            agent = await client.create_agent(options)
+            run = await agent.send(title_prompt(user, assistant))
+            result = await run.wait()
+            if getattr(result, "status", "") == "error":
+                return None
+            return clean_title(str(getattr(result, "result", None) or "")) or None
+        except Exception:
+            logger.debug("cursor title generation failed", exc_info=True)
+            return None
 
 
 def _public_error(exc: Exception, api_key: str, mcp_token: str = "") -> str:

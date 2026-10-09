@@ -17,7 +17,7 @@ from app.images import caption_for, image_events, parse_client_images
 from app.redact import redact
 from app.settings import Settings
 from app.store import Session, Store
-from app.titles import title_from_prompt
+from app.titles import accept_generated_title, needs_title_summary, title_from_prompt
 
 logger = logging.getLogger(__name__)
 STATIC = Path(__file__).resolve().parent / "static"
@@ -257,6 +257,8 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
     )
     store.rename_if_default(session.id, title_from_prompt(question))
     outbound = _with_ui_context(attach_files_to_message(message, files), body.origin)
+    suggest = getattr(provider, "suggest_title", None)
+    want_title = len(store.list_messages(session.id)) <= 1 and callable(suggest) and needs_title_summary(question)
 
     def on_agent_id(agent_id: str) -> None:
         store.set_agent_id(session.id, agent_id)
@@ -317,6 +319,18 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
                 yield _sse("status", {"type": "status", "text": "Done."})
         finally:
             lock.release()
+        if error is None and want_title:
+            try:
+                raw = await asyncio.wait_for(suggest(question, ""), timeout=12)
+            except Exception:
+                logger.debug("title generation failed", exc_info=True)
+                raw = None
+            label = accept_generated_title(question, raw or "")
+            applied = store.apply_generated_title(
+                _user_id(request), session.id, title_from_prompt(question), label
+            )
+            if applied:
+                yield _sse("title", {"type": "title", "title": applied})
 
     return StreamingResponse(
         generate(),

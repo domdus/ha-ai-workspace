@@ -138,7 +138,7 @@ def _needs_ha_bearer(name: str, url: str, mcp_kind: str = "") -> bool:
     """True for Home Assistant APIs that reject unauthenticated calls (and spam the log)."""
     path = (urlparse(str(url or "")).path or "").lower()
     key = str(name or "").strip().lower()
-    if key == "house-map" or "/api/ai_workspace/house_map/" in path:
+    if key in {"catalog", "house-map"} or "/api/ai_workspace/catalog/" in path or "/api/ai_workspace/house_map/" in path:
         return True
     if "/api/mcp" in path:
         return True
@@ -154,7 +154,7 @@ def with_mcp_auth(
     mcp_token: str = "",
     mcp_kind: str = "",
 ) -> dict[str, dict[str, Any]]:
-    """Attach a Bearer token to HA MCP endpoints; drop house-map when none is available."""
+    """Attach a Bearer token to HA MCP endpoints; drop the catalog when none is available."""
     token = str(mcp_token or "").strip() or str(access_token or "").strip()
     out: dict[str, dict[str, Any]] = {}
     for name, cfg in (servers or {}).items():

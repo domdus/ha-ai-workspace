@@ -16,7 +16,7 @@ class FakeCursor:
         self.last_mcp = None
         self.last_model = None
 
-    async def send(self, session: Session, message: str, on_agent_id, images=None, mcp=None, model=None):
+    async def send(self, session: Session, message: str, on_agent_id, images=None, mcp=None, model=None, **_kwargs):
         self.last_message = message
         self.last_images = images
         self.last_mcp = mcp
@@ -61,7 +61,7 @@ def test_chat_keeps_agent_id_and_transcript(tmp_path: Path) -> None:
         detail = client.get(f"/api/sessions/{session_id}")
         body = detail.json()
         assert body["agent_id"] == "agent-local-1"
-        assert body["title"] == "Why no water?"
+        assert body["title"] == "Why no water"
         assert [item["role"] for item in body["messages"]] == ["user", "assistant"]
         assert body["messages"][1]["content"] == "Moisture is 18%."
         other = client.get(f"/api/sessions/{session_id}", headers={"X-Remote-User-Id": "someone-else"})
@@ -74,7 +74,7 @@ class FakeCursorTitled(FakeCursor):
         return "Garden moisture"
 
 
-def test_chat_keeps_first_prompt_as_title(tmp_path: Path) -> None:
+def test_chat_keeps_short_first_prompt_as_title(tmp_path: Path) -> None:
     app = create_app(settings(tmp_path), {"cursor": FakeCursorTitled()})
     with TestClient(app) as client:
         created = client.post("/api/sessions", json={"provider": "cursor"})
@@ -86,7 +86,28 @@ def test_chat_keeps_first_prompt_as_title(tmp_path: Path) -> None:
         assert streamed.status_code == 200
         assert "Garden moisture" not in streamed.text
         detail = client.get(f"/api/sessions/{session_id}")
-        assert detail.json()["title"] == "Status der Bewässerung?"
+        assert detail.json()["title"] == "Status der Bewässerung"
+
+
+def test_chat_summarizes_long_first_prompt(tmp_path: Path) -> None:
+    app = create_app(settings(tmp_path), {"cursor": FakeCursorTitled()})
+    with TestClient(app) as client:
+        created = client.post("/api/sessions", json={"provider": "cursor"})
+        session_id = created.json()["id"]
+        streamed = client.post(
+            f"/api/sessions/{session_id}/chat",
+            json={
+                "message": (
+                    "Die dreame extension hat ein großes 2.0.1 update bekommen "
+                    "und liefert jetzt wohl auch lovelace maps usw.."
+                )
+            },
+        )
+        assert streamed.status_code == 200
+        assert "event: title" in streamed.text
+        assert "Garden moisture" in streamed.text
+        detail = client.get(f"/api/sessions/{session_id}")
+        assert detail.json()["title"] == "Garden moisture"
 
 
 def test_ingress_requires_a_user(tmp_path: Path) -> None:

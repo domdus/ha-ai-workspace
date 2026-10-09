@@ -30,18 +30,11 @@ Each agent also shows up under **Assist**, so you can use Cursor (or another pro
 
 - **Provider API key** (Cloud) or a **Cursor API key** (SDK Runtime)
 
-Start with one MCP server. You can add more later, and the assistant uses all of them in the same chat.
-
-- **Home Assistant MCP Server** (HA built-in)
-- **[HA-MCP](https://github.com/homeassistant-ai/ha-mcp)** — install the [custom component](https://github.com/homeassistant-ai/ha-mcp-integration) and its connect URL is picked up from that entry. Docker and the app are the other ways to run the same server.
-- **[HA Vibecode Agent](https://github.com/Coolver/home-assistant-vibecode-agent)**
-- A **custom MCP URL** if you already run something else
-
-Keep the connect URL or Agent Key if it shows one — paste it only if auto-detect misses it later.
+You need any MCP server: **Home Assistant MCP Server** (HA built-in), **[HA-MCP](https://github.com/homeassistant-ai/ha-mcp)** (install the [custom component](https://github.com/homeassistant-ai/ha-mcp-integration) and its connect URL is picked up from that entry; Docker and the app are the other ways to run the same server), **[HA Vibecode Agent](https://github.com/Coolver/home-assistant-vibecode-agent)**, or a **custom MCP URL** if you already run something else.
 
 ---
 
-## Option A: Cloud API Provider (Quick Setup)
+## Cloud API Provider (Quick Setup)
 
 Fastest path. No extra container. Add **AI Workspace** once. It adds an **AI Agents** entry beside it. Add an agent there for **OpenAI**, **Claude**, **Gemini**, **DeepSeek**, **Qwen**, **Grok**, **OpenRouter**, **Azure OpenAI**, **local Ollama**, or **OpenAI-compatible** (LM Studio and others). The model must support tool calls or it cannot drive MCP. If that provider is already configured in Home Assistant, the agent form can copy its key.
 
@@ -67,14 +60,14 @@ Open **AI Workspace** (`/ai-workspace`) and ask: `List my automations.`
 
 ---
 
-## Option B: Cursor AI (Advanced)
+## Cursor AI (Advanced)
 
 This integration works with **Cursor AI** using the SDK, without the desktop IDE:
 MCP tools, multi-step work, spawn and resume agents. Headless — no editor, no Composer UI.
 
 Install AI Workspace from HACS first ([step 1](#1-install-ai-workspace-from-hacs)). Then install the **Cursor SDK Runtime** once, for the Home Assistant you run.
 
-### Home Assistant OS / Supervised (Add-on)
+### Option A: Home Assistant OS / Supervised (Add-on)
 
 Add this repo to Apps and install **AI Workspace Runtime**:
 
@@ -84,11 +77,9 @@ Paste the Cursor API key on the app and **Start**. Leave Runtime URL empty. It i
 
 Home Assistant 2026.2 renamed “Add-ons” to “Apps”.
 
-### Home Assistant Container (Docker)
+### Option B: Home Assistant Container (Docker)
 
-If Home Assistant runs in Docker, without the Supervisor - it needs one extra container, `cursor-sdk`, next to Home Assistant.
-
-There is no public ready-made image to download. The compose file builds it from `ai_workspace/Dockerfile` in this repo: A Debian with the Cursor SDK installed. Paste your Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) into the compose file below (same file as [`docker-compose.runtime.yml`](docker-compose.runtime.yml)):
+If Home Assistant runs in Docker, without the Supervisor, it needs one extra container next to Home Assistant. Pull the runtime image (`linux/amd64` and `linux/arm64`) and paste your Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) (same file as [`docker-compose.runtime.yml`](docker-compose.runtime.yml)):
 
 ```yaml
 name: ai-workspace-runtime
@@ -96,8 +87,8 @@ name: ai-workspace-runtime
 services:
   cursor-sdk:
     container_name: cursor-sdk
+    image: ghcr.io/domdus/ha-ai-workspace-runtime:latest
     build: ./ai_workspace
-    image: cursor-sdk
     network_mode: host
     environment:
       CURSOR_API_KEY: "paste-your-cursor-api-key"
@@ -114,7 +105,17 @@ volumes:
   ai-workspace-data:
 ```
 
-Start that project the same way you start Home Assistant.
+```bash
+docker compose -f docker-compose.runtime.yml up -d
+```
+
+That pulls [GHCR](https://github.com/domdus/ha-ai-workspace/pkgs/container/ha-ai-workspace-runtime) (`linux/amd64` and `linux/arm64`). After the first CI publish, set that package to **Public** so `docker pull` works without a GitHub login.
+
+To build from this repo instead (`ai_workspace/Dockerfile`):
+
+```bash
+docker compose -f docker-compose.runtime.yml up -d --build
+```
 
 **Host network** (`network_mode: host` in the file above). Same as a typical Home Assistant Container. MCP at `127.0.0.1` on this machine works. `HOST: 127.0.0.1` keeps **8090** off the LAN.
 
@@ -142,12 +143,6 @@ After the Runtime is up and running: **Settings → Devices & services → Add i
 - Model: `composer-2.5`, `grok-4`, `gpt-4.1`, `claude-sonnet-4-5` (or leave empty to use `CURSOR_MODEL` on the container).
 - Paste the Cursor API key, unless the Runtime already has one.
 - Open **AI Workspace** (`/ai-workspace`). More agents are added with **Add agent**.
-
-## More than one connection
-
-The first connection is this Home Assistant. After setup it is a row on the **AI Workspace** device, with the same shape as any connection you add later. When the assistant should also reach another MCP server, such as a website, a CMS, or another tool you already run, add that row too.
-
-**Settings → Devices & services → AI Workspace.** Use **Add connection** for another MCP server, and **Add agent** for another provider. Give a connection a short name and its address. Open a row to change it, or remove it from that row. Disable the agent or connection device to hide it from chat and Assist. The assistant can use every connection in one chat, whether the agent is a cloud model or Cursor.
 
 ## System Prompt
 
@@ -179,12 +174,8 @@ A tool that sends back the whole house is shortened before the model reads it. T
 | **Show dictate button** | Microphone in the prompt. On by default |
 | **Show AI Workspace in the sidebar** | Sidebar item. `/ai-workspace` still works if this is off |
 | **Chats to keep** | Newest unpinned chats per person (default 30). Pinned chats are always kept |
-| **Name index** | Off by default. Speeds up and saves tokens on new chats by looking up entity, area, automation, and dashboard names in a local name index before broad MCP calls. Not live state |
+| **Config catalog** | Off by default. Optional local name/id index. Leave it off when live MCP already looks up the house. Not live state, history, or traces |
 | **Assist** | Each agent also becomes a Voice assistants entry next to Home Assistant, ready to use. No second form under Manage assistants |
-
-The integration page has two entries. **AI Workspace** is the shared chat setup and the connection rows. **AI Agents** is one row per provider. You add the integration once. Neither row has Delete. Prefer **Add connection** / **Add agent** on each entry's ⋮ menu — that skips the entry picker. Header buttons may ask which entry; either choice still lands on the right row.
-
-The first connection is chosen on that first screen, then it is a row with the others. Every connection is sent with each chat. The Cursor API key stays on the Cursor agent. The Runtime URL stays on AI Workspace.
 
 ## Remove it
 
