@@ -1,7 +1,7 @@
 {
   "domain": "ai_workspace",
   "name": "AI Workspace",
-  "codeowners": [],
+  "codeowners": ["@domdus"],
   "config_flow": true,
   "single_config_entry": true,
   "dependencies": [
