@@ -6,6 +6,7 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant import config_entries
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig, TextSelector, TextSelectorConfig, TextSelectorType
 
 from .agents import borrow_by_id, borrowed_setups
@@ -21,6 +22,7 @@ from .const import (
     CONF_API_PROVIDER,
     CONF_AZURE_API_VERSION,
     CONF_BORROW,
+    CONF_ASSIST,
     CONF_CURSOR_API_KEY,
     CONF_AGENT_ID,
     CONF_EFFORT,
@@ -33,6 +35,7 @@ from .const import (
     MODE_API,
     MODE_CURSOR,
     ROLE_PROVIDER,
+    assist_enabled,
     default_api_base,
     default_api_model,
 )
@@ -72,7 +75,7 @@ def _effort_field(current: dict) -> dict:
     }
 
 
-def _fields_schema(step: str, current: dict, borrows: list[dict[str, str]]) -> vol.Schema:
+def _fields_schema(step: str, current: dict, borrows: list[dict[str, str]], *, new: bool = False) -> vol.Schema:
     model = str(current.get(CONF_MODEL) or "")
     fields: dict = {}
     if step == "cursor":
@@ -100,6 +103,7 @@ def _fields_schema(step: str, current: dict, borrows: list[dict[str, str]]) -> v
         fields[vol.Optional(CONF_API_KEY, default="")] = _PASSWORD
         fields[vol.Optional(CONF_MODEL, default=model)] = str
     fields.update(_effort_field(current))
+    fields[vol.Optional(CONF_ASSIST, default=assist_enabled(current, new=new))] = cv.boolean
     return vol.Schema(fields)
 
 
@@ -259,6 +263,12 @@ class ProviderSteps:
                     CONF_API_BASE: "" if provider == MODE_CURSOR else base,
                     CONF_MODEL: str(merged.get(CONF_MODEL) or "").strip() if provider == MODE_CURSOR else model,
                     CONF_EFFORT: str(merged.get(CONF_EFFORT) or ""),
+                    CONF_ASSIST: bool(
+                        user_input.get(
+                            CONF_ASSIST,
+                            assist_enabled(current, new=not bool(getattr(self, "_editing", False))),
+                        )
+                    ),
                     CONF_AZURE_API_VERSION: (
                         str(merged.get(CONF_AZURE_API_VERSION) or DEFAULT_AZURE_API_VERSION)
                         if provider == API_AZURE
@@ -272,7 +282,9 @@ class ProviderSteps:
             current = merged
         return self.async_show_form(
             step_id=f"provider_{step}",
-            data_schema=_fields_schema(step, current, borrows),
+            data_schema=_fields_schema(
+                step, current, borrows, new=not bool(getattr(self, "_editing", False))
+            ),
             errors=errors,
         )
 
@@ -366,6 +378,7 @@ class ProviderOptionsFlow(ProviderSteps, config_entries.OptionsFlow):
         del user_input
         entry = self.config_entry
         raw = {**entry.data, **entry.options}
+        self._editing = True
         self._hub_id = str(raw.get(CONF_HUB_ID) or "")
         self._current = raw
         self._provider = str(raw.get(CONF_API_PROVIDER) or MODE_CURSOR)

@@ -11,6 +11,15 @@ def _const():
     return mod
 
 
+def test_assist_defaults_on_for_existing_off_for_new() -> None:
+    const = _const()
+    assert const.assist_enabled({}) is True
+    assert const.assist_enabled({}, new=True) is False
+    assert const.assist_enabled({"assist": False}) is False
+    assert const.assist_enabled({"assist": True}, new=True) is True
+    assert const.assist_enabled({"assist": False}, new=True) is False
+
+
 def test_mcp_dropdown_keeps_detected_saved_and_custom() -> None:
     const = _const()
     assert const.mcp_kind_options({"ha"}, current="coolver") == ["ha", "coolver", "custom"]

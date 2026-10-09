@@ -290,12 +290,14 @@
           "data": {
             "cursor_api_key": "Cursor API key",
             "model": "Model",
-            "effort": "Effort"
+            "effort": "Effort",
+            "assist": "Auch in Assist nutzen"
           },
           "data_description": {
             "cursor_api_key": "From cursor.com/dashboard/integrations. Leave blank when editing to keep the saved key.",
             "model": "Empty uses Composer.",
-            "effort": "Fast, High, or High fast. Composer uses Fast unless you pick High."
+            "effort": "Fast, High, or High fast. Composer uses Fast unless you pick High.",
+            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
           }
         },
         "cloud": {
@@ -305,13 +307,15 @@
             "borrow": "Copy key from",
             "api_key": "API key",
             "model": "Model",
-            "effort": "Effort"
+            "effort": "Effort",
+            "assist": "Auch in Assist nutzen"
           },
           "data_description": {
             "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
             "api_key": "Not a Home Assistant token.",
             "model": "Empty uses the provider default.",
-            "effort": "Fast, High, or High fast when the model supports it."
+            "effort": "Fast, High, or High fast when the model supports it.",
+            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
           }
         },
         "ollama": {
@@ -320,12 +324,14 @@
           "data": {
             "api_base": "Ollama URL",
             "model": "Model",
-            "effort": "Effort"
+            "effort": "Effort",
+            "assist": "Auch in Assist nutzen"
           },
           "data_description": {
             "api_base": "Usually http://127.0.0.1:11434/v1",
             "model": "Empty uses llama3.2.",
-            "effort": "Used when the model supports it."
+            "effort": "Used when the model supports it.",
+            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
           }
         },
         "azure": {
@@ -336,14 +342,16 @@
             "api_base": "Endpoint",
             "model": "Deployment",
             "azure_api_version": "API version",
-            "effort": "Effort"
+            "effort": "Effort",
+            "assist": "Auch in Assist nutzen"
           },
           "data_description": {
             "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key.",
             "api_base": "https://YOUR.openai.azure.com",
             "model": "The deployment name.",
             "azure_api_version": "Default 2024-10-21.",
-            "effort": "Used when the deployment supports it."
+            "effort": "Used when the deployment supports it.",
+            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
           }
         },
         "compatible": {
@@ -353,13 +361,15 @@
             "api_key": "API key",
             "api_base": "API base URL",
             "model": "Model",
-            "effort": "Effort"
+            "effort": "Effort",
+            "assist": "Auch in Assist nutzen"
           },
           "data_description": {
             "api_key": "Leave blank when editing to keep the saved key.",
             "api_base": "Base URL of the server, including /v1 when it uses that path.",
             "model": "Model name on that server.",
-            "effort": "Used when the server supports it."
+            "effort": "Used when the server supports it.",
+            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
           }
         },
         "provider": {
@@ -378,12 +388,14 @@
           "data": {
             "cursor_api_key": "Cursor API key",
             "model": "Model",
-            "effort": "Effort"
+            "effort": "Effort",
+            "assist": "Auch in Assist nutzen"
           },
           "data_description": {
             "cursor_api_key": "From cursor.com/dashboard/integrations. Leave blank when editing to keep the saved key.",
             "model": "Empty uses Composer.",
-            "effort": "Fast, High, or High fast. Composer uses Fast unless you pick High."
+            "effort": "Fast, High, or High fast. Composer uses Fast unless you pick High.",
+            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
           }
         },
         "provider_cloud": {
@@ -393,13 +405,15 @@
             "borrow": "Copy key from",
             "api_key": "API key",
             "model": "Model",
-            "effort": "Effort"
+            "effort": "Effort",
+            "assist": "Auch in Assist nutzen"
           },
           "data_description": {
             "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
             "api_key": "Not a Home Assistant token.",
             "model": "Empty uses the provider default.",
-            "effort": "Fast, High, or High fast when the model supports it."
+            "effort": "Fast, High, or High fast when the model supports it.",
+            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
           }
         },
         "provider_ollama": {
@@ -408,12 +422,14 @@
           "data": {
             "api_base": "Ollama URL",
             "model": "Model",
-            "effort": "Effort"
+            "effort": "Effort",
+            "assist": "Auch in Assist nutzen"
           },
           "data_description": {
             "api_base": "Usually http://127.0.0.1:11434/v1",
             "model": "Empty uses llama3.2.",
-            "effort": "Used when the model supports it."
+            "effort": "Used when the model supports it.",
+            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
           }
         },
         "provider_azure": {
@@ -424,14 +440,16 @@
             "api_base": "Endpoint",
             "model": "Deployment",
             "azure_api_version": "API version",
-            "effort": "Effort"
+            "effort": "Effort",
+            "assist": "Auch in Assist nutzen"
           },
           "data_description": {
             "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key.",
             "api_base": "https://YOUR.openai.azure.com",
             "model": "The deployment name.",
             "azure_api_version": "Default 2024-10-21.",
-            "effort": "Used when the deployment supports it."
+            "effort": "Used when the deployment supports it.",
+            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
           }
         },
         "provider_compatible": {
@@ -441,13 +459,15 @@
             "api_key": "API key",
             "api_base": "API base URL",
             "model": "Model",
-            "effort": "Effort"
+            "effort": "Effort",
+            "assist": "Auch in Assist nutzen"
           },
           "data_description": {
             "api_key": "Leave blank when editing to keep the saved key.",
             "api_base": "Base URL of the server, including /v1 when it uses that path.",
             "model": "Model name on that server.",
-            "effort": "Used when the server supports it."
+            "effort": "Used when the server supports it.",
+            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
           }
         }
       },

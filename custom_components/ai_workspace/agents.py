@@ -23,6 +23,7 @@ from .const import (
     CONF_AGENT_ID,
     CONF_API_PROVIDER,
     CONF_AZURE_API_VERSION,
+    CONF_ASSIST,
     CONF_CURSOR_API_KEY,
     CONF_EFFORT,
     CONF_HUB_ID,
@@ -37,6 +38,7 @@ from .const import (
     ROLE_PROVIDER,
     SUBENTRY_AGENT,
     CONF_ROLE,
+    assist_enabled,
     default_api_base,
     default_api_model,
 )
@@ -58,6 +60,7 @@ class Agent:
     model: str = ""
     effort: str = ""
     enabled: bool = True
+    assist: bool = True
     azure_api_version: str = DEFAULT_AZURE_API_VERSION
     cursor_api_key: str = ""
     subentry_id: str = ""
@@ -102,6 +105,7 @@ def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Age
         model=_text(raw.get(CONF_MODEL)),
         effort=effort,
         enabled=True,
+        assist=assist_enabled(raw),
         azure_api_version=_text(raw.get(CONF_AZURE_API_VERSION)) or DEFAULT_AZURE_API_VERSION,
         cursor_api_key=_text(raw.get(CONF_CURSOR_API_KEY)),
     )

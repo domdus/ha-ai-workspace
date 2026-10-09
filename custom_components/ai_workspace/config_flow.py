@@ -120,6 +120,10 @@ _RUNTIME_URL_NOTE = (
 )
 
 
+def _same_url(left: str, right: str) -> bool:
+    return str(left or "").strip().rstrip("/") == str(right or "").strip().rstrip("/")
+
+
 def _looks_detected_mcp(url: str) -> bool:
     parsed = urlparse(str(url or "").strip())
     path = (parsed.path or "").lower()
@@ -134,7 +138,7 @@ def _mcp_url_note(url: str, auto: bool) -> str:
         return _MCP_URL_NOTE
     path = (urlparse(url).path or "").lower()
     if "webhook" in path:
-        return "Auto-detected HA-MCP webhook from the HA-MCP integration. Keep this unless you use a different MCP."
+        return "Auto-detected HA-MCP webhook. Keep this unless you use a different MCP."
     if "/api/mcp" in path:
         return "Auto-detected built-in Home Assistant MCP. Keep this unless you use a different MCP."
     return "Auto-detected MCP URL. Keep this unless you use a different MCP."
@@ -154,9 +158,9 @@ def _form_placeholders(
     else:
         runtime_note = _RUNTIME_URL_NOTE
     return {
-        "mcp_url_mark": " (Auto-detected)" if mcp_auto else "",
+        "mcp_url_mark": " · auto-detected" if mcp_auto else "",
         "mcp_url_note": _mcp_url_note(mcp_url, mcp_auto),
-        "runtime_url_mark": " (Auto-detected)" if runtime_auto else "",
+        "runtime_url_mark": " · auto-detected" if runtime_auto else "",
         "runtime_url_note": runtime_note,
     }
 
@@ -248,6 +252,23 @@ def _normalize(user_input: dict, current: dict | None = None, hass: HomeAssistan
     return out
 
 
+async def _restore_auto_urls(hass: HomeAssistant, out: dict) -> dict:
+    """Store empty when the submitted URL is still the auto-detected one."""
+    kind = str(out.get(CONF_MCP_KIND) or "").strip()
+    token = str(out.get(CONF_MCP_TOKEN) or "").strip()
+    submitted = str(out.get(CONF_MCP_URL) or "").strip()
+    if kind and kind != MCP_CUSTOM:
+        detected = await async_resolve_mcp_url(hass, kind, "", token)
+        if not submitted or _same_url(submitted, detected):
+            out[CONF_MCP_URL] = ""
+    if CONF_RUNTIME_URL in out:
+        submitted_rt = str(out.get(CONF_RUNTIME_URL) or "").strip()
+        detected_rt = await async_resolve_runtime_url(hass, "")
+        if not submitted_rt or _same_url(submitted_rt, detected_rt):
+            out[CONF_RUNTIME_URL] = ""
+    return out
+
+
 def _mcp_kind_selector(kinds: list[str]) -> SelectSelector:
     return SelectSelector(
         SelectSelectorConfig(options=kinds, mode="dropdown", translation_key="mcp_kind")
@@ -286,15 +307,14 @@ def _mcp_schema(
 ):
     current = defaults or {}
     options = kinds or mcp_kind_options([], _explicit_mcp_kind(current))
-    return vol.Schema(
-        {
-            vol.Required(CONF_MCP_KIND, default=_default_mcp_kind(current, options)): _mcp_kind_selector(
-                options
-            ),
-            vol.Optional(CONF_MCP_URL, default=_mcp_url_for_form(current, hass)): _MCP_SELECTOR,
-            vol.Optional(CONF_MCP_TOKEN, default=""): _TOKEN_SELECTOR,
-        }
-    )
+    kind = _default_mcp_kind(current, options)
+    fields: dict = {
+        vol.Required(CONF_MCP_KIND, default=kind): _mcp_kind_selector(options),
+        vol.Optional(CONF_MCP_URL, default=_mcp_url_for_form(current, hass)): _MCP_SELECTOR,
+    }
+    if kind in {MCP_CUSTOM, MCP_COOLVER} or str(current.get(CONF_MCP_TOKEN) or "").strip():
+        fields[vol.Optional(CONF_MCP_TOKEN, default="")] = _TOKEN_SELECTOR
+    return vol.Schema(fields)
 
 
 async def _prepare_mcp_form(hass: HomeAssistant, current: dict) -> tuple[dict, bool, list[str]]:
@@ -310,28 +330,36 @@ async def _defaults_with_mcp(hass: HomeAssistant, current: dict) -> tuple[dict, 
     data = dict(current)
     kind = mcp_kind_of(data)
     token = str(data.get(CONF_MCP_TOKEN) or "").strip()
-    found = await async_resolve_mcp_url(
-        hass,
-        kind,
-        str(data.get(CONF_MCP_URL) or "").strip(),
-        token,
-    )
-    live = False
-    if found:
-        headers = {"Authorization": f"Bearer {token}"} if token else {}
-        live = await async_probe_mcp(hass, found, headers)
-        data[CONF_MCP_URL] = found
-    return data, live and _looks_detected_mcp(found)
+    saved = str(data.get(CONF_MCP_URL) or "").strip()
+    detected = await async_resolve_mcp_url(hass, kind, "", token)
+    auto = kind != MCP_CUSTOM and (not saved or _same_url(saved, detected))
+    if auto and detected:
+        data[CONF_MCP_URL] = detected
+    elif saved:
+        data[CONF_MCP_URL] = saved
+    return data, auto and bool(data.get(CONF_MCP_URL)) and _looks_detected_mcp(str(data.get(CONF_MCP_URL) or ""))
 
 
-async def _cursor_placeholders(hass: HomeAssistant, defaults: dict, mcp_auto: bool) -> dict[str, str]:
-    discovered = hassio_runtime_url(hass) or ""
-    base = str(defaults.get(CONF_RUNTIME_URL) or discovered or HOST_RUNTIME_URL).rstrip("/")
-    live = await async_probe_runtime(hass, base)
-    return _form_placeholders(
-        mcp_url=str(defaults.get(CONF_MCP_URL) or ""),
+async def _defaults_with_runtime(hass: HomeAssistant, current: dict) -> tuple[dict, bool, bool]:
+    data = dict(current)
+    saved = str(data.get(CONF_RUNTIME_URL) or "").strip()
+    detected = await async_resolve_runtime_url(hass, "")
+    auto = not saved or _same_url(saved, detected)
+    url = (detected if auto else saved) or detected
+    if url:
+        data[CONF_RUNTIME_URL] = url
+    live = bool(url) and await async_probe_runtime(hass, url.rstrip("/"))
+    return data, auto and bool(url), live
+
+
+async def _with_runtime_placeholders(
+    hass: HomeAssistant, defaults: dict, mcp_auto: bool
+) -> tuple[dict, dict[str, str]]:
+    filled, runtime_auto, live = await _defaults_with_runtime(hass, defaults)
+    return filled, _form_placeholders(
+        mcp_url=str(filled.get(CONF_MCP_URL) or ""),
         mcp_auto=mcp_auto,
-        runtime_auto=bool(discovered),
+        runtime_auto=runtime_auto,
         runtime_live=live,
     )
 
@@ -586,7 +614,7 @@ class AiWorkspaceConfigFlow(ProviderSteps, config_entries.ConfigFlow, domain=DOM
         if user_input is not None:
             sent_mcp = SECTION_MCP in user_input or CONF_MCP_URL in user_input
             flat = _keep_saved_mcp(
-                _normalize(_flatten(user_input), saved, self.hass),
+                await _restore_auto_urls(self.hass, _normalize(_flatten(user_input), saved, self.hass)),
                 saved,
                 sent_mcp or include_mcp,
             )
@@ -605,14 +633,12 @@ class AiWorkspaceConfigFlow(ProviderSteps, config_entries.ConfigFlow, domain=DOM
                 return self.async_create_entry(title="AI Workspace", data=data)
             user_input = {**saved, **flat}
         defaults, mcp_auto, kinds = await _prepare_mcp_form(self.hass, user_input or saved)
+        defaults, placeholders = await _with_runtime_placeholders(self.hass, defaults, mcp_auto)
         return self.async_show_form(
             step_id="user",
             data_schema=await _shared_form(self.hass, defaults, kinds, include_mcp=include_mcp),
             errors=errors,
-            description_placeholders=_form_placeholders(
-                mcp_url=str(defaults.get(CONF_MCP_URL) or ""),
-                mcp_auto=mcp_auto,
-            ),
+            description_placeholders=placeholders,
         )
 
     @classmethod
@@ -637,7 +663,7 @@ class AiWorkspaceConfigFlow(ProviderSteps, config_entries.ConfigFlow, domain=DOM
         errors = {}
         discovered = hassio_runtime_url(self.hass) or ""
         if user_input is not None:
-            flat = _normalize(_flatten(user_input), self._ui, self.hass)
+            flat = await _restore_auto_urls(self.hass, _normalize(_flatten(user_input), self._ui, self.hass))
             configured = str(flat.get(CONF_RUNTIME_URL) or discovered or "").strip()
             runtime = await async_resolve_runtime_url(self.hass, configured)
             if not runtime:
@@ -648,22 +674,23 @@ class AiWorkspaceConfigFlow(ProviderSteps, config_entries.ConfigFlow, domain=DOM
                     **flat,
                     CONF_MODE: MODE_CURSOR,
                     CONF_MODEL: _cursor_model({**self._ui, **flat, CONF_MODE: MODE_CURSOR}),
-                    CONF_RUNTIME_URL: runtime,
+                    CONF_RUNTIME_URL: str(flat.get(CONF_RUNTIME_URL) or ""),
                 }
                 await self.async_set_unique_id(DOMAIN)
                 return self.async_create_entry(title="AI Workspace", data=data)
         defaults, mcp_auto, kinds = await _prepare_mcp_form(self.hass, self._ui)
+        defaults, placeholders = await _with_runtime_placeholders(self.hass, defaults, mcp_auto)
         return self.async_show_form(
             step_id="cursor",
             data_schema=_cursor_form(defaults, kinds=kinds, runtime_url=True, hass=self.hass),
             errors=errors,
-            description_placeholders=await _cursor_placeholders(self.hass, defaults, mcp_auto),
+            description_placeholders=placeholders,
         )
 
     async def async_step_api(self, user_input=None):
         errors = {}
         if user_input is not None:
-            flat = _normalize(_flatten(user_input), self._ui, self.hass)
+            flat = await _restore_auto_urls(self.hass, _normalize(_flatten(user_input), self._ui, self.hass))
             errors = _api_errors(flat)
             if not errors:
                 data = {**self._ui, **flat, CONF_MODE: MODE_API}
@@ -709,27 +736,29 @@ class AiWorkspaceOptionsFlow(config_entries.OptionsFlow):
         errors = {}
         if user_input is not None:
             sent_mcp = SECTION_MCP in user_input or CONF_MCP_URL in user_input
-            flat = _keep_saved_mcp(_normalize(_flatten(user_input), current, self.hass), current, sent_mcp)
+            flat = _keep_saved_mcp(
+                await _restore_auto_urls(self.hass, _normalize(_flatten(user_input), current, self.hass)),
+                current,
+                sent_mcp,
+            )
             errors = {}
             if not errors:
                 return self._save(flat)
             current = {**current, **flat}
         defaults, mcp_auto, kinds = await _prepare_mcp_form(self.hass, current)
+        defaults, placeholders = await _with_runtime_placeholders(self.hass, defaults, mcp_auto)
         return self.async_show_form(
             step_id="init",
             data_schema=await _shared_form(self.hass, defaults, kinds, include_mcp=False),
             errors=errors,
-            description_placeholders=_form_placeholders(
-                mcp_url=str(defaults.get(CONF_MCP_URL) or ""),
-                mcp_auto=mcp_auto,
-            ),
+            description_placeholders=placeholders,
         )
 
     async def async_step_api(self, user_input=None):
         current = self._current()
         errors = {}
         if user_input is not None:
-            flat = _normalize(_flatten(user_input), current, self.hass)
+            flat = await _restore_auto_urls(self.hass, _normalize(_flatten(user_input), current, self.hass))
             merged = {**current, **flat}
             errors = _api_errors(merged)
             if not errors:
@@ -751,7 +780,7 @@ class AiWorkspaceOptionsFlow(config_entries.OptionsFlow):
         errors = {}
         discovered = hassio_runtime_url(self.hass) or ""
         if user_input is not None:
-            flat = _normalize(_flatten(user_input), current, self.hass)
+            flat = await _restore_auto_urls(self.hass, _normalize(_flatten(user_input), current, self.hass))
             configured = str(flat.get(CONF_RUNTIME_URL) or discovered or current.get(CONF_RUNTIME_URL) or "").strip()
             runtime = await async_resolve_runtime_url(self.hass, configured)
             if not runtime:
@@ -762,14 +791,15 @@ class AiWorkspaceOptionsFlow(config_entries.OptionsFlow):
                         **flat,
                         CONF_MODE: MODE_CURSOR,
                         CONF_MODEL: _cursor_model({**current, **flat, CONF_MODE: MODE_CURSOR}),
-                        CONF_RUNTIME_URL: runtime,
+                        CONF_RUNTIME_URL: str(flat.get(CONF_RUNTIME_URL) or ""),
                     }
                 )
             current = {**current, **flat}
         defaults, mcp_auto, kinds = await _prepare_mcp_form(self.hass, current)
+        defaults, placeholders = await _with_runtime_placeholders(self.hass, defaults, mcp_auto)
         return self.async_show_form(
             step_id="cursor",
             data_schema=_cursor_form(defaults, kinds=kinds, runtime_url=True, hass=self.hass),
             errors=errors,
-            description_placeholders=await _cursor_placeholders(self.hass, defaults, mcp_auto),
+            description_placeholders=placeholders,
         )
