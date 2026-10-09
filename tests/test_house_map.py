@@ -44,6 +44,39 @@ def test_house_map_search(tmp_path: Path) -> None:
     store.close()
 
 
+def test_catalog_detail_compact_strips_wiring() -> None:
+    catalog = _catalog()
+    row = {
+        "kind": "automation",
+        "id": "automation.balkon",
+        "name": "Bewässerung - Balkon",
+        "config_id": "1778612154557",
+        "trigger_summary": "time 08:00",
+        "acts_on": ["switch.water_pump_balcony"],
+        "depends_on": ["sensor.radar_max_rain_last_24h"],
+        "related_config_ids": ["1782683008999"],
+    }
+    compact = catalog.apply_catalog_detail([row], "compact")
+    assert compact == [
+        {
+            "kind": "automation",
+            "id": "automation.balkon",
+            "name": "Bewässerung - Balkon",
+            "config_id": "1778612154557",
+        }
+    ]
+    wiring = catalog.apply_catalog_detail([row], "wiring")
+    assert wiring[0]["acts_on"] == ["switch.water_pump_balcony"]
+    assert wiring[0]["trigger_summary"] == "time 08:00"
+
+
+def test_catalog_instructions_are_not_list_first() -> None:
+    text = (ROOT / "custom_components" / "ai_workspace" / "house_map.py").read_text()
+    assert "call search_catalog first" not in text
+    assert "Do not call it to list automations" in text
+    assert "detail=wiring" in text
+
+
 def test_search_matches_aliases_in_extra(tmp_path: Path) -> None:
     Store = _store_mod().Store
     store = Store(tmp_path / "map.sqlite")

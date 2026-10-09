@@ -1,0 +1,9 @@
+architecture-beta
+  group ha(server)[Home Assistant]
+  service ws(server)[AI Workspace] in ha
+  service core(server)[Home Assistant] in ha
+  service mcp(server)[MCP] in ha
+  service ollama(server)[Ollama]
+  ws:R -- L:core
+  core:R -- L:mcp
+  mcp:R -- L:ollama

@@ -32,6 +32,13 @@ _ACTOR_DOMAINS = {
 TRIGGER_KEYS = ("trigger", "triggers")
 CONDITION_KEYS = ("condition", "conditions")
 ACTION_KEYS = ("action", "actions")
+WIRING_KEYS = ("trigger_summary", "acts_on", "depends_on", "related_config_ids")
+
+
+def apply_catalog_detail(matches: list[dict[str, Any]], detail: str = "compact") -> list[dict[str, Any]]:
+    if str(detail or "").strip().lower() == "wiring":
+        return matches
+    return [{key: value for key, value in item.items() if key not in WIRING_KEYS} for item in matches]
 
 
 def as_list(value: Any) -> list[Any]:

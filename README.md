@@ -66,12 +66,7 @@ Fastest path. Add an **AI Agents** for **OpenAI**, **Claude**, **Gemini**, **Dee
 
 You chat in **AI Workspace**. It calls the cloud API. **MCP** is how that model reaches Home Assistant.
 
-```mermaid
-flowchart LR
-  ws[AI Workspace] --> api[AI Cloud API]
-  ws --> mcp[MCP]
-  mcp --> ha[Home Assistant]
-```
+![AI Workspace, MCP, Home Assistant, AI Cloud API](docs/cloud-architecture.jpg)
 
 ### 1. Install AI Workspace from HACS
 
@@ -108,18 +103,7 @@ Install AI Workspace from HACS first ([step 1](#1-install-ai-workspace-from-hacs
 
 The Cursor SDK runs as an App on the same box as Home Assistant.
 
-```mermaid
-flowchart LR
-  subgraph box [Home Assistant OS]
-    ws[AI Workspace]
-    sdk[Cursor SDK]
-    mcp[MCP]
-    ha[Home Assistant]
-  end
-  cloud[Cursor Cloud AI]
-  ws --> sdk --> cloud
-  sdk --> mcp --> ha
-```
+![Home Assistant OS with Cursor SDK and Cursor Cloud AI](docs/os-architecture.jpg)
 
 Add this repo to Apps and install **AI Workspace Runtime**:
 
@@ -206,15 +190,7 @@ Same as Cloud AI, with **Ollama** (or LM Studio) on this machine. Offline: the c
 
 Install as in [Cloud AI](#cloud-ai-api-provider-quick). Pick **Ollama** and point the API Base URL at your Ollama server.
 
-```mermaid
-flowchart LR
-  subgraph ha [Home Assistant]
-    ws[AI Workspace]
-    mcp[MCP]
-    ws --> mcp
-  end
-  ws --> ollama[Ollama]
-```
+![Home Assistant and Ollama](docs/ollama-architecture.jpg)
 
 ## System Prompt
 
@@ -242,7 +218,7 @@ It does not control Home Assistant edit links. Those are added on every reply, s
 | **Show dictate button** | Microphone in the prompt. On by default |
 | **Show AI Workspace in the sidebar** | Sidebar item. `/ai-workspace` still works if this is off |
 | **Chats to keep** | Newest unpinned chats per person (default 30). Pinned chats are always kept |
-| **Config catalog** | Off by default. Optional local name/id index. Leave it off when live MCP already looks up the house. Not live state, history, or traces |
+| **Config catalog** | Off by default. Wiring of a named item (triggers, related ids). Not for listing automations or on/off — live MCP is shorter for that. Not live state, history, or traces |
 | **Also use in Assist** | On each agent. Off (default for new agents) keeps the chat in AI Workspace. On adds a Voice assistants pipeline, no second form under Manage assistants. Agents added before this option stay on |
 
 ## Optimization: Large listings

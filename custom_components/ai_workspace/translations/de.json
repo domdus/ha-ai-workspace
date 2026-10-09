@@ -78,7 +78,7 @@
           "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt.",
           "enable_dictate": "Mikrofon im Eingabefeld. Browser erlauben das Diktieren nur über https://.",
           "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren.",
-          "house_map": "Lokaler Konfigurationskatalog mit Namen, IDs, Automations-Triggern und zugehörigen Entitäten. Vor breiten MCP-Aufrufen nutzen. Standardmäßig aus. Kein Live-Zustand, keine Historie, keine Traces.",
+          "house_map": "Optionaler lokaler Index für die Verdrahtung eines benannten Eintrags (Trigger, zugehörige IDs). Standardmäßig aus. Nicht für Namenslisten oder an/aus — dafür Live-MCP. Kein Live-Zustand, keine Historie, keine Traces.",
           "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30."
         },
         "sections": {
@@ -140,7 +140,7 @@
           "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt.",
           "enable_dictate": "Mikrofon im Eingabefeld. Browser erlauben das Diktieren nur über https://.",
           "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren.",
-          "house_map": "Lokaler Konfigurationskatalog mit Namen, IDs, Automations-Triggern und zugehörigen Entitäten. Vor breiten MCP-Aufrufen nutzen. Standardmäßig aus. Kein Live-Zustand, keine Historie, keine Traces.",
+          "house_map": "Optionaler lokaler Index für die Verdrahtung eines benannten Eintrags (Trigger, zugehörige IDs). Standardmäßig aus. Nicht für Namenslisten oder an/aus — dafür Live-MCP. Kein Live-Zustand, keine Historie, keine Traces.",
           "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30."
         },
         "sections": {
@@ -202,7 +202,7 @@
           "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt.",
           "enable_dictate": "Mikrofon im Eingabefeld. Browser erlauben das Diktieren nur über https://.",
           "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren.",
-          "house_map": "Lokaler Konfigurationskatalog mit Namen, IDs, Automations-Triggern und zugehörigen Entitäten. Vor breiten MCP-Aufrufen nutzen. Standardmäßig aus. Kein Live-Zustand, keine Historie, keine Traces.",
+          "house_map": "Optionaler lokaler Index für die Verdrahtung eines benannten Eintrags (Trigger, zugehörige IDs). Standardmäßig aus. Nicht für Namenslisten oder an/aus — dafür Live-MCP. Kein Live-Zustand, keine Historie, keine Traces.",
           "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30."
         },
         "sections": {

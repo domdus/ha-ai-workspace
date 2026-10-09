@@ -377,7 +377,7 @@ class Store:
         if not tokens:
             return []
         kind = _text(kind).lower() or "any"
-        limit = max(1, min(int(limit or 24), 40))
+        limit = max(1, min(int(limit or 24), 80))
         clauses = []
         params: list[object] = []
         if kind and kind != "any":

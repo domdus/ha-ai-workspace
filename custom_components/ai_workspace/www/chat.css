@@ -333,6 +333,7 @@ ha-button.new-chat {
   overflow-y: auto;
   overflow-anchor: none;
   overscroll-behavior: contain;
+  scroll-behavior: auto;
   scroll-padding-bottom: calc(8rem + var(--ha-space-6));
 }
 

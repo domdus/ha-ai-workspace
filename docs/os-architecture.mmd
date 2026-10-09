@@ -1,0 +1,12 @@
+architecture-beta
+  group os(server)[Home Assistant OS]
+  service ws(server)[AI Workspace] in os
+  service core(server)[Home Assistant] in os
+  service mcp(server)[MCP] in os
+  service cursor(server)[Cursor SDK] in os
+  service cloud(internet)[Cursor Cloud AI]
+  ws:R -- L:core
+  core:R -- L:mcp
+  mcp:R -- L:cursor
+  cursor:L --> R:mcp
+  cursor:R --> L:cloud

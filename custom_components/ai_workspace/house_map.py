@@ -16,6 +16,7 @@ from datetime import timedelta
 from .catalog_index import (
     ACTION_KEYS,
     acts_on as acts_on_ids,
+    apply_catalog_detail,
     depends_on as depends_on_ids,
     extra_payload,
     harvest_device_ids,
@@ -33,19 +34,22 @@ TOOL_NAME = "search_catalog"
 TOOL_ALIASES = frozenset({"search_house_map"})
 CATALOG_SERVER = "catalog"
 TOOL_DESCRIPTION = (
-    "Search the local config catalog of this Home Assistant for entity ids, areas, automations, "
-    "and dashboards. Automations include trigger_summary, acts_on, depends_on, and related_config_ids. "
-    "Use this before broad MCP listings when you need ids or static wiring. "
-    "It is not live state — call MCP after this for current state, history, traces, or to change anything."
+    "Find static wiring for a named item: ids, automation triggers, acts_on, depends_on, related_config_ids. "
+    "Do not use this to list all automations or for on/off. Home Assistant MCP already returns every item "
+    "with live state in a short payload. Default detail is compact (name and id). "
+    "Pass detail=wiring only when asking what one named automation is wired to. Not live state."
 )
 CATALOG_INSTRUCTIONS = (
-    "A local tool search_catalog looks up entity ids, areas, automations, and dashboards "
-    "from the config catalog. Automations may include trigger times, acts_on, depends_on, and related_config_ids. "
-    "For naming or 'what is wired to what' on a new chat, call search_catalog first, "
-    "then MCP for live state, history, traces, or changes. The catalog is not live state."
+    "search_catalog is only for wiring of a named item (triggers, what it acts on, related ids). "
+    "Do not call it to list automations, names, or on/off. Use Home Assistant MCP for those lists: "
+    "it returns every item with live state, and a full name list costs fewer tokens than the catalog. "
+    "The catalog is capped and has no on/off. Default detail is compact. "
+    "Use detail=wiring only for one named item."
 )
 HOUSE_MAP_INSTRUCTIONS = CATALOG_INSTRUCTIONS
 
+_COMPACT_LIMIT = 80
+_WIRING_LIMIT = 24
 _REFRESH_SECONDS = 15 * 60
 _ACTOR_DOMAINS = {
     "switch",
@@ -77,6 +81,11 @@ def tool_definition() -> dict[str, Any]:
                     "type": "string",
                     "enum": ["any", "entity", "area", "automation", "dashboard"],
                     "description": "Limit to one kind of row. Default any.",
+                },
+                "detail": {
+                    "type": "string",
+                    "enum": ["compact", "wiring"],
+                    "description": "compact (default): name and id. wiring: triggers, acts_on, related ids.",
                 },
             },
             "required": ["query"],
@@ -300,12 +309,17 @@ class HouseMapClient:
         args = arguments or {}
         query = str(args.get("query") or "").strip()
         kind = str(args.get("kind") or "any").strip() or "any"
+        detail = str(args.get("detail") or "compact").strip().lower() or "compact"
         if not query:
-            return {"matches": [], "note": "Provide a query string."}
-        matches = await self.hass.async_add_executor_job(search_house_map, self.store, query, kind)
+            return {"matches": [], "note": "Provide a query string. For a full name list with on/off, use Home Assistant MCP."}
+        limit = _WIRING_LIMIT if detail == "wiring" else _COMPACT_LIMIT
+        matches = await self.hass.async_add_executor_job(
+            search_house_map, self.store, query, kind, limit
+        )
+        matches = apply_catalog_detail(matches, detail)
         return {
             "matches": matches,
-            "note": "Static catalog (ids, names, wiring). Use MCP for live state, history, traces, or changes.",
+            "note": "Static catalog. Not live state. For a full name list with on/off, use Home Assistant MCP.",
         }
 
 
