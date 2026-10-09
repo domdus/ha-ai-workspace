@@ -24,9 +24,9 @@
 </p>
 
 This HACS integration connects to and AI and uses an MCP server of your choice.
-You work from/in Home Assistant instead of Claude Desktop, the Cursor IDE, or VS Code. Use OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible as well as **Cursor AI** via the Cursor SDK Runtime to work on Home Assistant.
+You work from/in Home Assistant instead of Claude Desktop, the Cursor IDE, or VS Code. Use OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible as well.
 
-The agent capabilties rely on the MCP server you connect. Automations, dashboards, history, and devices are that server's tools.
+The agent capabilties rely on the MCP server you connect.
 
 - Polished agent chat
 - Attachments in chat (docs, images)
@@ -34,7 +34,7 @@ The agent capabilties rely on the MCP server you connect. Automations, dashboard
 - Chat history with pin
 - Optional floating button on every page
 - Optional dictate and spoken replies
-- Several Cloud and Cursor agents in one chat
+- Several agents in one chat
 - More than one MCP connection
 
 <p align="center">
