@@ -681,20 +681,43 @@ export function mountAiWorkspace(root, options = {}) {
     clearMotion();
   }
 
-  function headers(extra = {}) {
-    const token = getToken();
-    if (!token) return null;
-    return {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      ...extra,
-    };
+  function overlayOpen() {
+    if (!compact) return true;
+    return Boolean(root.parentElement?.classList.contains("open"));
   }
 
-  function apiFetch(url, options = {}) {
-    const hdrs = headers(options.headers);
-    if (!hdrs) return Promise.resolve(null);
-    return fetch(url, { ...options, headers: hdrs });
+  function chatVisible() {
+    return overlayOpen() && document.visibilityState !== "hidden";
+  }
+
+  async function apiFetch(url, options = {}) {
+    const hass = hassObj();
+    const auth = hass?.auth;
+    if (typeof hass?.fetchWithAuth === "function") {
+      try {
+        return await hass.fetchWithAuth(url, options);
+      } catch (_err) {
+        return null;
+      }
+    }
+    try {
+      if (auth?.expired && typeof auth.refreshAccessToken === "function") {
+        await auth.refreshAccessToken();
+      }
+    } catch (_err) {
+      return null;
+    }
+    if (auth?.expired) return null;
+    const token = auth?.data?.access_token || auth?.accessToken || getToken();
+    if (!token) return null;
+    return fetch(url, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        ...(options.headers || {}),
+      },
+    });
   }
 
   function prettyStatus(text) {
@@ -1696,10 +1719,10 @@ export function mountAiWorkspace(root, options = {}) {
   let liveStream = false;
 
   async function watchPending(id) {
-    if (!id || liveStream) return false;
+    if (!id || liveStream || !chatVisible()) return false;
     const gen = ++watchGen;
     for (let attempt = 0; attempt < 240; attempt += 1) {
-      if (gen !== watchGen || sessionId !== id || liveStream) return false;
+      if (gen !== watchGen || sessionId !== id || liveStream || !chatVisible()) return false;
       let session;
       try {
         const pendingResponse = await apiFetch(`${API}/sessions/${id}`);
@@ -2565,10 +2588,10 @@ export function mountAiWorkspace(root, options = {}) {
     window.addEventListener("popstate", applyRoute);
   }
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible" && sessionId) watchPending(sessionId);
+    if (sessionId && chatVisible()) watchPending(sessionId);
   });
   window.addEventListener("pageshow", () => {
-    if (sessionId) watchPending(sessionId);
+    if (sessionId && chatVisible()) watchPending(sessionId);
   });
 
   loadProviders();
@@ -2582,5 +2605,10 @@ export function mountAiWorkspace(root, options = {}) {
   resizeComposer();
   const linkWatch = new MutationObserver(() => retargetHaLinks(logEl));
   linkWatch.observe(logEl, { subtree: true, childList: true, attributes: true, attributeFilter: ["href", "target"] });
-  return { openSession, applyRoute, setNarrow, toggleNav, startNewChat, loadDictate };
+  function resume() {
+    loadDictate();
+    if (sessionId) watchPending(sessionId);
+  }
+
+  return { openSession, applyRoute, setNarrow, toggleNav, startNewChat, loadDictate, resume };
 }

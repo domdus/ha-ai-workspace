@@ -517,14 +517,12 @@
           "data": {
             "name": "Name",
             "url": "Address",
-            "token": "Token",
-            "enabled": "Enabled"
+            "token": "Token"
           },
           "data_description": {
             "name": "A short name, such as Directus. The assistant uses it to tell this connection from the others.",
             "url": "The MCP address, starting with https:// or http://.",
-            "token": "Only if that server asks for a key. Leave empty when editing to keep the saved key.",
-            "enabled": "Off keeps the row but the assistant does not use this connection."
+            "token": "Only if that server asks for a key. Leave empty when editing to keep the saved key."
           }
         }
       }
@@ -556,14 +554,12 @@
           "data": {
             "cursor_api_key": "Cursor API key",
             "model": "Model",
-            "effort": "Effort",
-            "enabled": "Enabled"
+            "effort": "Effort"
           },
           "data_description": {
             "cursor_api_key": "From cursor.com/dashboard/integrations. Leave blank when editing to keep the saved key.",
             "model": "Empty uses Composer.",
-            "effort": "Fast, High, or High fast. Composer uses Fast unless you pick High.",
-            "enabled": "Off hides this agent from chat and Assist."
+            "effort": "Fast, High, or High fast. Composer uses Fast unless you pick High."
           }
         },
         "cloud": {
@@ -573,15 +569,13 @@
             "borrow": "Copy key from",
             "api_key": "API key",
             "model": "Model",
-            "effort": "Effort",
-            "enabled": "Enabled"
+            "effort": "Effort"
           },
           "data_description": {
             "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
             "api_key": "Not a Home Assistant token.",
             "model": "Empty uses the provider default.",
-            "effort": "Fast, High, or High fast when the model supports it.",
-            "enabled": "Off hides this agent from chat and Assist."
+            "effort": "Fast, High, or High fast when the model supports it."
           }
         },
         "ollama": {
@@ -590,14 +584,12 @@
           "data": {
             "api_base": "Ollama URL",
             "model": "Model",
-            "effort": "Effort",
-            "enabled": "Enabled"
+            "effort": "Effort"
           },
           "data_description": {
             "api_base": "Usually http://127.0.0.1:11434/v1",
             "model": "Empty uses llama3.2.",
-            "effort": "Used when the model supports it.",
-            "enabled": "Off hides this agent from chat and Assist."
+            "effort": "Used when the model supports it."
           }
         },
         "azure": {
@@ -608,16 +600,14 @@
             "api_base": "Endpoint",
             "model": "Deployment",
             "azure_api_version": "API version",
-            "effort": "Effort",
-            "enabled": "Enabled"
+            "effort": "Effort"
           },
           "data_description": {
             "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key.",
             "api_base": "https://YOUR.openai.azure.com",
             "model": "The deployment name.",
             "azure_api_version": "Default 2024-10-21.",
-            "effort": "Used when the deployment supports it.",
-            "enabled": "Off hides this agent from chat and Assist."
+            "effort": "Used when the deployment supports it."
           }
         },
         "compatible": {
@@ -627,15 +617,13 @@
             "api_key": "API key",
             "api_base": "API base URL",
             "model": "Model",
-            "effort": "Effort",
-            "enabled": "Enabled"
+            "effort": "Effort"
           },
           "data_description": {
             "api_key": "Leave blank when editing to keep the saved key.",
             "api_base": "Base URL of the server, including /v1 when it uses that path.",
             "model": "Model name on that server.",
-            "effort": "Used when the server supports it.",
-            "enabled": "Off hides this agent from chat and Assist."
+            "effort": "Used when the server supports it."
           }
         },
         "provider": {
@@ -654,14 +642,12 @@
           "data": {
             "cursor_api_key": "Cursor API key",
             "model": "Model",
-            "effort": "Effort",
-            "enabled": "Enabled"
+            "effort": "Effort"
           },
           "data_description": {
             "cursor_api_key": "From cursor.com/dashboard/integrations. Leave blank when editing to keep the saved key.",
             "model": "Empty uses Composer.",
-            "effort": "Fast, High, or High fast. Composer uses Fast unless you pick High.",
-            "enabled": "Off hides this agent from chat and Assist."
+            "effort": "Fast, High, or High fast. Composer uses Fast unless you pick High."
           }
         },
         "provider_cloud": {
@@ -671,15 +657,13 @@
             "borrow": "Copy key from",
             "api_key": "API key",
             "model": "Model",
-            "effort": "Effort",
-            "enabled": "Enabled"
+            "effort": "Effort"
           },
           "data_description": {
             "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
             "api_key": "Not a Home Assistant token.",
             "model": "Empty uses the provider default.",
-            "effort": "Fast, High, or High fast when the model supports it.",
-            "enabled": "Off hides this agent from chat and Assist."
+            "effort": "Fast, High, or High fast when the model supports it."
           }
         },
         "provider_ollama": {
@@ -688,14 +672,12 @@
           "data": {
             "api_base": "Ollama URL",
             "model": "Model",
-            "effort": "Effort",
-            "enabled": "Enabled"
+            "effort": "Effort"
           },
           "data_description": {
             "api_base": "Usually http://127.0.0.1:11434/v1",
             "model": "Empty uses llama3.2.",
-            "effort": "Used when the model supports it.",
-            "enabled": "Off hides this agent from chat and Assist."
+            "effort": "Used when the model supports it."
           }
         },
         "provider_azure": {
@@ -706,16 +688,14 @@
             "api_base": "Endpoint",
             "model": "Deployment",
             "azure_api_version": "API version",
-            "effort": "Effort",
-            "enabled": "Enabled"
+            "effort": "Effort"
           },
           "data_description": {
             "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key.",
             "api_base": "https://YOUR.openai.azure.com",
             "model": "The deployment name.",
             "azure_api_version": "Default 2024-10-21.",
-            "effort": "Used when the deployment supports it.",
-            "enabled": "Off hides this agent from chat and Assist."
+            "effort": "Used when the deployment supports it."
           }
         },
         "provider_compatible": {
@@ -725,15 +705,13 @@
             "api_key": "API key",
             "api_base": "API base URL",
             "model": "Model",
-            "effort": "Effort",
-            "enabled": "Enabled"
+            "effort": "Effort"
           },
           "data_description": {
             "api_key": "Leave blank when editing to keep the saved key.",
             "api_base": "Base URL of the server, including /v1 when it uses that path.",
             "model": "Model name on that server.",
-            "effort": "Used when the server supports it.",
-            "enabled": "Off hides this agent from chat and Assist."
+            "effort": "Used when the server supports it."
           }
         }
       },

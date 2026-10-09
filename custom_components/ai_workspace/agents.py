@@ -25,7 +25,6 @@ from .const import (
     CONF_AZURE_API_VERSION,
     CONF_CURSOR_API_KEY,
     CONF_EFFORT,
-    CONF_ENABLED,
     CONF_HUB_ID,
     CONF_MODE,
     CONF_MODEL,
@@ -102,7 +101,7 @@ def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Age
         api_base=_text(raw.get(CONF_API_BASE)),
         model=_text(raw.get(CONF_MODEL)),
         effort=effort,
-        enabled=bool(raw.get(CONF_ENABLED, True)),
+        enabled=True,
         azure_api_version=_text(raw.get(CONF_AZURE_API_VERSION)) or DEFAULT_AZURE_API_VERSION,
         cursor_api_key=_text(raw.get(CONF_CURSOR_API_KEY)),
     )
@@ -180,7 +179,6 @@ def legacy_agent_data(data: Mapping[str, Any]) -> dict[str, Any] | None:
             CONF_API_PROVIDER: MODE_CURSOR,
             CONF_MODEL: _text(data.get(CONF_MODEL)),
             CONF_EFFORT: "",
-            CONF_ENABLED: True,
             CONF_CURSOR_API_KEY: _text(data.get(CONF_CURSOR_API_KEY)),
         }
     if not key and provider != API_OLLAMA:
@@ -192,7 +190,6 @@ def legacy_agent_data(data: Mapping[str, Any]) -> dict[str, Any] | None:
         CONF_API_BASE: _text(data.get(CONF_API_BASE)),
         CONF_MODEL: _text(data.get(CONF_MODEL)),
         CONF_EFFORT: "",
-        CONF_ENABLED: True,
         CONF_AZURE_API_VERSION: _text(data.get(CONF_AZURE_API_VERSION)) or DEFAULT_AZURE_API_VERSION,
     }
 

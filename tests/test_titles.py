@@ -1,5 +1,5 @@
 from app.store import Store
-from app.titles import clean_title, is_placeholder_title, title_prompt
+from app.titles import clean_title, is_placeholder_title, title_from_prompt, title_prompt
 
 
 def test_clean_title_strips_quotes_and_prefix() -> None:
@@ -9,10 +9,15 @@ def test_clean_title_strips_quotes_and_prefix() -> None:
     assert clean_title("Status **of** lights") == "Status of lights"
 
 
-def test_placeholder_is_first_user_message() -> None:
+def test_title_from_prompt_keeps_the_question() -> None:
+    assert title_from_prompt("Status der Bewässerung?") == "Status der Bewässerung?"
+    assert title_from_prompt("**Status der Bewässerung?**") == "Status der Bewässerung?"
+
+
+def test_placeholder_is_new_chat_only() -> None:
     assert is_placeholder_title("New Chat", "Why no water?")
     assert is_placeholder_title("New chat", "Why no water?")
-    assert is_placeholder_title("Why no water?", "Why no water?")
+    assert not is_placeholder_title("Why no water?", "Why no water?")
     assert not is_placeholder_title("Kitchen leak", "Why no water?")
 
 
@@ -24,11 +29,12 @@ def test_title_prompt_uses_the_question_only() -> None:
     assert "Assistant:" not in prompt
 
 
-def test_apply_generated_title_skips_manual_rename(tmp_path) -> None:
+def test_apply_generated_title_skips_first_prompt(tmp_path) -> None:
     store = Store(tmp_path / "db.sqlite")
     session = store.create_session("local", "cursor")
     store.rename_if_default(session.id, "Why no water?")
-    assert store.apply_generated_title("local", session.id, "Why no water?", "Garden moisture") == "Garden moisture"
+    assert store.apply_generated_title("local", session.id, "Why no water?", "Garden moisture") is None
+    assert store.get_session("local", session.id).title == "Why no water?"
     store.rename_session("local", session.id, "Kitchen leak")
     assert store.apply_generated_title("local", session.id, "Why no water?", "Something else") is None
     assert store.get_session("local", session.id).title == "Kitchen leak"

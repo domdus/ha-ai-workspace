@@ -147,7 +147,7 @@ After the Runtime is up and running: **Settings → Devices & services → Add i
 
 The first connection is this Home Assistant. After setup it is a row on the **AI Workspace** device, with the same shape as any connection you add later. When the assistant should also reach another MCP server, such as a website, a CMS, or another tool you already run, add that row too.
 
-**Settings → Devices & services → AI Workspace.** Use **Add connection** for another MCP server, and **Add agent** for another provider. Give a connection a short name and its address. Open a row to change it, or remove it from that row. The assistant can use every connection in one chat, whether the agent is a cloud model or Cursor.
+**Settings → Devices & services → AI Workspace.** Use **Add connection** for another MCP server, and **Add agent** for another provider. Give a connection a short name and its address. Open a row to change it, or remove it from that row. Disable the agent or connection device to hide it from chat and Assist. The assistant can use every connection in one chat, whether the agent is a cloud model or Cursor.
 
 ## System Prompt
 

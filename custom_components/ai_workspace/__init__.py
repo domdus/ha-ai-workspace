@@ -158,9 +158,7 @@ def _mcp_rows(hass: HomeAssistant, entry: ConfigEntry) -> list[dict]:
         url = str(raw.get("url") or "").strip()
         if not name or not url:
             continue
-        enabled = bool(raw.get("enabled", True)) and _subentry_device_active(
-            hass, entry.entry_id, sub.subentry_id
-        )
+        enabled = _subentry_device_active(hass, entry.entry_id, sub.subentry_id)
         found.append(
             {
                 "name": name,
@@ -738,8 +736,6 @@ async def _setup_agents(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     runtime = bucket.get("runtime_url") or ""
     providers = {}
     for agent in entry_agents(entry):
-        if not agent.enabled:
-            continue
         if not _subentry_device_active(hass, entry.entry_id, agent.subentry_id):
             continue
         providers[agent.id] = _one_provider(hass, bucket["settings"], agent, runtime)

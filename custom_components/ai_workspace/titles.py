@@ -30,12 +30,16 @@ def clean_title(raw: str) -> str:
     text = re.sub(r"[*_`#]+", "", text)
     text = text.strip(" \t\"'`“”‘’")
     text = re.sub(r"\s+", " ", text).strip(" .-")
-    return text[:60]
+    return text[:80]
 
 
-def is_placeholder_title(title: str, first_user: str) -> bool:
-    current = (title or "").strip()
-    if current in {"", "New Chat", "New chat", "Neuer Chat"}:
-        return True
-    snippet = (first_user or "").replace("\n", " ").strip()[:80]
-    return bool(snippet) and current == snippet
+def title_from_prompt(user: str) -> str:
+    text = clean_title((user or "").replace("\n", " "))
+    if text:
+        return text
+    return (user or "").replace("\n", " ").strip()[:80]
+
+
+def is_placeholder_title(title: str, first_user: str = "") -> bool:
+    del first_user
+    return (title or "").strip() in {"", "New Chat", "New chat", "Neuer Chat"}
