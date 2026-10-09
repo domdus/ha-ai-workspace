@@ -24,7 +24,7 @@
 </p>
 
 This HACS integration connects to an AI and uses an MCP server of your choice.
-You work from/in Home Assistant instead of Claude Desktop, the Cursor IDE, or VS Code. Use OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible as well.
+You work in Home Assistant instead of Claude Desktop, the Cursor IDE, or VS Code. Use OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible as well.
 
 The agent capabilties rely on the MCP server you connect.
 
@@ -203,7 +203,7 @@ It does not control Home Assistant edit links. Those are added on every reply, s
 
 ## Optimization: Large listings
 
-A tool that sends back the whole house is shortened before the model reads it. The entities are grouped by area, as ids only, and the model can ask again for one area or one entity to load states and attributes. A shorter list keeps each entity's state and drops the bulky attributes. One entity, one room, or one automation still arrives whole. What the model receives is always valid JSON. Nothing is cut off in the middle of an object. This is automatic for Cloud API and Cursor Runtime.
+When an MCP tool sends back the whole house it is shortened before the model reads it. The entities are grouped by area, as ids only, and the model can ask again for one area or one entity to load states and attributes. A shorter list keeps each entity's state and drops the bulky attributes. One entity, one room, or one automation still arrives whole. What the model receives is always valid JSON. Nothing is cut off in the middle of an object. This is automatic for Cloud API and Cursor Runtime.
 
 ## Remove it
 
