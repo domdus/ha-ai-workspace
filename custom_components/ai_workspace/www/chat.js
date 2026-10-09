@@ -577,12 +577,14 @@ export function mountAiWorkspace(root, options = {}) {
   let attachNoticeTimer = 0;
   let micNoticeTimer = 0;
   let pinBottom = true;
+  let holdFollow = false;
   let jumping = false;
   let jumpTimer = 0;
   let lastScrollTop = 0;
   let followRaf = 0;
   let followLast = 0;
   let motionTimer = 0;
+  let userScrollAt = 0;
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function resizeComposer() {
@@ -594,7 +596,7 @@ export function mountAiWorkspace(root, options = {}) {
     if (attachBtn) attachBtn.disabled = pending.length >= MAX_ATTACH;
     messageEl.placeholder = streaming ? t("placeholder_next") : t("placeholder");
     if (holdTop != null) chatEl.scrollTop = holdTop;
-    else if (pinBottom) stickToBottom();
+    else if (pinBottom) followBottom();
   }
 
   function keepComposerFocus() {
@@ -1168,22 +1170,42 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   function nearBottom() {
-    return distanceFromBottom() < 32;
+    return distanceFromBottom() < 72;
+  }
+
+  function clipToBottom() {
+    holdFollow = false;
+    pinBottom = true;
   }
 
   let scrollLock = 0;
 
+  function followMax() {
+    return Math.max(0, chatEl.scrollHeight - chatEl.clientHeight);
+  }
+
   function writeScrollTop(value) {
+    if (holdFollow || !pinBottom) return;
+    const next = Math.max(0, Math.min(followMax(), value));
+    if (Math.abs(chatEl.scrollTop - next) < 0.5) return;
     scrollLock += 1;
-    chatEl.scrollTop = value;
+    chatEl.scrollTop = next;
+    lastScrollTop = chatEl.scrollTop;
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        scrollLock = Math.max(0, scrollLock - 1);
-      });
+      scrollLock = Math.max(0, scrollLock - 1);
     });
   }
 
+  function markUserScroll() {
+    userScrollAt = performance.now();
+  }
+
+  function isUserScroll() {
+    return performance.now() - userScrollAt < 500;
+  }
+
   function releaseFollow() {
+    holdFollow = true;
     pinBottom = false;
     jumping = false;
     if (jumpTimer) {
@@ -1209,24 +1231,20 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   function stickToBottom() {
-    if (!pinBottom) {
+    if (holdFollow || !pinBottom) {
       syncScrollBottomBtn();
       return;
     }
-    writeScrollTop(Math.max(0, chatEl.scrollHeight - chatEl.clientHeight));
+    writeScrollTop(followMax());
     lastScrollTop = chatEl.scrollTop;
     syncScrollBottomBtn();
   }
 
   function jumpToBottom() {
-    pinBottom = true;
+    clipToBottom();
     jumping = true;
     syncScrollBottomBtn();
-    if (followRaf) {
-      cancelAnimationFrame(followRaf);
-      followRaf = 0;
-    }
-    const max = Math.max(0, chatEl.scrollHeight - chatEl.clientHeight);
+    const max = followMax();
     if (reduceMotion) {
       writeScrollTop(max);
       lastScrollTop = chatEl.scrollTop;
@@ -1369,11 +1387,12 @@ export function mountAiWorkspace(root, options = {}) {
       streamFull += takeStreamChunk(dt);
     }
     writeStreamVisible();
-    if (pinBottom) followBottom();
+    easeToBottom(dt);
     if (streamBuf) {
       streamDrainRaf = requestAnimationFrame(pumpStream);
       return;
     }
+    followBottom();
     finishStreamWaiters();
   }
 
@@ -1416,51 +1435,41 @@ export function mountAiWorkspace(root, options = {}) {
     startStreamPump();
   }
 
+  function easeToBottom(dt) {
+    if (holdFollow || !pinBottom) return false;
+    if (reduceMotion) {
+      stickToBottom();
+      return false;
+    }
+    const max = followMax();
+    const dist = max - chatEl.scrollTop;
+    if (dist <= 0.5) {
+      if (dist > 0) writeScrollTop(max);
+      return false;
+    }
+    writeScrollTop(chatEl.scrollTop + dist * (1 - Math.exp(-dt * 10)));
+    return true;
+  }
+
   function followBottom() {
-    if (followRaf) return;
-    followLast = performance.now();
+    if (holdFollow || !pinBottom || followRaf || streamDrainRaf) return;
+    followLast = 0;
     const tick = (now) => {
-      const dt = Math.min(0.032, (now - followLast) / 1000);
+      if (!followLast) followLast = now;
+      const dt = Math.min(0.033, (now - followLast) / 1000);
       followLast = now;
-      const max = Math.max(0, chatEl.scrollHeight - chatEl.clientHeight);
-      const dist = max - chatEl.scrollTop;
-      const keep = pinBottom && (streaming || Boolean(streamBuf) || dist > 0.5);
-      if (!keep) {
-        followRaf = 0;
-        jumping = false;
-        syncScrollBottomBtn();
+      if (easeToBottom(dt)) {
+        followRaf = requestAnimationFrame(tick);
         return;
       }
-      if (dist <= 0.5) {
-        writeScrollTop(max);
-      } else {
-        const k = streaming || streamBuf ? 2.6 : 10;
-        const alpha = 1 - Math.exp(-dt * k);
-        let step = dist * alpha;
-        if (streaming || streamBuf) step = Math.min(step, Math.max(6, dist * 0.16));
-        writeScrollTop(chatEl.scrollTop + step);
-      }
-      followRaf = requestAnimationFrame(tick);
+      followRaf = 0;
+      syncScrollBottomBtn();
     };
     followRaf = requestAnimationFrame(tick);
   }
 
-  function scrollChatToBottom(smooth = true) {
-    if (!pinBottom) {
-      syncScrollBottomBtn();
-      return;
-    }
-    if (!smooth || reduceMotion) {
-      if (followRaf) {
-        cancelAnimationFrame(followRaf);
-        followRaf = 0;
-      }
-      writeScrollTop(Math.max(0, chatEl.scrollHeight - chatEl.clientHeight));
-      syncScrollBottomBtn();
-      return;
-    }
+  function scrollChatToBottom() {
     followBottom();
-    syncScrollBottomBtn();
   }
 
   function showEmpty() {
@@ -1807,7 +1816,7 @@ export function mountAiWorkspace(root, options = {}) {
     for (const message of messages) {
       addBubble(message.role, message.content, message.events, { animate: false, follow: false });
     }
-    pinBottom = true;
+    clipToBottom();
     stickToBottom();
     requestAnimationFrame(() => requestAnimationFrame(stickToBottom));
     window.setTimeout(stickToBottom, 50);
@@ -2399,7 +2408,9 @@ export function mountAiWorkspace(root, options = {}) {
     let attachments = pending.slice();
     if (streaming) {
       if (!text && !attachments.length) return;
+      clipToBottom();
       queueTurn(text, attachments);
+      stickToBottom();
       return;
     }
     if (!text && !attachments.length) {
@@ -2432,12 +2443,14 @@ export function mountAiWorkspace(root, options = {}) {
     messageEl.value = "";
     resizeComposer();
     setWelcome(false);
+    clipToBottom();
     addBubble("user", text, [
       ...images.map((img) => ({ type: "image", name: img.name, src: img.src })),
       ...files.map((file) => ({ type: "file", name: file.name })),
     ]);
     const assistant = addBubble("assistant", "");
     assistant.classList.add("streaming");
+    stickToBottom();
     streamFull = "";
     streamBuf = "";
     const tools = document.createElement("div");
@@ -2593,31 +2606,63 @@ export function mountAiWorkspace(root, options = {}) {
 
   chatEl.addEventListener("scroll", () => {
     const top = chatEl.scrollTop;
-    const movedUp = top < lastScrollTop - 2;
+    const movedUp = top < lastScrollTop - 1;
+    const movedDown = top > lastScrollTop + 1;
     lastScrollTop = top;
     syncScrollBottomBtn();
     if (scrollLock) return;
-    if (movedUp) {
+    if (movedUp && isUserScroll()) {
       releaseFollow();
       return;
     }
-    if (!nearBottom()) return;
-    const resume = !pinBottom && (streaming || streamBuf);
-    pinBottom = true;
-    syncScrollBottomBtn();
-    if (resume) followBottom();
+    if (holdFollow) {
+      if (movedDown && nearBottom()) {
+        clipToBottom();
+        followBottom();
+      }
+      return;
+    }
+    if (nearBottom() && !movedUp) {
+      clipToBottom();
+      followBottom();
+    }
   }, { passive: true });
 
   let lastTouchY = 0;
+
+  function fromComposer(event) {
+    const path = typeof event.composedPath === "function" ? event.composedPath() : [];
+    return path.some((node) => node?.classList?.contains("composer"))
+      || Boolean(event.target?.closest?.(".composer"));
+  }
+
+  function onLeaveClip(event, y) {
+    if (fromComposer(event)) return;
+    markUserScroll();
+    if (y > lastTouchY + 8) releaseFollow();
+    lastTouchY = y;
+  }
+
   chatEl.addEventListener("touchstart", (event) => {
     lastTouchY = event.touches[0]?.clientY || 0;
+    if (!fromComposer(event)) markUserScroll();
   }, { passive: true });
   chatEl.addEventListener("touchmove", (event) => {
-    const y = event.touches[0]?.clientY || 0;
-    if (y > lastTouchY + 6) releaseFollow();
-    lastTouchY = y;
+    onLeaveClip(event, event.touches[0]?.clientY || 0);
+  }, { passive: true });
+  chatEl.addEventListener("pointerdown", (event) => {
+    if (!event.isPrimary) return;
+    lastTouchY = event.clientY;
+    if (!fromComposer(event)) markUserScroll();
+  }, { passive: true });
+  chatEl.addEventListener("pointermove", (event) => {
+    if (!event.isPrimary) return;
+    if (event.pointerType === "mouse" && !event.buttons) return;
+    onLeaveClip(event, event.clientY);
   }, { passive: true });
   chatEl.addEventListener("wheel", (event) => {
+    if (fromComposer(event)) return;
+    markUserScroll();
     if (event.deltaY < 0) releaseFollow();
   }, { passive: true });
 
@@ -2662,7 +2707,7 @@ export function mountAiWorkspace(root, options = {}) {
     jumpToBottom();
   });
   const scrollBtnWatch = new ResizeObserver(() => {
-    if (pinBottom) stickToBottom();
+    if (pinBottom) followBottom();
     else syncScrollBottomBtn();
   });
   scrollBtnWatch.observe(logEl);

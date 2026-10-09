@@ -25,7 +25,7 @@
           "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
           "enable_dictate": "Microphone in the message box.",
           "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only.",
-          "house_map": "Local config catalog of names, ids, automation triggers, and related entities. Use it before broad MCP calls. Off by default. Not live state, history, or traces.",
+          "house_map": "Optional local index for wiring of a named item (triggers, related ids). Off by default. Not for listing automations or on/off — use live MCP for that. Not live state, history, or traces.",
           "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30."
         },
         "sections": {
@@ -120,7 +120,7 @@
           "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
           "enable_dictate": "Microphone in the message box. Browsers allow dictation only over https://.",
           "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only.",
-          "house_map": "Local config catalog of names, ids, automation triggers, and related entities. Use it before broad MCP calls. Off by default. Not live state, history, or traces.",
+          "house_map": "Optional local index for wiring of a named item (triggers, related ids). Off by default. Not for listing automations or on/off — use live MCP for that. Not live state, history, or traces.",
           "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30."
         },
         "sections": {
@@ -281,7 +281,7 @@
           "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
           "enable_dictate": "Microphone in the message box.",
           "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only.",
-          "house_map": "Local config catalog of names, ids, automation triggers, and related entities. Use it before broad MCP calls. Off by default. Not live state, history, or traces.",
+          "house_map": "Optional local index for wiring of a named item (triggers, related ids). Off by default. Not for listing automations or on/off — use live MCP for that. Not live state, history, or traces.",
           "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30."
         },
         "sections": {
@@ -324,7 +324,7 @@
           "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
           "enable_dictate": "Microphone in the message box. Browsers allow dictation only over https://.",
           "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only.",
-          "house_map": "Local config catalog of names, ids, automation triggers, and related entities. Use it before broad MCP calls. Off by default. Not live state, history, or traces.",
+          "house_map": "Optional local index for wiring of a named item (triggers, related ids). Off by default. Not for listing automations or on/off — use live MCP for that. Not live state, history, or traces.",
           "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30."
         },
         "sections": {
@@ -384,7 +384,7 @@
           "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
           "enable_dictate": "Microphone in the message box. Browsers allow dictation only over https://.",
           "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only.",
-          "house_map": "Local config catalog of names, ids, automation triggers, and related entities. Use it before broad MCP calls. Off by default. Not live state, history, or traces.",
+          "house_map": "Optional local index for wiring of a named item (triggers, related ids). Off by default. Not for listing automations or on/off — use live MCP for that. Not live state, history, or traces.",
           "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30."
         },
         "sections": {
