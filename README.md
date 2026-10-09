@@ -54,7 +54,7 @@ Each agent can optionally be added as an Assist pipeline, so you can use **Curso
 You need any MCP server:
 
 - [Home Assistant MCP Server](https://www.home-assistant.io/integrations/mcp_server/) (HA built-in)
-- [HA-MCP](https://github.com/homeassistant-ai/ha-mcp) (recommended) — the connect URL is picked up from that entry.
+- [HA-MCP](https://github.com/homeassistant-ai/ha-mcp) (recommended)
 - [HA Vibecode Agent](https://github.com/Coolver/home-assistant-vibecode-agent)
 - A **custom MCP URL** if you already run something else
 
