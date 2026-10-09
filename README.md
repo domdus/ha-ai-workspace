@@ -133,20 +133,7 @@ Home Assistant 2026.2 renamed “Add-ons” to “Apps”.
 
 If Home Assistant runs in Docker, without the Supervisor, it needs one extra container next to Home Assistant. Same wiring as Option A: **AI Workspace** talks to the **Cursor SDK**, the SDK talks to **Cursor** and to **MCP**.
 
-```mermaid
-architecture-beta
-  group ha(server)[Home Assistant]
-  group sdk(server)[Cursor SDK]
-  service ws(server)[AI Workspace] in ha
-  service core(server)[Home Assistant] in ha
-  service mcp(server)[MCP] in ha
-  service cursor(server)[Cursor SDK] in sdk
-  service cloud(internet)[Cursor Cloud AI]
-  ws:R -- L:core
-  core:R -- L:mcp
-  cursor:L --> R:mcp
-  cursor:R --> L:cloud
-```
+![Home Assistant container, Cursor SDK, Cursor Cloud AI](docs/docker-architecture.jpg)
 
 Paste your Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) into [`docker-compose.runtime.yml`](docker-compose.runtime.yml):
 
