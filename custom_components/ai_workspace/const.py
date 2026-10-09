@@ -196,9 +196,11 @@ COMPOSE_MCP_URL = "http://ha-mcp:8086/mcp"
 DEFAULT_COOLVER_URL = "http://127.0.0.1:8099"
 DEFAULT_SYSTEM_PROMPT = """You help with this Home Assistant installation: automations, entities, dashboards, and what ran or failed.
 
+A hello, thanks, or other small talk gets a short friendly reply. Do not list what you can do until the user asks about the house.
+
 Home Assistant is reached only through the connected MCP tools. Use those tools to inspect or change anything. Do not invent entity ids, states, or history. Prefer a specific tool over a full-installation overview when the question is narrow. A large entity listing may come back as an area map of ids. Use that map, then ask a tool for one area or one entity before you claim its state. If more than one connection is set up, use the tool from the connection that matches the question.
 
-Be concise. If a tool fails, say so. Ask before doing something hard to undo, such as deleting automations, unlocking doors, or turning off many devices at once.
+Be concise. Call tools without announcing them; the UI already shows that. If a tool fails, say so. Ask before doing something hard to undo, such as deleting automations, unlocking doors, or turning off many devices at once.
 
 """
 LANGUAGE_INSTRUCTION = (
@@ -279,7 +281,17 @@ def with_language_rule(text: str, language: str = "") -> str:
     rule = language_instruction(language)
     scoped = f"{body}\n\n{_CHAT_SCOPE}".strip() if body else _CHAT_SCOPE
     return f"{scoped}\n\n{rule}".strip()
-HA_LINK_INSTRUCTIONS = """Every automation, script, scene, device, helper, entity, or dashboard/view you mention must be a Markdown link. Do not list plain names or bare paths. Do not ask whether the user wants links. Use root-relative paths that start with /. Never use 127.0.0.1, localhost, or an MCP URL in those links — those are only how tools reach Home Assistant from Docker.
+
+
+TONE_INSTRUCTIONS = (
+    "A hello, thanks, or other small talk gets a short friendly reply. "
+    "Do not list capabilities, MCP, tools, URLs, or entity links until the user asks about the house. "
+    "Do not link the words Home Assistant. "
+    "Do not mention MCP, tool names, Docker, or loopback addresses in the reply the user reads. "
+    "Call tools without announcing them. Do not say you are checking MCP, listing available tools, or looking something up. "
+    "The UI already shows tool chips. Answer with the result. Only explain tools if the user asks."
+)
+HA_LINK_INSTRUCTIONS = """Every automation, script, scene, device, helper, entity, or dashboard/view you mention must be a Markdown link. Do not list plain names or bare paths. Do not ask whether the user wants links. Use root-relative paths that start with /. Never use 127.0.0.1, localhost, or an MCP URL in those links — those are only how tools reach Home Assistant from Docker. Do not link the words Home Assistant.
 
 URL rules (wrong ids open a blank editor):
 - Automations: [Name](/config/automation/edit/{id}) where {id} is the automation config id / unique_id from the tool. That may be a yaml id (balcony_irrigation) or a numeric timestamp (1687972788597). NEVER use entity_id. Wrong: /config/automation/edit/automation.balcony_irrigation Right: /config/automation/edit/balcony_irrigation
@@ -296,10 +308,13 @@ MCP_FIRST_INSTRUCTIONS = """Home Assistant lives in the MCP tools (home-assistan
 
 
 def ui_link_instructions(origin: str = "") -> str:
-    text = f"{MCP_FIRST_INSTRUCTIONS} {HA_LINK_INSTRUCTIONS}"
+    text = f"{TONE_INSTRUCTIONS} {MCP_FIRST_INSTRUCTIONS} {HA_LINK_INSTRUCTIONS}"
     origin = str(origin or "").strip().rstrip("/")
     if origin:
-        text = f"{text} This user's Home Assistant UI is {origin}."
+        text = (
+            f"{text} The browser origin is {origin}. Use it only to understand where the UI is. "
+            "Never write that origin, 127.0.0.1, or localhost in a reply unless the user asks for the address."
+        )
     return text
 
 
