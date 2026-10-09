@@ -23,7 +23,8 @@
   <img src="https://img.shields.io/badge/Assist-ready-green" alt="Assist">
 </p>
 
-This is a HACS integration and it uses an MCP server of your choice. Use AI (OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible) as well as **Cursor AI** via the Cursor SDK Runtime to work on Home Assistant.
+This HACS integration connects to and AI and uses an MCP server of your choice.
+You work from/in Home Assistant instead of Claude Desktop, the Cursor IDE, or VS Code. Use OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible as well as **Cursor AI** via the Cursor SDK Runtime to work on Home Assistant.
 
 The agent capabilties rely on the MCP server you connect. Automations, dashboards, history, and devices are that server's tools.
 
