@@ -15,6 +15,15 @@ The chat UI is the **AI Workspace** HACS integration, not this app page.
 5. Install **AI Workspace** from HACS (Integration), restart Home Assistant, then **Settings → Devices & services → Add integration → AI Workspace**. It should find this app on its own.
 6. Optional UI toggles live on the **integration**, not the app: **Settings → Devices & services → AI Workspace → Configure** (`Show AI Workspace in the sidebar`, `Show floating AI button on every page`).
 
+## Home Assistant Container (Docker)
+
+See [`docker-compose.runtime.yml`](../docker-compose.runtime.yml) in the repo root.
+
+- Pull: `docker compose -f docker-compose.runtime.yml up -d` → `ghcr.io/domdus/ha-ai-workspace-runtime:latest`
+- Build from this checkout: `docker compose -f docker-compose.runtime.yml up -d --build`
+
+After the first GitHub Actions publish, set the GHCR package to **Public**.
+
 Do not publish MCP to the internet. The agent runs here and calls MCP on the LAN.
 
 ## Extra MCP servers

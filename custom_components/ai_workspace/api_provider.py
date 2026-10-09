@@ -340,9 +340,9 @@ class ApiProvider:
         body = (self.settings.system_prompt or "").strip() or DEFAULT_SYSTEM_PROMPT
         text = f"{identity}\n\n{body}\n\n{ui_link_instructions(origin)}"
         if self.settings.house_map:
-            from .house_map import HOUSE_MAP_INSTRUCTIONS
+            from .house_map import CATALOG_INSTRUCTIONS
 
-            text = f"{text}\n\n{HOUSE_MAP_INSTRUCTIONS}"
+            text = f"{text}\n\n{CATALOG_INSTRUCTIONS}"
         return with_language_rule(text, language)
 
     def _public(self, exc: BaseException) -> str:
@@ -394,7 +394,7 @@ class ApiProvider:
                 await primary_client.initialize()
                 bundle.add("home-assistant", primary_client, await primary_client.list_tools())
             for name, url, extra_headers in extra_clients:
-                if name == "house-map":
+                if name in {"catalog", "house-map"}:
                     continue
                 client = McpHttpClient(http, url, extra_headers)
                 await client.initialize()
@@ -404,7 +404,7 @@ class ApiProvider:
 
                 local = HouseMapClient(self.hass, self.store)
                 await local.initialize()
-                bundle.add("house-map", local, await local.list_tools())
+                bundle.add("catalog", local, await local.list_tools())
             bundle.finish()
         except McpError as exc:
             yield {"type": "error", "message": self._public(exc)}

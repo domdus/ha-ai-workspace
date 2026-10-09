@@ -267,7 +267,7 @@ def _settings(hass: HomeAssistant, entry: ConfigEntry, mcp_url: str | None = Non
     if house_map:
         from .house_map import mcp_server_config
 
-        servers = {**servers, "house-map": mcp_server_config(hass, token)}
+        servers = {**servers, "catalog": mcp_server_config(hass, token)}
     return Settings(
         data_dir=root,
         workspace_dir=root / "workspace",

@@ -35,7 +35,7 @@ except ImportError:
     KEY_HASS = "hass"
 from .redact import redact
 from .store import Session, Store
-from .titles import clean_title, title_from_prompt
+from .titles import accept_generated_title, clean_title, needs_title_summary, title_from_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -222,9 +222,9 @@ async def _runtime_chat(
         language,
     )
     if getattr(settings, "house_map", False):
-        from .house_map import HOUSE_MAP_INSTRUCTIONS
+        from .house_map import CATALOG_INSTRUCTIONS
 
-        prompt = f"{prompt}\n\n{HOUSE_MAP_INSTRUCTIONS}".strip()
+        prompt = f"{prompt}\n\n{CATALOG_INSTRUCTIONS}".strip()
     if prompt:
         payload["message"] = f"{prompt}\n\n{payload['message']}"
     if images:
@@ -763,6 +763,8 @@ class ChatView(HomeAssistantView):
             events_json,
         )
         await hass.async_add_executor_job(store.rename_if_default, session.id, title_from_prompt(message))
+        count = await hass.async_add_executor_job(lambda: len(store.list_messages(session.id)))
+        suggest = getattr(provider, "suggest_title", None) if count <= 1 and needs_title_summary(message) else None
         outbound = attach_files_to_message(message, files)
         if page_note:
             outbound = f"{page_note}\n\n{outbound}"
@@ -868,14 +870,14 @@ class ChatView(HomeAssistantView):
                         elif event.get("type") == "error":
                             error = str(event.get("message") or "The agent failed.")
                         elif event.get("type") == "title":
-                            label = clean_title(str(event.get("title") or ""))
+                            label = accept_generated_title(message, str(event.get("title") or ""))
                             applied = None
                             if label:
                                 applied = await hass.async_add_executor_job(
                                     store.apply_generated_title,
                                     user_id,
                                     session.id,
-                                    message,
+                                    title_from_prompt(message),
                                     label,
                                 )
                             if not applied:
@@ -920,6 +922,22 @@ class ChatView(HomeAssistantView):
             finally:
                 if held:
                     lock.release()
+            if error is None and callable(suggest):
+                try:
+                    raw = await asyncio.wait_for(suggest(message, ""), timeout=12)
+                except Exception:
+                    logger.debug("title generation failed", exc_info=True)
+                    raw = None
+                title = accept_generated_title(message, raw or "")
+                if title:
+                    applied = await hass.async_add_executor_job(
+                        store.apply_generated_title, user_id, session.id, title_from_prompt(message), title
+                    )
+                    if applied and not client_gone:
+                        try:
+                            await response.write(_sse("title", {"type": "title", "title": applied}))
+                        except Exception:
+                            logger.debug("title event skipped", exc_info=True)
 
         jobs: set[asyncio.Task] = data.setdefault("chat_jobs", set())
         task = asyncio.create_task(produce(), name=f"ai_workspace_chat_{session.id}")
@@ -984,7 +1002,7 @@ class SpeakView(HomeAssistantView):
 
 
 class HouseMapMcpView(HomeAssistantView):
-    """Minimal MCP HTTP endpoint for the local house map search tool."""
+    """Minimal MCP HTTP endpoint for the local config catalog search tool."""
 
     url = "/api/ai_workspace/house_map/mcp"
     name = "api:ai_workspace:house_map:mcp"
@@ -996,7 +1014,7 @@ class HouseMapMcpView(HomeAssistantView):
         settings = _runtime(hass).get("settings")
         if not getattr(settings, "house_map", False):
             return web.json_response(
-                {"jsonrpc": "2.0", "id": None, "error": {"code": -32000, "message": "Name index is off."}},
+                {"jsonrpc": "2.0", "id": None, "error": {"code": -32000, "message": "Config catalog is off."}},
                 status=404,
             )
         try:
@@ -1026,7 +1044,7 @@ class HouseMapMcpView(HomeAssistantView):
             result = {
                 "protocolVersion": "2025-03-26",
                 "capabilities": {"tools": {}},
-                "serverInfo": {"name": "ai-workspace-house-map", "version": "1"},
+                "serverInfo": {"name": "ai-workspace-catalog", "version": "1"},
             }
         elif method == "tools/list":
             result = {"tools": await client.list_tools()}
@@ -1058,6 +1076,11 @@ class HouseMapMcpView(HomeAssistantView):
         return web.json_response({"jsonrpc": "2.0", "id": req_id, "result": result})
 
 
+class CatalogMcpView(HouseMapMcpView):
+    url = "/api/ai_workspace/catalog/mcp"
+    name = "api:ai_workspace:catalog:mcp"
+
+
 def register_views(hass: HomeAssistant) -> None:
     hass.http.register_view(HealthView)
     hass.http.register_view(UiView)
@@ -1068,3 +1091,4 @@ def register_views(hass: HomeAssistant) -> None:
     hass.http.register_view(SessionView)
     hass.http.register_view(ChatView)
     hass.http.register_view(HouseMapMcpView)
+    hass.http.register_view(CatalogMcpView)

@@ -2,18 +2,25 @@ from __future__ import annotations
 
 import re
 
-_PROMPT = """Write a short sidebar title from the user's question only.
+_PROMPT = """Write a short sidebar title for this chat from the user's first message only.
 
 Rules:
-- 3 to 6 words
+- 3 to 8 words
 - Same language as the user
-- Name the topic; do not quote the user
-- Plain text only
-- No quotation marks, markdown, asterisks, bold, trailing punctuation, or prefix
+- Summarize the topic; do not copy or truncate the message
+- If the message is already a short label, return that label cleaned
+- Do not use the words Home Assistant, MCP, assistance, assistant, chat, or help
+- Plain text only: no quotes, markdown, asterisks, or trailing punctuation
 
-User question:
+User:
 {user}
 """
+
+_GENERIC = re.compile(
+    r"\b(home assistant|mcp|assistance|assistent|assistant|new chat|chat title|hilfe beim)\b",
+    re.I,
+)
+_PLACEHOLDERS = {"", "New Chat", "New chat", "Neuer Chat"}
 
 
 def title_prompt(user: str, assistant: str = "") -> str:
@@ -30,6 +37,7 @@ def clean_title(raw: str) -> str:
     text = re.sub(r"[*_`#]+", "", text)
     text = text.strip(" \t\"'`“”‘’")
     text = re.sub(r"\s+", " ", text).strip(" .-")
+    text = text.rstrip("?!.,;:")
     return text[:80]
 
 
@@ -40,6 +48,33 @@ def title_from_prompt(user: str) -> str:
     return (user or "").replace("\n", " ").strip()[:80]
 
 
+def needs_title_summary(user: str) -> bool:
+    text = title_from_prompt(user)
+    if not text:
+        return False
+    return len(text) > 50 or len(text.split()) > 8
+
+
+def accept_generated_title(user: str, title: str) -> str:
+    label = clean_title(title)
+    if not label or _GENERIC.search(label):
+        return ""
+    source = title_from_prompt(user)
+    if source.startswith(label) and len(source) > len(label) + 6:
+        return ""
+    return label
+
+
 def is_placeholder_title(title: str, first_user: str = "") -> bool:
-    del first_user
-    return (title or "").strip() in {"", "New Chat", "New chat", "Neuer Chat"}
+    current = (title or "").strip()
+    if current in _PLACEHOLDERS:
+        return True
+    snippet = title_from_prompt(first_user)
+    cleaned = title_from_prompt(current)
+    if not snippet:
+        return False
+    if current == snippet or (cleaned and cleaned == snippet):
+        return True
+    if current and snippet.startswith(current):
+        return True
+    return bool(cleaned) and snippet.startswith(cleaned)

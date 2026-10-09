@@ -25,6 +25,7 @@ export const I18N = {
     mic_needs_https:
       "Dictation needs a secure connection. Open Home Assistant over https:// (Nabu Casa or a reverse proxy). Browsers block the microphone on http:// LAN addresses.",
     send: "Send",
+    scroll_to_bottom: "Scroll to bottom",
     rename: "Rename",
     delete: "Delete",
     rename_prompt: "Rename chat",
@@ -70,6 +71,7 @@ export const I18N = {
     mic_needs_https:
       "Diktieren braucht eine sichere Verbindung. Öffne Home Assistant über https:// (Nabu Casa oder Reverse-Proxy). Browser blockieren das Mikrofon unter http://-LAN-Adressen.",
     send: "Senden",
+    scroll_to_bottom: "Nach unten scrollen",
     placeholder_next: "Nächste Nachricht",
     queued_hint: "Wird gesendet, sobald diese Antwort fertig ist",
     queued_remove: "Verwerfen",

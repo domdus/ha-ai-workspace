@@ -1,4 +1,4 @@
-"""Optional local index of entities, areas, automations, and dashboards."""
+"""Optional local config catalog of entities, areas, automations, and dashboards."""
 
 from __future__ import annotations
 
@@ -8,29 +8,58 @@ from typing import Any
 
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers import area_registry as ar
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.event import async_track_time_interval
 from datetime import timedelta
 
+from .catalog_index import (
+    ACTION_KEYS,
+    acts_on as acts_on_ids,
+    depends_on as depends_on_ids,
+    extra_payload,
+    harvest_device_ids,
+    related_config_ids,
+    summarize_triggers,
+    uniq,
+)
 from .const import DOMAIN
 from .mcp_client import McpError
 from .store import Store
 
 _LOGGER = logging.getLogger(__name__)
 
-TOOL_NAME = "search_house_map"
+TOOL_NAME = "search_catalog"
+TOOL_ALIASES = frozenset({"search_house_map"})
+CATALOG_SERVER = "catalog"
 TOOL_DESCRIPTION = (
-    "Search a local name index of this Home Assistant for entity ids, areas, automations, "
-    "and dashboards by name. Use this before broad MCP listings when you need ids. "
-    "It is not live state — call MCP after this for current state or to change anything."
+    "Search the local config catalog of this Home Assistant for entity ids, areas, automations, "
+    "and dashboards. Automations include trigger_summary, acts_on, depends_on, and related_config_ids. "
+    "Use this before broad MCP listings when you need ids or static wiring. "
+    "It is not live state — call MCP after this for current state, history, traces, or to change anything."
 )
-HOUSE_MAP_INSTRUCTIONS = (
-    "A local tool search_house_map looks up entity ids, areas, automations, and dashboards "
-    "from a name index. For naming questions on a new chat, call search_house_map first, "
-    "then MCP for live state or changes. The index is not live state."
+CATALOG_INSTRUCTIONS = (
+    "A local tool search_catalog looks up entity ids, areas, automations, and dashboards "
+    "from the config catalog. Automations may include trigger times, acts_on, depends_on, and related_config_ids. "
+    "For naming or 'what is wired to what' on a new chat, call search_catalog first, "
+    "then MCP for live state, history, traces, or changes. The catalog is not live state."
 )
+HOUSE_MAP_INSTRUCTIONS = CATALOG_INSTRUCTIONS
 
 _REFRESH_SECONDS = 15 * 60
+_ACTOR_DOMAINS = {
+    "switch",
+    "light",
+    "valve",
+    "cover",
+    "fan",
+    "lock",
+    "input_boolean",
+    "climate",
+    "humidifier",
+    "siren",
+    "button",
+}
 
 
 def tool_definition() -> dict[str, Any]:
@@ -42,7 +71,7 @@ def tool_definition() -> dict[str, Any]:
             "properties": {
                 "query": {
                     "type": "string",
-                    "description": "Words to match against names and ids, such as living room lights.",
+                    "description": "Words to match against names, aliases, tags, and ids.",
                 },
                 "kind": {
                     "type": "string",
@@ -55,32 +84,135 @@ def tool_definition() -> dict[str, Any]:
     }
 
 
+def _label_names(hass: HomeAssistant, label_ids: Any) -> list[str]:
+    ids = [str(item) for item in (label_ids or []) if item]
+    if not ids:
+        return []
+    try:
+        from homeassistant.helpers import label_registry as lr
+
+        registry = lr.async_get(hass)
+    except Exception:
+        return []
+    names: list[str] = []
+    getter = getattr(registry, "async_get_label", None)
+    labels = getattr(registry, "labels", None)
+    for lid in ids:
+        label = getter(lid) if callable(getter) else (labels.get(lid) if isinstance(labels, dict) else None)
+        if label is None:
+            continue
+        name = str(getattr(label, "name", None) or lid).strip()
+        if name:
+            names.append(name)
+    return uniq(names, 8)
+
+
+def _automation_entities(hass: HomeAssistant) -> list[Any]:
+    components = hass.data.get("entity_components")
+    if isinstance(components, dict):
+        component = components.get("automation")
+        entities = getattr(component, "entities", None) if component is not None else None
+        if entities:
+            if isinstance(entities, dict):
+                return list(entities.values())
+            return list(entities)
+    return []
+
+
+def _raw_config(entity: Any) -> dict[str, Any]:
+    for key in ("raw_config", "_config", "config"):
+        value = getattr(entity, key, None)
+        if isinstance(value, dict) and value:
+            return value
+    return {}
+
+
+def _entities_for_device(registry: er.EntityRegistry, device_id: str, *, actors: bool) -> list[str]:
+    try:
+        entries = er.async_entries_for_device(registry, device_id, include_disabled_entities=False)
+    except TypeError:
+        entries = [item for item in registry.entities.values() if item.device_id == device_id and item.disabled_by is None]
+    out: list[str] = []
+    for item in entries:
+        domain = str(item.domain or "")
+        if actors and domain not in _ACTOR_DOMAINS:
+            continue
+        if not actors and domain in _ACTOR_DOMAINS:
+            continue
+        out.append(item.entity_id)
+    return out
+
+
 def collect_rows(hass: HomeAssistant) -> list[tuple[str, str, str, str, str, str]]:
     rows: list[tuple[str, str, str, str, str, str]] = []
     areas = ar.async_get(hass)
     area_names = {area.id: area.name for area in areas.async_list_areas()}
-    for area_id, name in area_names.items():
-        rows.append(("area", area_id, name or area_id, area_id, "", ""))
-
+    devices = dr.async_get(hass)
     registry = er.async_get(hass)
+    entity_by_id = {entity.entity_id: entity for entity in _automation_entities(hass)}
+    pending_autos: list[dict[str, Any]] = []
+
+    for area_id, name in area_names.items():
+        rows.append(("area", area_id, name or area_id, area_id, "", json.dumps({"area": name or area_id}, ensure_ascii=False)))
+
     for entry in registry.entities.values():
         if entry.disabled_by is not None:
             continue
         name = (entry.name or entry.original_name or entry.entity_id or "").strip()
         area_id = entry.area_id or ""
-        if area_id and area_id in area_names:
-            label = f"{name} ({area_names[area_id]})"
-        else:
-            label = name
+        if not area_id and entry.device_id:
+            device = devices.async_get(entry.device_id)
+            if device is not None:
+                area_id = str(device.area_id or "")
+        area_name = area_names.get(area_id, "")
+        label = f"{name} ({area_name})" if area_name else name
+        aliases = uniq(list(getattr(entry, "aliases", None) or []), 8)
+        tags = _label_names(hass, getattr(entry, "labels", None))
         kind = "automation" if entry.domain == "automation" else "entity"
-        extra = ""
+        extra: dict[str, Any] = extra_payload(
+            entity_id=entry.entity_id,
+            aliases=aliases,
+            tags=tags,
+            area=area_name,
+        )
         if kind == "automation":
             state = hass.states.get(entry.entity_id)
-            auto_id = ""
+            config_id = ""
             if state is not None:
-                auto_id = str(state.attributes.get("id") or "").strip()
-            extra = json.dumps({"entity_id": entry.entity_id, "config_id": auto_id}, ensure_ascii=False)
-        rows.append((kind, entry.entity_id, label or entry.entity_id, area_id, entry.domain or "", extra))
+                config_id = str(state.attributes.get("id") or "").strip()
+            extra["config_id"] = config_id
+            entity = entity_by_id.get(entry.entity_id)
+            config = _raw_config(entity) if entity is not None else {}
+            trigger_summary = summarize_triggers(config) if config else ""
+            acted = list(acts_on_ids(config) if config else [])
+            depended = list(depends_on_ids(config) if config else [])
+            if config:
+                for device_id in harvest_device_ids(config, ACTION_KEYS):
+                    acted.extend(_entities_for_device(registry, device_id, actors=True))
+                for device_id in harvest_device_ids(config, ("trigger", "triggers", "condition", "conditions")):
+                    depended.extend(_entities_for_device(registry, device_id, actors=False))
+            extra.update(
+                extra_payload(
+                    entity_id=entry.entity_id,
+                    config_id=config_id,
+                    aliases=aliases,
+                    tags=tags,
+                    trigger_summary=trigger_summary,
+                    acts_on_ids=acted,
+                    depends_on_ids=depended,
+                    area=area_name,
+                )
+            )
+            pending_autos.append(
+                {
+                    "entity_id": entry.entity_id,
+                    "config_id": config_id,
+                    "name": name,
+                    "acts_on": extra.get("acts_on") or [],
+                    "row": extra,
+                }
+            )
+        rows.append((kind, entry.entity_id, label or entry.entity_id, area_id, entry.domain or "", json.dumps(extra, ensure_ascii=False)))
 
     for state in hass.states.async_all("automation"):
         entity_id = state.entity_id
@@ -88,16 +220,36 @@ def collect_rows(hass: HomeAssistant) -> list[tuple[str, str, str, str, str, str
             continue
         config_id = str(state.attributes.get("id") or "").strip()
         name = str(state.attributes.get("friendly_name") or entity_id).strip()
-        rows.append(
-            (
-                "automation",
-                entity_id,
-                name,
-                "",
-                "automation",
-                json.dumps({"entity_id": entity_id, "config_id": config_id}, ensure_ascii=False),
-            )
+        extra = extra_payload(entity_id=entity_id, config_id=config_id)
+        pending_autos.append(
+            {
+                "entity_id": entity_id,
+                "config_id": config_id,
+                "name": name,
+                "acts_on": [],
+                "row": extra,
+            }
         )
+        rows.append(("automation", entity_id, name, "", "automation", json.dumps(extra, ensure_ascii=False)))
+
+    related = related_config_ids(pending_autos)
+    if related:
+        by_entity = {item["entity_id"]: item for item in pending_autos}
+        rewritten: list[tuple[str, str, str, str, str, str]] = []
+        for row in rows:
+            if row[0] != "automation":
+                rewritten.append(row)
+                continue
+            item = by_entity.get(row[1])
+            if item is None:
+                rewritten.append(row)
+                continue
+            extra = dict(item["row"])
+            related_ids = related.get(str(item.get("config_id") or ""), [])
+            if related_ids:
+                extra["related_config_ids"] = related_ids
+            rewritten.append((row[0], row[1], row[2], row[3], row[4], json.dumps(extra, ensure_ascii=False)))
+        rows = rewritten
 
     lovelace = hass.data.get("lovelace")
     dashboards = getattr(lovelace, "dashboards", None) if lovelace is not None else None
@@ -121,7 +273,7 @@ def collect_rows(hass: HomeAssistant) -> list[tuple[str, str, str, str, str, str
 async def refresh_house_map(hass: HomeAssistant, store: Store) -> int:
     rows = collect_rows(hass)
     await hass.async_add_executor_job(store.replace_house_map, rows)
-    _LOGGER.debug("house map refreshed rows=%s", len(rows))
+    _LOGGER.debug("config catalog refreshed rows=%s", len(rows))
     return len(rows)
 
 
@@ -143,8 +295,8 @@ class HouseMapClient:
         return [tool_definition()]
 
     async def call_tool(self, name: str, arguments: dict[str, Any] | None = None) -> Any:
-        if name != TOOL_NAME:
-            raise McpError(f"Unknown house map tool: {name}")
+        if name not in {TOOL_NAME, *TOOL_ALIASES}:
+            raise McpError(f"Unknown catalog tool: {name}")
         args = arguments or {}
         query = str(args.get("query") or "").strip()
         kind = str(args.get("kind") or "any").strip() or "any"
@@ -153,7 +305,7 @@ class HouseMapClient:
         matches = await self.hass.async_add_executor_job(search_house_map, self.store, query, kind)
         return {
             "matches": matches,
-            "note": "Ids and names only. Use MCP for live state or to change anything.",
+            "note": "Static catalog (ids, names, wiring). Use MCP for live state, history, traces, or changes.",
         }
 
 
@@ -169,7 +321,7 @@ def house_map_mcp_url(hass: HomeAssistant) -> str:
         base = str(getattr(hass.config, "internal_url", None) or "").strip()
     if not base:
         base = "http://127.0.0.1:8123"
-    return f"{base.rstrip('/')}/api/ai_workspace/house_map/mcp"
+    return f"{base.rstrip('/')}/api/ai_workspace/catalog/mcp"
 
 
 def mcp_server_config(hass: HomeAssistant, token: str = "") -> dict[str, Any]:
@@ -194,7 +346,7 @@ async def async_setup_house_map(hass: HomeAssistant, store: Store, enabled: bool
         try:
             await refresh_house_map(hass, store)
         except Exception:
-            _LOGGER.exception("house map refresh failed")
+            _LOGGER.exception("config catalog refresh failed")
 
     await _refresh()
 
@@ -205,6 +357,7 @@ async def async_setup_house_map(hass: HomeAssistant, store: Store, enabled: bool
     unsubs = [
         hass.bus.async_listen(er.EVENT_ENTITY_REGISTRY_UPDATED, _schedule),
         hass.bus.async_listen(ar.EVENT_AREA_REGISTRY_UPDATED, _schedule),
+        hass.bus.async_listen("automation_reloaded", _schedule),
     ]
     timer = async_track_time_interval(hass, _refresh, timedelta(seconds=_REFRESH_SECONDS))
     unsubs.append(timer)

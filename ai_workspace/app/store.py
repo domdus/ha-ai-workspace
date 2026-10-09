@@ -161,11 +161,12 @@ class Store:
         self._conn.commit()
 
     def apply_generated_title(self, user_id: str, session_id: str, first_user: str, title: str) -> str | None:
+        from app.titles import is_placeholder_title
+
         session = self.get_session(user_id, session_id)
         if session is None:
             return None
-        del first_user
-        if session.title not in {"New Chat", "New chat", "Neuer Chat"}:
+        if not is_placeholder_title(session.title, first_user):
             return None
         label = (title or "").strip().replace("\n", " ")[:80]
         if not label:

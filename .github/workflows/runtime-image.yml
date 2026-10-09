@@ -3,6 +3,7 @@ name: Runtime image
 on:
   push:
     branches: [main]
+    tags: ["v*"]
     paths:
       - "ai_workspace/**"
       - ".github/workflows/runtime-image.yml"
@@ -12,11 +13,21 @@ permissions:
   contents: read
   packages: write
 
+env:
+  IMAGE: ghcr.io/domdus/ha-ai-workspace-runtime
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Addon version
+        id: addon
+        run: |
+          version=$(sed -n 's/^version: "\(.*\)"/\1/p' ai_workspace/config.yaml | head -1)
+          echo "version=${version:-dev}" >> "$GITHUB_OUTPUT"
+
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
@@ -24,11 +35,25 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ steps.addon.outputs.version }}
+            type=sha,format=short
+            type=semver,pattern={{version}}
+
       - uses: docker/build-push-action@v6
         with:
           context: ./ai_workspace
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            ghcr.io/domdus/ha-ai-workspace-runtime:latest
-            ghcr.io/domdus/ha-ai-workspace-runtime:${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ steps.addon.outputs.version }}

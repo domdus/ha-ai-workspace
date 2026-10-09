@@ -402,6 +402,9 @@ export function mountAiWorkspace(root, options = {}) {
           <div class="log"></div>
           <p class="status" hidden></p>
           <form class="composer">
+            <button type="button" class="scroll-bottom" tabindex="-1" aria-label="${t("scroll_to_bottom")}">
+              <ha-icon icon="mdi:arrow-down"></ha-icon>
+            </button>
             <div class="composer-box">
               <div class="next-row" hidden>
                 <p class="next-copy"></p>
@@ -447,6 +450,7 @@ export function mountAiWorkspace(root, options = {}) {
   const statusEl = root.querySelector(".status");
   const bannerEl = root.querySelector(".banner");
   const form = root.querySelector(".composer");
+  const scrollBottomBtn = root.querySelector(".scroll-bottom");
   const messageEl = root.querySelector(".message");
   const sendBtn = root.querySelector(".send");
   const agentPicker = root.querySelector(".agent-picker");
@@ -576,18 +580,24 @@ export function mountAiWorkspace(root, options = {}) {
   let attachNoticeTimer = 0;
   let micNoticeTimer = 0;
   let pinBottom = true;
+  let jumping = false;
+  let jumpTimer = 0;
+  let lastScrollTop = 0;
   let followRaf = 0;
   let followLast = 0;
   let motionTimer = 0;
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function resizeComposer() {
+    const holdTop = !pinBottom ? chatEl.scrollTop : null;
     messageEl.style.height = "auto";
     messageEl.style.height = `${Math.min(Math.max(messageEl.scrollHeight, 36), 160)}px`;
     const hasDraft = Boolean(messageEl.value.trim() || pending.length);
     sendBtn.disabled = !hasDraft;
     if (attachBtn) attachBtn.disabled = pending.length >= MAX_ATTACH;
     messageEl.placeholder = streaming ? t("placeholder_next") : t("placeholder");
+    if (holdTop != null) chatEl.scrollTop = holdTop;
+    else if (pinBottom) stickToBottom();
   }
 
   function keepComposerFocus() {
@@ -657,7 +667,10 @@ export function mountAiWorkspace(root, options = {}) {
 
   function setWelcome(on, animate = true) {
     const want = Boolean(on);
-    if (chatEl.classList.contains("welcome") === want) return;
+    if (chatEl.classList.contains("welcome") === want) {
+      syncScrollBottomBtn();
+      return;
+    }
     if (!want) logEl.querySelector(".empty")?.remove();
     const shouldAnimate = animate && !reduceMotion;
     if (shouldAnimate) {
@@ -674,11 +687,13 @@ export function mountAiWorkspace(root, options = {}) {
         box.style.transform = "translateY(0)";
         box.addEventListener("transitionend", clearMotion, { once: true });
         motionTimer = setTimeout(clearMotion, 700);
+        syncScrollBottomBtn();
         return;
       }
     }
     chatEl.classList.toggle("welcome", want);
     clearMotion();
+    syncScrollBottomBtn();
   }
 
   function overlayOpen() {
@@ -1150,10 +1165,70 @@ export function mountAiWorkspace(root, options = {}) {
 
   function releaseFollow() {
     pinBottom = false;
+    jumping = false;
+    if (jumpTimer) {
+      window.clearTimeout(jumpTimer);
+      jumpTimer = 0;
+    }
     if (followRaf) {
       cancelAnimationFrame(followRaf);
       followRaf = 0;
     }
+    chatEl.scrollTop = chatEl.scrollTop;
+    syncScrollBottomBtn();
+  }
+
+  function syncScrollBottomBtn() {
+    if (!scrollBottomBtn) return;
+    const overflow = chatEl.scrollHeight - chatEl.clientHeight;
+    const far = overflow > 48 && distanceFromBottom() > 72;
+    if (!far || !pinBottom) jumping = false;
+    const show = !chatEl.classList.contains("welcome") && far && !jumping;
+    scrollBottomBtn.classList.toggle("is-visible", show);
+    scrollBottomBtn.setAttribute("aria-hidden", show ? "false" : "true");
+  }
+
+  function stickToBottom() {
+    if (!pinBottom) {
+      syncScrollBottomBtn();
+      return;
+    }
+    writeScrollTop(Math.max(0, chatEl.scrollHeight - chatEl.clientHeight));
+    lastScrollTop = chatEl.scrollTop;
+    syncScrollBottomBtn();
+  }
+
+  function jumpToBottom() {
+    pinBottom = true;
+    jumping = true;
+    syncScrollBottomBtn();
+    if (followRaf) {
+      cancelAnimationFrame(followRaf);
+      followRaf = 0;
+    }
+    const max = Math.max(0, chatEl.scrollHeight - chatEl.clientHeight);
+    if (reduceMotion) {
+      writeScrollTop(max);
+      lastScrollTop = chatEl.scrollTop;
+      jumping = false;
+      syncScrollBottomBtn();
+      return;
+    }
+    const finish = () => {
+      if (jumpTimer) {
+        window.clearTimeout(jumpTimer);
+        jumpTimer = 0;
+      }
+      chatEl.removeEventListener("scrollend", finish);
+      jumping = false;
+      lastScrollTop = chatEl.scrollTop;
+      if (pinBottom) writeScrollTop(Math.max(0, chatEl.scrollHeight - chatEl.clientHeight));
+      syncScrollBottomBtn();
+    };
+    chatEl.addEventListener("scrollend", finish, { once: true });
+    if (jumpTimer) window.clearTimeout(jumpTimer);
+    jumpTimer = window.setTimeout(finish, 900);
+    chatEl.scrollTo({ top: max, behavior: "smooth" });
   }
 
   let streamNode = null;
@@ -1332,6 +1407,8 @@ export function mountAiWorkspace(root, options = {}) {
       const keep = pinBottom && (streaming || Boolean(streamBuf) || dist > 0.5);
       if (!keep) {
         followRaf = 0;
+        jumping = false;
+        syncScrollBottomBtn();
         return;
       }
       if (dist <= 0.5) {
@@ -1349,16 +1426,21 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   function scrollChatToBottom(smooth = true) {
-    if (!pinBottom) return;
+    if (!pinBottom) {
+      syncScrollBottomBtn();
+      return;
+    }
     if (!smooth || reduceMotion) {
       if (followRaf) {
         cancelAnimationFrame(followRaf);
         followRaf = 0;
       }
       writeScrollTop(Math.max(0, chatEl.scrollHeight - chatEl.clientHeight));
+      syncScrollBottomBtn();
       return;
     }
     followBottom();
+    syncScrollBottomBtn();
   }
 
   function showEmpty() {
@@ -1546,6 +1628,18 @@ export function mountAiWorkspace(root, options = {}) {
     return title;
   }
 
+  function promptTitle(text) {
+    const clean = String(text || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/[*_`#]+/g, "")
+      .replace(/[?!.]+$/g, "");
+    if (!clean) return "";
+    const words = clean.split(" ");
+    if (clean.length > 50 || words.length > 8) return "";
+    return clean;
+  }
+
   function applySessionTitle(id, title) {
     if (!id || !title) return;
     const labelText = displayTitle(title);
@@ -1679,7 +1773,12 @@ export function mountAiWorkspace(root, options = {}) {
     for (const message of messages) {
       addBubble(message.role, message.content, message.events, { animate: false, follow: false });
     }
-    scrollChatToBottom(false);
+    pinBottom = true;
+    stickToBottom();
+    requestAnimationFrame(() => requestAnimationFrame(stickToBottom));
+    window.setTimeout(stickToBottom, 50);
+    window.setTimeout(stickToBottom, 250);
+    window.setTimeout(stickToBottom, 700);
   }
 
   function needsPaint(session) {
@@ -2319,7 +2418,7 @@ export function mountAiWorkspace(root, options = {}) {
       if (!sessionId) {
         const created = await createSession();
         if (token !== streamToken || !created) return;
-        titleEl.textContent = (text || attachments[0]?.name || "File").slice(0, 80);
+        titleEl.textContent = promptTitle(text) || attachments[0]?.name || t("new_chat");
       }
       if (token !== streamToken) return;
       chatId = sessionId;
@@ -2342,7 +2441,7 @@ export function mountAiWorkspace(root, options = {}) {
       if (response.status === 404) {
         const created = await createSession();
         if (token !== streamToken || !created) return;
-        titleEl.textContent = (text || attachments[0]?.name || "File").slice(0, 80);
+        titleEl.textContent = promptTitle(text) || attachments[0]?.name || t("new_chat");
         response = await apiFetch(`${API}/sessions/${sessionId}/chat`, {
           method: "POST",
           body: payload,
@@ -2458,11 +2557,11 @@ export function mountAiWorkspace(root, options = {}) {
     }
   });
 
-  let lastScrollTop = 0;
   chatEl.addEventListener("scroll", () => {
     const top = chatEl.scrollTop;
     const movedUp = top < lastScrollTop - 2;
     lastScrollTop = top;
+    syncScrollBottomBtn();
     if (scrollLock) return;
     if (movedUp) {
       releaseFollow();
@@ -2471,6 +2570,7 @@ export function mountAiWorkspace(root, options = {}) {
     if (!nearBottom()) return;
     const resume = !pinBottom && (streaming || streamBuf);
     pinBottom = true;
+    syncScrollBottomBtn();
     if (resume) followBottom();
   }, { passive: true });
 
@@ -2503,7 +2603,16 @@ export function mountAiWorkspace(root, options = {}) {
   window.visualViewport?.addEventListener("scroll", () => {
     if (wrap.classList.contains("keyboard-open")) syncKeyboardInset();
   });
-  messageEl.addEventListener("input", resizeComposer);
+  messageEl.addEventListener("input", () => {
+    const top = chatEl.scrollTop;
+    const hold = !pinBottom;
+    resizeComposer();
+    if (!hold) return;
+    chatEl.scrollTop = top;
+    requestAnimationFrame(() => {
+      if (!pinBottom) chatEl.scrollTop = top;
+    });
+  });
   messageEl.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
@@ -2514,6 +2623,15 @@ export function mountAiWorkspace(root, options = {}) {
     event.preventDefault();
     form.requestSubmit();
   });
+  scrollBottomBtn?.addEventListener("click", (event) => {
+    event.preventDefault();
+    jumpToBottom();
+  });
+  const scrollBtnWatch = new ResizeObserver(() => {
+    if (pinBottom) stickToBottom();
+    else syncScrollBottomBtn();
+  });
+  scrollBtnWatch.observe(logEl);
   nextRemove?.addEventListener("click", (event) => {
     event.preventDefault();
     nextTurn = null;
