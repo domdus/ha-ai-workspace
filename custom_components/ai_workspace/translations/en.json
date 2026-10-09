@@ -531,6 +531,16 @@
         "already_configured": "A connection with this name is already there."
       },
       "step": {
+        "user": {
+          "title": "Connection",
+          "description": "Only MCP servers this Home Assistant can reach are listed. Custom is any MCP HTTP URL.",
+          "menu_options": {
+            "ha": "Home Assistant MCP Server (built-in)",
+            "ha_mcp": "HA-MCP",
+            "coolver": "HA Vibecode Agent (Coolver)",
+            "custom": "Custom MCP URL"
+          }
+        },
         "connection": {
           "title": "Connection",
           "description": "An MCP server the assistant can use in the same chat.",
@@ -541,7 +551,7 @@
           },
           "data_description": {
             "name": "A short name, such as Directus. The assistant uses it to tell this connection from the others.",
-            "url": "The MCP address, starting with https:// or http://.",
+            "url": "The MCP address, starting with https:// or http://. Found servers are filled in.",
             "token": "Only if that server asks for a key. Leave empty when editing to keep the saved key."
           }
         }

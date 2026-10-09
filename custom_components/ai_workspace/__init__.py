@@ -82,7 +82,7 @@ from .const import (
     PANEL_URL,
     STATIC_URL,
 )
-from .discovery import async_resolve_runtime_url
+from .discovery import MISSING_RUNTIME, async_bind_runtime, async_resolve_runtime_url
 from .http import register_views
 from .mcp_config import clean_mcp_extra, mcp_servers_from_saved, server_slug
 from .mcp_resolve import async_resolve_mcp_url, mcp_kind_of
@@ -332,7 +332,7 @@ def _one_provider(hass: HomeAssistant, settings: Settings, agent, runtime_url: s
     from .api_provider import ApiProvider
 
     if agent.mode == MODE_CURSOR:
-        reason = None if runtime_url else "Start the Cursor SDK Runtime and set its URL on AI Workspace."
+        reason = None if runtime_url else MISSING_RUNTIME
         return CursorAgent(agent, bool(runtime_url), reason)
     store = hass.data[DOMAIN].get("store")
     agent_settings = replace(
@@ -361,7 +361,7 @@ async def _ensure_shared(hass: HomeAssistant, hub: ConfigEntry) -> dict:
     data = _merged(hub)
     settings = await _build_settings(hass, hub)
     configured = str(data.get(CONF_RUNTIME_URL) or "").strip().rstrip("/")
-    runtime_url = await async_resolve_runtime_url(hass, configured) if configured else ""
+    runtime_url = await async_resolve_runtime_url(hass, configured)
     from .store import Store
 
     await hass.async_add_executor_job(settings.ensure_dirs)
@@ -712,8 +712,7 @@ async def _setup_provider(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return False
     agent = agent_from_entry(entry)
     if agent.mode == MODE_CURSOR and not bucket.get("runtime_url"):
-        configured = str(_merged(hub).get(CONF_RUNTIME_URL) or "").strip().rstrip("/")
-        bucket["runtime_url"] = await async_resolve_runtime_url(hass, configured)
+        await async_bind_runtime(hass, bucket)
     if hub.data.get("devices_migrated"):
         return False
     bucket["providers"][agent.id] = _one_provider(hass, bucket["settings"], agent, bucket.get("runtime_url") or "")
@@ -731,8 +730,7 @@ async def _setup_agents(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _sync_subentry_devices(hass, entry)
     _listen_device_disable(hass, entry)
     if not bucket.get("runtime_url"):
-        configured = str(_merged(hub).get(CONF_RUNTIME_URL) or "").strip().rstrip("/")
-        bucket["runtime_url"] = await async_resolve_runtime_url(hass, configured) if configured else ""
+        await async_bind_runtime(hass, bucket)
     runtime = bucket.get("runtime_url") or ""
     providers = {}
     for agent in entry_agents(entry):

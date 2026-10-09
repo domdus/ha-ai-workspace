@@ -6,7 +6,7 @@ from typing import Any, AsyncIterator
 
 from homeassistant.core import Context, HomeAssistant
 
-from .const import DOMAIN
+from .const import DOMAIN, is_builtin_assist_agent
 
 
 def list_assist_agents(hass: HomeAssistant) -> list[dict[str, Any]]:
@@ -30,7 +30,8 @@ def list_assist_agents(hass: HomeAssistant) -> list[dict[str, Any]]:
             if not entity_id or entity_id in seen:
                 continue
             reg = registry.async_get(entity_id)
-            if reg is not None and reg.platform == DOMAIN:
+            platform = str(getattr(reg, "platform", "") or "")
+            if platform == DOMAIN or is_builtin_assist_agent(entity_id, platform):
                 continue
             state = hass.states.get(entity_id)
             name = state.name if state is not None and state.name else ""
@@ -54,7 +55,7 @@ def list_assist_agents(hass: HomeAssistant) -> list[dict[str, Any]]:
         manager = None
     if manager is not None:
         for info in manager.async_get_agent_info():
-            if info.id in seen:
+            if info.id in seen or is_builtin_assist_agent(info.id):
                 continue
             agent = manager.async_get_agent(info.id)
             if isinstance(agent, ConversationEntity):

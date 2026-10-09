@@ -26,3 +26,10 @@ def test_mcp_dropdown_keeps_detected_saved_and_custom() -> None:
     assert const.mcp_kind_options({"ha", "ha_mcp"}) == ["ha", "ha_mcp", "custom"]
     assert const.mcp_kind_options(set()) == ["custom"]
     assert const.mcp_kind_options(set(), current="custom") == ["custom"]
+
+
+def test_mcp_connection_menu_lists_found_and_skips_already_added() -> None:
+    const = _const()
+    assert const.mcp_connection_menu({"ha"}) == ["ha", "custom"]
+    assert const.mcp_connection_menu({"ha", "ha_mcp"}, used={"ha"}) == ["ha_mcp", "custom"]
+    assert const.mcp_connection_menu(set()) == ["custom"]
