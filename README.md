@@ -64,6 +64,15 @@ You need any MCP server:
 
 Fastest path. Add an **AI Agents** for **OpenAI**, **Claude**, **Gemini**, **DeepSeek**, **Qwen**, **Grok**, **OpenRouter**, **Azure OpenAI**, **local Ollama**, or **OpenAI-compatible** (LM Studio and others). The model must support tool calls or it cannot drive MCP. If that provider is already configured in Home Assistant, the agent form can copy its key.
 
+You chat in **AI Workspace**. It calls the cloud API. **MCP** is how that model reaches Home Assistant.
+
+```mermaid
+flowchart LR
+  ws[AI Workspace] --> api[AI Cloud API]
+  ws --> mcp[MCP]
+  mcp --> ha[Home Assistant]
+```
+
 ### 1. Install AI Workspace from HACS
 
 [![Add AI Workspace to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=domdus&repository=ha-ai-workspace&category=integration)
@@ -97,6 +106,21 @@ Install AI Workspace from HACS first ([step 1](#1-install-ai-workspace-from-hacs
 
 ### Option A: Home Assistant OS / Supervised (Add-on)
 
+The Cursor SDK runs as an App on the same box as Home Assistant.
+
+```mermaid
+flowchart LR
+  subgraph box [Home Assistant OS]
+    ws[AI Workspace]
+    sdk[Cursor SDK]
+    mcp[MCP]
+    ha[Home Assistant]
+  end
+  cloud[Cursor Cloud AI]
+  ws --> sdk --> cloud
+  sdk --> mcp --> ha
+```
+
 Add this repo to Apps and install **AI Workspace Runtime**:
 
 [![Add repository](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fdomdus%2Fha-ai-workspace)
@@ -107,7 +131,24 @@ Home Assistant 2026.2 renamed “Add-ons” to “Apps”.
 
 ### Option B: Home Assistant Container (Docker)
 
-If Home Assistant runs in Docker, without the Supervisor, it needs one extra container next to Home Assistant. Paste your Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) into [`docker-compose.runtime.yml`](docker-compose.runtime.yml):
+If Home Assistant runs in Docker, without the Supervisor, it needs one extra container next to Home Assistant. Same wiring as Option A: **AI Workspace** talks to the **Cursor SDK**, the SDK talks to **Cursor** and to **MCP**.
+
+```mermaid
+architecture-beta
+  group ha(server)[Home Assistant]
+  group sdk(server)[Cursor SDK]
+  service ws(server)[AI Workspace] in ha
+  service core(server)[Home Assistant] in ha
+  service mcp(server)[MCP] in ha
+  service cursor(server)[Cursor SDK] in sdk
+  service cloud(internet)[Cursor Cloud AI]
+  ws:R -- L:core
+  core:R -- L:mcp
+  cursor:L --> R:mcp
+  cursor:R --> L:cloud
+```
+
+Paste your Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) into [`docker-compose.runtime.yml`](docker-compose.runtime.yml):
 
 ```yaml
 name: ai-workspace-runtime
@@ -171,6 +212,22 @@ After the Runtime is up and running: **Settings → Devices & services → Add i
 - Model: `composer-2.5`, `grok-4`, `gpt-4.1`, `claude-sonnet-4-5` (or leave empty to use `CURSOR_MODEL` on the container).
 - Paste the Cursor API key, unless the Runtime already has one.
 - Open **AI Workspace** (`/ai-workspace`). More agents are added with **Add agent**.
+
+## Local AI (Ollama)
+
+Same as Cloud AI, with **Ollama** (or LM Studio) on this machine. Offline: the chat stays in the house. The model must support tool calls.
+
+Install as in [Cloud AI](#cloud-ai-api-provider-quick). Pick **Ollama** and point the API Base URL at your Ollama server.
+
+```mermaid
+flowchart LR
+  subgraph ha [Home Assistant]
+    ws[AI Workspace]
+    mcp[MCP]
+    ws --> mcp
+  end
+  ws --> ollama[Ollama]
+```
 
 ## System Prompt
 
