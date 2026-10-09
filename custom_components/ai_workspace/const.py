@@ -147,7 +147,6 @@ CONF_HOUSE_MAP = "house_map"
 CONF_KEEP_CHATS = "keep_chats"
 DEFAULT_KEEP_CHATS = 30
 CONF_EFFORT = "effort"
-CONF_ENABLED = "enabled"
 CONF_STT_ENGINE = "stt_engine"
 CONF_TTS_ENGINE = "tts_engine"
 CONF_SPEAK_REPLIES = "speak_replies"

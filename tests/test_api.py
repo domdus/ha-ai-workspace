@@ -74,20 +74,19 @@ class FakeCursorTitled(FakeCursor):
         return "Garden moisture"
 
 
-def test_chat_summarizes_title_after_first_reply(tmp_path: Path) -> None:
+def test_chat_keeps_first_prompt_as_title(tmp_path: Path) -> None:
     app = create_app(settings(tmp_path), {"cursor": FakeCursorTitled()})
     with TestClient(app) as client:
         created = client.post("/api/sessions", json={"provider": "cursor"})
         session_id = created.json()["id"]
         streamed = client.post(
             f"/api/sessions/{session_id}/chat",
-            json={"message": "Why is the garden so dry?"},
+            json={"message": "Status der Bewässerung?"},
         )
         assert streamed.status_code == 200
-        assert "event: title" in streamed.text
-        assert "Garden moisture" in streamed.text
+        assert "Garden moisture" not in streamed.text
         detail = client.get(f"/api/sessions/{session_id}")
-        assert detail.json()["title"] == "Garden moisture"
+        assert detail.json()["title"] == "Status der Bewässerung?"
 
 
 def test_ingress_requires_a_user(tmp_path: Path) -> None:

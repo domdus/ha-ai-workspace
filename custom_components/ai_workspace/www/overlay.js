@@ -23,10 +23,16 @@ function refreshAccess(onReady) {
   const user = hass?.user;
   if (!user || user.is_admin || usersAllowed !== null || accessFlight) return;
   const token = hass.auth?.data?.access_token || "";
-  if (!token) return;
-  accessFlight = fetch("/api/ai_workspace/ui", {
-    headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-  })
+  if (!token && typeof hass.fetchWithAuth !== "function") return;
+  const fetchUi = () => {
+    if (typeof hass.fetchWithAuth === "function") {
+      return hass.fetchWithAuth("/api/ai_workspace/ui", { headers: { Accept: "application/json" } });
+    }
+    return fetch("/api/ai_workspace/ui", {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    });
+  };
+  accessFlight = fetchUi()
     .then((resp) => (resp.ok ? resp.json() : { allowed: false }))
     .then((data) => {
       usersAllowed = data.allowed === true;
@@ -302,12 +308,11 @@ async function ensureHost() {
   fab.addEventListener("click", async () => {
     drawer.classList.add("open");
     const api = await mountChat();
-    api.loadDictate?.();
+    api.resume?.();
   });
   newChat.addEventListener("click", async () => {
     drawer.classList.add("open");
     const api = await mountChat();
-    api.loadDictate?.();
     api.startNewChat();
   });
   close.addEventListener("click", () => drawer.classList.remove("open"));

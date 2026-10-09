@@ -18,6 +18,7 @@ from .agents import Agent, agent_from_entry, entry_agents, is_agents, is_provide
 from .const import DOMAIN
 from .http import _create_runtime_session, async_agent_events
 from .store import Store
+from .titles import title_from_prompt
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -46,8 +47,8 @@ async def _login_token(hass: HomeAssistant, user_id: str) -> str | None:
         return None
 
 
-def _sync_agent_entity(hass: HomeAssistant, agent_id: str, enabled: bool) -> None:
-    """Mirror the agent Enabled flag onto the conversation entity."""
+def _clear_integration_disabled_agent(hass: HomeAssistant, agent_id: str) -> None:
+    """Undo the old form Enabled flag, which disabled the conversation entity."""
     from homeassistant.helpers import entity_registry as er
 
     registry = er.async_get(hass)
@@ -55,13 +56,9 @@ def _sync_agent_entity(hass: HomeAssistant, agent_id: str, enabled: bool) -> Non
     if not entity_id:
         return
     entry = registry.async_get(entity_id)
-    if entry is None:
+    if entry is None or entry.disabled_by is not er.RegistryEntryDisabler.INTEGRATION:
         return
-    if enabled:
-        if entry.disabled_by is er.RegistryEntryDisabler.INTEGRATION:
-            registry.async_update_entity(entity_id, disabled_by=None)
-    elif entry.disabled_by is None:
-        registry.async_update_entity(entity_id, disabled_by=er.RegistryEntryDisabler.INTEGRATION)
+    registry.async_update_entity(entity_id, disabled_by=None)
 
 
 async def async_setup_entry(
@@ -74,7 +71,7 @@ async def async_setup_entry(
         agents = entry_agents(entry)
         _LOGGER.info("Exposing %s Assist agent(s) for %s", len(agents), entry.title)
         for agent in agents:
-            _sync_agent_entity(hass, agent.id, agent.enabled)
+            _clear_integration_disabled_agent(hass, agent.id)
         async_add_entities([AiWorkspaceConversationEntity(entry, agent) for agent in agents])
         return
     if is_provider(entry):
@@ -93,7 +90,6 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
 
     def __init__(self, entry: ConfigEntry, agent: Agent) -> None:
         self._agent_id = agent.id
-        self._agent_enabled = agent.enabled
         self._subentry_id = agent.subentry_id
         self._attr_unique_id = agent.id
         self._attr_name = agent.title or entry.title or "AI Workspace"
@@ -106,9 +102,9 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
-        _sync_agent_entity(self.hass, self._agent_id, self._agent_enabled)
+        _clear_integration_disabled_agent(self.hass, self._agent_id)
         self._link_agent_device()
-        if not self._agent_enabled:
+        if self.registry_entry is not None and self.registry_entry.disabled_by:
             return
         from .assist_pipelines import async_ensure_assist_pipeline
 
@@ -215,9 +211,7 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
 
         async with lock:
             await self.hass.async_add_executor_job(store.add_message, session.id, "user", text, "[]")
-            await self.hass.async_add_executor_job(store.rename_if_default, session.id, text.replace("\n", " ").strip())
-            count = await self.hass.async_add_executor_job(lambda: len(store.list_messages(session.id)))
-            suggest = getattr(provider, "suggest_title", None) if count <= 1 else None
+            await self.hass.async_add_executor_job(store.rename_if_default, session.id, title_from_prompt(text))
             parts: list[str] = []
             tools: list[dict[str, Any]] = []
             error: str | None = None
@@ -284,16 +278,6 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
                 json.dumps(stored, ensure_ascii=False),
             )
 
-        if error is None and callable(suggest):
-            try:
-                title = await suggest(text, answer)
-            except Exception:
-                _LOGGER.debug("Assist title skipped", exc_info=True)
-                title = None
-            if title:
-                await self.hass.async_add_executor_job(
-                    store.apply_generated_title, user_id, session.id, text, title
-                )
         return conversation.async_get_result_from_chat_log(user_input, chat_log)
 
     def _reply(self, chat_log: conversation.ChatLog, text: str) -> None:

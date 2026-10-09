@@ -27,7 +27,6 @@ def _schema(current: dict) -> vol.Schema:
             vol.Required("name", default=str(current.get("name") or "")): cv.string,
             vol.Required("url", default=str(current.get("url") or "")): _URL,
             vol.Optional("token", default=""): _TOKEN,
-            vol.Optional("enabled", default=bool(current.get("enabled", True))): cv.boolean,
         }
     )
 
@@ -55,12 +54,11 @@ class McpConnectionFlow(config_entries.ConfigSubentryFlow):
 
     def _defaults(self) -> dict:
         if not self._editing:
-            return {"enabled": True}
+            return {}
         current, data = self._saved()
         return {
             "name": current.title,
             "url": data.get("url") or "",
-            "enabled": bool(data.get("enabled", True)),
         }
 
     def _taken(self, host, slug: str, current_id: str | None) -> bool:
@@ -95,7 +93,6 @@ class McpConnectionFlow(config_entries.ConfigSubentryFlow):
             name = str(user_input.get("name") or "").strip()
             url = str(user_input.get("url") or "").strip()
             token = str(user_input.get("token") or "").strip()
-            enabled = bool(user_input.get("enabled", True))
             if not url.startswith(("http://", "https://")):
                 errors["url"] = "required"
             slug = server_slug(name, url)
@@ -106,7 +103,7 @@ class McpConnectionFlow(config_entries.ConfigSubentryFlow):
             if not errors:
                 if self._editing and not token:
                     token = previous_token
-                payload = {"name": slug, "url": url, "token": token, "enabled": enabled}
+                payload = {"name": slug, "url": url, "token": token}
                 if self._editing:
                     current, data = self._saved()
                     if data.get("primary"):

@@ -164,8 +164,8 @@ class Store:
         session = self.get_session(user_id, session_id)
         if session is None:
             return None
-        snippet = (first_user or "").replace("\n", " ").strip()[:80]
-        if session.title not in {"New Chat", "New chat", "Neuer Chat", snippet}:
+        del first_user
+        if session.title not in {"New Chat", "New chat", "Neuer Chat"}:
             return None
         label = (title or "").strip().replace("\n", " ")[:80]
         if not label:

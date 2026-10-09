@@ -35,7 +35,7 @@ except ImportError:
     KEY_HASS = "hass"
 from .redact import redact
 from .store import Session, Store
-from .titles import clean_title
+from .titles import clean_title, title_from_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -452,19 +452,6 @@ async def _prune_all_chats(hass: HomeAssistant, store: Store, keep: int) -> None
         await _cleanup_pruned_sessions(hass, deleted, None)
 
 
-async def _title_from_task(task, timeout: float = 12) -> str:
-    if task is None:
-        return ""
-    try:
-        raw = await asyncio.wait_for(task, timeout)
-    except Exception:
-        logger.debug("title generation failed", exc_info=True)
-        if not task.done():
-            task.cancel()
-        return ""
-    return clean_title(raw or "")
-
-
 _SKIP = {"content-length", "transfer-encoding", "connection", "host"}
 
 
@@ -775,9 +762,7 @@ class ChatView(HomeAssistantView):
             message,
             events_json,
         )
-        await hass.async_add_executor_job(store.rename_if_default, session.id, message.replace("\n", " ").strip())
-        count = await hass.async_add_executor_job(lambda: len(store.list_messages(session.id)))
-        suggest = getattr(provider, "suggest_title", None) if count <= 1 else None
+        await hass.async_add_executor_job(store.rename_if_default, session.id, title_from_prompt(message))
         outbound = attach_files_to_message(message, files)
         if page_note:
             outbound = f"{page_note}\n\n{outbound}"
@@ -935,17 +920,6 @@ class ChatView(HomeAssistantView):
             finally:
                 if held:
                     lock.release()
-            if error is None and callable(suggest):
-                title = await _title_from_task(asyncio.create_task(suggest(message, "")))
-                if title:
-                    applied = await hass.async_add_executor_job(
-                        store.apply_generated_title, user_id, session.id, message, title
-                    )
-                    if applied and not client_gone:
-                        try:
-                            await response.write(_sse("title", {"type": "title", "title": applied}))
-                        except Exception:
-                            logger.debug("title event skipped", exc_info=True)
 
         jobs: set[asyncio.Task] = data.setdefault("chat_jobs", set())
         task = asyncio.create_task(produce(), name=f"ai_workspace_chat_{session.id}")
