@@ -11,6 +11,14 @@ def _const():
     return mod
 
 
+def test_cleared_model_uses_fallback_not_the_old_value() -> None:
+    const = _const()
+    assert const.submitted_model({"model": ""}) == ""
+    assert const.submitted_model({}) == ""
+    assert const.submitted_model(None) == ""
+    assert const.submitted_model({"model": "  grok-4.7  "}) == "grok-4.7"
+
+
 def test_assist_defaults_on_for_existing_off_for_new() -> None:
     const = _const()
     assert const.assist_enabled({}) is True

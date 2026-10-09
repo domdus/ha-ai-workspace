@@ -69,6 +69,7 @@ from .const import (
     TTS_OFF,
     default_api_model,
     mcp_kind_options,
+    submitted_model,
 )
 from .voice import async_speech_engines
 from .discovery import async_probe_runtime, async_resolve_runtime_url, hassio_runtime_url
@@ -210,7 +211,7 @@ def _provider_schema(defaults: dict | None = None):
                 default=kind if kind in providers else API_OPENAI,
             ): _PROVIDER_SELECTOR,
             vol.Optional(CONF_API_KEY, default=current.get(CONF_API_KEY, "")): cv.string,
-            vol.Optional(CONF_MODEL, default=model): cv.string,
+            vol.Optional(CONF_MODEL, default="", description={"suggested_value": model}): cv.string,
             vol.Optional(CONF_API_BASE, default=current.get(CONF_API_BASE, "")): cv.string,
         }
     )
@@ -413,7 +414,11 @@ def _cursor_form(
     schema: dict = {
         vol.Required(SECTION_MCP): section(_mcp_schema(defaults, hass, kinds), {"collapsed": False}),
         vol.Required(SECTION_PROMPT): section(_prompt_schema(defaults), {"collapsed": True}),
-        vol.Optional(CONF_MODEL, default=_cursor_model(defaults)): cv.string,
+        vol.Optional(
+            CONF_MODEL,
+            default="",
+            description={"suggested_value": _cursor_model(defaults)},
+        ): cv.string,
     }
     if runtime_url:
         schema[
@@ -673,7 +678,7 @@ class AiWorkspaceConfigFlow(ProviderSteps, config_entries.ConfigFlow, domain=DOM
                     **self._ui,
                     **flat,
                     CONF_MODE: MODE_CURSOR,
-                    CONF_MODEL: _cursor_model({**self._ui, **flat, CONF_MODE: MODE_CURSOR}),
+                    CONF_MODEL: _cursor_model({CONF_MODEL: submitted_model(flat), CONF_MODE: MODE_CURSOR}),
                     CONF_RUNTIME_URL: str(flat.get(CONF_RUNTIME_URL) or ""),
                 }
                 await self.async_set_unique_id(DOMAIN)
@@ -790,7 +795,7 @@ class AiWorkspaceOptionsFlow(config_entries.OptionsFlow):
                     {
                         **flat,
                         CONF_MODE: MODE_CURSOR,
-                        CONF_MODEL: _cursor_model({**current, **flat, CONF_MODE: MODE_CURSOR}),
+                        CONF_MODEL: _cursor_model({CONF_MODEL: submitted_model(flat), CONF_MODE: MODE_CURSOR}),
                         CONF_RUNTIME_URL: str(flat.get(CONF_RUNTIME_URL) or ""),
                     }
                 )

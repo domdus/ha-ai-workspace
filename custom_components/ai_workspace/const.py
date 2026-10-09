@@ -150,6 +150,13 @@ CONF_EFFORT = "effort"
 CONF_ASSIST = "assist"
 
 
+def submitted_model(user_input: dict | None) -> str:
+    """Empty model means use the provider fallback. Omitted optional fields are empty, not the old value."""
+    if not user_input or CONF_MODEL not in user_input:
+        return ""
+    return str(user_input.get(CONF_MODEL) or "").strip()
+
+
 def assist_enabled(raw: dict, *, new: bool = False) -> bool:
     """Existing agents stay in Assist. New agents are opt-in."""
     if CONF_ASSIST not in raw:

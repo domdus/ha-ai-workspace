@@ -39,6 +39,7 @@
 
 .wrap.keyboard-open {
   overflow: hidden;
+  transition: none;
 }
 
 .wrap > aside {

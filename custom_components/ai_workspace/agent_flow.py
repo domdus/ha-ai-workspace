@@ -37,7 +37,7 @@ from .const import (
     ROLE_PROVIDER,
     assist_enabled,
     default_api_base,
-    default_api_model,
+    submitted_model,
 )
 from .discovery import async_probe_runtime, async_resolve_runtime_url, hassio_runtime_url
 
@@ -75,15 +75,20 @@ def _effort_field(current: dict) -> dict:
     }
 
 
+def _optional_model(current: dict) -> dict:
+    shown = str(current.get(CONF_MODEL) or "")
+    return {vol.Optional(CONF_MODEL, default="", description={"suggested_value": shown}): str}
+
+
 def _fields_schema(step: str, current: dict, borrows: list[dict[str, str]], *, new: bool = False) -> vol.Schema:
     model = str(current.get(CONF_MODEL) or "")
     fields: dict = {}
     if step == "cursor":
         fields[vol.Optional(CONF_CURSOR_API_KEY, default="")] = _PASSWORD
-        fields[vol.Optional(CONF_MODEL, default=model)] = str
+        fields.update(_optional_model(current))
     elif step == "ollama":
         fields[vol.Required(CONF_API_BASE, default=str(current.get(CONF_API_BASE) or default_api_base(API_OLLAMA)))] = str
-        fields[vol.Optional(CONF_MODEL, default=model)] = str
+        fields.update(_optional_model(current))
     elif step == "azure":
         fields[vol.Optional(CONF_API_KEY, default="")] = _PASSWORD
         fields[vol.Required(CONF_API_BASE, default=str(current.get(CONF_API_BASE) or ""))] = str
@@ -92,7 +97,7 @@ def _fields_schema(step: str, current: dict, borrows: list[dict[str, str]], *, n
     elif step == "compatible":
         fields[vol.Optional(CONF_API_KEY, default="")] = _PASSWORD
         fields[vol.Required(CONF_API_BASE, default=str(current.get(CONF_API_BASE) or ""))] = str
-        fields[vol.Optional(CONF_MODEL, default=model)] = str
+        fields.update(_optional_model(current))
     else:
         if borrows:
             options = [{"value": "", "label": "Enter it here"}]
@@ -101,7 +106,7 @@ def _fields_schema(step: str, current: dict, borrows: list[dict[str, str]], *, n
                 SelectSelectorConfig(options=options, mode="dropdown")
             )
         fields[vol.Optional(CONF_API_KEY, default="")] = _PASSWORD
-        fields[vol.Optional(CONF_MODEL, default=model)] = str
+        fields.update(_optional_model(current))
     fields.update(_effort_field(current))
     fields[vol.Optional(CONF_ASSIST, default=assist_enabled(current, new=new))] = cv.boolean
     return vol.Schema(fields)
@@ -218,7 +223,7 @@ class ProviderSteps:
             if borrowed and borrowed.get("provider") == provider and not str(merged.get(CONF_API_KEY) or "").strip():
                 merged[CONF_API_KEY] = borrowed["api_key"]
                 merged[CONF_API_BASE] = borrowed["api_base"]
-                if not str(merged.get(CONF_MODEL) or "").strip():
+                if CONF_MODEL not in user_input or not str(user_input.get(CONF_MODEL) or "").strip():
                     merged[CONF_MODEL] = borrowed["model"]
                 merged[CONF_AZURE_API_VERSION] = borrowed.get("azure_api_version") or DEFAULT_AZURE_API_VERSION
             cursor_key = str(merged.get(CONF_CURSOR_API_KEY) or current.get(CONF_CURSOR_API_KEY) or "").strip()
@@ -226,7 +231,9 @@ class ProviderSteps:
                 cursor_key = _hub_cursor_key(self)
             key = str(merged.get(CONF_API_KEY) or current.get(CONF_API_KEY) or "").strip()
             base = str(merged.get(CONF_API_BASE) or "").strip() or default_api_base(provider)
-            model = str(merged.get(CONF_MODEL) or "").strip() or default_api_model(provider)
+            model = submitted_model(user_input)
+            if borrowed and borrowed.get("provider") == provider and not model:
+                model = str(borrowed.get("model") or merged.get(CONF_MODEL) or "").strip()
             if provider == MODE_CURSOR:
                 if not cursor_key:
                     errors[CONF_CURSOR_API_KEY] = "required"
@@ -245,7 +252,7 @@ class ProviderSteps:
                     errors[CONF_API_KEY] = "required"
                 if not str(merged.get(CONF_API_BASE) or "").strip():
                     errors[CONF_API_BASE] = "required"
-                if not str(merged.get(CONF_MODEL) or "").strip():
+                if not model:
                     errors[CONF_MODEL] = "required"
             elif provider == API_COMPATIBLE:
                 if not key:
@@ -261,7 +268,7 @@ class ProviderSteps:
                     CONF_CURSOR_API_KEY: cursor_key if provider == MODE_CURSOR else "",
                     CONF_API_KEY: "" if provider == MODE_CURSOR else key,
                     CONF_API_BASE: "" if provider == MODE_CURSOR else base,
-                    CONF_MODEL: str(merged.get(CONF_MODEL) or "").strip() if provider == MODE_CURSOR else model,
+                    CONF_MODEL: model,
                     CONF_EFFORT: str(merged.get(CONF_EFFORT) or ""),
                     CONF_ASSIST: bool(
                         user_input.get(
