@@ -588,15 +588,14 @@ export function mountAiWorkspace(root, options = {}) {
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function resizeComposer() {
-    const holdTop = !pinBottom ? chatEl.scrollTop : null;
+    const holdTop = chatEl.scrollTop;
     messageEl.style.height = "auto";
     messageEl.style.height = `${Math.min(Math.max(messageEl.scrollHeight, 36), 160)}px`;
     const hasDraft = Boolean(messageEl.value.trim() || pending.length);
     sendBtn.disabled = !hasDraft;
     if (attachBtn) attachBtn.disabled = pending.length >= MAX_ATTACH;
     messageEl.placeholder = streaming ? t("placeholder_next") : t("placeholder");
-    if (holdTop != null) chatEl.scrollTop = holdTop;
-    else if (pinBottom) followBottom();
+    if (!pinBottom || wrap.classList.contains("keyboard-open")) chatEl.scrollTop = holdTop;
   }
 
   function keepComposerFocus() {
@@ -616,6 +615,9 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   let pinningScroll = false;
+  let keyboardRaf = 0;
+  let keyboardHeight = "";
+  let keyboardOpen = false;
 
   function resetOuterScroll() {
     if (pinningScroll) return;
@@ -633,25 +635,48 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   function clearKeyboardLock() {
+    keyboardOpen = false;
+    keyboardHeight = "";
     wrap.classList.remove("keyboard-open");
     wrap.style.height = "";
   }
 
   function syncKeyboardInset() {
     if (keepComposerFocus()) return;
+    if (keyboardRaf) return;
+    keyboardRaf = requestAnimationFrame(applyKeyboardInset);
+  }
+
+  function applyKeyboardInset() {
+    keyboardRaf = 0;
+    if (keepComposerFocus()) return;
     const vv = window.visualViewport;
     const inset = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
     const open = composerFocused() && inset > 80;
     if (!open) {
-      clearKeyboardLock();
+      if (keyboardOpen) clearKeyboardLock();
       return;
     }
-    resetOuterScroll();
     const top = wrap.getBoundingClientRect().top;
     const visibleBottom = (vv?.offsetTop || 0) + (vv?.height || window.innerHeight);
-    const available = Math.max(180, visibleBottom - Math.max(0, top));
-    wrap.classList.add("keyboard-open");
-    wrap.style.height = `${Math.round(available)}px`;
+    const nextH = `${Math.max(180, Math.round(visibleBottom - Math.max(0, top)))}px`;
+    if (nextH === keyboardHeight && keyboardOpen) return;
+    const opened = !keyboardOpen;
+    keyboardOpen = true;
+    keyboardHeight = nextH;
+    if (opened) {
+      if (followRaf) {
+        cancelAnimationFrame(followRaf);
+        followRaf = 0;
+      }
+      resetOuterScroll();
+      wrap.classList.add("keyboard-open");
+    }
+    wrap.style.height = nextH;
+    if (opened && pinBottom && !holdFollow) {
+      chatEl.scrollTop = Math.max(0, chatEl.scrollHeight - chatEl.clientHeight);
+      lastScrollTop = chatEl.scrollTop;
+    }
   }
 
   function clearMotion() {
@@ -1436,7 +1461,7 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   function easeToBottom(dt) {
-    if (holdFollow || !pinBottom) return false;
+    if (holdFollow || !pinBottom || keyboardOpen) return false;
     if (reduceMotion) {
       stickToBottom();
       return false;
@@ -1452,7 +1477,7 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   function followBottom() {
-    if (holdFollow || !pinBottom || followRaf || streamDrainRaf) return;
+    if (holdFollow || !pinBottom || followRaf || streamDrainRaf || keyboardOpen) return;
     followLast = 0;
     const tick = (now) => {
       if (!followLast) followLast = now;
@@ -2669,9 +2694,7 @@ export function mountAiWorkspace(root, options = {}) {
   messageEl.addEventListener("focus", () => {
     if (keepComposerFocus()) return;
     syncKeyboardInset();
-    requestAnimationFrame(syncKeyboardInset);
-    window.setTimeout(syncKeyboardInset, 80);
-    window.setTimeout(syncKeyboardInset, 320);
+    window.setTimeout(syncKeyboardInset, 280);
   });
   messageEl.addEventListener("blur", () => {
     window.setTimeout(() => {
@@ -2683,14 +2706,7 @@ export function mountAiWorkspace(root, options = {}) {
     if (wrap.classList.contains("keyboard-open")) syncKeyboardInset();
   });
   messageEl.addEventListener("input", () => {
-    const top = chatEl.scrollTop;
-    const hold = !pinBottom;
     resizeComposer();
-    if (!hold) return;
-    chatEl.scrollTop = top;
-    requestAnimationFrame(() => {
-      if (!pinBottom) chatEl.scrollTop = top;
-    });
   });
   messageEl.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -2707,6 +2723,10 @@ export function mountAiWorkspace(root, options = {}) {
     jumpToBottom();
   });
   const scrollBtnWatch = new ResizeObserver(() => {
+    if (keyboardOpen) {
+      syncScrollBottomBtn();
+      return;
+    }
     if (pinBottom) followBottom();
     else syncScrollBottomBtn();
   });
