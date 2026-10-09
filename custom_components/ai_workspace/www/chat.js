@@ -2,17 +2,6 @@ const CACHE = new URL(import.meta.url).search;
 const { stringsFor } = await import(`./i18n.js${CACHE}`);
 
 const API = "/api/ai_workspace";
-const HELPER_DOMAINS = new Set([
-  "input_boolean",
-  "input_button",
-  "input_datetime",
-  "input_number",
-  "input_select",
-  "input_text",
-  "counter",
-  "timer",
-  "schedule",
-]);
 
 function hassObj() {
   return document.querySelector("home-assistant")?.hass;
@@ -149,7 +138,6 @@ function configId(info) {
 
 function pathForEntity(entityId, info) {
   const domain = String(entityId || "").split(".")[0];
-  if (HELPER_DOMAINS.has(domain)) return `/config/entities/entity/${entityId}`;
   if (domain === "automation") {
     const id = configId(info);
     if (id && !looksLikeEntityId(id)) return `/config/automation/edit/${id}`;
@@ -162,9 +150,19 @@ function pathForEntity(entityId, info) {
     const id = configId(info) || String(entityId).replace(/^scene\./, "");
     if (id) return `/config/scene/edit/${id}`;
   }
-  const deviceId = info?.entry?.device_id;
-  if (deviceId) return `/config/devices/device/${deviceId}`;
   return `/config/entities/entity/${entityId}`;
+}
+
+function entityIdFromHaPath(path) {
+  try {
+    const url = new URL(String(path || ""), window.location.origin);
+    const match = url.pathname.match(/^\/config\/entities(?:\/entity)?\/([^/]+)$/);
+    if (!match) return "";
+    const raw = decodeURIComponent(match[1]);
+    return looksLikeEntityId(raw) ? raw : "";
+  } catch (_err) {
+    return "";
+  }
 }
 
 function rewriteHaPath(pathname) {
@@ -181,7 +179,6 @@ function rewriteHaPath(pathname) {
     const entityId = looksLikeEntityId(raw) ? raw : `${kind}.${raw}`;
     const info = lookupEntity(entityId);
     const domain = entityId.split(".")[0];
-    if (HELPER_DOMAINS.has(domain)) return `/config/entities/entity/${entityId}`;
     if (looksLikeEntityId(raw) || info?.state || info?.entry) {
       if (domain === "automation" || kind === "automation") {
         const id = configId(info);
@@ -1126,7 +1123,30 @@ export function mountAiWorkspace(root, options = {}) {
     });
   }
 
+  function fireMoreInfo(entityId) {
+    const hassEl = document.querySelector("home-assistant");
+    if (!hassEl) return false;
+    hassEl.dispatchEvent(
+      new CustomEvent("hass-more-info", {
+        bubbles: true,
+        composed: true,
+        detail: { entityId },
+      }),
+    );
+    return true;
+  }
+
+  function closeOverlayChat() {
+    const node = root.getRootNode?.();
+    node?.querySelector?.(".drawer")?.classList.remove("open");
+  }
+
   function openHaPath(path) {
+    const entityId = entityIdFromHaPath(path);
+    if (entityId && fireMoreInfo(entityId)) {
+      if (compact) closeOverlayChat();
+      return;
+    }
     if (typeof navigate === "function") {
       navigate(path);
       return;
