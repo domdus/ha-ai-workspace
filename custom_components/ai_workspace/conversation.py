@@ -69,13 +69,16 @@ async def async_setup_entry(
     """Expose each agent to Assist."""
     if is_agents(entry):
         agents = entry_agents(entry)
-        _LOGGER.info("Exposing %s Assist agent(s) for %s", len(agents), entry.title)
-        for agent in agents:
+        wanted = [agent for agent in agents if agent.assist]
+        _LOGGER.info("Exposing %s Assist agent(s) for %s", len(wanted), entry.title)
+        for agent in wanted:
             _clear_integration_disabled_agent(hass, agent.id)
-        async_add_entities([AiWorkspaceConversationEntity(entry, agent) for agent in agents])
+        async_add_entities([AiWorkspaceConversationEntity(entry, agent) for agent in wanted])
         return
     if is_provider(entry):
-        async_add_entities([AiWorkspaceConversationEntity(entry, agent_from_entry(entry))])
+        agent = agent_from_entry(entry)
+        if agent.assist:
+            async_add_entities([AiWorkspaceConversationEntity(entry, agent)])
 
 
 class AiWorkspaceConversationEntity(conversation.ConversationEntity):
@@ -155,7 +158,7 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
             entry = self.platform.config_entry
         still_configured = bool(
             entry is not None
-            and any(agent.id == self._agent_id for agent in entry_agents(entry))
+            and any(agent.id == self._agent_id and agent.assist for agent in entry_agents(entry))
         )
         if not still_configured:
             await async_remove_assist_pipeline(self.hass, self.entity_id)

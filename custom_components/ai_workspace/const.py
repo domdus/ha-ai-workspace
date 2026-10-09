@@ -147,6 +147,16 @@ CONF_HOUSE_MAP = "house_map"
 CONF_KEEP_CHATS = "keep_chats"
 DEFAULT_KEEP_CHATS = 30
 CONF_EFFORT = "effort"
+CONF_ASSIST = "assist"
+
+
+def assist_enabled(raw: dict, *, new: bool = False) -> bool:
+    """Existing agents stay in Assist. New agents are opt-in."""
+    if CONF_ASSIST not in raw:
+        return not new
+    return bool(raw.get(CONF_ASSIST))
+
+
 CONF_STT_ENGINE = "stt_engine"
 CONF_TTS_ENGINE = "tts_engine"
 CONF_SPEAK_REPLIES = "speak_replies"

@@ -2,7 +2,7 @@
   <img src="ai_workspace/logo.png" alt="AI Workspace" width="420">
 </p>
 
-<p align="center"><em>Use AI inside Home Assistant from your couch.</em></p>
+<p align="center"><em>Build your Home Assistant from the couch.</em></p>
 
 <p align="center">
   <img src="docs/ai_workspace.gif" alt="AI Workspace chat demo" width="300">
@@ -23,17 +23,24 @@
   <img src="https://img.shields.io/badge/Assist-ready-green" alt="Assist">
 </p>
 
-Work on **your** Home Assistant installation through MCP.
+This is a HACS integration and it uses an MCP server of your choice. Use AI (OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible) as well as **Cursor AI** via the Cursor SDK Runtime to work on Home Assistant.
 
-This is a HACS integration. Use AI (OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible) and Cursor AI via the Cursor SDK Runtime to work on Home Assistant via MCP.
+The agent capabilties rely on the MCP server you connect. Automations, dashboards, history, and devices are that server's tools.
 
-What the agent can do relies on the MCP server you connect. Automations, dashboards, history, and devices are that server's tools.
-
-Each agent also shows up under **Assist**, so you can use Cursor (or another provider) from Home Assistant's built-in Assist dialog as well as the AI Workspace chat.
+- Polished agent chat
+- Attachments in chat (docs, images)
+- Deep links to devices, entities, automations, and more
+- Chat history with pin
+- Optional floating button on every page
+- Optional dictate and spoken replies
+- Several Cloud and Cursor agents in one chat
+- More than one MCP connection
 
 <p align="center">
   <img src="docs/ai-workspace.png" alt="AI Workspace in the Home Assistant sidebar" width="820">
 </p>
+
+Each agent can optionally be added as an Assist pipeline, so you can use **Cursor AI** (or another provider) from Home Assistant's built-in Assist dialog as well.
 
 <p align="center">
   <img src="docs/ai-workspace-assists.png" alt="Cursor in Home Assistant Assist" width="820">
@@ -46,13 +53,13 @@ Each agent also shows up under **Assist**, so you can use Cursor (or another pro
 You need any MCP server:
 
 - [Home Assistant MCP Server](https://www.home-assistant.io/integrations/mcp_server/) (HA built-in)
-- [HA-MCP](https://github.com/homeassistant-ai/ha-mcp) — install the [custom component](https://github.com/homeassistant-ai/ha-mcp-integration); the connect URL is picked up from that entry. Docker and the app are the other ways to run the same server
+- [HA-MCP](https://github.com/homeassistant-ai/ha-mcp) (recommended) — the connect URL is picked up from that entry.
 - [HA Vibecode Agent](https://github.com/Coolver/home-assistant-vibecode-agent)
 - A **custom MCP URL** if you already run something else
 
 ---
 
-## Cloud AI API Provider
+## Cloud AI API Provider (Quick)
 
 Fastest path. No extra container. Add **AI Workspace** once. It adds an **AI Agents** entry beside it. Add an agent there for **OpenAI**, **Claude**, **Gemini**, **DeepSeek**, **Qwen**, **Grok**, **OpenRouter**, **Azure OpenAI**, **local Ollama**, or **OpenAI-compatible** (LM Studio and others). The model must support tool calls or it cannot drive MCP. If that provider is already configured in Home Assistant, the agent form can copy its key.
 
@@ -189,7 +196,7 @@ It does not control Home Assistant edit links. Those are added on every reply, s
 | **Show AI Workspace in the sidebar** | Sidebar item. `/ai-workspace` still works if this is off |
 | **Chats to keep** | Newest unpinned chats per person (default 30). Pinned chats are always kept |
 | **Config catalog** | Off by default. Optional local name/id index. Leave it off when live MCP already looks up the house. Not live state, history, or traces |
-| **Assist** | Each agent also becomes a Voice assistants entry next to Home Assistant, ready to use. No second form under Manage assistants |
+| **Also use in Assist** | On each agent. Off (default for new agents) keeps the chat in AI Workspace. On adds a Voice assistants pipeline, no second form under Manage assistants. Agents added before this option stay on |
 
 ## Optimization: Large listings
 
