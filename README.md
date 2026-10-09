@@ -25,9 +25,9 @@
 
 Work on **your** Home Assistant installation through MCP.
 
-This is a HACS integration. The agent is a **cloud API** (OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible) or Cursor AI via the **Cursor SDK Runtime** used in Home Assistant by the integration.
+This is a HACS integration. Use AI (OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible) and Cursor AI via the Cursor SDK Runtime to work on Home Assistant via MCP.
 
-What the agent can do relies on the MCP server you connect. Automations, dashboards, history, and devices are that server's tools. Home Assistant applies each change itself, so a new automation or dashboard is there without a restart. Access stays on that MCP connection, and the tools stay the ones Home Assistant already speaks. That is safer and more reliable than a second tool set maintained beside Home Assistant.
+What the agent can do relies on the MCP server you connect. Automations, dashboards, history, and devices are that server's tools.
 
 Each agent also shows up under **Assist**, so you can use Cursor (or another provider) from Home Assistant's built-in Assist dialog as well as the AI Workspace chat.
 
@@ -43,11 +43,16 @@ Each agent also shows up under **Assist**, so you can use Cursor (or another pro
 
 - **Provider API key** (Cloud) or a **Cursor API key** (SDK Runtime)
 
-You need any MCP server: **Home Assistant MCP Server** (HA built-in), **[HA-MCP](https://github.com/homeassistant-ai/ha-mcp)** (install the [custom component](https://github.com/homeassistant-ai/ha-mcp-integration) and its connect URL is picked up from that entry; Docker and the app are the other ways to run the same server), **[HA Vibecode Agent](https://github.com/Coolver/home-assistant-vibecode-agent)**, or a **custom MCP URL** if you already run something else.
+You need any MCP server:
+
+- [Home Assistant MCP Server](https://www.home-assistant.io/integrations/mcp_server/) (HA built-in)
+- [HA-MCP](https://github.com/homeassistant-ai/ha-mcp) — install the [custom component](https://github.com/homeassistant-ai/ha-mcp-integration); the connect URL is picked up from that entry. Docker and the app are the other ways to run the same server
+- [HA Vibecode Agent](https://github.com/Coolver/home-assistant-vibecode-agent)
+- A **custom MCP URL** if you already run something else
 
 ---
 
-## Cloud API Provider (Quick Setup)
+## Cloud AI API Provider
 
 Fastest path. No extra container. Add **AI Workspace** once. It adds an **AI Agents** entry beside it. Add an agent there for **OpenAI**, **Claude**, **Gemini**, **DeepSeek**, **Qwen**, **Grok**, **OpenRouter**, **Azure OpenAI**, **local Ollama**, or **OpenAI-compatible** (LM Studio and others). The model must support tool calls or it cannot drive MCP. If that provider is already configured in Home Assistant, the agent form can copy its key.
 
@@ -92,7 +97,13 @@ Home Assistant 2026.2 renamed “Add-ons” to “Apps”.
 
 ### Option B: Home Assistant Container (Docker)
 
-If Home Assistant runs in Docker, without the Supervisor, it needs one extra container next to Home Assistant. Pull the runtime image (`linux/amd64` and `linux/arm64`) and paste your Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) (same file as [`docker-compose.runtime.yml`](docker-compose.runtime.yml)):
+If Home Assistant runs in Docker, without the Supervisor, it needs one extra container next to Home Assistant. Pull the runtime image (`linux/amd64` and `linux/arm64`):
+
+```bash
+docker pull ghcr.io/domdus/ha-ai-workspace-runtime:latest
+```
+
+Paste your Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) into [`docker-compose.runtime.yml`](docker-compose.runtime.yml):
 
 ```yaml
 name: ai-workspace-runtime
