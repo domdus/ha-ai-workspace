@@ -70,6 +70,8 @@ Fastest path. Add an **AI Agents** for **OpenAI**, **Claude**, **Gemini**, **Dee
 
 Or **HACS → Integrations → ⋮ → Custom repositories** → `https://github.com/domdus/ha-ai-workspace` (category **Integration**) → **Download** → **Restart Home Assistant.**
 
+**Manual install (no HACS):** copy `custom_components/ai_workspace/` from this repository into your Home Assistant `config/custom_components/` directory, then restart and add the integration as below.
+
 ### 2. Add the integration
 
 **Settings → Devices & services → Add integration → AI Workspace.**
