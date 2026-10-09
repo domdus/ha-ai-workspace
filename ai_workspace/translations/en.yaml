@@ -5,25 +5,5 @@ configuration:
   model:
     name: Model
     description: Default Cursor model id, for example composer-2.5. The HACS form can override this.
-  mcp_kind:
-    name: MCP type
-    description: >-
-      Home Assistant MCP Server (built-in), HA-MCP, HA Vibecode Agent (Coolver),
-      or a custom MCP HTTP URL.
-  mcp_url:
-    name: MCP URL
-    description: >-
-      Optional fallback if the HACS integration is not sending MCP on chat.
-      Leave empty for the default of that type. Built-in uses this Home Assistant
-      /api/mcp. HA-MCP needs its connect URL. Vibecode defaults to
-      http://127.0.0.1:8099.
-  mcp_token:
-    name: MCP token
-    description: >-
-      Built-in: Home Assistant long-lived access token. HA-MCP: usually empty.
-      Vibecode: Agent Key. Custom: optional Bearer token.
-  mcp_config:
-    name: Extra MCP servers
-    description: Optional JSON mcpServers object for GitHub, Synology, and other LAN MCP servers
 network:
   8090/TCP: Used by the HACS integration. Leave unpublished on the host.

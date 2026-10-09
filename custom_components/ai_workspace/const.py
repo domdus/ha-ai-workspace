@@ -157,6 +157,20 @@ def assist_enabled(raw: dict, *, new: bool = False) -> bool:
     return bool(raw.get(CONF_ASSIST))
 
 
+_BUILTIN_ASSIST = {
+    "conversation.home_assistant",
+    "homeassistant",
+}
+
+
+def is_builtin_assist_agent(agent_id: str, platform: str = "") -> bool:
+    """True for Home Assistant's intent matcher ('Sorry, I didn't understand')."""
+    eid = str(agent_id or "").strip()
+    if eid in _BUILTIN_ASSIST:
+        return True
+    return platform == "homeassistant" and eid.startswith("conversation.")
+
+
 CONF_STT_ENGINE = "stt_engine"
 CONF_TTS_ENGINE = "tts_engine"
 CONF_SPEAK_REPLIES = "speak_replies"
@@ -182,6 +196,11 @@ MCP_KINDS = {
     MCP_COOLVER: "HA Vibecode Agent (Coolver)",
     MCP_CUSTOM: "Custom MCP URL",
 }
+MCP_CONNECTION_TITLES = {
+    MCP_HA: "Home Assistant",
+    MCP_HA_MCP: "HA-MCP",
+    MCP_COOLVER: "Coolver",
+}
 _MCP_KIND_ORDER = (MCP_HA, MCP_HA_MCP, MCP_COOLVER)
 
 
@@ -189,6 +208,17 @@ def mcp_kind_options(detected: set[str] | frozenset[str] | list[str], current: s
     """Detected MCP providers, the saved choice, and always Custom URL."""
     found = set(detected)
     options = [kind for kind in _MCP_KIND_ORDER if kind in found or kind == current]
+    options.append(MCP_CUSTOM)
+    return options
+
+
+def mcp_connection_menu(
+    detected: set[str] | frozenset[str] | list[str],
+    used: set[str] | frozenset[str] | list[str] | None = None,
+) -> list[str]:
+    """Detected MCP servers not already added, plus Custom URL."""
+    skip = set(used or ())
+    options = [kind for kind in _MCP_KIND_ORDER if kind in detected and kind not in skip]
     options.append(MCP_CUSTOM)
     return options
 DEFAULT_MCP_URL = "http://127.0.0.1:8086/mcp"

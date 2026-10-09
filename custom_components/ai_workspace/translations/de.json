@@ -247,9 +247,19 @@
         "already_configured": "Eine Verbindung mit diesem Namen gibt es schon."
       },
       "step": {
+        "user": {
+          "title": "Verbindung",
+          "description": "Es werden nur MCP-Server gelistet, die diese Home-Assistant-Instanz erreicht. Benutzerdefiniert ist jede MCP-HTTP-URL.",
+          "menu_options": {
+            "ha": "Home Assistant MCP-Server (eingebaut)",
+            "ha_mcp": "HA-MCP",
+            "coolver": "HA Vibecode Agent (Coolver)",
+            "custom": "Benutzerdefinierte MCP-URL"
+          }
+        },
         "connection": {
           "title": "Verbindung",
-          "description": "Ein weiterer MCP-Server, den der Assistent im selben Chat nutzen kann.",
+          "description": "Ein MCP-Server, den der Assistent im selben Chat nutzen kann.",
           "data": {
             "name": "Name",
             "url": "Adresse",
@@ -257,7 +267,7 @@
           },
           "data_description": {
             "name": "Ein kurzer Name, zum Beispiel Directus. Der Assistent unterscheidet daran diese Verbindung von den anderen.",
-            "url": "Die MCP-Adresse, beginnend mit https:// oder http://.",
+            "url": "Die MCP-Adresse, beginnend mit https:// oder http://. Gefundene Server werden vorausgefüllt.",
             "token": "Nur wenn dieser Server einen Schlüssel verlangt. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten."
           }
         }

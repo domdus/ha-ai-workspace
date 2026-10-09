@@ -12,6 +12,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .assist_agents import assist_agent_ids, async_assist_events, list_assist_agents
+from .discovery import async_bind_runtime
 from .const import (
     CLOUD_ONLY_MODELS,
     DEFAULT_SYSTEM_PROMPT,
@@ -605,6 +606,11 @@ class ProvidersView(HomeAssistantView):
         _user_id(request)
         hass = _hass(request)
         data = _runtime(hass)
+        if any(
+            getattr(item, "kind", "") == "cursor" and not item.info.available
+            for item in (data.get("providers") or {}).values()
+        ):
+            await async_bind_runtime(hass, data)
         rows = []
         for item in data["providers"].values():
             row = item.info.as_dict()
@@ -640,9 +646,11 @@ class SessionsView(HomeAssistantView):
         provider = str(body.get("provider") or body.get("agent") or "")
         if provider not in providers and provider not in known_assist:
             provider = next((item.info.id for item in providers.values() if item.info.available), "")
+        if not provider:
+            provider = next(iter(providers), "")
         if not provider and known_assist:
             provider = next(iter(list_assist_agents(hass)), {}).get("id", "")
-        provider = provider or next(iter(providers), "") or "api"
+        provider = provider or "api"
         store: Store = data["store"]
         user_id = _user_id(request)
         session_id = None
@@ -743,6 +751,12 @@ class ChatView(HomeAssistantView):
                 await hass.async_add_executor_job(store.set_provider, _user_id(request), session.id, requested)
                 session.provider = requested
         assist = session.provider in known_assist
+        if not assist and any(
+            getattr(item, "kind", "") == "cursor" and not item.info.available
+            for item in providers.values()
+        ):
+            await async_bind_runtime(hass, data)
+            providers = data.get("providers") or {}
         provider = None if assist else (providers.get(session.provider) or _send_provider(data, session))
         images = parse_client_images(body.get("images"))
         files = parse_client_files(body.get("files"))

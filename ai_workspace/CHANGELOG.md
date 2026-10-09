@@ -7,6 +7,7 @@
 
 ## 1.0.5
 
+- Runtime app configuration is Cursor API key and default model only. MCP is set on the AI Workspace integration.
 - Pass composer-2.5 as Cursor `ModelSelection` with Fast on (same default as the IDE picker and `model="composer-2.5"`)
 - Retry once when Cursor returns an empty run; do not suggest model ids that are not in the catalog
 - Cursor Runtime chats include the HA UI link rules on every message so automation names stay tappable

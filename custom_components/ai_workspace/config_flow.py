@@ -390,7 +390,7 @@ def _api_form(defaults: dict, *, kinds: list[str], hass: HomeAssistant | None = 
                 _provider_schema(defaults), {"collapsed": False}
             ),
             vol.Required(SECTION_MCP): section(_mcp_schema(defaults, hass, kinds), {"collapsed": False}),
-            vol.Required(SECTION_PROMPT): section(_prompt_schema(defaults), {"collapsed": False}),
+            vol.Required(SECTION_PROMPT): section(_prompt_schema(defaults), {"collapsed": True}),
             **_ui_schema(defaults),
         }
     )
@@ -412,7 +412,7 @@ def _cursor_form(
 ) -> vol.Schema:
     schema: dict = {
         vol.Required(SECTION_MCP): section(_mcp_schema(defaults, hass, kinds), {"collapsed": False}),
-        vol.Required(SECTION_PROMPT): section(_prompt_schema(defaults), {"collapsed": False}),
+        vol.Required(SECTION_PROMPT): section(_prompt_schema(defaults), {"collapsed": True}),
         vol.Optional(CONF_MODEL, default=_cursor_model(defaults)): cv.string,
     }
     if runtime_url:
@@ -491,7 +491,7 @@ async def _shared_form(hass, defaults: dict, kinds: list[str], *, include_mcp: b
     fields: dict = {}
     if include_mcp:
         fields[vol.Required(SECTION_MCP)] = section(_mcp_schema(defaults, hass, kinds), {"collapsed": False})
-    fields[vol.Required(SECTION_PROMPT)] = section(_prompt_schema(defaults), {"collapsed": False})
+    fields[vol.Required(SECTION_PROMPT)] = section(_prompt_schema(defaults), {"collapsed": True})
     fields[
         vol.Optional(
             CONF_RUNTIME_URL,

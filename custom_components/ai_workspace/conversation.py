@@ -178,6 +178,12 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
         providers = data.get("providers") or {}
         provider = providers.get(self._agent_id)
         info = getattr(provider, "info", None)
+        if getattr(provider, "kind", "") == "cursor" and not getattr(info, "available", False):
+            from .discovery import async_bind_runtime
+
+            await async_bind_runtime(self.hass, data)
+            provider = providers.get(self._agent_id)
+            info = getattr(provider, "info", None)
         if provider is None or not getattr(info, "available", False):
             reason = getattr(info, "reason", None) or "This agent is not available."
             self._reply(chat_log, str(reason))

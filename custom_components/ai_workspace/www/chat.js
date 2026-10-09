@@ -1490,13 +1490,27 @@ export function mountAiWorkspace(root, options = {}) {
     return items.filter((item) => item.available);
   }
 
+  function pickAgent(items, previous) {
+    const ours = items.filter((item) => item.kind !== "assist");
+    const assist = items.filter((item) => item.kind === "assist");
+    const readyOurs = ours.filter((item) => item.available);
+    const readyAssist = assist.filter((item) => item.available);
+    return (
+      items.find((item) => item.id === previous) ||
+      readyOurs[0] ||
+      ours[0] ||
+      readyAssist[0] ||
+      items[0]
+    );
+  }
+
   async function loadProviders() {
     const response = await apiFetch(`${API}/providers`);
     if (!response?.ok) return;
     const items = await response.json();
     const ready = agentChoices(items);
     const previous = agentId || localStorage.getItem("ai_workspace_agent") || "";
-    const pick = ready.find((item) => item.id === previous) || ready[0];
+    const pick = pickAgent(items, previous);
     agentId = pick?.id || "";
     if (agentPicker && agentMenu && agentLabel) {
       agentPicker.hidden = ready.length < 2;
