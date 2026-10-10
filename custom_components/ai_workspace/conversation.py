@@ -16,6 +16,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .agents import Agent, agent_from_entry, entry_agents, is_agents, is_provider
 from .const import DOMAIN
+from .chat_scope import handoff_note
 from .http import _create_runtime_session, async_agent_events
 from .store import Store
 from .titles import accept_generated_title, needs_title_summary, title_from_prompt
@@ -197,6 +198,7 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
             return conversation.async_get_result_from_chat_log(user_input, chat_log)
 
         session = await self.hass.async_add_executor_job(store.get_session, user_id, conversation_id)
+        switched = False
         if session is None:
             if getattr(provider, "kind", "") == "cursor":
                 await _create_runtime_session(self.hass, user_id, conversation_id)
@@ -204,6 +206,7 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
                 store.create_session, user_id, self._agent_id, conversation_id
             )
         elif session.provider != self._agent_id:
+            switched = True
             await self.hass.async_add_executor_job(store.set_provider, user_id, session.id, self._agent_id)
             session.provider = self._agent_id
 
@@ -224,6 +227,12 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
             await self.hass.async_add_executor_job(store.add_message, session.id, "user", text, "[]")
             await self.hass.async_add_executor_job(store.rename_if_default, session.id, title_from_prompt(text))
             count = await self.hass.async_add_executor_job(lambda: len(store.list_messages(session.id)))
+            handoff = ""
+            if getattr(provider, "kind", "") == "cursor":
+                rows = await self.hass.async_add_executor_job(store.list_messages, session.id)
+                handoff = handoff_note(rows)
+                if switched and handoff:
+                    outbound = f"{handoff}\n\n{outbound}"
             suggest = getattr(provider, "suggest_title", None) if count <= 1 and needs_title_summary(text) else None
             parts: list[str] = []
             tools: list[dict[str, Any]] = []
@@ -243,6 +252,7 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
                     language=language,
                     origin=origin,
                     access_token=access_token,
+                    handoff=handoff,
                 ):
                     kind = event.get("type")
                     if kind == "text":

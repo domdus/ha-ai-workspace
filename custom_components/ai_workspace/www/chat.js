@@ -1114,6 +1114,29 @@ export function mountAiWorkspace(root, options = {}) {
       });
       row.appendChild(btn);
     }
+    let speakBtn = row.querySelector(".speak-chat");
+    if (voice.speak) {
+      if (!speakBtn) {
+        speakBtn = document.createElement("ha-icon-button");
+        speakBtn.className = "speak-chat";
+        speakBtn.type = "button";
+        speakBtn.label = t("speak_reply");
+        const speakIcon = document.createElement("ha-icon");
+        speakIcon.setAttribute("icon", "mdi:volume-high");
+        speakBtn.appendChild(speakIcon);
+        speakBtn.addEventListener("click", async (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          const text = lastAssistantText();
+          if (!text) return;
+          await speakReply(text);
+        });
+        row.appendChild(speakBtn);
+      }
+      speakBtn.hidden = false;
+    } else if (speakBtn) {
+      speakBtn.hidden = true;
+    }
     row.hidden = false;
     logEl.appendChild(row);
   }
@@ -2198,8 +2221,8 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   function startSpeech() {
-    if (!SpeechRecognitionAPI || micBtn?.hidden) return;
-    if (!window.isSecureContext) {
+    if (micBtn?.hidden) return;
+    if (!SpeechRecognitionAPI || !window.isSecureContext) {
       showMicHelp();
       return;
     }
@@ -2266,6 +2289,19 @@ export function mountAiWorkspace(root, options = {}) {
 
   let capture = null;
   let replyAudio = null;
+  let replyObjectUrl = "";
+  let outputCtx = null;
+
+  async function unlockOutput() {
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      if (!outputCtx) outputCtx = new Ctx();
+      if (outputCtx.state === "suspended") await outputCtx.resume();
+    } catch (_err) {
+      /* WebView may still block until a later tap */
+    }
+  }
 
   function encodeWav(chunks, sampleRate) {
     const length = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
@@ -2359,21 +2395,41 @@ export function mountAiWorkspace(root, options = {}) {
     resizeComposer();
   }
 
+  function showSpeakHelp() {
+    if (!bannerEl) return;
+    bannerEl.classList.add("mic-help");
+    bannerEl.hidden = false;
+    bannerEl.textContent = t("speak_failed");
+    if (micNoticeTimer) clearTimeout(micNoticeTimer);
+    micNoticeTimer = window.setTimeout(() => {
+      clearMicHelp();
+    }, 6000);
+  }
+
   async function speakReply(text) {
     if (!voice.speak || !String(text || "").trim()) return;
     try {
+      await unlockOutput();
       const response = await apiFetch(`${API}/tts`, {
         method: "POST",
         body: JSON.stringify({ text, language: speechLanguage() }),
       });
-      if (!response?.ok) return;
-      const body = await response.json();
-      if (!body.url) return;
+      if (!response?.ok) {
+        showSpeakHelp();
+        return;
+      }
+      const blob = await response.blob();
+      if (!blob || blob.size < 32) {
+        showSpeakHelp();
+        return;
+      }
       replyAudio?.pause();
-      replyAudio = new Audio(body.url);
+      if (replyObjectUrl) URL.revokeObjectURL(replyObjectUrl);
+      replyObjectUrl = URL.createObjectURL(blob);
+      replyAudio = new Audio(replyObjectUrl);
       await replyAudio.play();
     } catch (_err) {
-      /* playback can be blocked until the next tap */
+      showSpeakHelp();
     }
   }
 
@@ -2395,10 +2451,19 @@ export function mountAiWorkspace(root, options = {}) {
     });
   }
 
+  function lastAssistantText() {
+    const bubbles = [...logEl.querySelectorAll(".bubble.assistant")];
+    for (let i = bubbles.length - 1; i >= 0; i -= 1) {
+      const md = bubbles[i].querySelector("ha-markdown.text");
+      const text = String(md?.content || "").trim();
+      if (text) return text;
+    }
+    return "";
+  }
+
   function setMicShown(show) {
     if (!micBtn) return;
-    const browserOnly = !voice.stt || voice.stt === "browser";
-    const visible = Boolean(show) && !(browserOnly && !SpeechRecognitionAPI);
+    const visible = Boolean(show);
     micBtn.classList.toggle("is-hidden", !visible);
     if (visible) micBtn.removeAttribute("hidden");
     else micBtn.setAttribute("hidden", "");
@@ -2425,6 +2490,7 @@ export function mountAiWorkspace(root, options = {}) {
       show = false;
     }
     setMicShown(show);
+    syncCopyChat();
   }
 
   form.addEventListener("submit", async (event) => {
@@ -2455,6 +2521,7 @@ export function mountAiWorkspace(root, options = {}) {
     const abort = new AbortController();
     streamAbort = abort;
     stopSpeech();
+    unlockOutput();
     if (keepComposerFocus()) messageEl.focus();
     else hideKeyboard();
     streaming = true;

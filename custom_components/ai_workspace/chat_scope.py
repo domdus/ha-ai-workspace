@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 
 _CUES = re.compile(
@@ -49,6 +50,13 @@ _STOP = frozenset(
     }
 )
 _PLACEHOLDERS = frozenset({"", "new chat", "neuer chat"})
+_HANDOFF_MAX = 12
+_HANDOFF_CLIP = 800
+HANDOFF_LEAD = (
+    "This is the same chat. The transcript below is the conversation so far. "
+    "Continue from it. Do not greet as if this is a new chat."
+)
+_HANDOFF_LEAD = HANDOFF_LEAD
 
 
 def _words(text: str) -> set[str]:
@@ -112,3 +120,49 @@ def other_chat_note(store, user_id: str, session_id: str, message: str) -> str:
             }
         )
     return excerpt_for(loaded)
+
+
+def _failed_reply(row) -> bool:
+    if getattr(row, "role", "") != "assistant":
+        return False
+    try:
+        events = json.loads(getattr(row, "events", None) or "[]")
+    except json.JSONDecodeError:
+        return False
+    if not isinstance(events, list):
+        return False
+    errors = [str(item.get("message") or "") for item in events if isinstance(item, dict) and item.get("type") == "error"]
+    if not errors:
+        return False
+    content = str(getattr(row, "content", "") or "").strip()
+    return not content or content in errors
+
+
+def handoff_note(rows) -> str:
+    """Transcript when Cursor starts a new agent in this chat (switch or MCP change)."""
+    lines: list[str] = []
+    for row in rows or []:
+        role = str(getattr(row, "role", "") or "")
+        if role not in {"user", "assistant"} or _failed_reply(row):
+            continue
+        body = " ".join(str(getattr(row, "content", "") or "").split())
+        if not body:
+            continue
+        label = "User" if role == "user" else "Assistant"
+        lines.append(f"{label}: {body[:_HANDOFF_CLIP]}")
+    if lines and lines[-1].startswith("User:"):
+        lines = lines[:-1]
+    if not lines:
+        return ""
+    if len(lines) > _HANDOFF_MAX:
+        lines = lines[-_HANDOFF_MAX:]
+    return f"{_HANDOFF_LEAD}\n\n" + "\n".join(lines)
+
+
+def attach_handoff(message: str, rows, needed: bool) -> str:
+    if not needed:
+        return message
+    note = handoff_note(rows)
+    if not note:
+        return message
+    return f"{note}\n\n{message}"

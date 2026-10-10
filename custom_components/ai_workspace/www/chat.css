@@ -480,14 +480,17 @@ h1 {
   display: none !important;
 }
 
-.copy-chat {
+.copy-chat,
+.speak-chat {
   --mdc-icon-button-size: 32px;
   --mdc-icon-size: 18px;
   color: var(--secondary-text-color);
 }
 
 .copy-chat:hover,
-.copy-chat:focus-visible {
+.copy-chat:focus-visible,
+.speak-chat:hover,
+.speak-chat:focus-visible {
   color: var(--primary-text-color);
 }
 

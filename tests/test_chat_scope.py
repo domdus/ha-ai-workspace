@@ -24,6 +24,50 @@ def test_other_chats_stay_out_until_named() -> None:
     assert [item["id"] for item in named] == ["weather"]
 
 
+def test_handoff_skips_current_prompt() -> None:
+    scope = _scope()
+
+    class Row:
+        def __init__(self, role, content, events="[]"):
+            self.role = role
+            self.content = content
+            self.events = events
+
+    rows = [
+        Row("user", "Which lights are on?"),
+        Row("assistant", "Kitchen and hallway."),
+        Row("user", "Turn the hallway off."),
+    ]
+    note = scope.handoff_note(rows)
+    assert "same chat" in note
+    assert "Continue from it" in note
+    assert "Which lights are on?" in note
+    assert "Kitchen and hallway." in note
+    assert "Turn the hallway off." not in note
+    assert scope.attach_handoff("Turn the hallway off.", rows, True).endswith("Turn the hallway off.")
+    assert scope.attach_handoff("Turn the hallway off.", rows, False) == "Turn the hallway off."
+
+
+def test_handoff_drops_failed_replies() -> None:
+    scope = _scope()
+
+    class Row:
+        def __init__(self, role, content, events="[]"):
+            self.role = role
+            self.content = content
+            self.events = events
+
+    rows = [
+        Row("user", "List automations"),
+        Row("assistant", "MCP HTTP 401", '[{"type":"error","message":"MCP HTTP 401"}]'),
+        Row("user", "Continue"),
+    ]
+    note = scope.handoff_note(rows)
+    assert "List automations" in note
+    assert "MCP HTTP 401" not in note
+    assert scope.handoff_note([Row("user", "Hello")]) == ""
+
+
 def test_excerpt_is_read_only() -> None:
     scope = _scope()
     note = scope.excerpt_for(

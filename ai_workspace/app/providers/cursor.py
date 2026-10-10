@@ -96,27 +96,19 @@ class CursorRuntime:
         model: str | None = None,
         effort: str = "",
         api_key: str = "",
-    ) -> Any:
+        config_key: str | None = None,
+    ) -> tuple[Any, bool]:
         from cursor_sdk import AgentNotFoundError
 
         resolved_model = (model or "").strip() or self.settings.model
         resolved_key = (api_key or "").strip() or self.settings.cursor_api_key
         key_tag = hashlib.sha256(resolved_key.encode()).hexdigest()[:16] if resolved_key else ""
-        fingerprint = json.dumps(
-            {
-                "mcp": mcp_servers,
-                "model": _model_fingerprint(resolved_model, effort),
-                "effort": effort,
-                "key": key_tag,
-            },
-            sort_keys=True,
-            default=str,
-        )
+        fingerprint = config_key or _agent_fingerprint(mcp_servers, resolved_model, effort, key_tag)
         cached = self._agents.get(session.id)
         previous = self._mcp_by_session.get(session.id)
         if cached is not None and previous == fingerprint:
             logger.info("reuse agent session=%s", session.id)
-            return cached
+            return cached, False
         if cached is not None:
             logger.info("mcp servers or model changed, replacing agent session=%s", session.id)
             self._agents.pop(session.id, None)
@@ -133,12 +125,13 @@ class CursorRuntime:
             except AgentNotFoundError:
                 logger.info("agent %s missing, creating a new one", resume_id)
                 agent = None
+        created = agent is None
         if agent is None:
             logger.info("create agent session=%s model=%s", session.id, _model_fingerprint(resolved_model))
             agent = await client.create_agent(options)
         self._agents[session.id] = agent
         self._mcp_by_session[session.id] = fingerprint
-        return agent
+        return agent, created
 
     async def warm(self) -> None:
         try:
@@ -184,6 +177,7 @@ class CursorProvider:
         model: str | None = None,
         effort: str = "",
         api_key: str = "",
+        handoff: str = "",
     ) -> AsyncIterator[dict]:
         key = (api_key or "").strip() or self.settings.cursor_api_key
         if not key:
@@ -205,13 +199,20 @@ class CursorProvider:
                     for name, cfg in sorted(mcp_servers.items())
                 ),
             )
-        mcp_servers = self.runtime.wrap_mcp(mcp_servers)
         used_model = (model or "").strip() or self.settings.model
+        key_tag = hashlib.sha256(key.encode()).hexdigest()[:16] if key else ""
+        config_key = _agent_fingerprint(mcp_servers, used_model, effort, key_tag)
+        mcp_servers = self.runtime.wrap_mcp(mcp_servers)
         logger.info("cursor model=%s", used_model)
         yield {"type": "status", "text": "Thinking..."}
         try:
-            agent = await self.runtime.open_agent(
-                session, mcp_servers, model=used_model, effort=effort, api_key=key
+            agent, created = await self.runtime.open_agent(
+                session,
+                mcp_servers,
+                model=used_model,
+                effort=effort,
+                api_key=key,
+                config_key=config_key,
             )
         except Exception as exc:
             yield {"type": "error", "message": _public_error(exc, self.settings.cursor_api_key)}
@@ -219,8 +220,9 @@ class CursorProvider:
         agent_id = getattr(agent, "agent_id", None)
         if agent_id:
             on_agent_id(str(agent_id))
+        outbound = apply_handoff(message, handoff, created)
         try:
-            run = await _start_run(agent, message, images, mcp_servers)
+            run = await _start_run(agent, outbound, images, mcp_servers)
         except Exception as exc:
             yield {"type": "error", "message": _public_error(exc, self.settings.cursor_api_key)}
             return
@@ -235,7 +237,7 @@ class CursorProvider:
             result = await run.wait()
             if _empty_failed_run(result) and not stream_error:
                 logger.info("retrying empty cursor run session=%s model=%s", session.id, used_model)
-                run = await _start_run(agent, message, images, mcp_servers)
+                run = await _start_run(agent, outbound, images, mcp_servers)
                 run_id = getattr(run, "id", "") or run_id
                 async for event in _iter_messages(run):
                     if event.get("type") == "error" and not stream_error:
@@ -317,6 +319,44 @@ def _sdk_model(ident: str, effort: str = "") -> Any:
         )
     except Exception:
         return {"id": model_id, "params": params}
+
+
+def _mcp_identity(servers: dict) -> dict[str, dict[str, str]]:
+    """Stable MCP shape: names and endpoints, not rotating Bearer tokens."""
+    out: dict[str, dict[str, str]] = {}
+    for name, cfg in sorted((servers or {}).items()):
+        raw = dict(cfg or {})
+        out[str(name)] = {
+            "url": str(raw.get("url") or ""),
+            "type": str(raw.get("type") or ""),
+            "command": str(raw.get("command") or ""),
+        }
+    return out
+
+
+def _agent_fingerprint(servers: dict, model: str, effort: str, key_tag: str) -> str:
+    return json.dumps(
+        {
+            "mcp": _mcp_identity(servers),
+            "model": _model_fingerprint(model, effort),
+            "effort": effort,
+            "key": key_tag,
+        },
+        sort_keys=True,
+        default=str,
+    )
+
+
+def apply_handoff(message: str, handoff: str, fresh: bool) -> str:
+    if not fresh:
+        return message
+    note = (handoff or "").strip()
+    if not note:
+        return message
+    marker = note.split("\n", 1)[0].strip()
+    if marker and marker in (message or ""):
+        return message
+    return f"{note}\n\n{message}"
 
 
 def _model_fingerprint(ident: str, effort: str = "") -> Any:
