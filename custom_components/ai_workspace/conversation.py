@@ -48,6 +48,29 @@ async def _login_token(hass: HomeAssistant, user_id: str) -> str | None:
         return None
 
 
+def _agent_device_active(hass: HomeAssistant, entry_id: str, subentry_id: str | None) -> bool:
+    if not subentry_id:
+        return True
+    from homeassistant.helpers import device_registry as dr
+
+    registry = dr.async_get(hass)
+    for device in dr.async_entries_for_config_entry(registry, entry_id):
+        if device.config_subentry_id != subentry_id:
+            continue
+        return device.disabled_by is None
+    return True
+
+
+async def _drop_assist_pipeline(hass: HomeAssistant, unique_id: str) -> None:
+    from homeassistant.helpers import entity_registry as er
+
+    from .assist_pipelines import async_remove_assist_pipeline
+
+    entity_id = er.async_get(hass).async_get_entity_id("conversation", DOMAIN, unique_id)
+    if entity_id:
+        await async_remove_assist_pipeline(hass, entity_id)
+
+
 def _clear_integration_disabled_agent(hass: HomeAssistant, agent_id: str) -> None:
     """Undo the old form Enabled flag, which disabled the conversation entity."""
     from homeassistant.helpers import entity_registry as er
@@ -70,7 +93,12 @@ async def async_setup_entry(
     """Expose each agent to Assist."""
     if is_agents(entry):
         agents = entry_agents(entry)
-        wanted = [agent for agent in agents if agent.assist]
+        wanted = []
+        for agent in agents:
+            if agent.assist and _agent_device_active(hass, entry.entry_id, agent.subentry_id):
+                wanted.append(agent)
+            else:
+                await _drop_assist_pipeline(hass, agent.id)
         _LOGGER.info("Exposing %s Assist agent(s) for %s", len(wanted), entry.title)
         for agent in wanted:
             _clear_integration_disabled_agent(hass, agent.id)
@@ -78,8 +106,10 @@ async def async_setup_entry(
         return
     if is_provider(entry):
         agent = agent_from_entry(entry)
-        if agent.assist:
+        if agent.assist and _agent_device_active(hass, entry.entry_id, agent.subentry_id):
             async_add_entities([AiWorkspaceConversationEntity(entry, agent)])
+        else:
+            await _drop_assist_pipeline(hass, agent.id)
 
 
 class AiWorkspaceConversationEntity(conversation.ConversationEntity):
@@ -159,7 +189,12 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
             entry = self.platform.config_entry
         still_configured = bool(
             entry is not None
-            and any(agent.id == self._agent_id and agent.assist for agent in entry_agents(entry))
+            and any(
+                agent.id == self._agent_id
+                and agent.assist
+                and _agent_device_active(self.hass, entry.entry_id, agent.subentry_id)
+                for agent in entry_agents(entry)
+            )
         )
         if not still_configured:
             await async_remove_assist_pipeline(self.hass, self.entity_id)

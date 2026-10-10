@@ -8,6 +8,8 @@ from io import BytesIO
 
 from homeassistant.core import HomeAssistant
 
+from .const import STT_BROWSER, TTS_OFF
+
 _LINK = re.compile(r"\[([^\]]+)\]\([^)]+\)")
 _URL = re.compile(r"https?://\S+")
 _MARK = re.compile(r"[*_`#]+")
@@ -35,9 +37,34 @@ def match_speech_language(requested: str, supported: list[str] | tuple[str, ...]
     return wanted or (tags[0] if tags else "")
 
 
+_TABLE_LINE = re.compile(
+    r"""
+    ^\s*
+    (
+      \|.*\|                                 # | cell | cell |
+      | \|?[\s:|-]*---[\s:|-]*               # --- | ---
+      | [^\n|]+\s\|\s[^\n|]+(\s\|\s[^\n|]*)* # cell | cell
+    )
+    \s*$
+    """,
+    re.VERBOSE,
+)
+
+
+def _without_tables(text: str) -> str:
+    """Keep the intro and closing line; skip markdown tables in between."""
+    kept: list[str] = []
+    for line in str(text or "").splitlines():
+        if _TABLE_LINE.match(line):
+            continue
+        kept.append(line)
+    return "\n".join(kept)
+
+
 def speech_text(text: str) -> str:
-    """Plain words for TTS — skip markdown links and raw URLs."""
-    out = _LINK.sub(r"\1", str(text or ""))
+    """Plain words for TTS — skip tables, markdown links, and raw URLs."""
+    out = _without_tables(str(text or ""))
+    out = _LINK.sub(r"\1", out)
     out = _URL.sub("", out)
     out = _MARK.sub("", out)
     return " ".join(out.split())[:4000]
