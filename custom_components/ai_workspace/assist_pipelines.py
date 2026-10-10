@@ -7,6 +7,8 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 
+from .const import DOMAIN, STT_BROWSER, TTS_OFF
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -27,20 +29,69 @@ def _language(hass: HomeAssistant) -> str:
     return str(getattr(hass.config, "language", None) or "en").strip() or "en"
 
 
-def _settings(entity_id: str, name: str, language: str) -> dict[str, Any]:
+def resolve_pipeline_voice(
+    stt_setting: str,
+    tts_setting: str,
+    *,
+    language: str = "en",
+    preferred_stt: str | None = None,
+    preferred_stt_language: str | None = None,
+    preferred_tts: str | None = None,
+    preferred_tts_language: str | None = None,
+    preferred_tts_voice: str | None = None,
+) -> dict[str, Any]:
+    """STT/TTS for Assist: our engines, else the default Assist pipeline."""
+    stt = stt_setting if stt_setting and stt_setting != STT_BROWSER else (preferred_stt or None)
+    tts = tts_setting if tts_setting and tts_setting != TTS_OFF else (preferred_tts or None)
+    return {
+        "stt_engine": stt or None,
+        "stt_language": (preferred_stt_language if stt == preferred_stt else language) if stt else None,
+        "tts_engine": tts or None,
+        "tts_language": (preferred_tts_language if tts == preferred_tts else language) if tts else None,
+        "tts_voice": preferred_tts_voice if tts and tts == preferred_tts else None,
+    }
+
+
+def _preferred_voice(hass: HomeAssistant, entity_id: str) -> dict[str, Any]:
+    store = _pipeline_store(hass)
+    if store is None:
+        return {}
+    try:
+        pref_id = store.async_get_preferred_item()
+    except Exception:
+        return {}
+    pipeline = (store.data or {}).get(pref_id) if pref_id else None
+    if pipeline is None:
+        return {}
+    if str(getattr(pipeline, "conversation_engine", "") or "") == entity_id:
+        return {}
+    return {
+        "preferred_stt": getattr(pipeline, "stt_engine", None) or None,
+        "preferred_stt_language": getattr(pipeline, "stt_language", None) or None,
+        "preferred_tts": getattr(pipeline, "tts_engine", None) or None,
+        "preferred_tts_language": getattr(pipeline, "tts_language", None) or None,
+        "preferred_tts_voice": getattr(pipeline, "tts_voice", None) or None,
+    }
+
+
+def _settings(hass: HomeAssistant, entity_id: str, name: str) -> dict[str, Any]:
+    language = _language(hass)
+    settings = (hass.data.get(DOMAIN) or {}).get("settings")
+    voice = resolve_pipeline_voice(
+        str(getattr(settings, "stt_engine", "") or ""),
+        str(getattr(settings, "tts_engine", "") or ""),
+        language=language,
+        **_preferred_voice(hass, entity_id),
+    )
     return {
         "conversation_engine": entity_id,
         "conversation_language": language,
         "language": language,
         "name": name,
-        "stt_engine": None,
-        "stt_language": None,
-        "tts_engine": None,
-        "tts_language": None,
-        "tts_voice": None,
         "wake_word_entity": None,
         "wake_word_id": None,
         "prefer_local_intents": False,
+        **voice,
     }
 
 
@@ -53,21 +104,17 @@ async def async_ensure_assist_pipeline(hass: HomeAssistant, entity_id: str, name
     store = _pipeline_store(hass)
     if store is None:
         return
-    language = _language(hass)
+    wanted = _settings(hass, entity_id, name)
     for pipeline in list(store.data.values()):
         if getattr(pipeline, "conversation_engine", None) != entity_id:
             continue
-        if getattr(pipeline, "name", None) != name:
-            try:
-                await store.async_update_item(
-                    pipeline.id,
-                    _settings(entity_id, name, language),
-                )
-            except Exception:
-                _LOGGER.debug("Assist pipeline rename skipped for %s", entity_id, exc_info=True)
+        try:
+            await store.async_update_item(pipeline.id, wanted)
+        except Exception:
+            _LOGGER.debug("Assist pipeline update skipped for %s", entity_id, exc_info=True)
         return
     try:
-        await store.async_create_item(_settings(entity_id, name, language))
+        await store.async_create_item(wanted)
         _LOGGER.info("Assist pipeline ready for %s", entity_id)
     except Exception:
         _LOGGER.exception("Could not create Assist pipeline for %s", entity_id)

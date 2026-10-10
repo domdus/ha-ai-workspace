@@ -26,7 +26,7 @@ from .const import (
     with_ui_context,
 )
 from .mcp_config import with_mcp_auth
-from .chat_scope import other_chat_note
+from .chat_scope import handoff_note, other_chat_note
 from .files import attach_files_to_message, file_events, parse_client_files
 from .images import caption_for, image_events, parse_client_images
 
@@ -205,6 +205,7 @@ async def _runtime_chat(
     effort: str = "",
     api_key: str = "",
     access_token: str | None = None,
+    handoff: str = "",
 ) -> AsyncIterator[dict]:
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
@@ -244,6 +245,8 @@ async def _runtime_chat(
         payload["effort"] = effort
     if api_key:
         payload["api_key"] = api_key
+    if handoff:
+        payload["handoff"] = handoff
     try:
         resp = await http.post(
             f"{base}/api/sessions/{session.id}/chat",
@@ -277,6 +280,7 @@ async def async_agent_events(
     language: str = "",
     origin: str = "",
     access_token: str | None = None,
+    handoff: str = "",
 ) -> AsyncIterator[dict]:
     """Run one turn for Assist or any caller that is not an HTTP chat request."""
     store: Store = _runtime(hass)["store"]
@@ -297,6 +301,7 @@ async def async_agent_events(
             effort=str(getattr(provider, "effort", "") or ""),
             api_key=str(getattr(provider, "api_key", "") or ""),
             access_token=access_token,
+            handoff=handoff,
         ):
             yield event
         return
@@ -746,8 +751,10 @@ class ChatView(HomeAssistantView):
         requested = str(body.get("agent") or body.get("provider") or session.provider)
         providers = data.get("providers") or {}
         known_assist = assist_agent_ids(hass)
+        switched = False
         if requested and (requested in providers or requested in known_assist):
             if requested != session.provider:
+                switched = True
                 await hass.async_add_executor_job(store.set_provider, _user_id(request), session.id, requested)
                 session.provider = requested
         assist = session.provider in known_assist
@@ -788,6 +795,15 @@ class ChatView(HomeAssistantView):
         note = await hass.async_add_executor_job(other_chat_note, store, user_id, session.id, message)
         if note:
             outbound = f"{outbound}\n\n{note}"
+        handoff = ""
+        if assist or getattr(provider, "kind", "") == "cursor":
+            rows = await hass.async_add_executor_job(store.list_messages, session.id)
+            handoff = handoff_note(rows)
+            if handoff and switched:
+                if assist:
+                    page_note = f"{handoff}\n\n{page_note}" if page_note else handoff
+                elif getattr(provider, "kind", "") == "cursor":
+                    outbound = f"{handoff}\n\n{outbound}"
         access_token = _bearer(request)
         runtime_headers = _runtime_headers(request)
 
@@ -823,6 +839,7 @@ class ChatView(HomeAssistantView):
                     effort=str(getattr(provider, "effort", "") or ""),
                     api_key=str(getattr(provider, "api_key", "") or ""),
                     access_token=access_token,
+                    handoff=handoff,
                 ):
                     yield event
                 return
@@ -1007,12 +1024,12 @@ class SpeakView(HomeAssistantView):
         body = await request.json()
         language = str(body.get("language") or "")
         try:
-            url = await async_speak(_hass(request), engine, str(body.get("text") or ""), language)
+            data, mime = await async_speak(_hass(request), engine, str(body.get("text") or ""), language)
         except Exception as exc:
             raise web.HTTPBadGateway(text=str(exc)[:300]) from exc
-        if not url:
+        if not data:
             raise web.HTTPBadGateway(text="Text-to-speech returned no audio.")
-        return self.json({"url": url})
+        return web.Response(body=data, content_type=mime or "audio/mpeg")
 
 
 class HouseMapMcpView(HomeAssistantView):

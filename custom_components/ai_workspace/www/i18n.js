@@ -24,6 +24,8 @@ export const I18N = {
     mic_blocked: "Microphone blocked",
     mic_needs_https:
       "Dictation needs a secure connection. Open Home Assistant over https:// (Nabu Casa or a reverse proxy). Browsers block the microphone on http:// LAN addresses.",
+    speak_failed: "Could not play the reply.",
+    speak_reply: "Play reply",
     send: "Send",
     scroll_to_bottom: "Scroll to bottom",
     rename: "Rename",
@@ -70,6 +72,8 @@ export const I18N = {
     mic_blocked: "Mikrofon blockiert",
     mic_needs_https:
       "Diktieren braucht eine sichere Verbindung. Öffne Home Assistant über https:// (Nabu Casa oder Reverse-Proxy). Browser blockieren das Mikrofon unter http://-LAN-Adressen.",
+    speak_failed: "Antwort konnte nicht abgespielt werden.",
+    speak_reply: "Antwort abspielen",
     send: "Senden",
     scroll_to_bottom: "Nach unten scrollen",
     placeholder_next: "Nächste Nachricht",

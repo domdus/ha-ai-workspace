@@ -35,4 +35,5 @@ class ChatProvider(Protocol):
         model: str | None = None,
         effort: str = "",
         api_key: str = "",
+        handoff: str = "",
     ) -> AsyncIterator[dict]: ...

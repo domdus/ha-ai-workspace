@@ -5,7 +5,9 @@ from types import ModuleType, SimpleNamespace
 
 from app.providers.cursor import (
     CursorRuntime,
+    apply_handoff,
     _empty_failed_run,
+    _mcp_identity,
     _run_error_text,
     _sdk_model,
 )
@@ -77,15 +79,17 @@ def test_replaces_cached_agent_when_mcp_changes(tmp_path: Path, monkeypatch) -> 
     runtime._client = FakeClient()
     session = Session("s1", "u1", "cursor", "Chat", "old-agent", "t", "t")
 
-    first = asyncio.run(runtime.open_agent(session, {}))
-    second = asyncio.run(
+    first, first_new = asyncio.run(runtime.open_agent(session, {}))
+    second, second_new = asyncio.run(
         runtime.open_agent(
             session,
             {"home-assistant": {"type": "http", "url": "http://127.0.0.1:8123/api/webhook/x"}},
         )
     )
     assert first.agent_id == "old-agent"
+    assert not first_new
     assert second.agent_id == "agent-1"
+    assert second_new
     assert created[0].mcp_servers == {
         "home-assistant": {"type": "http", "url": "http://127.0.0.1:8123/api/webhook/x"}
     }
@@ -94,7 +98,7 @@ def test_replaces_cached_agent_when_mcp_changes(tmp_path: Path, monkeypatch) -> 
     assert created[0].model.params[0].id == "fast"
     assert created[0].model.params[0].value == "true"
 
-    third = asyncio.run(
+    third, third_new = asyncio.run(
         runtime.open_agent(
             session,
             {"home-assistant": {"type": "http", "url": "http://127.0.0.1:8123/api/webhook/x"}},
@@ -102,6 +106,7 @@ def test_replaces_cached_agent_when_mcp_changes(tmp_path: Path, monkeypatch) -> 
         )
     )
     assert third.agent_id == "agent-2"
+    assert third_new
     assert created[1].model == "composer-2.6"
 
 
@@ -139,3 +144,41 @@ def test_run_error_text_mentions_empty_output_when_cursor_is_silent() -> None:
     assert "no assistant text" in text
     assert "budget limit" in text
     assert "composer-2.6" not in text
+
+
+def test_keeps_agent_when_only_mcp_token_changes(tmp_path: Path, monkeypatch) -> None:
+    _install_fake_sdk(monkeypatch)
+
+    class FakeClient:
+        async def create_agent(self, options):
+            del options
+            raise AssertionError("token rotation must not create a new agent")
+
+        async def resume_agent(self, agent_id, options):
+            del options
+            return SimpleNamespace(agent_id=agent_id)
+
+    runtime = CursorRuntime(_settings(tmp_path))
+    runtime._client = FakeClient()
+    session = Session("s1", "u1", "cursor", "Chat", "keep-me", "t", "t")
+    url = "http://127.0.0.1:8123/api/mcp"
+    first, _ = asyncio.run(
+        runtime.open_agent(session, {"mcp": {"url": url, "headers": {"Authorization": "Bearer one"}}})
+    )
+    second, created = asyncio.run(
+        runtime.open_agent(session, {"mcp": {"url": url, "headers": {"Authorization": "Bearer two"}}})
+    )
+    assert first.agent_id == "keep-me"
+    assert second.agent_id == "keep-me"
+    assert not created
+    assert _mcp_identity({"mcp": {"url": url, "headers": {"Authorization": "Bearer one"}}}) == _mcp_identity(
+        {"mcp": {"url": url, "headers": {"Authorization": "Bearer two"}}}
+    )
+
+
+def test_apply_handoff_only_when_agent_is_new() -> None:
+    note = "This is the same chat.\n\nUser: Status?"
+    assert apply_handoff("And now?", note, True).startswith("This is the same chat.")
+    assert apply_handoff("And now?", note, False) == "And now?"
+    already = f"{note}\n\nAnd now?"
+    assert apply_handoff(already, note, True) == already

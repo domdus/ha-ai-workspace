@@ -71,6 +71,7 @@ class ChatRequest(BaseModel):
     effort: str = ""
     api_key: str = ""
     question: str = Field(default="", max_length=8000)
+    handoff: str = Field(default="", max_length=20000)
 
 
 def _with_ui_context(message: str, origin: str = "") -> str:
@@ -286,6 +287,7 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
                     model=body.model.strip(),
                     effort=body.effort.strip(),
                     api_key=body.api_key.strip(),
+                    handoff=body.handoff.strip(),
                 ):
                     if event.get("type") == "text":
                         parts.append(str(event.get("delta") or ""))

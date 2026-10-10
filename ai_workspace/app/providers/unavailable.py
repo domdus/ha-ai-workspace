@@ -20,6 +20,7 @@ class UnavailableProvider:
         model: str | None = None,
     effort: str = "",
     api_key: str = "",
+    handoff: str = "",
 ) -> AsyncIterator[dict]:
-        del session, message, on_agent_id, images, mcp, model, effort, api_key
+        del session, message, on_agent_id, images, mcp, model, effort, api_key, handoff
         yield {"type": "error", "message": self.info.reason or "This provider is not available."}
