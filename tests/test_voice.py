@@ -49,6 +49,23 @@ def test_speech_text_drops_links() -> None:
     )
 
 
+def test_speech_text_skips_tables_keeps_intro_and_close() -> None:
+    voice = _load("voice", "voice.py")
+    spoken = voice.speech_text(
+        "54 Automatisierungen (43 aktiv · 11 aus):\n\n"
+        "| Automatisierung | Status |\n"
+        "| --- | --- |\n"
+        "| 00:00 | aktiv |\n"
+        "| Bewässerung - Balkon | aktiv |\n"
+        "| Wäsche fertig | aktiv |\n\n"
+        "Aktiv = Schalter der Automatisierung ist an (on), aus = aus (off)."
+    )
+    assert spoken.startswith("54 Automatisierungen")
+    assert "Wäsche fertig" not in spoken
+    assert "00:00" not in spoken
+    assert spoken.endswith("aus = aus (off).") or "aus = aus (off)." in spoken
+
+
 def test_pipeline_voice_uses_ha_engines_then_preferred() -> None:
     _load("const", "const.py")
     pipes = _load("assist_pipelines", "assist_pipelines.py")

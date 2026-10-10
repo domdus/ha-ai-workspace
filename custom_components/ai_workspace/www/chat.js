@@ -1127,9 +1127,7 @@ export function mountAiWorkspace(root, options = {}) {
         speakBtn.addEventListener("click", async (event) => {
           event.preventDefault();
           event.stopPropagation();
-          const text = lastAssistantText();
-          if (!text) return;
-          await speakReply(text);
+          await toggleSpeak();
         });
         row.appendChild(speakBtn);
       }
@@ -2290,14 +2288,21 @@ export function mountAiWorkspace(root, options = {}) {
   let capture = null;
   let replyAudio = null;
   let replyObjectUrl = "";
-  let outputCtx = null;
+  let speakGen = 0;
+  const SILENCE =
+    "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
 
   async function unlockOutput() {
+    if (!replyAudio) {
+      replyAudio = new Audio();
+      replyAudio.setAttribute("playsinline", "");
+      bindReplyAudio();
+    }
     try {
-      const Ctx = window.AudioContext || window.webkitAudioContext;
-      if (!Ctx) return;
-      if (!outputCtx) outputCtx = new Ctx();
-      if (outputCtx.state === "suspended") await outputCtx.resume();
+      replyAudio.src = SILENCE;
+      await replyAudio.play();
+      replyAudio.pause();
+      replyAudio.currentTime = 0;
     } catch (_err) {
       /* WebView may still block until a later tap */
     }
@@ -2406,30 +2411,94 @@ export function mountAiWorkspace(root, options = {}) {
     }, 6000);
   }
 
-  async function speakReply(text) {
+  function setSpeakUi(state) {
+    const btn = logEl.querySelector(".speak-chat");
+    if (!btn) return;
+    const icon = btn.querySelector("ha-icon");
+    if (state === "playing") {
+      icon?.setAttribute("icon", "mdi:pause");
+      btn.label = t("pause_reply");
+      btn.classList.add("speaking");
+    } else if (state === "paused") {
+      icon?.setAttribute("icon", "mdi:play");
+      btn.label = t("speak_reply");
+      btn.classList.remove("speaking");
+    } else {
+      icon?.setAttribute("icon", "mdi:volume-high");
+      btn.label = t("speak_reply");
+      btn.classList.remove("speaking");
+    }
+  }
+
+  function bindReplyAudio() {
+    if (!replyAudio || replyAudio._speakBound) return;
+    replyAudio._speakBound = true;
+    replyAudio.addEventListener("play", () => {
+      if (String(replyAudio.src || "").startsWith("data:")) return;
+      setSpeakUi("playing");
+    });
+    replyAudio.addEventListener("pause", () => {
+      if (!replyAudio || replyAudio.ended || String(replyAudio.src || "").startsWith("data:")) {
+        if (replyAudio?.ended) setSpeakUi("idle");
+        return;
+      }
+      setSpeakUi("paused");
+    });
+    replyAudio.addEventListener("ended", () => setSpeakUi("idle"));
+  }
+
+  async function toggleSpeak() {
+    if (replyAudio && !replyAudio.paused && !replyAudio.ended) {
+      replyAudio.pause();
+      return;
+    }
+    if (replyAudio && replyAudio.paused && replyAudio.currentTime > 0 && !replyAudio.ended) {
+      try {
+        await replyAudio.play();
+      } catch (_err) {
+        showSpeakHelp();
+      }
+      return;
+    }
+    const text = lastAssistantText();
+    if (!text) return;
+    await speakReply(text, true);
+  }
+
+  async function speakReply(text, fromUser = false) {
     if (!voice.speak || !String(text || "").trim()) return;
+    const gen = ++speakGen;
     try {
-      await unlockOutput();
+      if (fromUser) await unlockOutput();
       const response = await apiFetch(`${API}/tts`, {
         method: "POST",
         body: JSON.stringify({ text, language: speechLanguage() }),
       });
+      if (gen !== speakGen) return;
       if (!response?.ok) {
-        showSpeakHelp();
+        if (fromUser) showSpeakHelp();
         return;
       }
       const blob = await response.blob();
+      if (gen !== speakGen) return;
       if (!blob || blob.size < 32) {
-        showSpeakHelp();
+        if (fromUser) showSpeakHelp();
         return;
       }
-      replyAudio?.pause();
       if (replyObjectUrl) URL.revokeObjectURL(replyObjectUrl);
       replyObjectUrl = URL.createObjectURL(blob);
-      replyAudio = new Audio(replyObjectUrl);
+      if (!replyAudio) {
+        replyAudio = new Audio();
+        replyAudio.setAttribute("playsinline", "");
+      }
+      bindReplyAudio();
+      replyAudio.pause();
+      replyAudio.src = replyObjectUrl;
       await replyAudio.play();
     } catch (_err) {
-      showSpeakHelp();
+      if (gen !== speakGen) return;
+      setSpeakUi("idle");
+      if (fromUser) showSpeakHelp();
     }
   }
 
@@ -2521,6 +2590,9 @@ export function mountAiWorkspace(root, options = {}) {
     const abort = new AbortController();
     streamAbort = abort;
     stopSpeech();
+    speakGen += 1;
+    if (replyAudio && !replyAudio.paused) replyAudio.pause();
+    setSpeakUi("idle");
     unlockOutput();
     if (keepComposerFocus()) messageEl.focus();
     else hideKeyboard();
@@ -2628,6 +2700,7 @@ export function mountAiWorkspace(root, options = {}) {
           if (data.answer) queueStreamAnswer(data.answer);
           settleTools(assistant);
           setActivity(assistant, "");
+          speakReply(data.answer || streamFull);
         } else if (name === "title" && data.title) {
           applySessionTitle(chatId, data.title);
         }
@@ -2636,10 +2709,7 @@ export function mountAiWorkspace(root, options = {}) {
       await waitForStream();
       streamNode = null;
       if (!sawDone) recover = true;
-      else {
-        await loadSessions();
-        await speakReply(streamFull);
-      }
+      else await loadSessions();
     } catch (error) {
       if (token !== streamToken) return;
       if (chatId && (isDisconnect(error) || document.visibilityState === "hidden") && sessionId === chatId) {

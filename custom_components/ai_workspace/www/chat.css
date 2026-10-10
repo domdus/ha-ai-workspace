@@ -490,7 +490,8 @@ h1 {
 .copy-chat:hover,
 .copy-chat:focus-visible,
 .speak-chat:hover,
-.speak-chat:focus-visible {
+.speak-chat:focus-visible,
+.speak-chat.speaking {
   color: var(--primary-text-color);
 }
 
