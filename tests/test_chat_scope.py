@@ -24,6 +24,49 @@ def test_other_chats_stay_out_until_named() -> None:
     assert [item["id"] for item in named] == ["weather"]
 
 
+def test_cross_chat_matches_title_without_a_cue() -> None:
+    scope = _scope()
+    chats = [
+        {"id": "weather", "title": "Weather entities"},
+        {"id": "light", "title": "Light automation"},
+        {"id": "current", "title": "New Chat"},
+    ]
+    assert scope.matching_chats("debug the light automation", chats, "current") == []
+    named = scope.matching_chats("debug the light automation", chats, "current", cross=True)
+    assert [item["id"] for item in named] == ["light"]
+    assert scope.matching_chats("give me status", chats, "current", cross=True) == []
+
+
+def test_handoff_includes_title_and_skips_tables() -> None:
+    scope = _scope()
+
+    class Row:
+        def __init__(self, role, content, events="[]"):
+            self.role = role
+            self.content = content
+            self.events = events
+
+    rows = [
+        Row("user", "Handy-Tracker kaputt?"),
+        Row(
+            "assistant",
+            "Die Person hängt an toten Trackern.\n\n"
+            "| Tracker | Status |\n"
+            "| --- | --- |\n"
+            "| Galaxy-A55-5G | not_home |\n\n"
+            "Wenn du willst, setze ich A55-von-Alex auf die Person.",
+        ),
+        Row("user", "Ja mach mal."),
+    ]
+    note = scope.handoff_note(rows, "Handy nicht zu Hause")
+    assert 'titled "Handy nicht zu Hause"' in note
+    assert "Handy-Tracker kaputt?" in note
+    assert "setze ich A55-von-Alex" in note
+    assert "Galaxy-A55-5G" not in note
+    assert "Ja mach mal." not in note
+    assert "go ahead" in note
+
+
 def test_handoff_skips_current_prompt() -> None:
     scope = _scope()
 

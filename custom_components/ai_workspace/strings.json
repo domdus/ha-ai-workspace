@@ -8,24 +8,26 @@
           "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
           "stt_engine": "Speech to text",
           "tts_engine": "Text to speech",
-          "speak_replies": "Speak replies",
+          "speak_replies": "Speak replies automatically",
           "enable_sidebar": "Show AI Workspace in the sidebar",
           "enable_overlay": "Show floating AI button on every page",
           "enable_dictate": "Show dictate button",
           "allow_users": "Allow normal users",
           "house_map": "Config catalog",
+          "cross_chat": "Cross chat",
           "keep_chats": "Chats to keep"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "Browser uses the device speech engine and needs https:// or localhost. A Home Assistant engine (Whisper, and others under Settings) transcribes a recording from this page. The browser still has to allow the microphone, which it only does on https:// or localhost.",
           "tts_engine": "Piper and other Home Assistant voices. Speaking the reply works on plain http://. Off leaves replies as text.",
-          "speak_replies": "Play the assistant reply with the text-to-speech engine above.",
+          "speak_replies": "When a voice is selected, each reply is read as it arrives. Off keeps the speaker button so you can play a reply yourself.",
           "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
           "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
           "enable_dictate": "Microphone in the message box.",
           "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only.",
           "house_map": "Optional local index for wiring of a named item (triggers, related ids). Off by default. Not for listing automations or on/off — use live MCP for that. Not live state, history, or traces.",
+          "cross_chat": "Off by default. When on, a question can use another chat whose title shares words with it. You do not have to mention chat. A short excerpt only, and that chat is not changed.",
           "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30."
         },
         "sections": {
@@ -61,6 +63,7 @@
           "enable_dictate": "Show dictate button",
           "allow_users": "Allow normal users",
           "house_map": "Config catalog",
+          "cross_chat": "Cross chat",
           "keep_chats": "Chats to keep"
         },
         "sections": {
@@ -112,6 +115,7 @@
           "enable_dictate": "Show dictate button",
           "allow_users": "Allow normal users",
           "house_map": "Config catalog",
+          "cross_chat": "Cross chat",
           "keep_chats": "Chats to keep"
         },
         "data_description": {
@@ -121,6 +125,7 @@
           "enable_dictate": "Microphone in the message box. Browsers allow dictation only over https://.",
           "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only.",
           "house_map": "Optional local index for wiring of a named item (triggers, related ids). Off by default. Not for listing automations or on/off — use live MCP for that. Not live state, history, or traces.",
+          "cross_chat": "Off by default. When on, a question can use another chat whose title shares words with it. You do not have to mention chat. A short excerpt only, and that chat is not changed.",
           "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30."
         },
         "sections": {
@@ -182,6 +187,7 @@
           "api_key": "API key",
           "model": "Model",
           "effort": "Effort",
+          "low_token": "Low token",
           "assist": "Also use in Assist"
         },
         "data_description": {
@@ -189,6 +195,7 @@
           "api_key": "Not a Home Assistant token.",
           "model": "Empty uses the provider default.",
           "effort": "Fast, High, or High fast when the model supports it.",
+          "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
           "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
         }
       },
@@ -199,12 +206,14 @@
           "api_base": "Ollama URL",
           "model": "Model",
           "effort": "Effort",
+          "low_token": "Low token",
           "assist": "Also use in Assist"
         },
         "data_description": {
           "api_base": "Usually http://127.0.0.1:11434/v1",
           "model": "Empty uses llama3.2.",
           "effort": "Used when the model supports it.",
+          "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
           "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
         }
       },
@@ -217,6 +226,7 @@
           "model": "Deployment",
           "azure_api_version": "API version",
           "effort": "Effort",
+          "low_token": "Low token",
           "assist": "Also use in Assist"
         },
         "data_description": {
@@ -225,6 +235,7 @@
           "model": "The deployment name.",
           "azure_api_version": "Default 2024-10-21.",
           "effort": "Used when the deployment supports it.",
+          "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
           "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
         }
       },
@@ -236,6 +247,7 @@
           "api_base": "API base URL",
           "model": "Model",
           "effort": "Effort",
+          "low_token": "Low token",
           "assist": "Also use in Assist"
         },
         "data_description": {
@@ -243,6 +255,7 @@
           "api_base": "Base URL of the server, including /v1 when it uses that path.",
           "model": "Model name on that server.",
           "effort": "Used when the server supports it.",
+          "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
           "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
         }
       }
@@ -264,24 +277,26 @@
           "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
           "stt_engine": "Speech to text",
           "tts_engine": "Text to speech",
-          "speak_replies": "Speak replies",
+          "speak_replies": "Speak replies automatically",
           "enable_sidebar": "Show AI Workspace in the sidebar",
           "enable_overlay": "Show floating AI button on every page",
           "enable_dictate": "Show dictate button",
           "allow_users": "Allow normal users",
           "house_map": "Config catalog",
+          "cross_chat": "Cross chat",
           "keep_chats": "Chats to keep"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "Browser uses the device speech engine and needs https:// or localhost. A Home Assistant engine (Whisper, and others under Settings) transcribes a recording from this page. The browser still has to allow the microphone, which it only does on https:// or localhost.",
           "tts_engine": "Piper and other Home Assistant voices. Speaking the reply works on plain http://. Off leaves replies as text.",
-          "speak_replies": "Play the assistant reply with the text-to-speech engine above.",
+          "speak_replies": "When a voice is selected, each reply is read as it arrives. Off keeps the speaker button so you can play a reply yourself.",
           "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
           "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
           "enable_dictate": "Microphone in the message box.",
           "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only.",
           "house_map": "Optional local index for wiring of a named item (triggers, related ids). Off by default. Not for listing automations or on/off — use live MCP for that. Not live state, history, or traces.",
+          "cross_chat": "Off by default. When on, a question can use another chat whose title shares words with it. You do not have to mention chat. A short excerpt only, and that chat is not changed.",
           "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30."
         },
         "sections": {
@@ -317,6 +332,7 @@
           "enable_dictate": "Show dictate button",
           "allow_users": "Allow normal users",
           "house_map": "Config catalog",
+          "cross_chat": "Cross chat",
           "keep_chats": "Chats to keep"
         },
         "data_description": {
@@ -325,6 +341,7 @@
           "enable_dictate": "Microphone in the message box. Browsers allow dictation only over https://.",
           "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only.",
           "house_map": "Optional local index for wiring of a named item (triggers, related ids). Off by default. Not for listing automations or on/off — use live MCP for that. Not live state, history, or traces.",
+          "cross_chat": "Off by default. When on, a question can use another chat whose title shares words with it. You do not have to mention chat. A short excerpt only, and that chat is not changed.",
           "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30."
         },
         "sections": {
@@ -376,6 +393,7 @@
           "enable_dictate": "Show dictate button",
           "allow_users": "Allow normal users",
           "house_map": "Config catalog",
+          "cross_chat": "Cross chat",
           "keep_chats": "Chats to keep"
         },
         "data_description": {
@@ -385,6 +403,7 @@
           "enable_dictate": "Microphone in the message box. Browsers allow dictation only over https://.",
           "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only.",
           "house_map": "Optional local index for wiring of a named item (triggers, related ids). Off by default. Not for listing automations or on/off — use live MCP for that. Not live state, history, or traces.",
+          "cross_chat": "Off by default. When on, a question can use another chat whose title shares words with it. You do not have to mention chat. A short excerpt only, and that chat is not changed.",
           "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30."
         },
         "sections": {
@@ -446,6 +465,7 @@
           "api_key": "API key",
           "model": "Model",
           "effort": "Effort",
+          "low_token": "Low token",
           "assist": "Also use in Assist"
         },
         "data_description": {
@@ -453,6 +473,7 @@
           "api_key": "Not a Home Assistant token.",
           "model": "Empty uses the provider default.",
           "effort": "Fast, High, or High fast when the model supports it.",
+          "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
           "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
         }
       },
@@ -463,12 +484,14 @@
           "api_base": "Ollama URL",
           "model": "Model",
           "effort": "Effort",
+          "low_token": "Low token",
           "assist": "Also use in Assist"
         },
         "data_description": {
           "api_base": "Usually http://127.0.0.1:11434/v1",
           "model": "Empty uses llama3.2.",
           "effort": "Used when the model supports it.",
+          "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
           "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
         }
       },
@@ -481,6 +504,7 @@
           "model": "Deployment",
           "azure_api_version": "API version",
           "effort": "Effort",
+          "low_token": "Low token",
           "assist": "Also use in Assist"
         },
         "data_description": {
@@ -489,6 +513,7 @@
           "model": "The deployment name.",
           "azure_api_version": "Default 2024-10-21.",
           "effort": "Used when the deployment supports it.",
+          "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
           "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
         }
       },
@@ -500,6 +525,7 @@
           "api_base": "API base URL",
           "model": "Model",
           "effort": "Effort",
+          "low_token": "Low token",
           "assist": "Also use in Assist"
         },
         "data_description": {
@@ -507,6 +533,7 @@
           "api_base": "Base URL of the server, including /v1 when it uses that path.",
           "model": "Model name on that server.",
           "effort": "Used when the server supports it.",
+          "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
           "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
         }
       }
@@ -602,6 +629,7 @@
             "api_key": "API key",
             "model": "Model",
             "effort": "Effort",
+            "low_token": "Low token",
             "assist": "Also use in Assist"
           },
           "data_description": {
@@ -609,6 +637,7 @@
             "api_key": "Not a Home Assistant token.",
             "model": "Empty uses the provider default.",
             "effort": "Fast, High, or High fast when the model supports it.",
+            "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
             "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
           }
         },
@@ -619,12 +648,14 @@
             "api_base": "Ollama URL",
             "model": "Model",
             "effort": "Effort",
+            "low_token": "Low token",
             "assist": "Also use in Assist"
           },
           "data_description": {
             "api_base": "Usually http://127.0.0.1:11434/v1",
             "model": "Empty uses llama3.2.",
             "effort": "Used when the model supports it.",
+            "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
             "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
           }
         },
@@ -637,6 +668,7 @@
             "model": "Deployment",
             "azure_api_version": "API version",
             "effort": "Effort",
+            "low_token": "Low token",
             "assist": "Also use in Assist"
           },
           "data_description": {
@@ -645,6 +677,7 @@
             "model": "The deployment name.",
             "azure_api_version": "Default 2024-10-21.",
             "effort": "Used when the deployment supports it.",
+            "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
             "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
           }
         },
@@ -656,6 +689,7 @@
             "api_base": "API base URL",
             "model": "Model",
             "effort": "Effort",
+            "low_token": "Low token",
             "assist": "Also use in Assist"
           },
           "data_description": {
@@ -663,6 +697,7 @@
             "api_base": "Base URL of the server, including /v1 when it uses that path.",
             "model": "Model name on that server.",
             "effort": "Used when the server supports it.",
+            "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
             "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
           }
         },
@@ -700,6 +735,7 @@
             "api_key": "API key",
             "model": "Model",
             "effort": "Effort",
+            "low_token": "Low token",
             "assist": "Also use in Assist"
           },
           "data_description": {
@@ -707,6 +743,7 @@
             "api_key": "Not a Home Assistant token.",
             "model": "Empty uses the provider default.",
             "effort": "Fast, High, or High fast when the model supports it.",
+            "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
             "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
           }
         },
@@ -717,12 +754,14 @@
             "api_base": "Ollama URL",
             "model": "Model",
             "effort": "Effort",
+            "low_token": "Low token",
             "assist": "Also use in Assist"
           },
           "data_description": {
             "api_base": "Usually http://127.0.0.1:11434/v1",
             "model": "Empty uses llama3.2.",
             "effort": "Used when the model supports it.",
+            "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
             "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
           }
         },
@@ -735,6 +774,7 @@
             "model": "Deployment",
             "azure_api_version": "API version",
             "effort": "Effort",
+            "low_token": "Low token",
             "assist": "Also use in Assist"
           },
           "data_description": {
@@ -743,6 +783,7 @@
             "model": "The deployment name.",
             "azure_api_version": "Default 2024-10-21.",
             "effort": "Used when the deployment supports it.",
+            "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
             "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
           }
         },
@@ -754,6 +795,7 @@
             "api_base": "API base URL",
             "model": "Model",
             "effort": "Effort",
+            "low_token": "Low token",
             "assist": "Also use in Assist"
           },
           "data_description": {
@@ -761,6 +803,7 @@
             "api_base": "Base URL of the server, including /v1 when it uses that path.",
             "model": "Model name on that server.",
             "effort": "Used when the server supports it.",
+            "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
             "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
           }
         }

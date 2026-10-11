@@ -28,6 +28,12 @@ def test_with_mcp_auth_adds_bearer_to_house_map() -> None:
     assert "headers" not in out["mcp"]
 
 
+def test_with_mcp_auth_adds_bearer_to_builtin_mcp() -> None:
+    servers = {"mcp": {"type": "http", "url": "http://127.0.0.1:8123/api/mcp"}}
+    out = mod.with_mcp_auth(servers, access_token="ha-token", mcp_token="", mcp_kind="ha_mcp")
+    assert out["mcp"]["headers"]["Authorization"] == "Bearer ha-token"
+
+
 def test_with_mcp_auth_drops_house_map_without_token() -> None:
     servers = {
         "catalog": {"type": "http", "url": "http://homeassistant:8123/api/ai_workspace/catalog/mcp"},

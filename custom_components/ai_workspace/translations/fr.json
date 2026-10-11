@@ -1,0 +1,863 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "AI Workspace",
+        "description": "Paramètres de chat partagés. Ensuite, ajoutez le premier agent (Cursor, OpenAI, OpenRouter, Ollama et autres) sous AI Agents.",
+        "data": {
+          "runtime_url": "URL du runtime Cursor{runtime_url_mark}",
+          "stt_engine": "Parole vers texte",
+          "tts_engine": "Texte vers parole",
+          "speak_replies": "Lire les réponses automatiquement",
+          "enable_sidebar": "Afficher AI Workspace dans la barre latérale",
+          "enable_overlay": "Afficher le bouton IA flottant sur chaque page",
+          "enable_dictate": "Afficher le bouton de dictée",
+          "allow_users": "Autoriser les utilisateurs normaux",
+          "house_map": "Catalogue de configuration",
+          "cross_chat": "Entre chats",
+          "keep_chats": "Discussions à conserver"
+        },
+        "data_description": {
+          "runtime_url": "{runtime_url_note}",
+          "stt_engine": "Le navigateur utilise la reconnaissance vocale de l’appareil et nécessite https:// ou localhost. Un moteur Home Assistant (Whisper et autres sous Paramètres) transcrit un enregistrement de cette page. Le navigateur doit quand même autoriser le microphone, uniquement en https:// ou localhost.",
+          "tts_engine": "Piper et d’autres voix Home Assistant. La lecture de la réponse fonctionne aussi en http://. Désactivé laisse les réponses en texte.",
+          "speak_replies": "Quand une voix est choisie, chaque réponse est lue dès qu’elle arrive. Désactivé garde le bouton haut-parleur pour lire une réponse soi-même.",
+          "enable_sidebar": "L’entrée de barre latérale AI Workspace. La page reste disponible sur /ai-workspace si c’est désactivé.",
+          "enable_overlay": "Le bouton IA flottant. Masqué sur Paramètres pour ne pas couvrir Ajouter une intégration.",
+          "enable_dictate": "Microphone dans le champ de message.",
+          "allow_users": "Les utilisateurs connectés qui ne sont pas administrateurs peuvent ouvrir le chat flottant. Désactivé le réserve aux administrateurs. L’entrée de barre latérale reste réservée aux administrateurs.",
+          "house_map": "Index local facultatif pour le câblage d’un élément nommé (déclencheurs, identifiants liés). Désactivé par défaut. Pas pour lister des automatisations ou marche/arrêt — utilisez le MCP en direct. Pas d’état en direct, d’historique ni de traces.",
+          "cross_chat": "Désactivé par défaut. Si activé, une question peut utiliser un autre chat dont le titre partage des mots avec elle. Inutile de dire chat. Un court extrait seulement, et ce chat n’est pas modifié.",
+          "keep_chats": "Discussions non épinglées les plus récentes à conserver par personne. Les discussions épinglées sont toujours conservées. Par défaut 30."
+        },
+        "sections": {
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "Type MCP",
+              "mcp_url": "URL MCP{mcp_url_mark}",
+              "mcp_token": "Jeton MCP"
+            },
+            "data_description": {
+              "mcp_kind": "Seuls les serveurs MCP joignables par cette instance Home Assistant sont listés. Personnalisé est n’importe quelle URL HTTP MCP.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Intégré : jeton d’accès longue durée Home Assistant, ou laisser vide pour utiliser la connexion actuelle dans ce chat. HA-MCP : généralement vide. Vibecode : Agent Key. Personnalisé : jeton Bearer facultatif."
+            }
+          },
+          "prompt": {
+            "name": "Invite système",
+            "data": {
+              "system_prompt": "Invite système"
+            },
+            "data_description": {
+              "system_prompt": "Ton et comportement uniquement. Laisser vide pour l’invite intégrée. Les outils MCP et les liens d’éditeur sont toujours ajoutés ; ils ne font pas partie de ce champ."
+            }
+          }
+        }
+      },
+      "api": {
+        "title": "Fournisseur d’API cloud",
+        "data": {
+          "enable_sidebar": "Afficher AI Workspace dans la barre latérale",
+          "enable_overlay": "Afficher le bouton IA flottant sur chaque page",
+          "enable_dictate": "Afficher le bouton de dictée",
+          "allow_users": "Autoriser les utilisateurs normaux",
+          "house_map": "Catalogue de configuration",
+          "cross_chat": "Entre chats",
+          "keep_chats": "Discussions à conserver"
+        },
+        "sections": {
+          "provider": {
+            "name": "Fournisseur",
+            "data": {
+              "api_provider": "Fournisseur",
+              "api_key": "Clé API",
+              "model": "Modèle",
+              "api_base": "URL de base de l’API"
+            },
+            "data_description": {
+              "api_provider": "OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok ou compatible OpenAI.",
+              "api_key": "Clé API du fournisseur. Pas un jeton Home Assistant.",
+              "model": "Vide utilise le modèle par défaut du fournisseur.",
+              "api_base": "Laisser vide pour le fournisseur choisi. Obligatoire pour compatible OpenAI (OpenRouter, Ollama, LM Studio). Qwen en Chine continentale : https://dashscope.aliyuncs.com/compatible-mode/v1"
+            }
+          },
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "Type MCP",
+              "mcp_url": "URL MCP{mcp_url_mark}",
+              "mcp_token": "Jeton MCP"
+            },
+            "data_description": {
+              "mcp_kind": "Seuls les serveurs MCP joignables par cette instance Home Assistant sont listés. Personnalisé est n’importe quelle URL HTTP MCP.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Intégré : jeton d’accès longue durée Home Assistant, ou laisser vide pour utiliser la connexion actuelle dans ce chat. HA-MCP : généralement vide. Vibecode : Agent Key. Personnalisé : jeton Bearer facultatif."
+            }
+          },
+          "prompt": {
+            "name": "Invite système",
+            "data": {
+              "system_prompt": "Invite système"
+            },
+            "data_description": {
+              "system_prompt": "Ton et comportement uniquement. Laisser vide pour l’invite intégrée. Les outils MCP et les liens d’éditeur sont toujours ajoutés ; ils ne font pas partie de ce champ."
+            }
+          }
+        }
+      },
+      "cursor": {
+        "title": "Runtime Cursor",
+        "data": {
+          "runtime_url": "URL du runtime Cursor{runtime_url_mark}",
+          "enable_sidebar": "Afficher AI Workspace dans la barre latérale",
+          "enable_overlay": "Afficher le bouton IA flottant sur chaque page",
+          "enable_dictate": "Afficher le bouton de dictée",
+          "allow_users": "Autoriser les utilisateurs normaux",
+          "house_map": "Catalogue de configuration",
+          "cross_chat": "Entre chats",
+          "keep_chats": "Discussions à conserver"
+        },
+        "data_description": {
+          "runtime_url": "{runtime_url_note}",
+          "enable_sidebar": "L’entrée de barre latérale AI Workspace. La page reste disponible sur /ai-workspace si c’est désactivé.",
+          "enable_overlay": "Le bouton IA flottant. Masqué sur Paramètres pour ne pas couvrir Ajouter une intégration.",
+          "enable_dictate": "Microphone dans le champ de message. Les navigateurs n’autorisent la dictée qu’en https://.",
+          "allow_users": "Les utilisateurs connectés qui ne sont pas administrateurs peuvent ouvrir le chat flottant. Désactivé le réserve aux administrateurs. L’entrée de barre latérale reste réservée aux administrateurs.",
+          "house_map": "Index local facultatif pour le câblage d’un élément nommé (déclencheurs, identifiants liés). Désactivé par défaut. Pas pour lister des automatisations ou marche/arrêt — utilisez le MCP en direct. Pas d’état en direct, d’historique ni de traces.",
+          "cross_chat": "Désactivé par défaut. Si activé, une question peut utiliser un autre chat dont le titre partage des mots avec elle. Inutile de dire chat. Un court extrait seulement, et ce chat n’est pas modifié.",
+          "keep_chats": "Discussions non épinglées les plus récentes à conserver par personne. Les discussions épinglées sont toujours conservées. Par défaut 30."
+        },
+        "sections": {
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "Type MCP",
+              "mcp_url": "URL MCP{mcp_url_mark}",
+              "mcp_token": "Jeton MCP"
+            },
+            "data_description": {
+              "mcp_kind": "Seuls les serveurs MCP joignables par cette instance Home Assistant sont listés. Personnalisé est n’importe quelle URL HTTP MCP.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Intégré : jeton d’accès longue durée Home Assistant, ou laisser vide pour utiliser la connexion actuelle dans ce chat. HA-MCP : généralement vide. Vibecode : Agent Key. Personnalisé : jeton Bearer facultatif."
+            }
+          },
+          "prompt": {
+            "name": "Invite système",
+            "data": {
+              "system_prompt": "Invite système"
+            },
+            "data_description": {
+              "system_prompt": "Ton et comportement uniquement. Laisser vide pour l’invite intégrée. Les outils MCP et les liens d’éditeur sont toujours ajoutés ; ils ne font pas partie de ce champ."
+            }
+          }
+        }
+      },
+      "provider": {
+        "title": "Fournisseur",
+        "description": "Choisissez le fournisseur. L’écran suivant ne demande que ce dont ce fournisseur a besoin.",
+        "data": {
+          "api_provider": "Fournisseur"
+        },
+        "data_description": {
+          "api_provider": "Cursor, ou un modèle cloud ou local. "
+        }
+      },
+      "provider_cursor": {
+        "title": "Cursor",
+        "description": "Clé API Cursor, modèle et effort. L’URL du runtime reste sur AI Workspace.",
+        "data": {
+          "cursor_api_key": "Clé API Cursor",
+          "model": "Modèle",
+          "effort": "Effort",
+          "assist": "Utiliser aussi dans Assist"
+        },
+        "data_description": {
+          "cursor_api_key": "Depuis cursor.com/dashboard/integrations. Laisser vide à l’édition pour conserver la clé enregistrée.",
+          "model": "Vide utilise Composer.",
+          "effort": "Rapide, Élevé ou Élevé rapide. Composer utilise Rapide sauf si vous choisissez Élevé.",
+          "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
+        }
+      },
+      "provider_cloud": {
+        "title": "Agent cloud",
+        "description": "Cet agent conserve sa propre clé. Copiez-en une depuis une intégration déjà configurée, ou collez-en une nouvelle. Laisser la clé vide à l’édition pour conserver celle enregistrée.",
+        "data": {
+          "borrow": "Copier la clé depuis",
+          "api_key": "Clé API",
+          "model": "Modèle",
+          "effort": "Effort",
+          "low_token": "Peu de tokens",
+          "assist": "Utiliser aussi dans Assist"
+        },
+        "data_description": {
+          "borrow": "Utilise la clé déjà enregistrée par cette intégration. L’autre intégration n’est pas modifiée.",
+          "api_key": "Pas un jeton Home Assistant.",
+          "model": "Vide utilise le modèle par défaut du fournisseur.",
+          "effort": "Rapide, Élevé ou Élevé rapide lorsque le modèle le prend en charge.",
+          "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
+          "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
+        }
+      },
+      "provider_ollama": {
+        "title": "Ollama",
+        "description": "Indiquez l’adresse du serveur Ollama.",
+        "data": {
+          "api_base": "URL Ollama",
+          "model": "Modèle",
+          "effort": "Effort",
+          "low_token": "Peu de tokens",
+          "assist": "Utiliser aussi dans Assist"
+        },
+        "data_description": {
+          "api_base": "Usually http://127.0.0.1:11434/v1",
+          "model": "Vide utilise llama3.2.",
+          "effort": "Utilisé lorsque le modèle le prend en charge.",
+          "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
+          "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
+        }
+      },
+      "provider_azure": {
+        "title": "Azure OpenAI",
+        "description": "Point de terminaison Azure, déploiement et clé.",
+        "data": {
+          "api_key": "Clé API Azure",
+          "api_base": "Point de terminaison",
+          "model": "Déploiement",
+          "azure_api_version": "Version de l’API",
+          "effort": "Effort",
+          "low_token": "Peu de tokens",
+          "assist": "Utiliser aussi dans Assist"
+        },
+        "data_description": {
+          "api_key": "La clé Azure OpenAI. Laisser vide à l’édition pour conserver la clé enregistrée.",
+          "api_base": "https://YOUR.openai.azure.com",
+          "model": "Le nom du déploiement.",
+          "azure_api_version": "Default 2024-10-21.",
+          "effort": "Utilisé lorsque le déploiement le prend en charge.",
+          "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
+          "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
+        }
+      },
+      "provider_compatible": {
+        "title": "Compatible OpenAI",
+        "description": "Un serveur personnalisé qui parle l’API OpenAI.",
+        "data": {
+          "api_key": "Clé API",
+          "api_base": "URL de base de l’API",
+          "model": "Modèle",
+          "effort": "Effort",
+          "low_token": "Peu de tokens",
+          "assist": "Utiliser aussi dans Assist"
+        },
+        "data_description": {
+          "api_key": "Laisser vide à l’édition pour conserver la clé enregistrée.",
+          "api_base": "URL de base du serveur, y compris /v1 s’il utilise ce chemin.",
+          "model": "Nom du modèle sur ce serveur.",
+          "effort": "Utilisé lorsque le serveur le prend en charge.",
+          "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
+          "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
+        }
+      }
+    },
+    "error": {
+      "no_runtime": "Le runtime Cursor est injoignable. Démarrez-le et indiquez son URL sur AI Workspace.",
+      "required": "Ce champ est obligatoire."
+    },
+    "abort": {
+      "already_configured": "AI Workspace est déjà configuré"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "AI Workspace",
+        "description": "Paramètres de chat partagés. Les connexions s’ajoutent sur AI Workspace. Les agents s’ajoutent sur AI Agents.",
+        "data": {
+          "runtime_url": "URL du runtime Cursor{runtime_url_mark}",
+          "stt_engine": "Parole vers texte",
+          "tts_engine": "Texte vers parole",
+          "speak_replies": "Lire les réponses automatiquement",
+          "enable_sidebar": "Afficher AI Workspace dans la barre latérale",
+          "enable_overlay": "Afficher le bouton IA flottant sur chaque page",
+          "enable_dictate": "Afficher le bouton de dictée",
+          "allow_users": "Autoriser les utilisateurs normaux",
+          "house_map": "Catalogue de configuration",
+          "cross_chat": "Entre chats",
+          "keep_chats": "Discussions à conserver"
+        },
+        "data_description": {
+          "runtime_url": "{runtime_url_note}",
+          "stt_engine": "Le navigateur utilise la reconnaissance vocale de l’appareil et nécessite https:// ou localhost. Un moteur Home Assistant (Whisper et autres sous Paramètres) transcrit un enregistrement de cette page. Le navigateur doit quand même autoriser le microphone, uniquement en https:// ou localhost.",
+          "tts_engine": "Piper et d’autres voix Home Assistant. La lecture de la réponse fonctionne aussi en http://. Désactivé laisse les réponses en texte.",
+          "speak_replies": "Quand une voix est choisie, chaque réponse est lue dès qu’elle arrive. Désactivé garde le bouton haut-parleur pour lire une réponse soi-même.",
+          "enable_sidebar": "L’entrée de barre latérale AI Workspace. La page reste disponible sur /ai-workspace si c’est désactivé.",
+          "enable_overlay": "Le bouton IA flottant. Masqué sur Paramètres pour ne pas couvrir Ajouter une intégration.",
+          "enable_dictate": "Microphone dans le champ de message.",
+          "allow_users": "Les utilisateurs connectés qui ne sont pas administrateurs peuvent ouvrir le chat flottant. Désactivé le réserve aux administrateurs. L’entrée de barre latérale reste réservée aux administrateurs.",
+          "house_map": "Index local facultatif pour le câblage d’un élément nommé (déclencheurs, identifiants liés). Désactivé par défaut. Pas pour lister des automatisations ou marche/arrêt — utilisez le MCP en direct. Pas d’état en direct, d’historique ni de traces.",
+          "cross_chat": "Désactivé par défaut. Si activé, une question peut utiliser un autre chat dont le titre partage des mots avec elle. Inutile de dire chat. Un court extrait seulement, et ce chat n’est pas modifié.",
+          "keep_chats": "Discussions non épinglées les plus récentes à conserver par personne. Les discussions épinglées sont toujours conservées. Par défaut 30."
+        },
+        "sections": {
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "Type MCP",
+              "mcp_url": "URL MCP{mcp_url_mark}",
+              "mcp_token": "Jeton MCP"
+            },
+            "data_description": {
+              "mcp_kind": "Seuls les serveurs MCP joignables par cette instance Home Assistant sont listés. Personnalisé est n’importe quelle URL HTTP MCP.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Intégré : jeton d’accès longue durée Home Assistant, ou laisser vide pour utiliser la connexion actuelle dans ce chat. HA-MCP : généralement vide. Vibecode : Agent Key. Personnalisé : jeton Bearer facultatif."
+            }
+          },
+          "prompt": {
+            "name": "Invite système",
+            "data": {
+              "system_prompt": "Invite système"
+            },
+            "data_description": {
+              "system_prompt": "Ton et comportement uniquement. Laisser vide pour l’invite intégrée. Les outils MCP et les liens d’éditeur sont toujours ajoutés ; ils ne font pas partie de ce champ."
+            }
+          }
+        }
+      },
+      "api": {
+        "title": "Fournisseur d’API cloud",
+        "data": {
+          "enable_sidebar": "Afficher AI Workspace dans la barre latérale",
+          "enable_overlay": "Afficher le bouton IA flottant sur chaque page",
+          "enable_dictate": "Afficher le bouton de dictée",
+          "allow_users": "Autoriser les utilisateurs normaux",
+          "house_map": "Catalogue de configuration",
+          "cross_chat": "Entre chats",
+          "keep_chats": "Discussions à conserver"
+        },
+        "data_description": {
+          "enable_sidebar": "L’entrée de barre latérale AI Workspace. La page reste disponible sur /ai-workspace si c’est désactivé.",
+          "enable_overlay": "Le bouton IA flottant. Masqué sur Paramètres pour ne pas couvrir Ajouter une intégration.",
+          "enable_dictate": "Microphone dans le champ de message. Les navigateurs n’autorisent la dictée qu’en https://.",
+          "allow_users": "Les utilisateurs connectés qui ne sont pas administrateurs peuvent ouvrir le chat flottant. Désactivé le réserve aux administrateurs. L’entrée de barre latérale reste réservée aux administrateurs.",
+          "house_map": "Index local facultatif pour le câblage d’un élément nommé (déclencheurs, identifiants liés). Désactivé par défaut. Pas pour lister des automatisations ou marche/arrêt — utilisez le MCP en direct. Pas d’état en direct, d’historique ni de traces.",
+          "cross_chat": "Désactivé par défaut. Si activé, une question peut utiliser un autre chat dont le titre partage des mots avec elle. Inutile de dire chat. Un court extrait seulement, et ce chat n’est pas modifié.",
+          "keep_chats": "Discussions non épinglées les plus récentes à conserver par personne. Les discussions épinglées sont toujours conservées. Par défaut 30."
+        },
+        "sections": {
+          "provider": {
+            "name": "Fournisseur",
+            "data": {
+              "api_provider": "Fournisseur",
+              "api_key": "Clé API",
+              "model": "Modèle",
+              "api_base": "URL de base de l’API"
+            },
+            "data_description": {
+              "api_provider": "OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok ou compatible OpenAI.",
+              "api_key": "Clé API du fournisseur. Pas un jeton Home Assistant.",
+              "model": "Vide utilise le modèle par défaut du fournisseur.",
+              "api_base": "Laisser vide pour le fournisseur choisi. Obligatoire pour compatible OpenAI (OpenRouter, Ollama, LM Studio). Qwen en Chine continentale : https://dashscope.aliyuncs.com/compatible-mode/v1"
+            }
+          },
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "Type MCP",
+              "mcp_url": "URL MCP{mcp_url_mark}",
+              "mcp_token": "Jeton MCP"
+            },
+            "data_description": {
+              "mcp_kind": "Seuls les serveurs MCP joignables par cette instance Home Assistant sont listés. Personnalisé est n’importe quelle URL HTTP MCP.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Intégré : jeton d’accès longue durée Home Assistant, ou laisser vide pour utiliser la connexion actuelle dans ce chat. HA-MCP : généralement vide. Vibecode : Agent Key. Personnalisé : jeton Bearer facultatif."
+            }
+          },
+          "prompt": {
+            "name": "Invite système",
+            "data": {
+              "system_prompt": "Invite système"
+            },
+            "data_description": {
+              "system_prompt": "Ton et comportement uniquement. Laisser vide pour l’invite intégrée. Les outils MCP et les liens d’éditeur sont toujours ajoutés ; ils ne font pas partie de ce champ."
+            }
+          }
+        }
+      },
+      "cursor": {
+        "title": "Runtime Cursor",
+        "data": {
+          "runtime_url": "URL du runtime Cursor{runtime_url_mark}",
+          "enable_sidebar": "Afficher AI Workspace dans la barre latérale",
+          "enable_overlay": "Afficher le bouton IA flottant sur chaque page",
+          "enable_dictate": "Afficher le bouton de dictée",
+          "allow_users": "Autoriser les utilisateurs normaux",
+          "house_map": "Catalogue de configuration",
+          "cross_chat": "Entre chats",
+          "keep_chats": "Discussions à conserver"
+        },
+        "data_description": {
+          "runtime_url": "{runtime_url_note}",
+          "enable_sidebar": "L’entrée de barre latérale AI Workspace. La page reste disponible sur /ai-workspace si c’est désactivé.",
+          "enable_overlay": "Le bouton IA flottant. Masqué sur Paramètres pour ne pas couvrir Ajouter une intégration.",
+          "enable_dictate": "Microphone dans le champ de message. Les navigateurs n’autorisent la dictée qu’en https://.",
+          "allow_users": "Les utilisateurs connectés qui ne sont pas administrateurs peuvent ouvrir le chat flottant. Désactivé le réserve aux administrateurs. L’entrée de barre latérale reste réservée aux administrateurs.",
+          "house_map": "Index local facultatif pour le câblage d’un élément nommé (déclencheurs, identifiants liés). Désactivé par défaut. Pas pour lister des automatisations ou marche/arrêt — utilisez le MCP en direct. Pas d’état en direct, d’historique ni de traces.",
+          "cross_chat": "Désactivé par défaut. Si activé, une question peut utiliser un autre chat dont le titre partage des mots avec elle. Inutile de dire chat. Un court extrait seulement, et ce chat n’est pas modifié.",
+          "keep_chats": "Discussions non épinglées les plus récentes à conserver par personne. Les discussions épinglées sont toujours conservées. Par défaut 30."
+        },
+        "sections": {
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "Type MCP",
+              "mcp_url": "URL MCP{mcp_url_mark}",
+              "mcp_token": "Jeton MCP"
+            },
+            "data_description": {
+              "mcp_kind": "Seuls les serveurs MCP joignables par cette instance Home Assistant sont listés. Personnalisé est n’importe quelle URL HTTP MCP.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Intégré : jeton d’accès longue durée Home Assistant, ou laisser vide pour utiliser la connexion actuelle dans ce chat. HA-MCP : généralement vide. Vibecode : Agent Key. Personnalisé : jeton Bearer facultatif."
+            }
+          },
+          "prompt": {
+            "name": "Invite système",
+            "data": {
+              "system_prompt": "Invite système"
+            },
+            "data_description": {
+              "system_prompt": "Ton et comportement uniquement. Laisser vide pour l’invite intégrée. Les outils MCP et les liens d’éditeur sont toujours ajoutés ; ils ne font pas partie de ce champ."
+            }
+          }
+        }
+      },
+      "provider": {
+        "title": "Fournisseur",
+        "description": "Choisissez le fournisseur. L’écran suivant ne demande que ce dont ce fournisseur a besoin.",
+        "data": {
+          "api_provider": "Fournisseur"
+        },
+        "data_description": {
+          "api_provider": "Cursor, ou un modèle cloud ou local. "
+        }
+      },
+      "provider_cursor": {
+        "title": "Cursor",
+        "description": "Clé API Cursor, modèle et effort. L’URL du runtime reste sur AI Workspace.",
+        "data": {
+          "cursor_api_key": "Clé API Cursor",
+          "model": "Modèle",
+          "effort": "Effort",
+          "assist": "Utiliser aussi dans Assist"
+        },
+        "data_description": {
+          "cursor_api_key": "Depuis cursor.com/dashboard/integrations. Laisser vide à l’édition pour conserver la clé enregistrée.",
+          "model": "Vide utilise Composer.",
+          "effort": "Rapide, Élevé ou Élevé rapide. Composer utilise Rapide sauf si vous choisissez Élevé.",
+          "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
+        }
+      },
+      "provider_cloud": {
+        "title": "Agent cloud",
+        "description": "Cet agent conserve sa propre clé. Copiez-en une depuis une intégration déjà configurée, ou collez-en une nouvelle. Laisser la clé vide à l’édition pour conserver celle enregistrée.",
+        "data": {
+          "borrow": "Copier la clé depuis",
+          "api_key": "Clé API",
+          "model": "Modèle",
+          "effort": "Effort",
+          "low_token": "Peu de tokens",
+          "assist": "Utiliser aussi dans Assist"
+        },
+        "data_description": {
+          "borrow": "Utilise la clé déjà enregistrée par cette intégration. L’autre intégration n’est pas modifiée.",
+          "api_key": "Pas un jeton Home Assistant.",
+          "model": "Vide utilise le modèle par défaut du fournisseur.",
+          "effort": "Rapide, Élevé ou Élevé rapide lorsque le modèle le prend en charge.",
+          "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
+          "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
+        }
+      },
+      "provider_ollama": {
+        "title": "Ollama",
+        "description": "Indiquez l’adresse du serveur Ollama.",
+        "data": {
+          "api_base": "URL Ollama",
+          "model": "Modèle",
+          "effort": "Effort",
+          "low_token": "Peu de tokens",
+          "assist": "Utiliser aussi dans Assist"
+        },
+        "data_description": {
+          "api_base": "Usually http://127.0.0.1:11434/v1",
+          "model": "Vide utilise llama3.2.",
+          "effort": "Utilisé lorsque le modèle le prend en charge.",
+          "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
+          "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
+        }
+      },
+      "provider_azure": {
+        "title": "Azure OpenAI",
+        "description": "Point de terminaison Azure, déploiement et clé.",
+        "data": {
+          "api_key": "Clé API Azure",
+          "api_base": "Point de terminaison",
+          "model": "Déploiement",
+          "azure_api_version": "Version de l’API",
+          "effort": "Effort",
+          "low_token": "Peu de tokens",
+          "assist": "Utiliser aussi dans Assist"
+        },
+        "data_description": {
+          "api_key": "La clé Azure OpenAI. Laisser vide à l’édition pour conserver la clé enregistrée.",
+          "api_base": "https://YOUR.openai.azure.com",
+          "model": "Le nom du déploiement.",
+          "azure_api_version": "Default 2024-10-21.",
+          "effort": "Utilisé lorsque le déploiement le prend en charge.",
+          "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
+          "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
+        }
+      },
+      "provider_compatible": {
+        "title": "Compatible OpenAI",
+        "description": "Un serveur personnalisé qui parle l’API OpenAI.",
+        "data": {
+          "api_key": "Clé API",
+          "api_base": "URL de base de l’API",
+          "model": "Modèle",
+          "effort": "Effort",
+          "low_token": "Peu de tokens",
+          "assist": "Utiliser aussi dans Assist"
+        },
+        "data_description": {
+          "api_key": "Laisser vide à l’édition pour conserver la clé enregistrée.",
+          "api_base": "URL de base du serveur, y compris /v1 s’il utilise ce chemin.",
+          "model": "Nom du modèle sur ce serveur.",
+          "effort": "Utilisé lorsque le serveur le prend en charge.",
+          "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
+          "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
+        }
+      }
+    },
+    "error": {
+      "no_runtime": "Le runtime Cursor est injoignable. Démarrez-le et indiquez son URL sur AI Workspace.",
+      "required": "Ce champ est obligatoire."
+    }
+  },
+  "config_subentries": {
+    "mcp": {
+      "initiate_flow": {
+        "user": "Ajouter une connexion",
+        "reconfigure": "Modifier la connexion"
+      },
+      "entry_type": "Connexion",
+      "abort": {
+        "reconfigure_successful": "Connexion mise à jour."
+      },
+      "error": {
+        "required": "Ce champ est obligatoire.",
+        "already_configured": "Une connexion avec ce nom existe déjà."
+      },
+      "step": {
+        "user": {
+          "title": "Connexion",
+          "description": "Seuls les serveurs MCP joignables par cette instance Home Assistant sont listés. Personnalisé est n’importe quelle URL HTTP MCP.",
+          "menu_options": {
+            "ha": "Serveur MCP Home Assistant (intégré)",
+            "ha_mcp": "HA-MCP",
+            "coolver": "HA Vibecode Agent (Coolver)",
+            "custom": "URL MCP personnalisée"
+          }
+        },
+        "connection": {
+          "title": "Connexion",
+          "description": "Un serveur MCP que l’assistant peut utiliser dans le même chat.",
+          "data": {
+            "name": "Nom",
+            "url": "Adresse",
+            "token": "Jeton"
+          },
+          "data_description": {
+            "name": "Un nom court, par exemple Directus. L’assistant s’en sert pour distinguer cette connexion des autres.",
+            "url": "L’adresse MCP, commençant par https:// ou http://. Les serveurs trouvés sont préremplis.",
+            "token": "Uniquement si ce serveur demande une clé. Laisser vide à l’édition pour conserver la clé enregistrée."
+          }
+        }
+      }
+    },
+    "agent": {
+      "initiate_flow": {
+        "user": "Ajouter un agent",
+        "reconfigure": "Modifier l’agent"
+      },
+      "entry_type": "Agent",
+      "error": {
+        "no_runtime": "Le runtime Cursor est injoignable. Démarrez-le et indiquez son URL sur AI Workspace.",
+        "required": "Ce champ est obligatoire."
+      },
+      "step": {
+        "agent": {
+          "title": "Agent",
+          "description": "Choisissez l’agent. L’écran suivant ne demande que ce dont cet agent a besoin.",
+          "data": {
+            "api_provider": "Agent"
+          },
+          "data_description": {
+            "api_provider": "Cursor, ou un modèle cloud ou local."
+          }
+        },
+        "cursor": {
+          "title": "Cursor",
+          "description": "Clé API Cursor, modèle et effort. L’URL du runtime reste sur AI Workspace.",
+          "data": {
+            "cursor_api_key": "Clé API Cursor",
+            "model": "Modèle",
+            "effort": "Effort",
+            "assist": "Utiliser aussi dans Assist"
+          },
+          "data_description": {
+            "cursor_api_key": "Depuis cursor.com/dashboard/integrations. Laisser vide à l’édition pour conserver la clé enregistrée.",
+            "model": "Vide utilise Composer.",
+            "effort": "Rapide, Élevé ou Élevé rapide. Composer utilise Rapide sauf si vous choisissez Élevé.",
+            "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
+          }
+        },
+        "cloud": {
+          "title": "Agent cloud",
+          "description": "Cet agent conserve sa propre clé. Copiez-en une depuis une intégration déjà configurée, ou collez-en une nouvelle. Laisser la clé vide à l’édition pour conserver celle enregistrée.",
+          "data": {
+            "borrow": "Copier la clé depuis",
+            "api_key": "Clé API",
+            "model": "Modèle",
+            "effort": "Effort",
+            "low_token": "Peu de tokens",
+            "assist": "Utiliser aussi dans Assist"
+          },
+          "data_description": {
+            "borrow": "Utilise la clé déjà enregistrée par cette intégration. L’autre intégration n’est pas modifiée.",
+            "api_key": "Pas un jeton Home Assistant.",
+            "model": "Vide utilise le modèle par défaut du fournisseur.",
+            "effort": "Rapide, Élevé ou Élevé rapide lorsque le modèle le prend en charge.",
+            "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
+            "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
+          }
+        },
+        "ollama": {
+          "title": "Ollama",
+          "description": "Indiquez l’adresse du serveur Ollama.",
+          "data": {
+            "api_base": "URL Ollama",
+            "model": "Modèle",
+            "effort": "Effort",
+            "low_token": "Peu de tokens",
+            "assist": "Utiliser aussi dans Assist"
+          },
+          "data_description": {
+            "api_base": "Usually http://127.0.0.1:11434/v1",
+            "model": "Vide utilise llama3.2.",
+            "effort": "Utilisé lorsque le modèle le prend en charge.",
+            "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
+            "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
+          }
+        },
+        "azure": {
+          "title": "Azure OpenAI",
+          "description": "Point de terminaison Azure, déploiement et clé.",
+          "data": {
+            "api_key": "Clé API Azure",
+            "api_base": "Point de terminaison",
+            "model": "Déploiement",
+            "azure_api_version": "Version de l’API",
+            "effort": "Effort",
+            "low_token": "Peu de tokens",
+            "assist": "Utiliser aussi dans Assist"
+          },
+          "data_description": {
+            "api_key": "La clé Azure OpenAI. Laisser vide à l’édition pour conserver la clé enregistrée.",
+            "api_base": "https://YOUR.openai.azure.com",
+            "model": "Le nom du déploiement.",
+            "azure_api_version": "Default 2024-10-21.",
+            "effort": "Utilisé lorsque le déploiement le prend en charge.",
+            "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
+            "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
+          }
+        },
+        "compatible": {
+          "title": "Compatible OpenAI",
+          "description": "Un serveur personnalisé qui parle l’API OpenAI.",
+          "data": {
+            "api_key": "Clé API",
+            "api_base": "URL de base de l’API",
+            "model": "Modèle",
+            "effort": "Effort",
+            "low_token": "Peu de tokens",
+            "assist": "Utiliser aussi dans Assist"
+          },
+          "data_description": {
+            "api_key": "Laisser vide à l’édition pour conserver la clé enregistrée.",
+            "api_base": "URL de base du serveur, y compris /v1 s’il utilise ce chemin.",
+            "model": "Nom du modèle sur ce serveur.",
+            "effort": "Utilisé lorsque le serveur le prend en charge.",
+            "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
+            "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
+          }
+        },
+        "provider": {
+          "title": "Fournisseur",
+          "description": "Choisissez le fournisseur. L’écran suivant ne demande que ce dont ce fournisseur a besoin.",
+          "data": {
+            "api_provider": "Fournisseur"
+          },
+          "data_description": {
+            "api_provider": "Cursor, ou un modèle cloud ou local. "
+          }
+        },
+        "provider_cursor": {
+          "title": "Cursor",
+          "description": "Clé API Cursor, modèle et effort. L’URL du runtime reste sur AI Workspace.",
+          "data": {
+            "cursor_api_key": "Clé API Cursor",
+            "model": "Modèle",
+            "effort": "Effort",
+            "assist": "Utiliser aussi dans Assist"
+          },
+          "data_description": {
+            "cursor_api_key": "Depuis cursor.com/dashboard/integrations. Laisser vide à l’édition pour conserver la clé enregistrée.",
+            "model": "Vide utilise Composer.",
+            "effort": "Rapide, Élevé ou Élevé rapide. Composer utilise Rapide sauf si vous choisissez Élevé.",
+            "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
+          }
+        },
+        "provider_cloud": {
+          "title": "Agent cloud",
+          "description": "Cet agent conserve sa propre clé. Copiez-en une depuis une intégration déjà configurée, ou collez-en une nouvelle. Laisser la clé vide à l’édition pour conserver celle enregistrée.",
+          "data": {
+            "borrow": "Copier la clé depuis",
+            "api_key": "Clé API",
+            "model": "Modèle",
+            "effort": "Effort",
+            "low_token": "Peu de tokens",
+            "assist": "Utiliser aussi dans Assist"
+          },
+          "data_description": {
+            "borrow": "Utilise la clé déjà enregistrée par cette intégration. L’autre intégration n’est pas modifiée.",
+            "api_key": "Pas un jeton Home Assistant.",
+            "model": "Vide utilise le modèle par défaut du fournisseur.",
+            "effort": "Rapide, Élevé ou Élevé rapide lorsque le modèle le prend en charge.",
+            "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
+            "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
+          }
+        },
+        "provider_ollama": {
+          "title": "Ollama",
+          "description": "Indiquez l’adresse du serveur Ollama.",
+          "data": {
+            "api_base": "URL Ollama",
+            "model": "Modèle",
+            "effort": "Effort",
+            "low_token": "Peu de tokens",
+            "assist": "Utiliser aussi dans Assist"
+          },
+          "data_description": {
+            "api_base": "Usually http://127.0.0.1:11434/v1",
+            "model": "Vide utilise llama3.2.",
+            "effort": "Utilisé lorsque le modèle le prend en charge.",
+            "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
+            "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
+          }
+        },
+        "provider_azure": {
+          "title": "Azure OpenAI",
+          "description": "Point de terminaison Azure, déploiement et clé.",
+          "data": {
+            "api_key": "Clé API Azure",
+            "api_base": "Point de terminaison",
+            "model": "Déploiement",
+            "azure_api_version": "Version de l’API",
+            "effort": "Effort",
+            "low_token": "Peu de tokens",
+            "assist": "Utiliser aussi dans Assist"
+          },
+          "data_description": {
+            "api_key": "La clé Azure OpenAI. Laisser vide à l’édition pour conserver la clé enregistrée.",
+            "api_base": "https://YOUR.openai.azure.com",
+            "model": "Le nom du déploiement.",
+            "azure_api_version": "Default 2024-10-21.",
+            "effort": "Utilisé lorsque le déploiement le prend en charge.",
+            "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
+            "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
+          }
+        },
+        "provider_compatible": {
+          "title": "Compatible OpenAI",
+          "description": "Un serveur personnalisé qui parle l’API OpenAI.",
+          "data": {
+            "api_key": "Clé API",
+            "api_base": "URL de base de l’API",
+            "model": "Modèle",
+            "effort": "Effort",
+            "low_token": "Peu de tokens",
+            "assist": "Utiliser aussi dans Assist"
+          },
+          "data_description": {
+            "api_key": "Laisser vide à l’édition pour conserver la clé enregistrée.",
+            "api_base": "URL de base du serveur, y compris /v1 s’il utilise ce chemin.",
+            "model": "Nom du modèle sur ce serveur.",
+            "effort": "Utilisé lorsque le serveur le prend en charge.",
+            "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
+            "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
+          }
+        }
+      },
+      "abort": {
+        "reconfigure_successful": "Agent mis à jour."
+      }
+    }
+  },
+  "selector": {
+    "api_provider": {
+      "options": {
+        "openai": "OpenAI",
+        "anthropic": "Claude (Anthropic)",
+        "gemini": "Google Gemini",
+        "deepseek": "DeepSeek",
+        "qwen": "Qwen (Alibaba)",
+        "xai": "Grok (xAI)",
+        "openrouter": "OpenRouter",
+        "ollama": "Ollama local",
+        "azure": "Azure OpenAI",
+        "compatible": "Compatible OpenAI (URL de base personnalisée)"
+      }
+    },
+    "agent_provider": {
+      "options": {
+        "cursor": "Cursor",
+        "openai": "OpenAI",
+        "anthropic": "Claude (Anthropic)",
+        "gemini": "Google Gemini",
+        "deepseek": "DeepSeek",
+        "qwen": "Qwen (Alibaba)",
+        "xai": "Grok (xAI)",
+        "openrouter": "OpenRouter",
+        "ollama": "Ollama local",
+        "azure": "Azure OpenAI",
+        "compatible": "Compatible OpenAI (URL de base personnalisée)"
+      }
+    },
+    "effort": {
+      "options": {
+        "": "Par défaut",
+        "fast": "Rapide",
+        "high": "Élevé",
+        "high_fast": "Élevé rapide"
+      }
+    },
+    "mcp_kind": {
+      "options": {
+        "ha": "Serveur MCP Home Assistant (intégré)",
+        "ha_mcp": "HA-MCP",
+        "coolver": "HA Vibecode Agent (Coolver)",
+        "custom": "URL MCP personnalisée"
+      }
+    }
+  }
+}

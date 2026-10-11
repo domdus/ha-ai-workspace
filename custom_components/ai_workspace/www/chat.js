@@ -3,6 +3,66 @@ const { stringsFor } = await import(`./i18n.js${CACHE}`);
 
 const API = "/api/ai_workspace";
 
+function speechIsShort(text) {
+  const words = String(text || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean);
+  return words.length <= 3;
+}
+
+function pullSpeechPiece(text) {
+  const para = /^[\s\S]*?\n\s*\n/.exec(text);
+  const sentence = /^[\s\S]*?[.!?。！？]["»«”’')\]]*?(?=\s+(?:\p{Lu}|\p{Lt}|[„"«(])|\s*\n)/u.exec(text);
+  let piece = "";
+  if (sentence) piece = sentence[0];
+  if (para && (!piece || para[0].length < piece.length)) piece = para[0];
+  if (!piece) return null;
+  return { piece, rest: text.slice(piece.length) };
+}
+
+function trailingSentence(text) {
+  const match = /^([\s\S]*?[.!?。！？]["»«”’')\]]*)\s*$/u.exec(text);
+  if (!match || !match[1].trim()) return null;
+  return { piece: match[0], rest: "" };
+}
+
+export function takeSpeech(held, started, flush) {
+  const pieces = [];
+  let rest = String(held || "");
+  let bundle = "";
+  let open = !started;
+  while (rest) {
+    let next = pullSpeechPiece(rest);
+    if (!next) {
+      const tail = trailingSentence(rest);
+      if (!tail || (open && speechIsShort(bundle + tail.piece))) break;
+      next = tail;
+    }
+    rest = next.rest;
+    if (open) {
+      bundle += next.piece;
+      if (!speechIsShort(bundle)) {
+        pieces.push(bundle.trim());
+        bundle = "";
+        open = false;
+      }
+      continue;
+    }
+    const bit = next.piece.trim();
+    if (bit) pieces.push(bit);
+  }
+  if (open && bundle) {
+    if (flush) pieces.push(bundle.trim());
+    else rest = bundle + rest;
+  } else if (flush && rest.trim()) {
+    pieces.push(rest.trim());
+    rest = "";
+  }
+  return { pieces: pieces.filter(Boolean), rest };
+}
+
 function hassObj() {
   return document.querySelector("home-assistant")?.hass;
 }
@@ -426,11 +486,12 @@ export function mountAiWorkspace(root, options = {}) {
               </div>
             </div>
             <div class="agent-picker" hidden>
-              <button type="button" class="agent-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="${t("agent")}">
-                <span class="agent-trigger-label"></span>
-                <ha-icon icon="mdi:chevron-down"></ha-icon>
-              </button>
-              <div class="agent-menu" role="listbox" hidden></div>
+              <ha-dropdown class="agent-menu" placement="top-start">
+                <button type="button" class="agent-trigger" slot="trigger" aria-haspopup="menu" aria-expanded="false" aria-label="${t("agent")}">
+                  <span class="agent-trigger-label"></span>
+                  <ha-icon icon="mdi:chevron-down"></ha-icon>
+                </button>
+              </ha-dropdown>
             </div>
           </form>
         </div>
@@ -563,7 +624,6 @@ export function mountAiWorkspace(root, options = {}) {
       sessionId = "";
       titleEl.textContent = t("new_chat");
       showEmpty();
-      loadSessions();
     }
   }
   let streaming = false;
@@ -1115,7 +1175,7 @@ export function mountAiWorkspace(root, options = {}) {
       row.appendChild(btn);
     }
     let speakBtn = row.querySelector(".speak-chat");
-    if (voice.speak) {
+    if (voice.tts) {
       if (!speakBtn) {
         speakBtn = document.createElement("ha-icon-button");
         speakBtn.className = "speak-chat";
@@ -1382,6 +1442,7 @@ export function mountAiWorkspace(root, options = {}) {
     streamBuf = "";
     streamFull = "";
     streamNode = null;
+    haltSpeech();
     const waiters = streamWaiters;
     streamWaiters = [];
     waiters.forEach((fn) => fn());
@@ -1529,16 +1590,10 @@ export function mountAiWorkspace(root, options = {}) {
 
   let defaultProvider = "api";
   let agentId = "";
-  let voice = { dictate: true, stt: "browser", speak: false };
+  let voice = { dictate: true, stt: "browser", speak: false, tts: false };
 
   function selectedAgent() {
     return agentId || defaultProvider;
-  }
-
-  function closeAgentMenu() {
-    if (!agentMenu || !agentTrigger) return;
-    agentMenu.hidden = true;
-    agentTrigger.setAttribute("aria-expanded", "false");
   }
 
   function agentChoices(items) {
@@ -1570,44 +1625,15 @@ export function mountAiWorkspace(root, options = {}) {
     if (agentPicker && agentMenu && agentLabel) {
       agentPicker.hidden = ready.length < 2;
       agentLabel.textContent = pick?.label || "";
-      agentMenu.replaceChildren();
+      agentMenu.querySelectorAll("ha-dropdown-item").forEach((node) => node.remove());
       for (const item of items) {
-        const option = document.createElement("button");
-        option.type = "button";
-        option.className = "agent-option";
-        option.setAttribute("role", "option");
-        option.dataset.id = item.id;
+        const option = document.createElement("ha-dropdown-item");
+        option.value = item.id;
         option.disabled = !item.available;
-        option.setAttribute("aria-selected", item.id === agentId ? "true" : "false");
-        const name = document.createElement("span");
-        name.className = "agent-option-name";
-        name.textContent = item.label;
-        option.appendChild(name);
-        if (item.id === agentId) {
-          const mark = document.createElement("ha-icon");
-          mark.setAttribute("icon", "mdi:check");
-          option.appendChild(mark);
-        }
-        option.addEventListener("click", () => {
-          if (!item.available) return;
-          agentId = item.id;
-          localStorage.setItem("ai_workspace_agent", agentId);
-          defaultProvider = agentId;
-          agentLabel.textContent = item.label;
-          for (const other of agentMenu.querySelectorAll(".agent-option")) {
-            const on = other.dataset.id === agentId;
-            other.setAttribute("aria-selected", on ? "true" : "false");
-            const mark = other.querySelector("ha-icon");
-            if (on && !mark) {
-              const icon = document.createElement("ha-icon");
-              icon.setAttribute("icon", "mdi:check");
-              other.appendChild(icon);
-            } else if (!on && mark) {
-              mark.remove();
-            }
-          }
-          closeAgentMenu();
-        });
+        option.selected = item.id === agentId;
+        if (!item.available) option.setAttribute("disabled", "");
+        if (item.id === agentId) option.setAttribute("selected", "");
+        option.textContent = item.label;
         agentMenu.appendChild(option);
       }
     }
@@ -1623,58 +1649,111 @@ export function mountAiWorkspace(root, options = {}) {
     }
   }
 
-  let sessionMenu = null;
-
   function closeSessionMenu() {
-    if (!sessionMenu) return;
-    sessionMenu.remove();
-    sessionMenu = null;
+    root.querySelectorAll("ha-dropdown.session-menu").forEach((menu) => {
+      menu.open = false;
+    });
     root.querySelectorAll(".session-more[aria-expanded='true']").forEach((btn) => {
       btn.setAttribute("aria-expanded", "false");
     });
   }
 
-  function sessionAction(label, className, onClick) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = className;
-    btn.setAttribute("role", "menuitem");
-    btn.textContent = label;
-    btn.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      closeSessionMenu();
-      onClick();
-    });
-    return btn;
+  function sessionAction(label, value, variant) {
+    const item = document.createElement("ha-dropdown-item");
+    item.value = value;
+    if (variant) item.variant = variant;
+    item.textContent = label;
+    return item;
   }
 
-  function openSessionMenu(anchor, session) {
-    const already = sessionMenu && sessionMenu.dataset.sessionId === session.id;
-    closeSessionMenu();
-    if (already) return;
-    sessionMenu = document.createElement("div");
-    sessionMenu.className = "session-menu";
-    sessionMenu.dataset.sessionId = session.id;
-    sessionMenu.setAttribute("role", "menu");
-    sessionMenu.append(
-      sessionAction(session.pinned ? t("unpin") : t("pin"), "", () => pinSession(session)),
-      sessionAction(t("rename"), "", () => renameSession(session)),
-      sessionAction(t("delete"), "danger", () => deleteSession(session)),
-    );
-    wrap.appendChild(sessionMenu);
-    const rect = anchor.getBoundingClientRect();
-    const wrapRect = wrap.getBoundingClientRect();
-    const menuRect = sessionMenu.getBoundingClientRect();
-    let top = rect.bottom - wrapRect.top + 4;
-    let left = rect.right - wrapRect.left - menuRect.width;
-    if (left < 8) left = 8;
-    if (top + menuRect.height > wrapRect.height - 8) {
-      top = rect.top - wrapRect.top - menuRect.height - 4;
-    }
-    sessionMenu.style.top = `${Math.max(8, top)}px`;
-    sessionMenu.style.left = `${left}px`;
-    anchor.setAttribute("aria-expanded", "true");
+  function openDialog(dialog) {
+    root.appendChild(dialog);
+    customElements.whenDefined("ha-dialog").then(() => {
+      dialog.open = true;
+    });
+  }
+
+  function askText(title, value) {
+    return new Promise((resolve) => {
+      const dialog = document.createElement("ha-dialog");
+      dialog.setAttribute("header-title", title);
+      dialog.setAttribute("width", "small");
+      const input = document.createElement("input");
+      input.className = "dialog-field";
+      input.type = "text";
+      input.value = value || "";
+      input.maxLength = 80;
+      const footer = document.createElement("ha-dialog-footer");
+      footer.slot = "footer";
+      const cancel = document.createElement("ha-button");
+      cancel.setAttribute("appearance", "plain");
+      cancel.slot = "secondaryAction";
+      cancel.textContent = t("cancel");
+      const save = document.createElement("ha-button");
+      save.setAttribute("variant", "brand");
+      save.slot = "primaryAction";
+      save.textContent = t("save");
+      footer.append(cancel, save);
+      dialog.append(input, footer);
+      let result = null;
+      const finish = (next) => {
+        result = next;
+        dialog.open = false;
+      };
+      cancel.addEventListener("click", () => finish(null));
+      save.addEventListener("click", () => finish(input.value));
+      input.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        finish(input.value);
+      });
+      dialog.addEventListener("opened", () => {
+        input.focus();
+        input.select();
+      }, { once: true });
+      dialog.addEventListener("closed", () => {
+        dialog.remove();
+        resolve(result);
+      });
+      openDialog(dialog);
+    });
+  }
+
+  function askConfirm(title, body, confirmLabel) {
+    return new Promise((resolve) => {
+      const dialog = document.createElement("ha-dialog");
+      dialog.setAttribute("header-title", title);
+      dialog.setAttribute("width", "small");
+      dialog.setAttribute("type", "alert");
+      const copy = document.createElement("p");
+      copy.className = "dialog-copy";
+      copy.textContent = body;
+      const footer = document.createElement("ha-dialog-footer");
+      footer.slot = "footer";
+      const cancel = document.createElement("ha-button");
+      cancel.setAttribute("appearance", "plain");
+      cancel.slot = "secondaryAction";
+      cancel.textContent = t("cancel");
+      const ok = document.createElement("ha-button");
+      ok.setAttribute("variant", "danger");
+      ok.slot = "primaryAction";
+      ok.textContent = confirmLabel;
+      footer.append(cancel, ok);
+      dialog.append(copy, footer);
+      let confirmed = false;
+      cancel.addEventListener("click", () => {
+        dialog.open = false;
+      });
+      ok.addEventListener("click", () => {
+        confirmed = true;
+        dialog.open = false;
+      });
+      dialog.addEventListener("closed", () => {
+        dialog.remove();
+        resolve(confirmed);
+      });
+      openDialog(dialog);
+    });
   }
 
   async function pinSession(session) {
@@ -1691,7 +1770,7 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   async function renameSession(session) {
-    const next = window.prompt(t("rename_prompt"), session.title);
+    const next = await askText(t("rename_prompt"), displayTitle(session.title));
     if (next == null) return;
     const title = next.trim().replace(/\s+/g, " ").slice(0, 80);
     if (!title || title === session.title) return;
@@ -1705,7 +1784,12 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   async function deleteSession(session) {
-    if (!window.confirm(t("delete_confirm", { title: session.title }))) return;
+    const ok = await askConfirm(
+      t("delete"),
+      t("delete_confirm", { title: displayTitle(session.title) }),
+      t("delete"),
+    );
+    if (!ok) return;
     const response = await apiFetch(`${API}/sessions/${session.id}`, { method: "DELETE" });
     if (!response || (!response.ok && response.status !== 204)) return;
     if (session.id === sessionId) startNewChat();
@@ -1738,6 +1822,34 @@ export function mountAiWorkspace(root, options = {}) {
     if (label) label.textContent = labelText;
   }
 
+  function selectSessionRow(id) {
+    if (!sessionsEl) return;
+    sessionsEl.querySelectorAll(".session-row.selected, .session.selected").forEach((node) => {
+      node.classList.remove("selected");
+    });
+    const row = sessionsEl.querySelector(`.session-row[data-session-id="${id}"]`);
+    if (!row) return;
+    row.classList.add("selected");
+    row.querySelector(".session")?.classList.add("selected");
+  }
+
+  function bumpSession(id, title, pinned) {
+    if (!sessionsEl || !id || compact) return;
+    let row = sessionsEl.querySelector(`.session-row[data-session-id="${id}"]`);
+    const stayPinned = pinned === undefined ? row?.dataset.pinned === "1" : Boolean(pinned);
+    if (!row) {
+      row = sessionRow({ id, title: title || "", pinned: stayPinned });
+    } else if (title) {
+      applySessionTitle(id, title);
+    }
+    row.dataset.pinned = stayPinned ? "1" : "0";
+    const labels = [...sessionsEl.querySelectorAll(".chats-label")];
+    const anchor = stayPinned ? labels[0] : labels[labels.length - 1];
+    if (anchor) anchor.after(row);
+    else sessionsEl.prepend(row);
+    selectSessionRow(sessionId);
+  }
+
   function sessionLabel(text) {
     const label = document.createElement("div");
     label.className = "chats-label";
@@ -1749,6 +1861,7 @@ export function mountAiWorkspace(root, options = {}) {
     const row = document.createElement("div");
     row.className = "session-row";
     row.dataset.sessionId = session.id;
+    row.dataset.pinned = session.pinned ? "1" : "0";
     row.role = "listitem";
     if (session.id === sessionId) titleEl.textContent = displayTitle(session.title);
     const item = document.createElement("ha-list-item-button");
@@ -1769,21 +1882,45 @@ export function mountAiWorkspace(root, options = {}) {
       closeNavIfOverlay();
       openSession(session.id);
     });
-    const more = document.createElement("button");
-    more.type = "button";
+    const menu = document.createElement("ha-dropdown");
+    menu.className = "session-menu";
+    menu.slot = "end";
+    menu.placement = "bottom-end";
+    const more = document.createElement("span");
     more.className = "session-more";
+    more.slot = "trigger";
+    more.tabIndex = 0;
+    more.setAttribute("role", "button");
     more.setAttribute("aria-label", "Chat actions");
     more.setAttribute("aria-haspopup", "menu");
     more.setAttribute("aria-expanded", "false");
     const dots = document.createElement("ha-icon");
     dots.setAttribute("icon", "mdi:dots-vertical");
     more.appendChild(dots);
-    more.addEventListener("click", (event) => {
+    more.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
       event.stopPropagation();
-      openSessionMenu(more, session);
+      more.click();
     });
-    row.append(item, more);
+    menu.addEventListener("click", (event) => event.stopPropagation());
+    menu.addEventListener("keydown", (event) => event.stopPropagation());
+    menu.addEventListener("wa-show", () => more.setAttribute("aria-expanded", "true"));
+    menu.addEventListener("wa-hide", () => more.setAttribute("aria-expanded", "false"));
+    menu.addEventListener("wa-select", (event) => {
+      const value = event.detail?.item?.value;
+      if (value === "pin") pinSession(session);
+      else if (value === "rename") renameSession(session);
+      else if (value === "delete") deleteSession(session);
+    });
+    menu.append(
+      more,
+      sessionAction(session.pinned ? t("unpin") : t("pin"), "pin"),
+      sessionAction(t("rename"), "rename"),
+      sessionAction(t("delete"), "delete", "danger"),
+    );
+    item.append(menu);
+    row.append(item);
     return row;
   }
 
@@ -1814,6 +1951,7 @@ export function mountAiWorkspace(root, options = {}) {
     const session = await created.json();
     if (mark !== streamToken) return null;
     sessionId = session.id;
+    bumpSession(session.id, session.title, session.pinned);
     goToSession(sessionId, true);
     if (compact) localStorage.setItem("ai_workspace_session", sessionId);
     return session;
@@ -1828,7 +1966,7 @@ export function mountAiWorkspace(root, options = {}) {
       titleEl.textContent = t("new_chat");
       showEmpty();
       if (!fromUrl) goToSession("");
-      await loadSessions();
+      selectSessionRow("");
       return;
     }
     if (fromUrl && id === sessionId) return;
@@ -1840,7 +1978,6 @@ export function mountAiWorkspace(root, options = {}) {
       titleEl.textContent = t("new_chat");
       showEmpty();
       goToSession("", true);
-      await loadSessions();
       return;
     }
     sessionId = id;
@@ -1848,7 +1985,8 @@ export function mountAiWorkspace(root, options = {}) {
     if (!fromUrl) goToSession(id);
     const session = await response.json();
     paintSession(session);
-    await loadSessions();
+    if (!sessionsEl?.querySelector(".session-row")) await loadSessions();
+    selectSessionRow(id);
     if (session.pending) watchPending(id);
   }
 
@@ -1938,7 +2076,7 @@ export function mountAiWorkspace(root, options = {}) {
       streaming = false;
       resizeComposer();
       syncCopyChat();
-      await loadSessions();
+      bumpSession(id, session.title, session.pinned);
       return true;
     }
     return false;
@@ -2270,25 +2408,40 @@ export function mountAiWorkspace(root, options = {}) {
     }
   }
 
-  agentTrigger?.addEventListener("click", () => {
-    if (!agentMenu) return;
-    const open = agentMenu.hidden;
-    agentMenu.hidden = !open;
-    agentTrigger.setAttribute("aria-expanded", open ? "true" : "false");
+  agentMenu?.addEventListener("wa-select", (event) => {
+    const picked = event.detail?.item;
+    const id = picked?.value;
+    if (!id || picked.disabled) return;
+    agentId = id;
+    localStorage.setItem("ai_workspace_agent", agentId);
+    defaultProvider = agentId;
+    const label = picked.textContent.replace(/\s+/g, " ").trim();
+    if (agentLabel && label) agentLabel.textContent = label;
+    agentMenu.querySelectorAll("ha-dropdown-item").forEach((other) => {
+      const on = other.value === agentId;
+      other.selected = on;
+      other.toggleAttribute("selected", on);
+    });
   });
-  root.addEventListener("click", (event) => {
-    if (!agentPicker || agentPicker.hidden || agentMenu?.hidden) return;
-    if (event.composedPath().includes(agentPicker)) return;
-    closeAgentMenu();
+  agentMenu?.addEventListener("wa-show", () => {
+    agentTrigger?.setAttribute("aria-expanded", "true");
   });
-  root.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeAgentMenu();
+  agentMenu?.addEventListener("wa-hide", () => {
+    agentTrigger?.setAttribute("aria-expanded", "false");
   });
 
   let capture = null;
   let replyAudio = null;
   let replyObjectUrl = "";
   let speakGen = 0;
+  let speakHeld = "";
+  let speakRaw = "";
+  let speakStarted = false;
+  let speakFromUser = false;
+  let speakBusy = false;
+  let speakRelease = null;
+  const speakPending = [];
+  const speakInflight = [];
   const SILENCE =
     "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
 
@@ -2447,6 +2600,125 @@ export function mountAiWorkspace(root, options = {}) {
     replyAudio.addEventListener("ended", () => setSpeakUi("idle"));
   }
 
+  function haltSpeech() {
+    speakGen += 1;
+    speakHeld = "";
+    speakRaw = "";
+    speakStarted = false;
+    speakFromUser = false;
+    speakPending.length = 0;
+    speakInflight.length = 0;
+    if (speakRelease) speakRelease();
+    if (replyAudio && !replyAudio.paused) replyAudio.pause();
+    setSpeakUi("idle");
+  }
+
+  function drainSpeech(flush) {
+    const taken = takeSpeech(speakHeld, speakStarted, flush);
+    speakHeld = taken.rest;
+    for (const piece of taken.pieces) {
+      speakStarted = true;
+      queueSpeech(piece);
+    }
+  }
+
+  function feedSpeech(delta) {
+    if (!voice.speak || !delta) return;
+    speakRaw += delta;
+    speakHeld += delta;
+    drainSpeech(false);
+  }
+
+  function syncSpeechTo(full) {
+    if (!voice.speak || !full || !full.startsWith(speakRaw)) return;
+    const extra = full.slice(speakRaw.length);
+    if (extra) feedSpeech(extra);
+  }
+
+  function queueSpeech(text) {
+    const clean = String(text || "").trim();
+    if (!clean) return;
+    speakPending.push(clean);
+    fillSpeakAhead();
+    kickSpeak();
+  }
+
+  function fillSpeakAhead() {
+    while (speakInflight.length < 2 && speakPending.length) {
+      const text = speakPending.shift();
+      const gen = speakGen;
+      speakInflight.push(fetchSpeech(text, gen));
+    }
+  }
+
+  async function fetchSpeech(text, gen) {
+    try {
+      const response = await apiFetch(`${API}/tts`, {
+        method: "POST",
+        body: JSON.stringify({ text, language: speechLanguage() }),
+      });
+      if (gen !== speakGen || !response?.ok) return null;
+      const blob = await response.blob();
+      if (gen !== speakGen || !blob || blob.size < 32) return null;
+      return blob;
+    } catch (_err) {
+      return null;
+    }
+  }
+
+  function playSpeechBlob(blob, gen) {
+    return new Promise((resolve) => {
+      if (gen !== speakGen) {
+        resolve();
+        return;
+      }
+      if (replyObjectUrl) URL.revokeObjectURL(replyObjectUrl);
+      replyObjectUrl = URL.createObjectURL(blob);
+      if (!replyAudio) {
+        replyAudio = new Audio();
+        replyAudio.setAttribute("playsinline", "");
+      }
+      bindReplyAudio();
+      const done = () => {
+        replyAudio.removeEventListener("ended", done);
+        if (speakRelease === done) speakRelease = null;
+        resolve();
+      };
+      speakRelease = done;
+      replyAudio.addEventListener("ended", done);
+      replyAudio.pause();
+      replyAudio.src = replyObjectUrl;
+      replyAudio.play().catch(() => {
+        if (speakFromUser) showSpeakHelp();
+        done();
+      });
+    });
+  }
+
+  function kickSpeak() {
+    if (speakBusy) return;
+    speakBusy = true;
+    const gen = speakGen;
+    const fromUser = speakFromUser;
+    (async () => {
+      let played = false;
+      while (gen === speakGen && (speakInflight.length || speakPending.length)) {
+        fillSpeakAhead();
+        if (!speakInflight.length) break;
+        const blob = await speakInflight.shift();
+        fillSpeakAhead();
+        if (gen !== speakGen || !blob) continue;
+        played = true;
+        await playSpeechBlob(blob, gen);
+      }
+      if (gen === speakGen && fromUser && !played) showSpeakHelp();
+    })()
+      .finally(() => {
+        speakBusy = false;
+        if (speakPending.length || speakInflight.length) kickSpeak();
+      });
+  }
+
   async function toggleSpeak() {
     if (replyAudio && !replyAudio.paused && !replyAudio.ended) {
       replyAudio.pause();
@@ -2460,46 +2732,19 @@ export function mountAiWorkspace(root, options = {}) {
       }
       return;
     }
+    if (speakBusy || speakPending.length || speakInflight.length) return;
     const text = lastAssistantText();
     if (!text) return;
     await speakReply(text, true);
   }
 
   async function speakReply(text, fromUser = false) {
-    if (!voice.speak || !String(text || "").trim()) return;
-    const gen = ++speakGen;
-    try {
-      if (fromUser) await unlockOutput();
-      const response = await apiFetch(`${API}/tts`, {
-        method: "POST",
-        body: JSON.stringify({ text, language: speechLanguage() }),
-      });
-      if (gen !== speakGen) return;
-      if (!response?.ok) {
-        if (fromUser) showSpeakHelp();
-        return;
-      }
-      const blob = await response.blob();
-      if (gen !== speakGen) return;
-      if (!blob || blob.size < 32) {
-        if (fromUser) showSpeakHelp();
-        return;
-      }
-      if (replyObjectUrl) URL.revokeObjectURL(replyObjectUrl);
-      replyObjectUrl = URL.createObjectURL(blob);
-      if (!replyAudio) {
-        replyAudio = new Audio();
-        replyAudio.setAttribute("playsinline", "");
-      }
-      bindReplyAudio();
-      replyAudio.pause();
-      replyAudio.src = replyObjectUrl;
-      await replyAudio.play();
-    } catch (_err) {
-      if (gen !== speakGen) return;
-      setSpeakUi("idle");
-      if (fromUser) showSpeakHelp();
-    }
+    if (!voice.tts || !String(text || "").trim()) return;
+    haltSpeech();
+    speakFromUser = fromUser;
+    if (fromUser) await unlockOutput();
+    const taken = takeSpeech(String(text), false, true);
+    for (const piece of taken.pieces) queueSpeech(piece);
   }
 
   if (micBtn) {
@@ -2553,6 +2798,7 @@ export function mountAiWorkspace(root, options = {}) {
           dictate: show,
           stt: body.stt || "browser",
           speak: body.speak === true,
+          tts: Boolean(body.tts) && body.tts !== "off",
         };
       }
     } catch (_err) {
@@ -2590,9 +2836,6 @@ export function mountAiWorkspace(root, options = {}) {
     const abort = new AbortController();
     streamAbort = abort;
     stopSpeech();
-    speakGen += 1;
-    if (replyAudio && !replyAudio.paused) replyAudio.pause();
-    setSpeakUi("idle");
     unlockOutput();
     if (keepComposerFocus()) messageEl.focus();
     else hideKeyboard();
@@ -2630,6 +2873,7 @@ export function mountAiWorkspace(root, options = {}) {
         const created = await createSession();
         if (token !== streamToken || !created) return;
         titleEl.textContent = promptTitle(text) || attachments[0]?.name || t("new_chat");
+        bumpSession(sessionId, titleEl.textContent);
       }
       if (token !== streamToken) return;
       chatId = sessionId;
@@ -2653,6 +2897,7 @@ export function mountAiWorkspace(root, options = {}) {
         const created = await createSession();
         if (token !== streamToken || !created) return;
         titleEl.textContent = promptTitle(text) || attachments[0]?.name || t("new_chat");
+        bumpSession(sessionId, titleEl.textContent);
         response = await apiFetch(`${API}/sessions/${sessionId}/chat`, {
           method: "POST",
           body: payload,
@@ -2672,6 +2917,7 @@ export function mountAiWorkspace(root, options = {}) {
         if (token !== streamToken) return;
         if (name === "text") {
           appendAssistantText(assistant.querySelector(".text"), data.delta || "");
+          feedSpeech(data.delta || "");
           return;
         }
         if (name === "tool" && data.text) {
@@ -2685,6 +2931,7 @@ export function mountAiWorkspace(root, options = {}) {
         } else if (name === "status") {
           setStatus(data.text);
         } else if (name === "error") {
+          drainSpeech(true);
           revealAllNow();
           assistant.classList.add("error");
           const textNode = assistant.querySelector(".text");
@@ -2697,19 +2944,26 @@ export function mountAiWorkspace(root, options = {}) {
           setActivity(assistant, "");
         } else if (name === "done") {
           sawDone = true;
-          if (data.answer) queueStreamAnswer(data.answer);
+          if (data.answer) {
+            queueStreamAnswer(data.answer);
+            syncSpeechTo(data.answer);
+          }
+          drainSpeech(true);
           settleTools(assistant);
           setActivity(assistant, "");
-          speakReply(data.answer || streamFull);
+          streaming = false;
+          assistant.classList.remove("streaming");
+          resizeComposer();
+          bumpSession(chatId, titleEl.textContent);
         } else if (name === "title" && data.title) {
           applySessionTitle(chatId, data.title);
+          bumpSession(chatId, data.title);
         }
         scrollChatToBottom();
       });
       await waitForStream();
       streamNode = null;
       if (!sawDone) recover = true;
-      else await loadSessions();
     } catch (error) {
       if (token !== streamToken) return;
       if (chatId && (isDisconnect(error) || document.visibilityState === "hidden") && sessionId === chatId) {
@@ -2889,7 +3143,7 @@ export function mountAiWorkspace(root, options = {}) {
     goToSession("");
     titleEl.textContent = t("new_chat");
     showEmpty();
-    loadSessions();
+    selectSessionRow("");
     if (keepComposerFocus()) messageEl.focus({ preventScroll: true });
   }
 
@@ -2903,19 +3157,11 @@ export function mountAiWorkspace(root, options = {}) {
     closeSessionMenu();
     setNavOpen(false);
   });
-  wrap.addEventListener("click", (event) => {
-    if (!sessionMenu) return;
-    const path = event.composedPath();
-    if (path.includes(sessionMenu) || path.some((node) => node.classList?.contains("session-more"))) return;
-    closeSessionMenu();
-  });
   sessionsEl?.addEventListener("scroll", closeSessionMenu, { passive: true });
   window.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
-    if (sessionMenu) {
-      closeSessionMenu();
-      return;
-    }
+    if (root.querySelector("ha-dialog[open]")) return;
+    if (root.querySelector(".session-more[aria-expanded='true'], .agent-trigger[aria-expanded='true']")) return;
     if (wrap.classList.contains("nav-open")) setNavOpen(false);
   });
   mqNarrow.addEventListener("change", () => setNarrow(options.narrow));

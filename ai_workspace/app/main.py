@@ -268,6 +268,15 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
         store.set_agent_id(session.id, agent_id)
         session.agent_id = agent_id
 
+    title_task: asyncio.Task | None = None
+    if want_title:
+        title_task = asyncio.create_task(
+            asyncio.wait_for(
+                suggest(question, "", api_key=body.api_key.strip(), model=body.model.strip()),
+                timeout=25,
+            )
+        )
+
     await lock.acquire()
 
     async def generate():
@@ -288,6 +297,7 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
                     effort=body.effort.strip(),
                     api_key=body.api_key.strip(),
                     handoff=body.handoff.strip(),
+                    question=question,
                 ):
                     if event.get("type") == "text":
                         parts.append(str(event.get("delta") or ""))
@@ -322,20 +332,22 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
             if error is None and not disconnected:
                 yield _sse("done", {"type": "done", "answer": answer})
                 yield _sse("status", {"type": "status", "text": "Done."})
+            if error is None and title_task is not None and not disconnected:
+                try:
+                    raw = await title_task
+                except Exception:
+                    logger.debug("title generation failed", exc_info=True)
+                    raw = None
+                label = accept_generated_title(question, raw or "")
+                applied = store.apply_generated_title(
+                    _user_id(request), session.id, title_from_prompt(question), label
+                )
+                if applied:
+                    yield _sse("title", {"type": "title", "title": applied})
         finally:
             lock.release()
-        if error is None and want_title:
-            try:
-                raw = await asyncio.wait_for(suggest(question, ""), timeout=12)
-            except Exception:
-                logger.debug("title generation failed", exc_info=True)
-                raw = None
-            label = accept_generated_title(question, raw or "")
-            applied = store.apply_generated_title(
-                _user_id(request), session.id, title_from_prompt(question), label
-            )
-            if applied:
-                yield _sse("title", {"type": "title", "title": applied})
+            if title_task is not None and not title_task.done():
+                title_task.cancel()
 
     return StreamingResponse(
         generate(),

@@ -34,6 +34,7 @@ from .const import (
     CONF_ENABLE_OVERLAY,
     CONF_ENABLE_SIDEBAR,
     CONF_ENABLE_DICTATE,
+    CONF_CROSS_CHAT,
     CONF_HOUSE_MAP,
     CONF_KEEP_CHATS,
     DEFAULT_KEEP_CHATS,
@@ -100,10 +101,11 @@ _PARENT_KEYS = (
     CONF_ENABLE_DICTATE,
     CONF_ALLOW_USERS,
     CONF_HOUSE_MAP,
+    CONF_CROSS_CHAT,
     CONF_KEEP_CHATS,
+    CONF_SPEAK_REPLIES,
     CONF_STT_ENGINE,
     CONF_TTS_ENGINE,
-    CONF_SPEAK_REPLIES,
 )
 _MCP_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.URL))
 _TOKEN_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
@@ -188,6 +190,10 @@ def _ui_schema(defaults: dict | None = None):
         vol.Optional(
             CONF_HOUSE_MAP,
             default=current.get(CONF_HOUSE_MAP, False),
+        ): cv.boolean,
+        vol.Optional(
+            CONF_CROSS_CHAT,
+            default=current.get(CONF_CROSS_CHAT, False),
         ): cv.boolean,
         vol.Optional(
             CONF_KEEP_CHATS,
@@ -482,6 +488,7 @@ def _voice_schema(defaults: dict, stt: list, tts: list) -> vol.Schema:
             vol.Optional(CONF_TTS_ENGINE, default=str(defaults.get(CONF_TTS_ENGINE) or TTS_OFF)): SelectSelector(
                 SelectSelectorConfig(options=tts, mode="dropdown")
             ),
+            vol.Optional(CONF_SPEAK_REPLIES, default=bool(defaults.get(CONF_SPEAK_REPLIES, False))): cv.boolean,
         }
     )
 
@@ -492,6 +499,7 @@ async def _shared_form(hass, defaults: dict, kinds: list[str], *, include_mcp: b
     voice = {
         CONF_STT_ENGINE: str(defaults.get(CONF_STT_ENGINE) or STT_BROWSER),
         CONF_TTS_ENGINE: str(defaults.get(CONF_TTS_ENGINE) or TTS_OFF),
+        CONF_SPEAK_REPLIES: bool(defaults.get(CONF_SPEAK_REPLIES, False)),
     }
     fields: dict = {}
     if include_mcp:
@@ -504,7 +512,6 @@ async def _shared_form(hass, defaults: dict, kinds: list[str], *, include_mcp: b
         )
     ] = _MCP_SELECTOR
     fields[vol.Optional(SECTION_VOICE, default=voice)] = _SideBySide(_voice_schema(defaults, stt, tts))
-    fields[vol.Optional(CONF_SPEAK_REPLIES, default=bool(defaults.get(CONF_SPEAK_REPLIES, False)))] = cv.boolean
     fields.update(_ui_schema(defaults))
     return vol.Schema(fields, extra=vol.ALLOW_EXTRA)
 

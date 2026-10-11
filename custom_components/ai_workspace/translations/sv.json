@@ -1,0 +1,863 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "AI Workspace",
+        "description": "Delade chattinställningar. Lägg sedan till den första agenten (Cursor, OpenAI, OpenRouter, Ollama och andra) under AI Agents.",
+        "data": {
+          "runtime_url": "URL till Cursor-runtime{runtime_url_mark}",
+          "stt_engine": "Tal till text",
+          "tts_engine": "Text till tal",
+          "speak_replies": "Läs upp svar automatiskt",
+          "enable_sidebar": "Visa AI Workspace i sidofältet",
+          "enable_overlay": "Visa den flytande AI-knappen på varje sida",
+          "enable_dictate": "Visa dikteringsknapp",
+          "allow_users": "Tillåt vanliga användare",
+          "house_map": "Konfigurationskatalog",
+          "cross_chat": "Mellan chattar",
+          "keep_chats": "Chattar att behålla"
+        },
+        "data_description": {
+          "runtime_url": "{runtime_url_note}",
+          "stt_engine": "Webbläsaren använder enhetens talmotor och behöver https:// eller localhost. En Home Assistant-motor (Whisper och andra under Inställningar) transkriberar en inspelning från den här sidan. Webbläsaren måste ändå tillåta mikrofonen, och det gör den bara på https:// eller localhost.",
+          "tts_engine": "Piper och andra Home Assistant-röster. Uppläsning av svaret fungerar även över http://. Av lämnar svar som text.",
+          "speak_replies": "När en röst är vald läses varje svar upp direkt. Av lämnar högtalarknappen så att du kan spela upp själv.",
+          "enable_sidebar": "Sidofältsobjektet AI Workspace. Sidan finns kvar på /ai-workspace om det här är av.",
+          "enable_overlay": "Den flytande AI-knappen. Dold på Inställningar så att den inte täcker Lägg till integration.",
+          "enable_dictate": "Mikrofon i meddelanderutan.",
+          "allow_users": "Inloggade användare som inte är administratörer kan öppna den flytande chatten. Av håller den till administratörer. Sidofältsobjektet förblir bara för administratörer.",
+          "house_map": "Valfritt lokalt index för kopplingen av ett namngivet objekt (utlösare, relaterade id:n). Av som standard. Inte för att lista automatiseringar eller på/av — använd live-MCP till det. Inte live-status, historik eller spår.",
+          "cross_chat": "Av som standard. När det är på kan en fråga använda en annan chatt vars titel delar ord. Du behöver inte säga chatt. Bara ett kort utdrag, och den chatten ändras inte.",
+          "keep_chats": "Nyaste icke-fästa chattar per person. Fästa chattar behålls alltid. Standard 30."
+        },
+        "sections": {
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "MCP-typ",
+              "mcp_url": "MCP-URL{mcp_url_mark}",
+              "mcp_token": "MCP-token"
+            },
+            "data_description": {
+              "mcp_kind": "Endast MCP-servrar som den här Home Assistant kan nå listas. Anpassad är valfri MCP-HTTP-URL.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Inbyggd: långlivad åtkomsttoken för Home Assistant, eller lämna tomt för att använda den aktuella inloggningen i den här chatten. HA-MCP: oftast tomt. Vibecode: Agent Key. Anpassad: valfri Bearer-token."
+            }
+          },
+          "prompt": {
+            "name": "Systemprompt",
+            "data": {
+              "system_prompt": "Systemprompt"
+            },
+            "data_description": {
+              "system_prompt": "Endast ton och beteende. Lämna tomt för den inbyggda prompten. MCP-verktyg och redigerarlänkar läggs alltid till; de hör inte till det här fältet."
+            }
+          }
+        }
+      },
+      "api": {
+        "title": "Moln-API-leverantör",
+        "data": {
+          "enable_sidebar": "Visa AI Workspace i sidofältet",
+          "enable_overlay": "Visa den flytande AI-knappen på varje sida",
+          "enable_dictate": "Visa dikteringsknapp",
+          "allow_users": "Tillåt vanliga användare",
+          "house_map": "Konfigurationskatalog",
+          "cross_chat": "Mellan chattar",
+          "keep_chats": "Chattar att behålla"
+        },
+        "sections": {
+          "provider": {
+            "name": "Leverantör",
+            "data": {
+              "api_provider": "Leverantör",
+              "api_key": "API-nyckel",
+              "model": "Modell",
+              "api_base": "API-bas-URL"
+            },
+            "data_description": {
+              "api_provider": "OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok eller OpenAI-kompatibel.",
+              "api_key": "Leverantörens API-nyckel. Inte en Home Assistant-token.",
+              "model": "Tomt använder leverantörens standard.",
+              "api_base": "Lämna tomt för den valda leverantören. Obligatoriskt för OpenAI-kompatibel (OpenRouter, Ollama, LM Studio). Qwen i Kina: https://dashscope.aliyuncs.com/compatible-mode/v1"
+            }
+          },
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "MCP-typ",
+              "mcp_url": "MCP-URL{mcp_url_mark}",
+              "mcp_token": "MCP-token"
+            },
+            "data_description": {
+              "mcp_kind": "Endast MCP-servrar som den här Home Assistant kan nå listas. Anpassad är valfri MCP-HTTP-URL.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Inbyggd: långlivad åtkomsttoken för Home Assistant, eller lämna tomt för att använda den aktuella inloggningen i den här chatten. HA-MCP: oftast tomt. Vibecode: Agent Key. Anpassad: valfri Bearer-token."
+            }
+          },
+          "prompt": {
+            "name": "Systemprompt",
+            "data": {
+              "system_prompt": "Systemprompt"
+            },
+            "data_description": {
+              "system_prompt": "Endast ton och beteende. Lämna tomt för den inbyggda prompten. MCP-verktyg och redigerarlänkar läggs alltid till; de hör inte till det här fältet."
+            }
+          }
+        }
+      },
+      "cursor": {
+        "title": "Cursor-runtime",
+        "data": {
+          "runtime_url": "URL till Cursor-runtime{runtime_url_mark}",
+          "enable_sidebar": "Visa AI Workspace i sidofältet",
+          "enable_overlay": "Visa den flytande AI-knappen på varje sida",
+          "enable_dictate": "Visa dikteringsknapp",
+          "allow_users": "Tillåt vanliga användare",
+          "house_map": "Konfigurationskatalog",
+          "cross_chat": "Mellan chattar",
+          "keep_chats": "Chattar att behålla"
+        },
+        "data_description": {
+          "runtime_url": "{runtime_url_note}",
+          "enable_sidebar": "Sidofältsobjektet AI Workspace. Sidan finns kvar på /ai-workspace om det här är av.",
+          "enable_overlay": "Den flytande AI-knappen. Dold på Inställningar så att den inte täcker Lägg till integration.",
+          "enable_dictate": "Mikrofon i meddelanderutan. Webbläsare tillåter diktering bara över https://.",
+          "allow_users": "Inloggade användare som inte är administratörer kan öppna den flytande chatten. Av håller den till administratörer. Sidofältsobjektet förblir bara för administratörer.",
+          "house_map": "Valfritt lokalt index för kopplingen av ett namngivet objekt (utlösare, relaterade id:n). Av som standard. Inte för att lista automatiseringar eller på/av — använd live-MCP till det. Inte live-status, historik eller spår.",
+          "cross_chat": "Av som standard. När det är på kan en fråga använda en annan chatt vars titel delar ord. Du behöver inte säga chatt. Bara ett kort utdrag, och den chatten ändras inte.",
+          "keep_chats": "Nyaste icke-fästa chattar per person. Fästa chattar behålls alltid. Standard 30."
+        },
+        "sections": {
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "MCP-typ",
+              "mcp_url": "MCP-URL{mcp_url_mark}",
+              "mcp_token": "MCP-token"
+            },
+            "data_description": {
+              "mcp_kind": "Endast MCP-servrar som den här Home Assistant kan nå listas. Anpassad är valfri MCP-HTTP-URL.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Inbyggd: långlivad åtkomsttoken för Home Assistant, eller lämna tomt för att använda den aktuella inloggningen i den här chatten. HA-MCP: oftast tomt. Vibecode: Agent Key. Anpassad: valfri Bearer-token."
+            }
+          },
+          "prompt": {
+            "name": "Systemprompt",
+            "data": {
+              "system_prompt": "Systemprompt"
+            },
+            "data_description": {
+              "system_prompt": "Endast ton och beteende. Lämna tomt för den inbyggda prompten. MCP-verktyg och redigerarlänkar läggs alltid till; de hör inte till det här fältet."
+            }
+          }
+        }
+      },
+      "provider": {
+        "title": "Leverantör",
+        "description": "Välj leverantör. Nästa skärm frågar bara efter det den leverantören behöver.",
+        "data": {
+          "api_provider": "Leverantör"
+        },
+        "data_description": {
+          "api_provider": "Cursor, eller en moln- eller lokal modell. "
+        }
+      },
+      "provider_cursor": {
+        "title": "Cursor",
+        "description": "Cursor-API-nyckel, modell och ansträngning. Runtime-URL:en stannar på AI Workspace.",
+        "data": {
+          "cursor_api_key": "Cursor-API-nyckel",
+          "model": "Modell",
+          "effort": "Ansträngning",
+          "assist": "Använd också i Assist"
+        },
+        "data_description": {
+          "cursor_api_key": "Från cursor.com/dashboard/integrations. Lämna tomt vid redigering för att behålla den sparade nyckeln.",
+          "model": "Tomt använder Composer.",
+          "effort": "Snabb, Hög eller Hög snabb. Composer använder Snabb om du inte väljer Hög.",
+          "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+        }
+      },
+      "provider_cloud": {
+        "title": "Molnagent",
+        "description": "Den här agenten behåller en egen nyckel. Kopiera en från en redan konfigurerad integration eller klistra in en ny. Lämna nyckeln tom vid redigering för att behålla den sparade.",
+        "data": {
+          "borrow": "Kopiera nyckel från",
+          "api_key": "API-nyckel",
+          "model": "Modell",
+          "effort": "Ansträngning",
+          "low_token": "Få tokens",
+          "assist": "Använd också i Assist"
+        },
+        "data_description": {
+          "borrow": "Använder nyckeln som den integrationen redan har sparat. Den andra integrationen lämnas orörd.",
+          "api_key": "Inte en Home Assistant-token.",
+          "model": "Tomt använder leverantörens standard.",
+          "effort": "Snabb, Hög eller Hög snabb när modellen stöder det.",
+          "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
+          "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+        }
+      },
+      "provider_ollama": {
+        "title": "Ollama",
+        "description": "Peka det här mot Ollama-servern.",
+        "data": {
+          "api_base": "Ollama-URL",
+          "model": "Modell",
+          "effort": "Ansträngning",
+          "low_token": "Få tokens",
+          "assist": "Använd också i Assist"
+        },
+        "data_description": {
+          "api_base": "Usually http://127.0.0.1:11434/v1",
+          "model": "Tomt använder llama3.2.",
+          "effort": "Används när modellen stöder det.",
+          "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
+          "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+        }
+      },
+      "provider_azure": {
+        "title": "Azure OpenAI",
+        "description": "Azure-slutpunkt, distribution och nyckel.",
+        "data": {
+          "api_key": "Azure-API-nyckel",
+          "api_base": "Slutpunkt",
+          "model": "Distribution",
+          "azure_api_version": "API-version",
+          "effort": "Ansträngning",
+          "low_token": "Få tokens",
+          "assist": "Använd också i Assist"
+        },
+        "data_description": {
+          "api_key": "Azure OpenAI-nyckeln. Lämna tomt vid redigering för att behålla den sparade nyckeln.",
+          "api_base": "https://YOUR.openai.azure.com",
+          "model": "Distributionens namn.",
+          "azure_api_version": "Default 2024-10-21.",
+          "effort": "Används när distributionen stöder det.",
+          "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
+          "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+        }
+      },
+      "provider_compatible": {
+        "title": "OpenAI-kompatibel",
+        "description": "En egen server som talar OpenAI-API:t.",
+        "data": {
+          "api_key": "API-nyckel",
+          "api_base": "API-bas-URL",
+          "model": "Modell",
+          "effort": "Ansträngning",
+          "low_token": "Få tokens",
+          "assist": "Använd också i Assist"
+        },
+        "data_description": {
+          "api_key": "Lämna tomt vid redigering för att behålla den sparade nyckeln.",
+          "api_base": "Serverns bas-URL, inklusive /v1 om den använder den sökvägen.",
+          "model": "Modellnamn på den servern.",
+          "effort": "Används när servern stöder det.",
+          "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
+          "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+        }
+      }
+    },
+    "error": {
+      "no_runtime": "Cursor-runtimen går inte att nå. Starta den och ange URL:en på AI Workspace.",
+      "required": "Det här fältet är obligatoriskt."
+    },
+    "abort": {
+      "already_configured": "AI Workspace är redan konfigurerat"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "AI Workspace",
+        "description": "Delade chattinställningar. Anslutningar läggs till på AI Workspace. Agenter på AI Agents.",
+        "data": {
+          "runtime_url": "URL till Cursor-runtime{runtime_url_mark}",
+          "stt_engine": "Tal till text",
+          "tts_engine": "Text till tal",
+          "speak_replies": "Läs upp svar automatiskt",
+          "enable_sidebar": "Visa AI Workspace i sidofältet",
+          "enable_overlay": "Visa den flytande AI-knappen på varje sida",
+          "enable_dictate": "Visa dikteringsknapp",
+          "allow_users": "Tillåt vanliga användare",
+          "house_map": "Konfigurationskatalog",
+          "cross_chat": "Mellan chattar",
+          "keep_chats": "Chattar att behålla"
+        },
+        "data_description": {
+          "runtime_url": "{runtime_url_note}",
+          "stt_engine": "Webbläsaren använder enhetens talmotor och behöver https:// eller localhost. En Home Assistant-motor (Whisper och andra under Inställningar) transkriberar en inspelning från den här sidan. Webbläsaren måste ändå tillåta mikrofonen, och det gör den bara på https:// eller localhost.",
+          "tts_engine": "Piper och andra Home Assistant-röster. Uppläsning av svaret fungerar även över http://. Av lämnar svar som text.",
+          "speak_replies": "När en röst är vald läses varje svar upp direkt. Av lämnar högtalarknappen så att du kan spela upp själv.",
+          "enable_sidebar": "Sidofältsobjektet AI Workspace. Sidan finns kvar på /ai-workspace om det här är av.",
+          "enable_overlay": "Den flytande AI-knappen. Dold på Inställningar så att den inte täcker Lägg till integration.",
+          "enable_dictate": "Mikrofon i meddelanderutan.",
+          "allow_users": "Inloggade användare som inte är administratörer kan öppna den flytande chatten. Av håller den till administratörer. Sidofältsobjektet förblir bara för administratörer.",
+          "house_map": "Valfritt lokalt index för kopplingen av ett namngivet objekt (utlösare, relaterade id:n). Av som standard. Inte för att lista automatiseringar eller på/av — använd live-MCP till det. Inte live-status, historik eller spår.",
+          "cross_chat": "Av som standard. När det är på kan en fråga använda en annan chatt vars titel delar ord. Du behöver inte säga chatt. Bara ett kort utdrag, och den chatten ändras inte.",
+          "keep_chats": "Nyaste icke-fästa chattar per person. Fästa chattar behålls alltid. Standard 30."
+        },
+        "sections": {
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "MCP-typ",
+              "mcp_url": "MCP-URL{mcp_url_mark}",
+              "mcp_token": "MCP-token"
+            },
+            "data_description": {
+              "mcp_kind": "Endast MCP-servrar som den här Home Assistant kan nå listas. Anpassad är valfri MCP-HTTP-URL.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Inbyggd: långlivad åtkomsttoken för Home Assistant, eller lämna tomt för att använda den aktuella inloggningen i den här chatten. HA-MCP: oftast tomt. Vibecode: Agent Key. Anpassad: valfri Bearer-token."
+            }
+          },
+          "prompt": {
+            "name": "Systemprompt",
+            "data": {
+              "system_prompt": "Systemprompt"
+            },
+            "data_description": {
+              "system_prompt": "Endast ton och beteende. Lämna tomt för den inbyggda prompten. MCP-verktyg och redigerarlänkar läggs alltid till; de hör inte till det här fältet."
+            }
+          }
+        }
+      },
+      "api": {
+        "title": "Moln-API-leverantör",
+        "data": {
+          "enable_sidebar": "Visa AI Workspace i sidofältet",
+          "enable_overlay": "Visa den flytande AI-knappen på varje sida",
+          "enable_dictate": "Visa dikteringsknapp",
+          "allow_users": "Tillåt vanliga användare",
+          "house_map": "Konfigurationskatalog",
+          "cross_chat": "Mellan chattar",
+          "keep_chats": "Chattar att behålla"
+        },
+        "data_description": {
+          "enable_sidebar": "Sidofältsobjektet AI Workspace. Sidan finns kvar på /ai-workspace om det här är av.",
+          "enable_overlay": "Den flytande AI-knappen. Dold på Inställningar så att den inte täcker Lägg till integration.",
+          "enable_dictate": "Mikrofon i meddelanderutan. Webbläsare tillåter diktering bara över https://.",
+          "allow_users": "Inloggade användare som inte är administratörer kan öppna den flytande chatten. Av håller den till administratörer. Sidofältsobjektet förblir bara för administratörer.",
+          "house_map": "Valfritt lokalt index för kopplingen av ett namngivet objekt (utlösare, relaterade id:n). Av som standard. Inte för att lista automatiseringar eller på/av — använd live-MCP till det. Inte live-status, historik eller spår.",
+          "cross_chat": "Av som standard. När det är på kan en fråga använda en annan chatt vars titel delar ord. Du behöver inte säga chatt. Bara ett kort utdrag, och den chatten ändras inte.",
+          "keep_chats": "Nyaste icke-fästa chattar per person. Fästa chattar behålls alltid. Standard 30."
+        },
+        "sections": {
+          "provider": {
+            "name": "Leverantör",
+            "data": {
+              "api_provider": "Leverantör",
+              "api_key": "API-nyckel",
+              "model": "Modell",
+              "api_base": "API-bas-URL"
+            },
+            "data_description": {
+              "api_provider": "OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok eller OpenAI-kompatibel.",
+              "api_key": "Leverantörens API-nyckel. Inte en Home Assistant-token.",
+              "model": "Tomt använder leverantörens standard.",
+              "api_base": "Lämna tomt för den valda leverantören. Obligatoriskt för OpenAI-kompatibel (OpenRouter, Ollama, LM Studio). Qwen i Kina: https://dashscope.aliyuncs.com/compatible-mode/v1"
+            }
+          },
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "MCP-typ",
+              "mcp_url": "MCP-URL{mcp_url_mark}",
+              "mcp_token": "MCP-token"
+            },
+            "data_description": {
+              "mcp_kind": "Endast MCP-servrar som den här Home Assistant kan nå listas. Anpassad är valfri MCP-HTTP-URL.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Inbyggd: långlivad åtkomsttoken för Home Assistant, eller lämna tomt för att använda den aktuella inloggningen i den här chatten. HA-MCP: oftast tomt. Vibecode: Agent Key. Anpassad: valfri Bearer-token."
+            }
+          },
+          "prompt": {
+            "name": "Systemprompt",
+            "data": {
+              "system_prompt": "Systemprompt"
+            },
+            "data_description": {
+              "system_prompt": "Endast ton och beteende. Lämna tomt för den inbyggda prompten. MCP-verktyg och redigerarlänkar läggs alltid till; de hör inte till det här fältet."
+            }
+          }
+        }
+      },
+      "cursor": {
+        "title": "Cursor-runtime",
+        "data": {
+          "runtime_url": "URL till Cursor-runtime{runtime_url_mark}",
+          "enable_sidebar": "Visa AI Workspace i sidofältet",
+          "enable_overlay": "Visa den flytande AI-knappen på varje sida",
+          "enable_dictate": "Visa dikteringsknapp",
+          "allow_users": "Tillåt vanliga användare",
+          "house_map": "Konfigurationskatalog",
+          "cross_chat": "Mellan chattar",
+          "keep_chats": "Chattar att behålla"
+        },
+        "data_description": {
+          "runtime_url": "{runtime_url_note}",
+          "enable_sidebar": "Sidofältsobjektet AI Workspace. Sidan finns kvar på /ai-workspace om det här är av.",
+          "enable_overlay": "Den flytande AI-knappen. Dold på Inställningar så att den inte täcker Lägg till integration.",
+          "enable_dictate": "Mikrofon i meddelanderutan. Webbläsare tillåter diktering bara över https://.",
+          "allow_users": "Inloggade användare som inte är administratörer kan öppna den flytande chatten. Av håller den till administratörer. Sidofältsobjektet förblir bara för administratörer.",
+          "house_map": "Valfritt lokalt index för kopplingen av ett namngivet objekt (utlösare, relaterade id:n). Av som standard. Inte för att lista automatiseringar eller på/av — använd live-MCP till det. Inte live-status, historik eller spår.",
+          "cross_chat": "Av som standard. När det är på kan en fråga använda en annan chatt vars titel delar ord. Du behöver inte säga chatt. Bara ett kort utdrag, och den chatten ändras inte.",
+          "keep_chats": "Nyaste icke-fästa chattar per person. Fästa chattar behålls alltid. Standard 30."
+        },
+        "sections": {
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "MCP-typ",
+              "mcp_url": "MCP-URL{mcp_url_mark}",
+              "mcp_token": "MCP-token"
+            },
+            "data_description": {
+              "mcp_kind": "Endast MCP-servrar som den här Home Assistant kan nå listas. Anpassad är valfri MCP-HTTP-URL.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Inbyggd: långlivad åtkomsttoken för Home Assistant, eller lämna tomt för att använda den aktuella inloggningen i den här chatten. HA-MCP: oftast tomt. Vibecode: Agent Key. Anpassad: valfri Bearer-token."
+            }
+          },
+          "prompt": {
+            "name": "Systemprompt",
+            "data": {
+              "system_prompt": "Systemprompt"
+            },
+            "data_description": {
+              "system_prompt": "Endast ton och beteende. Lämna tomt för den inbyggda prompten. MCP-verktyg och redigerarlänkar läggs alltid till; de hör inte till det här fältet."
+            }
+          }
+        }
+      },
+      "provider": {
+        "title": "Leverantör",
+        "description": "Välj leverantör. Nästa skärm frågar bara efter det den leverantören behöver.",
+        "data": {
+          "api_provider": "Leverantör"
+        },
+        "data_description": {
+          "api_provider": "Cursor, eller en moln- eller lokal modell. "
+        }
+      },
+      "provider_cursor": {
+        "title": "Cursor",
+        "description": "Cursor-API-nyckel, modell och ansträngning. Runtime-URL:en stannar på AI Workspace.",
+        "data": {
+          "cursor_api_key": "Cursor-API-nyckel",
+          "model": "Modell",
+          "effort": "Ansträngning",
+          "assist": "Använd också i Assist"
+        },
+        "data_description": {
+          "cursor_api_key": "Från cursor.com/dashboard/integrations. Lämna tomt vid redigering för att behålla den sparade nyckeln.",
+          "model": "Tomt använder Composer.",
+          "effort": "Snabb, Hög eller Hög snabb. Composer använder Snabb om du inte väljer Hög.",
+          "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+        }
+      },
+      "provider_cloud": {
+        "title": "Molnagent",
+        "description": "Den här agenten behåller en egen nyckel. Kopiera en från en redan konfigurerad integration eller klistra in en ny. Lämna nyckeln tom vid redigering för att behålla den sparade.",
+        "data": {
+          "borrow": "Kopiera nyckel från",
+          "api_key": "API-nyckel",
+          "model": "Modell",
+          "effort": "Ansträngning",
+          "low_token": "Få tokens",
+          "assist": "Använd också i Assist"
+        },
+        "data_description": {
+          "borrow": "Använder nyckeln som den integrationen redan har sparat. Den andra integrationen lämnas orörd.",
+          "api_key": "Inte en Home Assistant-token.",
+          "model": "Tomt använder leverantörens standard.",
+          "effort": "Snabb, Hög eller Hög snabb när modellen stöder det.",
+          "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
+          "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+        }
+      },
+      "provider_ollama": {
+        "title": "Ollama",
+        "description": "Peka det här mot Ollama-servern.",
+        "data": {
+          "api_base": "Ollama-URL",
+          "model": "Modell",
+          "effort": "Ansträngning",
+          "low_token": "Få tokens",
+          "assist": "Använd också i Assist"
+        },
+        "data_description": {
+          "api_base": "Usually http://127.0.0.1:11434/v1",
+          "model": "Tomt använder llama3.2.",
+          "effort": "Används när modellen stöder det.",
+          "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
+          "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+        }
+      },
+      "provider_azure": {
+        "title": "Azure OpenAI",
+        "description": "Azure-slutpunkt, distribution och nyckel.",
+        "data": {
+          "api_key": "Azure-API-nyckel",
+          "api_base": "Slutpunkt",
+          "model": "Distribution",
+          "azure_api_version": "API-version",
+          "effort": "Ansträngning",
+          "low_token": "Få tokens",
+          "assist": "Använd också i Assist"
+        },
+        "data_description": {
+          "api_key": "Azure OpenAI-nyckeln. Lämna tomt vid redigering för att behålla den sparade nyckeln.",
+          "api_base": "https://YOUR.openai.azure.com",
+          "model": "Distributionens namn.",
+          "azure_api_version": "Default 2024-10-21.",
+          "effort": "Används när distributionen stöder det.",
+          "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
+          "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+        }
+      },
+      "provider_compatible": {
+        "title": "OpenAI-kompatibel",
+        "description": "En egen server som talar OpenAI-API:t.",
+        "data": {
+          "api_key": "API-nyckel",
+          "api_base": "API-bas-URL",
+          "model": "Modell",
+          "effort": "Ansträngning",
+          "low_token": "Få tokens",
+          "assist": "Använd också i Assist"
+        },
+        "data_description": {
+          "api_key": "Lämna tomt vid redigering för att behålla den sparade nyckeln.",
+          "api_base": "Serverns bas-URL, inklusive /v1 om den använder den sökvägen.",
+          "model": "Modellnamn på den servern.",
+          "effort": "Används när servern stöder det.",
+          "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
+          "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+        }
+      }
+    },
+    "error": {
+      "no_runtime": "Cursor-runtimen går inte att nå. Starta den och ange URL:en på AI Workspace.",
+      "required": "Det här fältet är obligatoriskt."
+    }
+  },
+  "config_subentries": {
+    "mcp": {
+      "initiate_flow": {
+        "user": "Lägg till anslutning",
+        "reconfigure": "Redigera anslutning"
+      },
+      "entry_type": "Anslutning",
+      "abort": {
+        "reconfigure_successful": "Anslutningen uppdaterades."
+      },
+      "error": {
+        "required": "Det här fältet är obligatoriskt.",
+        "already_configured": "En anslutning med det här namnet finns redan."
+      },
+      "step": {
+        "user": {
+          "title": "Anslutning",
+          "description": "Endast MCP-servrar som den här Home Assistant kan nå listas. Anpassad är valfri MCP-HTTP-URL.",
+          "menu_options": {
+            "ha": "Home Assistant MCP-server (inbyggd)",
+            "ha_mcp": "HA-MCP",
+            "coolver": "HA Vibecode Agent (Coolver)",
+            "custom": "Anpassad MCP-URL"
+          }
+        },
+        "connection": {
+          "title": "Anslutning",
+          "description": "En MCP-server som assistenten kan använda i samma chatt.",
+          "data": {
+            "name": "Namn",
+            "url": "Adress",
+            "token": "Token"
+          },
+          "data_description": {
+            "name": "Ett kort namn, till exempel Directus. Assistenten använder det för att skilja den här anslutningen från de andra.",
+            "url": "MCP-adressen, som börjar med https:// eller http://. Hittade servrar fylls i.",
+            "token": "Bara om den servern ber om en nyckel. Lämna tomt vid redigering för att behålla den sparade nyckeln."
+          }
+        }
+      }
+    },
+    "agent": {
+      "initiate_flow": {
+        "user": "Lägg till agent",
+        "reconfigure": "Redigera agent"
+      },
+      "entry_type": "Agent",
+      "error": {
+        "no_runtime": "Cursor-runtimen går inte att nå. Starta den och ange URL:en på AI Workspace.",
+        "required": "Det här fältet är obligatoriskt."
+      },
+      "step": {
+        "agent": {
+          "title": "Agent",
+          "description": "Välj agent. Nästa skärm frågar bara efter det den agenten behöver.",
+          "data": {
+            "api_provider": "Agent"
+          },
+          "data_description": {
+            "api_provider": "Cursor, eller en moln- eller lokal modell."
+          }
+        },
+        "cursor": {
+          "title": "Cursor",
+          "description": "Cursor-API-nyckel, modell och ansträngning. Runtime-URL:en stannar på AI Workspace.",
+          "data": {
+            "cursor_api_key": "Cursor-API-nyckel",
+            "model": "Modell",
+            "effort": "Ansträngning",
+            "assist": "Använd också i Assist"
+          },
+          "data_description": {
+            "cursor_api_key": "Från cursor.com/dashboard/integrations. Lämna tomt vid redigering för att behålla den sparade nyckeln.",
+            "model": "Tomt använder Composer.",
+            "effort": "Snabb, Hög eller Hög snabb. Composer använder Snabb om du inte väljer Hög.",
+            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+          }
+        },
+        "cloud": {
+          "title": "Molnagent",
+          "description": "Den här agenten behåller en egen nyckel. Kopiera en från en redan konfigurerad integration eller klistra in en ny. Lämna nyckeln tom vid redigering för att behålla den sparade.",
+          "data": {
+            "borrow": "Kopiera nyckel från",
+            "api_key": "API-nyckel",
+            "model": "Modell",
+            "effort": "Ansträngning",
+            "low_token": "Få tokens",
+            "assist": "Använd också i Assist"
+          },
+          "data_description": {
+            "borrow": "Använder nyckeln som den integrationen redan har sparat. Den andra integrationen lämnas orörd.",
+            "api_key": "Inte en Home Assistant-token.",
+            "model": "Tomt använder leverantörens standard.",
+            "effort": "Snabb, Hög eller Hög snabb när modellen stöder det.",
+            "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
+            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+          }
+        },
+        "ollama": {
+          "title": "Ollama",
+          "description": "Peka det här mot Ollama-servern.",
+          "data": {
+            "api_base": "Ollama-URL",
+            "model": "Modell",
+            "effort": "Ansträngning",
+            "low_token": "Få tokens",
+            "assist": "Använd också i Assist"
+          },
+          "data_description": {
+            "api_base": "Usually http://127.0.0.1:11434/v1",
+            "model": "Tomt använder llama3.2.",
+            "effort": "Används när modellen stöder det.",
+            "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
+            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+          }
+        },
+        "azure": {
+          "title": "Azure OpenAI",
+          "description": "Azure-slutpunkt, distribution och nyckel.",
+          "data": {
+            "api_key": "Azure-API-nyckel",
+            "api_base": "Slutpunkt",
+            "model": "Distribution",
+            "azure_api_version": "API-version",
+            "effort": "Ansträngning",
+            "low_token": "Få tokens",
+            "assist": "Använd också i Assist"
+          },
+          "data_description": {
+            "api_key": "Azure OpenAI-nyckeln. Lämna tomt vid redigering för att behålla den sparade nyckeln.",
+            "api_base": "https://YOUR.openai.azure.com",
+            "model": "Distributionens namn.",
+            "azure_api_version": "Default 2024-10-21.",
+            "effort": "Används när distributionen stöder det.",
+            "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
+            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+          }
+        },
+        "compatible": {
+          "title": "OpenAI-kompatibel",
+          "description": "En egen server som talar OpenAI-API:t.",
+          "data": {
+            "api_key": "API-nyckel",
+            "api_base": "API-bas-URL",
+            "model": "Modell",
+            "effort": "Ansträngning",
+            "low_token": "Få tokens",
+            "assist": "Använd också i Assist"
+          },
+          "data_description": {
+            "api_key": "Lämna tomt vid redigering för att behålla den sparade nyckeln.",
+            "api_base": "Serverns bas-URL, inklusive /v1 om den använder den sökvägen.",
+            "model": "Modellnamn på den servern.",
+            "effort": "Används när servern stöder det.",
+            "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
+            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+          }
+        },
+        "provider": {
+          "title": "Leverantör",
+          "description": "Välj leverantör. Nästa skärm frågar bara efter det den leverantören behöver.",
+          "data": {
+            "api_provider": "Leverantör"
+          },
+          "data_description": {
+            "api_provider": "Cursor, eller en moln- eller lokal modell. "
+          }
+        },
+        "provider_cursor": {
+          "title": "Cursor",
+          "description": "Cursor-API-nyckel, modell och ansträngning. Runtime-URL:en stannar på AI Workspace.",
+          "data": {
+            "cursor_api_key": "Cursor-API-nyckel",
+            "model": "Modell",
+            "effort": "Ansträngning",
+            "assist": "Använd också i Assist"
+          },
+          "data_description": {
+            "cursor_api_key": "Från cursor.com/dashboard/integrations. Lämna tomt vid redigering för att behålla den sparade nyckeln.",
+            "model": "Tomt använder Composer.",
+            "effort": "Snabb, Hög eller Hög snabb. Composer använder Snabb om du inte väljer Hög.",
+            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+          }
+        },
+        "provider_cloud": {
+          "title": "Molnagent",
+          "description": "Den här agenten behåller en egen nyckel. Kopiera en från en redan konfigurerad integration eller klistra in en ny. Lämna nyckeln tom vid redigering för att behålla den sparade.",
+          "data": {
+            "borrow": "Kopiera nyckel från",
+            "api_key": "API-nyckel",
+            "model": "Modell",
+            "effort": "Ansträngning",
+            "low_token": "Få tokens",
+            "assist": "Använd också i Assist"
+          },
+          "data_description": {
+            "borrow": "Använder nyckeln som den integrationen redan har sparat. Den andra integrationen lämnas orörd.",
+            "api_key": "Inte en Home Assistant-token.",
+            "model": "Tomt använder leverantörens standard.",
+            "effort": "Snabb, Hög eller Hög snabb när modellen stöder det.",
+            "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
+            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+          }
+        },
+        "provider_ollama": {
+          "title": "Ollama",
+          "description": "Peka det här mot Ollama-servern.",
+          "data": {
+            "api_base": "Ollama-URL",
+            "model": "Modell",
+            "effort": "Ansträngning",
+            "low_token": "Få tokens",
+            "assist": "Använd också i Assist"
+          },
+          "data_description": {
+            "api_base": "Usually http://127.0.0.1:11434/v1",
+            "model": "Tomt använder llama3.2.",
+            "effort": "Används när modellen stöder det.",
+            "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
+            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+          }
+        },
+        "provider_azure": {
+          "title": "Azure OpenAI",
+          "description": "Azure-slutpunkt, distribution och nyckel.",
+          "data": {
+            "api_key": "Azure-API-nyckel",
+            "api_base": "Slutpunkt",
+            "model": "Distribution",
+            "azure_api_version": "API-version",
+            "effort": "Ansträngning",
+            "low_token": "Få tokens",
+            "assist": "Använd också i Assist"
+          },
+          "data_description": {
+            "api_key": "Azure OpenAI-nyckeln. Lämna tomt vid redigering för att behålla den sparade nyckeln.",
+            "api_base": "https://YOUR.openai.azure.com",
+            "model": "Distributionens namn.",
+            "azure_api_version": "Default 2024-10-21.",
+            "effort": "Används när distributionen stöder det.",
+            "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
+            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+          }
+        },
+        "provider_compatible": {
+          "title": "OpenAI-kompatibel",
+          "description": "En egen server som talar OpenAI-API:t.",
+          "data": {
+            "api_key": "API-nyckel",
+            "api_base": "API-bas-URL",
+            "model": "Modell",
+            "effort": "Ansträngning",
+            "low_token": "Få tokens",
+            "assist": "Använd också i Assist"
+          },
+          "data_description": {
+            "api_key": "Lämna tomt vid redigering för att behålla den sparade nyckeln.",
+            "api_base": "Serverns bas-URL, inklusive /v1 om den använder den sökvägen.",
+            "model": "Modellnamn på den servern.",
+            "effort": "Används när servern stöder det.",
+            "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
+            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+          }
+        }
+      },
+      "abort": {
+        "reconfigure_successful": "Agenten uppdaterades."
+      }
+    }
+  },
+  "selector": {
+    "api_provider": {
+      "options": {
+        "openai": "OpenAI",
+        "anthropic": "Claude (Anthropic)",
+        "gemini": "Google Gemini",
+        "deepseek": "DeepSeek",
+        "qwen": "Qwen (Alibaba)",
+        "xai": "Grok (xAI)",
+        "openrouter": "OpenRouter",
+        "ollama": "Lokal Ollama",
+        "azure": "Azure OpenAI",
+        "compatible": "OpenAI-kompatibel (egen bas-URL)"
+      }
+    },
+    "agent_provider": {
+      "options": {
+        "cursor": "Cursor",
+        "openai": "OpenAI",
+        "anthropic": "Claude (Anthropic)",
+        "gemini": "Google Gemini",
+        "deepseek": "DeepSeek",
+        "qwen": "Qwen (Alibaba)",
+        "xai": "Grok (xAI)",
+        "openrouter": "OpenRouter",
+        "ollama": "Lokal Ollama",
+        "azure": "Azure OpenAI",
+        "compatible": "OpenAI-kompatibel (egen bas-URL)"
+      }
+    },
+    "effort": {
+      "options": {
+        "": "Standard",
+        "fast": "Snabb",
+        "high": "Hög",
+        "high_fast": "Hög snabb"
+      }
+    },
+    "mcp_kind": {
+      "options": {
+        "ha": "Home Assistant MCP-server (inbyggd)",
+        "ha_mcp": "HA-MCP",
+        "coolver": "HA Vibecode Agent (Coolver)",
+        "custom": "Anpassad MCP-URL"
+      }
+    }
+  }
+}
