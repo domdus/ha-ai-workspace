@@ -1,0 +1,863 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "AI Workspace",
+        "description": "Komunaj babilejaj agordoj. Poste aldonu la unuan agenton (Cursor, OpenAI, OpenRouter, Ollama kaj aliaj) ĉe AI Agents.",
+        "data": {
+          "runtime_url": "URL de la Cursor-rultempo{runtime_url_mark}",
+          "stt_engine": "Parolo al teksto",
+          "tts_engine": "Teksto al parolo",
+          "speak_replies": "Laŭtlegi respondojn aŭtomate",
+          "enable_sidebar": "Montri AI Workspace en la flanka strio",
+          "enable_overlay": "Montri ŝveban AI-butonon sur ĉiu paĝo",
+          "enable_dictate": "Montri diktan butonon",
+          "allow_users": "Permesi ordinarajn uzantojn",
+          "house_map": "Agorda katalogo",
+          "cross_chat": "Inter babilejoj",
+          "keep_chats": "Babilejoj konservotaj"
+        },
+        "data_description": {
+          "runtime_url": "{runtime_url_note}",
+          "stt_engine": "La foliumilo uzas la parolilon de la aparato kaj bezonas https:// aŭ localhost. Home Assistant-motoro (Whisper kaj aliaj ĉe Agordoj) transskribas registron de ĉi tiu paĝo. La foliumilo tamen devas permesi la mikrofonon, kaj tion ĝi faras nur ĉe https:// aŭ localhost.",
+          "tts_engine": "Piper kaj aliaj voĉoj de Home Assistant. Laŭtlegado de la respondo funkcias ankaŭ per http://. Malŝalte lasas respondojn kiel tekston.",
+          "speak_replies": "Kiam voĉo estas elektita, ĉiu respondo estas laŭtlegata tuj. Malŝalte lasas la laŭtparolilan butonon por ludi mem.",
+          "enable_sidebar": "La flanka-stria ero AI Workspace. La paĝo restas ĉe /ai-workspace se ĉi tio estas malŝalta.",
+          "enable_overlay": "La ŝveba AI-butono. Kaŝita ĉe Agordoj por ne kovri Aldoni integriĝon.",
+          "enable_dictate": "Mikrofono en la mesaĝa kampo.",
+          "allow_users": "Ensalutintaj uzantoj kiuj ne estas administrantoj povas malfermi la ŝveban babilejon. Malŝalte lasas ĝin al administrantoj. La flanka-stria ero restas nur por administrantoj.",
+          "house_map": "Laŭvola loka indekso por la kabligo de nomita ero (ekigiloj, rilataj id-oj). Defaŭlte malŝalta. Ne por listigi aŭtomatojn aŭ ŝaltite/malŝaltite — uzu vivan MCP por tio. Ne viva stato, historio aŭ spuroj.",
+          "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi alian babilejon kies titolo kunhavas vortojn. Ne necesas diri babilejo. Nur mallonga eltiraĵo, kaj tiu babilejo ne estas ŝanĝita.",
+          "keep_chats": "Plej novaj nealpinglitaj babilejoj po persono. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."
+        },
+        "sections": {
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "MCP-tipo",
+              "mcp_url": "MCP-URL{mcp_url_mark}",
+              "mcp_token": "MCP-ĵetono"
+            },
+            "data_description": {
+              "mcp_kind": "Nur MCP-serviloj kiujn ĉi tiu Home Assistant atingas estas listigitaj. Propra estas iu ajn MCP-HTTP-URL.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Enkonstruita: longdaŭra alira ĵetono de Home Assistant, aŭ lasu malplena por uzi la nunan ensaluton en ĉi tiu babilejo. HA-MCP: kutime malplena. Vibecode: Agent Key. Propra: laŭvola Bearer-ĵetono."
+            }
+          },
+          "prompt": {
+            "name": "Sistema prompto",
+            "data": {
+              "system_prompt": "Sistema prompto"
+            },
+            "data_description": {
+              "system_prompt": "Nur tono kaj konduto. Lasu malplena por la enkonstruita prompto. MCP-iloj kaj redaktilaj ligiloj ĉiam aldoniĝas; ili ne estas parto de ĉi tiu kampo."
+            }
+          }
+        }
+      },
+      "api": {
+        "title": "Nuba API-provizanto",
+        "data": {
+          "enable_sidebar": "Montri AI Workspace en la flanka strio",
+          "enable_overlay": "Montri ŝveban AI-butonon sur ĉiu paĝo",
+          "enable_dictate": "Montri diktan butonon",
+          "allow_users": "Permesi ordinarajn uzantojn",
+          "house_map": "Agorda katalogo",
+          "cross_chat": "Inter babilejoj",
+          "keep_chats": "Babilejoj konservotaj"
+        },
+        "sections": {
+          "provider": {
+            "name": "Provizanto",
+            "data": {
+              "api_provider": "Provizanto",
+              "api_key": "API-ŝlosilo",
+              "model": "Modelo",
+              "api_base": "API-baza URL"
+            },
+            "data_description": {
+              "api_provider": "OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok aŭ OpenAI-kongrua.",
+              "api_key": "API-ŝlosilo de la provizanto. Ne Home Assistant-ĵetono.",
+              "model": "Malplena uzas la defaŭlton de la provizanto.",
+              "api_base": "Lasu malplena por la elektita provizanto. Necesa por OpenAI-kongrua (OpenRouter, Ollama, LM Studio). Qwen en Ĉinio: https://dashscope.aliyuncs.com/compatible-mode/v1"
+            }
+          },
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "MCP-tipo",
+              "mcp_url": "MCP-URL{mcp_url_mark}",
+              "mcp_token": "MCP-ĵetono"
+            },
+            "data_description": {
+              "mcp_kind": "Nur MCP-serviloj kiujn ĉi tiu Home Assistant atingas estas listigitaj. Propra estas iu ajn MCP-HTTP-URL.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Enkonstruita: longdaŭra alira ĵetono de Home Assistant, aŭ lasu malplena por uzi la nunan ensaluton en ĉi tiu babilejo. HA-MCP: kutime malplena. Vibecode: Agent Key. Propra: laŭvola Bearer-ĵetono."
+            }
+          },
+          "prompt": {
+            "name": "Sistema prompto",
+            "data": {
+              "system_prompt": "Sistema prompto"
+            },
+            "data_description": {
+              "system_prompt": "Nur tono kaj konduto. Lasu malplena por la enkonstruita prompto. MCP-iloj kaj redaktilaj ligiloj ĉiam aldoniĝas; ili ne estas parto de ĉi tiu kampo."
+            }
+          }
+        }
+      },
+      "cursor": {
+        "title": "Cursor-rultempo",
+        "data": {
+          "runtime_url": "URL de la Cursor-rultempo{runtime_url_mark}",
+          "enable_sidebar": "Montri AI Workspace en la flanka strio",
+          "enable_overlay": "Montri ŝveban AI-butonon sur ĉiu paĝo",
+          "enable_dictate": "Montri diktan butonon",
+          "allow_users": "Permesi ordinarajn uzantojn",
+          "house_map": "Agorda katalogo",
+          "cross_chat": "Inter babilejoj",
+          "keep_chats": "Babilejoj konservotaj"
+        },
+        "data_description": {
+          "runtime_url": "{runtime_url_note}",
+          "enable_sidebar": "La flanka-stria ero AI Workspace. La paĝo restas ĉe /ai-workspace se ĉi tio estas malŝalta.",
+          "enable_overlay": "La ŝveba AI-butono. Kaŝita ĉe Agordoj por ne kovri Aldoni integriĝon.",
+          "enable_dictate": "Mikrofono en la mesaĝa kampo. Foliumiloj permesas dikton nur per https://.",
+          "allow_users": "Ensalutintaj uzantoj kiuj ne estas administrantoj povas malfermi la ŝveban babilejon. Malŝalte lasas ĝin al administrantoj. La flanka-stria ero restas nur por administrantoj.",
+          "house_map": "Laŭvola loka indekso por la kabligo de nomita ero (ekigiloj, rilataj id-oj). Defaŭlte malŝalta. Ne por listigi aŭtomatojn aŭ ŝaltite/malŝaltite — uzu vivan MCP por tio. Ne viva stato, historio aŭ spuroj.",
+          "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi alian babilejon kies titolo kunhavas vortojn. Ne necesas diri babilejo. Nur mallonga eltiraĵo, kaj tiu babilejo ne estas ŝanĝita.",
+          "keep_chats": "Plej novaj nealpinglitaj babilejoj po persono. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."
+        },
+        "sections": {
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "MCP-tipo",
+              "mcp_url": "MCP-URL{mcp_url_mark}",
+              "mcp_token": "MCP-ĵetono"
+            },
+            "data_description": {
+              "mcp_kind": "Nur MCP-serviloj kiujn ĉi tiu Home Assistant atingas estas listigitaj. Propra estas iu ajn MCP-HTTP-URL.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Enkonstruita: longdaŭra alira ĵetono de Home Assistant, aŭ lasu malplena por uzi la nunan ensaluton en ĉi tiu babilejo. HA-MCP: kutime malplena. Vibecode: Agent Key. Propra: laŭvola Bearer-ĵetono."
+            }
+          },
+          "prompt": {
+            "name": "Sistema prompto",
+            "data": {
+              "system_prompt": "Sistema prompto"
+            },
+            "data_description": {
+              "system_prompt": "Nur tono kaj konduto. Lasu malplena por la enkonstruita prompto. MCP-iloj kaj redaktilaj ligiloj ĉiam aldoniĝas; ili ne estas parto de ĉi tiu kampo."
+            }
+          }
+        }
+      },
+      "provider": {
+        "title": "Provizanto",
+        "description": "Elektu la provizanton. La sekva ekrano demandas nur tion, kion tiu provizanto bezonas.",
+        "data": {
+          "api_provider": "Provizanto"
+        },
+        "data_description": {
+          "api_provider": "Cursor, aŭ nuba aŭ loka modelo. "
+        }
+      },
+      "provider_cursor": {
+        "title": "Cursor",
+        "description": "Cursor-API-ŝlosilo, modelo kaj peno. La rultempa URL restas ĉe AI Workspace.",
+        "data": {
+          "cursor_api_key": "Cursor-API-ŝlosilo",
+          "model": "Modelo",
+          "effort": "Peno",
+          "assist": "Ankaŭ uzi en Assist"
+        },
+        "data_description": {
+          "cursor_api_key": "De cursor.com/dashboard/integrations. Lasu malplena dum redakto por konservi la konservitan ŝlosilon.",
+          "model": "Malplena uzas Composer.",
+          "effort": "Rapida, Alta aŭ Alta rapida. Composer uzas Rapida krom se vi elektas Alta.",
+          "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+        }
+      },
+      "provider_cloud": {
+        "title": "Nuba agento",
+        "description": "Ĉi tiu agento konservas propran ŝlosilon. Kopiu el jam agordita integriĝo, aŭ algluu novan. Lasu la ŝlosilon malplena dum redakto por konservi la konservitan.",
+        "data": {
+          "borrow": "Kopii ŝlosilon de",
+          "api_key": "API-ŝlosilo",
+          "model": "Modelo",
+          "effort": "Peno",
+          "low_token": "Malmultaj tokenoj",
+          "assist": "Ankaŭ uzi en Assist"
+        },
+        "data_description": {
+          "borrow": "Uzas la ŝlosilon jam konservitan de tiu integriĝo. La alia integriĝo restas kiel estas.",
+          "api_key": "Ne Home Assistant-ĵetono.",
+          "model": "Malplena uzas la defaŭlton de la provizanto.",
+          "effort": "Rapida, Alta aŭ Alta rapida kiam la modelo tion subtenas.",
+          "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
+          "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+        }
+      },
+      "provider_ollama": {
+        "title": "Ollama",
+        "description": "Indiku la adreson de la Ollama-servilo.",
+        "data": {
+          "api_base": "Ollama-URL",
+          "model": "Modelo",
+          "effort": "Peno",
+          "low_token": "Malmultaj tokenoj",
+          "assist": "Ankaŭ uzi en Assist"
+        },
+        "data_description": {
+          "api_base": "Usually http://127.0.0.1:11434/v1",
+          "model": "Malplena uzas llama3.2.",
+          "effort": "Uzata kiam la modelo tion subtenas.",
+          "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
+          "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+        }
+      },
+      "provider_azure": {
+        "title": "Azure OpenAI",
+        "description": "Azure-finpunkto, deplojo kaj ŝlosilo.",
+        "data": {
+          "api_key": "Azure-API-ŝlosilo",
+          "api_base": "Finpunkto",
+          "model": "Deplojo",
+          "azure_api_version": "API-versio",
+          "effort": "Peno",
+          "low_token": "Malmultaj tokenoj",
+          "assist": "Ankaŭ uzi en Assist"
+        },
+        "data_description": {
+          "api_key": "La Azure OpenAI-ŝlosilo. Lasu malplena dum redakto por konservi la konservitan ŝlosilon.",
+          "api_base": "https://YOUR.openai.azure.com",
+          "model": "La nomo de la deplojo.",
+          "azure_api_version": "Default 2024-10-21.",
+          "effort": "Uzata kiam la deplojo tion subtenas.",
+          "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
+          "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+        }
+      },
+      "provider_compatible": {
+        "title": "OpenAI-kongrua",
+        "description": "Propra servilo kiu parolas la OpenAI-API.",
+        "data": {
+          "api_key": "API-ŝlosilo",
+          "api_base": "API-baza URL",
+          "model": "Modelo",
+          "effort": "Peno",
+          "low_token": "Malmultaj tokenoj",
+          "assist": "Ankaŭ uzi en Assist"
+        },
+        "data_description": {
+          "api_key": "Lasu malplena dum redakto por konservi la konservitan ŝlosilon.",
+          "api_base": "Baza URL de la servilo, inkluzive /v1 se ĝi uzas tiun vojon.",
+          "model": "Modelnomo sur tiu servilo.",
+          "effort": "Uzata kiam la servilo tion subtenas.",
+          "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
+          "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+        }
+      }
+    },
+    "error": {
+      "no_runtime": "La Cursor-rultempo ne estas atingebla. Startu ĝin kaj agordu la URL ĉe AI Workspace.",
+      "required": "Ĉi tiu kampo estas deviga."
+    },
+    "abort": {
+      "already_configured": "AI Workspace jam estas agordita"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "AI Workspace",
+        "description": "Komunaj babilejaj agordoj. Konektoj aldoniĝas ĉe AI Workspace. Agentoj ĉe AI Agents.",
+        "data": {
+          "runtime_url": "URL de la Cursor-rultempo{runtime_url_mark}",
+          "stt_engine": "Parolo al teksto",
+          "tts_engine": "Teksto al parolo",
+          "speak_replies": "Laŭtlegi respondojn aŭtomate",
+          "enable_sidebar": "Montri AI Workspace en la flanka strio",
+          "enable_overlay": "Montri ŝveban AI-butonon sur ĉiu paĝo",
+          "enable_dictate": "Montri diktan butonon",
+          "allow_users": "Permesi ordinarajn uzantojn",
+          "house_map": "Agorda katalogo",
+          "cross_chat": "Inter babilejoj",
+          "keep_chats": "Babilejoj konservotaj"
+        },
+        "data_description": {
+          "runtime_url": "{runtime_url_note}",
+          "stt_engine": "La foliumilo uzas la parolilon de la aparato kaj bezonas https:// aŭ localhost. Home Assistant-motoro (Whisper kaj aliaj ĉe Agordoj) transskribas registron de ĉi tiu paĝo. La foliumilo tamen devas permesi la mikrofonon, kaj tion ĝi faras nur ĉe https:// aŭ localhost.",
+          "tts_engine": "Piper kaj aliaj voĉoj de Home Assistant. Laŭtlegado de la respondo funkcias ankaŭ per http://. Malŝalte lasas respondojn kiel tekston.",
+          "speak_replies": "Kiam voĉo estas elektita, ĉiu respondo estas laŭtlegata tuj. Malŝalte lasas la laŭtparolilan butonon por ludi mem.",
+          "enable_sidebar": "La flanka-stria ero AI Workspace. La paĝo restas ĉe /ai-workspace se ĉi tio estas malŝalta.",
+          "enable_overlay": "La ŝveba AI-butono. Kaŝita ĉe Agordoj por ne kovri Aldoni integriĝon.",
+          "enable_dictate": "Mikrofono en la mesaĝa kampo.",
+          "allow_users": "Ensalutintaj uzantoj kiuj ne estas administrantoj povas malfermi la ŝveban babilejon. Malŝalte lasas ĝin al administrantoj. La flanka-stria ero restas nur por administrantoj.",
+          "house_map": "Laŭvola loka indekso por la kabligo de nomita ero (ekigiloj, rilataj id-oj). Defaŭlte malŝalta. Ne por listigi aŭtomatojn aŭ ŝaltite/malŝaltite — uzu vivan MCP por tio. Ne viva stato, historio aŭ spuroj.",
+          "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi alian babilejon kies titolo kunhavas vortojn. Ne necesas diri babilejo. Nur mallonga eltiraĵo, kaj tiu babilejo ne estas ŝanĝita.",
+          "keep_chats": "Plej novaj nealpinglitaj babilejoj po persono. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."
+        },
+        "sections": {
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "MCP-tipo",
+              "mcp_url": "MCP-URL{mcp_url_mark}",
+              "mcp_token": "MCP-ĵetono"
+            },
+            "data_description": {
+              "mcp_kind": "Nur MCP-serviloj kiujn ĉi tiu Home Assistant atingas estas listigitaj. Propra estas iu ajn MCP-HTTP-URL.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Enkonstruita: longdaŭra alira ĵetono de Home Assistant, aŭ lasu malplena por uzi la nunan ensaluton en ĉi tiu babilejo. HA-MCP: kutime malplena. Vibecode: Agent Key. Propra: laŭvola Bearer-ĵetono."
+            }
+          },
+          "prompt": {
+            "name": "Sistema prompto",
+            "data": {
+              "system_prompt": "Sistema prompto"
+            },
+            "data_description": {
+              "system_prompt": "Nur tono kaj konduto. Lasu malplena por la enkonstruita prompto. MCP-iloj kaj redaktilaj ligiloj ĉiam aldoniĝas; ili ne estas parto de ĉi tiu kampo."
+            }
+          }
+        }
+      },
+      "api": {
+        "title": "Nuba API-provizanto",
+        "data": {
+          "enable_sidebar": "Montri AI Workspace en la flanka strio",
+          "enable_overlay": "Montri ŝveban AI-butonon sur ĉiu paĝo",
+          "enable_dictate": "Montri diktan butonon",
+          "allow_users": "Permesi ordinarajn uzantojn",
+          "house_map": "Agorda katalogo",
+          "cross_chat": "Inter babilejoj",
+          "keep_chats": "Babilejoj konservotaj"
+        },
+        "data_description": {
+          "enable_sidebar": "La flanka-stria ero AI Workspace. La paĝo restas ĉe /ai-workspace se ĉi tio estas malŝalta.",
+          "enable_overlay": "La ŝveba AI-butono. Kaŝita ĉe Agordoj por ne kovri Aldoni integriĝon.",
+          "enable_dictate": "Mikrofono en la mesaĝa kampo. Foliumiloj permesas dikton nur per https://.",
+          "allow_users": "Ensalutintaj uzantoj kiuj ne estas administrantoj povas malfermi la ŝveban babilejon. Malŝalte lasas ĝin al administrantoj. La flanka-stria ero restas nur por administrantoj.",
+          "house_map": "Laŭvola loka indekso por la kabligo de nomita ero (ekigiloj, rilataj id-oj). Defaŭlte malŝalta. Ne por listigi aŭtomatojn aŭ ŝaltite/malŝaltite — uzu vivan MCP por tio. Ne viva stato, historio aŭ spuroj.",
+          "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi alian babilejon kies titolo kunhavas vortojn. Ne necesas diri babilejo. Nur mallonga eltiraĵo, kaj tiu babilejo ne estas ŝanĝita.",
+          "keep_chats": "Plej novaj nealpinglitaj babilejoj po persono. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."
+        },
+        "sections": {
+          "provider": {
+            "name": "Provizanto",
+            "data": {
+              "api_provider": "Provizanto",
+              "api_key": "API-ŝlosilo",
+              "model": "Modelo",
+              "api_base": "API-baza URL"
+            },
+            "data_description": {
+              "api_provider": "OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok aŭ OpenAI-kongrua.",
+              "api_key": "API-ŝlosilo de la provizanto. Ne Home Assistant-ĵetono.",
+              "model": "Malplena uzas la defaŭlton de la provizanto.",
+              "api_base": "Lasu malplena por la elektita provizanto. Necesa por OpenAI-kongrua (OpenRouter, Ollama, LM Studio). Qwen en Ĉinio: https://dashscope.aliyuncs.com/compatible-mode/v1"
+            }
+          },
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "MCP-tipo",
+              "mcp_url": "MCP-URL{mcp_url_mark}",
+              "mcp_token": "MCP-ĵetono"
+            },
+            "data_description": {
+              "mcp_kind": "Nur MCP-serviloj kiujn ĉi tiu Home Assistant atingas estas listigitaj. Propra estas iu ajn MCP-HTTP-URL.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Enkonstruita: longdaŭra alira ĵetono de Home Assistant, aŭ lasu malplena por uzi la nunan ensaluton en ĉi tiu babilejo. HA-MCP: kutime malplena. Vibecode: Agent Key. Propra: laŭvola Bearer-ĵetono."
+            }
+          },
+          "prompt": {
+            "name": "Sistema prompto",
+            "data": {
+              "system_prompt": "Sistema prompto"
+            },
+            "data_description": {
+              "system_prompt": "Nur tono kaj konduto. Lasu malplena por la enkonstruita prompto. MCP-iloj kaj redaktilaj ligiloj ĉiam aldoniĝas; ili ne estas parto de ĉi tiu kampo."
+            }
+          }
+        }
+      },
+      "cursor": {
+        "title": "Cursor-rultempo",
+        "data": {
+          "runtime_url": "URL de la Cursor-rultempo{runtime_url_mark}",
+          "enable_sidebar": "Montri AI Workspace en la flanka strio",
+          "enable_overlay": "Montri ŝveban AI-butonon sur ĉiu paĝo",
+          "enable_dictate": "Montri diktan butonon",
+          "allow_users": "Permesi ordinarajn uzantojn",
+          "house_map": "Agorda katalogo",
+          "cross_chat": "Inter babilejoj",
+          "keep_chats": "Babilejoj konservotaj"
+        },
+        "data_description": {
+          "runtime_url": "{runtime_url_note}",
+          "enable_sidebar": "La flanka-stria ero AI Workspace. La paĝo restas ĉe /ai-workspace se ĉi tio estas malŝalta.",
+          "enable_overlay": "La ŝveba AI-butono. Kaŝita ĉe Agordoj por ne kovri Aldoni integriĝon.",
+          "enable_dictate": "Mikrofono en la mesaĝa kampo. Foliumiloj permesas dikton nur per https://.",
+          "allow_users": "Ensalutintaj uzantoj kiuj ne estas administrantoj povas malfermi la ŝveban babilejon. Malŝalte lasas ĝin al administrantoj. La flanka-stria ero restas nur por administrantoj.",
+          "house_map": "Laŭvola loka indekso por la kabligo de nomita ero (ekigiloj, rilataj id-oj). Defaŭlte malŝalta. Ne por listigi aŭtomatojn aŭ ŝaltite/malŝaltite — uzu vivan MCP por tio. Ne viva stato, historio aŭ spuroj.",
+          "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi alian babilejon kies titolo kunhavas vortojn. Ne necesas diri babilejo. Nur mallonga eltiraĵo, kaj tiu babilejo ne estas ŝanĝita.",
+          "keep_chats": "Plej novaj nealpinglitaj babilejoj po persono. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."
+        },
+        "sections": {
+          "mcp": {
+            "name": "MCP",
+            "data": {
+              "mcp_kind": "MCP-tipo",
+              "mcp_url": "MCP-URL{mcp_url_mark}",
+              "mcp_token": "MCP-ĵetono"
+            },
+            "data_description": {
+              "mcp_kind": "Nur MCP-serviloj kiujn ĉi tiu Home Assistant atingas estas listigitaj. Propra estas iu ajn MCP-HTTP-URL.",
+              "mcp_url": "{mcp_url_note}",
+              "mcp_token": "Enkonstruita: longdaŭra alira ĵetono de Home Assistant, aŭ lasu malplena por uzi la nunan ensaluton en ĉi tiu babilejo. HA-MCP: kutime malplena. Vibecode: Agent Key. Propra: laŭvola Bearer-ĵetono."
+            }
+          },
+          "prompt": {
+            "name": "Sistema prompto",
+            "data": {
+              "system_prompt": "Sistema prompto"
+            },
+            "data_description": {
+              "system_prompt": "Nur tono kaj konduto. Lasu malplena por la enkonstruita prompto. MCP-iloj kaj redaktilaj ligiloj ĉiam aldoniĝas; ili ne estas parto de ĉi tiu kampo."
+            }
+          }
+        }
+      },
+      "provider": {
+        "title": "Provizanto",
+        "description": "Elektu la provizanton. La sekva ekrano demandas nur tion, kion tiu provizanto bezonas.",
+        "data": {
+          "api_provider": "Provizanto"
+        },
+        "data_description": {
+          "api_provider": "Cursor, aŭ nuba aŭ loka modelo. "
+        }
+      },
+      "provider_cursor": {
+        "title": "Cursor",
+        "description": "Cursor-API-ŝlosilo, modelo kaj peno. La rultempa URL restas ĉe AI Workspace.",
+        "data": {
+          "cursor_api_key": "Cursor-API-ŝlosilo",
+          "model": "Modelo",
+          "effort": "Peno",
+          "assist": "Ankaŭ uzi en Assist"
+        },
+        "data_description": {
+          "cursor_api_key": "De cursor.com/dashboard/integrations. Lasu malplena dum redakto por konservi la konservitan ŝlosilon.",
+          "model": "Malplena uzas Composer.",
+          "effort": "Rapida, Alta aŭ Alta rapida. Composer uzas Rapida krom se vi elektas Alta.",
+          "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+        }
+      },
+      "provider_cloud": {
+        "title": "Nuba agento",
+        "description": "Ĉi tiu agento konservas propran ŝlosilon. Kopiu el jam agordita integriĝo, aŭ algluu novan. Lasu la ŝlosilon malplena dum redakto por konservi la konservitan.",
+        "data": {
+          "borrow": "Kopii ŝlosilon de",
+          "api_key": "API-ŝlosilo",
+          "model": "Modelo",
+          "effort": "Peno",
+          "low_token": "Malmultaj tokenoj",
+          "assist": "Ankaŭ uzi en Assist"
+        },
+        "data_description": {
+          "borrow": "Uzas la ŝlosilon jam konservitan de tiu integriĝo. La alia integriĝo restas kiel estas.",
+          "api_key": "Ne Home Assistant-ĵetono.",
+          "model": "Malplena uzas la defaŭlton de la provizanto.",
+          "effort": "Rapida, Alta aŭ Alta rapida kiam la modelo tion subtenas.",
+          "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
+          "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+        }
+      },
+      "provider_ollama": {
+        "title": "Ollama",
+        "description": "Indiku la adreson de la Ollama-servilo.",
+        "data": {
+          "api_base": "Ollama-URL",
+          "model": "Modelo",
+          "effort": "Peno",
+          "low_token": "Malmultaj tokenoj",
+          "assist": "Ankaŭ uzi en Assist"
+        },
+        "data_description": {
+          "api_base": "Usually http://127.0.0.1:11434/v1",
+          "model": "Malplena uzas llama3.2.",
+          "effort": "Uzata kiam la modelo tion subtenas.",
+          "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
+          "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+        }
+      },
+      "provider_azure": {
+        "title": "Azure OpenAI",
+        "description": "Azure-finpunkto, deplojo kaj ŝlosilo.",
+        "data": {
+          "api_key": "Azure-API-ŝlosilo",
+          "api_base": "Finpunkto",
+          "model": "Deplojo",
+          "azure_api_version": "API-versio",
+          "effort": "Peno",
+          "low_token": "Malmultaj tokenoj",
+          "assist": "Ankaŭ uzi en Assist"
+        },
+        "data_description": {
+          "api_key": "La Azure OpenAI-ŝlosilo. Lasu malplena dum redakto por konservi la konservitan ŝlosilon.",
+          "api_base": "https://YOUR.openai.azure.com",
+          "model": "La nomo de la deplojo.",
+          "azure_api_version": "Default 2024-10-21.",
+          "effort": "Uzata kiam la deplojo tion subtenas.",
+          "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
+          "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+        }
+      },
+      "provider_compatible": {
+        "title": "OpenAI-kongrua",
+        "description": "Propra servilo kiu parolas la OpenAI-API.",
+        "data": {
+          "api_key": "API-ŝlosilo",
+          "api_base": "API-baza URL",
+          "model": "Modelo",
+          "effort": "Peno",
+          "low_token": "Malmultaj tokenoj",
+          "assist": "Ankaŭ uzi en Assist"
+        },
+        "data_description": {
+          "api_key": "Lasu malplena dum redakto por konservi la konservitan ŝlosilon.",
+          "api_base": "Baza URL de la servilo, inkluzive /v1 se ĝi uzas tiun vojon.",
+          "model": "Modelnomo sur tiu servilo.",
+          "effort": "Uzata kiam la servilo tion subtenas.",
+          "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
+          "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+        }
+      }
+    },
+    "error": {
+      "no_runtime": "La Cursor-rultempo ne estas atingebla. Startu ĝin kaj agordu la URL ĉe AI Workspace.",
+      "required": "Ĉi tiu kampo estas deviga."
+    }
+  },
+  "config_subentries": {
+    "mcp": {
+      "initiate_flow": {
+        "user": "Aldoni konekton",
+        "reconfigure": "Redakti konekton"
+      },
+      "entry_type": "Konekto",
+      "abort": {
+        "reconfigure_successful": "Konekto ĝisdatigita."
+      },
+      "error": {
+        "required": "Ĉi tiu kampo estas deviga.",
+        "already_configured": "Konekto kun ĉi tiu nomo jam ekzistas."
+      },
+      "step": {
+        "user": {
+          "title": "Konekto",
+          "description": "Nur MCP-serviloj kiujn ĉi tiu Home Assistant atingas estas listigitaj. Propra estas iu ajn MCP-HTTP-URL.",
+          "menu_options": {
+            "ha": "Home Assistant MCP-servilo (enkonstruita)",
+            "ha_mcp": "HA-MCP",
+            "coolver": "HA Vibecode Agent (Coolver)",
+            "custom": "Propra MCP-URL"
+          }
+        },
+        "connection": {
+          "title": "Konekto",
+          "description": "MCP-servilo kiun la asistanto povas uzi en la sama babilejo.",
+          "data": {
+            "name": "Nomo",
+            "url": "Adreso",
+            "token": "Ĵetono"
+          },
+          "data_description": {
+            "name": "Mallonga nomo, ekzemple Directus. La asistanto uzas ĝin por distingi ĉi tiun konekton de la aliaj.",
+            "url": "La MCP-adreso, komencante per https:// aŭ http://. Trovitaj serviloj estas plenigitaj.",
+            "token": "Nur se tiu servilo petas ŝlosilon. Lasu malplena dum redakto por konservi la konservitan ŝlosilon."
+          }
+        }
+      }
+    },
+    "agent": {
+      "initiate_flow": {
+        "user": "Aldoni agenton",
+        "reconfigure": "Redakti agenton"
+      },
+      "entry_type": "Agento",
+      "error": {
+        "no_runtime": "La Cursor-rultempo ne estas atingebla. Startu ĝin kaj agordu la URL ĉe AI Workspace.",
+        "required": "Ĉi tiu kampo estas deviga."
+      },
+      "step": {
+        "agent": {
+          "title": "Agento",
+          "description": "Elektu la agenton. La sekva ekrano demandas nur tion, kion tiu agento bezonas.",
+          "data": {
+            "api_provider": "Agento"
+          },
+          "data_description": {
+            "api_provider": "Cursor, aŭ nuba aŭ loka modelo."
+          }
+        },
+        "cursor": {
+          "title": "Cursor",
+          "description": "Cursor-API-ŝlosilo, modelo kaj peno. La rultempa URL restas ĉe AI Workspace.",
+          "data": {
+            "cursor_api_key": "Cursor-API-ŝlosilo",
+            "model": "Modelo",
+            "effort": "Peno",
+            "assist": "Ankaŭ uzi en Assist"
+          },
+          "data_description": {
+            "cursor_api_key": "De cursor.com/dashboard/integrations. Lasu malplena dum redakto por konservi la konservitan ŝlosilon.",
+            "model": "Malplena uzas Composer.",
+            "effort": "Rapida, Alta aŭ Alta rapida. Composer uzas Rapida krom se vi elektas Alta.",
+            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+          }
+        },
+        "cloud": {
+          "title": "Nuba agento",
+          "description": "Ĉi tiu agento konservas propran ŝlosilon. Kopiu el jam agordita integriĝo, aŭ algluu novan. Lasu la ŝlosilon malplena dum redakto por konservi la konservitan.",
+          "data": {
+            "borrow": "Kopii ŝlosilon de",
+            "api_key": "API-ŝlosilo",
+            "model": "Modelo",
+            "effort": "Peno",
+            "low_token": "Malmultaj tokenoj",
+            "assist": "Ankaŭ uzi en Assist"
+          },
+          "data_description": {
+            "borrow": "Uzas la ŝlosilon jam konservitan de tiu integriĝo. La alia integriĝo restas kiel estas.",
+            "api_key": "Ne Home Assistant-ĵetono.",
+            "model": "Malplena uzas la defaŭlton de la provizanto.",
+            "effort": "Rapida, Alta aŭ Alta rapida kiam la modelo tion subtenas.",
+            "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
+            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+          }
+        },
+        "ollama": {
+          "title": "Ollama",
+          "description": "Indiku la adreson de la Ollama-servilo.",
+          "data": {
+            "api_base": "Ollama-URL",
+            "model": "Modelo",
+            "effort": "Peno",
+            "low_token": "Malmultaj tokenoj",
+            "assist": "Ankaŭ uzi en Assist"
+          },
+          "data_description": {
+            "api_base": "Usually http://127.0.0.1:11434/v1",
+            "model": "Malplena uzas llama3.2.",
+            "effort": "Uzata kiam la modelo tion subtenas.",
+            "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
+            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+          }
+        },
+        "azure": {
+          "title": "Azure OpenAI",
+          "description": "Azure-finpunkto, deplojo kaj ŝlosilo.",
+          "data": {
+            "api_key": "Azure-API-ŝlosilo",
+            "api_base": "Finpunkto",
+            "model": "Deplojo",
+            "azure_api_version": "API-versio",
+            "effort": "Peno",
+            "low_token": "Malmultaj tokenoj",
+            "assist": "Ankaŭ uzi en Assist"
+          },
+          "data_description": {
+            "api_key": "La Azure OpenAI-ŝlosilo. Lasu malplena dum redakto por konservi la konservitan ŝlosilon.",
+            "api_base": "https://YOUR.openai.azure.com",
+            "model": "La nomo de la deplojo.",
+            "azure_api_version": "Default 2024-10-21.",
+            "effort": "Uzata kiam la deplojo tion subtenas.",
+            "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
+            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+          }
+        },
+        "compatible": {
+          "title": "OpenAI-kongrua",
+          "description": "Propra servilo kiu parolas la OpenAI-API.",
+          "data": {
+            "api_key": "API-ŝlosilo",
+            "api_base": "API-baza URL",
+            "model": "Modelo",
+            "effort": "Peno",
+            "low_token": "Malmultaj tokenoj",
+            "assist": "Ankaŭ uzi en Assist"
+          },
+          "data_description": {
+            "api_key": "Lasu malplena dum redakto por konservi la konservitan ŝlosilon.",
+            "api_base": "Baza URL de la servilo, inkluzive /v1 se ĝi uzas tiun vojon.",
+            "model": "Modelnomo sur tiu servilo.",
+            "effort": "Uzata kiam la servilo tion subtenas.",
+            "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
+            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+          }
+        },
+        "provider": {
+          "title": "Provizanto",
+          "description": "Elektu la provizanton. La sekva ekrano demandas nur tion, kion tiu provizanto bezonas.",
+          "data": {
+            "api_provider": "Provizanto"
+          },
+          "data_description": {
+            "api_provider": "Cursor, aŭ nuba aŭ loka modelo. "
+          }
+        },
+        "provider_cursor": {
+          "title": "Cursor",
+          "description": "Cursor-API-ŝlosilo, modelo kaj peno. La rultempa URL restas ĉe AI Workspace.",
+          "data": {
+            "cursor_api_key": "Cursor-API-ŝlosilo",
+            "model": "Modelo",
+            "effort": "Peno",
+            "assist": "Ankaŭ uzi en Assist"
+          },
+          "data_description": {
+            "cursor_api_key": "De cursor.com/dashboard/integrations. Lasu malplena dum redakto por konservi la konservitan ŝlosilon.",
+            "model": "Malplena uzas Composer.",
+            "effort": "Rapida, Alta aŭ Alta rapida. Composer uzas Rapida krom se vi elektas Alta.",
+            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+          }
+        },
+        "provider_cloud": {
+          "title": "Nuba agento",
+          "description": "Ĉi tiu agento konservas propran ŝlosilon. Kopiu el jam agordita integriĝo, aŭ algluu novan. Lasu la ŝlosilon malplena dum redakto por konservi la konservitan.",
+          "data": {
+            "borrow": "Kopii ŝlosilon de",
+            "api_key": "API-ŝlosilo",
+            "model": "Modelo",
+            "effort": "Peno",
+            "low_token": "Malmultaj tokenoj",
+            "assist": "Ankaŭ uzi en Assist"
+          },
+          "data_description": {
+            "borrow": "Uzas la ŝlosilon jam konservitan de tiu integriĝo. La alia integriĝo restas kiel estas.",
+            "api_key": "Ne Home Assistant-ĵetono.",
+            "model": "Malplena uzas la defaŭlton de la provizanto.",
+            "effort": "Rapida, Alta aŭ Alta rapida kiam la modelo tion subtenas.",
+            "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
+            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+          }
+        },
+        "provider_ollama": {
+          "title": "Ollama",
+          "description": "Indiku la adreson de la Ollama-servilo.",
+          "data": {
+            "api_base": "Ollama-URL",
+            "model": "Modelo",
+            "effort": "Peno",
+            "low_token": "Malmultaj tokenoj",
+            "assist": "Ankaŭ uzi en Assist"
+          },
+          "data_description": {
+            "api_base": "Usually http://127.0.0.1:11434/v1",
+            "model": "Malplena uzas llama3.2.",
+            "effort": "Uzata kiam la modelo tion subtenas.",
+            "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
+            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+          }
+        },
+        "provider_azure": {
+          "title": "Azure OpenAI",
+          "description": "Azure-finpunkto, deplojo kaj ŝlosilo.",
+          "data": {
+            "api_key": "Azure-API-ŝlosilo",
+            "api_base": "Finpunkto",
+            "model": "Deplojo",
+            "azure_api_version": "API-versio",
+            "effort": "Peno",
+            "low_token": "Malmultaj tokenoj",
+            "assist": "Ankaŭ uzi en Assist"
+          },
+          "data_description": {
+            "api_key": "La Azure OpenAI-ŝlosilo. Lasu malplena dum redakto por konservi la konservitan ŝlosilon.",
+            "api_base": "https://YOUR.openai.azure.com",
+            "model": "La nomo de la deplojo.",
+            "azure_api_version": "Default 2024-10-21.",
+            "effort": "Uzata kiam la deplojo tion subtenas.",
+            "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
+            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+          }
+        },
+        "provider_compatible": {
+          "title": "OpenAI-kongrua",
+          "description": "Propra servilo kiu parolas la OpenAI-API.",
+          "data": {
+            "api_key": "API-ŝlosilo",
+            "api_base": "API-baza URL",
+            "model": "Modelo",
+            "effort": "Peno",
+            "low_token": "Malmultaj tokenoj",
+            "assist": "Ankaŭ uzi en Assist"
+          },
+          "data_description": {
+            "api_key": "Lasu malplena dum redakto por konservi la konservitan ŝlosilon.",
+            "api_base": "Baza URL de la servilo, inkluzive /v1 se ĝi uzas tiun vojon.",
+            "model": "Modelnomo sur tiu servilo.",
+            "effort": "Uzata kiam la servilo tion subtenas.",
+            "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
+            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+          }
+        }
+      },
+      "abort": {
+        "reconfigure_successful": "Agento ĝisdatigita."
+      }
+    }
+  },
+  "selector": {
+    "api_provider": {
+      "options": {
+        "openai": "OpenAI",
+        "anthropic": "Claude (Anthropic)",
+        "gemini": "Google Gemini",
+        "deepseek": "DeepSeek",
+        "qwen": "Qwen (Alibaba)",
+        "xai": "Grok (xAI)",
+        "openrouter": "OpenRouter",
+        "ollama": "Loka Ollama",
+        "azure": "Azure OpenAI",
+        "compatible": "OpenAI-kongrua (propra baza URL)"
+      }
+    },
+    "agent_provider": {
+      "options": {
+        "cursor": "Cursor",
+        "openai": "OpenAI",
+        "anthropic": "Claude (Anthropic)",
+        "gemini": "Google Gemini",
+        "deepseek": "DeepSeek",
+        "qwen": "Qwen (Alibaba)",
+        "xai": "Grok (xAI)",
+        "openrouter": "OpenRouter",
+        "ollama": "Loka Ollama",
+        "azure": "Azure OpenAI",
+        "compatible": "OpenAI-kongrua (propra baza URL)"
+      }
+    },
+    "effort": {
+      "options": {
+        "": "Defaŭlta",
+        "fast": "Rapida",
+        "high": "Alta",
+        "high_fast": "Alta rapida"
+      }
+    },
+    "mcp_kind": {
+      "options": {
+        "ha": "Home Assistant MCP-servilo (enkonstruita)",
+        "ha_mcp": "HA-MCP",
+        "coolver": "HA Vibecode Agent (Coolver)",
+        "custom": "Propra MCP-URL"
+      }
+    }
+  }
+}

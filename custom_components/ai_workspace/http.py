@@ -35,6 +35,7 @@ try:
 except ImportError:
     KEY_HASS = "hass"
 from .redact import redact
+from .small_talk import wants_house_tools
 from .store import Session, Store
 from .titles import accept_generated_title, clean_title, needs_title_summary, title_from_prompt
 
@@ -206,6 +207,7 @@ async def _runtime_chat(
     api_key: str = "",
     access_token: str | None = None,
     handoff: str = "",
+    question: str = "",
 ) -> AsyncIterator[dict]:
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
@@ -215,7 +217,7 @@ async def _runtime_chat(
     http: ClientSession = async_get_clientsession(hass)
     payload: dict[str, Any] = {
         "message": with_ui_context(attach_files_to_message(message, files or []), origin),
-        "question": message,
+        "question": (question or message).strip(),
         "origin": origin,
     }
     settings = _runtime(hass).get("settings")
@@ -281,6 +283,8 @@ async def async_agent_events(
     origin: str = "",
     access_token: str | None = None,
     handoff: str = "",
+    question: str = "",
+    tools: bool | None = None,
 ) -> AsyncIterator[dict]:
     """Run one turn for Assist or any caller that is not an HTTP chat request."""
     store: Store = _runtime(hass)["store"]
@@ -302,6 +306,7 @@ async def async_agent_events(
             api_key=str(getattr(provider, "api_key", "") or ""),
             access_token=access_token,
             handoff=handoff,
+            question=question,
         ):
             yield event
         return
@@ -315,89 +320,9 @@ async def async_agent_events(
         access_token=access_token,
         frontend_origin=origin,
         language=language,
+        tools=tools,
     ):
         yield event
-
-
-async def _import_runtime_sessions(hass: HomeAssistant, request: web.Request, store: Store, user_id: str) -> None:
-    data = _runtime(hass)
-    base = str((data.get("runtime_url") or "")).rstrip("/")
-    if not base:
-        return
-    http: ClientSession = async_get_clientsession(hass)
-    try:
-        resp = await http.get(
-            f"{base}/api/sessions",
-            headers=_runtime_headers(request),
-            timeout=ClientTimeout(total=8),
-        )
-        if resp.status != 200:
-            resp.release()
-            return
-        items = await resp.json()
-        resp.release()
-    except Exception:
-        logger.debug("runtime session import skipped", exc_info=True)
-        return
-    if not isinstance(items, list):
-        return
-    for item in items:
-        if not isinstance(item, dict):
-            continue
-        raw = item.get("id")
-        if raw is None:
-            raw = item.get("session_id")
-        if isinstance(raw, (int, float)):
-            sid = str(int(raw)) if float(raw).is_integer() else ""
-        elif isinstance(raw, str):
-            sid = raw.strip()
-        else:
-            sid = ""
-        if not sid or len(sid) > 128:
-            continue
-        try:
-            added = await hass.async_add_executor_job(
-                store.import_session,
-                user_id,
-                sid,
-                str(item.get("provider") or "cursor"),
-                str(item.get("title") or "New Chat"),
-                str(item.get("agent_id") or "") or None,
-                str(item.get("created_at") or ""),
-                str(item.get("updated_at") or ""),
-            )
-        except Exception:
-            logger.debug("runtime session import skipped", exc_info=True)
-            continue
-        if not added:
-            existing = await hass.async_add_executor_job(store.list_messages, sid)
-            if existing:
-                continue
-        try:
-            detail = await http.get(
-                f"{base}/api/sessions/{sid}",
-                headers=_runtime_headers(request),
-                timeout=ClientTimeout(total=8),
-            )
-        except Exception:
-            continue
-        if detail.status != 200:
-            detail.release()
-            continue
-        body = await detail.json()
-        detail.release()
-        for message in body.get("messages") or []:
-            if not isinstance(message, dict):
-                continue
-            events = message.get("events") or []
-            blob = events if isinstance(events, str) else json.dumps(events, ensure_ascii=False)
-            await hass.async_add_executor_job(
-                store.add_message,
-                sid,
-                str(message.get("role") or "assistant"),
-                str(message.get("content") or ""),
-                blob,
-            )
 
 
 def _send_provider(data: dict[str, Any], session: Session):
@@ -569,7 +494,7 @@ class UiView(HomeAssistantView):
                 "allowed": bool(getattr(user, "is_admin", False) or settings.allow_users),
                 "stt": settings.stt_engine,
                 "tts": settings.tts_engine,
-                "speak": bool(settings.speak_replies and settings.tts_engine and settings.tts_engine != "off"),
+                "speak": bool(settings.speak_replies),
             }
         )
 
@@ -634,11 +559,6 @@ class SessionsView(HomeAssistantView):
         hass: HomeAssistant = _hass(request)
         store: Store = _runtime(hass)["store"]
         user_id = _user_id(request)
-        try:
-            await _import_runtime_sessions(hass, request, store, user_id)
-        except Exception:
-            logger.debug("runtime session import skipped", exc_info=True)
-        await _prune_user_chats(hass, store, user_id, request)
         sessions = await hass.async_add_executor_job(store.list_sessions, user_id)
         return self.json([_session_dict(item) for item in sessions])
 
@@ -751,10 +671,8 @@ class ChatView(HomeAssistantView):
         requested = str(body.get("agent") or body.get("provider") or session.provider)
         providers = data.get("providers") or {}
         known_assist = assist_agent_ids(hass)
-        switched = False
         if requested and (requested in providers or requested in known_assist):
             if requested != session.provider:
-                switched = True
                 await hass.async_add_executor_job(store.set_provider, _user_id(request), session.id, requested)
                 session.provider = requested
         assist = session.provider in known_assist
@@ -765,6 +683,7 @@ class ChatView(HomeAssistantView):
             await async_bind_runtime(hass, data)
             providers = data.get("providers") or {}
         provider = None if assist else (providers.get(session.provider) or _send_provider(data, session))
+        low_token = bool(getattr(getattr(provider, "settings", None), "low_token", False))
         images = parse_client_images(body.get("images"))
         files = parse_client_files(body.get("files"))
         message = caption_for(str(body.get("message") or ""), len(images), len(files))
@@ -785,25 +704,33 @@ class ChatView(HomeAssistantView):
         )
         await hass.async_add_executor_job(store.rename_if_default, session.id, title_from_prompt(message))
         count = await hass.async_add_executor_job(lambda: len(store.list_messages(session.id)))
-        suggest = getattr(provider, "suggest_title", None) if count <= 1 and needs_title_summary(message) else None
-        outbound = attach_files_to_message(message, files)
-        if page_note:
+        suggest = (
+            None
+            if low_token
+            else getattr(provider, "suggest_title", None)
+            if count <= 1 and needs_title_summary(message)
+            else None
+        )
+        outbound = message if low_token else attach_files_to_message(message, files)
+        if page_note and not low_token:
             outbound = f"{page_note}\n\n{outbound}"
 
         language = str(body.get("language") or "").strip()
         user_id = _user_id(request)
-        note = await hass.async_add_executor_job(other_chat_note, store, user_id, session.id, message)
+        cross = bool(getattr(settings, "cross_chat", False))
+        note = (
+            ""
+            if low_token
+            else await hass.async_add_executor_job(
+                other_chat_note, store, user_id, session.id, message, cross
+            )
+        )
         if note:
             outbound = f"{outbound}\n\n{note}"
         handoff = ""
         if assist or getattr(provider, "kind", "") == "cursor":
             rows = await hass.async_add_executor_job(store.list_messages, session.id)
-            handoff = handoff_note(rows)
-            if handoff and switched:
-                if assist:
-                    page_note = f"{handoff}\n\n{page_note}" if page_note else handoff
-                elif getattr(provider, "kind", "") == "cursor":
-                    outbound = f"{handoff}\n\n{outbound}"
+            handoff = handoff_note(rows, session.title)
         access_token = _bearer(request)
         runtime_headers = _runtime_headers(request)
 
@@ -840,6 +767,7 @@ class ChatView(HomeAssistantView):
                     api_key=str(getattr(provider, "api_key", "") or ""),
                     access_token=access_token,
                     handoff=handoff,
+                    question=message,
                 ):
                     yield event
                 return
@@ -854,6 +782,7 @@ class ChatView(HomeAssistantView):
                 frontend_origin=origin,
                 images=images,
                 language=language,
+                tools=bool(images) or bool(files) or wants_house_tools(message),
             ):
                 yield event
 

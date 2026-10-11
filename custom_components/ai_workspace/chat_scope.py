@@ -50,11 +50,25 @@ _STOP = frozenset(
     }
 )
 _PLACEHOLDERS = frozenset({"", "new chat", "neuer chat"})
-_HANDOFF_MAX = 12
-_HANDOFF_CLIP = 800
+_HANDOFF_MAX = 16
+_HANDOFF_CLIP = 1600
+_TABLE_LINE = re.compile(
+    r"""
+    ^\s*
+    (
+      \|.*\|
+      | \|?[\s:|-]*---[\s:|-]*
+      | [^\n|]+\s\|\s[^\n|]+(\s\|\s[^\n|]*)*
+    )
+    \s*$
+    """,
+    re.VERBOSE,
+)
 HANDOFF_LEAD = (
-    "This is the same chat. The transcript below is the conversation so far. "
-    "Continue from it. Do not greet as if this is a new chat."
+    "This is the same chat. The transcript below is the conversation so far, "
+    "including replies from other agents. "
+    "Continue from it. Do not greet as if this is a new chat, and do not say the chat was empty. "
+    "If the user says to go ahead, do the last thing you offered."
 )
 _HANDOFF_LEAD = HANDOFF_LEAD
 
@@ -63,9 +77,12 @@ def _words(text: str) -> set[str]:
     return {word.casefold() for word in _WORD.findall(text or "") if word.casefold() not in _STOP}
 
 
-def matching_chats(message: str, chats: list[dict], current_id: str) -> list[dict]:
-    """Other chats whose title the user actually referred to."""
-    if not _CUES.search(message or ""):
+def matching_chats(message: str, chats: list[dict], current_id: str, cross: bool = False) -> list[dict]:
+    """Other chats whose title overlaps this message.
+
+    Without Cross chat, the message also has to mention a chat.
+    """
+    if not cross and not _CUES.search(message or ""):
         return []
     asked = _words(message)
     if not asked:
@@ -105,10 +122,10 @@ def excerpt_for(chats: list[dict]) -> str:
     return "\n\n".join(blocks)
 
 
-def other_chat_note(store, user_id: str, session_id: str, message: str) -> str:
+def other_chat_note(store, user_id: str, session_id: str, message: str, cross: bool = False) -> str:
     sessions = store.list_sessions(user_id)
     catalog = [{"id": item.id, "title": item.title} for item in sessions]
-    picked = matching_chats(message, catalog, session_id)
+    picked = matching_chats(message, catalog, session_id, cross=bool(cross))
     loaded = []
     for chat in picked:
         rows = store.list_messages(chat["id"])
@@ -120,6 +137,15 @@ def other_chat_note(store, user_id: str, session_id: str, message: str) -> str:
             }
         )
     return excerpt_for(loaded)
+
+
+def _without_tables(text: str) -> str:
+    kept: list[str] = []
+    for line in str(text or "").splitlines():
+        if _TABLE_LINE.match(line):
+            continue
+        kept.append(line)
+    return "\n".join(kept)
 
 
 def _failed_reply(row) -> bool:
@@ -138,14 +164,14 @@ def _failed_reply(row) -> bool:
     return not content or content in errors
 
 
-def handoff_note(rows) -> str:
-    """Transcript when Cursor starts a new agent in this chat (switch or MCP change)."""
+def handoff_note(rows, title: str = "") -> str:
+    """Prior turns from this HA chat, used only when Cursor may have lost the thread."""
     lines: list[str] = []
     for row in rows or []:
         role = str(getattr(row, "role", "") or "")
         if role not in {"user", "assistant"} or _failed_reply(row):
             continue
-        body = " ".join(str(getattr(row, "content", "") or "").split())
+        body = " ".join(_without_tables(str(getattr(row, "content", "") or "")).split())
         if not body:
             continue
         label = "User" if role == "user" else "Assistant"
@@ -156,13 +182,23 @@ def handoff_note(rows) -> str:
         return ""
     if len(lines) > _HANDOFF_MAX:
         lines = lines[-_HANDOFF_MAX:]
-    return f"{_HANDOFF_LEAD}\n\n" + "\n".join(lines)
+    name = " ".join(str(title or "").split())
+    if name and name.casefold() not in _PLACEHOLDERS:
+        lead = (
+            f'This is the same chat titled "{name[:80]}". '
+            "The transcript below is the conversation so far, including replies from other agents. "
+            "Continue from it. Do not greet as if this is a new chat, and do not say the chat was empty. "
+            "If the user says to go ahead, do the last thing you offered."
+        )
+    else:
+        lead = _HANDOFF_LEAD
+    return f"{lead}\n\n" + "\n".join(lines)
 
 
-def attach_handoff(message: str, rows, needed: bool) -> str:
+def attach_handoff(message: str, rows, needed: bool = True, title: str = "") -> str:
     if not needed:
         return message
-    note = handoff_note(rows)
+    note = handoff_note(rows, title)
     if not note:
         return message
     return f"{note}\n\n{message}"

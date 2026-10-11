@@ -27,6 +27,7 @@ from .const import (
     CONF_AGENT_ID,
     CONF_EFFORT,
     CONF_HUB_ID,
+    CONF_LOW_TOKEN,
     CONF_MODE,
     CONF_ROLE,
     CONF_MODEL,
@@ -108,6 +109,8 @@ def _fields_schema(step: str, current: dict, borrows: list[dict[str, str]], *, n
         fields[vol.Optional(CONF_API_KEY, default="")] = _PASSWORD
         fields.update(_optional_model(current))
     fields.update(_effort_field(current))
+    if step != "cursor":
+        fields[vol.Optional(CONF_LOW_TOKEN, default=bool(current.get(CONF_LOW_TOKEN, False)))] = cv.boolean
     fields[vol.Optional(CONF_ASSIST, default=assist_enabled(current, new=new))] = cv.boolean
     return vol.Schema(fields)
 
@@ -270,6 +273,7 @@ class ProviderSteps:
                     CONF_API_BASE: "" if provider == MODE_CURSOR else base,
                     CONF_MODEL: model,
                     CONF_EFFORT: str(merged.get(CONF_EFFORT) or ""),
+                    CONF_LOW_TOKEN: False if provider == MODE_CURSOR else bool(user_input.get(CONF_LOW_TOKEN, False)),
                     CONF_ASSIST: bool(
                         user_input.get(
                             CONF_ASSIST,

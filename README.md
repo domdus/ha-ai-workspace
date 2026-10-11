@@ -186,7 +186,7 @@ After the Runtime is up and running: **Settings → Devices & services → Add i
 
 ## Local AI (Ollama)
 
-Same as Cloud AI, with **Ollama** (or LM Studio) on this machine. Offline: the chat stays in the house. The model must support tool calls.
+Same as Cloud AI, with **Ollama** (or LM Studio) on this machine. Offline: the chat stays in the house. The model must support tool calls. Turn on **Low token** on that agent when the machine is small: the chat then sends a short prompt and no tools, so it can answer, but it cannot check or change the house.
 
 Install as in [Cloud AI](#cloud-ai-api-provider-quick). Pick **Ollama** and point the API Base URL at your Ollama server.
 
@@ -205,7 +205,7 @@ It does not control Home Assistant edit links. Those are added on every reply, s
 | Option | What it does |
 |---|---|
 | **AI Workspace** | Shared chat settings, and one row per MCP connection. **Add connection** puts another row here |
-| **AI Agents** | One row per Cursor, OpenAI, Claude, Gemini, OpenRouter, Ollama, Azure, or other provider. **Add agent** puts another row here. Effort is Fast, High, or High fast when the model supports it |
+| **AI Agents** | One row per Cursor, OpenAI, Claude, Gemini, OpenRouter, Ollama, Azure, or other provider. **Add agent** puts another row here. Effort is Fast, High, or High fast when the model supports it. **Low token** (not on Cursor) sends a short prompt and no tools |
 | **Copy key from** | Uses the key already stored by OpenRouter, OpenAI, Claude, Gemini, Ollama, or Azure in Home Assistant. That integration stays |
 | **MCP type** | Asked once, when you add AI Workspace: built-in MCP Server, HA-MCP, HA Vibecode Agent, or a custom URL. It is saved as the first connection row |
 | **MCP URL** | Empty uses auto-detect. Paste the HA-MCP webhook or a custom URL only if needed |
@@ -214,10 +214,12 @@ It does not control Home Assistant edit links. Those are added on every reply, s
 | **System prompt** | Behaviour above. Empty uses the built-in prompt |
 | **Show floating AI button on every page** | Bottom-right robot icon. Hidden on Settings |
 | **Speech to text** | Browser speech, or a Home Assistant engine such as Whisper. The microphone itself needs https:// or localhost. Browsers block it on a plain http:// LAN address |
-| **Text to speech** | Piper or another Home Assistant voice. Spoken replies play on plain http:// |
+| **Text to speech** | Piper or another Home Assistant voice. The speaker button plays a reply on plain http://. Off leaves replies as text |
+| **Speak replies automatically** | Off by default. When a voice is selected, each reply is read as it arrives. Off keeps the speaker button so you can play a reply yourself |
 | **Show dictate button** | Microphone in the prompt. On by default |
 | **Show AI Workspace in the sidebar** | Sidebar item. `/ai-workspace` still works if this is off |
 | **Chats to keep** | Newest unpinned chats per person (default 30). Pinned chats are always kept |
+| **Cross chat** | Off by default. When on, a question can use another chat whose title shares words with it. You do not have to mention chat. A short excerpt only, and that chat is not changed |
 | **Config catalog** | Off by default. Wiring of a named item (triggers, related ids). Not for listing automations or on/off — live MCP is shorter for that. Not live state, history, or traces |
 | **Also use in Assist** | On each agent. Off (default for new agents) keeps the chat in AI Workspace. On adds a Voice assistants pipeline, no second form under Manage assistants. Agents added before this option stay on |
 

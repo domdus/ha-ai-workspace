@@ -19,6 +19,7 @@ from .const import (
     API_SHORT_LABELS,
     DEFAULT_AZURE_API_VERSION,
     DEFAULT_SYSTEM_PROMPT,
+    LOW_TOKEN_PROMPT,
     EFFORT_FAST,
     EFFORT_HIGH,
     EFFORT_HIGH_FAST,
@@ -32,10 +33,11 @@ from .const import (
 )
 from .coolver import CoolverClient
 from .mcp_client import McpError, McpHttpClient
-from .mcp_config import public_tool_names
+from .mcp_config import public_tool_names, with_mcp_auth
 from .mcp_resolve import async_resolve_mcp_url
 from .models import ProviderInfo, Settings
 from .redact import redact
+from .small_talk import wants_house_tools
 from .store import Session, Store
 from .titles import clean_title, title_prompt
 from .tool_result import fit_tool_result
@@ -50,6 +52,8 @@ _IDENTITY = (
 _MAX_ROUNDS = 8
 _DESC_MAX = 180
 _HISTORY_MAX = 12
+_LOW_TOKEN_CHARS = 1200
+_LOW_TOKEN_REPLY = 256
 _PROPS_MAX = 16
 _WAIT = re.compile(r"try again in ([\d.]+)\s*(ms|s)", re.I)
 
@@ -336,6 +340,8 @@ class ApiProvider:
         return default_api_model(self.settings.api_provider)
 
     def _system(self, origin: str = "", language: str = "") -> str:
+        if self.settings.low_token:
+            return with_language_rule(LOW_TOKEN_PROMPT, language)
         identity = _IDENTITY.format(label=self._label(), model=self._model())
         body = (self.settings.system_prompt or "").strip() or DEFAULT_SYSTEM_PROMPT
         text = f"{identity}\n\n{body}\n\n{ui_link_instructions(origin)}"
@@ -357,6 +363,7 @@ class ApiProvider:
         frontend_origin: str | None = None,
         images: list[dict] | None = None,
         language: str = "",
+        tools: bool | None = None,
     ) -> AsyncIterator[dict]:
         origin = str(frontend_origin or "").strip()
         language = str(language or "")
@@ -365,19 +372,70 @@ class ApiProvider:
         if not self.info.available:
             yield {"type": "error", "message": self.info.reason}
             return
-        bundle = McpBundle()
         http = self._http()
-        primary = next(iter(self.settings.mcp_servers.values()), {}) if self.settings.mcp_servers else {}
+        use_tools = wants_house_tools(message) if tools is None else bool(tools)
+        if pictures:
+            use_tools = True
+        if self.settings.low_token:
+            message = _clip(message, _LOW_TOKEN_CHARS)
+            yield {"type": "status", "text": "Working"}
+            logger.info(
+                "api chat provider=%s model=%s low_token=1",
+                self.settings.api_provider,
+                self._model(),
+            )
+            try:
+                empty = McpBundle()
+                if self.settings.api_provider == API_ANTHROPIC:
+                    stream = self._anthropic(http, [], message, empty, [], origin, [], language)
+                else:
+                    stream = self._openai(http, [], message, empty, [], origin, [], language)
+                async for event in stream:
+                    yield event
+            except (McpError, ClientError, TimeoutError, OSError, json.JSONDecodeError, RuntimeError) as exc:
+                logger.exception("api provider failed")
+                yield {"type": "error", "message": self._public(exc)}
+            return
+        if not use_tools:
+            yield {"type": "status", "text": "Working"}
+            logger.info(
+                "api chat provider=%s model=%s tools=off",
+                self.settings.api_provider,
+                self._model(),
+            )
+            history = await self.hass.async_add_executor_job(self.store.list_messages, session.id)
+            try:
+                empty = McpBundle()
+                if self.settings.api_provider == API_ANTHROPIC:
+                    stream = self._anthropic(http, history, message, empty, [], origin, pictures, language)
+                else:
+                    stream = self._openai(http, history, message, empty, [], origin, pictures, language)
+                async for event in stream:
+                    yield event
+            except (McpError, ClientError, TimeoutError, OSError, json.JSONDecodeError, RuntimeError) as exc:
+                logger.exception("api provider failed")
+                yield {"type": "error", "message": self._public(exc)}
+            return
+        bundle = McpBundle()
+        # Built-in /api/mcp only accepts a signed-in bearer.
+        authed = with_mcp_auth(
+            self.settings.mcp_servers,
+            access_token=str(access_token or ""),
+            mcp_token=str(self.settings.mcp_token or ""),
+            mcp_kind=str(self.settings.mcp_kind or ""),
+        )
+        primary = authed.get("mcp") or {}
         configured = str(primary.get("url") or "")
         headers = dict(primary.get("headers") or {})
         token = (self.settings.mcp_token or "").strip()
-        if self.settings.mcp_kind == MCP_HA:
+        auth_header = str(headers.get("Authorization") or "")
+        if auth_header.lower().startswith("bearer "):
+            token = auth_header[7:].strip()
+        elif self.settings.mcp_kind == MCP_HA:
             token = token or str(access_token or "").strip()
-        if token and "Authorization" not in headers:
-            headers["Authorization"] = f"Bearer {token}"
         mcp_url = await async_resolve_mcp_url(self.hass, self.settings.mcp_kind, configured, token)
         extra_clients: list[tuple[str, str, dict[str, str]]] = []
-        for name, cfg in (self.settings.mcp_servers or {}).items():
+        for name, cfg in authed.items():
             if name == "mcp" or not cfg.get("url"):
                 continue
             extra_clients.append((name, str(cfg.get("url") or ""), dict(cfg.get("headers") or {})))
@@ -430,7 +488,7 @@ class ApiProvider:
             yield {"type": "error", "message": self._public(exc)}
 
     async def suggest_title(self, user: str, assistant: str = "") -> str | None:
-        if not self.info.available:
+        if not self.info.available or self.settings.low_token:
             return None
         prompt = title_prompt(user, assistant)
         http = self._http()
@@ -497,7 +555,10 @@ class ApiProvider:
         headers = self._auth_headers()
         for _ in range(_MAX_ROUNDS):
             payload: dict[str, Any] = {"model": self._model(), "messages": messages}
-            self._effort_body(payload)
+            if self.settings.low_token:
+                payload["max_tokens"] = _LOW_TOKEN_REPLY
+            else:
+                self._effort_body(payload)
             if tools:
                 payload["tools"] = tools
                 if self.settings.api_provider == API_OPENAI:
@@ -554,11 +615,12 @@ class ApiProvider:
         for _ in range(_MAX_ROUNDS):
             payload: dict[str, Any] = {
                 "model": self._model(),
-                "max_tokens": 4096,
+                "max_tokens": _LOW_TOKEN_REPLY if self.settings.low_token else 4096,
                 "system": self._system(origin, language),
                 "messages": messages,
             }
-            self._effort_body(payload)
+            if not self.settings.low_token:
+                self._effort_body(payload)
             if tools:
                 payload["tools"] = tools
             data = await self._post(http, url, headers, payload)

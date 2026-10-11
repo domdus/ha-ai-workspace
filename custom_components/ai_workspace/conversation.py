@@ -16,8 +16,9 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .agents import Agent, agent_from_entry, entry_agents, is_agents, is_provider
 from .const import DOMAIN
-from .chat_scope import handoff_note
+from .chat_scope import handoff_note, other_chat_note
 from .http import _create_runtime_session, async_agent_events
+from .small_talk import wants_house_tools
 from .store import Store
 from .titles import accept_generated_title, needs_title_summary, title_from_prompt
 
@@ -233,7 +234,6 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
             return conversation.async_get_result_from_chat_log(user_input, chat_log)
 
         session = await self.hass.async_add_executor_job(store.get_session, user_id, conversation_id)
-        switched = False
         if session is None:
             if getattr(provider, "kind", "") == "cursor":
                 await _create_runtime_session(self.hass, user_id, conversation_id)
@@ -241,7 +241,6 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
                 store.create_session, user_id, self._agent_id, conversation_id
             )
         elif session.provider != self._agent_id:
-            switched = True
             await self.hass.async_add_executor_job(store.set_provider, user_id, session.id, self._agent_id)
             session.provider = self._agent_id
 
@@ -251,8 +250,19 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
             self._reply(chat_log, "This chat is already waiting on the agent.")
             return conversation.async_get_result_from_chat_log(user_input, chat_log)
 
-        extra = str(user_input.extra_system_prompt or "").strip()
+        low_token = bool(getattr(getattr(provider, "settings", None), "low_token", False))
+        extra = "" if low_token else str(user_input.extra_system_prompt or "").strip()
         outbound = f"{extra}\n\n{text}" if extra else text
+        cross = bool(getattr(data.get("settings"), "cross_chat", False))
+        note = (
+            ""
+            if low_token
+            else await self.hass.async_add_executor_job(
+                other_chat_note, store, user_id, session.id, text, cross
+            )
+        )
+        if note:
+            outbound = f"{outbound}\n\n{note}"
         origin = str(self.hass.config.external_url or self.hass.config.internal_url or "").rstrip("/")
         language = str(user_input.language or "")
         suggest = None
@@ -265,10 +275,14 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
             handoff = ""
             if getattr(provider, "kind", "") == "cursor":
                 rows = await self.hass.async_add_executor_job(store.list_messages, session.id)
-                handoff = handoff_note(rows)
-                if switched and handoff:
-                    outbound = f"{handoff}\n\n{outbound}"
-            suggest = getattr(provider, "suggest_title", None) if count <= 1 and needs_title_summary(text) else None
+                handoff = handoff_note(rows, session.title)
+            suggest = (
+                None
+                if low_token
+                else getattr(provider, "suggest_title", None)
+                if count <= 1 and needs_title_summary(text)
+                else None
+            )
             parts: list[str] = []
             tools: list[dict[str, Any]] = []
             final: str | None = None
@@ -288,6 +302,8 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
                     origin=origin,
                     access_token=access_token,
                     handoff=handoff,
+                    question=text,
+                    tools=wants_house_tools(text),
                 ):
                     kind = event.get("type")
                     if kind == "text":

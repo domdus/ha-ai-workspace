@@ -87,7 +87,7 @@ def test_replaces_cached_agent_when_mcp_changes(tmp_path: Path, monkeypatch) -> 
         )
     )
     assert first.agent_id == "old-agent"
-    assert not first_new
+    assert first_new
     assert second.agent_id == "agent-1"
     assert second_new
     assert created[0].mcp_servers == {
@@ -176,9 +176,68 @@ def test_keeps_agent_when_only_mcp_token_changes(tmp_path: Path, monkeypatch) ->
     )
 
 
-def test_apply_handoff_only_when_agent_is_new() -> None:
+def test_live_follow_up_reuses_agent_until_idle(tmp_path: Path, monkeypatch) -> None:
+    _install_fake_sdk(monkeypatch)
+
+    created: list[str] = []
+
+    class FakeClient:
+        async def create_agent(self, options):
+            del options
+            created.append("new")
+            return SimpleNamespace(agent_id="fresh")
+
+        async def resume_agent(self, agent_id, options):
+            del options
+            return SimpleNamespace(agent_id=agent_id)
+
+    runtime = CursorRuntime(_settings(tmp_path))
+    runtime._client = FakeClient()
+    session = Session("s1", "u1", "cursor", "Chat", "keep-me", "t", "t")
+    first, restore = asyncio.run(runtime.open_agent(session, {}))
+    second, follow = asyncio.run(runtime.open_agent(session, {}))
+    assert first.agent_id == "keep-me"
+    assert restore
+    assert not follow
+    assert created == []
+    runtime._used_at[session.id] -= 200
+    third, after_pause = asyncio.run(runtime.open_agent(session, {}))
+    assert third.agent_id == "fresh"
+    assert after_pause
+    assert created == ["new"]
+
+
+def test_old_chat_does_not_resume_empty_thread(tmp_path: Path, monkeypatch) -> None:
+    _install_fake_sdk(monkeypatch)
+    resumed: list[str] = []
+
+    class FakeClient:
+        async def create_agent(self, options):
+            del options
+            return SimpleNamespace(agent_id="fresh")
+
+        async def resume_agent(self, agent_id, options):
+            del options
+            resumed.append(agent_id)
+            return SimpleNamespace(agent_id=agent_id)
+
+    runtime = CursorRuntime(_settings(tmp_path))
+    runtime._client = FakeClient()
+    session = Session("s1", "u1", "cursor", "Chat", "old-cloud", "t", "2020-01-01T00:00:00+00:00")
+    agent, fresh = asyncio.run(runtime.open_agent(session, {}))
+    assert agent.agent_id == "fresh"
+    assert fresh
+    assert resumed == []
+
+
+def test_apply_handoff_goes_with_every_follow_up() -> None:
     note = "This is the same chat.\n\nUser: Status?"
     assert apply_handoff("And now?", note, True).startswith("This is the same chat.")
-    assert apply_handoff("And now?", note, False) == "And now?"
+    again = apply_handoff("And now?", note, False)
+    assert "User: Status?" in again
+    assert again.endswith("And now?")
     already = f"{note}\n\nAnd now?"
     assert apply_handoff(already, note, True) == already
+    message = "System prompt about the house.\n\nWhat did we talk about?"
+    placed = apply_handoff(message, note, True, question="What did we talk about?")
+    assert placed.index("System prompt") < placed.index("User: Status?") < placed.index("What did we talk about?")

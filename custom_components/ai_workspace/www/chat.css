@@ -233,15 +233,19 @@ ha-button.new-chat {
   height: 36px;
 }
 
-.session-row .item-text {
-  padding-inline-end: 32px;
+.sessions ha-list-item-button::part(end) {
+  display: flex;
+  align-items: center;
+  align-self: center;
+}
+
+.session-row ha-dropdown.session-menu {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
 }
 
 .session-row .session-more {
-  position: absolute;
-  inset-inline-end: 2px;
-  top: 50%;
-  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -256,7 +260,6 @@ ha-button.new-chat {
   color: var(--sidebar-icon-color, var(--sidebar-text-color));
   cursor: pointer;
   opacity: 0;
-  transform: translateY(-50%);
 }
 
 .session-row .session-more ha-icon {
@@ -287,41 +290,26 @@ ha-button.new-chat {
   }
 }
 
-.session-menu {
-  position: absolute;
-  z-index: 30;
-  min-width: 148px;
-  padding: 4px 0;
-  border-radius: var(--ha-border-radius-sm, 8px);
-  background: var(--card-background-color, var(--ha-card-background));
+.dialog-copy {
+  margin: 0;
   color: var(--primary-text-color);
-  box-shadow: var(--ha-card-box-shadow);
-  border: 1px solid var(--ha-color-border-neutral-normal, var(--divider-color));
 }
 
-.session-menu button {
-  display: block;
+.dialog-field {
+  box-sizing: border-box;
   width: 100%;
   margin: 0;
-  padding: 10px 16px;
-  border: 0;
-  background: transparent;
-  color: inherit;
+  padding: 10px 12px;
+  border: 1px solid var(--ha-color-border-neutral-normal, var(--divider-color));
+  border-radius: var(--ha-border-radius-md, 8px);
+  background: var(--ha-color-form-background, var(--input-fill-color, transparent));
+  color: var(--primary-text-color);
   font: inherit;
-  text-align: start;
-  cursor: pointer;
 }
 
-.session-menu button:hover,
-.session-menu button:focus-visible {
-  background: var(
-    --ha-color-fill-neutral-quiet-hover,
-    color-mix(in srgb, var(--primary-text-color) 8%, transparent)
-  );
-}
-
-.session-menu button.danger {
-  color: var(--error-color);
+.dialog-field:focus {
+  outline: none;
+  border-color: var(--primary-color);
 }
 
 .chat {
@@ -834,81 +822,6 @@ h1 {
     color-mix(in srgb, var(--primary-text-color) 8%, transparent)
   );
   color: var(--primary-text-color);
-}
-
-.agent-menu {
-  position: absolute;
-  z-index: 20;
-  bottom: calc(100% + 6px);
-  left: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 220px;
-  max-width: min(320px, 80vw);
-  margin: 0;
-  padding: 6px;
-  border: 1px solid var(--ha-color-border-neutral-normal, var(--divider-color));
-  border-radius: 14px;
-  background: var(--card-background-color, var(--ha-card-background, var(--primary-background-color)));
-  color: var(--primary-text-color);
-  box-shadow: 0 10px 32px color-mix(in srgb, var(--primary-text-color) 18%, transparent);
-}
-
-.agent-menu[hidden] {
-  display: none;
-}
-
-.agent-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  margin: 0;
-  padding: 8px 10px;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  font-size: var(--ha-font-size-s, 0.85rem);
-  line-height: 1.3;
-  text-align: start;
-  cursor: pointer;
-}
-
-.agent-option-name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.agent-option ha-icon {
-  --mdc-icon-size: 16px;
-  width: 16px;
-  height: 16px;
-  flex: 0 0 auto;
-  color: var(--primary-color);
-}
-
-.agent-option:hover,
-.agent-option:focus-visible {
-  background: var(
-    --ha-color-fill-neutral-quiet-hover,
-    color-mix(in srgb, var(--primary-text-color) 8%, transparent)
-  );
-  outline: none;
-}
-
-.agent-option[aria-selected="true"] {
-  background: color-mix(in srgb, var(--primary-color) 14%, transparent);
-}
-
-.agent-option:disabled {
-  opacity: 0.45;
-  cursor: default;
 }
 
 .next-row {

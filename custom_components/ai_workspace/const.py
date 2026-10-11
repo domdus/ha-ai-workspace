@@ -144,6 +144,8 @@ CONF_ENABLE_SIDEBAR = "enable_sidebar"
 CONF_ENABLE_DICTATE = "enable_dictate"
 CONF_ALLOW_USERS = "allow_users"
 CONF_HOUSE_MAP = "house_map"
+CONF_CROSS_CHAT = "cross_chat"
+CONF_LOW_TOKEN = "low_token"
 CONF_KEEP_CHATS = "keep_chats"
 DEFAULT_KEEP_CHATS = 30
 CONF_EFFORT = "effort"
@@ -240,6 +242,10 @@ Home Assistant is reached only through the connected MCP tools. Use those tools 
 Be concise. Call tools without announcing them; the UI already shows that. If a tool fails, say so. Ask before doing something hard to undo, such as deleting automations, unlocking doors, or turning off many devices at once.
 
 """
+LOW_TOKEN_PROMPT = (
+    "You help with this Home Assistant. Answer in a few short sentences. "
+    "You cannot check or change the house in this mode."
+)
 LANGUAGE_INSTRUCTION = (
     "Always answer in the same language the user wrote their latest message in."
 )

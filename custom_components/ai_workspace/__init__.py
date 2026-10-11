@@ -45,6 +45,7 @@ from .const import (
     CONF_ENABLE_SIDEBAR,
     CONF_ALLOW_USERS,
     CONF_ENABLE_DICTATE,
+    CONF_CROSS_CHAT,
     CONF_HOUSE_MAP,
     CONF_KEEP_CHATS,
     DEFAULT_KEEP_CHATS,
@@ -85,7 +86,7 @@ from .const import (
 from .discovery import MISSING_RUNTIME, async_bind_runtime, async_resolve_runtime_url
 from .http import register_views
 from .mcp_config import clean_mcp_extra, mcp_servers_from_saved, server_slug
-from .mcp_resolve import async_resolve_mcp_url, mcp_kind_of
+from .mcp_resolve import async_resolve_mcp_url, infer_mcp_kind, mcp_kind_of
 from .models import Settings
 
 _LOGGER = logging.getLogger(__name__)
@@ -111,6 +112,7 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Optional(CONF_ENABLE_DICTATE, default=True): cv.boolean,
                 vol.Optional(CONF_ALLOW_USERS, default=False): cv.boolean,
                 vol.Optional(CONF_HOUSE_MAP, default=False): cv.boolean,
+                vol.Optional(CONF_CROSS_CHAT, default=False): cv.boolean,
                 vol.Optional(CONF_KEEP_CHATS, default=DEFAULT_KEEP_CHATS): cv.positive_int,
                 vol.Optional(CONF_STT_ENGINE, default=STT_BROWSER): cv.string,
                 vol.Optional(CONF_TTS_ENGINE, default=TTS_OFF): cv.string,
@@ -268,13 +270,19 @@ def _settings(hass: HomeAssistant, entry: ConfigEntry, mcp_url: str | None = Non
         from .house_map import mcp_server_config
 
         servers = {**servers, "catalog": mcp_server_config(hass, token)}
+    tts = str(data.get(CONF_TTS_ENGINE) or TTS_OFF).strip() or TTS_OFF
+    kind = mcp_kind_of(data)
+    if primary:
+        inferred = infer_mcp_kind(str(primary.get("url") or ""))
+        if inferred in {MCP_HA, MCP_HA_MCP, MCP_COOLVER}:
+            kind = inferred
     return Settings(
         data_dir=root,
         workspace_dir=root / "workspace",
         state_dir=root / "cursor-state",
         cursor_api_key=str(data.get(CONF_CURSOR_API_KEY) or "").strip(),
         model=_model_for_mode(data),
-        mcp_kind=mcp_kind_of(data),
+        mcp_kind=kind,
         mcp_token=token,
         mcp_servers=servers,
         enable_overlay=bool(data.get(CONF_ENABLE_OVERLAY, True)),
@@ -282,6 +290,7 @@ def _settings(hass: HomeAssistant, entry: ConfigEntry, mcp_url: str | None = Non
         enable_dictate=bool(data.get(CONF_ENABLE_DICTATE, True)),
         allow_users=bool(data.get(CONF_ALLOW_USERS, False)),
         house_map=house_map,
+        cross_chat=bool(data.get(CONF_CROSS_CHAT, False)),
         keep_chats=_keep_chats(data),
         mode=_mode(data),
         api_provider=str(data.get(CONF_API_PROVIDER) or "openai").strip() or "openai",
@@ -291,8 +300,8 @@ def _settings(hass: HomeAssistant, entry: ConfigEntry, mcp_url: str | None = Non
         effort=str(data.get(CONF_EFFORT) or "").strip(),
         azure_api_version=str(data.get(CONF_AZURE_API_VERSION) or DEFAULT_AZURE_API_VERSION).strip(),
         stt_engine=str(data.get(CONF_STT_ENGINE) or STT_BROWSER).strip() or STT_BROWSER,
-        tts_engine=str(data.get(CONF_TTS_ENGINE) or TTS_OFF).strip() or TTS_OFF,
-        speak_replies=bool(data.get(CONF_SPEAK_REPLIES, False)),
+        tts_engine=tts,
+        speak_replies=bool(data.get(CONF_SPEAK_REPLIES, False)) and tts != TTS_OFF,
     )
 
 
@@ -343,6 +352,7 @@ def _one_provider(hass: HomeAssistant, settings: Settings, agent, runtime_url: s
         api_base=agent.api_base,
         model=agent.model,
         effort=agent.effort,
+        low_token=agent.low_token,
         azure_api_version=agent.azure_api_version,
         agent_id=agent.id,
         agent_title=agent.title,

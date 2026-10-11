@@ -3,6 +3,8 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import time
+from datetime import datetime, timezone
 from typing import Any, AsyncIterator, Callable
 
 from app.events import map_sdk_message
@@ -12,6 +14,7 @@ from app.mcp_fit import FitRegistry
 from app.providers.base import ProviderInfo
 from app.redact import redact
 from app.settings import Settings
+from app.small_talk import wants_house_tools
 from app.store import Session
 from app.titles import clean_title, title_prompt
 
@@ -24,6 +27,11 @@ _MISSING_KEY = (
 )
 
 
+# After this pause the saved Cursor thread is often empty, so open a new agent.
+# The HA transcript is still pasted on every turn, including a quick follow-up.
+_IDLE_RESTORE = 120.0
+
+
 class CursorRuntime:
     """One local Cursor bridge for the process. Agent handles stay open so follow-ups keep context."""
 
@@ -32,6 +40,8 @@ class CursorRuntime:
         self._client: Any = None
         self._agents: dict[str, Any] = {}
         self._mcp_by_session: dict[str, str] = {}
+        self._used_at: dict[str, float] = {}
+        self._with_tools: set[str] = set()
         self._start_lock = None
         self.fit = FitRegistry(settings.data_dir / "mcp-fit-secret")
 
@@ -106,18 +116,24 @@ class CursorRuntime:
         fingerprint = config_key or _agent_fingerprint(mcp_servers, resolved_model, effort, key_tag)
         cached = self._agents.get(session.id)
         previous = self._mcp_by_session.get(session.id)
-        if cached is not None and previous == fingerprint:
+        cold = self._cold(session)
+        if cached is not None and previous == fingerprint and not cold:
+            self._touch(session.id)
             logger.info("reuse agent session=%s", session.id)
             return cached, False
         if cached is not None:
-            logger.info("mcp servers or model changed, replacing agent session=%s", session.id)
-            self._agents.pop(session.id, None)
+            if cold:
+                logger.info("chat idle, opening a fresh agent session=%s", session.id)
+            else:
+                logger.info("mcp servers or model changed, replacing agent session=%s", session.id)
+            self.drop(session.id)
         client = await self.client()
         options = self._agent_options(
             f"ha-{session.id[:8]}", mcp_servers, model=resolved_model, effort=effort, api_key=resolved_key
         )
         agent = None
-        resume_id = session.agent_id if previous in (None, fingerprint) else None
+        # A cold cloud thread often comes back empty. Start a new agent and let the HA transcript resume the chat.
+        resume_id = None if cold else (session.agent_id if previous in (None, fingerprint) else None)
         if resume_id:
             try:
                 logger.info("resume agent session=%s agent=%s", session.id, resume_id)
@@ -125,13 +141,17 @@ class CursorRuntime:
             except AgentNotFoundError:
                 logger.info("agent %s missing, creating a new one", resume_id)
                 agent = None
-        created = agent is None
         if agent is None:
             logger.info("create agent session=%s model=%s", session.id, _model_fingerprint(resolved_model))
             agent = await client.create_agent(options)
         self._agents[session.id] = agent
         self._mcp_by_session[session.id] = fingerprint
-        return agent, created
+        self._touch(session.id)
+        if mcp_servers:
+            self._with_tools.add(session.id)
+        else:
+            self._with_tools.discard(session.id)
+        return agent, True
 
     async def warm(self) -> None:
         try:
@@ -143,15 +163,34 @@ class CursorRuntime:
     def wrap_mcp(self, servers: dict) -> dict:
         return self.fit.wrap(servers, f"http://127.0.0.1:{self.settings.port}")
 
+    def _touch(self, session_id: str) -> None:
+        self._used_at[session_id] = time.monotonic()
+
+    def _idle(self, session_id: str) -> bool:
+        last = self._used_at.get(session_id)
+        if last is None:
+            return True
+        return (time.monotonic() - last) >= _IDLE_RESTORE
+
+    def _cold(self, session: Session) -> bool:
+        """True when this chat's Cursor thread should not be trusted."""
+        if session.id in self._used_at:
+            return self._idle(session.id)
+        return _session_idle(getattr(session, "updated_at", ""))
+
     def drop(self, session_id: str) -> None:
         self._agents.pop(session_id, None)
         self._mcp_by_session.pop(session_id, None)
+        self._used_at.pop(session_id, None)
+        self._with_tools.discard(session_id)
 
     async def aclose(self) -> None:
         client = self._client
         self._client = None
         self._agents.clear()
         self._mcp_by_session.clear()
+        self._used_at.clear()
+        self._with_tools.clear()
         if client is not None:
             await client.aclose()
 
@@ -178,6 +217,7 @@ class CursorProvider:
         effort: str = "",
         api_key: str = "",
         handoff: str = "",
+        question: str = "",
     ) -> AsyncIterator[dict]:
         key = (api_key or "").strip() or self.settings.cursor_api_key
         if not key:
@@ -202,13 +242,18 @@ class CursorProvider:
         used_model = (model or "").strip() or self.settings.model
         key_tag = hashlib.sha256(key.encode()).hexdigest()[:16] if key else ""
         config_key = _agent_fingerprint(mcp_servers, used_model, effort, key_tag)
-        mcp_servers = self.runtime.wrap_mcp(mcp_servers)
-        logger.info("cursor model=%s", used_model)
+        wrapped = self.runtime.wrap_mcp(mcp_servers)
+        asked = (question or "").strip()
+        attach_tools = bool(images) or wants_house_tools(asked or message)
+        if attach_tools and session.id not in self.runtime._with_tools:
+            self.runtime.drop(session.id)
+        run_servers = wrapped if attach_tools else {}
+        logger.info("cursor model=%s tools=%s", used_model, "on" if attach_tools else "off")
         yield {"type": "status", "text": "Thinking..."}
         try:
             agent, created = await self.runtime.open_agent(
                 session,
-                mcp_servers,
+                run_servers,
                 model=used_model,
                 effort=effort,
                 api_key=key,
@@ -220,9 +265,9 @@ class CursorProvider:
         agent_id = getattr(agent, "agent_id", None)
         if agent_id:
             on_agent_id(str(agent_id))
-        outbound = apply_handoff(message, handoff, created)
+        outbound = apply_handoff(message, handoff, created, question=asked or question)
         try:
-            run = await _start_run(agent, outbound, images, mcp_servers)
+            run = await _start_run(agent, outbound, images, run_servers)
         except Exception as exc:
             yield {"type": "error", "message": _public_error(exc, self.settings.cursor_api_key)}
             return
@@ -237,7 +282,7 @@ class CursorProvider:
             result = await run.wait()
             if _empty_failed_run(result) and not stream_error:
                 logger.info("retrying empty cursor run session=%s model=%s", session.id, used_model)
-                run = await _start_run(agent, outbound, images, mcp_servers)
+                run = await _start_run(agent, outbound, images, run_servers)
                 run_id = getattr(run, "id", "") or run_id
                 async for event in _iter_messages(run):
                     if event.get("type") == "error" and not stream_error:
@@ -269,13 +314,27 @@ class CursorProvider:
         if final:
             yield {"type": "result", "text": str(final), "run_id": str(run_id), "status": str(status)}
 
-    async def suggest_title(self, user: str, assistant: str = "") -> str | None:
-        if not self.settings.cursor_api_key:
+    async def suggest_title(
+        self,
+        user: str,
+        assistant: str = "",
+        *,
+        api_key: str = "",
+        model: str = "",
+    ) -> str | None:
+        key = (api_key or "").strip() or self.settings.cursor_api_key
+        if not key:
             return None
+        used = (model or "").strip() or self.settings.model
         try:
             client = await self.runtime.client()
-            options = self.runtime._agent_options("ha-title", {}, tools=[])
-            agent = await client.create_agent(options)
+            try:
+                options = self.runtime._agent_options("ha-title", {}, tools=[], model=used, api_key=key)
+                agent = await client.create_agent(options)
+            except Exception:
+                logger.debug("title agent without tools failed, retrying", exc_info=True)
+                options = self.runtime._agent_options("ha-title", {}, model=used, api_key=key)
+                agent = await client.create_agent(options)
             run = await agent.send(title_prompt(user, assistant))
             result = await run.wait()
             if getattr(result, "status", "") == "error":
@@ -347,16 +406,41 @@ def _agent_fingerprint(servers: dict, model: str, effort: str, key_tag: str) -> 
     )
 
 
-def apply_handoff(message: str, handoff: str, fresh: bool) -> str:
-    if not fresh:
-        return message
+def _session_idle(updated_at: str) -> bool:
+    raw = str(updated_at or "").strip()
+    if not raw:
+        return False
+    try:
+        stamp = datetime.fromisoformat(raw)
+    except ValueError:
+        return False
+    if stamp.tzinfo is None:
+        stamp = stamp.replace(tzinfo=timezone.utc)
+    return (datetime.now(timezone.utc) - stamp).total_seconds() >= _IDLE_RESTORE
+
+
+def apply_handoff(message: str, handoff: str, fresh: bool = True, question: str = "") -> str:
+    """Paste the HA transcript above the question.
+
+    A follow-up a few seconds later can still land on an agent that has no
+    memory of the previous turn, so the transcript goes out every time.
+    """
+    del fresh
     note = (handoff or "").strip()
     if not note:
         return message
     marker = note.split("\n", 1)[0].strip()
-    if marker and marker in (message or ""):
-        return message
-    return f"{note}\n\n{message}"
+    body = message or ""
+    if marker and marker in body:
+        return body
+    asked = (question or "").strip()
+    if asked:
+        at = body.rfind(asked)
+        if at >= 0:
+            head = body[:at].rstrip()
+            tail = body[at:]
+            return f"{head}\n\n{note}\n\n{tail}"
+    return f"{note}\n\n{body}"
 
 
 def _model_fingerprint(ident: str, effort: str = "") -> Any:

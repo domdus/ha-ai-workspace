@@ -27,6 +27,7 @@ from .const import (
     CONF_CURSOR_API_KEY,
     CONF_EFFORT,
     CONF_HUB_ID,
+    CONF_LOW_TOKEN,
     CONF_MODE,
     CONF_MODEL,
     CONF_RUNTIME_URL,
@@ -61,6 +62,7 @@ class Agent:
     effort: str = ""
     enabled: bool = True
     assist: bool = True
+    low_token: bool = False
     azure_api_version: str = DEFAULT_AZURE_API_VERSION
     cursor_api_key: str = ""
     subentry_id: str = ""
@@ -106,6 +108,7 @@ def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Age
         effort=effort,
         enabled=True,
         assist=assist_enabled(raw),
+        low_token=bool(raw.get(CONF_LOW_TOKEN, False)),
         azure_api_version=_text(raw.get(CONF_AZURE_API_VERSION)) or DEFAULT_AZURE_API_VERSION,
         cursor_api_key=_text(raw.get(CONF_CURSOR_API_KEY)),
     )
