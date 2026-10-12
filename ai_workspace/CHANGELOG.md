@@ -11,4 +11,4 @@ First public release.
 - Users who are not admins only get the built-in Home Assistant MCP Server with their own login
 - Agents are kept open between messages, so follow-ups keep their context; a lost agent resumes from the saved chat
 - Large MCP results are shortened to valid JSON before the model reads them
-- Requires Home Assistant 2026.1 or newer
+- Requires Home Assistant 2025.12 or newer

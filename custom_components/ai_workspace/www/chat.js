@@ -67,6 +67,12 @@ function hassObj() {
   return document.querySelector("home-assistant")?.hass;
 }
 
+function haAtLeast(year, month) {
+  const [major, minor] = String(hassObj()?.config?.version || "").split(".").map(Number);
+  if (!major) return true;
+  return major > year || (major === year && minor >= month);
+}
+
 function hassLanguage() {
   const hass = hassObj();
   return hass?.locale?.language || hass?.language || navigator.language || "en";
@@ -1974,10 +1980,22 @@ export function mountAiWorkspace(root, options = {}) {
     row.dataset.pinned = session.pinned ? "1" : "0";
     row.role = "listitem";
     if (session.id === sessionId) titleEl.textContent = displayTitle(session.title);
-    const item = document.createElement("ha-list-item-button");
-    item.className = "session";
-    item.setAttribute("interactive", "");
-    item.setAttribute("ha-list-item", "");
+    // ha-list-item-button ships with Home Assistant 2026.6; older frontends get a plain row.
+    const native = haAtLeast(2026, 6) || Boolean(customElements.get("ha-list-item-button"));
+    const item = document.createElement(native ? "ha-list-item-button" : "div");
+    item.className = native ? "session" : "session session-plain";
+    if (native) {
+      item.setAttribute("interactive", "");
+      item.setAttribute("ha-list-item", "");
+    } else {
+      item.tabIndex = 0;
+      item.setAttribute("role", "button");
+      item.addEventListener("keydown", (event) => {
+        if (event.target !== item || (event.key !== "Enter" && event.key !== " ")) return;
+        event.preventDefault();
+        item.click();
+      });
+    }
     const label = document.createElement("span");
     label.className = "item-text";
     label.slot = "headline";

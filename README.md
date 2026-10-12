@@ -12,9 +12,9 @@
 
 <p align="center">
   <a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Custom-41BDF5.svg" alt="HACS"></a>
-  <a href="https://www.home-assistant.io/"><img src="https://img.shields.io/badge/Home%20Assistant-2026.1+-41BDF5.svg" alt="Home Assistant"></a>
+  <a href="https://www.home-assistant.io/"><img src="https://img.shields.io/badge/Home%20Assistant-2025.12+-41BDF5.svg" alt="Home Assistant"></a>
   <a href="https://github.com/domdus/ha-ai-workspace/releases"><img src="https://img.shields.io/github/v/release/domdus/ha-ai-workspace" alt="Release"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/domdus/ha-ai-workspace.svg" alt="License"></a>
+  <a href="https://github.com/domdus/ha-ai-workspace/blob/main/LICENSE"><img src="https://img.shields.io/github/license/domdus/ha-ai-workspace.svg" alt="License"></a>
   <br>
   <a href="https://github.com/domdus/ha-ai-workspace/commits/main"><img src="https://img.shields.io/github/commit-activity/m/domdus/ha-ai-workspace.svg" alt="Activity"></a>
   <a href="https://github.com/domdus/ha-ai-workspace/actions/workflows/runtime-image.yml"><img src="https://img.shields.io/github/actions/workflow/status/domdus/ha-ai-workspace/runtime-image.yml?branch=main&label=Runtime%20image" alt="Runtime image"></a>
@@ -49,7 +49,7 @@ Each agent can also be added as an Assist pipeline. The integration creates the 
 
 ## Requirements
 
-- Home Assistant **2026.1** or newer
+- Home Assistant **2025.12** or newer
 - A **provider API key** (cloud AI), a local **Ollama** server, or a **Cursor API key** (Cursor SDK Runtime)
 
 You also need an MCP server:

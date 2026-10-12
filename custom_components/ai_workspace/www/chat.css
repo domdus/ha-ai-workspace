@@ -195,14 +195,46 @@ ha-button.new-chat {
   font-weight: var(--ha-font-weight-normal);
 }
 
-.sessions ha-list-item-button::part(base):hover {
+.sessions ha-list-item-button::part(base):hover,
+.sessions .session-plain:hover {
   background-color: var(
     --ha-color-fill-neutral-quiet-hover,
     color-mix(in srgb, var(--primary-text-color) 8%, transparent)
   );
 }
 
-.sessions ha-list-item-button .item-text {
+.sessions .session-plain {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--ha-space-2, 8px);
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  box-sizing: border-box;
+  padding: 0 var(--ha-space-3, 12px);
+  border-radius: var(--ha-border-radius-sm, 6px);
+  position: relative;
+  color: var(--sidebar-text-color);
+  cursor: pointer;
+}
+
+.sessions .session-plain:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
+}
+
+.sessions .session-plain .item-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sessions .session-plain.selected .item-text {
+  color: var(--sidebar-selected-icon-color);
+}
+
+.sessions ha-list-item-button .item-text,
+.sessions .session-plain .item-text {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -211,7 +243,8 @@ ha-button.new-chat {
   font-weight: var(--ha-font-weight-normal);
 }
 
-.sessions ha-list-item-button.selected::before {
+.sessions ha-list-item-button.selected::before,
+.sessions .session-plain.selected::before {
   content: "";
   position: absolute;
   inset: 0;
