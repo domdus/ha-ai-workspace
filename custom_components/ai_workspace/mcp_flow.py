@@ -1,12 +1,9 @@
-"""Extra MCP servers as rows under the AI Workspace service."""
+"""MCP connections as rows on the AI Workspace entry."""
 
 from __future__ import annotations
 
-from types import MappingProxyType
-
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.config_entries import ConfigSubentry
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.selector import (
     TextSelector,
@@ -38,15 +35,6 @@ class McpConnectionFlow(config_entries.ConfigSubentryFlow):
         self._editing = False
         self._kind = MCP_CUSTOM
 
-    def _host(self):
-        """Connections always live on the hub, even if the header picker chose agents."""
-        from .agents import hub_entry, is_agents
-
-        entry = self._get_entry()
-        if is_agents(entry):
-            return hub_entry(self.hass) or entry
-        return entry
-
     def _saved(self) -> tuple[object, dict]:
         entry = self._get_entry()
         subentry = self._get_reconfigure_subentry()
@@ -61,9 +49,7 @@ class McpConnectionFlow(config_entries.ConfigSubentryFlow):
             if current_id and sub.subentry_id == current_id:
                 continue
             url = str(sub.data.get("url") or "").strip()
-            if not url:
-                continue
-            kind = infer_mcp_kind(url)
+            kind = str(sub.data.get(CONF_MCP_KIND) or "") or (infer_mcp_kind(url) if url else MCP_CUSTOM)
             if kind != MCP_CUSTOM:
                 used.add(kind)
         return used
@@ -110,7 +96,7 @@ class McpConnectionFlow(config_entries.ConfigSubentryFlow):
 
     async def async_step_user(self, user_input=None):
         self._editing = False
-        host = self._host()
+        host = self._get_entry()
         detected = await async_detect_mcp_kinds(self.hass)
         options = mcp_connection_menu(detected, self._used_kinds(host))
         if options == [MCP_CUSTOM]:
@@ -137,19 +123,18 @@ class McpConnectionFlow(config_entries.ConfigSubentryFlow):
     async def async_step_reconfigure(self, user_input=None):
         self._editing = True
         _current, data = self._saved()
-        self._kind = infer_mcp_kind(str(data.get("url") or ""))
+        self._kind = str(data.get(CONF_MCP_KIND) or "") or infer_mcp_kind(str(data.get("url") or ""))
         return await self.async_step_connection(user_input)
 
     async def async_step_connection(self, user_input=None):
         errors: dict[str, str] = {}
         current_id = None
         previous_token = ""
-        host = self._host()
+        host = self._get_entry()
         if self._editing:
             current, data = self._saved()
             current_id = current.subentry_id
             previous_token = str(data.get("token") or "")
-            host = self._get_entry()
         if user_input is not None:
             name = str(user_input.get("name") or "").strip()
             url = str(user_input.get("url") or "").strip()
@@ -181,18 +166,6 @@ class McpConnectionFlow(config_entries.ConfigSubentryFlow):
                         unique_id=slug,
                         data=payload,
                     )
-                if host.entry_id != self._get_entry().entry_id:
-                    self.hass.config_entries.async_add_subentry(
-                        host,
-                        ConfigSubentry(
-                            data=MappingProxyType(payload),
-                            subentry_type=SUBENTRY_MCP,
-                            title=name,
-                            unique_id=slug,
-                        ),
-                    )
-                    self.hass.async_create_task(self.hass.config_entries.async_reload(host.entry_id))
-                    return self.async_abort(reason="reconfigure_successful")
                 return self.async_create_entry(title=name, data=payload, unique_id=slug)
         defaults = user_input or await self._defaults()
         return self.async_show_form(

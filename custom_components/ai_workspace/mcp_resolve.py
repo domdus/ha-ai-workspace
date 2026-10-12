@@ -98,6 +98,21 @@ def hass_mcp_server_urls(hass: HomeAssistant | None) -> list[str]:
     return _unique(urls)
 
 
+def ha_hosts(hass: HomeAssistant | None) -> frozenset[str]:
+    """Host names that reach this Home Assistant, so its user token never leaves it."""
+    hosts: set[str] = set()
+    config = getattr(hass, "config", None)
+    for raw in (getattr(config, "internal_url", None), getattr(config, "external_url", None)):
+        host = urlparse(str(raw or "")).hostname
+        if host:
+            hosts.add(host.lower())
+    api = getattr(config, "api", None)
+    local_ip = getattr(api, "local_ip", None)
+    if local_ip:
+        hosts.add(str(local_ip).lower())
+    return frozenset(hosts)
+
+
 def default_mcp_url(hass: HomeAssistant | None, kind: str) -> str:
     if kind == MCP_HA:
         return hass_mcp_server_url(hass)

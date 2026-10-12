@@ -134,42 +134,44 @@ def mcp_servers_from_saved(url: str, token: str, extra: Any) -> dict[str, dict[s
     return servers
 
 
-def _needs_ha_bearer(name: str, url: str, mcp_kind: str = "") -> bool:
-    """True for Home Assistant APIs that reject unauthenticated calls (and spam the log)."""
-    path = (urlparse(str(url or "")).path or "").lower()
+LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1", "homeassistant"})
+
+
+def _needs_ha_bearer(name: str, url: str, ha_hosts: frozenset[str] | set[str]) -> bool:
+    """True for this Home Assistant's own APIs, which reject unauthenticated calls."""
+    parsed = urlparse(str(url or ""))
+    path = (parsed.path or "").lower()
+    host = (parsed.hostname or "").lower()
+    if host not in ha_hosts:
+        return False
     key = str(name or "").strip().lower()
-    if key in {"catalog", "house-map"} or "/api/ai_workspace/catalog/" in path or "/api/ai_workspace/house_map/" in path:
+    if key in {"catalog", "house-map"}:
         return True
-    if "/api/mcp" in path:
-        return True
-    if mcp_kind == "ha" and key in {"mcp", "home-assistant", "ha", "ha-mcp"}:
-        return True
-    return False
+    return "/api/mcp" in path or "/api/ai_workspace/catalog/" in path or "/api/ai_workspace/house_map/" in path
 
 
 def with_mcp_auth(
     servers: dict[str, dict[str, Any]] | None,
     *,
     access_token: str = "",
-    mcp_token: str = "",
-    mcp_kind: str = "",
+    ha_hosts: frozenset[str] | set[str] | None = None,
 ) -> dict[str, dict[str, Any]]:
-    """Attach a Bearer token to HA MCP endpoints; drop the catalog when none is available."""
-    token = str(mcp_token or "").strip() or str(access_token or "").strip()
+    """Sign this Home Assistant's MCP endpoints as the chatting user; drop them when nobody is signed in."""
+    token = str(access_token or "").strip()
+    hosts = frozenset(ha_hosts or ()) | LOOPBACK_HOSTS
     out: dict[str, dict[str, Any]] = {}
     for name, cfg in (servers or {}).items():
         raw = dict(cfg or {})
         url = str(raw.get("url") or "")
-        if not _needs_ha_bearer(name, url, mcp_kind):
+        headers = dict(raw.get("headers") or {})
+        if "Authorization" in headers or not _needs_ha_bearer(name, url, hosts):
             out[name] = raw
             continue
         if not token:
             # Calling these without auth floods HA with "invalid authentication" warnings.
             continue
-        headers = dict(raw.get("headers") or {})
-        if "Authorization" not in headers:
-            headers["Authorization"] = f"Bearer {token}"
-            raw["headers"] = headers
+        headers["Authorization"] = f"Bearer {token}"
+        raw["headers"] = headers
         out[name] = raw
     return out
 

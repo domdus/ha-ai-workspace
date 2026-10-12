@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "AI Workspace",
-        "description": "공유 채팅 설정입니다. 그다음 AI Agents에서 첫 에이전트(Cursor, OpenAI, OpenRouter, Ollama 등)를 추가하세요.",
+        "description": "공유 채팅 설정입니다. 다음으로 첫 에이전트(Cursor, OpenAI, OpenRouter, Ollama 등)를 추가하세요. 연결과 에이전트는 이 통합구성요소의 항목입니다.",
         "data": {
           "runtime_url": "Cursor 런타임 URL{runtime_url_mark}",
           "stt_engine": "음성을 텍스트로",
@@ -15,7 +15,8 @@
           "allow_users": "일반 사용자 허용",
           "house_map": "구성 카탈로그",
           "cross_chat": "채팅 간 참조",
-          "keep_chats": "유지할 채팅"
+          "keep_chats": "유지할 채팅",
+          "runtime_token": "런타임 토큰"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
@@ -25,10 +26,11 @@
           "enable_sidebar": "사이드바 항목 AI Workspace. 꺼져 있어도 페이지는 /ai-workspace에서 열립니다.",
           "enable_overlay": "떠 있는 AI 버튼. 설정에서는 숨겨 ‘통합 추가’를 가리지 않습니다.",
           "enable_dictate": "메시지 상자의 마이크.",
-          "allow_users": "관리자가 아닌 로그인한 사용자도 떠 있는 채팅을 열 수 있습니다. 끄면 관리자만 됩니다. 사이드바 항목은 계속 관리자 전용입니다.",
+          "allow_users": "관리자가 아닌 로그인한 사용자도 떠 있는 채팅을 열 수 있습니다. 끄면 관리자만 됩니다. 사이드바 항목은 계속 관리자 전용입니다. 이들은 자신의 권한으로 내장 Home Assistant MCP 서버만 사용합니다.",
           "house_map": "이름 있는 항목의 배선(트리거, 관련 id)을 위한 선택적 로컬 인덱스. 기본은 끔. 자동화 목록이나 켜짐/꺼짐용이 아닙니다. 그건 실시간 MCP를 쓰세요. 실시간 상태, 기록, 추적은 아닙니다.",
           "cross_chat": "기본은 끔. 켜면 제목에 같은 단어가 있는 다른 채팅을 질문에 쓸 수 있습니다. 채팅이라고 말할 필요가 없습니다. 짧은 발췌만 사용하며 그 채팅은 바꾸지 않습니다.",
-          "keep_chats": "사람당 유지할 고정되지 않은 최신 채팅. 고정된 채팅은 항상 유지됩니다. 기본값 30."
+          "keep_chats": "사람당 유지할 고정되지 않은 최신 채팅. 고정된 채팅은 항상 유지됩니다. 기본값 30.",
+          "runtime_token": "Docker 런타임용 공유 비밀입니다. 컨테이너의 RUNTIME_TOKEN에 같은 값을 넣으세요. 애드온은 자동으로 연결되므로 비워 두세요."
         },
         "sections": {
           "mcp": {
@@ -53,216 +55,14 @@
               "system_prompt": "어조와 행동만. 비워 두면 기본 프롬프트를 씁니다. MCP 도구와 편집기 링크는 항상 추가되며 이 필드에 넣지 않습니다."
             }
           }
-        }
-      },
-      "api": {
-        "title": "클라우드 API 제공자",
-        "data": {
-          "enable_sidebar": "사이드바에 AI Workspace 표시",
-          "enable_overlay": "모든 페이지에 떠 있는 AI 버튼 표시",
-          "enable_dictate": "받아쓰기 버튼 표시",
-          "allow_users": "일반 사용자 허용",
-          "house_map": "구성 카탈로그",
-          "cross_chat": "채팅 간 참조",
-          "keep_chats": "유지할 채팅"
-        },
-        "sections": {
-          "provider": {
-            "name": "제공자",
-            "data": {
-              "api_provider": "제공자",
-              "api_key": "API 키",
-              "model": "모델",
-              "api_base": "API 기본 URL"
-            },
-            "data_description": {
-              "api_provider": "OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok 또는 OpenAI 호환.",
-              "api_key": "제공자 API 키. Home Assistant 토큰이 아닙니다.",
-              "model": "비워 두면 제공자 기본값을 씁니다.",
-              "api_base": "선택한 제공자는 비워 두세요. OpenAI 호환(OpenRouter, Ollama, LM Studio)에는 필요합니다. 중국 본토 Qwen: https://dashscope.aliyuncs.com/compatible-mode/v1"
-            }
-          },
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP 유형",
-              "mcp_url": "MCP URL{mcp_url_mark}",
-              "mcp_token": "MCP 토큰"
-            },
-            "data_description": {
-              "mcp_kind": "이 Home Assistant가 도달할 수 있는 MCP 서버만 나열됩니다. 사용자 지정은 임의의 MCP HTTP URL입니다.",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "기본 제공: Home Assistant 장기 액세스 토큰. 비워 두면 이 채팅의 현재 로그인을 씁니다. HA-MCP: 보통 비움. Vibecode: Agent Key. 사용자 지정: 선택적 Bearer 토큰."
-            }
-          },
-          "prompt": {
-            "name": "시스템 프롬프트",
-            "data": {
-              "system_prompt": "시스템 프롬프트"
-            },
-            "data_description": {
-              "system_prompt": "어조와 행동만. 비워 두면 기본 프롬프트를 씁니다. MCP 도구와 편집기 링크는 항상 추가되며 이 필드에 넣지 않습니다."
-            }
-          }
-        }
-      },
-      "cursor": {
-        "title": "Cursor 런타임",
-        "data": {
-          "runtime_url": "Cursor 런타임 URL{runtime_url_mark}",
-          "enable_sidebar": "사이드바에 AI Workspace 표시",
-          "enable_overlay": "모든 페이지에 떠 있는 AI 버튼 표시",
-          "enable_dictate": "받아쓰기 버튼 표시",
-          "allow_users": "일반 사용자 허용",
-          "house_map": "구성 카탈로그",
-          "cross_chat": "채팅 간 참조",
-          "keep_chats": "유지할 채팅"
-        },
-        "data_description": {
-          "runtime_url": "{runtime_url_note}",
-          "enable_sidebar": "사이드바 항목 AI Workspace. 꺼져 있어도 페이지는 /ai-workspace에서 열립니다.",
-          "enable_overlay": "떠 있는 AI 버튼. 설정에서는 숨겨 ‘통합 추가’를 가리지 않습니다.",
-          "enable_dictate": "메시지 상자의 마이크. 브라우저는 https://에서만 받아쓰기를 허용합니다.",
-          "allow_users": "관리자가 아닌 로그인한 사용자도 떠 있는 채팅을 열 수 있습니다. 끄면 관리자만 됩니다. 사이드바 항목은 계속 관리자 전용입니다.",
-          "house_map": "이름 있는 항목의 배선(트리거, 관련 id)을 위한 선택적 로컬 인덱스. 기본은 끔. 자동화 목록이나 켜짐/꺼짐용이 아닙니다. 그건 실시간 MCP를 쓰세요. 실시간 상태, 기록, 추적은 아닙니다.",
-          "cross_chat": "기본은 끔. 켜면 제목에 같은 단어가 있는 다른 채팅을 질문에 쓸 수 있습니다. 채팅이라고 말할 필요가 없습니다. 짧은 발췌만 사용하며 그 채팅은 바꾸지 않습니다.",
-          "keep_chats": "사람당 유지할 고정되지 않은 최신 채팅. 고정된 채팅은 항상 유지됩니다. 기본값 30."
-        },
-        "sections": {
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP 유형",
-              "mcp_url": "MCP URL{mcp_url_mark}",
-              "mcp_token": "MCP 토큰"
-            },
-            "data_description": {
-              "mcp_kind": "이 Home Assistant가 도달할 수 있는 MCP 서버만 나열됩니다. 사용자 지정은 임의의 MCP HTTP URL입니다.",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "기본 제공: Home Assistant 장기 액세스 토큰. 비워 두면 이 채팅의 현재 로그인을 씁니다. HA-MCP: 보통 비움. Vibecode: Agent Key. 사용자 지정: 선택적 Bearer 토큰."
-            }
-          },
-          "prompt": {
-            "name": "시스템 프롬프트",
-            "data": {
-              "system_prompt": "시스템 프롬프트"
-            },
-            "data_description": {
-              "system_prompt": "어조와 행동만. 비워 두면 기본 프롬프트를 씁니다. MCP 도구와 편집기 링크는 항상 추가되며 이 필드에 넣지 않습니다."
-            }
-          }
-        }
-      },
-      "provider": {
-        "title": "제공자",
-        "description": "제공자를 고르세요. 다음 화면은 그 제공자에 필요한 것만 묻습니다.",
-        "data": {
-          "api_provider": "제공자"
-        },
-        "data_description": {
-          "api_provider": "Cursor, 또는 클라우드나 로컬 모델. "
-        }
-      },
-      "provider_cursor": {
-        "title": "Cursor",
-        "description": "Cursor API 키, 모델, 노력. 런타임 URL은 AI Workspace에 남습니다.",
-        "data": {
-          "cursor_api_key": "Cursor API 키",
-          "model": "모델",
-          "effort": "노력",
-          "assist": "Assist에서도 사용"
-        },
-        "data_description": {
-          "cursor_api_key": "cursor.com/dashboard/integrations에서. 편집 시 비워 두면 저장된 키를 유지합니다.",
-          "model": "비워 두면 Composer를 씁니다.",
-          "effort": "빠름, 높음 또는 높음 빠름. Composer는 높음을 고르지 않으면 빠름을 씁니다.",
-          "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다."
-        }
-      },
-      "provider_cloud": {
-        "title": "클라우드 에이전트",
-        "description": "이 에이전트는 자체 키를 보관합니다. 이미 설정된 통합에서 복사하거나 새로 붙여 넣으세요. 편집 시 키를 비워 두면 저장된 키를 유지합니다.",
-        "data": {
-          "borrow": "키 복사 원본",
-          "api_key": "API 키",
-          "model": "모델",
-          "effort": "노력",
-          "low_token": "적은 토큰",
-          "assist": "Assist에서도 사용"
-        },
-        "data_description": {
-          "borrow": "해당 통합이 이미 저장한 키를 씁니다. 다른 통합은 그대로 둡니다.",
-          "api_key": "Home Assistant 토큰이 아닙니다.",
-          "model": "비워 두면 제공자 기본값을 씁니다.",
-          "effort": "모델이 지원하면 빠름, 높음 또는 높음 빠름.",
-          "low_token": "짧은 요청과 도구 없음. 작은 모델이 답할 수 있습니다. 집을 확인하거나 바꾸지는 못합니다.",
-          "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다."
-        }
-      },
-      "provider_ollama": {
-        "title": "Ollama",
-        "description": "Ollama 서버 주소를 넣으세요.",
-        "data": {
-          "api_base": "Ollama URL",
-          "model": "모델",
-          "effort": "노력",
-          "low_token": "적은 토큰",
-          "assist": "Assist에서도 사용"
-        },
-        "data_description": {
-          "api_base": "Usually http://127.0.0.1:11434/v1",
-          "model": "비워 두면 llama3.2를 씁니다.",
-          "effort": "모델이 지원할 때 사용합니다.",
-          "low_token": "짧은 요청과 도구 없음. 작은 모델이 답할 수 있습니다. 집을 확인하거나 바꾸지는 못합니다.",
-          "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다."
-        }
-      },
-      "provider_azure": {
-        "title": "Azure OpenAI",
-        "description": "Azure 엔드포인트, 배포, 키.",
-        "data": {
-          "api_key": "Azure API 키",
-          "api_base": "엔드포인트",
-          "model": "배포",
-          "azure_api_version": "API 버전",
-          "effort": "노력",
-          "low_token": "적은 토큰",
-          "assist": "Assist에서도 사용"
-        },
-        "data_description": {
-          "api_key": "Azure OpenAI 키. 편집 시 비워 두면 저장된 키를 유지합니다.",
-          "api_base": "https://YOUR.openai.azure.com",
-          "model": "배포 이름.",
-          "azure_api_version": "Default 2024-10-21.",
-          "effort": "배포가 지원할 때 사용합니다.",
-          "low_token": "짧은 요청과 도구 없음. 작은 모델이 답할 수 있습니다. 집을 확인하거나 바꾸지는 못합니다.",
-          "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다."
-        }
-      },
-      "provider_compatible": {
-        "title": "OpenAI 호환",
-        "description": "OpenAI API를 말하는 사용자 지정 서버.",
-        "data": {
-          "api_key": "API 키",
-          "api_base": "API 기본 URL",
-          "model": "모델",
-          "effort": "노력",
-          "low_token": "적은 토큰",
-          "assist": "Assist에서도 사용"
-        },
-        "data_description": {
-          "api_key": "편집 시 비워 두면 저장된 키를 유지합니다.",
-          "api_base": "서버 기본 URL. 그 경로를 쓰면 /v1을 포함하세요.",
-          "model": "그 서버의 모델 이름.",
-          "effort": "서버가 지원할 때 사용합니다.",
-          "low_token": "짧은 요청과 도구 없음. 작은 모델이 답할 수 있습니다. 집을 확인하거나 바꾸지는 못합니다.",
-          "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다."
         }
       }
     },
     "error": {
       "no_runtime": "Cursor 런타임에 연결할 수 없습니다. 시작한 뒤 AI Workspace에 URL을 넣으세요.",
-      "required": "이 필드는 필수입니다."
+      "required": "이 필드는 필수입니다.",
+      "invalid_auth": "제공자가 이 API 키를 거부했습니다.",
+      "cannot_connect": "제공자에 연결할 수 없습니다. URL과 네트워크를 확인하세요."
     },
     "abort": {
       "already_configured": "AI Workspace가 이미 구성되어 있습니다"
@@ -272,7 +72,7 @@
     "step": {
       "init": {
         "title": "AI Workspace",
-        "description": "공유 채팅 설정. 연결은 AI Workspace에, 에이전트는 AI Agents에 추가합니다.",
+        "description": "공유 채팅 설정입니다. MCP 연결과 에이전트는 AI Workspace 통합구성요소 페이지의 버튼으로 추가합니다.",
         "data": {
           "runtime_url": "Cursor 런타임 URL{runtime_url_mark}",
           "stt_engine": "음성을 텍스트로",
@@ -284,7 +84,8 @@
           "allow_users": "일반 사용자 허용",
           "house_map": "구성 카탈로그",
           "cross_chat": "채팅 간 참조",
-          "keep_chats": "유지할 채팅"
+          "keep_chats": "유지할 채팅",
+          "runtime_token": "런타임 토큰"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
@@ -294,10 +95,11 @@
           "enable_sidebar": "사이드바 항목 AI Workspace. 꺼져 있어도 페이지는 /ai-workspace에서 열립니다.",
           "enable_overlay": "떠 있는 AI 버튼. 설정에서는 숨겨 ‘통합 추가’를 가리지 않습니다.",
           "enable_dictate": "메시지 상자의 마이크.",
-          "allow_users": "관리자가 아닌 로그인한 사용자도 떠 있는 채팅을 열 수 있습니다. 끄면 관리자만 됩니다. 사이드바 항목은 계속 관리자 전용입니다.",
+          "allow_users": "관리자가 아닌 로그인한 사용자도 떠 있는 채팅을 열 수 있습니다. 끄면 관리자만 됩니다. 사이드바 항목은 계속 관리자 전용입니다. 이들은 자신의 권한으로 내장 Home Assistant MCP 서버만 사용합니다.",
           "house_map": "이름 있는 항목의 배선(트리거, 관련 id)을 위한 선택적 로컬 인덱스. 기본은 끔. 자동화 목록이나 켜짐/꺼짐용이 아닙니다. 그건 실시간 MCP를 쓰세요. 실시간 상태, 기록, 추적은 아닙니다.",
           "cross_chat": "기본은 끔. 켜면 제목에 같은 단어가 있는 다른 채팅을 질문에 쓸 수 있습니다. 채팅이라고 말할 필요가 없습니다. 짧은 발췌만 사용하며 그 채팅은 바꾸지 않습니다.",
-          "keep_chats": "사람당 유지할 고정되지 않은 최신 채팅. 고정된 채팅은 항상 유지됩니다. 기본값 30."
+          "keep_chats": "사람당 유지할 고정되지 않은 최신 채팅. 고정된 채팅은 항상 유지됩니다. 기본값 30.",
+          "runtime_token": "Docker 런타임용 공유 비밀입니다. 컨테이너의 RUNTIME_TOKEN에 같은 값을 넣으세요. 애드온은 자동으로 연결되므로 비워 두세요."
         },
         "sections": {
           "mcp": {
@@ -322,225 +124,14 @@
               "system_prompt": "어조와 행동만. 비워 두면 기본 프롬프트를 씁니다. MCP 도구와 편집기 링크는 항상 추가되며 이 필드에 넣지 않습니다."
             }
           }
-        }
-      },
-      "api": {
-        "title": "클라우드 API 제공자",
-        "data": {
-          "enable_sidebar": "사이드바에 AI Workspace 표시",
-          "enable_overlay": "모든 페이지에 떠 있는 AI 버튼 표시",
-          "enable_dictate": "받아쓰기 버튼 표시",
-          "allow_users": "일반 사용자 허용",
-          "house_map": "구성 카탈로그",
-          "cross_chat": "채팅 간 참조",
-          "keep_chats": "유지할 채팅"
-        },
-        "data_description": {
-          "enable_sidebar": "사이드바 항목 AI Workspace. 꺼져 있어도 페이지는 /ai-workspace에서 열립니다.",
-          "enable_overlay": "떠 있는 AI 버튼. 설정에서는 숨겨 ‘통합 추가’를 가리지 않습니다.",
-          "enable_dictate": "메시지 상자의 마이크. 브라우저는 https://에서만 받아쓰기를 허용합니다.",
-          "allow_users": "관리자가 아닌 로그인한 사용자도 떠 있는 채팅을 열 수 있습니다. 끄면 관리자만 됩니다. 사이드바 항목은 계속 관리자 전용입니다.",
-          "house_map": "이름 있는 항목의 배선(트리거, 관련 id)을 위한 선택적 로컬 인덱스. 기본은 끔. 자동화 목록이나 켜짐/꺼짐용이 아닙니다. 그건 실시간 MCP를 쓰세요. 실시간 상태, 기록, 추적은 아닙니다.",
-          "cross_chat": "기본은 끔. 켜면 제목에 같은 단어가 있는 다른 채팅을 질문에 쓸 수 있습니다. 채팅이라고 말할 필요가 없습니다. 짧은 발췌만 사용하며 그 채팅은 바꾸지 않습니다.",
-          "keep_chats": "사람당 유지할 고정되지 않은 최신 채팅. 고정된 채팅은 항상 유지됩니다. 기본값 30."
-        },
-        "sections": {
-          "provider": {
-            "name": "제공자",
-            "data": {
-              "api_provider": "제공자",
-              "api_key": "API 키",
-              "model": "모델",
-              "api_base": "API 기본 URL"
-            },
-            "data_description": {
-              "api_provider": "OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok 또는 OpenAI 호환.",
-              "api_key": "제공자 API 키. Home Assistant 토큰이 아닙니다.",
-              "model": "비워 두면 제공자 기본값을 씁니다.",
-              "api_base": "선택한 제공자는 비워 두세요. OpenAI 호환(OpenRouter, Ollama, LM Studio)에는 필요합니다. 중국 본토 Qwen: https://dashscope.aliyuncs.com/compatible-mode/v1"
-            }
-          },
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP 유형",
-              "mcp_url": "MCP URL{mcp_url_mark}",
-              "mcp_token": "MCP 토큰"
-            },
-            "data_description": {
-              "mcp_kind": "이 Home Assistant가 도달할 수 있는 MCP 서버만 나열됩니다. 사용자 지정은 임의의 MCP HTTP URL입니다.",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "기본 제공: Home Assistant 장기 액세스 토큰. 비워 두면 이 채팅의 현재 로그인을 씁니다. HA-MCP: 보통 비움. Vibecode: Agent Key. 사용자 지정: 선택적 Bearer 토큰."
-            }
-          },
-          "prompt": {
-            "name": "시스템 프롬프트",
-            "data": {
-              "system_prompt": "시스템 프롬프트"
-            },
-            "data_description": {
-              "system_prompt": "어조와 행동만. 비워 두면 기본 프롬프트를 씁니다. MCP 도구와 편집기 링크는 항상 추가되며 이 필드에 넣지 않습니다."
-            }
-          }
-        }
-      },
-      "cursor": {
-        "title": "Cursor 런타임",
-        "data": {
-          "runtime_url": "Cursor 런타임 URL{runtime_url_mark}",
-          "enable_sidebar": "사이드바에 AI Workspace 표시",
-          "enable_overlay": "모든 페이지에 떠 있는 AI 버튼 표시",
-          "enable_dictate": "받아쓰기 버튼 표시",
-          "allow_users": "일반 사용자 허용",
-          "house_map": "구성 카탈로그",
-          "cross_chat": "채팅 간 참조",
-          "keep_chats": "유지할 채팅"
-        },
-        "data_description": {
-          "runtime_url": "{runtime_url_note}",
-          "enable_sidebar": "사이드바 항목 AI Workspace. 꺼져 있어도 페이지는 /ai-workspace에서 열립니다.",
-          "enable_overlay": "떠 있는 AI 버튼. 설정에서는 숨겨 ‘통합 추가’를 가리지 않습니다.",
-          "enable_dictate": "메시지 상자의 마이크. 브라우저는 https://에서만 받아쓰기를 허용합니다.",
-          "allow_users": "관리자가 아닌 로그인한 사용자도 떠 있는 채팅을 열 수 있습니다. 끄면 관리자만 됩니다. 사이드바 항목은 계속 관리자 전용입니다.",
-          "house_map": "이름 있는 항목의 배선(트리거, 관련 id)을 위한 선택적 로컬 인덱스. 기본은 끔. 자동화 목록이나 켜짐/꺼짐용이 아닙니다. 그건 실시간 MCP를 쓰세요. 실시간 상태, 기록, 추적은 아닙니다.",
-          "cross_chat": "기본은 끔. 켜면 제목에 같은 단어가 있는 다른 채팅을 질문에 쓸 수 있습니다. 채팅이라고 말할 필요가 없습니다. 짧은 발췌만 사용하며 그 채팅은 바꾸지 않습니다.",
-          "keep_chats": "사람당 유지할 고정되지 않은 최신 채팅. 고정된 채팅은 항상 유지됩니다. 기본값 30."
-        },
-        "sections": {
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP 유형",
-              "mcp_url": "MCP URL{mcp_url_mark}",
-              "mcp_token": "MCP 토큰"
-            },
-            "data_description": {
-              "mcp_kind": "이 Home Assistant가 도달할 수 있는 MCP 서버만 나열됩니다. 사용자 지정은 임의의 MCP HTTP URL입니다.",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "기본 제공: Home Assistant 장기 액세스 토큰. 비워 두면 이 채팅의 현재 로그인을 씁니다. HA-MCP: 보통 비움. Vibecode: Agent Key. 사용자 지정: 선택적 Bearer 토큰."
-            }
-          },
-          "prompt": {
-            "name": "시스템 프롬프트",
-            "data": {
-              "system_prompt": "시스템 프롬프트"
-            },
-            "data_description": {
-              "system_prompt": "어조와 행동만. 비워 두면 기본 프롬프트를 씁니다. MCP 도구와 편집기 링크는 항상 추가되며 이 필드에 넣지 않습니다."
-            }
-          }
-        }
-      },
-      "provider": {
-        "title": "제공자",
-        "description": "제공자를 고르세요. 다음 화면은 그 제공자에 필요한 것만 묻습니다.",
-        "data": {
-          "api_provider": "제공자"
-        },
-        "data_description": {
-          "api_provider": "Cursor, 또는 클라우드나 로컬 모델. "
-        }
-      },
-      "provider_cursor": {
-        "title": "Cursor",
-        "description": "Cursor API 키, 모델, 노력. 런타임 URL은 AI Workspace에 남습니다.",
-        "data": {
-          "cursor_api_key": "Cursor API 키",
-          "model": "모델",
-          "effort": "노력",
-          "assist": "Assist에서도 사용"
-        },
-        "data_description": {
-          "cursor_api_key": "cursor.com/dashboard/integrations에서. 편집 시 비워 두면 저장된 키를 유지합니다.",
-          "model": "비워 두면 Composer를 씁니다.",
-          "effort": "빠름, 높음 또는 높음 빠름. Composer는 높음을 고르지 않으면 빠름을 씁니다.",
-          "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다."
-        }
-      },
-      "provider_cloud": {
-        "title": "클라우드 에이전트",
-        "description": "이 에이전트는 자체 키를 보관합니다. 이미 설정된 통합에서 복사하거나 새로 붙여 넣으세요. 편집 시 키를 비워 두면 저장된 키를 유지합니다.",
-        "data": {
-          "borrow": "키 복사 원본",
-          "api_key": "API 키",
-          "model": "모델",
-          "effort": "노력",
-          "low_token": "적은 토큰",
-          "assist": "Assist에서도 사용"
-        },
-        "data_description": {
-          "borrow": "해당 통합이 이미 저장한 키를 씁니다. 다른 통합은 그대로 둡니다.",
-          "api_key": "Home Assistant 토큰이 아닙니다.",
-          "model": "비워 두면 제공자 기본값을 씁니다.",
-          "effort": "모델이 지원하면 빠름, 높음 또는 높음 빠름.",
-          "low_token": "짧은 요청과 도구 없음. 작은 모델이 답할 수 있습니다. 집을 확인하거나 바꾸지는 못합니다.",
-          "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다."
-        }
-      },
-      "provider_ollama": {
-        "title": "Ollama",
-        "description": "Ollama 서버 주소를 넣으세요.",
-        "data": {
-          "api_base": "Ollama URL",
-          "model": "모델",
-          "effort": "노력",
-          "low_token": "적은 토큰",
-          "assist": "Assist에서도 사용"
-        },
-        "data_description": {
-          "api_base": "Usually http://127.0.0.1:11434/v1",
-          "model": "비워 두면 llama3.2를 씁니다.",
-          "effort": "모델이 지원할 때 사용합니다.",
-          "low_token": "짧은 요청과 도구 없음. 작은 모델이 답할 수 있습니다. 집을 확인하거나 바꾸지는 못합니다.",
-          "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다."
-        }
-      },
-      "provider_azure": {
-        "title": "Azure OpenAI",
-        "description": "Azure 엔드포인트, 배포, 키.",
-        "data": {
-          "api_key": "Azure API 키",
-          "api_base": "엔드포인트",
-          "model": "배포",
-          "azure_api_version": "API 버전",
-          "effort": "노력",
-          "low_token": "적은 토큰",
-          "assist": "Assist에서도 사용"
-        },
-        "data_description": {
-          "api_key": "Azure OpenAI 키. 편집 시 비워 두면 저장된 키를 유지합니다.",
-          "api_base": "https://YOUR.openai.azure.com",
-          "model": "배포 이름.",
-          "azure_api_version": "Default 2024-10-21.",
-          "effort": "배포가 지원할 때 사용합니다.",
-          "low_token": "짧은 요청과 도구 없음. 작은 모델이 답할 수 있습니다. 집을 확인하거나 바꾸지는 못합니다.",
-          "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다."
-        }
-      },
-      "provider_compatible": {
-        "title": "OpenAI 호환",
-        "description": "OpenAI API를 말하는 사용자 지정 서버.",
-        "data": {
-          "api_key": "API 키",
-          "api_base": "API 기본 URL",
-          "model": "모델",
-          "effort": "노력",
-          "low_token": "적은 토큰",
-          "assist": "Assist에서도 사용"
-        },
-        "data_description": {
-          "api_key": "편집 시 비워 두면 저장된 키를 유지합니다.",
-          "api_base": "서버 기본 URL. 그 경로를 쓰면 /v1을 포함하세요.",
-          "model": "그 서버의 모델 이름.",
-          "effort": "서버가 지원할 때 사용합니다.",
-          "low_token": "짧은 요청과 도구 없음. 작은 모델이 답할 수 있습니다. 집을 확인하거나 바꾸지는 못합니다.",
-          "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다."
         }
       }
     },
     "error": {
       "no_runtime": "Cursor 런타임에 연결할 수 없습니다. 시작한 뒤 AI Workspace에 URL을 넣으세요.",
-      "required": "이 필드는 필수입니다."
+      "required": "이 필드는 필수입니다.",
+      "invalid_auth": "제공자가 이 API 키를 거부했습니다.",
+      "cannot_connect": "제공자에 연결할 수 없습니다. URL과 네트워크를 확인하세요."
     }
   },
   "config_subentries": {
@@ -592,115 +183,11 @@
       "entry_type": "에이전트",
       "error": {
         "no_runtime": "Cursor 런타임에 연결할 수 없습니다. 시작한 뒤 AI Workspace에 URL을 넣으세요.",
-        "required": "이 필드는 필수입니다."
+        "required": "이 필드는 필수입니다.",
+        "invalid_auth": "제공자가 이 API 키를 거부했습니다.",
+        "cannot_connect": "제공자에 연결할 수 없습니다. URL과 네트워크를 확인하세요."
       },
       "step": {
-        "agent": {
-          "title": "에이전트",
-          "description": "에이전트를 고르세요. 다음 화면은 그 에이전트에 필요한 것만 묻습니다.",
-          "data": {
-            "api_provider": "에이전트"
-          },
-          "data_description": {
-            "api_provider": "Cursor, 또는 클라우드나 로컬 모델."
-          }
-        },
-        "cursor": {
-          "title": "Cursor",
-          "description": "Cursor API 키, 모델, 노력. 런타임 URL은 AI Workspace에 남습니다.",
-          "data": {
-            "cursor_api_key": "Cursor API 키",
-            "model": "모델",
-            "effort": "노력",
-            "assist": "Assist에서도 사용"
-          },
-          "data_description": {
-            "cursor_api_key": "cursor.com/dashboard/integrations에서. 편집 시 비워 두면 저장된 키를 유지합니다.",
-            "model": "비워 두면 Composer를 씁니다.",
-            "effort": "빠름, 높음 또는 높음 빠름. Composer는 높음을 고르지 않으면 빠름을 씁니다.",
-            "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다."
-          }
-        },
-        "cloud": {
-          "title": "클라우드 에이전트",
-          "description": "이 에이전트는 자체 키를 보관합니다. 이미 설정된 통합에서 복사하거나 새로 붙여 넣으세요. 편집 시 키를 비워 두면 저장된 키를 유지합니다.",
-          "data": {
-            "borrow": "키 복사 원본",
-            "api_key": "API 키",
-            "model": "모델",
-            "effort": "노력",
-            "low_token": "적은 토큰",
-            "assist": "Assist에서도 사용"
-          },
-          "data_description": {
-            "borrow": "해당 통합이 이미 저장한 키를 씁니다. 다른 통합은 그대로 둡니다.",
-            "api_key": "Home Assistant 토큰이 아닙니다.",
-            "model": "비워 두면 제공자 기본값을 씁니다.",
-            "effort": "모델이 지원하면 빠름, 높음 또는 높음 빠름.",
-            "low_token": "짧은 요청과 도구 없음. 작은 모델이 답할 수 있습니다. 집을 확인하거나 바꾸지는 못합니다.",
-            "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다."
-          }
-        },
-        "ollama": {
-          "title": "Ollama",
-          "description": "Ollama 서버 주소를 넣으세요.",
-          "data": {
-            "api_base": "Ollama URL",
-            "model": "모델",
-            "effort": "노력",
-            "low_token": "적은 토큰",
-            "assist": "Assist에서도 사용"
-          },
-          "data_description": {
-            "api_base": "Usually http://127.0.0.1:11434/v1",
-            "model": "비워 두면 llama3.2를 씁니다.",
-            "effort": "모델이 지원할 때 사용합니다.",
-            "low_token": "짧은 요청과 도구 없음. 작은 모델이 답할 수 있습니다. 집을 확인하거나 바꾸지는 못합니다.",
-            "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다."
-          }
-        },
-        "azure": {
-          "title": "Azure OpenAI",
-          "description": "Azure 엔드포인트, 배포, 키.",
-          "data": {
-            "api_key": "Azure API 키",
-            "api_base": "엔드포인트",
-            "model": "배포",
-            "azure_api_version": "API 버전",
-            "effort": "노력",
-            "low_token": "적은 토큰",
-            "assist": "Assist에서도 사용"
-          },
-          "data_description": {
-            "api_key": "Azure OpenAI 키. 편집 시 비워 두면 저장된 키를 유지합니다.",
-            "api_base": "https://YOUR.openai.azure.com",
-            "model": "배포 이름.",
-            "azure_api_version": "Default 2024-10-21.",
-            "effort": "배포가 지원할 때 사용합니다.",
-            "low_token": "짧은 요청과 도구 없음. 작은 모델이 답할 수 있습니다. 집을 확인하거나 바꾸지는 못합니다.",
-            "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다."
-          }
-        },
-        "compatible": {
-          "title": "OpenAI 호환",
-          "description": "OpenAI API를 말하는 사용자 지정 서버.",
-          "data": {
-            "api_key": "API 키",
-            "api_base": "API 기본 URL",
-            "model": "모델",
-            "effort": "노력",
-            "low_token": "적은 토큰",
-            "assist": "Assist에서도 사용"
-          },
-          "data_description": {
-            "api_key": "편집 시 비워 두면 저장된 키를 유지합니다.",
-            "api_base": "서버 기본 URL. 그 경로를 쓰면 /v1을 포함하세요.",
-            "model": "그 서버의 모델 이름.",
-            "effort": "서버가 지원할 때 사용합니다.",
-            "low_token": "짧은 요청과 도구 없음. 작은 모델이 답할 수 있습니다. 집을 확인하거나 바꾸지는 못합니다.",
-            "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다."
-          }
-        },
         "provider": {
           "title": "제공자",
           "description": "제공자를 고르세요. 다음 화면은 그 제공자에 필요한 것만 묻습니다.",
@@ -708,7 +195,7 @@
             "api_provider": "제공자"
           },
           "data_description": {
-            "api_provider": "Cursor, 또는 클라우드나 로컬 모델. "
+            "api_provider": "Cursor, 또는 클라우드나 로컬 모델."
           }
         },
         "provider_cursor": {
@@ -721,7 +208,7 @@
             "assist": "Assist에서도 사용"
           },
           "data_description": {
-            "cursor_api_key": "cursor.com/dashboard/integrations에서. 편집 시 비워 두면 저장된 키를 유지합니다.",
+            "cursor_api_key": "cursor.com/dashboard/integrations에서. 편집 시 비워 두면 저장된 키를 유지합니다. 런타임에 이미 CURSOR_API_KEY가 있으면 비워 두세요.",
             "model": "비워 두면 Composer를 씁니다.",
             "effort": "빠름, 높음 또는 높음 빠름. Composer는 높음을 고르지 않으면 빠름을 씁니다.",
             "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다."
@@ -758,7 +245,7 @@
             "assist": "Assist에서도 사용"
           },
           "data_description": {
-            "api_base": "Usually http://127.0.0.1:11434/v1",
+            "api_base": "Usually {example_url}",
             "model": "비워 두면 llama3.2를 씁니다.",
             "effort": "모델이 지원할 때 사용합니다.",
             "low_token": "짧은 요청과 도구 없음. 작은 모델이 답할 수 있습니다. 집을 확인하거나 바꾸지는 못합니다.",
@@ -779,7 +266,7 @@
           },
           "data_description": {
             "api_key": "Azure OpenAI 키. 편집 시 비워 두면 저장된 키를 유지합니다.",
-            "api_base": "https://YOUR.openai.azure.com",
+            "api_base": "{example_url}",
             "model": "배포 이름.",
             "azure_api_version": "Default 2024-10-21.",
             "effort": "배포가 지원할 때 사용합니다.",
@@ -814,20 +301,6 @@
     }
   },
   "selector": {
-    "api_provider": {
-      "options": {
-        "openai": "OpenAI",
-        "anthropic": "Claude (Anthropic)",
-        "gemini": "Google Gemini",
-        "deepseek": "DeepSeek",
-        "qwen": "Qwen (Alibaba)",
-        "xai": "Grok (xAI)",
-        "openrouter": "OpenRouter",
-        "ollama": "로컬 Ollama",
-        "azure": "Azure OpenAI",
-        "compatible": "OpenAI 호환(사용자 지정 기본 URL)"
-      }
-    },
     "agent_provider": {
       "options": {
         "cursor": "Cursor",
@@ -845,7 +318,7 @@
     },
     "effort": {
       "options": {
-        "": "기본",
+        "default": "기본",
         "fast": "빠름",
         "high": "높음",
         "high_fast": "높음 빠름"

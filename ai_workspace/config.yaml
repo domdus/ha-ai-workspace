@@ -1,17 +1,18 @@
 name: AI Workspace Runtime
-version: "1.0.5"
+version: "1.1.0"
 slug: ai_workspace
 description: >-
   Runs the Cursor agent next to Home Assistant and talks to LAN MCP.
   Install the AI Workspace HACS integration for the sidebar chat.
 url: https://github.com/domdus/ha-ai-workspace
+image: ghcr.io/domdus/ha-ai-workspace-runtime
 arch:
   - amd64
   - aarch64
 init: false
 startup: services
 boot: auto
-homeassistant: "2024.8.0"
+homeassistant: "2026.1.0"
 ingress: false
 ports:
   8090/tcp: null
@@ -21,6 +22,8 @@ watchdog: http://[HOST]:[PORT:8090]/api/health
 options:
   cursor_api_key: ""
   model: composer-2.5
+  runtime_token: ""
 schema:
   cursor_api_key: password
   model: str
+  runtime_token: password?

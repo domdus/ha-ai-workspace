@@ -97,6 +97,25 @@ def mcp_servers_from_url(url: str, token: str = "") -> dict[str, dict[str, Any]]
     return {"mcp": server_to_sdk("mcp", raw)}
 
 
+def server_from_request(name: str, raw: Any) -> dict[str, Any]:
+    """HTTP or SSE only. A chat request must never start a process or read the runtime environment."""
+    if not isinstance(raw, dict):
+        raise McpConfigError(f"MCP server {name} must be an object")
+    if raw.get("command") or str(raw.get("type") or "").strip().lower() == "stdio":
+        raise McpConfigError(f"MCP server {name}: only http and sse servers can be sent with a chat")
+    url = raw.get("url")
+    if not isinstance(url, str) or not url.startswith(("http://", "https://")):
+        raise McpConfigError(f"MCP server {name} needs an http(s) url")
+    kind = str(raw.get("type") or "").strip().lower()
+    server: dict[str, Any] = {"type": "sse" if kind == "sse" else "http", "url": rewrite_loopback_url(url)}
+    headers = raw.get("headers")
+    if headers is not None:
+        if not isinstance(headers, dict) or not all(isinstance(val, str) for val in headers.values()):
+            raise McpConfigError(f"{name}.headers must be an object of strings")
+        server["headers"] = {str(key): val for key, val in headers.items()}
+    return server
+
+
 def servers_from_chat_mcp(mcp: Any) -> dict[str, dict[str, Any]]:
     if mcp is None:
         return {}
@@ -108,11 +127,14 @@ def servers_from_chat_mcp(mcp: Any) -> dict[str, dict[str, Any]]:
     raw_servers = mcp.get("servers")
     if isinstance(raw_servers, dict):
         for name, cfg in raw_servers.items():
-            out[str(name)] = server_to_sdk(str(name), cfg)
+            out[str(name)] = server_from_request(str(name), cfg)
     url = str(mcp.get("url") or "").strip()
     token = str(mcp.get("token") or "").strip()
     if url and not out:
-        out = mcp_servers_from_url(url, token)
+        raw: dict[str, Any] = {"url": url}
+        if token:
+            raw["headers"] = {"Authorization": f"Bearer {token}"}
+        out = {"mcp": server_from_request("mcp", raw)}
     return out
 
 

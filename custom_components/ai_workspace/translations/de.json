@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "AI Workspace",
-        "description": "Gemeinsame Chat-Einstellungen. Danach den ersten Agenten (Cursor, OpenAI, OpenRouter, Ollama und andere) unter AI Agents hinzufügen.",
+        "description": "Gemeinsame Chat-Einstellungen. Danach fügst du den ersten Agenten hinzu (Cursor, OpenAI, OpenRouter, Ollama und weitere). Verbindungen und Agenten sind Einträge dieser Integration.",
         "data": {
           "runtime_url": "Cursor-Runtime-URL{runtime_url_mark}",
           "stt_engine": "Sprache zu Text",
@@ -15,7 +15,8 @@
           "allow_users": "Normale Benutzer erlauben",
           "house_map": "Konfigurationskatalog",
           "cross_chat": "Chatübergreifend",
-          "keep_chats": "Chats behalten"
+          "keep_chats": "Chats behalten",
+          "runtime_token": "Runtime-Token"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
@@ -25,10 +26,11 @@
           "enable_sidebar": "Der Seitenleisteneintrag AI Workspace. Die Seite bleibt unter /ai-workspace erreichbar, wenn das aus ist.",
           "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt.",
           "enable_dictate": "Mikrofon im Eingabefeld.",
-          "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren.",
+          "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren. Sie bekommen nur den eingebauten Home Assistant MCP Server mit ihren eigenen Rechten.",
           "house_map": "Optionaler lokaler Index für die Verdrahtung eines benannten Eintrags (Trigger, zugehörige IDs). Standardmäßig aus. Nicht für Listen von Automatisierungen oder an/aus — dafür Live-MCP. Kein Live-Zustand, keine Historie, keine Traces.",
           "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen anderen Chat nutzen, dessen Titel Wörter mit ihr teilt. Du musst nicht Chat oder Gespräch sagen. Nur ein kurzer Auszug, und dieser Chat wird nicht geändert.",
-          "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30."
+          "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30.",
+          "runtime_token": "Gemeinsames Geheimnis für eine Docker-Runtime. Trage denselben Wert als RUNTIME_TOKEN am Container ein. Das Add-on wird automatisch gekoppelt; dann leer lassen."
         },
         "sections": {
           "mcp": {
@@ -53,216 +55,14 @@
               "system_prompt": "Nur Ton und Verhalten. Leer lassen für den eingebauten Prompt. MCP-Tools und Editor-Links werden immer ergänzt und gehören nicht in dieses Feld."
             }
           }
-        }
-      },
-      "api": {
-        "title": "Cloud-API-Anbieter",
-        "data": {
-          "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
-          "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen",
-          "enable_dictate": "Diktier-Schaltfläche anzeigen",
-          "allow_users": "Normale Benutzer erlauben",
-          "house_map": "Konfigurationskatalog",
-          "cross_chat": "Chatübergreifend",
-          "keep_chats": "Chats behalten"
-        },
-        "sections": {
-          "provider": {
-            "name": "Anbieter",
-            "data": {
-              "api_provider": "Anbieter",
-              "api_key": "API-Schlüssel",
-              "model": "Modell",
-              "api_base": "API-Basis-URL"
-            },
-            "data_description": {
-              "api_provider": "OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok oder OpenAI-kompatibel.",
-              "api_key": "API-Schlüssel des Anbieters. Kein Home-Assistant-Token.",
-              "model": "Leer lässt den Standard des Anbieters.",
-              "api_base": "Leer für den gewählten Anbieter. Pflicht bei OpenAI-kompatibel (OpenRouter, Ollama, LM Studio). Qwen in China: https://dashscope.aliyuncs.com/compatible-mode/v1"
-            }
-          },
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP-Typ",
-              "mcp_url": "MCP-URL{mcp_url_mark}",
-              "mcp_token": "MCP-Token"
-            },
-            "data_description": {
-              "mcp_kind": "Es werden nur MCP-Server gelistet, die diese Home-Assistant-Instanz erreicht. Benutzerdefiniert ist jede MCP-HTTP-URL.",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Eingebaut: langlebiges Home-Assistant-Zugriffstoken, oder leer lassen, um die aktuelle Anmeldung in diesem Chat zu nutzen. HA-MCP: meist leer. Vibecode: Agent Key. Benutzerdefiniert: optionales Bearer-Token."
-            }
-          },
-          "prompt": {
-            "name": "System-Prompt",
-            "data": {
-              "system_prompt": "System-Prompt"
-            },
-            "data_description": {
-              "system_prompt": "Nur Ton und Verhalten. Leer lassen für den eingebauten Prompt. MCP-Tools und Editor-Links werden immer ergänzt und gehören nicht in dieses Feld."
-            }
-          }
-        }
-      },
-      "cursor": {
-        "title": "Cursor Runtime",
-        "data": {
-          "runtime_url": "Cursor-Runtime-URL{runtime_url_mark}",
-          "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
-          "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen",
-          "enable_dictate": "Diktier-Schaltfläche anzeigen",
-          "allow_users": "Normale Benutzer erlauben",
-          "house_map": "Konfigurationskatalog",
-          "cross_chat": "Chatübergreifend",
-          "keep_chats": "Chats behalten"
-        },
-        "data_description": {
-          "runtime_url": "{runtime_url_note}",
-          "enable_sidebar": "Der Seitenleisteneintrag AI Workspace. Die Seite bleibt unter /ai-workspace erreichbar, wenn das aus ist.",
-          "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt.",
-          "enable_dictate": "Mikrofon im Eingabefeld. Browser erlauben das Diktieren nur über https://.",
-          "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren.",
-          "house_map": "Optionaler lokaler Index für die Verdrahtung eines benannten Eintrags (Trigger, zugehörige IDs). Standardmäßig aus. Nicht für Listen von Automatisierungen oder an/aus — dafür Live-MCP. Kein Live-Zustand, keine Historie, keine Traces.",
-          "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen anderen Chat nutzen, dessen Titel Wörter mit ihr teilt. Du musst nicht Chat oder Gespräch sagen. Nur ein kurzer Auszug, und dieser Chat wird nicht geändert.",
-          "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30."
-        },
-        "sections": {
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP-Typ",
-              "mcp_url": "MCP-URL{mcp_url_mark}",
-              "mcp_token": "MCP-Token"
-            },
-            "data_description": {
-              "mcp_kind": "Es werden nur MCP-Server gelistet, die diese Home-Assistant-Instanz erreicht. Benutzerdefiniert ist jede MCP-HTTP-URL.",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Eingebaut: langlebiges Home-Assistant-Zugriffstoken, oder leer lassen, um die aktuelle Anmeldung in diesem Chat zu nutzen. HA-MCP: meist leer. Vibecode: Agent Key. Benutzerdefiniert: optionales Bearer-Token."
-            }
-          },
-          "prompt": {
-            "name": "System-Prompt",
-            "data": {
-              "system_prompt": "System-Prompt"
-            },
-            "data_description": {
-              "system_prompt": "Nur Ton und Verhalten. Leer lassen für den eingebauten Prompt. MCP-Tools und Editor-Links werden immer ergänzt und gehören nicht in dieses Feld."
-            }
-          }
-        }
-      },
-      "provider": {
-        "title": "Anbieter",
-        "description": "Wähle den Anbieter. Der nächste Bildschirm fragt nur, was dieser Anbieter braucht.",
-        "data": {
-          "api_provider": "Anbieter"
-        },
-        "data_description": {
-          "api_provider": "Cursor oder ein Cloud- bzw. lokales Modell. "
-        }
-      },
-      "provider_cursor": {
-        "title": "Cursor",
-        "description": "Cursor-API-Schlüssel, Modell und Aufwand. Die Runtime-URL bleibt bei AI Workspace.",
-        "data": {
-          "cursor_api_key": "Cursor-API-Schlüssel",
-          "model": "Modell",
-          "effort": "Aufwand",
-          "assist": "Auch in Assist nutzen"
-        },
-        "data_description": {
-          "cursor_api_key": "Von cursor.com/dashboard/integrations. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
-          "model": "Leer nutzt Composer.",
-          "effort": "Schnell, Hoch oder Hoch schnell. Composer nutzt Schnell, außer du wählst Hoch.",
-          "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
-        }
-      },
-      "provider_cloud": {
-        "title": "Cloud-Agent",
-        "description": "Dieser Agent speichert seinen eigenen Schlüssel. Übernimm einen aus einer schon eingerichteten Integration oder füge einen neuen ein. Beim Bearbeiten den Schlüssel leer lassen, um den gespeicherten zu behalten.",
-        "data": {
-          "borrow": "Schlüssel kopieren von",
-          "api_key": "API-Schlüssel",
-          "model": "Modell",
-          "effort": "Aufwand",
-          "low_token": "Wenig Token",
-          "assist": "Auch in Assist nutzen"
-        },
-        "data_description": {
-          "borrow": "Nutzt den Schlüssel, den diese Integration schon gespeichert hat. Die andere Integration bleibt unverändert.",
-          "api_key": "Kein Home-Assistant-Token.",
-          "model": "Leer lässt den Standard des Anbieters.",
-          "effort": "Schnell, Hoch oder Hoch schnell, wenn das Modell das unterstützt.",
-          "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
-          "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
-        }
-      },
-      "provider_ollama": {
-        "title": "Ollama",
-        "description": "Hier die Adresse des Ollama-Servers eintragen.",
-        "data": {
-          "api_base": "Ollama-URL",
-          "model": "Modell",
-          "effort": "Aufwand",
-          "low_token": "Wenig Token",
-          "assist": "Auch in Assist nutzen"
-        },
-        "data_description": {
-          "api_base": "Usually http://127.0.0.1:11434/v1",
-          "model": "Leer nutzt llama3.2.",
-          "effort": "Wird genutzt, wenn das Modell das unterstützt.",
-          "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
-          "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
-        }
-      },
-      "provider_azure": {
-        "title": "Azure OpenAI",
-        "description": "Azure-Endpunkt, Bereitstellung und Schlüssel.",
-        "data": {
-          "api_key": "Azure-API-Schlüssel",
-          "api_base": "Endpunkt",
-          "model": "Bereitstellung",
-          "azure_api_version": "API-Version",
-          "effort": "Aufwand",
-          "low_token": "Wenig Token",
-          "assist": "Auch in Assist nutzen"
-        },
-        "data_description": {
-          "api_key": "Der Azure-OpenAI-Schlüssel. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
-          "api_base": "https://YOUR.openai.azure.com",
-          "model": "Der Name der Bereitstellung.",
-          "azure_api_version": "Default 2024-10-21.",
-          "effort": "Wird genutzt, wenn die Bereitstellung das unterstützt.",
-          "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
-          "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
-        }
-      },
-      "provider_compatible": {
-        "title": "OpenAI-kompatibel",
-        "description": "Ein eigener Server, der die OpenAI-API spricht.",
-        "data": {
-          "api_key": "API-Schlüssel",
-          "api_base": "API-Basis-URL",
-          "model": "Modell",
-          "effort": "Aufwand",
-          "low_token": "Wenig Token",
-          "assist": "Auch in Assist nutzen"
-        },
-        "data_description": {
-          "api_key": "Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
-          "api_base": "Basis-URL des Servers, inklusive /v1 wenn dieser Pfad genutzt wird.",
-          "model": "Modellname auf diesem Server.",
-          "effort": "Wird genutzt, wenn der Server das unterstützt.",
-          "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
-          "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
         }
       }
     },
     "error": {
       "no_runtime": "Die Cursor-Runtime ist nicht erreichbar. Starte sie und trage die URL unter AI Workspace ein.",
-      "required": "Dieses Feld ist erforderlich."
+      "required": "Dieses Feld ist erforderlich.",
+      "invalid_auth": "Der Anbieter hat diesen API-Schlüssel abgelehnt.",
+      "cannot_connect": "Der Anbieter ist nicht erreichbar. Prüfe die URL und das Netzwerk."
     },
     "abort": {
       "already_configured": "AI Workspace ist bereits eingerichtet"
@@ -272,7 +72,7 @@
     "step": {
       "init": {
         "title": "AI Workspace",
-        "description": "Gemeinsame Chat-Einstellungen. Verbindungen kommen unter AI Workspace hinzu, Agenten unter AI Agents.",
+        "description": "Gemeinsame Chat-Einstellungen. MCP-Verbindungen und Agenten fügst du über die Schaltflächen auf der Seite der AI-Workspace-Integration hinzu.",
         "data": {
           "runtime_url": "Cursor-Runtime-URL{runtime_url_mark}",
           "stt_engine": "Sprache zu Text",
@@ -284,7 +84,8 @@
           "allow_users": "Normale Benutzer erlauben",
           "house_map": "Konfigurationskatalog",
           "cross_chat": "Chatübergreifend",
-          "keep_chats": "Chats behalten"
+          "keep_chats": "Chats behalten",
+          "runtime_token": "Runtime-Token"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
@@ -294,10 +95,11 @@
           "enable_sidebar": "Der Seitenleisteneintrag AI Workspace. Die Seite bleibt unter /ai-workspace erreichbar, wenn das aus ist.",
           "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt.",
           "enable_dictate": "Mikrofon im Eingabefeld.",
-          "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren.",
+          "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren. Sie bekommen nur den eingebauten Home Assistant MCP Server mit ihren eigenen Rechten.",
           "house_map": "Optionaler lokaler Index für die Verdrahtung eines benannten Eintrags (Trigger, zugehörige IDs). Standardmäßig aus. Nicht für Listen von Automatisierungen oder an/aus — dafür Live-MCP. Kein Live-Zustand, keine Historie, keine Traces.",
           "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen anderen Chat nutzen, dessen Titel Wörter mit ihr teilt. Du musst nicht Chat oder Gespräch sagen. Nur ein kurzer Auszug, und dieser Chat wird nicht geändert.",
-          "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30."
+          "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30.",
+          "runtime_token": "Gemeinsames Geheimnis für eine Docker-Runtime. Trage denselben Wert als RUNTIME_TOKEN am Container ein. Das Add-on wird automatisch gekoppelt; dann leer lassen."
         },
         "sections": {
           "mcp": {
@@ -322,225 +124,14 @@
               "system_prompt": "Nur Ton und Verhalten. Leer lassen für den eingebauten Prompt. MCP-Tools und Editor-Links werden immer ergänzt und gehören nicht in dieses Feld."
             }
           }
-        }
-      },
-      "api": {
-        "title": "Cloud-API-Anbieter",
-        "data": {
-          "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
-          "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen",
-          "enable_dictate": "Diktier-Schaltfläche anzeigen",
-          "allow_users": "Normale Benutzer erlauben",
-          "house_map": "Konfigurationskatalog",
-          "cross_chat": "Chatübergreifend",
-          "keep_chats": "Chats behalten"
-        },
-        "data_description": {
-          "enable_sidebar": "Der Seitenleisteneintrag AI Workspace. Die Seite bleibt unter /ai-workspace erreichbar, wenn das aus ist.",
-          "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt.",
-          "enable_dictate": "Mikrofon im Eingabefeld. Browser erlauben das Diktieren nur über https://.",
-          "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren.",
-          "house_map": "Optionaler lokaler Index für die Verdrahtung eines benannten Eintrags (Trigger, zugehörige IDs). Standardmäßig aus. Nicht für Listen von Automatisierungen oder an/aus — dafür Live-MCP. Kein Live-Zustand, keine Historie, keine Traces.",
-          "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen anderen Chat nutzen, dessen Titel Wörter mit ihr teilt. Du musst nicht Chat oder Gespräch sagen. Nur ein kurzer Auszug, und dieser Chat wird nicht geändert.",
-          "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30."
-        },
-        "sections": {
-          "provider": {
-            "name": "Anbieter",
-            "data": {
-              "api_provider": "Anbieter",
-              "api_key": "API-Schlüssel",
-              "model": "Modell",
-              "api_base": "API-Basis-URL"
-            },
-            "data_description": {
-              "api_provider": "OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok oder OpenAI-kompatibel.",
-              "api_key": "API-Schlüssel des Anbieters. Kein Home-Assistant-Token.",
-              "model": "Leer lässt den Standard des Anbieters.",
-              "api_base": "Leer für den gewählten Anbieter. Pflicht bei OpenAI-kompatibel (OpenRouter, Ollama, LM Studio). Qwen in China: https://dashscope.aliyuncs.com/compatible-mode/v1"
-            }
-          },
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP-Typ",
-              "mcp_url": "MCP-URL{mcp_url_mark}",
-              "mcp_token": "MCP-Token"
-            },
-            "data_description": {
-              "mcp_kind": "Es werden nur MCP-Server gelistet, die diese Home-Assistant-Instanz erreicht. Benutzerdefiniert ist jede MCP-HTTP-URL.",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Eingebaut: langlebiges Home-Assistant-Zugriffstoken, oder leer lassen, um die aktuelle Anmeldung in diesem Chat zu nutzen. HA-MCP: meist leer. Vibecode: Agent Key. Benutzerdefiniert: optionales Bearer-Token."
-            }
-          },
-          "prompt": {
-            "name": "System-Prompt",
-            "data": {
-              "system_prompt": "System-Prompt"
-            },
-            "data_description": {
-              "system_prompt": "Nur Ton und Verhalten. Leer lassen für den eingebauten Prompt. MCP-Tools und Editor-Links werden immer ergänzt und gehören nicht in dieses Feld."
-            }
-          }
-        }
-      },
-      "cursor": {
-        "title": "Cursor Runtime",
-        "data": {
-          "runtime_url": "Cursor-Runtime-URL{runtime_url_mark}",
-          "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
-          "enable_overlay": "Schwebende KI-Schaltfläche auf jeder Seite anzeigen",
-          "enable_dictate": "Diktier-Schaltfläche anzeigen",
-          "allow_users": "Normale Benutzer erlauben",
-          "house_map": "Konfigurationskatalog",
-          "cross_chat": "Chatübergreifend",
-          "keep_chats": "Chats behalten"
-        },
-        "data_description": {
-          "runtime_url": "{runtime_url_note}",
-          "enable_sidebar": "Der Seitenleisteneintrag AI Workspace. Die Seite bleibt unter /ai-workspace erreichbar, wenn das aus ist.",
-          "enable_overlay": "Die schwebende KI-Schaltfläche. Auf Einstellungen ausgeblendet, damit sie „Integration hinzufügen“ nicht überdeckt.",
-          "enable_dictate": "Mikrofon im Eingabefeld. Browser erlauben das Diktieren nur über https://.",
-          "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren.",
-          "house_map": "Optionaler lokaler Index für die Verdrahtung eines benannten Eintrags (Trigger, zugehörige IDs). Standardmäßig aus. Nicht für Listen von Automatisierungen oder an/aus — dafür Live-MCP. Kein Live-Zustand, keine Historie, keine Traces.",
-          "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen anderen Chat nutzen, dessen Titel Wörter mit ihr teilt. Du musst nicht Chat oder Gespräch sagen. Nur ein kurzer Auszug, und dieser Chat wird nicht geändert.",
-          "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30."
-        },
-        "sections": {
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP-Typ",
-              "mcp_url": "MCP-URL{mcp_url_mark}",
-              "mcp_token": "MCP-Token"
-            },
-            "data_description": {
-              "mcp_kind": "Es werden nur MCP-Server gelistet, die diese Home-Assistant-Instanz erreicht. Benutzerdefiniert ist jede MCP-HTTP-URL.",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Eingebaut: langlebiges Home-Assistant-Zugriffstoken, oder leer lassen, um die aktuelle Anmeldung in diesem Chat zu nutzen. HA-MCP: meist leer. Vibecode: Agent Key. Benutzerdefiniert: optionales Bearer-Token."
-            }
-          },
-          "prompt": {
-            "name": "System-Prompt",
-            "data": {
-              "system_prompt": "System-Prompt"
-            },
-            "data_description": {
-              "system_prompt": "Nur Ton und Verhalten. Leer lassen für den eingebauten Prompt. MCP-Tools und Editor-Links werden immer ergänzt und gehören nicht in dieses Feld."
-            }
-          }
-        }
-      },
-      "provider": {
-        "title": "Anbieter",
-        "description": "Wähle den Anbieter. Der nächste Bildschirm fragt nur, was dieser Anbieter braucht.",
-        "data": {
-          "api_provider": "Anbieter"
-        },
-        "data_description": {
-          "api_provider": "Cursor oder ein Cloud- bzw. lokales Modell. "
-        }
-      },
-      "provider_cursor": {
-        "title": "Cursor",
-        "description": "Cursor-API-Schlüssel, Modell und Aufwand. Die Runtime-URL bleibt bei AI Workspace.",
-        "data": {
-          "cursor_api_key": "Cursor-API-Schlüssel",
-          "model": "Modell",
-          "effort": "Aufwand",
-          "assist": "Auch in Assist nutzen"
-        },
-        "data_description": {
-          "cursor_api_key": "Von cursor.com/dashboard/integrations. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
-          "model": "Leer nutzt Composer.",
-          "effort": "Schnell, Hoch oder Hoch schnell. Composer nutzt Schnell, außer du wählst Hoch.",
-          "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
-        }
-      },
-      "provider_cloud": {
-        "title": "Cloud-Agent",
-        "description": "Dieser Agent speichert seinen eigenen Schlüssel. Übernimm einen aus einer schon eingerichteten Integration oder füge einen neuen ein. Beim Bearbeiten den Schlüssel leer lassen, um den gespeicherten zu behalten.",
-        "data": {
-          "borrow": "Schlüssel kopieren von",
-          "api_key": "API-Schlüssel",
-          "model": "Modell",
-          "effort": "Aufwand",
-          "low_token": "Wenig Token",
-          "assist": "Auch in Assist nutzen"
-        },
-        "data_description": {
-          "borrow": "Nutzt den Schlüssel, den diese Integration schon gespeichert hat. Die andere Integration bleibt unverändert.",
-          "api_key": "Kein Home-Assistant-Token.",
-          "model": "Leer lässt den Standard des Anbieters.",
-          "effort": "Schnell, Hoch oder Hoch schnell, wenn das Modell das unterstützt.",
-          "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
-          "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
-        }
-      },
-      "provider_ollama": {
-        "title": "Ollama",
-        "description": "Hier die Adresse des Ollama-Servers eintragen.",
-        "data": {
-          "api_base": "Ollama-URL",
-          "model": "Modell",
-          "effort": "Aufwand",
-          "low_token": "Wenig Token",
-          "assist": "Auch in Assist nutzen"
-        },
-        "data_description": {
-          "api_base": "Usually http://127.0.0.1:11434/v1",
-          "model": "Leer nutzt llama3.2.",
-          "effort": "Wird genutzt, wenn das Modell das unterstützt.",
-          "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
-          "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
-        }
-      },
-      "provider_azure": {
-        "title": "Azure OpenAI",
-        "description": "Azure-Endpunkt, Bereitstellung und Schlüssel.",
-        "data": {
-          "api_key": "Azure-API-Schlüssel",
-          "api_base": "Endpunkt",
-          "model": "Bereitstellung",
-          "azure_api_version": "API-Version",
-          "effort": "Aufwand",
-          "low_token": "Wenig Token",
-          "assist": "Auch in Assist nutzen"
-        },
-        "data_description": {
-          "api_key": "Der Azure-OpenAI-Schlüssel. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
-          "api_base": "https://YOUR.openai.azure.com",
-          "model": "Der Name der Bereitstellung.",
-          "azure_api_version": "Default 2024-10-21.",
-          "effort": "Wird genutzt, wenn die Bereitstellung das unterstützt.",
-          "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
-          "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
-        }
-      },
-      "provider_compatible": {
-        "title": "OpenAI-kompatibel",
-        "description": "Ein eigener Server, der die OpenAI-API spricht.",
-        "data": {
-          "api_key": "API-Schlüssel",
-          "api_base": "API-Basis-URL",
-          "model": "Modell",
-          "effort": "Aufwand",
-          "low_token": "Wenig Token",
-          "assist": "Auch in Assist nutzen"
-        },
-        "data_description": {
-          "api_key": "Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
-          "api_base": "Basis-URL des Servers, inklusive /v1 wenn dieser Pfad genutzt wird.",
-          "model": "Modellname auf diesem Server.",
-          "effort": "Wird genutzt, wenn der Server das unterstützt.",
-          "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
-          "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
         }
       }
     },
     "error": {
       "no_runtime": "Die Cursor-Runtime ist nicht erreichbar. Starte sie und trage die URL unter AI Workspace ein.",
-      "required": "Dieses Feld ist erforderlich."
+      "required": "Dieses Feld ist erforderlich.",
+      "invalid_auth": "Der Anbieter hat diesen API-Schlüssel abgelehnt.",
+      "cannot_connect": "Der Anbieter ist nicht erreichbar. Prüfe die URL und das Netzwerk."
     }
   },
   "config_subentries": {
@@ -592,115 +183,11 @@
       "entry_type": "Agent",
       "error": {
         "no_runtime": "Die Cursor-Runtime ist nicht erreichbar. Starte sie und trage die URL unter AI Workspace ein.",
-        "required": "Dieses Feld ist erforderlich."
+        "required": "Dieses Feld ist erforderlich.",
+        "invalid_auth": "Der Anbieter hat diesen API-Schlüssel abgelehnt.",
+        "cannot_connect": "Der Anbieter ist nicht erreichbar. Prüfe die URL und das Netzwerk."
       },
       "step": {
-        "agent": {
-          "title": "Agent",
-          "description": "Wähle den Agenten. Der nächste Bildschirm fragt nur, was dieser Agent braucht.",
-          "data": {
-            "api_provider": "Agent"
-          },
-          "data_description": {
-            "api_provider": "Cursor oder ein Cloud- bzw. lokales Modell."
-          }
-        },
-        "cursor": {
-          "title": "Cursor",
-          "description": "Cursor-API-Schlüssel, Modell und Aufwand. Die Runtime-URL bleibt bei AI Workspace.",
-          "data": {
-            "cursor_api_key": "Cursor-API-Schlüssel",
-            "model": "Modell",
-            "effort": "Aufwand",
-            "assist": "Auch in Assist nutzen"
-          },
-          "data_description": {
-            "cursor_api_key": "Von cursor.com/dashboard/integrations. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
-            "model": "Leer nutzt Composer.",
-            "effort": "Schnell, Hoch oder Hoch schnell. Composer nutzt Schnell, außer du wählst Hoch.",
-            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
-          }
-        },
-        "cloud": {
-          "title": "Cloud-Agent",
-          "description": "Dieser Agent speichert seinen eigenen Schlüssel. Übernimm einen aus einer schon eingerichteten Integration oder füge einen neuen ein. Beim Bearbeiten den Schlüssel leer lassen, um den gespeicherten zu behalten.",
-          "data": {
-            "borrow": "Schlüssel kopieren von",
-            "api_key": "API-Schlüssel",
-            "model": "Modell",
-            "effort": "Aufwand",
-            "low_token": "Wenig Token",
-            "assist": "Auch in Assist nutzen"
-          },
-          "data_description": {
-            "borrow": "Nutzt den Schlüssel, den diese Integration schon gespeichert hat. Die andere Integration bleibt unverändert.",
-            "api_key": "Kein Home-Assistant-Token.",
-            "model": "Leer lässt den Standard des Anbieters.",
-            "effort": "Schnell, Hoch oder Hoch schnell, wenn das Modell das unterstützt.",
-            "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
-            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
-          }
-        },
-        "ollama": {
-          "title": "Ollama",
-          "description": "Hier die Adresse des Ollama-Servers eintragen.",
-          "data": {
-            "api_base": "Ollama-URL",
-            "model": "Modell",
-            "effort": "Aufwand",
-            "low_token": "Wenig Token",
-            "assist": "Auch in Assist nutzen"
-          },
-          "data_description": {
-            "api_base": "Usually http://127.0.0.1:11434/v1",
-            "model": "Leer nutzt llama3.2.",
-            "effort": "Wird genutzt, wenn das Modell das unterstützt.",
-            "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
-            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
-          }
-        },
-        "azure": {
-          "title": "Azure OpenAI",
-          "description": "Azure-Endpunkt, Bereitstellung und Schlüssel.",
-          "data": {
-            "api_key": "Azure-API-Schlüssel",
-            "api_base": "Endpunkt",
-            "model": "Bereitstellung",
-            "azure_api_version": "API-Version",
-            "effort": "Aufwand",
-            "low_token": "Wenig Token",
-            "assist": "Auch in Assist nutzen"
-          },
-          "data_description": {
-            "api_key": "Der Azure-OpenAI-Schlüssel. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
-            "api_base": "https://YOUR.openai.azure.com",
-            "model": "Der Name der Bereitstellung.",
-            "azure_api_version": "Default 2024-10-21.",
-            "effort": "Wird genutzt, wenn die Bereitstellung das unterstützt.",
-            "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
-            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
-          }
-        },
-        "compatible": {
-          "title": "OpenAI-kompatibel",
-          "description": "Ein eigener Server, der die OpenAI-API spricht.",
-          "data": {
-            "api_key": "API-Schlüssel",
-            "api_base": "API-Basis-URL",
-            "model": "Modell",
-            "effort": "Aufwand",
-            "low_token": "Wenig Token",
-            "assist": "Auch in Assist nutzen"
-          },
-          "data_description": {
-            "api_key": "Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
-            "api_base": "Basis-URL des Servers, inklusive /v1 wenn dieser Pfad genutzt wird.",
-            "model": "Modellname auf diesem Server.",
-            "effort": "Wird genutzt, wenn der Server das unterstützt.",
-            "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
-            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
-          }
-        },
         "provider": {
           "title": "Anbieter",
           "description": "Wähle den Anbieter. Der nächste Bildschirm fragt nur, was dieser Anbieter braucht.",
@@ -708,7 +195,7 @@
             "api_provider": "Anbieter"
           },
           "data_description": {
-            "api_provider": "Cursor oder ein Cloud- bzw. lokales Modell. "
+            "api_provider": "Cursor oder ein Cloud- bzw. lokales Modell."
           }
         },
         "provider_cursor": {
@@ -721,7 +208,7 @@
             "assist": "Auch in Assist nutzen"
           },
           "data_description": {
-            "cursor_api_key": "Von cursor.com/dashboard/integrations. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
+            "cursor_api_key": "Von cursor.com/dashboard/integrations. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten. Leer lassen, wenn die Runtime bereits CURSOR_API_KEY hat.",
             "model": "Leer nutzt Composer.",
             "effort": "Schnell, Hoch oder Hoch schnell. Composer nutzt Schnell, außer du wählst Hoch.",
             "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
@@ -758,7 +245,7 @@
             "assist": "Auch in Assist nutzen"
           },
           "data_description": {
-            "api_base": "Usually http://127.0.0.1:11434/v1",
+            "api_base": "Usually {example_url}",
             "model": "Leer nutzt llama3.2.",
             "effort": "Wird genutzt, wenn das Modell das unterstützt.",
             "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
@@ -779,7 +266,7 @@
           },
           "data_description": {
             "api_key": "Der Azure-OpenAI-Schlüssel. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
-            "api_base": "https://YOUR.openai.azure.com",
+            "api_base": "{example_url}",
             "model": "Der Name der Bereitstellung.",
             "azure_api_version": "Default 2024-10-21.",
             "effort": "Wird genutzt, wenn die Bereitstellung das unterstützt.",
@@ -814,20 +301,6 @@
     }
   },
   "selector": {
-    "api_provider": {
-      "options": {
-        "openai": "OpenAI",
-        "anthropic": "Claude (Anthropic)",
-        "gemini": "Google Gemini",
-        "deepseek": "DeepSeek",
-        "qwen": "Qwen (Alibaba)",
-        "xai": "Grok (xAI)",
-        "openrouter": "OpenRouter",
-        "ollama": "Lokales Ollama",
-        "azure": "Azure OpenAI",
-        "compatible": "OpenAI-kompatibel (eigene Basis-URL)"
-      }
-    },
     "agent_provider": {
       "options": {
         "cursor": "Cursor",
@@ -845,7 +318,7 @@
     },
     "effort": {
       "options": {
-        "": "Standard",
+        "default": "Standard",
         "fast": "Schnell",
         "high": "Hoch",
         "high_fast": "Hoch schnell"

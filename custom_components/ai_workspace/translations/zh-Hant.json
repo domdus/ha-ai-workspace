@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "AI Workspace",
-        "description": "共用聊天設定。然後在 AI Agents 下新增第一個代理（Cursor、OpenAI、OpenRouter、Ollama 等）。",
+        "description": "共用聊天設定。之後新增第一個代理（Cursor、OpenAI、OpenRouter、Ollama 等）。連線和代理都是此整合下的項目。",
         "data": {
           "runtime_url": "Cursor 執行階段 URL{runtime_url_mark}",
           "stt_engine": "語音轉文字",
@@ -15,7 +15,8 @@
           "allow_users": "允許一般使用者",
           "house_map": "設定目錄",
           "cross_chat": "跨聊天",
-          "keep_chats": "要保留的聊天"
+          "keep_chats": "要保留的聊天",
+          "runtime_token": "Runtime 權杖"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
@@ -25,10 +26,11 @@
           "enable_sidebar": "側欄項目 AI Workspace。關閉後頁面仍可在 /ai-workspace 開啟。",
           "enable_overlay": "懸浮 AI 按鈕。在設定頁隱藏，以免擋住「新增整合」。",
           "enable_dictate": "訊息框中的麥克風。",
-          "allow_users": "非管理員的已登入使用者可以開啟懸浮聊天。關閉則僅限管理員。側欄項目仍僅管理員可見。",
+          "allow_users": "非管理員的已登入使用者可以開啟懸浮聊天。關閉則僅限管理員。側欄項目仍僅管理員可見。 他們只能以自己的權限使用內建的 Home Assistant MCP 伺服器。",
           "house_map": "選用的本機索引，用於已命名項目的接線（觸發器、相關 id）。預設關閉。不要用來列出自動化或開關狀態——那用即時 MCP。不是即時狀態、歷程或追蹤。",
           "cross_chat": "預設關閉。開啟後，問題可以使用標題有相同詞語的另一個聊天。不必說「聊天」。只附上短摘錄，且不修改那個聊天。",
-          "keep_chats": "每人保留的未釘選最新聊天。已釘選的聊天一律保留。預設 30。"
+          "keep_chats": "每人保留的未釘選最新聊天。已釘選的聊天一律保留。預設 30。",
+          "runtime_token": "Docker Runtime 的共用密鑰。在容器上將 RUNTIME_TOKEN 設為相同的值。附加元件會自動配對，請留空。"
         },
         "sections": {
           "mcp": {
@@ -53,216 +55,14 @@
               "system_prompt": "僅語氣與行為。留空則使用內建提示詞。MCP 工具和編輯器連結一定會加上，不要寫進此欄位。"
             }
           }
-        }
-      },
-      "api": {
-        "title": "雲端 API 供應商",
-        "data": {
-          "enable_sidebar": "在側欄顯示 AI Workspace",
-          "enable_overlay": "在每個頁面顯示懸浮 AI 按鈕",
-          "enable_dictate": "顯示聽寫按鈕",
-          "allow_users": "允許一般使用者",
-          "house_map": "設定目錄",
-          "cross_chat": "跨聊天",
-          "keep_chats": "要保留的聊天"
-        },
-        "sections": {
-          "provider": {
-            "name": "供應商",
-            "data": {
-              "api_provider": "供應商",
-              "api_key": "API 金鑰",
-              "model": "模型",
-              "api_base": "API 基礎 URL"
-            },
-            "data_description": {
-              "api_provider": "OpenAI、Claude、Gemini、DeepSeek、Qwen、Grok 或 OpenAI 相容。",
-              "api_key": "供應商 API 金鑰。不是 Home Assistant 權杖。",
-              "model": "留空則使用供應商預設值。",
-              "api_base": "所選供應商可留空。OpenAI 相容（OpenRouter、Ollama、LM Studio）必填。中國大陸 Qwen：https://dashscope.aliyuncs.com/compatible-mode/v1"
-            }
-          },
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP 類型",
-              "mcp_url": "MCP URL{mcp_url_mark}",
-              "mcp_token": "MCP 權杖"
-            },
-            "data_description": {
-              "mcp_kind": "僅列出此 Home Assistant 能連到的 MCP 伺服器。自訂可以是任意 MCP HTTP URL。",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "內建：Home Assistant 長期存取權杖，或留空以使用此聊天的目前登入。HA-MCP：通常留空。Vibecode：Agent Key。自訂：選用 Bearer 權杖。"
-            }
-          },
-          "prompt": {
-            "name": "系統提示詞",
-            "data": {
-              "system_prompt": "系統提示詞"
-            },
-            "data_description": {
-              "system_prompt": "僅語氣與行為。留空則使用內建提示詞。MCP 工具和編輯器連結一定會加上，不要寫進此欄位。"
-            }
-          }
-        }
-      },
-      "cursor": {
-        "title": "Cursor 執行階段",
-        "data": {
-          "runtime_url": "Cursor 執行階段 URL{runtime_url_mark}",
-          "enable_sidebar": "在側欄顯示 AI Workspace",
-          "enable_overlay": "在每個頁面顯示懸浮 AI 按鈕",
-          "enable_dictate": "顯示聽寫按鈕",
-          "allow_users": "允許一般使用者",
-          "house_map": "設定目錄",
-          "cross_chat": "跨聊天",
-          "keep_chats": "要保留的聊天"
-        },
-        "data_description": {
-          "runtime_url": "{runtime_url_note}",
-          "enable_sidebar": "側欄項目 AI Workspace。關閉後頁面仍可在 /ai-workspace 開啟。",
-          "enable_overlay": "懸浮 AI 按鈕。在設定頁隱藏，以免擋住「新增整合」。",
-          "enable_dictate": "訊息框中的麥克風。瀏覽器僅在 https:// 上允許聽寫。",
-          "allow_users": "非管理員的已登入使用者可以開啟懸浮聊天。關閉則僅限管理員。側欄項目仍僅管理員可見。",
-          "house_map": "選用的本機索引，用於已命名項目的接線（觸發器、相關 id）。預設關閉。不要用來列出自動化或開關狀態——那用即時 MCP。不是即時狀態、歷程或追蹤。",
-          "cross_chat": "預設關閉。開啟後，問題可以使用標題有相同詞語的另一個聊天。不必說「聊天」。只附上短摘錄，且不修改那個聊天。",
-          "keep_chats": "每人保留的未釘選最新聊天。已釘選的聊天一律保留。預設 30。"
-        },
-        "sections": {
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP 類型",
-              "mcp_url": "MCP URL{mcp_url_mark}",
-              "mcp_token": "MCP 權杖"
-            },
-            "data_description": {
-              "mcp_kind": "僅列出此 Home Assistant 能連到的 MCP 伺服器。自訂可以是任意 MCP HTTP URL。",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "內建：Home Assistant 長期存取權杖，或留空以使用此聊天的目前登入。HA-MCP：通常留空。Vibecode：Agent Key。自訂：選用 Bearer 權杖。"
-            }
-          },
-          "prompt": {
-            "name": "系統提示詞",
-            "data": {
-              "system_prompt": "系統提示詞"
-            },
-            "data_description": {
-              "system_prompt": "僅語氣與行為。留空則使用內建提示詞。MCP 工具和編輯器連結一定會加上，不要寫進此欄位。"
-            }
-          }
-        }
-      },
-      "provider": {
-        "title": "供應商",
-        "description": "選擇供應商。下一屏只詢問該供應商需要的內容。",
-        "data": {
-          "api_provider": "供應商"
-        },
-        "data_description": {
-          "api_provider": "Cursor，或雲端／本機模型。 "
-        }
-      },
-      "provider_cursor": {
-        "title": "Cursor",
-        "description": "Cursor API 金鑰、模型和力度。執行階段 URL 仍在 AI Workspace。",
-        "data": {
-          "cursor_api_key": "Cursor API 金鑰",
-          "model": "模型",
-          "effort": "力度",
-          "assist": "也在 Assist 中使用"
-        },
-        "data_description": {
-          "cursor_api_key": "來自 cursor.com/dashboard/integrations。編輯時留空以保留已儲存的金鑰。",
-          "model": "留空則使用 Composer。",
-          "effort": "快速、高或高快速。Composer 使用快速，除非你選擇高。",
-          "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。"
-        }
-      },
-      "provider_cloud": {
-        "title": "雲端代理",
-        "description": "此代理保存自己的金鑰。從已設定的整合複製，或貼上新金鑰。編輯時留空以保留已儲存的金鑰。",
-        "data": {
-          "borrow": "從以下位置複製金鑰",
-          "api_key": "API 金鑰",
-          "model": "模型",
-          "effort": "力度",
-          "low_token": "低 Token",
-          "assist": "也在 Assist 中使用"
-        },
-        "data_description": {
-          "borrow": "使用該整合已儲存的金鑰。另一個整合維持不變。",
-          "api_key": "不是 Home Assistant 權杖。",
-          "model": "留空則使用供應商預設值。",
-          "effort": "在模型支援時為快速、高或高快速。",
-          "low_token": "短提示、不帶工具，方便小模型回答。不能查看或改動家裡的設備。",
-          "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。"
-        }
-      },
-      "provider_ollama": {
-        "title": "Ollama",
-        "description": "指向 Ollama 伺服器。",
-        "data": {
-          "api_base": "Ollama URL",
-          "model": "模型",
-          "effort": "力度",
-          "low_token": "低 Token",
-          "assist": "也在 Assist 中使用"
-        },
-        "data_description": {
-          "api_base": "Usually http://127.0.0.1:11434/v1",
-          "model": "留空則使用 llama3.2。",
-          "effort": "在模型支援時使用。",
-          "low_token": "短提示、不帶工具，方便小模型回答。不能查看或改動家裡的設備。",
-          "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。"
-        }
-      },
-      "provider_azure": {
-        "title": "Azure OpenAI",
-        "description": "Azure 端點、部署和金鑰。",
-        "data": {
-          "api_key": "Azure API 金鑰",
-          "api_base": "端點",
-          "model": "部署",
-          "azure_api_version": "API 版本",
-          "effort": "力度",
-          "low_token": "低 Token",
-          "assist": "也在 Assist 中使用"
-        },
-        "data_description": {
-          "api_key": "Azure OpenAI 金鑰。編輯時留空以保留已儲存的金鑰。",
-          "api_base": "https://YOUR.openai.azure.com",
-          "model": "部署名稱。",
-          "azure_api_version": "Default 2024-10-21.",
-          "effort": "在部署支援時使用。",
-          "low_token": "短提示、不帶工具，方便小模型回答。不能查看或改動家裡的設備。",
-          "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。"
-        }
-      },
-      "provider_compatible": {
-        "title": "OpenAI 相容",
-        "description": "使用 OpenAI API 的自訂伺服器。",
-        "data": {
-          "api_key": "API 金鑰",
-          "api_base": "API 基礎 URL",
-          "model": "模型",
-          "effort": "力度",
-          "low_token": "低 Token",
-          "assist": "也在 Assist 中使用"
-        },
-        "data_description": {
-          "api_key": "編輯時留空以保留已儲存的金鑰。",
-          "api_base": "伺服器基礎 URL，若使用該路徑則包含 /v1。",
-          "model": "該伺服器上的模型名稱。",
-          "effort": "在伺服器支援時使用。",
-          "low_token": "短提示、不帶工具，方便小模型回答。不能查看或改動家裡的設備。",
-          "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。"
         }
       }
     },
     "error": {
       "no_runtime": "無法連線 Cursor 執行階段。請啟動它並在 AI Workspace 中設定 URL。",
-      "required": "此欄位為必填。"
+      "required": "此欄位為必填。",
+      "invalid_auth": "提供者拒絕了此 API 金鑰。",
+      "cannot_connect": "無法連線到提供者。請檢查 URL 和網路。"
     },
     "abort": {
       "already_configured": "AI Workspace 已設定"
@@ -272,7 +72,7 @@
     "step": {
       "init": {
         "title": "AI Workspace",
-        "description": "共用聊天設定。連線在 AI Workspace 新增。代理在 AI Agents 新增。",
+        "description": "共用聊天設定。在 AI Workspace 整合頁面上用按鈕新增 MCP 連線和代理。",
         "data": {
           "runtime_url": "Cursor 執行階段 URL{runtime_url_mark}",
           "stt_engine": "語音轉文字",
@@ -284,7 +84,8 @@
           "allow_users": "允許一般使用者",
           "house_map": "設定目錄",
           "cross_chat": "跨聊天",
-          "keep_chats": "要保留的聊天"
+          "keep_chats": "要保留的聊天",
+          "runtime_token": "Runtime 權杖"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
@@ -294,10 +95,11 @@
           "enable_sidebar": "側欄項目 AI Workspace。關閉後頁面仍可在 /ai-workspace 開啟。",
           "enable_overlay": "懸浮 AI 按鈕。在設定頁隱藏，以免擋住「新增整合」。",
           "enable_dictate": "訊息框中的麥克風。",
-          "allow_users": "非管理員的已登入使用者可以開啟懸浮聊天。關閉則僅限管理員。側欄項目仍僅管理員可見。",
+          "allow_users": "非管理員的已登入使用者可以開啟懸浮聊天。關閉則僅限管理員。側欄項目仍僅管理員可見。 他們只能以自己的權限使用內建的 Home Assistant MCP 伺服器。",
           "house_map": "選用的本機索引，用於已命名項目的接線（觸發器、相關 id）。預設關閉。不要用來列出自動化或開關狀態——那用即時 MCP。不是即時狀態、歷程或追蹤。",
           "cross_chat": "預設關閉。開啟後，問題可以使用標題有相同詞語的另一個聊天。不必說「聊天」。只附上短摘錄，且不修改那個聊天。",
-          "keep_chats": "每人保留的未釘選最新聊天。已釘選的聊天一律保留。預設 30。"
+          "keep_chats": "每人保留的未釘選最新聊天。已釘選的聊天一律保留。預設 30。",
+          "runtime_token": "Docker Runtime 的共用密鑰。在容器上將 RUNTIME_TOKEN 設為相同的值。附加元件會自動配對，請留空。"
         },
         "sections": {
           "mcp": {
@@ -322,225 +124,14 @@
               "system_prompt": "僅語氣與行為。留空則使用內建提示詞。MCP 工具和編輯器連結一定會加上，不要寫進此欄位。"
             }
           }
-        }
-      },
-      "api": {
-        "title": "雲端 API 供應商",
-        "data": {
-          "enable_sidebar": "在側欄顯示 AI Workspace",
-          "enable_overlay": "在每個頁面顯示懸浮 AI 按鈕",
-          "enable_dictate": "顯示聽寫按鈕",
-          "allow_users": "允許一般使用者",
-          "house_map": "設定目錄",
-          "cross_chat": "跨聊天",
-          "keep_chats": "要保留的聊天"
-        },
-        "data_description": {
-          "enable_sidebar": "側欄項目 AI Workspace。關閉後頁面仍可在 /ai-workspace 開啟。",
-          "enable_overlay": "懸浮 AI 按鈕。在設定頁隱藏，以免擋住「新增整合」。",
-          "enable_dictate": "訊息框中的麥克風。瀏覽器僅在 https:// 上允許聽寫。",
-          "allow_users": "非管理員的已登入使用者可以開啟懸浮聊天。關閉則僅限管理員。側欄項目仍僅管理員可見。",
-          "house_map": "選用的本機索引，用於已命名項目的接線（觸發器、相關 id）。預設關閉。不要用來列出自動化或開關狀態——那用即時 MCP。不是即時狀態、歷程或追蹤。",
-          "cross_chat": "預設關閉。開啟後，問題可以使用標題有相同詞語的另一個聊天。不必說「聊天」。只附上短摘錄，且不修改那個聊天。",
-          "keep_chats": "每人保留的未釘選最新聊天。已釘選的聊天一律保留。預設 30。"
-        },
-        "sections": {
-          "provider": {
-            "name": "供應商",
-            "data": {
-              "api_provider": "供應商",
-              "api_key": "API 金鑰",
-              "model": "模型",
-              "api_base": "API 基礎 URL"
-            },
-            "data_description": {
-              "api_provider": "OpenAI、Claude、Gemini、DeepSeek、Qwen、Grok 或 OpenAI 相容。",
-              "api_key": "供應商 API 金鑰。不是 Home Assistant 權杖。",
-              "model": "留空則使用供應商預設值。",
-              "api_base": "所選供應商可留空。OpenAI 相容（OpenRouter、Ollama、LM Studio）必填。中國大陸 Qwen：https://dashscope.aliyuncs.com/compatible-mode/v1"
-            }
-          },
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP 類型",
-              "mcp_url": "MCP URL{mcp_url_mark}",
-              "mcp_token": "MCP 權杖"
-            },
-            "data_description": {
-              "mcp_kind": "僅列出此 Home Assistant 能連到的 MCP 伺服器。自訂可以是任意 MCP HTTP URL。",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "內建：Home Assistant 長期存取權杖，或留空以使用此聊天的目前登入。HA-MCP：通常留空。Vibecode：Agent Key。自訂：選用 Bearer 權杖。"
-            }
-          },
-          "prompt": {
-            "name": "系統提示詞",
-            "data": {
-              "system_prompt": "系統提示詞"
-            },
-            "data_description": {
-              "system_prompt": "僅語氣與行為。留空則使用內建提示詞。MCP 工具和編輯器連結一定會加上，不要寫進此欄位。"
-            }
-          }
-        }
-      },
-      "cursor": {
-        "title": "Cursor 執行階段",
-        "data": {
-          "runtime_url": "Cursor 執行階段 URL{runtime_url_mark}",
-          "enable_sidebar": "在側欄顯示 AI Workspace",
-          "enable_overlay": "在每個頁面顯示懸浮 AI 按鈕",
-          "enable_dictate": "顯示聽寫按鈕",
-          "allow_users": "允許一般使用者",
-          "house_map": "設定目錄",
-          "cross_chat": "跨聊天",
-          "keep_chats": "要保留的聊天"
-        },
-        "data_description": {
-          "runtime_url": "{runtime_url_note}",
-          "enable_sidebar": "側欄項目 AI Workspace。關閉後頁面仍可在 /ai-workspace 開啟。",
-          "enable_overlay": "懸浮 AI 按鈕。在設定頁隱藏，以免擋住「新增整合」。",
-          "enable_dictate": "訊息框中的麥克風。瀏覽器僅在 https:// 上允許聽寫。",
-          "allow_users": "非管理員的已登入使用者可以開啟懸浮聊天。關閉則僅限管理員。側欄項目仍僅管理員可見。",
-          "house_map": "選用的本機索引，用於已命名項目的接線（觸發器、相關 id）。預設關閉。不要用來列出自動化或開關狀態——那用即時 MCP。不是即時狀態、歷程或追蹤。",
-          "cross_chat": "預設關閉。開啟後，問題可以使用標題有相同詞語的另一個聊天。不必說「聊天」。只附上短摘錄，且不修改那個聊天。",
-          "keep_chats": "每人保留的未釘選最新聊天。已釘選的聊天一律保留。預設 30。"
-        },
-        "sections": {
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP 類型",
-              "mcp_url": "MCP URL{mcp_url_mark}",
-              "mcp_token": "MCP 權杖"
-            },
-            "data_description": {
-              "mcp_kind": "僅列出此 Home Assistant 能連到的 MCP 伺服器。自訂可以是任意 MCP HTTP URL。",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "內建：Home Assistant 長期存取權杖，或留空以使用此聊天的目前登入。HA-MCP：通常留空。Vibecode：Agent Key。自訂：選用 Bearer 權杖。"
-            }
-          },
-          "prompt": {
-            "name": "系統提示詞",
-            "data": {
-              "system_prompt": "系統提示詞"
-            },
-            "data_description": {
-              "system_prompt": "僅語氣與行為。留空則使用內建提示詞。MCP 工具和編輯器連結一定會加上，不要寫進此欄位。"
-            }
-          }
-        }
-      },
-      "provider": {
-        "title": "供應商",
-        "description": "選擇供應商。下一屏只詢問該供應商需要的內容。",
-        "data": {
-          "api_provider": "供應商"
-        },
-        "data_description": {
-          "api_provider": "Cursor，或雲端／本機模型。 "
-        }
-      },
-      "provider_cursor": {
-        "title": "Cursor",
-        "description": "Cursor API 金鑰、模型和力度。執行階段 URL 仍在 AI Workspace。",
-        "data": {
-          "cursor_api_key": "Cursor API 金鑰",
-          "model": "模型",
-          "effort": "力度",
-          "assist": "也在 Assist 中使用"
-        },
-        "data_description": {
-          "cursor_api_key": "來自 cursor.com/dashboard/integrations。編輯時留空以保留已儲存的金鑰。",
-          "model": "留空則使用 Composer。",
-          "effort": "快速、高或高快速。Composer 使用快速，除非你選擇高。",
-          "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。"
-        }
-      },
-      "provider_cloud": {
-        "title": "雲端代理",
-        "description": "此代理保存自己的金鑰。從已設定的整合複製，或貼上新金鑰。編輯時留空以保留已儲存的金鑰。",
-        "data": {
-          "borrow": "從以下位置複製金鑰",
-          "api_key": "API 金鑰",
-          "model": "模型",
-          "effort": "力度",
-          "low_token": "低 Token",
-          "assist": "也在 Assist 中使用"
-        },
-        "data_description": {
-          "borrow": "使用該整合已儲存的金鑰。另一個整合維持不變。",
-          "api_key": "不是 Home Assistant 權杖。",
-          "model": "留空則使用供應商預設值。",
-          "effort": "在模型支援時為快速、高或高快速。",
-          "low_token": "短提示、不帶工具，方便小模型回答。不能查看或改動家裡的設備。",
-          "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。"
-        }
-      },
-      "provider_ollama": {
-        "title": "Ollama",
-        "description": "指向 Ollama 伺服器。",
-        "data": {
-          "api_base": "Ollama URL",
-          "model": "模型",
-          "effort": "力度",
-          "low_token": "低 Token",
-          "assist": "也在 Assist 中使用"
-        },
-        "data_description": {
-          "api_base": "Usually http://127.0.0.1:11434/v1",
-          "model": "留空則使用 llama3.2。",
-          "effort": "在模型支援時使用。",
-          "low_token": "短提示、不帶工具，方便小模型回答。不能查看或改動家裡的設備。",
-          "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。"
-        }
-      },
-      "provider_azure": {
-        "title": "Azure OpenAI",
-        "description": "Azure 端點、部署和金鑰。",
-        "data": {
-          "api_key": "Azure API 金鑰",
-          "api_base": "端點",
-          "model": "部署",
-          "azure_api_version": "API 版本",
-          "effort": "力度",
-          "low_token": "低 Token",
-          "assist": "也在 Assist 中使用"
-        },
-        "data_description": {
-          "api_key": "Azure OpenAI 金鑰。編輯時留空以保留已儲存的金鑰。",
-          "api_base": "https://YOUR.openai.azure.com",
-          "model": "部署名稱。",
-          "azure_api_version": "Default 2024-10-21.",
-          "effort": "在部署支援時使用。",
-          "low_token": "短提示、不帶工具，方便小模型回答。不能查看或改動家裡的設備。",
-          "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。"
-        }
-      },
-      "provider_compatible": {
-        "title": "OpenAI 相容",
-        "description": "使用 OpenAI API 的自訂伺服器。",
-        "data": {
-          "api_key": "API 金鑰",
-          "api_base": "API 基礎 URL",
-          "model": "模型",
-          "effort": "力度",
-          "low_token": "低 Token",
-          "assist": "也在 Assist 中使用"
-        },
-        "data_description": {
-          "api_key": "編輯時留空以保留已儲存的金鑰。",
-          "api_base": "伺服器基礎 URL，若使用該路徑則包含 /v1。",
-          "model": "該伺服器上的模型名稱。",
-          "effort": "在伺服器支援時使用。",
-          "low_token": "短提示、不帶工具，方便小模型回答。不能查看或改動家裡的設備。",
-          "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。"
         }
       }
     },
     "error": {
       "no_runtime": "無法連線 Cursor 執行階段。請啟動它並在 AI Workspace 中設定 URL。",
-      "required": "此欄位為必填。"
+      "required": "此欄位為必填。",
+      "invalid_auth": "提供者拒絕了此 API 金鑰。",
+      "cannot_connect": "無法連線到提供者。請檢查 URL 和網路。"
     }
   },
   "config_subentries": {
@@ -592,115 +183,11 @@
       "entry_type": "代理",
       "error": {
         "no_runtime": "無法連線 Cursor 執行階段。請啟動它並在 AI Workspace 中設定 URL。",
-        "required": "此欄位為必填。"
+        "required": "此欄位為必填。",
+        "invalid_auth": "提供者拒絕了此 API 金鑰。",
+        "cannot_connect": "無法連線到提供者。請檢查 URL 和網路。"
       },
       "step": {
-        "agent": {
-          "title": "代理",
-          "description": "選擇代理。下一屏只詢問該代理需要的內容。",
-          "data": {
-            "api_provider": "代理"
-          },
-          "data_description": {
-            "api_provider": "Cursor，或雲端／本機模型。"
-          }
-        },
-        "cursor": {
-          "title": "Cursor",
-          "description": "Cursor API 金鑰、模型和力度。執行階段 URL 仍在 AI Workspace。",
-          "data": {
-            "cursor_api_key": "Cursor API 金鑰",
-            "model": "模型",
-            "effort": "力度",
-            "assist": "也在 Assist 中使用"
-          },
-          "data_description": {
-            "cursor_api_key": "來自 cursor.com/dashboard/integrations。編輯時留空以保留已儲存的金鑰。",
-            "model": "留空則使用 Composer。",
-            "effort": "快速、高或高快速。Composer 使用快速，除非你選擇高。",
-            "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。"
-          }
-        },
-        "cloud": {
-          "title": "雲端代理",
-          "description": "此代理保存自己的金鑰。從已設定的整合複製，或貼上新金鑰。編輯時留空以保留已儲存的金鑰。",
-          "data": {
-            "borrow": "從以下位置複製金鑰",
-            "api_key": "API 金鑰",
-            "model": "模型",
-            "effort": "力度",
-            "low_token": "低 Token",
-            "assist": "也在 Assist 中使用"
-          },
-          "data_description": {
-            "borrow": "使用該整合已儲存的金鑰。另一個整合維持不變。",
-            "api_key": "不是 Home Assistant 權杖。",
-            "model": "留空則使用供應商預設值。",
-            "effort": "在模型支援時為快速、高或高快速。",
-            "low_token": "短提示、不帶工具，方便小模型回答。不能查看或改動家裡的設備。",
-            "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。"
-          }
-        },
-        "ollama": {
-          "title": "Ollama",
-          "description": "指向 Ollama 伺服器。",
-          "data": {
-            "api_base": "Ollama URL",
-            "model": "模型",
-            "effort": "力度",
-            "low_token": "低 Token",
-            "assist": "也在 Assist 中使用"
-          },
-          "data_description": {
-            "api_base": "Usually http://127.0.0.1:11434/v1",
-            "model": "留空則使用 llama3.2。",
-            "effort": "在模型支援時使用。",
-            "low_token": "短提示、不帶工具，方便小模型回答。不能查看或改動家裡的設備。",
-            "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。"
-          }
-        },
-        "azure": {
-          "title": "Azure OpenAI",
-          "description": "Azure 端點、部署和金鑰。",
-          "data": {
-            "api_key": "Azure API 金鑰",
-            "api_base": "端點",
-            "model": "部署",
-            "azure_api_version": "API 版本",
-            "effort": "力度",
-            "low_token": "低 Token",
-            "assist": "也在 Assist 中使用"
-          },
-          "data_description": {
-            "api_key": "Azure OpenAI 金鑰。編輯時留空以保留已儲存的金鑰。",
-            "api_base": "https://YOUR.openai.azure.com",
-            "model": "部署名稱。",
-            "azure_api_version": "Default 2024-10-21.",
-            "effort": "在部署支援時使用。",
-            "low_token": "短提示、不帶工具，方便小模型回答。不能查看或改動家裡的設備。",
-            "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。"
-          }
-        },
-        "compatible": {
-          "title": "OpenAI 相容",
-          "description": "使用 OpenAI API 的自訂伺服器。",
-          "data": {
-            "api_key": "API 金鑰",
-            "api_base": "API 基礎 URL",
-            "model": "模型",
-            "effort": "力度",
-            "low_token": "低 Token",
-            "assist": "也在 Assist 中使用"
-          },
-          "data_description": {
-            "api_key": "編輯時留空以保留已儲存的金鑰。",
-            "api_base": "伺服器基礎 URL，若使用該路徑則包含 /v1。",
-            "model": "該伺服器上的模型名稱。",
-            "effort": "在伺服器支援時使用。",
-            "low_token": "短提示、不帶工具，方便小模型回答。不能查看或改動家裡的設備。",
-            "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。"
-          }
-        },
         "provider": {
           "title": "供應商",
           "description": "選擇供應商。下一屏只詢問該供應商需要的內容。",
@@ -708,7 +195,7 @@
             "api_provider": "供應商"
           },
           "data_description": {
-            "api_provider": "Cursor，或雲端／本機模型。 "
+            "api_provider": "Cursor，或雲端／本機模型。"
           }
         },
         "provider_cursor": {
@@ -721,7 +208,7 @@
             "assist": "也在 Assist 中使用"
           },
           "data_description": {
-            "cursor_api_key": "來自 cursor.com/dashboard/integrations。編輯時留空以保留已儲存的金鑰。",
+            "cursor_api_key": "來自 cursor.com/dashboard/integrations。編輯時留空以保留已儲存的金鑰。 如果 Runtime 已設定 CURSOR_API_KEY，請留空。",
             "model": "留空則使用 Composer。",
             "effort": "快速、高或高快速。Composer 使用快速，除非你選擇高。",
             "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。"
@@ -758,7 +245,7 @@
             "assist": "也在 Assist 中使用"
           },
           "data_description": {
-            "api_base": "Usually http://127.0.0.1:11434/v1",
+            "api_base": "Usually {example_url}",
             "model": "留空則使用 llama3.2。",
             "effort": "在模型支援時使用。",
             "low_token": "短提示、不帶工具，方便小模型回答。不能查看或改動家裡的設備。",
@@ -779,7 +266,7 @@
           },
           "data_description": {
             "api_key": "Azure OpenAI 金鑰。編輯時留空以保留已儲存的金鑰。",
-            "api_base": "https://YOUR.openai.azure.com",
+            "api_base": "{example_url}",
             "model": "部署名稱。",
             "azure_api_version": "Default 2024-10-21.",
             "effort": "在部署支援時使用。",
@@ -814,20 +301,6 @@
     }
   },
   "selector": {
-    "api_provider": {
-      "options": {
-        "openai": "OpenAI",
-        "anthropic": "Claude (Anthropic)",
-        "gemini": "Google Gemini",
-        "deepseek": "DeepSeek",
-        "qwen": "Qwen (Alibaba)",
-        "xai": "Grok (xAI)",
-        "openrouter": "OpenRouter",
-        "ollama": "本機 Ollama",
-        "azure": "Azure OpenAI",
-        "compatible": "OpenAI 相容（自訂基礎 URL）"
-      }
-    },
     "agent_provider": {
       "options": {
         "cursor": "Cursor",
@@ -845,7 +318,7 @@
     },
     "effort": {
       "options": {
-        "": "預設",
+        "default": "預設",
         "fast": "快速",
         "high": "高",
         "high_fast": "高快速"

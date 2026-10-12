@@ -88,23 +88,6 @@ def openai_user_content(text: str, images: list[dict[str, str]]) -> str | list[d
     return parts
 
 
-def cursor_payload(text: str, images: list[dict[str, str]] | None):
-    if not images:
-        return text
-    packed = [{"data": item["data"], "mime_type": item["mime"]} for item in images]
-    try:
-        from cursor_sdk import SDKImage, UserMessage
-    except ImportError:
-        return {"text": text, "images": packed}
-    factory = getattr(SDKImage, "data_image", None)
-    if factory is None:
-        return {"text": text, "images": packed}
-    try:
-        return UserMessage(text=text, images=[factory(item["data"], mime_type=item["mime_type"]) for item in packed])
-    except Exception:
-        return {"text": text, "images": packed}
-
-
 def anthropic_user_content(text: str, images: list[dict[str, str]]) -> str | list[dict[str, Any]]:
     if not images:
         return text

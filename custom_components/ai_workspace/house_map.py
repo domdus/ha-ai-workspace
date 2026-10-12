@@ -40,11 +40,10 @@ TOOL_DESCRIPTION = (
     "Pass detail=wiring only when asking what one named automation is wired to. Not live state."
 )
 CATALOG_INSTRUCTIONS = (
-    "search_catalog is only for wiring of a named item (triggers, what it acts on, related ids). "
-    "Do not call it to list automations, names, or on/off. Use Home Assistant MCP for those lists: "
-    "it returns every item with live state, and a full name list costs fewer tokens than the catalog. "
-    "The catalog is capped and has no on/off. Default detail is compact. "
-    "Use detail=wiring only for one named item."
+    "For counts, lists, names, and on/off, call the Home Assistant tools; they return every item with live state "
+    "and cost fewer tokens than the catalog. "
+    "search_catalog is a capped static index for the wiring of one named item (triggers, what it acts on, related ids). "
+    "Default detail is compact. Use detail=wiring only for one named item."
 )
 HOUSE_MAP_INSTRUCTIONS = CATALOG_INSTRUCTIONS
 

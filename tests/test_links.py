@@ -40,5 +40,6 @@ def test_small_talk_stays_plain() -> None:
     assert "Do not link the words Home Assistant" in text
     assert "Never write that origin" in text
     assert "This user's Home Assistant UI is" not in text
-    assert "Call tools without announcing them" in text
+    assert "Call tools silently" in text
     assert "small talk" in const.DEFAULT_SYSTEM_PROMPT
+    assert "call a Home Assistant tool" in const.DEFAULT_SYSTEM_PROMPT

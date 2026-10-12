@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "AI Workspace",
-        "description": "Shared chat settings. After this, add the first agent (Cursor, OpenAI, OpenRouter, Ollama, and others) under AI Agents.",
+        "description": "Shared chat settings. After this, add the first agent (Cursor, OpenAI, OpenRouter, Ollama, and others). Connections and agents are rows on this integration.",
         "data": {
           "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
           "stt_engine": "Speech to text",
@@ -15,7 +15,8 @@
           "allow_users": "Allow normal users",
           "house_map": "Config catalog",
           "cross_chat": "Cross chat",
-          "keep_chats": "Chats to keep"
+          "keep_chats": "Chats to keep",
+          "runtime_token": "Runtime token"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
@@ -25,10 +26,11 @@
           "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
           "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
           "enable_dictate": "Microphone in the message box.",
-          "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only.",
+          "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only. They only get the built-in Home Assistant MCP Server with their own permissions.",
           "house_map": "Optional local index for wiring of a named item (triggers, related ids). Off by default. Not for listing automations or on/off — use live MCP for that. Not live state, history, or traces.",
           "cross_chat": "Off by default. When on, a question can use another chat whose title shares words with it. You do not have to mention chat. A short excerpt only, and that chat is not changed.",
-          "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30."
+          "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30.",
+          "runtime_token": "Shared secret for a Docker Runtime. Set the same value as RUNTIME_TOKEN on the container. The add-on is paired automatically; leave this empty."
         },
         "sections": {
           "mcp": {
@@ -53,216 +55,14 @@
               "system_prompt": "Tone and behavior only. Leave empty for the built-in prompt. MCP tools and editor links are always added; they are not part of this field."
             }
           }
-        }
-      },
-      "api": {
-        "title": "Cloud API Provider",
-        "data": {
-          "enable_sidebar": "Show AI Workspace in the sidebar",
-          "enable_overlay": "Show floating AI button on every page",
-          "enable_dictate": "Show dictate button",
-          "allow_users": "Allow normal users",
-          "house_map": "Config catalog",
-          "cross_chat": "Cross chat",
-          "keep_chats": "Chats to keep"
-        },
-        "sections": {
-          "provider": {
-            "name": "Provider",
-            "data": {
-              "api_provider": "Provider",
-              "api_key": "API Key",
-              "model": "Model",
-              "api_base": "API Base URL"
-            },
-            "data_description": {
-              "api_provider": "OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible.",
-              "api_key": "Provider API key. Not a Home Assistant token.",
-              "model": "Empty uses the provider default.",
-              "api_base": "Leave empty for the selected provider. Required for OpenAI-compatible (OpenRouter, Ollama, LM Studio). Mainland China Qwen: https://dashscope.aliyuncs.com/compatible-mode/v1"
-            }
-          },
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP Type",
-              "mcp_url": "MCP URL{mcp_url_mark}",
-              "mcp_token": "MCP Token"
-            },
-            "data_description": {
-              "mcp_kind": "Only MCP servers this Home Assistant can reach are listed. Custom is any MCP HTTP URL.",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Built-in: Home Assistant long-lived access token, or leave empty to use your current login in this chat. HA-MCP: usually empty. Vibecode: Agent Key. Custom: optional Bearer token."
-            }
-          },
-          "prompt": {
-            "name": "System Prompt",
-            "data": {
-              "system_prompt": "System Prompt"
-            },
-            "data_description": {
-              "system_prompt": "Tone and behavior only. Leave empty for the built-in prompt. MCP tools and editor links are always added; they are not part of this field."
-            }
-          }
-        }
-      },
-      "cursor": {
-        "title": "Cursor Runtime",
-        "data": {
-          "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
-          "enable_sidebar": "Show AI Workspace in the sidebar",
-          "enable_overlay": "Show floating AI button on every page",
-          "enable_dictate": "Show dictate button",
-          "allow_users": "Allow normal users",
-          "house_map": "Config catalog",
-          "cross_chat": "Cross chat",
-          "keep_chats": "Chats to keep"
-        },
-        "data_description": {
-          "runtime_url": "{runtime_url_note}",
-          "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
-          "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
-          "enable_dictate": "Microphone in the message box. Browsers allow dictation only over https://.",
-          "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only.",
-          "house_map": "Optional local index for wiring of a named item (triggers, related ids). Off by default. Not for listing automations or on/off — use live MCP for that. Not live state, history, or traces.",
-          "cross_chat": "Off by default. When on, a question can use another chat whose title shares words with it. You do not have to mention chat. A short excerpt only, and that chat is not changed.",
-          "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30."
-        },
-        "sections": {
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP Type",
-              "mcp_url": "MCP URL{mcp_url_mark}",
-              "mcp_token": "MCP Token"
-            },
-            "data_description": {
-              "mcp_kind": "Only MCP servers this Home Assistant can reach are listed. Custom is any MCP HTTP URL.",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Built-in: Home Assistant long-lived access token, or leave empty to use your current login in this chat. HA-MCP: usually empty. Vibecode: Agent Key. Custom: optional Bearer token."
-            }
-          },
-          "prompt": {
-            "name": "System Prompt",
-            "data": {
-              "system_prompt": "System Prompt"
-            },
-            "data_description": {
-              "system_prompt": "Tone and behavior only. Leave empty for the built-in prompt. MCP tools and editor links are always added; they are not part of this field."
-            }
-          }
-        }
-      },
-      "provider": {
-        "title": "Provider",
-        "description": "Choose the provider. The next screen asks only for what that provider needs.",
-        "data": {
-          "api_provider": "Provider"
-        },
-        "data_description": {
-          "api_provider": "Cursor, or a cloud or local model. "
-        }
-      },
-      "provider_cursor": {
-        "title": "Cursor",
-        "description": "Cursor API key, model, and effort. The runtime URL stays on AI Workspace.",
-        "data": {
-          "cursor_api_key": "Cursor API key",
-          "model": "Model",
-          "effort": "Effort",
-          "assist": "Also use in Assist"
-        },
-        "data_description": {
-          "cursor_api_key": "From cursor.com/dashboard/integrations. Leave blank when editing to keep the saved key.",
-          "model": "Empty uses Composer.",
-          "effort": "Fast, High, or High fast. Composer uses Fast unless you pick High.",
-          "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
-        }
-      },
-      "provider_cloud": {
-        "title": "Cloud agent",
-        "description": "This agent keeps its own key. Copy one from an integration that is already set up, or paste a new one. Leave the key blank when editing to keep the saved key.",
-        "data": {
-          "borrow": "Copy key from",
-          "api_key": "API key",
-          "model": "Model",
-          "effort": "Effort",
-          "low_token": "Low token",
-          "assist": "Also use in Assist"
-        },
-        "data_description": {
-          "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
-          "api_key": "Not a Home Assistant token.",
-          "model": "Empty uses the provider default.",
-          "effort": "Fast, High, or High fast when the model supports it.",
-          "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
-          "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
-        }
-      },
-      "provider_ollama": {
-        "title": "Ollama",
-        "description": "Point this at the Ollama server.",
-        "data": {
-          "api_base": "Ollama URL",
-          "model": "Model",
-          "effort": "Effort",
-          "low_token": "Low token",
-          "assist": "Also use in Assist"
-        },
-        "data_description": {
-          "api_base": "Usually http://127.0.0.1:11434/v1",
-          "model": "Empty uses llama3.2.",
-          "effort": "Used when the model supports it.",
-          "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
-          "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
-        }
-      },
-      "provider_azure": {
-        "title": "Azure OpenAI",
-        "description": "Azure endpoint, deployment, and key.",
-        "data": {
-          "api_key": "Azure API key",
-          "api_base": "Endpoint",
-          "model": "Deployment",
-          "azure_api_version": "API version",
-          "effort": "Effort",
-          "low_token": "Low token",
-          "assist": "Also use in Assist"
-        },
-        "data_description": {
-          "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key.",
-          "api_base": "https://YOUR.openai.azure.com",
-          "model": "The deployment name.",
-          "azure_api_version": "Default 2024-10-21.",
-          "effort": "Used when the deployment supports it.",
-          "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
-          "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
-        }
-      },
-      "provider_compatible": {
-        "title": "OpenAI-compatible",
-        "description": "A custom server that speaks the OpenAI API.",
-        "data": {
-          "api_key": "API key",
-          "api_base": "API base URL",
-          "model": "Model",
-          "effort": "Effort",
-          "low_token": "Low token",
-          "assist": "Also use in Assist"
-        },
-        "data_description": {
-          "api_key": "Leave blank when editing to keep the saved key.",
-          "api_base": "Base URL of the server, including /v1 when it uses that path.",
-          "model": "Model name on that server.",
-          "effort": "Used when the server supports it.",
-          "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
-          "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
         }
       }
     },
     "error": {
       "no_runtime": "The Cursor runtime is not reachable. Start it and set its URL on AI Workspace.",
-      "required": "This field is required."
+      "required": "This field is required.",
+      "invalid_auth": "The provider rejected this API key.",
+      "cannot_connect": "Could not reach the provider. Check the URL and the network."
     },
     "abort": {
       "already_configured": "AI Workspace is already configured"
@@ -272,7 +72,7 @@
     "step": {
       "init": {
         "title": "AI Workspace",
-        "description": "Shared chat settings. Connections are added on AI Workspace. Agents are added on AI Agents.",
+        "description": "Shared chat settings. Add MCP connections and agents with the buttons on the AI Workspace integration page.",
         "data": {
           "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
           "stt_engine": "Speech to text",
@@ -284,7 +84,8 @@
           "allow_users": "Allow normal users",
           "house_map": "Config catalog",
           "cross_chat": "Cross chat",
-          "keep_chats": "Chats to keep"
+          "keep_chats": "Chats to keep",
+          "runtime_token": "Runtime token"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
@@ -294,10 +95,11 @@
           "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
           "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
           "enable_dictate": "Microphone in the message box.",
-          "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only.",
+          "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only. They only get the built-in Home Assistant MCP Server with their own permissions.",
           "house_map": "Optional local index for wiring of a named item (triggers, related ids). Off by default. Not for listing automations or on/off — use live MCP for that. Not live state, history, or traces.",
           "cross_chat": "Off by default. When on, a question can use another chat whose title shares words with it. You do not have to mention chat. A short excerpt only, and that chat is not changed.",
-          "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30."
+          "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30.",
+          "runtime_token": "Shared secret for a Docker Runtime. Set the same value as RUNTIME_TOKEN on the container. The add-on is paired automatically; leave this empty."
         },
         "sections": {
           "mcp": {
@@ -322,225 +124,14 @@
               "system_prompt": "Tone and behavior only. Leave empty for the built-in prompt. MCP tools and editor links are always added; they are not part of this field."
             }
           }
-        }
-      },
-      "api": {
-        "title": "Cloud API Provider",
-        "data": {
-          "enable_sidebar": "Show AI Workspace in the sidebar",
-          "enable_overlay": "Show floating AI button on every page",
-          "enable_dictate": "Show dictate button",
-          "allow_users": "Allow normal users",
-          "house_map": "Config catalog",
-          "cross_chat": "Cross chat",
-          "keep_chats": "Chats to keep"
-        },
-        "data_description": {
-          "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
-          "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
-          "enable_dictate": "Microphone in the message box. Browsers allow dictation only over https://.",
-          "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only.",
-          "house_map": "Optional local index for wiring of a named item (triggers, related ids). Off by default. Not for listing automations or on/off — use live MCP for that. Not live state, history, or traces.",
-          "cross_chat": "Off by default. When on, a question can use another chat whose title shares words with it. You do not have to mention chat. A short excerpt only, and that chat is not changed.",
-          "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30."
-        },
-        "sections": {
-          "provider": {
-            "name": "Provider",
-            "data": {
-              "api_provider": "Provider",
-              "api_key": "API Key",
-              "model": "Model",
-              "api_base": "API Base URL"
-            },
-            "data_description": {
-              "api_provider": "OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or OpenAI-compatible.",
-              "api_key": "Provider API key. Not a Home Assistant token.",
-              "model": "Empty uses the provider default.",
-              "api_base": "Leave empty for the selected provider. Required for OpenAI-compatible (OpenRouter, Ollama, LM Studio). Mainland China Qwen: https://dashscope.aliyuncs.com/compatible-mode/v1"
-            }
-          },
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP Type",
-              "mcp_url": "MCP URL{mcp_url_mark}",
-              "mcp_token": "MCP Token"
-            },
-            "data_description": {
-              "mcp_kind": "Only MCP servers this Home Assistant can reach are listed. Custom is any MCP HTTP URL.",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Built-in: Home Assistant long-lived access token, or leave empty to use your current login in this chat. HA-MCP: usually empty. Vibecode: Agent Key. Custom: optional Bearer token."
-            }
-          },
-          "prompt": {
-            "name": "System Prompt",
-            "data": {
-              "system_prompt": "System Prompt"
-            },
-            "data_description": {
-              "system_prompt": "Tone and behavior only. Leave empty for the built-in prompt. MCP tools and editor links are always added; they are not part of this field."
-            }
-          }
-        }
-      },
-      "cursor": {
-        "title": "Cursor Runtime",
-        "data": {
-          "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
-          "enable_sidebar": "Show AI Workspace in the sidebar",
-          "enable_overlay": "Show floating AI button on every page",
-          "enable_dictate": "Show dictate button",
-          "allow_users": "Allow normal users",
-          "house_map": "Config catalog",
-          "cross_chat": "Cross chat",
-          "keep_chats": "Chats to keep"
-        },
-        "data_description": {
-          "runtime_url": "{runtime_url_note}",
-          "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
-          "enable_overlay": "The floating AI button. Hidden on Settings so it does not cover Add integration.",
-          "enable_dictate": "Microphone in the message box. Browsers allow dictation only over https://.",
-          "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only.",
-          "house_map": "Optional local index for wiring of a named item (triggers, related ids). Off by default. Not for listing automations or on/off — use live MCP for that. Not live state, history, or traces.",
-          "cross_chat": "Off by default. When on, a question can use another chat whose title shares words with it. You do not have to mention chat. A short excerpt only, and that chat is not changed.",
-          "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30."
-        },
-        "sections": {
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP Type",
-              "mcp_url": "MCP URL{mcp_url_mark}",
-              "mcp_token": "MCP Token"
-            },
-            "data_description": {
-              "mcp_kind": "Only MCP servers this Home Assistant can reach are listed. Custom is any MCP HTTP URL.",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Built-in: Home Assistant long-lived access token, or leave empty to use your current login in this chat. HA-MCP: usually empty. Vibecode: Agent Key. Custom: optional Bearer token."
-            }
-          },
-          "prompt": {
-            "name": "System Prompt",
-            "data": {
-              "system_prompt": "System Prompt"
-            },
-            "data_description": {
-              "system_prompt": "Tone and behavior only. Leave empty for the built-in prompt. MCP tools and editor links are always added; they are not part of this field."
-            }
-          }
-        }
-      },
-      "provider": {
-        "title": "Provider",
-        "description": "Choose the provider. The next screen asks only for what that provider needs.",
-        "data": {
-          "api_provider": "Provider"
-        },
-        "data_description": {
-          "api_provider": "Cursor, or a cloud or local model. "
-        }
-      },
-      "provider_cursor": {
-        "title": "Cursor",
-        "description": "Cursor API key, model, and effort. The runtime URL stays on AI Workspace.",
-        "data": {
-          "cursor_api_key": "Cursor API key",
-          "model": "Model",
-          "effort": "Effort",
-          "assist": "Also use in Assist"
-        },
-        "data_description": {
-          "cursor_api_key": "From cursor.com/dashboard/integrations. Leave blank when editing to keep the saved key.",
-          "model": "Empty uses Composer.",
-          "effort": "Fast, High, or High fast. Composer uses Fast unless you pick High.",
-          "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
-        }
-      },
-      "provider_cloud": {
-        "title": "Cloud agent",
-        "description": "This agent keeps its own key. Copy one from an integration that is already set up, or paste a new one. Leave the key blank when editing to keep the saved key.",
-        "data": {
-          "borrow": "Copy key from",
-          "api_key": "API key",
-          "model": "Model",
-          "effort": "Effort",
-          "low_token": "Low token",
-          "assist": "Also use in Assist"
-        },
-        "data_description": {
-          "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
-          "api_key": "Not a Home Assistant token.",
-          "model": "Empty uses the provider default.",
-          "effort": "Fast, High, or High fast when the model supports it.",
-          "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
-          "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
-        }
-      },
-      "provider_ollama": {
-        "title": "Ollama",
-        "description": "Point this at the Ollama server.",
-        "data": {
-          "api_base": "Ollama URL",
-          "model": "Model",
-          "effort": "Effort",
-          "low_token": "Low token",
-          "assist": "Also use in Assist"
-        },
-        "data_description": {
-          "api_base": "Usually http://127.0.0.1:11434/v1",
-          "model": "Empty uses llama3.2.",
-          "effort": "Used when the model supports it.",
-          "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
-          "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
-        }
-      },
-      "provider_azure": {
-        "title": "Azure OpenAI",
-        "description": "Azure endpoint, deployment, and key.",
-        "data": {
-          "api_key": "Azure API key",
-          "api_base": "Endpoint",
-          "model": "Deployment",
-          "azure_api_version": "API version",
-          "effort": "Effort",
-          "low_token": "Low token",
-          "assist": "Also use in Assist"
-        },
-        "data_description": {
-          "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key.",
-          "api_base": "https://YOUR.openai.azure.com",
-          "model": "The deployment name.",
-          "azure_api_version": "Default 2024-10-21.",
-          "effort": "Used when the deployment supports it.",
-          "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
-          "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
-        }
-      },
-      "provider_compatible": {
-        "title": "OpenAI-compatible",
-        "description": "A custom server that speaks the OpenAI API.",
-        "data": {
-          "api_key": "API key",
-          "api_base": "API base URL",
-          "model": "Model",
-          "effort": "Effort",
-          "low_token": "Low token",
-          "assist": "Also use in Assist"
-        },
-        "data_description": {
-          "api_key": "Leave blank when editing to keep the saved key.",
-          "api_base": "Base URL of the server, including /v1 when it uses that path.",
-          "model": "Model name on that server.",
-          "effort": "Used when the server supports it.",
-          "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
-          "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
         }
       }
     },
     "error": {
       "no_runtime": "The Cursor runtime is not reachable. Start it and set its URL on AI Workspace.",
-      "required": "This field is required."
+      "required": "This field is required.",
+      "invalid_auth": "The provider rejected this API key.",
+      "cannot_connect": "Could not reach the provider. Check the URL and the network."
     }
   },
   "config_subentries": {
@@ -592,115 +183,11 @@
       "entry_type": "Agent",
       "error": {
         "no_runtime": "The Cursor runtime is not reachable. Start it and set its URL on AI Workspace.",
-        "required": "This field is required."
+        "required": "This field is required.",
+        "invalid_auth": "The provider rejected this API key.",
+        "cannot_connect": "Could not reach the provider. Check the URL and the network."
       },
       "step": {
-        "agent": {
-          "title": "Agent",
-          "description": "Choose the agent. The next screen asks only for what that agent needs.",
-          "data": {
-            "api_provider": "Agent"
-          },
-          "data_description": {
-            "api_provider": "Cursor, or a cloud or local model."
-          }
-        },
-        "cursor": {
-          "title": "Cursor",
-          "description": "Cursor API key, model, and effort. The runtime URL stays on AI Workspace.",
-          "data": {
-            "cursor_api_key": "Cursor API key",
-            "model": "Model",
-            "effort": "Effort",
-            "assist": "Also use in Assist"
-          },
-          "data_description": {
-            "cursor_api_key": "From cursor.com/dashboard/integrations. Leave blank when editing to keep the saved key.",
-            "model": "Empty uses Composer.",
-            "effort": "Fast, High, or High fast. Composer uses Fast unless you pick High.",
-            "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
-          }
-        },
-        "cloud": {
-          "title": "Cloud agent",
-          "description": "This agent keeps its own key. Copy one from an integration that is already set up, or paste a new one. Leave the key blank when editing to keep the saved key.",
-          "data": {
-            "borrow": "Copy key from",
-            "api_key": "API key",
-            "model": "Model",
-            "effort": "Effort",
-            "low_token": "Low token",
-            "assist": "Also use in Assist"
-          },
-          "data_description": {
-            "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
-            "api_key": "Not a Home Assistant token.",
-            "model": "Empty uses the provider default.",
-            "effort": "Fast, High, or High fast when the model supports it.",
-            "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
-            "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
-          }
-        },
-        "ollama": {
-          "title": "Ollama",
-          "description": "Point this at the Ollama server.",
-          "data": {
-            "api_base": "Ollama URL",
-            "model": "Model",
-            "effort": "Effort",
-            "low_token": "Low token",
-            "assist": "Also use in Assist"
-          },
-          "data_description": {
-            "api_base": "Usually http://127.0.0.1:11434/v1",
-            "model": "Empty uses llama3.2.",
-            "effort": "Used when the model supports it.",
-            "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
-            "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
-          }
-        },
-        "azure": {
-          "title": "Azure OpenAI",
-          "description": "Azure endpoint, deployment, and key.",
-          "data": {
-            "api_key": "Azure API key",
-            "api_base": "Endpoint",
-            "model": "Deployment",
-            "azure_api_version": "API version",
-            "effort": "Effort",
-            "low_token": "Low token",
-            "assist": "Also use in Assist"
-          },
-          "data_description": {
-            "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key.",
-            "api_base": "https://YOUR.openai.azure.com",
-            "model": "The deployment name.",
-            "azure_api_version": "Default 2024-10-21.",
-            "effort": "Used when the deployment supports it.",
-            "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
-            "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
-          }
-        },
-        "compatible": {
-          "title": "OpenAI-compatible",
-          "description": "A custom server that speaks the OpenAI API.",
-          "data": {
-            "api_key": "API key",
-            "api_base": "API base URL",
-            "model": "Model",
-            "effort": "Effort",
-            "low_token": "Low token",
-            "assist": "Also use in Assist"
-          },
-          "data_description": {
-            "api_key": "Leave blank when editing to keep the saved key.",
-            "api_base": "Base URL of the server, including /v1 when it uses that path.",
-            "model": "Model name on that server.",
-            "effort": "Used when the server supports it.",
-            "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
-            "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
-          }
-        },
         "provider": {
           "title": "Provider",
           "description": "Choose the provider. The next screen asks only for what that provider needs.",
@@ -708,7 +195,7 @@
             "api_provider": "Provider"
           },
           "data_description": {
-            "api_provider": "Cursor, or a cloud or local model. "
+            "api_provider": "Cursor, or a cloud or local model."
           }
         },
         "provider_cursor": {
@@ -721,7 +208,7 @@
             "assist": "Also use in Assist"
           },
           "data_description": {
-            "cursor_api_key": "From cursor.com/dashboard/integrations. Leave blank when editing to keep the saved key.",
+            "cursor_api_key": "From cursor.com/dashboard/integrations. Leave blank when editing to keep the saved key. Leave empty when the Runtime already has CURSOR_API_KEY.",
             "model": "Empty uses Composer.",
             "effort": "Fast, High, or High fast. Composer uses Fast unless you pick High.",
             "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
@@ -758,7 +245,7 @@
             "assist": "Also use in Assist"
           },
           "data_description": {
-            "api_base": "Usually http://127.0.0.1:11434/v1",
+            "api_base": "Usually {example_url}",
             "model": "Empty uses llama3.2.",
             "effort": "Used when the model supports it.",
             "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
@@ -779,7 +266,7 @@
           },
           "data_description": {
             "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key.",
-            "api_base": "https://YOUR.openai.azure.com",
+            "api_base": "{example_url}",
             "model": "The deployment name.",
             "azure_api_version": "Default 2024-10-21.",
             "effort": "Used when the deployment supports it.",
@@ -814,20 +301,6 @@
     }
   },
   "selector": {
-    "api_provider": {
-      "options": {
-        "openai": "OpenAI",
-        "anthropic": "Claude (Anthropic)",
-        "gemini": "Google Gemini",
-        "deepseek": "DeepSeek",
-        "qwen": "Qwen (Alibaba)",
-        "xai": "Grok (xAI)",
-        "openrouter": "OpenRouter",
-        "ollama": "Local Ollama",
-        "azure": "Azure OpenAI",
-        "compatible": "OpenAI-compatible (custom base URL)"
-      }
-    },
     "agent_provider": {
       "options": {
         "cursor": "Cursor",
@@ -845,7 +318,7 @@
     },
     "effort": {
       "options": {
-        "": "Default",
+        "default": "Default",
         "fast": "Fast",
         "high": "High",
         "high_fast": "High fast"

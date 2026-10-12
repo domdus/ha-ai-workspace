@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Protocol
 
@@ -45,6 +45,7 @@ class Settings:
     cursor_api_key: str
     model: str
     mcp_servers: dict[str, dict[str, Any]]
+    mcp_rows: list[dict[str, Any]] = field(default_factory=list)
     enable_overlay: bool = True
     enable_sidebar: bool = True
     enable_dictate: bool = True

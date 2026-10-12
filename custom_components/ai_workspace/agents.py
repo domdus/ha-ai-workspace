@@ -1,12 +1,11 @@
-"""Agents saved as rows on the AI Agents entry."""
+"""Agents saved as rows on the AI Workspace entry."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from types import MappingProxyType
 from typing import Any, Mapping
 
-from homeassistant.config_entries import ConfigEntry, ConfigSubentry
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from .models import ProviderInfo
@@ -23,22 +22,17 @@ from .const import (
     CONF_AGENT_ID,
     CONF_API_PROVIDER,
     CONF_AZURE_API_VERSION,
-    CONF_ASSIST,
     CONF_CURSOR_API_KEY,
     CONF_EFFORT,
-    CONF_HUB_ID,
     CONF_LOW_TOKEN,
     CONF_MODE,
     CONF_MODEL,
-    CONF_RUNTIME_URL,
     DEFAULT_AZURE_API_VERSION,
+    EFFORT_DEFAULT,
     EFFORTS,
     MODE_API,
     MODE_CURSOR,
-    ROLE_AGENTS,
-    ROLE_PROVIDER,
     SUBENTRY_AGENT,
-    CONF_ROLE,
     assist_enabled,
     default_api_base,
     default_api_model,
@@ -95,7 +89,7 @@ def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Age
     else:
         mode = MODE_API
     effort = _text(raw.get(CONF_EFFORT))
-    if effort not in EFFORTS:
+    if effort not in EFFORTS or effort == EFFORT_DEFAULT:
         effort = ""
     return Agent(
         id=agent_id,
@@ -125,105 +119,6 @@ def entry_agents(entry: ConfigEntry) -> list[Agent]:
         agent.subentry_id = sub.subentry_id
         found.append(agent)
     return found
-
-
-def is_agents(entry: ConfigEntry) -> bool:
-    return entry.data.get(CONF_ROLE) == ROLE_AGENTS
-
-
-def is_provider(entry: ConfigEntry) -> bool:
-    raw = entry.data
-    if raw.get(CONF_ROLE) == ROLE_AGENTS:
-        return False
-    return raw.get(CONF_ROLE) == ROLE_PROVIDER or bool(raw.get(CONF_HUB_ID))
-
-
-def hub_entry(hass: HomeAssistant) -> ConfigEntry | None:
-    for entry in hass.config_entries.async_entries("ai_workspace"):
-        if is_provider(entry) or is_agents(entry):
-            continue
-        return entry
-    return None
-
-
-def agents_entry(hass: HomeAssistant, hub_id: str | None = None) -> ConfigEntry | None:
-    for entry in hass.config_entries.async_entries("ai_workspace"):
-        if not is_agents(entry):
-            continue
-        if hub_id and str(entry.data.get(CONF_HUB_ID) or "") not in {"", hub_id}:
-            continue
-        return entry
-    return None
-
-
-def provider_entries(hass: HomeAssistant, hub_id: str | None = None) -> list[ConfigEntry]:
-    found: list[ConfigEntry] = []
-    for entry in hass.config_entries.async_entries("ai_workspace"):
-        if not is_provider(entry):
-            continue
-        if hub_id and str(entry.data.get(CONF_HUB_ID) or "") != hub_id:
-            continue
-        found.append(entry)
-    return found
-
-
-def agent_from_entry(entry: ConfigEntry) -> Agent:
-    raw = {**entry.data, **entry.options}
-    agent_id = _text(raw.get(CONF_AGENT_ID)) or entry.entry_id
-    return agent_from_mapping(agent_id, entry.title, raw)
-
-
-def legacy_agent_data(data: Mapping[str, Any]) -> dict[str, Any] | None:
-    mode = _text(data.get(CONF_MODE))
-    runtime = _text(data.get(CONF_RUNTIME_URL))
-    key = _text(data.get(CONF_API_KEY))
-    provider = _text(data.get(CONF_API_PROVIDER)) or API_OPENAI
-    if mode not in {MODE_API, MODE_CURSOR}:
-        mode = MODE_CURSOR if runtime else MODE_API if key else ""
-    if mode == MODE_CURSOR or (runtime and not key):
-        return {
-            CONF_MODE: MODE_CURSOR,
-            CONF_API_PROVIDER: MODE_CURSOR,
-            CONF_MODEL: _text(data.get(CONF_MODEL)),
-            CONF_EFFORT: "",
-            CONF_CURSOR_API_KEY: _text(data.get(CONF_CURSOR_API_KEY)),
-        }
-    if not key and provider != API_OLLAMA:
-        return None
-    return {
-        CONF_MODE: MODE_API,
-        CONF_API_PROVIDER: provider if provider in API_PROVIDERS else API_OPENAI,
-        CONF_API_KEY: key,
-        CONF_API_BASE: _text(data.get(CONF_API_BASE)),
-        CONF_MODEL: _text(data.get(CONF_MODEL)),
-        CONF_EFFORT: "",
-        CONF_AZURE_API_VERSION: _text(data.get(CONF_AZURE_API_VERSION)) or DEFAULT_AZURE_API_VERSION,
-    }
-
-
-def legacy_title(data: Mapping[str, Any]) -> str:
-    if _text(data.get(CONF_MODE)) == MODE_CURSOR or _text(data.get(CONF_API_PROVIDER)) == MODE_CURSOR:
-        return "Cursor"
-    provider = _text(data.get(CONF_API_PROVIDER))
-    return API_SHORT_LABELS.get(provider, "Agent")
-
-
-def ensure_legacy_agent(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Turn a pre-subentry config into one agent, once."""
-    if entry.data.get("agents_migrated"):
-        return
-    data = {**entry.data, **entry.options}
-    if not entry_agents(entry):
-        payload = legacy_agent_data(data)
-        if payload:
-            sub = ConfigSubentry(
-                data=MappingProxyType(payload),
-                subentry_type=SUBENTRY_AGENT,
-                title=legacy_title(payload),
-                unique_id="legacy",
-            )
-            hass.config_entries.async_add_subentry(entry, sub)
-    hass.config_entries.async_update_entry(entry, data={**entry.data, "agents_migrated": True})
 
 
 def _blobs(entry: ConfigEntry) -> list[Mapping[str, Any]]:

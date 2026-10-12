@@ -52,7 +52,7 @@ _API_DEFAULT_MODEL = {
     API_GEMINI: "gemini-3.8-flash",
     API_DEEPSEEK: "deepseek-chat",
     API_QWEN: "qwen-plus",
-    API_XAI: "grok-4",
+    API_XAI: "grok-4.3",
     API_OPENROUTER: "openai/gpt-4.1",
     API_OLLAMA: "llama3.2",
     API_AZURE: "",
@@ -91,24 +91,20 @@ CLOUD_ONLY_MODELS = frozenset(
         "llama3.2",
     }
 )
+EFFORT_DEFAULT = "default"
 EFFORT_FAST = "fast"
 EFFORT_HIGH = "high"
 EFFORT_HIGH_FAST = "high_fast"
 EFFORTS = {
-    "": "Default",
+    EFFORT_DEFAULT: "Default",
     EFFORT_FAST: "Fast",
     EFFORT_HIGH: "High",
     EFFORT_HIGH_FAST: "High fast",
 }
 SUBENTRY_AGENT = "agent"
 SUBENTRY_MCP = "mcp"
-ROLE_HUB = "hub"
-ROLE_PROVIDER = "provider"
-ROLE_AGENTS = "agents"
-AGENTS_TITLE = "AI Agents"
-CONF_ROLE = "role"
-CONF_HUB_ID = "hub_id"
 CONF_AGENT_ID = "agent_id"
+CONF_RUNTIME_TOKEN = "runtime_token"
 STT_BROWSER = "browser"
 TTS_OFF = "off"
 DEFAULT_AZURE_API_VERSION = "2024-10-21"
@@ -239,6 +235,8 @@ A hello, thanks, or other small talk gets a short friendly reply. Do not list wh
 
 Home Assistant is reached only through the connected MCP tools. Use those tools to inspect or change anything. Do not invent entity ids, states, or history. Prefer a specific tool over a full-installation overview when the question is narrow. A large entity listing may come back as an area map of ids. Use that map, then ask a tool for one area or one entity before you claim its state. If more than one connection is set up, use the tool from the connection that matches the question.
 
+Before you answer any question about this house (automations, entities, devices, states, counts), call a Home Assistant tool. Never answer those from memory.
+
 Be concise. Call tools without announcing them; the UI already shows that. If a tool fails, say so. Ask before doing something hard to undo, such as deleting automations, unlocking doors, or turning off many devices at once.
 
 """
@@ -328,11 +326,10 @@ def with_language_rule(text: str, language: str = "") -> str:
 
 TONE_INSTRUCTIONS = (
     "A hello, thanks, or other small talk gets a short friendly reply. "
-    "Do not list capabilities, MCP, tools, URLs, or entity links until the user asks about the house. "
+    "List capabilities, URLs, or entity links only when the user asks about the house. "
     "Do not link the words Home Assistant. "
-    "Do not mention MCP, tool names, Docker, or loopback addresses in the reply the user reads. "
-    "Call tools without announcing them. Do not say you are checking MCP, listing available tools, or looking something up. "
-    "The UI already shows tool chips. Answer with the result. Only explain tools if the user asks."
+    "Keep MCP, tool names, Docker, and loopback addresses out of the reply the user reads. "
+    "Call tools silently: the UI already shows tool chips. Answer with the result. Only explain tools if the user asks."
 )
 HA_LINK_INSTRUCTIONS = """Every automation, script, scene, device, helper, entity, or dashboard/view you mention must be a Markdown link. Do not list plain names or bare paths. Do not ask whether the user wants links. Use root-relative paths that start with /. Never use 127.0.0.1, localhost, or an MCP URL in those links — those are only how tools reach Home Assistant from Docker. Do not link the words Home Assistant.
 

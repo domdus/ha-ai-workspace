@@ -8,39 +8,38 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig, TextSelector, TextSelectorConfig, TextSelectorType
+from homeassistant.util.ulid import ulid
 
-from .agents import borrow_by_id, borrowed_setups
-
+from .agents import borrow_by_id, borrowed_setups, entry_agents
 from .const import (
     API_AZURE,
     API_COMPATIBLE,
     API_OLLAMA,
     API_PROVIDERS,
     API_SHORT_LABELS,
+    CONF_AGENT_ID,
     CONF_API_BASE,
     CONF_API_KEY,
     CONF_API_PROVIDER,
+    CONF_ASSIST,
     CONF_AZURE_API_VERSION,
     CONF_BORROW,
-    CONF_ASSIST,
     CONF_CURSOR_API_KEY,
-    CONF_AGENT_ID,
     CONF_EFFORT,
-    CONF_HUB_ID,
     CONF_LOW_TOKEN,
     CONF_MODE,
-    CONF_ROLE,
     CONF_MODEL,
+    CONF_RUNTIME_URL,
     DEFAULT_AZURE_API_VERSION,
+    EFFORT_DEFAULT,
     EFFORTS,
     MODE_API,
     MODE_CURSOR,
-    ROLE_PROVIDER,
     assist_enabled,
     default_api_base,
     submitted_model,
 )
-from .discovery import async_probe_runtime, async_resolve_runtime_url, hassio_runtime_url
+from .discovery import async_resolve_runtime_url, async_runtime_health
 
 _PASSWORD = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
 _DETAIL = {
@@ -70,7 +69,7 @@ def _provider_schema(current: dict) -> vol.Schema:
 
 def _effort_field(current: dict) -> dict:
     return {
-        vol.Optional(CONF_EFFORT, default=str(current.get(CONF_EFFORT) or "")): SelectSelector(
+        vol.Optional(CONF_EFFORT, default=str(current.get(CONF_EFFORT) or EFFORT_DEFAULT)): SelectSelector(
             SelectSelectorConfig(options=list(EFFORTS), mode="dropdown", translation_key="effort")
         ),
     }
@@ -125,80 +124,37 @@ def _title(provider: str, used: set[str]) -> str:
     return f"{base} {number}"
 
 
-def _unique(provider: str, used: set[str]) -> str:
-    if provider not in used:
-        return provider
-    number = 2
-    while f"{provider}-{number}" in used:
-        number += 1
-    return f"{provider}-{number}"
+class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
+    """One agent on AI Workspace. The form asks only for that provider."""
 
+    def __init__(self) -> None:
+        self._editing = False
+        self._current: dict[str, Any] = {}
+        self._provider = MODE_CURSOR
 
-def _detail_step(provider: str) -> str:
-    return _DETAIL.get(provider, "cloud")
+    async def async_step_user(self, user_input=None):
+        del user_input
+        self._editing = False
+        self._current = {}
+        self._provider = MODE_CURSOR
+        return await self.async_step_provider()
 
-
-def _hub_entry(flow):
-    from .agents import hub_entry, is_provider
-
-    hub_id = str(getattr(flow, "_hub_id", "") or "")
-    if hub_id:
-        get = getattr(getattr(flow.hass, "config_entries", None), "async_get_entry", None)
-        if callable(get):
-            found = get(hub_id)
-            if found is not None:
-                return found
-    current = getattr(flow, "config_entry", None)
-    if current is not None and not is_provider(current):
-        return current
-    return hub_entry(flow.hass)
-
-
-def _hub_cursor_key(flow) -> str:
-    hub = _hub_entry(flow)
-    if hub is None:
-        return ""
-    return str({**hub.data, **hub.options}.get(CONF_CURSOR_API_KEY) or "").strip()
-
-
-def _provider_names(flow) -> tuple[set[str], set[str]]:
-    from .agents import agents_entry, entry_agents, is_agents, provider_entries
-
-    titles: set[str] = set()
-    uniques: set[str] = set()
-    for entry in provider_entries(flow.hass):
-        titles.add(entry.title)
-        if entry.unique_id:
-            uniques.add(entry.unique_id)
-    parent = None
-    getter = getattr(flow, "_get_entry", None)
-    if callable(getter):
-        try:
-            parent = getter()
-        except Exception:
-            parent = None
-    if parent is None or not is_agents(parent):
-        parent = agents_entry(flow.hass)
-    if parent is not None:
-        for agent in entry_agents(parent):
-            titles.add(agent.title)
-            uniques.add(agent.id)
-    return titles, uniques
-
-
-class ProviderSteps:
-    """Provider picker and fields, shared by the config flow and the options flow."""
+    async def async_step_reconfigure(self, user_input=None):
+        del user_input
+        self._editing = True
+        self._current = dict(self._get_reconfigure_subentry().data)
+        self._provider = str(self._current.get(CONF_API_PROVIDER) or MODE_CURSOR)
+        return await self.async_step_provider()
 
     async def async_step_provider(self, user_input: dict[str, Any] | None = None):
-        current = getattr(self, "_current", {})
         if user_input is not None:
             provider = str(user_input.get(CONF_API_PROVIDER) or MODE_CURSOR)
             if provider not in _agent_choices():
                 provider = MODE_CURSOR
             self._provider = provider
-            self._current = {**current, CONF_API_PROVIDER: provider}
-            return await getattr(self, f"async_step_provider_{_detail_step(provider)}")()
-        return self.async_show_form(step_id="provider", data_schema=_provider_schema(current))
+            self._current = {**self._current, CONF_API_PROVIDER: provider}
+            return await getattr(self, f"async_step_provider_{_DETAIL.get(provider, 'cloud')}")()
+        return self.async_show_form(step_id="provider", data_schema=_provider_schema(self._current))
 
     async def async_step_provider_cursor(self, user_input=None):
         return await self._async_step_fields("cursor", user_input)
@@ -215,38 +171,49 @@ class ProviderSteps:
     async def async_step_provider_compatible(self, user_input=None):
         return await self._async_step_fields("compatible", user_input)
 
+    async def _cursor_errors(self, cursor_key: str) -> dict[str, str]:
+        entry = self._get_entry()
+        configured = str({**entry.data, **entry.options}.get(CONF_RUNTIME_URL) or "").strip()
+        runtime = await async_resolve_runtime_url(self.hass, configured)
+        health = await async_runtime_health(self.hass, runtime) if runtime else None
+        if health is None:
+            return {"base": "no_runtime"}
+        if not cursor_key and not health.get("cursor"):
+            return {CONF_CURSOR_API_KEY: "required"}
+        return {}
+
+    async def _key_errors(self, provider: str, key: str, base: str, version: str) -> dict[str, str]:
+        from .api_provider import async_check_api_key
+
+        problem = await async_check_api_key(self.hass, provider, key, base, version)
+        if problem is None:
+            return {}
+        field = CONF_API_BASE if problem == "cannot_connect" and provider in _DETAIL else "base"
+        if problem == "invalid_auth":
+            field = CONF_API_KEY
+        return {field: problem}
+
     async def _async_step_fields(self, step: str, user_input: dict[str, Any] | None):
-        current = getattr(self, "_current", {})
-        provider = str(getattr(self, "_provider", "") or current.get(CONF_API_PROVIDER) or MODE_CURSOR)
+        current = self._current
+        provider = self._provider
         borrows = [item for item in borrowed_setups(self.hass) if item.get("provider") == provider]
         errors: dict[str, str] = {}
         if user_input is not None:
             merged = {**current, **user_input, CONF_API_PROVIDER: provider}
             borrowed = borrow_by_id(self.hass, str(user_input.get(CONF_BORROW) or ""))
-            if borrowed and borrowed.get("provider") == provider and not str(merged.get(CONF_API_KEY) or "").strip():
+            if borrowed and borrowed.get("provider") == provider and not str(user_input.get(CONF_API_KEY) or "").strip():
                 merged[CONF_API_KEY] = borrowed["api_key"]
                 merged[CONF_API_BASE] = borrowed["api_base"]
-                if CONF_MODEL not in user_input or not str(user_input.get(CONF_MODEL) or "").strip():
-                    merged[CONF_MODEL] = borrowed["model"]
                 merged[CONF_AZURE_API_VERSION] = borrowed.get("azure_api_version") or DEFAULT_AZURE_API_VERSION
             cursor_key = str(merged.get(CONF_CURSOR_API_KEY) or current.get(CONF_CURSOR_API_KEY) or "").strip()
-            if provider == MODE_CURSOR and not cursor_key:
-                cursor_key = _hub_cursor_key(self)
             key = str(merged.get(CONF_API_KEY) or current.get(CONF_API_KEY) or "").strip()
             base = str(merged.get(CONF_API_BASE) or "").strip() or default_api_base(provider)
+            version = str(merged.get(CONF_AZURE_API_VERSION) or DEFAULT_AZURE_API_VERSION)
             model = submitted_model(user_input)
             if borrowed and borrowed.get("provider") == provider and not model:
-                model = str(borrowed.get("model") or merged.get(CONF_MODEL) or "").strip()
+                model = str(borrowed.get("model") or "").strip()
             if provider == MODE_CURSOR:
-                if not cursor_key:
-                    errors[CONF_CURSOR_API_KEY] = "required"
-                discovered = hassio_runtime_url(self.hass) or ""
-                parent = _hub_entry(self)
-                merged_hub = {**parent.data, **parent.options} if parent is not None else {}
-                configured = str(merged_hub.get("runtime_url") or discovered).strip()
-                runtime = await async_resolve_runtime_url(self.hass, configured)
-                if not runtime or not await async_probe_runtime(self.hass, runtime):
-                    errors["base"] = "no_runtime"
+                errors = await self._cursor_errors(cursor_key)
             elif provider == API_OLLAMA:
                 if not str(merged.get(CONF_API_BASE) or "").strip():
                     errors[CONF_API_BASE] = "required"
@@ -258,13 +225,14 @@ class ProviderSteps:
                 if not model:
                     errors[CONF_MODEL] = "required"
             elif provider == API_COMPATIBLE:
-                if not key:
-                    errors[CONF_API_KEY] = "required"
                 if not str(merged.get(CONF_API_BASE) or "").strip():
                     errors[CONF_API_BASE] = "required"
             elif not key:
                 errors[CONF_API_KEY] = "required"
+            if not errors and provider != MODE_CURSOR:
+                errors = await self._key_errors(provider, key, base, version)
             if not errors:
+                effort = str(merged.get(CONF_EFFORT) or "")
                 data = {
                     CONF_MODE: MODE_CURSOR if provider == MODE_CURSOR else MODE_API,
                     CONF_API_PROVIDER: provider,
@@ -272,138 +240,30 @@ class ProviderSteps:
                     CONF_API_KEY: "" if provider == MODE_CURSOR else key,
                     CONF_API_BASE: "" if provider == MODE_CURSOR else base,
                     CONF_MODEL: model,
-                    CONF_EFFORT: str(merged.get(CONF_EFFORT) or ""),
+                    CONF_EFFORT: "" if effort == EFFORT_DEFAULT else effort,
                     CONF_LOW_TOKEN: False if provider == MODE_CURSOR else bool(user_input.get(CONF_LOW_TOKEN, False)),
-                    CONF_ASSIST: bool(
-                        user_input.get(
-                            CONF_ASSIST,
-                            assist_enabled(current, new=not bool(getattr(self, "_editing", False))),
-                        )
-                    ),
-                    CONF_AZURE_API_VERSION: (
-                        str(merged.get(CONF_AZURE_API_VERSION) or DEFAULT_AZURE_API_VERSION)
-                        if provider == API_AZURE
-                        else ""
-                    ),
-                    CONF_ROLE: ROLE_PROVIDER,
-                    CONF_HUB_ID: str(getattr(self, "_hub_id", "") or ""),
-                    CONF_AGENT_ID: str(getattr(self, "_agent_id", "") or ""),
+                    CONF_ASSIST: bool(user_input.get(CONF_ASSIST, assist_enabled(current, new=not self._editing))),
+                    CONF_AZURE_API_VERSION: version if provider == API_AZURE else "",
                 }
-                return await self._finish_provider(provider, data)
-            current = merged
+                return self._finish(provider, data)
+            self._current = merged
+        example = "https://YOUR-RESOURCE.openai.azure.com" if step == "azure" else default_api_base(API_OLLAMA)
         return self.async_show_form(
             step_id=f"provider_{step}",
-            data_schema=_fields_schema(
-                step, current, borrows, new=not bool(getattr(self, "_editing", False))
-            ),
+            data_schema=_fields_schema(step, self._current, borrows, new=not self._editing),
             errors=errors,
+            description_placeholders={"example_url": example},
         )
 
-    async def _finish_provider(self, provider: str, data: dict[str, Any]):
-        raise NotImplementedError
-
-
-class AgentSubentryFlow(ProviderSteps, config_entries.ConfigSubentryFlow):
-    """One agent under AI Agents. The form asks only for that provider."""
-
-    def _host(self):
-        """Agents always live on the agents entry, even if the header picker chose the hub."""
-        from .agents import agents_entry, is_agents
-
+    def _finish(self, provider: str, data: dict[str, Any]):
         entry = self._get_entry()
-        if is_agents(entry):
-            return entry
-        return agents_entry(self.hass) or entry
-
-    async def async_step_user(self, user_input=None):
-        del user_input
-        self._editing = False
-        self._current = {}
-        self._provider = MODE_CURSOR
-        self._agent_id = ""
-        parent = self._host()
-        self._hub_id = str(parent.data.get("hub_id") or "")
-        return await self.async_step_provider()
-
-    async def async_step_reconfigure(self, user_input=None):
-        del user_input
-        self._editing = True
-        sub = self._get_reconfigure_subentry()
-        raw = dict(sub.data)
-        self._current = raw
-        self._provider = str(raw.get(CONF_API_PROVIDER) or MODE_CURSOR)
-        self._agent_id = str(raw.get(CONF_AGENT_ID) or sub.unique_id or sub.subentry_id)
-        self._hub_id = str(self._get_entry().data.get("hub_id") or "")
-        return await self.async_step_provider()
-
-    async def _finish_provider(self, provider: str, data: dict[str, Any]):
-        from types import MappingProxyType
-
-        from homeassistant.config_entries import ConfigSubentry
-        from homeassistant.util.ulid import ulid
-
-        from .const import SUBENTRY_AGENT
-
-        data.pop(CONF_ROLE, None)
-        data.pop(CONF_HUB_ID, None)
-        titles, _uniques = _provider_names(self)
-        if getattr(self, "_editing", False):
+        titles = {agent.title for agent in entry_agents(entry)}
+        if self._editing:
             sub = self._get_reconfigure_subentry()
             titles.discard(sub.title)
             same = str(sub.data.get(CONF_API_PROVIDER) or "") == provider
             title = sub.title if same else _title(provider, titles)
-            data[CONF_AGENT_ID] = self._agent_id or str(sub.data.get(CONF_AGENT_ID) or sub.unique_id or sub.subentry_id)
-            # Entry has update listeners — reload_and_abort is forbidden; update
-            # fires _reload the same way MCP connection edits do.
-            return self.async_update_and_abort(
-                self._get_entry(),
-                sub,
-                title=title,
-                data=data,
-                unique_id=data[CONF_AGENT_ID],
-            )
-        titles.discard("")
-        agent_id = ulid()
-        data[CONF_AGENT_ID] = agent_id
-        title = _title(provider, titles)
-        host = self._host()
-        if host.entry_id != self._get_entry().entry_id:
-            self.hass.config_entries.async_add_subentry(
-                host,
-                ConfigSubentry(
-                    data=MappingProxyType(data),
-                    subentry_type=SUBENTRY_AGENT,
-                    title=title,
-                    unique_id=agent_id,
-                ),
-            )
-            self.hass.async_create_task(self.hass.config_entries.async_reload(host.entry_id))
-            return self.async_abort(reason="reconfigure_successful")
-        return self.async_create_entry(title=title, data=data, unique_id=agent_id)
-
-
-class ProviderOptionsFlow(ProviderSteps, config_entries.OptionsFlow):
-    """Edit a provider that has not been folded into AI Agents yet."""
-
-    async def async_step_init(self, user_input=None):
-        del user_input
-        entry = self.config_entry
-        raw = {**entry.data, **entry.options}
-        self._editing = True
-        self._hub_id = str(raw.get(CONF_HUB_ID) or "")
-        self._current = raw
-        self._provider = str(raw.get(CONF_API_PROVIDER) or MODE_CURSOR)
-        self._agent_id = str(raw.get(CONF_AGENT_ID) or entry.entry_id)
-        return await self.async_step_provider()
-
-    async def _finish_provider(self, provider: str, data: dict[str, Any]):
-        entry = self.config_entry
-        titles, _uniques = _provider_names(self)
-        titles.discard(entry.title)
-        title = entry.title
-        if str(entry.data.get(CONF_API_PROVIDER) or "") != provider:
-            title = _title(provider, titles)
-            self.hass.config_entries.async_update_entry(entry, title=title)
-        data[CONF_AGENT_ID] = str(data.get(CONF_AGENT_ID) or entry.data.get(CONF_AGENT_ID) or entry.entry_id)
-        data[CONF_HUB_ID] = str(data.get(CONF_HUB_ID) or entry.data.get(CONF_HUB_ID) or "")
-        return self.async_create_entry(title="", data=data)
+            data[CONF_AGENT_ID] = str(sub.data.get(CONF_AGENT_ID) or sub.unique_id or sub.subentry_id)
+            return self.async_update_and_abort(entry, sub, title=title, data=data, unique_id=data[CONF_AGENT_ID])
+        data[CONF_AGENT_ID] = ulid()
+        return self.async_create_entry(title=_title(provider, titles), data=data, unique_id=data[CONF_AGENT_ID])

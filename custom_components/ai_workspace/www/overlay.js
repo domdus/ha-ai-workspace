@@ -10,6 +10,9 @@ function hassObj() {
 
 let usersAllowed = null;
 let accessFlight = null;
+let accessNextCheck = 0;
+const ACCESS_TTL_MS = 5 * 60 * 1000;
+const ACCESS_RETRY_MS = 30 * 1000;
 
 function hideFab() {
   const user = hassObj()?.user;
@@ -21,7 +24,8 @@ function hideFab() {
 function refreshAccess(onReady) {
   const hass = hassObj();
   const user = hass?.user;
-  if (!user || user.is_admin || usersAllowed !== null || accessFlight) return;
+  if (!user || user.is_admin || accessFlight) return;
+  if (usersAllowed !== null && Date.now() < accessNextCheck) return;
   const token = hass.auth?.data?.access_token || "";
   if (!token && typeof hass.fetchWithAuth !== "function") return;
   const fetchUi = () => {
@@ -32,17 +36,24 @@ function refreshAccess(onReady) {
       headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
     });
   };
+  const before = usersAllowed;
   accessFlight = fetchUi()
-    .then((resp) => (resp.ok ? resp.json() : { allowed: false }))
+    .then((resp) => {
+      if (resp.status === 401 || resp.status === 403) return { allowed: false };
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      return resp.json();
+    })
     .then((data) => {
       usersAllowed = data.allowed === true;
+      accessNextCheck = Date.now() + (usersAllowed ? ACCESS_TTL_MS : ACCESS_RETRY_MS);
     })
     .catch(() => {
-      usersAllowed = false;
+      accessNextCheck = Date.now() + ACCESS_RETRY_MS;
+      if (usersAllowed === null) usersAllowed = false;
     })
     .finally(() => {
       accessFlight = null;
-      onReady();
+      if (usersAllowed !== before) onReady();
     });
 }
 
@@ -323,12 +334,28 @@ async function ensureHost() {
   return host;
 }
 
+function boot(tries = 0) {
+  if (document.getElementById(HOST_ID)) return;
+  const user = hassObj()?.user;
+  if (!user) {
+    if (tries < 50) window.setTimeout(() => boot(tries + 1), 200);
+    return;
+  }
+  if (user.is_admin || usersAllowed === true) {
+    ensureHost();
+    return;
+  }
+  refreshAccess(() => boot(tries));
+}
+
 function start() {
   if (!customElements.get("home-assistant")) {
     customElements.whenDefined("home-assistant").then(start);
     return;
   }
-  ensureHost();
+  // Users without access never download the chat UI; navigation re-checks after the retry delay.
+  window.addEventListener("location-changed", () => boot());
+  boot();
 }
 
 start();

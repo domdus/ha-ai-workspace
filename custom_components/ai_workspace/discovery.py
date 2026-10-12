@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
+import secrets
+import time
 
 from aiohttp import ClientError, ClientTimeout
 from homeassistant.core import HomeAssistant
@@ -11,6 +14,7 @@ from .const import (
     ADDON_PORT,
     ADDON_SLUG,
     COMPOSE_RUNTIME_URLS,
+    CONF_RUNTIME_TOKEN,
     CONF_RUNTIME_URL,
     DOMAIN,
     HOST_RUNTIME_URL,
@@ -18,8 +22,15 @@ from .const import (
 from .models import ProviderInfo
 
 MISSING_RUNTIME = "Start the Cursor SDK Runtime and set its URL on AI Workspace."
+BAD_TOKEN = (
+    "The Cursor SDK Runtime refused the token. Set the same Runtime token on the Runtime "
+    "and on AI Workspace (Configure)."
+)
+PAIRING = "Pairing with the AI Workspace Runtime app. Try again in a minute."
 
 _LOGGER = logging.getLogger(__name__)
+_PROBE_COOLDOWN = 30.0
+_PAIR_WAIT = 90.0
 
 
 def _slug_matches(slug: str) -> bool:
@@ -27,7 +38,8 @@ def _slug_matches(slug: str) -> bool:
     return name == ADDON_SLUG or name.endswith(f"_{ADDON_SLUG}")
 
 
-def hassio_runtime_url(hass: HomeAssistant) -> str | None:
+def _hassio_addon(hass: HomeAssistant) -> tuple[str, str] | None:
+    """Slug and URL of the running Runtime app."""
     try:
         from homeassistant.components.hassio import get_addons_info
     except ImportError:
@@ -36,9 +48,7 @@ def hassio_runtime_url(hass: HomeAssistant) -> str | None:
         addons = get_addons_info(hass)
     except Exception:
         return None
-    if not addons:
-        return None
-    for slug, info in addons.items():
+    for slug, info in (addons or {}).items():
         if not info or not _slug_matches(str(slug)):
             continue
         state = str(info.get("state") or "").lower()
@@ -46,30 +56,60 @@ def hassio_runtime_url(hass: HomeAssistant) -> str | None:
             _LOGGER.debug("AI Workspace add-on %s is %s", slug, state)
             continue
         hostname = info.get("hostname") or str(slug).replace("_", "-")
-        return f"http://{hostname}:{ADDON_PORT}"
+        return str(slug), f"http://{hostname}:{ADDON_PORT}"
     return None
 
 
+def hassio_runtime_url(hass: HomeAssistant) -> str | None:
+    found = _hassio_addon(hass)
+    return found[1] if found else None
+
+
+def _auth(token: str) -> dict[str, str]:
+    return {"Authorization": f"Bearer {token}"} if token else {}
+
+
 async def async_probe_runtime(hass: HomeAssistant, base: str) -> bool:
+    return await async_runtime_health(hass, base) is not None
+
+
+async def async_runtime_health(hass: HomeAssistant, base: str) -> dict | None:
+    session = async_get_clientsession(hass)
+    try:
+        resp = await session.get(f"{base.rstrip('/')}/api/health", timeout=ClientTimeout(total=3))
+    except (ClientError, TimeoutError, OSError):
+        return None
+    try:
+        if resp.status != 200:
+            return None
+        body = await resp.json(content_type=None)
+    except (ClientError, ValueError):
+        return None
+    finally:
+        resp.release()
+    return body if isinstance(body, dict) else {}
+
+
+async def async_token_accepted(hass: HomeAssistant, base: str, token: str) -> bool:
     session = async_get_clientsession(hass)
     try:
         resp = await session.get(
-            f"{base.rstrip('/')}/api/health",
-            timeout=ClientTimeout(total=3),
+            f"{base.rstrip('/')}/api/providers",
+            headers=_auth(token),
+            timeout=ClientTimeout(total=5),
         )
     except (ClientError, TimeoutError, OSError):
         return False
-    ok = resp.status == 200
+    status = resp.status
     resp.release()
-    return ok
+    return status != 401
 
 
 async def async_resolve_runtime_url(hass: HomeAssistant, configured: str) -> str:
     if configured:
         base = configured.rstrip("/")
-        if await async_probe_runtime(hass, base):
-            return base
-        _LOGGER.warning("AI Workspace runtime at %s did not answer", base)
+        if not await async_probe_runtime(hass, base):
+            _LOGGER.warning("AI Workspace runtime at %s did not answer", base)
         return base
     found = hassio_runtime_url(hass)
     for candidate in (found, HOST_RUNTIME_URL, *COMPOSE_RUNTIME_URLS):
@@ -83,34 +123,120 @@ async def async_resolve_runtime_url(hass: HomeAssistant, configured: str) -> str
     return found or ""
 
 
-def _configured_runtime(entry) -> str:
+def _entry_value(entry, key: str) -> str:
     if entry is None:
         return ""
     blob = {**getattr(entry, "data", {}), **getattr(entry, "options", {})}
-    return str(blob.get(CONF_RUNTIME_URL) or "").strip().rstrip("/")
+    return str(blob.get(key) or "").strip()
 
 
-def apply_runtime_to_providers(bucket: dict, runtime_url: str) -> None:
+async def _async_addon_token(hass: HomeAssistant, slug: str) -> str:
+    from homeassistant.components.hassio import AddonError, AddonManager
+
+    try:
+        info = await AddonManager(hass, _LOGGER, "AI Workspace Runtime", slug).async_get_addon_info()
+    except AddonError:
+        return ""
+    return str((info.options or {}).get(CONF_RUNTIME_TOKEN) or "").strip()
+
+
+async def _async_pair_addon(hass: HomeAssistant, slug: str, base: str) -> str:
+    """Give the Runtime app a token through the Supervisor, the way Z-Wave JS sets its keys."""
+    from homeassistant.components.hassio import AddonError, AddonManager
+
+    manager = AddonManager(hass, _LOGGER, "AI Workspace Runtime", slug)
+    try:
+        info = await manager.async_get_addon_info()
+        token = str((info.options or {}).get(CONF_RUNTIME_TOKEN) or "").strip()
+        if token and await async_token_accepted(hass, base, token):
+            return token
+        if not token:
+            token = secrets.token_urlsafe(32)
+            await manager.async_set_addon_options({**(info.options or {}), CONF_RUNTIME_TOKEN: token})
+        _LOGGER.info("Restarting the AI Workspace Runtime app so it picks up its token")
+        await manager.async_restart_addon()
+    except AddonError as exc:
+        _LOGGER.warning("Could not pair with the AI Workspace Runtime app: %s", exc)
+        return ""
+    deadline = time.monotonic() + _PAIR_WAIT
+    while time.monotonic() < deadline:
+        await asyncio.sleep(3)
+        if await async_token_accepted(hass, base, token):
+            return token
+    _LOGGER.warning("The AI Workspace Runtime app did not come back with its token")
+    return token
+
+
+def apply_runtime_to_providers(bucket: dict, runtime_url: str, reason: str | None = None) -> None:
     bucket["runtime_url"] = runtime_url
-    reason = None if runtime_url else MISSING_RUNTIME
+    if not runtime_url and reason is None:
+        reason = MISSING_RUNTIME
     for item in (bucket.get("providers") or {}).values():
         if getattr(item, "kind", "") != "cursor":
             continue
         info = item.info
-        if bool(info.available) == bool(runtime_url) and info.reason == reason:
+        available = reason is None
+        if bool(info.available) == available and info.reason == reason:
             continue
-        item.info = ProviderInfo(info.id, info.label, bool(runtime_url), reason)
+        item.info = ProviderInfo(info.id, info.label, available, reason)
 
 
-async def async_bind_runtime(hass: HomeAssistant, bucket: dict | None = None) -> str:
-    """Probe the Runtime (including an empty URL = auto-detect) and mark Cursor agents."""
+def _needs_cursor(bucket: dict) -> bool:
+    return any(getattr(item, "kind", "") == "cursor" for item in (bucket.get("providers") or {}).values())
+
+
+async def async_bind_runtime(hass: HomeAssistant, bucket: dict | None = None, *, force: bool = False) -> str:
+    """Find the Runtime, make sure it accepts our token, and mark Cursor agents."""
     data = bucket if bucket is not None else hass.data.get(DOMAIN)
     if not data:
         return ""
+    now = time.monotonic()
+    if not force and now - float(data.get("runtime_checked") or 0) < _PROBE_COOLDOWN:
+        return str(data.get("runtime_url") or "")
+    data["runtime_checked"] = now
+    entry = data.get("entry")
     previous = str(data.get("runtime_url") or "")
-    url = await async_resolve_runtime_url(hass, _configured_runtime(data.get("entry")))
-    apply_runtime_to_providers(data, url)
-    if url and url != previous:
+    url = await async_resolve_runtime_url(hass, _entry_value(entry, CONF_RUNTIME_URL))
+    if not url:
+        apply_runtime_to_providers(data, "")
+        return ""
+    health = await async_runtime_health(hass, url)
+    if health is None:
+        apply_runtime_to_providers(data, url, MISSING_RUNTIME)
+        return url
+    token = _entry_value(entry, CONF_RUNTIME_TOKEN) or str(data.get("runtime_token") or "")
+    reason: str | None = None
+    if health.get("token_required") or token:
+        accepted = bool(token) and await async_token_accepted(hass, url, token)
+        addon = _hassio_addon(hass)
+        own_addon = bool(addon) and addon[1] == url and not _entry_value(entry, CONF_RUNTIME_TOKEN)
+        if not accepted and own_addon:
+            stored = await _async_addon_token(hass, addon[0])
+            if stored and await async_token_accepted(hass, url, stored):
+                token, accepted = stored, True
+        if not accepted:
+            if own_addon:
+                reason = PAIRING
+                if not data.get("pairing") and _needs_cursor(data):
+                    data["pairing"] = True
+                    hass.async_create_background_task(
+                        _async_finish_pairing(hass, data, addon[0], url), "ai_workspace_pair_runtime"
+                    )
+            else:
+                reason = BAD_TOKEN
+    data["runtime_token"] = token
+    apply_runtime_to_providers(data, url, reason)
+    if url != previous:
         _LOGGER.info("AI Workspace Cursor Runtime at %s", url)
     return url
 
+
+async def _async_finish_pairing(hass: HomeAssistant, data: dict, slug: str, url: str) -> None:
+    try:
+        token = await _async_pair_addon(hass, slug, url)
+    finally:
+        data["pairing"] = False
+    if token:
+        data["runtime_token"] = token
+    ok = bool(token) and await async_token_accepted(hass, url, token)
+    apply_runtime_to_providers(data, url, None if ok else BAD_TOKEN)

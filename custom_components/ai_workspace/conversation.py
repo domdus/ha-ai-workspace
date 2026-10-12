@@ -12,9 +12,11 @@ from homeassistant.components.conversation.chat_log import AssistantContent
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import MATCH_ALL
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .agents import Agent, agent_from_entry, entry_agents, is_agents, is_provider
+from .agents import Agent, entry_agents
 from .const import DOMAIN
 from .chat_scope import handoff_note, other_chat_note
 from .http import _create_runtime_session, async_agent_events
@@ -29,8 +31,11 @@ async def _login_token(hass: HomeAssistant, user_id: str) -> str | None:
     """Short-lived token for the person who opened Assist.
 
     The sidebar chat sends the browser login. Assist does not, so an empty
-    MCP token would leave Home Assistant tools unauthorized.
+    MCP token would leave Home Assistant tools unauthorized. Only a normal
+    login is used, never a long-lived access token.
     """
+    from homeassistant.auth.models import TOKEN_TYPE_NORMAL
+
     if not user_id or user_id == "assist":
         return None
     try:
@@ -39,14 +44,31 @@ async def _login_token(hass: HomeAssistant, user_id: str) -> str | None:
         return None
     if user is None:
         return None
-    refresh = next(iter(getattr(user, "refresh_tokens", {}).values()), None)
-    if refresh is None:
+    logins = [
+        token
+        for token in getattr(user, "refresh_tokens", {}).values()
+        if getattr(token, "token_type", None) == TOKEN_TYPE_NORMAL
+    ]
+    if not logins:
+        _LOGGER.info("Assist user %s has no browser or app login; Home Assistant MCP tools are skipped", user.name)
         return None
+    refresh = max(logins, key=lambda token: token.last_used_at or token.created_at)
     try:
         return hass.auth.async_create_access_token(refresh)
     except Exception:
         _LOGGER.debug("Assist login token skipped", exc_info=True)
         return None
+
+
+async def _is_admin(hass: HomeAssistant, user_id: str) -> bool:
+    """Voice satellites run without a user and get the tools the administrator set up."""
+    if not user_id or user_id == "assist":
+        return True
+    try:
+        user = await hass.auth.async_get_user(user_id)
+    except Exception:
+        return False
+    return user is None or bool(user.is_admin)
 
 
 def _agent_device_active(hass: HomeAssistant, entry_id: str, subentry_id: str | None) -> bool:
@@ -72,45 +94,23 @@ async def _drop_assist_pipeline(hass: HomeAssistant, unique_id: str) -> None:
         await async_remove_assist_pipeline(hass, entity_id)
 
 
-def _clear_integration_disabled_agent(hass: HomeAssistant, agent_id: str) -> None:
-    """Undo the old form Enabled flag, which disabled the conversation entity."""
-    from homeassistant.helpers import entity_registry as er
-
-    registry = er.async_get(hass)
-    entity_id = registry.async_get_entity_id("conversation", DOMAIN, agent_id)
-    if not entity_id:
-        return
-    entry = registry.async_get(entity_id)
-    if entry is None or entry.disabled_by is not er.RegistryEntryDisabler.INTEGRATION:
-        return
-    registry.async_update_entity(entity_id, disabled_by=None)
-
-
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Expose each agent to Assist."""
-    if is_agents(entry):
-        agents = entry_agents(entry)
-        wanted = []
-        for agent in agents:
-            if agent.assist and _agent_device_active(hass, entry.entry_id, agent.subentry_id):
-                wanted.append(agent)
-            else:
-                await _drop_assist_pipeline(hass, agent.id)
-        _LOGGER.info("Exposing %s Assist agent(s) for %s", len(wanted), entry.title)
-        for agent in wanted:
-            _clear_integration_disabled_agent(hass, agent.id)
-        async_add_entities([AiWorkspaceConversationEntity(entry, agent) for agent in wanted])
-        return
-    if is_provider(entry):
-        agent = agent_from_entry(entry)
+    """Expose each agent that has Assist on."""
+    wanted = 0
+    for agent in entry_agents(entry):
         if agent.assist and _agent_device_active(hass, entry.entry_id, agent.subentry_id):
-            async_add_entities([AiWorkspaceConversationEntity(entry, agent)])
+            async_add_entities(
+                [AiWorkspaceConversationEntity(entry, agent)],
+                config_subentry_id=agent.subentry_id or None,
+            )
+            wanted += 1
         else:
             await _drop_assist_pipeline(hass, agent.id)
+    _LOGGER.info("Exposing %s Assist agent(s)", wanted)
 
 
 class AiWorkspaceConversationEntity(conversation.ConversationEntity):
@@ -120,16 +120,19 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
     _attr_supported_features = conversation.ConversationEntityFeature.CONTROL
     _attr_icon = "mdi:robot"
     _attr_should_poll = False
-    # Device linkage comes from _sync_subentry_devices (one device per agent row).
-    # Do not set DeviceInfo here — it fights the subentry device and can strand setup.
+    _attr_has_entity_name = True
+    _attr_name = None
 
     def __init__(self, entry: ConfigEntry, agent: Agent) -> None:
         self._agent_id = agent.id
-        self._subentry_id = agent.subentry_id
         self._attr_unique_id = agent.id
-        self._attr_name = agent.title or entry.title or "AI Workspace"
-        if agent.subentry_id:
-            self._attr_config_subentry_id = agent.subentry_id
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"agent:{agent.id}")},
+            name=agent.title or entry.title or "AI Workspace",
+            manufacturer="AI Workspace",
+            model="Agent",
+            entry_type=dr.DeviceEntryType.SERVICE,
+        )
 
     @property
     def supported_languages(self) -> list[str] | str:
@@ -137,50 +140,15 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
-        _clear_integration_disabled_agent(self.hass, self._agent_id)
-        self._link_agent_device()
         if self.registry_entry is not None and self.registry_entry.disabled_by:
             return
         from .assist_pipelines import async_ensure_assist_pipeline
 
-        name = self.name if isinstance(self.name, str) else self._attr_name
-        await async_ensure_assist_pipeline(self.hass, self.entity_id, str(name or "AI Workspace"))
-
-    def _link_agent_device(self) -> None:
-        """Put the conversation entity on the agent device so Disable device works."""
-        from homeassistant.helpers import device_registry as dr
-        from homeassistant.helpers import entity_registry as er
-
-        registry = er.async_get(self.hass)
-        entry = registry.async_get(self.entity_id)
-        if entry is None:
-            return
-        config_entry_id = entry.config_entry_id or (
-            self.platform.config_entry.entry_id if self.platform and self.platform.config_entry else None
-        )
-        devices = dr.async_get(self.hass)
-        device = None
-        get_by_id = getattr(devices, "async_get_device_by_identifier", None)
-        if callable(get_by_id) and config_entry_id:
-            device = get_by_id((DOMAIN, f"agent:{self._agent_id}"), config_entry_id)
-        else:
-            device = devices.async_get_device(identifiers={(DOMAIN, f"agent:{self._agent_id}")})
-        updates: dict[str, Any] = {}
-        if device is not None and entry.device_id != device.id:
-            updates["device_id"] = device.id
-        if self._subentry_id and entry.config_subentry_id != self._subentry_id:
-            updates["config_subentry_id"] = self._subentry_id
-        if updates:
-            try:
-                registry.async_update_entity(self.entity_id, **updates)
-            except TypeError:
-                updates.pop("config_subentry_id", None)
-                if updates:
-                    registry.async_update_entity(self.entity_id, **updates)
+        name = (self.device_info or {}).get("name") or "AI Workspace"
+        await async_ensure_assist_pipeline(self.hass, self.entity_id, str(name))
 
     async def async_will_remove_from_hass(self) -> None:
         # Reloads unload the entity but the agent subentry stays — keep the pipeline.
-        from .agents import entry_agents
         from .assist_pipelines import async_remove_assist_pipeline
 
         entry = None
@@ -244,12 +212,6 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
             await self.hass.async_add_executor_job(store.set_provider, user_id, session.id, self._agent_id)
             session.provider = self._agent_id
 
-        locks: dict[str, asyncio.Lock] = data.setdefault("locks", {})
-        lock = locks.setdefault(session.id, asyncio.Lock())
-        if lock.locked():
-            self._reply(chat_log, "This chat is already waiting on the agent.")
-            return conversation.async_get_result_from_chat_log(user_input, chat_log)
-
         low_token = bool(getattr(getattr(provider, "settings", None), "low_token", False))
         extra = "" if low_token else str(user_input.extra_system_prompt or "").strip()
         outbound = f"{extra}\n\n{text}" if extra else text
@@ -268,6 +230,11 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
         suggest = None
         error: str | None = None
 
+        locks: dict[str, asyncio.Lock] = data.setdefault("locks", {})
+        lock = locks.setdefault(session.id, asyncio.Lock())
+        if lock.locked():
+            self._reply(chat_log, "This chat is already waiting on the agent.")
+            return conversation.async_get_result_from_chat_log(user_input, chat_log)
         async with lock:
             await self.hass.async_add_executor_job(store.add_message, session.id, "user", text, "[]")
             await self.hass.async_add_executor_job(store.rename_if_default, session.id, title_from_prompt(text))
@@ -288,6 +255,7 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
             final: str | None = None
 
             access_token = await _login_token(self.hass, user_id)
+            admin = await _is_admin(self.hass, user_id)
 
             async def deltas():
                 nonlocal error, final
@@ -304,6 +272,8 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
                     handoff=handoff,
                     question=text,
                     tools=wants_house_tools(text),
+                    admin=admin,
+                    force_tools=wants_house_tools(text),
                 ):
                     kind = event.get("type")
                     if kind == "text":
@@ -351,6 +321,8 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
                 json.dumps(stored, ensure_ascii=False),
             )
 
+        if locks.get(session.id) is lock and not lock.locked():
+            locks.pop(session.id, None)
         if error is None and callable(suggest):
             try:
                 title = accept_generated_title(text, await suggest(text, "") or "")

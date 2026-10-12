@@ -10,6 +10,7 @@ import logging
 import secrets
 import urllib.error
 import urllib.request
+from collections import OrderedDict
 from pathlib import Path
 from typing import Any
 
@@ -31,10 +32,13 @@ _FORWARD = {
 _DROP = {"content-length", "transfer-encoding", "connection", "keep-alive"}
 
 
+_MAX_UPSTREAMS = 64
+
+
 class FitRegistry:
     def __init__(self, secret_path: Path | None = None) -> None:
         self.secret = _load_secret(secret_path)
-        self.upstreams: dict[str, dict[str, Any]] = {}
+        self.upstreams: OrderedDict[str, dict[str, Any]] = OrderedDict()
 
     def allows(self, secret: str, digest: str) -> bool:
         return hmac.compare_digest(secret, self.secret) and digest in self.upstreams
@@ -52,6 +56,9 @@ class FitRegistry:
                 json.dumps({"url": url, "headers": cfg.get("headers") or {}}, sort_keys=True).encode()
             ).hexdigest()[:20]
             self.upstreams[digest] = {"url": url, "headers": dict(cfg.get("headers") or {})}
+            self.upstreams.move_to_end(digest)
+            while len(self.upstreams) > _MAX_UPSTREAMS:
+                self.upstreams.popitem(last=False)
             forwarded = dict(cfg)
             forwarded["url"] = f"{root}/api/mcp-fit/{self.secret}/{digest}"
             forwarded.pop("headers", None)

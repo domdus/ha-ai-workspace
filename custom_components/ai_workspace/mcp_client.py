@@ -11,7 +11,9 @@ _PROTOCOL = "2025-03-26"
 
 
 class McpError(RuntimeError):
-    pass
+    def __init__(self, message: str, status: int | None = None) -> None:
+        super().__init__(message)
+        self.status = status
 
 
 def _parse_body(text: str, content_type: str) -> dict[str, Any]:
@@ -87,7 +89,7 @@ class McpHttpClient:
             self._session_id = sid
         text = await resp.text()
         if resp.status >= 400:
-            raise McpError(f"MCP HTTP {resp.status}: {text[:300]}")
+            raise McpError(f"MCP HTTP {resp.status}: {text[:300]}", resp.status)
         if notify:
             return {}
         body = _parse_body(text, resp.headers.get("Content-Type", ""))

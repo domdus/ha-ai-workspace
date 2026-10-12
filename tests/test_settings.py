@@ -33,6 +33,17 @@ def test_addon_options_write_mcp_json(tmp_path: Path, monkeypatch) -> None:
     assert written["mcpServers"]["github"]["url"] == "http://github-mcp/mcp"
 
 
+def test_runtime_token_from_addon_options(tmp_path: Path, monkeypatch) -> None:
+    options = tmp_path / "options.json"
+    options.write_text(json.dumps({"cursor_api_key": "", "runtime_token": "tok-1"}), encoding="utf-8")
+    monkeypatch.setenv("ADDON_OPTIONS", str(options))
+    monkeypatch.setenv("DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.delenv("RUNTIME_TOKEN", raising=False)
+    assert Settings.from_env().runtime_token == "tok-1"
+    monkeypatch.setenv("RUNTIME_TOKEN", "env-tok")
+    assert Settings.from_env().runtime_token == "env-tok"
+
+
 def test_mcp_url_bootstraps_empty_config_path(tmp_path: Path, monkeypatch) -> None:
     data = tmp_path / "data"
     empty = tmp_path / "empty-mcp.json"

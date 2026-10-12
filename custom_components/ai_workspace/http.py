@@ -18,14 +18,13 @@ from .const import (
     DEFAULT_SYSTEM_PROMPT,
     DOMAIN,
     MCP_COOLVER,
-    MODE_API,
-    MODE_CURSOR,
     format_ui_page,
     parse_ui_page,
     with_language_rule,
     with_ui_context,
 )
 from .mcp_config import with_mcp_auth
+from .mcp_resolve import ha_hosts, hass_mcp_server_url
 from .chat_scope import handoff_note, other_chat_note
 from .files import attach_files_to_message, file_events, parse_client_files
 from .images import caption_for, image_events, parse_client_images
@@ -37,7 +36,7 @@ except ImportError:
 from .redact import redact
 from .small_talk import wants_house_tools
 from .store import Session, Store
-from .titles import accept_generated_title, clean_title, needs_title_summary, title_from_prompt
+from .titles import accept_generated_title, needs_title_summary, title_from_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -83,20 +82,36 @@ def _runtime(hass: HomeAssistant) -> dict[str, Any]:
     return hass.data[DOMAIN]
 
 
-def _runtime_headers_for(user_id: str, accept: str = "application/json") -> dict[str, str]:
+def _runtime_headers_for(hass: HomeAssistant, user_id: str, accept: str = "application/json") -> dict[str, str]:
     uid = str(user_id or "anonymous")
-    return {
+    headers = {
         "Accept": accept,
         "Content-Type": "application/json",
         "X-Remote-User-Id": uid,
         "X-Hass-User-Id": uid,
     }
+    token = str((hass.data.get(DOMAIN) or {}).get("runtime_token") or "")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
 
 
 def _runtime_headers(request: web.Request) -> dict[str, str]:
     user = request["hass_user"]
     uid = str(user.id) if user else "anonymous"
-    return _runtime_headers_for(uid, request.headers.get("Accept", "application/json"))
+    return _runtime_headers_for(_hass(request), uid, request.headers.get("Accept", "application/json"))
+
+
+def _runtime_error(status: int, text: str) -> str:
+    try:
+        detail = json.loads(text).get("detail")
+    except (json.JSONDecodeError, AttributeError):
+        detail = None
+    if isinstance(detail, str) and detail.strip():
+        return detail.strip()[:400]
+    if status == 401:
+        return "The Cursor SDK Runtime refused the token. Set the same Runtime token on both sides."
+    return f"The Cursor SDK Runtime answered HTTP {status}."
 
 
 async def _create_runtime_session(hass: HomeAssistant, user_id: str, session_id: str | None = None) -> str | None:
@@ -111,7 +126,7 @@ async def _create_runtime_session(hass: HomeAssistant, user_id: str, session_id:
         resp = await http.post(
             f"{base}/api/sessions",
             json=payload,
-            headers=_runtime_headers_for(user_id),
+            headers=_runtime_headers_for(hass, user_id),
             timeout=ClientTimeout(total=10),
         )
         if resp.status >= 400:
@@ -133,7 +148,7 @@ async def _ensure_runtime_session(hass: HomeAssistant, user_id: str, session: Se
     try:
         existing = await http.get(
             f"{base}/api/sessions/{session.id}",
-            headers=_runtime_headers_for(user_id),
+            headers=_runtime_headers_for(hass, user_id),
             timeout=ClientTimeout(total=8),
         )
         status = existing.status
@@ -167,23 +182,24 @@ async def _iter_sse(resp) -> AsyncIterator[tuple[str, dict]]:
             yield event, payload if isinstance(payload, dict) else {"type": event}
 
 
-def _runtime_agent_overrides(hass: HomeAssistant, access_token: str | None = None) -> dict[str, Any]:
+def _runtime_agent_overrides(
+    hass: HomeAssistant, access_token: str | None = None, admin: bool = True
+) -> dict[str, Any]:
     settings = _runtime(hass).get("settings")
     extra: dict[str, Any] = {}
     if settings is None:
         return extra
-    servers = dict(getattr(settings, "mcp_servers", None) or {})
-    kind = str(getattr(settings, "mcp_kind", "") or "")
-    if kind == MCP_COOLVER:
-        servers.pop("mcp", None)
-    servers = with_mcp_auth(
-        servers,
-        access_token=str(access_token or ""),
-        mcp_token=str(getattr(settings, "mcp_token", "") or ""),
-        mcp_kind=kind,
-    )
-    if servers:
-        extra["mcp"] = {"servers": servers}
+    if admin:
+        servers = dict(getattr(settings, "mcp_servers", None) or {})
+        if str(getattr(settings, "mcp_kind", "") or "") == MCP_COOLVER:
+            servers.pop("mcp", None)
+    elif "mcp_server" in hass.config.components:
+        servers = {"mcp": {"type": "http", "url": hass_mcp_server_url(hass)}}
+    else:
+        servers = {}
+    servers = with_mcp_auth(servers, access_token=str(access_token or ""), ha_hosts=ha_hosts(hass))
+    if servers or not admin:
+        extra["mcp"] = {"servers": servers, "exclusive": not admin}
     model = str(getattr(settings, "model", "") or "").strip()
     if model in CLOUD_ONLY_MODELS:
         model = ""
@@ -208,6 +224,7 @@ async def _runtime_chat(
     access_token: str | None = None,
     handoff: str = "",
     question: str = "",
+    admin: bool = True,
 ) -> AsyncIterator[dict]:
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
@@ -225,7 +242,7 @@ async def _runtime_chat(
         str(getattr(settings, "system_prompt", "") or "").strip() or DEFAULT_SYSTEM_PROMPT,
         language,
     )
-    if getattr(settings, "house_map", False):
+    if admin and getattr(settings, "house_map", False):
         from .house_map import CATALOG_INSTRUCTIONS
 
         prompt = f"{prompt}\n\n{CATALOG_INSTRUCTIONS}".strip()
@@ -240,7 +257,7 @@ async def _runtime_chat(
         from .conversation import _login_token
 
         token = str(await _login_token(hass, user_id) or "").strip()
-    payload.update(_runtime_agent_overrides(hass, access_token=token))
+    payload.update(_runtime_agent_overrides(hass, access_token=token, admin=admin))
     if model:
         payload["model"] = model
     if effort:
@@ -253,7 +270,7 @@ async def _runtime_chat(
         resp = await http.post(
             f"{base}/api/sessions/{session.id}/chat",
             json=payload,
-            headers={**(headers or _runtime_headers_for(user_id)), "Accept": "text/event-stream"},
+            headers={**(headers or _runtime_headers_for(hass, user_id)), "Accept": "text/event-stream"},
             timeout=ClientTimeout(total=None, sock_read=600),
         )
     except Exception as exc:
@@ -261,8 +278,7 @@ async def _runtime_chat(
         return
     try:
         if resp.status >= 400:
-            text = await resp.text()
-            yield {"type": "error", "message": text[:400] or f"Runtime HTTP {resp.status}"}
+            yield {"type": "error", "message": _runtime_error(resp.status, await resp.text())}
             return
         async for name, payload in _iter_sse(resp):
             event = dict(payload)
@@ -285,12 +301,15 @@ async def async_agent_events(
     handoff: str = "",
     question: str = "",
     tools: bool | None = None,
+    admin: bool = True,
+    force_tools: bool = False,
 ) -> AsyncIterator[dict]:
     """Run one turn for Assist or any caller that is not an HTTP chat request."""
     store: Store = _runtime(hass)["store"]
 
     def on_agent_id(agent_id: str) -> None:
-        store.set_agent_id(session.id, agent_id)
+        if session.agent_id != agent_id:
+            hass.async_add_executor_job(store.set_agent_id, session.id, agent_id)
         session.agent_id = agent_id
 
     if getattr(provider, "kind", "") == "cursor":
@@ -307,6 +326,7 @@ async def async_agent_events(
             access_token=access_token,
             handoff=handoff,
             question=question,
+            admin=admin,
         ):
             yield event
         return
@@ -321,6 +341,8 @@ async def async_agent_events(
         frontend_origin=origin,
         language=language,
         tools=tools,
+        admin=admin,
+        force_tools=force_tools,
     ):
         yield event
 
@@ -341,13 +363,6 @@ async def _cleanup_pruned_sessions(
     if not session_ids:
         return
     data = hass.data.get(DOMAIN) or {}
-    runtime = data.get("runtime")
-    for session_id in session_ids:
-        if runtime:
-            try:
-                runtime.drop(session_id)
-            except Exception:
-                logger.debug("runtime drop skipped for pruned chat", exc_info=True)
     base = str((data.get("runtime_url") or "")).rstrip("/")
     if not base or request is None:
         return
@@ -381,53 +396,6 @@ async def _prune_all_chats(hass: HomeAssistant, store: Store, keep: int) -> None
     for user_id in user_ids:
         deleted = await hass.async_add_executor_job(store.prune_sessions, user_id, keep)
         await _cleanup_pruned_sessions(hass, deleted, None)
-
-
-_SKIP = {"content-length", "transfer-encoding", "connection", "host"}
-
-
-async def _proxy(request: web.Request, path: str) -> web.StreamResponse | None:
-    hass = _hass(request)
-    data = hass.data.get(DOMAIN) or {}
-    if data.get("mode") == MODE_API:
-        return None
-    base = str(data.get("runtime_url") or "").rstrip("/")
-    if not base:
-        return None
-    target = f"{base}/api/{path}" if path else f"{base}/api"
-    user = request["hass_user"]
-    headers = {
-        "Accept": request.headers.get("Accept", "application/json"),
-        "Content-Type": request.headers.get("Content-Type", "application/json"),
-        "X-Remote-User-Id": str(user.id) if user else "anonymous",
-        "X-Hass-User-Id": str(user.id) if user else "anonymous",
-    }
-    body = await request.read()
-    if request.query_string:
-        target = f"{target}?{request.query_string}"
-    session: ClientSession = async_get_clientsession(hass)
-    try:
-        resp = await session.request(
-            request.method,
-            target,
-            headers=headers,
-            data=body or None,
-            timeout=ClientTimeout(total=None, sock_read=600),
-        )
-    except Exception as exc:
-        raise web.HTTPBadGateway(text=f"AI Workspace runtime is unreachable at {base}: {exc}") from exc
-    try:
-        out_headers = {k: v for k, v in resp.headers.items() if k.lower() not in _SKIP}
-        if "text/event-stream" in resp.headers.get("Content-Type", ""):
-            stream = web.StreamResponse(status=resp.status, headers=out_headers)
-            await stream.prepare(request)
-            async for chunk in resp.content.iter_any():
-                await stream.write(chunk)
-            return stream
-        payload = await resp.read()
-        return web.Response(status=resp.status, body=payload, headers=out_headers)
-    finally:
-        resp.release()
 
 
 def _bearer(request: web.Request) -> str:
@@ -506,21 +474,14 @@ class HealthView(HomeAssistantView):
 
     async def get(self, request: web.Request) -> web.Response:
         _user_id(request)
-        proxied = await _proxy(request, "health")
-        if proxied is not None:
-            return proxied
         data = _runtime(_hass(request))
         settings = data["settings"]
-        providers = data.get("providers") or {}
-        ready = next((item.info for item in providers.values() if item.info.available), None)
-        first = next(iter(providers.values())).info if providers else None
-        info = ready or first
+        providers = (data.get("providers") or {}).values()
         return self.json(
             {
                 "ok": True,
-                "model": settings.model,
-                "mode": settings.mode,
-                "cursor": bool(info and info.id == "cursor" and info.available),
+                "runtime": bool(data.get("runtime_url")),
+                "cursor": any(getattr(item, "kind", "") == "cursor" and item.info.available for item in providers),
                 "overlay": settings.enable_overlay,
                 "dictate": settings.enable_dictate,
             }
@@ -637,9 +598,6 @@ class SessionView(HomeAssistantView):
         deleted = await hass.async_add_executor_job(store.delete_session, _user_id(request), session_id)
         if not deleted:
             raise web.HTTPNotFound(text="Chat not found.")
-        runtime = data.get("runtime")
-        if runtime:
-            runtime.drop(session_id)
         base = str((data.get("runtime_url") or "")).rstrip("/")
         if base:
             try:
@@ -654,6 +612,18 @@ class SessionView(HomeAssistantView):
         return web.Response(status=204)
 
 
+def _release_lock(data: dict[str, Any], session_id: str, lock: asyncio.Lock) -> None:
+    if lock.locked():
+        lock.release()
+    locks = data.get("locks") or {}
+    if locks.get(session_id) is lock:
+        locks.pop(session_id, None)
+
+
+def _is_admin(request: web.Request) -> bool:
+    return bool(getattr(request.get("hass_user"), "is_admin", False))
+
+
 class ChatView(HomeAssistantView):
     url = "/api/ai_workspace/sessions/{session_id}/chat"
     name = "api:ai_workspace:chat"
@@ -664,66 +634,82 @@ class ChatView(HomeAssistantView):
         data = _runtime(hass)
         settings = data["settings"]
         store: Store = data["store"]
-        session = await hass.async_add_executor_job(store.get_session, _user_id(request), session_id)
+        user_id = _user_id(request)
+        admin = _is_admin(request)
+        session = await hass.async_add_executor_job(store.get_session, user_id, session_id)
         if session is None:
             raise web.HTTPNotFound(text="Chat not found.")
         body = await request.json()
-        requested = str(body.get("agent") or body.get("provider") or session.provider)
-        providers = data.get("providers") or {}
-        known_assist = assist_agent_ids(hass)
-        if requested and (requested in providers or requested in known_assist):
-            if requested != session.provider:
-                await hass.async_add_executor_job(store.set_provider, _user_id(request), session.id, requested)
-                session.provider = requested
-        assist = session.provider in known_assist
-        if not assist and any(
-            getattr(item, "kind", "") == "cursor" and not item.info.available
-            for item in providers.values()
-        ):
-            await async_bind_runtime(hass, data)
-            providers = data.get("providers") or {}
-        provider = None if assist else (providers.get(session.provider) or _send_provider(data, session))
-        low_token = bool(getattr(getattr(provider, "settings", None), "low_token", False))
         images = parse_client_images(body.get("images"))
         files = parse_client_files(body.get("files"))
         message = caption_for(str(body.get("message") or ""), len(images), len(files))
         if not message:
             raise web.HTTPBadRequest(text="Message is empty.")
-        origin = _frontend_origin(request, body)
-        page_note = format_ui_page(parse_ui_page(body.get("page")))
         lock: asyncio.Lock = data["locks"].setdefault(session.id, asyncio.Lock())
         if lock.locked():
             raise web.HTTPConflict(text="This chat is already waiting on the agent.")
+        await lock.acquire()
+        try:
+            task = await self._start(request, hass, data, settings, store, user_id, admin, session, body, images, files, message, lock)
+        except BaseException:
+            _release_lock(data, session.id, lock)
+            raise
+        try:
+            await asyncio.shield(task)
+        except asyncio.CancelledError:
+            raise
+        return task.result()
+
+    async def _start(
+        self,
+        request: web.Request,
+        hass: HomeAssistant,
+        data: dict[str, Any],
+        settings,
+        store: Store,
+        user_id: str,
+        admin: bool,
+        session: Session,
+        body: dict,
+        images: list[dict],
+        files: list[dict],
+        message: str,
+        lock: asyncio.Lock,
+    ) -> asyncio.Task:
+        requested = str(body.get("agent") or body.get("provider") or session.provider)
+        providers = data.get("providers") or {}
+        known_assist = assist_agent_ids(hass)
+        if requested and (requested in providers or requested in known_assist) and requested != session.provider:
+            await hass.async_add_executor_job(store.set_provider, user_id, session.id, requested)
+            session.provider = requested
+        assist = session.provider in known_assist
+        if not assist and any(
+            getattr(item, "kind", "") == "cursor" and not item.info.available for item in providers.values()
+        ):
+            await async_bind_runtime(hass, data)
+            providers = data.get("providers") or {}
+        provider = None if assist else (providers.get(session.provider) or _send_provider(data, session))
+        low_token = bool(getattr(getattr(provider, "settings", None), "low_token", False))
+        origin = _frontend_origin(request, body)
+        page_note = format_ui_page(parse_ui_page(body.get("page")))
         events_json = json.dumps(image_events(images) + file_events(files), ensure_ascii=False)
-        await hass.async_add_executor_job(
-            store.add_message,
-            session.id,
-            "user",
-            message,
-            events_json,
-        )
+        await hass.async_add_executor_job(store.add_message, session.id, "user", message, events_json)
         await hass.async_add_executor_job(store.rename_if_default, session.id, title_from_prompt(message))
         count = await hass.async_add_executor_job(lambda: len(store.list_messages(session.id)))
         suggest = (
-            None
-            if low_token
-            else getattr(provider, "suggest_title", None)
-            if count <= 1 and needs_title_summary(message)
+            getattr(provider, "suggest_title", None)
+            if not low_token and count <= 1 and needs_title_summary(message)
             else None
         )
         outbound = message if low_token else attach_files_to_message(message, files)
         if page_note and not low_token:
             outbound = f"{page_note}\n\n{outbound}"
-
         language = str(body.get("language") or "").strip()
-        user_id = _user_id(request)
         cross = bool(getattr(settings, "cross_chat", False))
         note = (
             ""
             if low_token
-            else await hass.async_add_executor_job(
-                other_chat_note, store, user_id, session.id, message, cross
-            )
+            else await hass.async_add_executor_job(other_chat_note, store, user_id, session.id, message, cross)
         )
         if note:
             outbound = f"{outbound}\n\n{note}"
@@ -735,7 +721,8 @@ class ChatView(HomeAssistantView):
         runtime_headers = _runtime_headers(request)
 
         def on_agent_id(agent_id: str) -> None:
-            store.set_agent_id(session.id, agent_id)
+            if session.agent_id != agent_id:
+                hass.async_add_executor_job(store.set_agent_id, session.id, agent_id)
             session.agent_id = agent_id
 
         async def events():
@@ -768,6 +755,7 @@ class ChatView(HomeAssistantView):
                     access_token=access_token,
                     handoff=handoff,
                     question=message,
+                    admin=admin,
                 ):
                     yield event
                 return
@@ -783,6 +771,8 @@ class ChatView(HomeAssistantView):
                 images=images,
                 language=language,
                 tools=bool(images) or bool(files) or wants_house_tools(message),
+                admin=admin,
+                force_tools=not images and not files and wants_house_tools(message),
             ):
                 yield event
 
@@ -796,16 +786,24 @@ class ChatView(HomeAssistantView):
         )
         client_gone = False
 
-        async def produce() -> None:
+        async def send(event: dict) -> None:
+            nonlocal client_gone
+            if client_gone:
+                return
+            try:
+                if request.transport is None or request.transport.is_closing():
+                    client_gone = True
+                    return
+                await response.write(_sse(str(event["type"]), event))
+            except Exception:
+                client_gone = True
+
+        async def produce() -> web.StreamResponse:
             nonlocal client_gone
             parts: list[str] = []
             tools: list[dict] = []
             error: str | None = None
             final: str | None = None
-            answer = ""
-            held = False
-            await lock.acquire()
-            held = True
             try:
                 try:
                     await response.prepare(request)
@@ -813,12 +811,16 @@ class ChatView(HomeAssistantView):
                     client_gone = True
                 try:
                     async for event in events():
-                        if event.get("type") == "text":
+                        kind = event.get("type")
+                        if kind == "text":
                             parts.append(str(event.get("delta") or ""))
-                        elif event.get("type") == "result":
+                        elif kind == "result":
                             final = str(event.get("text") or "")
                             continue
-                        elif event.get("type") == "tool":
+                        elif kind == "done":
+                            final = final or str(event.get("answer") or "")
+                            continue
+                        elif kind == "tool":
                             tools.append(
                                 {
                                     "name": event.get("name"),
@@ -827,39 +829,23 @@ class ChatView(HomeAssistantView):
                                     **({"id": event["id"]} if event.get("id") else {}),
                                 }
                             )
-                        elif event.get("type") == "error":
+                        elif kind == "error":
                             error = str(event.get("message") or "The agent failed.")
-                        elif event.get("type") == "title":
+                        elif kind == "title":
                             label = accept_generated_title(message, str(event.get("title") or ""))
                             applied = None
                             if label:
                                 applied = await hass.async_add_executor_job(
-                                    store.apply_generated_title,
-                                    user_id,
-                                    session.id,
-                                    title_from_prompt(message),
-                                    label,
+                                    store.apply_generated_title, user_id, session.id, title_from_prompt(message), label
                                 )
                             if not applied:
                                 continue
                             event = {"type": "title", "title": applied}
-                        if client_gone:
-                            continue
-                        try:
-                            if request.transport is None or request.transport.is_closing():
-                                client_gone = True
-                                continue
-                            await response.write(_sse(str(event["type"]), event))
-                        except Exception:
-                            client_gone = True
+                        await send(event)
                 except Exception as exc:
                     logger.exception("chat failed session=%s", session.id)
                     error = redact(str(exc), [settings.cursor_api_key, settings.api_key, settings.mcp_token])
-                    if not client_gone:
-                        try:
-                            await response.write(_sse("error", {"type": "error", "message": error}))
-                        except Exception:
-                            client_gone = True
+                    await send({"type": "error", "message": error})
                 answer = (final or "".join(parts)).strip()
                 if error and not answer:
                     answer = error
@@ -873,15 +859,10 @@ class ChatView(HomeAssistantView):
                     answer,
                     json.dumps(stored_events, ensure_ascii=False),
                 )
-                if error is None and not client_gone:
-                    try:
-                        await response.write(_sse("done", {"type": "done", "answer": answer}))
-                        await response.write(_sse("status", {"type": "status", "text": "Done."}))
-                    except Exception:
-                        client_gone = True
+                if error is None:
+                    await send({"type": "done", "answer": answer})
             finally:
-                if held:
-                    lock.release()
+                _release_lock(data, session.id, lock)
             if error is None and callable(suggest):
                 try:
                     raw = await asyncio.wait_for(suggest(message, ""), timeout=12)
@@ -893,22 +874,15 @@ class ChatView(HomeAssistantView):
                     applied = await hass.async_add_executor_job(
                         store.apply_generated_title, user_id, session.id, title_from_prompt(message), title
                     )
-                    if applied and not client_gone:
-                        try:
-                            await response.write(_sse("title", {"type": "title", "title": applied}))
-                        except Exception:
-                            logger.debug("title event skipped", exc_info=True)
+                    if applied:
+                        await send({"type": "title", "title": applied})
+            return response
 
         jobs: set[asyncio.Task] = data.setdefault("chat_jobs", set())
         task = asyncio.create_task(produce(), name=f"ai_workspace_chat_{session.id}")
         jobs.add(task)
         task.add_done_callback(jobs.discard)
-        try:
-            await asyncio.shield(task)
-        except asyncio.CancelledError:
-            client_gone = True
-            raise
-        return response
+        return task
 
 
 class SpeechView(HomeAssistantView):

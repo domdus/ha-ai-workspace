@@ -1,22 +1,26 @@
 {
   "domain": "ai_workspace",
   "name": "AI Workspace",
-  "codeowners": ["@domdus"],
-  "config_flow": true,
-  "single_config_entry": true,
-  "dependencies": [
-    "http",
-    "frontend",
-    "panel_custom",
-    "conversation"
-  ],
   "after_dependencies": [
-    "assist_pipeline"
+    "assist_pipeline",
+    "hassio",
+    "mcp_server"
+  ],
+  "codeowners": [
+    "@domdus"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "conversation",
+    "frontend",
+    "http",
+    "panel_custom"
   ],
   "documentation": "https://github.com/domdus/ha-ai-workspace",
   "integration_type": "service",
-  "iot_class": "local_push",
+  "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/domdus/ha-ai-workspace/issues",
   "requirements": [],
-  "version": "1.0.3"
+  "single_config_entry": true,
+  "version": "1.1.0"
 }

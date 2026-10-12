@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "AI Workspace",
-        "description": "Gedeelde chatinstellingen. Voeg daarna de eerste agent (Cursor, OpenAI, OpenRouter, Ollama en anderen) toe onder AI Agents.",
+        "description": "Gedeelde chatinstellingen. Voeg daarna de eerste agent toe (Cursor, OpenAI, OpenRouter, Ollama en meer). Verbindingen en agents zijn regels van deze integratie.",
         "data": {
           "runtime_url": "Cursor-runtime-URL{runtime_url_mark}",
           "stt_engine": "Spraak naar tekst",
@@ -15,7 +15,8 @@
           "allow_users": "Gewone gebruikers toestaan",
           "house_map": "Configuratiecatalogus",
           "cross_chat": "Tussen chats",
-          "keep_chats": "Chats bewaren"
+          "keep_chats": "Chats bewaren",
+          "runtime_token": "Runtime-token"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
@@ -25,10 +26,11 @@
           "enable_sidebar": "Het zijbalkitem AI Workspace. De pagina blijft bereikbaar op /ai-workspace als dit uit staat.",
           "enable_overlay": "De zwevende AI-knop. Verborgen op Instellingen zodat Integratie toevoegen niet wordt bedekt.",
           "enable_dictate": "Microfoon in het berichtveld.",
-          "allow_users": "Aangemelde gebruikers die geen beheerder zijn, kunnen de zwevende chat openen. Uit houdt het bij beheerders. Het zijbalkitem blijft alleen voor beheerders.",
+          "allow_users": "Aangemelde gebruikers die geen beheerder zijn, kunnen de zwevende chat openen. Uit houdt het bij beheerders. Het zijbalkitem blijft alleen voor beheerders. Ze krijgen alleen de ingebouwde Home Assistant MCP Server met hun eigen rechten.",
           "house_map": "Optionele lokale index voor de bedrading van een benoemd item (triggers, gerelateerde id’s). Standaard uit. Niet om automatiseringen of aan/uit te listen — gebruik daar live MCP voor. Geen livestatus, geschiedenis of traces.",
           "cross_chat": "Standaard uit. Als het aan staat, kan een vraag een andere chat gebruiken waarvan de titel woorden deelt. Je hoeft niet chat te zeggen. Alleen een kort fragment, en die chat wordt niet gewijzigd.",
-          "keep_chats": "Nieuwste niet-vastgezette chats per persoon. Vastgezette chats blijven altijd. Standaard 30."
+          "keep_chats": "Nieuwste niet-vastgezette chats per persoon. Vastgezette chats blijven altijd. Standaard 30.",
+          "runtime_token": "Gedeeld geheim voor een Docker-Runtime. Zet dezelfde waarde als RUNTIME_TOKEN op de container. De add-on wordt automatisch gekoppeld; laat leeg."
         },
         "sections": {
           "mcp": {
@@ -53,216 +55,14 @@
               "system_prompt": "Alleen toon en gedrag. Leeg laten voor de ingebouwde prompt. MCP-tools en editorlinks worden altijd toegevoegd; ze horen niet in dit veld."
             }
           }
-        }
-      },
-      "api": {
-        "title": "Cloud-API-provider",
-        "data": {
-          "enable_sidebar": "AI Workspace in de zijbalk tonen",
-          "enable_overlay": "Zwevende AI-knop op elke pagina tonen",
-          "enable_dictate": "Dicteerknop tonen",
-          "allow_users": "Gewone gebruikers toestaan",
-          "house_map": "Configuratiecatalogus",
-          "cross_chat": "Tussen chats",
-          "keep_chats": "Chats bewaren"
-        },
-        "sections": {
-          "provider": {
-            "name": "Provider",
-            "data": {
-              "api_provider": "Provider",
-              "api_key": "API-sleutel",
-              "model": "Model",
-              "api_base": "API-basis-URL"
-            },
-            "data_description": {
-              "api_provider": "OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok of OpenAI-compatibel.",
-              "api_key": "API-sleutel van de provider. Geen Home Assistant-token.",
-              "model": "Leeg gebruikt de standaard van de provider.",
-              "api_base": "Leeg laten voor de gekozen provider. Verplicht voor OpenAI-compatibel (OpenRouter, Ollama, LM Studio). Qwen in China: https://dashscope.aliyuncs.com/compatible-mode/v1"
-            }
-          },
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP-type",
-              "mcp_url": "MCP-URL{mcp_url_mark}",
-              "mcp_token": "MCP-token"
-            },
-            "data_description": {
-              "mcp_kind": "Alleen MCP-servers die deze Home Assistant kan bereiken, staan in de lijst. Aangepast is elke MCP-HTTP-URL.",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Ingebouwd: langlevend toegangstoken van Home Assistant, of leeg laten om de huidige aanmelding in deze chat te gebruiken. HA-MCP: meestal leeg. Vibecode: Agent Key. Aangepast: optioneel Bearer-token."
-            }
-          },
-          "prompt": {
-            "name": "Systeemprompt",
-            "data": {
-              "system_prompt": "Systeemprompt"
-            },
-            "data_description": {
-              "system_prompt": "Alleen toon en gedrag. Leeg laten voor de ingebouwde prompt. MCP-tools en editorlinks worden altijd toegevoegd; ze horen niet in dit veld."
-            }
-          }
-        }
-      },
-      "cursor": {
-        "title": "Cursor-runtime",
-        "data": {
-          "runtime_url": "Cursor-runtime-URL{runtime_url_mark}",
-          "enable_sidebar": "AI Workspace in de zijbalk tonen",
-          "enable_overlay": "Zwevende AI-knop op elke pagina tonen",
-          "enable_dictate": "Dicteerknop tonen",
-          "allow_users": "Gewone gebruikers toestaan",
-          "house_map": "Configuratiecatalogus",
-          "cross_chat": "Tussen chats",
-          "keep_chats": "Chats bewaren"
-        },
-        "data_description": {
-          "runtime_url": "{runtime_url_note}",
-          "enable_sidebar": "Het zijbalkitem AI Workspace. De pagina blijft bereikbaar op /ai-workspace als dit uit staat.",
-          "enable_overlay": "De zwevende AI-knop. Verborgen op Instellingen zodat Integratie toevoegen niet wordt bedekt.",
-          "enable_dictate": "Microfoon in het berichtveld. Browsers staan dicteren alleen toe via https://.",
-          "allow_users": "Aangemelde gebruikers die geen beheerder zijn, kunnen de zwevende chat openen. Uit houdt het bij beheerders. Het zijbalkitem blijft alleen voor beheerders.",
-          "house_map": "Optionele lokale index voor de bedrading van een benoemd item (triggers, gerelateerde id’s). Standaard uit. Niet om automatiseringen of aan/uit te listen — gebruik daar live MCP voor. Geen livestatus, geschiedenis of traces.",
-          "cross_chat": "Standaard uit. Als het aan staat, kan een vraag een andere chat gebruiken waarvan de titel woorden deelt. Je hoeft niet chat te zeggen. Alleen een kort fragment, en die chat wordt niet gewijzigd.",
-          "keep_chats": "Nieuwste niet-vastgezette chats per persoon. Vastgezette chats blijven altijd. Standaard 30."
-        },
-        "sections": {
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP-type",
-              "mcp_url": "MCP-URL{mcp_url_mark}",
-              "mcp_token": "MCP-token"
-            },
-            "data_description": {
-              "mcp_kind": "Alleen MCP-servers die deze Home Assistant kan bereiken, staan in de lijst. Aangepast is elke MCP-HTTP-URL.",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Ingebouwd: langlevend toegangstoken van Home Assistant, of leeg laten om de huidige aanmelding in deze chat te gebruiken. HA-MCP: meestal leeg. Vibecode: Agent Key. Aangepast: optioneel Bearer-token."
-            }
-          },
-          "prompt": {
-            "name": "Systeemprompt",
-            "data": {
-              "system_prompt": "Systeemprompt"
-            },
-            "data_description": {
-              "system_prompt": "Alleen toon en gedrag. Leeg laten voor de ingebouwde prompt. MCP-tools en editorlinks worden altijd toegevoegd; ze horen niet in dit veld."
-            }
-          }
-        }
-      },
-      "provider": {
-        "title": "Provider",
-        "description": "Kies de provider. Het volgende scherm vraagt alleen wat die provider nodig heeft.",
-        "data": {
-          "api_provider": "Provider"
-        },
-        "data_description": {
-          "api_provider": "Cursor, of een cloud- of lokaal model. "
-        }
-      },
-      "provider_cursor": {
-        "title": "Cursor",
-        "description": "Cursor-API-sleutel, model en inzet. De runtime-URL blijft op AI Workspace.",
-        "data": {
-          "cursor_api_key": "Cursor-API-sleutel",
-          "model": "Model",
-          "effort": "Inzet",
-          "assist": "Ook in Assist gebruiken"
-        },
-        "data_description": {
-          "cursor_api_key": "Van cursor.com/dashboard/integrations. Leeg laten bij bewerken om de opgeslagen sleutel te houden.",
-          "model": "Leeg gebruikt Composer.",
-          "effort": "Snel, Hoog of Hoog snel. Composer gebruikt Snel tenzij je Hoog kiest.",
-          "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
-        }
-      },
-      "provider_cloud": {
-        "title": "Cloudagent",
-        "description": "Deze agent bewaart een eigen sleutel. Kopieer er een van een al ingestelde integratie of plak een nieuwe. Laat de sleutel leeg bij bewerken om de opgeslagen te houden.",
-        "data": {
-          "borrow": "Sleutel kopiëren van",
-          "api_key": "API-sleutel",
-          "model": "Model",
-          "effort": "Inzet",
-          "low_token": "Weinig tokens",
-          "assist": "Ook in Assist gebruiken"
-        },
-        "data_description": {
-          "borrow": "Gebruikt de sleutel die die integratie al heeft opgeslagen. De andere integratie blijft ongewijzigd.",
-          "api_key": "Geen Home Assistant-token.",
-          "model": "Leeg gebruikt de standaard van de provider.",
-          "effort": "Snel, Hoog of Hoog snel wanneer het model dat ondersteunt.",
-          "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
-          "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
-        }
-      },
-      "provider_ollama": {
-        "title": "Ollama",
-        "description": "Vul hier het adres van de Ollama-server in.",
-        "data": {
-          "api_base": "Ollama-URL",
-          "model": "Model",
-          "effort": "Inzet",
-          "low_token": "Weinig tokens",
-          "assist": "Ook in Assist gebruiken"
-        },
-        "data_description": {
-          "api_base": "Usually http://127.0.0.1:11434/v1",
-          "model": "Leeg gebruikt llama3.2.",
-          "effort": "Gebruikt wanneer het model dat ondersteunt.",
-          "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
-          "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
-        }
-      },
-      "provider_azure": {
-        "title": "Azure OpenAI",
-        "description": "Azure-eindpunt, implementatie en sleutel.",
-        "data": {
-          "api_key": "Azure-API-sleutel",
-          "api_base": "Eindpunt",
-          "model": "Implementatie",
-          "azure_api_version": "API-versie",
-          "effort": "Inzet",
-          "low_token": "Weinig tokens",
-          "assist": "Ook in Assist gebruiken"
-        },
-        "data_description": {
-          "api_key": "De Azure OpenAI-sleutel. Leeg laten bij bewerken om de opgeslagen sleutel te houden.",
-          "api_base": "https://YOUR.openai.azure.com",
-          "model": "De naam van de implementatie.",
-          "azure_api_version": "Default 2024-10-21.",
-          "effort": "Gebruikt wanneer de implementatie dat ondersteunt.",
-          "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
-          "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
-        }
-      },
-      "provider_compatible": {
-        "title": "OpenAI-compatibel",
-        "description": "Een eigen server die de OpenAI-API spreekt.",
-        "data": {
-          "api_key": "API-sleutel",
-          "api_base": "API-basis-URL",
-          "model": "Model",
-          "effort": "Inzet",
-          "low_token": "Weinig tokens",
-          "assist": "Ook in Assist gebruiken"
-        },
-        "data_description": {
-          "api_key": "Leeg laten bij bewerken om de opgeslagen sleutel te houden.",
-          "api_base": "Basis-URL van de server, inclusief /v1 als dat pad wordt gebruikt.",
-          "model": "Modelnaam op die server.",
-          "effort": "Gebruikt wanneer de server dat ondersteunt.",
-          "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
-          "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
         }
       }
     },
     "error": {
       "no_runtime": "De Cursor-runtime is niet bereikbaar. Start hem en zet de URL op AI Workspace.",
-      "required": "Dit veld is verplicht."
+      "required": "Dit veld is verplicht.",
+      "invalid_auth": "De provider heeft deze API-sleutel geweigerd.",
+      "cannot_connect": "De provider is niet bereikbaar. Controleer de URL en het netwerk."
     },
     "abort": {
       "already_configured": "AI Workspace is al geconfigureerd"
@@ -272,7 +72,7 @@
     "step": {
       "init": {
         "title": "AI Workspace",
-        "description": "Gedeelde chatinstellingen. Verbindingen voeg je toe op AI Workspace. Agenten op AI Agents.",
+        "description": "Gedeelde chatinstellingen. Voeg MCP-verbindingen en agents toe met de knoppen op de pagina van de AI Workspace-integratie.",
         "data": {
           "runtime_url": "Cursor-runtime-URL{runtime_url_mark}",
           "stt_engine": "Spraak naar tekst",
@@ -284,7 +84,8 @@
           "allow_users": "Gewone gebruikers toestaan",
           "house_map": "Configuratiecatalogus",
           "cross_chat": "Tussen chats",
-          "keep_chats": "Chats bewaren"
+          "keep_chats": "Chats bewaren",
+          "runtime_token": "Runtime-token"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
@@ -294,10 +95,11 @@
           "enable_sidebar": "Het zijbalkitem AI Workspace. De pagina blijft bereikbaar op /ai-workspace als dit uit staat.",
           "enable_overlay": "De zwevende AI-knop. Verborgen op Instellingen zodat Integratie toevoegen niet wordt bedekt.",
           "enable_dictate": "Microfoon in het berichtveld.",
-          "allow_users": "Aangemelde gebruikers die geen beheerder zijn, kunnen de zwevende chat openen. Uit houdt het bij beheerders. Het zijbalkitem blijft alleen voor beheerders.",
+          "allow_users": "Aangemelde gebruikers die geen beheerder zijn, kunnen de zwevende chat openen. Uit houdt het bij beheerders. Het zijbalkitem blijft alleen voor beheerders. Ze krijgen alleen de ingebouwde Home Assistant MCP Server met hun eigen rechten.",
           "house_map": "Optionele lokale index voor de bedrading van een benoemd item (triggers, gerelateerde id’s). Standaard uit. Niet om automatiseringen of aan/uit te listen — gebruik daar live MCP voor. Geen livestatus, geschiedenis of traces.",
           "cross_chat": "Standaard uit. Als het aan staat, kan een vraag een andere chat gebruiken waarvan de titel woorden deelt. Je hoeft niet chat te zeggen. Alleen een kort fragment, en die chat wordt niet gewijzigd.",
-          "keep_chats": "Nieuwste niet-vastgezette chats per persoon. Vastgezette chats blijven altijd. Standaard 30."
+          "keep_chats": "Nieuwste niet-vastgezette chats per persoon. Vastgezette chats blijven altijd. Standaard 30.",
+          "runtime_token": "Gedeeld geheim voor een Docker-Runtime. Zet dezelfde waarde als RUNTIME_TOKEN op de container. De add-on wordt automatisch gekoppeld; laat leeg."
         },
         "sections": {
           "mcp": {
@@ -322,225 +124,14 @@
               "system_prompt": "Alleen toon en gedrag. Leeg laten voor de ingebouwde prompt. MCP-tools en editorlinks worden altijd toegevoegd; ze horen niet in dit veld."
             }
           }
-        }
-      },
-      "api": {
-        "title": "Cloud-API-provider",
-        "data": {
-          "enable_sidebar": "AI Workspace in de zijbalk tonen",
-          "enable_overlay": "Zwevende AI-knop op elke pagina tonen",
-          "enable_dictate": "Dicteerknop tonen",
-          "allow_users": "Gewone gebruikers toestaan",
-          "house_map": "Configuratiecatalogus",
-          "cross_chat": "Tussen chats",
-          "keep_chats": "Chats bewaren"
-        },
-        "data_description": {
-          "enable_sidebar": "Het zijbalkitem AI Workspace. De pagina blijft bereikbaar op /ai-workspace als dit uit staat.",
-          "enable_overlay": "De zwevende AI-knop. Verborgen op Instellingen zodat Integratie toevoegen niet wordt bedekt.",
-          "enable_dictate": "Microfoon in het berichtveld. Browsers staan dicteren alleen toe via https://.",
-          "allow_users": "Aangemelde gebruikers die geen beheerder zijn, kunnen de zwevende chat openen. Uit houdt het bij beheerders. Het zijbalkitem blijft alleen voor beheerders.",
-          "house_map": "Optionele lokale index voor de bedrading van een benoemd item (triggers, gerelateerde id’s). Standaard uit. Niet om automatiseringen of aan/uit te listen — gebruik daar live MCP voor. Geen livestatus, geschiedenis of traces.",
-          "cross_chat": "Standaard uit. Als het aan staat, kan een vraag een andere chat gebruiken waarvan de titel woorden deelt. Je hoeft niet chat te zeggen. Alleen een kort fragment, en die chat wordt niet gewijzigd.",
-          "keep_chats": "Nieuwste niet-vastgezette chats per persoon. Vastgezette chats blijven altijd. Standaard 30."
-        },
-        "sections": {
-          "provider": {
-            "name": "Provider",
-            "data": {
-              "api_provider": "Provider",
-              "api_key": "API-sleutel",
-              "model": "Model",
-              "api_base": "API-basis-URL"
-            },
-            "data_description": {
-              "api_provider": "OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok of OpenAI-compatibel.",
-              "api_key": "API-sleutel van de provider. Geen Home Assistant-token.",
-              "model": "Leeg gebruikt de standaard van de provider.",
-              "api_base": "Leeg laten voor de gekozen provider. Verplicht voor OpenAI-compatibel (OpenRouter, Ollama, LM Studio). Qwen in China: https://dashscope.aliyuncs.com/compatible-mode/v1"
-            }
-          },
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP-type",
-              "mcp_url": "MCP-URL{mcp_url_mark}",
-              "mcp_token": "MCP-token"
-            },
-            "data_description": {
-              "mcp_kind": "Alleen MCP-servers die deze Home Assistant kan bereiken, staan in de lijst. Aangepast is elke MCP-HTTP-URL.",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Ingebouwd: langlevend toegangstoken van Home Assistant, of leeg laten om de huidige aanmelding in deze chat te gebruiken. HA-MCP: meestal leeg. Vibecode: Agent Key. Aangepast: optioneel Bearer-token."
-            }
-          },
-          "prompt": {
-            "name": "Systeemprompt",
-            "data": {
-              "system_prompt": "Systeemprompt"
-            },
-            "data_description": {
-              "system_prompt": "Alleen toon en gedrag. Leeg laten voor de ingebouwde prompt. MCP-tools en editorlinks worden altijd toegevoegd; ze horen niet in dit veld."
-            }
-          }
-        }
-      },
-      "cursor": {
-        "title": "Cursor-runtime",
-        "data": {
-          "runtime_url": "Cursor-runtime-URL{runtime_url_mark}",
-          "enable_sidebar": "AI Workspace in de zijbalk tonen",
-          "enable_overlay": "Zwevende AI-knop op elke pagina tonen",
-          "enable_dictate": "Dicteerknop tonen",
-          "allow_users": "Gewone gebruikers toestaan",
-          "house_map": "Configuratiecatalogus",
-          "cross_chat": "Tussen chats",
-          "keep_chats": "Chats bewaren"
-        },
-        "data_description": {
-          "runtime_url": "{runtime_url_note}",
-          "enable_sidebar": "Het zijbalkitem AI Workspace. De pagina blijft bereikbaar op /ai-workspace als dit uit staat.",
-          "enable_overlay": "De zwevende AI-knop. Verborgen op Instellingen zodat Integratie toevoegen niet wordt bedekt.",
-          "enable_dictate": "Microfoon in het berichtveld. Browsers staan dicteren alleen toe via https://.",
-          "allow_users": "Aangemelde gebruikers die geen beheerder zijn, kunnen de zwevende chat openen. Uit houdt het bij beheerders. Het zijbalkitem blijft alleen voor beheerders.",
-          "house_map": "Optionele lokale index voor de bedrading van een benoemd item (triggers, gerelateerde id’s). Standaard uit. Niet om automatiseringen of aan/uit te listen — gebruik daar live MCP voor. Geen livestatus, geschiedenis of traces.",
-          "cross_chat": "Standaard uit. Als het aan staat, kan een vraag een andere chat gebruiken waarvan de titel woorden deelt. Je hoeft niet chat te zeggen. Alleen een kort fragment, en die chat wordt niet gewijzigd.",
-          "keep_chats": "Nieuwste niet-vastgezette chats per persoon. Vastgezette chats blijven altijd. Standaard 30."
-        },
-        "sections": {
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP-type",
-              "mcp_url": "MCP-URL{mcp_url_mark}",
-              "mcp_token": "MCP-token"
-            },
-            "data_description": {
-              "mcp_kind": "Alleen MCP-servers die deze Home Assistant kan bereiken, staan in de lijst. Aangepast is elke MCP-HTTP-URL.",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Ingebouwd: langlevend toegangstoken van Home Assistant, of leeg laten om de huidige aanmelding in deze chat te gebruiken. HA-MCP: meestal leeg. Vibecode: Agent Key. Aangepast: optioneel Bearer-token."
-            }
-          },
-          "prompt": {
-            "name": "Systeemprompt",
-            "data": {
-              "system_prompt": "Systeemprompt"
-            },
-            "data_description": {
-              "system_prompt": "Alleen toon en gedrag. Leeg laten voor de ingebouwde prompt. MCP-tools en editorlinks worden altijd toegevoegd; ze horen niet in dit veld."
-            }
-          }
-        }
-      },
-      "provider": {
-        "title": "Provider",
-        "description": "Kies de provider. Het volgende scherm vraagt alleen wat die provider nodig heeft.",
-        "data": {
-          "api_provider": "Provider"
-        },
-        "data_description": {
-          "api_provider": "Cursor, of een cloud- of lokaal model. "
-        }
-      },
-      "provider_cursor": {
-        "title": "Cursor",
-        "description": "Cursor-API-sleutel, model en inzet. De runtime-URL blijft op AI Workspace.",
-        "data": {
-          "cursor_api_key": "Cursor-API-sleutel",
-          "model": "Model",
-          "effort": "Inzet",
-          "assist": "Ook in Assist gebruiken"
-        },
-        "data_description": {
-          "cursor_api_key": "Van cursor.com/dashboard/integrations. Leeg laten bij bewerken om de opgeslagen sleutel te houden.",
-          "model": "Leeg gebruikt Composer.",
-          "effort": "Snel, Hoog of Hoog snel. Composer gebruikt Snel tenzij je Hoog kiest.",
-          "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
-        }
-      },
-      "provider_cloud": {
-        "title": "Cloudagent",
-        "description": "Deze agent bewaart een eigen sleutel. Kopieer er een van een al ingestelde integratie of plak een nieuwe. Laat de sleutel leeg bij bewerken om de opgeslagen te houden.",
-        "data": {
-          "borrow": "Sleutel kopiëren van",
-          "api_key": "API-sleutel",
-          "model": "Model",
-          "effort": "Inzet",
-          "low_token": "Weinig tokens",
-          "assist": "Ook in Assist gebruiken"
-        },
-        "data_description": {
-          "borrow": "Gebruikt de sleutel die die integratie al heeft opgeslagen. De andere integratie blijft ongewijzigd.",
-          "api_key": "Geen Home Assistant-token.",
-          "model": "Leeg gebruikt de standaard van de provider.",
-          "effort": "Snel, Hoog of Hoog snel wanneer het model dat ondersteunt.",
-          "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
-          "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
-        }
-      },
-      "provider_ollama": {
-        "title": "Ollama",
-        "description": "Vul hier het adres van de Ollama-server in.",
-        "data": {
-          "api_base": "Ollama-URL",
-          "model": "Model",
-          "effort": "Inzet",
-          "low_token": "Weinig tokens",
-          "assist": "Ook in Assist gebruiken"
-        },
-        "data_description": {
-          "api_base": "Usually http://127.0.0.1:11434/v1",
-          "model": "Leeg gebruikt llama3.2.",
-          "effort": "Gebruikt wanneer het model dat ondersteunt.",
-          "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
-          "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
-        }
-      },
-      "provider_azure": {
-        "title": "Azure OpenAI",
-        "description": "Azure-eindpunt, implementatie en sleutel.",
-        "data": {
-          "api_key": "Azure-API-sleutel",
-          "api_base": "Eindpunt",
-          "model": "Implementatie",
-          "azure_api_version": "API-versie",
-          "effort": "Inzet",
-          "low_token": "Weinig tokens",
-          "assist": "Ook in Assist gebruiken"
-        },
-        "data_description": {
-          "api_key": "De Azure OpenAI-sleutel. Leeg laten bij bewerken om de opgeslagen sleutel te houden.",
-          "api_base": "https://YOUR.openai.azure.com",
-          "model": "De naam van de implementatie.",
-          "azure_api_version": "Default 2024-10-21.",
-          "effort": "Gebruikt wanneer de implementatie dat ondersteunt.",
-          "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
-          "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
-        }
-      },
-      "provider_compatible": {
-        "title": "OpenAI-compatibel",
-        "description": "Een eigen server die de OpenAI-API spreekt.",
-        "data": {
-          "api_key": "API-sleutel",
-          "api_base": "API-basis-URL",
-          "model": "Model",
-          "effort": "Inzet",
-          "low_token": "Weinig tokens",
-          "assist": "Ook in Assist gebruiken"
-        },
-        "data_description": {
-          "api_key": "Leeg laten bij bewerken om de opgeslagen sleutel te houden.",
-          "api_base": "Basis-URL van de server, inclusief /v1 als dat pad wordt gebruikt.",
-          "model": "Modelnaam op die server.",
-          "effort": "Gebruikt wanneer de server dat ondersteunt.",
-          "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
-          "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
         }
       }
     },
     "error": {
       "no_runtime": "De Cursor-runtime is niet bereikbaar. Start hem en zet de URL op AI Workspace.",
-      "required": "Dit veld is verplicht."
+      "required": "Dit veld is verplicht.",
+      "invalid_auth": "De provider heeft deze API-sleutel geweigerd.",
+      "cannot_connect": "De provider is niet bereikbaar. Controleer de URL en het netwerk."
     }
   },
   "config_subentries": {
@@ -592,115 +183,11 @@
       "entry_type": "Agent",
       "error": {
         "no_runtime": "De Cursor-runtime is niet bereikbaar. Start hem en zet de URL op AI Workspace.",
-        "required": "Dit veld is verplicht."
+        "required": "Dit veld is verplicht.",
+        "invalid_auth": "De provider heeft deze API-sleutel geweigerd.",
+        "cannot_connect": "De provider is niet bereikbaar. Controleer de URL en het netwerk."
       },
       "step": {
-        "agent": {
-          "title": "Agent",
-          "description": "Kies de agent. Het volgende scherm vraagt alleen wat die agent nodig heeft.",
-          "data": {
-            "api_provider": "Agent"
-          },
-          "data_description": {
-            "api_provider": "Cursor, of een cloud- of lokaal model."
-          }
-        },
-        "cursor": {
-          "title": "Cursor",
-          "description": "Cursor-API-sleutel, model en inzet. De runtime-URL blijft op AI Workspace.",
-          "data": {
-            "cursor_api_key": "Cursor-API-sleutel",
-            "model": "Model",
-            "effort": "Inzet",
-            "assist": "Ook in Assist gebruiken"
-          },
-          "data_description": {
-            "cursor_api_key": "Van cursor.com/dashboard/integrations. Leeg laten bij bewerken om de opgeslagen sleutel te houden.",
-            "model": "Leeg gebruikt Composer.",
-            "effort": "Snel, Hoog of Hoog snel. Composer gebruikt Snel tenzij je Hoog kiest.",
-            "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
-          }
-        },
-        "cloud": {
-          "title": "Cloudagent",
-          "description": "Deze agent bewaart een eigen sleutel. Kopieer er een van een al ingestelde integratie of plak een nieuwe. Laat de sleutel leeg bij bewerken om de opgeslagen te houden.",
-          "data": {
-            "borrow": "Sleutel kopiëren van",
-            "api_key": "API-sleutel",
-            "model": "Model",
-            "effort": "Inzet",
-            "low_token": "Weinig tokens",
-            "assist": "Ook in Assist gebruiken"
-          },
-          "data_description": {
-            "borrow": "Gebruikt de sleutel die die integratie al heeft opgeslagen. De andere integratie blijft ongewijzigd.",
-            "api_key": "Geen Home Assistant-token.",
-            "model": "Leeg gebruikt de standaard van de provider.",
-            "effort": "Snel, Hoog of Hoog snel wanneer het model dat ondersteunt.",
-            "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
-            "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
-          }
-        },
-        "ollama": {
-          "title": "Ollama",
-          "description": "Vul hier het adres van de Ollama-server in.",
-          "data": {
-            "api_base": "Ollama-URL",
-            "model": "Model",
-            "effort": "Inzet",
-            "low_token": "Weinig tokens",
-            "assist": "Ook in Assist gebruiken"
-          },
-          "data_description": {
-            "api_base": "Usually http://127.0.0.1:11434/v1",
-            "model": "Leeg gebruikt llama3.2.",
-            "effort": "Gebruikt wanneer het model dat ondersteunt.",
-            "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
-            "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
-          }
-        },
-        "azure": {
-          "title": "Azure OpenAI",
-          "description": "Azure-eindpunt, implementatie en sleutel.",
-          "data": {
-            "api_key": "Azure-API-sleutel",
-            "api_base": "Eindpunt",
-            "model": "Implementatie",
-            "azure_api_version": "API-versie",
-            "effort": "Inzet",
-            "low_token": "Weinig tokens",
-            "assist": "Ook in Assist gebruiken"
-          },
-          "data_description": {
-            "api_key": "De Azure OpenAI-sleutel. Leeg laten bij bewerken om de opgeslagen sleutel te houden.",
-            "api_base": "https://YOUR.openai.azure.com",
-            "model": "De naam van de implementatie.",
-            "azure_api_version": "Default 2024-10-21.",
-            "effort": "Gebruikt wanneer de implementatie dat ondersteunt.",
-            "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
-            "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
-          }
-        },
-        "compatible": {
-          "title": "OpenAI-compatibel",
-          "description": "Een eigen server die de OpenAI-API spreekt.",
-          "data": {
-            "api_key": "API-sleutel",
-            "api_base": "API-basis-URL",
-            "model": "Model",
-            "effort": "Inzet",
-            "low_token": "Weinig tokens",
-            "assist": "Ook in Assist gebruiken"
-          },
-          "data_description": {
-            "api_key": "Leeg laten bij bewerken om de opgeslagen sleutel te houden.",
-            "api_base": "Basis-URL van de server, inclusief /v1 als dat pad wordt gebruikt.",
-            "model": "Modelnaam op die server.",
-            "effort": "Gebruikt wanneer de server dat ondersteunt.",
-            "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
-            "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
-          }
-        },
         "provider": {
           "title": "Provider",
           "description": "Kies de provider. Het volgende scherm vraagt alleen wat die provider nodig heeft.",
@@ -708,7 +195,7 @@
             "api_provider": "Provider"
           },
           "data_description": {
-            "api_provider": "Cursor, of een cloud- of lokaal model. "
+            "api_provider": "Cursor, of een cloud- of lokaal model."
           }
         },
         "provider_cursor": {
@@ -721,7 +208,7 @@
             "assist": "Ook in Assist gebruiken"
           },
           "data_description": {
-            "cursor_api_key": "Van cursor.com/dashboard/integrations. Leeg laten bij bewerken om de opgeslagen sleutel te houden.",
+            "cursor_api_key": "Van cursor.com/dashboard/integrations. Leeg laten bij bewerken om de opgeslagen sleutel te houden. Laat leeg als de Runtime al CURSOR_API_KEY heeft.",
             "model": "Leeg gebruikt Composer.",
             "effort": "Snel, Hoog of Hoog snel. Composer gebruikt Snel tenzij je Hoog kiest.",
             "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
@@ -758,7 +245,7 @@
             "assist": "Ook in Assist gebruiken"
           },
           "data_description": {
-            "api_base": "Usually http://127.0.0.1:11434/v1",
+            "api_base": "Usually {example_url}",
             "model": "Leeg gebruikt llama3.2.",
             "effort": "Gebruikt wanneer het model dat ondersteunt.",
             "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
@@ -779,7 +266,7 @@
           },
           "data_description": {
             "api_key": "De Azure OpenAI-sleutel. Leeg laten bij bewerken om de opgeslagen sleutel te houden.",
-            "api_base": "https://YOUR.openai.azure.com",
+            "api_base": "{example_url}",
             "model": "De naam van de implementatie.",
             "azure_api_version": "Default 2024-10-21.",
             "effort": "Gebruikt wanneer de implementatie dat ondersteunt.",
@@ -814,20 +301,6 @@
     }
   },
   "selector": {
-    "api_provider": {
-      "options": {
-        "openai": "OpenAI",
-        "anthropic": "Claude (Anthropic)",
-        "gemini": "Google Gemini",
-        "deepseek": "DeepSeek",
-        "qwen": "Qwen (Alibaba)",
-        "xai": "Grok (xAI)",
-        "openrouter": "OpenRouter",
-        "ollama": "Lokale Ollama",
-        "azure": "Azure OpenAI",
-        "compatible": "OpenAI-compatibel (eigen basis-URL)"
-      }
-    },
     "agent_provider": {
       "options": {
         "cursor": "Cursor",
@@ -845,7 +318,7 @@
     },
     "effort": {
       "options": {
-        "": "Standaard",
+        "default": "Standaard",
         "fast": "Snel",
         "high": "Hoog",
         "high_fast": "Hoog snel"

@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "AI Workspace",
-        "description": "Paylaşılan çat ayarları. Sonra AI Agents altında ilk agenti (Cursor, OpenAI, OpenRouter, Ollama və s.) əlavə edin.",
+        "description": "Ümumi söhbət ayarları. Sonra ilk agenti əlavə edin (Cursor, OpenAI, OpenRouter, Ollama və digərləri). Bağlantılar və agentlər bu inteqrasiyanın sətirləridir.",
         "data": {
           "runtime_url": "Cursor runtime URL{runtime_url_mark}",
           "stt_engine": "Nitqdən mətnə",
@@ -15,7 +15,8 @@
           "allow_users": "Adi istifadəçilərə icazə ver",
           "house_map": "Konfiqurasiya kataloqu",
           "cross_chat": "Çatlar arası",
-          "keep_chats": "Saxlanılacaq çatlar"
+          "keep_chats": "Saxlanılacaq çatlar",
+          "runtime_token": "Runtime tokeni"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
@@ -25,10 +26,11 @@
           "enable_sidebar": "Yan panel bəndi AI Workspace. Bu sönülü olsa belə səhifə /ai-workspace ünvanında qalır.",
           "enable_overlay": "Üzən AI düyməsi. Ayarlarda gizlidir ki, İnteqrasiya əlavə et-i örtməsin.",
           "enable_dictate": "Mesaj qutusunda mikrofon.",
-          "allow_users": "Administrator olmayan daxil olmuş istifadəçilər üzən çatı aça bilər. Sönülü onu administratorlara saxlayır. Yan panel bəndi administratorlara məxsus qalır.",
+          "allow_users": "Administrator olmayan daxil olmuş istifadəçilər üzən çatı aça bilər. Sönülü onu administratorlara saxlayır. Yan panel bəndi administratorlara məxsus qalır. Onlar yalnız öz icazələri ilə daxili Home Assistant MCP serverini alırlar.",
           "house_map": "Adlı elementin naqilləşməsi (tətiklər, bağlı id-lər) üçün istəyə bağlı yerli indeks. Defolt sönülü. Avtomatlaşdırmaları və ya açıq/sönülünü siyahılamaq üçün deyil — buna canlı MCP istifadə edin. Canlı vəziyyət, tarixçə və ya izlər deyil.",
           "cross_chat": "Defolt sönülü. Yanılı olanda sual başlığında ortaq söz olan başqa çatı istifadə edə bilər. Çat demək lazım deyil. Yalnız qısa parça, və o çat dəyişmir.",
-          "keep_chats": "Hər şəxs üçün saxlanılacaq ən yeni sancılanmamış çatlar. Sancılmış çatlar həmişə qalır. Defolt 30."
+          "keep_chats": "Hər şəxs üçün saxlanılacaq ən yeni sancılanmamış çatlar. Sancılmış çatlar həmişə qalır. Defolt 30.",
+          "runtime_token": "Docker Runtime üçün ortaq sirr. Konteynerdə RUNTIME_TOKEN üçün eyni dəyəri yazın. Əlavə avtomatik qoşulur; boş saxlayın."
         },
         "sections": {
           "mcp": {
@@ -53,216 +55,14 @@
               "system_prompt": "Yalnız ton və davranış. Daxili prompt üçün boş buraxın. MCP alətləri və redaktor keçidləri həmişə əlavə olunur; bu sahəyə aid deyil."
             }
           }
-        }
-      },
-      "api": {
-        "title": "Bulud API təminatçısı",
-        "data": {
-          "enable_sidebar": "Yan paneldə AI Workspace göstər",
-          "enable_overlay": "Hər səhifədə üzən AI düyməsini göstər",
-          "enable_dictate": "Diktə düyməsini göstər",
-          "allow_users": "Adi istifadəçilərə icazə ver",
-          "house_map": "Konfiqurasiya kataloqu",
-          "cross_chat": "Çatlar arası",
-          "keep_chats": "Saxlanılacaq çatlar"
-        },
-        "sections": {
-          "provider": {
-            "name": "Təminatçı",
-            "data": {
-              "api_provider": "Təminatçı",
-              "api_key": "API açarı",
-              "model": "Model",
-              "api_base": "API baza URL"
-            },
-            "data_description": {
-              "api_provider": "OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok və ya OpenAI-uyğun.",
-              "api_key": "Təminatçı API açarı. Home Assistant tokeni deyil.",
-              "model": "Boş təminatçının defoltunu istifadə edir.",
-              "api_base": "Seçilmiş təminatçı üçün boş buraxın. OpenAI-uyğun (OpenRouter, Ollama, LM Studio) üçün məcburidir. Çin Qwen: https://dashscope.aliyuncs.com/compatible-mode/v1"
-            }
-          },
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP növü",
-              "mcp_url": "MCP URL{mcp_url_mark}",
-              "mcp_token": "MCP tokeni"
-            },
-            "data_description": {
-              "mcp_kind": "Yalnız bu Home Assistant-ın çata bildiyi MCP serverləri siyahıdadır. Fərdi istənilən MCP HTTP URL-idir.",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Daxili: Home Assistant uzunömürlü giriş tokeni, və ya bu çatdakı cari girişi istifadə etmək üçün boş buraxın. HA-MCP: adətən boş. Vibecode: Agent Key. Fərdi: istəyə bağlı Bearer tokeni."
-            }
-          },
-          "prompt": {
-            "name": "Sistem promptu",
-            "data": {
-              "system_prompt": "Sistem promptu"
-            },
-            "data_description": {
-              "system_prompt": "Yalnız ton və davranış. Daxili prompt üçün boş buraxın. MCP alətləri və redaktor keçidləri həmişə əlavə olunur; bu sahəyə aid deyil."
-            }
-          }
-        }
-      },
-      "cursor": {
-        "title": "Cursor runtime",
-        "data": {
-          "runtime_url": "Cursor runtime URL{runtime_url_mark}",
-          "enable_sidebar": "Yan paneldə AI Workspace göstər",
-          "enable_overlay": "Hər səhifədə üzən AI düyməsini göstər",
-          "enable_dictate": "Diktə düyməsini göstər",
-          "allow_users": "Adi istifadəçilərə icazə ver",
-          "house_map": "Konfiqurasiya kataloqu",
-          "cross_chat": "Çatlar arası",
-          "keep_chats": "Saxlanılacaq çatlar"
-        },
-        "data_description": {
-          "runtime_url": "{runtime_url_note}",
-          "enable_sidebar": "Yan panel bəndi AI Workspace. Bu sönülü olsa belə səhifə /ai-workspace ünvanında qalır.",
-          "enable_overlay": "Üzən AI düyməsi. Ayarlarda gizlidir ki, İnteqrasiya əlavə et-i örtməsin.",
-          "enable_dictate": "Mesaj qutusunda mikrofon. Brauzerlər diktəyə yalnız https:// üzərində icazə verir.",
-          "allow_users": "Administrator olmayan daxil olmuş istifadəçilər üzən çatı aça bilər. Sönülü onu administratorlara saxlayır. Yan panel bəndi administratorlara məxsus qalır.",
-          "house_map": "Adlı elementin naqilləşməsi (tətiklər, bağlı id-lər) üçün istəyə bağlı yerli indeks. Defolt sönülü. Avtomatlaşdırmaları və ya açıq/sönülünü siyahılamaq üçün deyil — buna canlı MCP istifadə edin. Canlı vəziyyət, tarixçə və ya izlər deyil.",
-          "cross_chat": "Defolt sönülü. Yanılı olanda sual başlığında ortaq söz olan başqa çatı istifadə edə bilər. Çat demək lazım deyil. Yalnız qısa parça, və o çat dəyişmir.",
-          "keep_chats": "Hər şəxs üçün saxlanılacaq ən yeni sancılanmamış çatlar. Sancılmış çatlar həmişə qalır. Defolt 30."
-        },
-        "sections": {
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP növü",
-              "mcp_url": "MCP URL{mcp_url_mark}",
-              "mcp_token": "MCP tokeni"
-            },
-            "data_description": {
-              "mcp_kind": "Yalnız bu Home Assistant-ın çata bildiyi MCP serverləri siyahıdadır. Fərdi istənilən MCP HTTP URL-idir.",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Daxili: Home Assistant uzunömürlü giriş tokeni, və ya bu çatdakı cari girişi istifadə etmək üçün boş buraxın. HA-MCP: adətən boş. Vibecode: Agent Key. Fərdi: istəyə bağlı Bearer tokeni."
-            }
-          },
-          "prompt": {
-            "name": "Sistem promptu",
-            "data": {
-              "system_prompt": "Sistem promptu"
-            },
-            "data_description": {
-              "system_prompt": "Yalnız ton və davranış. Daxili prompt üçün boş buraxın. MCP alətləri və redaktor keçidləri həmişə əlavə olunur; bu sahəyə aid deyil."
-            }
-          }
-        }
-      },
-      "provider": {
-        "title": "Təminatçı",
-        "description": "Təminatçını seçin. Növbəti ekran yalnız həmin təminatçının ehtiyacını soruşur.",
-        "data": {
-          "api_provider": "Təminatçı"
-        },
-        "data_description": {
-          "api_provider": "Cursor, və ya bulud yaxud yerli model. "
-        }
-      },
-      "provider_cursor": {
-        "title": "Cursor",
-        "description": "Cursor API açarı, model və səy. Runtime URL AI Workspace-də qalır.",
-        "data": {
-          "cursor_api_key": "Cursor API açarı",
-          "model": "Model",
-          "effort": "Səy",
-          "assist": "Assist-də də istifadə et"
-        },
-        "data_description": {
-          "cursor_api_key": "cursor.com/dashboard/integrations ünvanından. Redaktədə boş buraxın ki, saxlanmış açar qalsın.",
-          "model": "Boş Composer istifadə edir.",
-          "effort": "Sürətli, Yüksək və ya Yüksək sürətli. Composer, Yüksək seçməsəniz, Sürətli istifadə edir.",
-          "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
-        }
-      },
-      "provider_cloud": {
-        "title": "Bulud agenti",
-        "description": "Bu agent öz açarını saxlayır. Artıq qurulmuş inteqrasiyadan kopyalayın və ya yenisini yapışdırın. Redaktədə açarı boş buraxın ki, saxlanmış qalsın.",
-        "data": {
-          "borrow": "Açarı buradan kopyala",
-          "api_key": "API açarı",
-          "model": "Model",
-          "effort": "Səy",
-          "low_token": "Az token",
-          "assist": "Assist-də də istifadə et"
-        },
-        "data_description": {
-          "borrow": "Həmin inteqrasiyanın artıq saxladığı açarı istifadə edir. Digər inteqrasiya dəyişmir.",
-          "api_key": "Home Assistant tokeni deyil.",
-          "model": "Boş təminatçının defoltunu istifadə edir.",
-          "effort": "Model dəstəkləyəndə Sürətli, Yüksək və ya Yüksək sürətli.",
-          "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
-          "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
-        }
-      },
-      "provider_ollama": {
-        "title": "Ollama",
-        "description": "Bunu Ollama serverinə yönəldin.",
-        "data": {
-          "api_base": "Ollama URL",
-          "model": "Model",
-          "effort": "Səy",
-          "low_token": "Az token",
-          "assist": "Assist-də də istifadə et"
-        },
-        "data_description": {
-          "api_base": "Usually http://127.0.0.1:11434/v1",
-          "model": "Boş llama3.2 istifadə edir.",
-          "effort": "Model dəstəkləyəndə istifadə olunur.",
-          "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
-          "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
-        }
-      },
-      "provider_azure": {
-        "title": "Azure OpenAI",
-        "description": "Azure son nöqtəsi, yerləşdirmə və açar.",
-        "data": {
-          "api_key": "Azure API açarı",
-          "api_base": "Son nöqtə",
-          "model": "Yerləşdirmə",
-          "azure_api_version": "API versiyası",
-          "effort": "Səy",
-          "low_token": "Az token",
-          "assist": "Assist-də də istifadə et"
-        },
-        "data_description": {
-          "api_key": "Azure OpenAI açarı. Redaktədə boş buraxın ki, saxlanmış açar qalsın.",
-          "api_base": "https://YOUR.openai.azure.com",
-          "model": "Yerləşdirmə adı.",
-          "azure_api_version": "Default 2024-10-21.",
-          "effort": "Yerləşdirmə dəstəkləyəndə istifadə olunur.",
-          "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
-          "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
-        }
-      },
-      "provider_compatible": {
-        "title": "OpenAI-uyğun",
-        "description": "OpenAI API danışan fərdi server.",
-        "data": {
-          "api_key": "API açarı",
-          "api_base": "API baza URL",
-          "model": "Model",
-          "effort": "Səy",
-          "low_token": "Az token",
-          "assist": "Assist-də də istifadə et"
-        },
-        "data_description": {
-          "api_key": "Redaktədə boş buraxın ki, saxlanmış açar qalsın.",
-          "api_base": "Serverin baza URL-i, həmin yolu istifadə edirsə /v1 daxil.",
-          "model": "Həmin serverdəki model adı.",
-          "effort": "Server dəstəkləyəndə istifadə olunur.",
-          "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
-          "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
         }
       }
     },
     "error": {
       "no_runtime": "Cursor runtime-ə çatmaq olmur. Onu başladın və URL-ini AI Workspace-də yazın.",
-      "required": "Bu sahə tələb olunur."
+      "required": "Bu sahə tələb olunur.",
+      "invalid_auth": "Provayder bu API açarını rədd etdi.",
+      "cannot_connect": "Provayderə qoşulmaq olmadı. URL-i və şəbəkəni yoxlayın."
     },
     "abort": {
       "already_configured": "AI Workspace artıq konfiqurasiya olunub"
@@ -272,7 +72,7 @@
     "step": {
       "init": {
         "title": "AI Workspace",
-        "description": "Paylaşılan çat ayarları. Bağlantılar AI Workspace-də, agentlər AI Agents-də əlavə olunur.",
+        "description": "Ümumi söhbət ayarları. MCP bağlantılarını və agentləri AI Workspace inteqrasiyası səhifəsindəki düymələrlə əlavə edin.",
         "data": {
           "runtime_url": "Cursor runtime URL{runtime_url_mark}",
           "stt_engine": "Nitqdən mətnə",
@@ -284,7 +84,8 @@
           "allow_users": "Adi istifadəçilərə icazə ver",
           "house_map": "Konfiqurasiya kataloqu",
           "cross_chat": "Çatlar arası",
-          "keep_chats": "Saxlanılacaq çatlar"
+          "keep_chats": "Saxlanılacaq çatlar",
+          "runtime_token": "Runtime tokeni"
         },
         "data_description": {
           "runtime_url": "{runtime_url_note}",
@@ -294,10 +95,11 @@
           "enable_sidebar": "Yan panel bəndi AI Workspace. Bu sönülü olsa belə səhifə /ai-workspace ünvanında qalır.",
           "enable_overlay": "Üzən AI düyməsi. Ayarlarda gizlidir ki, İnteqrasiya əlavə et-i örtməsin.",
           "enable_dictate": "Mesaj qutusunda mikrofon.",
-          "allow_users": "Administrator olmayan daxil olmuş istifadəçilər üzən çatı aça bilər. Sönülü onu administratorlara saxlayır. Yan panel bəndi administratorlara məxsus qalır.",
+          "allow_users": "Administrator olmayan daxil olmuş istifadəçilər üzən çatı aça bilər. Sönülü onu administratorlara saxlayır. Yan panel bəndi administratorlara məxsus qalır. Onlar yalnız öz icazələri ilə daxili Home Assistant MCP serverini alırlar.",
           "house_map": "Adlı elementin naqilləşməsi (tətiklər, bağlı id-lər) üçün istəyə bağlı yerli indeks. Defolt sönülü. Avtomatlaşdırmaları və ya açıq/sönülünü siyahılamaq üçün deyil — buna canlı MCP istifadə edin. Canlı vəziyyət, tarixçə və ya izlər deyil.",
           "cross_chat": "Defolt sönülü. Yanılı olanda sual başlığında ortaq söz olan başqa çatı istifadə edə bilər. Çat demək lazım deyil. Yalnız qısa parça, və o çat dəyişmir.",
-          "keep_chats": "Hər şəxs üçün saxlanılacaq ən yeni sancılanmamış çatlar. Sancılmış çatlar həmişə qalır. Defolt 30."
+          "keep_chats": "Hər şəxs üçün saxlanılacaq ən yeni sancılanmamış çatlar. Sancılmış çatlar həmişə qalır. Defolt 30.",
+          "runtime_token": "Docker Runtime üçün ortaq sirr. Konteynerdə RUNTIME_TOKEN üçün eyni dəyəri yazın. Əlavə avtomatik qoşulur; boş saxlayın."
         },
         "sections": {
           "mcp": {
@@ -322,225 +124,14 @@
               "system_prompt": "Yalnız ton və davranış. Daxili prompt üçün boş buraxın. MCP alətləri və redaktor keçidləri həmişə əlavə olunur; bu sahəyə aid deyil."
             }
           }
-        }
-      },
-      "api": {
-        "title": "Bulud API təminatçısı",
-        "data": {
-          "enable_sidebar": "Yan paneldə AI Workspace göstər",
-          "enable_overlay": "Hər səhifədə üzən AI düyməsini göstər",
-          "enable_dictate": "Diktə düyməsini göstər",
-          "allow_users": "Adi istifadəçilərə icazə ver",
-          "house_map": "Konfiqurasiya kataloqu",
-          "cross_chat": "Çatlar arası",
-          "keep_chats": "Saxlanılacaq çatlar"
-        },
-        "data_description": {
-          "enable_sidebar": "Yan panel bəndi AI Workspace. Bu sönülü olsa belə səhifə /ai-workspace ünvanında qalır.",
-          "enable_overlay": "Üzən AI düyməsi. Ayarlarda gizlidir ki, İnteqrasiya əlavə et-i örtməsin.",
-          "enable_dictate": "Mesaj qutusunda mikrofon. Brauzerlər diktəyə yalnız https:// üzərində icazə verir.",
-          "allow_users": "Administrator olmayan daxil olmuş istifadəçilər üzən çatı aça bilər. Sönülü onu administratorlara saxlayır. Yan panel bəndi administratorlara məxsus qalır.",
-          "house_map": "Adlı elementin naqilləşməsi (tətiklər, bağlı id-lər) üçün istəyə bağlı yerli indeks. Defolt sönülü. Avtomatlaşdırmaları və ya açıq/sönülünü siyahılamaq üçün deyil — buna canlı MCP istifadə edin. Canlı vəziyyət, tarixçə və ya izlər deyil.",
-          "cross_chat": "Defolt sönülü. Yanılı olanda sual başlığında ortaq söz olan başqa çatı istifadə edə bilər. Çat demək lazım deyil. Yalnız qısa parça, və o çat dəyişmir.",
-          "keep_chats": "Hər şəxs üçün saxlanılacaq ən yeni sancılanmamış çatlar. Sancılmış çatlar həmişə qalır. Defolt 30."
-        },
-        "sections": {
-          "provider": {
-            "name": "Təminatçı",
-            "data": {
-              "api_provider": "Təminatçı",
-              "api_key": "API açarı",
-              "model": "Model",
-              "api_base": "API baza URL"
-            },
-            "data_description": {
-              "api_provider": "OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok və ya OpenAI-uyğun.",
-              "api_key": "Təminatçı API açarı. Home Assistant tokeni deyil.",
-              "model": "Boş təminatçının defoltunu istifadə edir.",
-              "api_base": "Seçilmiş təminatçı üçün boş buraxın. OpenAI-uyğun (OpenRouter, Ollama, LM Studio) üçün məcburidir. Çin Qwen: https://dashscope.aliyuncs.com/compatible-mode/v1"
-            }
-          },
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP növü",
-              "mcp_url": "MCP URL{mcp_url_mark}",
-              "mcp_token": "MCP tokeni"
-            },
-            "data_description": {
-              "mcp_kind": "Yalnız bu Home Assistant-ın çata bildiyi MCP serverləri siyahıdadır. Fərdi istənilən MCP HTTP URL-idir.",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Daxili: Home Assistant uzunömürlü giriş tokeni, və ya bu çatdakı cari girişi istifadə etmək üçün boş buraxın. HA-MCP: adətən boş. Vibecode: Agent Key. Fərdi: istəyə bağlı Bearer tokeni."
-            }
-          },
-          "prompt": {
-            "name": "Sistem promptu",
-            "data": {
-              "system_prompt": "Sistem promptu"
-            },
-            "data_description": {
-              "system_prompt": "Yalnız ton və davranış. Daxili prompt üçün boş buraxın. MCP alətləri və redaktor keçidləri həmişə əlavə olunur; bu sahəyə aid deyil."
-            }
-          }
-        }
-      },
-      "cursor": {
-        "title": "Cursor runtime",
-        "data": {
-          "runtime_url": "Cursor runtime URL{runtime_url_mark}",
-          "enable_sidebar": "Yan paneldə AI Workspace göstər",
-          "enable_overlay": "Hər səhifədə üzən AI düyməsini göstər",
-          "enable_dictate": "Diktə düyməsini göstər",
-          "allow_users": "Adi istifadəçilərə icazə ver",
-          "house_map": "Konfiqurasiya kataloqu",
-          "cross_chat": "Çatlar arası",
-          "keep_chats": "Saxlanılacaq çatlar"
-        },
-        "data_description": {
-          "runtime_url": "{runtime_url_note}",
-          "enable_sidebar": "Yan panel bəndi AI Workspace. Bu sönülü olsa belə səhifə /ai-workspace ünvanında qalır.",
-          "enable_overlay": "Üzən AI düyməsi. Ayarlarda gizlidir ki, İnteqrasiya əlavə et-i örtməsin.",
-          "enable_dictate": "Mesaj qutusunda mikrofon. Brauzerlər diktəyə yalnız https:// üzərində icazə verir.",
-          "allow_users": "Administrator olmayan daxil olmuş istifadəçilər üzən çatı aça bilər. Sönülü onu administratorlara saxlayır. Yan panel bəndi administratorlara məxsus qalır.",
-          "house_map": "Adlı elementin naqilləşməsi (tətiklər, bağlı id-lər) üçün istəyə bağlı yerli indeks. Defolt sönülü. Avtomatlaşdırmaları və ya açıq/sönülünü siyahılamaq üçün deyil — buna canlı MCP istifadə edin. Canlı vəziyyət, tarixçə və ya izlər deyil.",
-          "cross_chat": "Defolt sönülü. Yanılı olanda sual başlığında ortaq söz olan başqa çatı istifadə edə bilər. Çat demək lazım deyil. Yalnız qısa parça, və o çat dəyişmir.",
-          "keep_chats": "Hər şəxs üçün saxlanılacaq ən yeni sancılanmamış çatlar. Sancılmış çatlar həmişə qalır. Defolt 30."
-        },
-        "sections": {
-          "mcp": {
-            "name": "MCP",
-            "data": {
-              "mcp_kind": "MCP növü",
-              "mcp_url": "MCP URL{mcp_url_mark}",
-              "mcp_token": "MCP tokeni"
-            },
-            "data_description": {
-              "mcp_kind": "Yalnız bu Home Assistant-ın çata bildiyi MCP serverləri siyahıdadır. Fərdi istənilən MCP HTTP URL-idir.",
-              "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Daxili: Home Assistant uzunömürlü giriş tokeni, və ya bu çatdakı cari girişi istifadə etmək üçün boş buraxın. HA-MCP: adətən boş. Vibecode: Agent Key. Fərdi: istəyə bağlı Bearer tokeni."
-            }
-          },
-          "prompt": {
-            "name": "Sistem promptu",
-            "data": {
-              "system_prompt": "Sistem promptu"
-            },
-            "data_description": {
-              "system_prompt": "Yalnız ton və davranış. Daxili prompt üçün boş buraxın. MCP alətləri və redaktor keçidləri həmişə əlavə olunur; bu sahəyə aid deyil."
-            }
-          }
-        }
-      },
-      "provider": {
-        "title": "Təminatçı",
-        "description": "Təminatçını seçin. Növbəti ekran yalnız həmin təminatçının ehtiyacını soruşur.",
-        "data": {
-          "api_provider": "Təminatçı"
-        },
-        "data_description": {
-          "api_provider": "Cursor, və ya bulud yaxud yerli model. "
-        }
-      },
-      "provider_cursor": {
-        "title": "Cursor",
-        "description": "Cursor API açarı, model və səy. Runtime URL AI Workspace-də qalır.",
-        "data": {
-          "cursor_api_key": "Cursor API açarı",
-          "model": "Model",
-          "effort": "Səy",
-          "assist": "Assist-də də istifadə et"
-        },
-        "data_description": {
-          "cursor_api_key": "cursor.com/dashboard/integrations ünvanından. Redaktədə boş buraxın ki, saxlanmış açar qalsın.",
-          "model": "Boş Composer istifadə edir.",
-          "effort": "Sürətli, Yüksək və ya Yüksək sürətli. Composer, Yüksək seçməsəniz, Sürətli istifadə edir.",
-          "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
-        }
-      },
-      "provider_cloud": {
-        "title": "Bulud agenti",
-        "description": "Bu agent öz açarını saxlayır. Artıq qurulmuş inteqrasiyadan kopyalayın və ya yenisini yapışdırın. Redaktədə açarı boş buraxın ki, saxlanmış qalsın.",
-        "data": {
-          "borrow": "Açarı buradan kopyala",
-          "api_key": "API açarı",
-          "model": "Model",
-          "effort": "Səy",
-          "low_token": "Az token",
-          "assist": "Assist-də də istifadə et"
-        },
-        "data_description": {
-          "borrow": "Həmin inteqrasiyanın artıq saxladığı açarı istifadə edir. Digər inteqrasiya dəyişmir.",
-          "api_key": "Home Assistant tokeni deyil.",
-          "model": "Boş təminatçının defoltunu istifadə edir.",
-          "effort": "Model dəstəkləyəndə Sürətli, Yüksək və ya Yüksək sürətli.",
-          "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
-          "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
-        }
-      },
-      "provider_ollama": {
-        "title": "Ollama",
-        "description": "Bunu Ollama serverinə yönəldin.",
-        "data": {
-          "api_base": "Ollama URL",
-          "model": "Model",
-          "effort": "Səy",
-          "low_token": "Az token",
-          "assist": "Assist-də də istifadə et"
-        },
-        "data_description": {
-          "api_base": "Usually http://127.0.0.1:11434/v1",
-          "model": "Boş llama3.2 istifadə edir.",
-          "effort": "Model dəstəkləyəndə istifadə olunur.",
-          "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
-          "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
-        }
-      },
-      "provider_azure": {
-        "title": "Azure OpenAI",
-        "description": "Azure son nöqtəsi, yerləşdirmə və açar.",
-        "data": {
-          "api_key": "Azure API açarı",
-          "api_base": "Son nöqtə",
-          "model": "Yerləşdirmə",
-          "azure_api_version": "API versiyası",
-          "effort": "Səy",
-          "low_token": "Az token",
-          "assist": "Assist-də də istifadə et"
-        },
-        "data_description": {
-          "api_key": "Azure OpenAI açarı. Redaktədə boş buraxın ki, saxlanmış açar qalsın.",
-          "api_base": "https://YOUR.openai.azure.com",
-          "model": "Yerləşdirmə adı.",
-          "azure_api_version": "Default 2024-10-21.",
-          "effort": "Yerləşdirmə dəstəkləyəndə istifadə olunur.",
-          "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
-          "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
-        }
-      },
-      "provider_compatible": {
-        "title": "OpenAI-uyğun",
-        "description": "OpenAI API danışan fərdi server.",
-        "data": {
-          "api_key": "API açarı",
-          "api_base": "API baza URL",
-          "model": "Model",
-          "effort": "Səy",
-          "low_token": "Az token",
-          "assist": "Assist-də də istifadə et"
-        },
-        "data_description": {
-          "api_key": "Redaktədə boş buraxın ki, saxlanmış açar qalsın.",
-          "api_base": "Serverin baza URL-i, həmin yolu istifadə edirsə /v1 daxil.",
-          "model": "Həmin serverdəki model adı.",
-          "effort": "Server dəstəkləyəndə istifadə olunur.",
-          "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
-          "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
         }
       }
     },
     "error": {
       "no_runtime": "Cursor runtime-ə çatmaq olmur. Onu başladın və URL-ini AI Workspace-də yazın.",
-      "required": "Bu sahə tələb olunur."
+      "required": "Bu sahə tələb olunur.",
+      "invalid_auth": "Provayder bu API açarını rədd etdi.",
+      "cannot_connect": "Provayderə qoşulmaq olmadı. URL-i və şəbəkəni yoxlayın."
     }
   },
   "config_subentries": {
@@ -592,115 +183,11 @@
       "entry_type": "Agent",
       "error": {
         "no_runtime": "Cursor runtime-ə çatmaq olmur. Onu başladın və URL-ini AI Workspace-də yazın.",
-        "required": "Bu sahə tələb olunur."
+        "required": "Bu sahə tələb olunur.",
+        "invalid_auth": "Provayder bu API açarını rədd etdi.",
+        "cannot_connect": "Provayderə qoşulmaq olmadı. URL-i və şəbəkəni yoxlayın."
       },
       "step": {
-        "agent": {
-          "title": "Agent",
-          "description": "Agenti seçin. Növbəti ekran yalnız həmin agentin ehtiyacını soruşur.",
-          "data": {
-            "api_provider": "Agent"
-          },
-          "data_description": {
-            "api_provider": "Cursor, və ya bulud yaxud yerli model."
-          }
-        },
-        "cursor": {
-          "title": "Cursor",
-          "description": "Cursor API açarı, model və səy. Runtime URL AI Workspace-də qalır.",
-          "data": {
-            "cursor_api_key": "Cursor API açarı",
-            "model": "Model",
-            "effort": "Səy",
-            "assist": "Assist-də də istifadə et"
-          },
-          "data_description": {
-            "cursor_api_key": "cursor.com/dashboard/integrations ünvanından. Redaktədə boş buraxın ki, saxlanmış açar qalsın.",
-            "model": "Boş Composer istifadə edir.",
-            "effort": "Sürətli, Yüksək və ya Yüksək sürətli. Composer, Yüksək seçməsəniz, Sürətli istifadə edir.",
-            "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
-          }
-        },
-        "cloud": {
-          "title": "Bulud agenti",
-          "description": "Bu agent öz açarını saxlayır. Artıq qurulmuş inteqrasiyadan kopyalayın və ya yenisini yapışdırın. Redaktədə açarı boş buraxın ki, saxlanmış qalsın.",
-          "data": {
-            "borrow": "Açarı buradan kopyala",
-            "api_key": "API açarı",
-            "model": "Model",
-            "effort": "Səy",
-            "low_token": "Az token",
-            "assist": "Assist-də də istifadə et"
-          },
-          "data_description": {
-            "borrow": "Həmin inteqrasiyanın artıq saxladığı açarı istifadə edir. Digər inteqrasiya dəyişmir.",
-            "api_key": "Home Assistant tokeni deyil.",
-            "model": "Boş təminatçının defoltunu istifadə edir.",
-            "effort": "Model dəstəkləyəndə Sürətli, Yüksək və ya Yüksək sürətli.",
-            "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
-            "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
-          }
-        },
-        "ollama": {
-          "title": "Ollama",
-          "description": "Bunu Ollama serverinə yönəldin.",
-          "data": {
-            "api_base": "Ollama URL",
-            "model": "Model",
-            "effort": "Səy",
-            "low_token": "Az token",
-            "assist": "Assist-də də istifadə et"
-          },
-          "data_description": {
-            "api_base": "Usually http://127.0.0.1:11434/v1",
-            "model": "Boş llama3.2 istifadə edir.",
-            "effort": "Model dəstəkləyəndə istifadə olunur.",
-            "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
-            "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
-          }
-        },
-        "azure": {
-          "title": "Azure OpenAI",
-          "description": "Azure son nöqtəsi, yerləşdirmə və açar.",
-          "data": {
-            "api_key": "Azure API açarı",
-            "api_base": "Son nöqtə",
-            "model": "Yerləşdirmə",
-            "azure_api_version": "API versiyası",
-            "effort": "Səy",
-            "low_token": "Az token",
-            "assist": "Assist-də də istifadə et"
-          },
-          "data_description": {
-            "api_key": "Azure OpenAI açarı. Redaktədə boş buraxın ki, saxlanmış açar qalsın.",
-            "api_base": "https://YOUR.openai.azure.com",
-            "model": "Yerləşdirmə adı.",
-            "azure_api_version": "Default 2024-10-21.",
-            "effort": "Yerləşdirmə dəstəkləyəndə istifadə olunur.",
-            "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
-            "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
-          }
-        },
-        "compatible": {
-          "title": "OpenAI-uyğun",
-          "description": "OpenAI API danışan fərdi server.",
-          "data": {
-            "api_key": "API açarı",
-            "api_base": "API baza URL",
-            "model": "Model",
-            "effort": "Səy",
-            "low_token": "Az token",
-            "assist": "Assist-də də istifadə et"
-          },
-          "data_description": {
-            "api_key": "Redaktədə boş buraxın ki, saxlanmış açar qalsın.",
-            "api_base": "Serverin baza URL-i, həmin yolu istifadə edirsə /v1 daxil.",
-            "model": "Həmin serverdəki model adı.",
-            "effort": "Server dəstəkləyəndə istifadə olunur.",
-            "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
-            "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
-          }
-        },
         "provider": {
           "title": "Təminatçı",
           "description": "Təminatçını seçin. Növbəti ekran yalnız həmin təminatçının ehtiyacını soruşur.",
@@ -708,7 +195,7 @@
             "api_provider": "Təminatçı"
           },
           "data_description": {
-            "api_provider": "Cursor, və ya bulud yaxud yerli model. "
+            "api_provider": "Cursor, və ya bulud yaxud yerli model."
           }
         },
         "provider_cursor": {
@@ -721,7 +208,7 @@
             "assist": "Assist-də də istifadə et"
           },
           "data_description": {
-            "cursor_api_key": "cursor.com/dashboard/integrations ünvanından. Redaktədə boş buraxın ki, saxlanmış açar qalsın.",
+            "cursor_api_key": "cursor.com/dashboard/integrations ünvanından. Redaktədə boş buraxın ki, saxlanmış açar qalsın. Runtime-da artıq CURSOR_API_KEY varsa, boş saxlayın.",
             "model": "Boş Composer istifadə edir.",
             "effort": "Sürətli, Yüksək və ya Yüksək sürətli. Composer, Yüksək seçməsəniz, Sürətli istifadə edir.",
             "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
@@ -758,7 +245,7 @@
             "assist": "Assist-də də istifadə et"
           },
           "data_description": {
-            "api_base": "Usually http://127.0.0.1:11434/v1",
+            "api_base": "Usually {example_url}",
             "model": "Boş llama3.2 istifadə edir.",
             "effort": "Model dəstəkləyəndə istifadə olunur.",
             "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
@@ -779,7 +266,7 @@
           },
           "data_description": {
             "api_key": "Azure OpenAI açarı. Redaktədə boş buraxın ki, saxlanmış açar qalsın.",
-            "api_base": "https://YOUR.openai.azure.com",
+            "api_base": "{example_url}",
             "model": "Yerləşdirmə adı.",
             "azure_api_version": "Default 2024-10-21.",
             "effort": "Yerləşdirmə dəstəkləyəndə istifadə olunur.",
@@ -814,20 +301,6 @@
     }
   },
   "selector": {
-    "api_provider": {
-      "options": {
-        "openai": "OpenAI",
-        "anthropic": "Claude (Anthropic)",
-        "gemini": "Google Gemini",
-        "deepseek": "DeepSeek",
-        "qwen": "Qwen (Alibaba)",
-        "xai": "Grok (xAI)",
-        "openrouter": "OpenRouter",
-        "ollama": "Yerli Ollama",
-        "azure": "Azure OpenAI",
-        "compatible": "OpenAI-uyğun (fərdi baza URL)"
-      }
-    },
     "agent_provider": {
       "options": {
         "cursor": "Cursor",
@@ -845,7 +318,7 @@
     },
     "effort": {
       "options": {
-        "": "Defolt",
+        "default": "Defolt",
         "fast": "Sürətli",
         "high": "Yüksək",
         "high_fast": "Yüksək sürətli"
