@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import hmac
 import json
 import logging
 from contextlib import asynccontextmanager
@@ -8,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.files import attach_files_to_message, file_events, parse_client_files
@@ -59,6 +60,7 @@ class ChatMcp(BaseModel):
     servers: dict[str, Any] = Field(default_factory=dict)
     url: str = ""
     token: str = ""
+    exclusive: bool = False
 
 
 class ChatRequest(BaseModel):
@@ -87,12 +89,43 @@ def _with_ui_context(message: str, origin: str = "") -> str:
 router = APIRouter()
 
 
+_OPEN_PATHS = ("/api/health", "/api/mcp-fit/")
+
+
+def _token_ok(settings: Settings, header: str) -> bool:
+    expected = settings.runtime_token
+    if not expected:
+        return settings.open_without_token()
+    scheme, _, value = str(header or "").partition(" ")
+    return scheme.lower() == "bearer" and hmac.compare_digest(value.strip().encode(), expected.encode())
+
+
 def create_app(settings: Settings | None = None, providers: dict | None = None) -> FastAPI:
     _configure_logging()
     app = FastAPI(title="AI Workspace", lifespan=lifespan)
     app.state.settings = settings or Settings.from_env()
     app.state.providers_override = providers
+
+    @app.middleware("http")
+    async def require_token(request: Request, call_next):
+        path = request.url.path
+        if path.startswith("/api/") and not path.startswith(_OPEN_PATHS):
+            current: Settings = request.app.state.settings
+            if not _token_ok(current, request.headers.get("authorization", "")):
+                detail = (
+                    "Runtime token is missing or wrong."
+                    if current.runtime_token
+                    else "Set RUNTIME_TOKEN on the runtime and the same token on AI Workspace."
+                )
+                return JSONResponse({"detail": detail}, status_code=401)
+        return await call_next(request)
+
     app.include_router(router)
+    if not app.state.settings.runtime_token and not app.state.settings.open_without_token():
+        logger.warning(
+            "No RUNTIME_TOKEN set and the runtime listens on %s. Chat requests are refused until a token is set.",
+            app.state.settings.host,
+        )
     return app
 
 
@@ -167,6 +200,7 @@ def health(request: Request) -> dict:
         "auth_mode": settings.auth_mode,
         "model": settings.model,
         "cursor": cursor.available,
+        "token_required": bool(settings.runtime_token) or not settings.open_without_token(),
     }
 
 

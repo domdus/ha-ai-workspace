@@ -5,5 +5,8 @@ configuration:
   model:
     name: Model
     description: Default Cursor model id, for example composer-2.5. The HACS form can override this.
+  runtime_token:
+    name: Runtime token
+    description: Filled in by the AI Workspace integration. Leave it alone unless you pair the integration by hand.
 network:
   8090/TCP: Used by the HACS integration. Leave unpublished on the host.

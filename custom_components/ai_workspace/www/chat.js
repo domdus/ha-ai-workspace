@@ -280,13 +280,14 @@ function rewriteHaPath(pathname) {
 
 function rewriteHaHref(raw) {
   const trimmed = String(raw || "").trim();
-  if (!trimmed || trimmed.startsWith("#") || trimmed.startsWith("mailto:")) return trimmed;
+  if (!trimmed || trimmed.startsWith("#")) return trimmed;
   let url;
   try {
     url = new URL(trimmed, window.location.origin);
   } catch (_err) {
     return trimmed;
   }
+  if (url.protocol !== "http:" && url.protocol !== "https:") return trimmed;
   const path = rewriteHaPath(url.pathname);
   const suffix = `${path}${url.search}${url.hash}`;
   if (
@@ -332,47 +333,77 @@ function rememberUniqueName(map, name, path) {
   else if (!prev) map.set(key, { name: text, path });
 }
 
+let linkCatalog = null;
+
+function mentionPattern(words) {
+  if (!words.length) return null;
+  return new RegExp(`(^|[^\\w./#\\u0000])(${words.map(escapeRe).join("|")})(?![\\w./\\u0000])`, "g");
+}
+
 function haLinkCatalog() {
-  const names = [];
-  const ids = [];
   const hass = hassObj();
-  if (!hass) return { names, ids };
+  if (!hass) return { names: null, ids: null, paths: new Map() };
+  const states = hass.states || {};
+  const count = Object.keys(states).length;
+  const cached = linkCatalog;
+  if (
+    cached &&
+    cached.entities === hass.entities &&
+    cached.devices === hass.devices &&
+    cached.count === count &&
+    Date.now() - cached.at < 60000
+  ) {
+    return cached;
+  }
   const nameToPath = new Map();
-  for (const [entityId, state] of Object.entries(hass.states || {})) {
+  const paths = new Map();
+  for (const [entityId, state] of Object.entries(states)) {
     const info = { entityId, state, entry: hass.entities?.[entityId] };
     const path = pathForEntity(entityId, info);
-    ids.push({ match: entityId, path });
+    paths.set(entityId, path);
     rememberUniqueName(nameToPath, state?.attributes?.friendly_name, path);
   }
   for (const device of Object.values(hass.devices || {})) {
     const id = device?.id;
     if (!id) continue;
-    const path = `/config/devices/device/${id}`;
-    rememberUniqueName(nameToPath, device.name_by_user || device.name, path);
+    rememberUniqueName(nameToPath, device.name_by_user || device.name, `/config/devices/device/${id}`);
   }
+  const names = [];
   for (const row of nameToPath.values()) {
-    if (row) names.push(row);
+    if (row && !paths.has(row.name)) {
+      paths.set(row.name, row.path);
+      names.push(row.name);
+    }
   }
-  names.sort((a, b) => b.name.length - a.name.length);
-  ids.sort((a, b) => b.match.length - a.match.length);
-  return { names, ids };
+  const byLength = (a, b) => b.length - a.length;
+  linkCatalog = {
+    entities: hass.entities,
+    devices: hass.devices,
+    count,
+    at: Date.now(),
+    names: mentionPattern(names.sort(byLength)),
+    ids: mentionPattern(Object.keys(states).sort(byLength)),
+    paths,
+  };
+  return linkCatalog;
 }
 
 function linkifyHaPaths(text) {
   // Bare HA UI paths the model sometimes writes without Markdown, e.g. /lovelace/media
   return String(text || "").replace(
-    /(?<![\w./#\u0000[])(\/(?:config|lovelace|dashboard|history|logbook|developer-tools|profile|media-browser|energy|map|todo|ai-workspace|hassio|supervisor)[^\s)\]<>"'`]*)/g,
-    (raw) => {
+    /(^|[^\w./#\u0000[])(\/(?:config|lovelace|dashboard|history|logbook|developer-tools|profile|media-browser|energy|map|todo|ai-workspace|hassio|supervisor)[^\s)\]<>"'`]*)/g,
+    (whole, lead, raw, offset, source) => {
+      if (lead === "(" && source[offset - 1] === "]") return whole;
       let path = raw;
       while (/[.,;:!?]$/.test(path)) path = path.slice(0, -1);
       const base = path.split(/[?#]/)[0];
-      if (!haAppPath(base)) return raw;
-      return `[${path}](${path})${raw.slice(path.length)}`;
+      if (!haAppPath(base)) return whole;
+      return `${lead}[${path}](${path})${raw.slice(path.length)}`;
     },
   );
 }
 
-function linkifyHaMentions(content) {
+function linkifyHaMentions(content, mentions = true) {
   let text = String(content || "");
   if (!text) return text;
   const held = [];
@@ -386,16 +417,37 @@ function linkifyHaMentions(content) {
   text = text.replace(/\[[^\]]+\]\([^)\s]+\)/g, hold);
   text = linkifyHaPaths(text);
   text = text.replace(/\[[^\]]+\]\([^)\s]+\)/g, hold);
-  const { names, ids } = haLinkCatalog();
-  for (const item of names) {
-    const re = new RegExp(`(?<![\\w./#\\u0000])${escapeRe(item.name)}(?![\\w./\\u0000])`, "gi");
-    text = text.replace(re, (matched) => hold(`[${matched}](${item.path})`));
-  }
-  for (const item of ids) {
-    const re = new RegExp(`(?<![\\w./#\\u0000])${escapeRe(item.match)}(?![\\w./\\u0000])`, "g");
-    text = text.replace(re, (matched) => hold(`[${matched}](${item.path})`));
+  const { names, ids, paths } = mentions ? haLinkCatalog() : {};
+  for (const re of [names, ids]) {
+    if (!re) continue;
+    re.lastIndex = 0;
+    text = text.replace(re, (_whole, lead, matched) => `${lead}${hold(`[${matched}](${paths.get(matched)})`)}`);
   }
   return text.replace(/\u0000HA(\d+)\u0000/g, (_m, index) => held[Number(index)] || "");
+}
+
+function safeImageUrl(raw) {
+  const value = String(raw || "").trim().replace(/^<|>$/g, "");
+  if (/^data:image\//i.test(value)) return true;
+  if (value.startsWith("/") && !value.startsWith("//")) return true;
+  try {
+    return new URL(value).origin === window.location.origin;
+  } catch (_err) {
+    return false;
+  }
+}
+
+function stripRemoteImages(text) {
+  return String(text || "")
+    .replace(/!\[([^\]]*)\]\(\s*(<[^>]*>|[^)\s]+)(?:\s+"[^"]*")?\s*\)/g, (whole, alt, url) => {
+      if (safeImageUrl(url)) return whole;
+      const target = url.replace(/^<|>$/g, "");
+      return `[${alt || target}](${target})`;
+    })
+    .replace(/<img\b[^>]*>/gi, (tag) => {
+      const src = /\bsrc\s*=\s*["']?([^"'\s>]+)/i.exec(tag)?.[1] || "";
+      return safeImageUrl(src) ? tag : "";
+    });
 }
 
 export function mountAiWorkspace(root, options = {}) {
@@ -454,10 +506,9 @@ export function mountAiWorkspace(root, options = {}) {
           </div>
           <p class="banner" hidden></p>
         </header>
-        ${compact ? `<a class="workspace-link" href="/ai-workspace">${t("open_workspace")}</a>` : ""}
+        ${compact && hassObj()?.user?.is_admin ? `<a class="workspace-link" href="/ai-workspace">${t("open_workspace")}</a>` : ""}
         <div class="stage">
           <div class="log"></div>
-          <p class="status" hidden></p>
           <form class="composer">
             <button type="button" class="scroll-bottom" tabindex="-1" aria-label="${t("scroll_to_bottom")}">
               <ha-icon icon="mdi:arrow-down"></ha-icon>
@@ -505,7 +556,6 @@ export function mountAiWorkspace(root, options = {}) {
   const logEl = root.querySelector(".log");
   const sessionsEl = root.querySelector(".sessions");
   const titleEl = root.querySelector(".title");
-  const statusEl = root.querySelector(".status");
   const bannerEl = root.querySelector(".banner");
   const form = root.querySelector(".composer");
   const scrollBottomBtn = root.querySelector(".scroll-bottom");
@@ -531,6 +581,13 @@ export function mountAiWorkspace(root, options = {}) {
   let sessionId = "";
   let routeGen = 0;
   const workspaceLink = root.querySelector(".workspace-link");
+  const teardown = [];
+
+  function listen(target, type, handler, opts) {
+    if (!target) return;
+    target.addEventListener(type, handler, opts);
+    teardown.push(() => target.removeEventListener(type, handler, opts));
+  }
 
   function isNarrow() {
     return Boolean(options.narrow) || mqNarrow.matches;
@@ -620,6 +677,7 @@ export function mountAiWorkspace(root, options = {}) {
     if (id === sessionId) return;
     if (id) openSession(id, true);
     else {
+      restoreQueued();
       abandonStream();
       sessionId = "";
       titleEl.textContent = t("new_chat");
@@ -789,34 +847,33 @@ export function mountAiWorkspace(root, options = {}) {
     return overlayOpen() && document.visibilityState !== "hidden";
   }
 
-  async function apiFetch(url, options = {}) {
+  // Resolves to null when nobody is signed in. Network errors reject only with { raise: true }.
+  async function apiFetch(url, options = {}, { raise = false } = {}) {
     const hass = hassObj();
     const auth = hass?.auth;
-    if (typeof hass?.fetchWithAuth === "function") {
-      try {
-        return await hass.fetchWithAuth(url, options);
-      } catch (_err) {
-        return null;
-      }
-    }
     try {
+      if (typeof hass?.fetchWithAuth === "function") {
+        return await hass.fetchWithAuth(url, options);
+      }
       if (auth?.expired && typeof auth.refreshAccessToken === "function") {
         await auth.refreshAccessToken();
       }
-    } catch (_err) {
+      if (auth?.expired) return null;
+      const token = auth?.data?.access_token || auth?.accessToken || getToken();
+      if (!token) return null;
+      return await fetch(url, {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          ...(options.headers || {}),
+        },
+      });
+    } catch (err) {
+      if (raise) throw err;
+      console.debug("AI Workspace request failed", url, err);
       return null;
     }
-    if (auth?.expired) return null;
-    const token = auth?.data?.access_token || auth?.accessToken || getToken();
-    if (!token) return null;
-    return fetch(url, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-        ...(options.headers || {}),
-      },
-    });
   }
 
   function prettyStatus(text) {
@@ -872,8 +929,6 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   function setStatus(text) {
-    statusEl.hidden = true;
-    statusEl.textContent = "";
     const bubble = logEl.querySelector(".bubble.assistant.streaming") || logEl.querySelector(".bubble.assistant:last-of-type");
     if (!bubble) return;
     const busyChip = bubble.querySelector(".tools span.busy");
@@ -884,15 +939,51 @@ export function mountAiWorkspace(root, options = {}) {
     setActivity(bubble, text);
   }
 
-  function rewriteAssistantLinks(content) {
-    let text = String(content || "");
+  function rewriteAssistantLinks(content, mentions = true) {
+    let text = stripRemoteImages(content);
     const here = window.location.origin;
     if (!/^https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?$/i.test(here)) {
       text = text.replace(/https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?/gi, here);
     }
     text = text.replace(/\]\(([^)]+)\)/g, (_m, url) => `](${rewriteHaHref(url)})`);
-    text = text.replace(/https?:\/\/[^\s)<]+/g, (url) => rewriteHaHref(url));
-    return linkifyHaMentions(text);
+    text = text.replace(/(^|[^(])(https?:\/\/[^\s)<]+)/g, (_m, lead, url) => `${lead}${rewriteHaHref(url)}`);
+    return linkifyHaMentions(text, mentions);
+  }
+
+  async function errorText(response) {
+    if (!response) return t("not_signed_in");
+    let raw = "";
+    try {
+      raw = await response.text();
+    } catch (_err) {
+      raw = "";
+    }
+    try {
+      const body = JSON.parse(raw);
+      const detail = body?.message || body?.detail || body?.error;
+      if (typeof detail === "string" && detail.trim()) return detail.trim();
+    } catch (_err) {
+      /* not JSON */
+    }
+    const plain = raw.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+    if (plain && plain.length <= 300 && !/^\d{3}\b/.test(plain)) return plain;
+    return `${t("error")} (${response.status})`;
+  }
+
+  let noticeTimer = 0;
+
+  function showNotice(text) {
+    if (!bannerEl || !text) return;
+    clearMicHelp();
+    bannerEl.hidden = false;
+    bannerEl.textContent = text;
+    if (noticeTimer) clearTimeout(noticeTimer);
+    noticeTimer = window.setTimeout(() => {
+      if (bannerEl.textContent === text) {
+        bannerEl.hidden = true;
+        bannerEl.textContent = "";
+      }
+    }, 6000);
   }
 
   function chipClass(event) {
@@ -1036,7 +1127,7 @@ export function mountAiWorkspace(root, options = {}) {
     for (const pic of pics) {
       const img = document.createElement("img");
       img.src = pic.src;
-      img.alt = pic.name || "Image";
+      img.alt = pic.name || t("image");
       row.appendChild(img);
     }
     bubble.appendChild(row);
@@ -1383,6 +1474,7 @@ export function mountAiWorkspace(root, options = {}) {
   let streamWaiters = [];
   let streamToken = 0;
   let streamAbort = null;
+  let streamFinal = false;
 
   function renderNext() {
     if (!nextRow || !nextCopy) return;
@@ -1429,6 +1521,17 @@ export function mountAiWorkspace(root, options = {}) {
     form.requestSubmit();
   }
 
+  function restoreQueued() {
+    if (!nextTurn) return;
+    const turn = nextTurn;
+    nextTurn = null;
+    if (!messageEl.value.trim()) messageEl.value = turn.text;
+    pending = [...pending, ...turn.attachments].slice(0, MAX_ATTACH);
+    renderThumbs();
+    renderNext();
+    resizeComposer();
+  }
+
   function abandonStream() {
     streamToken += 1;
     if (streamAbort) {
@@ -1442,6 +1545,7 @@ export function mountAiWorkspace(root, options = {}) {
     streamBuf = "";
     streamFull = "";
     streamNode = null;
+    streamFinal = false;
     haltSpeech();
     const waiters = streamWaiters;
     streamWaiters = [];
@@ -1455,7 +1559,7 @@ export function mountAiWorkspace(root, options = {}) {
 
   function writeStreamVisible() {
     if (!streamNode) return;
-    streamNode.content = rewriteAssistantLinks(streamFull);
+    streamNode.content = rewriteAssistantLinks(streamFull, streamFinal && !streamBuf);
     streamNode.hidden = !streamFull;
     const bubble = streamNode.closest(".bubble");
     bubble?.classList.toggle("has-text", Boolean(streamFull));
@@ -1763,7 +1867,7 @@ export function mountAiWorkspace(root, options = {}) {
       body: JSON.stringify({ pinned }),
     });
     if (!response?.ok) {
-      setBanner(await response.text());
+      showNotice(await errorText(response));
       return;
     }
     loadSessions();
@@ -1778,7 +1882,10 @@ export function mountAiWorkspace(root, options = {}) {
       method: "PATCH",
       body: JSON.stringify({ title }),
     });
-    if (!response?.ok) return;
+    if (!response?.ok) {
+      showNotice(await errorText(response));
+      return;
+    }
     if (session.id === sessionId) titleEl.textContent = title;
     await loadSessions();
   }
@@ -1791,7 +1898,10 @@ export function mountAiWorkspace(root, options = {}) {
     );
     if (!ok) return;
     const response = await apiFetch(`${API}/sessions/${session.id}`, { method: "DELETE" });
-    if (!response || (!response.ok && response.status !== 204)) return;
+    if (!response || (!response.ok && response.status !== 204)) {
+      showNotice(await errorText(response));
+      return;
+    }
     if (session.id === sessionId) startNewChat();
     else await loadSessions();
   }
@@ -1891,7 +2001,7 @@ export function mountAiWorkspace(root, options = {}) {
     more.slot = "trigger";
     more.tabIndex = 0;
     more.setAttribute("role", "button");
-    more.setAttribute("aria-label", "Chat actions");
+    more.setAttribute("aria-label", t("chat_actions"));
     more.setAttribute("aria-haspopup", "menu");
     more.setAttribute("aria-expanded", "false");
     const dots = document.createElement("ha-icon");
@@ -1947,9 +2057,12 @@ export function mountAiWorkspace(root, options = {}) {
       method: "POST",
       body: JSON.stringify({ provider: selectedAgent() }),
     });
-    if (!created?.ok) throw new Error(created ? await created.text() : "Not signed in");
+    if (!created?.ok) throw new Error(await errorText(created));
     const session = await created.json();
-    if (mark !== streamToken) return null;
+    if (mark !== streamToken) {
+      apiFetch(`${API}/sessions/${session.id}`, { method: "DELETE" });
+      return null;
+    }
     sessionId = session.id;
     bumpSession(session.id, session.title, session.pinned);
     goToSession(sessionId, true);
@@ -1958,7 +2071,14 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   async function openSession(id, fromUrl = false) {
-    if (id !== sessionId) abandonStream();
+    if (id && id === sessionId && (streaming || liveStream)) {
+      selectSessionRow(id);
+      return;
+    }
+    if (id !== sessionId) {
+      restoreQueued();
+      abandonStream();
+    }
     watchGen += 1;
     if (!id) {
       routeGen += 1;
@@ -2086,28 +2206,46 @@ export function mountAiWorkspace(root, options = {}) {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
+    const emit = (raw) => {
+      let event = "message";
+      const dataLines = [];
+      for (const line of raw.split("\n")) {
+        if (line.startsWith("event:")) event = line.slice(6).trim();
+        else if (line.startsWith("data:")) dataLines.push(line.slice(5).replace(/^ /, ""));
+      }
+      if (!dataLines.length) return;
+      let data;
+      try {
+        data = JSON.parse(dataLines.join("\n"));
+      } catch (_err) {
+        console.debug("AI Workspace skipped a malformed event", raw);
+        return;
+      }
+      onEvent(event, data);
+    };
+    const drain = () => {
+      buffer = buffer.replace(/\r\n/g, "\n");
+      let splitAt;
+      while ((splitAt = buffer.indexOf("\n\n")) !== -1) {
+        emit(buffer.slice(0, splitAt));
+        buffer = buffer.slice(splitAt + 2);
+      }
+    };
     while (true) {
       const { value, done } = await reader.read();
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
-      let splitAt;
-      while ((splitAt = buffer.indexOf("\n\n")) !== -1) {
-        const raw = buffer.slice(0, splitAt);
-        buffer = buffer.slice(splitAt + 2);
-        let event = "message";
-        const dataLines = [];
-        for (const line of raw.split("\n")) {
-          if (line.startsWith("event:")) event = line.slice(6).trim();
-          else if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
-        }
-        if (!dataLines.length) continue;
-        onEvent(event, JSON.parse(dataLines.join("\n")));
-      }
+      drain();
     }
+    buffer += decoder.decode();
+    drain();
+    if (buffer.trim()) emit(buffer);
   }
 
   const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
   let recognition = null;
+  let capture = null;
+  let captureStarting = false;
   let listening = false;
   let speechBase = "";
 
@@ -2234,11 +2372,11 @@ export function mountAiWorkspace(root, options = {}) {
       thumb.className = "thumb";
       const picture = document.createElement("img");
       picture.src = item.src;
-      picture.alt = item.name || "Image";
+      picture.alt = item.name || t("image");
       const remove = document.createElement("button");
       remove.type = "button";
       remove.className = "thumb-remove";
-      remove.setAttribute("aria-label", "Remove image");
+      remove.setAttribute("aria-label", t("remove_image"));
       remove.textContent = "×";
       remove.addEventListener("click", () => {
         pending.splice(index, 1);
@@ -2332,6 +2470,9 @@ export function mountAiWorkspace(root, options = {}) {
     } catch (_err) {
       /* already stopped */
     }
+    const active = capture;
+    capture = null;
+    active?.stop().catch(() => {});
   }
 
   function clearMicHelp() {
@@ -2430,7 +2571,6 @@ export function mountAiWorkspace(root, options = {}) {
     agentTrigger?.setAttribute("aria-expanded", "false");
   });
 
-  let capture = null;
   let replyAudio = null;
   let replyObjectUrl = "";
   let speakGen = 0;
@@ -2497,31 +2637,43 @@ export function mountAiWorkspace(root, options = {}) {
       showMicHelp();
       return;
     }
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1 } });
-    const ctx = new AudioContext();
-    const source = ctx.createMediaStreamSource(stream);
-    const proc = ctx.createScriptProcessor(4096, 1, 1);
-    const gain = ctx.createGain();
-    gain.gain.value = 0;
-    const chunks = [];
-    proc.onaudioprocess = (event) => {
-      chunks.push(new Float32Array(event.inputBuffer.getChannelData(0)));
-    };
-    source.connect(proc);
-    proc.connect(gain);
-    gain.connect(ctx.destination);
-    listening = true;
-    micBtn.classList.add("listening");
-    micBtn.label = t("stop_dictate");
-    capture = {
-      async stop() {
-        proc.disconnect();
-        source.disconnect();
-        stream.getTracks().forEach((track) => track.stop());
-        await ctx.close();
-        return encodeWav(chunks, ctx.sampleRate || 16000);
-      },
-    };
+    if (capture || captureStarting) return;
+    captureStarting = true;
+    let stream = null;
+    let ctx = null;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1 } });
+      ctx = new AudioContext();
+      const source = ctx.createMediaStreamSource(stream);
+      const proc = ctx.createScriptProcessor(4096, 1, 1);
+      const gain = ctx.createGain();
+      gain.gain.value = 0;
+      const chunks = [];
+      proc.onaudioprocess = (event) => {
+        chunks.push(new Float32Array(event.inputBuffer.getChannelData(0)));
+      };
+      source.connect(proc);
+      proc.connect(gain);
+      gain.connect(ctx.destination);
+      capture = {
+        async stop() {
+          proc.disconnect();
+          source.disconnect();
+          stream.getTracks().forEach((track) => track.stop());
+          await ctx.close();
+          return encodeWav(chunks, ctx.sampleRate || 16000);
+        },
+      };
+      listening = true;
+      micBtn.classList.add("listening");
+      micBtn.label = t("stop_dictate");
+    } catch (err) {
+      stream?.getTracks().forEach((track) => track.stop());
+      ctx?.close().catch(() => {});
+      throw err;
+    } finally {
+      captureStarting = false;
+    }
   }
 
   async function finishEngineSpeech() {
@@ -2591,7 +2743,7 @@ export function mountAiWorkspace(root, options = {}) {
       setSpeakUi("playing");
     });
     replyAudio.addEventListener("pause", () => {
-      if (!replyAudio || replyAudio.ended || String(replyAudio.src || "").startsWith("data:")) {
+      if (!replyAudio || replyAudio.ended || !replyObjectUrl || String(replyAudio.src || "").startsWith("data:")) {
         if (replyAudio?.ended) setSpeakUi("idle");
         return;
       }
@@ -2610,6 +2762,12 @@ export function mountAiWorkspace(root, options = {}) {
     speakInflight.length = 0;
     if (speakRelease) speakRelease();
     if (replyAudio && !replyAudio.paused) replyAudio.pause();
+    if (replyObjectUrl) {
+      replyAudio?.removeAttribute("src");
+      replyAudio?.load();
+      URL.revokeObjectURL(replyObjectUrl);
+      replyObjectUrl = "";
+    }
     setSpeakUi("idle");
   }
 
@@ -2887,27 +3045,28 @@ export function mountAiWorkspace(root, options = {}) {
           files: files.map((file) => ({ name: file.name, mime: file.mime, text: file.text })),
           agent: selectedAgent(),
         });
-      let response = await apiFetch(`${API}/sessions/${chatId}/chat`, {
-        method: "POST",
-        body: payload,
-        signal: abort.signal,
-      });
-      if (!response || token !== streamToken) return;
-      if (response.status === 404) {
+      let response = await apiFetch(
+        `${API}/sessions/${chatId}/chat`,
+        { method: "POST", body: payload, signal: abort.signal },
+        { raise: true },
+      );
+      if (token !== streamToken) return;
+      if (response?.status === 404) {
         const created = await createSession();
         if (token !== streamToken || !created) return;
         titleEl.textContent = promptTitle(text) || attachments[0]?.name || t("new_chat");
         bumpSession(sessionId, titleEl.textContent);
-        response = await apiFetch(`${API}/sessions/${sessionId}/chat`, {
-          method: "POST",
-          body: payload,
-          signal: abort.signal,
-        });
-        if (!response) return;
+        chatId = sessionId;
+        response = await apiFetch(
+          `${API}/sessions/${chatId}/chat`,
+          { method: "POST", body: payload, signal: abort.signal },
+          { raise: true },
+        );
+        if (token !== streamToken) return;
       }
-      if (!response.ok || !response.body) {
+      if (!response?.ok || !response.body) {
         const node = assistant.querySelector(".text");
-        node.content = await response.text();
+        node.content = await errorText(response);
         node.hidden = !node.content;
         assistant.classList.add("error", "has-text");
         setActivity(assistant, "");
@@ -2932,11 +3091,12 @@ export function mountAiWorkspace(root, options = {}) {
           setStatus(data.text);
         } else if (name === "error") {
           drainSpeech(true);
+          streamFinal = true;
           revealAllNow();
           assistant.classList.add("error");
           const textNode = assistant.querySelector(".text");
           if (!streamFull) {
-            textNode.content = data.message || "Error";
+            textNode.content = data.message || t("error");
             textNode.hidden = !textNode.content;
             assistant.classList.add("has-text");
           }
@@ -2944,10 +3104,13 @@ export function mountAiWorkspace(root, options = {}) {
           setActivity(assistant, "");
         } else if (name === "done") {
           sawDone = true;
+          streamFinal = true;
+          streamNode = streamNode || assistant.querySelector(".text");
           if (data.answer) {
             queueStreamAnswer(data.answer);
             syncSpeechTo(data.answer);
           }
+          startStreamPump();
           drainSpeech(true);
           settleTools(assistant);
           setActivity(assistant, "");
@@ -2955,6 +3118,12 @@ export function mountAiWorkspace(root, options = {}) {
           assistant.classList.remove("streaming");
           resizeComposer();
           bumpSession(chatId, titleEl.textContent);
+          waitForStream().then(() => {
+            if (token === streamToken && sessionId === chatId) {
+              syncCopyChat();
+              flushNext();
+            }
+          });
         } else if (name === "title" && data.title) {
           applySessionTitle(chatId, data.title);
           bumpSession(chatId, data.title);
@@ -3092,8 +3261,8 @@ export function mountAiWorkspace(root, options = {}) {
       if (!composerFocused()) clearKeyboardLock();
     }, 60);
   });
-  window.visualViewport?.addEventListener("resize", syncKeyboardInset);
-  window.visualViewport?.addEventListener("scroll", () => {
+  listen(window.visualViewport, "resize", syncKeyboardInset);
+  listen(window.visualViewport, "scroll", () => {
     if (wrap.classList.contains("keyboard-open")) syncKeyboardInset();
   });
   messageEl.addEventListener("input", () => {
@@ -3122,6 +3291,7 @@ export function mountAiWorkspace(root, options = {}) {
     else syncScrollBottomBtn();
   });
   scrollBtnWatch.observe(logEl);
+  teardown.push(() => scrollBtnWatch.disconnect());
   nextRemove?.addEventListener("click", (event) => {
     event.preventDefault();
     nextTurn = null;
@@ -3131,12 +3301,12 @@ export function mountAiWorkspace(root, options = {}) {
   });
 
   function startNewChat() {
+    restoreQueued();
     abandonStream();
     clearMicHelp();
     routeGen += 1;
     watchGen += 1;
     sessionId = "";
-    pending = [];
     renderThumbs();
     if (compact) localStorage.removeItem("ai_workspace_session");
     closeNavIfOverlay();
@@ -3158,13 +3328,13 @@ export function mountAiWorkspace(root, options = {}) {
     setNavOpen(false);
   });
   sessionsEl?.addEventListener("scroll", closeSessionMenu, { passive: true });
-  window.addEventListener("keydown", (event) => {
+  listen(window, "keydown", (event) => {
     if (event.key !== "Escape") return;
     if (root.querySelector("ha-dialog[open]")) return;
     if (root.querySelector(".session-more[aria-expanded='true'], .agent-trigger[aria-expanded='true']")) return;
     if (wrap.classList.contains("nav-open")) setNavOpen(false);
   });
-  mqNarrow.addEventListener("change", () => setNarrow(options.narrow));
+  listen(mqNarrow, "change", () => setNarrow(options.narrow));
 
   logEl.addEventListener("click", (event) => {
     const link = event.composedPath().find((node) => node && node.tagName === "A");
@@ -3184,13 +3354,13 @@ export function mountAiWorkspace(root, options = {}) {
   root.querySelector(".new-chat-icon")?.addEventListener("click", startNewChat);
 
   if (!compact && routed) {
-    window.addEventListener("location-changed", applyRoute);
-    window.addEventListener("popstate", applyRoute);
+    listen(window, "location-changed", applyRoute);
+    listen(window, "popstate", applyRoute);
   }
-  document.addEventListener("visibilitychange", () => {
+  listen(document, "visibilitychange", () => {
     if (sessionId && chatVisible()) watchPending(sessionId);
   });
-  window.addEventListener("pageshow", () => {
+  listen(window, "pageshow", () => {
     if (sessionId && chatVisible()) watchPending(sessionId);
   });
 
@@ -3205,10 +3375,24 @@ export function mountAiWorkspace(root, options = {}) {
   resizeComposer();
   const linkWatch = new MutationObserver(() => retargetHaLinks(logEl));
   linkWatch.observe(logEl, { subtree: true, childList: true, attributes: true, attributeFilter: ["href", "target"] });
+  teardown.push(() => linkWatch.disconnect());
   function resume() {
     loadDictate();
     if (sessionId) watchPending(sessionId);
   }
 
-  return { openSession, applyRoute, setNarrow, toggleNav, startNewChat, loadDictate, resume };
+  function destroy() {
+    abandonStream();
+    stopSpeech();
+    watchGen += 1;
+    routeGen += 1;
+    for (const undo of teardown.splice(0)) undo();
+    if (followRaf) cancelAnimationFrame(followRaf);
+    if (keyboardRaf) cancelAnimationFrame(keyboardRaf);
+    replyAudio?.pause();
+    replyAudio = null;
+    root.replaceChildren();
+  }
+
+  return { openSession, applyRoute, setNarrow, toggleNav, startNewChat, loadDictate, resume, destroy };
 }

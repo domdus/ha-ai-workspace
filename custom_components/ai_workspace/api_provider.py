@@ -4,9 +4,11 @@ import asyncio
 import json
 import logging
 import re
+import time
+from collections import OrderedDict
 from typing import Any, AsyncIterator, Callable
 
-from aiohttp import ClientError, ClientSession, ClientTimeout
+from aiohttp import ClientError, ClientResponse, ClientSession, ClientTimeout
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -14,11 +16,16 @@ from .images import anthropic_user_content, openai_user_content
 from .const import (
     API_ANTHROPIC,
     API_AZURE,
+    API_COMPATIBLE,
+    API_GEMINI,
     API_OLLAMA,
     API_OPENAI,
+    API_OPENROUTER,
     API_SHORT_LABELS,
+    API_XAI,
     DEFAULT_AZURE_API_VERSION,
     DEFAULT_SYSTEM_PROMPT,
+    DOMAIN,
     LOW_TOKEN_PROMPT,
     EFFORT_FAST,
     EFFORT_HIGH,
@@ -34,7 +41,7 @@ from .const import (
 from .coolver import CoolverClient
 from .mcp_client import McpError, McpHttpClient
 from .mcp_config import public_tool_names, with_mcp_auth
-from .mcp_resolve import async_resolve_mcp_url
+from .mcp_resolve import ha_hosts, hass_mcp_server_url
 from .models import ProviderInfo, Settings
 from .redact import redact
 from .small_talk import wants_house_tools
@@ -49,13 +56,31 @@ _IDENTITY = (
     "If asked which model or provider you are, answer with that provider and that exact model id. "
     "Do not claim to be a different model."
 )
-_MAX_ROUNDS = 8
+_MAX_ROUNDS = 15
 _DESC_MAX = 180
 _HISTORY_MAX = 12
 _LOW_TOKEN_CHARS = 1200
 _LOW_TOKEN_REPLY = 256
 _PROPS_MAX = 16
 _WAIT = re.compile(r"try again in ([\d.]+)\s*(ms|s)", re.I)
+_ANTHROPIC_VERSION = "2023-06-01"
+_REASONING_EFFORT = {API_OPENAI, API_AZURE, API_GEMINI, API_XAI}
+_EFFORT_KEYS = ("reasoning_effort", "reasoning", "output_config")
+_MCP_TTL = 600.0
+_MCP_CACHE_MAX = 32
+_MCP_CACHE = f"{DOMAIN}_mcp_cache"
+_LOCAL_TOOLS = {"catalog", "house-map"}
+_ERRORS = (McpError, ClientError, TimeoutError, OSError, json.JSONDecodeError, RuntimeError)
+
+
+class ApiError(RuntimeError):
+    def __init__(self, status: int, message: str) -> None:
+        super().__init__(message)
+        self.status = status
+
+
+class _StreamUnsupported(Exception):
+    pass
 
 
 def _friendly_api_error(status: int, text: str) -> str:
@@ -99,7 +124,6 @@ def _retry_wait(resp, text: str) -> float | None:
     if resp.status == 429:
         return 0.5
     return None
-
 
 
 def _clip(text: str, limit: int) -> str:
@@ -187,12 +211,103 @@ class McpBundle:
                 merged.append(copied)
         self.tools = merged
 
+    @property
+    def names(self) -> list[str]:
+        return list(self._clients)
+
     async def call_tool(self, name: str, arguments: dict[str, Any] | None = None) -> Any:
         route = self._routes.get(name)
         if route is None:
             raise McpError(f"No connection has a tool named {name}.")
         server, raw = route
         return await self._clients[server].call_tool(raw, arguments or {})
+
+
+class McpServer:
+    """One open MCP connection, shared by chats and reopened once when its session expires."""
+
+    def __init__(self, http: ClientSession, kind: str, url: str, headers: dict[str, str]) -> None:
+        self._http = http
+        self._kind = kind
+        self._url = url
+        self._headers = headers
+        self._client: Any = None
+        self.tools: list[dict] = []
+        self.expires = 0.0
+
+    async def open(self) -> None:
+        if self._kind == MCP_COOLVER:
+            client: Any = CoolverClient(self._http, self._url, self._headers)
+        else:
+            client = McpHttpClient(self._http, self._url, self._headers)
+        await client.initialize()
+        self.tools = await client.list_tools()
+        self._client = client
+        self.expires = time.monotonic() + _MCP_TTL
+
+    async def call_tool(self, name: str, arguments: dict[str, Any] | None = None) -> Any:
+        try:
+            return await self._client.call_tool(name, arguments or {})
+        except McpError as exc:
+            # Streamable HTTP answers 404 (or 400) once the server forgot our session.
+            if exc.status not in {400, 404}:
+                raise
+        await self.open()
+        return await self._client.call_tool(name, arguments or {})
+
+
+async def async_mcp_server(
+    hass: HomeAssistant, http: ClientSession, kind: str, url: str, headers: dict[str, str]
+) -> McpServer:
+    cache: OrderedDict = hass.data.setdefault(_MCP_CACHE, OrderedDict())
+    key = (kind, url.rstrip("/"), tuple(sorted(headers.items())))
+    found = cache.get(key)
+    if found is not None and found.expires > time.monotonic():
+        cache.move_to_end(key)
+        return found
+    server = McpServer(http, kind, url, headers)
+    await server.open()
+    cache[key] = server
+    cache.move_to_end(key)
+    while len(cache) > _MCP_CACHE_MAX:
+        cache.popitem(last=False)
+    return server
+
+
+async def async_check_api_key(
+    hass: HomeAssistant,
+    provider: str,
+    api_key: str,
+    api_base: str = "",
+    azure_api_version: str = "",
+) -> str | None:
+    """None when the provider accepts the key, else a form error key."""
+    base = (str(api_base or "").strip() or default_api_base(provider)).rstrip("/")
+    if not base:
+        return None
+    key = str(api_key or "").strip()
+    headers: dict[str, str] = {}
+    url = f"{base}/models"
+    if provider == API_ANTHROPIC:
+        headers = {"x-api-key": key, "anthropic-version": _ANTHROPIC_VERSION}
+    elif provider == API_AZURE:
+        version = str(azure_api_version or DEFAULT_AZURE_API_VERSION).strip()
+        url = f"{base}/openai/models?api-version={version}"
+        headers = {"api-key": key}
+    elif provider == API_OPENROUTER:
+        url = f"{base}/key"
+        headers = {"Authorization": f"Bearer {key}"}
+    elif key:
+        headers = {"Authorization": f"Bearer {key}"}
+    try:
+        resp = await async_get_clientsession(hass).get(url, headers=headers, timeout=ClientTimeout(total=10))
+        status = resp.status
+        resp.release()
+    except (ClientError, TimeoutError, OSError):
+        return "cannot_connect"
+    if status in {401, 403}:
+        return "invalid_auth"
+    return None
 
 
 def _tool_body(result: Any) -> str:
@@ -267,19 +382,56 @@ def _history_messages(rows) -> list[dict[str, str]]:
     return messages
 
 
+async def _sse(resp: ClientResponse) -> AsyncIterator[tuple[str, str]]:
+    """(event, data) pairs from a server-sent event stream."""
+    event = ""
+    data: list[str] = []
+    buffer = b""
+
+    def line_of(raw: bytes) -> str:
+        return raw.decode("utf-8", errors="replace").rstrip("\r")
+
+    async for chunk in resp.content.iter_any():
+        buffer += chunk
+        while b"\n" in buffer:
+            raw, buffer = buffer.split(b"\n", 1)
+            line = line_of(raw)
+            if not line:
+                if data:
+                    yield event, "\n".join(data)
+                event, data = "", []
+            elif line.startswith("event:"):
+                event = line[6:].strip()
+            elif line.startswith("data:"):
+                data.append(line[5:].lstrip())
+    tail = line_of(buffer)
+    if tail.startswith("data:"):
+        data.append(tail[5:].lstrip())
+    if data:
+        yield event, "\n".join(data)
+
+
+def _clean_blocks(blocks: list[dict]) -> list[dict]:
+    """Anthropic rejects empty text blocks when they are sent back."""
+    return [block for block in blocks if block.get("type") != "text" or str(block.get("text") or "")]
+
+
 class ApiProvider:
     def __init__(self, hass: HomeAssistant, settings: Settings, store: Store) -> None:
         self.hass = hass
         self.settings = settings
         self.store = store
+        self._stream = True
+        self._effort = True
+        self._force = True
         reason = None
-        needs_key = settings.api_provider != API_OLLAMA
+        needs_key = settings.api_provider not in {API_OLLAMA, API_COMPATIBLE}
         if needs_key and not settings.api_key:
             reason = "Add an API key on this agent."
         elif settings.api_provider == API_AZURE and not (settings.api_base and settings.model):
             reason = "Azure needs the endpoint and the deployment name."
         elif self.settings.mcp_kind == MCP_CUSTOM and not settings.mcp_servers:
-            reason = "Set an MCP URL on the AI Workspace integration."
+            reason = "Add an MCP connection on the AI Workspace integration."
         elif self.settings.mcp_kind == MCP_COOLVER and not settings.mcp_token:
             reason = "Set the Vibecode Agent Key on the AI Workspace integration."
         label = settings.agent_title or f"{self._label()} ({self._model()})"
@@ -322,16 +474,25 @@ class ApiProvider:
             headers["Authorization"] = f"Bearer {key}"
         return headers
 
+    def _anthropic_headers(self) -> dict[str, str]:
+        return {
+            "x-api-key": self.settings.api_key,
+            "anthropic-version": _ANTHROPIC_VERSION,
+            "Content-Type": "application/json",
+        }
+
     def _effort_body(self, payload: dict[str, Any]) -> None:
         effort = (self.settings.effort or "").strip()
-        if effort not in {EFFORT_FAST, EFFORT_HIGH, EFFORT_HIGH_FAST}:
+        if not self._effort or effort not in {EFFORT_FAST, EFFORT_HIGH, EFFORT_HIGH_FAST}:
             return
         level = "low" if effort == EFFORT_FAST else "high"
         provider = self.settings.api_provider
         if provider == API_ANTHROPIC:
-            payload["output_config"] = {"effort": "max" if effort == EFFORT_HIGH_FAST else level}
-            return
-        payload["reasoning_effort"] = level
+            payload["output_config"] = {"effort": level}
+        elif provider == API_OPENROUTER:
+            payload["reasoning"] = {"effort": level}
+        elif provider in _REASONING_EFFORT:
+            payload["reasoning_effort"] = level
 
     def _model(self) -> str:
         model = (self.settings.model or "").strip()
@@ -339,13 +500,13 @@ class ApiProvider:
             return model
         return default_api_model(self.settings.api_provider)
 
-    def _system(self, origin: str = "", language: str = "") -> str:
+    def _system(self, origin: str = "", language: str = "", admin: bool = True) -> str:
         if self.settings.low_token:
             return with_language_rule(LOW_TOKEN_PROMPT, language)
         identity = _IDENTITY.format(label=self._label(), model=self._model())
         body = (self.settings.system_prompt or "").strip() or DEFAULT_SYSTEM_PROMPT
         text = f"{identity}\n\n{body}\n\n{ui_link_instructions(origin)}"
-        if self.settings.house_map:
+        if self.settings.house_map and admin:
             from .house_map import CATALOG_INSTRUCTIONS
 
             text = f"{text}\n\n{CATALOG_INSTRUCTIONS}"
@@ -353,6 +514,50 @@ class ApiProvider:
 
     def _public(self, exc: BaseException) -> str:
         return redact(str(exc), [self.settings.api_key, self.settings.cursor_api_key, self.settings.mcp_token])
+
+    def _servers(self, access_token: str, admin: bool) -> dict[str, dict[str, Any]]:
+        if admin:
+            servers = dict(self.settings.mcp_servers)
+        elif self.hass is not None and "mcp_server" in self.hass.config.components:
+            servers = {"mcp": {"type": "http", "url": hass_mcp_server_url(self.hass)}}
+        else:
+            servers = {}
+        return with_mcp_auth(servers, access_token=access_token, ha_hosts=ha_hosts(self.hass))
+
+    def _server_kind(self, name: str, admin: bool) -> str:
+        if name == "mcp":
+            return str(self.settings.mcp_kind or "") if admin else MCP_HA
+        for row in self.settings.mcp_rows:
+            if row.get("name") == name and not row.get("primary"):
+                return str(row.get("kind") or "")
+        return MCP_CUSTOM
+
+    async def _open_tools(self, http: ClientSession, access_token: str, admin: bool) -> tuple[McpBundle, list[str], str]:
+        bundle = McpBundle()
+        skipped: list[str] = []
+        first_error = ""
+        for name, cfg in self._servers(access_token, admin).items():
+            url = str(cfg.get("url") or "")
+            if name in _LOCAL_TOOLS or not url:
+                continue
+            label = "home-assistant" if name == "mcp" else name
+            try:
+                server = await async_mcp_server(
+                    self.hass, http, self._server_kind(name, admin), url, dict(cfg.get("headers") or {})
+                )
+            except _ERRORS as exc:
+                logger.warning("MCP connection %s skipped: %s", label, self._public(exc))
+                skipped.append(label)
+                first_error = first_error or self._public(exc)
+                continue
+            bundle.add(label, server, server.tools)
+        if admin and self.settings.house_map:
+            from .house_map import HouseMapClient
+
+            local = HouseMapClient(self.hass, self.store)
+            bundle.add("catalog", local, await local.list_tools())
+        bundle.finish()
+        return bundle, skipped, first_error
 
     async def send(
         self,
@@ -364,7 +569,10 @@ class ApiProvider:
         images: list[dict] | None = None,
         language: str = "",
         tools: bool | None = None,
+        admin: bool = True,
+        force_tools: bool = False,
     ) -> AsyncIterator[dict]:
+        """force_tools makes the first round call a tool, so house answers come from live data."""
         origin = str(frontend_origin or "").strip()
         language = str(language or "")
         pictures = list(images or [])
@@ -373,139 +581,55 @@ class ApiProvider:
             yield {"type": "error", "message": self.info.reason}
             return
         http = self._http()
-        use_tools = wants_house_tools(message) if tools is None else bool(tools)
-        if pictures:
-            use_tools = True
+        use_tools = (wants_house_tools(message) if tools is None else bool(tools)) or bool(pictures)
+        history = []
+        bundle = McpBundle()
         if self.settings.low_token:
             message = _clip(message, _LOW_TOKEN_CHARS)
-            yield {"type": "status", "text": "Working"}
-            logger.info(
-                "api chat provider=%s model=%s low_token=1",
-                self.settings.api_provider,
-                self._model(),
-            )
-            try:
-                empty = McpBundle()
-                if self.settings.api_provider == API_ANTHROPIC:
-                    stream = self._anthropic(http, [], message, empty, [], origin, [], language)
-                else:
-                    stream = self._openai(http, [], message, empty, [], origin, [], language)
-                async for event in stream:
-                    yield event
-            except (McpError, ClientError, TimeoutError, OSError, json.JSONDecodeError, RuntimeError) as exc:
-                logger.exception("api provider failed")
-                yield {"type": "error", "message": self._public(exc)}
-            return
-        if not use_tools:
-            yield {"type": "status", "text": "Working"}
-            logger.info(
-                "api chat provider=%s model=%s tools=off",
-                self.settings.api_provider,
-                self._model(),
-            )
+            pictures = []
+        else:
             history = await self.hass.async_add_executor_job(self.store.list_messages, session.id)
-            try:
-                empty = McpBundle()
-                if self.settings.api_provider == API_ANTHROPIC:
-                    stream = self._anthropic(http, history, message, empty, [], origin, pictures, language)
-                else:
-                    stream = self._openai(http, history, message, empty, [], origin, pictures, language)
-                async for event in stream:
-                    yield event
-            except (McpError, ClientError, TimeoutError, OSError, json.JSONDecodeError, RuntimeError) as exc:
-                logger.exception("api provider failed")
-                yield {"type": "error", "message": self._public(exc)}
-            return
-        bundle = McpBundle()
-        # Built-in /api/mcp only accepts a signed-in bearer.
-        authed = with_mcp_auth(
-            self.settings.mcp_servers,
-            access_token=str(access_token or ""),
-            mcp_token=str(self.settings.mcp_token or ""),
-            mcp_kind=str(self.settings.mcp_kind or ""),
-        )
-        primary = authed.get("mcp") or {}
-        configured = str(primary.get("url") or "")
-        headers = dict(primary.get("headers") or {})
-        token = (self.settings.mcp_token or "").strip()
-        auth_header = str(headers.get("Authorization") or "")
-        if auth_header.lower().startswith("bearer "):
-            token = auth_header[7:].strip()
-        elif self.settings.mcp_kind == MCP_HA:
-            token = token or str(access_token or "").strip()
-        mcp_url = await async_resolve_mcp_url(self.hass, self.settings.mcp_kind, configured, token)
-        extra_clients: list[tuple[str, str, dict[str, str]]] = []
-        for name, cfg in authed.items():
-            if name == "mcp" or not cfg.get("url"):
-                continue
-            extra_clients.append((name, str(cfg.get("url") or ""), dict(cfg.get("headers") or {})))
-        if not mcp_url and not extra_clients:
-            yield {"type": "error", "message": "MCP URL is missing."}
-            return
         yield {"type": "status", "text": "Working"}
-        try:
-            if mcp_url:
-                if self.settings.mcp_kind == MCP_COOLVER:
-                    primary_client: McpHttpClient | CoolverClient = CoolverClient(http, mcp_url, headers)
-                else:
-                    primary_client = McpHttpClient(http, mcp_url, headers)
-                await primary_client.initialize()
-                bundle.add("home-assistant", primary_client, await primary_client.list_tools())
-            for name, url, extra_headers in extra_clients:
-                if name in {"catalog", "house-map"}:
-                    continue
-                client = McpHttpClient(http, url, extra_headers)
-                await client.initialize()
-                bundle.add(name, client, await client.list_tools())
-            if self.settings.house_map:
-                from .house_map import HouseMapClient
-
-                local = HouseMapClient(self.hass, self.store)
-                await local.initialize()
-                bundle.add("catalog", local, await local.list_tools())
-            bundle.finish()
-        except McpError as exc:
-            yield {"type": "error", "message": self._public(exc)}
-            return
+        if use_tools and not self.settings.low_token:
+            bundle, skipped, first_error = await self._open_tools(http, str(access_token or ""), admin)
+            if skipped and not bundle.names:
+                yield {"type": "error", "message": first_error}
+                return
+            if skipped:
+                yield {"type": "status", "text": f"Not reachable, continuing without: {', '.join(skipped)}"}
         logger.info(
-            "api chat provider=%s model=%s mcp=%s",
+            "api chat provider=%s model=%s mcp=%s tools=%s low_token=%s",
             self.settings.api_provider,
             self._model(),
-            ", ".join(bundle._clients) or "none",
+            ", ".join(bundle.names) or "none",
+            len(bundle.tools),
+            int(self.settings.low_token),
         )
-        mcp = bundle
-        mcp_tools = bundle.tools
-        history = await self.hass.async_add_executor_job(self.store.list_messages, session.id)
+        loop = self._anthropic if self.settings.api_provider == API_ANTHROPIC else self._openai
+        force = bool(force_tools) and not pictures and not self.settings.low_token
         try:
-            if self.settings.api_provider == API_ANTHROPIC:
-                async for event in self._anthropic(http, history, message, mcp, mcp_tools, origin, pictures, language):
-                    yield event
-            else:
-                async for event in self._openai(http, history, message, mcp, mcp_tools, origin, pictures, language):
-                    yield event
-        except (McpError, ClientError, TimeoutError, OSError, json.JSONDecodeError, RuntimeError) as exc:
-            logger.exception("api provider failed")
+            async for event in loop(http, history, message, bundle, origin, pictures, language, admin, force):
+                yield event
+        except _ERRORS as exc:
+            logger.warning("api provider failed: %s", self._public(exc))
             yield {"type": "error", "message": self._public(exc)}
 
     async def suggest_title(self, user: str, assistant: str = "") -> str | None:
         if not self.info.available or self.settings.low_token:
             return None
         prompt = title_prompt(user, assistant)
+        system = "You write short chat titles. Reply with the title only."
         http = self._http()
         try:
             if self.settings.api_provider == API_ANTHROPIC:
                 data = await self._post(
                     http,
                     f"{self._base()}/messages",
-                    {
-                        "x-api-key": self.settings.api_key,
-                        "anthropic-version": "2023-06-01",
-                        "Content-Type": "application/json",
-                    },
+                    self._anthropic_headers(),
                     {
                         "model": self._model(),
                         "max_tokens": 32,
-                        "system": "You write short chat titles. Reply with the title only.",
+                        "system": system,
                         "messages": [{"role": "user", "content": prompt}],
                     },
                     timeout=8,
@@ -514,19 +638,18 @@ class ApiProvider:
                 blocks = data.get("content") or []
                 raw = "".join(str(b.get("text") or "") for b in blocks if b.get("type") == "text")
             else:
-                title_body = {
-                    "model": self._model(),
-                    "max_tokens": 32,
-                    "messages": [
-                        {"role": "system", "content": "You write short chat titles. Reply with the title only."},
-                        {"role": "user", "content": prompt},
-                    ],
-                }
                 data = await self._post(
                     http,
                     self._chat_url(),
                     self._auth_headers(),
-                    title_body,
+                    {
+                        "model": self._model(),
+                        "max_tokens": 32,
+                        "messages": [
+                            {"role": "system", "content": system},
+                            {"role": "user", "content": prompt},
+                        ],
+                    },
                     timeout=8,
                     attempts=1,
                 )
@@ -542,18 +665,21 @@ class ApiProvider:
         history,
         message: str,
         mcp: McpBundle,
-        mcp_tools: list[dict],
-        origin: str = "",
-        images: list[dict] | None = None,
-        language: str = "",
+        origin: str,
+        images: list[dict],
+        language: str,
+        admin: bool,
+        force: bool = False,
     ) -> AsyncIterator[dict]:
-        messages: list[dict[str, Any]] = [{"role": "system", "content": self._system(origin, language)}]
+        messages: list[dict[str, Any]] = [{"role": "system", "content": self._system(origin, language, admin)}]
         messages.extend(_history_messages(history))
-        messages.append({"role": "user", "content": openai_user_content(message, images or [])})
-        tools = _openai_tools(mcp_tools)
+        messages.append({"role": "user", "content": openai_user_content(message, images)})
+        tools = _openai_tools(mcp.tools)
         url = self._chat_url()
         headers = self._auth_headers()
-        for _ in range(_MAX_ROUNDS):
+        said: list[str] = []
+        for round_no in range(_MAX_ROUNDS + 1):
+            last = round_no == _MAX_ROUNDS
             payload: dict[str, Any] = {"model": self._model(), "messages": messages}
             if self.settings.low_token:
                 payload["max_tokens"] = _LOW_TOKEN_REPLY
@@ -561,15 +687,29 @@ class ApiProvider:
                 self._effort_body(payload)
             if tools:
                 payload["tools"] = tools
-                if self.settings.api_provider == API_OPENAI:
-                    payload["parallel_tool_calls"] = False
-            data = await self._post(http, url, headers, payload)
-            choice = ((data.get("choices") or [{}])[0].get("message")) or {}
-            tool_calls = choice.get("tool_calls") or []
-            content = str(choice.get("content") or "")
-            if tool_calls:
-                messages.append(choice)
-                for call in tool_calls:
+                if last:
+                    payload["tool_choice"] = "none"
+                else:
+                    if round_no == 0 and force and self._force:
+                        payload["tool_choice"] = "required"
+                    if self.settings.api_provider == API_OPENAI:
+                        payload["parallel_tool_calls"] = False
+            reply: dict[str, Any] = {}
+            gap = bool(said)
+            async for kind, value in self._openai_round(http, url, headers, payload):
+                if kind == "message":
+                    reply = value
+                    continue
+                if gap:
+                    said.append("\n\n")
+                    yield {"type": "text", "delta": "\n\n"}
+                    gap = False
+                said.append(value)
+                yield {"type": "text", "delta": value}
+            calls = reply.get("tool_calls") or []
+            if calls and not last:
+                messages.append({"role": "assistant", "content": reply.get("content") or None, "tool_calls": calls})
+                for call in calls:
                     fn = call.get("function") or {}
                     name = str(fn.get("name") or "tool")
                     label = _tool_label(name)
@@ -579,18 +719,84 @@ class ApiProvider:
                     except json.JSONDecodeError:
                         args = {}
                     try:
-                        result = await mcp.call_tool(name, args if isinstance(args, dict) else {})
-                        body = _tool_body(result)
-                    except McpError as exc:
+                        body = _tool_body(await mcp.call_tool(name, args if isinstance(args, dict) else {}))
+                    except _ERRORS as exc:
                         body = self._public(exc)
                     yield {"type": "tool", "name": name, "phase": "end", "text": f"Finished {label}"}
                     messages.append({"role": "tool", "tool_call_id": call.get("id"), "content": body})
                 continue
-            if content:
-                yield {"type": "text", "delta": content}
-            yield {"type": "result", "text": content, "status": "finished"}
+            break
+        text = "".join(said).strip()
+        if not text and last:
+            yield {"type": "error", "message": "The model kept calling tools without finishing."}
             return
-        yield {"type": "error", "message": "The model kept calling tools without finishing."}
+        yield {"type": "result", "text": text, "status": "finished"}
+
+    async def _openai_round(
+        self, http: ClientSession, url: str, headers: dict, payload: dict
+    ) -> AsyncIterator[tuple[str, Any]]:
+        if self._stream:
+            try:
+                async for item in self._openai_stream(http, url, headers, payload):
+                    yield item
+                return
+            except _StreamUnsupported:
+                logger.info("%s does not stream; using plain replies", self._label())
+                self._stream = False
+        data = await self._post(http, url, headers, payload)
+        reply = ((data.get("choices") or [{}])[0].get("message")) or {}
+        content = str(reply.get("content") or "")
+        if content:
+            yield "text", content
+        yield "message", reply
+
+    async def _openai_stream(
+        self, http: ClientSession, url: str, headers: dict, payload: dict
+    ) -> AsyncIterator[tuple[str, Any]]:
+        body = {**payload, "stream": True}
+        resp = await self._open(http, url, headers, body, stream=True)
+        parts: list[str] = []
+        calls: dict[int, dict[str, Any]] = {}
+        try:
+            async for _event, raw in _sse(resp):
+                if raw == "[DONE]":
+                    break
+                try:
+                    chunk = json.loads(raw)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(chunk, dict):
+                    continue
+                if chunk.get("error"):
+                    raise ApiError(resp.status, _friendly_api_error(resp.status, raw))
+                for choice in chunk.get("choices") or []:
+                    delta = choice.get("delta") or {}
+                    text = delta.get("content")
+                    if isinstance(text, str) and text:
+                        parts.append(text)
+                        yield "text", text
+                    for position, call in enumerate(delta.get("tool_calls") or []):
+                        index = call.get("index", position)
+                        slot = calls.setdefault(
+                            index,
+                            {"id": "", "type": "function", "function": {"name": "", "arguments": ""}},
+                        )
+                        if call.get("id"):
+                            slot["id"] = call["id"]
+                        fn = call.get("function") or {}
+                        if fn.get("name") and not slot["function"]["name"]:
+                            slot["function"]["name"] = fn["name"]
+                        if fn.get("arguments"):
+                            slot["function"]["arguments"] += str(fn["arguments"])
+        finally:
+            resp.release()
+        reply: dict[str, Any] = {"role": "assistant", "content": "".join(parts) or None}
+        if calls:
+            ordered = [calls[index] for index in sorted(calls)]
+            for number, call in enumerate(ordered):
+                call["id"] = call["id"] or f"call_{number}"
+            reply["tool_calls"] = ordered
+        yield "message", reply
 
     async def _anthropic(
         self,
@@ -598,64 +804,197 @@ class ApiProvider:
         history,
         message: str,
         mcp: McpBundle,
-        mcp_tools: list[dict],
-        origin: str = "",
-        images: list[dict] | None = None,
-        language: str = "",
+        origin: str,
+        images: list[dict],
+        language: str,
+        admin: bool,
+        force: bool = False,
     ) -> AsyncIterator[dict]:
         messages: list[dict[str, Any]] = list(_history_messages(history))
-        messages.append({"role": "user", "content": anthropic_user_content(message, images or [])})
-        tools = _anthropic_tools(mcp_tools)
+        messages.append({"role": "user", "content": anthropic_user_content(message, images)})
+        tools = _anthropic_tools(mcp.tools)
         url = f"{self._base()}/messages"
-        headers = {
-            "x-api-key": self.settings.api_key,
-            "anthropic-version": "2023-06-01",
-            "Content-Type": "application/json",
-        }
-        for _ in range(_MAX_ROUNDS):
+        headers = self._anthropic_headers()
+        said: list[str] = []
+        for round_no in range(_MAX_ROUNDS + 1):
+            last = round_no == _MAX_ROUNDS
             payload: dict[str, Any] = {
                 "model": self._model(),
                 "max_tokens": _LOW_TOKEN_REPLY if self.settings.low_token else 4096,
-                "system": self._system(origin, language),
+                "system": self._system(origin, language, admin),
                 "messages": messages,
             }
             if not self.settings.low_token:
                 self._effort_body(payload)
             if tools:
                 payload["tools"] = tools
-            data = await self._post(http, url, headers, payload)
-            blocks = data.get("content") or []
-            tool_uses = [b for b in blocks if b.get("type") == "tool_use"]
-            texts = [str(b.get("text") or "") for b in blocks if b.get("type") == "text"]
-            if tool_uses:
-                messages.append({"role": "assistant", "content": blocks})
+                if last:
+                    payload["tool_choice"] = {"type": "none"}
+                elif round_no == 0 and force and self._force:
+                    payload["tool_choice"] = {"type": "any"}
+            blocks: list[dict] = []
+            gap = bool(said)
+            async for kind, value in self._anthropic_round(http, url, headers, payload):
+                if kind == "message":
+                    blocks = value
+                    continue
+                if gap:
+                    said.append("\n\n")
+                    yield {"type": "text", "delta": "\n\n"}
+                    gap = False
+                said.append(value)
+                yield {"type": "text", "delta": value}
+            uses = [block for block in blocks if block.get("type") == "tool_use"]
+            if uses and not last:
+                messages.append({"role": "assistant", "content": _clean_blocks(blocks)})
                 results = []
-                for block in tool_uses:
+                for block in uses:
                     name = str(block.get("name") or "tool")
                     label = _tool_label(name)
                     yield {"type": "tool", "name": name, "phase": "start", "text": f"Calling {label}..."}
                     args = block.get("input") if isinstance(block.get("input"), dict) else {}
                     try:
-                        result = await mcp.call_tool(name, args)
-                        body = _tool_body(result)
-                    except McpError as exc:
+                        body = _tool_body(await mcp.call_tool(name, args))
+                    except _ERRORS as exc:
                         body = self._public(exc)
                     yield {"type": "tool", "name": name, "phase": "end", "text": f"Finished {label}"}
-                    results.append(
-                        {
-                            "type": "tool_result",
-                            "tool_use_id": block.get("id"),
-                            "content": body,
-                        }
-                    )
+                    results.append({"type": "tool_result", "tool_use_id": block.get("id"), "content": body})
                 messages.append({"role": "user", "content": results})
                 continue
-            content = "".join(texts)
-            if content:
-                yield {"type": "text", "delta": content}
-            yield {"type": "result", "text": content, "status": "finished"}
+            break
+        text = "".join(said).strip()
+        if not text and last:
+            yield {"type": "error", "message": "The model kept calling tools without finishing."}
             return
-        yield {"type": "error", "message": "The model kept calling tools without finishing."}
+        yield {"type": "result", "text": text, "status": "finished"}
+
+    async def _anthropic_round(
+        self, http: ClientSession, url: str, headers: dict, payload: dict
+    ) -> AsyncIterator[tuple[str, Any]]:
+        if self._stream:
+            try:
+                async for item in self._anthropic_stream(http, url, headers, payload):
+                    yield item
+                return
+            except _StreamUnsupported:
+                self._stream = False
+        data = await self._post(http, url, headers, payload)
+        blocks = list(data.get("content") or [])
+        for block in blocks:
+            if block.get("type") == "text" and block.get("text"):
+                yield "text", str(block["text"])
+        yield "message", blocks
+
+    async def _anthropic_stream(
+        self, http: ClientSession, url: str, headers: dict, payload: dict
+    ) -> AsyncIterator[tuple[str, Any]]:
+        resp = await self._open(http, url, headers, {**payload, "stream": True}, stream=True)
+        blocks: dict[int, dict[str, Any]] = {}
+        partial: dict[int, list[str]] = {}
+        try:
+            async for event, raw in _sse(resp):
+                try:
+                    data = json.loads(raw)
+                except json.JSONDecodeError:
+                    continue
+                kind = str(data.get("type") or event)
+                index = int(data.get("index") or 0)
+                if kind == "content_block_start":
+                    block = dict(data.get("content_block") or {})
+                    blocks[index] = block
+                    if block.get("type") == "text" and block.get("text"):
+                        yield "text", str(block["text"])
+                elif kind == "content_block_delta":
+                    delta = data.get("delta") or {}
+                    block = blocks.setdefault(index, {"type": "text", "text": ""})
+                    dtype = delta.get("type")
+                    if dtype == "text_delta":
+                        piece = str(delta.get("text") or "")
+                        block["text"] = str(block.get("text") or "") + piece
+                        if piece:
+                            yield "text", piece
+                    elif dtype == "input_json_delta":
+                        partial.setdefault(index, []).append(str(delta.get("partial_json") or ""))
+                    elif dtype == "thinking_delta":
+                        block["thinking"] = str(block.get("thinking") or "") + str(delta.get("thinking") or "")
+                    elif dtype == "signature_delta":
+                        block["signature"] = str(block.get("signature") or "") + str(delta.get("signature") or "")
+                elif kind == "content_block_stop":
+                    block = blocks.get(index) or {}
+                    if block.get("type") == "tool_use":
+                        raw_input = "".join(partial.pop(index, [])).strip()
+                        try:
+                            block["input"] = json.loads(raw_input) if raw_input else {}
+                        except json.JSONDecodeError:
+                            block["input"] = {}
+                elif kind == "error":
+                    err = data.get("error") or {}
+                    raise ApiError(resp.status, str(err.get("message") or "The model provider failed."))
+                elif kind == "message_stop":
+                    break
+        finally:
+            resp.release()
+        yield "message", [blocks[index] for index in sorted(blocks)]
+
+    async def _open(
+        self,
+        http: ClientSession,
+        url: str,
+        headers: dict,
+        payload: dict,
+        *,
+        timeout: float = 120,
+        attempts: int = 4,
+        stream: bool = False,
+    ) -> ClientResponse:
+        """A successful response; retries rate limits and drops effort the model refuses."""
+        body = dict(payload)
+        last = ""
+        retries = max(1, attempts)
+        attempt = 0
+        while attempt < retries:
+            attempt += 1
+            resp = await http.post(
+                url,
+                json=body,
+                headers=headers,
+                timeout=ClientTimeout(total=None, sock_connect=30, sock_read=timeout)
+                if stream
+                else ClientTimeout(total=timeout),
+            )
+            if resp.status < 400:
+                return resp
+            text = await resp.text()
+            resp.release()
+            last = text
+            low = text.lower()
+            if resp.status == 429:
+                wait = _retry_wait(resp, text)
+                if wait is not None and attempt < retries:
+                    logger.warning("api rate limited, retry in %.2fs", wait)
+                    await asyncio.sleep(wait)
+                    continue
+            if resp.status == 400 and any(key in body for key in _EFFORT_KEYS) and (
+                "effort" in low or "reasoning" in low or "output_config" in low
+            ):
+                logger.info("%s refused the effort setting; sending without it", self._label())
+                self._effort = False
+                for key in _EFFORT_KEYS:
+                    body.pop(key, None)
+                attempt -= 1
+                continue
+            if resp.status in {400, 422} and body.get("tool_choice") not in (None, "none", {"type": "none"}) and (
+                "tool_choice" in low or "tool choice" in low or "tool_use" in low or "thinking" in low
+            ):
+                logger.info("%s refused a forced tool call; letting the model choose", self._label())
+                self._force = False
+                body.pop("tool_choice", None)
+                attempt -= 1
+                continue
+            if stream and resp.status in {400, 404, 415, 422} and "stream" in low:
+                raise _StreamUnsupported
+            raise ApiError(resp.status, _friendly_api_error(resp.status, text))
+        raise ApiError(429, _friendly_api_error(429, last))
 
     async def _post(
         self,
@@ -666,19 +1005,9 @@ class ApiProvider:
         timeout: float = 120,
         attempts: int = 4,
     ) -> dict:
-        last = ""
-        retries = max(1, attempts)
-        for attempt in range(retries):
-            resp = await http.post(url, json=payload, headers=headers, timeout=ClientTimeout(total=timeout))
+        resp = await self._open(http, url, headers, payload, timeout=timeout, attempts=attempts)
+        try:
             text = await resp.text()
-            last = text
-            if resp.status == 429:
-                wait = _retry_wait(resp, text)
-                if wait is not None and attempt < retries - 1:
-                    logger.warning("api rate limited, retry in %.2fs", wait)
-                    await asyncio.sleep(wait)
-                    continue
-            if resp.status >= 400:
-                raise RuntimeError(_friendly_api_error(resp.status, text))
-            return json.loads(text)
-        raise RuntimeError(_friendly_api_error(429, last))
+        finally:
+            resp.release()
+        return json.loads(text)

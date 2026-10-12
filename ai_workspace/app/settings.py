@@ -75,6 +75,11 @@ class Settings:
     auth_mode: str
     host: str
     port: int
+    runtime_token: str = ""
+
+    def open_without_token(self) -> bool:
+        """Only a runtime bound to loopback may answer without the shared token."""
+        return self.host in {"127.0.0.1", "localhost", "::1"}
 
     def ensure_dirs(self) -> None:
         from app.prompt import CURSOR_IDENTITY, CURSOR_RULE
@@ -117,4 +122,7 @@ class Settings:
             auth_mode=auth_mode,
             host=os.environ.get("HOST", "0.0.0.0"),
             port=int(os.environ.get("PORT", "8090")),
+            runtime_token=(
+                os.environ.get("RUNTIME_TOKEN", "").strip() or str(options.get("runtime_token") or "").strip()
+            ),
         )

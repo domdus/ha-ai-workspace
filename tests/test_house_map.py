@@ -73,7 +73,8 @@ def test_catalog_detail_compact_strips_wiring() -> None:
 def test_catalog_instructions_are_not_list_first() -> None:
     text = (ROOT / "custom_components" / "ai_workspace" / "house_map.py").read_text()
     assert "call search_catalog first" not in text
-    assert "Do not call it to list automations" in text
+    assert "For counts, lists, names, and on/off, call the Home Assistant tools" in text
+    assert "Do not call" not in text
     assert "detail=wiring" in text
 
 
@@ -148,8 +149,8 @@ def test_catalog_auth_paths() -> None:
         "catalog": {"type": "http", "url": "http://homeassistant:8123/api/ai_workspace/catalog/mcp"},
         "mcp": {"type": "http", "url": "http://homeassistant:8123/api/webhook/mcp_x"},
     }
-    out = mod.with_mcp_auth(servers, access_token="ha-token", mcp_kind="ha_mcp")
+    out = mod.with_mcp_auth(servers, access_token="ha-token")
     assert out["catalog"]["headers"]["Authorization"] == "Bearer ha-token"
     assert "headers" not in out["mcp"]
-    dropped = mod.with_mcp_auth(servers, access_token="", mcp_kind="ha_mcp")
+    dropped = mod.with_mcp_auth(servers, access_token="")
     assert "catalog" not in dropped

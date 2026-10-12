@@ -7,11 +7,15 @@ The chat UI is the **AI Workspace** HACS integration, not this app page.
 ## Install (Home Assistant OS)
 
 1. **Settings → Apps → Install app → ⋮ → Repositories**. Add this GitHub repository.
-2. Install **AI Workspace Runtime**. The first install builds a container and can take several minutes.
+2. Install **AI Workspace Runtime**.
 3. In the app **Configuration**, paste the Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) (a Cursor user API key, not a Home Assistant token). Model can stay `composer-2.5`. MCP is set on the HACS integration, not here.
 4. Start the app.
-5. Install **AI Workspace** from HACS (Integration), restart Home Assistant, then **Settings → Devices & services → Add integration → AI Workspace**. It should find this app on its own.
-6. Optional UI toggles live on the **integration**, not the app: **Settings → Devices & services → AI Workspace → Configure** (`Show AI Workspace in the sidebar`, `Show floating AI button on every page`).
+5. Install **AI Workspace** from HACS (Integration), restart Home Assistant, then **Settings → Devices & services → Add integration → AI Workspace**. It finds this app on its own.
+6. Optional UI toggles live on the **integration**, not the app: **Settings → Devices & services → AI Workspace → Configure**.
+
+### Runtime token
+
+The integration and this app share a token. Every chat request must carry it. On Home Assistant OS the integration creates the token, writes it into this app's **Runtime token** option, and restarts the app once. Leave the field alone unless you pair by hand.
 
 ## Home Assistant Container (Docker)
 
@@ -20,10 +24,12 @@ See [`docker-compose.runtime.yml`](../docker-compose.runtime.yml) in the repo ro
 - Pull: `docker compose -f docker-compose.runtime.yml up -d` → `ghcr.io/domdus/ha-ai-workspace-runtime:latest`
 - Build from this checkout: `docker compose -f docker-compose.runtime.yml up -d --build`
 
-After the first GitHub Actions publish, set the GHCR package to **Public**.
+The compose file uses host networking and binds to `127.0.0.1`, so only this machine reaches port 8090. On loopback the token is optional.
 
-Do not publish MCP to the internet. The agent runs here and calls MCP on the LAN.
+If Home Assistant runs in another container on a bridge network, set `HOST: "0.0.0.0"` and a `RUNTIME_TOKEN` (for example `openssl rand -hex 32`). Put the same value in **AI Workspace → Configure → Runtime token**. Without a token, a runtime that listens beyond loopback refuses every chat.
+
+Do not publish port 8090 or MCP to the internet. The agent runs here and calls MCP on the LAN.
 
 ## Extra MCP servers
 
-Home Assistant MCP and extra MCP connections are configured on the **AI Workspace** integration, then sent with each chat. The Docker Runtime can still mount an `mcp.json` or set `MCP_URL` if you need a file fallback. The app form does not ask for MCP.
+Home Assistant MCP and extra MCP connections are configured on the **AI Workspace** integration, then sent with each chat. Only HTTP MCP servers are accepted from the integration. The Docker Runtime can still mount an `mcp.json` or set `MCP_URL` if you need a file fallback (that is also the only place for stdio servers). The app form does not ask for MCP.

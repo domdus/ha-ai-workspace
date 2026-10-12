@@ -224,7 +224,8 @@ class CursorProvider:
             yield {"type": "error", "message": _MISSING_KEY}
             return
         try:
-            file_servers = load_mcp_servers(self.settings.mcp_config_path)
+            exclusive = bool((mcp or {}).get("exclusive"))
+            file_servers = {} if exclusive else load_mcp_servers(self.settings.mcp_config_path)
             mcp_servers = merge_mcp_servers(file_servers, servers_from_chat_mcp(mcp))
         except McpConfigError as exc:
             yield {"type": "error", "message": str(exc)}

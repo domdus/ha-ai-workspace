@@ -33,7 +33,7 @@ class FakeCursor:
         yield {"type": "result", "text": "Moisture is 18%.", "run_id": "run-1", "status": "finished"}
 
 
-def settings(tmp_path: Path, auth_mode: str = "dev") -> Settings:
+def settings(tmp_path: Path, auth_mode: str = "dev", host: str = "127.0.0.1", token: str = "") -> Settings:
     return Settings(
         data_dir=tmp_path,
         workspace_dir=tmp_path / "workspace",
@@ -42,9 +42,27 @@ def settings(tmp_path: Path, auth_mode: str = "dev") -> Settings:
         cursor_api_key="",
         model="composer-2.5",
         auth_mode=auth_mode,
-        host="127.0.0.1",
+        host=host,
         port=8090,
+        runtime_token=token,
     )
+
+
+def test_token_is_required_when_set(tmp_path: Path) -> None:
+    app = create_app(settings(tmp_path, token="s3cret"), {"cursor": FakeCursor()})
+    with TestClient(app) as client:
+        assert client.get("/api/health").status_code == 200
+        assert client.get("/api/sessions").status_code == 401
+        assert client.get("/api/sessions", headers={"Authorization": "Bearer wrong"}).status_code == 401
+        assert client.get("/api/sessions", headers={"Authorization": "Bearer s3cret"}).status_code == 200
+
+
+def test_network_bound_runtime_without_token_refuses_chat(tmp_path: Path) -> None:
+    app = create_app(settings(tmp_path, host="0.0.0.0"), {"cursor": FakeCursor()})
+    with TestClient(app) as client:
+        health = client.get("/api/health").json()
+        assert health["token_required"] is True
+        assert client.post("/api/sessions", json={"provider": "cursor"}).status_code == 401
 
 
 def test_chat_keeps_agent_id_and_transcript(tmp_path: Path) -> None:
@@ -69,7 +87,7 @@ def test_chat_keeps_agent_id_and_transcript(tmp_path: Path) -> None:
 
 
 class FakeCursorTitled(FakeCursor):
-    async def suggest_title(self, user: str, assistant: str = "") -> str | None:
+    async def suggest_title(self, user: str, assistant: str = "", **_kwargs) -> str | None:
         del user, assistant
         return "Garden moisture"
 

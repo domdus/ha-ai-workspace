@@ -26,7 +26,6 @@ class HaAiWorkspacePanel extends HTMLElement {
       this._syncChrome();
       this._ui?.setNarrow?.(this._overlayNav());
     };
-    this._mq.addEventListener("change", this._onMq);
   }
 
   set hass(hass) {
@@ -55,7 +54,20 @@ class HaAiWorkspacePanel extends HTMLElement {
       panel.style.display = "block";
       panel.style.height = "100%";
     }
+    this._mq.addEventListener("change", this._onMq);
     this._mount();
+  }
+
+  disconnectedCallback() {
+    this._mq.removeEventListener("change", this._onMq);
+    // HA sometimes moves the panel; only tear down when it stays detached.
+    window.setTimeout(() => {
+      if (this.isConnected || !this._ui) return;
+      this._ui.destroy?.();
+      this._ui = null;
+      this._mounted = false;
+      this._mounting = false;
+    }, 0);
   }
 
   _overlayNav() {

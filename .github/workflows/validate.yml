@@ -7,7 +7,8 @@ on:
     - cron: "0 0 * * *"
   workflow_dispatch:
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   validate-hacs:
@@ -23,3 +24,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: home-assistant/actions/hassfest@master
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pytest in the Home Assistant image
+        run: |
+          docker run --rm --entrypoint "" -v "$PWD":/w -w /w -e PYTHONDONTWRITEBYTECODE=1 \
+            ghcr.io/home-assistant/home-assistant:stable sh -c "
+              pip install -q pytest fastapi httpx uvicorn pyflakes &&
+              python -m pyflakes custom_components/ai_workspace ai_workspace/app &&
+              python -m pytest -q -p no:cacheprovider
+            "
+      - name: Frontend syntax
+        run: |
+          for f in custom_components/ai_workspace/www/*.js; do
+            node --input-type=module --check < "$f"
+          done

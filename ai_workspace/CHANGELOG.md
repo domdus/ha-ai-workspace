@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0
+
+- Shared runtime token. On Home Assistant OS the integration creates it and writes it to the app. Docker sets `RUNTIME_TOKEN`. A runtime that listens beyond loopback refuses chats without a token.
+- MCP servers sent by the integration must be HTTP. stdio servers and environment overrides from requests are refused.
+- Users who are not admins only get the built-in Home Assistant MCP Server with their own login
+- Prebuilt multi-arch image instead of a local build on install
+- Requires Home Assistant 2026.1 or newer
+- Prompt asks the model to call a Home Assistant tool before it answers questions about the house
+
 ## 1.0.6
 
 - Overlay shortcut is the robot icon only
