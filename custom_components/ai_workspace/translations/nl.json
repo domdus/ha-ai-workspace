@@ -223,6 +223,7 @@
             "model": "Model",
             "effort": "Inzet",
             "low_token": "Weinig tokens",
+            "check_house": "Altijd eerst het huis controleren",
             "assist": "Ook in Assist gebruiken"
           },
           "data_description": {
@@ -231,6 +232,7 @@
             "model": "Leeg gebruikt de standaard van de provider.",
             "effort": "Snel, Hoog of Hoog snel wanneer het model dat ondersteunt.",
             "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
+            "check_house": "De eerste stap van elk bericht (behalve begroetingen en bedankjes) moet een tool aanroepen, zodat antwoorden over het huis op live gegevens berusten. Zet dit uit voor modellen die tools zelf betrouwbaar aanroepen, of om bij algemene vragen een toolronde te besparen.",
             "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
           }
         },
@@ -242,6 +244,7 @@
             "model": "Model",
             "effort": "Inzet",
             "low_token": "Weinig tokens",
+            "check_house": "Altijd eerst het huis controleren",
             "assist": "Ook in Assist gebruiken"
           },
           "data_description": {
@@ -249,6 +252,7 @@
             "model": "Leeg gebruikt llama3.2.",
             "effort": "Gebruikt wanneer het model dat ondersteunt.",
             "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
+            "check_house": "De eerste stap van elk bericht (behalve begroetingen en bedankjes) moet een tool aanroepen, zodat antwoorden over het huis op live gegevens berusten. Zet dit uit voor modellen die tools zelf betrouwbaar aanroepen, of om bij algemene vragen een toolronde te besparen.",
             "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
           }
         },
@@ -262,6 +266,7 @@
             "azure_api_version": "API-versie",
             "effort": "Inzet",
             "low_token": "Weinig tokens",
+            "check_house": "Altijd eerst het huis controleren",
             "assist": "Ook in Assist gebruiken"
           },
           "data_description": {
@@ -271,6 +276,7 @@
             "azure_api_version": "Default 2024-10-21.",
             "effort": "Gebruikt wanneer de implementatie dat ondersteunt.",
             "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
+            "check_house": "De eerste stap van elk bericht (behalve begroetingen en bedankjes) moet een tool aanroepen, zodat antwoorden over het huis op live gegevens berusten. Zet dit uit voor modellen die tools zelf betrouwbaar aanroepen, of om bij algemene vragen een toolronde te besparen.",
             "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
           }
         },
@@ -283,6 +289,7 @@
             "model": "Model",
             "effort": "Inzet",
             "low_token": "Weinig tokens",
+            "check_house": "Altijd eerst het huis controleren",
             "assist": "Ook in Assist gebruiken"
           },
           "data_description": {
@@ -291,6 +298,7 @@
             "model": "Modelnaam op die server.",
             "effort": "Gebruikt wanneer de server dat ondersteunt.",
             "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
+            "check_house": "De eerste stap van elk bericht (behalve begroetingen en bedankjes) moet een tool aanroepen, zodat antwoorden over het huis op live gegevens berusten. Zet dit uit voor modellen die tools zelf betrouwbaar aanroepen, of om bij algemene vragen een toolronde te besparen.",
             "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
           }
         }

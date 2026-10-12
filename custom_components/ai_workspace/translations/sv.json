@@ -223,6 +223,7 @@
             "model": "Modell",
             "effort": "Ansträngning",
             "low_token": "Få tokens",
+            "check_house": "Kontrollera alltid huset först",
             "assist": "Använd också i Assist"
           },
           "data_description": {
@@ -231,6 +232,7 @@
             "model": "Tomt använder leverantörens standard.",
             "effort": "Snabb, Hög eller Hög snabb när modellen stöder det.",
             "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
+            "check_house": "Första steget i varje meddelande (utom hälsningar och tack) måste anropa ett verktyg, så att svar om huset bygger på aktuell data. Stäng av för modeller som anropar verktyg pålitligt själva, eller för att spara en verktygsrunda på allmänna frågor.",
             "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
           }
         },
@@ -242,6 +244,7 @@
             "model": "Modell",
             "effort": "Ansträngning",
             "low_token": "Få tokens",
+            "check_house": "Kontrollera alltid huset först",
             "assist": "Använd också i Assist"
           },
           "data_description": {
@@ -249,6 +252,7 @@
             "model": "Tomt använder llama3.2.",
             "effort": "Används när modellen stöder det.",
             "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
+            "check_house": "Första steget i varje meddelande (utom hälsningar och tack) måste anropa ett verktyg, så att svar om huset bygger på aktuell data. Stäng av för modeller som anropar verktyg pålitligt själva, eller för att spara en verktygsrunda på allmänna frågor.",
             "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
           }
         },
@@ -262,6 +266,7 @@
             "azure_api_version": "API-version",
             "effort": "Ansträngning",
             "low_token": "Få tokens",
+            "check_house": "Kontrollera alltid huset först",
             "assist": "Använd också i Assist"
           },
           "data_description": {
@@ -271,6 +276,7 @@
             "azure_api_version": "Default 2024-10-21.",
             "effort": "Används när distributionen stöder det.",
             "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
+            "check_house": "Första steget i varje meddelande (utom hälsningar och tack) måste anropa ett verktyg, så att svar om huset bygger på aktuell data. Stäng av för modeller som anropar verktyg pålitligt själva, eller för att spara en verktygsrunda på allmänna frågor.",
             "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
           }
         },
@@ -283,6 +289,7 @@
             "model": "Modell",
             "effort": "Ansträngning",
             "low_token": "Få tokens",
+            "check_house": "Kontrollera alltid huset först",
             "assist": "Använd också i Assist"
           },
           "data_description": {
@@ -291,6 +298,7 @@
             "model": "Modellnamn på den servern.",
             "effort": "Används när servern stöder det.",
             "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
+            "check_house": "Första steget i varje meddelande (utom hälsningar och tack) måste anropa ett verktyg, så att svar om huset bygger på aktuell data. Stäng av för modeller som anropar verktyg pålitligt själva, eller för att spara en verktygsrunda på allmänna frågor.",
             "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
           }
         }

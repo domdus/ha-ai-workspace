@@ -223,6 +223,7 @@
             "model": "Modell",
             "effort": "Aufwand",
             "low_token": "Wenig Token",
+            "check_house": "Immer zuerst das Haus prüfen",
             "assist": "Auch in Assist nutzen"
           },
           "data_description": {
@@ -231,6 +232,7 @@
             "model": "Leer lässt den Standard des Anbieters.",
             "effort": "Schnell, Hoch oder Hoch schnell, wenn das Modell das unterstützt.",
             "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
+            "check_house": "Der erste Schritt jeder Nachricht (außer Begrüßung und Dank) muss ein Werkzeug aufrufen, damit Antworten zum Haus auf Live-Daten beruhen. Ausschalten bei Modellen, die Werkzeuge zuverlässig selbst aufrufen, oder um bei allgemeinen Fragen eine Werkzeugrunde zu sparen.",
             "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
           }
         },
@@ -242,6 +244,7 @@
             "model": "Modell",
             "effort": "Aufwand",
             "low_token": "Wenig Token",
+            "check_house": "Immer zuerst das Haus prüfen",
             "assist": "Auch in Assist nutzen"
           },
           "data_description": {
@@ -249,6 +252,7 @@
             "model": "Leer nutzt llama3.2.",
             "effort": "Wird genutzt, wenn das Modell das unterstützt.",
             "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
+            "check_house": "Der erste Schritt jeder Nachricht (außer Begrüßung und Dank) muss ein Werkzeug aufrufen, damit Antworten zum Haus auf Live-Daten beruhen. Ausschalten bei Modellen, die Werkzeuge zuverlässig selbst aufrufen, oder um bei allgemeinen Fragen eine Werkzeugrunde zu sparen.",
             "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
           }
         },
@@ -262,6 +266,7 @@
             "azure_api_version": "API-Version",
             "effort": "Aufwand",
             "low_token": "Wenig Token",
+            "check_house": "Immer zuerst das Haus prüfen",
             "assist": "Auch in Assist nutzen"
           },
           "data_description": {
@@ -271,6 +276,7 @@
             "azure_api_version": "Default 2024-10-21.",
             "effort": "Wird genutzt, wenn die Bereitstellung das unterstützt.",
             "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
+            "check_house": "Der erste Schritt jeder Nachricht (außer Begrüßung und Dank) muss ein Werkzeug aufrufen, damit Antworten zum Haus auf Live-Daten beruhen. Ausschalten bei Modellen, die Werkzeuge zuverlässig selbst aufrufen, oder um bei allgemeinen Fragen eine Werkzeugrunde zu sparen.",
             "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
           }
         },
@@ -283,6 +289,7 @@
             "model": "Modell",
             "effort": "Aufwand",
             "low_token": "Wenig Token",
+            "check_house": "Immer zuerst das Haus prüfen",
             "assist": "Auch in Assist nutzen"
           },
           "data_description": {
@@ -291,6 +298,7 @@
             "model": "Modellname auf diesem Server.",
             "effort": "Wird genutzt, wenn der Server das unterstützt.",
             "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
+            "check_house": "Der erste Schritt jeder Nachricht (außer Begrüßung und Dank) muss ein Werkzeug aufrufen, damit Antworten zum Haus auf Live-Daten beruhen. Ausschalten bei Modellen, die Werkzeuge zuverlässig selbst aufrufen, oder um bei allgemeinen Fragen eine Werkzeugrunde zu sparen.",
             "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
           }
         }

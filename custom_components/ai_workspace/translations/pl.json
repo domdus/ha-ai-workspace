@@ -223,6 +223,7 @@
             "model": "Model",
             "effort": "Wysiłek",
             "low_token": "Mało tokenów",
+            "check_house": "Zawsze najpierw sprawdzaj dom",
             "assist": "Używaj też w Assist"
           },
           "data_description": {
@@ -231,6 +232,7 @@
             "model": "Puste używa domyślnego modelu dostawcy.",
             "effort": "Szybki, Wysoki lub Wysoki szybki, gdy model to obsługuje.",
             "low_token": "Krótka treść i bez narzędzi, żeby mały model mógł odpowiedzieć. Nie sprawdzi ani nie zmieni domu.",
+            "check_house": "Pierwszy krok każdej wiadomości (poza powitaniami i podziękowaniami) musi wywołać narzędzie, aby odpowiedzi o domu opierały się na danych na żywo. Wyłącz dla modeli, które same niezawodnie wywołują narzędzia, lub aby zaoszczędzić rundę narzędzi przy ogólnych pytaniach.",
             "assist": "Dodaje tego agenta do Home Assistant Assist. Wyłączone zostawia go tylko na czacie AI Workspace."
           }
         },
@@ -242,6 +244,7 @@
             "model": "Model",
             "effort": "Wysiłek",
             "low_token": "Mało tokenów",
+            "check_house": "Zawsze najpierw sprawdzaj dom",
             "assist": "Używaj też w Assist"
           },
           "data_description": {
@@ -249,6 +252,7 @@
             "model": "Puste używa llama3.2.",
             "effort": "Używane, gdy model to obsługuje.",
             "low_token": "Krótka treść i bez narzędzi, żeby mały model mógł odpowiedzieć. Nie sprawdzi ani nie zmieni domu.",
+            "check_house": "Pierwszy krok każdej wiadomości (poza powitaniami i podziękowaniami) musi wywołać narzędzie, aby odpowiedzi o domu opierały się na danych na żywo. Wyłącz dla modeli, które same niezawodnie wywołują narzędzia, lub aby zaoszczędzić rundę narzędzi przy ogólnych pytaniach.",
             "assist": "Dodaje tego agenta do Home Assistant Assist. Wyłączone zostawia go tylko na czacie AI Workspace."
           }
         },
@@ -262,6 +266,7 @@
             "azure_api_version": "Wersja API",
             "effort": "Wysiłek",
             "low_token": "Mało tokenów",
+            "check_house": "Zawsze najpierw sprawdzaj dom",
             "assist": "Używaj też w Assist"
           },
           "data_description": {
@@ -271,6 +276,7 @@
             "azure_api_version": "Default 2024-10-21.",
             "effort": "Używane, gdy wdrożenie to obsługuje.",
             "low_token": "Krótka treść i bez narzędzi, żeby mały model mógł odpowiedzieć. Nie sprawdzi ani nie zmieni domu.",
+            "check_house": "Pierwszy krok każdej wiadomości (poza powitaniami i podziękowaniami) musi wywołać narzędzie, aby odpowiedzi o domu opierały się na danych na żywo. Wyłącz dla modeli, które same niezawodnie wywołują narzędzia, lub aby zaoszczędzić rundę narzędzi przy ogólnych pytaniach.",
             "assist": "Dodaje tego agenta do Home Assistant Assist. Wyłączone zostawia go tylko na czacie AI Workspace."
           }
         },
@@ -283,6 +289,7 @@
             "model": "Model",
             "effort": "Wysiłek",
             "low_token": "Mało tokenów",
+            "check_house": "Zawsze najpierw sprawdzaj dom",
             "assist": "Używaj też w Assist"
           },
           "data_description": {
@@ -291,6 +298,7 @@
             "model": "Nazwa modelu na tym serwerze.",
             "effort": "Używane, gdy serwer to obsługuje.",
             "low_token": "Krótka treść i bez narzędzi, żeby mały model mógł odpowiedzieć. Nie sprawdzi ani nie zmieni domu.",
+            "check_house": "Pierwszy krok każdej wiadomości (poza powitaniami i podziękowaniami) musi wywołać narzędzie, aby odpowiedzi o domu opierały się na danych na żywo. Wyłącz dla modeli, które same niezawodnie wywołują narzędzia, lub aby zaoszczędzić rundę narzędzi przy ogólnych pytaniach.",
             "assist": "Dodaje tego agenta do Home Assistant Assist. Wyłączone zostawia go tylko na czacie AI Workspace."
           }
         }

@@ -53,6 +53,7 @@ class Settings:
     house_map: bool = False
     cross_chat: bool = False
     low_token: bool = False
+    check_house: bool = True
     keep_chats: int = 30
     mode: str = "cursor"
     api_provider: str = "openai"

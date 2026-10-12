@@ -606,7 +606,7 @@ class ApiProvider:
             int(self.settings.low_token),
         )
         loop = self._anthropic if self.settings.api_provider == API_ANTHROPIC else self._openai
-        force = bool(force_tools) and not pictures and not self.settings.low_token
+        force = bool(force_tools) and self.settings.check_house and not pictures and not self.settings.low_token
         try:
             async for event in loop(http, history, message, bundle, origin, pictures, language, admin, force):
                 yield event
