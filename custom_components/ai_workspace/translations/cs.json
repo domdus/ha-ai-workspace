@@ -223,6 +223,7 @@
             "model": "Model",
             "effort": "Úsilí",
             "low_token": "Málo tokenů",
+            "check_house": "Vždy nejdřív zkontrolovat dům",
             "assist": "Použít také v Assist"
           },
           "data_description": {
@@ -231,6 +232,7 @@
             "model": "Prázdné použije výchozí hodnotu poskytovatele.",
             "effort": "Rychlé, Vysoké nebo Vysoké rychlé, když to model umí.",
             "low_token": "Krátký pokyn a žádné nástroje, aby malý model stihl odpovědět. Dům tak nezkontroluje ani nezmění.",
+            "check_house": "První krok každé zprávy (kromě pozdravů a poděkování) musí zavolat nástroj, aby odpovědi o domě vycházely z živých dat. Vypněte u modelů, které nástroje spolehlivě volají samy, nebo pro úsporu jednoho kola nástrojů u obecných otázek.",
             "assist": "Přidá tohoto agenta do Home Assistant Assist. Vypnuto ho nechá jen v chatu AI Workspace."
           }
         },
@@ -242,6 +244,7 @@
             "model": "Model",
             "effort": "Úsilí",
             "low_token": "Málo tokenů",
+            "check_house": "Vždy nejdřív zkontrolovat dům",
             "assist": "Použít také v Assist"
           },
           "data_description": {
@@ -249,6 +252,7 @@
             "model": "Prázdné použije llama3.2.",
             "effort": "Použije se, když to model umí.",
             "low_token": "Krátký pokyn a žádné nástroje, aby malý model stihl odpovědět. Dům tak nezkontroluje ani nezmění.",
+            "check_house": "První krok každé zprávy (kromě pozdravů a poděkování) musí zavolat nástroj, aby odpovědi o domě vycházely z živých dat. Vypněte u modelů, které nástroje spolehlivě volají samy, nebo pro úsporu jednoho kola nástrojů u obecných otázek.",
             "assist": "Přidá tohoto agenta do Home Assistant Assist. Vypnuto ho nechá jen v chatu AI Workspace."
           }
         },
@@ -262,6 +266,7 @@
             "azure_api_version": "Verze API",
             "effort": "Úsilí",
             "low_token": "Málo tokenů",
+            "check_house": "Vždy nejdřív zkontrolovat dům",
             "assist": "Použít také v Assist"
           },
           "data_description": {
@@ -271,6 +276,7 @@
             "azure_api_version": "Default 2024-10-21.",
             "effort": "Použije se, když to nasazení umí.",
             "low_token": "Krátký pokyn a žádné nástroje, aby malý model stihl odpovědět. Dům tak nezkontroluje ani nezmění.",
+            "check_house": "První krok každé zprávy (kromě pozdravů a poděkování) musí zavolat nástroj, aby odpovědi o domě vycházely z živých dat. Vypněte u modelů, které nástroje spolehlivě volají samy, nebo pro úsporu jednoho kola nástrojů u obecných otázek.",
             "assist": "Přidá tohoto agenta do Home Assistant Assist. Vypnuto ho nechá jen v chatu AI Workspace."
           }
         },
@@ -283,6 +289,7 @@
             "model": "Model",
             "effort": "Úsilí",
             "low_token": "Málo tokenů",
+            "check_house": "Vždy nejdřív zkontrolovat dům",
             "assist": "Použít také v Assist"
           },
           "data_description": {
@@ -291,6 +298,7 @@
             "model": "Název modelu na tom serveru.",
             "effort": "Použije se, když to server umí.",
             "low_token": "Krátký pokyn a žádné nástroje, aby malý model stihl odpovědět. Dům tak nezkontroluje ani nezmění.",
+            "check_house": "První krok každé zprávy (kromě pozdravů a poděkování) musí zavolat nástroj, aby odpovědi o domě vycházely z živých dat. Vypněte u modelů, které nástroje spolehlivě volají samy, nebo pro úsporu jednoho kola nástrojů u obecných otázek.",
             "assist": "Přidá tohoto agenta do Home Assistant Assist. Vypnuto ho nechá jen v chatu AI Workspace."
           }
         }

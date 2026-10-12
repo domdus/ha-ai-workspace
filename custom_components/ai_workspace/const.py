@@ -142,6 +142,7 @@ CONF_ALLOW_USERS = "allow_users"
 CONF_HOUSE_MAP = "house_map"
 CONF_CROSS_CHAT = "cross_chat"
 CONF_LOW_TOKEN = "low_token"
+CONF_CHECK_HOUSE = "check_house"
 CONF_KEEP_CHATS = "keep_chats"
 DEFAULT_KEEP_CHATS = 30
 CONF_EFFORT = "effort"

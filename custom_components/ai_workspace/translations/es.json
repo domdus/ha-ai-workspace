@@ -223,6 +223,7 @@
             "model": "Modelo",
             "effort": "Esfuerzo",
             "low_token": "Pocos tokens",
+            "check_house": "Comprobar siempre la casa primero",
             "assist": "Usar también en Assist"
           },
           "data_description": {
@@ -231,6 +232,7 @@
             "model": "Vacío usa el valor predeterminado del proveedor.",
             "effort": "Rápido, Alto o Alto rápido cuando el modelo lo admite.",
             "low_token": "Un aviso corto y sin herramientas, para que un modelo pequeño pueda responder. No puede consultar ni cambiar la casa.",
+            "check_house": "El primer paso de cada mensaje (salvo saludos y agradecimientos) debe llamar a una herramienta, para que las respuestas sobre la casa se basen en datos en vivo. Desactívalo en modelos que ya llaman herramientas de forma fiable o para ahorrar una ronda de herramientas en preguntas generales.",
             "assist": "Añade este agente a Home Assistant Assist. Desactivado lo deja solo en el chat de AI Workspace."
           }
         },
@@ -242,6 +244,7 @@
             "model": "Modelo",
             "effort": "Esfuerzo",
             "low_token": "Pocos tokens",
+            "check_house": "Comprobar siempre la casa primero",
             "assist": "Usar también en Assist"
           },
           "data_description": {
@@ -249,6 +252,7 @@
             "model": "Vacío usa llama3.2.",
             "effort": "Se usa cuando el modelo lo admite.",
             "low_token": "Un aviso corto y sin herramientas, para que un modelo pequeño pueda responder. No puede consultar ni cambiar la casa.",
+            "check_house": "El primer paso de cada mensaje (salvo saludos y agradecimientos) debe llamar a una herramienta, para que las respuestas sobre la casa se basen en datos en vivo. Desactívalo en modelos que ya llaman herramientas de forma fiable o para ahorrar una ronda de herramientas en preguntas generales.",
             "assist": "Añade este agente a Home Assistant Assist. Desactivado lo deja solo en el chat de AI Workspace."
           }
         },
@@ -262,6 +266,7 @@
             "azure_api_version": "Versión de la API",
             "effort": "Esfuerzo",
             "low_token": "Pocos tokens",
+            "check_house": "Comprobar siempre la casa primero",
             "assist": "Usar también en Assist"
           },
           "data_description": {
@@ -271,6 +276,7 @@
             "azure_api_version": "Default 2024-10-21.",
             "effort": "Se usa cuando la implementación lo admite.",
             "low_token": "Un aviso corto y sin herramientas, para que un modelo pequeño pueda responder. No puede consultar ni cambiar la casa.",
+            "check_house": "El primer paso de cada mensaje (salvo saludos y agradecimientos) debe llamar a una herramienta, para que las respuestas sobre la casa se basen en datos en vivo. Desactívalo en modelos que ya llaman herramientas de forma fiable o para ahorrar una ronda de herramientas en preguntas generales.",
             "assist": "Añade este agente a Home Assistant Assist. Desactivado lo deja solo en el chat de AI Workspace."
           }
         },
@@ -283,6 +289,7 @@
             "model": "Modelo",
             "effort": "Esfuerzo",
             "low_token": "Pocos tokens",
+            "check_house": "Comprobar siempre la casa primero",
             "assist": "Usar también en Assist"
           },
           "data_description": {
@@ -291,6 +298,7 @@
             "model": "Nombre del modelo en ese servidor.",
             "effort": "Se usa cuando el servidor lo admite.",
             "low_token": "Un aviso corto y sin herramientas, para que un modelo pequeño pueda responder. No puede consultar ni cambiar la casa.",
+            "check_house": "El primer paso de cada mensaje (salvo saludos y agradecimientos) debe llamar a una herramienta, para que las respuestas sobre la casa se basen en datos en vivo. Desactívalo en modelos que ya llaman herramientas de forma fiable o para ahorrar una ronda de herramientas en preguntas generales.",
             "assist": "Añade este agente a Home Assistant Assist. Desactivado lo deja solo en el chat de AI Workspace."
           }
         }

@@ -223,6 +223,7 @@
             "model": "Modèle",
             "effort": "Effort",
             "low_token": "Peu de tokens",
+            "check_house": "Toujours vérifier la maison d'abord",
             "assist": "Utiliser aussi dans Assist"
           },
           "data_description": {
@@ -231,6 +232,7 @@
             "model": "Vide utilise le modèle par défaut du fournisseur.",
             "effort": "Rapide, Élevé ou Élevé rapide lorsque le modèle le prend en charge.",
             "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
+            "check_house": "La première étape de chaque message (sauf salutations et remerciements) doit appeler un outil, pour que les réponses sur la maison reposent sur des données en direct. Désactivez-le pour les modèles qui appellent les outils de façon fiable, ou pour économiser un tour d'outil sur les questions générales.",
             "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
           }
         },
@@ -242,6 +244,7 @@
             "model": "Modèle",
             "effort": "Effort",
             "low_token": "Peu de tokens",
+            "check_house": "Toujours vérifier la maison d'abord",
             "assist": "Utiliser aussi dans Assist"
           },
           "data_description": {
@@ -249,6 +252,7 @@
             "model": "Vide utilise llama3.2.",
             "effort": "Utilisé lorsque le modèle le prend en charge.",
             "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
+            "check_house": "La première étape de chaque message (sauf salutations et remerciements) doit appeler un outil, pour que les réponses sur la maison reposent sur des données en direct. Désactivez-le pour les modèles qui appellent les outils de façon fiable, ou pour économiser un tour d'outil sur les questions générales.",
             "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
           }
         },
@@ -262,6 +266,7 @@
             "azure_api_version": "Version de l’API",
             "effort": "Effort",
             "low_token": "Peu de tokens",
+            "check_house": "Toujours vérifier la maison d'abord",
             "assist": "Utiliser aussi dans Assist"
           },
           "data_description": {
@@ -271,6 +276,7 @@
             "azure_api_version": "Default 2024-10-21.",
             "effort": "Utilisé lorsque le déploiement le prend en charge.",
             "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
+            "check_house": "La première étape de chaque message (sauf salutations et remerciements) doit appeler un outil, pour que les réponses sur la maison reposent sur des données en direct. Désactivez-le pour les modèles qui appellent les outils de façon fiable, ou pour économiser un tour d'outil sur les questions générales.",
             "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
           }
         },
@@ -283,6 +289,7 @@
             "model": "Modèle",
             "effort": "Effort",
             "low_token": "Peu de tokens",
+            "check_house": "Toujours vérifier la maison d'abord",
             "assist": "Utiliser aussi dans Assist"
           },
           "data_description": {
@@ -291,6 +298,7 @@
             "model": "Nom du modèle sur ce serveur.",
             "effort": "Utilisé lorsque le serveur le prend en charge.",
             "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
+            "check_house": "La première étape de chaque message (sauf salutations et remerciements) doit appeler un outil, pour que les réponses sur la maison reposent sur des données en direct. Désactivez-le pour les modèles qui appellent les outils de façon fiable, ou pour économiser un tour d'outil sur les questions générales.",
             "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
           }
         }

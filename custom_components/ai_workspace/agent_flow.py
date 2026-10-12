@@ -24,6 +24,7 @@ from .const import (
     CONF_ASSIST,
     CONF_AZURE_API_VERSION,
     CONF_BORROW,
+    CONF_CHECK_HOUSE,
     CONF_CURSOR_API_KEY,
     CONF_EFFORT,
     CONF_LOW_TOKEN,
@@ -110,6 +111,7 @@ def _fields_schema(step: str, current: dict, borrows: list[dict[str, str]], *, n
     fields.update(_effort_field(current))
     if step != "cursor":
         fields[vol.Optional(CONF_LOW_TOKEN, default=bool(current.get(CONF_LOW_TOKEN, False)))] = cv.boolean
+        fields[vol.Optional(CONF_CHECK_HOUSE, default=bool(current.get(CONF_CHECK_HOUSE, True)))] = cv.boolean
     fields[vol.Optional(CONF_ASSIST, default=assist_enabled(current, new=new))] = cv.boolean
     return vol.Schema(fields)
 
@@ -242,6 +244,7 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                     CONF_MODEL: model,
                     CONF_EFFORT: "" if effort == EFFORT_DEFAULT else effort,
                     CONF_LOW_TOKEN: False if provider == MODE_CURSOR else bool(user_input.get(CONF_LOW_TOKEN, False)),
+                    CONF_CHECK_HOUSE: provider != MODE_CURSOR and bool(user_input.get(CONF_CHECK_HOUSE, True)),
                     CONF_ASSIST: bool(user_input.get(CONF_ASSIST, assist_enabled(current, new=not self._editing))),
                     CONF_AZURE_API_VERSION: version if provider == API_AZURE else "",
                 }

@@ -73,6 +73,14 @@ def test_no_force_leaves_the_choice_to_the_model() -> None:
     assert "tool_choice" not in payloads[0]
 
 
+def test_check_house_defaults_on_and_can_be_turned_off() -> None:
+    from custom_components.ai_workspace.agents import agent_from_mapping
+
+    assert agent_from_mapping("a", "OpenAI", {"api_provider": "openai"}).check_house is True
+    assert agent_from_mapping("b", "OpenAI", {"api_provider": "openai", "check_house": False}).check_house is False
+    assert _settings("openai").check_house is True
+
+
 def test_refused_force_is_dropped_and_remembered() -> None:
     provider = ApiProvider(None, _settings("compatible"), None)
     bodies: list[dict] = []

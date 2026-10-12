@@ -170,6 +170,7 @@ def _one_provider(hass: HomeAssistant, settings: Settings, agent, store):
         model=agent.model,
         effort=agent.effort,
         low_token=agent.low_token,
+        check_house=agent.check_house,
         azure_api_version=agent.azure_api_version,
         agent_id=agent.id,
         agent_title=agent.title,

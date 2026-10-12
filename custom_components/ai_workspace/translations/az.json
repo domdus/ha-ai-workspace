@@ -223,6 +223,7 @@
             "model": "Model",
             "effort": "Səy",
             "low_token": "Az token",
+            "check_house": "Həmişə əvvəlcə evi yoxla",
             "assist": "Assist-də də istifadə et"
           },
           "data_description": {
@@ -231,6 +232,7 @@
             "model": "Boş təminatçının defoltunu istifadə edir.",
             "effort": "Model dəstəkləyəndə Sürətli, Yüksək və ya Yüksək sürətli.",
             "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
+            "check_house": "Hər mesajın ilk addımı (salam və təşəkkür istisna olmaqla) alət çağırmalıdır ki, ev haqqında cavablar canlı məlumata əsaslansın. Alətləri özü etibarlı çağıran modellər üçün və ya ümumi suallarda bir alət raundunu qənaət etmək üçün söndürün.",
             "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
           }
         },
@@ -242,6 +244,7 @@
             "model": "Model",
             "effort": "Səy",
             "low_token": "Az token",
+            "check_house": "Həmişə əvvəlcə evi yoxla",
             "assist": "Assist-də də istifadə et"
           },
           "data_description": {
@@ -249,6 +252,7 @@
             "model": "Boş llama3.2 istifadə edir.",
             "effort": "Model dəstəkləyəndə istifadə olunur.",
             "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
+            "check_house": "Hər mesajın ilk addımı (salam və təşəkkür istisna olmaqla) alət çağırmalıdır ki, ev haqqında cavablar canlı məlumata əsaslansın. Alətləri özü etibarlı çağıran modellər üçün və ya ümumi suallarda bir alət raundunu qənaət etmək üçün söndürün.",
             "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
           }
         },
@@ -262,6 +266,7 @@
             "azure_api_version": "API versiyası",
             "effort": "Səy",
             "low_token": "Az token",
+            "check_house": "Həmişə əvvəlcə evi yoxla",
             "assist": "Assist-də də istifadə et"
           },
           "data_description": {
@@ -271,6 +276,7 @@
             "azure_api_version": "Default 2024-10-21.",
             "effort": "Yerləşdirmə dəstəkləyəndə istifadə olunur.",
             "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
+            "check_house": "Hər mesajın ilk addımı (salam və təşəkkür istisna olmaqla) alət çağırmalıdır ki, ev haqqında cavablar canlı məlumata əsaslansın. Alətləri özü etibarlı çağıran modellər üçün və ya ümumi suallarda bir alət raundunu qənaət etmək üçün söndürün.",
             "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
           }
         },
@@ -283,6 +289,7 @@
             "model": "Model",
             "effort": "Səy",
             "low_token": "Az token",
+            "check_house": "Həmişə əvvəlcə evi yoxla",
             "assist": "Assist-də də istifadə et"
           },
           "data_description": {
@@ -291,6 +298,7 @@
             "model": "Həmin serverdəki model adı.",
             "effort": "Server dəstəkləyəndə istifadə olunur.",
             "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
+            "check_house": "Hər mesajın ilk addımı (salam və təşəkkür istisna olmaqla) alət çağırmalıdır ki, ev haqqında cavablar canlı məlumata əsaslansın. Alətləri özü etibarlı çağıran modellər üçün və ya ümumi suallarda bir alət raundunu qənaət etmək üçün söndürün.",
             "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
           }
         }

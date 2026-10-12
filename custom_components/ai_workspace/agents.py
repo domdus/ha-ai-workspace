@@ -22,6 +22,7 @@ from .const import (
     CONF_AGENT_ID,
     CONF_API_PROVIDER,
     CONF_AZURE_API_VERSION,
+    CONF_CHECK_HOUSE,
     CONF_CURSOR_API_KEY,
     CONF_EFFORT,
     CONF_LOW_TOKEN,
@@ -57,6 +58,7 @@ class Agent:
     enabled: bool = True
     assist: bool = True
     low_token: bool = False
+    check_house: bool = True
     azure_api_version: str = DEFAULT_AZURE_API_VERSION
     cursor_api_key: str = ""
     subentry_id: str = ""
@@ -103,6 +105,7 @@ def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Age
         enabled=True,
         assist=assist_enabled(raw),
         low_token=bool(raw.get(CONF_LOW_TOKEN, False)),
+        check_house=bool(raw.get(CONF_CHECK_HOUSE, True)),
         azure_api_version=_text(raw.get(CONF_AZURE_API_VERSION)) or DEFAULT_AZURE_API_VERSION,
         cursor_api_key=_text(raw.get(CONF_CURSOR_API_KEY)),
     )

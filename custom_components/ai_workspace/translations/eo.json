@@ -223,6 +223,7 @@
             "model": "Modelo",
             "effort": "Peno",
             "low_token": "Malmultaj tokenoj",
+            "check_house": "Ĉiam unue kontroli la domon",
             "assist": "Ankaŭ uzi en Assist"
           },
           "data_description": {
@@ -231,6 +232,7 @@
             "model": "Malplena uzas la defaŭlton de la provizanto.",
             "effort": "Rapida, Alta aŭ Alta rapida kiam la modelo tion subtenas.",
             "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
+            "check_house": "La unua paŝo de ĉiu mesaĝo (krom salutoj kaj dankoj) devas voki ilon, por ke respondoj pri la domo baziĝu sur vivaj datumoj. Malŝaltu por modeloj, kiuj mem fidinde vokas ilojn, aŭ por ŝpari ilan rondon ĉe ĝeneralaj demandoj.",
             "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
           }
         },
@@ -242,6 +244,7 @@
             "model": "Modelo",
             "effort": "Peno",
             "low_token": "Malmultaj tokenoj",
+            "check_house": "Ĉiam unue kontroli la domon",
             "assist": "Ankaŭ uzi en Assist"
           },
           "data_description": {
@@ -249,6 +252,7 @@
             "model": "Malplena uzas llama3.2.",
             "effort": "Uzata kiam la modelo tion subtenas.",
             "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
+            "check_house": "La unua paŝo de ĉiu mesaĝo (krom salutoj kaj dankoj) devas voki ilon, por ke respondoj pri la domo baziĝu sur vivaj datumoj. Malŝaltu por modeloj, kiuj mem fidinde vokas ilojn, aŭ por ŝpari ilan rondon ĉe ĝeneralaj demandoj.",
             "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
           }
         },
@@ -262,6 +266,7 @@
             "azure_api_version": "API-versio",
             "effort": "Peno",
             "low_token": "Malmultaj tokenoj",
+            "check_house": "Ĉiam unue kontroli la domon",
             "assist": "Ankaŭ uzi en Assist"
           },
           "data_description": {
@@ -271,6 +276,7 @@
             "azure_api_version": "Default 2024-10-21.",
             "effort": "Uzata kiam la deplojo tion subtenas.",
             "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
+            "check_house": "La unua paŝo de ĉiu mesaĝo (krom salutoj kaj dankoj) devas voki ilon, por ke respondoj pri la domo baziĝu sur vivaj datumoj. Malŝaltu por modeloj, kiuj mem fidinde vokas ilojn, aŭ por ŝpari ilan rondon ĉe ĝeneralaj demandoj.",
             "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
           }
         },
@@ -283,6 +289,7 @@
             "model": "Modelo",
             "effort": "Peno",
             "low_token": "Malmultaj tokenoj",
+            "check_house": "Ĉiam unue kontroli la domon",
             "assist": "Ankaŭ uzi en Assist"
           },
           "data_description": {
@@ -291,6 +298,7 @@
             "model": "Modelnomo sur tiu servilo.",
             "effort": "Uzata kiam la servilo tion subtenas.",
             "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
+            "check_house": "La unua paŝo de ĉiu mesaĝo (krom salutoj kaj dankoj) devas voki ilon, por ke respondoj pri la domo baziĝu sur vivaj datumoj. Malŝaltu por modeloj, kiuj mem fidinde vokas ilojn, aŭ por ŝpari ilan rondon ĉe ĝeneralaj demandoj.",
             "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
           }
         }

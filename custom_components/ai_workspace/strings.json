@@ -223,6 +223,7 @@
             "model": "Model",
             "effort": "Effort",
             "low_token": "Low token",
+            "check_house": "Always check the house first",
             "assist": "Also use in Assist"
           },
           "data_description": {
@@ -231,6 +232,7 @@
             "model": "Empty uses the provider default.",
             "effort": "Fast, High, or High fast when the model supports it.",
             "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
+            "check_house": "The first step of every message (except greetings and thanks) must call a tool, so answers about the house come from live data. Turn it off for models that call tools reliably on their own, or to save a tool round on general questions.",
             "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
           }
         },
@@ -242,6 +244,7 @@
             "model": "Model",
             "effort": "Effort",
             "low_token": "Low token",
+            "check_house": "Always check the house first",
             "assist": "Also use in Assist"
           },
           "data_description": {
@@ -249,6 +252,7 @@
             "model": "Empty uses llama3.2.",
             "effort": "Used when the model supports it.",
             "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
+            "check_house": "The first step of every message (except greetings and thanks) must call a tool, so answers about the house come from live data. Turn it off for models that call tools reliably on their own, or to save a tool round on general questions.",
             "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
           }
         },
@@ -262,6 +266,7 @@
             "azure_api_version": "API version",
             "effort": "Effort",
             "low_token": "Low token",
+            "check_house": "Always check the house first",
             "assist": "Also use in Assist"
           },
           "data_description": {
@@ -271,6 +276,7 @@
             "azure_api_version": "Default 2024-10-21.",
             "effort": "Used when the deployment supports it.",
             "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
+            "check_house": "The first step of every message (except greetings and thanks) must call a tool, so answers about the house come from live data. Turn it off for models that call tools reliably on their own, or to save a tool round on general questions.",
             "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
           }
         },
@@ -283,6 +289,7 @@
             "model": "Model",
             "effort": "Effort",
             "low_token": "Low token",
+            "check_house": "Always check the house first",
             "assist": "Also use in Assist"
           },
           "data_description": {
@@ -291,6 +298,7 @@
             "model": "Model name on that server.",
             "effort": "Used when the server supports it.",
             "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
+            "check_house": "The first step of every message (except greetings and thanks) must call a tool, so answers about the house come from live data. Turn it off for models that call tools reliably on their own, or to save a tool round on general questions.",
             "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
           }
         }

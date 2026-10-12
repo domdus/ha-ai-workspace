@@ -183,7 +183,7 @@ The integration and the runtime share a token, and every chat request carries it
 
 After the runtime is running: **Settings → Devices & services → Add integration → AI Workspace.**
 
-- **Runtime URL:** leave empty (it should find `http://127.0.0.1:8090` or the app).
+- **Cursor Runtime URL:** leave empty (it should find `http://127.0.0.1:8090` or the app).
 - **MCP type:** one from [Requirements](#requirements). Leave the MCP URL empty if it shows as detected.
 - Save. Home Assistant then asks for the first agent. Choose **Cursor**.
 - **Model:** for example `composer-2.5`, `grok-4`, `gpt-4.1`, or `claude-sonnet-4-5`. Leave it empty to use `CURSOR_MODEL` from the runtime.
@@ -222,10 +222,11 @@ It does not control Home Assistant edit links. Those rules are added to every me
 | **Copy key from** | Uses the key already stored by OpenRouter, OpenAI, Claude, Gemini, Ollama, or Azure in Home Assistant. That integration stays as it is |
 | **Effort** | Default, Fast, High, or High fast when the model supports it. A provider that rejects it is retried without |
 | **Low token** | Not on Cursor. Sends a short prompt and no tools |
+| **Always check the house first** | Not on Cursor. On by default. The first step of every message that is not a greeting or thanks must call a tool, so house answers come from live data. Turn it off for models that call tools reliably on their own, or to save that round on general questions |
 | **MCP type** | Asked once, when you add AI Workspace: built-in MCP Server, HA-MCP, HA Vibecode Agent, or a custom URL. It becomes the first connection |
 | **MCP URL** | Empty uses auto-detect. Paste the HA-MCP webhook or a custom URL only if needed |
 | **MCP token** | Built-in MCP Server: empty uses the login of the person chatting. HA-MCP: usually empty. Vibecode: Agent Key |
-| **Runtime URL** / **Runtime token** | Where the Cursor SDK Runtime listens, and the shared token. See [Runtime token](#runtime-token) |
+| **Cursor Runtime URL** / **Runtime token** | Where the Cursor SDK Runtime listens, and the shared token. See [Runtime token](#runtime-token) |
 | **System prompt** | See [System Prompt](#system-prompt). Empty uses the built-in prompt |
 | **Show floating AI button on every page** | Bottom-right robot icon. Hidden on Settings pages |
 | **Speech to text** | Browser speech, or a Home Assistant engine such as Whisper. The microphone needs https:// or localhost; browsers block it on a plain http:// LAN address |
@@ -254,12 +255,13 @@ When an MCP tool sends back the whole house, the result is shortened before the 
 
 ## Cost
 
-Every message sends the system prompt and the tool list of every connected MCP server. HA-MCP alone offers about 80 tools, which is several thousand tokens before you type anything, and tool results add more. Long chats resend the history each turn. Pick a small model for everyday questions, use **Low token** for chat without tools, or start a new chat when the topic changes. Cursor usage is billed through your Cursor plan.
+Every message sends the system prompt and the tool list of every connected MCP server. HA-MCP alone offers about 80 tools, which is several thousand tokens before you type anything, and tool results add more. With **Always check the house first** (on by default), Cloud AI and Ollama agents make at least one tool call for every message that is not a greeting or thanks, so even a general question costs one extra round. Long chats resend the history each turn. Pick a small model for everyday questions, use **Low token** for chat without tools, or start a new chat when the topic changes. Cursor usage is billed through your Cursor plan.
 
 ## Troubleshooting
 
 - **"Runtime token is missing or wrong."** The token on the integration and on the runtime differ. On Docker, copy `RUNTIME_TOKEN` into **Configure → Runtime token**. On the app, the integration pairs by itself as long as its own Runtime token field was never filled in; if you typed one there, use the same value as the app's **Runtime token** option.
-- **The agent invents answers instead of checking.** Cloud AI and Ollama agents ask the model to call a tool first for every message that is not a greeting or thanks. Some models (often small local ones) ignore that request. Use a model with reliable tool calling (for example GPT-4.1 mini, Claude Sonnet, Gemini 2.5, or Composer) and check that the MCP connection's device is enabled.
+- **"Set RUNTIME_TOKEN on the runtime and the same token on AI Workspace."** The runtime has no token and listens beyond loopback. Without `HOST: "127.0.0.1"` it listens on all addresses. Either set `HOST: "127.0.0.1"` (host network), or set `RUNTIME_TOKEN` and put the same value in **Configure → Runtime token**.
+- **The agent invents answers instead of checking.** Check that **Always check the house first** is on for that agent. It makes the model call a tool first for every message that is not a greeting or thanks. Some providers and small local models do not honor a forced tool call. Use a model with reliable tool calling (for example GPT-4.1 mini, Claude Sonnet, Gemini 2.5, or Composer) and check that the MCP connection's device is enabled.
 - **Built-in MCP Server tools are missing in Assist.** That server needs a login, and a voice satellite has none. Set a long-lived token on the connection (see [Privacy and security](#privacy-and-security)).
 - **The microphone is greyed out.** Open Home Assistant over https:// (Nabu Casa or a reverse proxy) or on localhost.
 - **More detail:** add this to `configuration.yaml` and restart, then check **Settings → System → Logs**:
@@ -274,7 +276,7 @@ Every message sends the system prompt and the tool list of every connected MCP s
 
 1. **Settings → Devices & services → AI Workspace → ⋮ → Delete.** That removes all connections, agents, and their Assist pipelines.
 2. **HACS → AI Workspace → Remove**, then restart.
-3. Runtime: remove the **app**, or run `docker compose down` in the runtime compose folder (`docker rm -f cursor-sdk` if an old container remains).
+3. Runtime: remove the **app**, or run `docker compose down -v` in the runtime compose folder. `-v` also deletes the `ai-workspace-data` volume with the Cursor state; leave it out to keep that. Use `docker rm -f cursor-sdk` if an old container remains.
 4. Optional: delete `config/ai_workspace/` to remove the chat history.
 
 ## Community
