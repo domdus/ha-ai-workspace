@@ -16,8 +16,6 @@
   <a href="https://github.com/domdus/ha-ai-workspace/releases"><img src="https://img.shields.io/github/v/release/domdus/ha-ai-workspace" alt="Release"></a>
   <a href="https://github.com/domdus/ha-ai-workspace/blob/main/LICENSE"><img src="https://img.shields.io/github/license/domdus/ha-ai-workspace.svg" alt="License"></a>
   <br>
-  <a href="https://github.com/domdus/ha-ai-workspace/commits/main"><img src="https://img.shields.io/github/commit-activity/m/domdus/ha-ai-workspace.svg" alt="Activity"></a>
-  <a href="https://github.com/domdus/ha-ai-workspace/actions/workflows/runtime-image.yml"><img src="https://img.shields.io/github/actions/workflow/status/domdus/ha-ai-workspace/runtime-image.yml?branch=main&label=Runtime%20image" alt="Runtime image"></a>
   <a href="https://github.com/domdus/ha-ai-workspace/pkgs/container/ha-ai-workspace-runtime"><img src="https://img.shields.io/badge/GHCR-runtime-teal" alt="GHCR"></a>
   <img src="https://img.shields.io/badge/MCP-client-purple" alt="MCP">
   <img src="https://img.shields.io/badge/Assist-ready-green" alt="Assist">
