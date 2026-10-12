@@ -14,7 +14,7 @@
   <a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Custom-41BDF5.svg" alt="HACS"></a>
   <a href="https://www.home-assistant.io/"><img src="https://img.shields.io/badge/Home%20Assistant-2025.12+-41BDF5.svg" alt="Home Assistant"></a>
   <a href="https://github.com/domdus/ha-ai-workspace/releases"><img src="https://img.shields.io/github/v/release/domdus/ha-ai-workspace" alt="Release"></a>
-  <a href="https://github.com/domdus/ha-ai-workspace/blob/main/LICENSE"><img src="https://img.shields.io/github/license/domdus/ha-ai-workspace.svg" alt="License"></a>
+  <a href="https://github.com/domdus/ha-ai-workspace/blob/main/LICENSE"><img src="https://img.shields.io/github/license/domdus/ha-ai-workspace" alt="License"></a>
   <br>
   <a href="https://github.com/domdus/ha-ai-workspace/pkgs/container/ha-ai-workspace-runtime"><img src="https://img.shields.io/badge/GHCR-runtime-teal" alt="GHCR"></a>
   <img src="https://img.shields.io/badge/MCP-client-purple" alt="MCP">
