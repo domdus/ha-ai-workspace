@@ -12,7 +12,7 @@ arch:
 init: false
 startup: services
 boot: auto
-homeassistant: "2026.1.0"
+homeassistant: "2025.12.0"
 ingress: false
 ports:
   8090/tcp: null
