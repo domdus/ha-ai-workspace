@@ -220,7 +220,7 @@ It does not control Home Assistant edit links. Those rules are added to every me
 | **Copy key from** | Uses the key already stored by OpenRouter, OpenAI, Claude, Gemini, Ollama, or Azure in Home Assistant. That integration stays as it is |
 | **Effort** | Default, Fast, High, or High fast when the model supports it. A provider that rejects it is retried without |
 | **Low token** | Not on Cursor. Sends a short prompt and no tools |
-| **Always check the house first** | Not on Cursor. On by default. The first step of every message that is not a greeting or thanks must call a tool, so house answers come from live data. Turn it off for models that call tools reliably on their own, or to save that round on general questions |
+| **Always check the house first** | Not on Cursor. On by default. The model must call a tool before it answers, so lists, counts, and states come from Home Assistant. See [why](#why-the-agent-checks-the-house-first) |
 | **MCP type** | Asked once, when you add AI Workspace: built-in MCP Server, HA-MCP, HA Vibecode Agent, or a custom URL. It becomes the first connection |
 | **MCP URL** | Empty uses auto-detect. Paste the HA-MCP webhook or a custom URL only if needed |
 | **MCP token** | Built-in MCP Server: empty uses the login of the person chatting. HA-MCP: usually empty. Vibecode: Agent Key |
@@ -235,8 +235,23 @@ It does not control Home Assistant edit links. Those rules are added to every me
 | **Allow normal users** | Off by default. See [Privacy and security](#privacy-and-security) |
 | **Chats to keep** | Newest unpinned chats per person (default 30). Pinned chats are always kept |
 | **Cross chat** | Off by default. When on, a question can use another chat whose title shares words with it. Only a short excerpt is used, and that chat is not changed |
-| **Config catalog** | Off by default. Indexes the wiring of named items (triggers, related ids). Lists, counts, and on/off still come from live MCP. No live state, history, or traces |
+| **Config catalog** | Off by default. A local index of how automations are wired, so "what uses the kitchen light?" takes one lookup. See [why](#why-use-the-config-catalog) |
 | **Also use in Assist** | On each agent. Off (the default) keeps the agent in AI Workspace only. On adds a Voice assistants pipeline for it |
+
+## Why the agent checks the house first
+
+A model that is not told otherwise answers from what it guesses. For a house that means invented automations, wrong counts, or "the light is off" while it is on, said with confidence. Asking for a tool call in the prompt is not enough: in testing, GPT-4.1 listed automations that do not exist. With **Always check the house first**, the model must call a tool before it answers, so lists, counts, and states come from Home Assistant. After that first call it decides freely.
+
+It is on by default because a wrong answer about the house costs more than one tool call. Greetings, thanks, and messages with images or files are never forced, and Cursor agents are not affected. Turn it off for an agent you mostly use for general questions, or for a model that already checks reliably on its own.
+
+## Why use the config catalog
+
+MCP tools answer "what is on?" well, but not "what is wired to what?". To find every automation that switches the kitchen light, the model would load the automations one by one, which takes many tool calls and tokens. The **Config catalog** keeps a local index of entities, areas, automations, and dashboards, with each automation's triggers, what it acts on, and what it depends on. One `search_catalog` call answers "what uses `light.kitchen`?" or "what starts the balcony irrigation?".
+
+- It updates when entities, areas, or automations change, and every 15 minutes.
+- It holds no live state, history, or traces. Lists, counts, and on/off still come from MCP.
+- Only admins get it.
+- It adds one tool and a few lines of prompt to every message, so it is off by default. Turn it on if you often ask how automations are connected.
 
 ## Optimization: Large listings
 
@@ -253,7 +268,11 @@ When an MCP tool sends back the whole house, the result is shortened before the 
 
 ## Cost
 
-Every message sends the system prompt and the tool list of every connected MCP server. HA-MCP alone offers about 80 tools, which is several thousand tokens before you type anything, and tool results add more. With **Always check the house first** (on by default), Cloud AI and Ollama agents make at least one tool call for every message that is not a greeting or thanks, so even a general question costs one extra round. Long chats resend the history each turn. Pick a small model for everyday questions, use **Low token** for chat without tools, or start a new chat when the topic changes. Cursor usage is billed through your Cursor plan.
+Cloud AI and Ollama agents send the system prompt and the tool list of every enabled MCP connection with each message. HA-MCP offers about 80 tools. Even with their descriptions shortened, that is several thousand tokens before you type anything. Each tool call adds its result and one more request, which sends the prompt and the tool list again. A greeting or thanks is sent without tools.
+
+- **History:** the last 12 messages of the chat are sent again, each cut to 2,000 characters. Tool results from earlier messages are not.
+- **[Always check the house first](#why-the-agent-checks-the-house-first):** a question that needs no house data, like a poem or a YAML explanation, still costs one tool call and one more request.
+- **To spend less:** pick a small model for everyday questions, use **Low token** for chat without tools, disable the device of an MCP connection you do not need, and start a new chat when the topic changes.
 
 ## Troubleshooting
 
