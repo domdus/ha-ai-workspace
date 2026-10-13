@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import hmac
 import json
 import logging
 from urllib.parse import urlparse
@@ -225,6 +226,7 @@ async def _runtime_chat(
     handoff: str = "",
     question: str = "",
     admin: bool = True,
+    agent: str = "",
 ) -> AsyncIterator[dict]:
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
@@ -267,10 +269,13 @@ async def _runtime_chat(
     if handoff:
         payload["handoff"] = handoff
     try:
+        sent = {**(headers or _runtime_headers_for(hass, user_id)), "Accept": "text/event-stream"}
+        if agent:
+            sent["X-Ai-Workspace-Agent"] = agent
         resp = await http.post(
             f"{base}/api/sessions/{session.id}/chat",
             json=payload,
-            headers={**(headers or _runtime_headers_for(hass, user_id)), "Accept": "text/event-stream"},
+            headers=sent,
             timeout=ClientTimeout(total=None, sock_read=600),
         )
     except Exception as exc:
@@ -327,6 +332,7 @@ async def async_agent_events(
             handoff=handoff,
             question=question,
             admin=admin,
+            agent=_agent_label(provider),
         ):
             yield event
         return
@@ -343,6 +349,7 @@ async def async_agent_events(
         tools=tools,
         admin=admin,
         force_tools=force_tools,
+        **(await _activity_kwargs(hass, provider, user_id)),
     ):
         yield event
 
@@ -756,6 +763,7 @@ class ChatView(HomeAssistantView):
                     handoff=handoff,
                     question=message,
                     admin=admin,
+                    agent=_agent_label(provider),
                 ):
                     yield event
                 return
@@ -773,6 +781,7 @@ class ChatView(HomeAssistantView):
                 tools=bool(images) or bool(files) or wants_house_tools(message),
                 admin=admin,
                 force_tools=not images and not files and wants_house_tools(message),
+                **(await _activity_kwargs(hass, provider, user_id)),
             ):
                 yield event
 
@@ -1015,6 +1024,161 @@ class CatalogMcpView(HouseMapMcpView):
     name = "api:ai_workspace:catalog:mcp"
 
 
+def _agent_label(provider: Any) -> str:
+    info = getattr(provider, "info", None)
+    return str(getattr(info, "label", "") or "Cursor")
+
+
+async def _activity_kwargs(hass: HomeAssistant, provider: Any, user_id: str) -> dict[str, Any]:
+    from .api_provider import ApiProvider
+
+    if not isinstance(provider, ApiProvider):
+        return {}
+    from .activity_ha import track_tool
+
+    user = await hass.auth.async_get_user(user_id)
+    user_name = str(getattr(user, "name", "") or "") if user else ""
+    store: Store = _runtime(hass)["store"]
+    label = _agent_label(provider)
+
+    async def on_tool(tool: str, args: dict, call) -> Any:
+        return await track_tool(hass, store, user_id, user_name or user_id, label, tool, args, call)
+
+    return {"on_tool": on_tool}
+
+
+def _runtime_token_ok(request: web.Request) -> bool:
+    expected = str((_runtime(_hass(request)).get("runtime_token") or "")).strip()
+    if not expected:
+        return False
+    scheme, _, value = str(request.headers.get("Authorization") or "").partition(" ")
+    if scheme.lower() != "bearer" or not value.strip():
+        return False
+    return hmac.compare_digest(value.strip().encode(), expected.encode())
+
+
+def _activity_dict(row) -> dict:
+    return {
+        "id": row.id,
+        "created_at": row.created_at,
+        "user_id": row.user_id,
+        "user_name": row.user_name,
+        "agent": row.agent,
+        "summary": row.summary,
+        "tool": row.tool,
+        "can_rollback": bool(row.can_rollback),
+        "undone_at": row.undone_at or "",
+    }
+
+
+class ActivityView(HomeAssistantView):
+    url = "/api/ai_workspace/activity"
+    name = "api:ai_workspace:activity"
+    requires_auth = True
+
+    async def get(self, request: web.Request) -> web.Response:
+        hass = _hass(request)
+        store: Store = _runtime(hass)["store"]
+        user_id = _user_id(request)
+        admin = _is_admin(request)
+        rows = await hass.async_add_executor_job(lambda: store.list_activity(user_id, admin=admin))
+        return self.json([_activity_dict(row) for row in rows])
+
+
+class ActivityRollbackView(HomeAssistantView):
+    url = "/api/ai_workspace/activity/{activity_id}/rollback"
+    name = "api:ai_workspace:activity:rollback"
+    requires_auth = True
+
+    async def post(self, request: web.Request, activity_id: str) -> web.Response:
+        from .activity_ha import ActivityError, rollback
+
+        hass = _hass(request)
+        store: Store = _runtime(hass)["store"]
+        try:
+            row_id = int(activity_id)
+        except (TypeError, ValueError):
+            raise web.HTTPNotFound() from None
+        row = await hass.async_add_executor_job(store.get_activity, row_id)
+        if row is None:
+            raise web.HTTPNotFound()
+        if not _is_admin(request) and row.user_id != _user_id(request):
+            raise web.HTTPNotFound()
+        if not row.can_rollback:
+            raise web.HTTPBadRequest(text="This change cannot be rolled back.")
+        raw = await hass.async_add_executor_job(store.activity_document, row_id)
+        try:
+            document = json.loads(raw)
+        except json.JSONDecodeError:
+            document = None
+        if not isinstance(document, dict):
+            raise web.HTTPBadRequest(text="This change cannot be rolled back.")
+        try:
+            await rollback(hass, document)
+        except ActivityError as exc:
+            raise web.HTTPBadRequest(text=str(exc)) from exc
+        updated = await hass.async_add_executor_job(store.mark_activity_undone, row_id)
+        return self.json(_activity_dict(updated or row))
+
+
+class ActivityPrepareView(HomeAssistantView):
+    """Runtime callback. Snapshots a config document before Cursor forwards a tool."""
+
+    url = "/api/ai_workspace/activity/prepare"
+    name = "api:ai_workspace:activity:prepare"
+    requires_auth = False
+
+    async def post(self, request: web.Request) -> web.Response:
+        from .activity_ha import prepare
+
+        if not _runtime_token_ok(request):
+            raise web.HTTPUnauthorized()
+        try:
+            body = await request.json()
+        except json.JSONDecodeError:
+            raise web.HTTPBadRequest(text="Invalid JSON.") from None
+        if not isinstance(body, dict):
+            raise web.HTTPBadRequest(text="Invalid JSON.")
+        hass = _hass(request)
+        user_id = str(body.get("user_id") or "").strip()
+        if not user_id:
+            return self.json({"token": None})
+        user = await hass.auth.async_get_user(user_id)
+        user_name = str(getattr(user, "name", "") or "") if user else ""
+        arguments = body.get("arguments") if isinstance(body.get("arguments"), dict) else {}
+        token = await prepare(
+            hass,
+            user_id,
+            user_name or user_id,
+            str(body.get("agent") or "Cursor"),
+            str(body.get("tool") or ""),
+            arguments,
+        )
+        return self.json({"token": token})
+
+
+class ActivityCommitView(HomeAssistantView):
+    url = "/api/ai_workspace/activity/commit"
+    name = "api:ai_workspace:activity:commit"
+    requires_auth = False
+
+    async def post(self, request: web.Request) -> web.Response:
+        from .activity_ha import commit
+
+        if not _runtime_token_ok(request):
+            raise web.HTTPUnauthorized()
+        try:
+            body = await request.json()
+        except json.JSONDecodeError:
+            raise web.HTTPBadRequest(text="Invalid JSON.") from None
+        if not isinstance(body, dict):
+            raise web.HTTPBadRequest(text="Invalid JSON.")
+        hass = _hass(request)
+        store: Store = _runtime(hass)["store"]
+        await commit(hass, store, str(body.get("token") or ""), ok=bool(body.get("ok")))
+        return self.json({"ok": True})
+
+
 def register_views(hass: HomeAssistant) -> None:
     hass.http.register_view(HealthView)
     hass.http.register_view(UiView)
@@ -1026,3 +1190,7 @@ def register_views(hass: HomeAssistant) -> None:
     hass.http.register_view(ChatView)
     hass.http.register_view(HouseMapMcpView)
     hass.http.register_view(CatalogMcpView)
+    hass.http.register_view(ActivityView)
+    hass.http.register_view(ActivityRollbackView)
+    hass.http.register_view(ActivityPrepareView)
+    hass.http.register_view(ActivityCommitView)

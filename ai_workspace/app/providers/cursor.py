@@ -160,8 +160,8 @@ class CursorRuntime:
         except Exception:
             logger.warning("cursor bridge warmup failed", exc_info=True)
 
-    def wrap_mcp(self, servers: dict) -> dict:
-        return self.fit.wrap(servers, f"http://127.0.0.1:{self.settings.port}")
+    def wrap_mcp(self, servers: dict, actor: str = "") -> dict:
+        return self.fit.wrap(servers, f"http://127.0.0.1:{self.settings.port}", actor)
 
     def _touch(self, session_id: str) -> None:
         self._used_at[session_id] = time.monotonic()
@@ -243,7 +243,7 @@ class CursorProvider:
         used_model = (model or "").strip() or self.settings.model
         key_tag = hashlib.sha256(key.encode()).hexdigest()[:16] if key else ""
         config_key = _agent_fingerprint(mcp_servers, used_model, effort, key_tag)
-        wrapped = self.runtime.wrap_mcp(mcp_servers)
+        wrapped = self.runtime.wrap_mcp(mcp_servers, session.id)
         asked = (question or "").strip()
         attach_tools = bool(images) or wants_house_tools(asked or message)
         if attach_tools and session.id not in self.runtime._with_tools:

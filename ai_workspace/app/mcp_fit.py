@@ -39,11 +39,12 @@ class FitRegistry:
     def __init__(self, secret_path: Path | None = None) -> None:
         self.secret = _load_secret(secret_path)
         self.upstreams: OrderedDict[str, dict[str, Any]] = OrderedDict()
+        self.actors: OrderedDict[str, dict[str, str]] = OrderedDict()
 
     def allows(self, secret: str, digest: str) -> bool:
         return hmac.compare_digest(secret, self.secret) and digest in self.upstreams
 
-    def wrap(self, servers: dict[str, dict[str, Any]], base: str) -> dict[str, dict[str, Any]]:
+    def wrap(self, servers: dict[str, dict[str, Any]], base: str, actor: str = "") -> dict[str, dict[str, Any]]:
         wrapped: dict[str, dict[str, Any]] = {}
         root = str(base or "").rstrip("/")
         for name, cfg in servers.items():
@@ -61,12 +62,56 @@ class FitRegistry:
                 self.upstreams.popitem(last=False)
             forwarded = dict(cfg)
             forwarded["url"] = f"{root}/api/mcp-fit/{self.secret}/{digest}"
+            if actor:
+                forwarded["url"] += f"/{actor}"
             forwarded.pop("headers", None)
             wrapped[name] = forwarded
         return wrapped
 
+    def note_actor(self, session_id: str, user_id: str, agent: str) -> None:
+        session_id = str(session_id or "").strip()
+        user_id = str(user_id or "").strip()
+        if not session_id or not user_id:
+            return
+        self.actors[session_id] = {"user_id": user_id, "agent": str(agent or "Cursor")[:120]}
+        self.actors.move_to_end(session_id)
+        while len(self.actors) > _MAX_UPSTREAMS:
+            self.actors.popitem(last=False)
 
-async def proxy_mcp(request: Request, secret: str, digest: str) -> Response:
+    def actor(self, session_id: str) -> dict[str, str] | None:
+        found = self.actors.get(str(session_id or ""))
+        return dict(found) if found else None
+
+
+def parse_tool_call(body: bytes) -> tuple[str, dict[str, Any]] | None:
+    """Return the tool name and arguments when this MCP body is a tools/call."""
+    raw = (body or b"").strip()
+    if not raw or not raw.startswith(b"{"):
+        return None
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(payload, dict) or payload.get("method") != "tools/call":
+        return None
+    params = payload.get("params") if isinstance(payload.get("params"), dict) else {}
+    name = str(params.get("name") or "").strip()
+    if not name:
+        return None
+    arguments = params.get("arguments") if isinstance(params.get("arguments"), dict) else {}
+    return name, arguments
+
+
+def tool_response_ok(status: int, raw: bytes) -> bool:
+    if status >= 400:
+        return False
+    text = raw.decode("utf-8", "replace")
+    if '"isError": true' in text or '"isError":true' in text:
+        return False
+    return True
+
+
+async def proxy_mcp(request: Request, secret: str, digest: str, actor: str = "") -> Response:
     runtime = getattr(request.app.state, "runtime", None)
     registry = getattr(runtime, "fit", None) if runtime is not None else None
     if registry is None or not registry.allows(secret, digest):
@@ -79,6 +124,10 @@ async def proxy_mcp(request: Request, secret: str, digest: str) -> Response:
             headers[key] = value
     if "accept" not in {key.lower() for key in headers}:
         headers["Accept"] = "application/json, text/event-stream"
+    tool_call = parse_tool_call(body) if request.method.upper() == "POST" else None
+    activity_token = ""
+    if tool_call is not None:
+        activity_token = await _activity_prepare(request, registry, actor, tool_call)
     try:
         status, response_headers, raw = await asyncio.to_thread(
             _forward,
@@ -88,9 +137,13 @@ async def proxy_mcp(request: Request, secret: str, digest: str) -> Response:
             request.method,
         )
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        if activity_token:
+            await _activity_commit(request, activity_token, ok=False)
         logger.warning("mcp fit proxy failed: %s", exc)
         raise HTTPException(status_code=502, detail="The MCP server did not answer.") from exc
     content_type = response_headers.get("Content-Type") or response_headers.get("content-type") or ""
+    if activity_token:
+        await _activity_commit(request, activity_token, ok=tool_response_ok(status, raw))
     if request.method.upper() == "POST":
         raw = compact_mcp_response(body, raw, content_type)
     kept = {}
@@ -120,11 +173,81 @@ def _load_secret(path: Path | None) -> str:
         return secrets.token_urlsafe(18)
 
 
-def _forward(url: str, headers: dict[str, str], body: bytes, method: str) -> tuple[int, dict[str, str], bytes]:
+def _activity_target(request: Request) -> tuple[str, str]:
+    settings = getattr(request.app.state, "settings", None)
+    base = str(getattr(settings, "hass_url", "") or "").rstrip("/")
+    token = str(getattr(settings, "runtime_token", "") or "").strip()
+    return base, token
+
+
+async def _activity_prepare(
+    request: Request,
+    registry: FitRegistry,
+    actor: str,
+    tool_call: tuple[str, dict[str, Any]],
+) -> str:
+    who = registry.actor(actor)
+    base, token = _activity_target(request)
+    if who is None or not base or not token:
+        return ""
+    name, arguments = tool_call
+    payload = {
+        "user_id": who["user_id"],
+        "agent": who.get("agent") or "Cursor",
+        "tool": name,
+        "arguments": arguments,
+    }
+    try:
+        status, _headers, raw = await asyncio.to_thread(
+            _forward,
+            f"{base}/api/ai_workspace/activity/prepare",
+            {"Authorization": f"Bearer {token}", "Content-Type": "application/json", "Accept": "application/json"},
+            json.dumps(payload).encode(),
+            "POST",
+            8,
+        )
+    except (urllib.error.URLError, TimeoutError, OSError):
+        logger.warning("activity prepare failed", exc_info=True)
+        return ""
+    if status >= 400:
+        logger.warning("activity prepare HTTP %s", status)
+        return ""
+    try:
+        body = json.loads(raw.decode("utf-8", "replace") or "{}")
+    except json.JSONDecodeError:
+        return ""
+    return str(body.get("token") or "") if isinstance(body, dict) else ""
+
+
+async def _activity_commit(request: Request, token: str, *, ok: bool) -> None:
+    base, runtime_token = _activity_target(request)
+    if not base or not runtime_token or not token:
+        return
+    payload = json.dumps({"token": token, "ok": ok}).encode()
+    try:
+        await asyncio.to_thread(
+            _forward,
+            f"{base}/api/ai_workspace/activity/commit",
+            {
+                "Authorization": f"Bearer {runtime_token}",
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            payload,
+            "POST",
+            8,
+        )
+    except (urllib.error.URLError, TimeoutError, OSError):
+        logger.warning("activity commit failed", exc_info=True)
+
+
+def _forward(
+    url: str, headers: dict[str, str], body: bytes, method: str, timeout: int = 120
+) -> tuple[int, dict[str, str], bytes]:
     data = body if method.upper() not in {"GET", "HEAD"} else None
     req = urllib.request.Request(url, data=data, headers=headers, method=method.upper())
     try:
-        with urllib.request.urlopen(req, timeout=120) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
             return resp.status, dict(resp.headers), resp.read()
     except urllib.error.HTTPError as exc:
         return exc.code, dict(exc.headers), exc.read()

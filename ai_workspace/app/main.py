@@ -187,8 +187,9 @@ def _public(settings: Settings, exc: BaseException) -> str:
 
 
 @router.api_route("/api/mcp-fit/{secret}/{digest}", methods=["GET", "POST", "DELETE"])
-async def mcp_fit(request: Request, secret: str, digest: str):
-    return await proxy_mcp(request, secret, digest)
+@router.api_route("/api/mcp-fit/{secret}/{digest}/{actor}", methods=["GET", "POST", "DELETE"])
+async def mcp_fit(request: Request, secret: str, digest: str, actor: str = ""):
+    return await proxy_mcp(request, secret, digest, actor)
 
 
 @router.get("/api/health")
@@ -312,6 +313,14 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
         )
 
     await lock.acquire()
+    runtime = request.app.state.runtime
+    fit = getattr(runtime, "fit", None) if runtime is not None else None
+    if fit is not None:
+        fit.note_actor(
+            session.id,
+            _user_id(request),
+            request.headers.get("x-ai-workspace-agent") or "Cursor",
+        )
 
     async def generate():
         parts: list[str] = []
