@@ -1897,6 +1897,7 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   async function renameSession(session) {
+    session = listedSession(session);
     const next = await askText(t("rename_prompt"), displayTitle(session.title));
     if (next == null) return;
     const title = next.trim().replace(/\s+/g, " ").slice(0, 80);
@@ -1914,6 +1915,7 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   async function deleteSession(session) {
+    session = listedSession(session);
     const ok = await askConfirm(
       t("delete"),
       t("delete_confirm", { title: displayTitle(session.title) }),
@@ -1926,7 +1928,7 @@ export function mountAiWorkspace(root, options = {}) {
       return;
     }
     if (session.id === sessionId) startNewChat();
-    else await loadSessions();
+    await loadSessions();
   }
 
   function displayTitle(title) {
@@ -1946,11 +1948,19 @@ export function mountAiWorkspace(root, options = {}) {
     return clean;
   }
 
+  function listedSession(session) {
+    const row = sessionsEl?.querySelector(`.session-row[data-session-id="${session.id}"]`);
+    const title = row?.dataset.title;
+    if (!title || title === session.title) return session;
+    return { ...session, title };
+  }
+
   function applySessionTitle(id, title) {
     if (!id || !title) return;
     const labelText = displayTitle(title);
     if (sessionId === id) titleEl.textContent = labelText;
     const row = sessionsEl?.querySelector(`.session-row[data-session-id="${id}"]`);
+    if (row) row.dataset.title = title;
     const label = row?.querySelector(".item-text");
     if (label) label.textContent = labelText;
   }
@@ -1994,6 +2004,7 @@ export function mountAiWorkspace(root, options = {}) {
     const row = document.createElement("div");
     row.className = "session-row";
     row.dataset.sessionId = session.id;
+    row.dataset.title = session.title || "";
     row.dataset.pinned = session.pinned ? "1" : "0";
     row.role = "listitem";
     if (session.id === sessionId) titleEl.textContent = displayTitle(session.title);
