@@ -6,7 +6,6 @@ from types import ModuleType, SimpleNamespace
 from app.providers.cursor import (
     CursorRuntime,
     apply_handoff,
-    _empty_failed_run,
     _mcp_identity,
     _run_error_text,
     _sdk_model,
@@ -119,12 +118,6 @@ def test_sdk_model_pins_composer_25_standard(monkeypatch) -> None:
     assert _sdk_model("composer-2.6") == "composer-2.6"
 
 
-def test_empty_failed_run_matches_composer_fast_error() -> None:
-    result = SimpleNamespace(status="error", result="", usage=None, error=None)
-    assert _empty_failed_run(result)
-    assert not _empty_failed_run(SimpleNamespace(status="finished", result="Hi", usage=None))
-
-
 def test_run_error_text_unpacks_nested_error() -> None:
     result = SimpleNamespace(
         status="error",
@@ -142,7 +135,7 @@ def test_run_error_text_mentions_empty_output_when_cursor_is_silent() -> None:
     assert "composer-2.5" in text
     assert "run-040cda8d" in text
     assert "no assistant text" in text
-    assert "budget limit" in text
+    assert "budget limit" not in text
     assert "composer-2.6" not in text
 
 
@@ -205,6 +198,36 @@ def test_live_follow_up_reuses_agent_until_idle(tmp_path: Path, monkeypatch) -> 
     assert third.agent_id == "fresh"
     assert after_pause
     assert created == ["new"]
+
+
+def test_forget_opens_a_new_agent_instead_of_resuming(tmp_path: Path, monkeypatch) -> None:
+    _install_fake_sdk(monkeypatch)
+    resumed: list[str] = []
+    created: list[str] = []
+
+    class FakeClient:
+        async def create_agent(self, options):
+            del options
+            created.append("new")
+            return SimpleNamespace(agent_id="fresh")
+
+        async def resume_agent(self, agent_id, options):
+            del options
+            resumed.append(agent_id)
+            return SimpleNamespace(agent_id=agent_id)
+
+    runtime = CursorRuntime(_settings(tmp_path))
+    runtime._client = FakeClient()
+    session = Session("s1", "u1", "cursor", "Chat", "dead-agent", "t", "t")
+    first, _ = asyncio.run(runtime.open_agent(session, {}))
+    assert first.agent_id == "dead-agent"
+    runtime.forget(session)
+    second, fresh = asyncio.run(runtime.open_agent(session, {}))
+    assert second.agent_id == "fresh"
+    assert fresh
+    assert resumed == []
+    assert created == ["new"]
+    assert session.agent_id is None
 
 
 def test_old_chat_does_not_resume_empty_thread(tmp_path: Path, monkeypatch) -> None:

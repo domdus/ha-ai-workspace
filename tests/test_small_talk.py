@@ -6,7 +6,24 @@ _ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_greeting_skips_tools() -> None:
-    for text in ("Hello?", "Hello!", "hi", "Hallo", "Guten Morgen", "Thanks", "Danke!", "How are you?"):
+    for text in (
+        "Hello?",
+        "Hello!",
+        "hi",
+        "Hallo",
+        "Guten Morgen",
+        "Thanks",
+        "Danke!",
+        "How are you?",
+        "Are you okay?",
+        "Are you okay again?",
+        "Are you there?",
+        "Hey Cursor?",
+        "Hi Cursor",
+        "Cursor?",
+        "Cursor",
+        "ping",
+    ):
         assert wants_house_tools(text) is False
 
 

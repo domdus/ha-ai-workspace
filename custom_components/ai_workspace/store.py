@@ -33,7 +33,7 @@ class Session:
     pinned: bool = False
 
 
-ACTIVITY_CAP = 300
+ACTIVITY_CAP = 30
 
 
 @dataclass
@@ -47,6 +47,8 @@ class Activity:
     tool: str
     can_rollback: bool
     undone_at: str
+    session_id: str = ""
+    chat: str = ""
 
 
 @dataclass
@@ -62,6 +64,7 @@ class ChatMessage:
 class Store:
     def __init__(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
+        self._path = path
         self._lock = threading.RLock()
         self._conn = sqlite3.connect(path, check_same_thread=False, timeout=30)
         self._conn.row_factory = sqlite3.Row
@@ -112,6 +115,11 @@ class Store:
         cols = {row[1] for row in self._conn.execute("PRAGMA table_info(sessions)")}
         if "pinned" not in cols:
             self._conn.execute("ALTER TABLE sessions ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0")
+        activity_cols = {row[1] for row in self._conn.execute("PRAGMA table_info(activity)")}
+        if "session_id" not in activity_cols:
+            self._conn.execute("ALTER TABLE activity ADD COLUMN session_id TEXT NOT NULL DEFAULT ''")
+        if "chat" not in activity_cols:
+            self._conn.execute("ALTER TABLE activity ADD COLUMN chat TEXT NOT NULL DEFAULT ''")
         self._conn.commit()
 
     def close(self) -> None:
@@ -162,6 +170,23 @@ class Store:
                 (user_id,),
             ).fetchall()
         return [_session(row) for row in rows]
+
+    def session_title(self, session_id: str) -> str:
+        session_id = _text(session_id)
+        if not session_id:
+            return ""
+        with self._lock:
+            row = self._conn.execute("SELECT title FROM sessions WHERE id = ?", (session_id,)).fetchone()
+        return _text(row["title"]) if row else ""
+
+    def session_titles(self, session_ids: list[str]) -> dict[str, str]:
+        ids = [item for item in {_text(value) for value in session_ids} if item]
+        if not ids:
+            return {}
+        marks = ",".join("?" for _ in ids)
+        with self._lock:
+            rows = self._conn.execute(f"SELECT id, title FROM sessions WHERE id IN ({marks})", ids).fetchall()
+        return {_text(row["id"]): _text(row["title"]) for row in rows}
 
     def get_session(self, user_id: str, session_id: str) -> Session | None:
         user_id = _text(user_id)
@@ -457,13 +482,17 @@ class Store:
         summary: str,
         tool: str,
         document: str = "",
+        session_id: str = "",
+        chat: str = "",
     ) -> Activity:
         now = _now()
         with self._lock:
             cursor = self._conn.execute(
                 """
-                INSERT INTO activity (created_at, user_id, user_name, agent, summary, tool, document)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO activity (
+                    created_at, user_id, user_name, agent, summary, tool, document, session_id, chat
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     now,
@@ -473,6 +502,8 @@ class Store:
                     _text(summary)[:240],
                     _text(tool)[:120],
                     document or "",
+                    _text(session_id),
+                    _text(chat)[:80],
                 ),
             )
             row_id = int(cursor.lastrowid)
@@ -480,12 +511,29 @@ class Store:
                 "SELECT id FROM activity ORDER BY id DESC LIMIT -1 OFFSET ?",
                 (ACTIVITY_CAP,),
             ).fetchall()
-            if extra:
-                self._conn.executemany("DELETE FROM activity WHERE id = ?", [(row["id"],) for row in extra])
+            dropped = [int(row["id"]) for row in extra]
+            if dropped:
+                self._conn.executemany("DELETE FROM activity WHERE id = ?", [(item,) for item in dropped])
             self._conn.commit()
+        if dropped:
+            self.drop_change_files(dropped)
         row = self.get_activity(row_id)
         assert row is not None
         return row
+
+    def change_dir(self) -> Path:
+        return self._path.parent / "changes"
+
+    def change_path(self, activity_id: int) -> Path:
+        return self.change_dir() / f"{int(activity_id)}.yaml"
+
+    def drop_change_files(self, activity_ids: list[int]) -> None:
+        for activity_id in activity_ids:
+            path = self.change_path(activity_id)
+            try:
+                path.unlink(missing_ok=True)
+            except OSError:
+                pass
 
     def list_activity(self, user_id: str, *, admin: bool) -> list[Activity]:
         with self._lock:
@@ -537,6 +585,8 @@ def _activity(row: sqlite3.Row) -> Activity:
         tool=row["tool"],
         can_rollback=bool(document) and not undone,
         undone_at=undone,
+        session_id=_text(row["session_id"]) if "session_id" in row.keys() else "",
+        chat=_text(row["chat"]) if "chat" in row.keys() else "",
     )
 
 

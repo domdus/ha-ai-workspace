@@ -26,6 +26,34 @@ def test_parse_tool_call_reads_only_tool_invocations() -> None:
     assert tool_response_ok(200, b'{"result":{"isError": false}}') is True
     assert tool_response_ok(200, b'{"result":{"isError": true}}') is False
     assert tool_response_ok(500, b"{}") is False
+    described = json.dumps(
+        {
+            "result": {
+                "content": [{"type": "text", "text": 'description example "isError": true'}],
+                "isError": False,
+            }
+        }
+    ).encode()
+    assert tool_response_ok(200, described) is True
+    transform = json.dumps(
+        {
+            "result": {
+                "content": [
+                    {
+                        "type": "text",
+                        "text": json.dumps(
+                            {
+                                "success": True,
+                                "action": "python_transform",
+                                "skill_content": 'docs mention "isError": true',
+                            }
+                        ),
+                    }
+                ]
+            }
+        }
+    ).encode()
+    assert tool_response_ok(200, transform) is True
 
 
 def test_fit_secret_stays_on_disk(tmp_path: Path) -> None:
