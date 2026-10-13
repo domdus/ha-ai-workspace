@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from app.main import create_app
-from app.mcp_fit import FitRegistry
+from app.mcp_fit import FitRegistry, parse_tool_call, tool_response_ok
 from app.settings import Settings
 from app.tool_result import PASS, compact_mcp_response, fit_tool_result
 
@@ -17,6 +17,15 @@ def _component():
     assert spec.loader is not None
     spec.loader.exec_module(mod)
     return mod
+
+
+def test_parse_tool_call_reads_only_tool_invocations() -> None:
+    body = b'{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"ha_config_set_automation","arguments":{"identifier":"a"}}}'
+    assert parse_tool_call(body) == ("ha_config_set_automation", {"identifier": "a"})
+    assert parse_tool_call(b'{"jsonrpc":"2.0","id":1,"method":"tools/list"}') is None
+    assert tool_response_ok(200, b'{"result":{"isError": false}}') is True
+    assert tool_response_ok(200, b'{"result":{"isError": true}}') is False
+    assert tool_response_ok(500, b"{}") is False
 
 
 def test_fit_secret_stays_on_disk(tmp_path: Path) -> None:

@@ -24,6 +24,7 @@ from .const import (
     API_SHORT_LABELS,
     API_XAI,
     DEFAULT_AZURE_API_VERSION,
+    BPS_KEY_INSTRUCTIONS,
     DEFAULT_SYSTEM_PROMPT,
     DOMAIN,
     LOW_TOKEN_PROMPT,
@@ -58,6 +59,16 @@ _IDENTITY = (
 )
 _MAX_ROUNDS = 15
 _DESC_MAX = 180
+# HA-MCP hides the acknowledgment key inside ha_get_skill_guide and puts the
+# "call that tool" sentence at the end of a long write-tool description. A
+# 180-character trim drops it, and the model then asks the user for BestPracticeKey.
+_BPS_PARAM = (
+    "Call ha_get_skill_guide, copy the acknowledgment key from the top of the result, "
+    "and pass it here. Do not ask the user."
+)
+_BPS_NOTE = (
+    " Call ha_get_skill_guide and pass its acknowledgment key as BestPracticeKey. Do not ask the user."
+)
 _HISTORY_MAX = 12
 _LOW_TOKEN_CHARS = 1200
 _LOW_TOKEN_REPLY = 256
@@ -146,10 +157,16 @@ def _slim_schema(schema: Any, depth: int = 0) -> dict[str, Any]:
     props = schema.get("properties")
     if isinstance(props, dict) and props:
         slim: dict[str, Any] = {}
-        for index, (key, value) in enumerate(props.items()):
-            if index >= _PROPS_MAX:
-                break
-            slim[str(key)] = _slim_schema(value, depth + 1) if isinstance(value, dict) else {"type": "string"}
+        kept = 0
+        for key, value in props.items():
+            name = str(key)
+            if name == "BestPracticeKey":
+                slim[name] = {"type": "string", "description": _BPS_PARAM}
+                continue
+            if kept >= _PROPS_MAX:
+                continue
+            kept += 1
+            slim[name] = _slim_schema(value, depth + 1) if isinstance(value, dict) else {"type": "string"}
         out["properties"] = slim
     required = schema.get("required")
     if isinstance(required, list) and out.get("properties"):
@@ -163,6 +180,16 @@ def _slim_schema(schema: Any, depth: int = 0) -> dict[str, Any]:
     return out or {"type": "object", "properties": {}}
 
 
+def _clip_bps_tool(text: str) -> str:
+    """Keep the skill-key instruction inside the description budget."""
+    note = _BPS_NOTE
+    room = _DESC_MAX - len(note)
+    raw = str(text or "").strip()
+    if len(raw) <= room:
+        return raw + note
+    return raw[: room - 1].rstrip() + "…" + note
+
+
 def _slim_mcp_tools(mcp_tools: list[dict]) -> list[dict]:
     out = []
     for tool in mcp_tools:
@@ -170,11 +197,18 @@ def _slim_mcp_tools(mcp_tools: list[dict]) -> list[dict]:
         if not name:
             continue
         schema = tool.get("inputSchema") or tool.get("input_schema") or {"type": "object", "properties": {}}
+        slim = _slim_schema(schema)
+        description = str(tool.get("description") or name)
+        props = slim.get("properties") if isinstance(slim, dict) else None
+        if isinstance(props, dict) and "BestPracticeKey" in props:
+            description = _clip_bps_tool(description)
+        else:
+            description = _clip(description, _DESC_MAX)
         out.append(
             {
                 "name": name,
-                "description": _clip(str(tool.get("description") or name), _DESC_MAX),
-                "inputSchema": _slim_schema(schema),
+                "description": description,
+                "inputSchema": slim,
             }
         )
     return out
@@ -505,7 +539,7 @@ class ApiProvider:
             return with_language_rule(LOW_TOKEN_PROMPT, language)
         identity = _IDENTITY.format(label=self._label(), model=self._model())
         body = (self.settings.system_prompt or "").strip() or DEFAULT_SYSTEM_PROMPT
-        text = f"{identity}\n\n{body}\n\n{ui_link_instructions(origin)}"
+        text = f"{identity}\n\n{body}\n\n{ui_link_instructions(origin)}\n\n{BPS_KEY_INSTRUCTIONS}"
         if self.settings.house_map and admin:
             from .house_map import CATALOG_INSTRUCTIONS
 
@@ -559,6 +593,16 @@ class ApiProvider:
         bundle.finish()
         return bundle, skipped, first_error
 
+    async def _invoke_tool(self, mcp, name: str, args: Any, on_tool: Callable | None):
+        payload = args if isinstance(args, dict) else {}
+        if on_tool is None:
+            return await mcp.call_tool(name, payload)
+
+        async def call(tool_name: str, tool_args: dict) -> Any:
+            return await mcp.call_tool(tool_name, tool_args)
+
+        return await on_tool(name, payload, call)
+
     async def send(
         self,
         session: Session,
@@ -571,6 +615,7 @@ class ApiProvider:
         tools: bool | None = None,
         admin: bool = True,
         force_tools: bool = False,
+        on_tool: Callable | None = None,
     ) -> AsyncIterator[dict]:
         """force_tools makes the first round call a tool, so house answers come from live data."""
         origin = str(frontend_origin or "").strip()
@@ -608,7 +653,9 @@ class ApiProvider:
         loop = self._anthropic if self.settings.api_provider == API_ANTHROPIC else self._openai
         force = bool(force_tools) and self.settings.check_house and not pictures and not self.settings.low_token
         try:
-            async for event in loop(http, history, message, bundle, origin, pictures, language, admin, force):
+            async for event in loop(
+                http, history, message, bundle, origin, pictures, language, admin, force, on_tool
+            ):
                 yield event
         except _ERRORS as exc:
             logger.warning("api provider failed: %s", self._public(exc))
@@ -670,6 +717,7 @@ class ApiProvider:
         language: str,
         admin: bool,
         force: bool = False,
+        on_tool: Callable | None = None,
     ) -> AsyncIterator[dict]:
         messages: list[dict[str, Any]] = [{"role": "system", "content": self._system(origin, language, admin)}]
         messages.extend(_history_messages(history))
@@ -719,7 +767,7 @@ class ApiProvider:
                     except json.JSONDecodeError:
                         args = {}
                     try:
-                        body = _tool_body(await mcp.call_tool(name, args if isinstance(args, dict) else {}))
+                        body = _tool_body(await self._invoke_tool(mcp, name, args, on_tool))
                     except _ERRORS as exc:
                         body = self._public(exc)
                     yield {"type": "tool", "name": name, "phase": "end", "text": f"Finished {label}"}
@@ -809,6 +857,7 @@ class ApiProvider:
         language: str,
         admin: bool,
         force: bool = False,
+        on_tool: Callable | None = None,
     ) -> AsyncIterator[dict]:
         messages: list[dict[str, Any]] = list(_history_messages(history))
         messages.append({"role": "user", "content": anthropic_user_content(message, images)})
@@ -854,7 +903,7 @@ class ApiProvider:
                     yield {"type": "tool", "name": name, "phase": "start", "text": f"Calling {label}..."}
                     args = block.get("input") if isinstance(block.get("input"), dict) else {}
                     try:
-                        body = _tool_body(await mcp.call_tool(name, args))
+                        body = _tool_body(await self._invoke_tool(mcp, name, args, on_tool))
                     except _ERRORS as exc:
                         body = self._public(exc)
                     yield {"type": "tool", "name": name, "phase": "end", "text": f"Finished {label}"}

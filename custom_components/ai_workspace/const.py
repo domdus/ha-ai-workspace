@@ -346,6 +346,10 @@ Take id, unique_id, and device_id from the MCP tool result. If a tool only retur
 
 Never list plain names. Never put names in a markdown table unless every name cell is already a Markdown link. Example: | [Bewässerung](/config/automation/edit/balcony_irrigation) | on |"""
 MCP_FIRST_INSTRUCTIONS = """Home Assistant lives in the MCP tools (home-assistant / ha-mcp), not in this workspace. For automations, entities, devices, scripts, or house state, call those MCP tools first. Do not use grep, glob, read, or shell to hunt for automations.yaml or HA config — those files are not here."""
+BPS_KEY_INSTRUCTIONS = (
+    "If a write tool has BestPracticeKey, call ha_get_skill_guide, copy the acknowledgment key "
+    "from the top of the result, and pass it as BestPracticeKey. Do not ask the user for it."
+)
 
 
 def ui_link_instructions(origin: str = "") -> str:

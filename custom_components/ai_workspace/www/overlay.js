@@ -17,8 +17,11 @@ const ACCESS_RETRY_MS = 30 * 1000;
 function hideFab() {
   const user = hassObj()?.user;
   if (!user?.is_admin && usersAllowed !== true) return true;
-  const path = location.pathname;
-  return path.includes("/ai-workspace") || path.startsWith("/config");
+  return location.pathname.includes("/ai-workspace");
+}
+
+function configPage() {
+  return location.pathname.startsWith("/config");
 }
 
 function refreshAccess(onReady) {
@@ -75,6 +78,9 @@ async function ensureHost() {
         right: var(--ha-space-4);
         bottom: var(--ha-space-4);
         z-index: 9;
+      }
+      .fab.raised {
+        bottom: calc(var(--ha-space-4) + 72px);
       }
       .fab {
         --ha-space-1: 0px;
@@ -192,6 +198,9 @@ async function ensureHost() {
           right: var(--ha-space-3);
           bottom: var(--ha-space-3);
         }
+        .fab.raised {
+          bottom: calc(var(--ha-space-3) + 72px);
+        }
         .drawer { width: 100%; border-left: 0; }
         .bar {
           padding-inline: max(var(--ha-space-6, 24px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
@@ -287,6 +296,7 @@ async function ensureHost() {
       userWaits += 1;
       window.setTimeout(sync, 200);
     }
+    fab.classList.toggle("raised", configPage());
     fab.classList.toggle("hidden", hideFab());
     if (hideFab()) drawer.classList.remove("open");
     schedulePlace();

@@ -488,6 +488,9 @@ export function mountAiWorkspace(root, options = {}) {
       <button type="button" class="nav-scrim" hidden aria-label="${t("close")}"></button>
       <aside>
         <div class="nav-toolbar">
+          <ha-icon-button class="history-open" label="${t("activity")}">
+            <ha-icon icon="mdi:history"></ha-icon>
+          </ha-icon-button>
           <ha-icon-button class="nav-toggle" label="${t("hide_chats")}">
             <ha-icon icon="mdi:dock-left"></ha-icon>
           </ha-icon-button>
@@ -507,6 +510,9 @@ export function mountAiWorkspace(root, options = {}) {
           <div class="header-row">
             <ha-icon-button class="nav-toggle chat-nav-toggle" label="${t("show_chats")}">
               <ha-icon icon="mdi:forum-outline"></ha-icon>
+            </ha-icon-button>
+            <ha-icon-button class="history-open header-history" label="${t("activity")}">
+              <ha-icon icon="mdi:history"></ha-icon>
             </ha-icon-button>
             <h1 class="title">${t("new_chat")}</h1>
           </div>
@@ -553,6 +559,15 @@ export function mountAiWorkspace(root, options = {}) {
           </form>
         </div>
       </section>
+      <div class="history" hidden>
+        <div class="history-bar">
+          <span>${t("activity")}</span>
+          <ha-icon-button class="history-close" label="${t("close")}">
+            <ha-icon icon="mdi:close"></ha-icon>
+          </ha-icon-button>
+        </div>
+        <div class="history-list"></div>
+      </div>
     </div>
   `;
 
@@ -3202,7 +3217,12 @@ export function mountAiWorkspace(root, options = {}) {
         flushNext();
         return;
       }
-      if (keepComposerFocus()) messageEl.focus();
+      // A draft already started on the phone should keep the keyboard.
+      if (composerFocused()) {
+        syncKeyboardInset();
+        return;
+      }
+      if (keepComposerFocus()) messageEl.focus({ preventScroll: true });
       else hideKeyboard();
     }
   });
@@ -3335,6 +3355,97 @@ export function mountAiWorkspace(root, options = {}) {
     if (keepComposerFocus()) messageEl.focus({ preventScroll: true });
   }
 
+  const historyEl = root.querySelector(".history");
+  const historyList = root.querySelector(".history-list");
+
+  function activityWhen(iso) {
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  }
+
+  function closeHistory() {
+    if (historyEl) historyEl.hidden = true;
+  }
+
+  async function loadHistory() {
+    if (!historyList) return;
+    historyList.replaceChildren();
+    const resp = await apiFetch(`${API}/activity`);
+    if (!resp || !resp.ok) {
+      const note = document.createElement("p");
+      note.className = "history-empty";
+      note.textContent = t("activity_empty");
+      historyList.appendChild(note);
+      return;
+    }
+    const rows = await resp.json();
+    if (!Array.isArray(rows) || !rows.length) {
+      const note = document.createElement("p");
+      note.className = "history-empty";
+      note.textContent = t("activity_empty");
+      historyList.appendChild(note);
+      return;
+    }
+    for (const row of rows) historyList.appendChild(historyRow(row));
+  }
+
+  function historyRow(row) {
+    const item = document.createElement("article");
+    item.className = "history-row";
+    const when = document.createElement("p");
+    when.className = "history-when";
+    when.textContent = activityWhen(row.created_at);
+    const line = document.createElement("p");
+    line.className = "history-summary";
+    line.textContent = row.summary || "";
+    const who = document.createElement("p");
+    who.className = "history-who";
+    who.textContent = [row.user_name, row.agent].filter(Boolean).join(" · ");
+    item.append(when, line, who);
+    if (row.undone_at) {
+      const restored = document.createElement("p");
+      restored.className = "history-restored";
+      restored.textContent = t("restored");
+      item.appendChild(restored);
+      return item;
+    }
+    if (!row.can_rollback) return item;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "history-rollback";
+    button.textContent = t("rollback");
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      const resp = await apiFetch(`${API}/activity/${row.id}/rollback`, { method: "POST", body: "{}" });
+      if (!resp || !resp.ok) {
+        button.disabled = false;
+        button.textContent = t("rollback_failed");
+        return;
+      }
+      await loadHistory();
+    });
+    item.appendChild(button);
+    return item;
+  }
+
+  async function openHistory() {
+    if (!historyEl) return;
+    historyEl.hidden = false;
+    await loadHistory();
+  }
+
+  root.querySelectorAll(".history-open").forEach((btn) => {
+    btn.addEventListener("click", (event) => {
+      event.preventDefault();
+      openHistory();
+    });
+  });
+  root.querySelector(".history-close")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    closeHistory();
+  });
+
   root.querySelectorAll(".nav-toggle").forEach((btn) => {
     btn.addEventListener("click", (event) => {
       event.preventDefault();
@@ -3348,6 +3459,10 @@ export function mountAiWorkspace(root, options = {}) {
   sessionsEl?.addEventListener("scroll", closeSessionMenu, { passive: true });
   listen(window, "keydown", (event) => {
     if (event.key !== "Escape") return;
+    if (historyEl && !historyEl.hidden) {
+      closeHistory();
+      return;
+    }
     if (root.querySelector("ha-dialog[open]")) return;
     if (root.querySelector(".session-more[aria-expanded='true'], .agent-trigger[aria-expanded='true']")) return;
     if (wrap.classList.contains("nav-open")) setNavOpen(false);

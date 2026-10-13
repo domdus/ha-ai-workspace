@@ -33,6 +33,22 @@ class Session:
     pinned: bool = False
 
 
+ACTIVITY_CAP = 300
+
+
+@dataclass
+class Activity:
+    id: int
+    created_at: str
+    user_id: str
+    user_name: str
+    agent: str
+    summary: str
+    tool: str
+    can_rollback: bool
+    undone_at: str
+
+
 @dataclass
 class ChatMessage:
     id: int
@@ -79,6 +95,18 @@ class Store:
                 PRIMARY KEY (kind, item_id)
             );
             CREATE INDEX IF NOT EXISTS house_map_name ON house_map(name);
+            CREATE TABLE IF NOT EXISTS activity (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                created_at TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                user_name TEXT NOT NULL,
+                agent TEXT NOT NULL,
+                summary TEXT NOT NULL,
+                tool TEXT NOT NULL,
+                document TEXT NOT NULL DEFAULT '',
+                undone_at TEXT
+            );
+            CREATE INDEX IF NOT EXISTS activity_created ON activity(created_at);
             """
         )
         cols = {row[1] for row in self._conn.execute("PRAGMA table_info(sessions)")}
@@ -420,6 +448,96 @@ class Store:
                             item[str(key)] = value
             out.append(item)
         return out
+
+    def add_activity(
+        self,
+        user_id: str,
+        user_name: str,
+        agent: str,
+        summary: str,
+        tool: str,
+        document: str = "",
+    ) -> Activity:
+        now = _now()
+        with self._lock:
+            cursor = self._conn.execute(
+                """
+                INSERT INTO activity (created_at, user_id, user_name, agent, summary, tool, document)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    now,
+                    _text(user_id),
+                    _text(user_name) or _text(user_id),
+                    _text(agent) or "Agent",
+                    _text(summary)[:240],
+                    _text(tool)[:120],
+                    document or "",
+                ),
+            )
+            row_id = int(cursor.lastrowid)
+            extra = self._conn.execute(
+                "SELECT id FROM activity ORDER BY id DESC LIMIT -1 OFFSET ?",
+                (ACTIVITY_CAP,),
+            ).fetchall()
+            if extra:
+                self._conn.executemany("DELETE FROM activity WHERE id = ?", [(row["id"],) for row in extra])
+            self._conn.commit()
+        row = self.get_activity(row_id)
+        assert row is not None
+        return row
+
+    def list_activity(self, user_id: str, *, admin: bool) -> list[Activity]:
+        with self._lock:
+            if admin:
+                rows = self._conn.execute(
+                    "SELECT * FROM activity ORDER BY id DESC LIMIT ?",
+                    (ACTIVITY_CAP,),
+                ).fetchall()
+            else:
+                rows = self._conn.execute(
+                    "SELECT * FROM activity WHERE user_id = ? ORDER BY id DESC LIMIT ?",
+                    (_text(user_id), ACTIVITY_CAP),
+                ).fetchall()
+        return [_activity(row) for row in rows]
+
+    def get_activity(self, activity_id: int) -> Activity | None:
+        with self._lock:
+            row = self._conn.execute("SELECT * FROM activity WHERE id = ?", (int(activity_id),)).fetchone()
+        return _activity(row) if row else None
+
+    def activity_document(self, activity_id: int) -> str:
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT document FROM activity WHERE id = ?",
+                (int(activity_id),),
+            ).fetchone()
+        return _text(row["document"]) if row else ""
+
+    def mark_activity_undone(self, activity_id: int) -> Activity | None:
+        with self._lock:
+            self._conn.execute(
+                "UPDATE activity SET undone_at = ? WHERE id = ? AND undone_at IS NULL",
+                (_now(), int(activity_id)),
+            )
+            self._conn.commit()
+        return self.get_activity(activity_id)
+
+
+def _activity(row: sqlite3.Row) -> Activity:
+    undone = _text(row["undone_at"])
+    document = _text(row["document"])
+    return Activity(
+        id=int(row["id"]),
+        created_at=row["created_at"],
+        user_id=row["user_id"],
+        user_name=row["user_name"],
+        agent=row["agent"],
+        summary=row["summary"],
+        tool=row["tool"],
+        can_rollback=bool(document) and not undone,
+        undone_at=undone,
+    )
 
 
 def _session(row: sqlite3.Row) -> Session:

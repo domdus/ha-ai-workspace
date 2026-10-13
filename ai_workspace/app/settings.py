@@ -76,6 +76,7 @@ class Settings:
     host: str
     port: int
     runtime_token: str = ""
+    hass_url: str = ""
 
     def open_without_token(self) -> bool:
         """Only a runtime bound to loopback may answer without the shared token."""
@@ -125,4 +126,9 @@ class Settings:
             runtime_token=(
                 os.environ.get("RUNTIME_TOKEN", "").strip() or str(options.get("runtime_token") or "").strip()
             ),
+            hass_url=(
+                os.environ.get("HASS_URL", "").strip()
+                or os.environ.get("HOMEASSISTANT_URL", "").strip()
+                or "http://homeassistant:8123"
+            ).rstrip("/"),
         )
