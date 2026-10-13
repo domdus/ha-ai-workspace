@@ -234,13 +234,15 @@ async function ensureHost() {
   let chatApi = null;
   let mounting = null;
   let placeToken = 0;
-  const cornerFabs = () => {
+  // Config add actions live in `#fab` (older HA used `ha-fab`). On a phone the
+  // bottom tab bar lifts that control onto the same offset as `.fab.raised`.
+  const cornerButtons = () => {
     const boxes = [];
     const visit = (el, origin) => {
       const style = el.ownerDocument.defaultView.getComputedStyle(el);
       if (style.display === "none" || style.visibility === "hidden") return;
       const rect = el.getBoundingClientRect();
-      if (rect.width < 8 || rect.height < 8) return;
+      if (rect.width < 8 || rect.height < 8 || rect.height > 160) return;
       boxes.push({
         top: origin.top + rect.top,
         bottom: origin.top + rect.bottom,
@@ -250,7 +252,7 @@ async function ensureHost() {
     };
     const walk = (root, origin) => {
       if (!root?.querySelectorAll) return;
-      for (const el of root.querySelectorAll("ha-fab")) visit(el, origin);
+      for (const el of root.querySelectorAll("ha-fab, #fab, [slot='fab']")) visit(el, origin);
       for (const el of root.querySelectorAll("*")) {
         if (el.id === HOST_ID) continue;
         if (el.shadowRoot) walk(el.shadowRoot, origin);
@@ -273,12 +275,14 @@ async function ensureHost() {
     fab.style.bottom = "";
     if (fab.classList.contains("hidden")) return;
     const mine = fab.getBoundingClientRect();
-    const hit = cornerFabs().filter(
+    const hit = cornerButtons().filter(
       (box) => box.left < mine.right && box.right > mine.left && box.top < mine.bottom && box.bottom > mine.top
     );
     if (!hit.length) return;
     const top = Math.min(...hit.map((box) => box.top));
-    fab.style.bottom = `${Math.round(window.innerHeight - top + 12)}px`;
+    const needed = Math.round(window.innerHeight - top + 12);
+    const current = Math.round(window.innerHeight - mine.bottom);
+    if (needed > current) fab.style.bottom = `${needed}px`;
   };
   const schedulePlace = () => {
     const token = ++placeToken;
@@ -340,6 +344,13 @@ async function ensureHost() {
   window.addEventListener("location-changed", sync);
   window.addEventListener("popstate", sync);
   window.addEventListener("resize", schedulePlace);
+  // `narrow` / `show-tabs` is what lifts the add button above the phone tab bar.
+  const layoutHint = new MutationObserver(schedulePlace);
+  layoutHint.observe(document.body, {
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["narrow", "show-tabs", "is-wide"],
+  });
   sync();
   return host;
 }
