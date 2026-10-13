@@ -221,11 +221,12 @@ def test_forget_opens_a_new_agent_instead_of_resuming(tmp_path: Path, monkeypatc
     session = Session("s1", "u1", "cursor", "Chat", "dead-agent", "t", "t")
     first, _ = asyncio.run(runtime.open_agent(session, {}))
     assert first.agent_id == "dead-agent"
+    assert resumed == ["dead-agent"]
     runtime.forget(session)
     second, fresh = asyncio.run(runtime.open_agent(session, {}))
     assert second.agent_id == "fresh"
     assert fresh
-    assert resumed == []
+    assert resumed == ["dead-agent"]
     assert created == ["new"]
     assert session.agent_id is None
 
