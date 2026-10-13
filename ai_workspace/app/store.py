@@ -122,7 +122,7 @@ class Store:
     def set_agent_id(self, session_id: str, agent_id: str) -> None:
         self._conn.execute(
             "UPDATE sessions SET agent_id = ?, updated_at = ? WHERE id = ?",
-            (agent_id, _now(), session_id),
+            (agent_id or None, _now(), session_id),
         )
         self._conn.commit()
 

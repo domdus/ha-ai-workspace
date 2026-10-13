@@ -349,7 +349,7 @@ async def async_agent_events(
         tools=tools,
         admin=admin,
         force_tools=force_tools,
-        **(await _activity_kwargs(hass, provider, user_id)),
+        **(await _activity_kwargs(hass, provider, user_id, session.id)),
     ):
         yield event
 
@@ -781,7 +781,7 @@ class ChatView(HomeAssistantView):
                 tools=bool(images) or bool(files) or wants_house_tools(message),
                 admin=admin,
                 force_tools=not images and not files and wants_house_tools(message),
-                **(await _activity_kwargs(hass, provider, user_id)),
+                **(await _activity_kwargs(hass, provider, user_id, session.id)),
             ):
                 yield event
 
@@ -1029,7 +1029,9 @@ def _agent_label(provider: Any) -> str:
     return str(getattr(info, "label", "") or "Cursor")
 
 
-async def _activity_kwargs(hass: HomeAssistant, provider: Any, user_id: str) -> dict[str, Any]:
+async def _activity_kwargs(
+    hass: HomeAssistant, provider: Any, user_id: str, session_id: str = ""
+) -> dict[str, Any]:
     from .api_provider import ApiProvider
 
     if not isinstance(provider, ApiProvider):
@@ -1042,7 +1044,9 @@ async def _activity_kwargs(hass: HomeAssistant, provider: Any, user_id: str) -> 
     label = _agent_label(provider)
 
     async def on_tool(tool: str, args: dict, call) -> Any:
-        return await track_tool(hass, store, user_id, user_name or user_id, label, tool, args, call)
+        return await track_tool(
+            hass, store, user_id, user_name or user_id, label, tool, args, call, session_id
+        )
 
     return {"on_tool": on_tool}
 
@@ -1057,13 +1061,15 @@ def _runtime_token_ok(request: web.Request) -> bool:
     return hmac.compare_digest(value.strip().encode(), expected.encode())
 
 
-def _activity_dict(row) -> dict:
+def _activity_dict(row, chat: str = "") -> dict:
     return {
         "id": row.id,
         "created_at": row.created_at,
         "user_id": row.user_id,
         "user_name": row.user_name,
         "agent": row.agent,
+        "chat": chat or row.chat,
+        "session_id": row.session_id or "",
         "summary": row.summary,
         "tool": row.tool,
         "can_rollback": bool(row.can_rollback),
@@ -1082,7 +1088,8 @@ class ActivityView(HomeAssistantView):
         user_id = _user_id(request)
         admin = _is_admin(request)
         rows = await hass.async_add_executor_job(lambda: store.list_activity(user_id, admin=admin))
-        return self.json([_activity_dict(row) for row in rows])
+        titles = await hass.async_add_executor_job(store.session_titles, [row.session_id for row in rows])
+        return self.json([_activity_dict(row, titles.get(row.session_id) or "") for row in rows])
 
 
 class ActivityRollbackView(HomeAssistantView):
@@ -1118,7 +1125,9 @@ class ActivityRollbackView(HomeAssistantView):
         except ActivityError as exc:
             raise web.HTTPBadRequest(text=str(exc)) from exc
         updated = await hass.async_add_executor_job(store.mark_activity_undone, row_id)
-        return self.json(_activity_dict(updated or row))
+        shown = updated or row
+        live = await hass.async_add_executor_job(store.session_title, shown.session_id)
+        return self.json(_activity_dict(shown, live))
 
 
 class ActivityPrepareView(HomeAssistantView):
@@ -1153,6 +1162,7 @@ class ActivityPrepareView(HomeAssistantView):
             str(body.get("agent") or "Cursor"),
             str(body.get("tool") or ""),
             arguments,
+            str(body.get("session_id") or ""),
         )
         return self.json({"token": token})
 

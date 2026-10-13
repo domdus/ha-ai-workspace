@@ -487,22 +487,24 @@ export function mountAiWorkspace(root, options = {}) {
     <div class="${wrapClass}">
       <button type="button" class="nav-scrim" hidden aria-label="${t("close")}"></button>
       <aside>
-        <div class="nav-toolbar">
-          <ha-icon-button class="history-open" label="${t("activity")}">
-            <ha-icon icon="mdi:history"></ha-icon>
+        <div class="nav-head">
+          <div class="nav-toolbar">
+            <ha-icon-button class="history-open" label="${t("activity")}">
+              <ha-icon icon="mdi:history"></ha-icon>
+            </ha-icon-button>
+            <ha-icon-button class="nav-toggle" label="${t("hide_chats")}">
+              <ha-icon icon="mdi:dock-left"></ha-icon>
+            </ha-icon-button>
+          </div>
+          <div class="brand">${t("title")}</div>
+          <ha-icon-button class="new-chat-icon" label="${t("new_chat")}">
+            <ha-icon icon="mdi:plus"></ha-icon>
           </ha-icon-button>
-          <ha-icon-button class="nav-toggle" label="${t("hide_chats")}">
-            <ha-icon icon="mdi:dock-left"></ha-icon>
-          </ha-icon-button>
+          <ha-button class="new-chat" size="s">
+            <ha-svg-icon slot="start" path="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"></ha-svg-icon>
+            ${t("new_chat")}
+          </ha-button>
         </div>
-        <div class="brand">${t("title")}</div>
-        <ha-icon-button class="new-chat-icon" label="${t("new_chat")}">
-          <ha-icon icon="mdi:plus"></ha-icon>
-        </ha-icon-button>
-        <ha-button class="new-chat" size="s">
-          <ha-svg-icon slot="start" path="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"></ha-svg-icon>
-          ${t("new_chat")}
-        </ha-button>
         <div class="sessions" role="list"></div>
       </aside>
       <section class="chat welcome">
@@ -533,7 +535,7 @@ export function mountAiWorkspace(root, options = {}) {
               <div class="attach-row" hidden></div>
               <div class="composer-row">
               <label class="sr" for="ai-message">${t("message")}</label>
-              <textarea id="ai-message" class="message" rows="1" placeholder="${t("placeholder")}"></textarea>
+              <textarea id="ai-message" class="message" rows="1" enterkeyhint="enter" placeholder="${t("placeholder")}"></textarea>
               <div class="composer-actions">
               <input class="file-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif,.yaml,.yml,.json,.txt,.md,.csv,.xml,.toml,.html,.css,.js,.ts,.py,.log,.cfg,.ini,.conf" multiple hidden>
               <ha-icon-button class="attach" type="button" label="${t("attach")}">
@@ -559,7 +561,7 @@ export function mountAiWorkspace(root, options = {}) {
           </form>
         </div>
       </section>
-      <div class="history" hidden>
+      <div class="history" hidden aria-hidden="true">
         <div class="history-bar">
           <span>${t("activity")}</span>
           <ha-icon-button class="history-close" label="${t("close")}">
@@ -3307,10 +3309,11 @@ export function mountAiWorkspace(root, options = {}) {
     resizeComposer();
   });
   messageEl.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      form.requestSubmit();
-    }
+    if (event.key !== "Enter" || event.shiftKey) return;
+    // Phones insert a line break. The send button is the only way to submit.
+    if (window.matchMedia("(pointer: coarse)").matches) return;
+    event.preventDefault();
+    form.requestSubmit();
   });
   sendBtn.addEventListener("click", (event) => {
     event.preventDefault();
@@ -3364,8 +3367,28 @@ export function mountAiWorkspace(root, options = {}) {
     return date.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
   }
 
+  function syncHistoryButtons(open) {
+    root.querySelectorAll(".history-open").forEach((btn) => {
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+  }
+
+  function historyIsOpen() {
+    return wrap.classList.contains("history-open") || Boolean(historyEl && !historyEl.hidden);
+  }
+
   function closeHistory() {
-    if (historyEl) historyEl.hidden = true;
+    wrap.classList.remove("history-open");
+    syncHistoryButtons(false);
+    if (!historyEl) return;
+    historyEl.setAttribute("aria-hidden", "true");
+    const hide = (event) => {
+      if (event && event.target !== historyEl) return;
+      if (event && event.propertyName && event.propertyName !== "transform") return;
+      if (!wrap.classList.contains("history-open")) historyEl.hidden = true;
+    };
+    historyEl.addEventListener("transitionend", hide, { once: true });
+    window.setTimeout(hide, 320);
   }
 
   async function loadHistory() {
@@ -3401,7 +3424,23 @@ export function mountAiWorkspace(root, options = {}) {
     line.textContent = row.summary || "";
     const who = document.createElement("p");
     who.className = "history-who";
-    who.textContent = [row.user_name, row.agent].filter(Boolean).join(" · ");
+    const title = displayTitle(row.chat) || row.user_name || "";
+    const chatId = String(row.session_id || "").trim();
+    if (chatId && title) {
+      const link = document.createElement("a");
+      link.className = "history-chat";
+      link.href = sessionPath(chatId);
+      link.textContent = title;
+      link.addEventListener("click", (event) => {
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+        event.preventDefault();
+        closeHistory();
+        openSession(chatId);
+      });
+      who.append(link, row.agent ? ` · ${row.agent}` : "");
+    } else {
+      who.textContent = [title, row.agent].filter(Boolean).join(" · ");
+    }
     item.append(when, line, who);
     if (row.undone_at) {
       const restored = document.createElement("p");
@@ -3411,11 +3450,14 @@ export function mountAiWorkspace(root, options = {}) {
       return item;
     }
     if (!row.can_rollback) return item;
-    const button = document.createElement("button");
-    button.type = "button";
+    const button = document.createElement("ha-button");
     button.className = "history-rollback";
+    button.setAttribute("size", "s");
+    button.setAttribute("appearance", "plain");
     button.textContent = t("rollback");
     button.addEventListener("click", async () => {
+      const ok = await askConfirm(t("rollback"), t("rollback_confirm", { summary: row.summary || "" }), t("rollback"));
+      if (!ok) return;
       button.disabled = true;
       const resp = await apiFetch(`${API}/activity/${row.id}/rollback`, { method: "POST", body: "{}" });
       if (!resp || !resp.ok) {
@@ -3432,13 +3474,24 @@ export function mountAiWorkspace(root, options = {}) {
   async function openHistory() {
     if (!historyEl) return;
     historyEl.hidden = false;
+    historyEl.setAttribute("aria-hidden", "false");
+    syncHistoryButtons(true);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => wrap.classList.add("history-open"));
+    });
     await loadHistory();
   }
 
+  function toggleHistory() {
+    if (historyIsOpen()) closeHistory();
+    else openHistory();
+  }
+
   root.querySelectorAll(".history-open").forEach((btn) => {
+    btn.setAttribute("aria-expanded", "false");
     btn.addEventListener("click", (event) => {
       event.preventDefault();
-      openHistory();
+      toggleHistory();
     });
   });
   root.querySelector(".history-close")?.addEventListener("click", (event) => {
@@ -3459,7 +3512,7 @@ export function mountAiWorkspace(root, options = {}) {
   sessionsEl?.addEventListener("scroll", closeSessionMenu, { passive: true });
   listen(window, "keydown", (event) => {
     if (event.key !== "Escape") return;
-    if (historyEl && !historyEl.hidden) {
+    if (wrap.classList.contains("history-open")) {
       closeHistory();
       return;
     }

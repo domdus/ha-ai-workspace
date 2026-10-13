@@ -102,13 +102,53 @@ def parse_tool_call(body: bytes) -> tuple[str, dict[str, Any]] | None:
     return name, arguments
 
 
+def _json_messages(text: str):
+    body = text.strip()
+    if body.startswith("{") or body.startswith("["):
+        yield body
+        return
+    for line in text.splitlines():
+        line = line.strip()
+        if line.startswith("data:"):
+            line = line[5:].strip()
+        if line.startswith("{") or line.startswith("["):
+            yield line
+
+
 def tool_response_ok(status: int, raw: bytes) -> bool:
+    """True when the MCP call itself succeeded.
+
+    A description or skill text may contain the words ``isError: true``. Only
+    the tool result flag counts. A JSON-RPC result with no flag is success.
+    """
     if status >= 400:
         return False
     text = raw.decode("utf-8", "replace")
-    if '"isError": true' in text or '"isError":true' in text:
-        return False
-    return True
+    saw_result = False
+    for chunk in _json_messages(text):
+        try:
+            payload = json.loads(chunk)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(payload, list):
+            messages = [item for item in payload if isinstance(item, dict)]
+        elif isinstance(payload, dict):
+            messages = [payload]
+        else:
+            continue
+        for message in messages:
+            result = message.get("result") if isinstance(message.get("result"), dict) else message
+            if not isinstance(result, dict):
+                continue
+            if result.get("isError") is True:
+                return False
+            if "isError" in result or "content" in result or "structuredContent" in result:
+                saw_result = True
+            elif result.get("success") is True:
+                saw_result = True
+    if saw_result:
+        return True
+    return '"isError": true' not in text and '"isError":true' not in text
 
 
 async def proxy_mcp(request: Request, secret: str, digest: str, actor: str = "") -> Response:
@@ -194,6 +234,7 @@ async def _activity_prepare(
     payload = {
         "user_id": who["user_id"],
         "agent": who.get("agent") or "Cursor",
+        "session_id": actor,
         "tool": name,
         "arguments": arguments,
     }

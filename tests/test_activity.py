@@ -16,7 +16,9 @@ def _load(name: str, filename: str):
 
 
 activity = _load("ai_workspace_activity", "activity.py")
-Store = _load("ai_workspace_store_activity", "store.py").Store
+_store = _load("ai_workspace_store_activity", "store.py")
+Store = _store.Store
+ACTIVITY_CAP = _store.ACTIVITY_CAP
 
 
 def test_automation_update_and_create():
@@ -92,8 +94,18 @@ def test_describe_index_names_the_change():
 def test_activity_rows_are_private_and_capped(tmp_path: Path):
     store = Store(tmp_path / "db.sqlite")
     first = store.add_activity(
-        "user-1", "Ada", "Cursor", "Updated automation Morning", "ha_config_set_automation", '{"kind":"automation"}'
+        "user-1",
+        "Ada",
+        "Cursor",
+        "Updated automation Morning",
+        "ha_config_set_automation",
+        '{"kind":"automation"}',
+        "chat-1",
+        "Morning lights",
     )
+    assert first.session_id == "chat-1"
+    assert first.chat == "Morning lights"
+    assert store.session_title("chat-1") == ""
     store.add_activity("user-2", "Bea", "OpenAI", "Created script Bed", "ha_config_set_script", "")
     assert first.can_rollback is True
     own = store.list_activity("user-1", admin=False)
@@ -103,7 +115,12 @@ def test_activity_rows_are_private_and_capped(tmp_path: Path):
     assert undone is not None
     assert undone.can_rollback is False
     assert store.activity_document(first.id).startswith("{")
-    for number in range(301):
+    snapshot = store.change_path(first.id)
+    snapshot.parent.mkdir(parents=True, exist_ok=True)
+    snapshot.write_text("id: morning\nalias: Morning\n", encoding="utf-8")
+    for number in range(ACTIVITY_CAP + 1):
         store.add_activity("user-1", "Ada", "Cursor", f"Updated entity {number}", "ha_set_entity", "")
-    assert len(store.list_activity("user-1", admin=True)) == 300
+    assert len(store.list_activity("user-1", admin=True)) == ACTIVITY_CAP
+    assert store.get_activity(first.id) is None
+    assert snapshot.exists() is False
     store.close()

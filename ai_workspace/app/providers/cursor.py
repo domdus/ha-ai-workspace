@@ -184,6 +184,11 @@ class CursorRuntime:
         self._used_at.pop(session_id, None)
         self._with_tools.discard(session_id)
 
+    def forget(self, session: Session) -> None:
+        """Drop a dead Cursor thread so the next turn creates a new agent."""
+        self.drop(session.id)
+        session.agent_id = None
+
     async def aclose(self) -> None:
         client = self._client
         self._client = None
@@ -267,6 +272,14 @@ class CursorProvider:
         if agent_id:
             on_agent_id(str(agent_id))
         outbound = apply_handoff(message, handoff, created, question=asked or question)
+        logger.info(
+            "cursor outbound session=%s chars=%s handoff=%s tools=%s created=%s",
+            session.id,
+            len(outbound),
+            len(handoff or ""),
+            "on" if attach_tools else "off",
+            created,
+        )
         try:
             run = await _start_run(agent, outbound, images, run_servers)
         except Exception as exc:
@@ -281,16 +294,16 @@ class CursorProvider:
                     stream_error = str(event.get("message") or "")
                 yield event
             result = await run.wait()
-            if _empty_failed_run(result) and not stream_error:
-                logger.info("retrying empty cursor run session=%s model=%s", session.id, used_model)
-                run = await _start_run(agent, outbound, images, run_servers)
-                run_id = getattr(run, "id", "") or run_id
-                async for event in _iter_messages(run):
-                    if event.get("type") == "error" and not stream_error:
-                        stream_error = str(event.get("message") or "")
-                    yield event
-                result = await run.wait()
+            logger.info(
+                "cursor run finished session=%s run=%s status=%s duration=%s created=%s",
+                session.id,
+                run_id,
+                getattr(result, "status", None),
+                getattr(result, "duration_ms", None),
+                created,
+            )
         except Exception as exc:
+            self.runtime.forget(session)
             yield {"type": "error", "message": _public_error(exc, self.settings.cursor_api_key)}
             return
         status = str(getattr(result, "status", "") or "")
@@ -307,6 +320,8 @@ class CursorProvider:
                 result,
             )
             await _log_conversation(run, run_id)
+            self.runtime.forget(session)
+            on_agent_id("")
             yield {
                 "type": "error",
                 "message": _run_error_text(result, run_id, used_model, stream_error),
@@ -494,18 +509,6 @@ def _request_id(result: Any) -> str:
     return ""
 
 
-def _empty_failed_run(result: Any) -> bool:
-    status = str(getattr(result, "status", "") or "").lower()
-    text = str(getattr(result, "result", None) or "").strip()
-    if text:
-        return False
-    if status == "error":
-        return True
-    if status in {"finished", "success", ""} and getattr(result, "usage", None) is None:
-        return True
-    return False
-
-
 def _run_error_text(result: Any, run_id: str, model: str, stream_error: str | None = None) -> str:
     for attr in ("result", "error", "message", "error_message", "failure_reason"):
         text = _nested_text(getattr(result, attr, None))
@@ -519,7 +522,9 @@ def _run_error_text(result: Any, run_id: str, model: str, stream_error: str | No
     bits = [f"Run failed{suffix}."]
     if used:
         bits.append(f"Cursor ended the {used} run with no assistant text.")
-    bits.append("The Cursor account may have reached its usage or budget limit.")
+    duration = getattr(result, "duration_ms", None)
+    if isinstance(duration, (int, float)) and duration > 0:
+        bits.append(f"It stopped after {int(duration)} ms.")
     if request:
         bits.append(f"request_id={request}")
     bits.append("Retry the message.")

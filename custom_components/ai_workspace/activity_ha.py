@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -44,6 +45,8 @@ class Pending:
     summary: str
     document: dict[str, Any] | None
     watch: dict[str, tuple[str, str]] | None
+    session_id: str
+    chat: str
     at: float
 
 
@@ -71,11 +74,12 @@ async def track_tool(
     tool: str,
     arguments: dict[str, Any],
     call,
+    session_id: str = "",
 ):
     """Snapshot, run the tool, and keep a row only when the call succeeds."""
     token = None
     try:
-        token = await prepare(hass, user_id, user_name, agent, tool, arguments)
+        token = await prepare(hass, user_id, user_name, agent, tool, arguments, session_id)
     except Exception:
         logger.warning("activity prepare failed", exc_info=True)
     try:
@@ -102,6 +106,7 @@ async def prepare(
     agent: str,
     tool: str,
     arguments: dict[str, Any] | None,
+    session_id: str = "",
 ) -> str | None:
     args = arguments if isinstance(arguments, dict) else {}
     change = classify(tool, args)
@@ -140,14 +145,54 @@ async def prepare(
         summary=text,
         document=document if isinstance(document, dict) else None,
         watch=watch,
+        session_id=str(session_id or ""),
+        chat=_session_title(hass, session_id),
         at=time.monotonic(),
     )
     return token
 
 
+def _same_body(left: object, right: object) -> bool:
+    return json.dumps(left, sort_keys=True, default=str, ensure_ascii=False) == json.dumps(
+        right, sort_keys=True, default=str, ensure_ascii=False
+    )
+
+
+def _saved_body(document: dict[str, Any]) -> object:
+    if "item" in document:
+        return document.get("item")
+    if document.get("kind") == "dashboard":
+        return document.get("config")
+    return {
+        key: document.get(key)
+        for key in ("entity_id", "name", "icon", "area_id", "disabled_by", "hidden_by", "aliases", "labels", "categories")
+    }
+
+
+async def _document_changed(hass: HomeAssistant, document: dict[str, Any]) -> bool:
+    """True when the saved config document is different after the tool returned."""
+    kind = str(document.get("kind") or "")
+    item_id = str(document.get("entity_id") or "") if kind == "entity" else str(document.get("id") or "")
+    if not kind or not item_id:
+        return False
+    current = await snapshot(
+        hass,
+        Change(
+            kind=kind,
+            action="update",
+            item_id=item_id,
+            label="",
+            domain=str(document.get("domain") or ""),
+        ),
+    )
+    if current is None:
+        return True
+    return not _same_body(_saved_body(document), _saved_body(current))
+
+
 async def commit(hass: HomeAssistant, store: Store, token: str, *, ok: bool) -> None:
     pending = _pending(hass).pop(str(token or ""), None)
-    if pending is None or not ok:
+    if pending is None:
         return
     text = pending.summary
     document = pending.document
@@ -156,9 +201,26 @@ async def commit(hass: HomeAssistant, store: Store, token: str, *, ok: bool) -> 
         document = None
         if not text:
             return
+    elif isinstance(document, dict):
+        # A description-only or action-alias edit is still a change. Keep it
+        # when the document moved, even if the tool result looked like a failure.
+        # HA may return from the config API before automations.yaml is flushed.
+        changed = await _document_changed(hass, document)
+        if not ok and not changed:
+            for delay in (0.3, 0.8):
+                await asyncio.sleep(delay)
+                changed = await _document_changed(hass, document)
+                if changed:
+                    break
+        if not ok and not changed:
+            logger.info("activity skipped %s ok=false unchanged", pending.tool)
+            return
+    elif not ok:
+        return
     if not text:
         return
-    await hass.async_add_executor_job(
+    chat = _session_title(hass, pending.session_id) or pending.chat
+    row = await hass.async_add_executor_job(
         store.add_activity,
         pending.user_id,
         pending.user_name,
@@ -166,7 +228,11 @@ async def commit(hass: HomeAssistant, store: Store, token: str, *, ok: bool) -> 
         text,
         pending.tool,
         json.dumps(document, ensure_ascii=False, default=str) if document else "",
+        pending.session_id,
+        chat,
     )
+    if isinstance(document, dict) and document.get("kind") in _YAML:
+        await hass.async_add_executor_job(_write_change_file, store, row, document)
 
 
 async def rollback(hass: HomeAssistant, document: dict[str, Any]) -> None:
@@ -203,6 +269,36 @@ async def collect_index(hass: HomeAssistant) -> dict[str, tuple[str, str]]:
     yaml_index.update(_entity_index(hass))
     yaml_index.update(await _dashboard_index(hass))
     return yaml_index
+
+
+def _write_change_file(store: Store, row, document: dict[str, Any]) -> None:
+    """YAML copy of one automation, script, or scene for recovery if Home Assistant will not start."""
+    kind = str(document.get("kind") or "")
+    item = document.get("item")
+    item_id = str(document.get("id") or "")
+    if kind not in _YAML or not isinstance(item, dict):
+        return
+    body: Any = {item_id: item} if kind == "script" and item_id else item
+    header = "\n".join(
+        [
+            "# AI Workspace change snapshot",
+            f"# {row.created_at}",
+            f"# {row.summary}",
+            f"# {row.chat} · {row.agent}".strip(" ·"),
+            f"# Restore: merge this into {_YAML[kind]} (same id), then reload {kind}s.",
+            "",
+        ]
+    )
+    path = store.change_path(row.id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    write_utf8_file_atomic(str(path), header + dump(body))
+
+
+def _session_title(hass: HomeAssistant, session_id: str) -> str:
+    store = (hass.data.get(DOMAIN) or {}).get("store")
+    if store is None or not str(session_id or "").strip():
+        return ""
+    return str(store.session_title(session_id) or "")
 
 
 def _read_yaml(path: str) -> Any:
