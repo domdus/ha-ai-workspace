@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0
+
+- A failed Cursor run is dropped, so the next message starts a fresh agent
+- Greetings such as "Hey Cursor?" are sent without tools
+- Configuration writes are snapshotted before they run, so Change History can roll them back
+
 ## 1.0.0
 
 First public release.
