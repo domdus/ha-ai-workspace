@@ -2,7 +2,9 @@
 
 *Build your Home Assistant from the couch.*
 
-[AI Workspace chat demo](https://github.com/domdus/ha-ai-workspace/blob/main/docs/ai_workspace.webm)
+<p align="center">
+  <video src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai_workspace.webm" width="300" autoplay loop muted playsinline></video>
+</p>
 
 # AI Workspace
 
@@ -29,7 +31,9 @@ What the agent can do depends entirely on the MCP server you connect.
 An optional button on the other pages opens the same chat.
 
   
-[Floating button](https://github.com/domdus/ha-ai-workspace/blob/main/docs/ai_workspace_floating.webm)
+<p align="center">
+  <video src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai_workspace_floating.webm" width="820" autoplay loop muted playsinline></video>
+</p>
 
 Each agent can also be added as an Assist pipeline. The integration creates the pipeline for you, so you can use **Cursor AI** (or another AI) from Home Assistant's built-in Assist dialog as well.
 
