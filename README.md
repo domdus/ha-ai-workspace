@@ -3,7 +3,7 @@
 *Build your Home Assistant from the couch.*
 
 <p align="center">
-  <video src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai_workspace.webm" width="300" autoplay loop muted playsinline></video>
+  <img src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai_workspace.gif" alt="AI Workspace chat demo" width="300">
 </p>
 
 # AI Workspace
@@ -32,7 +32,7 @@ An optional button on the other pages opens the same chat.
 
   
 <p align="center">
-  <video src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai_workspace_floating.webm" width="820" autoplay loop muted playsinline></video>
+  <img src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai_workspace_floating.gif" alt="Floating button" width="820">
 </p>
 
 Each agent can also be added as an Assist pipeline. The integration creates the pipeline for you, so you can use **Cursor AI** (or another AI) from Home Assistant's built-in Assist dialog as well.
