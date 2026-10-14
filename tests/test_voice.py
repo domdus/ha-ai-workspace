@@ -110,6 +110,16 @@ def test_pipeline_voice_uses_ha_engines_then_preferred() -> None:
     assert borrowed["tts_engine"] == "tts.piper"
     assert borrowed["stt_language"] == "en"
     assert borrowed["tts_voice"] == "de_DE-thorsten-medium"
+    ours_voice = pipes.resolve_pipeline_voice(
+        "browser",
+        "tts.open_ai_text_to_speech",
+        language="de",
+        preferred_tts="tts.piper",
+        preferred_tts_voice="de_DE-thorsten-medium",
+        engine_tts_voice="ash",
+    )
+    assert ours_voice["tts_engine"] == "tts.open_ai_text_to_speech"
+    assert ours_voice["tts_voice"] == "ash"
     empty = pipes.resolve_pipeline_voice("browser", "off", language="de")
     assert empty["stt_engine"] is None
     assert empty["tts_engine"] is None
@@ -178,6 +188,14 @@ def test_pick_assist_tts_skips_google_translate() -> None:
     assert pipes.pick_assist_tts(setting="off", engines=engines) == "tts.open_ai_text_to_speech"
     empty = pipes.resolve_pipeline_voice("browser", "tts.google_translate_en_com", fallback_tts="tts.open_ai_text_to_speech")
     assert empty["tts_engine"] == "tts.open_ai_text_to_speech"
+
+
+def test_existing_engine_drops_removed_stt() -> None:
+    pipes = _load("assist_pipelines", "assist_pipelines.py")
+    engines = [("stt.whisper", "wyoming", "whisper")]
+    assert pipes._existing_engine("stt.whisper", engines) == "stt.whisper"
+    assert pipes._existing_engine("stt.open_ai_speech_to_text", engines) == ""
+    assert pipes._existing_engine("browser", engines) == "browser"
 
 
 def test_assist_pipeline_keeps_agent_title() -> None:

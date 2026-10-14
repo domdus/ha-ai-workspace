@@ -24,6 +24,10 @@ function speechIsShort(text) {
   return words.length <= 3;
 }
 
+function speechIsCompleteSentence(text) {
+  return /[.!?。！？]["»«”’')\]]*\s*$/u.test(String(text || "").trim());
+}
+
 function pullSentence(text) {
   const para = /^[\s\S]*?\n\s*\n/.exec(text);
   const sentence = /^[\s\S]*?[.!?。！？]["»«”’')\]]*?(?=\s+(?:\p{Lu}|\p{Lt}|[„"«(])|\s*\n)/u.exec(text);
@@ -90,10 +94,11 @@ function takeLightSpeech(held, started, flush) {
   return { pieces: pieces.filter(Boolean), rest };
 }
 
-function takeHeavySpeech(held, flush) {
+function takeHeavySpeech(held, started, flush) {
   const pieces = [];
   let rest = String(held || "");
   let bundle = "";
+  let first = !started;
 
   const emit = () => {
     const spoken = bundle.trim();
@@ -108,17 +113,28 @@ function takeHeavySpeech(held, flush) {
     if (!next) {
       const tail = trailingSentence(rest);
       if (!tail) break;
-      if (!flush && size(bundle + tail.piece) < TARGET_CHARS) break;
+      const nextSize = size(bundle + tail.piece);
+      if (!flush && first && speechIsShort(bundle + tail.piece)) break;
+      if (!flush && !first && nextSize < TARGET_CHARS) break;
       next = tail;
     }
     const candidate = `${bundle}${next.piece}`;
     if (bundle.trim() && size(candidate) > MAX_CHARS) {
       emit();
+      first = false;
       continue;
     }
     rest = next.rest;
     bundle = candidate;
-    if (size(bundle) >= TARGET_CHARS) emit();
+    if (first && !speechIsShort(bundle) && speechIsCompleteSentence(bundle)) {
+      emit();
+      first = false;
+      continue;
+    }
+    if (size(bundle) >= TARGET_CHARS) {
+      emit();
+      first = false;
+    }
   }
   if (flush) {
     const spoken = `${bundle}${rest}`.trim();
@@ -129,6 +145,6 @@ function takeHeavySpeech(held, flush) {
 }
 
 export function takeSpeech(held, started, flush, options = {}) {
-  if (options && options.heavy) return takeHeavySpeech(held, flush);
+  if (options && options.heavy) return takeHeavySpeech(held, started, flush);
   return takeLightSpeech(held, started, flush);
 }

@@ -124,3 +124,13 @@ def test_excerpt_is_read_only() -> None:
     assert 'chat "Weather entities"' in note
     assert "Read-only" in note
     assert "sensor.outdoor_temp" in note
+
+
+def test_merge_reply_keeps_intro_before_tools() -> None:
+    scope = _scope()
+    intro = "Ich suche in der Installation nach Bewässerung und dem heutigen Verlauf."
+    later = "Heute ist die Bewässerung zweimal gelaufen."
+    assert scope.merge_reply_text(intro, later) == f"{intro}\n\n{later}"
+    assert scope.merge_reply_text(f"{intro}\n\n{later}", later) == f"{intro}\n\n{later}"
+    assert scope.merge_reply_text(later, later) == later
+    assert scope.merge_reply_text(later, "") == later

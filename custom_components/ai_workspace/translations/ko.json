@@ -205,13 +205,13 @@
             "cursor_api_key": "Cursor API 키",
             "model": "모델",
             "effort": "노력",
-            "assist": "Assist에서도 사용"
+            "assist": "Assist에 추가"
           },
           "data_description": {
             "cursor_api_key": "cursor.com/dashboard/integrations에서. 편집 시 비워 두면 저장된 키를 유지합니다. 런타임에 이미 CURSOR_API_KEY가 있으면 비워 두세요.",
             "model": "하나를 고르거나 id를 입력하세요. 비워 두면 Composer를 씁니다.",
             "effort": "빠름, 높음 또는 높음 빠름. Composer는 높음을 고르지 않으면 빠름을 씁니다.",
-            "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다."
+            "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 두고, 이 에이전트가 만든 Assist 파이프라인을 제거합니다."
           }
         },
         "provider_cloud": {
@@ -224,12 +224,13 @@
             "effort": "노력",
             "low_token": "적은 토큰",
             "check_house": "항상 먼저 집 확인",
-            "assist": "Assist에서도 사용",
-            "assist_stt": "음성-텍스트도 추가",
+            "assist": "Assist에 추가",
+            "assist_stt": "음성-텍스트 추가",
             "stt_model": "음성-텍스트 모델",
-            "assist_tts": "텍스트-음성도 추가",
+            "assist_tts": "텍스트-음성 추가",
             "tts_model": "텍스트-음성 모델",
-            "tts_voice": "목소리"
+            "tts_voice": "목소리",
+            "tts_speed": "속도"
           },
           "data_description": {
             "borrow": "해당 통합이 이미 저장한 키를 씁니다. 다른 통합은 그대로 둡니다.",
@@ -238,12 +239,13 @@
             "effort": "모델이 지원하면 빠름, 높음 또는 높음 빠름.",
             "low_token": "짧은 요청과 도구 없음. 작은 모델이 답할 수 있습니다. 집을 확인하거나 바꾸지는 못합니다.",
             "check_house": "모든 메시지(인사와 감사 제외)의 첫 단계에서 도구를 호출해야 하므로, 집에 관한 답변은 실시간 데이터를 바탕으로 합니다. 도구를 스스로 안정적으로 호출하는 모델이거나 일반 질문에서 도구 호출 한 번을 아끼려면 끄세요.",
-            "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다.",
-            "assist_stt": "이 에이전트의 API 키로 Home Assistant 음성-텍스트 엔진을 만들고 모든 AI Workspace Assist 파이프라인(Cursor 포함)에 연결합니다. 다른 엔진을 이미 쓰면 끄세요.",
+            "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 두고, 이 에이전트가 만든 Assist 파이프라인을 제거합니다.",
+            "assist_stt": "이 에이전트의 API 키로 Home Assistant 음성-텍스트 엔진을 만들고 모든 AI Workspace Assist 파이프라인(Cursor 포함)에 연결합니다. 끄면 이 에이전트가 만든 음성-텍스트 엔진을 제거합니다.",
             "stt_model": "비우면 공급자 기본값을 씁니다. 다른 id를 입력할 수 있습니다.",
-            "assist_tts": "이 에이전트의 API 키로 Home Assistant 텍스트-음성 엔진을 만들고 모든 AI Workspace Assist 파이프라인(Cursor 포함)에 연결합니다. Piper나 다른 목소리를 이미 쓰면 끄세요.",
+            "assist_tts": "이 에이전트의 API 키로 Home Assistant 텍스트-음성 엔진을 만들고 모든 AI Workspace Assist 파이프라인(Cursor 포함)에 연결합니다. 끄면 이 에이전트가 만든 텍스트-음성 엔진을 제거합니다.",
             "tts_model": "비우면 gpt-4o-mini-tts를 씁니다. tts-1이 더 저렴합니다. 다른 id를 입력할 수 있습니다.",
-            "tts_voice": "Coral이 기본입니다. Assist 파이프라인의 목소리 필드가 이를 덮어쓸 수 있습니다."
+            "tts_voice": "Coral이 기본입니다. 이 에이전트가 만든 Assist 파이프라인이 이 목소리를 씁니다.",
+            "tts_speed": "이 목소리가 말하는 속도입니다. 1×가 보통입니다. AI Workspace와 Assist에 적용됩니다."
           }
         },
         "provider_ollama": {
@@ -255,7 +257,7 @@
             "effort": "노력",
             "low_token": "적은 토큰",
             "check_house": "항상 먼저 집 확인",
-            "assist": "Assist에서도 사용"
+            "assist": "Assist에 추가"
           },
           "data_description": {
             "api_base": "Usually {example_url}",
@@ -263,7 +265,7 @@
             "effort": "모델이 지원할 때 사용합니다.",
             "low_token": "짧은 요청과 도구 없음. 작은 모델이 답할 수 있습니다. 집을 확인하거나 바꾸지는 못합니다.",
             "check_house": "모든 메시지(인사와 감사 제외)의 첫 단계에서 도구를 호출해야 하므로, 집에 관한 답변은 실시간 데이터를 바탕으로 합니다. 도구를 스스로 안정적으로 호출하는 모델이거나 일반 질문에서 도구 호출 한 번을 아끼려면 끄세요.",
-            "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다."
+            "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 두고, 이 에이전트가 만든 Assist 파이프라인을 제거합니다."
           }
         },
         "provider_azure": {
@@ -277,7 +279,7 @@
             "effort": "노력",
             "low_token": "적은 토큰",
             "check_house": "항상 먼저 집 확인",
-            "assist": "Assist에서도 사용"
+            "assist": "Assist에 추가"
           },
           "data_description": {
             "api_key": "Azure OpenAI 키. 편집 시 비워 두면 저장된 키를 유지합니다.",
@@ -287,7 +289,7 @@
             "effort": "배포가 지원할 때 사용합니다.",
             "low_token": "짧은 요청과 도구 없음. 작은 모델이 답할 수 있습니다. 집을 확인하거나 바꾸지는 못합니다.",
             "check_house": "모든 메시지(인사와 감사 제외)의 첫 단계에서 도구를 호출해야 하므로, 집에 관한 답변은 실시간 데이터를 바탕으로 합니다. 도구를 스스로 안정적으로 호출하는 모델이거나 일반 질문에서 도구 호출 한 번을 아끼려면 끄세요.",
-            "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다."
+            "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 두고, 이 에이전트가 만든 Assist 파이프라인을 제거합니다."
           }
         },
         "provider_compatible": {
@@ -300,12 +302,13 @@
             "effort": "노력",
             "low_token": "적은 토큰",
             "check_house": "항상 먼저 집 확인",
-            "assist": "Assist에서도 사용",
-            "assist_stt": "음성-텍스트도 추가",
+            "assist": "Assist에 추가",
+            "assist_stt": "음성-텍스트 추가",
             "stt_model": "음성-텍스트 모델",
-            "assist_tts": "텍스트-음성도 추가",
+            "assist_tts": "텍스트-음성 추가",
             "tts_model": "텍스트-음성 모델",
-            "tts_voice": "목소리"
+            "tts_voice": "목소리",
+            "tts_speed": "속도"
           },
           "data_description": {
             "api_key": "편집 시 비워 두면 저장된 키를 유지합니다.",
@@ -314,12 +317,13 @@
             "effort": "서버가 지원할 때 사용합니다.",
             "low_token": "짧은 요청과 도구 없음. 작은 모델이 답할 수 있습니다. 집을 확인하거나 바꾸지는 못합니다.",
             "check_house": "모든 메시지(인사와 감사 제외)의 첫 단계에서 도구를 호출해야 하므로, 집에 관한 답변은 실시간 데이터를 바탕으로 합니다. 도구를 스스로 안정적으로 호출하는 모델이거나 일반 질문에서 도구 호출 한 번을 아끼려면 끄세요.",
-            "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다.",
-            "assist_stt": "이 에이전트의 API 키로 Home Assistant 음성-텍스트 엔진을 만들고 모든 AI Workspace Assist 파이프라인(Cursor 포함)에 연결합니다. 다른 엔진을 이미 쓰면 끄세요.",
+            "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 두고, 이 에이전트가 만든 Assist 파이프라인을 제거합니다.",
+            "assist_stt": "이 에이전트의 API 키로 Home Assistant 음성-텍스트 엔진을 만들고 모든 AI Workspace Assist 파이프라인(Cursor 포함)에 연결합니다. 끄면 이 에이전트가 만든 음성-텍스트 엔진을 제거합니다.",
             "stt_model": "비우면 공급자 기본값을 씁니다. 다른 id를 입력할 수 있습니다.",
-            "assist_tts": "이 에이전트의 API 키로 Home Assistant 텍스트-음성 엔진을 만들고 모든 AI Workspace Assist 파이프라인(Cursor 포함)에 연결합니다. Piper나 다른 목소리를 이미 쓰면 끄세요.",
+            "assist_tts": "이 에이전트의 API 키로 Home Assistant 텍스트-음성 엔진을 만들고 모든 AI Workspace Assist 파이프라인(Cursor 포함)에 연결합니다. 끄면 이 에이전트가 만든 텍스트-음성 엔진을 제거합니다.",
             "tts_model": "비우면 gpt-4o-mini-tts를 씁니다. tts-1이 더 저렴합니다. 다른 id를 입력할 수 있습니다.",
-            "tts_voice": "Coral이 기본입니다. Assist 파이프라인의 목소리 필드가 이를 덮어쓸 수 있습니다."
+            "tts_voice": "Coral이 기본입니다. 이 에이전트가 만든 Assist 파이프라인이 이 목소리를 씁니다.",
+            "tts_speed": "이 목소리가 말하는 속도입니다. 1×가 보통입니다. AI Workspace와 Assist에 적용됩니다."
           }
         }
       },

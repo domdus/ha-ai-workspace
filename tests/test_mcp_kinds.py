@@ -87,6 +87,11 @@ def test_text_to_speech_defaults_on_for_openai_style_agents() -> None:
     assert const.assist_tts_enabled({}, "cursor") is False
     assert const.resolved_tts_voice({}) == "coral"
     assert const.resolved_tts_voice({"tts_voice": "nova"}) == "nova"
+    assert const.resolved_tts_speed({}) == 1.0
+    assert const.resolved_tts_speed({"tts_speed": "1.5"}) == 1.5
+    assert const.resolved_tts_speed({"tts_speed": "9"}) == 4.0
+    assert const.tts_speed_choice(1.0) == "1"
+    assert const.tts_speed_choice(1.5) == "1.5"
     assert const.is_placeholder_tts("off")
     assert const.is_placeholder_tts("tts.google_translate_en_com")
     assert not const.is_placeholder_tts("tts.piper")

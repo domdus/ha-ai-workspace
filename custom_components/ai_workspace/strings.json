@@ -205,13 +205,13 @@
             "cursor_api_key": "Cursor API key",
             "model": "Model",
             "effort": "Effort",
-            "assist": "Also use in Assist"
+            "assist": "Add to Assist"
           },
           "data_description": {
             "cursor_api_key": "From cursor.com/dashboard/integrations. Leave blank when editing to keep the saved key. Leave empty when the Runtime already has CURSOR_API_KEY.",
             "model": "Pick one or type an id. Empty uses Composer.",
             "effort": "Fast, High, or High fast. Composer uses Fast unless you pick High.",
-            "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
+            "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only and removes the Assist pipeline this agent added."
           }
         },
         "provider_cloud": {
@@ -224,12 +224,13 @@
             "effort": "Effort",
             "low_token": "Low token",
             "check_house": "Always check the house first",
-            "assist": "Also use in Assist",
-            "assist_stt": "Also add Speech-to-text",
+            "assist": "Add to Assist",
+            "assist_stt": "Add Speech-to-text",
             "stt_model": "Speech-to-text model",
-            "assist_tts": "Also add Text-to-speech",
+            "assist_tts": "Add Text-to-speech",
             "tts_model": "Text-to-speech model",
-            "tts_voice": "Voice"
+            "tts_voice": "Voice",
+            "tts_speed": "Speed"
           },
           "data_description": {
             "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
@@ -238,12 +239,13 @@
             "effort": "Fast, High, or High fast when the model supports it.",
             "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
             "check_house": "The first step of every message (except greetings and thanks) must call a tool, so answers about the house come from live data. Turn it off for models that call tools reliably on their own, or to save a tool round on general questions.",
-            "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only.",
-            "assist_stt": "Uses this agent's API key as a Home Assistant Speech-to-text engine and assigns it to every AI Workspace Assist pipeline (including Cursor). Off if you already use another engine.",
+            "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only and removes the Assist pipeline this agent added.",
+            "assist_stt": "Uses this agent's API key as a Home Assistant Speech-to-text engine and assigns it to every AI Workspace Assist pipeline (including Cursor). Off removes the Speech-to-text engine this agent added.",
             "stt_model": "Empty uses the provider default. Whisper is cheaper; gpt-4o-mini-transcribe is the OpenAI default. You can type another id.",
-            "assist_tts": "Uses this agent's API key as a Home Assistant Text-to-speech engine and assigns it to every AI Workspace Assist pipeline (including Cursor). Off if you already use Piper or another voice.",
+            "assist_tts": "Uses this agent's API key as a Home Assistant Text-to-speech engine and assigns it to every AI Workspace Assist pipeline (including Cursor). Off removes the Text-to-speech engine this agent added.",
             "tts_model": "Empty uses gpt-4o-mini-tts. tts-1 is cheaper. You can type another id.",
-            "tts_voice": "Coral is the default. The same voices speak German, French, and the other languages you pick under Assist → Language. The pipeline Voice field can override this."
+            "tts_voice": "Coral is the default. The same voices speak German, French, and the other languages you pick under Assist → Language. Assist pipelines this agent created use this voice.",
+            "tts_speed": "How fast this voice speaks. 1× is normal. Applies to AI Workspace and Assist."
           }
         },
         "provider_ollama": {
@@ -255,7 +257,7 @@
             "effort": "Effort",
             "low_token": "Low token",
             "check_house": "Always check the house first",
-            "assist": "Also use in Assist"
+            "assist": "Add to Assist"
           },
           "data_description": {
             "api_base": "Usually {example_url}",
@@ -263,7 +265,7 @@
             "effort": "Used when the model supports it.",
             "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
             "check_house": "The first step of every message (except greetings and thanks) must call a tool, so answers about the house come from live data. Turn it off for models that call tools reliably on their own, or to save a tool round on general questions.",
-            "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
+            "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only and removes the Assist pipeline this agent added."
           }
         },
         "provider_azure": {
@@ -277,7 +279,7 @@
             "effort": "Effort",
             "low_token": "Low token",
             "check_house": "Always check the house first",
-            "assist": "Also use in Assist"
+            "assist": "Add to Assist"
           },
           "data_description": {
             "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key.",
@@ -287,7 +289,7 @@
             "effort": "Used when the deployment supports it.",
             "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
             "check_house": "The first step of every message (except greetings and thanks) must call a tool, so answers about the house come from live data. Turn it off for models that call tools reliably on their own, or to save a tool round on general questions.",
-            "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only."
+            "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only and removes the Assist pipeline this agent added."
           }
         },
         "provider_compatible": {
@@ -300,12 +302,13 @@
             "effort": "Effort",
             "low_token": "Low token",
             "check_house": "Always check the house first",
-            "assist": "Also use in Assist",
-            "assist_stt": "Also add Speech-to-text",
+            "assist": "Add to Assist",
+            "assist_stt": "Add Speech-to-text",
             "stt_model": "Speech-to-text model",
-            "assist_tts": "Also add Text-to-speech",
+            "assist_tts": "Add Text-to-speech",
             "tts_model": "Text-to-speech model",
-            "tts_voice": "Voice"
+            "tts_voice": "Voice",
+            "tts_speed": "Speed"
           },
           "data_description": {
             "api_key": "Leave blank when editing to keep the saved key.",
@@ -314,12 +317,13 @@
             "effort": "Used when the server supports it.",
             "low_token": "A short prompt and no tools, so a small model can answer. It cannot check or change the house.",
             "check_house": "The first step of every message (except greetings and thanks) must call a tool, so answers about the house come from live data. Turn it off for models that call tools reliably on their own, or to save a tool round on general questions.",
-            "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only.",
-            "assist_stt": "Uses this agent's API key as a Home Assistant Speech-to-text engine and assigns it to every AI Workspace Assist pipeline (including Cursor). Off if you already use another engine.",
+            "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only and removes the Assist pipeline this agent added.",
+            "assist_stt": "Uses this agent's API key as a Home Assistant Speech-to-text engine and assigns it to every AI Workspace Assist pipeline (including Cursor). Off removes the Speech-to-text engine this agent added.",
             "stt_model": "Empty uses the provider default. Whisper is cheaper; gpt-4o-mini-transcribe is the OpenAI default. You can type another id.",
-            "assist_tts": "Uses this agent's API key as a Home Assistant Text-to-speech engine and assigns it to every AI Workspace Assist pipeline (including Cursor). Off if you already use Piper or another voice.",
+            "assist_tts": "Uses this agent's API key as a Home Assistant Text-to-speech engine and assigns it to every AI Workspace Assist pipeline (including Cursor). Off removes the Text-to-speech engine this agent added.",
             "tts_model": "Empty uses gpt-4o-mini-tts. tts-1 is cheaper. You can type another id.",
-            "tts_voice": "Coral is the default. The same voices speak German, French, and the other languages you pick under Assist → Language. The pipeline Voice field can override this."
+            "tts_voice": "Coral is the default. The same voices speak German, French, and the other languages you pick under Assist → Language. Assist pipelines this agent created use this voice.",
+            "tts_speed": "How fast this voice speaks. 1× is normal. Applies to AI Workspace and Assist."
           }
         }
       },

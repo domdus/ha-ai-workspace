@@ -1047,7 +1047,7 @@ export function mountAiWorkspace(root, options = {}) {
   function addChip(tools, event, animate) {
     if (!event?.text || event.type === "image" || event.type === "file") return;
     const list = ensureToolsChrome(tools);
-    const kind = animate ? chipClass(event) : "done";
+    const kind = chipClass(event);
     const name = String(event.name || "");
     const callId = String(event.id || event.call_id || "");
     const label = chipLabel(event.text);
@@ -2142,6 +2142,7 @@ export function mountAiWorkspace(root, options = {}) {
         createdAt: message.created_at,
       });
     }
+    settleTools(logEl);
     const lastUser = [...messages].reverse().find((message) => message.role === "user");
     refreshTurnHistory(lastUser?.created_at || "");
     clipToBottom();
@@ -2859,8 +2860,11 @@ export function mountAiWorkspace(root, options = {}) {
   function fillSpeakAhead() {
     while (speakInflight.length < 2 && speakPending.length) {
       if (voice.ttsHeavy) {
-        const first = speechPlain(speakPending[0]).length;
-        if (!speakFlush && first < 160 && pendingChars() < 280) break;
+        if (!speakInflight.length) {
+          speakInflight.push(fetchSpeech(speakPending.shift(), speakGen));
+          continue;
+        }
+        if (!speakFlush && pendingChars() < 280) break;
         const text = takePendingClip();
         if (!text) break;
         speakInflight.push(fetchSpeech(text, speakGen));

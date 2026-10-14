@@ -123,12 +123,35 @@ def preferred_workspace_tts(hass: HomeAssistant) -> str:
     return ""
 
 
+def _tts_engine_exists(hass: HomeAssistant, engine: str) -> bool:
+    chosen = str(engine or "").strip()
+    if not chosen or chosen == TTS_OFF:
+        return False
+    try:
+        from homeassistant.helpers import entity_registry as er
+
+        row = er.async_get(hass).async_get(chosen)
+    except Exception:
+        row = None
+    if row is not None:
+        return row.disabled_by is None
+    try:
+        return hass.states.get(chosen) is not None
+    except Exception:
+        return False
+
+
 def resolved_overlay_tts(hass: HomeAssistant, engine: str) -> str:
     """Use our voice in the overlay when the saved engine is Off or Google Translate."""
     chosen = str(engine or "").strip() or TTS_OFF
-    if not is_placeholder_tts(chosen):
+    if chosen != TTS_OFF and not is_placeholder_tts(chosen) and _tts_engine_exists(hass, chosen):
         return chosen
-    return preferred_workspace_tts(hass) or chosen
+    ours = preferred_workspace_tts(hass)
+    if ours:
+        return ours
+    if chosen != TTS_OFF and not is_placeholder_tts(chosen):
+        return TTS_OFF
+    return chosen
 
 
 def overlay_tts_heavy(hass: HomeAssistant, engine: str) -> bool:

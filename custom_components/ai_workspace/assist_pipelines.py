@@ -7,7 +7,7 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN, STT_BROWSER, TTS_LANGUAGES, TTS_OFF, is_placeholder_tts
+from .const import DEFAULT_TTS_VOICE, DOMAIN, STT_BROWSER, TTS_LANGUAGES, TTS_OFF, is_placeholder_tts
 
 _LOGGER = logging.getLogger(__name__)
 _OPENAI_STT_PLATFORM = "openai_conversation"
@@ -128,6 +128,7 @@ def resolve_pipeline_voice(
     fallback_stt: str | None = None,
     fallback_stt_language: str | None = None,
     fallback_tts: str | None = None,
+    engine_tts_voice: str | None = None,
 ) -> dict[str, Any]:
     """STT/TTS for Assist: our engines, else a discovered engine, else the default pipeline."""
     stt = stt_setting if stt_setting and stt_setting != STT_BROWSER else (fallback_stt or preferred_stt or None)
@@ -142,12 +143,18 @@ def resolve_pipeline_voice(
         stt_language = fallback_stt_language or language
     else:
         stt_language = language
+    if tts and engine_tts_voice:
+        tts_voice = engine_tts_voice
+    elif tts and tts == preferred_tts:
+        tts_voice = preferred_tts_voice
+    else:
+        tts_voice = None
     return {
         "stt_engine": stt or None,
         "stt_language": stt_language if stt else None,
         "tts_engine": tts or None,
         "tts_language": (preferred_tts_language if tts == preferred_tts else language) if tts else None,
-        "tts_voice": preferred_tts_voice if tts and tts == preferred_tts else None,
+        "tts_voice": tts_voice,
     }
 
 
@@ -213,6 +220,36 @@ def _tts_engines(hass: HomeAssistant) -> list[tuple[str, str, str]]:
     return _speech_engines(hass, "tts")
 
 
+def _workspace_tts_voice(hass: HomeAssistant, engine_id: str) -> str | None:
+    """Voice stored on the AI Workspace agent that owns this TTS engine."""
+    engine_id = str(engine_id or "").strip()
+    if not engine_id.startswith("tts."):
+        return None
+    try:
+        from homeassistant.helpers import entity_registry as er
+
+        row = er.async_get(hass).async_get(engine_id)
+    except Exception:
+        return None
+    if row is None or row.domain != "tts" or row.platform != DOMAIN:
+        return None
+    unique = str(row.unique_id or "")
+    if not unique.endswith("-tts"):
+        return None
+    agent_id = unique[: -len("-tts")]
+    entry = (hass.data.get(DOMAIN) or {}).get("entry")
+    if entry is None:
+        return None
+    try:
+        from .agents import entry_agents
+    except Exception:
+        return None
+    for agent in entry_agents(entry):
+        if agent.id == agent_id and agent.assist_tts:
+            return str(agent.tts_voice or DEFAULT_TTS_VOICE).strip() or DEFAULT_TTS_VOICE
+    return None
+
+
 def _conversation_unique_id(hass: HomeAssistant, entity_id: str) -> str | None:
     try:
         from homeassistant.helpers import entity_registry as er
@@ -263,6 +300,17 @@ def _tts_language_for(
         return language
 
 
+def _existing_engine(entity_id: str, engines: list[tuple[str, str, str]]) -> str:
+    chosen = str(entity_id or "").strip()
+    if not chosen:
+        return ""
+    if chosen in {row[0] for row in engines}:
+        return chosen
+    if chosen.startswith(("stt.", "tts.")):
+        return ""
+    return chosen
+
+
 def _settings(hass: HomeAssistant, entity_id: str, name: str, existing: Any = None) -> dict[str, Any]:
     language = str(getattr(existing, "language", None) or "").strip() or _language(hass)
     conversation_language = (
@@ -285,13 +333,20 @@ def _settings(hass: HomeAssistant, entity_id: str, name: str, existing: Any = No
         conversation_unique_id=unique_id,
         engines=tts_engines,
     )
+    tts_setting = _existing_engine(str(getattr(settings, "tts_engine", "") or ""), tts_engines)
+    chosen_tts = (
+        tts_setting
+        if tts_setting and not is_placeholder_tts(tts_setting)
+        else fallback_tts
+    )
     voice = resolve_pipeline_voice(
-        str(getattr(settings, "stt_engine", "") or ""),
-        str(getattr(settings, "tts_engine", "") or ""),
+        _existing_engine(str(getattr(settings, "stt_engine", "") or ""), engines),
+        tts_setting,
         language=language,
         fallback_stt=fallback_stt,
         fallback_stt_language=_stt_language_for(fallback_stt, language, engines),
         fallback_tts=fallback_tts,
+        engine_tts_voice=_workspace_tts_voice(hass, str(chosen_tts or "")),
         **preferred,
     )
     tts_engine = voice.get("tts_engine")
@@ -361,6 +416,32 @@ async def async_ensure_assist_pipeline(hass: HomeAssistant, entity_id: str, name
         _LOGGER.info("Assist pipeline ready for %s", entity_id)
     except Exception:
         _LOGGER.exception("Could not create Assist pipeline for %s", entity_id)
+
+
+async def async_prune_voice_entities(
+    hass: HomeAssistant,
+    entry_id: str,
+    domain: str,
+    wanted_unique_ids: set[str],
+) -> None:
+    """Remove leftover Assist/STT/TTS entities after those options are turned off."""
+    try:
+        from homeassistant.helpers import entity_registry as er
+    except Exception:
+        return
+    registry = er.async_get(hass)
+    wanted = {str(item) for item in wanted_unique_ids}
+    for row in list(er.async_entries_for_config_entry(registry, entry_id)):
+        if row.domain != domain or row.platform != DOMAIN:
+            continue
+        if str(row.unique_id or "") in wanted:
+            continue
+        if domain == "conversation":
+            await async_remove_assist_pipeline(hass, row.entity_id)
+        try:
+            registry.async_remove(row.entity_id)
+        except Exception:
+            _LOGGER.debug("voice entity prune skipped for %s", row.entity_id, exc_info=True)
 
 
 async def async_refresh_assist_pipelines(hass: HomeAssistant) -> None:

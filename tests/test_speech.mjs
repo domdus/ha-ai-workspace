@@ -29,6 +29,16 @@ const list = `Here are your automations:
 - [Close balcony reminder](/config/automation/edit/close_balcony_reminder) — on
 - [Evening living room lights](/config/automation/edit/evening_living_room) — on
 - [Hallway motion light](/config/automation/edit/hallway_motion_light) — on`;
+const firstLook = takeSpeech(
+  "Ich suche in der Installation nach Bewässerung und dem heutigen Verlauf.",
+  false,
+  false,
+  { heavy: true },
+);
+if (firstLook.pieces.length !== 1 || !firstLook.pieces[0].includes("Bewässerung")) {
+  throw new Error(`heavy TTS should speak the first sentence immediately: ${JSON.stringify(firstLook)}`);
+}
+
 const listed = takeSpeech(list, false, true, { heavy: true });
 eq(listed.pieces.length, 1, "heavy TTS keeps a short list as one clip");
 if (!listed.pieces[0].includes("Here are your automations")) {
