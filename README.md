@@ -1,12 +1,13 @@
 <div align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/custom_components/ai_workspace/brand/dark_logo.png">
-    <img src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/custom_components/ai_workspace/brand/logo.png" alt="AI Workspace" align="center">
+    <img src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/custom_components/ai_workspace/brand/logo.png" alt="AI Workspace" align="center" width="420">
   </picture>
   <br>
   <em>Build your Home Assistant from the couch.</em>
 </div>
-
+<br>
+<br>
 <p align="center">
   <img src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai_workspace.gif" alt="AI Workspace chat demo" width="300">
 </p>
