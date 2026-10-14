@@ -1,21 +1,25 @@
 <div align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/custom_components/ai_workspace/brand/dark_logo.png">
-    <img src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/custom_components/ai_workspace/brand/logo.png" alt="AI Workspace" align="center" width="420">
+    <img src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/custom_components/ai_workspace/brand/logo.png" alt="AI Workspace" align="center" width="280">
   </picture>
+  <br>
   <br>
   <em>Build your Home Assistant from the couch.</em>
 </div>
-<br>
 <br>
 <p align="center">
   <img src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai_workspace.gif" alt="AI Workspace chat demo" width="300">
 </p>
 
+<div align="center">
+
 # AI Workspace
 
 ![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.12+-41BDF5.svg)![Release](https://img.shields.io/github/v/release/domdus/ha-ai-workspace)![License](https://img.shields.io/github/license/domdus/ha-ai-workspace)  
 ![GHCR](https://img.shields.io/badge/GHCR-runtime-teal)![MCP](https://img.shields.io/badge/MCP-client-purple)![Assist](https://img.shields.io/badge/Assist-ready-green)
+
+</div>
 
 This HACS integration is an agent UI inside Home Assistant. It connects to an AI and uses the MCP server of your choice.
 You work right in Home Assistant instead of Claude Desktop, the Cursor IDE, VS Code, or any other app. Use Cursor, OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or any OpenAI-compatible provider.
