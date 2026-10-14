@@ -21,7 +21,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "Przeglądarka używa rozpoznawania mowy urządzenia i wymaga https:// lub localhost. Silnik Home Assistant (Whisper i inne w Ustawieniach) transkrybuje nagranie z tej strony. Przeglądarka i tak musi zezwolić na mikrofon, a robi to tylko na https:// lub localhost.",
-          "tts_engine": "Piper i inne głosy Home Assistant. Odczyt odpowiedzi działa też przez http://. Wyłączone zostawia odpowiedzi jako tekst.",
+          "tts_engine": "Piper, Google Translate lub głos AI Workspace agenta OpenAI. Odczyt odpowiedzi działa też przez http://. Wyłączone zostawia odpowiedzi jako tekst.",
           "speak_replies": "Gdy wybrany jest głos, każda odpowiedź jest czytana od razu. Wyłączone zostawia przycisk głośnika, aby odtworzyć ją samemu.",
           "enable_sidebar": "Pozycja paska bocznego AI Workspace. Strona zostaje pod /ai-workspace, gdy to jest wyłączone.",
           "enable_overlay": "Włącza lub wyłącza pływający przycisk AI. W Ustawieniach jest wyżej, żeby nie zasłaniał przycisków systemowych.",
@@ -90,7 +90,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "Przeglądarka używa rozpoznawania mowy urządzenia i wymaga https:// lub localhost. Silnik Home Assistant (Whisper i inne w Ustawieniach) transkrybuje nagranie z tej strony. Przeglądarka i tak musi zezwolić na mikrofon, a robi to tylko na https:// lub localhost.",
-          "tts_engine": "Piper i inne głosy Home Assistant. Odczyt odpowiedzi działa też przez http://. Wyłączone zostawia odpowiedzi jako tekst.",
+          "tts_engine": "Piper, Google Translate lub głos AI Workspace agenta OpenAI. Odczyt odpowiedzi działa też przez http://. Wyłączone zostawia odpowiedzi jako tekst.",
           "speak_replies": "Gdy wybrany jest głos, każda odpowiedź jest czytana od razu. Wyłączone zostawia przycisk głośnika, aby odtworzyć ją samemu.",
           "enable_sidebar": "Pozycja paska bocznego AI Workspace. Strona zostaje pod /ai-workspace, gdy to jest wyłączone.",
           "enable_overlay": "Włącza lub wyłącza pływający przycisk AI. W Ustawieniach jest wyżej, żeby nie zasłaniał przycisków systemowych.",
@@ -226,7 +226,10 @@
             "check_house": "Zawsze najpierw sprawdzaj dom",
             "assist": "Używaj też w Assist",
             "assist_stt": "Dodaj też mowę na tekst",
-            "stt_model": "Model mowy na tekst"
+            "stt_model": "Model mowy na tekst",
+            "assist_tts": "Dodaj też tekst na mowę",
+            "tts_model": "Model tekstu na mowę",
+            "tts_voice": "Głos"
           },
           "data_description": {
             "borrow": "Używa klucza już zapisanego przez tę integrację. Druga integracja zostaje bez zmian.",
@@ -237,7 +240,10 @@
             "check_house": "Pierwszy krok każdej wiadomości (poza powitaniami i podziękowaniami) musi wywołać narzędzie, aby odpowiedzi o domu opierały się na danych na żywo. Wyłącz dla modeli, które same niezawodnie wywołują narzędzia, lub aby zaoszczędzić rundę narzędzi przy ogólnych pytaniach.",
             "assist": "Dodaje tego agenta do Home Assistant Assist. Wyłączone zostawia go tylko na czacie AI Workspace.",
             "assist_stt": "Używa klucza API tego agenta jako silnika mowy na tekst w Home Assistant i przypisuje go do każdej rury AI Workspace Assist (w tym Cursor). Wyłącz, jeśli korzystasz już z innego silnika.",
-            "stt_model": "Puste używa domyślnego modelu dostawcy. Możesz wpisać inne id."
+            "stt_model": "Puste używa domyślnego modelu dostawcy. Możesz wpisać inne id.",
+            "assist_tts": "Używa klucza API tego agenta jako silnika tekstu na mowę w Home Assistant i przypisuje go do każdej rury AI Workspace Assist (w tym Cursor). Wyłącz, jeśli korzystasz już z Piper lub innego głosu.",
+            "tts_model": "Puste używa gpt-4o-mini-tts. tts-1 jest tańszy. Możesz wpisać inne id.",
+            "tts_voice": "Coral jest domyślny. Pole Głos rury Assist może to zastąpić."
           }
         },
         "provider_ollama": {
@@ -296,7 +302,10 @@
             "check_house": "Zawsze najpierw sprawdzaj dom",
             "assist": "Używaj też w Assist",
             "assist_stt": "Dodaj też mowę na tekst",
-            "stt_model": "Model mowy na tekst"
+            "stt_model": "Model mowy na tekst",
+            "assist_tts": "Dodaj też tekst na mowę",
+            "tts_model": "Model tekstu na mowę",
+            "tts_voice": "Głos"
           },
           "data_description": {
             "api_key": "Przy edycji zostaw puste, aby zachować zapisany klucz.",
@@ -307,7 +316,10 @@
             "check_house": "Pierwszy krok każdej wiadomości (poza powitaniami i podziękowaniami) musi wywołać narzędzie, aby odpowiedzi o domu opierały się na danych na żywo. Wyłącz dla modeli, które same niezawodnie wywołują narzędzia, lub aby zaoszczędzić rundę narzędzi przy ogólnych pytaniach.",
             "assist": "Dodaje tego agenta do Home Assistant Assist. Wyłączone zostawia go tylko na czacie AI Workspace.",
             "assist_stt": "Używa klucza API tego agenta jako silnika mowy na tekst w Home Assistant i przypisuje go do każdej rury AI Workspace Assist (w tym Cursor). Wyłącz, jeśli korzystasz już z innego silnika.",
-            "stt_model": "Puste używa domyślnego modelu dostawcy. Możesz wpisać inne id."
+            "stt_model": "Puste używa domyślnego modelu dostawcy. Możesz wpisać inne id.",
+            "assist_tts": "Używa klucza API tego agenta jako silnika tekstu na mowę w Home Assistant i przypisuje go do każdej rury AI Workspace Assist (w tym Cursor). Wyłącz, jeśli korzystasz już z Piper lub innego głosu.",
+            "tts_model": "Puste używa gpt-4o-mini-tts. tts-1 jest tańszy. Możesz wpisać inne id.",
+            "tts_voice": "Coral jest domyślny. Pole Głos rury Assist może to zastąpić."
           }
         }
       },

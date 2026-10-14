@@ -21,7 +21,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "Der Browser nutzt die Spracheingabe des Geräts und braucht https:// oder localhost. Eine Home-Assistant-Engine (Whisper und andere unter Einstellungen) transkribiert eine Aufnahme von dieser Seite. Der Browser muss das Mikrofon trotzdem erlauben, und das nur über https:// oder localhost.",
-          "tts_engine": "Piper und andere Home-Assistant-Stimmen. Das Vorlesen der Antwort funktioniert auch über http://. Aus lässt Antworten als Text.",
+          "tts_engine": "Piper, Google Translate oder eine AI-Workspace-Stimme eines OpenAI-Agenten. Das Vorlesen der Antwort funktioniert auch über http://. Aus lässt Antworten als Text.",
           "speak_replies": "Wenn eine Stimme gewählt ist, wird jede Antwort vorgelesen. Aus lässt die Lautsprecher-Schaltfläche zum selbst Abspielen.",
           "enable_sidebar": "Der Seitenleisteneintrag AI Workspace. Die Seite bleibt unter /ai-workspace erreichbar, wenn das aus ist.",
           "enable_overlay": "Schaltet die schwebende KI-Schaltfläche ein oder aus. Auf Einstellungen sitzt sie höher, damit sie die Systemschaltflächen nicht überdeckt.",
@@ -90,7 +90,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "Der Browser nutzt die Spracheingabe des Geräts und braucht https:// oder localhost. Eine Home-Assistant-Engine (Whisper und andere unter Einstellungen) transkribiert eine Aufnahme von dieser Seite. Der Browser muss das Mikrofon trotzdem erlauben, und das nur über https:// oder localhost.",
-          "tts_engine": "Piper und andere Home-Assistant-Stimmen. Das Vorlesen der Antwort funktioniert auch über http://. Aus lässt Antworten als Text.",
+          "tts_engine": "Piper, Google Translate oder eine AI-Workspace-Stimme eines OpenAI-Agenten. Das Vorlesen der Antwort funktioniert auch über http://. Aus lässt Antworten als Text.",
           "speak_replies": "Wenn eine Stimme gewählt ist, wird jede Antwort vorgelesen. Aus lässt die Lautsprecher-Schaltfläche zum selbst Abspielen.",
           "enable_sidebar": "Der Seitenleisteneintrag AI Workspace. Die Seite bleibt unter /ai-workspace erreichbar, wenn das aus ist.",
           "enable_overlay": "Schaltet die schwebende KI-Schaltfläche ein oder aus. Auf Einstellungen sitzt sie höher, damit sie die Systemschaltflächen nicht überdeckt.",
@@ -226,7 +226,10 @@
             "check_house": "Immer zuerst das Haus prüfen",
             "assist": "Auch in Assist nutzen",
             "assist_stt": "Auch Sprache-zu-Text anlegen",
-            "stt_model": "Sprache-zu-Text-Modell"
+            "stt_model": "Sprache-zu-Text-Modell",
+            "assist_tts": "Auch Text-zu-Sprache anlegen",
+            "tts_model": "Text-zu-Sprache-Modell",
+            "tts_voice": "Stimme"
           },
           "data_description": {
             "borrow": "Nutzt den Schlüssel, den diese Integration schon gespeichert hat. Die andere Integration bleibt unverändert.",
@@ -237,7 +240,10 @@
             "check_house": "Der erste Schritt jeder Nachricht (außer Begrüßung und Dank) muss ein Werkzeug aufrufen, damit Antworten zum Haus auf Live-Daten beruhen. Ausschalten bei Modellen, die Werkzeuge zuverlässig selbst aufrufen, oder um bei allgemeinen Fragen eine Werkzeugrunde zu sparen.",
             "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat.",
             "assist_stt": "Nutzt den API-Schlüssel dieses Agenten als Home-Assistant-Sprache-zu-Text-Engine und hängt sie an alle AI-Workspace-Assist-Pipelines (auch Cursor). Aus, wenn schon eine andere Engine genutzt wird.",
-            "stt_model": "Leer nutzt den Standard des Anbieters. Whisper ist günstiger; gpt-4o-mini-transcribe ist der OpenAI-Standard. Du kannst eine andere ID eingeben."
+            "stt_model": "Leer nutzt den Standard des Anbieters. Whisper ist günstiger; gpt-4o-mini-transcribe ist der OpenAI-Standard. Du kannst eine andere ID eingeben.",
+            "assist_tts": "Nutzt den API-Schlüssel dieses Agenten als Home-Assistant-Text-zu-Sprache-Engine und hängt sie an alle AI-Workspace-Assist-Pipelines (auch Cursor). Aus, wenn schon Piper oder eine andere Stimme genutzt wird.",
+            "tts_model": "Leer nutzt gpt-4o-mini-tts. tts-1 ist günstiger. Du kannst eine andere ID eingeben.",
+            "tts_voice": "Coral ist der Standard. Das Feld Stimme der Assist-Pipeline kann das überschreiben."
           }
         },
         "provider_ollama": {
@@ -296,7 +302,10 @@
             "check_house": "Immer zuerst das Haus prüfen",
             "assist": "Auch in Assist nutzen",
             "assist_stt": "Auch Sprache-zu-Text anlegen",
-            "stt_model": "Sprache-zu-Text-Modell"
+            "stt_model": "Sprache-zu-Text-Modell",
+            "assist_tts": "Auch Text-zu-Sprache anlegen",
+            "tts_model": "Text-zu-Sprache-Modell",
+            "tts_voice": "Stimme"
           },
           "data_description": {
             "api_key": "Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
@@ -307,7 +316,10 @@
             "check_house": "Der erste Schritt jeder Nachricht (außer Begrüßung und Dank) muss ein Werkzeug aufrufen, damit Antworten zum Haus auf Live-Daten beruhen. Ausschalten bei Modellen, die Werkzeuge zuverlässig selbst aufrufen, oder um bei allgemeinen Fragen eine Werkzeugrunde zu sparen.",
             "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat.",
             "assist_stt": "Nutzt den API-Schlüssel dieses Agenten als Home-Assistant-Sprache-zu-Text-Engine und hängt sie an alle AI-Workspace-Assist-Pipelines (auch Cursor). Aus, wenn schon eine andere Engine genutzt wird.",
-            "stt_model": "Leer nutzt den Standard des Anbieters. Whisper ist günstiger; gpt-4o-mini-transcribe ist der OpenAI-Standard. Du kannst eine andere ID eingeben."
+            "stt_model": "Leer nutzt den Standard des Anbieters. Whisper ist günstiger; gpt-4o-mini-transcribe ist der OpenAI-Standard. Du kannst eine andere ID eingeben.",
+            "assist_tts": "Nutzt den API-Schlüssel dieses Agenten als Home-Assistant-Text-zu-Sprache-Engine und hängt sie an alle AI-Workspace-Assist-Pipelines (auch Cursor). Aus, wenn schon Piper oder eine andere Stimme genutzt wird.",
+            "tts_model": "Leer nutzt gpt-4o-mini-tts. tts-1 ist günstiger. Du kannst eine andere ID eingeben.",
+            "tts_voice": "Coral ist der Standard. Das Feld Stimme der Assist-Pipeline kann das überschreiben."
           }
         }
       },

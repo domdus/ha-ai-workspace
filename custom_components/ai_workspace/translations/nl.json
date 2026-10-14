@@ -21,7 +21,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "De browser gebruikt de spraakherkenning van het apparaat en heeft https:// of localhost nodig. Een Home Assistant-engine (Whisper en andere onder Instellingen) transcribeert een opname van deze pagina. De browser moet de microfoon nog steeds toestaan, en dat doet hij alleen op https:// of localhost.",
-          "tts_engine": "Piper en andere Home Assistant-stemmen. Het voorlezen van het antwoord werkt ook via http://. Uit laat antwoorden als tekst.",
+          "tts_engine": "Piper, Google Translate of een AI Workspace-stem van een OpenAI-agent. Het voorlezen van het antwoord werkt ook via http://. Uit laat antwoorden als tekst.",
           "speak_replies": "Als er een stem is gekozen, wordt elk antwoord voorgelezen. Uit laat de luidsprekerknop om zelf af te spelen.",
           "enable_sidebar": "Het zijbalkitem AI Workspace. De pagina blijft bereikbaar op /ai-workspace als dit uit staat.",
           "enable_overlay": "Zet de zwevende AI-knop aan of uit. Op Instellingen staat hij hoger zodat hij de systeemknoppen niet bedekt.",
@@ -90,7 +90,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "De browser gebruikt de spraakherkenning van het apparaat en heeft https:// of localhost nodig. Een Home Assistant-engine (Whisper en andere onder Instellingen) transcribeert een opname van deze pagina. De browser moet de microfoon nog steeds toestaan, en dat doet hij alleen op https:// of localhost.",
-          "tts_engine": "Piper en andere Home Assistant-stemmen. Het voorlezen van het antwoord werkt ook via http://. Uit laat antwoorden als tekst.",
+          "tts_engine": "Piper, Google Translate of een AI Workspace-stem van een OpenAI-agent. Het voorlezen van het antwoord werkt ook via http://. Uit laat antwoorden als tekst.",
           "speak_replies": "Als er een stem is gekozen, wordt elk antwoord voorgelezen. Uit laat de luidsprekerknop om zelf af te spelen.",
           "enable_sidebar": "Het zijbalkitem AI Workspace. De pagina blijft bereikbaar op /ai-workspace als dit uit staat.",
           "enable_overlay": "Zet de zwevende AI-knop aan of uit. Op Instellingen staat hij hoger zodat hij de systeemknoppen niet bedekt.",
@@ -226,7 +226,10 @@
             "check_house": "Altijd eerst het huis controleren",
             "assist": "Ook in Assist gebruiken",
             "assist_stt": "Ook spraak-naar-tekst toevoegen",
-            "stt_model": "Spraak-naar-tekst-model"
+            "stt_model": "Spraak-naar-tekst-model",
+            "assist_tts": "Ook tekst-naar-spraak toevoegen",
+            "tts_model": "Tekst-naar-spraak-model",
+            "tts_voice": "Stem"
           },
           "data_description": {
             "borrow": "Gebruikt de sleutel die die integratie al heeft opgeslagen. De andere integratie blijft ongewijzigd.",
@@ -237,7 +240,10 @@
             "check_house": "De eerste stap van elk bericht (behalve begroetingen en bedankjes) moet een tool aanroepen, zodat antwoorden over het huis op live gegevens berusten. Zet dit uit voor modellen die tools zelf betrouwbaar aanroepen, of om bij algemene vragen een toolronde te besparen.",
             "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat.",
             "assist_stt": "Gebruikt de API-sleutel van deze agent als Home Assistant spraak-naar-tekst-engine en koppelt die aan elke AI Workspace Assist-pijplijn (inclusief Cursor). Uit als je al een andere engine gebruikt.",
-            "stt_model": "Leeg gebruikt de standaard van de provider. Je kunt een ander id typen."
+            "stt_model": "Leeg gebruikt de standaard van de provider. Je kunt een ander id typen.",
+            "assist_tts": "Gebruikt de API-sleutel van deze agent als Home Assistant tekst-naar-spraak-engine en koppelt die aan elke AI Workspace Assist-pijplijn (inclusief Cursor). Uit als je al Piper of een andere stem gebruikt.",
+            "tts_model": "Leeg gebruikt gpt-4o-mini-tts. tts-1 is goedkoper. Je kunt een ander id typen.",
+            "tts_voice": "Coral is de standaard. Het veld Stem van de Assist-pijplijn kan dit overschrijven."
           }
         },
         "provider_ollama": {
@@ -296,7 +302,10 @@
             "check_house": "Altijd eerst het huis controleren",
             "assist": "Ook in Assist gebruiken",
             "assist_stt": "Ook spraak-naar-tekst toevoegen",
-            "stt_model": "Spraak-naar-tekst-model"
+            "stt_model": "Spraak-naar-tekst-model",
+            "assist_tts": "Ook tekst-naar-spraak toevoegen",
+            "tts_model": "Tekst-naar-spraak-model",
+            "tts_voice": "Stem"
           },
           "data_description": {
             "api_key": "Leeg laten bij bewerken om de opgeslagen sleutel te houden.",
@@ -307,7 +316,10 @@
             "check_house": "De eerste stap van elk bericht (behalve begroetingen en bedankjes) moet een tool aanroepen, zodat antwoorden over het huis op live gegevens berusten. Zet dit uit voor modellen die tools zelf betrouwbaar aanroepen, of om bij algemene vragen een toolronde te besparen.",
             "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat.",
             "assist_stt": "Gebruikt de API-sleutel van deze agent als Home Assistant spraak-naar-tekst-engine en koppelt die aan elke AI Workspace Assist-pijplijn (inclusief Cursor). Uit als je al een andere engine gebruikt.",
-            "stt_model": "Leeg gebruikt de standaard van de provider. Je kunt een ander id typen."
+            "stt_model": "Leeg gebruikt de standaard van de provider. Je kunt een ander id typen.",
+            "assist_tts": "Gebruikt de API-sleutel van deze agent als Home Assistant tekst-naar-spraak-engine en koppelt die aan elke AI Workspace Assist-pijplijn (inclusief Cursor). Uit als je al Piper of een andere stem gebruikt.",
+            "tts_model": "Leeg gebruikt gpt-4o-mini-tts. tts-1 is goedkoper. Je kunt een ander id typen.",
+            "tts_voice": "Coral is de standaard. Het veld Stem van de Assist-pijplijn kan dit overschrijven."
           }
         }
       },

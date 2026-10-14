@@ -54,7 +54,7 @@ from .mcp_resolve import async_resolve_mcp_url, infer_mcp_kind
 from .models import Settings
 
 _LOGGER = logging.getLogger(__name__)
-_PLATFORMS = [Platform.CONVERSATION, Platform.STT]
+_PLATFORMS = [Platform.CONVERSATION, Platform.STT, Platform.TTS]
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -129,7 +129,9 @@ async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
     kind = primary["kind"] if primary else MCP_CUSTOM
     if kind not in {MCP_HA, MCP_HA_MCP, MCP_COOLVER}:
         kind = MCP_CUSTOM
-    tts = str(data.get(CONF_TTS_ENGINE) or TTS_OFF).strip() or TTS_OFF
+    from .voice import resolved_overlay_tts
+
+    tts = resolved_overlay_tts(hass, str(data.get(CONF_TTS_ENGINE) or TTS_OFF).strip() or TTS_OFF)
     root = Path(hass.config.path(DOMAIN))
     return Settings(
         data_dir=root,
@@ -298,6 +300,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await _prune_all_chats(hass, store, settings.keep_chats)
     entry.async_on_unload(entry.add_update_listener(_reload))
     await hass.config_entries.async_forward_entry_setups(entry, _PLATFORMS)
+    from .voice import resolved_overlay_tts
+
+    settings.tts_engine = resolved_overlay_tts(hass, settings.tts_engine)
+    if settings.tts_engine == TTS_OFF:
+        settings.speak_replies = False
     _LOGGER.info("AI Workspace agents: %s", ", ".join(bucket["providers"]) or "none yet")
     return True
 

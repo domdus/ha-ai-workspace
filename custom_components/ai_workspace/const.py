@@ -174,7 +174,11 @@ CONF_EFFORT = "effort"
 CONF_ASSIST = "assist"
 CONF_ASSIST_STT = "assist_stt"
 CONF_STT_MODEL = "stt_model"
+CONF_ASSIST_TTS = "assist_tts"
+CONF_TTS_MODEL = "tts_model"
+CONF_TTS_VOICE = "tts_voice"
 STT_PROVIDERS = frozenset({API_OPENAI, API_OPENROUTER, API_COMPATIBLE})
+TTS_PROVIDERS = STT_PROVIDERS
 _STT_MODEL = {
     API_OPENAI: "gpt-4o-mini-transcribe",
     API_OPENROUTER: "openai/whisper-1",
@@ -185,6 +189,32 @@ _STT_MODEL_CHOICES = {
     API_OPENROUTER: ["openai/whisper-1", "openai/gpt-4o-mini-transcribe", "openai/gpt-4o-transcribe"],
     API_COMPATIBLE: ["whisper-1", "gpt-4o-mini-transcribe", "gpt-4o-transcribe"],
 }
+_TTS_MODEL = {
+    API_OPENAI: "gpt-4o-mini-tts",
+    API_OPENROUTER: "openai/gpt-4o-mini-tts",
+    API_COMPATIBLE: "gpt-4o-mini-tts",
+}
+_TTS_MODEL_CHOICES = {
+    API_OPENAI: ["gpt-4o-mini-tts", "tts-1-hd", "tts-1"],
+    API_OPENROUTER: ["openai/gpt-4o-mini-tts", "openai/tts-1-hd", "openai/tts-1"],
+    API_COMPATIBLE: ["gpt-4o-mini-tts", "tts-1-hd", "tts-1"],
+}
+TTS_VOICES = [
+    "coral",
+    "marin",
+    "cedar",
+    "alloy",
+    "ash",
+    "ballad",
+    "echo",
+    "fable",
+    "nova",
+    "onyx",
+    "sage",
+    "shimmer",
+    "verse",
+]
+DEFAULT_TTS_VOICE = "coral"
 
 
 def submitted_model(user_input: dict | None) -> str:
@@ -228,6 +258,46 @@ def assist_stt_enabled(raw: dict, provider: str = "") -> bool:
     if CONF_ASSIST_STT not in raw:
         return True
     return bool(raw.get(CONF_ASSIST_STT))
+
+
+def provider_supports_tts(kind: str) -> bool:
+    """True when this provider has an OpenAI-style /audio/speech API."""
+    return str(kind or "") in TTS_PROVIDERS
+
+
+def default_tts_model(kind: str) -> str:
+    return _TTS_MODEL.get(str(kind or ""), "gpt-4o-mini-tts")
+
+
+def tts_model_choices(kind: str) -> list[str]:
+    return list(_TTS_MODEL_CHOICES.get(str(kind or ""), []))
+
+
+def resolved_tts_model(raw: dict, provider: str = "") -> str:
+    kind = str(provider or raw.get(CONF_API_PROVIDER) or "")
+    stored = str(raw.get(CONF_TTS_MODEL) or "").strip()
+    return stored or default_tts_model(kind)
+
+
+def resolved_tts_voice(raw: dict) -> str:
+    stored = str(raw.get(CONF_TTS_VOICE) or "").strip().casefold()
+    return stored or DEFAULT_TTS_VOICE
+
+
+def assist_tts_enabled(raw: dict, provider: str = "") -> bool:
+    """OpenAI-style agents speak for Assist unless the row turned it off."""
+    kind = str(provider or raw.get(CONF_API_PROVIDER) or "")
+    if not provider_supports_tts(kind):
+        return False
+    if CONF_ASSIST_TTS not in raw:
+        return True
+    return bool(raw.get(CONF_ASSIST_TTS))
+
+
+def is_placeholder_tts(engine: str) -> bool:
+    """True for Off and Google Translate (the usual HA default)."""
+    low = str(engine or "").strip().casefold()
+    return (not low) or low == TTS_OFF or "google_translate" in low
 
 
 _BUILTIN_ASSIST = {

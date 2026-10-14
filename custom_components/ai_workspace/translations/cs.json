@@ -21,7 +21,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "Prohlížeč používá řečový engine zařízení a potřebuje https:// nebo localhost. Engine Home Assistant (Whisper a další v Nastavení) přepíše nahrávku z této stránky. Prohlížeč musí mikrofon stejně povolit, a to jen na https:// nebo localhost.",
-          "tts_engine": "Piper a další hlasy Home Assistant. Přečtení odpovědi funguje i přes http://. Vypnuto nechá odpovědi jako text.",
+          "tts_engine": "Piper, Google Translate nebo hlas AI Workspace agenta OpenAI. Přečtení odpovědi funguje i přes http://. Vypnuto nechá odpovědi jako text.",
           "speak_replies": "Když je zvolen hlas, každá odpověď se přečte hned. Vypnuto nechá tlačítko reproduktoru pro přehrání ručně.",
           "enable_sidebar": "Položka postranního panelu AI Workspace. Stránka zůstane na /ai-workspace, když je to vypnuté.",
           "enable_overlay": "Zapíná nebo vypíná plovoucí tlačítko AI. V Nastavení je výš, aby nepřekrývalo systémová tlačítka.",
@@ -90,7 +90,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "Prohlížeč používá řečový engine zařízení a potřebuje https:// nebo localhost. Engine Home Assistant (Whisper a další v Nastavení) přepíše nahrávku z této stránky. Prohlížeč musí mikrofon stejně povolit, a to jen na https:// nebo localhost.",
-          "tts_engine": "Piper a další hlasy Home Assistant. Přečtení odpovědi funguje i přes http://. Vypnuto nechá odpovědi jako text.",
+          "tts_engine": "Piper, Google Translate nebo hlas AI Workspace agenta OpenAI. Přečtení odpovědi funguje i přes http://. Vypnuto nechá odpovědi jako text.",
           "speak_replies": "Když je zvolen hlas, každá odpověď se přečte hned. Vypnuto nechá tlačítko reproduktoru pro přehrání ručně.",
           "enable_sidebar": "Položka postranního panelu AI Workspace. Stránka zůstane na /ai-workspace, když je to vypnuté.",
           "enable_overlay": "Zapíná nebo vypíná plovoucí tlačítko AI. V Nastavení je výš, aby nepřekrývalo systémová tlačítka.",
@@ -226,7 +226,10 @@
             "check_house": "Vždy nejdřív zkontrolovat dům",
             "assist": "Použít také v Assist",
             "assist_stt": "Přidat také převod řeči na text",
-            "stt_model": "Model řeči na text"
+            "stt_model": "Model řeči na text",
+            "assist_tts": "Přidat také převod textu na řeč",
+            "tts_model": "Model textu na řeč",
+            "tts_voice": "Hlas"
           },
           "data_description": {
             "borrow": "Použije klíč, který už tato integrace uložila. Druhá integrace se nemění.",
@@ -237,7 +240,10 @@
             "check_house": "První krok každé zprávy (kromě pozdravů a poděkování) musí zavolat nástroj, aby odpovědi o domě vycházely z živých dat. Vypněte u modelů, které nástroje spolehlivě volají samy, nebo pro úsporu jednoho kola nástrojů u obecných otázek.",
             "assist": "Přidá tohoto agenta do Home Assistant Assist. Vypnuto ho nechá jen v chatu AI Workspace.",
             "assist_stt": "Použije API klíč tohoto agenta jako Home Assistant engine řeči na text a přiřadí ho ke všem pipeline AI Workspace Assist (včetně Cursor). Vypněte, pokud už používáte jiný engine.",
-            "stt_model": "Prázdné použije výchozí model poskytovatele. Můžete zadat i jiné id."
+            "stt_model": "Prázdné použije výchozí model poskytovatele. Můžete zadat i jiné id.",
+            "assist_tts": "Použije API klíč tohoto agenta jako Home Assistant engine textu na řeč a přiřadí ho ke všem pipeline AI Workspace Assist (včetně Cursor). Vypněte, pokud už používáte Piper nebo jiný hlas.",
+            "tts_model": "Prázdné použije gpt-4o-mini-tts. tts-1 je levnější. Můžete zadat i jiné id.",
+            "tts_voice": "Coral je výchozí. Pole Hlas pipeline Assist to může přepsat."
           }
         },
         "provider_ollama": {
@@ -296,7 +302,10 @@
             "check_house": "Vždy nejdřív zkontrolovat dům",
             "assist": "Použít také v Assist",
             "assist_stt": "Přidat také převod řeči na text",
-            "stt_model": "Model řeči na text"
+            "stt_model": "Model řeči na text",
+            "assist_tts": "Přidat také převod textu na řeč",
+            "tts_model": "Model textu na řeč",
+            "tts_voice": "Hlas"
           },
           "data_description": {
             "api_key": "Při úpravě nechte prázdné, aby se zachoval uložený klíč.",
@@ -307,7 +316,10 @@
             "check_house": "První krok každé zprávy (kromě pozdravů a poděkování) musí zavolat nástroj, aby odpovědi o domě vycházely z živých dat. Vypněte u modelů, které nástroje spolehlivě volají samy, nebo pro úsporu jednoho kola nástrojů u obecných otázek.",
             "assist": "Přidá tohoto agenta do Home Assistant Assist. Vypnuto ho nechá jen v chatu AI Workspace.",
             "assist_stt": "Použije API klíč tohoto agenta jako Home Assistant engine řeči na text a přiřadí ho ke všem pipeline AI Workspace Assist (včetně Cursor). Vypněte, pokud už používáte jiný engine.",
-            "stt_model": "Prázdné použije výchozí model poskytovatele. Můžete zadat i jiné id."
+            "stt_model": "Prázdné použije výchozí model poskytovatele. Můžete zadat i jiné id.",
+            "assist_tts": "Použije API klíč tohoto agenta jako Home Assistant engine textu na řeč a přiřadí ho ke všem pipeline AI Workspace Assist (včetně Cursor). Vypněte, pokud už používáte Piper nebo jiný hlas.",
+            "tts_model": "Prázdné použije gpt-4o-mini-tts. tts-1 je levnější. Můžete zadat i jiné id.",
+            "tts_voice": "Coral je výchozí. Pole Hlas pipeline Assist to může přepsat."
           }
         }
       },

@@ -21,7 +21,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "Brauzer cihazın nitq mühərrikini istifadə edir və https:// və ya localhost tələb edir. Home Assistant mühərriki (Ayarlardakı Whisper və s.) bu səhifədən yazını mətnə çevirir. Brauzer yenə də mikrofonu icazə verməlidir və bunu yalnız https:// və ya localhost-da edir.",
-          "tts_engine": "Piper və digər Home Assistant səsləri. Cavabı oxumaq adi http:// üzərində də işləyir. Sönülü cavabları mətn kimi buraxır.",
+          "tts_engine": "Piper, Google Translate və ya OpenAI agentinin AI Workspace səsi. Cavabı oxumaq adi http:// üzərində də işləyir. Sönülü cavabları mətn kimi buraxır.",
           "speak_replies": "Səs seçilibsə, hər cavab gələn kimi oxunur. Sönülü səsucaldan düyməsini saxlayır ki, özünüz oxudasınız.",
           "enable_sidebar": "Yan panel bəndi AI Workspace. Bu sönülü olsa belə səhifə /ai-workspace ünvanında qalır.",
           "enable_overlay": "Üzən AI düyməsini yandırır və ya söndürür. Ayarlarda sistem düymələrini örtməmək üçün yuxarıda durur.",
@@ -90,7 +90,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "Brauzer cihazın nitq mühərrikini istifadə edir və https:// və ya localhost tələb edir. Home Assistant mühərriki (Ayarlardakı Whisper və s.) bu səhifədən yazını mətnə çevirir. Brauzer yenə də mikrofonu icazə verməlidir və bunu yalnız https:// və ya localhost-da edir.",
-          "tts_engine": "Piper və digər Home Assistant səsləri. Cavabı oxumaq adi http:// üzərində də işləyir. Sönülü cavabları mətn kimi buraxır.",
+          "tts_engine": "Piper, Google Translate və ya OpenAI agentinin AI Workspace səsi. Cavabı oxumaq adi http:// üzərində də işləyir. Sönülü cavabları mətn kimi buraxır.",
           "speak_replies": "Səs seçilibsə, hər cavab gələn kimi oxunur. Sönülü səsucaldan düyməsini saxlayır ki, özünüz oxudasınız.",
           "enable_sidebar": "Yan panel bəndi AI Workspace. Bu sönülü olsa belə səhifə /ai-workspace ünvanında qalır.",
           "enable_overlay": "Üzən AI düyməsini yandırır və ya söndürür. Ayarlarda sistem düymələrini örtməmək üçün yuxarıda durur.",
@@ -226,7 +226,10 @@
             "check_house": "Həmişə əvvəlcə evi yoxla",
             "assist": "Assist-də də istifadə et",
             "assist_stt": "Nitqdən mətnə də əlavə et",
-            "stt_model": "Nitqdən mətnə modeli"
+            "stt_model": "Nitqdən mətnə modeli",
+            "assist_tts": "Mətndən nitqə də əlavə et",
+            "tts_model": "Mətndən nitqə modeli",
+            "tts_voice": "Səs"
           },
           "data_description": {
             "borrow": "Həmin inteqrasiyanın artıq saxladığı açarı istifadə edir. Digər inteqrasiya dəyişmir.",
@@ -237,7 +240,10 @@
             "check_house": "Hər mesajın ilk addımı (salam və təşəkkür istisna olmaqla) alət çağırmalıdır ki, ev haqqında cavablar canlı məlumata əsaslansın. Alətləri özü etibarlı çağıran modellər üçün və ya ümumi suallarda bir alət raundunu qənaət etmək üçün söndürün.",
             "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır.",
             "assist_stt": "Bu agentin API açarını Home Assistant nitqdən-mətnə mühərriki kimi istifadə edir və onu bütün AI Workspace Assist boru xətlərinə (Cursor daxil) bağlayır. Başqa mühərrik varsa sönülü saxlayın.",
-            "stt_model": "Boş buraxılsa təminatçının standartı istifadə olunur. Başqa id də yaza bilərsiniz."
+            "stt_model": "Boş buraxılsa təminatçının standartı istifadə olunur. Başqa id də yaza bilərsiniz.",
+            "assist_tts": "Bu agentin API açarını Home Assistant mətndən-nitqə mühərriki kimi istifadə edir və onu bütün AI Workspace Assist boru xətlərinə (Cursor daxil) bağlayır. Piper və ya başqa səs varsa sönülü saxlayın.",
+            "tts_model": "Boş buraxılsa gpt-4o-mini-tts istifadə olunur. tts-1 ucuzdur. Başqa id də yaza bilərsiniz.",
+            "tts_voice": "Coral standartdır. Assist boru xəttinin Səs sahəsi bunu əvəz edə bilər."
           }
         },
         "provider_ollama": {
@@ -296,7 +302,10 @@
             "check_house": "Həmişə əvvəlcə evi yoxla",
             "assist": "Assist-də də istifadə et",
             "assist_stt": "Nitqdən mətnə də əlavə et",
-            "stt_model": "Nitqdən mətnə modeli"
+            "stt_model": "Nitqdən mətnə modeli",
+            "assist_tts": "Mətndən nitqə də əlavə et",
+            "tts_model": "Mətndən nitqə modeli",
+            "tts_voice": "Səs"
           },
           "data_description": {
             "api_key": "Redaktədə boş buraxın ki, saxlanmış açar qalsın.",
@@ -307,7 +316,10 @@
             "check_house": "Hər mesajın ilk addımı (salam və təşəkkür istisna olmaqla) alət çağırmalıdır ki, ev haqqında cavablar canlı məlumata əsaslansın. Alətləri özü etibarlı çağıran modellər üçün və ya ümumi suallarda bir alət raundunu qənaət etmək üçün söndürün.",
             "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır.",
             "assist_stt": "Bu agentin API açarını Home Assistant nitqdən-mətnə mühərriki kimi istifadə edir və onu bütün AI Workspace Assist boru xətlərinə (Cursor daxil) bağlayır. Başqa mühərrik varsa sönülü saxlayın.",
-            "stt_model": "Boş buraxılsa təminatçının standartı istifadə olunur. Başqa id də yaza bilərsiniz."
+            "stt_model": "Boş buraxılsa təminatçının standartı istifadə olunur. Başqa id də yaza bilərsiniz.",
+            "assist_tts": "Bu agentin API açarını Home Assistant mətndən-nitqə mühərriki kimi istifadə edir və onu bütün AI Workspace Assist boru xətlərinə (Cursor daxil) bağlayır. Piper və ya başqa səs varsa sönülü saxlayın.",
+            "tts_model": "Boş buraxılsa gpt-4o-mini-tts istifadə olunur. tts-1 ucuzdur. Başqa id də yaza bilərsiniz.",
+            "tts_voice": "Coral standartdır. Assist boru xəttinin Səs sahəsi bunu əvəz edə bilər."
           }
         }
       },

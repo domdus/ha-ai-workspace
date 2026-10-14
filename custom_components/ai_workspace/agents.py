@@ -36,7 +36,10 @@ from .const import (
     SUBENTRY_AGENT,
     assist_enabled,
     assist_stt_enabled,
+    assist_tts_enabled,
     resolved_stt_model,
+    resolved_tts_model,
+    resolved_tts_voice,
     default_api_base,
     default_api_model,
 )
@@ -61,6 +64,9 @@ class Agent:
     assist: bool = True
     assist_stt: bool = False
     stt_model: str = ""
+    assist_tts: bool = False
+    tts_model: str = ""
+    tts_voice: str = ""
     low_token: bool = False
     check_house: bool = True
     azure_api_version: str = DEFAULT_AZURE_API_VERSION
@@ -110,6 +116,9 @@ def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Age
         assist=assist_enabled(raw),
         assist_stt=assist_stt_enabled(raw, provider),
         stt_model=resolved_stt_model(raw, provider),
+        assist_tts=assist_tts_enabled(raw, provider),
+        tts_model=resolved_tts_model(raw, provider),
+        tts_voice=resolved_tts_voice(raw),
         low_token=bool(raw.get(CONF_LOW_TOKEN, False)),
         check_house=bool(raw.get(CONF_CHECK_HOUSE, True)),
         azure_api_version=_text(raw.get(CONF_AZURE_API_VERSION)) or DEFAULT_AZURE_API_VERSION,

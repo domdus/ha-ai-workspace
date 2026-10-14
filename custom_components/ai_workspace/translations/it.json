@@ -21,7 +21,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "Il browser usa il motore vocale del dispositivo e richiede https:// o localhost. Un motore Home Assistant (Whisper e altri in Impostazioni) trascrive una registrazione da questa pagina. Il browser deve comunque autorizzare il microfono, e lo fa solo su https:// o localhost.",
-          "tts_engine": "Piper e altre voci Home Assistant. La lettura della risposta funziona anche su http://. Disattivo lascia le risposte come testo.",
+          "tts_engine": "Piper, Google Translate o una voce AI Workspace di un agente OpenAI. La lettura della risposta funziona anche su http://. Disattivo lascia le risposte come testo.",
           "speak_replies": "Se è scelta una voce, ogni risposta viene letta appena arriva. Disattivo lascia il pulsante dell’altoparlante per riprodurla tu.",
           "enable_sidebar": "La voce della barra laterale AI Workspace. La pagina resta disponibile su /ai-workspace se è disattivato.",
           "enable_overlay": "Attiva o disattiva il pulsante IA mobile. In Impostazioni sta più in alto per non coprire i pulsanti di sistema.",
@@ -90,7 +90,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "Il browser usa il motore vocale del dispositivo e richiede https:// o localhost. Un motore Home Assistant (Whisper e altri in Impostazioni) trascrive una registrazione da questa pagina. Il browser deve comunque autorizzare il microfono, e lo fa solo su https:// o localhost.",
-          "tts_engine": "Piper e altre voci Home Assistant. La lettura della risposta funziona anche su http://. Disattivo lascia le risposte come testo.",
+          "tts_engine": "Piper, Google Translate o una voce AI Workspace di un agente OpenAI. La lettura della risposta funziona anche su http://. Disattivo lascia le risposte come testo.",
           "speak_replies": "Se è scelta una voce, ogni risposta viene letta appena arriva. Disattivo lascia il pulsante dell’altoparlante per riprodurla tu.",
           "enable_sidebar": "La voce della barra laterale AI Workspace. La pagina resta disponibile su /ai-workspace se è disattivato.",
           "enable_overlay": "Attiva o disattiva il pulsante IA mobile. In Impostazioni sta più in alto per non coprire i pulsanti di sistema.",
@@ -226,7 +226,10 @@
             "check_house": "Controlla sempre prima la casa",
             "assist": "Usa anche in Assist",
             "assist_stt": "Aggiungi anche voce in testo",
-            "stt_model": "Modello voce in testo"
+            "stt_model": "Modello voce in testo",
+            "assist_tts": "Aggiungi anche testo in voce",
+            "tts_model": "Modello testo in voce",
+            "tts_voice": "Voce"
           },
           "data_description": {
             "borrow": "Usa la chiave già salvata da quell’integrazione. L’altra integrazione non viene modificata.",
@@ -237,7 +240,10 @@
             "check_house": "Il primo passo di ogni messaggio (tranne saluti e ringraziamenti) deve chiamare uno strumento, così le risposte sulla casa si basano su dati in tempo reale. Disattivalo per i modelli che chiamano gli strumenti in modo affidabile o per risparmiare un giro di strumenti nelle domande generali.",
             "assist": "Aggiunge questo agente a Home Assistant Assist. Disattivo lo lascia solo nella chat di AI Workspace.",
             "assist_stt": "Usa la chiave API di questo agente come motore voce-in-testo di Home Assistant e la assegna a ogni pipeline AI Workspace Assist (incluso Cursor). Disattiva se usi già un altro motore.",
-            "stt_model": "Vuoto usa il valore predefinito del provider. Puoi digitare un altro id."
+            "stt_model": "Vuoto usa il valore predefinito del provider. Puoi digitare un altro id.",
+            "assist_tts": "Usa la chiave API di questo agente come motore testo-in-voce di Home Assistant e la assegna a ogni pipeline AI Workspace Assist (incluso Cursor). Disattiva se usi già Piper o un’altra voce.",
+            "tts_model": "Vuoto usa gpt-4o-mini-tts. tts-1 è più economico. Puoi digitare un altro id.",
+            "tts_voice": "Coral è il valore predefinito. Il campo Voce della pipeline Assist può sostituirlo."
           }
         },
         "provider_ollama": {
@@ -296,7 +302,10 @@
             "check_house": "Controlla sempre prima la casa",
             "assist": "Usa anche in Assist",
             "assist_stt": "Aggiungi anche voce in testo",
-            "stt_model": "Modello voce in testo"
+            "stt_model": "Modello voce in testo",
+            "assist_tts": "Aggiungi anche testo in voce",
+            "tts_model": "Modello testo in voce",
+            "tts_voice": "Voce"
           },
           "data_description": {
             "api_key": "Lascia vuoto in modifica per conservare la chiave salvata.",
@@ -307,7 +316,10 @@
             "check_house": "Il primo passo di ogni messaggio (tranne saluti e ringraziamenti) deve chiamare uno strumento, così le risposte sulla casa si basano su dati in tempo reale. Disattivalo per i modelli che chiamano gli strumenti in modo affidabile o per risparmiare un giro di strumenti nelle domande generali.",
             "assist": "Aggiunge questo agente a Home Assistant Assist. Disattivo lo lascia solo nella chat di AI Workspace.",
             "assist_stt": "Usa la chiave API di questo agente come motore voce-in-testo di Home Assistant e la assegna a ogni pipeline AI Workspace Assist (incluso Cursor). Disattiva se usi già un altro motore.",
-            "stt_model": "Vuoto usa il valore predefinito del provider. Puoi digitare un altro id."
+            "stt_model": "Vuoto usa il valore predefinito del provider. Puoi digitare un altro id.",
+            "assist_tts": "Usa la chiave API di questo agente come motore testo-in-voce di Home Assistant e la assegna a ogni pipeline AI Workspace Assist (incluso Cursor). Disattiva se usi già Piper o un’altra voce.",
+            "tts_model": "Vuoto usa gpt-4o-mini-tts. tts-1 è più economico. Puoi digitare un altro id.",
+            "tts_voice": "Coral è il valore predefinito. Il campo Voce della pipeline Assist può sostituirlo."
           }
         }
       },

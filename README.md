@@ -37,7 +37,7 @@ An optional button on the other pages opens the same chat.
 
 Each agent can also be added as an Assist pipeline. The integration creates the pipeline for you, so you can use **Cursor AI** (or another AI) from Home Assistant's built-in Assist dialog as well.
 
-OpenAI, OpenRouter, and OpenAI-compatible agents can add **Speech-to-text** from the same API key (on by default). That engine is assigned to every AI Workspace Assist pipeline, so a Cursor pipeline can listen too. If the official OpenAI integration already has Speech-to-text, that engine is used when AI Workspace does not create its own. Cursor has no transcription API of its own.
+OpenAI, OpenRouter, and OpenAI-compatible agents can add **Speech-to-text** and **Text-to-speech** from the same API key (on by default). Those engines are assigned to every AI Workspace Assist pipeline, so a Cursor pipeline can listen and speak too. Google Translate is replaced when our voice exists. Cursor has no speech API of its own. Claude, Gemini, and local Ollama stay on a Home Assistant TTS engine such as Piper.
 
 ![Cursor in Home Assistant Assist](https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai-workspace-assists.png)
 
@@ -233,9 +233,9 @@ It does not control Home Assistant edit links. Those rules are added to every me
 | **MCP token**                              | Built-in MCP Server: empty uses the login of the person chatting. HA-MCP: usually empty. Vibecode: Agent Key                                                                        |
 | **Cursor Runtime URL** / **Runtime token** | Where the Cursor SDK Runtime listens, and the shared token. See [Runtime token](#runtime-token)                                                                                     |
 | **System prompt**                          | See [System Prompt](#system-prompt). Empty uses the built-in prompt                                                                                                                 |
-| **Show floating AI button**                | Turns the button on or off. Bottom-right robot icon. On Settings pages it sits higher so it does not cover the system buttons                                                      |
+| **Show floating AI button**                | Turns the button on or off. Bottom-right robot icon. It slides up only when another corner button is on the page                                                                    |
 | **Speech to text**                         | Browser speech, or a Home Assistant engine such as Whisper. The microphone needs https:// or localhost; browsers block it on a plain http:// LAN address                            |
-| **Text to speech**                         | Piper or another Home Assistant voice. The speaker button plays a reply, also on plain http://. Off leaves replies as text                                                          |
+| **Text to speech**                         | Piper, Google Translate, or an AI Workspace voice from an OpenAI-style agent. The speaker button plays a reply, also on plain http://. Off leaves replies as text                   |
 | **Speak replies automatically**            | Off by default. When a voice is selected, each reply is read aloud as it arrives                                                                                                    |
 | **Show dictate button**                    | Microphone in the prompt field. On by default                                                                                                                                       |
 | **Show AI Workspace in the sidebar**       | Sidebar item. `/ai-workspace` still works when this is off                                                                                                                          |
@@ -246,6 +246,8 @@ It does not control Home Assistant edit links. Those rules are added to every me
 | **Also use in Assist**                     | On each agent. Off (the default) keeps the agent in AI Workspace only. On adds a Voice assistants pipeline for it                                                                   |
 | **Also add Speech-to-text**                | On OpenAI, OpenRouter, and OpenAI-compatible agents. On by default. Creates a Speech-to-text engine from this agent's key and assigns it to every AI Workspace Assist pipeline      |
 | **Speech-to-text model**                   | Shown with Speech-to-text. Empty uses the provider default (`gpt-4o-mini-transcribe` on OpenAI, Whisper on OpenRouter / compatible). You can pick another or type an id                 |
+| **Also add Text-to-speech**                | On OpenAI, OpenRouter, and OpenAI-compatible agents. On by default. Creates a Text-to-speech engine from this agent's key (`gpt-4o-mini-tts`, voice Coral) and assigns it to Assist  |
+| **Text-to-speech model / Voice**           | Shown with Text-to-speech. Empty uses `gpt-4o-mini-tts` and Coral. You can pick another model or voice, or type an id                                                                |
 
 
 

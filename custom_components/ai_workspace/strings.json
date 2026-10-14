@@ -21,7 +21,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "Browser uses the device speech engine and needs https:// or localhost. A Home Assistant engine (Whisper, and others under Settings) transcribes a recording from this page. The browser still has to allow the microphone, which it only does on https:// or localhost.",
-          "tts_engine": "Piper and other Home Assistant voices. Speaking the reply works on plain http://. Off leaves replies as text.",
+          "tts_engine": "Piper, Google Translate, or an AI Workspace voice from an OpenAI-style agent. Speaking the reply works on plain http://. Off leaves replies as text.",
           "speak_replies": "When a voice is selected, each reply is read as it arrives. Off keeps the speaker button so you can play a reply yourself.",
           "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
           "enable_overlay": "Turns the floating AI button on or off. On Settings pages it sits higher so it does not cover system buttons.",
@@ -90,7 +90,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "Browser uses the device speech engine and needs https:// or localhost. A Home Assistant engine (Whisper, and others under Settings) transcribes a recording from this page. The browser still has to allow the microphone, which it only does on https:// or localhost.",
-          "tts_engine": "Piper and other Home Assistant voices. Speaking the reply works on plain http://. Off leaves replies as text.",
+          "tts_engine": "Piper, Google Translate, or an AI Workspace voice from an OpenAI-style agent. Speaking the reply works on plain http://. Off leaves replies as text.",
           "speak_replies": "When a voice is selected, each reply is read as it arrives. Off keeps the speaker button so you can play a reply yourself.",
           "enable_sidebar": "The sidebar item labeled AI Workspace. The page stays available at /ai-workspace if this is off.",
           "enable_overlay": "Turns the floating AI button on or off. On Settings pages it sits higher so it does not cover system buttons.",
@@ -226,7 +226,10 @@
             "check_house": "Always check the house first",
             "assist": "Also use in Assist",
             "assist_stt": "Also add Speech-to-text",
-            "stt_model": "Speech-to-text model"
+            "stt_model": "Speech-to-text model",
+            "assist_tts": "Also add Text-to-speech",
+            "tts_model": "Text-to-speech model",
+            "tts_voice": "Voice"
           },
           "data_description": {
             "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
@@ -237,7 +240,10 @@
             "check_house": "The first step of every message (except greetings and thanks) must call a tool, so answers about the house come from live data. Turn it off for models that call tools reliably on their own, or to save a tool round on general questions.",
             "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only.",
             "assist_stt": "Uses this agent's API key as a Home Assistant Speech-to-text engine and assigns it to every AI Workspace Assist pipeline (including Cursor). Off if you already use another engine.",
-            "stt_model": "Empty uses the provider default. Whisper is cheaper; gpt-4o-mini-transcribe is the OpenAI default. You can type another id."
+            "stt_model": "Empty uses the provider default. Whisper is cheaper; gpt-4o-mini-transcribe is the OpenAI default. You can type another id.",
+            "assist_tts": "Uses this agent's API key as a Home Assistant Text-to-speech engine and assigns it to every AI Workspace Assist pipeline (including Cursor). Off if you already use Piper or another voice.",
+            "tts_model": "Empty uses gpt-4o-mini-tts. tts-1 is cheaper. You can type another id.",
+            "tts_voice": "Coral is the default. The Assist pipeline Voice field can override this."
           }
         },
         "provider_ollama": {
@@ -296,7 +302,10 @@
             "check_house": "Always check the house first",
             "assist": "Also use in Assist",
             "assist_stt": "Also add Speech-to-text",
-            "stt_model": "Speech-to-text model"
+            "stt_model": "Speech-to-text model",
+            "assist_tts": "Also add Text-to-speech",
+            "tts_model": "Text-to-speech model",
+            "tts_voice": "Voice"
           },
           "data_description": {
             "api_key": "Leave blank when editing to keep the saved key.",
@@ -307,7 +316,10 @@
             "check_house": "The first step of every message (except greetings and thanks) must call a tool, so answers about the house come from live data. Turn it off for models that call tools reliably on their own, or to save a tool round on general questions.",
             "assist": "Adds this agent to Home Assistant Assist. Off keeps it in the AI Workspace chat only.",
             "assist_stt": "Uses this agent's API key as a Home Assistant Speech-to-text engine and assigns it to every AI Workspace Assist pipeline (including Cursor). Off if you already use another engine.",
-            "stt_model": "Empty uses the provider default. Whisper is cheaper; gpt-4o-mini-transcribe is the OpenAI default. You can type another id."
+            "stt_model": "Empty uses the provider default. Whisper is cheaper; gpt-4o-mini-transcribe is the OpenAI default. You can type another id.",
+            "assist_tts": "Uses this agent's API key as a Home Assistant Text-to-speech engine and assigns it to every AI Workspace Assist pipeline (including Cursor). Off if you already use Piper or another voice.",
+            "tts_model": "Empty uses gpt-4o-mini-tts. tts-1 is cheaper. You can type another id.",
+            "tts_voice": "Coral is the default. The Assist pipeline Voice field can override this."
           }
         }
       },

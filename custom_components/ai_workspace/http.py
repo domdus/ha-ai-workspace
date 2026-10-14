@@ -463,6 +463,8 @@ class UiView(HomeAssistantView):
     async def get(self, request: web.Request) -> web.Response:
         user = _signed_in(request)
         settings = _runtime(_hass(request))["settings"]
+        from .voice import overlay_tts_heavy
+
         return self.json(
             {
                 "dictate": bool(settings.enable_dictate),
@@ -470,6 +472,7 @@ class UiView(HomeAssistantView):
                 "stt": settings.stt_engine,
                 "tts": settings.tts_engine,
                 "speak": bool(settings.speak_replies),
+                "tts_heavy": overlay_tts_heavy(_hass(request), settings.tts_engine),
             }
         )
 

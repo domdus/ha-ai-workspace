@@ -55,7 +55,7 @@ from .discovery import async_probe_runtime, async_resolve_runtime_url
 from .mcp_config import server_slug
 from .mcp_flow import McpConnectionFlow
 from .mcp_resolve import async_detect_mcp_kinds, async_resolve_mcp_url, default_mcp_url, mcp_kind_of
-from .voice import async_speech_engines
+from .voice import async_speech_engines, resolved_overlay_tts
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -328,7 +328,7 @@ async def _shared_form(
     tts = await async_speech_engines(hass, "tts")
     voice = {
         CONF_STT_ENGINE: str(defaults.get(CONF_STT_ENGINE) or STT_BROWSER),
-        CONF_TTS_ENGINE: str(defaults.get(CONF_TTS_ENGINE) or TTS_OFF),
+        CONF_TTS_ENGINE: resolved_overlay_tts(hass, str(defaults.get(CONF_TTS_ENGINE) or TTS_OFF)),
         CONF_SPEAK_REPLIES: bool(defaults.get(CONF_SPEAK_REPLIES, False)),
     }
     fields: dict = {}
@@ -337,7 +337,7 @@ async def _shared_form(
     fields[vol.Required(SECTION_PROMPT)] = section(_prompt_schema(defaults), {"collapsed": True})
     fields[vol.Optional(CONF_RUNTIME_URL, default=str(defaults.get(CONF_RUNTIME_URL) or ""))] = _URL_SELECTOR
     fields[vol.Optional(CONF_RUNTIME_TOKEN, default="")] = _TOKEN_SELECTOR
-    fields[vol.Optional(SECTION_VOICE, default=voice)] = _SideBySide(_voice_schema(defaults, stt, tts))
+    fields[vol.Optional(SECTION_VOICE, default=voice)] = _SideBySide(_voice_schema(voice, stt, tts))
     fields.update(_ui_schema(defaults))
     return vol.Schema(fields, extra=vol.ALLOW_EXTRA)
 

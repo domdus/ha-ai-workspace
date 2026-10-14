@@ -8,7 +8,7 @@ from io import BytesIO
 
 from homeassistant.core import HomeAssistant
 
-from .const import STT_BROWSER, TTS_OFF
+from .const import DOMAIN, STT_BROWSER, TTS_OFF, is_placeholder_tts
 
 _LINK = re.compile(r"\[([^\]]+)\]\([^)]+\)")
 _URL = re.compile(r"https?://\S+")
@@ -67,7 +67,8 @@ def speech_text(text: str) -> str:
     out = _LINK.sub(r"\1", out)
     out = _URL.sub("", out)
     out = _MARK.sub("", out)
-    return " ".join(out.split())[:4000]
+    lines = [" ".join(line.split()) for line in out.splitlines()]
+    return "\n".join(line for line in lines if line).strip()[:4000]
 
 
 async def async_speech_engines(hass: HomeAssistant, kind: str) -> list[dict[str, str]]:
@@ -91,11 +92,59 @@ async def async_speech_engines(hass: HomeAssistant, kind: str) -> list[dict[str,
         if not entity_id:
             continue
         name = str(getattr(entity, "name", "") or entity_id)
+        device = getattr(entity, "device_info", None) or {}
+        device_name = ""
+        if isinstance(device, dict):
+            device_name = str(device.get("name") or "").strip()
+        else:
+            device_name = str(getattr(device, "name", "") or "").strip()
+        if device_name and name and name.casefold() not in device_name.casefold():
+            name = f"{device_name} {name}"
+        elif device_name:
+            name = device_name
         options.append({"value": entity_id, "label": name})
     for engine_id, provider in legacy.items():
         label = str(getattr(provider, "name", "") or engine_id)
         options.append({"value": str(engine_id), "label": label})
     return options
+
+
+def preferred_workspace_tts(hass: HomeAssistant) -> str:
+    """First AI Workspace TTS entity, if any."""
+    try:
+        from homeassistant.helpers import entity_registry as er
+
+        for row in er.async_get(hass).entities.values():
+            if row.domain != "tts" or row.platform != DOMAIN or row.disabled_by is not None:
+                continue
+            return row.entity_id
+    except Exception:
+        return ""
+    return ""
+
+
+def resolved_overlay_tts(hass: HomeAssistant, engine: str) -> str:
+    """Use our voice in the overlay when the saved engine is Off or Google Translate."""
+    chosen = str(engine or "").strip() or TTS_OFF
+    if not is_placeholder_tts(chosen):
+        return chosen
+    return preferred_workspace_tts(hass) or chosen
+
+
+def overlay_tts_heavy(hass: HomeAssistant, engine: str) -> bool:
+    """True when overlay TTS is an AI Workspace OpenAI-style engine (slow per clip)."""
+    chosen = str(engine or "").strip()
+    if not chosen or chosen == TTS_OFF or is_placeholder_tts(chosen):
+        return False
+    try:
+        from homeassistant.helpers import entity_registry as er
+
+        row = er.async_get(hass).async_get(chosen)
+    except Exception:
+        row = None
+    if row is None:
+        return False
+    return str(getattr(row, "platform", "") or "") == DOMAIN
 
 
 def _wav_meta(audio: bytes) -> tuple[int, int, int]:
@@ -164,6 +213,15 @@ async def async_speak(hass: HomeAssistant, engine_id: str, text: str, language: 
     spoken = _engine_language(engine, language, str(hass.config.language or "en")) if engine is not None else (
         language or hass.config.language or "en"
     )
+    getter = getattr(engine, "async_internal_get_tts_audio", None) if engine is not None else None
+    if callable(getter):
+        options = dict(getattr(engine, "default_options", None) or {})
+        extension, data = await getter(message, spoken or "", options)
+        if not data:
+            raise RuntimeError("Text-to-speech returned no audio.")
+        ext = str(extension or "mp3").lstrip(".")
+        mime = f"audio/{'mpeg' if ext == 'mp3' else ext}"
+        return data, mime
     stream = async_create_stream(hass, engine_id, spoken or None)
     stream.async_set_message(message)
     chunks = getattr(stream, "async_stream_result", None)

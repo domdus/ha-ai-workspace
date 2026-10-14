@@ -72,6 +72,26 @@ def test_speech_to_text_defaults_on_for_openai_style_agents() -> None:
     assert const.resolved_stt_model({}, "openrouter") == "openai/whisper-1"
 
 
+def test_text_to_speech_defaults_on_for_openai_style_agents() -> None:
+    const = _const()
+    assert const.provider_supports_tts("openai")
+    assert const.provider_supports_tts("openrouter")
+    assert const.provider_supports_tts("compatible")
+    assert not const.provider_supports_tts("cursor")
+    assert not const.provider_supports_tts("anthropic")
+    assert not const.provider_supports_tts("gemini")
+    assert const.default_tts_model("openai") == "gpt-4o-mini-tts"
+    assert const.default_tts_model("openrouter") == "openai/gpt-4o-mini-tts"
+    assert const.assist_tts_enabled({}, "openai") is True
+    assert const.assist_tts_enabled({"assist_tts": False}, "openai") is False
+    assert const.assist_tts_enabled({}, "cursor") is False
+    assert const.resolved_tts_voice({}) == "coral"
+    assert const.resolved_tts_voice({"tts_voice": "nova"}) == "nova"
+    assert const.is_placeholder_tts("off")
+    assert const.is_placeholder_tts("tts.google_translate_en_com")
+    assert not const.is_placeholder_tts("tts.piper")
+
+
 def test_mcp_dropdown_keeps_detected_saved_and_custom() -> None:
     const = _const()
     assert const.mcp_kind_options({"ha"}, current="coolver") == ["ha", "coolver", "custom"]
