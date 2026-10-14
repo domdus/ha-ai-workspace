@@ -129,3 +129,12 @@ def test_pick_assist_stt_prefers_our_engine_then_official_openai() -> None:
     assert pipes.pick_assist_stt(setting="browser", engines=[("stt.cloud", "cloud", "cloud")]) == "stt.cloud"
     assert pipes.pick_assist_stt(setting="browser", preferred="stt.cloud", engines=[]) == "stt.cloud"
     assert pipes.pick_assist_stt(setting="browser") is None
+
+
+def test_assist_pipeline_keeps_agent_title() -> None:
+    _load("const", "const.py")
+    pipes = _load("assist_pipelines", "assist_pipelines.py")
+    assert pipes.conversation_pipeline_name("AI Workspace", "Cursor") == "Cursor"
+    assert pipes.conversation_pipeline_name("", None, "OpenAI") == "OpenAI"
+    assert pipes.conversation_pipeline_name("Ollama", "AI Workspace") == "Ollama"
+    assert pipes.conversation_pipeline_name("AI Workspace", "Agent", "") == "AI Workspace"

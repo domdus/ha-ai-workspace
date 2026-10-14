@@ -11,6 +11,19 @@ from .const import DOMAIN, STT_BROWSER, TTS_OFF
 
 _LOGGER = logging.getLogger(__name__)
 _OPENAI_STT_PLATFORM = "openai_conversation"
+_GENERIC_PIPELINE_NAMES = frozenset({"", "ai workspace", "agent"})
+
+
+def conversation_pipeline_name(*candidates: str) -> str:
+    """Prefer the agent title over the integration name."""
+    texts = [str(item or "").strip() for item in candidates]
+    for text in texts:
+        if text and text.casefold() not in _GENERIC_PIPELINE_NAMES:
+            return text
+    for text in texts:
+        if text:
+            return text
+    return "AI Workspace"
 
 
 def _pipeline_store(hass: HomeAssistant):
@@ -211,10 +224,34 @@ def _settings(hass: HomeAssistant, entity_id: str, name: str) -> dict[str, Any]:
     }
 
 
+def _existing_pipeline_name(hass: HomeAssistant, entity_id: str) -> str:
+    store = _pipeline_store(hass)
+    if store is None:
+        return ""
+    for pipeline in list(store.data.values()):
+        if getattr(pipeline, "conversation_engine", None) == entity_id:
+            return str(getattr(pipeline, "name", "") or "")
+    return ""
+
+
+def _device_name_for_entity(hass: HomeAssistant, device_id: str | None) -> str:
+    if not device_id:
+        return ""
+    try:
+        from homeassistant.helpers import device_registry as dr
+
+        device = dr.async_get(hass).async_get(device_id)
+    except Exception:
+        return ""
+    if device is None:
+        return ""
+    return str(getattr(device, "name_by_user", None) or getattr(device, "name", "") or "").strip()
+
+
 async def async_ensure_assist_pipeline(hass: HomeAssistant, entity_id: str, name: str) -> None:
     """Make sure Voice assistants has a ready pipeline for this conversation agent."""
     entity_id = str(entity_id or "").strip()
-    name = str(name or "").strip() or entity_id
+    name = conversation_pipeline_name(name, _existing_pipeline_name(hass, entity_id))
     if not entity_id.startswith("conversation."):
         return
     store = _pipeline_store(hass)
@@ -246,7 +283,12 @@ async def async_refresh_assist_pipelines(hass: HomeAssistant) -> None:
     for row in list(registry.entities.values()):
         if row.domain != "conversation" or row.platform != DOMAIN or row.disabled_by is not None:
             continue
-        name = str(row.name or row.original_name or "AI Workspace")
+        name = conversation_pipeline_name(
+            _device_name_for_entity(hass, row.device_id),
+            row.name,
+            row.original_name,
+            _existing_pipeline_name(hass, row.entity_id),
+        )
         await async_ensure_assist_pipeline(hass, row.entity_id, name)
 
 
