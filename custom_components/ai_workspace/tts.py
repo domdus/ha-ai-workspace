@@ -50,10 +50,14 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """One TTS entity per OpenAI-style agent that has Text-to-speech on."""
+    from .assist_pipelines import async_prune_voice_entities, async_refresh_assist_pipelines
+
+    keep: set[str] = set()
     wanted = 0
     for agent in entry_agents(entry):
         if not agent.assist_tts or not agent.api_key:
             continue
+        keep.add(f"{agent.id}-tts")
         if not _agent_device_active(hass, entry.entry_id, agent.subentry_id):
             continue
         async_add_entities(
@@ -61,9 +65,8 @@ async def async_setup_entry(
             config_subentry_id=agent.subentry_id or None,
         )
         wanted += 1
+    await async_prune_voice_entities(hass, entry.entry_id, "tts", keep)
     _LOGGER.info("Exposing %s text-to-speech engine(s)", wanted)
-    from .assist_pipelines import async_refresh_assist_pipelines
-
     await async_refresh_assist_pipelines(hass)
 
 
@@ -93,6 +96,7 @@ class AiWorkspaceTTSEntity(tts.TextToSpeechEntity):
         self._api_base = agent.api_base
         self._tts_model = agent.tts_model or default_tts_model(agent.provider)
         self._tts_voice = agent.tts_voice or DEFAULT_TTS_VOICE
+        self._tts_speed = float(agent.tts_speed or 1.0)
         self._attr_unique_id = f"{agent.id}-tts"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"agent:{agent.id}")},
@@ -138,6 +142,7 @@ class AiWorkspaceTTSEntity(tts.TextToSpeechEntity):
             "input": text,
             "voice": voice or self._tts_voice or DEFAULT_TTS_VOICE,
             "response_format": fmt,
+            "speed": max(0.25, min(4.0, self._tts_speed or 1.0)),
         }
         session = async_get_clientsession(self.hass)
         try:

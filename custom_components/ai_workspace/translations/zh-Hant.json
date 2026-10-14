@@ -205,13 +205,13 @@
             "cursor_api_key": "Cursor API 金鑰",
             "model": "模型",
             "effort": "力度",
-            "assist": "也在 Assist 中使用"
+            "assist": "加入 Assist"
           },
           "data_description": {
             "cursor_api_key": "來自 cursor.com/dashboard/integrations。編輯時留空以保留已儲存的金鑰。 如果 Runtime 已設定 CURSOR_API_KEY，請留空。",
             "model": "從列表選擇或輸入 id。留空則使用 Composer。",
             "effort": "快速、高或高快速。Composer 使用快速，除非你選擇高。",
-            "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。"
+            "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中，並移除此代理新增的 Assist 管線。"
           }
         },
         "provider_cloud": {
@@ -224,12 +224,13 @@
             "effort": "力度",
             "low_token": "低 Token",
             "check_house": "一律先檢查房屋",
-            "assist": "也在 Assist 中使用",
-            "assist_stt": "同時新增語音轉文字",
+            "assist": "加入 Assist",
+            "assist_stt": "新增語音轉文字",
             "stt_model": "語音轉文字模型",
-            "assist_tts": "同時新增文字轉語音",
+            "assist_tts": "新增文字轉語音",
             "tts_model": "文字轉語音模型",
-            "tts_voice": "音色"
+            "tts_voice": "音色",
+            "tts_speed": "語速"
           },
           "data_description": {
             "borrow": "使用該整合已儲存的金鑰。另一個整合維持不變。",
@@ -238,12 +239,13 @@
             "effort": "在模型支援時為快速、高或高快速。",
             "low_token": "短提示、不帶工具，方便小模型回答。不能查看或改動家裡的設備。",
             "check_house": "每則訊息（問候與感謝除外）的第一步都必須呼叫工具，讓關於房屋的回答以即時資料為依據。若模型能自行可靠地呼叫工具，或想在一般問題上省下一輪工具呼叫，請關閉。",
-            "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。",
-            "assist_stt": "用此代理的 API 金鑰建立 Home Assistant 語音轉文字引擎，並指派給每個 AI Workspace Assist 管線（含 Cursor）。若已有其他引擎請關閉。",
+            "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中，並移除此代理新增的 Assist 管線。",
+            "assist_stt": "用此代理的 API 金鑰建立 Home Assistant 語音轉文字引擎，並指派給每個 AI Workspace Assist 管線（含 Cursor）。關閉會移除此代理新增的語音轉文字引擎。",
             "stt_model": "留空使用該供應商的預設模型。也可以輸入其他 id。",
-            "assist_tts": "用此代理的 API 金鑰建立 Home Assistant 文字轉語音引擎，並指派給每個 AI Workspace Assist 管線（含 Cursor）。若已有 Piper 或其他語音請關閉。",
+            "assist_tts": "用此代理的 API 金鑰建立 Home Assistant 文字轉語音引擎，並指派給每個 AI Workspace Assist 管線（含 Cursor）。關閉會移除此代理新增的文字轉語音引擎。",
             "tts_model": "留空使用 gpt-4o-mini-tts。tts-1 較便宜。也可以輸入其他 id。",
-            "tts_voice": "預設 Coral。Assist 管線的音色欄位可以覆寫。"
+            "tts_voice": "預設 Coral。此代理建立的 Assist 管線使用此音色。",
+            "tts_speed": "此語音的語速。1× 為正常。適用於 AI Workspace 與 Assist。"
           }
         },
         "provider_ollama": {
@@ -255,7 +257,7 @@
             "effort": "力度",
             "low_token": "低 Token",
             "check_house": "一律先檢查房屋",
-            "assist": "也在 Assist 中使用"
+            "assist": "加入 Assist"
           },
           "data_description": {
             "api_base": "Usually {example_url}",
@@ -263,7 +265,7 @@
             "effort": "在模型支援時使用。",
             "low_token": "短提示、不帶工具，方便小模型回答。不能查看或改動家裡的設備。",
             "check_house": "每則訊息（問候與感謝除外）的第一步都必須呼叫工具，讓關於房屋的回答以即時資料為依據。若模型能自行可靠地呼叫工具，或想在一般問題上省下一輪工具呼叫，請關閉。",
-            "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。"
+            "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中，並移除此代理新增的 Assist 管線。"
           }
         },
         "provider_azure": {
@@ -277,7 +279,7 @@
             "effort": "力度",
             "low_token": "低 Token",
             "check_house": "一律先檢查房屋",
-            "assist": "也在 Assist 中使用"
+            "assist": "加入 Assist"
           },
           "data_description": {
             "api_key": "Azure OpenAI 金鑰。編輯時留空以保留已儲存的金鑰。",
@@ -287,7 +289,7 @@
             "effort": "在部署支援時使用。",
             "low_token": "短提示、不帶工具，方便小模型回答。不能查看或改動家裡的設備。",
             "check_house": "每則訊息（問候與感謝除外）的第一步都必須呼叫工具，讓關於房屋的回答以即時資料為依據。若模型能自行可靠地呼叫工具，或想在一般問題上省下一輪工具呼叫，請關閉。",
-            "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。"
+            "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中，並移除此代理新增的 Assist 管線。"
           }
         },
         "provider_compatible": {
@@ -300,12 +302,13 @@
             "effort": "力度",
             "low_token": "低 Token",
             "check_house": "一律先檢查房屋",
-            "assist": "也在 Assist 中使用",
-            "assist_stt": "同時新增語音轉文字",
+            "assist": "加入 Assist",
+            "assist_stt": "新增語音轉文字",
             "stt_model": "語音轉文字模型",
-            "assist_tts": "同時新增文字轉語音",
+            "assist_tts": "新增文字轉語音",
             "tts_model": "文字轉語音模型",
-            "tts_voice": "音色"
+            "tts_voice": "音色",
+            "tts_speed": "語速"
           },
           "data_description": {
             "api_key": "編輯時留空以保留已儲存的金鑰。",
@@ -314,12 +317,13 @@
             "effort": "在伺服器支援時使用。",
             "low_token": "短提示、不帶工具，方便小模型回答。不能查看或改動家裡的設備。",
             "check_house": "每則訊息（問候與感謝除外）的第一步都必須呼叫工具，讓關於房屋的回答以即時資料為依據。若模型能自行可靠地呼叫工具，或想在一般問題上省下一輪工具呼叫，請關閉。",
-            "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。",
-            "assist_stt": "用此代理的 API 金鑰建立 Home Assistant 語音轉文字引擎，並指派給每個 AI Workspace Assist 管線（含 Cursor）。若已有其他引擎請關閉。",
+            "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中，並移除此代理新增的 Assist 管線。",
+            "assist_stt": "用此代理的 API 金鑰建立 Home Assistant 語音轉文字引擎，並指派給每個 AI Workspace Assist 管線（含 Cursor）。關閉會移除此代理新增的語音轉文字引擎。",
             "stt_model": "留空使用該供應商的預設模型。也可以輸入其他 id。",
-            "assist_tts": "用此代理的 API 金鑰建立 Home Assistant 文字轉語音引擎，並指派給每個 AI Workspace Assist 管線（含 Cursor）。若已有 Piper 或其他語音請關閉。",
+            "assist_tts": "用此代理的 API 金鑰建立 Home Assistant 文字轉語音引擎，並指派給每個 AI Workspace Assist 管線（含 Cursor）。關閉會移除此代理新增的文字轉語音引擎。",
             "tts_model": "留空使用 gpt-4o-mini-tts。tts-1 較便宜。也可以輸入其他 id。",
-            "tts_voice": "預設 Coral。Assist 管線的音色欄位可以覆寫。"
+            "tts_voice": "預設 Coral。此代理建立的 Assist 管線使用此音色。",
+            "tts_speed": "此語音的語速。1× 為正常。適用於 AI Workspace 與 Assist。"
           }
         }
       },

@@ -202,3 +202,26 @@ def attach_handoff(message: str, rows, needed: bool = True, title: str = "") -> 
     if not note:
         return message
     return f"{note}\n\n{message}"
+
+
+def merge_reply_text(streamed: str, final: str | None) -> str:
+    """Keep a spoken intro that arrived before tools when the result is only the later answer."""
+    streamed = str(streamed or "").strip()
+    final = str(final or "").strip()
+    if not final:
+        return streamed
+    if not streamed:
+        return final
+    if streamed == final or streamed in final:
+        return final
+    if final in streamed:
+        return streamed
+    overlap = 0
+    for n in range(min(len(streamed), len(final)), 0, -1):
+        if streamed.endswith(final[:n]):
+            overlap = n
+            break
+    intro = streamed[: len(streamed) - overlap].strip() if overlap else streamed
+    if intro and intro not in final:
+        return f"{intro}\n\n{final}".strip()
+    return final

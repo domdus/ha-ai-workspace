@@ -26,6 +26,7 @@ from .const import (
     CONF_ASSIST_TTS,
     CONF_STT_MODEL,
     CONF_TTS_MODEL,
+    CONF_TTS_SPEED,
     CONF_TTS_VOICE,
     CONF_AZURE_API_VERSION,
     CONF_BORROW,
@@ -41,6 +42,7 @@ from .const import (
     EFFORTS,
     MODE_API,
     MODE_CURSOR,
+    TTS_SPEEDS,
     TTS_VOICES,
     assist_enabled,
     assist_stt_enabled,
@@ -52,7 +54,9 @@ from .const import (
     default_api_model,
     default_stt_model,
     default_tts_model,
+    resolved_tts_speed,
     resolved_tts_voice,
+    tts_speed_choice,
     stt_model_choices,
     tts_model_choices,
     submitted_model,
@@ -159,6 +163,18 @@ def _tts_voice_field(current: dict) -> dict:
     }
 
 
+def _tts_speed_field(current: dict) -> dict:
+    shown = tts_speed_choice(resolved_tts_speed(current))
+    options = [{"value": tts_speed_choice(item), "label": f"{tts_speed_choice(item)}×"} for item in TTS_SPEEDS]
+    if shown and shown not in {item["value"] for item in options}:
+        options.insert(0, {"value": shown, "label": f"{shown}×"})
+    return {
+        vol.Optional(CONF_TTS_SPEED, default=shown): SelectSelector(
+            SelectSelectorConfig(options=options, mode="dropdown")
+        )
+    }
+
+
 def _fields_schema(step: str, current: dict, borrows: list[dict[str, str]], *, new: bool = False) -> vol.Schema:
     provider = str(current.get(CONF_API_PROVIDER) or MODE_CURSOR)
     fields: dict = {}
@@ -198,6 +214,7 @@ def _fields_schema(step: str, current: dict, borrows: list[dict[str, str]], *, n
         fields[vol.Optional(CONF_ASSIST_TTS, default=assist_tts_enabled(current, provider))] = cv.boolean
         fields.update(_tts_model_field(provider, current))
         fields.update(_tts_voice_field(current))
+        fields.update(_tts_speed_field(current))
     return vol.Schema(fields)
 
 
@@ -344,6 +361,9 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                     if provider_supports_tts(provider)
                     else "",
                     CONF_TTS_VOICE: str(user_input.get(CONF_TTS_VOICE) or "").strip()
+                    if provider_supports_tts(provider)
+                    else "",
+                    CONF_TTS_SPEED: tts_speed_choice(resolved_tts_speed(user_input if provider_supports_tts(provider) else {}))
                     if provider_supports_tts(provider)
                     else "",
                     CONF_AZURE_API_VERSION: version if provider == API_AZURE else "",

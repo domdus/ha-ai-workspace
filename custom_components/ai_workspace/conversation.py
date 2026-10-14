@@ -18,7 +18,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .agents import Agent, entry_agents
 from .const import DOMAIN
-from .chat_scope import handoff_note, other_chat_note
+from .chat_scope import handoff_note, merge_reply_text, other_chat_note
 from .http import _create_runtime_session, async_agent_events
 from .small_talk import wants_house_tools
 from .store import Store
@@ -100,8 +100,13 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Expose each agent that has Assist on."""
+    from .assist_pipelines import async_prune_voice_entities
+
+    keep: set[str] = set()
     wanted = 0
     for agent in entry_agents(entry):
+        if agent.assist:
+            keep.add(agent.id)
         if agent.assist and _agent_device_active(hass, entry.entry_id, agent.subentry_id):
             async_add_entities(
                 [AiWorkspaceConversationEntity(entry, agent)],
@@ -110,6 +115,7 @@ async def async_setup_entry(
             wanted += 1
         else:
             await _drop_assist_pipeline(hass, agent.id)
+    await async_prune_voice_entities(hass, entry.entry_id, "conversation", keep)
     _LOGGER.info("Exposing %s Assist agent(s)", wanted)
 
 
@@ -307,7 +313,7 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
             async for _content in chat_log.async_add_delta_content_stream(self.entity_id, deltas()):
                 pass
 
-            answer = (final or "".join(parts)).strip()
+            answer = merge_reply_text("".join(parts), final)
             if error and not answer:
                 answer = error
             stored = list(tools)

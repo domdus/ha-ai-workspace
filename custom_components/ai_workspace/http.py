@@ -26,7 +26,7 @@ from .const import (
 )
 from .mcp_config import with_mcp_auth
 from .mcp_resolve import ha_hosts, hass_mcp_server_url
-from .chat_scope import handoff_note, other_chat_note
+from .chat_scope import handoff_note, merge_reply_text, other_chat_note
 from .files import attach_files_to_message, file_events, parse_client_files
 from .images import caption_for, image_events, parse_client_images
 
@@ -858,7 +858,7 @@ class ChatView(HomeAssistantView):
                     logger.exception("chat failed session=%s", session.id)
                     error = redact(str(exc), [settings.cursor_api_key, settings.api_key, settings.mcp_token])
                     await send({"type": "error", "message": error})
-                answer = (final or "".join(parts)).strip()
+                answer = merge_reply_text("".join(parts), final)
                 if error and not answer:
                     answer = error
                 stored_events = list(tools)

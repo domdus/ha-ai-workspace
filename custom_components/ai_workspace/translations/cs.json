@@ -205,13 +205,13 @@
             "cursor_api_key": "Klíč API Cursor",
             "model": "Model",
             "effort": "Úsilí",
-            "assist": "Použít také v Assist"
+            "assist": "Přidat do Assist"
           },
           "data_description": {
             "cursor_api_key": "Z cursor.com/dashboard/integrations. Při úpravě nechte prázdné, aby se zachoval uložený klíč. Nechte prázdné, pokud Runtime už má CURSOR_API_KEY.",
             "model": "Vyberte jeden nebo zadejte id. Prázdné použije Composer.",
             "effort": "Rychlé, Vysoké nebo Vysoké rychlé. Composer použije Rychlé, pokud nezvolíte Vysoké.",
-            "assist": "Přidá tohoto agenta do Home Assistant Assist. Vypnuto ho nechá jen v chatu AI Workspace."
+            "assist": "Přidá tohoto agenta do Home Assistant Assist. Vypnuto ho nechá jen v chatu AI Workspace a odstraní Assist pipeline, kterou tento agent přidal."
           }
         },
         "provider_cloud": {
@@ -224,12 +224,13 @@
             "effort": "Úsilí",
             "low_token": "Málo tokenů",
             "check_house": "Vždy nejdřív zkontrolovat dům",
-            "assist": "Použít také v Assist",
-            "assist_stt": "Přidat také převod řeči na text",
+            "assist": "Přidat do Assist",
+            "assist_stt": "Přidat převod řeči na text",
             "stt_model": "Model řeči na text",
-            "assist_tts": "Přidat také převod textu na řeč",
+            "assist_tts": "Přidat převod textu na řeč",
             "tts_model": "Model textu na řeč",
-            "tts_voice": "Hlas"
+            "tts_voice": "Hlas",
+            "tts_speed": "Rychlost"
           },
           "data_description": {
             "borrow": "Použije klíč, který už tato integrace uložila. Druhá integrace se nemění.",
@@ -238,12 +239,13 @@
             "effort": "Rychlé, Vysoké nebo Vysoké rychlé, když to model umí.",
             "low_token": "Krátký pokyn a žádné nástroje, aby malý model stihl odpovědět. Dům tak nezkontroluje ani nezmění.",
             "check_house": "První krok každé zprávy (kromě pozdravů a poděkování) musí zavolat nástroj, aby odpovědi o domě vycházely z živých dat. Vypněte u modelů, které nástroje spolehlivě volají samy, nebo pro úsporu jednoho kola nástrojů u obecných otázek.",
-            "assist": "Přidá tohoto agenta do Home Assistant Assist. Vypnuto ho nechá jen v chatu AI Workspace.",
-            "assist_stt": "Použije API klíč tohoto agenta jako Home Assistant engine řeči na text a přiřadí ho ke všem pipeline AI Workspace Assist (včetně Cursor). Vypněte, pokud už používáte jiný engine.",
+            "assist": "Přidá tohoto agenta do Home Assistant Assist. Vypnuto ho nechá jen v chatu AI Workspace a odstraní Assist pipeline, kterou tento agent přidal.",
+            "assist_stt": "Použije API klíč tohoto agenta jako Home Assistant engine řeči na text a přiřadí ho ke všem pipeline AI Workspace Assist (včetně Cursor). Vypnuto odstraní engine řeči na text, který tento agent přidal.",
             "stt_model": "Prázdné použije výchozí model poskytovatele. Můžete zadat i jiné id.",
-            "assist_tts": "Použije API klíč tohoto agenta jako Home Assistant engine textu na řeč a přiřadí ho ke všem pipeline AI Workspace Assist (včetně Cursor). Vypněte, pokud už používáte Piper nebo jiný hlas.",
+            "assist_tts": "Použije API klíč tohoto agenta jako Home Assistant engine textu na řeč a přiřadí ho ke všem pipeline AI Workspace Assist (včetně Cursor). Vypnuto odstraní engine textu na řeč, který tento agent přidal.",
             "tts_model": "Prázdné použije gpt-4o-mini-tts. tts-1 je levnější. Můžete zadat i jiné id.",
-            "tts_voice": "Coral je výchozí. Pole Hlas pipeline Assist to může přepsat."
+            "tts_voice": "Coral je výchozí. Pipeline Assist, které tento agent vytvořil, použijí tento hlas.",
+            "tts_speed": "Jak rychle tento hlas mluví. 1× je běžné. Platí pro AI Workspace i Assist."
           }
         },
         "provider_ollama": {
@@ -255,7 +257,7 @@
             "effort": "Úsilí",
             "low_token": "Málo tokenů",
             "check_house": "Vždy nejdřív zkontrolovat dům",
-            "assist": "Použít také v Assist"
+            "assist": "Přidat do Assist"
           },
           "data_description": {
             "api_base": "Usually {example_url}",
@@ -263,7 +265,7 @@
             "effort": "Použije se, když to model umí.",
             "low_token": "Krátký pokyn a žádné nástroje, aby malý model stihl odpovědět. Dům tak nezkontroluje ani nezmění.",
             "check_house": "První krok každé zprávy (kromě pozdravů a poděkování) musí zavolat nástroj, aby odpovědi o domě vycházely z živých dat. Vypněte u modelů, které nástroje spolehlivě volají samy, nebo pro úsporu jednoho kola nástrojů u obecných otázek.",
-            "assist": "Přidá tohoto agenta do Home Assistant Assist. Vypnuto ho nechá jen v chatu AI Workspace."
+            "assist": "Přidá tohoto agenta do Home Assistant Assist. Vypnuto ho nechá jen v chatu AI Workspace a odstraní Assist pipeline, kterou tento agent přidal."
           }
         },
         "provider_azure": {
@@ -277,7 +279,7 @@
             "effort": "Úsilí",
             "low_token": "Málo tokenů",
             "check_house": "Vždy nejdřív zkontrolovat dům",
-            "assist": "Použít také v Assist"
+            "assist": "Přidat do Assist"
           },
           "data_description": {
             "api_key": "Klíč Azure OpenAI. Při úpravě nechte prázdné, aby se zachoval uložený klíč.",
@@ -287,7 +289,7 @@
             "effort": "Použije se, když to nasazení umí.",
             "low_token": "Krátký pokyn a žádné nástroje, aby malý model stihl odpovědět. Dům tak nezkontroluje ani nezmění.",
             "check_house": "První krok každé zprávy (kromě pozdravů a poděkování) musí zavolat nástroj, aby odpovědi o domě vycházely z živých dat. Vypněte u modelů, které nástroje spolehlivě volají samy, nebo pro úsporu jednoho kola nástrojů u obecných otázek.",
-            "assist": "Přidá tohoto agenta do Home Assistant Assist. Vypnuto ho nechá jen v chatu AI Workspace."
+            "assist": "Přidá tohoto agenta do Home Assistant Assist. Vypnuto ho nechá jen v chatu AI Workspace a odstraní Assist pipeline, kterou tento agent přidal."
           }
         },
         "provider_compatible": {
@@ -300,12 +302,13 @@
             "effort": "Úsilí",
             "low_token": "Málo tokenů",
             "check_house": "Vždy nejdřív zkontrolovat dům",
-            "assist": "Použít také v Assist",
-            "assist_stt": "Přidat také převod řeči na text",
+            "assist": "Přidat do Assist",
+            "assist_stt": "Přidat převod řeči na text",
             "stt_model": "Model řeči na text",
-            "assist_tts": "Přidat také převod textu na řeč",
+            "assist_tts": "Přidat převod textu na řeč",
             "tts_model": "Model textu na řeč",
-            "tts_voice": "Hlas"
+            "tts_voice": "Hlas",
+            "tts_speed": "Rychlost"
           },
           "data_description": {
             "api_key": "Při úpravě nechte prázdné, aby se zachoval uložený klíč.",
@@ -314,12 +317,13 @@
             "effort": "Použije se, když to server umí.",
             "low_token": "Krátký pokyn a žádné nástroje, aby malý model stihl odpovědět. Dům tak nezkontroluje ani nezmění.",
             "check_house": "První krok každé zprávy (kromě pozdravů a poděkování) musí zavolat nástroj, aby odpovědi o domě vycházely z živých dat. Vypněte u modelů, které nástroje spolehlivě volají samy, nebo pro úsporu jednoho kola nástrojů u obecných otázek.",
-            "assist": "Přidá tohoto agenta do Home Assistant Assist. Vypnuto ho nechá jen v chatu AI Workspace.",
-            "assist_stt": "Použije API klíč tohoto agenta jako Home Assistant engine řeči na text a přiřadí ho ke všem pipeline AI Workspace Assist (včetně Cursor). Vypněte, pokud už používáte jiný engine.",
+            "assist": "Přidá tohoto agenta do Home Assistant Assist. Vypnuto ho nechá jen v chatu AI Workspace a odstraní Assist pipeline, kterou tento agent přidal.",
+            "assist_stt": "Použije API klíč tohoto agenta jako Home Assistant engine řeči na text a přiřadí ho ke všem pipeline AI Workspace Assist (včetně Cursor). Vypnuto odstraní engine řeči na text, který tento agent přidal.",
             "stt_model": "Prázdné použije výchozí model poskytovatele. Můžete zadat i jiné id.",
-            "assist_tts": "Použije API klíč tohoto agenta jako Home Assistant engine textu na řeč a přiřadí ho ke všem pipeline AI Workspace Assist (včetně Cursor). Vypněte, pokud už používáte Piper nebo jiný hlas.",
+            "assist_tts": "Použije API klíč tohoto agenta jako Home Assistant engine textu na řeč a přiřadí ho ke všem pipeline AI Workspace Assist (včetně Cursor). Vypnuto odstraní engine textu na řeč, který tento agent přidal.",
             "tts_model": "Prázdné použije gpt-4o-mini-tts. tts-1 je levnější. Můžete zadat i jiné id.",
-            "tts_voice": "Coral je výchozí. Pole Hlas pipeline Assist to může přepsat."
+            "tts_voice": "Coral je výchozí. Pipeline Assist, které tento agent vytvořil, použijí tento hlas.",
+            "tts_speed": "Jak rychle tento hlas mluví. 1× je běžné. Platí pro AI Workspace i Assist."
           }
         }
       },

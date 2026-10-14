@@ -205,13 +205,13 @@
             "cursor_api_key": "Cursor-API-nyckel",
             "model": "Modell",
             "effort": "Ansträngning",
-            "assist": "Använd också i Assist"
+            "assist": "Lägg till i Assist"
           },
           "data_description": {
             "cursor_api_key": "Från cursor.com/dashboard/integrations. Lämna tomt vid redigering för att behålla den sparade nyckeln. Lämna tomt om Runtime redan har CURSOR_API_KEY.",
             "model": "Välj en eller skriv ett id. Tomt använder Composer.",
             "effort": "Snabb, Hög eller Hög snabb. Composer använder Snabb om du inte väljer Hög.",
-            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten och tar bort Assist-pipelinen som den här agenten lade till."
           }
         },
         "provider_cloud": {
@@ -224,12 +224,13 @@
             "effort": "Ansträngning",
             "low_token": "Få tokens",
             "check_house": "Kontrollera alltid huset först",
-            "assist": "Använd också i Assist",
-            "assist_stt": "Lägg också till tal till text",
+            "assist": "Lägg till i Assist",
+            "assist_stt": "Lägg till tal till text",
             "stt_model": "Tal-till-text-modell",
-            "assist_tts": "Lägg också till text till tal",
+            "assist_tts": "Lägg till text till tal",
             "tts_model": "Text-till-tal-modell",
-            "tts_voice": "Röst"
+            "tts_voice": "Röst",
+            "tts_speed": "Hastighet"
           },
           "data_description": {
             "borrow": "Använder nyckeln som den integrationen redan har sparat. Den andra integrationen lämnas orörd.",
@@ -238,12 +239,13 @@
             "effort": "Snabb, Hög eller Hög snabb när modellen stöder det.",
             "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
             "check_house": "Första steget i varje meddelande (utom hälsningar och tack) måste anropa ett verktyg, så att svar om huset bygger på aktuell data. Stäng av för modeller som anropar verktyg pålitligt själva, eller för att spara en verktygsrunda på allmänna frågor.",
-            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten.",
-            "assist_stt": "Använder agentens API-nyckel som en Home Assistant tal-till-text-motor och kopplar den till varje AI Workspace Assist-pipeline (även Cursor). Av om du redan använder en annan motor.",
+            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten och tar bort Assist-pipelinen som den här agenten lade till.",
+            "assist_stt": "Använder agentens API-nyckel som en Home Assistant tal-till-text-motor och kopplar den till varje AI Workspace Assist-pipeline (även Cursor). Av tar bort tal-till-text-motorn som den här agenten lade till.",
             "stt_model": "Tomt använder leverantörens standard. Du kan skriva ett annat id.",
-            "assist_tts": "Använder agentens API-nyckel som en Home Assistant text-till-tal-motor och kopplar den till varje AI Workspace Assist-pipeline (även Cursor). Av om du redan använder Piper eller en annan röst.",
+            "assist_tts": "Använder agentens API-nyckel som en Home Assistant text-till-tal-motor och kopplar den till varje AI Workspace Assist-pipeline (även Cursor). Av tar bort text-till-tal-motorn som den här agenten lade till.",
             "tts_model": "Tomt använder gpt-4o-mini-tts. tts-1 är billigare. Du kan skriva ett annat id.",
-            "tts_voice": "Coral är standard. Assist-pipelinens fält Röst kan åsidosätta detta."
+            "tts_voice": "Coral är standard. Assist-pipelines som den här agenten skapade använder den här rösten.",
+            "tts_speed": "Hur snabbt den här rösten talar. 1× är normalt. Gäller AI Workspace och Assist."
           }
         },
         "provider_ollama": {
@@ -255,7 +257,7 @@
             "effort": "Ansträngning",
             "low_token": "Få tokens",
             "check_house": "Kontrollera alltid huset först",
-            "assist": "Använd också i Assist"
+            "assist": "Lägg till i Assist"
           },
           "data_description": {
             "api_base": "Usually {example_url}",
@@ -263,7 +265,7 @@
             "effort": "Används när modellen stöder det.",
             "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
             "check_house": "Första steget i varje meddelande (utom hälsningar och tack) måste anropa ett verktyg, så att svar om huset bygger på aktuell data. Stäng av för modeller som anropar verktyg pålitligt själva, eller för att spara en verktygsrunda på allmänna frågor.",
-            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten och tar bort Assist-pipelinen som den här agenten lade till."
           }
         },
         "provider_azure": {
@@ -277,7 +279,7 @@
             "effort": "Ansträngning",
             "low_token": "Få tokens",
             "check_house": "Kontrollera alltid huset först",
-            "assist": "Använd också i Assist"
+            "assist": "Lägg till i Assist"
           },
           "data_description": {
             "api_key": "Azure OpenAI-nyckeln. Lämna tomt vid redigering för att behålla den sparade nyckeln.",
@@ -287,7 +289,7 @@
             "effort": "Används när distributionen stöder det.",
             "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
             "check_house": "Första steget i varje meddelande (utom hälsningar och tack) måste anropa ett verktyg, så att svar om huset bygger på aktuell data. Stäng av för modeller som anropar verktyg pålitligt själva, eller för att spara en verktygsrunda på allmänna frågor.",
-            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten och tar bort Assist-pipelinen som den här agenten lade till."
           }
         },
         "provider_compatible": {
@@ -300,12 +302,13 @@
             "effort": "Ansträngning",
             "low_token": "Få tokens",
             "check_house": "Kontrollera alltid huset först",
-            "assist": "Använd också i Assist",
-            "assist_stt": "Lägg också till tal till text",
+            "assist": "Lägg till i Assist",
+            "assist_stt": "Lägg till tal till text",
             "stt_model": "Tal-till-text-modell",
-            "assist_tts": "Lägg också till text till tal",
+            "assist_tts": "Lägg till text till tal",
             "tts_model": "Text-till-tal-modell",
-            "tts_voice": "Röst"
+            "tts_voice": "Röst",
+            "tts_speed": "Hastighet"
           },
           "data_description": {
             "api_key": "Lämna tomt vid redigering för att behålla den sparade nyckeln.",
@@ -314,12 +317,13 @@
             "effort": "Används när servern stöder det.",
             "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
             "check_house": "Första steget i varje meddelande (utom hälsningar och tack) måste anropa ett verktyg, så att svar om huset bygger på aktuell data. Stäng av för modeller som anropar verktyg pålitligt själva, eller för att spara en verktygsrunda på allmänna frågor.",
-            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten.",
-            "assist_stt": "Använder agentens API-nyckel som en Home Assistant tal-till-text-motor och kopplar den till varje AI Workspace Assist-pipeline (även Cursor). Av om du redan använder en annan motor.",
+            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten och tar bort Assist-pipelinen som den här agenten lade till.",
+            "assist_stt": "Använder agentens API-nyckel som en Home Assistant tal-till-text-motor och kopplar den till varje AI Workspace Assist-pipeline (även Cursor). Av tar bort tal-till-text-motorn som den här agenten lade till.",
             "stt_model": "Tomt använder leverantörens standard. Du kan skriva ett annat id.",
-            "assist_tts": "Använder agentens API-nyckel som en Home Assistant text-till-tal-motor och kopplar den till varje AI Workspace Assist-pipeline (även Cursor). Av om du redan använder Piper eller en annan röst.",
+            "assist_tts": "Använder agentens API-nyckel som en Home Assistant text-till-tal-motor och kopplar den till varje AI Workspace Assist-pipeline (även Cursor). Av tar bort text-till-tal-motorn som den här agenten lade till.",
             "tts_model": "Tomt använder gpt-4o-mini-tts. tts-1 är billigare. Du kan skriva ett annat id.",
-            "tts_voice": "Coral är standard. Assist-pipelinens fält Röst kan åsidosätta detta."
+            "tts_voice": "Coral är standard. Assist-pipelines som den här agenten skapade använder den här rösten.",
+            "tts_speed": "Hur snabbt den här rösten talar. 1× är normalt. Gäller AI Workspace och Assist."
           }
         }
       },

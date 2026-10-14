@@ -205,13 +205,13 @@
             "cursor_api_key": "Cursor API açarı",
             "model": "Model",
             "effort": "Səy",
-            "assist": "Assist-də də istifadə et"
+            "assist": "Assist-ə əlavə et"
           },
           "data_description": {
             "cursor_api_key": "cursor.com/dashboard/integrations ünvanından. Redaktədə boş buraxın ki, saxlanmış açar qalsın. Runtime-da artıq CURSOR_API_KEY varsa, boş saxlayın.",
             "model": "Birini seçin və ya id yazın. Boş Composer istifadə edir.",
             "effort": "Sürətli, Yüksək və ya Yüksək sürətli. Composer, Yüksək seçməsəniz, Sürətli istifadə edir.",
-            "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
+            "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır və bu agentin əlavə etdiyi Assist boru xəttini silir."
           }
         },
         "provider_cloud": {
@@ -224,12 +224,13 @@
             "effort": "Səy",
             "low_token": "Az token",
             "check_house": "Həmişə əvvəlcə evi yoxla",
-            "assist": "Assist-də də istifadə et",
-            "assist_stt": "Nitqdən mətnə də əlavə et",
+            "assist": "Assist-ə əlavə et",
+            "assist_stt": "Nitqdən mətnə əlavə et",
             "stt_model": "Nitqdən mətnə modeli",
-            "assist_tts": "Mətndən nitqə də əlavə et",
+            "assist_tts": "Mətndən nitqə əlavə et",
             "tts_model": "Mətndən nitqə modeli",
-            "tts_voice": "Səs"
+            "tts_voice": "Səs",
+            "tts_speed": "Sürət"
           },
           "data_description": {
             "borrow": "Həmin inteqrasiyanın artıq saxladığı açarı istifadə edir. Digər inteqrasiya dəyişmir.",
@@ -238,12 +239,13 @@
             "effort": "Model dəstəkləyəndə Sürətli, Yüksək və ya Yüksək sürətli.",
             "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
             "check_house": "Hər mesajın ilk addımı (salam və təşəkkür istisna olmaqla) alət çağırmalıdır ki, ev haqqında cavablar canlı məlumata əsaslansın. Alətləri özü etibarlı çağıran modellər üçün və ya ümumi suallarda bir alət raundunu qənaət etmək üçün söndürün.",
-            "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır.",
-            "assist_stt": "Bu agentin API açarını Home Assistant nitqdən-mətnə mühərriki kimi istifadə edir və onu bütün AI Workspace Assist boru xətlərinə (Cursor daxil) bağlayır. Başqa mühərrik varsa sönülü saxlayın.",
+            "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır və bu agentin əlavə etdiyi Assist boru xəttini silir.",
+            "assist_stt": "Bu agentin API açarını Home Assistant nitqdən-mətnə mühərriki kimi istifadə edir və onu bütün AI Workspace Assist boru xətlərinə (Cursor daxil) bağlayır. Sönülü bu agentin əlavə etdiyi nitqdən-mətnə mühərrikini silir.",
             "stt_model": "Boş buraxılsa təminatçının standartı istifadə olunur. Başqa id də yaza bilərsiniz.",
-            "assist_tts": "Bu agentin API açarını Home Assistant mətndən-nitqə mühərriki kimi istifadə edir və onu bütün AI Workspace Assist boru xətlərinə (Cursor daxil) bağlayır. Piper və ya başqa səs varsa sönülü saxlayın.",
+            "assist_tts": "Bu agentin API açarını Home Assistant mətndən-nitqə mühərriki kimi istifadə edir və onu bütün AI Workspace Assist boru xətlərinə (Cursor daxil) bağlayır. Sönülü bu agentin əlavə etdiyi mətndən-nitqə mühərrikini silir.",
             "tts_model": "Boş buraxılsa gpt-4o-mini-tts istifadə olunur. tts-1 ucuzdur. Başqa id də yaza bilərsiniz.",
-            "tts_voice": "Coral standartdır. Assist boru xəttinin Səs sahəsi bunu əvəz edə bilər."
+            "tts_voice": "Coral standartdır. Bu agentin yaratdığı Assist boru xətləri bu səsi istifadə edir.",
+            "tts_speed": "Bu səsin danışma sürəti. 1× normaldır. AI Workspace və Assist üçün keçərlidir."
           }
         },
         "provider_ollama": {
@@ -255,7 +257,7 @@
             "effort": "Səy",
             "low_token": "Az token",
             "check_house": "Həmişə əvvəlcə evi yoxla",
-            "assist": "Assist-də də istifadə et"
+            "assist": "Assist-ə əlavə et"
           },
           "data_description": {
             "api_base": "Usually {example_url}",
@@ -263,7 +265,7 @@
             "effort": "Model dəstəkləyəndə istifadə olunur.",
             "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
             "check_house": "Hər mesajın ilk addımı (salam və təşəkkür istisna olmaqla) alət çağırmalıdır ki, ev haqqında cavablar canlı məlumata əsaslansın. Alətləri özü etibarlı çağıran modellər üçün və ya ümumi suallarda bir alət raundunu qənaət etmək üçün söndürün.",
-            "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
+            "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır və bu agentin əlavə etdiyi Assist boru xəttini silir."
           }
         },
         "provider_azure": {
@@ -277,7 +279,7 @@
             "effort": "Səy",
             "low_token": "Az token",
             "check_house": "Həmişə əvvəlcə evi yoxla",
-            "assist": "Assist-də də istifadə et"
+            "assist": "Assist-ə əlavə et"
           },
           "data_description": {
             "api_key": "Azure OpenAI açarı. Redaktədə boş buraxın ki, saxlanmış açar qalsın.",
@@ -287,7 +289,7 @@
             "effort": "Yerləşdirmə dəstəkləyəndə istifadə olunur.",
             "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
             "check_house": "Hər mesajın ilk addımı (salam və təşəkkür istisna olmaqla) alət çağırmalıdır ki, ev haqqında cavablar canlı məlumata əsaslansın. Alətləri özü etibarlı çağıran modellər üçün və ya ümumi suallarda bir alət raundunu qənaət etmək üçün söndürün.",
-            "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır."
+            "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır və bu agentin əlavə etdiyi Assist boru xəttini silir."
           }
         },
         "provider_compatible": {
@@ -300,12 +302,13 @@
             "effort": "Səy",
             "low_token": "Az token",
             "check_house": "Həmişə əvvəlcə evi yoxla",
-            "assist": "Assist-də də istifadə et",
-            "assist_stt": "Nitqdən mətnə də əlavə et",
+            "assist": "Assist-ə əlavə et",
+            "assist_stt": "Nitqdən mətnə əlavə et",
             "stt_model": "Nitqdən mətnə modeli",
-            "assist_tts": "Mətndən nitqə də əlavə et",
+            "assist_tts": "Mətndən nitqə əlavə et",
             "tts_model": "Mətndən nitqə modeli",
-            "tts_voice": "Səs"
+            "tts_voice": "Səs",
+            "tts_speed": "Sürət"
           },
           "data_description": {
             "api_key": "Redaktədə boş buraxın ki, saxlanmış açar qalsın.",
@@ -314,12 +317,13 @@
             "effort": "Server dəstəkləyəndə istifadə olunur.",
             "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
             "check_house": "Hər mesajın ilk addımı (salam və təşəkkür istisna olmaqla) alət çağırmalıdır ki, ev haqqında cavablar canlı məlumata əsaslansın. Alətləri özü etibarlı çağıran modellər üçün və ya ümumi suallarda bir alət raundunu qənaət etmək üçün söndürün.",
-            "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır.",
-            "assist_stt": "Bu agentin API açarını Home Assistant nitqdən-mətnə mühərriki kimi istifadə edir və onu bütün AI Workspace Assist boru xətlərinə (Cursor daxil) bağlayır. Başqa mühərrik varsa sönülü saxlayın.",
+            "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır və bu agentin əlavə etdiyi Assist boru xəttini silir.",
+            "assist_stt": "Bu agentin API açarını Home Assistant nitqdən-mətnə mühərriki kimi istifadə edir və onu bütün AI Workspace Assist boru xətlərinə (Cursor daxil) bağlayır. Sönülü bu agentin əlavə etdiyi nitqdən-mətnə mühərrikini silir.",
             "stt_model": "Boş buraxılsa təminatçının standartı istifadə olunur. Başqa id də yaza bilərsiniz.",
-            "assist_tts": "Bu agentin API açarını Home Assistant mətndən-nitqə mühərriki kimi istifadə edir və onu bütün AI Workspace Assist boru xətlərinə (Cursor daxil) bağlayır. Piper və ya başqa səs varsa sönülü saxlayın.",
+            "assist_tts": "Bu agentin API açarını Home Assistant mətndən-nitqə mühərriki kimi istifadə edir və onu bütün AI Workspace Assist boru xətlərinə (Cursor daxil) bağlayır. Sönülü bu agentin əlavə etdiyi mətndən-nitqə mühərrikini silir.",
             "tts_model": "Boş buraxılsa gpt-4o-mini-tts istifadə olunur. tts-1 ucuzdur. Başqa id də yaza bilərsiniz.",
-            "tts_voice": "Coral standartdır. Assist boru xəttinin Səs sahəsi bunu əvəz edə bilər."
+            "tts_voice": "Coral standartdır. Bu agentin yaratdığı Assist boru xətləri bu səsi istifadə edir.",
+            "tts_speed": "Bu səsin danışma sürəti. 1× normaldır. AI Workspace və Assist üçün keçərlidir."
           }
         }
       },

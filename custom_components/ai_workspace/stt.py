@@ -106,10 +106,14 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """One STT entity per OpenAI-style agent that has Speech-to-text on."""
+    from .assist_pipelines import async_prune_voice_entities, async_refresh_assist_pipelines
+
+    keep: set[str] = set()
     wanted = 0
     for agent in entry_agents(entry):
         if not agent.assist_stt or not agent.api_key:
             continue
+        keep.add(f"{agent.id}-stt")
         if not _agent_device_active(hass, entry.entry_id, agent.subentry_id):
             continue
         async_add_entities(
@@ -117,9 +121,8 @@ async def async_setup_entry(
             config_subentry_id=agent.subentry_id or None,
         )
         wanted += 1
+    await async_prune_voice_entities(hass, entry.entry_id, "stt", keep)
     _LOGGER.info("Exposing %s speech-to-text engine(s)", wanted)
-    from .assist_pipelines import async_refresh_assist_pipelines
-
     await async_refresh_assist_pipelines(hass)
 
 

@@ -177,6 +177,7 @@ CONF_STT_MODEL = "stt_model"
 CONF_ASSIST_TTS = "assist_tts"
 CONF_TTS_MODEL = "tts_model"
 CONF_TTS_VOICE = "tts_voice"
+CONF_TTS_SPEED = "tts_speed"
 STT_PROVIDERS = frozenset({API_OPENAI, API_OPENROUTER, API_COMPATIBLE})
 TTS_PROVIDERS = STT_PROVIDERS
 _STT_MODEL = {
@@ -215,6 +216,8 @@ TTS_VOICES = [
     "verse",
 ]
 DEFAULT_TTS_VOICE = "coral"
+DEFAULT_TTS_SPEED = 1.0
+TTS_SPEEDS = (1.0, 1.25, 1.5, 2.0, 3.0, 4.0)
 # ISO 639-1 tags for OpenAI /audio/speech. One voice speaks all of these.
 TTS_LANGUAGES = [
     "af",
@@ -342,6 +345,20 @@ def resolved_tts_model(raw: dict, provider: str = "") -> str:
 def resolved_tts_voice(raw: dict) -> str:
     stored = str(raw.get(CONF_TTS_VOICE) or "").strip().casefold()
     return stored or DEFAULT_TTS_VOICE
+
+
+def tts_speed_choice(value: float) -> str:
+    if float(value) == int(value):
+        return str(int(value))
+    return str(value)
+
+
+def resolved_tts_speed(raw: dict) -> float:
+    try:
+        value = float(raw.get(CONF_TTS_SPEED, DEFAULT_TTS_SPEED) or DEFAULT_TTS_SPEED)
+    except (TypeError, ValueError):
+        value = DEFAULT_TTS_SPEED
+    return max(0.25, min(4.0, value))
 
 
 def assist_tts_enabled(raw: dict, provider: str = "") -> bool:

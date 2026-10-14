@@ -205,13 +205,13 @@
             "cursor_api_key": "Cursor-API-ŝlosilo",
             "model": "Modelo",
             "effort": "Peno",
-            "assist": "Ankaŭ uzi en Assist"
+            "assist": "Aldoni al Assist"
           },
           "data_description": {
             "cursor_api_key": "De cursor.com/dashboard/integrations. Lasu malplena dum redakto por konservi la konservitan ŝlosilon. Lasu malplena, se la Runtime jam havas CURSOR_API_KEY.",
             "model": "Elektu unu aŭ tajpu id. Malplena uzas Composer.",
             "effort": "Rapida, Alta aŭ Alta rapida. Composer uzas Rapida krom se vi elektas Alta.",
-            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo kaj forigas la Assist-dukton, kiun ĉi tiu agento aldonis."
           }
         },
         "provider_cloud": {
@@ -224,12 +224,13 @@
             "effort": "Peno",
             "low_token": "Malmultaj tokenoj",
             "check_house": "Ĉiam unue kontroli la domon",
-            "assist": "Ankaŭ uzi en Assist",
-            "assist_stt": "Ankaŭ aldoni parolon-al-teksto",
+            "assist": "Aldoni al Assist",
+            "assist_stt": "Aldoni parolon-al-teksto",
             "stt_model": "Modelo parolo-al-teksto",
-            "assist_tts": "Ankaŭ aldoni tekston-al-parolo",
+            "assist_tts": "Aldoni tekston-al-parolo",
             "tts_model": "Modelo teksto-al-parolo",
-            "tts_voice": "Voĉo"
+            "tts_voice": "Voĉo",
+            "tts_speed": "Rapideco"
           },
           "data_description": {
             "borrow": "Uzas la ŝlosilon jam konservitan de tiu integriĝo. La alia integriĝo restas kiel estas.",
@@ -238,12 +239,13 @@
             "effort": "Rapida, Alta aŭ Alta rapida kiam la modelo tion subtenas.",
             "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
             "check_house": "La unua paŝo de ĉiu mesaĝo (krom salutoj kaj dankoj) devas voki ilon, por ke respondoj pri la domo baziĝu sur vivaj datumoj. Malŝaltu por modeloj, kiuj mem fidinde vokas ilojn, aŭ por ŝpari ilan rondon ĉe ĝeneralaj demandoj.",
-            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo.",
-            "assist_stt": "Uzas la API-ŝlosilon de ĉi tiu agento kiel Home Assistant parolo-al-teksto-motoron kaj asignas ĝin al ĉiu AI Workspace Assist-dukto (inkluzive Cursor). Malŝaltu se vi jam uzas alian motoron.",
+            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo kaj forigas la Assist-dukton, kiun ĉi tiu agento aldonis.",
+            "assist_stt": "Uzas la API-ŝlosilon de ĉi tiu agento kiel Home Assistant parolo-al-teksto-motoron kaj asignas ĝin al ĉiu AI Workspace Assist-dukto (inkluzive Cursor). Malŝalte forigas la parolo-al-teksto-motoron, kiun ĉi tiu agento aldonis.",
             "stt_model": "Malplene uzas la defaŭlton de la provizanto. Vi povas tajpi alian id.",
-            "assist_tts": "Uzas la API-ŝlosilon de ĉi tiu agento kiel Home Assistant teksto-al-parolo-motoron kaj asignas ĝin al ĉiu AI Workspace Assist-dukto (inkluzive Cursor). Malŝaltu se vi jam uzas Piper aŭ alian voĉon.",
+            "assist_tts": "Uzas la API-ŝlosilon de ĉi tiu agento kiel Home Assistant teksto-al-parolo-motoron kaj asignas ĝin al ĉiu AI Workspace Assist-dukto (inkluzive Cursor). Malŝalte forigas la teksto-al-parolo-motoron, kiun ĉi tiu agento aldonis.",
             "tts_model": "Malplene uzas gpt-4o-mini-tts. tts-1 estas malpli kosta. Vi povas tajpi alian id.",
-            "tts_voice": "Coral estas la defaŭlto. La kampo Voĉo de Assist-dukto povas anstataŭigi ĝin."
+            "tts_voice": "Coral estas la defaŭlto. Assist-duktoj, kiujn ĉi tiu agento kreis, uzas ĉi tiun voĉon.",
+            "tts_speed": "Kiel rapide ĉi tiu voĉo parolas. 1× estas normala. Validas por AI Workspace kaj Assist."
           }
         },
         "provider_ollama": {
@@ -255,7 +257,7 @@
             "effort": "Peno",
             "low_token": "Malmultaj tokenoj",
             "check_house": "Ĉiam unue kontroli la domon",
-            "assist": "Ankaŭ uzi en Assist"
+            "assist": "Aldoni al Assist"
           },
           "data_description": {
             "api_base": "Usually {example_url}",
@@ -263,7 +265,7 @@
             "effort": "Uzata kiam la modelo tion subtenas.",
             "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
             "check_house": "La unua paŝo de ĉiu mesaĝo (krom salutoj kaj dankoj) devas voki ilon, por ke respondoj pri la domo baziĝu sur vivaj datumoj. Malŝaltu por modeloj, kiuj mem fidinde vokas ilojn, aŭ por ŝpari ilan rondon ĉe ĝeneralaj demandoj.",
-            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo kaj forigas la Assist-dukton, kiun ĉi tiu agento aldonis."
           }
         },
         "provider_azure": {
@@ -277,7 +279,7 @@
             "effort": "Peno",
             "low_token": "Malmultaj tokenoj",
             "check_house": "Ĉiam unue kontroli la domon",
-            "assist": "Ankaŭ uzi en Assist"
+            "assist": "Aldoni al Assist"
           },
           "data_description": {
             "api_key": "La Azure OpenAI-ŝlosilo. Lasu malplena dum redakto por konservi la konservitan ŝlosilon.",
@@ -287,7 +289,7 @@
             "effort": "Uzata kiam la deplojo tion subtenas.",
             "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
             "check_house": "La unua paŝo de ĉiu mesaĝo (krom salutoj kaj dankoj) devas voki ilon, por ke respondoj pri la domo baziĝu sur vivaj datumoj. Malŝaltu por modeloj, kiuj mem fidinde vokas ilojn, aŭ por ŝpari ilan rondon ĉe ĝeneralaj demandoj.",
-            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo kaj forigas la Assist-dukton, kiun ĉi tiu agento aldonis."
           }
         },
         "provider_compatible": {
@@ -300,12 +302,13 @@
             "effort": "Peno",
             "low_token": "Malmultaj tokenoj",
             "check_house": "Ĉiam unue kontroli la domon",
-            "assist": "Ankaŭ uzi en Assist",
-            "assist_stt": "Ankaŭ aldoni parolon-al-teksto",
+            "assist": "Aldoni al Assist",
+            "assist_stt": "Aldoni parolon-al-teksto",
             "stt_model": "Modelo parolo-al-teksto",
-            "assist_tts": "Ankaŭ aldoni tekston-al-parolo",
+            "assist_tts": "Aldoni tekston-al-parolo",
             "tts_model": "Modelo teksto-al-parolo",
-            "tts_voice": "Voĉo"
+            "tts_voice": "Voĉo",
+            "tts_speed": "Rapideco"
           },
           "data_description": {
             "api_key": "Lasu malplena dum redakto por konservi la konservitan ŝlosilon.",
@@ -314,12 +317,13 @@
             "effort": "Uzata kiam la servilo tion subtenas.",
             "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
             "check_house": "La unua paŝo de ĉiu mesaĝo (krom salutoj kaj dankoj) devas voki ilon, por ke respondoj pri la domo baziĝu sur vivaj datumoj. Malŝaltu por modeloj, kiuj mem fidinde vokas ilojn, aŭ por ŝpari ilan rondon ĉe ĝeneralaj demandoj.",
-            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo.",
-            "assist_stt": "Uzas la API-ŝlosilon de ĉi tiu agento kiel Home Assistant parolo-al-teksto-motoron kaj asignas ĝin al ĉiu AI Workspace Assist-dukto (inkluzive Cursor). Malŝaltu se vi jam uzas alian motoron.",
+            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo kaj forigas la Assist-dukton, kiun ĉi tiu agento aldonis.",
+            "assist_stt": "Uzas la API-ŝlosilon de ĉi tiu agento kiel Home Assistant parolo-al-teksto-motoron kaj asignas ĝin al ĉiu AI Workspace Assist-dukto (inkluzive Cursor). Malŝalte forigas la parolo-al-teksto-motoron, kiun ĉi tiu agento aldonis.",
             "stt_model": "Malplene uzas la defaŭlton de la provizanto. Vi povas tajpi alian id.",
-            "assist_tts": "Uzas la API-ŝlosilon de ĉi tiu agento kiel Home Assistant teksto-al-parolo-motoron kaj asignas ĝin al ĉiu AI Workspace Assist-dukto (inkluzive Cursor). Malŝaltu se vi jam uzas Piper aŭ alian voĉon.",
+            "assist_tts": "Uzas la API-ŝlosilon de ĉi tiu agento kiel Home Assistant teksto-al-parolo-motoron kaj asignas ĝin al ĉiu AI Workspace Assist-dukto (inkluzive Cursor). Malŝalte forigas la teksto-al-parolo-motoron, kiun ĉi tiu agento aldonis.",
             "tts_model": "Malplene uzas gpt-4o-mini-tts. tts-1 estas malpli kosta. Vi povas tajpi alian id.",
-            "tts_voice": "Coral estas la defaŭlto. La kampo Voĉo de Assist-dukto povas anstataŭigi ĝin."
+            "tts_voice": "Coral estas la defaŭlto. Assist-duktoj, kiujn ĉi tiu agento kreis, uzas ĉi tiun voĉon.",
+            "tts_speed": "Kiel rapide ĉi tiu voĉo parolas. 1× estas normala. Validas por AI Workspace kaj Assist."
           }
         }
       },

@@ -205,13 +205,13 @@
             "cursor_api_key": "Chiave API Cursor",
             "model": "Modello",
             "effort": "Impegno",
-            "assist": "Usa anche in Assist"
+            "assist": "Aggiungi ad Assist"
           },
           "data_description": {
             "cursor_api_key": "Da cursor.com/dashboard/integrations. Lascia vuoto in modifica per conservare la chiave salvata. Lascia vuoto se il Runtime ha già CURSOR_API_KEY.",
             "model": "Scegli uno o digita un id. Vuoto usa Composer.",
             "effort": "Veloce, Alto o Alto veloce. Composer usa Veloce a meno che non scelga Alto.",
-            "assist": "Aggiunge questo agente a Home Assistant Assist. Disattivo lo lascia solo nella chat di AI Workspace."
+            "assist": "Aggiunge questo agente a Home Assistant Assist. Disattivo lo lascia solo nella chat di AI Workspace e rimuove la pipeline Assist aggiunta da questo agente."
           }
         },
         "provider_cloud": {
@@ -224,12 +224,13 @@
             "effort": "Impegno",
             "low_token": "Pochi token",
             "check_house": "Controlla sempre prima la casa",
-            "assist": "Usa anche in Assist",
-            "assist_stt": "Aggiungi anche voce in testo",
+            "assist": "Aggiungi ad Assist",
+            "assist_stt": "Aggiungi voce in testo",
             "stt_model": "Modello voce in testo",
-            "assist_tts": "Aggiungi anche testo in voce",
+            "assist_tts": "Aggiungi testo in voce",
             "tts_model": "Modello testo in voce",
-            "tts_voice": "Voce"
+            "tts_voice": "Voce",
+            "tts_speed": "Velocità"
           },
           "data_description": {
             "borrow": "Usa la chiave già salvata da quell’integrazione. L’altra integrazione non viene modificata.",
@@ -238,12 +239,13 @@
             "effort": "Veloce, Alto o Alto veloce quando il modello lo supporta.",
             "low_token": "Un prompt breve e nessun strumento, così un modello piccolo può rispondere. Non può controllare né modificare la casa.",
             "check_house": "Il primo passo di ogni messaggio (tranne saluti e ringraziamenti) deve chiamare uno strumento, così le risposte sulla casa si basano su dati in tempo reale. Disattivalo per i modelli che chiamano gli strumenti in modo affidabile o per risparmiare un giro di strumenti nelle domande generali.",
-            "assist": "Aggiunge questo agente a Home Assistant Assist. Disattivo lo lascia solo nella chat di AI Workspace.",
-            "assist_stt": "Usa la chiave API di questo agente come motore voce-in-testo di Home Assistant e la assegna a ogni pipeline AI Workspace Assist (incluso Cursor). Disattiva se usi già un altro motore.",
+            "assist": "Aggiunge questo agente a Home Assistant Assist. Disattivo lo lascia solo nella chat di AI Workspace e rimuove la pipeline Assist aggiunta da questo agente.",
+            "assist_stt": "Usa la chiave API di questo agente come motore voce-in-testo di Home Assistant e la assegna a ogni pipeline AI Workspace Assist (incluso Cursor). Disattivo rimuove il motore voce-in-testo aggiunto da questo agente.",
             "stt_model": "Vuoto usa il valore predefinito del provider. Puoi digitare un altro id.",
-            "assist_tts": "Usa la chiave API di questo agente come motore testo-in-voce di Home Assistant e la assegna a ogni pipeline AI Workspace Assist (incluso Cursor). Disattiva se usi già Piper o un’altra voce.",
+            "assist_tts": "Usa la chiave API di questo agente come motore testo-in-voce di Home Assistant e la assegna a ogni pipeline AI Workspace Assist (incluso Cursor). Disattivo rimuove il motore testo-in-voce aggiunto da questo agente.",
             "tts_model": "Vuoto usa gpt-4o-mini-tts. tts-1 è più economico. Puoi digitare un altro id.",
-            "tts_voice": "Coral è il valore predefinito. Il campo Voce della pipeline Assist può sostituirlo."
+            "tts_voice": "Coral è il valore predefinito. Le pipeline Assist create da questo agente usano questa voce.",
+            "tts_speed": "Quanto velocemente parla questa voce. 1× è il normale. Vale per AI Workspace e Assist."
           }
         },
         "provider_ollama": {
@@ -255,7 +257,7 @@
             "effort": "Impegno",
             "low_token": "Pochi token",
             "check_house": "Controlla sempre prima la casa",
-            "assist": "Usa anche in Assist"
+            "assist": "Aggiungi ad Assist"
           },
           "data_description": {
             "api_base": "Usually {example_url}",
@@ -263,7 +265,7 @@
             "effort": "Usato quando il modello lo supporta.",
             "low_token": "Un prompt breve e nessun strumento, così un modello piccolo può rispondere. Non può controllare né modificare la casa.",
             "check_house": "Il primo passo di ogni messaggio (tranne saluti e ringraziamenti) deve chiamare uno strumento, così le risposte sulla casa si basano su dati in tempo reale. Disattivalo per i modelli che chiamano gli strumenti in modo affidabile o per risparmiare un giro di strumenti nelle domande generali.",
-            "assist": "Aggiunge questo agente a Home Assistant Assist. Disattivo lo lascia solo nella chat di AI Workspace."
+            "assist": "Aggiunge questo agente a Home Assistant Assist. Disattivo lo lascia solo nella chat di AI Workspace e rimuove la pipeline Assist aggiunta da questo agente."
           }
         },
         "provider_azure": {
@@ -277,7 +279,7 @@
             "effort": "Impegno",
             "low_token": "Pochi token",
             "check_house": "Controlla sempre prima la casa",
-            "assist": "Usa anche in Assist"
+            "assist": "Aggiungi ad Assist"
           },
           "data_description": {
             "api_key": "La chiave Azure OpenAI. Lascia vuoto in modifica per conservare la chiave salvata.",
@@ -287,7 +289,7 @@
             "effort": "Usato quando la distribuzione lo supporta.",
             "low_token": "Un prompt breve e nessun strumento, così un modello piccolo può rispondere. Non può controllare né modificare la casa.",
             "check_house": "Il primo passo di ogni messaggio (tranne saluti e ringraziamenti) deve chiamare uno strumento, così le risposte sulla casa si basano su dati in tempo reale. Disattivalo per i modelli che chiamano gli strumenti in modo affidabile o per risparmiare un giro di strumenti nelle domande generali.",
-            "assist": "Aggiunge questo agente a Home Assistant Assist. Disattivo lo lascia solo nella chat di AI Workspace."
+            "assist": "Aggiunge questo agente a Home Assistant Assist. Disattivo lo lascia solo nella chat di AI Workspace e rimuove la pipeline Assist aggiunta da questo agente."
           }
         },
         "provider_compatible": {
@@ -300,12 +302,13 @@
             "effort": "Impegno",
             "low_token": "Pochi token",
             "check_house": "Controlla sempre prima la casa",
-            "assist": "Usa anche in Assist",
-            "assist_stt": "Aggiungi anche voce in testo",
+            "assist": "Aggiungi ad Assist",
+            "assist_stt": "Aggiungi voce in testo",
             "stt_model": "Modello voce in testo",
-            "assist_tts": "Aggiungi anche testo in voce",
+            "assist_tts": "Aggiungi testo in voce",
             "tts_model": "Modello testo in voce",
-            "tts_voice": "Voce"
+            "tts_voice": "Voce",
+            "tts_speed": "Velocità"
           },
           "data_description": {
             "api_key": "Lascia vuoto in modifica per conservare la chiave salvata.",
@@ -314,12 +317,13 @@
             "effort": "Usato quando il server lo supporta.",
             "low_token": "Un prompt breve e nessun strumento, così un modello piccolo può rispondere. Non può controllare né modificare la casa.",
             "check_house": "Il primo passo di ogni messaggio (tranne saluti e ringraziamenti) deve chiamare uno strumento, così le risposte sulla casa si basano su dati in tempo reale. Disattivalo per i modelli che chiamano gli strumenti in modo affidabile o per risparmiare un giro di strumenti nelle domande generali.",
-            "assist": "Aggiunge questo agente a Home Assistant Assist. Disattivo lo lascia solo nella chat di AI Workspace.",
-            "assist_stt": "Usa la chiave API di questo agente come motore voce-in-testo di Home Assistant e la assegna a ogni pipeline AI Workspace Assist (incluso Cursor). Disattiva se usi già un altro motore.",
+            "assist": "Aggiunge questo agente a Home Assistant Assist. Disattivo lo lascia solo nella chat di AI Workspace e rimuove la pipeline Assist aggiunta da questo agente.",
+            "assist_stt": "Usa la chiave API di questo agente come motore voce-in-testo di Home Assistant e la assegna a ogni pipeline AI Workspace Assist (incluso Cursor). Disattivo rimuove il motore voce-in-testo aggiunto da questo agente.",
             "stt_model": "Vuoto usa il valore predefinito del provider. Puoi digitare un altro id.",
-            "assist_tts": "Usa la chiave API di questo agente come motore testo-in-voce di Home Assistant e la assegna a ogni pipeline AI Workspace Assist (incluso Cursor). Disattiva se usi già Piper o un’altra voce.",
+            "assist_tts": "Usa la chiave API di questo agente come motore testo-in-voce di Home Assistant e la assegna a ogni pipeline AI Workspace Assist (incluso Cursor). Disattivo rimuove il motore testo-in-voce aggiunto da questo agente.",
             "tts_model": "Vuoto usa gpt-4o-mini-tts. tts-1 è più economico. Puoi digitare un altro id.",
-            "tts_voice": "Coral è il valore predefinito. Il campo Voce della pipeline Assist può sostituirlo."
+            "tts_voice": "Coral è il valore predefinito. Le pipeline Assist create da questo agente usano questa voce.",
+            "tts_speed": "Quanto velocemente parla questa voce. 1× è il normale. Vale per AI Workspace e Assist."
           }
         }
       },

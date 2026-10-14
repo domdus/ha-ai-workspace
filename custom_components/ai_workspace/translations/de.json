@@ -205,13 +205,13 @@
             "cursor_api_key": "Cursor-API-Schlüssel",
             "model": "Modell",
             "effort": "Aufwand",
-            "assist": "Auch in Assist nutzen"
+            "assist": "Zu Assist hinzufügen"
           },
           "data_description": {
             "cursor_api_key": "Von cursor.com/dashboard/integrations. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten. Leer lassen, wenn die Runtime bereits CURSOR_API_KEY hat.",
             "model": "Wähle eines oder gib eine ID ein. Leer nutzt Composer.",
             "effort": "Schnell, Hoch oder Hoch schnell. Composer nutzt Schnell, außer du wählst Hoch.",
-            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
+            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat und entfernt die Assist-Pipeline, die dieser Agent angelegt hat."
           }
         },
         "provider_cloud": {
@@ -224,12 +224,13 @@
             "effort": "Aufwand",
             "low_token": "Wenig Token",
             "check_house": "Immer zuerst das Haus prüfen",
-            "assist": "Auch in Assist nutzen",
-            "assist_stt": "Auch Sprache-zu-Text anlegen",
+            "assist": "Zu Assist hinzufügen",
+            "assist_stt": "Sprache-zu-Text anlegen",
             "stt_model": "Sprache-zu-Text-Modell",
-            "assist_tts": "Auch Text-zu-Sprache anlegen",
+            "assist_tts": "Text-zu-Sprache anlegen",
             "tts_model": "Text-zu-Sprache-Modell",
-            "tts_voice": "Stimme"
+            "tts_voice": "Stimme",
+            "tts_speed": "Tempo"
           },
           "data_description": {
             "borrow": "Nutzt den Schlüssel, den diese Integration schon gespeichert hat. Die andere Integration bleibt unverändert.",
@@ -238,12 +239,13 @@
             "effort": "Schnell, Hoch oder Hoch schnell, wenn das Modell das unterstützt.",
             "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
             "check_house": "Der erste Schritt jeder Nachricht (außer Begrüßung und Dank) muss ein Werkzeug aufrufen, damit Antworten zum Haus auf Live-Daten beruhen. Ausschalten bei Modellen, die Werkzeuge zuverlässig selbst aufrufen, oder um bei allgemeinen Fragen eine Werkzeugrunde zu sparen.",
-            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat.",
-            "assist_stt": "Nutzt den API-Schlüssel dieses Agenten als Home-Assistant-Sprache-zu-Text-Engine und hängt sie an alle AI-Workspace-Assist-Pipelines (auch Cursor). Aus, wenn schon eine andere Engine genutzt wird.",
+            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat und entfernt die Assist-Pipeline, die dieser Agent angelegt hat.",
+            "assist_stt": "Nutzt den API-Schlüssel dieses Agenten als Home-Assistant-Sprache-zu-Text-Engine und hängt sie an alle AI-Workspace-Assist-Pipelines (auch Cursor). Aus entfernt die Sprache-zu-Text-Engine, die dieser Agent angelegt hat.",
             "stt_model": "Leer nutzt den Standard des Anbieters. Whisper ist günstiger; gpt-4o-mini-transcribe ist der OpenAI-Standard. Du kannst eine andere ID eingeben.",
-            "assist_tts": "Nutzt den API-Schlüssel dieses Agenten als Home-Assistant-Text-zu-Sprache-Engine und hängt sie an alle AI-Workspace-Assist-Pipelines (auch Cursor). Aus, wenn schon Piper oder eine andere Stimme genutzt wird.",
+            "assist_tts": "Nutzt den API-Schlüssel dieses Agenten als Home-Assistant-Text-zu-Sprache-Engine und hängt sie an alle AI-Workspace-Assist-Pipelines (auch Cursor). Aus entfernt die Text-zu-Sprache-Engine, die dieser Agent angelegt hat.",
             "tts_model": "Leer nutzt gpt-4o-mini-tts. tts-1 ist günstiger. Du kannst eine andere ID eingeben.",
-            "tts_voice": "Coral ist der Standard. Dieselben Stimmen sprechen Deutsch, Französisch und die anderen Sprachen, die du unter Assist → Sprache wählst. Das Feld Stimme der Assist-Pipeline kann das überschreiben."
+            "tts_voice": "Coral ist der Standard. Dieselben Stimmen sprechen Deutsch, Französisch und die anderen Sprachen, die du unter Assist → Sprache wählst. Assist-Pipelines, die dieser Agent angelegt hat, nutzen diese Stimme.",
+            "tts_speed": "Wie schnell diese Stimme spricht. 1× ist normal. Gilt für AI Workspace und Assist."
           }
         },
         "provider_ollama": {
@@ -255,7 +257,7 @@
             "effort": "Aufwand",
             "low_token": "Wenig Token",
             "check_house": "Immer zuerst das Haus prüfen",
-            "assist": "Auch in Assist nutzen"
+            "assist": "Zu Assist hinzufügen"
           },
           "data_description": {
             "api_base": "Usually {example_url}",
@@ -263,7 +265,7 @@
             "effort": "Wird genutzt, wenn das Modell das unterstützt.",
             "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
             "check_house": "Der erste Schritt jeder Nachricht (außer Begrüßung und Dank) muss ein Werkzeug aufrufen, damit Antworten zum Haus auf Live-Daten beruhen. Ausschalten bei Modellen, die Werkzeuge zuverlässig selbst aufrufen, oder um bei allgemeinen Fragen eine Werkzeugrunde zu sparen.",
-            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
+            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat und entfernt die Assist-Pipeline, die dieser Agent angelegt hat."
           }
         },
         "provider_azure": {
@@ -277,7 +279,7 @@
             "effort": "Aufwand",
             "low_token": "Wenig Token",
             "check_house": "Immer zuerst das Haus prüfen",
-            "assist": "Auch in Assist nutzen"
+            "assist": "Zu Assist hinzufügen"
           },
           "data_description": {
             "api_key": "Der Azure-OpenAI-Schlüssel. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
@@ -287,7 +289,7 @@
             "effort": "Wird genutzt, wenn die Bereitstellung das unterstützt.",
             "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
             "check_house": "Der erste Schritt jeder Nachricht (außer Begrüßung und Dank) muss ein Werkzeug aufrufen, damit Antworten zum Haus auf Live-Daten beruhen. Ausschalten bei Modellen, die Werkzeuge zuverlässig selbst aufrufen, oder um bei allgemeinen Fragen eine Werkzeugrunde zu sparen.",
-            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
+            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat und entfernt die Assist-Pipeline, die dieser Agent angelegt hat."
           }
         },
         "provider_compatible": {
@@ -300,12 +302,13 @@
             "effort": "Aufwand",
             "low_token": "Wenig Token",
             "check_house": "Immer zuerst das Haus prüfen",
-            "assist": "Auch in Assist nutzen",
-            "assist_stt": "Auch Sprache-zu-Text anlegen",
+            "assist": "Zu Assist hinzufügen",
+            "assist_stt": "Sprache-zu-Text anlegen",
             "stt_model": "Sprache-zu-Text-Modell",
-            "assist_tts": "Auch Text-zu-Sprache anlegen",
+            "assist_tts": "Text-zu-Sprache anlegen",
             "tts_model": "Text-zu-Sprache-Modell",
-            "tts_voice": "Stimme"
+            "tts_voice": "Stimme",
+            "tts_speed": "Tempo"
           },
           "data_description": {
             "api_key": "Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
@@ -314,12 +317,13 @@
             "effort": "Wird genutzt, wenn der Server das unterstützt.",
             "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
             "check_house": "Der erste Schritt jeder Nachricht (außer Begrüßung und Dank) muss ein Werkzeug aufrufen, damit Antworten zum Haus auf Live-Daten beruhen. Ausschalten bei Modellen, die Werkzeuge zuverlässig selbst aufrufen, oder um bei allgemeinen Fragen eine Werkzeugrunde zu sparen.",
-            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat.",
-            "assist_stt": "Nutzt den API-Schlüssel dieses Agenten als Home-Assistant-Sprache-zu-Text-Engine und hängt sie an alle AI-Workspace-Assist-Pipelines (auch Cursor). Aus, wenn schon eine andere Engine genutzt wird.",
+            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat und entfernt die Assist-Pipeline, die dieser Agent angelegt hat.",
+            "assist_stt": "Nutzt den API-Schlüssel dieses Agenten als Home-Assistant-Sprache-zu-Text-Engine und hängt sie an alle AI-Workspace-Assist-Pipelines (auch Cursor). Aus entfernt die Sprache-zu-Text-Engine, die dieser Agent angelegt hat.",
             "stt_model": "Leer nutzt den Standard des Anbieters. Whisper ist günstiger; gpt-4o-mini-transcribe ist der OpenAI-Standard. Du kannst eine andere ID eingeben.",
-            "assist_tts": "Nutzt den API-Schlüssel dieses Agenten als Home-Assistant-Text-zu-Sprache-Engine und hängt sie an alle AI-Workspace-Assist-Pipelines (auch Cursor). Aus, wenn schon Piper oder eine andere Stimme genutzt wird.",
+            "assist_tts": "Nutzt den API-Schlüssel dieses Agenten als Home-Assistant-Text-zu-Sprache-Engine und hängt sie an alle AI-Workspace-Assist-Pipelines (auch Cursor). Aus entfernt die Text-zu-Sprache-Engine, die dieser Agent angelegt hat.",
             "tts_model": "Leer nutzt gpt-4o-mini-tts. tts-1 ist günstiger. Du kannst eine andere ID eingeben.",
-            "tts_voice": "Coral ist der Standard. Dieselben Stimmen sprechen Deutsch, Französisch und die anderen Sprachen, die du unter Assist → Sprache wählst. Das Feld Stimme der Assist-Pipeline kann das überschreiben."
+            "tts_voice": "Coral ist der Standard. Dieselben Stimmen sprechen Deutsch, Französisch und die anderen Sprachen, die du unter Assist → Sprache wählst. Assist-Pipelines, die dieser Agent angelegt hat, nutzen diese Stimme.",
+            "tts_speed": "Wie schnell diese Stimme spricht. 1× ist normal. Gilt für AI Workspace und Assist."
           }
         }
       },

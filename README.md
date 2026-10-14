@@ -1,6 +1,11 @@
-![AI Workspace](https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/ai_workspace/logo.png)
-
-*Build your Home Assistant from the couch.*
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/custom_components/ai_workspace/brand/dark_logo.png">
+    <img src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/custom_components/ai_workspace/brand/logo.png" alt="AI Workspace" align="center">
+  </picture>
+  <br>
+  <em>Build your Home Assistant from the couch.</em>
+</div>
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai_workspace.gif" alt="AI Workspace chat demo" width="300">
@@ -25,6 +30,7 @@ What the agent can do depends entirely on the MCP server you connect.
 - More than one MCP connection
 - Optional floating button
 - Optional dictation (speech to text, needs HTTPS) and spoken replies (text to speech)
+- Assist pipelines that are ready to use — conversation, listening, and speaking already wired
 
 ![AI Workspace in the Home Assistant sidebar](https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai-workspace.png)
 
@@ -39,7 +45,7 @@ Each agent can also be added as an Assist pipeline. The integration creates the 
 
 OpenAI, OpenRouter, and OpenAI-compatible agents can add **Speech-to-text** and **Text-to-speech** from the same API key (on by default). Those engines are assigned to every AI Workspace Assist pipeline, so a Cursor pipeline can listen and speak too. Google Translate is replaced when our voice exists. Cursor has no speech API of its own. Claude, Gemini, and local Ollama stay on a Home Assistant TTS engine such as Piper.
 
-The OpenAI-style voices (Coral, Echo, …) speak **German, French, and many other languages**. There is no extra German voice to install: set **Language** (and Text-to-speech language) to German on the Assist pipeline under **Voice assistants**. Overlay auto-speak uses the language of the reply.
+The OpenAI-style voices (Coral, Echo, …) speak **German, French, and many other languages**. There is no extra German voice to install: they follow the language of the reply.
 
 ![Cursor in Home Assistant Assist](https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai-workspace-assists.png)
 
@@ -245,11 +251,11 @@ It does not control Home Assistant edit links. Those rules are added to every me
 | **Chats to keep**                          | Newest unpinned chats per person (default 30). Pinned chats are always kept                                                                                                         |
 | **Cross chat**                             | Off by default. When on, a question can use another chat whose title shares words with it. Only a short excerpt is used, and that chat is not changed                               |
 | **Config catalog**                         | Off by default. A local index of how automations are wired, so "what uses the kitchen light?" takes one lookup. See [why](#why-use-the-config-catalog)                              |
-| **Also use in Assist**                     | On each agent. Off (the default) keeps the agent in AI Workspace only. On adds a Voice assistants pipeline for it                                                                   |
-| **Also add Speech-to-text**                | On OpenAI, OpenRouter, and OpenAI-compatible agents. On by default. Creates a Speech-to-text engine from this agent's key and assigns it to every AI Workspace Assist pipeline      |
+| **Add to Assist**                          | On each agent. Off (the default) keeps the agent in AI Workspace only. On adds a Voice assistants pipeline for it. Off again removes that pipeline                                 |
+| **Add Speech-to-text**                     | On OpenAI, OpenRouter, and OpenAI-compatible agents. On by default. Creates a Speech-to-text engine from this agent's key and assigns it to every AI Workspace Assist pipeline. Off removes that engine |
 | **Speech-to-text model**                   | Shown with Speech-to-text. Empty uses the provider default (`gpt-4o-mini-transcribe` on OpenAI, Whisper on OpenRouter / compatible). You can pick another or type an id                 |
-| **Also add Text-to-speech**                | On OpenAI, OpenRouter, and OpenAI-compatible agents. On by default. Creates a Text-to-speech engine from this agent's key (`gpt-4o-mini-tts`, voice Coral) and assigns it to Assist  |
-| **Text-to-speech model / Voice**           | Shown with Text-to-speech. Empty uses `gpt-4o-mini-tts` and Coral. Same voices speak German, French, and other languages — pick the language on the Assist pipeline                  |
+| **Add Text-to-speech**                     | On OpenAI, OpenRouter, and OpenAI-compatible agents. On by default. Creates a Text-to-speech engine from this agent's key (`gpt-4o-mini-tts`, voice Coral) and assigns it to Assist. Off removes that engine |
+| **Text-to-speech model / Voice / Speed**   | Shown with Text-to-speech. Empty uses `gpt-4o-mini-tts` and Coral at 1×. Speed is 1×–4× (OpenAI). Submit writes this voice onto Assist pipelines AI Workspace created. Same voices speak German, French, and other languages — they follow the reply |
 
 
 
