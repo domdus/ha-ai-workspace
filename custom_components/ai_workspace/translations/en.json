@@ -243,7 +243,7 @@
             "stt_model": "Empty uses the provider default. Whisper is cheaper; gpt-4o-mini-transcribe is the OpenAI default. You can type another id.",
             "assist_tts": "Uses this agent's API key as a Home Assistant Text-to-speech engine and assigns it to every AI Workspace Assist pipeline (including Cursor). Off if you already use Piper or another voice.",
             "tts_model": "Empty uses gpt-4o-mini-tts. tts-1 is cheaper. You can type another id.",
-            "tts_voice": "Coral is the default. The Assist pipeline Voice field can override this."
+            "tts_voice": "Coral is the default. The same voices speak German, French, and the other languages you pick under Assist → Language. The pipeline Voice field can override this."
           }
         },
         "provider_ollama": {
@@ -319,7 +319,7 @@
             "stt_model": "Empty uses the provider default. Whisper is cheaper; gpt-4o-mini-transcribe is the OpenAI default. You can type another id.",
             "assist_tts": "Uses this agent's API key as a Home Assistant Text-to-speech engine and assigns it to every AI Workspace Assist pipeline (including Cursor). Off if you already use Piper or another voice.",
             "tts_model": "Empty uses gpt-4o-mini-tts. tts-1 is cheaper. You can type another id.",
-            "tts_voice": "Coral is the default. The Assist pipeline Voice field can override this."
+            "tts_voice": "Coral is the default. The same voices speak German, French, and the other languages you pick under Assist → Language. The pipeline Voice field can override this."
           }
         }
       },

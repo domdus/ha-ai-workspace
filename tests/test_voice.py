@@ -33,6 +33,16 @@ def _load(mod_name: str, file_name: str):
     return mod
 
 
+def test_tts_languages_include_german_and_map_region() -> None:
+    const = _load("const", "const.py")
+    voice = _load("voice", "voice.py")
+    assert "de" in const.TTS_LANGUAGES
+    assert "fr" in const.TTS_LANGUAGES
+    assert "it" in const.TTS_LANGUAGES
+    assert voice.match_speech_language("de-DE", const.TTS_LANGUAGES, "en") == "de"
+    assert voice.match_speech_language("de", const.TTS_LANGUAGES, "en") == "de"
+
+
 def test_match_maps_locale_to_engine_tag() -> None:
     voice = _load("voice", "voice.py")
     assert voice.match_speech_language("de-DE", ["de", "en"], "en") == "de"
@@ -142,6 +152,14 @@ def test_pick_assist_stt_prefers_our_engine_then_official_openai() -> None:
     assert pipes.pick_assist_stt(setting="browser", engines=[("stt.cloud", "cloud", "cloud")]) == "stt.cloud"
     assert pipes.pick_assist_stt(setting="browser", preferred="stt.cloud", engines=[]) == "stt.cloud"
     assert pipes.pick_assist_stt(setting="browser") is None
+
+
+def test_tts_language_for_maps_german_region() -> None:
+    _load("const", "const.py")
+    pipes = _load("assist_pipelines", "assist_pipelines.py")
+    engines = [("tts.open_ai_text_to_speech", "ai_workspace", "openai-1-tts")]
+    assert pipes._tts_language_for("tts.open_ai_text_to_speech", "de-DE", engines) == "de"
+    assert pipes._tts_language_for("tts.open_ai_text_to_speech", "de", engines) == "de"
 
 
 def test_pick_assist_tts_skips_google_translate() -> None:

@@ -21,28 +21,16 @@ from .const import (
     API_OPENROUTER,
     DEFAULT_TTS_VOICE,
     DOMAIN,
+    TTS_LANGUAGES,
     TTS_VOICES,
     default_api_base,
     default_tts_model,
 )
-from .stt import _LANGUAGES
-from .voice import speech_text
+from .voice import match_speech_language, speech_text
 
 _LOGGER = logging.getLogger(__name__)
 
 PARALLEL_UPDATES = 0
-
-
-def _supported_languages() -> list[str]:
-    tags = list(_LANGUAGES)
-    seen = set(tags)
-    extras: list[str] = []
-    for tag in tags:
-        primary = tag.split("-", 1)[0]
-        if primary not in seen:
-            seen.add(primary)
-            extras.append(primary)
-    return extras + tags
 
 
 def _agent_device_active(hass: HomeAssistant, entry_id: str, subentry_id: str | None) -> bool:
@@ -86,9 +74,16 @@ class AiWorkspaceTTSEntity(tts.TextToSpeechEntity):
     _attr_should_poll = False
     _attr_has_entity_name = True
     _attr_name = "Text-to-speech"
-    _attr_supported_languages = _supported_languages()
-    _attr_default_language = "en"
     _attr_supported_options = [getattr(tts, "ATTR_VOICE", "voice")]
+
+    @property
+    def supported_languages(self) -> list[str]:
+        return list(TTS_LANGUAGES)
+
+    @property
+    def default_language(self) -> str:
+        hass_lang = str(getattr(getattr(self.hass, "config", None), "language", "") or "en")
+        return match_speech_language(hass_lang, TTS_LANGUAGES, "en")
 
     def __init__(self, entry: ConfigEntry, agent: Agent) -> None:
         self._entry = entry
