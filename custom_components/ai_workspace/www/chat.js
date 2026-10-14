@@ -16,6 +16,28 @@ function haAtLeast(year, month) {
   return major > year || (major === year && minor >= month);
 }
 
+function haHas(name) {
+  return Boolean(customElements.get(name));
+}
+
+function haCreate(...names) {
+  for (const name of names) {
+    if (!name) continue;
+    if (!name.includes("-") || haHas(name)) return document.createElement(name);
+  }
+  return document.createElement(names[names.length - 1] || "div");
+}
+
+function haChipLabel(chip, text) {
+  if (!chip) return "";
+  if (text !== undefined) {
+    if ("label" in chip) chip.label = text;
+    else chip.textContent = text;
+    return text;
+  }
+  return String(chip.label || chip.textContent || "");
+}
+
 function hassLanguage() {
   const hass = hassObj();
   return hass?.locale?.language || hass?.language || navigator.language || "en";
@@ -461,24 +483,26 @@ export function mountAiWorkspace(root, options = {}) {
             </ha-icon-button>`}
             <h1 class="title">${t("new_chat")}</h1>
           </div>
-          <p class="banner" hidden></p>
+          <ha-alert class="banner" alert-type="error" hidden></ha-alert>
         </header>
-        ${compact && hassObj()?.user?.is_admin ? `<a class="workspace-link" href="/ai-workspace">${t("open_workspace")}</a>` : ""}
+        ${compact && hassObj()?.user?.is_admin ? `<ha-button class="workspace-link" appearance="plain" size="s" href="/ai-workspace">${t("open_workspace")}</ha-button>` : ""}
         <div class="stage">
           <div class="log"></div>
           <form class="composer">
-            <button type="button" class="scroll-bottom" tabindex="-1" aria-label="${t("scroll_to_bottom")}">
+            <ha-icon-button class="scroll-bottom" tabindex="-1" label="${t("scroll_to_bottom")}">
               <ha-icon icon="mdi:arrow-down"></ha-icon>
-            </button>
-            <div class="composer-box">
+            </ha-icon-button>
+            <ha-card class="composer-box">
               <div class="next-row" hidden>
                 <p class="next-copy"></p>
-                <button type="button" class="next-remove"></button>
+                <ha-icon-button class="next-remove" label="${t("queued_remove")}">
+                  <ha-icon icon="mdi:close"></ha-icon>
+                </ha-icon-button>
               </div>
               <div class="attach-row" hidden></div>
               <div class="composer-row">
               <label class="sr" for="ai-message">${t("message")}</label>
-              <textarea id="ai-message" class="message" rows="1" enterkeyhint="enter" placeholder="${t("placeholder")}"></textarea>
+              <div id="ai-message-host" class="message-host"></div>
               <div class="composer-actions">
               <input class="file-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif,.yaml,.yml,.json,.txt,.md,.csv,.xml,.toml,.html,.css,.js,.ts,.py,.log,.cfg,.ini,.conf" multiple hidden>
               <ha-icon-button class="attach" type="button" label="${t("attach")}">
@@ -492,13 +516,13 @@ export function mountAiWorkspace(root, options = {}) {
               </ha-button>
               </div>
               </div>
-            </div>
+            </ha-card>
             <div class="agent-picker" hidden>
               <ha-dropdown class="agent-menu" placement="top-start">
-                <button type="button" class="agent-trigger" slot="trigger" aria-haspopup="menu" aria-expanded="false" aria-label="${t("agent")}">
+                <ha-button type="button" class="agent-trigger" slot="trigger" appearance="plain" size="s" aria-haspopup="menu" aria-expanded="false" aria-label="${t("agent")}">
                   <span class="agent-trigger-label"></span>
-                  <ha-icon icon="mdi:chevron-down"></ha-icon>
-                </button>
+                  <ha-icon slot="end" icon="mdi:chevron-down"></ha-icon>
+                </ha-button>
               </ha-dropdown>
             </div>
           </form>
@@ -525,7 +549,23 @@ export function mountAiWorkspace(root, options = {}) {
   const bannerEl = root.querySelector(".banner");
   const form = root.querySelector(".composer");
   const scrollBottomBtn = root.querySelector(".scroll-bottom");
-  const messageEl = root.querySelector(".message");
+  const messageHost = root.querySelector("#ai-message-host");
+  const messageEl = (() => {
+    const el = haCreate("ha-textarea", "textarea");
+    el.id = "ai-message";
+    el.className = "message";
+    el.setAttribute("rows", "1");
+    el.setAttribute("placeholder", t("placeholder"));
+    if (el.localName === "ha-textarea") {
+      el.rows = 1;
+      el.resize = "auto";
+      el.setAttribute("resize", "auto");
+    } else {
+      el.setAttribute("enterkeyhint", "enter");
+    }
+    messageHost?.replaceWith(el);
+    return el;
+  })();
   const sendBtn = root.querySelector(".send");
   const agentPicker = root.querySelector(".agent-picker");
   const agentTrigger = root.querySelector(".agent-trigger");
@@ -673,12 +713,16 @@ export function mountAiWorkspace(root, options = {}) {
 
   function resizeComposer() {
     const holdTop = chatEl.scrollTop;
-    messageEl.style.height = "auto";
-    messageEl.style.height = `${Math.min(Math.max(messageEl.scrollHeight, 36), 160)}px`;
-    const hasDraft = Boolean(messageEl.value.trim() || pending.length);
+    if (messageEl.localName === "textarea") {
+      messageEl.style.height = "auto";
+      messageEl.style.height = `${Math.min(Math.max(messageEl.scrollHeight, 36), 160)}px`;
+    }
+    const hasDraft = Boolean(String(messageEl.value || "").trim() || pending.length);
     sendBtn.disabled = !hasDraft;
     if (attachBtn) attachBtn.disabled = pending.length >= MAX_ATTACH;
-    messageEl.placeholder = streaming ? t("placeholder_next") : t("placeholder");
+    const placeholder = streaming ? t("placeholder_next") : t("placeholder");
+    messageEl.placeholder = placeholder;
+    messageEl.setAttribute("placeholder", placeholder);
     chatEl.scrollTop = holdTop;
   }
 
@@ -704,7 +748,7 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   function composerFocused() {
-    return root.activeElement === messageEl || messageEl.matches(":focus");
+    return messageEl.matches(":focus-within") || messageEl.matches(":focus") || root.activeElement === messageEl;
   }
 
   let pinningScroll = false;
@@ -986,13 +1030,14 @@ export function mountAiWorkspace(root, options = {}) {
     if (!chip) return;
     chip.className = "done";
     chip.style.animation = "none";
-    if (text) chip.textContent = chipLabel(text);
+    if (chip.active !== undefined) chip.active = false;
+    if (text) haChipLabel(chip, chipLabel(text));
   }
 
   function ensureToolsChrome(tools) {
     let list = tools.querySelector(".tools-list");
     if (list) return list;
-    const summary = document.createElement("button");
+    const summary = haCreate("ha-assist-chip", "button");
     summary.type = "button";
     summary.className = "tools-summary";
     summary.hidden = true;
@@ -1000,9 +1045,14 @@ export function mountAiWorkspace(root, options = {}) {
     const chevron = document.createElement("ha-icon");
     chevron.className = "tools-chevron";
     chevron.setAttribute("icon", "mdi:chevron-right");
-    const label = document.createElement("span");
-    label.className = "tools-summary-label";
-    summary.append(chevron, label);
+    if (summary.localName === "ha-assist-chip") {
+      chevron.slot = "icon";
+      summary.append(chevron);
+    } else {
+      const label = document.createElement("span");
+      label.className = "tools-summary-label";
+      summary.append(chevron, label);
+    }
     summary.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -1010,7 +1060,7 @@ export function mountAiWorkspace(root, options = {}) {
       tools.dataset.userToggle = "1";
       syncToolsSummary(tools);
     });
-    list = document.createElement("div");
+    list = haCreate("ha-chip-set", "div");
     list.className = "tools-list";
     tools.append(summary, list);
     return list;
@@ -1026,13 +1076,16 @@ export function mountAiWorkspace(root, options = {}) {
     const list = tools.querySelector(".tools-list");
     const summary = tools.querySelector(".tools-summary");
     if (!list || !summary) return;
-    const chips = [...list.querySelectorAll(":scope > span")];
+    const chips = [...list.children];
     const n = chips.length;
     const busy = chips.some((chip) => chip.classList.contains("busy"));
     tools.classList.toggle("busy", busy);
     summary.hidden = n === 0;
     if (!n) return;
-    summary.querySelector(".tools-summary-label").textContent = toolsSummaryLabel(chips, busy);
+    const labelText = toolsSummaryLabel(chips, busy);
+    const labelEl = summary.querySelector(".tools-summary-label");
+    if (labelEl) labelEl.textContent = labelText;
+    else haChipLabel(summary, labelText);
     if (!tools.dataset.userToggle) {
       tools.classList.remove("expanded");
     }
@@ -1041,7 +1094,7 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   function isPendingChip(el) {
-    return el.classList.contains("busy") || /^calling\b/i.test(el.textContent || "");
+    return el.classList.contains("busy") || Boolean(el.active) || /^calling\b/i.test(haChipLabel(el));
   }
 
   function addChip(tools, event, animate) {
@@ -1065,19 +1118,20 @@ export function mountAiWorkspace(root, options = {}) {
         return;
       }
     }
-    const chip = document.createElement("span");
+    const chip = haCreate("ha-assist-chip", "span");
     chip.className = kind;
     if (name) chip.dataset.tool = name;
     if (callId) chip.dataset.callId = callId;
+    if (chip.active !== undefined) chip.active = kind === "busy";
     if (!animate || reduceMotion || kind !== "busy") chip.style.animation = "none";
-    chip.textContent = label;
+    haChipLabel(chip, label);
     list.appendChild(chip);
     syncToolsSummary(tools);
   }
 
   function settleTools(root) {
-    root?.querySelectorAll(".tools span.busy").forEach((chip) => {
-      const name = chip.dataset.tool || chip.textContent || "";
+    root?.querySelectorAll(".tools .busy").forEach((chip) => {
+      const name = chip.dataset.tool || haChipLabel(chip);
       settleChip(chip, t("finished_tool", { name: chipName(name) }));
     });
     root?.querySelectorAll(".tools").forEach(syncToolsSummary);
@@ -1112,12 +1166,12 @@ export function mountAiWorkspace(root, options = {}) {
   function addBubbleFiles(bubble, events) {
     const files = (events || []).filter((event) => event && event.type === "file" && event.name);
     if (!files.length) return files;
-    const row = document.createElement("div");
+    const row = haCreate("ha-chip-set", "div");
     row.className = "bubble-files";
     for (const file of files) {
-      const chip = document.createElement("span");
+      const chip = haCreate("ha-assist-chip", "span");
       chip.className = "file-chip";
-      chip.textContent = file.name;
+      haChipLabel(chip, file.name);
       row.appendChild(chip);
     }
     bubble.appendChild(row);
@@ -1128,8 +1182,13 @@ export function mountAiWorkspace(root, options = {}) {
     const empty = logEl.querySelector(".empty");
     if (empty) empty.remove();
     setWelcome(false, opts.animate !== false);
-    const bubble = document.createElement("div");
+    const isError = (events || []).some((event) => event && event.type === "error");
+    const bubble = isError ? haCreate("ha-alert", "ha-card", "div") : haCreate("ha-card", "div");
     bubble.className = `bubble ${role}`;
+    if (isError) {
+      if (bubble.localName === "ha-alert") bubble.setAttribute("alert-type", "error");
+      else bubble.classList.add("error");
+    }
     if (opts.createdAt) bubble.dataset.createdAt = String(opts.createdAt);
     if (opts.animate === false || reduceMotion) bubble.classList.add("instant");
     const pics = addBubbleImages(bubble, events);
@@ -1137,7 +1196,6 @@ export function mountAiWorkspace(root, options = {}) {
     const chips = (events || []).filter(
       (event) => event && event.type !== "image" && event.type !== "file" && event.type !== "error",
     );
-    if ((events || []).some((event) => event && event.type === "error")) bubble.classList.add("error");
     if (chips.length) {
       const tools = document.createElement("div");
       tools.className = "tools";
@@ -1177,7 +1235,7 @@ export function mountAiWorkspace(root, options = {}) {
         : String(textEl?.textContent || "").trim();
       const attachments = [
         ...[...bubble.querySelectorAll(".bubble-images img")].map((img) => img.alt || "image"),
-        ...[...bubble.querySelectorAll(".bubble-files .file-chip")].map((el) => el.textContent.trim()),
+        ...[...bubble.querySelectorAll(".bubble-files .file-chip")].map((el) => haChipLabel(el).trim()),
       ].filter(Boolean);
       if (!body && !attachments.length) continue;
       const lines = [];
@@ -1486,8 +1544,8 @@ export function mountAiWorkspace(root, options = {}) {
     hint.textContent = t("queued_hint");
     nextCopy.replaceChildren(text, hint);
     if (nextRemove) {
-      nextRemove.textContent = t("queued_remove");
-      nextRemove.setAttribute("aria-label", t("queued_remove"));
+      nextRemove.label = t("queued_remove");
+      nextRemove.setAttribute("label", t("queued_remove"));
     }
     nextRow.hidden = false;
   }
@@ -1680,9 +1738,10 @@ export function mountAiWorkspace(root, options = {}) {
     setWelcome(true);
     turnHasHistory = false;
     logEl.replaceChildren();
-    const note = document.createElement("p");
+    const note = haCreate("ha-empty-state", "p");
     note.className = "empty";
-    note.textContent = t("empty");
+    if (note.localName === "ha-empty-state") note.heading = t("empty");
+    else note.textContent = t("empty");
     logEl.appendChild(note);
   }
 
@@ -1777,11 +1836,13 @@ export function mountAiWorkspace(root, options = {}) {
       const dialog = document.createElement("ha-dialog");
       dialog.setAttribute("header-title", title);
       dialog.setAttribute("width", "small");
-      const input = document.createElement("input");
+      const input = haCreate("ha-input", "ha-textfield", "input");
       input.className = "dialog-field";
-      input.type = "text";
+      if (input.localName === "input") input.type = "text";
+      else input.setAttribute("type", "text");
       input.value = value || "";
       input.maxLength = 80;
+      if (input.label !== undefined) input.label = title;
       const footer = document.createElement("ha-dialog-footer");
       footer.slot = "footer";
       const cancel = document.createElement("ha-button");
@@ -2014,12 +2075,10 @@ export function mountAiWorkspace(root, options = {}) {
     menu.className = "session-menu";
     menu.slot = "end";
     menu.placement = "bottom-end";
-    const more = document.createElement("span");
+    const more = document.createElement("ha-icon-button");
     more.className = "session-more";
     more.slot = "trigger";
-    more.tabIndex = 0;
-    more.setAttribute("role", "button");
-    more.setAttribute("aria-label", t("chat_actions"));
+    more.label = t("chat_actions");
     more.setAttribute("aria-haspopup", "menu");
     more.setAttribute("aria-expanded", "false");
     const dots = document.createElement("ha-icon");
@@ -2382,22 +2441,33 @@ export function mountAiWorkspace(root, options = {}) {
     attachRow.replaceChildren();
     pending.forEach((item, index) => {
       if (item.kind === "file") {
-        const chip = document.createElement("div");
+        const chip = haCreate("ha-input-chip", "div");
         chip.className = "file-chip pending";
-        const name = document.createElement("span");
-        name.className = "name";
-        name.textContent = item.name;
-        const remove = document.createElement("button");
-        remove.type = "button";
-        remove.className = "thumb-remove";
-        remove.setAttribute("aria-label", t("remove_file"));
-        remove.textContent = "×";
-        remove.addEventListener("click", () => {
+        haChipLabel(chip, item.name);
+        const drop = () => {
           pending.splice(index, 1);
           renderThumbs();
           resizeComposer();
-        });
-        chip.append(name, remove);
+        };
+        if (chip.localName === "ha-input-chip") {
+          chip.removable = true;
+          chip.addEventListener("remove", (event) => {
+            event.preventDefault();
+            drop();
+          });
+        } else {
+          const name = document.createElement("span");
+          name.className = "name";
+          name.textContent = item.name;
+          const remove = document.createElement("ha-icon-button");
+          remove.className = "thumb-remove";
+          remove.label = t("remove_file");
+          const icon = document.createElement("ha-icon");
+          icon.setAttribute("icon", "mdi:close");
+          remove.append(icon);
+          remove.addEventListener("click", drop);
+          chip.replaceChildren(name, remove);
+        }
         attachRow.appendChild(chip);
         return;
       }
@@ -2406,11 +2476,12 @@ export function mountAiWorkspace(root, options = {}) {
       const picture = document.createElement("img");
       picture.src = item.src;
       picture.alt = item.name || t("image");
-      const remove = document.createElement("button");
-      remove.type = "button";
+      const remove = document.createElement("ha-icon-button");
       remove.className = "thumb-remove";
-      remove.setAttribute("aria-label", t("remove_image"));
-      remove.textContent = "×";
+      remove.label = t("remove_image");
+      const closeIcon = document.createElement("ha-icon");
+      closeIcon.setAttribute("icon", "mdi:close");
+      remove.append(closeIcon);
       remove.addEventListener("click", () => {
         pending.splice(index, 1);
         renderThumbs();
@@ -3483,26 +3554,27 @@ export function mountAiWorkspace(root, options = {}) {
     if (!historyList) return;
     historyList.replaceChildren();
     const resp = await apiFetch(`${API}/activity`);
-    if (!resp || !resp.ok) {
-      const note = document.createElement("p");
+    const emptyHistory = () => {
+      const note = haCreate("ha-empty-state", "p");
       note.className = "history-empty";
-      note.textContent = t("activity_empty");
+      if (note.localName === "ha-empty-state") note.heading = t("activity_empty");
+      else note.textContent = t("activity_empty");
       historyList.appendChild(note);
+    };
+    if (!resp || !resp.ok) {
+      emptyHistory();
       return;
     }
     const rows = await resp.json();
     if (!Array.isArray(rows) || !rows.length) {
-      const note = document.createElement("p");
-      note.className = "history-empty";
-      note.textContent = t("activity_empty");
-      historyList.appendChild(note);
+      emptyHistory();
       return;
     }
     for (const row of rows) historyList.appendChild(historyRow(row));
   }
 
   function historyRow(row) {
-    const item = document.createElement("article");
+    const item = haCreate("ha-card", "article");
     item.className = "history-row";
     const when = document.createElement("p");
     when.className = "history-when";
