@@ -243,7 +243,7 @@
             "stt_model": "Leer nutzt den Standard des Anbieters. Whisper ist günstiger; gpt-4o-mini-transcribe ist der OpenAI-Standard. Du kannst eine andere ID eingeben.",
             "assist_tts": "Nutzt den API-Schlüssel dieses Agenten als Home-Assistant-Text-zu-Sprache-Engine und hängt sie an alle AI-Workspace-Assist-Pipelines (auch Cursor). Aus, wenn schon Piper oder eine andere Stimme genutzt wird.",
             "tts_model": "Leer nutzt gpt-4o-mini-tts. tts-1 ist günstiger. Du kannst eine andere ID eingeben.",
-            "tts_voice": "Coral ist der Standard. Das Feld Stimme der Assist-Pipeline kann das überschreiben."
+            "tts_voice": "Coral ist der Standard. Dieselben Stimmen sprechen Deutsch, Französisch und die anderen Sprachen, die du unter Assist → Sprache wählst. Das Feld Stimme der Assist-Pipeline kann das überschreiben."
           }
         },
         "provider_ollama": {
@@ -319,7 +319,7 @@
             "stt_model": "Leer nutzt den Standard des Anbieters. Whisper ist günstiger; gpt-4o-mini-transcribe ist der OpenAI-Standard. Du kannst eine andere ID eingeben.",
             "assist_tts": "Nutzt den API-Schlüssel dieses Agenten als Home-Assistant-Text-zu-Sprache-Engine und hängt sie an alle AI-Workspace-Assist-Pipelines (auch Cursor). Aus, wenn schon Piper oder eine andere Stimme genutzt wird.",
             "tts_model": "Leer nutzt gpt-4o-mini-tts. tts-1 ist günstiger. Du kannst eine andere ID eingeben.",
-            "tts_voice": "Coral ist der Standard. Das Feld Stimme der Assist-Pipeline kann das überschreiben."
+            "tts_voice": "Coral ist der Standard. Dieselben Stimmen sprechen Deutsch, Französisch und die anderen Sprachen, die du unter Assist → Sprache wählst. Das Feld Stimme der Assist-Pipeline kann das überschreiben."
           }
         }
       },

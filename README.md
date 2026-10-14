@@ -39,6 +39,8 @@ Each agent can also be added as an Assist pipeline. The integration creates the 
 
 OpenAI, OpenRouter, and OpenAI-compatible agents can add **Speech-to-text** and **Text-to-speech** from the same API key (on by default). Those engines are assigned to every AI Workspace Assist pipeline, so a Cursor pipeline can listen and speak too. Google Translate is replaced when our voice exists. Cursor has no speech API of its own. Claude, Gemini, and local Ollama stay on a Home Assistant TTS engine such as Piper.
 
+The OpenAI-style voices (Coral, Echo, …) speak **German, French, and many other languages**. There is no extra German voice to install: set **Language** (and Text-to-speech language) to German on the Assist pipeline under **Voice assistants**. Overlay auto-speak uses the language of the reply.
+
 ![Cursor in Home Assistant Assist](https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai-workspace-assists.png)
 
 ## Requirements
@@ -247,7 +249,7 @@ It does not control Home Assistant edit links. Those rules are added to every me
 | **Also add Speech-to-text**                | On OpenAI, OpenRouter, and OpenAI-compatible agents. On by default. Creates a Speech-to-text engine from this agent's key and assigns it to every AI Workspace Assist pipeline      |
 | **Speech-to-text model**                   | Shown with Speech-to-text. Empty uses the provider default (`gpt-4o-mini-transcribe` on OpenAI, Whisper on OpenRouter / compatible). You can pick another or type an id                 |
 | **Also add Text-to-speech**                | On OpenAI, OpenRouter, and OpenAI-compatible agents. On by default. Creates a Text-to-speech engine from this agent's key (`gpt-4o-mini-tts`, voice Coral) and assigns it to Assist  |
-| **Text-to-speech model / Voice**           | Shown with Text-to-speech. Empty uses `gpt-4o-mini-tts` and Coral. You can pick another model or voice, or type an id                                                                |
+| **Text-to-speech model / Voice**           | Shown with Text-to-speech. Empty uses `gpt-4o-mini-tts` and Coral. Same voices speak German, French, and other languages — pick the language on the Assist pipeline                  |
 
 
 

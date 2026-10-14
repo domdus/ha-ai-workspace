@@ -7,7 +7,7 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN, STT_BROWSER, TTS_OFF, is_placeholder_tts
+from .const import DOMAIN, STT_BROWSER, TTS_LANGUAGES, TTS_OFF, is_placeholder_tts
 
 _LOGGER = logging.getLogger(__name__)
 _OPENAI_STT_PLATFORM = "openai_conversation"
@@ -245,8 +245,29 @@ def _stt_language_for(
         return language
 
 
-def _settings(hass: HomeAssistant, entity_id: str, name: str) -> dict[str, Any]:
-    language = _language(hass)
+def _tts_language_for(
+    engine_id: str | None,
+    language: str,
+    engines: list[tuple[str, str, str]] | None = None,
+) -> str:
+    if not engine_id:
+        return language
+    platform = next((item[1] for item in engines or [] if item[0] == engine_id), "")
+    if platform not in {DOMAIN, _OPENAI_STT_PLATFORM}:
+        return language
+    try:
+        from .voice import match_speech_language
+
+        return match_speech_language(language, TTS_LANGUAGES, "en")
+    except Exception:
+        return language
+
+
+def _settings(hass: HomeAssistant, entity_id: str, name: str, existing: Any = None) -> dict[str, Any]:
+    language = str(getattr(existing, "language", None) or "").strip() or _language(hass)
+    conversation_language = (
+        str(getattr(existing, "conversation_language", None) or "").strip() or language
+    )
     settings = (hass.data.get(DOMAIN) or {}).get("settings")
     preferred = _preferred_voice(hass, entity_id)
     engines = _stt_engines(hass)
@@ -275,14 +296,14 @@ def _settings(hass: HomeAssistant, entity_id: str, name: str) -> dict[str, Any]:
     )
     tts_engine = voice.get("tts_engine")
     if tts_engine:
-        voice["tts_language"] = _stt_language_for(
+        voice["tts_language"] = _tts_language_for(
             str(tts_engine),
             str(voice.get("tts_language") or language),
             tts_engines,
         )
     return {
         "conversation_engine": entity_id,
-        "conversation_language": language,
+        "conversation_language": conversation_language,
         "language": language,
         "name": name,
         "wake_word_entity": None,
@@ -325,15 +346,16 @@ async def async_ensure_assist_pipeline(hass: HomeAssistant, entity_id: str, name
     store = _pipeline_store(hass)
     if store is None:
         return
-    wanted = _settings(hass, entity_id, name)
     for pipeline in list(store.data.values()):
         if getattr(pipeline, "conversation_engine", None) != entity_id:
             continue
+        wanted = _settings(hass, entity_id, name, existing=pipeline)
         try:
             await store.async_update_item(pipeline.id, wanted)
         except Exception:
             _LOGGER.debug("Assist pipeline update skipped for %s", entity_id, exc_info=True)
         return
+    wanted = _settings(hass, entity_id, name)
     try:
         await store.async_create_item(wanted)
         _LOGGER.info("Assist pipeline ready for %s", entity_id)
