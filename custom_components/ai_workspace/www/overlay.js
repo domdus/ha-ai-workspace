@@ -20,10 +20,6 @@ function hideFab() {
   return location.pathname.includes("/ai-workspace");
 }
 
-function configPage() {
-  return location.pathname.startsWith("/config");
-}
-
 function refreshAccess(onReady) {
   const hass = hassObj();
   const user = hass?.user;
@@ -74,13 +70,12 @@ async function ensureHost() {
   shadow.innerHTML = `
     <style>
       .fab {
+        --ai-fab-rest: var(--ha-space-4);
         position: fixed;
         right: var(--ha-space-4);
-        bottom: var(--ha-space-4);
+        bottom: var(--ai-fab-bottom, var(--ai-fab-rest));
         z-index: 9;
-      }
-      .fab.raised {
-        bottom: calc(var(--ha-space-4) + 72px);
+        transition: bottom 280ms cubic-bezier(0.16, 1, 0.3, 1);
       }
       .fab {
         --ha-space-1: 0px;
@@ -142,6 +137,7 @@ async function ensureHost() {
           visibility 0s linear 0s;
       }
       @media (prefers-reduced-motion: reduce) {
+        .fab,
         .drawer { transition: none; }
       }
       .bar {
@@ -195,11 +191,8 @@ async function ensureHost() {
       .hidden { display: none !important; }
       @media (max-width: 870px) {
         .fab {
+          --ai-fab-rest: var(--ha-space-3);
           right: var(--ha-space-3);
-          bottom: var(--ha-space-3);
-        }
-        .fab.raised {
-          bottom: calc(var(--ha-space-3) + 72px);
         }
         .drawer { width: 100%; border-left: 0; }
         .bar {
@@ -234,15 +227,16 @@ async function ensureHost() {
   let chatApi = null;
   let mounting = null;
   let placeToken = 0;
-  // Config add actions live in `#fab` (older HA used `ha-fab`). On a phone the
-  // bottom tab bar lifts that control onto the same offset as `.fab.raised`.
+  // Config add actions live in `#fab` (older HA used `ha-fab`). Skip the empty
+  // wrapper — Dashboards still has the slot, but no button.
   const cornerButtons = () => {
     const boxes = [];
     const visit = (el, origin) => {
+      if (!el || el === fab || el.id === HOST_ID) return;
       const style = el.ownerDocument.defaultView.getComputedStyle(el);
       if (style.display === "none" || style.visibility === "hidden") return;
       const rect = el.getBoundingClientRect();
-      if (rect.width < 8 || rect.height < 8 || rect.height > 160) return;
+      if (rect.width < 36 || rect.height < 36 || rect.width > 96 || rect.height > 96) return;
       boxes.push({
         top: origin.top + rect.top,
         bottom: origin.top + rect.bottom,
@@ -250,9 +244,19 @@ async function ensureHost() {
         right: origin.left + rect.right,
       });
     };
+    const fabNodes = (root) => {
+      const nodes = [];
+      if (!root?.querySelectorAll) return nodes;
+      for (const el of root.querySelectorAll("ha-fab, [slot='fab']")) nodes.push(el);
+      for (const wrap of root.querySelectorAll("#fab")) {
+        const inner = wrap.querySelectorAll("ha-fab, ha-button, button, a, [slot='fab']");
+        if (inner.length) nodes.push(...inner);
+      }
+      return nodes;
+    };
     const walk = (root, origin) => {
       if (!root?.querySelectorAll) return;
-      for (const el of root.querySelectorAll("ha-fab, #fab, [slot='fab']")) visit(el, origin);
+      for (const el of fabNodes(root)) visit(el, origin);
       for (const el of root.querySelectorAll("*")) {
         if (el.id === HOST_ID) continue;
         if (el.shadowRoot) walk(el.shadowRoot, origin);
@@ -271,18 +275,17 @@ async function ensureHost() {
     walk(document, { top: 0, left: 0 });
     return boxes;
   };
+  const inCorner = (box) =>
+    window.innerWidth - box.right < 120 && window.innerHeight - box.bottom < 180;
   const placeFab = () => {
-    fab.style.bottom = "";
     if (fab.classList.contains("hidden")) return;
-    const mine = fab.getBoundingClientRect();
-    const hit = cornerButtons().filter(
-      (box) => box.left < mine.right && box.right > mine.left && box.top < mine.bottom && box.bottom > mine.top
-    );
-    if (!hit.length) return;
+    const hit = cornerButtons().filter(inCorner);
+    if (!hit.length) {
+      fab.style.removeProperty("--ai-fab-bottom");
+      return;
+    }
     const top = Math.min(...hit.map((box) => box.top));
-    const needed = Math.round(window.innerHeight - top + 12);
-    const current = Math.round(window.innerHeight - mine.bottom);
-    if (needed > current) fab.style.bottom = `${needed}px`;
+    fab.style.setProperty("--ai-fab-bottom", `${Math.round(window.innerHeight - top + 12)}px`);
   };
   const schedulePlace = () => {
     const token = ++placeToken;
@@ -300,7 +303,6 @@ async function ensureHost() {
       userWaits += 1;
       window.setTimeout(sync, 200);
     }
-    fab.classList.toggle("raised", configPage());
     fab.classList.toggle("hidden", hideFab());
     if (hideFab()) drawer.classList.remove("open");
     schedulePlace();

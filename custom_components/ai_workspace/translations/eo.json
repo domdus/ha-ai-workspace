@@ -21,7 +21,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "La foliumilo uzas la parolilon de la aparato kaj bezonas https:// aŭ localhost. Home Assistant-motoro (Whisper kaj aliaj ĉe Agordoj) transskribas registron de ĉi tiu paĝo. La foliumilo tamen devas permesi la mikrofonon, kaj tion ĝi faras nur ĉe https:// aŭ localhost.",
-          "tts_engine": "Piper kaj aliaj voĉoj de Home Assistant. Laŭtlegado de la respondo funkcias ankaŭ per http://. Malŝalte lasas respondojn kiel tekston.",
+          "tts_engine": "Piper, Google Translate aŭ AI Workspace-voĉo de OpenAI-agento. Laŭtlegado de la respondo funkcias ankaŭ per http://. Malŝalte lasas respondojn kiel tekston.",
           "speak_replies": "Kiam voĉo estas elektita, ĉiu respondo estas laŭtlegata tuj. Malŝalte lasas la laŭtparolilan butonon por ludi mem.",
           "enable_sidebar": "La flanka-stria ero AI Workspace. La paĝo restas ĉe /ai-workspace se ĉi tio estas malŝalta.",
           "enable_overlay": "Ŝaltas aŭ malŝaltas la ŝveban AI-butonon. Ĉe Agordoj ĝi sidas pli alte por ne kovri la sistemajn butonojn.",
@@ -90,7 +90,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "La foliumilo uzas la parolilon de la aparato kaj bezonas https:// aŭ localhost. Home Assistant-motoro (Whisper kaj aliaj ĉe Agordoj) transskribas registron de ĉi tiu paĝo. La foliumilo tamen devas permesi la mikrofonon, kaj tion ĝi faras nur ĉe https:// aŭ localhost.",
-          "tts_engine": "Piper kaj aliaj voĉoj de Home Assistant. Laŭtlegado de la respondo funkcias ankaŭ per http://. Malŝalte lasas respondojn kiel tekston.",
+          "tts_engine": "Piper, Google Translate aŭ AI Workspace-voĉo de OpenAI-agento. Laŭtlegado de la respondo funkcias ankaŭ per http://. Malŝalte lasas respondojn kiel tekston.",
           "speak_replies": "Kiam voĉo estas elektita, ĉiu respondo estas laŭtlegata tuj. Malŝalte lasas la laŭtparolilan butonon por ludi mem.",
           "enable_sidebar": "La flanka-stria ero AI Workspace. La paĝo restas ĉe /ai-workspace se ĉi tio estas malŝalta.",
           "enable_overlay": "Ŝaltas aŭ malŝaltas la ŝveban AI-butonon. Ĉe Agordoj ĝi sidas pli alte por ne kovri la sistemajn butonojn.",
@@ -226,7 +226,10 @@
             "check_house": "Ĉiam unue kontroli la domon",
             "assist": "Ankaŭ uzi en Assist",
             "assist_stt": "Ankaŭ aldoni parolon-al-teksto",
-            "stt_model": "Modelo parolo-al-teksto"
+            "stt_model": "Modelo parolo-al-teksto",
+            "assist_tts": "Ankaŭ aldoni tekston-al-parolo",
+            "tts_model": "Modelo teksto-al-parolo",
+            "tts_voice": "Voĉo"
           },
           "data_description": {
             "borrow": "Uzas la ŝlosilon jam konservitan de tiu integriĝo. La alia integriĝo restas kiel estas.",
@@ -237,7 +240,10 @@
             "check_house": "La unua paŝo de ĉiu mesaĝo (krom salutoj kaj dankoj) devas voki ilon, por ke respondoj pri la domo baziĝu sur vivaj datumoj. Malŝaltu por modeloj, kiuj mem fidinde vokas ilojn, aŭ por ŝpari ilan rondon ĉe ĝeneralaj demandoj.",
             "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo.",
             "assist_stt": "Uzas la API-ŝlosilon de ĉi tiu agento kiel Home Assistant parolo-al-teksto-motoron kaj asignas ĝin al ĉiu AI Workspace Assist-dukto (inkluzive Cursor). Malŝaltu se vi jam uzas alian motoron.",
-            "stt_model": "Malplene uzas la defaŭlton de la provizanto. Vi povas tajpi alian id."
+            "stt_model": "Malplene uzas la defaŭlton de la provizanto. Vi povas tajpi alian id.",
+            "assist_tts": "Uzas la API-ŝlosilon de ĉi tiu agento kiel Home Assistant teksto-al-parolo-motoron kaj asignas ĝin al ĉiu AI Workspace Assist-dukto (inkluzive Cursor). Malŝaltu se vi jam uzas Piper aŭ alian voĉon.",
+            "tts_model": "Malplene uzas gpt-4o-mini-tts. tts-1 estas malpli kosta. Vi povas tajpi alian id.",
+            "tts_voice": "Coral estas la defaŭlto. La kampo Voĉo de Assist-dukto povas anstataŭigi ĝin."
           }
         },
         "provider_ollama": {
@@ -296,7 +302,10 @@
             "check_house": "Ĉiam unue kontroli la domon",
             "assist": "Ankaŭ uzi en Assist",
             "assist_stt": "Ankaŭ aldoni parolon-al-teksto",
-            "stt_model": "Modelo parolo-al-teksto"
+            "stt_model": "Modelo parolo-al-teksto",
+            "assist_tts": "Ankaŭ aldoni tekston-al-parolo",
+            "tts_model": "Modelo teksto-al-parolo",
+            "tts_voice": "Voĉo"
           },
           "data_description": {
             "api_key": "Lasu malplena dum redakto por konservi la konservitan ŝlosilon.",
@@ -307,7 +316,10 @@
             "check_house": "La unua paŝo de ĉiu mesaĝo (krom salutoj kaj dankoj) devas voki ilon, por ke respondoj pri la domo baziĝu sur vivaj datumoj. Malŝaltu por modeloj, kiuj mem fidinde vokas ilojn, aŭ por ŝpari ilan rondon ĉe ĝeneralaj demandoj.",
             "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo.",
             "assist_stt": "Uzas la API-ŝlosilon de ĉi tiu agento kiel Home Assistant parolo-al-teksto-motoron kaj asignas ĝin al ĉiu AI Workspace Assist-dukto (inkluzive Cursor). Malŝaltu se vi jam uzas alian motoron.",
-            "stt_model": "Malplene uzas la defaŭlton de la provizanto. Vi povas tajpi alian id."
+            "stt_model": "Malplene uzas la defaŭlton de la provizanto. Vi povas tajpi alian id.",
+            "assist_tts": "Uzas la API-ŝlosilon de ĉi tiu agento kiel Home Assistant teksto-al-parolo-motoron kaj asignas ĝin al ĉiu AI Workspace Assist-dukto (inkluzive Cursor). Malŝaltu se vi jam uzas Piper aŭ alian voĉon.",
+            "tts_model": "Malplene uzas gpt-4o-mini-tts. tts-1 estas malpli kosta. Vi povas tajpi alian id.",
+            "tts_voice": "Coral estas la defaŭlto. La kampo Voĉo de Assist-dukto povas anstataŭigi ĝin."
           }
         }
       },

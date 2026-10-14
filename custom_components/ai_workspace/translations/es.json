@@ -21,7 +21,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "El navegador usa el motor de voz del dispositivo y necesita https:// o localhost. Un motor de Home Assistant (Whisper y otros en Ajustes) transcribe una grabación de esta página. El navegador igualmente debe permitir el micrófono, y solo lo hace en https:// o localhost.",
-          "tts_engine": "Piper y otras voces de Home Assistant. Reproducir la respuesta funciona también en http://. Desactivado deja las respuestas como texto.",
+          "tts_engine": "Piper, Google Translate o una voz de AI Workspace de un agente OpenAI. Reproducir la respuesta funciona también en http://. Desactivado deja las respuestas como texto.",
           "speak_replies": "Si hay una voz elegida, cada respuesta se lee al llegar. Desactivado deja el botón del altavoz para reproducirla tú.",
           "enable_sidebar": "El elemento de la barra lateral AI Workspace. La página sigue disponible en /ai-workspace si esto está desactivado.",
           "enable_overlay": "Activa o desactiva el botón flotante de IA. En Ajustes se sitúa más arriba para no tapar los botones del sistema.",
@@ -90,7 +90,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "El navegador usa el motor de voz del dispositivo y necesita https:// o localhost. Un motor de Home Assistant (Whisper y otros en Ajustes) transcribe una grabación de esta página. El navegador igualmente debe permitir el micrófono, y solo lo hace en https:// o localhost.",
-          "tts_engine": "Piper y otras voces de Home Assistant. Reproducir la respuesta funciona también en http://. Desactivado deja las respuestas como texto.",
+          "tts_engine": "Piper, Google Translate o una voz de AI Workspace de un agente OpenAI. Reproducir la respuesta funciona también en http://. Desactivado deja las respuestas como texto.",
           "speak_replies": "Si hay una voz elegida, cada respuesta se lee al llegar. Desactivado deja el botón del altavoz para reproducirla tú.",
           "enable_sidebar": "El elemento de la barra lateral AI Workspace. La página sigue disponible en /ai-workspace si esto está desactivado.",
           "enable_overlay": "Activa o desactiva el botón flotante de IA. En Ajustes se sitúa más arriba para no tapar los botones del sistema.",
@@ -226,7 +226,10 @@
             "check_house": "Comprobar siempre la casa primero",
             "assist": "Usar también en Assist",
             "assist_stt": "Añadir también voz a texto",
-            "stt_model": "Modelo de voz a texto"
+            "stt_model": "Modelo de voz a texto",
+            "assist_tts": "Añadir también texto a voz",
+            "tts_model": "Modelo de texto a voz",
+            "tts_voice": "Voz"
           },
           "data_description": {
             "borrow": "Usa la clave que esa integración ya tiene guardada. La otra integración no se modifica.",
@@ -237,7 +240,10 @@
             "check_house": "El primer paso de cada mensaje (salvo saludos y agradecimientos) debe llamar a una herramienta, para que las respuestas sobre la casa se basen en datos en vivo. Desactívalo en modelos que ya llaman herramientas de forma fiable o para ahorrar una ronda de herramientas en preguntas generales.",
             "assist": "Añade este agente a Home Assistant Assist. Desactivado lo deja solo en el chat de AI Workspace.",
             "assist_stt": "Usa la clave API de este agente como motor de voz a texto de Home Assistant y la asigna a cada canal de AI Workspace Assist (incluido Cursor). Desactívalo si ya usas otro motor.",
-            "stt_model": "Vacío usa el valor predeterminado del proveedor. Puedes escribir otro id."
+            "stt_model": "Vacío usa el valor predeterminado del proveedor. Puedes escribir otro id.",
+            "assist_tts": "Usa la clave API de este agente como motor de texto a voz de Home Assistant y la asigna a cada canal de AI Workspace Assist (incluido Cursor). Desactívalo si ya usas Piper u otra voz.",
+            "tts_model": "Vacío usa gpt-4o-mini-tts. tts-1 es más barato. Puedes escribir otro id.",
+            "tts_voice": "Coral es el valor predeterminado. El campo Voz del canal Assist puede sustituirlo."
           }
         },
         "provider_ollama": {
@@ -296,7 +302,10 @@
             "check_house": "Comprobar siempre la casa primero",
             "assist": "Usar también en Assist",
             "assist_stt": "Añadir también voz a texto",
-            "stt_model": "Modelo de voz a texto"
+            "stt_model": "Modelo de voz a texto",
+            "assist_tts": "Añadir también texto a voz",
+            "tts_model": "Modelo de texto a voz",
+            "tts_voice": "Voz"
           },
           "data_description": {
             "api_key": "Déjalo en blanco al editar para conservar la clave guardada.",
@@ -307,7 +316,10 @@
             "check_house": "El primer paso de cada mensaje (salvo saludos y agradecimientos) debe llamar a una herramienta, para que las respuestas sobre la casa se basen en datos en vivo. Desactívalo en modelos que ya llaman herramientas de forma fiable o para ahorrar una ronda de herramientas en preguntas generales.",
             "assist": "Añade este agente a Home Assistant Assist. Desactivado lo deja solo en el chat de AI Workspace.",
             "assist_stt": "Usa la clave API de este agente como motor de voz a texto de Home Assistant y la asigna a cada canal de AI Workspace Assist (incluido Cursor). Desactívalo si ya usas otro motor.",
-            "stt_model": "Vacío usa el valor predeterminado del proveedor. Puedes escribir otro id."
+            "stt_model": "Vacío usa el valor predeterminado del proveedor. Puedes escribir otro id.",
+            "assist_tts": "Usa la clave API de este agente como motor de texto a voz de Home Assistant y la asigna a cada canal de AI Workspace Assist (incluido Cursor). Desactívalo si ya usas Piper u otra voz.",
+            "tts_model": "Vacío usa gpt-4o-mini-tts. tts-1 es más barato. Puedes escribir otro id.",
+            "tts_voice": "Coral es el valor predeterminado. El campo Voz del canal Assist puede sustituirlo."
           }
         }
       },

@@ -1,67 +1,10 @@
 const CACHE = new URL(import.meta.url).search;
 const { stringsFor } = await import(`./i18n.js${CACHE}`);
+const { takeSpeech, speechPlain } = await import(`./speech.js${CACHE}`);
 
 const API = "/api/ai_workspace";
 
-function speechIsShort(text) {
-  const words = String(text || "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .split(" ")
-    .filter(Boolean);
-  return words.length <= 3;
-}
-
-function pullSpeechPiece(text) {
-  const para = /^[\s\S]*?\n\s*\n/.exec(text);
-  const sentence = /^[\s\S]*?[.!?。！？]["»«”’')\]]*?(?=\s+(?:\p{Lu}|\p{Lt}|[„"«(])|\s*\n)/u.exec(text);
-  let piece = "";
-  if (sentence) piece = sentence[0];
-  if (para && (!piece || para[0].length < piece.length)) piece = para[0];
-  if (!piece) return null;
-  return { piece, rest: text.slice(piece.length) };
-}
-
-function trailingSentence(text) {
-  const match = /^([\s\S]*?[.!?。！？]["»«”’')\]]*)\s*$/u.exec(text);
-  if (!match || !match[1].trim()) return null;
-  return { piece: match[0], rest: "" };
-}
-
-export function takeSpeech(held, started, flush) {
-  const pieces = [];
-  let rest = String(held || "");
-  let bundle = "";
-  let open = !started;
-  while (rest) {
-    let next = pullSpeechPiece(rest);
-    if (!next) {
-      const tail = trailingSentence(rest);
-      if (!tail || (open && speechIsShort(bundle + tail.piece))) break;
-      next = tail;
-    }
-    rest = next.rest;
-    if (open) {
-      bundle += next.piece;
-      if (!speechIsShort(bundle)) {
-        pieces.push(bundle.trim());
-        bundle = "";
-        open = false;
-      }
-      continue;
-    }
-    const bit = next.piece.trim();
-    if (bit) pieces.push(bit);
-  }
-  if (open && bundle) {
-    if (flush) pieces.push(bundle.trim());
-    else rest = bundle + rest;
-  } else if (flush && rest.trim()) {
-    pieces.push(rest.trim());
-    rest = "";
-  }
-  return { pieces: pieces.filter(Boolean), rest };
-}
+export { takeSpeech };
 
 function hassObj() {
   return document.querySelector("home-assistant")?.hass;
@@ -1745,7 +1688,7 @@ export function mountAiWorkspace(root, options = {}) {
 
   let defaultProvider = "api";
   let agentId = "";
-  let voice = { dictate: true, stt: "browser", speak: false, tts: false };
+  let voice = { dictate: true, stt: "browser", speak: false, tts: false, ttsHeavy: false };
   let turnHasHistory = false;
 
   function selectedAgent() {
@@ -2278,6 +2221,14 @@ export function mountAiWorkspace(root, options = {}) {
       resizeComposer();
       syncCopyChat();
       bumpSession(id, session.title, session.pinned);
+      if (voice.speak && voice.tts && !speakStarted) {
+        const leftover = lastAssistantText();
+        if (leftover) {
+          speakHeld = leftover;
+          speakRaw = leftover;
+          drainSpeech(true);
+        }
+      }
       return true;
     }
     return false;
@@ -2660,6 +2611,7 @@ export function mountAiWorkspace(root, options = {}) {
   let speakStarted = false;
   let speakFromUser = false;
   let speakBusy = false;
+  let speakFlush = false;
   let speakRelease = null;
   const speakPending = [];
   const speakInflight = [];
@@ -2839,13 +2791,12 @@ export function mountAiWorkspace(root, options = {}) {
     speakRaw = "";
     speakStarted = false;
     speakFromUser = false;
+    speakFlush = false;
     speakPending.length = 0;
     speakInflight.length = 0;
     if (speakRelease) speakRelease();
-    if (replyAudio && !replyAudio.paused) replyAudio.pause();
+    if (replyAudio && !replyAudio.paused && !replyAudio.ended) replyAudio.pause();
     if (replyObjectUrl) {
-      replyAudio?.removeAttribute("src");
-      replyAudio?.load();
       URL.revokeObjectURL(replyObjectUrl);
       replyObjectUrl = "";
     }
@@ -2853,12 +2804,14 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   function drainSpeech(flush) {
-    const taken = takeSpeech(speakHeld, speakStarted, flush);
+    if (flush) speakFlush = true;
+    const taken = takeSpeech(speakHeld, speakStarted, flush, { heavy: voice.ttsHeavy });
     speakHeld = taken.rest;
     for (const piece of taken.pieces) {
       speakStarted = true;
       queueSpeech(piece);
     }
+    if (flush) fillSpeakAhead();
   }
 
   function feedSpeech(delta) {
@@ -2882,19 +2835,52 @@ export function mountAiWorkspace(root, options = {}) {
     kickSpeak();
   }
 
+  function pendingChars() {
+    return speakPending.reduce((sum, item) => sum + speechPlain(item).length, 0);
+  }
+
+  function takePendingClip() {
+    let clip = "";
+    while (speakPending.length) {
+      const next = speakPending[0];
+      const combined = clip ? `${clip}\n${next}` : next;
+      if (clip && speechPlain(combined).length > 560) break;
+      speakPending.shift();
+      clip = combined;
+      const size = speechPlain(clip).length;
+      if (size < 280) continue;
+      if (!speakFlush) break;
+      if (!speakPending.length) break;
+      if (speechPlain(`${clip}\n${speakPending[0]}`).length > 560) break;
+    }
+    return clip.trim();
+  }
+
   function fillSpeakAhead() {
     while (speakInflight.length < 2 && speakPending.length) {
+      if (voice.ttsHeavy) {
+        const first = speechPlain(speakPending[0]).length;
+        if (!speakFlush && first < 160 && pendingChars() < 280) break;
+        const text = takePendingClip();
+        if (!text) break;
+        speakInflight.push(fetchSpeech(text, speakGen));
+        continue;
+      }
       const text = speakPending.shift();
-      const gen = speakGen;
-      speakInflight.push(fetchSpeech(text, gen));
+      speakInflight.push(fetchSpeech(text, speakGen));
     }
   }
 
   async function fetchSpeech(text, gen) {
+    const plain = speechPlain(text);
+    if (!plain) return null;
+    const ac = new AbortController();
+    const timer = window.setTimeout(() => ac.abort(), 20000);
     try {
       const response = await apiFetch(`${API}/tts`, {
         method: "POST",
-        body: JSON.stringify({ text, language: speechLanguage() }),
+        body: JSON.stringify({ text: plain, language: speechLanguage() }),
+        signal: ac.signal,
       });
       if (gen !== speakGen || !response?.ok) return null;
       const blob = await response.blob();
@@ -2902,6 +2888,8 @@ export function mountAiWorkspace(root, options = {}) {
       return blob;
     } catch (_err) {
       return null;
+    } finally {
+      window.clearTimeout(timer);
     }
   }
 
@@ -2958,12 +2946,17 @@ export function mountAiWorkspace(root, options = {}) {
       });
   }
 
+  function speechPaused() {
+    const btn = logEl.querySelector(".speak-chat");
+    return Boolean(btn?.classList.contains("speaking") && replyAudio?.paused && !replyAudio.ended);
+  }
+
   async function toggleSpeak() {
     if (replyAudio && !replyAudio.paused && !replyAudio.ended) {
       replyAudio.pause();
       return;
     }
-    if (replyAudio && replyAudio.paused && replyAudio.currentTime > 0 && !replyAudio.ended) {
+    if (speechPaused()) {
       try {
         await replyAudio.play();
       } catch (_err) {
@@ -2971,7 +2964,6 @@ export function mountAiWorkspace(root, options = {}) {
       }
       return;
     }
-    if (speakBusy || speakPending.length || speakInflight.length) return;
     const text = lastAssistantText();
     if (!text) return;
     await speakReply(text, true);
@@ -2982,7 +2974,8 @@ export function mountAiWorkspace(root, options = {}) {
     haltSpeech();
     speakFromUser = fromUser;
     if (fromUser) await unlockOutput();
-    const taken = takeSpeech(String(text), false, true);
+    speakFlush = true;
+    const taken = takeSpeech(String(text), false, true, { heavy: voice.ttsHeavy });
     for (const piece of taken.pieces) queueSpeech(piece);
   }
 
@@ -3008,7 +3001,7 @@ export function mountAiWorkspace(root, options = {}) {
     const bubbles = [...logEl.querySelectorAll(".bubble.assistant")];
     for (let i = bubbles.length - 1; i >= 0; i -= 1) {
       const md = bubbles[i].querySelector("ha-markdown.text");
-      const text = String(md?.content || "").trim();
+      const text = String(md?.content || md?.textContent || "").trim();
       if (text) return text;
     }
     return "";
@@ -3038,6 +3031,7 @@ export function mountAiWorkspace(root, options = {}) {
           stt: body.stt || "browser",
           speak: body.speak === true,
           tts: Boolean(body.tts) && body.tts !== "off",
+          ttsHeavy: body.tts_heavy === true,
         };
       }
     } catch (_err) {
@@ -3195,6 +3189,14 @@ export function mountAiWorkspace(root, options = {}) {
           }
           startStreamPump();
           drainSpeech(true);
+          if (voice.speak && !speakStarted) {
+            const leftover = String(data.answer || lastAssistantText() || "").trim();
+            if (leftover) {
+              speakHeld = leftover;
+              speakRaw = leftover;
+              drainSpeech(true);
+            }
+          }
           settleTools(assistant);
           setActivity(assistant, "");
           streaming = false;

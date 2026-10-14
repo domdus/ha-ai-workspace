@@ -23,7 +23,10 @@ from .const import (
     CONF_API_PROVIDER,
     CONF_ASSIST,
     CONF_ASSIST_STT,
+    CONF_ASSIST_TTS,
     CONF_STT_MODEL,
+    CONF_TTS_MODEL,
+    CONF_TTS_VOICE,
     CONF_AZURE_API_VERSION,
     CONF_BORROW,
     CONF_CHECK_HOUSE,
@@ -38,14 +41,20 @@ from .const import (
     EFFORTS,
     MODE_API,
     MODE_CURSOR,
+    TTS_VOICES,
     assist_enabled,
     assist_stt_enabled,
+    assist_tts_enabled,
     provider_supports_stt,
+    provider_supports_tts,
     api_model_choices,
     default_api_base,
     default_api_model,
     default_stt_model,
+    default_tts_model,
+    resolved_tts_voice,
     stt_model_choices,
+    tts_model_choices,
     submitted_model,
 )
 from .discovery import async_resolve_runtime_url, async_runtime_health
@@ -121,6 +130,35 @@ def _stt_model_field(provider: str, current: dict) -> dict:
     }
 
 
+def _tts_model_field(provider: str, current: dict) -> dict:
+    stored = str(current.get(CONF_TTS_MODEL) or "").strip()
+    fallback = default_tts_model(provider)
+    choices = tts_model_choices(provider)
+    shown = stored or fallback
+    if not choices:
+        return {vol.Optional(CONF_TTS_MODEL, default="", description={"suggested_value": shown}): str}
+    options = list(choices)
+    if stored and stored not in options:
+        options.insert(0, stored)
+    return {
+        vol.Optional(CONF_TTS_MODEL, default=shown): SelectSelector(
+            SelectSelectorConfig(options=options, custom_value=True, mode="dropdown")
+        )
+    }
+
+
+def _tts_voice_field(current: dict) -> dict:
+    shown = resolved_tts_voice(current)
+    options = list(TTS_VOICES)
+    if shown and shown not in options:
+        options.insert(0, shown)
+    return {
+        vol.Optional(CONF_TTS_VOICE, default=shown): SelectSelector(
+            SelectSelectorConfig(options=options, custom_value=True, mode="dropdown")
+        )
+    }
+
+
 def _fields_schema(step: str, current: dict, borrows: list[dict[str, str]], *, new: bool = False) -> vol.Schema:
     provider = str(current.get(CONF_API_PROVIDER) or MODE_CURSOR)
     fields: dict = {}
@@ -156,6 +194,10 @@ def _fields_schema(step: str, current: dict, borrows: list[dict[str, str]], *, n
     if provider_supports_stt(provider):
         fields[vol.Optional(CONF_ASSIST_STT, default=assist_stt_enabled(current, provider))] = cv.boolean
         fields.update(_stt_model_field(provider, current))
+    if provider_supports_tts(provider):
+        fields[vol.Optional(CONF_ASSIST_TTS, default=assist_tts_enabled(current, provider))] = cv.boolean
+        fields.update(_tts_model_field(provider, current))
+        fields.update(_tts_voice_field(current))
     return vol.Schema(fields)
 
 
@@ -294,6 +336,15 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                     else False,
                     CONF_STT_MODEL: str(user_input.get(CONF_STT_MODEL) or "").strip()
                     if provider_supports_stt(provider)
+                    else "",
+                    CONF_ASSIST_TTS: bool(user_input.get(CONF_ASSIST_TTS, assist_tts_enabled(current, provider)))
+                    if provider_supports_tts(provider)
+                    else False,
+                    CONF_TTS_MODEL: str(user_input.get(CONF_TTS_MODEL) or "").strip()
+                    if provider_supports_tts(provider)
+                    else "",
+                    CONF_TTS_VOICE: str(user_input.get(CONF_TTS_VOICE) or "").strip()
+                    if provider_supports_tts(provider)
                     else "",
                     CONF_AZURE_API_VERSION: version if provider == API_AZURE else "",
                 }

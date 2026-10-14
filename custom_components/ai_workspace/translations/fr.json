@@ -21,7 +21,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "Le navigateur utilise la reconnaissance vocale de l’appareil et nécessite https:// ou localhost. Un moteur Home Assistant (Whisper et autres sous Paramètres) transcrit un enregistrement de cette page. Le navigateur doit quand même autoriser le microphone, uniquement en https:// ou localhost.",
-          "tts_engine": "Piper et d’autres voix Home Assistant. La lecture de la réponse fonctionne aussi en http://. Désactivé laisse les réponses en texte.",
+          "tts_engine": "Piper, Google Translate, ou une voix AI Workspace d’un agent OpenAI. La lecture de la réponse fonctionne aussi en http://. Désactivé laisse les réponses en texte.",
           "speak_replies": "Quand une voix est choisie, chaque réponse est lue dès qu’elle arrive. Désactivé garde le bouton haut-parleur pour lire une réponse soi-même.",
           "enable_sidebar": "L’entrée de barre latérale AI Workspace. La page reste disponible sur /ai-workspace si c’est désactivé.",
           "enable_overlay": "Active ou désactive le bouton IA flottant. Sur Paramètres il est plus haut pour ne pas couvrir les boutons du système.",
@@ -90,7 +90,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "Le navigateur utilise la reconnaissance vocale de l’appareil et nécessite https:// ou localhost. Un moteur Home Assistant (Whisper et autres sous Paramètres) transcrit un enregistrement de cette page. Le navigateur doit quand même autoriser le microphone, uniquement en https:// ou localhost.",
-          "tts_engine": "Piper et d’autres voix Home Assistant. La lecture de la réponse fonctionne aussi en http://. Désactivé laisse les réponses en texte.",
+          "tts_engine": "Piper, Google Translate, ou une voix AI Workspace d’un agent OpenAI. La lecture de la réponse fonctionne aussi en http://. Désactivé laisse les réponses en texte.",
           "speak_replies": "Quand une voix est choisie, chaque réponse est lue dès qu’elle arrive. Désactivé garde le bouton haut-parleur pour lire une réponse soi-même.",
           "enable_sidebar": "L’entrée de barre latérale AI Workspace. La page reste disponible sur /ai-workspace si c’est désactivé.",
           "enable_overlay": "Active ou désactive le bouton IA flottant. Sur Paramètres il est plus haut pour ne pas couvrir les boutons du système.",
@@ -226,7 +226,10 @@
             "check_house": "Toujours vérifier la maison d'abord",
             "assist": "Utiliser aussi dans Assist",
             "assist_stt": "Ajouter aussi la parole vers texte",
-            "stt_model": "Modèle parole vers texte"
+            "stt_model": "Modèle parole vers texte",
+            "assist_tts": "Ajouter aussi le texte vers parole",
+            "tts_model": "Modèle texte vers parole",
+            "tts_voice": "Voix"
           },
           "data_description": {
             "borrow": "Utilise la clé déjà enregistrée par cette intégration. L’autre intégration n’est pas modifiée.",
@@ -237,7 +240,10 @@
             "check_house": "La première étape de chaque message (sauf salutations et remerciements) doit appeler un outil, pour que les réponses sur la maison reposent sur des données en direct. Désactivez-le pour les modèles qui appellent les outils de façon fiable, ou pour économiser un tour d'outil sur les questions générales.",
             "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace.",
             "assist_stt": "Utilise la clé API de cet agent comme moteur parole-vers-texte de Home Assistant et l’assigne à chaque pipeline AI Workspace Assist (y compris Cursor). Désactivez si vous utilisez déjà un autre moteur.",
-            "stt_model": "Vide utilise le défaut du fournisseur. Vous pouvez saisir un autre id."
+            "stt_model": "Vide utilise le défaut du fournisseur. Vous pouvez saisir un autre id.",
+            "assist_tts": "Utilise la clé API de cet agent comme moteur texte-vers-parole de Home Assistant et l’assigne à chaque pipeline AI Workspace Assist (y compris Cursor). Désactivez si vous utilisez déjà Piper ou une autre voix.",
+            "tts_model": "Vide utilise gpt-4o-mini-tts. tts-1 est moins cher. Vous pouvez saisir un autre id.",
+            "tts_voice": "Coral est la valeur par défaut. Le champ Voix du pipeline Assist peut le remplacer."
           }
         },
         "provider_ollama": {
@@ -296,7 +302,10 @@
             "check_house": "Toujours vérifier la maison d'abord",
             "assist": "Utiliser aussi dans Assist",
             "assist_stt": "Ajouter aussi la parole vers texte",
-            "stt_model": "Modèle parole vers texte"
+            "stt_model": "Modèle parole vers texte",
+            "assist_tts": "Ajouter aussi le texte vers parole",
+            "tts_model": "Modèle texte vers parole",
+            "tts_voice": "Voix"
           },
           "data_description": {
             "api_key": "Laisser vide à l’édition pour conserver la clé enregistrée.",
@@ -307,7 +316,10 @@
             "check_house": "La première étape de chaque message (sauf salutations et remerciements) doit appeler un outil, pour que les réponses sur la maison reposent sur des données en direct. Désactivez-le pour les modèles qui appellent les outils de façon fiable, ou pour économiser un tour d'outil sur les questions générales.",
             "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace.",
             "assist_stt": "Utilise la clé API de cet agent comme moteur parole-vers-texte de Home Assistant et l’assigne à chaque pipeline AI Workspace Assist (y compris Cursor). Désactivez si vous utilisez déjà un autre moteur.",
-            "stt_model": "Vide utilise le défaut du fournisseur. Vous pouvez saisir un autre id."
+            "stt_model": "Vide utilise le défaut du fournisseur. Vous pouvez saisir un autre id.",
+            "assist_tts": "Utilise la clé API de cet agent comme moteur texte-vers-parole de Home Assistant et l’assigne à chaque pipeline AI Workspace Assist (y compris Cursor). Désactivez si vous utilisez déjà Piper ou une autre voix.",
+            "tts_model": "Vide utilise gpt-4o-mini-tts. tts-1 est moins cher. Vous pouvez saisir un autre id.",
+            "tts_voice": "Coral est la valeur par défaut. Le champ Voix du pipeline Assist peut le remplacer."
           }
         }
       },

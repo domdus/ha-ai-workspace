@@ -7,7 +7,7 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN, STT_BROWSER, TTS_OFF
+from .const import DOMAIN, STT_BROWSER, TTS_OFF, is_placeholder_tts
 
 _LOGGER = logging.getLogger(__name__)
 _OPENAI_STT_PLATFORM = "openai_conversation"
@@ -79,6 +79,42 @@ def pick_assist_stt(
     return None
 
 
+def pick_assist_tts(
+    *,
+    setting: str = "",
+    preferred: str | None = None,
+    conversation_unique_id: str | None = None,
+    engines: list[tuple[str, str, str]] | None = None,
+) -> str | None:
+    """Choose a TTS engine for an AI Workspace Assist pipeline.
+
+    Order: the Text-to-speech setting when it is a real voice, this agent's
+    own engine, any AI Workspace engine, the official OpenAI integration,
+    the default Assist pipeline, then any other HA engine.
+    """
+    chosen = str(setting or "").strip()
+    if chosen and not is_placeholder_tts(chosen):
+        return chosen
+    rows = list(engines or [])
+    wanted = f"{conversation_unique_id}-tts" if conversation_unique_id else ""
+    if wanted:
+        for entity_id, platform, unique_id in rows:
+            if platform == DOMAIN and unique_id == wanted:
+                return entity_id
+    for entity_id, platform, _unique_id in rows:
+        if platform == DOMAIN:
+            return entity_id
+    for entity_id, platform, _unique_id in rows:
+        if platform == _OPENAI_STT_PLATFORM:
+            return entity_id
+    if preferred and not is_placeholder_tts(str(preferred)):
+        return preferred
+    for entity_id, _platform, _unique_id in rows:
+        if entity_id and not is_placeholder_tts(entity_id):
+            return entity_id
+    return None
+
+
 def resolve_pipeline_voice(
     stt_setting: str,
     tts_setting: str,
@@ -91,10 +127,15 @@ def resolve_pipeline_voice(
     preferred_tts_voice: str | None = None,
     fallback_stt: str | None = None,
     fallback_stt_language: str | None = None,
+    fallback_tts: str | None = None,
 ) -> dict[str, Any]:
     """STT/TTS for Assist: our engines, else a discovered engine, else the default pipeline."""
     stt = stt_setting if stt_setting and stt_setting != STT_BROWSER else (fallback_stt or preferred_stt or None)
-    tts = tts_setting if tts_setting and tts_setting != TTS_OFF else (preferred_tts or None)
+    tts = (
+        tts_setting
+        if tts_setting and not is_placeholder_tts(tts_setting)
+        else (fallback_tts or preferred_tts or None)
+    )
     if stt == preferred_stt:
         stt_language = preferred_stt_language
     elif stt == fallback_stt:
@@ -132,19 +173,22 @@ def _preferred_voice(hass: HomeAssistant, entity_id: str) -> dict[str, Any]:
     }
 
 
-def _stt_engines(hass: HomeAssistant) -> list[tuple[str, str, str]]:
+def _speech_engines(hass: HomeAssistant, domain: str) -> list[tuple[str, str, str]]:
     found: dict[str, tuple[str, str, str]] = {}
     try:
         from homeassistant.helpers import entity_registry as er
 
         for row in er.async_get(hass).entities.values():
-            if row.domain != "stt" or row.disabled_by is not None:
+            if row.domain != domain or row.disabled_by is not None:
                 continue
             found[row.entity_id] = (row.entity_id, str(row.platform or ""), str(row.unique_id or ""))
     except Exception:
-        _LOGGER.debug("STT registry listing skipped", exc_info=True)
+        _LOGGER.debug("%s registry listing skipped", domain, exc_info=True)
     try:
-        from homeassistant.components.stt import DATA_COMPONENT
+        if domain == "stt":
+            from homeassistant.components.stt import DATA_COMPONENT
+        else:
+            from homeassistant.components.tts import DATA_COMPONENT
 
         component = hass.data.get(DATA_COMPONENT)
         for entity in getattr(component, "entities", []) or []:
@@ -157,8 +201,16 @@ def _stt_engines(hass: HomeAssistant) -> list[tuple[str, str, str]]:
                 platform = str(getattr(host, "platform_name", "") or "")
             found[entity_id] = (entity_id, platform, str(getattr(entity, "unique_id", "") or ""))
     except Exception:
-        _LOGGER.debug("STT component listing skipped", exc_info=True)
+        _LOGGER.debug("%s component listing skipped", domain, exc_info=True)
     return list(found.values())
+
+
+def _stt_engines(hass: HomeAssistant) -> list[tuple[str, str, str]]:
+    return _speech_engines(hass, "stt")
+
+
+def _tts_engines(hass: HomeAssistant) -> list[tuple[str, str, str]]:
+    return _speech_engines(hass, "tts")
 
 
 def _conversation_unique_id(hass: HomeAssistant, entity_id: str) -> str | None:
@@ -198,11 +250,19 @@ def _settings(hass: HomeAssistant, entity_id: str, name: str) -> dict[str, Any]:
     settings = (hass.data.get(DOMAIN) or {}).get("settings")
     preferred = _preferred_voice(hass, entity_id)
     engines = _stt_engines(hass)
+    tts_engines = _tts_engines(hass)
+    unique_id = _conversation_unique_id(hass, entity_id)
     fallback_stt = pick_assist_stt(
         setting="",
         preferred=preferred.get("preferred_stt"),
-        conversation_unique_id=_conversation_unique_id(hass, entity_id),
+        conversation_unique_id=unique_id,
         engines=engines,
+    )
+    fallback_tts = pick_assist_tts(
+        setting="",
+        preferred=preferred.get("preferred_tts"),
+        conversation_unique_id=unique_id,
+        engines=tts_engines,
     )
     voice = resolve_pipeline_voice(
         str(getattr(settings, "stt_engine", "") or ""),
@@ -210,8 +270,16 @@ def _settings(hass: HomeAssistant, entity_id: str, name: str) -> dict[str, Any]:
         language=language,
         fallback_stt=fallback_stt,
         fallback_stt_language=_stt_language_for(fallback_stt, language, engines),
+        fallback_tts=fallback_tts,
         **preferred,
     )
+    tts_engine = voice.get("tts_engine")
+    if tts_engine:
+        voice["tts_language"] = _stt_language_for(
+            str(tts_engine),
+            str(voice.get("tts_language") or language),
+            tts_engines,
+        )
     return {
         "conversation_engine": entity_id,
         "conversation_language": language,

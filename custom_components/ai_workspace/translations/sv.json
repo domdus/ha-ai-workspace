@@ -21,7 +21,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "Webbläsaren använder enhetens talmotor och behöver https:// eller localhost. En Home Assistant-motor (Whisper och andra under Inställningar) transkriberar en inspelning från den här sidan. Webbläsaren måste ändå tillåta mikrofonen, och det gör den bara på https:// eller localhost.",
-          "tts_engine": "Piper och andra Home Assistant-röster. Uppläsning av svaret fungerar även över http://. Av lämnar svar som text.",
+          "tts_engine": "Piper, Google Translate eller en AI Workspace-röst från en OpenAI-agent. Uppläsning av svaret fungerar även över http://. Av lämnar svar som text.",
           "speak_replies": "När en röst är vald läses varje svar upp direkt. Av lämnar högtalarknappen så att du kan spela upp själv.",
           "enable_sidebar": "Sidofältsobjektet AI Workspace. Sidan finns kvar på /ai-workspace om det här är av.",
           "enable_overlay": "Slår på eller av den flytande AI-knappen. På Inställningar sitter den högre så att den inte täcker systemknapparna.",
@@ -90,7 +90,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "Webbläsaren använder enhetens talmotor och behöver https:// eller localhost. En Home Assistant-motor (Whisper och andra under Inställningar) transkriberar en inspelning från den här sidan. Webbläsaren måste ändå tillåta mikrofonen, och det gör den bara på https:// eller localhost.",
-          "tts_engine": "Piper och andra Home Assistant-röster. Uppläsning av svaret fungerar även över http://. Av lämnar svar som text.",
+          "tts_engine": "Piper, Google Translate eller en AI Workspace-röst från en OpenAI-agent. Uppläsning av svaret fungerar även över http://. Av lämnar svar som text.",
           "speak_replies": "När en röst är vald läses varje svar upp direkt. Av lämnar högtalarknappen så att du kan spela upp själv.",
           "enable_sidebar": "Sidofältsobjektet AI Workspace. Sidan finns kvar på /ai-workspace om det här är av.",
           "enable_overlay": "Slår på eller av den flytande AI-knappen. På Inställningar sitter den högre så att den inte täcker systemknapparna.",
@@ -226,7 +226,10 @@
             "check_house": "Kontrollera alltid huset först",
             "assist": "Använd också i Assist",
             "assist_stt": "Lägg också till tal till text",
-            "stt_model": "Tal-till-text-modell"
+            "stt_model": "Tal-till-text-modell",
+            "assist_tts": "Lägg också till text till tal",
+            "tts_model": "Text-till-tal-modell",
+            "tts_voice": "Röst"
           },
           "data_description": {
             "borrow": "Använder nyckeln som den integrationen redan har sparat. Den andra integrationen lämnas orörd.",
@@ -237,7 +240,10 @@
             "check_house": "Första steget i varje meddelande (utom hälsningar och tack) måste anropa ett verktyg, så att svar om huset bygger på aktuell data. Stäng av för modeller som anropar verktyg pålitligt själva, eller för att spara en verktygsrunda på allmänna frågor.",
             "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten.",
             "assist_stt": "Använder agentens API-nyckel som en Home Assistant tal-till-text-motor och kopplar den till varje AI Workspace Assist-pipeline (även Cursor). Av om du redan använder en annan motor.",
-            "stt_model": "Tomt använder leverantörens standard. Du kan skriva ett annat id."
+            "stt_model": "Tomt använder leverantörens standard. Du kan skriva ett annat id.",
+            "assist_tts": "Använder agentens API-nyckel som en Home Assistant text-till-tal-motor och kopplar den till varje AI Workspace Assist-pipeline (även Cursor). Av om du redan använder Piper eller en annan röst.",
+            "tts_model": "Tomt använder gpt-4o-mini-tts. tts-1 är billigare. Du kan skriva ett annat id.",
+            "tts_voice": "Coral är standard. Assist-pipelinens fält Röst kan åsidosätta detta."
           }
         },
         "provider_ollama": {
@@ -296,7 +302,10 @@
             "check_house": "Kontrollera alltid huset först",
             "assist": "Använd också i Assist",
             "assist_stt": "Lägg också till tal till text",
-            "stt_model": "Tal-till-text-modell"
+            "stt_model": "Tal-till-text-modell",
+            "assist_tts": "Lägg också till text till tal",
+            "tts_model": "Text-till-tal-modell",
+            "tts_voice": "Röst"
           },
           "data_description": {
             "api_key": "Lämna tomt vid redigering för att behålla den sparade nyckeln.",
@@ -307,7 +316,10 @@
             "check_house": "Första steget i varje meddelande (utom hälsningar och tack) måste anropa ett verktyg, så att svar om huset bygger på aktuell data. Stäng av för modeller som anropar verktyg pålitligt själva, eller för att spara en verktygsrunda på allmänna frågor.",
             "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten.",
             "assist_stt": "Använder agentens API-nyckel som en Home Assistant tal-till-text-motor och kopplar den till varje AI Workspace Assist-pipeline (även Cursor). Av om du redan använder en annan motor.",
-            "stt_model": "Tomt använder leverantörens standard. Du kan skriva ett annat id."
+            "stt_model": "Tomt använder leverantörens standard. Du kan skriva ett annat id.",
+            "assist_tts": "Använder agentens API-nyckel som en Home Assistant text-till-tal-motor och kopplar den till varje AI Workspace Assist-pipeline (även Cursor). Av om du redan använder Piper eller en annan röst.",
+            "tts_model": "Tomt använder gpt-4o-mini-tts. tts-1 är billigare. Du kan skriva ett annat id.",
+            "tts_voice": "Coral är standard. Assist-pipelinens fält Röst kan åsidosätta detta."
           }
         }
       },

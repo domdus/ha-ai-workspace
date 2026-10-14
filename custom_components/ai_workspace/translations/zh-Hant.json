@@ -21,7 +21,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "瀏覽器使用裝置語音引擎，需要 https:// 或 localhost。Home Assistant 引擎（設定中的 Whisper 等）會轉寫本頁錄音。瀏覽器仍須允許麥克風，且僅在 https:// 或 localhost 上允許。",
-          "tts_engine": "Piper 及其他 Home Assistant 語音。朗讀回覆在一般 http:// 上也可用。關閉則回覆只保留文字。",
+          "tts_engine": "Piper、Google Translate，或 OpenAI 風格代理的 AI Workspace 語音。朗讀回覆在一般 http:// 上也可用。關閉則回覆只保留文字。",
           "speak_replies": "選擇了語音時，每則回覆到達後會自動朗讀。關閉後仍保留喇叭按鈕，以便自己播放。",
           "enable_sidebar": "側欄項目 AI Workspace。關閉後頁面仍可在 /ai-workspace 開啟。",
           "enable_overlay": "開啟或關閉懸浮 AI 按鈕。在設定頁會再高一些，以免擋住系統按鈕。",
@@ -90,7 +90,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "瀏覽器使用裝置語音引擎，需要 https:// 或 localhost。Home Assistant 引擎（設定中的 Whisper 等）會轉寫本頁錄音。瀏覽器仍須允許麥克風，且僅在 https:// 或 localhost 上允許。",
-          "tts_engine": "Piper 及其他 Home Assistant 語音。朗讀回覆在一般 http:// 上也可用。關閉則回覆只保留文字。",
+          "tts_engine": "Piper、Google Translate，或 OpenAI 風格代理的 AI Workspace 語音。朗讀回覆在一般 http:// 上也可用。關閉則回覆只保留文字。",
           "speak_replies": "選擇了語音時，每則回覆到達後會自動朗讀。關閉後仍保留喇叭按鈕，以便自己播放。",
           "enable_sidebar": "側欄項目 AI Workspace。關閉後頁面仍可在 /ai-workspace 開啟。",
           "enable_overlay": "開啟或關閉懸浮 AI 按鈕。在設定頁會再高一些，以免擋住系統按鈕。",
@@ -226,7 +226,10 @@
             "check_house": "一律先檢查房屋",
             "assist": "也在 Assist 中使用",
             "assist_stt": "同時新增語音轉文字",
-            "stt_model": "語音轉文字模型"
+            "stt_model": "語音轉文字模型",
+            "assist_tts": "同時新增文字轉語音",
+            "tts_model": "文字轉語音模型",
+            "tts_voice": "音色"
           },
           "data_description": {
             "borrow": "使用該整合已儲存的金鑰。另一個整合維持不變。",
@@ -237,7 +240,10 @@
             "check_house": "每則訊息（問候與感謝除外）的第一步都必須呼叫工具，讓關於房屋的回答以即時資料為依據。若模型能自行可靠地呼叫工具，或想在一般問題上省下一輪工具呼叫，請關閉。",
             "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。",
             "assist_stt": "用此代理的 API 金鑰建立 Home Assistant 語音轉文字引擎，並指派給每個 AI Workspace Assist 管線（含 Cursor）。若已有其他引擎請關閉。",
-            "stt_model": "留空使用該供應商的預設模型。也可以輸入其他 id。"
+            "stt_model": "留空使用該供應商的預設模型。也可以輸入其他 id。",
+            "assist_tts": "用此代理的 API 金鑰建立 Home Assistant 文字轉語音引擎，並指派給每個 AI Workspace Assist 管線（含 Cursor）。若已有 Piper 或其他語音請關閉。",
+            "tts_model": "留空使用 gpt-4o-mini-tts。tts-1 較便宜。也可以輸入其他 id。",
+            "tts_voice": "預設 Coral。Assist 管線的音色欄位可以覆寫。"
           }
         },
         "provider_ollama": {
@@ -296,7 +302,10 @@
             "check_house": "一律先檢查房屋",
             "assist": "也在 Assist 中使用",
             "assist_stt": "同時新增語音轉文字",
-            "stt_model": "語音轉文字模型"
+            "stt_model": "語音轉文字模型",
+            "assist_tts": "同時新增文字轉語音",
+            "tts_model": "文字轉語音模型",
+            "tts_voice": "音色"
           },
           "data_description": {
             "api_key": "編輯時留空以保留已儲存的金鑰。",
@@ -307,7 +316,10 @@
             "check_house": "每則訊息（問候與感謝除外）的第一步都必須呼叫工具，讓關於房屋的回答以即時資料為依據。若模型能自行可靠地呼叫工具，或想在一般問題上省下一輪工具呼叫，請關閉。",
             "assist": "將此代理加入 Home Assistant Assist。關閉則只留在 AI Workspace 聊天中。",
             "assist_stt": "用此代理的 API 金鑰建立 Home Assistant 語音轉文字引擎，並指派給每個 AI Workspace Assist 管線（含 Cursor）。若已有其他引擎請關閉。",
-            "stt_model": "留空使用該供應商的預設模型。也可以輸入其他 id。"
+            "stt_model": "留空使用該供應商的預設模型。也可以輸入其他 id。",
+            "assist_tts": "用此代理的 API 金鑰建立 Home Assistant 文字轉語音引擎，並指派給每個 AI Workspace Assist 管線（含 Cursor）。若已有 Piper 或其他語音請關閉。",
+            "tts_model": "留空使用 gpt-4o-mini-tts。tts-1 較便宜。也可以輸入其他 id。",
+            "tts_voice": "預設 Coral。Assist 管線的音色欄位可以覆寫。"
           }
         }
       },

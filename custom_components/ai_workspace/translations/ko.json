@@ -21,7 +21,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "브라우저는 기기의 음성 엔진을 쓰며 https:// 또는 localhost가 필요합니다. Home Assistant 엔진(설정에 있는 Whisper 등)이 이 페이지의 녹음을 텍스트로 바꿉니다. 브라우저는 여전히 마이크를 허용해야 하며, 이는 https:// 또는 localhost에서만 됩니다.",
-          "tts_engine": "Piper 및 기타 Home Assistant 음성. 답변 읽기는 일반 http://에서도 됩니다. 끄면 답변은 텍스트로만 남습니다.",
+          "tts_engine": "Piper, Google Translate 또는 OpenAI 스타일 에이전트의 AI Workspace 목소리. 답변 읽기는 일반 http://에서도 됩니다. 끄면 답변은 텍스트로만 남습니다.",
           "speak_replies": "음성이 선택되어 있으면 답변이 도착하는 대로 읽어 줍니다. 끄면 스피커 버튼으로 직접 재생할 수 있습니다.",
           "enable_sidebar": "사이드바 항목 AI Workspace. 꺼져 있어도 페이지는 /ai-workspace에서 열립니다.",
           "enable_overlay": "떠 있는 AI 버튼을 켜거나 끕니다. 설정에서는 시스템 버튼을 가리지 않도록 더 위에 있습니다.",
@@ -90,7 +90,7 @@
         "data_description": {
           "runtime_url": "{runtime_url_note}",
           "stt_engine": "브라우저는 기기의 음성 엔진을 쓰며 https:// 또는 localhost가 필요합니다. Home Assistant 엔진(설정에 있는 Whisper 등)이 이 페이지의 녹음을 텍스트로 바꿉니다. 브라우저는 여전히 마이크를 허용해야 하며, 이는 https:// 또는 localhost에서만 됩니다.",
-          "tts_engine": "Piper 및 기타 Home Assistant 음성. 답변 읽기는 일반 http://에서도 됩니다. 끄면 답변은 텍스트로만 남습니다.",
+          "tts_engine": "Piper, Google Translate 또는 OpenAI 스타일 에이전트의 AI Workspace 목소리. 답변 읽기는 일반 http://에서도 됩니다. 끄면 답변은 텍스트로만 남습니다.",
           "speak_replies": "음성이 선택되어 있으면 답변이 도착하는 대로 읽어 줍니다. 끄면 스피커 버튼으로 직접 재생할 수 있습니다.",
           "enable_sidebar": "사이드바 항목 AI Workspace. 꺼져 있어도 페이지는 /ai-workspace에서 열립니다.",
           "enable_overlay": "떠 있는 AI 버튼을 켜거나 끕니다. 설정에서는 시스템 버튼을 가리지 않도록 더 위에 있습니다.",
@@ -226,7 +226,10 @@
             "check_house": "항상 먼저 집 확인",
             "assist": "Assist에서도 사용",
             "assist_stt": "음성-텍스트도 추가",
-            "stt_model": "음성-텍스트 모델"
+            "stt_model": "음성-텍스트 모델",
+            "assist_tts": "텍스트-음성도 추가",
+            "tts_model": "텍스트-음성 모델",
+            "tts_voice": "목소리"
           },
           "data_description": {
             "borrow": "해당 통합이 이미 저장한 키를 씁니다. 다른 통합은 그대로 둡니다.",
@@ -237,7 +240,10 @@
             "check_house": "모든 메시지(인사와 감사 제외)의 첫 단계에서 도구를 호출해야 하므로, 집에 관한 답변은 실시간 데이터를 바탕으로 합니다. 도구를 스스로 안정적으로 호출하는 모델이거나 일반 질문에서 도구 호출 한 번을 아끼려면 끄세요.",
             "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다.",
             "assist_stt": "이 에이전트의 API 키로 Home Assistant 음성-텍스트 엔진을 만들고 모든 AI Workspace Assist 파이프라인(Cursor 포함)에 연결합니다. 다른 엔진을 이미 쓰면 끄세요.",
-            "stt_model": "비우면 공급자 기본값을 씁니다. 다른 id를 입력할 수 있습니다."
+            "stt_model": "비우면 공급자 기본값을 씁니다. 다른 id를 입력할 수 있습니다.",
+            "assist_tts": "이 에이전트의 API 키로 Home Assistant 텍스트-음성 엔진을 만들고 모든 AI Workspace Assist 파이프라인(Cursor 포함)에 연결합니다. Piper나 다른 목소리를 이미 쓰면 끄세요.",
+            "tts_model": "비우면 gpt-4o-mini-tts를 씁니다. tts-1이 더 저렴합니다. 다른 id를 입력할 수 있습니다.",
+            "tts_voice": "Coral이 기본입니다. Assist 파이프라인의 목소리 필드가 이를 덮어쓸 수 있습니다."
           }
         },
         "provider_ollama": {
@@ -296,7 +302,10 @@
             "check_house": "항상 먼저 집 확인",
             "assist": "Assist에서도 사용",
             "assist_stt": "음성-텍스트도 추가",
-            "stt_model": "음성-텍스트 모델"
+            "stt_model": "음성-텍스트 모델",
+            "assist_tts": "텍스트-음성도 추가",
+            "tts_model": "텍스트-음성 모델",
+            "tts_voice": "목소리"
           },
           "data_description": {
             "api_key": "편집 시 비워 두면 저장된 키를 유지합니다.",
@@ -307,7 +316,10 @@
             "check_house": "모든 메시지(인사와 감사 제외)의 첫 단계에서 도구를 호출해야 하므로, 집에 관한 답변은 실시간 데이터를 바탕으로 합니다. 도구를 스스로 안정적으로 호출하는 모델이거나 일반 질문에서 도구 호출 한 번을 아끼려면 끄세요.",
             "assist": "이 에이전트를 Home Assistant Assist에 추가합니다. 끄면 AI Workspace 채팅에만 둡니다.",
             "assist_stt": "이 에이전트의 API 키로 Home Assistant 음성-텍스트 엔진을 만들고 모든 AI Workspace Assist 파이프라인(Cursor 포함)에 연결합니다. 다른 엔진을 이미 쓰면 끄세요.",
-            "stt_model": "비우면 공급자 기본값을 씁니다. 다른 id를 입력할 수 있습니다."
+            "stt_model": "비우면 공급자 기본값을 씁니다. 다른 id를 입력할 수 있습니다.",
+            "assist_tts": "이 에이전트의 API 키로 Home Assistant 텍스트-음성 엔진을 만들고 모든 AI Workspace Assist 파이프라인(Cursor 포함)에 연결합니다. Piper나 다른 목소리를 이미 쓰면 끄세요.",
+            "tts_model": "비우면 gpt-4o-mini-tts를 씁니다. tts-1이 더 저렴합니다. 다른 id를 입력할 수 있습니다.",
+            "tts_voice": "Coral이 기본입니다. Assist 파이프라인의 목소리 필드가 이를 덮어쓸 수 있습니다."
           }
         }
       },
