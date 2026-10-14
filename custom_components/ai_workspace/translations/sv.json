@@ -209,7 +209,7 @@
           },
           "data_description": {
             "cursor_api_key": "Från cursor.com/dashboard/integrations. Lämna tomt vid redigering för att behålla den sparade nyckeln. Lämna tomt om Runtime redan har CURSOR_API_KEY.",
-            "model": "Tomt använder Composer.",
+            "model": "Välj en eller skriv ett id. Tomt använder Composer.",
             "effort": "Snabb, Hög eller Hög snabb. Composer använder Snabb om du inte väljer Hög.",
             "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
           }
@@ -224,16 +224,20 @@
             "effort": "Ansträngning",
             "low_token": "Få tokens",
             "check_house": "Kontrollera alltid huset först",
-            "assist": "Använd också i Assist"
+            "assist": "Använd också i Assist",
+            "assist_stt": "Lägg också till tal till text",
+            "stt_model": "Tal-till-text-modell"
           },
           "data_description": {
             "borrow": "Använder nyckeln som den integrationen redan har sparat. Den andra integrationen lämnas orörd.",
             "api_key": "Inte en Home Assistant-token.",
-            "model": "Tomt använder leverantörens standard.",
+            "model": "Välj en eller skriv ett id. Tomt använder leverantörens standard.",
             "effort": "Snabb, Hög eller Hög snabb när modellen stöder det.",
             "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
             "check_house": "Första steget i varje meddelande (utom hälsningar och tack) måste anropa ett verktyg, så att svar om huset bygger på aktuell data. Stäng av för modeller som anropar verktyg pålitligt själva, eller för att spara en verktygsrunda på allmänna frågor.",
-            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten.",
+            "assist_stt": "Använder agentens API-nyckel som en Home Assistant tal-till-text-motor och kopplar den till varje AI Workspace Assist-pipeline (även Cursor). Av om du redan använder en annan motor.",
+            "stt_model": "Tomt använder leverantörens standard. Du kan skriva ett annat id."
           }
         },
         "provider_ollama": {
@@ -249,7 +253,7 @@
           },
           "data_description": {
             "api_base": "Usually {example_url}",
-            "model": "Tomt använder llama3.2.",
+            "model": "Välj en eller skriv en hämtad modell. Tomt använder llama3.2.",
             "effort": "Används när modellen stöder det.",
             "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
             "check_house": "Första steget i varje meddelande (utom hälsningar och tack) måste anropa ett verktyg, så att svar om huset bygger på aktuell data. Stäng av för modeller som anropar verktyg pålitligt själva, eller för att spara en verktygsrunda på allmänna frågor.",
@@ -290,7 +294,9 @@
             "effort": "Ansträngning",
             "low_token": "Få tokens",
             "check_house": "Kontrollera alltid huset först",
-            "assist": "Använd också i Assist"
+            "assist": "Använd också i Assist",
+            "assist_stt": "Lägg också till tal till text",
+            "stt_model": "Tal-till-text-modell"
           },
           "data_description": {
             "api_key": "Lämna tomt vid redigering för att behålla den sparade nyckeln.",
@@ -299,7 +305,9 @@
             "effort": "Används när servern stöder det.",
             "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
             "check_house": "Första steget i varje meddelande (utom hälsningar och tack) måste anropa ett verktyg, så att svar om huset bygger på aktuell data. Stäng av för modeller som anropar verktyg pålitligt själva, eller för att spara en verktygsrunda på allmänna frågor.",
-            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten."
+            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten.",
+            "assist_stt": "Använder agentens API-nyckel som en Home Assistant tal-till-text-motor och kopplar den till varje AI Workspace Assist-pipeline (även Cursor). Av om du redan använder en annan motor.",
+            "stt_model": "Tomt använder leverantörens standard. Du kan skriva ett annat id."
           }
         }
       },

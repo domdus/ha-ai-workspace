@@ -209,7 +209,7 @@
           },
           "data_description": {
             "cursor_api_key": "Z cursor.com/dashboard/integrations. Przy edycji zostaw puste, aby zachować zapisany klucz. Zostaw puste, jeśli Runtime ma już CURSOR_API_KEY.",
-            "model": "Puste używa Composer.",
+            "model": "Wybierz jeden lub wpisz id. Puste używa Composer.",
             "effort": "Szybki, Wysoki lub Wysoki szybki. Composer używa Szybki, chyba że wybierzesz Wysoki.",
             "assist": "Dodaje tego agenta do Home Assistant Assist. Wyłączone zostawia go tylko na czacie AI Workspace."
           }
@@ -224,16 +224,20 @@
             "effort": "Wysiłek",
             "low_token": "Mało tokenów",
             "check_house": "Zawsze najpierw sprawdzaj dom",
-            "assist": "Używaj też w Assist"
+            "assist": "Używaj też w Assist",
+            "assist_stt": "Dodaj też mowę na tekst",
+            "stt_model": "Model mowy na tekst"
           },
           "data_description": {
             "borrow": "Używa klucza już zapisanego przez tę integrację. Druga integracja zostaje bez zmian.",
             "api_key": "To nie token Home Assistant.",
-            "model": "Puste używa domyślnego modelu dostawcy.",
+            "model": "Wybierz jeden lub wpisz id. Puste używa domyślnego modelu dostawcy.",
             "effort": "Szybki, Wysoki lub Wysoki szybki, gdy model to obsługuje.",
             "low_token": "Krótka treść i bez narzędzi, żeby mały model mógł odpowiedzieć. Nie sprawdzi ani nie zmieni domu.",
             "check_house": "Pierwszy krok każdej wiadomości (poza powitaniami i podziękowaniami) musi wywołać narzędzie, aby odpowiedzi o domu opierały się na danych na żywo. Wyłącz dla modeli, które same niezawodnie wywołują narzędzia, lub aby zaoszczędzić rundę narzędzi przy ogólnych pytaniach.",
-            "assist": "Dodaje tego agenta do Home Assistant Assist. Wyłączone zostawia go tylko na czacie AI Workspace."
+            "assist": "Dodaje tego agenta do Home Assistant Assist. Wyłączone zostawia go tylko na czacie AI Workspace.",
+            "assist_stt": "Używa klucza API tego agenta jako silnika mowy na tekst w Home Assistant i przypisuje go do każdej rury AI Workspace Assist (w tym Cursor). Wyłącz, jeśli korzystasz już z innego silnika.",
+            "stt_model": "Puste używa domyślnego modelu dostawcy. Możesz wpisać inne id."
           }
         },
         "provider_ollama": {
@@ -249,7 +253,7 @@
           },
           "data_description": {
             "api_base": "Usually {example_url}",
-            "model": "Puste używa llama3.2.",
+            "model": "Wybierz jeden lub wpisz pobrany model. Puste używa llama3.2.",
             "effort": "Używane, gdy model to obsługuje.",
             "low_token": "Krótka treść i bez narzędzi, żeby mały model mógł odpowiedzieć. Nie sprawdzi ani nie zmieni domu.",
             "check_house": "Pierwszy krok każdej wiadomości (poza powitaniami i podziękowaniami) musi wywołać narzędzie, aby odpowiedzi o domu opierały się na danych na żywo. Wyłącz dla modeli, które same niezawodnie wywołują narzędzia, lub aby zaoszczędzić rundę narzędzi przy ogólnych pytaniach.",
@@ -290,7 +294,9 @@
             "effort": "Wysiłek",
             "low_token": "Mało tokenów",
             "check_house": "Zawsze najpierw sprawdzaj dom",
-            "assist": "Używaj też w Assist"
+            "assist": "Używaj też w Assist",
+            "assist_stt": "Dodaj też mowę na tekst",
+            "stt_model": "Model mowy na tekst"
           },
           "data_description": {
             "api_key": "Przy edycji zostaw puste, aby zachować zapisany klucz.",
@@ -299,7 +305,9 @@
             "effort": "Używane, gdy serwer to obsługuje.",
             "low_token": "Krótka treść i bez narzędzi, żeby mały model mógł odpowiedzieć. Nie sprawdzi ani nie zmieni domu.",
             "check_house": "Pierwszy krok każdej wiadomości (poza powitaniami i podziękowaniami) musi wywołać narzędzie, aby odpowiedzi o domu opierały się na danych na żywo. Wyłącz dla modeli, które same niezawodnie wywołują narzędzia, lub aby zaoszczędzić rundę narzędzi przy ogólnych pytaniach.",
-            "assist": "Dodaje tego agenta do Home Assistant Assist. Wyłączone zostawia go tylko na czacie AI Workspace."
+            "assist": "Dodaje tego agenta do Home Assistant Assist. Wyłączone zostawia go tylko na czacie AI Workspace.",
+            "assist_stt": "Używa klucza API tego agenta jako silnika mowy na tekst w Home Assistant i przypisuje go do każdej rury AI Workspace Assist (w tym Cursor). Wyłącz, jeśli korzystasz już z innego silnika.",
+            "stt_model": "Puste używa domyślnego modelu dostawcy. Możesz wpisać inne id."
           }
         }
       },

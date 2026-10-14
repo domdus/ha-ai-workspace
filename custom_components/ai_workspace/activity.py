@@ -12,7 +12,24 @@ import json
 from dataclasses import dataclass
 
 _READ = {"get", "list", "search", "find", "read", "query", "overview", "logbook", "history"}
-_WRITE = {"set", "update", "remove", "delete", "create", "add", "patch"}
+_WRITE = {
+    "set",
+    "update",
+    "remove",
+    "delete",
+    "create",
+    "add",
+    "patch",
+    "put",
+    "write",
+    "save",
+    "edit",
+    "upsert",
+    "modify",
+    "replace",
+    "transform",
+}
+_SKIP = {"reload"}
 _DELETE = {"remove", "delete"}
 _STATE = {"turn", "toggle", "press", "notify", "lock", "unlock", "play", "broadcast", "call"}
 _KINDS = (
@@ -67,6 +84,12 @@ def _kind(tokens: set[str]) -> str:
 def _text(value: object) -> str:
     if isinstance(value, str):
         return value.strip()
+    if isinstance(value, bool):
+        return ""
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
     return ""
 
 
@@ -97,10 +120,10 @@ def _label(args: dict, item_id: str) -> str:
 def classify(name: str, arguments: dict | None) -> Change | None:
     """Return the config change this tool intends, or None when it is not one."""
     tokens = _tokens(name)
-    if not tokens or tokens & _READ:
+    if not tokens or tokens & _READ or tokens & _SKIP:
         return None
     kind = _kind(tokens)
-    if not kind or not (tokens & _WRITE):
+    if not kind:
         return None
     args = arguments if isinstance(arguments, dict) else {}
     if kind == "automation":
@@ -130,7 +153,7 @@ def classify(name: str, arguments: dict | None) -> Change | None:
 def watches_config(name: str) -> bool:
     """True for a write we cannot name, so the caller can see whether config moved."""
     tokens = _tokens(name)
-    if not tokens or tokens & _READ or tokens & _STATE:
+    if not tokens or tokens & _READ or tokens & _STATE or tokens & _SKIP:
         return False
     if _kind(tokens):
         return False

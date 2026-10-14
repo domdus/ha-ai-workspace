@@ -209,7 +209,7 @@
           },
           "data_description": {
             "cursor_api_key": "Van cursor.com/dashboard/integrations. Leeg laten bij bewerken om de opgeslagen sleutel te houden. Laat leeg als de Runtime al CURSOR_API_KEY heeft.",
-            "model": "Leeg gebruikt Composer.",
+            "model": "Kies er een of typ een id. Leeg gebruikt Composer.",
             "effort": "Snel, Hoog of Hoog snel. Composer gebruikt Snel tenzij je Hoog kiest.",
             "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
           }
@@ -224,16 +224,20 @@
             "effort": "Inzet",
             "low_token": "Weinig tokens",
             "check_house": "Altijd eerst het huis controleren",
-            "assist": "Ook in Assist gebruiken"
+            "assist": "Ook in Assist gebruiken",
+            "assist_stt": "Ook spraak-naar-tekst toevoegen",
+            "stt_model": "Spraak-naar-tekst-model"
           },
           "data_description": {
             "borrow": "Gebruikt de sleutel die die integratie al heeft opgeslagen. De andere integratie blijft ongewijzigd.",
             "api_key": "Geen Home Assistant-token.",
-            "model": "Leeg gebruikt de standaard van de provider.",
+            "model": "Kies er een of typ een id. Leeg gebruikt de standaard van de provider.",
             "effort": "Snel, Hoog of Hoog snel wanneer het model dat ondersteunt.",
             "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
             "check_house": "De eerste stap van elk bericht (behalve begroetingen en bedankjes) moet een tool aanroepen, zodat antwoorden over het huis op live gegevens berusten. Zet dit uit voor modellen die tools zelf betrouwbaar aanroepen, of om bij algemene vragen een toolronde te besparen.",
-            "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
+            "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat.",
+            "assist_stt": "Gebruikt de API-sleutel van deze agent als Home Assistant spraak-naar-tekst-engine en koppelt die aan elke AI Workspace Assist-pijplijn (inclusief Cursor). Uit als je al een andere engine gebruikt.",
+            "stt_model": "Leeg gebruikt de standaard van de provider. Je kunt een ander id typen."
           }
         },
         "provider_ollama": {
@@ -249,7 +253,7 @@
           },
           "data_description": {
             "api_base": "Usually {example_url}",
-            "model": "Leeg gebruikt llama3.2.",
+            "model": "Kies er een of typ een opgehaald model. Leeg gebruikt llama3.2.",
             "effort": "Gebruikt wanneer het model dat ondersteunt.",
             "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
             "check_house": "De eerste stap van elk bericht (behalve begroetingen en bedankjes) moet een tool aanroepen, zodat antwoorden over het huis op live gegevens berusten. Zet dit uit voor modellen die tools zelf betrouwbaar aanroepen, of om bij algemene vragen een toolronde te besparen.",
@@ -290,7 +294,9 @@
             "effort": "Inzet",
             "low_token": "Weinig tokens",
             "check_house": "Altijd eerst het huis controleren",
-            "assist": "Ook in Assist gebruiken"
+            "assist": "Ook in Assist gebruiken",
+            "assist_stt": "Ook spraak-naar-tekst toevoegen",
+            "stt_model": "Spraak-naar-tekst-model"
           },
           "data_description": {
             "api_key": "Leeg laten bij bewerken om de opgeslagen sleutel te houden.",
@@ -299,7 +305,9 @@
             "effort": "Gebruikt wanneer de server dat ondersteunt.",
             "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
             "check_house": "De eerste stap van elk bericht (behalve begroetingen en bedankjes) moet een tool aanroepen, zodat antwoorden over het huis op live gegevens berusten. Zet dit uit voor modellen die tools zelf betrouwbaar aanroepen, of om bij algemene vragen een toolronde te besparen.",
-            "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat."
+            "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat.",
+            "assist_stt": "Gebruikt de API-sleutel van deze agent als Home Assistant spraak-naar-tekst-engine en koppelt die aan elke AI Workspace Assist-pijplijn (inclusief Cursor). Uit als je al een andere engine gebruikt.",
+            "stt_model": "Leeg gebruikt de standaard van de provider. Je kunt een ander id typen."
           }
         }
       },

@@ -209,7 +209,7 @@
           },
           "data_description": {
             "cursor_api_key": "Von cursor.com/dashboard/integrations. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten. Leer lassen, wenn die Runtime bereits CURSOR_API_KEY hat.",
-            "model": "Leer nutzt Composer.",
+            "model": "Wähle eines oder gib eine ID ein. Leer nutzt Composer.",
             "effort": "Schnell, Hoch oder Hoch schnell. Composer nutzt Schnell, außer du wählst Hoch.",
             "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
           }
@@ -224,16 +224,20 @@
             "effort": "Aufwand",
             "low_token": "Wenig Token",
             "check_house": "Immer zuerst das Haus prüfen",
-            "assist": "Auch in Assist nutzen"
+            "assist": "Auch in Assist nutzen",
+            "assist_stt": "Auch Sprache-zu-Text anlegen",
+            "stt_model": "Sprache-zu-Text-Modell"
           },
           "data_description": {
             "borrow": "Nutzt den Schlüssel, den diese Integration schon gespeichert hat. Die andere Integration bleibt unverändert.",
             "api_key": "Kein Home-Assistant-Token.",
-            "model": "Leer lässt den Standard des Anbieters.",
+            "model": "Wähle eines oder gib eine ID ein. Leer lässt den Standard des Anbieters.",
             "effort": "Schnell, Hoch oder Hoch schnell, wenn das Modell das unterstützt.",
             "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
             "check_house": "Der erste Schritt jeder Nachricht (außer Begrüßung und Dank) muss ein Werkzeug aufrufen, damit Antworten zum Haus auf Live-Daten beruhen. Ausschalten bei Modellen, die Werkzeuge zuverlässig selbst aufrufen, oder um bei allgemeinen Fragen eine Werkzeugrunde zu sparen.",
-            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
+            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat.",
+            "assist_stt": "Nutzt den API-Schlüssel dieses Agenten als Home-Assistant-Sprache-zu-Text-Engine und hängt sie an alle AI-Workspace-Assist-Pipelines (auch Cursor). Aus, wenn schon eine andere Engine genutzt wird.",
+            "stt_model": "Leer nutzt den Standard des Anbieters. Whisper ist günstiger; gpt-4o-mini-transcribe ist der OpenAI-Standard. Du kannst eine andere ID eingeben."
           }
         },
         "provider_ollama": {
@@ -249,7 +253,7 @@
           },
           "data_description": {
             "api_base": "Usually {example_url}",
-            "model": "Leer nutzt llama3.2.",
+            "model": "Wähle eines oder gib einen gezogenen Modellnamen ein. Leer nutzt llama3.2.",
             "effort": "Wird genutzt, wenn das Modell das unterstützt.",
             "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
             "check_house": "Der erste Schritt jeder Nachricht (außer Begrüßung und Dank) muss ein Werkzeug aufrufen, damit Antworten zum Haus auf Live-Daten beruhen. Ausschalten bei Modellen, die Werkzeuge zuverlässig selbst aufrufen, oder um bei allgemeinen Fragen eine Werkzeugrunde zu sparen.",
@@ -290,7 +294,9 @@
             "effort": "Aufwand",
             "low_token": "Wenig Token",
             "check_house": "Immer zuerst das Haus prüfen",
-            "assist": "Auch in Assist nutzen"
+            "assist": "Auch in Assist nutzen",
+            "assist_stt": "Auch Sprache-zu-Text anlegen",
+            "stt_model": "Sprache-zu-Text-Modell"
           },
           "data_description": {
             "api_key": "Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
@@ -299,7 +305,9 @@
             "effort": "Wird genutzt, wenn der Server das unterstützt.",
             "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
             "check_house": "Der erste Schritt jeder Nachricht (außer Begrüßung und Dank) muss ein Werkzeug aufrufen, damit Antworten zum Haus auf Live-Daten beruhen. Ausschalten bei Modellen, die Werkzeuge zuverlässig selbst aufrufen, oder um bei allgemeinen Fragen eine Werkzeugrunde zu sparen.",
-            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat."
+            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat.",
+            "assist_stt": "Nutzt den API-Schlüssel dieses Agenten als Home-Assistant-Sprache-zu-Text-Engine und hängt sie an alle AI-Workspace-Assist-Pipelines (auch Cursor). Aus, wenn schon eine andere Engine genutzt wird.",
+            "stt_model": "Leer nutzt den Standard des Anbieters. Whisper ist günstiger; gpt-4o-mini-transcribe ist der OpenAI-Standard. Du kannst eine andere ID eingeben."
           }
         }
       },

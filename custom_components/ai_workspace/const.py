@@ -47,16 +47,27 @@ API_SHORT_LABELS = {
     API_COMPATIBLE: "OpenAI-compatible",
 }
 _API_DEFAULT_MODEL = {
-    API_OPENAI: "gpt-4.1",
-    API_ANTHROPIC: "claude-sonnet-4-5",
+    API_OPENAI: "gpt-5",
+    API_ANTHROPIC: "claude-sonnet-5-5",
     API_GEMINI: "gemini-3.8-flash",
-    API_DEEPSEEK: "deepseek-chat",
-    API_QWEN: "qwen-plus",
-    API_XAI: "grok-4.3",
-    API_OPENROUTER: "openai/gpt-4.1",
+    API_DEEPSEEK: "deepseek-flash",
+    API_QWEN: "qwen3.7-plus",
+    API_XAI: "grok-4.7",
+    API_OPENROUTER: "openai/gpt-5",
     API_OLLAMA: "llama3.2",
     API_AZURE: "",
-    API_COMPATIBLE: "gpt-4.1",
+    API_COMPATIBLE: "gpt-5",
+}
+# OpenRouter, Azure, and custom OpenAI-compatible servers stay free-text.
+_API_MODEL_CHOICES = {
+    "cursor": ["composer-2.5"],
+    API_OPENAI: ["gpt-5", "gpt-6-astra", "gpt-6.1-sol", "gpt-5-mini", "gpt-4.1"],
+    API_ANTHROPIC: ["claude-sonnet-5-5", "claude-opus-5-5", "claude-haiku-5-5", "claude-sonnet-4-5"],
+    API_GEMINI: ["gemini-3.8-flash", "gemini-2.5-pro", "gemini-2.5-flash"],
+    API_DEEPSEEK: ["deepseek-flash", "deepseek-v4-pro", "deepseek-chat"],
+    API_QWEN: ["qwen3.7-plus", "qwen3.8-max", "qwen3.8-flash", "qwen-plus"],
+    API_XAI: ["grok-4.7", "grok-4.3", "grok-4"],
+    API_OLLAMA: ["llama3.2", "llama3.1", "qwen2.5", "mistral", "gemma3"],
 }
 _API_DEFAULT_BASE = {
     API_OPENAI: "https://api.openai.com/v1",
@@ -71,8 +82,15 @@ _API_DEFAULT_BASE = {
 DEFAULT_API_MODEL = _API_DEFAULT_MODEL[API_OPENAI]
 DEFAULT_ANTHROPIC_MODEL = _API_DEFAULT_MODEL[API_ANTHROPIC]
 CLOUD_ONLY_MODELS = frozenset(
-    {
+    m
+    for m in {
         *_API_DEFAULT_MODEL.values(),
+        *[
+            name
+            for kind, names in _API_MODEL_CHOICES.items()
+            if kind not in {API_OLLAMA, "cursor"}
+            for name in names
+        ],
         "gpt-4.1",
         "gpt-4o",
         "gpt-4o-mini",
@@ -90,6 +108,7 @@ CLOUD_ONLY_MODELS = frozenset(
         "openai/gpt-4.1",
         "llama3.2",
     }
+    if m
 )
 EFFORT_DEFAULT = "default"
 EFFORT_FAST = "fast"
@@ -121,7 +140,13 @@ BORROW_DOMAINS = {
 
 
 def default_api_model(kind: str) -> str:
+    if kind == "cursor":
+        return DEFAULT_MODEL
     return _API_DEFAULT_MODEL.get(kind, DEFAULT_API_MODEL)
+
+
+def api_model_choices(kind: str) -> list[str]:
+    return list(_API_MODEL_CHOICES.get(kind, ()))
 
 
 def default_api_base(kind: str) -> str:
@@ -147,6 +172,19 @@ CONF_KEEP_CHATS = "keep_chats"
 DEFAULT_KEEP_CHATS = 30
 CONF_EFFORT = "effort"
 CONF_ASSIST = "assist"
+CONF_ASSIST_STT = "assist_stt"
+CONF_STT_MODEL = "stt_model"
+STT_PROVIDERS = frozenset({API_OPENAI, API_OPENROUTER, API_COMPATIBLE})
+_STT_MODEL = {
+    API_OPENAI: "gpt-4o-mini-transcribe",
+    API_OPENROUTER: "openai/whisper-1",
+    API_COMPATIBLE: "whisper-1",
+}
+_STT_MODEL_CHOICES = {
+    API_OPENAI: ["gpt-4o-mini-transcribe", "gpt-4o-transcribe", "whisper-1"],
+    API_OPENROUTER: ["openai/whisper-1", "openai/gpt-4o-mini-transcribe", "openai/gpt-4o-transcribe"],
+    API_COMPATIBLE: ["whisper-1", "gpt-4o-mini-transcribe", "gpt-4o-transcribe"],
+}
 
 
 def submitted_model(user_input: dict | None) -> str:
@@ -161,6 +199,35 @@ def assist_enabled(raw: dict, *, new: bool = False) -> bool:
     if CONF_ASSIST not in raw:
         return not new
     return bool(raw.get(CONF_ASSIST))
+
+
+def provider_supports_stt(kind: str) -> bool:
+    """True when this provider has an OpenAI-style /audio/transcriptions API."""
+    return str(kind or "") in STT_PROVIDERS
+
+
+def default_stt_model(kind: str) -> str:
+    return _STT_MODEL.get(str(kind or ""), "whisper-1")
+
+
+def stt_model_choices(kind: str) -> list[str]:
+    return list(_STT_MODEL_CHOICES.get(str(kind or ""), []))
+
+
+def resolved_stt_model(raw: dict, provider: str = "") -> str:
+    kind = str(provider or raw.get(CONF_API_PROVIDER) or "")
+    stored = str(raw.get(CONF_STT_MODEL) or "").strip()
+    return stored or default_stt_model(kind)
+
+
+def assist_stt_enabled(raw: dict, provider: str = "") -> bool:
+    """OpenAI-style agents transcribe for Assist unless the row turned it off."""
+    kind = str(provider or raw.get(CONF_API_PROVIDER) or "")
+    if not provider_supports_stt(kind):
+        return False
+    if CONF_ASSIST_STT not in raw:
+        return True
+    return bool(raw.get(CONF_ASSIST_STT))
 
 
 _BUILTIN_ASSIST = {

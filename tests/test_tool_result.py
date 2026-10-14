@@ -22,6 +22,9 @@ def _component():
 def test_parse_tool_call_reads_only_tool_invocations() -> None:
     body = b'{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"ha_config_set_automation","arguments":{"identifier":"a"}}}'
     assert parse_tool_call(body) == ("ha_config_set_automation", {"identifier": "a"})
+    assert parse_tool_call(
+        b'{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"ha_config_set_automation","arguments":"{\\"identifier\\":\\"a\\"}"}}'
+    ) == ("ha_config_set_automation", {"identifier": "a"})
     assert parse_tool_call(b'{"jsonrpc":"2.0","id":1,"method":"tools/list"}') is None
     assert tool_response_ok(200, b'{"result":{"isError": false}}') is True
     assert tool_response_ok(200, b'{"result":{"isError": true}}') is False

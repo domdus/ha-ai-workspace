@@ -128,6 +128,7 @@ async def prepare(
                 label=change.label,
                 domain=change.domain,
             )
+            watch = await collect_index(hass)
         found = ""
         if isinstance(document, dict):
             found = str(document.get("label") or "")
@@ -197,9 +198,14 @@ async def commit(hass: HomeAssistant, store: Store, token: str, *, ok: bool) -> 
     text = pending.summary
     document = pending.document
     if pending.watch is not None:
-        text = describe_index(pending.watch, await collect_index(hass))
-        document = None
-        if not text:
+        indexed = describe_index(pending.watch, await collect_index(hass))
+        if indexed:
+            text = indexed
+            document = None
+        elif not text:
+            return
+        elif not ok:
+            logger.info("activity skipped %s ok=false unchanged", pending.tool)
             return
     elif isinstance(document, dict):
         # A description-only or action-alias edit is still a change. Keep it
@@ -329,6 +335,10 @@ def _config_id(hass: HomeAssistant, kind: str, identifier: str) -> str:
     return raw
 
 
+def _yaml_item_id(item: dict[str, Any]) -> str:
+    return str(item.get("id") or item.get("unique_id") or "").strip()
+
+
 def _snapshot_yaml(hass: HomeAssistant, change: Change) -> dict[str, Any] | None:
     path = hass.config.path(_YAML[change.kind])
     data = _read_yaml(path)
@@ -343,7 +353,7 @@ def _snapshot_yaml(hass: HomeAssistant, change: Change) -> dict[str, Any] | None
         return {"kind": "script", "id": item_id, "label": label, "item": item}
     rows = data if isinstance(data, list) else []
     for item in rows:
-        if isinstance(item, dict) and str(item.get("id") or "") == item_id:
+        if isinstance(item, dict) and _yaml_item_id(item) == item_id:
             label = str(item.get("alias") or item.get("name") or item_id)
             return {"kind": change.kind, "id": item_id, "label": label, "item": item}
     return None
@@ -370,7 +380,7 @@ async def _restore_yaml(hass: HomeAssistant, kind: str, document: dict[str, Any]
             data = dict(current) if isinstance(current, dict) else {}
             data[item_id] = item
         else:
-            rows = [row for row in (current or []) if not (isinstance(row, dict) and str(row.get("id") or "") == item_id)]
+            rows = [row for row in (current or []) if not (isinstance(row, dict) and _yaml_item_id(row) == item_id)]
             rows.append(item)
             data = rows
         _write_yaml(path, data)
