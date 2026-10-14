@@ -57,6 +57,18 @@ def test_reads_and_state_stay_out():
     assert activity.watches_config("ha_call_service") is False
     assert activity.watches_config("ha_config_set_yaml") is True
     assert activity.classify("ha_config_set_yaml", {"filename": "automations.yaml"}) is None
+    put = activity.classify("ha_put_automation", {"identifier": "1775990764950"})
+    assert put is not None
+    assert put.kind == "automation"
+    assert put.item_id == "1775990764950"
+    transform = activity.classify(
+        "ha_config_set_automation",
+        {"identifier": 1775990764950, "python_transform": "config['conditions'] = []"},
+    )
+    assert transform is not None
+    assert transform.action == "update"
+    assert transform.item_id == "1775990764950"
+    assert activity.classify("ha_reload_automations", {}) is None
 
 
 def test_entity_and_helper():

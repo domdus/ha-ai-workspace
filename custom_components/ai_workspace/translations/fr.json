@@ -209,7 +209,7 @@
           },
           "data_description": {
             "cursor_api_key": "Depuis cursor.com/dashboard/integrations. Laisser vide à l’édition pour conserver la clé enregistrée. Laissez vide si le Runtime a déjà CURSOR_API_KEY.",
-            "model": "Vide utilise Composer.",
+            "model": "Choisissez-en un ou saisissez un identifiant. Vide utilise Composer.",
             "effort": "Rapide, Élevé ou Élevé rapide. Composer utilise Rapide sauf si vous choisissez Élevé.",
             "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
           }
@@ -224,16 +224,20 @@
             "effort": "Effort",
             "low_token": "Peu de tokens",
             "check_house": "Toujours vérifier la maison d'abord",
-            "assist": "Utiliser aussi dans Assist"
+            "assist": "Utiliser aussi dans Assist",
+            "assist_stt": "Ajouter aussi la parole vers texte",
+            "stt_model": "Modèle parole vers texte"
           },
           "data_description": {
             "borrow": "Utilise la clé déjà enregistrée par cette intégration. L’autre intégration n’est pas modifiée.",
             "api_key": "Pas un jeton Home Assistant.",
-            "model": "Vide utilise le modèle par défaut du fournisseur.",
+            "model": "Choisissez-en un ou saisissez un identifiant. Vide utilise le modèle par défaut du fournisseur.",
             "effort": "Rapide, Élevé ou Élevé rapide lorsque le modèle le prend en charge.",
             "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
             "check_house": "La première étape de chaque message (sauf salutations et remerciements) doit appeler un outil, pour que les réponses sur la maison reposent sur des données en direct. Désactivez-le pour les modèles qui appellent les outils de façon fiable, ou pour économiser un tour d'outil sur les questions générales.",
-            "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
+            "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace.",
+            "assist_stt": "Utilise la clé API de cet agent comme moteur parole-vers-texte de Home Assistant et l’assigne à chaque pipeline AI Workspace Assist (y compris Cursor). Désactivez si vous utilisez déjà un autre moteur.",
+            "stt_model": "Vide utilise le défaut du fournisseur. Vous pouvez saisir un autre id."
           }
         },
         "provider_ollama": {
@@ -249,7 +253,7 @@
           },
           "data_description": {
             "api_base": "Usually {example_url}",
-            "model": "Vide utilise llama3.2.",
+            "model": "Choisissez-en un ou saisissez un modèle déjà téléchargé. Vide utilise llama3.2.",
             "effort": "Utilisé lorsque le modèle le prend en charge.",
             "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
             "check_house": "La première étape de chaque message (sauf salutations et remerciements) doit appeler un outil, pour que les réponses sur la maison reposent sur des données en direct. Désactivez-le pour les modèles qui appellent les outils de façon fiable, ou pour économiser un tour d'outil sur les questions générales.",
@@ -290,7 +294,9 @@
             "effort": "Effort",
             "low_token": "Peu de tokens",
             "check_house": "Toujours vérifier la maison d'abord",
-            "assist": "Utiliser aussi dans Assist"
+            "assist": "Utiliser aussi dans Assist",
+            "assist_stt": "Ajouter aussi la parole vers texte",
+            "stt_model": "Modèle parole vers texte"
           },
           "data_description": {
             "api_key": "Laisser vide à l’édition pour conserver la clé enregistrée.",
@@ -299,7 +305,9 @@
             "effort": "Utilisé lorsque le serveur le prend en charge.",
             "low_token": "Consigne courte et aucun outil, pour qu’un petit modèle puisse répondre. Il ne peut pas consulter ni modifier la maison.",
             "check_house": "La première étape de chaque message (sauf salutations et remerciements) doit appeler un outil, pour que les réponses sur la maison reposent sur des données en direct. Désactivez-le pour les modèles qui appellent les outils de façon fiable, ou pour économiser un tour d'outil sur les questions générales.",
-            "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace."
+            "assist": "Ajoute cet agent à Home Assistant Assist. Désactivé le laisse uniquement dans le chat AI Workspace.",
+            "assist_stt": "Utilise la clé API de cet agent comme moteur parole-vers-texte de Home Assistant et l’assigne à chaque pipeline AI Workspace Assist (y compris Cursor). Désactivez si vous utilisez déjà un autre moteur.",
+            "stt_model": "Vide utilise le défaut du fournisseur. Vous pouvez saisir un autre id."
           }
         }
       },

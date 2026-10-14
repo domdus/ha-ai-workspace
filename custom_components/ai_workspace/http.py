@@ -1053,12 +1053,12 @@ async def _activity_kwargs(
 
 def _runtime_token_ok(request: web.Request) -> bool:
     expected = str((_runtime(_hass(request)).get("runtime_token") or "")).strip()
-    if not expected:
-        return False
     scheme, _, value = str(request.headers.get("Authorization") or "").partition(" ")
-    if scheme.lower() != "bearer" or not value.strip():
-        return False
-    return hmac.compare_digest(value.strip().encode(), expected.encode())
+    provided = value.strip() if scheme.lower() == "bearer" else ""
+    if expected:
+        return bool(provided) and hmac.compare_digest(provided.encode(), expected.encode())
+    # Same as the Runtime chat API: an empty token means the local Runtime may call in.
+    return True
 
 
 def _activity_dict(row, chat: str = "") -> dict:

@@ -98,7 +98,17 @@ def parse_tool_call(body: bytes) -> tuple[str, dict[str, Any]] | None:
     name = str(params.get("name") or "").strip()
     if not name:
         return None
-    arguments = params.get("arguments") if isinstance(params.get("arguments"), dict) else {}
+    raw_args = params.get("arguments")
+    if isinstance(raw_args, str):
+        try:
+            parsed = json.loads(raw_args)
+        except json.JSONDecodeError:
+            parsed = {}
+        arguments = parsed if isinstance(parsed, dict) else {}
+    elif isinstance(raw_args, dict):
+        arguments = raw_args
+    else:
+        arguments = {}
     return name, arguments
 
 

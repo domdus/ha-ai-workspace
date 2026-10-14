@@ -37,6 +37,8 @@ An optional button on the other pages opens the same chat.
 
 Each agent can also be added as an Assist pipeline. The integration creates the pipeline for you, so you can use **Cursor AI** (or another AI) from Home Assistant's built-in Assist dialog as well.
 
+OpenAI, OpenRouter, and OpenAI-compatible agents can add **Speech-to-text** from the same API key (on by default). That engine is assigned to every AI Workspace Assist pipeline, so a Cursor pipeline can listen too. If the official OpenAI integration already has Speech-to-text, that engine is used when AI Workspace does not create its own. Cursor has no transcription API of its own.
+
 ![Cursor in Home Assistant Assist](https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai-workspace-assists.png)
 
 ## Requirements
@@ -186,7 +188,7 @@ After the runtime is running: **Settings → Devices & services → Add integrat
 - **Cursor Runtime URL:** leave empty (it should find `http://127.0.0.1:8090` or the app).
 - **MCP type:** one from [Requirements](#requirements). Leave the MCP URL empty if it shows as detected.
 - Save. Home Assistant then asks for the first agent. Choose **Cursor**.
-- **Model:** for example `composer-2.5`, `grok-4`, `gpt-4.1`, or `claude-sonnet-4-5`. Leave it empty to use `CURSOR_MODEL` from the runtime.
+- **Model:** pick one from the list or type an id, for example `composer-2.5`, `grok-4.7`, `gpt-5`, or `claude-sonnet-5-5`. Leave it empty to use `CURSOR_MODEL` from the runtime.
 - Paste the Cursor API key, unless the runtime already has one.
 - Open **AI Workspace** (`/ai-workspace`).
 
@@ -242,6 +244,8 @@ It does not control Home Assistant edit links. Those rules are added to every me
 | **Cross chat**                             | Off by default. When on, a question can use another chat whose title shares words with it. Only a short excerpt is used, and that chat is not changed                               |
 | **Config catalog**                         | Off by default. A local index of how automations are wired, so "what uses the kitchen light?" takes one lookup. See [why](#why-use-the-config-catalog)                              |
 | **Also use in Assist**                     | On each agent. Off (the default) keeps the agent in AI Workspace only. On adds a Voice assistants pipeline for it                                                                   |
+| **Also add Speech-to-text**                | On OpenAI, OpenRouter, and OpenAI-compatible agents. On by default. Creates a Speech-to-text engine from this agent's key and assigns it to every AI Workspace Assist pipeline      |
+| **Speech-to-text model**                   | Shown with Speech-to-text. Empty uses the provider default (`gpt-4o-mini-transcribe` on OpenAI, Whisper on OpenRouter / compatible). You can pick another or type an id                 |
 
 
 

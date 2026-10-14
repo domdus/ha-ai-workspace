@@ -54,7 +54,7 @@ from .mcp_resolve import async_resolve_mcp_url, infer_mcp_kind
 from .models import Settings
 
 _LOGGER = logging.getLogger(__name__)
-_PLATFORMS = [Platform.CONVERSATION]
+_PLATFORMS = [Platform.CONVERSATION, Platform.STT]
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 

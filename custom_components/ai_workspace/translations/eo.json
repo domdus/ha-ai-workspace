@@ -209,7 +209,7 @@
           },
           "data_description": {
             "cursor_api_key": "De cursor.com/dashboard/integrations. Lasu malplena dum redakto por konservi la konservitan ŝlosilon. Lasu malplena, se la Runtime jam havas CURSOR_API_KEY.",
-            "model": "Malplena uzas Composer.",
+            "model": "Elektu unu aŭ tajpu id. Malplena uzas Composer.",
             "effort": "Rapida, Alta aŭ Alta rapida. Composer uzas Rapida krom se vi elektas Alta.",
             "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
           }
@@ -224,16 +224,20 @@
             "effort": "Peno",
             "low_token": "Malmultaj tokenoj",
             "check_house": "Ĉiam unue kontroli la domon",
-            "assist": "Ankaŭ uzi en Assist"
+            "assist": "Ankaŭ uzi en Assist",
+            "assist_stt": "Ankaŭ aldoni parolon-al-teksto",
+            "stt_model": "Modelo parolo-al-teksto"
           },
           "data_description": {
             "borrow": "Uzas la ŝlosilon jam konservitan de tiu integriĝo. La alia integriĝo restas kiel estas.",
             "api_key": "Ne Home Assistant-ĵetono.",
-            "model": "Malplena uzas la defaŭlton de la provizanto.",
+            "model": "Elektu unu aŭ tajpu id. Malplena uzas la defaŭlton de la provizanto.",
             "effort": "Rapida, Alta aŭ Alta rapida kiam la modelo tion subtenas.",
             "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
             "check_house": "La unua paŝo de ĉiu mesaĝo (krom salutoj kaj dankoj) devas voki ilon, por ke respondoj pri la domo baziĝu sur vivaj datumoj. Malŝaltu por modeloj, kiuj mem fidinde vokas ilojn, aŭ por ŝpari ilan rondon ĉe ĝeneralaj demandoj.",
-            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo.",
+            "assist_stt": "Uzas la API-ŝlosilon de ĉi tiu agento kiel Home Assistant parolo-al-teksto-motoron kaj asignas ĝin al ĉiu AI Workspace Assist-dukto (inkluzive Cursor). Malŝaltu se vi jam uzas alian motoron.",
+            "stt_model": "Malplene uzas la defaŭlton de la provizanto. Vi povas tajpi alian id."
           }
         },
         "provider_ollama": {
@@ -249,7 +253,7 @@
           },
           "data_description": {
             "api_base": "Usually {example_url}",
-            "model": "Malplena uzas llama3.2.",
+            "model": "Elektu unu aŭ tajpu elŝutitan modelon. Malplena uzas llama3.2.",
             "effort": "Uzata kiam la modelo tion subtenas.",
             "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
             "check_house": "La unua paŝo de ĉiu mesaĝo (krom salutoj kaj dankoj) devas voki ilon, por ke respondoj pri la domo baziĝu sur vivaj datumoj. Malŝaltu por modeloj, kiuj mem fidinde vokas ilojn, aŭ por ŝpari ilan rondon ĉe ĝeneralaj demandoj.",
@@ -290,7 +294,9 @@
             "effort": "Peno",
             "low_token": "Malmultaj tokenoj",
             "check_house": "Ĉiam unue kontroli la domon",
-            "assist": "Ankaŭ uzi en Assist"
+            "assist": "Ankaŭ uzi en Assist",
+            "assist_stt": "Ankaŭ aldoni parolon-al-teksto",
+            "stt_model": "Modelo parolo-al-teksto"
           },
           "data_description": {
             "api_key": "Lasu malplena dum redakto por konservi la konservitan ŝlosilon.",
@@ -299,7 +305,9 @@
             "effort": "Uzata kiam la servilo tion subtenas.",
             "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
             "check_house": "La unua paŝo de ĉiu mesaĝo (krom salutoj kaj dankoj) devas voki ilon, por ke respondoj pri la domo baziĝu sur vivaj datumoj. Malŝaltu por modeloj, kiuj mem fidinde vokas ilojn, aŭ por ŝpari ilan rondon ĉe ĝeneralaj demandoj.",
-            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo."
+            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo.",
+            "assist_stt": "Uzas la API-ŝlosilon de ĉi tiu agento kiel Home Assistant parolo-al-teksto-motoron kaj asignas ĝin al ĉiu AI Workspace Assist-dukto (inkluzive Cursor). Malŝaltu se vi jam uzas alian motoron.",
+            "stt_model": "Malplene uzas la defaŭlton de la provizanto. Vi povas tajpi alian id."
           }
         }
       },

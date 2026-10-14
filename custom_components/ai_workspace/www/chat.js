@@ -513,9 +513,9 @@ export function mountAiWorkspace(root, options = {}) {
             <ha-icon-button class="nav-toggle chat-nav-toggle" label="${t("show_chats")}">
               <ha-icon icon="mdi:forum-outline"></ha-icon>
             </ha-icon-button>
-            <ha-icon-button class="history-open header-history" label="${t("activity")}">
+            ${compact ? "" : `<ha-icon-button class="history-open header-history" label="${t("activity")}">
               <ha-icon icon="mdi:history"></ha-icon>
-            </ha-icon-button>
+            </ha-icon-button>`}
             <h1 class="title">${t("new_chat")}</h1>
           </div>
           <p class="banner" hidden></p>
@@ -736,7 +736,16 @@ export function mountAiWorkspace(root, options = {}) {
     sendBtn.disabled = !hasDraft;
     if (attachBtn) attachBtn.disabled = pending.length >= MAX_ATTACH;
     messageEl.placeholder = streaming ? t("placeholder_next") : t("placeholder");
-    if (!pinBottom || wrap.classList.contains("keyboard-open")) chatEl.scrollTop = holdTop;
+    chatEl.scrollTop = holdTop;
+  }
+
+  function holdChatScroll(fn) {
+    const holdTop = chatEl.scrollTop;
+    fn();
+    chatEl.scrollTop = holdTop;
+    requestAnimationFrame(() => {
+      chatEl.scrollTop = holdTop;
+    });
   }
 
   function keepComposerFocus() {
@@ -1178,6 +1187,7 @@ export function mountAiWorkspace(root, options = {}) {
     setWelcome(false, opts.animate !== false);
     const bubble = document.createElement("div");
     bubble.className = `bubble ${role}`;
+    if (opts.createdAt) bubble.dataset.createdAt = String(opts.createdAt);
     if (opts.animate === false || reduceMotion) bubble.classList.add("instant");
     const pics = addBubbleImages(bubble, events);
     const files = addBubbleFiles(bubble, events);
@@ -1309,6 +1319,23 @@ export function mountAiWorkspace(root, options = {}) {
     } else if (speakBtn) {
       speakBtn.hidden = true;
     }
+    let historyBtn = row.querySelector(".history-chat");
+    if (!historyBtn) {
+      historyBtn = document.createElement("ha-icon-button");
+      historyBtn.className = "history-chat";
+      historyBtn.type = "button";
+      historyBtn.label = t("activity");
+      const historyIcon = document.createElement("ha-icon");
+      historyIcon.setAttribute("icon", "mdi:history");
+      historyBtn.appendChild(historyIcon);
+      historyBtn.addEventListener("click", async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        await openHistory();
+      });
+      row.appendChild(historyBtn);
+    }
+    historyBtn.hidden = !turnHasHistory;
     row.hidden = false;
     logEl.appendChild(row);
   }
@@ -1708,6 +1735,7 @@ export function mountAiWorkspace(root, options = {}) {
 
   function showEmpty() {
     setWelcome(true);
+    turnHasHistory = false;
     logEl.replaceChildren();
     const note = document.createElement("p");
     note.className = "empty";
@@ -1718,6 +1746,7 @@ export function mountAiWorkspace(root, options = {}) {
   let defaultProvider = "api";
   let agentId = "";
   let voice = { dictate: true, stt: "browser", speak: false, tts: false };
+  let turnHasHistory = false;
 
   function selectedAgent() {
     return agentId || defaultProvider;
@@ -2164,8 +2193,14 @@ export function mountAiWorkspace(root, options = {}) {
     if (!messages.length) showEmpty();
     else setWelcome(false, false);
     for (const message of messages) {
-      addBubble(message.role, message.content, message.events, { animate: false, follow: false });
+      addBubble(message.role, message.content, message.events, {
+        animate: false,
+        follow: false,
+        createdAt: message.created_at,
+      });
     }
+    const lastUser = [...messages].reverse().find((message) => message.role === "user");
+    refreshTurnHistory(lastUser?.created_at || "");
     clipToBottom();
     stickToBottom();
     requestAnimationFrame(() => requestAnimationFrame(stickToBottom));
@@ -3044,6 +3079,8 @@ export function mountAiWorkspace(root, options = {}) {
     if (keepComposerFocus()) messageEl.focus();
     else hideKeyboard();
     streaming = true;
+    turnHasHistory = false;
+    const turnSince = new Date().toISOString();
     watchGen += 1;
     clearKeyboardLock();
     resetOuterScroll();
@@ -3226,6 +3263,9 @@ export function mountAiWorkspace(root, options = {}) {
       }
       syncCopyChat();
       resizeComposer();
+      window.setTimeout(() => {
+        if (token === streamToken && sessionId === chatId) refreshTurnHistory(turnSince);
+      }, 500);
       if (followUp && sessionId === chatId && nextTurn) {
         flushNext();
         return;
@@ -3303,6 +3343,7 @@ export function mountAiWorkspace(root, options = {}) {
   }, { passive: true });
 
   messageEl.addEventListener("focus", () => {
+    if (!nearBottom()) releaseFollow();
     if (keepComposerFocus()) return;
     syncKeyboardInset();
     window.setTimeout(syncKeyboardInset, 280);
@@ -3317,7 +3358,7 @@ export function mountAiWorkspace(root, options = {}) {
     if (wrap.classList.contains("keyboard-open")) syncKeyboardInset();
   });
   messageEl.addEventListener("input", () => {
-    resizeComposer();
+    holdChatScroll(resizeComposer);
   });
   messageEl.addEventListener("keydown", (event) => {
     if (event.key !== "Enter" || event.shiftKey) return;
@@ -3335,7 +3376,7 @@ export function mountAiWorkspace(root, options = {}) {
     jumpToBottom();
   });
   const scrollBtnWatch = new ResizeObserver(() => {
-    if (keyboardOpen) {
+    if (keyboardOpen || composerFocused()) {
       syncScrollBottomBtn();
       return;
     }
@@ -3400,6 +3441,36 @@ export function mountAiWorkspace(root, options = {}) {
     };
     historyEl.addEventListener("transitionend", hide, { once: true });
     window.setTimeout(hide, 320);
+  }
+
+  async function refreshTurnHistory(sinceIso) {
+    turnHasHistory = false;
+    const chatId = String(sessionId || "").trim();
+    if (!chatId) {
+      syncCopyChat();
+      return;
+    }
+    try {
+      const resp = await apiFetch(`${API}/activity`);
+      if (!resp?.ok) {
+        syncCopyChat();
+        return;
+      }
+      const rows = await resp.json();
+      const since = Date.parse(sinceIso || "") || 0;
+      if (!since) {
+        syncCopyChat();
+        return;
+      }
+      turnHasHistory = (Array.isArray(rows) ? rows : []).some((row) => {
+        if (String(row.session_id || "") !== chatId) return false;
+        const at = Date.parse(row.created_at || "") || 0;
+        return at >= since - 2500;
+      });
+    } catch (_err) {
+      turnHasHistory = false;
+    }
+    syncCopyChat();
   }
 
   async function loadHistory() {

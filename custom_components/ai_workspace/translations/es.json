@@ -209,7 +209,7 @@
           },
           "data_description": {
             "cursor_api_key": "Desde cursor.com/dashboard/integrations. Déjalo en blanco al editar para conservar la clave guardada. Déjalo vacío si el Runtime ya tiene CURSOR_API_KEY.",
-            "model": "Vacío usa Composer.",
+            "model": "Elige uno o escribe un id. Vacío usa Composer.",
             "effort": "Rápido, Alto o Alto rápido. Composer usa Rápido salvo que elijas Alto.",
             "assist": "Añade este agente a Home Assistant Assist. Desactivado lo deja solo en el chat de AI Workspace."
           }
@@ -224,16 +224,20 @@
             "effort": "Esfuerzo",
             "low_token": "Pocos tokens",
             "check_house": "Comprobar siempre la casa primero",
-            "assist": "Usar también en Assist"
+            "assist": "Usar también en Assist",
+            "assist_stt": "Añadir también voz a texto",
+            "stt_model": "Modelo de voz a texto"
           },
           "data_description": {
             "borrow": "Usa la clave que esa integración ya tiene guardada. La otra integración no se modifica.",
             "api_key": "No es un token de Home Assistant.",
-            "model": "Vacío usa el valor predeterminado del proveedor.",
+            "model": "Elige uno o escribe un id. Vacío usa el valor predeterminado del proveedor.",
             "effort": "Rápido, Alto o Alto rápido cuando el modelo lo admite.",
             "low_token": "Un aviso corto y sin herramientas, para que un modelo pequeño pueda responder. No puede consultar ni cambiar la casa.",
             "check_house": "El primer paso de cada mensaje (salvo saludos y agradecimientos) debe llamar a una herramienta, para que las respuestas sobre la casa se basen en datos en vivo. Desactívalo en modelos que ya llaman herramientas de forma fiable o para ahorrar una ronda de herramientas en preguntas generales.",
-            "assist": "Añade este agente a Home Assistant Assist. Desactivado lo deja solo en el chat de AI Workspace."
+            "assist": "Añade este agente a Home Assistant Assist. Desactivado lo deja solo en el chat de AI Workspace.",
+            "assist_stt": "Usa la clave API de este agente como motor de voz a texto de Home Assistant y la asigna a cada canal de AI Workspace Assist (incluido Cursor). Desactívalo si ya usas otro motor.",
+            "stt_model": "Vacío usa el valor predeterminado del proveedor. Puedes escribir otro id."
           }
         },
         "provider_ollama": {
@@ -249,7 +253,7 @@
           },
           "data_description": {
             "api_base": "Usually {example_url}",
-            "model": "Vacío usa llama3.2.",
+            "model": "Elige uno o escribe un modelo ya descargado. Vacío usa llama3.2.",
             "effort": "Se usa cuando el modelo lo admite.",
             "low_token": "Un aviso corto y sin herramientas, para que un modelo pequeño pueda responder. No puede consultar ni cambiar la casa.",
             "check_house": "El primer paso de cada mensaje (salvo saludos y agradecimientos) debe llamar a una herramienta, para que las respuestas sobre la casa se basen en datos en vivo. Desactívalo en modelos que ya llaman herramientas de forma fiable o para ahorrar una ronda de herramientas en preguntas generales.",
@@ -290,7 +294,9 @@
             "effort": "Esfuerzo",
             "low_token": "Pocos tokens",
             "check_house": "Comprobar siempre la casa primero",
-            "assist": "Usar también en Assist"
+            "assist": "Usar también en Assist",
+            "assist_stt": "Añadir también voz a texto",
+            "stt_model": "Modelo de voz a texto"
           },
           "data_description": {
             "api_key": "Déjalo en blanco al editar para conservar la clave guardada.",
@@ -299,7 +305,9 @@
             "effort": "Se usa cuando el servidor lo admite.",
             "low_token": "Un aviso corto y sin herramientas, para que un modelo pequeño pueda responder. No puede consultar ni cambiar la casa.",
             "check_house": "El primer paso de cada mensaje (salvo saludos y agradecimientos) debe llamar a una herramienta, para que las respuestas sobre la casa se basen en datos en vivo. Desactívalo en modelos que ya llaman herramientas de forma fiable o para ahorrar una ronda de herramientas en preguntas generales.",
-            "assist": "Añade este agente a Home Assistant Assist. Desactivado lo deja solo en el chat de AI Workspace."
+            "assist": "Añade este agente a Home Assistant Assist. Desactivado lo deja solo en el chat de AI Workspace.",
+            "assist_stt": "Usa la clave API de este agente como motor de voz a texto de Home Assistant y la asigna a cada canal de AI Workspace Assist (incluido Cursor). Desactívalo si ya usas otro motor.",
+            "stt_model": "Vacío usa el valor predeterminado del proveedor. Puedes escribir otro id."
           }
         }
       },

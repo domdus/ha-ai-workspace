@@ -11,6 +11,27 @@ def _const():
     return mod
 
 
+def test_provider_model_defaults_and_dropdown_choices() -> None:
+    const = _const()
+    assert const.default_api_model("openai") == "gpt-5"
+    assert const.default_api_model("anthropic") == "claude-sonnet-5-5"
+    assert const.default_api_model("gemini") == "gemini-3.8-flash"
+    assert const.default_api_model("deepseek") == "deepseek-flash"
+    assert const.default_api_model("qwen") == "qwen3.7-plus"
+    assert const.default_api_model("xai") == "grok-4.7"
+    assert const.default_api_model("openrouter") == "openai/gpt-5"
+    assert const.default_api_model("ollama") == "llama3.2"
+    assert const.default_api_model("cursor") == "composer-2.5"
+    assert const.default_api_model("azure") == ""
+    for kind in ("openai", "anthropic", "gemini", "deepseek", "qwen", "xai", "ollama", "cursor"):
+        choices = const.api_model_choices(kind)
+        assert choices
+        assert choices[0] == const.default_api_model(kind)
+    assert const.api_model_choices("openrouter") == []
+    assert const.api_model_choices("azure") == []
+    assert const.api_model_choices("compatible") == []
+
+
 def test_cleared_model_uses_fallback_not_the_old_value() -> None:
     const = _const()
     assert const.submitted_model({"model": ""}) == ""
@@ -26,6 +47,29 @@ def test_assist_defaults_on_for_existing_off_for_new() -> None:
     assert const.assist_enabled({"assist": False}) is False
     assert const.assist_enabled({"assist": True}, new=True) is True
     assert const.assist_enabled({"assist": False}, new=True) is False
+
+
+def test_speech_to_text_defaults_on_for_openai_style_agents() -> None:
+    const = _const()
+    assert const.provider_supports_stt("openai")
+    assert const.provider_supports_stt("openrouter")
+    assert const.provider_supports_stt("compatible")
+    assert not const.provider_supports_stt("cursor")
+    assert not const.provider_supports_stt("anthropic")
+    assert not const.provider_supports_stt("azure")
+    assert const.default_stt_model("openai") == "gpt-4o-mini-transcribe"
+    assert const.default_stt_model("openrouter") == "openai/whisper-1"
+    assert const.default_stt_model("compatible") == "whisper-1"
+    assert const.assist_stt_enabled({}, "openai") is True
+    assert const.assist_stt_enabled({"api_provider": "openai"}) is True
+    assert const.assist_stt_enabled({"assist_stt": False}, "openai") is False
+    assert const.assist_stt_enabled({"assist_stt": True}, "openai") is True
+    assert const.assist_stt_enabled({}, "cursor") is False
+    assert const.assist_stt_enabled({"assist_stt": True}, "cursor") is False
+    assert const.stt_model_choices("openai")[0] == "gpt-4o-mini-transcribe"
+    assert const.resolved_stt_model({}, "openai") == "gpt-4o-mini-transcribe"
+    assert const.resolved_stt_model({"stt_model": "whisper-1"}, "openai") == "whisper-1"
+    assert const.resolved_stt_model({}, "openrouter") == "openai/whisper-1"
 
 
 def test_mcp_dropdown_keeps_detected_saved_and_custom() -> None:

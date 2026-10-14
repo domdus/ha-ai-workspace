@@ -35,6 +35,8 @@ from .const import (
     MODE_CURSOR,
     SUBENTRY_AGENT,
     assist_enabled,
+    assist_stt_enabled,
+    resolved_stt_model,
     default_api_base,
     default_api_model,
 )
@@ -57,6 +59,8 @@ class Agent:
     effort: str = ""
     enabled: bool = True
     assist: bool = True
+    assist_stt: bool = False
+    stt_model: str = ""
     low_token: bool = False
     check_house: bool = True
     azure_api_version: str = DEFAULT_AZURE_API_VERSION
@@ -104,6 +108,8 @@ def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Age
         effort=effort,
         enabled=True,
         assist=assist_enabled(raw),
+        assist_stt=assist_stt_enabled(raw, provider),
+        stt_model=resolved_stt_model(raw, provider),
         low_token=bool(raw.get(CONF_LOW_TOKEN, False)),
         check_house=bool(raw.get(CONF_CHECK_HOUSE, True)),
         azure_api_version=_text(raw.get(CONF_AZURE_API_VERSION)) or DEFAULT_AZURE_API_VERSION,

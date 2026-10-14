@@ -22,6 +22,8 @@ from .const import (
     CONF_API_KEY,
     CONF_API_PROVIDER,
     CONF_ASSIST,
+    CONF_ASSIST_STT,
+    CONF_STT_MODEL,
     CONF_AZURE_API_VERSION,
     CONF_BORROW,
     CONF_CHECK_HOUSE,
@@ -37,7 +39,13 @@ from .const import (
     MODE_API,
     MODE_CURSOR,
     assist_enabled,
+    assist_stt_enabled,
+    provider_supports_stt,
+    api_model_choices,
     default_api_base,
+    default_api_model,
+    default_stt_model,
+    stt_model_choices,
     submitted_model,
 )
 from .discovery import async_resolve_runtime_url, async_runtime_health
@@ -76,29 +84,61 @@ def _effort_field(current: dict) -> dict:
     }
 
 
-def _optional_model(current: dict) -> dict:
-    shown = str(current.get(CONF_MODEL) or "")
-    return {vol.Optional(CONF_MODEL, default="", description={"suggested_value": shown}): str}
+def _model_field(provider: str, current: dict, *, required: bool = False) -> dict:
+    stored = str(current.get(CONF_MODEL) or "").strip()
+    fallback = default_api_model(provider)
+    choices = api_model_choices(provider)
+    if choices:
+        options = list(choices)
+        if stored and stored not in options:
+            options.insert(0, stored)
+        shown = stored or fallback
+        selector = SelectSelector(
+            SelectSelectorConfig(options=options, custom_value=True, mode="dropdown")
+        )
+        key = vol.Required(CONF_MODEL, default=shown) if required else vol.Optional(CONF_MODEL, default=shown)
+        return {key: selector}
+    suggested = stored or fallback
+    if required:
+        return {vol.Required(CONF_MODEL, default=stored, description={"suggested_value": suggested}): str}
+    return {vol.Optional(CONF_MODEL, default="", description={"suggested_value": suggested}): str}
+
+
+def _stt_model_field(provider: str, current: dict) -> dict:
+    stored = str(current.get(CONF_STT_MODEL) or "").strip()
+    fallback = default_stt_model(provider)
+    choices = stt_model_choices(provider)
+    shown = stored or fallback
+    if not choices:
+        return {vol.Optional(CONF_STT_MODEL, default="", description={"suggested_value": shown}): str}
+    options = list(choices)
+    if stored and stored not in options:
+        options.insert(0, stored)
+    return {
+        vol.Optional(CONF_STT_MODEL, default=shown): SelectSelector(
+            SelectSelectorConfig(options=options, custom_value=True, mode="dropdown")
+        )
+    }
 
 
 def _fields_schema(step: str, current: dict, borrows: list[dict[str, str]], *, new: bool = False) -> vol.Schema:
-    model = str(current.get(CONF_MODEL) or "")
+    provider = str(current.get(CONF_API_PROVIDER) or MODE_CURSOR)
     fields: dict = {}
     if step == "cursor":
         fields[vol.Optional(CONF_CURSOR_API_KEY, default="")] = _PASSWORD
-        fields.update(_optional_model(current))
+        fields.update(_model_field(MODE_CURSOR, current))
     elif step == "ollama":
         fields[vol.Required(CONF_API_BASE, default=str(current.get(CONF_API_BASE) or default_api_base(API_OLLAMA)))] = str
-        fields.update(_optional_model(current))
+        fields.update(_model_field(API_OLLAMA, current))
     elif step == "azure":
         fields[vol.Optional(CONF_API_KEY, default="")] = _PASSWORD
         fields[vol.Required(CONF_API_BASE, default=str(current.get(CONF_API_BASE) or ""))] = str
-        fields[vol.Required(CONF_MODEL, default=model)] = str
+        fields.update(_model_field(API_AZURE, current, required=True))
         fields[vol.Optional(CONF_AZURE_API_VERSION, default=str(current.get(CONF_AZURE_API_VERSION) or DEFAULT_AZURE_API_VERSION))] = str
     elif step == "compatible":
         fields[vol.Optional(CONF_API_KEY, default="")] = _PASSWORD
         fields[vol.Required(CONF_API_BASE, default=str(current.get(CONF_API_BASE) or ""))] = str
-        fields.update(_optional_model(current))
+        fields.update(_model_field(API_COMPATIBLE, current))
     else:
         if borrows:
             options = [{"value": "", "label": "Enter it here"}]
@@ -107,12 +147,15 @@ def _fields_schema(step: str, current: dict, borrows: list[dict[str, str]], *, n
                 SelectSelectorConfig(options=options, mode="dropdown")
             )
         fields[vol.Optional(CONF_API_KEY, default="")] = _PASSWORD
-        fields.update(_optional_model(current))
+        fields.update(_model_field(provider, current))
     fields.update(_effort_field(current))
     if step != "cursor":
         fields[vol.Optional(CONF_LOW_TOKEN, default=bool(current.get(CONF_LOW_TOKEN, False)))] = cv.boolean
         fields[vol.Optional(CONF_CHECK_HOUSE, default=bool(current.get(CONF_CHECK_HOUSE, True)))] = cv.boolean
     fields[vol.Optional(CONF_ASSIST, default=assist_enabled(current, new=new))] = cv.boolean
+    if provider_supports_stt(provider):
+        fields[vol.Optional(CONF_ASSIST_STT, default=assist_stt_enabled(current, provider))] = cv.boolean
+        fields.update(_stt_model_field(provider, current))
     return vol.Schema(fields)
 
 
@@ -246,6 +289,12 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                     CONF_LOW_TOKEN: False if provider == MODE_CURSOR else bool(user_input.get(CONF_LOW_TOKEN, False)),
                     CONF_CHECK_HOUSE: provider != MODE_CURSOR and bool(user_input.get(CONF_CHECK_HOUSE, True)),
                     CONF_ASSIST: bool(user_input.get(CONF_ASSIST, assist_enabled(current, new=not self._editing))),
+                    CONF_ASSIST_STT: bool(user_input.get(CONF_ASSIST_STT, assist_stt_enabled(current, provider)))
+                    if provider_supports_stt(provider)
+                    else False,
+                    CONF_STT_MODEL: str(user_input.get(CONF_STT_MODEL) or "").strip()
+                    if provider_supports_stt(provider)
+                    else "",
                     CONF_AZURE_API_VERSION: version if provider == API_AZURE else "",
                 }
                 return self._finish(provider, data)

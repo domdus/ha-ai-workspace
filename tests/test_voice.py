@@ -90,3 +90,42 @@ def test_pipeline_voice_uses_ha_engines_then_preferred() -> None:
     empty = pipes.resolve_pipeline_voice("browser", "off", language="de")
     assert empty["stt_engine"] is None
     assert empty["tts_engine"] is None
+    discovered = pipes.resolve_pipeline_voice(
+        "browser",
+        "off",
+        language="de",
+        fallback_stt="stt.open_ai_speech_to_text",
+        fallback_stt_language="de-DE",
+    )
+    assert discovered["stt_engine"] == "stt.open_ai_speech_to_text"
+    assert discovered["stt_language"] == "de-DE"
+
+
+def test_pick_assist_stt_prefers_our_engine_then_official_openai() -> None:
+    _load("const", "const.py")
+    pipes = _load("assist_pipelines", "assist_pipelines.py")
+    engines = [
+        ("stt.piper_local", "wyoming", "wyoming-stt"),
+        ("stt.openai_conversation_stt", "openai_conversation", "stt-sub"),
+        ("stt.cursor_speech_to_text", "ai_workspace", "cursor-1-stt"),
+        ("stt.open_ai_speech_to_text", "ai_workspace", "openai-1-stt"),
+    ]
+    assert (
+        pipes.pick_assist_stt(setting="stt.whisper", engines=engines)
+        == "stt.whisper"
+    )
+    assert pipes.pick_assist_stt(setting="browser", engines=engines, conversation_unique_id="openai-1") == (
+        "stt.open_ai_speech_to_text"
+    )
+    assert pipes.pick_assist_stt(setting="browser", engines=engines, conversation_unique_id="cursor-1") == (
+        "stt.cursor_speech_to_text"
+    )
+    cursor_pipeline = [row for row in engines if row[2] != "cursor-1-stt"]
+    assert pipes.pick_assist_stt(setting="browser", engines=cursor_pipeline, conversation_unique_id="cursor-agent") == (
+        "stt.open_ai_speech_to_text"
+    )
+    without_ours = [row for row in engines if row[1] != "ai_workspace"]
+    assert pipes.pick_assist_stt(setting="browser", engines=without_ours) == "stt.openai_conversation_stt"
+    assert pipes.pick_assist_stt(setting="browser", engines=[("stt.cloud", "cloud", "cloud")]) == "stt.cloud"
+    assert pipes.pick_assist_stt(setting="browser", preferred="stt.cloud", engines=[]) == "stt.cloud"
+    assert pipes.pick_assist_stt(setting="browser") is None
