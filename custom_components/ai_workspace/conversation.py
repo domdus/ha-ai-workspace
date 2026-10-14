@@ -125,10 +125,11 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
 
     def __init__(self, entry: ConfigEntry, agent: Agent) -> None:
         self._agent_id = agent.id
+        self._title = agent.title or entry.title or "AI Workspace"
         self._attr_unique_id = agent.id
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"agent:{agent.id}")},
-            name=agent.title or entry.title or "AI Workspace",
+            name=self._title,
             manufacturer="AI Workspace",
             model="Agent",
             entry_type=dr.DeviceEntryType.SERVICE,
@@ -144,8 +145,7 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
             return
         from .assist_pipelines import async_ensure_assist_pipeline
 
-        name = (self.device_info or {}).get("name") or "AI Workspace"
-        await async_ensure_assist_pipeline(self.hass, self.entity_id, str(name))
+        await async_ensure_assist_pipeline(self.hass, self.entity_id, str(self._title))
 
     async def async_will_remove_from_hass(self) -> None:
         # Reloads unload the entity but the agent subentry stays — keep the pipeline.
