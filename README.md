@@ -109,9 +109,19 @@ Open **AI Workspace** (`/ai-workspace`) and ask: `List my automations.`
 
 This integration works with **Cursor AI** through the Cursor SDK, without the desktop IDE: MCP tools, multi-step work, and agents that can be resumed. It runs headless, with no editor and no Composer UI.
 
-Install AI Workspace from HACS first ([step 1](#1-install-ai-workspace-from-hacs)). Then install the **Cursor SDK Runtime** once, for the Home Assistant you run.
+Install AI Workspace from HACS first ([step 1](#1-install-ai-workspace-from-hacs)).
 
-### Option A: Home Assistant OS / Supervised (App)
+### Option A: Use via OpenRouter
+
+Start here. You get many of the same models people use in Cursor (Claude, GPT, Gemini, Grok, and others) with one OpenRouter key. There is no Cursor SDK runtime to install.
+
+Add an **OpenRouter** agent as in [Cloud AI](#cloud-ai-api-provider-quick). Pick **OpenRouter**, paste the key (or **Copy key from** if Home Assistant already has OpenRouter), and choose a model.
+
+Cursor's own models (**Composer**, Tab completion) are not on OpenRouter. Cursor also does not list OpenRouter as a first-class BYOK provider; the desktop IDE can still talk to OpenRouter through an OpenAI base-URL override (`https://openrouter.ai/api/v1/cursor`). That is a Cursor workaround, not this integration. See [OpenRouter's Cursor notes](https://openrouter.ai/docs/cookbook/coding-agents/cursor-integration).
+
+Options B and C run the Cursor SDK yourself, when you want Composer or a Cursor API key in Home Assistant.
+
+### Option B: Home Assistant OS / Supervised (App)
 
 The Cursor SDK runs as an app on the same machine as Home Assistant.
 
@@ -125,9 +135,9 @@ Paste the Cursor API key on the app and **Start** it. Leave the Runtime URL on t
 
 Home Assistant 2026.2 renamed "Add-ons" to "Apps".
 
-### Option B: Home Assistant Container (Docker)
+### Option C: Home Assistant Container (Docker)
 
-If Home Assistant runs in Docker without the Supervisor, it needs one extra container next to it. The wiring is the same as in Option A: **AI Workspace** talks to the **Cursor SDK**, and the SDK talks to **Cursor** and to **MCP**.
+If Home Assistant runs in Docker without the Supervisor, it needs one extra container next to it. The wiring is the same as in Option B: **AI Workspace** talks to the **Cursor SDK**, and the SDK talks to **Cursor** and to **MCP**.
 
 ![Home Assistant container, Cursor SDK, Cursor Cloud AI](https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/docker-architecture.jpg)
 
@@ -194,7 +204,7 @@ The integration and the runtime share a token, and every chat request carries it
 
 
 
-### Add the integration
+### Add the integration (Options B and C)
 
 After the runtime is running: **Settings → Devices & services → Add integration → AI Workspace.**
 
