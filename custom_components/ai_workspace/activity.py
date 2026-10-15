@@ -129,10 +129,12 @@ def dashboard_store_id(url_path: object) -> str:
 
 
 def dashboard_id_from_args(args: dict) -> str:
-    for key in ("url_path", "dashboard_id"):
-        found = _text(args.get(key))
-        if found:
-            return found
+    # HA-MCP omits url_path or sends null for the default Lovelace board.
+    if "url_path" in args:
+        return _text(args.get("url_path")) or "lovelace"
+    found = _text(args.get("dashboard_id"))
+    if found:
+        return found
     path = _text(args.get("path"))
     # JSON Patch pointers look like /views/0/title — not a dashboard id.
     if path.startswith("/") or path.startswith("views"):
@@ -189,6 +191,8 @@ def looks_like_config_write(name: str, arguments: dict | None) -> bool:
         return True
     ident = _from_args(args, "identifier", "automation_id", "script_id", "scene_id")
     if ident and (args.get("python_transform") not in (None, "") or isinstance(args.get("config"), dict)):
+        return True
+    if args.get("python_transform") not in (None, ""):
         return True
     return dashboard_args(args) or bool(entity_ids_from_args(args))
 

@@ -9,6 +9,9 @@
 - MCP tool names sent to OpenAI are unique and at most 64 characters, with a stable hash when a name is shortened
 - Disable an MCP connection's device to drop its tools; a failed list_tools on one row does not block the others
 - Built-in `/api/mcp` tools are omitted when the Home Assistant MCP Server integration is not loaded
+- Change History treats HA-MCP's empty/`null` dashboard `url_path` as the default board, and watches `python_transform` writes so card moves are recorded
+- Overlay Text-to-speech keeps the engine you pick (including Google Translate or Off); it no longer jumps to OpenAI
+- Existing Assist pipelines keep their STT/TTS; new pipelines still get our engines on first create. A removed engine becomes none instead of stealing another pipeline's voice
 - OpenAI TTS 429 `credit_balance_exhausted` is a provider quota issue, not this naming fix
 
 ## 1.1.0

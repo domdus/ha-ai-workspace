@@ -374,9 +374,9 @@ def assist_tts_enabled(raw: dict, provider: str = "") -> bool:
 
 
 def is_placeholder_tts(engine: str) -> bool:
-    """True for Off and Google Translate (the usual HA default)."""
+    """True for Off / empty. Google Translate is a real engine the user may keep."""
     low = str(engine or "").strip().casefold()
-    return (not low) or low == TTS_OFF or "google_translate" in low
+    return (not low) or low == TTS_OFF
 
 
 _BUILTIN_ASSIST = {

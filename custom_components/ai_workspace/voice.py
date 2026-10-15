@@ -109,20 +109,6 @@ async def async_speech_engines(hass: HomeAssistant, kind: str) -> list[dict[str,
     return options
 
 
-def preferred_workspace_tts(hass: HomeAssistant) -> str:
-    """First AI Workspace TTS entity, if any."""
-    try:
-        from homeassistant.helpers import entity_registry as er
-
-        for row in er.async_get(hass).entities.values():
-            if row.domain != "tts" or row.platform != DOMAIN or row.disabled_by is not None:
-                continue
-            return row.entity_id
-    except Exception:
-        return ""
-    return ""
-
-
 def _tts_engine_exists(hass: HomeAssistant, engine: str) -> bool:
     chosen = str(engine or "").strip()
     if not chosen or chosen == TTS_OFF:
@@ -134,7 +120,20 @@ def _tts_engine_exists(hass: HomeAssistant, engine: str) -> bool:
     except Exception:
         row = None
     if row is not None:
-        return row.disabled_by is None
+        return row.domain == "tts" and row.disabled_by is None
+    try:
+        from homeassistant.components.tts import DATA_COMPONENT, DATA_TTS_MANAGER
+
+        component = hass.data.get(DATA_COMPONENT)
+        for entity in getattr(component, "entities", []) or []:
+            if str(getattr(entity, "entity_id", "") or "") == chosen:
+                return True
+        manager = hass.data.get(DATA_TTS_MANAGER)
+        providers = getattr(manager, "providers", {}) if manager is not None else {}
+        if chosen in providers:
+            return True
+    except Exception:
+        pass
     try:
         return hass.states.get(chosen) is not None
     except Exception:
@@ -142,16 +141,13 @@ def _tts_engine_exists(hass: HomeAssistant, engine: str) -> bool:
 
 
 def resolved_overlay_tts(hass: HomeAssistant, engine: str) -> str:
-    """Use our voice in the overlay when the saved engine is Off or Google Translate."""
+    """Keep the saved overlay voice. Off if that engine is gone."""
     chosen = str(engine or "").strip() or TTS_OFF
-    if chosen != TTS_OFF and not is_placeholder_tts(chosen) and _tts_engine_exists(hass, chosen):
-        return chosen
-    ours = preferred_workspace_tts(hass)
-    if ours:
-        return ours
-    if chosen != TTS_OFF and not is_placeholder_tts(chosen):
+    if chosen == TTS_OFF:
         return TTS_OFF
-    return chosen
+    if _tts_engine_exists(hass, chosen):
+        return chosen
+    return TTS_OFF
 
 
 def overlay_tts_heavy(hass: HomeAssistant, engine: str) -> bool:

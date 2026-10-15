@@ -637,11 +637,12 @@ class ApiProvider:
         payload = args if isinstance(args, dict) else {}
         if on_tool is None:
             return await mcp.call_tool(name, payload)
+        original = mcp.original_name(name)
 
-        async def call(tool_name: str, tool_args: dict) -> Any:
-            return await mcp.call_tool(tool_name, tool_args)
+        async def call(_tool_name: str, tool_args: dict) -> Any:
+            return await mcp.call_tool(name, tool_args)
 
-        return await on_tool(name, payload, call)
+        return await on_tool(original, payload, call)
 
     async def send(
         self,
