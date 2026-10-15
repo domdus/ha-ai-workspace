@@ -2,8 +2,9 @@
 
 Reads and entity-state calls stay out. Config writes for automations, scripts,
 scenes, helpers, entities, and dashboards can be rolled back when a previous
-document was saved. Any other write is only a line, and only if a config
-document actually changed.
+document was saved. Dashboard and entity-registry events from Home Assistant
+name the document that actually moved, so a wrong tool argument still records.
+Any other write is only a line, and only if a config document actually changed.
 """
 
 from __future__ import annotations
@@ -117,15 +118,97 @@ def _label(args: dict, item_id: str) -> str:
     return item_id
 
 
+def dashboard_store_id(url_path: object) -> str:
+    """Map a Lovelace url_path (including the default board) to the snapshot id."""
+    raw = _text(url_path).strip("/")
+    if raw.lower().startswith("lovelace/"):
+        return "lovelace"
+    if raw in {"", "lovelace", "default"}:
+        return "lovelace"
+    return raw
+
+
+def dashboard_id_from_args(args: dict) -> str:
+    for key in ("url_path", "dashboard_id"):
+        found = _text(args.get(key))
+        if found:
+            return found
+    path = _text(args.get("path"))
+    # JSON Patch pointers look like /views/0/title — not a dashboard id.
+    if path.startswith("/") or path.startswith("views"):
+        return ""
+    return path
+
+
+def dashboard_args(args: dict) -> bool:
+    if dashboard_id_from_args(args):
+        return True
+    patch = args.get("patch")
+    if isinstance(patch, list) and patch:
+        return True
+    config = args.get("config")
+    return isinstance(config, dict) and ("views" in config or "sections" in config or "cards" in config)
+
+
+def entity_ids_from_args(args: dict) -> list[str]:
+    raw = args.get("entity_id")
+    if isinstance(raw, list):
+        return [found for item in raw if (found := _text(item))]
+    found = _text(raw)
+    return [found] if found else []
+
+
+def yaml_kind_from_args(args: dict) -> str:
+    """Automation, script, or scene from arguments when the tool name lost those words."""
+    if dashboard_args(args):
+        return ""
+    if _text(args.get("automation_id")):
+        return "automation"
+    if _text(args.get("script_id")):
+        return "script"
+    if _text(args.get("scene_id")):
+        return "scene"
+    ident = _from_args(args, "identifier", "entity_id", "id")
+    for prefix, kind in (("automation.", "automation"), ("script.", "script"), ("scene.", "scene")):
+        if ident.startswith(prefix):
+            return kind
+    return ""
+
+
+def looks_like_config_write(name: str, arguments: dict | None) -> bool:
+    """True when the call should be watched even if the tool name is hashed or generic."""
+    if classify(name, arguments) is not None:
+        return True
+    if watches_config(name):
+        return True
+    tokens = _tokens(name)
+    if not tokens or tokens & _READ or tokens & _STATE or tokens & _SKIP:
+        return False
+    args = arguments if isinstance(arguments, dict) else {}
+    if yaml_kind_from_args(args):
+        return True
+    ident = _from_args(args, "identifier", "automation_id", "script_id", "scene_id")
+    if ident and (args.get("python_transform") not in (None, "") or isinstance(args.get("config"), dict)):
+        return True
+    return dashboard_args(args) or bool(entity_ids_from_args(args))
+
+
 def classify(name: str, arguments: dict | None) -> Change | None:
     """Return the config change this tool intends, or None when it is not one."""
     tokens = _tokens(name)
     if not tokens or tokens & _READ or tokens & _SKIP:
         return None
     kind = _kind(tokens)
+    args = arguments if isinstance(arguments, dict) else {}
+    if not kind and not (tokens & _STATE):
+        if dashboard_args(args):
+            kind = "dashboard"
+        elif yaml_kind_from_args(args):
+            kind = yaml_kind_from_args(args)
+        elif entity_ids_from_args(args) and not (tokens & {"helper", "helpers"}):
+            kind = "entity"
     if not kind:
         return None
-    args = arguments if isinstance(arguments, dict) else {}
     if kind == "automation":
         item_id = _from_args(args, "identifier", "automation_id", "entity_id", "id")
         domain = "automation"
@@ -141,10 +224,11 @@ def classify(name: str, arguments: dict | None) -> Change | None:
         if not domain and "." in item_id:
             domain = item_id.split(".", 1)[0]
     elif kind == "dashboard":
-        item_id = _from_args(args, "url_path", "dashboard_id", "identifier", "path")
+        item_id = dashboard_id_from_args(args)
         domain = "lovelace"
     else:
-        item_id = _from_args(args, "entity_id", "identifier", "id")
+        ids = entity_ids_from_args(args)
+        item_id = ids[0] if ids else _from_args(args, "identifier", "id")
         domain = item_id.split(".", 1)[0] if "." in item_id else ""
     action = "delete" if tokens & _DELETE else ("update" if item_id else "create")
     return Change(kind=kind, action=action, item_id=item_id, label=_label(args, item_id), domain=domain)
@@ -186,6 +270,20 @@ def describe_index(before: dict[str, tuple[str, str]], after: dict[str, tuple[st
     if len(lines) == 1:
         return lines[0]
     return f"{lines[0]} (+{len(lines) - 1})"
+
+
+def changed_index_keys(
+    before: dict[str, tuple[str, str]], after: dict[str, tuple[str, str]]
+) -> list[str]:
+    keys: list[str] = []
+    for key, (_label, digest) in before.items():
+        later = after.get(key)
+        if later is None or later[1] != digest:
+            keys.append(key)
+    for key in after:
+        if key not in before:
+            keys.append(key)
+    return keys
 
 
 def tool_succeeded(result: object) -> bool:

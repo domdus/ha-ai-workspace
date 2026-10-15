@@ -15,11 +15,13 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .assist_agents import assist_agent_ids, async_assist_events, list_assist_agents
 from .discovery import async_bind_runtime
 from .const import (
+    ACTIVITY_ROLLBACK,
     CLOUD_ONLY_MODELS,
     DEFAULT_SYSTEM_PROMPT,
     DOMAIN,
     MCP_COOLVER,
     format_ui_page,
+    ha_mcp_is_connected,
     parse_ui_page,
     with_language_rule,
     with_ui_context,
@@ -1064,7 +1066,8 @@ def _runtime_token_ok(request: web.Request) -> bool:
     return True
 
 
-def _activity_dict(row, chat: str = "") -> dict:
+def _activity_dict(row, chat: str = "", *, ask_restore: bool = False) -> dict:
+    undone = bool(row.undone_at)
     return {
         "id": row.id,
         "created_at": row.created_at,
@@ -1075,8 +1078,12 @@ def _activity_dict(row, chat: str = "") -> dict:
         "session_id": row.session_id or "",
         "summary": row.summary,
         "tool": row.tool,
-        "can_rollback": bool(row.can_rollback),
+        "can_rollback": bool(ACTIVITY_ROLLBACK and row.can_rollback),
         "undone_at": row.undone_at or "",
+        "ask_restore": bool(ask_restore and not undone),
+        "restore_kind": getattr(row, "restore_kind", "") or "",
+        "restore_id": getattr(row, "restore_id", "") or "",
+        "restore_label": getattr(row, "restore_label", "") or "",
     }
 
 
@@ -1092,7 +1099,14 @@ class ActivityView(HomeAssistantView):
         admin = _is_admin(request)
         rows = await hass.async_add_executor_job(lambda: store.list_activity(user_id, admin=admin))
         titles = await hass.async_add_executor_job(store.session_titles, [row.session_id for row in rows])
-        return self.json([_activity_dict(row, titles.get(row.session_id) or "") for row in rows])
+        settings = _runtime(hass).get("settings")
+        ask_restore = admin and ha_mcp_is_connected(
+            str(getattr(settings, "mcp_kind", "") or "") if settings else "",
+            list(getattr(settings, "mcp_rows", None) or []) if settings else None,
+        )
+        return self.json(
+            [_activity_dict(row, titles.get(row.session_id) or "", ask_restore=ask_restore) for row in rows]
+        )
 
 
 class ActivityRollbackView(HomeAssistantView):
@@ -1114,7 +1128,7 @@ class ActivityRollbackView(HomeAssistantView):
             raise web.HTTPNotFound()
         if not _is_admin(request) and row.user_id != _user_id(request):
             raise web.HTTPNotFound()
-        if not row.can_rollback:
+        if not ACTIVITY_ROLLBACK or not row.can_rollback:
             raise web.HTTPBadRequest(text="This change cannot be rolled back.")
         raw = await hass.async_add_executor_job(store.activity_document, row_id)
         try:

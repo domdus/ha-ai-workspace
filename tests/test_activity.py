@@ -88,6 +88,55 @@ def test_entity_and_helper():
     assert fresh.action == "create"
 
 
+def test_dashboard_store_id_maps_default_and_view_urls():
+    assert activity.dashboard_store_id(None) == "lovelace"
+    assert activity.dashboard_store_id("default") == "lovelace"
+    assert activity.dashboard_store_id("/lovelace/home") == "lovelace"
+    assert activity.dashboard_store_id("lovelace-home") == "lovelace-home"
+
+
+def test_dashboard_id_ignores_json_patch_paths():
+    assert activity.dashboard_id_from_args({"url_path": "default", "patch": [{"op": "replace", "path": "/views/0/title", "value": "Home"}]}) == "default"
+    assert activity.dashboard_id_from_args({"path": "/views/0/sections/1"}) == ""
+    assert activity.dashboard_args({"url_path": "lovelace", "python_transform": "config['views'][0]['path'] = 'home'"}) is True
+    assert activity.dashboard_args({"python_transform": "config['conditions'] = []", "identifier": "automation.x"}) is False
+
+
+def test_hashed_automation_tool_from_identifier():
+    args = {
+        "identifier": "automation.balcony_irrigation",
+        "python_transform": "config['actions'].append({'action': 'notify.notify'})",
+        "config_hash": "abc",
+    }
+    change = activity.classify("a1b2c3d4e5f6", args)
+    assert change is not None
+    assert change.kind == "automation"
+    assert change.item_id == "automation.balcony_irrigation"
+    assert activity.looks_like_config_write("a1b2c3d4e5f6", args) is True
+    assert activity.yaml_kind_from_args({"script_id": "bed"}) == "script"
+    assert activity.yaml_kind_from_args({"scene_id": "evening"}) == "scene"
+    scene = activity.classify("a1b2c3d4e5f6", {"identifier": "scene.evening", "config": {"name": "Evening", "entities": {}}})
+    assert scene is not None and scene.kind == "scene"
+    assert activity.yaml_kind_from_args({"url_path": "lovelace", "identifier": "automation.x"}) == ""
+
+
+def test_hashed_dashboard_tool_still_looks_like_a_write():
+    args = {"url_path": "default", "python_transform": "config['views'][0]['cards'][0]['grid_options'] = {'rows': 1}"}
+    change = activity.classify("a1b2c3d4e5f6", args)
+    assert change is not None
+    assert change.kind == "dashboard"
+    assert change.item_id == "default"
+    assert activity.looks_like_config_write("a1b2c3d4e5f6", args) is True
+    assert activity.classify("ha_call_service", {"entity_id": "light.kitchen", "url_path": "lovelace"}) is None
+    assert activity.looks_like_config_write("ha_call_service", {"entity_id": "light.kitchen"}) is False
+
+
+def test_changed_index_keys():
+    before = {"dashboard:lovelace": ("Home", "aaa"), "entity:light.kitchen": ("Kitchen", "one")}
+    after = {"dashboard:lovelace": ("Home", "bbb"), "entity:light.kitchen": ("Kitchen", "one")}
+    assert activity.changed_index_keys(before, after) == ["dashboard:lovelace"]
+
+
 def test_failed_tool_result_is_not_success():
     assert activity.tool_succeeded({"content": [], "isError": True}) is False
     assert activity.tool_succeeded({"content": [{"type": "text", "text": "ok"}]}) is True
@@ -117,6 +166,7 @@ def test_activity_rows_are_private_and_capped(tmp_path: Path):
     )
     assert first.session_id == "chat-1"
     assert first.chat == "Morning lights"
+    assert first.restore_kind == "automation"
     assert store.session_title("chat-1") == ""
     store.add_activity("user-2", "Bea", "OpenAI", "Created script Bed", "ha_config_set_script", "")
     assert first.can_rollback is True
@@ -136,3 +186,29 @@ def test_activity_rows_are_private_and_capped(tmp_path: Path):
     assert store.get_activity(first.id) is None
     assert snapshot.exists() is False
     store.close()
+
+
+def test_restore_target_from_document():
+    kind, item_id, label = _store._restore_target(
+        '{"kind":"dashboard","id":"lovelace","label":"Home"}'
+    )
+    assert kind == "dashboard"
+    assert item_id == "lovelace"
+    assert label == "Home"
+    kind, item_id, label = _store._restore_target(
+        '{"kind":"entity","entity_id":"light.kitchen","name":"Kitchen"}'
+    )
+    assert kind == "entity"
+    assert item_id == "light.kitchen"
+    assert label == "Kitchen"
+    assert _store._restore_target("") == ("", "", "")
+    assert _store._restore_target("not-json") == ("", "", "")
+
+
+def test_ha_mcp_is_connected():
+    const = _load("ai_workspace_const", "const.py")
+    assert const.ha_mcp_is_connected("ha_mcp") is True
+    assert const.ha_mcp_is_connected("ha") is False
+    assert const.ha_mcp_is_connected("ha", [{"kind": "ha_mcp"}]) is True
+    assert const.ha_mcp_is_connected("custom", [{"kind": "ha"}]) is False
+    assert const.ha_mcp_is_connected("", None) is False

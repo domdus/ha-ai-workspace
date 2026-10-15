@@ -30,7 +30,7 @@ What the agent can do depends entirely on the MCP server you connect.
 - Attachments in chat (text files, images)
 - Deep links to devices, entities, automations, and more
 - Chat history with pins
-- Change History of the last 30 configuration changes, with rollback
+- Change History of recorded agent configuration writes (a log, not an undo). When HA-MCP is connected, **Ask to restore** tells the current chat to list HA-MCP’s edit backups
 - Several agents in one chat
 - More than one MCP connection
 - Optional floating button
@@ -299,7 +299,7 @@ When an MCP tool sends back the whole house, the result is shortened before the 
 ## Privacy and security
 
 - **What leaves the house:** your messages, attachments, the system prompt, the page you are on, and every MCP tool result go to the AI provider you picked (or to Cursor through the runtime). Only Ollama or another local server keeps everything at home.
-- **What stays local:** chat history is stored in `config/ai_workspace/ai-workspace.sqlite`. Change History keeps the last 30 configuration changes there, with a YAML copy of each automation, script, or scene so it can be restored. API keys live in Home Assistant's config entries, like any other integration.
+- **What stays local:** chat history is stored in `config/ai_workspace/ai-workspace.sqlite`. Change History keeps a log of the last 30 recorded agent configuration writes there. Undo for HA-MCP writes belongs to HA-MCP's own edit backups; **Ask to restore** in that log asks the current chat to list and restore them. API keys live in Home Assistant's config entries, like any other integration.
 - **Who can use it:** only admins by default. The sidebar panel is always admin-only.
 - **Allow normal users:** when this is on, people who are not admins get the floating chat. They only get the built-in **Home Assistant MCP Server**, using their own login, and never the admin's MCP connections or the config catalog. What they can see and do is then whatever Home Assistant exposes to them through Assist. **Only turn this on if you trust everyone with a login to chat with an AI that can act on the house.**
 - **Voice satellites:** Assist from a satellite has no signed-in person, so it uses the tools the admin configured. The built-in MCP Server needs a login, so set a long-lived access token in that connection's **MCP token** when satellites should reach it. HA-MCP and Vibecode bring their own credentials.

@@ -9,6 +9,8 @@ STATIC_URL = "/ai_workspace/static"
 VERSION = json.loads(
     (Path(__file__).parent / "manifest.json").read_text(encoding="utf-8")
 )["version"]
+# Observer snapshots sit beside MCP writes, not on them. Do not offer rollback as safety.
+ACTIVITY_ROLLBACK = False
 OVERLAY_JS = f"{STATIC_URL}/overlay.js?v={VERSION}"
 PANEL_JS = f"{STATIC_URL}/panel.js?v={VERSION}"
 DEFAULT_MODEL = "composer-2.5"
@@ -410,6 +412,18 @@ MCP_HA = "ha"
 MCP_HA_MCP = "ha_mcp"
 MCP_COOLVER = "coolver"
 MCP_CUSTOM = "custom"
+
+
+def ha_mcp_is_connected(mcp_kind: str, mcp_rows: list | None = None) -> bool:
+    """True when HA-MCP is the primary connection or an extra MCP row."""
+    if str(mcp_kind or "").strip() == MCP_HA_MCP:
+        return True
+    for row in mcp_rows or []:
+        if isinstance(row, dict) and str(row.get("kind") or "").strip() == MCP_HA_MCP:
+            return True
+    return False
+
+
 MCP_KINDS = {
     MCP_HA: "Home Assistant MCP Server (built-in)",
     MCP_HA_MCP: "HA-MCP",

@@ -49,6 +49,9 @@ class Activity:
     undone_at: str
     session_id: str = ""
     chat: str = ""
+    restore_kind: str = ""
+    restore_id: str = ""
+    restore_label: str = ""
 
 
 @dataclass
@@ -572,9 +575,25 @@ class Store:
         return self.get_activity(activity_id)
 
 
+def _restore_target(document: str) -> tuple[str, str, str]:
+    if not document:
+        return "", "", ""
+    try:
+        doc = json.loads(document)
+    except json.JSONDecodeError:
+        return "", "", ""
+    if not isinstance(doc, dict):
+        return "", "", ""
+    kind = str(doc.get("kind") or "").strip()
+    item_id = str(doc.get("entity_id") or doc.get("id") or "").strip()
+    label = str(doc.get("label") or doc.get("name") or "").strip()
+    return kind, item_id, label
+
+
 def _activity(row: sqlite3.Row) -> Activity:
     undone = _text(row["undone_at"])
     document = _text(row["document"])
+    restore_kind, restore_id, restore_label = _restore_target(document)
     return Activity(
         id=int(row["id"]),
         created_at=row["created_at"],
@@ -587,6 +606,9 @@ def _activity(row: sqlite3.Row) -> Activity:
         undone_at=undone,
         session_id=_text(row["session_id"]) if "session_id" in row.keys() else "",
         chat=_text(row["chat"]) if "chat" in row.keys() else "",
+        restore_kind=restore_kind,
+        restore_id=restore_id,
+        restore_label=restore_label,
     )
 
 

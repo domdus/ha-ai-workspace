@@ -2,6 +2,10 @@
 
 ## 1.1.3
 
+- Change History is a log of recorded agent writes; rollback is off because snapshots sit beside MCP tools, not on the write path like HA-MCP edit backups
+- When HA-MCP is connected, Change History shows **Ask to restore**: it prompts the current chat to list HA-MCP edit backups and restore the match, instead of listing backup files ourselves
+- Change History snapshots Lovelace from `lovelace_updated` and entity registry updates, and loads dashboards with `async_load` instead of cached `_data`
+- Automation, script, and scene edits snapshot the live config (not only `.yaml`), and `automation_reloaded` / `script_reloaded` / `scene_reloaded` record the change when the file is still flushing
 - MCP tool names sent to OpenAI are unique and at most 64 characters, with a stable hash when a name is shortened
 - Disable an MCP connection's device to drop its tools; a failed list_tools on one row does not block the others
 - Built-in `/api/mcp` tools are omitted when the Home Assistant MCP Server integration is not loaded

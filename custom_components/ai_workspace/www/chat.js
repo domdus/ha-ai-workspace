@@ -3537,6 +3537,26 @@ export function mountAiWorkspace(root, options = {}) {
       item.appendChild(restored);
       return item;
     }
+    if (row.ask_restore) {
+      const button = document.createElement("ha-button");
+      button.className = "history-rollback";
+      button.setAttribute("size", "s");
+      button.setAttribute("appearance", "plain");
+      button.textContent = t("ask_restore");
+      button.addEventListener("click", async () => {
+        const ok = await askConfirm(
+          t("ask_restore"),
+          t("ask_restore_confirm", { summary: row.summary || "" }),
+          t("ask_restore"),
+        );
+        if (!ok) return;
+        closeHistory();
+        messageEl.value = restorePrompt(row);
+        form.requestSubmit();
+      });
+      item.appendChild(button);
+      return item;
+    }
     if (!row.can_rollback) return item;
     const button = document.createElement("ha-button");
     button.className = "history-rollback";
@@ -3557,6 +3577,15 @@ export function mountAiWorkspace(root, options = {}) {
     });
     item.appendChild(button);
     return item;
+  }
+
+  function restorePrompt(row) {
+    const lines = [`Change: ${row.summary || ""}`, `When: ${row.created_at || ""}`];
+    if (row.restore_kind) lines.push(`Kind: ${row.restore_kind}`);
+    if (row.restore_id) lines.push(`Id: ${row.restore_id}`);
+    if (row.restore_label) lines.push(`Label: ${row.restore_label}`);
+    if (row.tool) lines.push(`Tool: ${row.tool}`);
+    return t("ask_restore_prompt", { details: lines.join("\n") });
   }
 
   async function openHistory() {
