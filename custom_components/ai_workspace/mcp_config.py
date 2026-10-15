@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import json
+import logging
 import os
 import re
 from collections import Counter
@@ -8,7 +10,24 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+_LOGGER = logging.getLogger(__name__)
 _ENV = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
+# OpenAI Chat Completions rejects function.name longer than this.
+OPENAI_TOOL_NAME_MAX = 64
+_PREFIX_MAX = 16
+_HASH_LEN = 8
+_NAME_CHARS = re.compile(r"[^A-Za-z0-9_-]+")
+_TRIMMED: set[str] = set()
+_PREFIX_ALIASES = {
+    "mcp": "ha",
+    "home-assistant": "ha",
+    "homeassistant": "ha",
+    "ha-mcp": "hamcp",
+    "ha_mcp": "hamcp",
+    "hamcp": "hamcp",
+    "catalog": "catalog",
+    "house-map": "catalog",
+}
 
 
 class McpConfigError(ValueError):
@@ -176,14 +195,109 @@ def with_mcp_auth(
     return out
 
 
+def is_local_hass_mcp_url(url: str, ha_hosts: frozenset[str] | set[str] | None = None) -> bool:
+    """True for this Home Assistant's built-in /api/mcp (not HA-MCP on another host)."""
+    parsed = urlparse(str(url or ""))
+    if "/api/mcp" not in (parsed.path or "").lower():
+        return False
+    host = (parsed.hostname or "").lower()
+    return host in (frozenset(ha_hosts or ()) | LOOPBACK_HOSTS)
+
+
+def connection_prefix(server_key: str) -> str:
+    """Short slug used only when two connections expose the same tool name."""
+    raw = str(server_key or "").strip().lower()
+    if raw in _PREFIX_ALIASES:
+        return _PREFIX_ALIASES[raw]
+    slug = _SLUG.sub("-", raw).strip("-")[:_PREFIX_MAX]
+    if not slug:
+        return "mcp"
+    if slug in _PREFIX_ALIASES or slug in _PREFIX_ALIASES.values() or slug in _RESERVED_NAMES:
+        slug = f"{slug[: max(1, _PREFIX_MAX - 2)]}-x".strip("-")
+    return slug[:_PREFIX_MAX]
+
+
+def _stable_hash(server_key: str, original_tool: str) -> str:
+    blob = f"{server_key}\0{original_tool}".encode()
+    return hashlib.sha1(blob).hexdigest()[:_HASH_LEN]
+
+
+def _clean_openai_chars(name: str) -> str:
+    cleaned = _NAME_CHARS.sub("_", str(name or "")).strip("_")
+    return cleaned or "tool"
+
+
+def _warn_trim(server_key: str, original_tool: str, old: str, new: str) -> None:
+    key = f"{server_key}\0{original_tool}"
+    if key in _TRIMMED:
+        return
+    _TRIMMED.add(key)
+    _LOGGER.warning(
+        "MCP tool name shortened for OpenAI (%s → %s, server %s tool %s)",
+        old,
+        new,
+        server_key,
+        original_tool,
+    )
+
+
+def sanitize_openai_tool_name(
+    public_name: str,
+    server_key: str,
+    original_tool: str,
+    used: set[str] | None = None,
+) -> str:
+    """OpenAI function.name: unique, [A-Za-z0-9_-], at most 64 characters."""
+    taken = used if used is not None else set()
+    digest = _stable_hash(server_key, original_tool)
+    cleaned = _clean_openai_chars(public_name)
+    if len(cleaned) <= OPENAI_TOOL_NAME_MAX and cleaned not in taken:
+        if cleaned != str(public_name or ""):
+            _warn_trim(server_key, original_tool, public_name, cleaned)
+        return cleaned
+    suffix = f"_{digest}"
+    keep = max(1, OPENAI_TOOL_NAME_MAX - len(suffix))
+    name = (cleaned[:keep] + suffix)[:OPENAI_TOOL_NAME_MAX]
+    extra = 0
+    while name in taken:
+        extra += 1
+        bump = f"_{extra}"
+        compact = f"t_{digest}{bump}"
+        name = compact[:OPENAI_TOOL_NAME_MAX]
+        if extra > 32:
+            break
+    _warn_trim(server_key, original_tool, public_name, name)
+    return name
+
+
+def _prefixed_name(prefix: str, tool: str) -> str:
+    sep = "__"
+    if len(prefix) + len(sep) + len(tool) <= OPENAI_TOOL_NAME_MAX:
+        return f"{prefix}{sep}{tool}"
+    room = OPENAI_TOOL_NAME_MAX - len(sep) - len(tool)
+    if room >= 2:
+        return f"{prefix[:room]}{sep}{tool}"
+    return f"{prefix}{sep}{tool}"
+
+
 def public_tool_names(groups: list[tuple[str, list[str]]]) -> dict[str, tuple[str, str]]:
-    """Name the model sees -> (server, tool on that server)."""
+    """Name the model sees -> (server, tool on that server). Unique and ≤ 64 characters."""
     counts = Counter(name for _server, tools in groups for name in tools)
     routes: dict[str, tuple[str, str]] = {}
+    used: set[str] = set()
     for server, tools in groups:
+        prefix = connection_prefix(server)
         for name in tools:
-            public = f"{server}__{name}" if counts[name] > 1 else name
-            if public in routes:
-                public = f"{server}__{name}"
-            routes[public] = (server, name)
+            public = _prefixed_name(prefix, name) if counts[name] > 1 else name
+            if _clean_openai_chars(public) in used:
+                public = _prefixed_name(prefix, name)
+            openai_name = sanitize_openai_tool_name(public, server, name, used)
+            used.add(openai_name)
+            routes[openai_name] = (server, name)
     return routes
+
+
+def openai_tool_name_errors(names: list[str]) -> list[str]:
+    """Names that OpenAI would reject (length or charset)."""
+    allowed = re.compile(r"^[A-Za-z0-9_-]{1," + str(OPENAI_TOOL_NAME_MAX) + r"}$")
+    return [name for name in names if not allowed.fullmatch(str(name or ""))]

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.3
+
+- MCP tool names sent to OpenAI are unique and at most 64 characters, with a stable hash when a name is shortened
+- Disable an MCP connection's device to drop its tools; a failed list_tools on one row does not block the others
+- Built-in `/api/mcp` tools are omitted when the Home Assistant MCP Server integration is not loaded
+- OpenAI TTS 429 `credit_balance_exhausted` is a provider quota issue, not this naming fix
+
 ## 1.1.0
 
 - A failed Cursor run is dropped, so the next message starts a fresh agent
