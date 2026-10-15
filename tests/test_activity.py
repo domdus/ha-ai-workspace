@@ -131,6 +131,16 @@ def test_hashed_dashboard_tool_still_looks_like_a_write():
     assert activity.looks_like_config_write("ha_call_service", {"entity_id": "light.kitchen"}) is False
 
 
+def test_null_url_path_is_the_default_dashboard():
+    args = {"url_path": None, "python_transform": "config['views'][0]['cards'].append({})"}
+    assert activity.dashboard_id_from_args(args) == "lovelace"
+    change = activity.classify("ha_config_set_dashboard", args)
+    assert change is not None
+    assert change.kind == "dashboard"
+    assert change.item_id == "lovelace"
+    assert activity.looks_like_config_write("a1b2c3d4e5f6", {"python_transform": "config['views'] = []"}) is True
+
+
 def test_changed_index_keys():
     before = {"dashboard:lovelace": ("Home", "aaa"), "entity:light.kitchen": ("Kitchen", "one")}
     after = {"dashboard:lovelace": ("Home", "bbb"), "entity:light.kitchen": ("Kitchen", "one")}

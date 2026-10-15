@@ -55,7 +55,7 @@ from .discovery import async_probe_runtime, async_resolve_runtime_url
 from .mcp_config import server_slug
 from .mcp_flow import McpConnectionFlow
 from .mcp_resolve import async_detect_mcp_kinds, async_resolve_mcp_url, default_mcp_url, mcp_kind_of
-from .voice import async_speech_engines, resolved_overlay_tts
+from .voice import async_speech_engines
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -326,9 +326,13 @@ async def _shared_form(
 ) -> vol.Schema:
     stt = await async_speech_engines(hass, "stt")
     tts = await async_speech_engines(hass, "tts")
+    saved_tts = str(defaults.get(CONF_TTS_ENGINE) or TTS_OFF)
+    tts_ids = {item.get("value") for item in tts}
+    if saved_tts not in tts_ids:
+        saved_tts = TTS_OFF
     voice = {
         CONF_STT_ENGINE: str(defaults.get(CONF_STT_ENGINE) or STT_BROWSER),
-        CONF_TTS_ENGINE: resolved_overlay_tts(hass, str(defaults.get(CONF_TTS_ENGINE) or TTS_OFF)),
+        CONF_TTS_ENGINE: saved_tts,
         CONF_SPEAK_REPLIES: bool(defaults.get(CONF_SPEAK_REPLIES, False)),
     }
     fields: dict = {}

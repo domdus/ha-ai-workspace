@@ -93,7 +93,8 @@ def test_text_to_speech_defaults_on_for_openai_style_agents() -> None:
     assert const.tts_speed_choice(1.0) == "1"
     assert const.tts_speed_choice(1.5) == "1.5"
     assert const.is_placeholder_tts("off")
-    assert const.is_placeholder_tts("tts.google_translate_en_com")
+    assert const.is_placeholder_tts("")
+    assert not const.is_placeholder_tts("tts.google_translate_en_com")
     assert not const.is_placeholder_tts("tts.piper")
 
 

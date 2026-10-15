@@ -86,11 +86,11 @@ def pick_assist_tts(
     conversation_unique_id: str | None = None,
     engines: list[tuple[str, str, str]] | None = None,
 ) -> str | None:
-    """Choose a TTS engine for an AI Workspace Assist pipeline.
+    """Choose a TTS engine for a new AI Workspace Assist pipeline.
 
-    Order: the Text-to-speech setting when it is a real voice, this agent's
-    own engine, any AI Workspace engine, the official OpenAI integration,
-    the default Assist pipeline, then any other HA engine.
+    Order: an explicit setting (including Google Translate), this agent's own
+    engine, any AI Workspace engine, the official OpenAI integration, the
+    default Assist pipeline, then any other HA engine.
     """
     chosen = str(setting or "").strip()
     if chosen and not is_placeholder_tts(chosen):
@@ -311,15 +311,37 @@ def _existing_engine(entity_id: str, engines: list[tuple[str, str, str]]) -> str
     return chosen
 
 
+def _keep_pipeline_engine(entity_id: str | None, engines: list[tuple[str, str, str]]) -> str | None:
+    """Keep a pipeline engine the user set, or None if that entity is gone."""
+    kept = _existing_engine(str(entity_id or ""), engines)
+    return kept or None
+
+
 def _settings(hass: HomeAssistant, entity_id: str, name: str, existing: Any = None) -> dict[str, Any]:
     language = str(getattr(existing, "language", None) or "").strip() or _language(hass)
     conversation_language = (
         str(getattr(existing, "conversation_language", None) or "").strip() or language
     )
-    settings = (hass.data.get(DOMAIN) or {}).get("settings")
-    preferred = _preferred_voice(hass, entity_id)
     engines = _stt_engines(hass)
     tts_engines = _tts_engines(hass)
+    if existing is not None:
+        stt = _keep_pipeline_engine(getattr(existing, "stt_engine", None), engines)
+        tts = _keep_pipeline_engine(getattr(existing, "tts_engine", None), tts_engines)
+        return {
+            "conversation_engine": entity_id,
+            "conversation_language": conversation_language,
+            "language": language,
+            "name": name,
+            "wake_word_entity": getattr(existing, "wake_word_entity", None),
+            "wake_word_id": getattr(existing, "wake_word_id", None),
+            "prefer_local_intents": bool(getattr(existing, "prefer_local_intents", False)),
+            "stt_engine": stt,
+            "stt_language": (getattr(existing, "stt_language", None) or None) if stt else None,
+            "tts_engine": tts,
+            "tts_language": (getattr(existing, "tts_language", None) or None) if tts else None,
+            "tts_voice": (getattr(existing, "tts_voice", None) or None) if tts else None,
+        }
+    preferred = _preferred_voice(hass, entity_id)
     unique_id = _conversation_unique_id(hass, entity_id)
     fallback_stt = pick_assist_stt(
         setting="",
@@ -333,20 +355,14 @@ def _settings(hass: HomeAssistant, entity_id: str, name: str, existing: Any = No
         conversation_unique_id=unique_id,
         engines=tts_engines,
     )
-    tts_setting = _existing_engine(str(getattr(settings, "tts_engine", "") or ""), tts_engines)
-    chosen_tts = (
-        tts_setting
-        if tts_setting and not is_placeholder_tts(tts_setting)
-        else fallback_tts
-    )
     voice = resolve_pipeline_voice(
-        _existing_engine(str(getattr(settings, "stt_engine", "") or ""), engines),
-        tts_setting,
+        "",
+        "",
         language=language,
         fallback_stt=fallback_stt,
         fallback_stt_language=_stt_language_for(fallback_stt, language, engines),
         fallback_tts=fallback_tts,
-        engine_tts_voice=_workspace_tts_voice(hass, str(chosen_tts or "")),
+        engine_tts_voice=_workspace_tts_voice(hass, str(fallback_tts or "")),
         **preferred,
     )
     tts_engine = voice.get("tts_engine")
@@ -445,7 +461,7 @@ async def async_prune_voice_entities(
 
 
 async def async_refresh_assist_pipelines(hass: HomeAssistant) -> None:
-    """Re-apply STT/TTS onto every AI Workspace Assist pipeline."""
+    """Refresh AI Workspace Assist pipelines without overwriting STT/TTS the user set."""
     try:
         from homeassistant.helpers import entity_registry as er
     except Exception:
