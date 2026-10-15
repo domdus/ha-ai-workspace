@@ -41,7 +41,13 @@ from .const import (
 )
 from .coolver import CoolverClient
 from .mcp_client import McpError, McpHttpClient
-from .mcp_config import public_tool_names, with_mcp_auth
+from .mcp_config import (
+    OPENAI_TOOL_NAME_MAX,
+    is_local_hass_mcp_url,
+    openai_tool_name_errors,
+    public_tool_names,
+    with_mcp_auth,
+)
 from .mcp_resolve import ha_hosts, hass_mcp_server_url
 from .models import ProviderInfo, Settings
 from .redact import redact
@@ -232,18 +238,28 @@ class McpBundle:
 
     def finish(self) -> None:
         self._routes = public_tool_names(self._groups)
+        lookup = {route: name for name, route in self._routes.items()}
         merged: list[dict] = []
+        truncated = 0
         for server, tools in self._pending:
             for tool in tools:
                 raw = str(tool.get("name") or "")
-                public = next((name for name, route in self._routes.items() if route == (server, raw)), raw)
+                public = lookup.get((server, raw), raw)
                 copied = dict(tool)
                 copied["name"] = public
                 if public != raw:
                     note = f"From {server}. "
                     copied["description"] = note + str(copied.get("description") or "")
+                if len(raw) > OPENAI_TOOL_NAME_MAX:
+                    truncated += 1
                 merged.append(copied)
         self.tools = merged
+        if truncated:
+            logger.info("MCP tools truncated to the OpenAI %s-character name limit: %s", OPENAI_TOOL_NAME_MAX, truncated)
+
+    def original_name(self, name: str) -> str:
+        route = self._routes.get(name)
+        return route[1] if route else name
 
     @property
     def names(self) -> list[str]:
@@ -367,6 +383,17 @@ def _openai_tools(mcp_tools: list[dict]) -> list[dict]:
                     "parameters": tool["inputSchema"],
                 },
             }
+        )
+    bad = openai_tool_name_errors([str((item.get("function") or {}).get("name") or "") for item in out])
+    if bad:
+        logger.error(
+            "OpenAI tool names invalid (max %s characters, [A-Za-z0-9_-]): %s",
+            OPENAI_TOOL_NAME_MAX,
+            ", ".join(bad),
+        )
+        raise McpError(
+            "An MCP tool name is longer than OpenAI allows (64 characters). "
+            "Disable one MCP connection or shorten its title."
         )
     return out
 
@@ -556,7 +583,20 @@ class ApiProvider:
             servers = {"mcp": {"type": "http", "url": hass_mcp_server_url(self.hass)}}
         else:
             servers = {}
-        return with_mcp_auth(servers, access_token=access_token, ha_hosts=ha_hosts(self.hass))
+        signed = with_mcp_auth(servers, access_token=access_token, ha_hosts=ha_hosts(self.hass))
+        return {name: cfg for name, cfg in signed.items() if not self._skip_unloaded_hass_mcp(name, cfg)}
+
+    def _skip_unloaded_hass_mcp(self, name: str, cfg: dict[str, Any]) -> bool:
+        """Built-in /api/mcp is gone when the mcp_server integration is not loaded."""
+        if self.hass is None:
+            return False
+        url = str((cfg or {}).get("url") or "")
+        if not is_local_hass_mcp_url(url, ha_hosts(self.hass)):
+            return False
+        if "mcp_server" in self.hass.config.components:
+            return False
+        logger.info("MCP connection %s skipped: Home Assistant MCP Server is not loaded", name)
+        return True
 
     def _server_kind(self, name: str, admin: bool) -> str:
         if name == "mcp":
@@ -650,6 +690,8 @@ class ApiProvider:
             len(bundle.tools),
             int(self.settings.low_token),
         )
+        if bundle.tools:
+            logger.debug("MCP OpenAI tool names: %s", ", ".join(tool["name"] for tool in bundle.tools))
         loop = self._anthropic if self.settings.api_provider == API_ANTHROPIC else self._openai
         force = bool(force_tools) and self.settings.check_house and not pictures and not self.settings.low_token
         try:
@@ -760,7 +802,7 @@ class ApiProvider:
                 for call in calls:
                     fn = call.get("function") or {}
                     name = str(fn.get("name") or "tool")
-                    label = _tool_label(name)
+                    label = _tool_label(mcp.original_name(name))
                     yield {"type": "tool", "name": name, "phase": "start", "text": f"Calling {label}..."}
                     try:
                         args = json.loads(fn.get("arguments") or "{}")
@@ -899,7 +941,7 @@ class ApiProvider:
                 results = []
                 for block in uses:
                     name = str(block.get("name") or "tool")
-                    label = _tool_label(name)
+                    label = _tool_label(mcp.original_name(name))
                     yield {"type": "tool", "name": name, "phase": "start", "text": f"Calling {label}..."}
                     args = block.get("input") if isinstance(block.get("input"), dict) else {}
                     try:

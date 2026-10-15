@@ -64,7 +64,14 @@ def _merged(entry: ConfigEntry) -> dict:
 
 
 def _disabled_subentries(hass: HomeAssistant, entry: ConfigEntry) -> set[str]:
-    """Rows whose service device the user disabled."""
+    """Rows whose service device the user disabled.
+
+    Reloads from `_listen_device_disable` when `disabled_by` changes, then
+    `mcp_rows()` drops those subentries so their tools never reach the model.
+    Unloading Home Assistant's MCP Server integration is a different path:
+    the subentry stays, and the API provider skips local `/api/mcp` until
+    `mcp_server` is loaded again.
+    """
     registry = dr.async_get(hass)
     return {
         device.config_subentry_id

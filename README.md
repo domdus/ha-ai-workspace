@@ -222,7 +222,7 @@ AI Workspace is one integration entry with two kinds of rows:
 - **Connection:** one row per MCP server. The first one is created during setup; **Add connection** adds more.
 - **Agent:** one row per Cursor, OpenAI, Claude, Gemini, OpenRouter, Ollama, Azure, or other provider. **Add agent** adds more.
 
-Each row has its own device. Disable a device to switch off one MCP connection or one agent without deleting it.
+Each row has its own device. Disable a device to switch off one MCP connection or one agent without deleting it. Two connections that share a tool name get a short prefix (`ha__…`, `hamcp__…`); names sent to OpenAI stay at most 64 characters. Turning off **All LLM APIs** or unloading **MCP Server** hides the built-in `/api/mcp` tools even if the connection row is still there — that is not the same as disabling the AI Workspace device.
 
 ## System Prompt
 
@@ -313,6 +313,8 @@ Cloud AI and Ollama agents send the system prompt and the tool list of every ena
 - **"Set RUNTIME_TOKEN on the runtime and the same token on AI Workspace."** The runtime has no token and listens beyond loopback. Without `HOST: "127.0.0.1"` it listens on all addresses. Either set `HOST: "127.0.0.1"` (host network), or set `RUNTIME_TOKEN` and put the same value in **Configure → Runtime token**.
 - **The agent invents answers instead of checking.** Check that **Always check the house first** is on for that agent. It makes the model call a tool first for every message that is not a greeting or thanks. Some providers and small local models do not honor a forced tool call. Use a model with reliable tool calling (for example GPT-4.1 mini, Claude Sonnet, Gemini 2.5, or Composer) and check that the MCP connection's device is enabled.
 - **Built-in MCP Server tools are missing in Assist.** That server needs a login, and a voice satellite has none. Set a long-lived token on the connection (see [Privacy and security](#privacy-and-security)).
+- **OpenAI rejects `function.name`.** Names over 64 characters are shortened with a stable hash. Two MCP connections that share a tool get a short prefix. Disable a connection's device to drop its tools. Turning off **All LLM APIs** is not the same as disabling that device; the built-in `/api/mcp` tools are omitted only while **MCP Server** is unloaded.
+- **OpenAI TTS 429 `credit_balance_exhausted`.** The OpenAI account is out of credit. That is separate from MCP tool names.
 - **The microphone is greyed out.** Open Home Assistant over https:// (Nabu Casa or a reverse proxy) or on localhost.
 - **More detail:** add this to `configuration.yaml` and restart, then check **Settings → System → Logs**:
   ```yaml

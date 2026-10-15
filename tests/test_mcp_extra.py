@@ -45,6 +45,7 @@ def test_reserved_name_does_not_replace_the_home_assistant_server():
 def test_tool_names_stay_plain_until_they_clash():
     mcp = _load()
     routes = mcp.public_tool_names([("home-assistant", ["list"]), ("directus", ["list", "read"])])
-    assert routes["home-assistant__list"] == ("home-assistant", "list")
+    assert routes["ha__list"] == ("home-assistant", "list")
     assert routes["directus__list"] == ("directus", "list")
     assert routes["read"] == ("directus", "read")
+    assert all(len(name) <= mcp.OPENAI_TOOL_NAME_MAX for name in routes)
