@@ -8,23 +8,44 @@ import logging
 import os
 import time
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from homeassistant.config import AUTOMATION_CONFIG_PATH, SCENE_CONFIG_PATH, SCRIPT_CONFIG_PATH
 from homeassistant.const import SERVICE_RELOAD
-from homeassistant.core import HomeAssistant
+from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util.file import write_utf8_file_atomic
 from homeassistant.util.yaml import dump, load_yaml
 
-from .activity import Change, classify, describe_index, index_items, summary, tool_succeeded, watches_config
+from .activity import (
+    Change,
+    changed_index_keys,
+    classify,
+    dashboard_args,
+    dashboard_id_from_args,
+    dashboard_store_id,
+    describe_index,
+    entity_ids_from_args,
+    index_items,
+    looks_like_config_write,
+    summary,
+    tool_succeeded,
+    watches_config,
+    yaml_kind_from_args,
+)
 from .const import DOMAIN
 from .store import Store
 
 logger = logging.getLogger(__name__)
 
 _PENDING_TTL = 600
+_EVENT_LOVELACE = "lovelace_updated"
+_EVENT_ENTITY_REGISTRY = "entity_registry_updated"
+_EVENT_AUTOMATION_RELOADED = "automation_reloaded"
+_EVENT_SCRIPT_RELOADED = "script_reloaded"
+_EVENT_SCENE_RELOADED = "scene_reloaded"
+_MISSING = object()
 _YAML = {
     "automation": AUTOMATION_CONFIG_PATH,
     "script": SCRIPT_CONFIG_PATH,
@@ -48,6 +69,11 @@ class Pending:
     session_id: str
     chat: str
     at: float
+    events: list[tuple] = field(default_factory=list)
+    unsubs: list = field(default_factory=list)
+    dashboard_docs: dict[str, dict[str, Any]] = field(default_factory=dict)
+    entity_docs: dict[str, dict[str, Any]] = field(default_factory=dict)
+    yaml_docs: dict[str, dict[str, Any]] = field(default_factory=dict)
 
 
 def _pending(hass: HomeAssistant) -> dict[str, Pending]:
@@ -62,7 +88,50 @@ def _pending(hass: HomeAssistant) -> dict[str, Pending]:
 def _drop_old(pending: dict[str, Pending]) -> None:
     cutoff = time.monotonic() - _PENDING_TTL
     for key in [item for item, row in pending.items() if row.at < cutoff]:
-        pending.pop(key, None)
+        _unsub(pending.pop(key))
+
+
+def _unsub(row: Pending | None) -> None:
+    if row is None:
+        return
+    for unsub in row.unsubs:
+        try:
+            unsub()
+        except Exception:
+            logger.debug("activity listener unsubscribe failed", exc_info=True)
+    row.unsubs.clear()
+
+
+def _listen(hass: HomeAssistant, row: Pending) -> None:
+    @callback
+    def on_lovelace(event: Event) -> None:
+        data = event.data if isinstance(event.data, dict) else {}
+        row.events.append(("dashboard", data.get("url_path")))
+
+    @callback
+    def on_entity(event: Event) -> None:
+        data = event.data if isinstance(event.data, dict) else {}
+        entity_id = data.get("entity_id") or data.get("old_entity_id")
+        row.events.append(("entity", entity_id, str(data.get("action") or "update")))
+
+    @callback
+    def on_yaml_reload(event: Event) -> None:
+        if event.event_type == _EVENT_SCRIPT_RELOADED:
+            kind = "script"
+        elif event.event_type == _EVENT_SCENE_RELOADED:
+            kind = "scene"
+        else:
+            kind = "automation"
+        data = event.data if isinstance(event.data, dict) else {}
+        row.events.append(("yaml", kind, data.get("id") or data.get("entity_id")))
+
+    row.unsubs = [
+        hass.bus.async_listen(_EVENT_LOVELACE, on_lovelace),
+        hass.bus.async_listen(_EVENT_ENTITY_REGISTRY, on_entity),
+        hass.bus.async_listen(_EVENT_AUTOMATION_RELOADED, on_yaml_reload),
+        hass.bus.async_listen(_EVENT_SCRIPT_RELOADED, on_yaml_reload),
+        hass.bus.async_listen(_EVENT_SCENE_RELOADED, on_yaml_reload),
+    ]
 
 
 async def track_tool(
@@ -113,13 +182,20 @@ async def prepare(
     watch = None
     document = None
     text = ""
+    dashboard_docs: dict[str, dict[str, Any]] = {}
+    entity_docs: dict[str, dict[str, Any]] = {}
+    yaml_docs: dict[str, dict[str, Any]] = {}
     if change is None:
-        if not watches_config(tool):
+        if not watches_config(tool) and not looks_like_config_write(tool, args):
             return None
         watch = await collect_index(hass)
     else:
+        if change.kind == "dashboard":
+            dashboard_docs = await _snapshot_all_dashboards(hass)
         if change.action != "create":
             document = await snapshot(hass, change)
+            if document is None and change.kind == "dashboard":
+                document = _pick_dashboard_doc(dashboard_docs, change.item_id)
         if document is None and change.action == "update":
             change = Change(
                 kind=change.kind,
@@ -135,10 +211,54 @@ async def prepare(
         text = summary(change, found)
         if change.action != "create" and document is None:
             document = None
+    want_dashboards = (change is not None and change.kind == "dashboard") or dashboard_args(args)
+    if (want_dashboards or watch is not None) and not dashboard_docs:
+        dashboard_docs = await _snapshot_all_dashboards(hass)
+    if document is None and dashboard_docs and (change is None or change.kind == "dashboard"):
+        document = _pick_dashboard_doc(dashboard_docs, change.item_id if change else dashboard_id_from_args(args))
+        if isinstance(document, dict):
+            text = summary(
+                Change(
+                    kind="dashboard",
+                    action="update",
+                    item_id=str(document.get("id") or ""),
+                    label=str(document.get("label") or ""),
+                    domain="lovelace",
+                ),
+                str(document.get("label") or ""),
+            )
+    ids = entity_ids_from_args(args)
+    if change is not None and change.kind == "entity" and change.item_id and change.item_id not in ids:
+        ids = [change.item_id, *ids]
+    for entity_id in ids:
+        snap = _snapshot_entity(hass, Change(kind="entity", action="update", item_id=entity_id, label=""))
+        if snap:
+            entity_docs[entity_id] = snap
+            if document is None and change is not None and change.kind == "entity":
+                document = snap
+    yaml_kind = change.kind if change is not None and change.kind in _YAML else yaml_kind_from_args(args)
+    if yaml_kind:
+        if isinstance(document, dict) and document.get("kind") == yaml_kind:
+            yaml_docs[_yaml_doc_key(document)] = document
+        else:
+            yaml_docs = await _snapshot_yaml_docs(hass, (yaml_kind,))
+            if document is None:
+                document = _pick_yaml_doc(yaml_docs, yaml_kind, change.item_id if change else "")
+                if isinstance(document, dict):
+                    text = summary(
+                        Change(
+                            kind=yaml_kind,
+                            action="update",
+                            item_id=str(document.get("id") or ""),
+                            label=str(document.get("label") or ""),
+                            domain=yaml_kind,
+                        ),
+                        str(document.get("label") or ""),
+                    )
     token = uuid.uuid4().hex
     pending = _pending(hass)
     _drop_old(pending)
-    pending[token] = Pending(
+    row = Pending(
         user_id=user_id,
         user_name=user_name or user_id,
         agent=agent or "Agent",
@@ -149,7 +269,12 @@ async def prepare(
         session_id=str(session_id or ""),
         chat=_session_title(hass, session_id),
         at=time.monotonic(),
+        dashboard_docs=dashboard_docs,
+        entity_docs=entity_docs,
+        yaml_docs=yaml_docs,
     )
+    pending[token] = row
+    _listen(hass, row)
     return token
 
 
@@ -166,7 +291,18 @@ def _saved_body(document: dict[str, Any]) -> object:
         return document.get("config")
     return {
         key: document.get(key)
-        for key in ("entity_id", "name", "icon", "area_id", "disabled_by", "hidden_by", "aliases", "labels", "categories")
+        for key in (
+            "entity_id",
+            "name",
+            "icon",
+            "area_id",
+            "disabled_by",
+            "hidden_by",
+            "aliases",
+            "labels",
+            "categories",
+            "device_class",
+        )
     }
 
 
@@ -191,40 +327,181 @@ async def _document_changed(hass: HomeAssistant, document: dict[str, Any]) -> bo
     return not _same_body(_saved_body(document), _saved_body(current))
 
 
+def _pick_dashboard_doc(docs: dict[str, dict[str, Any]], item_id: str | None) -> dict[str, Any] | None:
+    store_id = dashboard_store_id(item_id)
+    if store_id in docs:
+        return docs[store_id]
+    for alt in (store_id.replace("-", "_"), store_id.replace("_", "-")):
+        if alt in docs:
+            return docs[alt]
+    if len(docs) == 1:
+        return next(iter(docs.values()))
+    return None
+
+
+def _document_for_index_keys(pending: Pending, keys: list[str]) -> dict[str, Any] | None:
+    dash: list[dict[str, Any]] = []
+    ents: list[dict[str, Any]] = []
+    yaml_docs: list[dict[str, Any]] = []
+    for key in keys:
+        kind, _, item_id = key.partition(":")
+        if kind == "dashboard":
+            found = _pick_dashboard_doc(pending.dashboard_docs, item_id)
+            if found:
+                dash.append(found)
+        elif kind == "entity":
+            found = pending.entity_docs.get(item_id)
+            if found:
+                ents.append(found)
+        elif kind in _YAML:
+            found = _pick_yaml_doc(pending.yaml_docs, kind, item_id)
+            if found:
+                yaml_docs.append(found)
+    if len(yaml_docs) == 1:
+        return yaml_docs[0]
+    if len(dash) == 1:
+        return dash[0]
+    if len(ents) == 1:
+        return ents[0]
+    return None
+
+
+def _summary_from_events(pending: Pending) -> str:
+    for item in pending.events:
+        if item[0] == "yaml":
+            kind = str(item[1] or "automation")
+            doc = _pick_yaml_doc(pending.yaml_docs, kind, item[2] if len(item) > 2 else "")
+            label = str((doc or {}).get("label") or item[2] or kind)
+            return f"Updated {kind} {label}"
+        if item[0] == "dashboard":
+            store_id = dashboard_store_id(item[1])
+            doc = _pick_dashboard_doc(pending.dashboard_docs, store_id)
+            label = str((doc or {}).get("label") or store_id or "Overview")
+            return f"Updated dashboard {label}"
+        if item[0] == "entity":
+            entity_id = str(item[1] or "")
+            doc = pending.entity_docs.get(entity_id)
+            label = str((doc or {}).get("label") or entity_id)
+            action = item[2] if len(item) > 2 else "update"
+            if action == "remove":
+                return f"Deleted entity {label}"
+            if action == "create":
+                return f"Created entity {label}"
+            return f"Updated entity {label}"
+    return ""
+
+
+async def _apply_events(hass: HomeAssistant, pending: Pending) -> tuple[dict[str, Any] | None, str]:
+    dash_path: object = _MISSING
+    entity_id = None
+    entity_action = "update"
+    yaml_kind = None
+    yaml_id = None
+    for item in pending.events:
+        if item[0] == "yaml" and yaml_kind is None:
+            yaml_kind = str(item[1] or "automation")
+            yaml_id = item[2] if len(item) > 2 else None
+        elif item[0] == "dashboard" and dash_path is _MISSING:
+            dash_path = item[1]
+        elif item[0] == "entity" and entity_id is None:
+            entity_id = item[1]
+            entity_action = str(item[2] if len(item) > 2 else "update")
+    if yaml_kind:
+        before = _pick_yaml_doc(pending.yaml_docs, yaml_kind, yaml_id)
+        if before is None and isinstance(pending.document, dict) and pending.document.get("kind") == yaml_kind:
+            before = pending.document
+        label = str((before or {}).get("label") or yaml_id or yaml_kind)
+        text = summary(
+            Change(kind=yaml_kind, action="update", item_id=str((before or {}).get("id") or yaml_id or ""), label=label, domain=yaml_kind),
+            label,
+        )
+        return before, text
+    if dash_path is not _MISSING:
+        store_id = dashboard_store_id(dash_path)
+        before = _pick_dashboard_doc(pending.dashboard_docs, store_id)
+        label = str((before or {}).get("label") or store_id or "Overview")
+        action = "update"
+        if before is not None:
+            current = await snapshot(
+                hass,
+                Change(kind="dashboard", action="update", item_id=store_id, label="", domain="lovelace"),
+            )
+            if current is None:
+                action = "delete"
+        text = summary(
+            Change(kind="dashboard", action=action, item_id=store_id, label=label, domain="lovelace"),
+            label,
+        )
+        return before, text
+    domain = str(entity_id or "").split(".", 1)[0]
+    if entity_id and domain in _YAML:
+        before = _pick_yaml_doc(pending.yaml_docs, domain, entity_id)
+        if before is None and isinstance(pending.document, dict) and pending.document.get("kind") == domain:
+            before = pending.document
+        action = "delete" if entity_action == "remove" else ("create" if entity_action == "create" else "update")
+        label = str((before or {}).get("label") or entity_id)
+        text = summary(Change(kind=domain, action=action, item_id=str(entity_id), label=label, domain=domain), label)
+        return before, text
+    if entity_id:
+        before = pending.entity_docs.get(str(entity_id))
+        if before is None and isinstance(pending.document, dict) and pending.document.get("entity_id") == entity_id:
+            before = pending.document
+        action = "delete" if entity_action == "remove" else ("create" if entity_action == "create" else "update")
+        label = str((before or {}).get("label") or entity_id)
+        text = summary(Change(kind="entity", action=action, item_id=str(entity_id), label=label), label)
+        return before, text
+    return None, ""
+
+
 async def commit(hass: HomeAssistant, store: Store, token: str, *, ok: bool) -> None:
     pending = _pending(hass).pop(str(token or ""), None)
     if pending is None:
         return
+    _unsub(pending)
     text = pending.summary
     document = pending.document
+    event_doc, event_text = await _apply_events(hass, pending)
+    if event_text:
+        text = event_text
+    if event_doc is not None:
+        document = event_doc
+    after = None
     if pending.watch is not None:
-        indexed = describe_index(pending.watch, await collect_index(hass))
+        after = await collect_index(hass)
+        indexed = describe_index(pending.watch, after)
         if indexed:
-            text = indexed
-            document = None
-        elif not text:
+            text = event_text or indexed
+            attached = _document_for_index_keys(pending, changed_index_keys(pending.watch, after))
+            if attached is not None:
+                document = attached
+            elif event_doc is None:
+                document = pending.document
+        elif not pending.events and not text:
             return
-        elif not ok:
+        elif not ok and not pending.events:
             logger.info("activity skipped %s ok=false unchanged", pending.tool)
             return
     elif isinstance(document, dict):
         # A description-only or action-alias edit is still a change. Keep it
         # when the document moved, even if the tool result looked like a failure.
         # HA may return from the config API before automations.yaml is flushed.
-        changed = await _document_changed(hass, document)
+        changed = await _document_changed(hass, document) or bool(pending.events)
         if not ok and not changed:
             for delay in (0.3, 0.8):
                 await asyncio.sleep(delay)
                 changed = await _document_changed(hass, document)
-                if changed:
+                if changed or pending.events:
                     break
-        if not ok and not changed:
+        if not ok and not changed and not pending.events:
             logger.info("activity skipped %s ok=false unchanged", pending.tool)
             return
-    elif not ok:
+    elif not ok and not pending.events:
         return
     if not text:
-        return
+        if pending.events:
+            text = event_text or _summary_from_events(pending)
+        else:
+            return
     chat = _session_title(hass, pending.session_id) or pending.chat
     row = await hass.async_add_executor_job(
         store.add_activity,
@@ -260,7 +537,8 @@ async def rollback(hass: HomeAssistant, document: dict[str, Any]) -> None:
 
 async def snapshot(hass: HomeAssistant, change: Change) -> dict[str, Any] | None:
     if change.kind in _YAML:
-        return await hass.async_add_executor_job(_snapshot_yaml, hass, change)
+        file_doc = await hass.async_add_executor_job(_snapshot_yaml, hass, change)
+        return file_doc or _snapshot_live(hass, change)
     if change.kind == "helper":
         return _snapshot_helper(hass, change)
     if change.kind == "entity":
@@ -364,6 +642,149 @@ def _yaml_index(hass: HomeAssistant) -> dict[str, tuple[str, str]]:
     for kind, relative in _YAML.items():
         data = _read_yaml(hass.config.path(relative))
         found.update(index_items(kind, data))
+        for doc in _iter_live_docs(hass, kind):
+            key = f"{kind}:{doc['id']}"
+            if key not in found:
+                found.update(index_items(kind, [{"id": doc["id"], "alias": doc["label"], **doc["item"]}]))
+    return found
+
+
+def _yaml_doc_key(document: dict[str, Any]) -> str:
+    return f"{document.get('kind')}:{document.get('id')}"
+
+
+def _pick_yaml_doc(docs: dict[str, dict[str, Any]], kind: str, item_id: object) -> dict[str, Any] | None:
+    raw = str(item_id or "").strip()
+    for key in (f"{kind}:{raw}", f"{kind}:{raw.split('.', 1)[-1]}" if "." in raw else ""):
+        if key and key in docs:
+            return docs[key]
+    matches = [doc for doc in docs.values() if doc.get("kind") == kind]
+    if len(matches) == 1:
+        return matches[0]
+    prefix = f"{kind}."
+    if raw.startswith(prefix):
+        rest = raw.split(".", 1)[1]
+        for doc in matches:
+            if str(doc.get("id") or "") == rest:
+                return doc
+    return None
+
+
+def _component_entities(hass: HomeAssistant, kind: str) -> list[Any]:
+    components = hass.data.get("entity_components")
+    component = components.get(kind) if isinstance(components, dict) else None
+    entities = getattr(component, "entities", None) if component is not None else None
+    if not entities and kind == "scene":
+        platform = hass.data.get("homeassistant_scene")
+        entities = getattr(platform, "entities", None)
+    if not entities:
+        return []
+    if isinstance(entities, dict):
+        return list(entities.values())
+    return list(entities)
+
+
+def _scene_item(entity: Any) -> dict[str, Any]:
+    cfg = getattr(entity, "scene_config", None)
+    if cfg is None:
+        return {}
+    states = getattr(cfg, "states", None) or {}
+    entities: dict[str, Any] = {}
+    for entity_id, state in states.items() if isinstance(states, dict) else []:
+        if hasattr(state, "state"):
+            body = dict(getattr(state, "attributes", None) or {})
+            body["state"] = state.state
+            entities[str(entity_id)] = body
+        elif isinstance(state, dict):
+            entities[str(entity_id)] = state
+        else:
+            entities[str(entity_id)] = {"state": str(state)}
+    item: dict[str, Any] = {}
+    if getattr(cfg, "id", None):
+        item["id"] = cfg.id
+    if getattr(cfg, "name", None):
+        item["name"] = cfg.name
+    if getattr(cfg, "icon", None):
+        item["icon"] = cfg.icon
+    if entities:
+        item["entities"] = entities
+    return item
+
+
+def _raw_config(entity: Any) -> dict[str, Any]:
+    for key in ("raw_config", "_config", "config"):
+        value = getattr(entity, key, None)
+        if isinstance(value, dict) and value:
+            return dict(value)
+    return _scene_item(entity)
+
+
+def _snapshot_live(hass: HomeAssistant, change: Change) -> dict[str, Any] | None:
+    raw = str(change.item_id or "").strip()
+    item_id = _config_id(hass, change.kind, raw)
+    prefix = f"{change.kind}."
+    for entity in _component_entities(hass, change.kind):
+        entity_id = str(getattr(entity, "entity_id", "") or "")
+        config = _raw_config(entity)
+        state = hass.states.get(entity_id)
+        attr_id = str((state.attributes.get("id") if state is not None else "") or "")
+        config_id = str(config.get("id") or attr_id or "")
+        slug = entity_id.split(".", 1)[-1] if "." in entity_id else entity_id
+        aliases = {entity_id, slug, config_id, attr_id, item_id, raw}
+        if raw.startswith(prefix):
+            aliases.add(raw.split(".", 1)[1])
+        if raw not in aliases and item_id not in aliases:
+            continue
+        if not config:
+            continue
+        stored = config_id or item_id or slug
+        label = str(config.get("alias") or config.get("name") or getattr(entity, "name", None) or stored)
+        return {"kind": change.kind, "id": stored, "label": label, "item": config}
+    return None
+
+
+def _iter_live_docs(hass: HomeAssistant, kind: str) -> list[dict[str, Any]]:
+    found: list[dict[str, Any]] = []
+    for entity in _component_entities(hass, kind):
+        config = _raw_config(entity)
+        if not config:
+            continue
+        entity_id = str(getattr(entity, "entity_id", "") or "")
+        stored = str(config.get("id") or entity_id.split(".", 1)[-1])
+        label = str(config.get("alias") or config.get("name") or getattr(entity, "name", None) or stored)
+        found.append({"kind": kind, "id": stored, "label": label, "item": config})
+    return found
+
+
+async def _snapshot_yaml_docs(hass: HomeAssistant, kinds: tuple[str, ...]) -> dict[str, dict[str, Any]]:
+    found: dict[str, dict[str, Any]] = {}
+
+    def from_files() -> dict[str, dict[str, Any]]:
+        out: dict[str, dict[str, Any]] = {}
+        for kind in kinds:
+            if kind not in _YAML:
+                continue
+            data = _read_yaml(hass.config.path(_YAML[kind]))
+            if kind == "script" and isinstance(data, dict):
+                rows = [{"id": key, **item} if isinstance(item, dict) else {"id": key} for key, item in data.items()]
+            else:
+                rows = data if isinstance(data, list) else []
+            for item in rows:
+                if not isinstance(item, dict):
+                    continue
+                item_id = _yaml_item_id(item) if kind != "script" else str(item.get("id") or "")
+                if not item_id:
+                    continue
+                label = str(item.get("alias") or item.get("name") or item_id)
+                body = {key: value for key, value in item.items() if key != "id"} if kind == "script" else item
+                doc = {"kind": kind, "id": item_id, "label": label, "item": body}
+                out[_yaml_doc_key(doc)] = doc
+        return out
+
+    found.update(await hass.async_add_executor_job(from_files))
+    for kind in kinds:
+        for doc in _iter_live_docs(hass, kind):
+            found.setdefault(_yaml_doc_key(doc), doc)
     return found
 
 
@@ -472,6 +893,7 @@ def _entry_dict(entry) -> dict[str, Any]:
         "platform": entry.platform,
         "unique_id": entry.unique_id,
         "domain": entry.domain,
+        "device_class": getattr(entry, "device_class", None),
     }
 
 
@@ -511,6 +933,8 @@ def _restore_entity(hass: HomeAssistant, document: dict[str, Any]) -> None:
         "labels": set(document.get("labels") or []),
         "categories": dict(document.get("categories") or {}),
     }
+    if "device_class" in document:
+        fields["device_class"] = document.get("device_class")
     saved_id = str(document.get("entity_id") or "")
     if saved_id and saved_id != entity_id:
         fields["new_entity_id"] = saved_id
@@ -518,10 +942,14 @@ def _restore_entity(hass: HomeAssistant, document: dict[str, Any]) -> None:
 
 
 def _dashboard_key(url_path: str) -> str | None:
-    raw = str(url_path or "").strip().strip("/")
-    if raw in {"", "lovelace", "default"}:
-        return None
-    return raw
+    store_id = dashboard_store_id(url_path)
+    return None if store_id == "lovelace" else store_id
+
+
+def _board_store_key(key: object) -> str:
+    if key in (None, "", "lovelace", "default"):
+        return "lovelace"
+    return str(key)
 
 
 def _dashboards(hass: HomeAssistant) -> dict:
@@ -530,35 +958,65 @@ def _dashboards(hass: HomeAssistant) -> dict:
     return boards if isinstance(boards, dict) else {}
 
 
-async def _snapshot_dashboard(hass: HomeAssistant, change: Change) -> dict[str, Any] | None:
-    key = _dashboard_key(change.item_id)
-    board = _dashboards(hass).get(key)
-    if board is None and key is None:
-        board = _dashboards(hass).get("lovelace")
-        key = "lovelace" if board is not None else None
-    if board is None:
-        return None
+def _resolve_board(hass: HomeAssistant, item_id: str) -> tuple[str, Any]:
+    boards = _dashboards(hass)
+    store_id = dashboard_store_id(item_id)
+    if store_id == "lovelace":
+        board = boards.get(None)
+        if board is None:
+            board = boards.get("lovelace")
+        return "lovelace", board
+    board = boards.get(store_id)
+    if board is not None:
+        return store_id, board
+    for alt in (store_id.replace("-", "_"), store_id.replace("_", "-")):
+        if alt in boards:
+            return str(alt), boards[alt]
+    return store_id, None
+
+
+async def _load_board_config(board: Any) -> dict[str, Any] | None:
     try:
         config = await board.async_load(False)
     except Exception:
-        logger.debug("dashboard snapshot skipped for %s", change.item_id, exc_info=True)
+        logger.debug("dashboard async_load skipped", exc_info=True)
         return None
-    if not isinstance(config, dict):
+    return config if isinstance(config, dict) else None
+
+
+async def _snapshot_board(board: Any, stored_key: str, label: str = "") -> dict[str, Any] | None:
+    config = await _load_board_config(board)
+    if config is None:
         return None
     meta = dict(getattr(board, "config", None) or {})
-    label = str(meta.get("title") or change.label or change.item_id or "Overview")
-    stored_key = "lovelace" if key is None else str(key)
-    return {"kind": "dashboard", "id": stored_key, "label": label, "config": config, "meta": meta}
+    title = str(meta.get("title") or label or stored_key or "Overview")
+    return {"kind": "dashboard", "id": stored_key, "label": title, "config": config, "meta": meta}
+
+
+async def _snapshot_all_dashboards(hass: HomeAssistant) -> dict[str, dict[str, Any]]:
+    found: dict[str, dict[str, Any]] = {}
+    for key, board in _dashboards(hass).items():
+        stored = _board_store_key(key)
+        doc = await _snapshot_board(board, stored)
+        if doc:
+            found[stored] = doc
+    return found
+
+
+async def _snapshot_dashboard(hass: HomeAssistant, change: Change) -> dict[str, Any] | None:
+    store_id, board = _resolve_board(hass, change.item_id)
+    if board is None:
+        return None
+    return await _snapshot_board(board, store_id, change.label)
 
 
 async def _dashboard_index(hass: HomeAssistant) -> dict[str, tuple[str, str]]:
     found: dict[str, tuple[str, str]] = {}
     for key, board in _dashboards(hass).items():
-        stored = "lovelace" if key in (None, "") else str(key)
+        stored = _board_store_key(key)
         meta = dict(getattr(board, "config", None) or {})
         label = str(meta.get("title") or stored)
-        data = getattr(board, "_data", None)
-        config = data.get("config") if isinstance(data, dict) else None
+        config = await _load_board_config(board)
         body = config if isinstance(config, dict) else meta
         found.update(index_items("dashboard", [{"id": stored, "title": label, "config": body}], ("title",)))
     return found
@@ -568,11 +1026,7 @@ async def _restore_dashboard(hass: HomeAssistant, document: dict[str, Any]) -> N
     config = document.get("config")
     if not isinstance(config, dict):
         raise ActivityError("The saved dashboard is incomplete.")
-    key = _dashboard_key(str(document.get("id") or ""))
-    boards = _dashboards(hass)
-    board = boards.get(key)
-    if board is None and key is None:
-        board = boards.get("lovelace")
+    _store_id, board = _resolve_board(hass, str(document.get("id") or ""))
     if board is None:
         board = await _recreate_dashboard(hass, str(document.get("id") or ""), document.get("meta") or {})
     try:
@@ -607,6 +1061,11 @@ async def _recreate_dashboard(hass: HomeAssistant, url_path: str, meta: dict) ->
 def _entity_index(hass: HomeAssistant) -> dict[str, tuple[str, str]]:
     rows = []
     for entry in er.async_get(hass).entities.values():
+        aliases = []
+        for alias in getattr(entry, "aliases", None) or []:
+            aliases.append(alias if isinstance(alias, str) else str(getattr(alias, "name", alias)))
+        labels = sorted(str(item) for item in (getattr(entry, "labels", None) or []))
+        categories = {str(key): str(value) for key, value in (getattr(entry, "categories", None) or {}).items()}
         rows.append(
             {
                 "id": entry.entity_id,
@@ -615,6 +1074,10 @@ def _entity_index(hass: HomeAssistant) -> dict[str, tuple[str, str]]:
                 "icon": entry.icon,
                 "disabled_by": getattr(entry.disabled_by, "value", entry.disabled_by),
                 "hidden_by": getattr(entry.hidden_by, "value", entry.hidden_by),
+                "aliases": sorted(aliases),
+                "labels": labels,
+                "categories": categories,
+                "device_class": getattr(entry, "device_class", None),
             }
         )
     return index_items("entity", rows, ("name",))

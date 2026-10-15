@@ -238,7 +238,7 @@ async def _activity_prepare(
 ) -> str:
     who = registry.actor(actor)
     base, token = _activity_target(request)
-    if who is None or not base or not token:
+    if who is None or not base:
         return ""
     name, arguments = tool_call
     payload = {
@@ -248,11 +248,14 @@ async def _activity_prepare(
         "tool": name,
         "arguments": arguments,
     }
+    headers = {"Content-Type": "application/json", "Accept": "application/json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
     try:
         status, _headers, raw = await asyncio.to_thread(
             _forward,
             f"{base}/api/ai_workspace/activity/prepare",
-            {"Authorization": f"Bearer {token}", "Content-Type": "application/json", "Accept": "application/json"},
+            headers,
             json.dumps(payload).encode(),
             "POST",
             8,
@@ -272,18 +275,17 @@ async def _activity_prepare(
 
 async def _activity_commit(request: Request, token: str, *, ok: bool) -> None:
     base, runtime_token = _activity_target(request)
-    if not base or not runtime_token or not token:
+    if not base or not token:
         return
     payload = json.dumps({"token": token, "ok": ok}).encode()
+    headers = {"Content-Type": "application/json", "Accept": "application/json"}
+    if runtime_token:
+        headers["Authorization"] = f"Bearer {runtime_token}"
     try:
         await asyncio.to_thread(
             _forward,
             f"{base}/api/ai_workspace/activity/commit",
-            {
-                "Authorization": f"Bearer {runtime_token}",
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-            },
+            headers,
             payload,
             "POST",
             8,
