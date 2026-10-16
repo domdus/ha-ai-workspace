@@ -26,7 +26,7 @@ See [`docker-compose.runtime.yml`](../docker-compose.runtime.yml) in the repo ro
 
 The compose file uses host networking and binds to `127.0.0.1`, so only this machine reaches port 8090. On loopback the token is optional.
 
-If Home Assistant runs in another container on a bridge network, set `HOST: "0.0.0.0"` and a `RUNTIME_TOKEN` (for example `openssl rand -hex 32`). Put the same value in **AI Workspace → Configure → Runtime token**. Without a token, a runtime that listens beyond loopback refuses every chat.
+If Home Assistant runs in another container on a bridge network, set `HOST: "0.0.0.0"` and a `RUNTIME_TOKEN` (for example `openssl rand -hex 32`). Put the same value in **Cursor agent → Runtime token**. Without a token, a runtime that listens beyond loopback refuses every chat.
 
 Do not publish port 8090 or MCP to the internet. The agent runs here and calls MCP on the LAN.
 

@@ -23,7 +23,7 @@ from .const import (
 )
 from .models import ProviderInfo
 
-MISSING_RUNTIME = "Start the Cursor SDK Runtime and set its URL on AI Workspace."
+MISSING_RUNTIME = "Start the Cursor SDK Runtime and set its URL on the Cursor agent."
 BAD_TOKEN = (
     "The Cursor SDK Runtime refused the token. Set the same Runtime token on the Runtime "
     "and on AI Workspace (Configure)."
@@ -110,12 +110,12 @@ async def async_token_accepted(hass: HomeAssistant, base: str, token: str) -> bo
     return status != 401
 
 
-async def async_resolve_runtime_url(hass: HomeAssistant, configured: str) -> str:
-    if configured:
-        base = configured.rstrip("/")
-        if not await async_probe_runtime(hass, base):
-            _LOGGER.warning("AI Workspace runtime at %s did not answer", base)
-        return base
+def _same_runtime_url(left: str, right: str) -> bool:
+    return str(left or "").strip().rstrip("/") == str(right or "").strip().rstrip("/")
+
+
+async def async_detect_runtime_url(hass: HomeAssistant) -> str:
+    """Return a Runtime URL only when /api/health answered. No compose-name guesses."""
     found = hassio_runtime_url(hass)
     for candidate in (found, HOST_RUNTIME_URL, *COMPOSE_RUNTIME_URLS):
         if not candidate:
@@ -124,8 +124,50 @@ async def async_resolve_runtime_url(hass: HomeAssistant, configured: str) -> str
             continue
         if await async_probe_runtime(hass, candidate):
             _LOGGER.info("AI Workspace runtime using %s", candidate)
-            return candidate
-    return found or ""
+            return candidate.rstrip("/")
+    return ""
+
+
+async def async_resolve_runtime_url(hass: HomeAssistant, configured: str) -> str:
+    configured = str(configured or "").strip().rstrip("/")
+    if configured and await async_probe_runtime(hass, configured):
+        return configured
+    detected = await async_detect_runtime_url(hass)
+    if detected:
+        return detected
+    if configured:
+        _LOGGER.warning("AI Workspace runtime at %s did not answer", configured)
+        return configured
+    return hassio_runtime_url(hass) or ""
+
+
+def runtime_form_placeholders(*, live: bool, auto: bool) -> dict[str, str]:
+    if live:
+        note = "✅ Runtime found."
+    elif auto:
+        note = "Auto-detected Cursor SDK on this machine."
+    else:
+        note = (
+            "Where this Home Assistant reaches the Cursor SDK container. "
+            "Leave empty to auto-detect. The field is filled only when that URL answers. "
+            "Loopback: http://127.0.0.1:8090. Same Docker network: http://cursor-sdk:8090."
+        )
+    return {
+        "runtime_url_mark": " · auto-detected" if auto and live else "",
+        "runtime_url_note": note,
+    }
+
+
+async def async_runtime_form_url(hass: HomeAssistant, saved: str) -> tuple[str, bool, bool]:
+    """URL to show on the Cursor form: fill from detection only when health answers."""
+    saved = str(saved or "").strip().rstrip("/")
+    detected = await async_detect_runtime_url(hass)
+    saved_live = bool(saved) and await async_probe_runtime(hass, saved)
+    if saved_live:
+        return saved, True, bool(detected) and _same_runtime_url(saved, detected)
+    if detected:
+        return detected, True, True
+    return saved, False, False
 
 
 def _entry_value(entry, key: str) -> str:

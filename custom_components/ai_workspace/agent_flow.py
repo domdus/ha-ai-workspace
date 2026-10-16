@@ -36,6 +36,7 @@ from .const import (
     CONF_LOW_TOKEN,
     CONF_MODE,
     CONF_MODEL,
+    CONF_RUNTIME_TOKEN,
     CONF_RUNTIME_URL,
     DEFAULT_AZURE_API_VERSION,
     EFFORT_DEFAULT,
@@ -61,7 +62,16 @@ from .const import (
     tts_model_choices,
     submitted_model,
 )
-from .discovery import async_resolve_runtime_url, async_runtime_health
+from .discovery import (
+    async_detect_runtime_url,
+    async_probe_runtime,
+    async_resolve_runtime_url,
+    async_runtime_form_url,
+    async_runtime_health,
+    runtime_form_placeholders,
+)
+
+_URL = TextSelector(TextSelectorConfig(type=TextSelectorType.URL))
 
 _PASSWORD = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
 _DETAIL = {
@@ -179,6 +189,8 @@ def _fields_schema(step: str, current: dict, borrows: list[dict[str, str]], *, n
     provider = str(current.get(CONF_API_PROVIDER) or MODE_CURSOR)
     fields: dict = {}
     if step == "cursor":
+        fields[vol.Optional(CONF_RUNTIME_URL, default=str(current.get(CONF_RUNTIME_URL) or ""))] = _URL
+        fields[vol.Optional(CONF_RUNTIME_TOKEN, default="")] = _PASSWORD
         fields[vol.Optional(CONF_CURSOR_API_KEY, default="")] = _PASSWORD
         fields.update(_model_field(MODE_CURSOR, current))
     elif step == "ollama":
@@ -275,16 +287,31 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
     async def async_step_provider_compatible(self, user_input=None):
         return await self._async_step_fields("compatible", user_input)
 
-    async def _cursor_errors(self, cursor_key: str) -> dict[str, str]:
-        entry = self._get_entry()
-        configured = str({**entry.data, **entry.options}.get(CONF_RUNTIME_URL) or "").strip()
-        runtime = await async_resolve_runtime_url(self.hass, configured)
+    async def _cursor_errors(self, cursor_key: str, runtime_url: str) -> dict[str, str]:
+        runtime = await async_resolve_runtime_url(self.hass, runtime_url)
         health = await async_runtime_health(self.hass, runtime) if runtime else None
         if health is None:
-            return {"base": "no_runtime"}
+            return {CONF_RUNTIME_URL: "no_runtime"}
         if not cursor_key and not health.get("cursor"):
             return {CONF_CURSOR_API_KEY: "required"}
         return {}
+
+    async def _store_runtime(self, submitted_url: str, submitted_token: str) -> None:
+        entry = self._get_entry()
+        detected = await async_detect_runtime_url(self.hass)
+        url = str(submitted_url or "").strip().rstrip("/")
+        if not url or (detected and url.rstrip("/") == detected.rstrip("/")):
+            url = ""
+        token = str(submitted_token or "").strip()
+        current = {**entry.data, **entry.options}
+        if not token:
+            token = str(current.get(CONF_RUNTIME_TOKEN) or "")
+        options = dict(entry.options)
+        if str(options.get(CONF_RUNTIME_URL) or "") == url and str(options.get(CONF_RUNTIME_TOKEN) or "") == token:
+            return
+        options[CONF_RUNTIME_URL] = url
+        options[CONF_RUNTIME_TOKEN] = token
+        self.hass.config_entries.async_update_entry(entry, options=options)
 
     async def _key_errors(self, provider: str, key: str, base: str, version: str) -> dict[str, str]:
         from .api_provider import async_check_api_key
@@ -317,7 +344,9 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             if borrowed and borrowed.get("provider") == provider and not model:
                 model = str(borrowed.get("model") or "").strip()
             if provider == MODE_CURSOR:
-                errors = await self._cursor_errors(cursor_key)
+                errors = await self._cursor_errors(
+                    cursor_key, str(merged.get(CONF_RUNTIME_URL) or "")
+                )
             elif provider == API_OLLAMA:
                 if not str(merged.get(CONF_API_BASE) or "").strip():
                     errors[CONF_API_BASE] = "required"
@@ -336,6 +365,11 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             if not errors and provider != MODE_CURSOR:
                 errors = await self._key_errors(provider, key, base, version)
             if not errors:
+                if provider == MODE_CURSOR:
+                    await self._store_runtime(
+                        str(merged.get(CONF_RUNTIME_URL) or ""),
+                        str(user_input.get(CONF_RUNTIME_TOKEN) or ""),
+                    )
                 effort = str(merged.get(CONF_EFFORT) or "")
                 data = {
                     CONF_MODE: MODE_CURSOR if provider == MODE_CURSOR else MODE_API,
@@ -371,11 +405,25 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                 return self._finish(provider, data)
             self._current = merged
         example = "https://YOUR-RESOURCE.openai.azure.com" if step == "azure" else default_api_base(API_OLLAMA)
+        placeholders = {"example_url": example}
+        schema_current = dict(self._current)
+        if step == "cursor":
+            entry = self._get_entry()
+            saved = str({**entry.data, **entry.options}.get(CONF_RUNTIME_URL) or "")
+            typed = str((user_input or {}).get(CONF_RUNTIME_URL) or "")
+            if typed:
+                shown = typed.strip().rstrip("/")
+                live = await async_probe_runtime(self.hass, shown)
+                auto = False
+            else:
+                shown, live, auto = await async_runtime_form_url(self.hass, saved)
+            schema_current[CONF_RUNTIME_URL] = shown
+            placeholders.update(runtime_form_placeholders(live=live, auto=auto))
         return self.async_show_form(
             step_id=f"provider_{step}",
-            data_schema=_fields_schema(step, self._current, borrows, new=not self._editing),
+            data_schema=_fields_schema(step, schema_current, borrows, new=not self._editing),
             errors=errors,
-            description_placeholders={"example_url": example},
+            description_placeholders=placeholders,
         )
 
     def _finish(self, provider: str, data: dict[str, Any]):

@@ -16,6 +16,7 @@
 - Overlay Text-to-speech keeps the engine you pick (including Google Translate or Off); it no longer jumps to OpenAI
 - Existing Assist pipelines keep their STT/TTS; new pipelines still get our engines on first create. A removed engine becomes none instead of stealing another pipeline's voice
 - OpenAI TTS 429 `credit_balance_exhausted` is a provider quota issue, not this naming fix
+- Cursor Runtime URL and token live on the Cursor agent form; the URL is filled only when `/api/health` answers, not from a compose hostname guess
 
 ## 1.1.0
 

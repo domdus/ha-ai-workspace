@@ -53,7 +53,6 @@ from .const import (
     TTS_OFF,
     mcp_kind_options,
 )
-from .discovery import async_probe_runtime, async_resolve_runtime_url
 from .mcp_config import server_slug
 from .mcp_flow import McpConnectionFlow
 from .mcp_resolve import async_detect_mcp_kinds, async_resolve_mcp_url, default_mcp_url, mcp_kind_of
@@ -88,10 +87,6 @@ _MCP_URL_NOTE = (
     "Leave empty to auto-detect. HA-MCP is often a webhook under /api/webhook/… on this "
     "Home Assistant (port 8123), or http://127.0.0.1:8086/mcp. Built-in MCP is /api/mcp."
 )
-_RUNTIME_URL_NOTE = (
-    "Where this Home Assistant reaches the Cursor SDK container. Leave empty to auto-detect. "
-    "Loopback publish: http://127.0.0.1:8090. Same Docker network: http://cursor-sdk:8090."
-)
 
 
 def _same_url(left: str, right: str) -> bool:
@@ -118,24 +113,10 @@ def _mcp_url_note(url: str, auto: bool) -> str:
     return "Auto-detected MCP URL. Keep this unless you use a different MCP."
 
 
-def _form_placeholders(
-    *,
-    mcp_url: str = "",
-    mcp_auto: bool = False,
-    runtime_auto: bool = False,
-    runtime_live: bool = False,
-) -> dict[str, str]:
-    if runtime_live:
-        runtime_note = "✅ Runtime found."
-    elif runtime_auto:
-        runtime_note = "Auto-detected Cursor SDK on this machine."
-    else:
-        runtime_note = _RUNTIME_URL_NOTE
+def _form_placeholders(*, mcp_url: str = "", mcp_auto: bool = False) -> dict[str, str]:
     return {
         "mcp_url_mark": " · auto-detected" if mcp_auto else "",
         "mcp_url_note": _mcp_url_note(mcp_url, mcp_auto),
-        "runtime_url_mark": " · auto-detected" if runtime_auto else "",
-        "runtime_url_note": runtime_note,
     }
 
 
@@ -182,16 +163,6 @@ def _normalize(user_input: dict, hass: HomeAssistant | None = None) -> dict:
         except (TypeError, ValueError):
             keep = DEFAULT_KEEP_CHATS
         out[CONF_KEEP_CHATS] = max(1, min(keep, 500))
-    return out
-
-
-async def _restore_auto_runtime(hass: HomeAssistant, out: dict) -> dict:
-    """Store an empty Runtime URL when the submitted one is still the auto-detected one."""
-    if CONF_RUNTIME_URL in out:
-        submitted = str(out.get(CONF_RUNTIME_URL) or "").strip()
-        detected = await async_resolve_runtime_url(hass, "")
-        if not submitted or _same_url(submitted, detected):
-            out[CONF_RUNTIME_URL] = ""
     return out
 
 
@@ -248,23 +219,6 @@ async def _prepare_mcp_form(hass: HomeAssistant, current: dict) -> tuple[dict, b
         data[CONF_MCP_URL] = found
     mcp_auto = auto and bool(data.get(CONF_MCP_URL)) and _looks_detected_mcp(str(data.get(CONF_MCP_URL) or ""))
     return data, mcp_auto, kinds
-
-
-async def _with_runtime_placeholders(hass: HomeAssistant, defaults: dict, mcp_auto: bool) -> tuple[dict, dict]:
-    data = dict(defaults)
-    saved = str(data.get(CONF_RUNTIME_URL) or "").strip()
-    detected = await async_resolve_runtime_url(hass, "")
-    auto = not saved or _same_url(saved, detected)
-    url = (detected if auto else saved) or detected
-    if url:
-        data[CONF_RUNTIME_URL] = url
-    live = bool(url) and await async_probe_runtime(hass, url.rstrip("/"))
-    return data, _form_placeholders(
-        mcp_url=str(data.get(CONF_MCP_URL) or ""),
-        mcp_auto=mcp_auto,
-        runtime_auto=auto and bool(url),
-        runtime_live=live,
-    )
 
 
 def _prompt_schema(current: dict) -> vol.Schema:
@@ -345,8 +299,6 @@ async def _shared_form(
     if include_mcp:
         fields[vol.Required(SECTION_MCP)] = section(_mcp_schema(defaults, hass, kinds or []), {"collapsed": False})
     fields[vol.Required(SECTION_PROMPT)] = section(_prompt_schema(defaults), {"collapsed": True})
-    fields[vol.Optional(CONF_RUNTIME_URL, default=str(defaults.get(CONF_RUNTIME_URL) or ""))] = _URL_SELECTOR
-    fields[vol.Optional(CONF_RUNTIME_TOKEN, default="")] = _TOKEN_SELECTOR
     fields[vol.Optional(SECTION_VOICE, default=voice)] = _SideBySide(_voice_schema(voice, stt, tts))
     fields.update(_ui_schema(defaults))
     return vol.Schema(fields, extra=vol.ALLOW_EXTRA)
@@ -408,7 +360,7 @@ class AiWorkspaceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         saved: dict = {}
         if user_input is not None:
-            flat = await _restore_auto_runtime(self.hass, _normalize(_flatten(user_input), self.hass))
+            flat = _normalize(_flatten(user_input), self.hass)
             errors = _mcp_errors(flat)
             if not errors:
                 flat = await _restore_auto_mcp(self.hass, flat)
@@ -421,7 +373,10 @@ class AiWorkspaceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
             saved = flat
         defaults, mcp_auto, kinds = await _prepare_mcp_form(self.hass, saved)
-        defaults, placeholders = await _with_runtime_placeholders(self.hass, defaults, mcp_auto)
+        placeholders = _form_placeholders(
+            mcp_url=str(defaults.get(CONF_MCP_URL) or ""),
+            mcp_auto=mcp_auto,
+        )
         return self.async_show_form(
             step_id="user",
             data_schema=await _shared_form(self.hass, defaults, kinds, include_mcp=True),
@@ -450,16 +405,12 @@ class AiWorkspaceOptionsFlow(config_entries.OptionsFlow):
     async def async_step_init(self, user_input=None):
         current = self._current()
         if user_input is not None:
-            flat = await _restore_auto_runtime(self.hass, _flatten(user_input))
-            if not str(flat.get(CONF_RUNTIME_TOKEN) or "").strip():
-                flat[CONF_RUNTIME_TOKEN] = current.get(CONF_RUNTIME_TOKEN, "")
+            flat = _flatten(user_input)
             if CONF_KEEP_CHATS in flat:
                 flat = _normalize(flat, self.hass)
             merged = {**current, **flat}
             return self.async_create_entry(title="", data={key: merged.get(key) for key in _SHARED_KEYS})
-        defaults, placeholders = await _with_runtime_placeholders(self.hass, current, False)
         return self.async_show_form(
             step_id="init",
-            data_schema=await _shared_form(self.hass, defaults, None, include_mcp=False),
-            description_placeholders=placeholders,
+            data_schema=await _shared_form(self.hass, current, None, include_mcp=False),
         )

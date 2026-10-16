@@ -190,7 +190,7 @@ docker compose -f docker-compose.runtime.yml up -d --build
 The integration and the runtime share a token, and every chat request carries it.
 
 - **App (Home Assistant OS):** nothing to do. The integration generates the token, stores it on the app, and restarts the app once.
-- **Docker:** generate one, for example with `openssl rand -hex 32`. Put it in `RUNTIME_TOKEN` on the container and in **AI Workspace → Configure → Runtime token**.
+- **Docker:** generate one, for example with `openssl rand -hex 32`. Put it in `RUNTIME_TOKEN` on the container and in **Cursor agent → Runtime token**.
 
 
 
@@ -198,9 +198,9 @@ The integration and the runtime share a token, and every chat request carries it
 
 After the runtime is running: **Settings → Devices & services → Add integration → AI Workspace.**
 
-- **Cursor Runtime URL:** leave empty (it should find `http://127.0.0.1:8090` or the app).
 - **MCP type:** one from [Requirements](#requirements). Leave the MCP URL empty if it shows as detected.
 - Save. Home Assistant then asks for the first agent. Choose **Cursor**.
+- **Cursor Runtime URL:** leave empty unless the form does not show **Runtime found**. It is filled only when this Home Assistant can reach the Runtime (`http://127.0.0.1:8090` or the app). Do not paste a compose hostname that never answered.
 - **Model:** pick one from the list or type an id, for example `composer-2.5`, `grok-4.7`, `gpt-5`, or `claude-sonnet-5-5`. Leave it empty to use `CURSOR_MODEL` from the runtime.
 - Paste the Cursor API key, unless the runtime already has one.
 - Open **AI Workspace** (`/ai-workspace`).
@@ -244,7 +244,7 @@ It does not control Home Assistant edit links. Those rules are added to every me
 | **MCP type**                               | Asked once, when you add AI Workspace: built-in MCP Server, HA-MCP, HA Vibecode Agent, or a custom URL. It becomes the first connection                                             |
 | **MCP URL**                                | Empty uses auto-detect. Paste the HA-MCP webhook or a custom URL only if needed                                                                                                     |
 | **MCP token**                              | Built-in MCP Server: empty uses the login of the person chatting. HA-MCP: usually empty. Vibecode: Agent Key                                                                        |
-| **Cursor Runtime URL** / **Runtime token** | Where the Cursor SDK Runtime listens, and the shared token. See [Runtime token](#runtime-token)                                                                                     |
+| **Cursor Runtime URL** / **Runtime token** | On the **Cursor** agent form, not AI Workspace Configure. Filled only when `/api/health` answers. See [Runtime token](#runtime-token)                                                |
 | **System prompt**                          | See [System Prompt](#system-prompt). Empty uses the built-in prompt                                                                                                                 |
 | **Show floating AI button**                | Turns the button on or off. Bottom-right robot icon. It slides up only when another corner button is on the page                                                                    |
 | **Speech to text**                         | Browser speech, or a Home Assistant engine such as Whisper. The microphone needs https:// or localhost; browsers block it on a plain http:// LAN address                            |
@@ -317,8 +317,8 @@ Cloud AI and Ollama agents send the system prompt and the tool list of every ena
 
 ## Troubleshooting
 
-- **"Runtime token is missing or wrong."** The token on the integration and on the runtime differ. On Docker, copy `RUNTIME_TOKEN` into **Configure → Runtime token**. On the app, the integration pairs by itself as long as its own Runtime token field was never filled in; if you typed one there, use the same value as the app's **Runtime token** option.
-- **"Set RUNTIME_TOKEN on the runtime and the same token on AI Workspace."** The runtime has no token and listens beyond loopback. Without `HOST: "127.0.0.1"` it listens on all addresses. Either set `HOST: "127.0.0.1"` (host network), or set `RUNTIME_TOKEN` and put the same value in **Configure → Runtime token**.
+- **"Runtime token is missing or wrong."** The token on the Cursor agent and on the runtime differ. On Docker, copy `RUNTIME_TOKEN` into **Cursor agent → Runtime token**. On the app, the integration pairs by itself as long as its own Runtime token field was never filled in; if you typed one there, use the same value as the app's **Runtime token** option.
+- **"Set RUNTIME_TOKEN on the runtime and the same token on AI Workspace."** The runtime has no token and listens beyond loopback. Without `HOST: "127.0.0.1"` it listens on all addresses. Either set `HOST: "127.0.0.1"` (host network), or set `RUNTIME_TOKEN` and put the same value in **Cursor agent → Runtime token**.
 - **The agent invents answers instead of checking.** Check that **Always check the house first** is on for that agent. It makes the model call a tool first for every message that is not a greeting or thanks. Some providers and small local models do not honor a forced tool call. Use a model with reliable tool calling (for example GPT-4.1 mini, Claude Sonnet, Gemini 2.5, or Composer) and check that the MCP connection's device is enabled.
 - **Built-in MCP Server tools are missing in Assist.** That server needs a login, and a voice satellite has none. Set a long-lived token on the connection (see [Privacy and security](#privacy-and-security)).
 - **OpenAI rejects `function.name`.** Names over 64 characters are shortened with a stable hash. Two MCP connections that share a tool get a short prefix. Disable a connection's device to drop its tools. Turning off **All LLM APIs** is not the same as disabling that device; the built-in `/api/mcp` tools are omitted only while **MCP Server** is unloaded.
