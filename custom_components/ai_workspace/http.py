@@ -27,6 +27,7 @@ from .const import (
     with_ui_context,
 )
 from .mcp_config import with_mcp_auth
+from .mcp_observe import last_mcp_result, note_mcp_result
 from .mcp_resolve import ha_hosts, hass_mcp_server_url
 from .chat_scope import handoff_note, merge_reply_text, other_chat_note
 from .files import attach_files_to_message, file_events, parse_client_files
@@ -208,6 +209,8 @@ def _runtime_agent_overrides(
         model = ""
     if model:
         extra["model"] = model
+    extra["shorten_mcp_results"] = bool(getattr(settings, "shorten_mcp_results", True))
+    extra["change_history"] = bool(getattr(settings, "change_history", True))
     return extra
 
 
@@ -475,6 +478,10 @@ class UiView(HomeAssistantView):
                 "tts": settings.tts_engine,
                 "speak": bool(settings.speak_replies),
                 "tts_heavy": overlay_tts_heavy(_hass(request), settings.tts_engine),
+                "mcp_result": (
+                    last_mcp_result(_hass(request)) if getattr(user, "is_admin", False) else None
+                ),
+                "change_history": bool(getattr(settings, "change_history", True)),
             }
         )
 
@@ -1041,6 +1048,9 @@ async def _activity_kwargs(
 
     if not isinstance(provider, ApiProvider):
         return {}
+    settings = _runtime(hass).get("settings")
+    if not bool(getattr(settings, "change_history", True)):
+        return {}
     from .activity_ha import track_tool
 
     user = await hass.auth.async_get_user(user_id)
@@ -1147,6 +1157,37 @@ class ActivityRollbackView(HomeAssistantView):
         return self.json(_activity_dict(shown, live))
 
 
+class McpProxyView(HomeAssistantView):
+    """Last MCP proxy result. GET is admin-only; POST is the Runtime note."""
+
+    url = "/api/ai_workspace/mcp_proxy"
+    name = "api:ai_workspace:mcp_proxy"
+    requires_auth = False
+
+    async def get(self, request: web.Request) -> web.Response:
+        if not _signed_in(request) or not _is_admin(request):
+            raise web.HTTPUnauthorized()
+        return self.json(last_mcp_result(_hass(request)) or {})
+
+    async def post(self, request: web.Request) -> web.Response:
+        if not _runtime_token_ok(request):
+            raise web.HTTPUnauthorized()
+        try:
+            body = await request.json()
+        except json.JSONDecodeError:
+            raise web.HTTPBadRequest(text="Invalid JSON.") from None
+        if not isinstance(body, dict):
+            raise web.HTTPBadRequest(text="Invalid JSON.")
+        return self.json(
+            note_mcp_result(
+                _hass(request),
+                tool=str(body.get("tool") or ""),
+                kind=str(body.get("kind") or ""),
+                agent=str(body.get("agent") or ""),
+            )
+        )
+
+
 class ActivityPrepareView(HomeAssistantView):
     """Runtime callback. Snapshots a config document before Cursor forwards a tool."""
 
@@ -1159,13 +1200,16 @@ class ActivityPrepareView(HomeAssistantView):
 
         if not _runtime_token_ok(request):
             raise web.HTTPUnauthorized()
+        hass = _hass(request)
+        settings = _runtime(hass).get("settings")
+        if not bool(getattr(settings, "change_history", True)):
+            return self.json({"token": None})
         try:
             body = await request.json()
         except json.JSONDecodeError:
             raise web.HTTPBadRequest(text="Invalid JSON.") from None
         if not isinstance(body, dict):
             raise web.HTTPBadRequest(text="Invalid JSON.")
-        hass = _hass(request)
         user_id = str(body.get("user_id") or "").strip()
         if not user_id:
             return self.json({"token": None})
@@ -1219,5 +1263,6 @@ def register_views(hass: HomeAssistant) -> None:
     hass.http.register_view(CatalogMcpView)
     hass.http.register_view(ActivityView)
     hass.http.register_view(ActivityRollbackView)
+    hass.http.register_view(McpProxyView)
     hass.http.register_view(ActivityPrepareView)
     hass.http.register_view(ActivityCommitView)

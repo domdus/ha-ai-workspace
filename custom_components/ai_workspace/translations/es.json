@@ -14,6 +14,8 @@
           "enable_dictate": "Mostrar el botón de dictado",
           "allow_users": "Permitir usuarios normales",
           "house_map": "Catálogo de configuración",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "Entre chats",
           "keep_chats": "Chats a conservar",
           "runtime_token": "Token del Runtime"
@@ -28,6 +30,8 @@
           "enable_dictate": "Micrófono en el cuadro de mensaje.",
           "allow_users": "Los usuarios conectados que no son administradores pueden abrir el chat flotante. Desactivado lo deja solo para administradores. La entrada de la barra lateral sigue siendo solo para administradores. Solo obtienen el servidor MCP integrado de Home Assistant con sus propios permisos.",
           "house_map": "Índice local opcional del cableado de un elemento con nombre (desencadenadores, ids relacionados). Desactivado por defecto. No sirve para listar automatizaciones ni on/off: usa MCP en vivo. No es estado en vivo, historial ni trazas.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Desactivado por defecto. Si está activado, una pregunta puede usar otro chat cuyo título comparta palabras con ella. No hace falta decir chat. Solo un extracto breve, y ese chat no se modifica.",
           "keep_chats": "Chats no fijados más recientes a conservar por persona. Los chats fijados se conservan siempre. Por defecto 30.",
           "runtime_token": "Secreto compartido para un Runtime en Docker. Pon el mismo valor como RUNTIME_TOKEN en el contenedor. El complemento se empareja solo; déjalo vacío."
@@ -83,6 +87,8 @@
           "enable_dictate": "Mostrar el botón de dictado",
           "allow_users": "Permitir usuarios normales",
           "house_map": "Catálogo de configuración",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "Entre chats",
           "keep_chats": "Chats a conservar",
           "runtime_token": "Token del Runtime"
@@ -97,6 +103,8 @@
           "enable_dictate": "Micrófono en el cuadro de mensaje.",
           "allow_users": "Los usuarios conectados que no son administradores pueden abrir el chat flotante. Desactivado lo deja solo para administradores. La entrada de la barra lateral sigue siendo solo para administradores. Solo obtienen el servidor MCP integrado de Home Assistant con sus propios permisos.",
           "house_map": "Índice local opcional del cableado de un elemento con nombre (desencadenadores, ids relacionados). Desactivado por defecto. No sirve para listar automatizaciones ni on/off: usa MCP en vivo. No es estado en vivo, historial ni trazas.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Desactivado por defecto. Si está activado, una pregunta puede usar otro chat cuyo título comparta palabras con ella. No hace falta decir chat. Solo un extracto breve, y ese chat no se modifica.",
           "keep_chats": "Chats no fijados más recientes a conservar por persona. Los chats fijados se conservan siempre. Por defecto 30.",
           "runtime_token": "Secreto compartido para un Runtime en Docker. Pon el mismo valor como RUNTIME_TOKEN en el contenedor. El complemento se empareja solo; déjalo vacío."

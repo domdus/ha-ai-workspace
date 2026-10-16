@@ -14,6 +14,8 @@
           "enable_dictate": "Diktier-Schaltfläche anzeigen",
           "allow_users": "Normale Benutzer erlauben",
           "house_map": "Konfigurationskatalog",
+          "shorten_mcp_results": "Große MCP-Tool-Ergebnisse kürzen",
+          "change_history": "Änderungsverlauf",
           "cross_chat": "Chatübergreifend",
           "keep_chats": "Chats behalten",
           "runtime_token": "Runtime-Token"
@@ -28,6 +30,8 @@
           "enable_dictate": "Mikrofon im Eingabefeld.",
           "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren. Sie bekommen nur den eingebauten Home Assistant MCP Server mit ihren eigenen Rechten.",
           "house_map": "Optionaler lokaler Index für die Verdrahtung eines benannten Eintrags (Trigger, zugehörige IDs). Standardmäßig aus. Nicht für Listen von Automatisierungen oder an/aus — dafür Live-MCP. Kein Live-Zustand, keine Historie, keine Traces.",
+          "shorten_mcp_results": "Standardmäßig an. Große MCP-Antworten (ganzes Haus, lange Listen) werden gekürzt, bevor Cloud-Modelle und Cursor sie lesen. Aus sendet die vollen Antworten. Administratoren sehen danach Last MCP result: unchanged / area-map / truncated.",
+          "change_history": "Standardmäßig an. Zeichnet Konfigurationsänderungen von Cloud-Agenten und Cursor im Änderungsverlauf auf. Aus überspringt Snapshots; der MCP-Proxy leitet Tools weiter und kann Ergebnisse weiter kürzen.",
           "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen anderen Chat nutzen, dessen Titel Wörter mit ihr teilt. Du musst nicht Chat oder Gespräch sagen. Nur ein kurzer Auszug, und dieser Chat wird nicht geändert.",
           "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30.",
           "runtime_token": "Gemeinsames Geheimnis für eine Docker-Runtime. Trage denselben Wert als RUNTIME_TOKEN am Container ein. Das Add-on wird automatisch gekoppelt; dann leer lassen."
@@ -83,6 +87,8 @@
           "enable_dictate": "Diktier-Schaltfläche anzeigen",
           "allow_users": "Normale Benutzer erlauben",
           "house_map": "Konfigurationskatalog",
+          "shorten_mcp_results": "Große MCP-Tool-Ergebnisse kürzen",
+          "change_history": "Änderungsverlauf",
           "cross_chat": "Chatübergreifend",
           "keep_chats": "Chats behalten",
           "runtime_token": "Runtime-Token"
@@ -97,6 +103,8 @@
           "enable_dictate": "Mikrofon im Eingabefeld.",
           "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren. Sie bekommen nur den eingebauten Home Assistant MCP Server mit ihren eigenen Rechten.",
           "house_map": "Optionaler lokaler Index für die Verdrahtung eines benannten Eintrags (Trigger, zugehörige IDs). Standardmäßig aus. Nicht für Listen von Automatisierungen oder an/aus — dafür Live-MCP. Kein Live-Zustand, keine Historie, keine Traces.",
+          "shorten_mcp_results": "Standardmäßig an. Große MCP-Antworten (ganzes Haus, lange Listen) werden gekürzt, bevor Cloud-Modelle und Cursor sie lesen. Aus sendet die vollen Antworten. Administratoren sehen danach Last MCP result: unchanged / area-map / truncated.",
+          "change_history": "Standardmäßig an. Zeichnet Konfigurationsänderungen von Cloud-Agenten und Cursor im Änderungsverlauf auf. Aus überspringt Snapshots; der MCP-Proxy leitet Tools weiter und kann Ergebnisse weiter kürzen.",
           "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen anderen Chat nutzen, dessen Titel Wörter mit ihr teilt. Du musst nicht Chat oder Gespräch sagen. Nur ein kurzer Auszug, und dieser Chat wird nicht geändert.",
           "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30.",
           "runtime_token": "Gemeinsames Geheimnis für eine Docker-Runtime. Trage denselben Wert als RUNTIME_TOKEN am Container ein. Das Add-on wird automatisch gekoppelt; dann leer lassen."

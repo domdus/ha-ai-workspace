@@ -14,6 +14,8 @@
           "enable_dictate": "Pokaż przycisk dyktowania",
           "allow_users": "Zezwól zwykłym użytkownikom",
           "house_map": "Katalog konfiguracji",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "Między czatami",
           "keep_chats": "Czaty do zachowania",
           "runtime_token": "Token Runtime"
@@ -28,6 +30,8 @@
           "enable_dictate": "Mikrofon w polu wiadomości.",
           "allow_users": "Zalogowani użytkownicy bez uprawnień administratora mogą otworzyć pływający czat. Wyłączone zostawia go administratorom. Pozycja paska bocznego zostaje tylko dla administratorów. Dostają tylko wbudowany serwer MCP Home Assistant z własnymi uprawnieniami.",
           "house_map": "Opcjonalny lokalny indeks okablowania nazwanego elementu (wyzwalacze, powiązane id). Domyślnie wyłączony. Nie do listowania automatyzacji ani wł/wył — do tego użyj żywego MCP. To nie stan na żywo, historia ani ślady.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Domyślnie wyłączone. Gdy włączone, pytanie może użyć innego czatu, którego tytuł ma wspólne słowa. Nie trzeba mówić czat. Tylko krótki fragment i ten czat nie jest zmieniany.",
           "keep_chats": "Najnowsze nieprzypięte czaty na osobę. Przypięte czaty zostają zawsze. Domyślnie 30.",
           "runtime_token": "Wspólny sekret dla Runtime w Dockerze. Ustaw tę samą wartość jako RUNTIME_TOKEN w kontenerze. Dodatek paruje się automatycznie; zostaw puste."
@@ -83,6 +87,8 @@
           "enable_dictate": "Pokaż przycisk dyktowania",
           "allow_users": "Zezwól zwykłym użytkownikom",
           "house_map": "Katalog konfiguracji",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "Między czatami",
           "keep_chats": "Czaty do zachowania",
           "runtime_token": "Token Runtime"
@@ -97,6 +103,8 @@
           "enable_dictate": "Mikrofon w polu wiadomości.",
           "allow_users": "Zalogowani użytkownicy bez uprawnień administratora mogą otworzyć pływający czat. Wyłączone zostawia go administratorom. Pozycja paska bocznego zostaje tylko dla administratorów. Dostają tylko wbudowany serwer MCP Home Assistant z własnymi uprawnieniami.",
           "house_map": "Opcjonalny lokalny indeks okablowania nazwanego elementu (wyzwalacze, powiązane id). Domyślnie wyłączony. Nie do listowania automatyzacji ani wł/wył — do tego użyj żywego MCP. To nie stan na żywo, historia ani ślady.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Domyślnie wyłączone. Gdy włączone, pytanie może użyć innego czatu, którego tytuł ma wspólne słowa. Nie trzeba mówić czat. Tylko krótki fragment i ten czat nie jest zmieniany.",
           "keep_chats": "Najnowsze nieprzypięte czaty na osobę. Przypięte czaty zostają zawsze. Domyślnie 30.",
           "runtime_token": "Wspólny sekret dla Runtime w Dockerze. Ustaw tę samą wartość jako RUNTIME_TOKEN w kontenerze. Dodatek paruje się automatycznie; zostaw puste."

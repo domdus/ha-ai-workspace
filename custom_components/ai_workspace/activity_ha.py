@@ -40,6 +40,8 @@ from .store import Store
 logger = logging.getLogger(__name__)
 
 _PENDING_TTL = 600
+# Lovelace often fires lovelace_updated after the MCP HTTP response returns.
+_SETTLE_DELAYS = (0.15, 0.25, 0.35, 0.45)
 _EVENT_LOVELACE = "lovelace_updated"
 _EVENT_ENTITY_REGISTRY = "entity_registry_updated"
 _EVENT_AUTOMATION_RELOADED = "automation_reloaded"
@@ -453,8 +455,48 @@ async def _apply_events(hass: HomeAssistant, pending: Pending) -> tuple[dict[str
     return None, ""
 
 
+async def _dashboard_docs_changed(hass: HomeAssistant, docs: dict[str, dict[str, Any]]) -> bool:
+    if not docs:
+        return False
+    current = await _dashboard_index(hass)
+    for store_id, doc in docs.items():
+        config = doc.get("config")
+        if not isinstance(config, dict):
+            continue
+        key = f"dashboard:{store_id}"
+        digest = json.dumps(config, sort_keys=True, default=str, ensure_ascii=False)
+        now = current.get(key)
+        if now is not None and now[1] != digest:
+            return True
+    return False
+
+
+async def _activity_settle(hass: HomeAssistant, pending: Pending) -> None:
+    """Keep bus listeners active while HA finishes Lovelace / registry updates."""
+    document = pending.document if isinstance(pending.document, dict) else None
+    if not (pending.dashboard_docs or pending.watch is not None or document or pending.tool):
+        return
+    for delay in _SETTLE_DELAYS:
+        if pending.events:
+            return
+        if pending.watch is not None:
+            after = await collect_index(hass)
+            if describe_index(pending.watch, after):
+                return
+        if document is not None and await _document_changed(hass, document):
+            return
+        if pending.dashboard_docs and await _dashboard_docs_changed(hass, pending.dashboard_docs):
+            return
+        await asyncio.sleep(delay)
+
+
 async def commit(hass: HomeAssistant, store: Store, token: str, *, ok: bool) -> None:
-    pending = _pending(hass).pop(str(token or ""), None)
+    key = str(token or "")
+    pending = _pending(hass).get(key)
+    if pending is None:
+        return
+    await _activity_settle(hass, pending)
+    pending = _pending(hass).pop(key, None)
     if pending is None:
         return
     _unsub(pending)
@@ -486,14 +528,17 @@ async def commit(hass: HomeAssistant, store: Store, token: str, *, ok: bool) -> 
         # when the document moved, even if the tool result looked like a failure.
         # HA may return from the config API before automations.yaml is flushed.
         changed = await _document_changed(hass, document) or bool(pending.events)
-        if not ok and not changed:
-            for delay in (0.3, 0.8):
+        if not changed:
+            for delay in (0.2, 0.35):
                 await asyncio.sleep(delay)
-                changed = await _document_changed(hass, document)
-                if changed or pending.events:
+                changed = await _document_changed(hass, document) or bool(pending.events)
+                if changed:
                     break
         if not ok and not changed and not pending.events:
             logger.info("activity skipped %s ok=false unchanged", pending.tool)
+            return
+        if ok and not changed and not pending.events and not text:
+            logger.info("activity skipped %s ok=true unchanged", pending.tool)
             return
     elif not ok and not pending.events:
         return

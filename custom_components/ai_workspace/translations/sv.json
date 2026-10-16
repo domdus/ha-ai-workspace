@@ -14,6 +14,8 @@
           "enable_dictate": "Visa dikteringsknapp",
           "allow_users": "Tillåt vanliga användare",
           "house_map": "Konfigurationskatalog",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "Mellan chattar",
           "keep_chats": "Chattar att behålla",
           "runtime_token": "Runtime-token"
@@ -28,6 +30,8 @@
           "enable_dictate": "Mikrofon i meddelanderutan.",
           "allow_users": "Inloggade användare som inte är administratörer kan öppna den flytande chatten. Av håller den till administratörer. Sidofältsobjektet förblir bara för administratörer. De får bara den inbyggda Home Assistant MCP-servern med sina egna behörigheter.",
           "house_map": "Valfritt lokalt index för kopplingen av ett namngivet objekt (utlösare, relaterade id:n). Av som standard. Inte för att lista automatiseringar eller på/av — använd live-MCP till det. Inte live-status, historik eller spår.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Av som standard. När det är på kan en fråga använda en annan chatt vars titel delar ord. Du behöver inte säga chatt. Bara ett kort utdrag, och den chatten ändras inte.",
           "keep_chats": "Nyaste icke-fästa chattar per person. Fästa chattar behålls alltid. Standard 30.",
           "runtime_token": "Delad hemlighet för en Docker-Runtime. Ange samma värde som RUNTIME_TOKEN på containern. Tillägget paras automatiskt; lämna tomt."
@@ -83,6 +87,8 @@
           "enable_dictate": "Visa dikteringsknapp",
           "allow_users": "Tillåt vanliga användare",
           "house_map": "Konfigurationskatalog",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "Mellan chattar",
           "keep_chats": "Chattar att behålla",
           "runtime_token": "Runtime-token"
@@ -97,6 +103,8 @@
           "enable_dictate": "Mikrofon i meddelanderutan.",
           "allow_users": "Inloggade användare som inte är administratörer kan öppna den flytande chatten. Av håller den till administratörer. Sidofältsobjektet förblir bara för administratörer. De får bara den inbyggda Home Assistant MCP-servern med sina egna behörigheter.",
           "house_map": "Valfritt lokalt index för kopplingen av ett namngivet objekt (utlösare, relaterade id:n). Av som standard. Inte för att lista automatiseringar eller på/av — använd live-MCP till det. Inte live-status, historik eller spår.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Av som standard. När det är på kan en fråga använda en annan chatt vars titel delar ord. Du behöver inte säga chatt. Bara ett kort utdrag, och den chatten ändras inte.",
           "keep_chats": "Nyaste icke-fästa chattar per person. Fästa chattar behålls alltid. Standard 30.",
           "runtime_token": "Delad hemlighet för en Docker-Runtime. Ange samma värde som RUNTIME_TOKEN på containern. Tillägget paras automatiskt; lämna tomt."

@@ -16,6 +16,8 @@ from .const import (
     COMPOSE_RUNTIME_URLS,
     CONF_RUNTIME_TOKEN,
     CONF_RUNTIME_URL,
+    CONF_SHORTEN_MCP_RESULTS,
+    CONF_CHANGE_HISTORY,
     DOMAIN,
     HOST_RUNTIME_URL,
 )
@@ -29,6 +31,9 @@ BAD_TOKEN = (
 PAIRING = "Pairing with the AI Workspace Runtime app. Try again in a minute."
 
 _LOGGER = logging.getLogger(__name__)
+_HASS_URL_OPTION = "hass_url"
+_SHORTEN_OPTION = "shorten_mcp_results"
+_HISTORY_OPTION = "change_history"
 _PROBE_COOLDOWN = 30.0
 _PAIR_WAIT = 90.0
 
@@ -140,6 +145,55 @@ async def _async_addon_token(hass: HomeAssistant, slug: str) -> str:
     return str((info.options or {}).get(CONF_RUNTIME_TOKEN) or "").strip()
 
 
+def _shorten_mcp_results(hass: HomeAssistant) -> bool:
+    settings = (hass.data.get(DOMAIN) or {}).get("settings")
+    if settings is None:
+        return True
+    return bool(getattr(settings, CONF_SHORTEN_MCP_RESULTS, True))
+
+
+def _change_history(hass: HomeAssistant) -> bool:
+    settings = (hass.data.get(DOMAIN) or {}).get("settings")
+    if settings is None:
+        return True
+    return bool(getattr(settings, CONF_CHANGE_HISTORY, True))
+
+
+def _sync_runtime_options(hass: HomeAssistant, opts: dict) -> bool:
+    wanted_url = _runtime_hass_url(hass)
+    wanted_shorten = _shorten_mcp_results(hass)
+    wanted_history = _change_history(hass)
+    changed = False
+    if str(opts.get(_HASS_URL_OPTION) or "").rstrip("/") != wanted_url:
+        opts[_HASS_URL_OPTION] = wanted_url
+        changed = True
+    current = opts.get(_SHORTEN_OPTION)
+    if current is None or bool(current) != wanted_shorten:
+        opts[_SHORTEN_OPTION] = wanted_shorten
+        changed = True
+    current_history = opts.get(_HISTORY_OPTION)
+    if current_history is None or bool(current_history) != wanted_history:
+        opts[_HISTORY_OPTION] = wanted_history
+        changed = True
+    return changed
+
+
+def _runtime_hass_url(hass: HomeAssistant) -> str:
+    try:
+        from homeassistant.helpers.network import NoURLAvailableError, get_url
+
+        return str(
+            get_url(hass, allow_internal=True, allow_external=False, allow_ip=True, prefer_external=False)
+        ).rstrip("/")
+    except (ImportError, NoURLAvailableError):
+        pass
+    api = getattr(hass.config, "api", None)
+    port = int(getattr(api, "port", None) or 8123)
+    tls = bool(getattr(api, "use_ssl", False))
+    scheme = "https" if tls else "http"
+    return f"{scheme}://127.0.0.1:{port}"
+
+
 async def _async_pair_addon(hass: HomeAssistant, slug: str, base: str) -> str:
     """Give the Runtime app a token through the Supervisor, the way Z-Wave JS sets its keys."""
     from homeassistant.components.hassio import AddonError, AddonManager
@@ -149,10 +203,21 @@ async def _async_pair_addon(hass: HomeAssistant, slug: str, base: str) -> str:
         info = await manager.async_get_addon_info()
         token = str((info.options or {}).get(CONF_RUNTIME_TOKEN) or "").strip()
         if token and await async_token_accepted(hass, base, token):
+            opts = dict(info.options or {})
+            if _sync_runtime_options(hass, opts):
+                try:
+                    await manager.async_set_addon_options(opts)
+                except AddonError:
+                    pass
             return token
         if not token:
             token = secrets.token_urlsafe(32)
-            await manager.async_set_addon_options({**(info.options or {}), CONF_RUNTIME_TOKEN: token})
+            opts = {
+                **(info.options or {}),
+                CONF_RUNTIME_TOKEN: token,
+            }
+            _sync_runtime_options(hass, opts)
+            await manager.async_set_addon_options(opts)
         _LOGGER.info("Restarting the AI Workspace Runtime app so it picks up its token")
         await manager.async_restart_addon()
     except AddonError as exc:

@@ -462,6 +462,7 @@ export function mountAiWorkspace(root, options = {}) {
             <h1 class="title">${t("new_chat")}</h1>
           </div>
           <p class="banner" hidden></p>
+          <p class="mcp-result" hidden></p>
         </header>
         ${compact && hassObj()?.user?.is_admin ? `<a class="workspace-link" href="/ai-workspace">${t("open_workspace")}</a>` : ""}
         <div class="stage">
@@ -523,6 +524,7 @@ export function mountAiWorkspace(root, options = {}) {
   const sessionsEl = root.querySelector(".sessions");
   const titleEl = root.querySelector(".title");
   const bannerEl = root.querySelector(".banner");
+  const mcpResultEl = root.querySelector(".mcp-result");
   const form = root.querySelector(".composer");
   const scrollBottomBtn = root.querySelector(".scroll-bottom");
   const messageEl = root.querySelector(".message");
@@ -946,6 +948,35 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   let noticeTimer = 0;
+
+  function paintMcpResult(row) {
+    if (!mcpResultEl || !hassObj()?.user?.is_admin) {
+      if (mcpResultEl) mcpResultEl.hidden = true;
+      return;
+    }
+    const kind = String(row?.kind || "").trim();
+    const tool = String(row?.tool || "").trim();
+    if (!kind) {
+      mcpResultEl.hidden = true;
+      mcpResultEl.textContent = "";
+      return;
+    }
+    mcpResultEl.hidden = false;
+    mcpResultEl.textContent = tool
+      ? t("mcp_result_tool", { kind, tool })
+      : t("mcp_result", { kind });
+  }
+
+  async function refreshMcpResult() {
+    if (!mcpResultEl || !hassObj()?.user?.is_admin) return;
+    try {
+      const response = await apiFetch(`${API}/mcp_proxy`);
+      if (!response?.ok) return;
+      paintMcpResult(await response.json());
+    } catch (_err) {
+      /* ignore */
+    }
+  }
 
   function showNotice(text) {
     if (!bannerEl || !text) return;
@@ -3021,15 +3052,24 @@ export function mountAiWorkspace(root, options = {}) {
     if (!visible) stopSpeech();
   }
 
+  function setChangeHistoryShown(visible) {
+    root.querySelectorAll(".history-open").forEach((btn) => {
+      btn.hidden = !visible;
+      btn.classList.toggle("is-hidden", !visible);
+    });
+    if (!visible) closeHistory();
+  }
+
   async function loadDictate() {
-    if (!micBtn) return;
     // Stay hidden until /ui explicitly allows the mic (also covers the overlay drawer).
     let show = false;
+    let historyOn = true;
     try {
       const response = await apiFetch(`${API}/ui`);
       if (response?.ok) {
         const body = await response.json();
         show = body.dictate === true;
+        historyOn = body.change_history !== false;
         voice = {
           dictate: show,
           stt: body.stt || "browser",
@@ -3037,11 +3077,13 @@ export function mountAiWorkspace(root, options = {}) {
           tts: Boolean(body.tts) && body.tts !== "off",
           ttsHeavy: body.tts_heavy === true,
         };
+        paintMcpResult(body.mcp_result);
       }
     } catch (_err) {
       show = false;
     }
-    setMicShown(show);
+    setChangeHistoryShown(historyOn);
+    if (micBtn) setMicShown(show);
     syncCopyChat();
   }
 
@@ -3168,6 +3210,7 @@ export function mountAiWorkspace(root, options = {}) {
           }
           addChip(tools, data, true);
           if (assistant.querySelector(".tools span.busy")) setActivity(assistant, "");
+          if (data.phase === "end") refreshMcpResult();
         } else if (name === "status") {
           setStatus(data.text);
         } else if (name === "error") {
@@ -3184,6 +3227,7 @@ export function mountAiWorkspace(root, options = {}) {
           settleTools(assistant);
           setActivity(assistant, "");
         } else if (name === "done") {
+          refreshMcpResult();
           sawDone = true;
           streamFinal = true;
           streamNode = streamNode || assistant.querySelector(".text");
