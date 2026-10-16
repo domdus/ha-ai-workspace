@@ -10,6 +10,9 @@
 - Disable an MCP connection's device to drop its tools; a failed list_tools on one row does not block the others
 - Built-in `/api/mcp` tools are omitted when the Home Assistant MCP Server integration is not loaded
 - Change History treats HA-MCP's empty/`null` dashboard `url_path` as the default board, and watches `python_transform` writes so card moves are recorded
+- Cursor Runtime records Change History through the MCP proxy: commit waits for `lovelace_updated`, runtime defaults `hass_url` on HA OS, and prepare/commit failures log clearly
+- **MCP proxy** is the Runtime name for routing Cursor MCP, Change History, and large-result sizing; `/api/mcp-fit/` still works as an alias
+- **Shorten large MCP tool results** and **Change History** are shared options (default on) for cloud agents and Cursor; admins see Last MCP result: unchanged / area-map / truncated
 - Overlay Text-to-speech keeps the engine you pick (including Google Translate or Off); it no longer jumps to OpenAI
 - Existing Assist pipelines keep their STT/TTS; new pipelines still get our engines on first create. A removed engine becomes none instead of stealing another pipeline's voice
 - OpenAI TTS 429 `credit_balance_exhausted` is a provider quota issue, not this naming fix

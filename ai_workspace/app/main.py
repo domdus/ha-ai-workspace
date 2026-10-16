@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.files import attach_files_to_message, file_events, parse_client_files
-from app.mcp_fit import proxy_mcp
+from app.mcp_proxy import proxy_mcp
 from app.images import caption_for, image_events, parse_client_images
 from app.redact import redact
 from app.settings import Settings
@@ -74,6 +74,8 @@ class ChatRequest(BaseModel):
     api_key: str = ""
     question: str = Field(default="", max_length=8000)
     handoff: str = Field(default="", max_length=20000)
+    shorten_mcp_results: bool | None = None
+    change_history: bool | None = None
 
 
 def _with_ui_context(message: str, origin: str = "") -> str:
@@ -89,7 +91,7 @@ def _with_ui_context(message: str, origin: str = "") -> str:
 router = APIRouter()
 
 
-_OPEN_PATHS = ("/api/health", "/api/mcp-fit/")
+_OPEN_PATHS = ("/api/health", "/api/mcp-proxy/", "/api/mcp-fit/")
 
 
 def _token_ok(settings: Settings, header: str) -> bool:
@@ -186,9 +188,11 @@ def _public(settings: Settings, exc: BaseException) -> str:
     return redact(str(exc), [settings.cursor_api_key])
 
 
+@router.api_route("/api/mcp-proxy/{secret}/{digest}", methods=["GET", "POST", "DELETE"])
+@router.api_route("/api/mcp-proxy/{secret}/{digest}/{actor}", methods=["GET", "POST", "DELETE"])
 @router.api_route("/api/mcp-fit/{secret}/{digest}", methods=["GET", "POST", "DELETE"])
 @router.api_route("/api/mcp-fit/{secret}/{digest}/{actor}", methods=["GET", "POST", "DELETE"])
-async def mcp_fit(request: Request, secret: str, digest: str, actor: str = ""):
+async def mcp_proxy(request: Request, secret: str, digest: str, actor: str = ""):
     return await proxy_mcp(request, secret, digest, actor)
 
 
@@ -313,10 +317,14 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
         )
 
     await lock.acquire()
+    if body.shorten_mcp_results is not None:
+        request.app.state.shorten_mcp_results = body.shorten_mcp_results
+    if body.change_history is not None:
+        request.app.state.change_history = body.change_history
     runtime = request.app.state.runtime
-    fit = getattr(runtime, "fit", None) if runtime is not None else None
-    if fit is not None:
-        fit.note_actor(
+    proxy = getattr(runtime, "proxy", None) if runtime is not None else None
+    if proxy is not None:
+        proxy.note_actor(
             session.id,
             _user_id(request),
             request.headers.get("x-ai-workspace-agent") or "Cursor",

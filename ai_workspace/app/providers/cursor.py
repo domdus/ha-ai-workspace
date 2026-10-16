@@ -10,7 +10,7 @@ from typing import Any, AsyncIterator, Callable
 from app.events import map_sdk_message
 from app.images import cursor_payload
 from app.mcp_config import McpConfigError, load_mcp_servers, merge_mcp_servers, servers_from_chat_mcp
-from app.mcp_fit import FitRegistry
+from app.mcp_proxy import McpProxy, proxy_secret_path
 from app.providers.base import ProviderInfo
 from app.redact import redact
 from app.settings import Settings
@@ -43,7 +43,7 @@ class CursorRuntime:
         self._used_at: dict[str, float] = {}
         self._with_tools: set[str] = set()
         self._start_lock = None
-        self.fit = FitRegistry(settings.data_dir / "mcp-fit-secret")
+        self.proxy = McpProxy(proxy_secret_path(settings.data_dir))
 
     def _lock(self):
         import asyncio
@@ -161,7 +161,7 @@ class CursorRuntime:
             logger.warning("cursor bridge warmup failed", exc_info=True)
 
     def wrap_mcp(self, servers: dict, actor: str = "") -> dict:
-        return self.fit.wrap(servers, f"http://127.0.0.1:{self.settings.port}", actor)
+        return self.proxy.wrap(servers, f"http://127.0.0.1:{self.settings.port}", actor)
 
     def _touch(self, session_id: str) -> None:
         self._used_at[session_id] = time.monotonic()

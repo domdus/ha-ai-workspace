@@ -1,21 +1,7 @@
 <div align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/custom_components/ai_workspace/brand/dark_logo.png">
-    <img src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/custom_components/ai_workspace/brand/logo.png" alt="AI Workspace" align="center" width="280">
-  </picture>
-  <br>
-  <br>
-  <em>Build your Home Assistant from the couch.</em>
-</div>
-<br>
-<p align="center">
-  <img src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai_workspace.gif" alt="AI Workspace chat demo" width="300">
-</p>
-
-<div align="center">
 
 # AI Workspace
-
+ <em>Build your Home Assistant from the couch.</em>
 ![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.12+-41BDF5.svg)![Release](https://img.shields.io/github/v/release/domdus/ha-ai-workspace)![License](https://img.shields.io/github/license/domdus/ha-ai-workspace)  
 ![GHCR](https://img.shields.io/badge/GHCR-runtime-teal)![MCP](https://img.shields.io/badge/MCP-client-purple)![Assist](https://img.shields.io/badge/Assist-ready-green)
 
@@ -23,6 +9,10 @@
 
 This HACS integration is an agent UI inside Home Assistant. It connects to an AI and uses the MCP server of your choice.
 You work right in Home Assistant instead of Claude Desktop, the Cursor IDE, VS Code, or any other app. Use Cursor, OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or any OpenAI-compatible provider.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai_workspace.gif" alt="AI Workspace chat demo" width="300">
+</p>
 
 What the agent can do depends entirely on the MCP server you connect.
 
@@ -266,6 +256,8 @@ It does not control Home Assistant edit links. Those rules are added to every me
 | **Chats to keep**                          | Newest unpinned chats per person (default 30). Pinned chats are always kept                                                                                                         |
 | **Cross chat**                             | Off by default. When on, a question can use another chat whose title shares words with it. Only a short excerpt is used, and that chat is not changed                               |
 | **Config catalog**                         | Off by default. A local index of how automations are wired, so "what uses the kitchen light?" takes one lookup. See [why](#why-use-the-config-catalog)                              |
+| **Shorten large MCP tool results**         | On by default. Same setting for cloud agents and Cursor. See [MCP proxy](#mcp-proxy)                                                                                                |
+| **Change History**                         | On by default. Records agent configuration writes for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools. See [MCP proxy](#mcp-proxy)                   |
 | **Add to Assist**                          | On each agent. Off (the default) keeps the agent in AI Workspace only. On adds a Voice assistants pipeline for it. Off again removes that pipeline                                 |
 | **Add Speech-to-text**                     | On OpenAI, OpenRouter, and OpenAI-compatible agents. On by default. Creates a Speech-to-text engine from this agent's key and assigns it to every AI Workspace Assist pipeline. Off removes that engine |
 | **Speech-to-text model**                   | Shown with Speech-to-text. Empty uses the provider default (`gpt-4o-mini-transcribe` on OpenAI, Whisper on OpenRouter / compatible). You can pick another or type an id                 |
@@ -292,9 +284,15 @@ MCP tools answer "what is on?" well, but not "what is wired to what?". To find e
 
 
 
-## Optimization: Large listings
+## MCP proxy
 
-When an MCP tool sends back the whole house, the result is shortened before the model reads it. Entities are grouped by area as ids only, and the model can ask again for one area or one entity to load states and attributes. A shorter list keeps each entity's state and drops the bulky attributes. One entity, one room, or one automation still arrives whole. What the model receives is always valid JSON; nothing is cut off in the middle of an object. This is automatic for cloud APIs and the Cursor Runtime.
+Cursor does not call MCP from Home Assistant. HTTP MCP (HA-MCP and others) is rewritten to the **MCP proxy** in the Cursor Runtime (`/api/mcp-proxy/…`). Cloud API agents do not use that route; they call MCP inside the integration. The same three jobs still apply to both:
+
+1. **Routing** — Cursor reaches HA-MCP through the Runtime instead of the upstream URL. That is also how the Runtime can attach a chat session to each tool call.
+2. **Change History** — before and after each `tools/call`, the proxy (Cursor) or `on_tool` (cloud) snapshots config and commits a row when something actually changed. **Change History** on the integration (default on) turns this off without removing routing.
+3. **Result sizing** — large MCP JSON is shortened **before the model reads it**, with the same code on both paths. Entities are grouped by area as ids only, and the model can ask again for one area or one entity. A shorter list keeps each entity's state and drops bulky attributes. One entity, one room, or one automation still arrives whole. The model always receives valid JSON; nothing is cut off in the middle of an object.
+
+**Shorten large MCP tool results** and **Change History** are on by default. Turn either off on the AI Workspace integration; both flags are passed to the Runtime on each Cursor chat. Admins see **Last MCP result: unchanged / area-map / truncated** under the chat title after a tool returns; Home Assistant logs the same line (`mcp proxy last tool result`).
 
 ## Privacy and security
 

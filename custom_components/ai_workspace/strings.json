@@ -14,6 +14,8 @@
           "enable_dictate": "Show dictate button",
           "allow_users": "Allow normal users",
           "house_map": "Config catalog",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "Cross chat",
           "keep_chats": "Chats to keep",
           "runtime_token": "Runtime token"
@@ -28,6 +30,8 @@
           "enable_dictate": "Microphone in the message box.",
           "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only. They only get the built-in Home Assistant MCP Server with their own permissions.",
           "house_map": "Optional local index for wiring of a named item (triggers, related ids). Off by default. Not for listing automations or on/off — use live MCP for that. Not live state, history, or traces.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Off by default. When on, a question can use another chat whose title shares words with it. You do not have to mention chat. A short excerpt only, and that chat is not changed.",
           "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30.",
           "runtime_token": "Shared secret for a Docker Runtime. Set the same value as RUNTIME_TOKEN on the container. The add-on is paired automatically; leave this empty."
@@ -83,6 +87,8 @@
           "enable_dictate": "Show dictate button",
           "allow_users": "Allow normal users",
           "house_map": "Config catalog",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "Cross chat",
           "keep_chats": "Chats to keep",
           "runtime_token": "Runtime token"
@@ -97,6 +103,8 @@
           "enable_dictate": "Microphone in the message box.",
           "allow_users": "Signed-in users who are not administrators can open the floating chat. Off keeps it to administrators. The sidebar entry stays administrator-only. They only get the built-in Home Assistant MCP Server with their own permissions.",
           "house_map": "Optional local index for wiring of a named item (triggers, related ids). Off by default. Not for listing automations or on/off — use live MCP for that. Not live state, history, or traces.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Off by default. When on, a question can use another chat whose title shares words with it. You do not have to mention chat. A short excerpt only, and that chat is not changed.",
           "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30.",
           "runtime_token": "Shared secret for a Docker Runtime. Set the same value as RUNTIME_TOKEN on the container. The add-on is paired automatically; leave this empty."

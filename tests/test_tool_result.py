@@ -5,9 +5,9 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from app.main import create_app
-from app.mcp_fit import FitRegistry, parse_tool_call, tool_response_ok
+from app.mcp_proxy import McpProxy, parse_tool_call, proxy_secret_path, tool_response_ok
 from app.settings import Settings
-from app.tool_result import PASS, compact_mcp_response, fit_tool_result
+from app.tool_result import AREA_MAP, OFF, PASS, TRUNCATED, UNCHANGED, shorten_mcp_response, shorten_tool_result
 
 
 def _component():
@@ -59,12 +59,19 @@ def test_parse_tool_call_reads_only_tool_invocations() -> None:
     assert tool_response_ok(200, transform) is True
 
 
-def test_fit_secret_stays_on_disk(tmp_path: Path) -> None:
-    path = tmp_path / "mcp-fit-secret"
-    first = FitRegistry(path).secret
-    second = FitRegistry(path).secret
+def test_proxy_secret_stays_on_disk(tmp_path: Path) -> None:
+    path = tmp_path / "mcp-proxy-secret"
+    first = McpProxy(path).secret
+    second = McpProxy(path).secret
     assert first == second
     assert path.read_text(encoding="utf-8").strip() == first
+
+
+def test_proxy_secret_keeps_legacy_file(tmp_path: Path) -> None:
+    legacy = tmp_path / "mcp-fit-secret"
+    legacy.write_text("legacy-secret\n", encoding="utf-8")
+    assert proxy_secret_path(tmp_path) == legacy
+    assert McpProxy(proxy_secret_path(tmp_path)).secret == "legacy-secret"
 
 
 def test_runtime_and_integration_fitters_match() -> None:
@@ -75,15 +82,26 @@ def test_runtime_and_integration_fitters_match() -> None:
 
 
 def test_small_json_is_unchanged() -> None:
-    fit = _component().fit_tool_result
+    shorten = _component().shorten_tool_result
     raw = json.dumps({"entity_id": "light.kitchen", "state": "on", "attributes": {"brightness": 40}})
-    assert fit(raw) == raw
-    parsed = json.loads(fit(raw))
+    text, kind = shorten(raw)
+    assert kind == UNCHANGED
+    assert text == raw
+    parsed = json.loads(text)
     assert parsed["attributes"]["brightness"] == 40
 
 
+def test_shorten_can_be_turned_off() -> None:
+    shorten = _component().shorten_tool_result
+    entities = [{"entity_id": f"light.n_{i}", "state": "on", "attributes": {"blob": "m" * 400}} for i in range(500)]
+    raw = json.dumps(entities)
+    text, kind = shorten(raw, enabled=False)
+    assert kind == OFF
+    assert text == raw
+
+
 def test_house_listing_becomes_a_complete_area_map() -> None:
-    fit = _component().fit_tool_result
+    fit = lambda raw: _component().shorten_tool_result(raw)[0]
     entities = []
     for index in range(500):
         area = "Kitchen" if index % 2 == 0 else "Bedroom"
@@ -98,7 +116,9 @@ def test_house_listing_becomes_a_complete_area_map() -> None:
         )
     raw = json.dumps({"entities": entities})
     assert len(raw) > PASS
-    body = json.loads(fit(raw))
+    text, kind = _component().shorten_tool_result(raw)
+    assert kind == AREA_MAP
+    body = json.loads(text)
     areas = body["entities"]["areas"]
     assert set(areas) == {"Kitchen", "Bedroom"}
     listed = [entity for ids in areas.values() for entity in ids]
@@ -109,7 +129,7 @@ def test_house_listing_becomes_a_complete_area_map() -> None:
 
 
 def test_short_entity_list_keeps_state_and_drops_attributes() -> None:
-    fit = _component().fit_tool_result
+    fit = lambda raw: _component().shorten_tool_result(raw)[0]
     entities = [
         {
             "entity_id": f"sensor.probe_{index}",
@@ -130,9 +150,9 @@ def test_short_entity_list_keeps_state_and_drops_attributes() -> None:
 
 
 def test_long_json_list_omits_whole_items() -> None:
-    fit = _component().fit_tool_result
     items = [{"id": f"automation-{index}", "alias": "water " * 40, "config": "z" * 2000} for index in range(80)]
-    text = fit(json.dumps(items))
+    text, kind = _component().shorten_tool_result(json.dumps(items))
+    assert kind == TRUNCATED
     body = json.loads(text)
     assert isinstance(body, list)
     assert body[-1]["omitted"] > 0
@@ -141,7 +161,7 @@ def test_long_json_list_omits_whole_items() -> None:
 
 
 def test_mcp_envelope_text_stays_json() -> None:
-    fit = _component().fit_tool_result
+    fit = lambda raw: _component().shorten_tool_result(raw)[0]
     entities = [
             {
                 "entity_id": f"switch.lamp_{index}",
@@ -169,11 +189,14 @@ def test_tools_call_is_compacted_and_other_methods_are_not() -> None:
     response = json.dumps({"jsonrpc": "2.0", "id": 1, "result": result}).encode()
     call = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/call"}).encode()
     listed = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/list"}).encode()
-    compact = json.loads(compact_mcp_response(call, response, "application/json"))
+    compact, kind = shorten_mcp_response(call, response, "application/json")
+    compact = json.loads(compact)
     inner = json.loads(compact["result"]["content"][0]["text"])
     assert "areas" in inner
-    untouched = compact_mcp_response(listed, response, "application/json")
+    assert kind == AREA_MAP
+    untouched, listed_kind = shorten_mcp_response(listed, response, "application/json")
     assert untouched == response
+    assert listed_kind == UNCHANGED
 
 
 def test_proxy_returns_a_fitted_tool_result(tmp_path: Path) -> None:
@@ -224,13 +247,14 @@ def test_proxy_returns_a_fitted_tool_result(tmp_path: Path) -> None:
             providers={},
         )
         with TestClient(app) as client:
-            registry = FitRegistry()
-            client.app.state.runtime = type("Runtime", (), {"fit": registry})()
+            registry = McpProxy()
+            client.app.state.runtime = type("Runtime", (), {"proxy": registry})()
             wrapped = registry.wrap(
                 {"mcp": {"type": "http", "url": f"http://127.0.0.1:{server.server_address[1]}/mcp", "headers": {"Authorization": "Bearer secret"}}},
                 "http://test",
             )
             url = wrapped["mcp"]["url"].removeprefix("http://test")
+            assert url.startswith("/api/mcp-proxy/")
             assert "Bearer" not in url
             response = client.post(url, json={"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {}})
             assert response.status_code == 200

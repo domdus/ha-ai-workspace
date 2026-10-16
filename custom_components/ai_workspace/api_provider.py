@@ -54,7 +54,8 @@ from .redact import redact
 from .small_talk import wants_house_tools
 from .store import Session, Store
 from .titles import clean_title, title_prompt
-from .tool_result import fit_tool_result
+from .mcp_observe import note_mcp_result
+from .tool_result import shorten_tool_result
 
 logger = logging.getLogger(__name__)
 
@@ -360,10 +361,6 @@ async def async_check_api_key(
     return None
 
 
-def _tool_body(result: Any) -> str:
-    return fit_tool_result(result)
-
-
 def _tool_label(name: str) -> str:
     raw = str(name or "tool").strip() or "tool"
     if raw.lower() == "mcp":
@@ -505,6 +502,13 @@ class ApiProvider:
 
     def _label(self) -> str:
         return API_SHORT_LABELS.get(self.settings.api_provider, "OpenAI")
+
+    def _tool_body(self, result: Any, name: str = "") -> str:
+        text, kind = shorten_tool_result(
+            result, enabled=bool(getattr(self.settings, "shorten_mcp_results", True))
+        )
+        note_mcp_result(self.hass, tool=name, kind=kind, agent=self._label())
+        return text
 
     def _http(self) -> ClientSession:
         return async_get_clientsession(self.hass)
@@ -810,7 +814,7 @@ class ApiProvider:
                     except json.JSONDecodeError:
                         args = {}
                     try:
-                        body = _tool_body(await self._invoke_tool(mcp, name, args, on_tool))
+                        body = self._tool_body(await self._invoke_tool(mcp, name, args, on_tool), name)
                     except _ERRORS as exc:
                         body = self._public(exc)
                     yield {"type": "tool", "name": name, "phase": "end", "text": f"Finished {label}"}
@@ -946,7 +950,7 @@ class ApiProvider:
                     yield {"type": "tool", "name": name, "phase": "start", "text": f"Calling {label}..."}
                     args = block.get("input") if isinstance(block.get("input"), dict) else {}
                     try:
-                        body = _tool_body(await self._invoke_tool(mcp, name, args, on_tool))
+                        body = self._tool_body(await self._invoke_tool(mcp, name, args, on_tool), name)
                     except _ERRORS as exc:
                         body = self._public(exc)
                     yield {"type": "tool", "name": name, "phase": "end", "text": f"Finished {label}"}

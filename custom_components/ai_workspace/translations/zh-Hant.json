@@ -14,6 +14,8 @@
           "enable_dictate": "顯示聽寫按鈕",
           "allow_users": "允許一般使用者",
           "house_map": "設定目錄",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "跨聊天",
           "keep_chats": "要保留的聊天",
           "runtime_token": "Runtime 權杖"
@@ -28,6 +30,8 @@
           "enable_dictate": "訊息框中的麥克風。",
           "allow_users": "非管理員的已登入使用者可以開啟懸浮聊天。關閉則僅限管理員。側欄項目仍僅管理員可見。 他們只能以自己的權限使用內建的 Home Assistant MCP 伺服器。",
           "house_map": "選用的本機索引，用於已命名項目的接線（觸發器、相關 id）。預設關閉。不要用來列出自動化或開關狀態——那用即時 MCP。不是即時狀態、歷程或追蹤。",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "預設關閉。開啟後，問題可以使用標題有相同詞語的另一個聊天。不必說「聊天」。只附上短摘錄，且不修改那個聊天。",
           "keep_chats": "每人保留的未釘選最新聊天。已釘選的聊天一律保留。預設 30。",
           "runtime_token": "Docker Runtime 的共用密鑰。在容器上將 RUNTIME_TOKEN 設為相同的值。附加元件會自動配對，請留空。"
@@ -83,6 +87,8 @@
           "enable_dictate": "顯示聽寫按鈕",
           "allow_users": "允許一般使用者",
           "house_map": "設定目錄",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "跨聊天",
           "keep_chats": "要保留的聊天",
           "runtime_token": "Runtime 權杖"
@@ -97,6 +103,8 @@
           "enable_dictate": "訊息框中的麥克風。",
           "allow_users": "非管理員的已登入使用者可以開啟懸浮聊天。關閉則僅限管理員。側欄項目仍僅管理員可見。 他們只能以自己的權限使用內建的 Home Assistant MCP 伺服器。",
           "house_map": "選用的本機索引，用於已命名項目的接線（觸發器、相關 id）。預設關閉。不要用來列出自動化或開關狀態——那用即時 MCP。不是即時狀態、歷程或追蹤。",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "預設關閉。開啟後，問題可以使用標題有相同詞語的另一個聊天。不必說「聊天」。只附上短摘錄，且不修改那個聊天。",
           "keep_chats": "每人保留的未釘選最新聊天。已釘選的聊天一律保留。預設 30。",
           "runtime_token": "Docker Runtime 的共用密鑰。在容器上將 RUNTIME_TOKEN 設為相同的值。附加元件會自動配對，請留空。"

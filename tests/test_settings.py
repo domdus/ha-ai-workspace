@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from app.settings import Settings
+from app.settings import Settings, _bool_opt, _default_hass_url
 
 
 def test_addon_options_write_mcp_json(tmp_path: Path, monkeypatch) -> None:
@@ -42,6 +42,33 @@ def test_runtime_token_from_addon_options(tmp_path: Path, monkeypatch) -> None:
     assert Settings.from_env().runtime_token == "tok-1"
     monkeypatch.setenv("RUNTIME_TOKEN", "env-tok")
     assert Settings.from_env().runtime_token == "env-tok"
+
+
+def test_shorten_mcp_results_defaults_on(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.delenv("SHORTEN_MCP_RESULTS", raising=False)
+    monkeypatch.setenv("DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.delenv("ADDON_OPTIONS", raising=False)
+    assert Settings.from_env().shorten_mcp_results is True
+    monkeypatch.setenv("SHORTEN_MCP_RESULTS", "false")
+    assert Settings.from_env().shorten_mcp_results is False
+    assert _bool_opt({"shorten_mcp_results": False}, "shorten_mcp_results", "MISSING_ENV", True) is False
+    monkeypatch.delenv("CHANGE_HISTORY", raising=False)
+    monkeypatch.delenv("SHORTEN_MCP_RESULTS", raising=False)
+    assert Settings.from_env().change_history is True
+    monkeypatch.setenv("CHANGE_HISTORY", "false")
+    assert Settings.from_env().change_history is False
+
+
+def test_default_hass_url(monkeypatch) -> None:
+    monkeypatch.delenv("HASS_URL", raising=False)
+    monkeypatch.delenv("HOMEASSISTANT_URL", raising=False)
+    monkeypatch.delenv("SUPERVISOR_TOKEN", raising=False)
+    assert _default_hass_url({}) == "http://homeassistant:8123"
+    monkeypatch.setenv("SUPERVISOR_TOKEN", "x")
+    assert _default_hass_url({}) == "http://127.0.0.1:8123"
+    assert _default_hass_url({"hass_url": "http://ha.local:8123"}) == "http://ha.local:8123"
+    monkeypatch.setenv("HASS_URL", "http://env:8123/")
+    assert _default_hass_url({}) == "http://env:8123"
 
 
 def test_mcp_url_bootstraps_empty_config_path(tmp_path: Path, monkeypatch) -> None:
