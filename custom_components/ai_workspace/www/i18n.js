@@ -66,8 +66,6 @@ export const I18N = {
     image: "Image",
     error: "Error",
     not_signed_in: "Not signed in",
-    mcp_result: "Last MCP result: {kind}",
-    mcp_result_tool: "Last MCP result: {kind} ({tool})",
   },
   de: {
     title: "AI Workspace",
@@ -136,8 +134,6 @@ export const I18N = {
     image: "Bild",
     error: "Fehler",
     not_signed_in: "Nicht angemeldet",
-    mcp_result: "Letztes MCP-Ergebnis: {kind}",
-    mcp_result_tool: "Letztes MCP-Ergebnis: {kind} ({tool})",
   },
   fr: {
     title: "AI Workspace",

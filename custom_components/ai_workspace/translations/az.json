@@ -27,7 +27,7 @@
           "enable_dictate": "Mesaj qutusunda mikrofon.",
           "allow_users": "Administrator olmayan daxil olmuş istifadəçilər üzən çatı aça bilər. Sönülü onu administratorlara saxlayır. Yan panel bəndi administratorlara məxsus qalır. Onlar yalnız öz icazələri ilə daxili Home Assistant MCP serverini alırlar.",
           "house_map": "Adlı elementin naqilləşməsi (tətiklər, bağlı id-lər) üçün istəyə bağlı yerli indeks. Defolt sönülü. Avtomatlaşdırmaları və ya açıq/sönülünü siyahılamaq üçün deyil — buna canlı MCP istifadə edin. Canlı vəziyyət, tarixçə və ya izlər deyil.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
           "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Defolt sönülü. Yanılı olanda sual başlığında ortaq söz olan başqa çatı istifadə edə bilər. Çat demək lazım deyil. Yalnız qısa parça, və o çat dəyişmir.",
           "keep_chats": "Hər şəxs üçün saxlanılacaq ən yeni sancılanmamış çatlar. Sancılmış çatlar həmişə qalır. Defolt 30."
@@ -96,7 +96,7 @@
           "enable_dictate": "Mesaj qutusunda mikrofon.",
           "allow_users": "Administrator olmayan daxil olmuş istifadəçilər üzən çatı aça bilər. Sönülü onu administratorlara saxlayır. Yan panel bəndi administratorlara məxsus qalır. Onlar yalnız öz icazələri ilə daxili Home Assistant MCP serverini alırlar.",
           "house_map": "Adlı elementin naqilləşməsi (tətiklər, bağlı id-lər) üçün istəyə bağlı yerli indeks. Defolt sönülü. Avtomatlaşdırmaları və ya açıq/sönülünü siyahılamaq üçün deyil — buna canlı MCP istifadə edin. Canlı vəziyyət, tarixçə və ya izlər deyil.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
           "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Defolt sönülü. Yanılı olanda sual başlığında ortaq söz olan başqa çatı istifadə edə bilər. Çat demək lazım deyil. Yalnız qısa parça, və o çat dəyişmir.",
           "keep_chats": "Hər şəxs üçün saxlanılacaq ən yeni sancılanmamış çatlar. Sancılmış çatlar həmişə qalır. Defolt 30."

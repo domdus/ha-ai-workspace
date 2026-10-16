@@ -478,9 +478,6 @@ class UiView(HomeAssistantView):
                 "tts": settings.tts_engine,
                 "speak": bool(settings.speak_replies),
                 "tts_heavy": overlay_tts_heavy(_hass(request), settings.tts_engine),
-                "mcp_result": (
-                    last_mcp_result(_hass(request)) if getattr(user, "is_admin", False) else None
-                ),
                 "change_history": bool(getattr(settings, "change_history", True)),
             }
         )

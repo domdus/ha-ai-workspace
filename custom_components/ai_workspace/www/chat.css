@@ -438,12 +438,6 @@ h1 {
   color: var(--error-color);
 }
 
-.mcp-result {
-  margin: var(--ha-space-1) 0 0;
-  font-size: var(--ha-font-size-xs, 0.75rem);
-  color: var(--secondary-text-color);
-}
-
 .stage {
   flex: 1 0 auto;
   display: flex;

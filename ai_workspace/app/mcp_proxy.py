@@ -27,9 +27,11 @@ _FORWARD = {
     "content-type",
     "mcp-session-id",
     "mcp-protocol-version",
-    "authorization",
     "last-event-id",
 }
+# Never forward Authorization from Cursor. Auth for HA /api/mcp (and other MCP
+# that needs a Bearer) is stored on the upstream when the chat wraps servers.
+# Cursor's own Authorization would overwrite that and HA logs ban warnings.
 _DROP = {"content-length", "transfer-encoding", "connection", "keep-alive"}
 
 
@@ -175,6 +177,10 @@ async def proxy_mcp(request: Request, secret: str, digest: str, actor: str = "")
             headers[key] = value
     if "accept" not in {key.lower() for key in headers}:
         headers["Accept"] = "application/json, text/event-stream"
+    target = str(upstream.get("url") or "")
+    if _is_builtin_mcp(target) and not _header(headers, "authorization"):
+        logger.warning("mcp proxy refused /api/mcp without Bearer (avoids HA ban noise)")
+        raise HTTPException(status_code=502, detail="Built-in MCP needs a Home Assistant login.")
     tool_call = parse_tool_call(body) if request.method.upper() == "POST" else None
     activity_token = ""
     if tool_call is not None and _change_history_enabled(request):
@@ -199,7 +205,7 @@ async def proxy_mcp(request: Request, secret: str, digest: str, actor: str = "")
     try:
         status, response_headers, raw = await asyncio.to_thread(
             _forward,
-            str(upstream["url"]),
+            target,
             headers,
             body,
             request.method,
@@ -246,6 +252,21 @@ def _load_secret(path: Path | None) -> str:
     except OSError:
         logger.warning("mcp proxy secret could not be stored", exc_info=True)
         return secrets.token_urlsafe(18)
+
+
+def _header(headers: dict[str, str], name: str) -> str:
+    wanted = name.lower()
+    for key, value in headers.items():
+        if key.lower() == wanted:
+            return str(value or "").strip()
+    return ""
+
+
+def _is_builtin_mcp(url: str) -> bool:
+    from urllib.parse import urlparse
+
+    path = (urlparse(str(url or "")).path or "").rstrip("/").lower()
+    return path == "/api/mcp"
 
 
 def _activity_target(request: Request) -> tuple[str, str]:

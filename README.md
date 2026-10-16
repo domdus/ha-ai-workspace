@@ -292,7 +292,7 @@ Cursor does not call MCP from Home Assistant. HTTP MCP (HA-MCP and others) is re
 2. **Change History** — before and after each `tools/call`, the proxy (Cursor) or `on_tool` (cloud) snapshots config and commits a row when something actually changed. **Change History** on the integration (default on) turns this off without removing routing.
 3. **Result sizing** — large MCP JSON is shortened **before the model reads it**, with the same code on both paths. Entities are grouped by area as ids only, and the model can ask again for one area or one entity. A shorter list keeps each entity's state and drops bulky attributes. One entity, one room, or one automation still arrives whole. The model always receives valid JSON; nothing is cut off in the middle of an object.
 
-**Shorten large MCP tool results** and **Change History** are on by default. Turn either off on the AI Workspace integration; both flags are passed to the Runtime on each Cursor chat. Admins see **Last MCP result: unchanged / area-map / truncated** under the chat title after a tool returns; Home Assistant logs the same line (`mcp proxy last tool result`).
+**Shorten large MCP tool results** and **Change History** are on by default. Turn either off on the AI Workspace integration; both flags are passed to the Runtime on each Cursor chat. Home Assistant logs result sizing as `mcp proxy last tool result` (`unchanged` / `area-map` / `truncated`).
 
 ## Privacy and security
 

@@ -27,7 +27,7 @@
           "enable_dictate": "Mikrofon v poli zprávy.",
           "allow_users": "Přihlášení uživatelé bez oprávnění správce mohou otevřít plovoucí chat. Vypnuto ho nechá jen správcům. Položka postranního panelu zůstane jen pro správce. Dostanou jen vestavěný MCP server Home Assistantu se svými vlastními oprávněními.",
           "house_map": "Volitelný místní index zapojení pojmenované položky (spouštěče, související id). Ve výchozím stavu vypnuto. Ne pro výpis automatizací ani zap/vyp — k tomu použijte živé MCP. Ne živý stav, historie ani stopy.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
           "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Ve výchozím stavu vypnuto. Když je zapnuto, otázka může použít jiný chat, jehož název sdílí slova. Není třeba říkat chat. Jen krátký výňatek a ten chat se nemění.",
           "keep_chats": "Nejnovější nepřipnuté chaty na osobu. Připnuté chaty zůstanou vždy. Výchozí 30."
@@ -96,7 +96,7 @@
           "enable_dictate": "Mikrofon v poli zprávy.",
           "allow_users": "Přihlášení uživatelé bez oprávnění správce mohou otevřít plovoucí chat. Vypnuto ho nechá jen správcům. Položka postranního panelu zůstane jen pro správce. Dostanou jen vestavěný MCP server Home Assistantu se svými vlastními oprávněními.",
           "house_map": "Volitelný místní index zapojení pojmenované položky (spouštěče, související id). Ve výchozím stavu vypnuto. Ne pro výpis automatizací ani zap/vyp — k tomu použijte živé MCP. Ne živý stav, historie ani stopy.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
           "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Ve výchozím stavu vypnuto. Když je zapnuto, otázka může použít jiný chat, jehož název sdílí slova. Není třeba říkat chat. Jen krátký výňatek a ten chat se nemění.",
           "keep_chats": "Nejnovější nepřipnuté chaty na osobu. Připnuté chaty zůstanou vždy. Výchozí 30."

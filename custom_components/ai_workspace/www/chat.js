@@ -462,7 +462,6 @@ export function mountAiWorkspace(root, options = {}) {
             <h1 class="title">${t("new_chat")}</h1>
           </div>
           <p class="banner" hidden></p>
-          <p class="mcp-result" hidden></p>
         </header>
         ${compact && hassObj()?.user?.is_admin ? `<a class="workspace-link" href="/ai-workspace">${t("open_workspace")}</a>` : ""}
         <div class="stage">
@@ -524,7 +523,6 @@ export function mountAiWorkspace(root, options = {}) {
   const sessionsEl = root.querySelector(".sessions");
   const titleEl = root.querySelector(".title");
   const bannerEl = root.querySelector(".banner");
-  const mcpResultEl = root.querySelector(".mcp-result");
   const form = root.querySelector(".composer");
   const scrollBottomBtn = root.querySelector(".scroll-bottom");
   const messageEl = root.querySelector(".message");
@@ -948,35 +946,6 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   let noticeTimer = 0;
-
-  function paintMcpResult(row) {
-    if (!mcpResultEl || !hassObj()?.user?.is_admin) {
-      if (mcpResultEl) mcpResultEl.hidden = true;
-      return;
-    }
-    const kind = String(row?.kind || "").trim();
-    const tool = String(row?.tool || "").trim();
-    if (!kind) {
-      mcpResultEl.hidden = true;
-      mcpResultEl.textContent = "";
-      return;
-    }
-    mcpResultEl.hidden = false;
-    mcpResultEl.textContent = tool
-      ? t("mcp_result_tool", { kind, tool })
-      : t("mcp_result", { kind });
-  }
-
-  async function refreshMcpResult() {
-    if (!mcpResultEl || !hassObj()?.user?.is_admin) return;
-    try {
-      const response = await apiFetch(`${API}/mcp_proxy`);
-      if (!response?.ok) return;
-      paintMcpResult(await response.json());
-    } catch (_err) {
-      /* ignore */
-    }
-  }
 
   function showNotice(text) {
     if (!bannerEl || !text) return;
@@ -2174,8 +2143,8 @@ export function mountAiWorkspace(root, options = {}) {
       });
     }
     settleTools(logEl);
-    const lastUser = [...messages].reverse().find((message) => message.role === "user");
-    refreshTurnHistory(lastUser?.created_at || "");
+    // Any Change History row for this chat — not only the last user turn.
+    refreshTurnHistory();
     clipToBottom();
     stickToBottom();
     requestAnimationFrame(() => requestAnimationFrame(stickToBottom));
@@ -3077,7 +3046,6 @@ export function mountAiWorkspace(root, options = {}) {
           tts: Boolean(body.tts) && body.tts !== "off",
           ttsHeavy: body.tts_heavy === true,
         };
-        paintMcpResult(body.mcp_result);
       }
     } catch (_err) {
       show = false;
@@ -3210,7 +3178,6 @@ export function mountAiWorkspace(root, options = {}) {
           }
           addChip(tools, data, true);
           if (assistant.querySelector(".tools span.busy")) setActivity(assistant, "");
-          if (data.phase === "end") refreshMcpResult();
         } else if (name === "status") {
           setStatus(data.text);
         } else if (name === "error") {
@@ -3227,7 +3194,6 @@ export function mountAiWorkspace(root, options = {}) {
           settleTools(assistant);
           setActivity(assistant, "");
         } else if (name === "done") {
-          refreshMcpResult();
           sawDone = true;
           streamFinal = true;
           streamNode = streamNode || assistant.querySelector(".text");
@@ -3508,12 +3474,9 @@ export function mountAiWorkspace(root, options = {}) {
       }
       const rows = await resp.json();
       const since = Date.parse(sinceIso || "") || 0;
-      if (!since) {
-        syncCopyChat();
-        return;
-      }
       turnHasHistory = (Array.isArray(rows) ? rows : []).some((row) => {
         if (String(row.session_id || "") !== chatId) return false;
+        if (!since) return true;
         const at = Date.parse(row.created_at || "") || 0;
         return at >= since - 2500;
       });
@@ -3569,9 +3532,9 @@ export function mountAiWorkspace(root, options = {}) {
         closeHistory();
         openSession(chatId);
       });
-      who.append(link, row.agent ? ` · ${row.agent}` : "");
+      who.append(link, row.agent ? ` · ${String(row.agent).replace(/Â·/g, "·")}` : "");
     } else {
-      who.textContent = [title, row.agent].filter(Boolean).join(" · ");
+      who.textContent = [title, String(row.agent || "").replace(/Â·/g, "·")].filter(Boolean).join(" · ");
     }
     item.append(when, line, who);
     if (row.undone_at) {

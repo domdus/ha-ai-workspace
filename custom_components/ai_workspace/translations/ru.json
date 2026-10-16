@@ -27,7 +27,7 @@
           "enable_dictate": "Микрофон в поле сообщения.",
           "allow_users": "Вошедшие пользователи без прав администратора могут открыть плавающий чат. Выкл оставляет его администраторам. Пункт боковой панели остаётся только для администраторов. Они получают только встроенный MCP-сервер Home Assistant со своими правами.",
           "house_map": "Необязательный локальный индекс связей именованного элемента (триггеры, связанные id). По умолчанию выкл. Не для списка автоматизаций или вкл/выкл — для этого живой MCP. Не живое состояние, история или трассировки.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
           "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "По умолчанию выкл. Если вкл, вопрос может использовать другой чат, в названии которого есть общие слова. Не нужно говорить чат. Только короткий фрагмент, и этот чат не меняется.",
           "keep_chats": "Новые незакреплённые чаты на человека. Закреплённые чаты сохраняются всегда. По умолчанию 30."
@@ -96,7 +96,7 @@
           "enable_dictate": "Микрофон в поле сообщения.",
           "allow_users": "Вошедшие пользователи без прав администратора могут открыть плавающий чат. Выкл оставляет его администраторам. Пункт боковой панели остаётся только для администраторов. Они получают только встроенный MCP-сервер Home Assistant со своими правами.",
           "house_map": "Необязательный локальный индекс связей именованного элемента (триггеры, связанные id). По умолчанию выкл. Не для списка автоматизаций или вкл/выкл — для этого живой MCP. Не живое состояние, история или трассировки.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
           "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "По умолчанию выкл. Если вкл, вопрос может использовать другой чат, в названии которого есть общие слова. Не нужно говорить чат. Только короткий фрагмент, и этот чат не меняется.",
           "keep_chats": "Новые незакреплённые чаты на человека. Закреплённые чаты сохраняются всегда. По умолчанию 30."
