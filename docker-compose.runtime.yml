@@ -11,7 +11,7 @@
 # Home Assistant → Runtime URL: http://127.0.0.1:8090
 # On loopback RUNTIME_TOKEN is optional. With HOST 0.0.0.0 (bridge network, other host)
 # it is required: set a long random value here and the same one in
-# AI Workspace → Configure → Runtime token. Generate one with `openssl rand -hex 32`.
+# Cursor agent → Runtime token. Generate one with `openssl rand -hex 32`.
 # CURSOR_MODEL is only the fallback when the integration Model field is empty.
 # A value in the integration is sent as JSON `model` on each chat, then to AgentOptions.model.
 

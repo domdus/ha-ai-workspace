@@ -5,7 +5,6 @@
         "title": "AI Workspace",
         "description": "Wspólne ustawienia czatu. Potem dodaj pierwszego agenta (Cursor, OpenAI, OpenRouter, Ollama i inne). Połączenia i agenci są wierszami tej integracji.",
         "data": {
-          "runtime_url": "URL środowiska Cursor{runtime_url_mark}",
           "stt_engine": "Mowa na tekst",
           "tts_engine": "Tekst na mowę",
           "speak_replies": "Czytaj odpowiedzi automatycznie",
@@ -17,11 +16,9 @@
           "shorten_mcp_results": "Shorten large MCP tool results",
           "change_history": "Change History",
           "cross_chat": "Między czatami",
-          "keep_chats": "Czaty do zachowania",
-          "runtime_token": "Token Runtime"
+          "keep_chats": "Czaty do zachowania"
         },
         "data_description": {
-          "runtime_url": "{runtime_url_note}",
           "stt_engine": "Przeglądarka używa rozpoznawania mowy urządzenia i wymaga https:// lub localhost. Silnik Home Assistant (Whisper i inne w Ustawieniach) transkrybuje nagranie z tej strony. Przeglądarka i tak musi zezwolić na mikrofon, a robi to tylko na https:// lub localhost.",
           "tts_engine": "Piper, Google Translate lub głos AI Workspace agenta OpenAI. Odczyt odpowiedzi działa też przez http://. Wyłączone zostawia odpowiedzi jako tekst.",
           "speak_replies": "Gdy wybrany jest głos, każda odpowiedź jest czytana od razu. Wyłączone zostawia przycisk głośnika, aby odtworzyć ją samemu.",
@@ -33,8 +30,7 @@
           "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
           "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Domyślnie wyłączone. Gdy włączone, pytanie może użyć innego czatu, którego tytuł ma wspólne słowa. Nie trzeba mówić czat. Tylko krótki fragment i ten czat nie jest zmieniany.",
-          "keep_chats": "Najnowsze nieprzypięte czaty na osobę. Przypięte czaty zostają zawsze. Domyślnie 30.",
-          "runtime_token": "Wspólny sekret dla Runtime w Dockerze. Ustaw tę samą wartość jako RUNTIME_TOKEN w kontenerze. Dodatek paruje się automatycznie; zostaw puste."
+          "keep_chats": "Najnowsze nieprzypięte czaty na osobę. Przypięte czaty zostają zawsze. Domyślnie 30."
         },
         "sections": {
           "mcp": {
@@ -63,7 +59,7 @@
       }
     },
     "error": {
-      "no_runtime": "Środowisko Cursor jest nieosiągalne. Uruchom je i ustaw URL w AI Workspace.",
+      "no_runtime": "Środowisko Cursor jest nieosiągalne. Uruchom je i ustaw URL  w tym formularzu.",
       "required": "To pole jest wymagane.",
       "invalid_auth": "Dostawca odrzucił ten klucz API.",
       "cannot_connect": "Nie można połączyć się z dostawcą. Sprawdź adres URL i sieć."
@@ -78,7 +74,6 @@
         "title": "AI Workspace",
         "description": "Wspólne ustawienia czatu. Połączenia MCP i agentów dodasz przyciskami na stronie integracji AI Workspace.",
         "data": {
-          "runtime_url": "URL środowiska Cursor{runtime_url_mark}",
           "stt_engine": "Mowa na tekst",
           "tts_engine": "Tekst na mowę",
           "speak_replies": "Czytaj odpowiedzi automatycznie",
@@ -90,11 +85,9 @@
           "shorten_mcp_results": "Shorten large MCP tool results",
           "change_history": "Change History",
           "cross_chat": "Między czatami",
-          "keep_chats": "Czaty do zachowania",
-          "runtime_token": "Token Runtime"
+          "keep_chats": "Czaty do zachowania"
         },
         "data_description": {
-          "runtime_url": "{runtime_url_note}",
           "stt_engine": "Przeglądarka używa rozpoznawania mowy urządzenia i wymaga https:// lub localhost. Silnik Home Assistant (Whisper i inne w Ustawieniach) transkrybuje nagranie z tej strony. Przeglądarka i tak musi zezwolić na mikrofon, a robi to tylko na https:// lub localhost.",
           "tts_engine": "Piper, Google Translate lub głos AI Workspace agenta OpenAI. Odczyt odpowiedzi działa też przez http://. Wyłączone zostawia odpowiedzi jako tekst.",
           "speak_replies": "Gdy wybrany jest głos, każda odpowiedź jest czytana od razu. Wyłączone zostawia przycisk głośnika, aby odtworzyć ją samemu.",
@@ -106,8 +99,7 @@
           "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
           "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Domyślnie wyłączone. Gdy włączone, pytanie może użyć innego czatu, którego tytuł ma wspólne słowa. Nie trzeba mówić czat. Tylko krótki fragment i ten czat nie jest zmieniany.",
-          "keep_chats": "Najnowsze nieprzypięte czaty na osobę. Przypięte czaty zostają zawsze. Domyślnie 30.",
-          "runtime_token": "Wspólny sekret dla Runtime w Dockerze. Ustaw tę samą wartość jako RUNTIME_TOKEN w kontenerze. Dodatek paruje się automatycznie; zostaw puste."
+          "keep_chats": "Najnowsze nieprzypięte czaty na osobę. Przypięte czaty zostają zawsze. Domyślnie 30."
         },
         "sections": {
           "mcp": {
@@ -136,7 +128,7 @@
       }
     },
     "error": {
-      "no_runtime": "Środowisko Cursor jest nieosiągalne. Uruchom je i ustaw URL w AI Workspace.",
+      "no_runtime": "Środowisko Cursor jest nieosiągalne. Uruchom je i ustaw URL  w tym formularzu.",
       "required": "To pole jest wymagane.",
       "invalid_auth": "Dostawca odrzucił ten klucz API.",
       "cannot_connect": "Nie można połączyć się z dostawcą. Sprawdź adres URL i sieć."
@@ -190,7 +182,7 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Środowisko Cursor jest nieosiągalne. Uruchom je i ustaw URL w AI Workspace.",
+        "no_runtime": "Środowisko Cursor jest nieosiągalne. Uruchom je i ustaw URL  w tym formularzu.",
         "required": "To pole jest wymagane.",
         "invalid_auth": "Dostawca odrzucił ten klucz API.",
         "cannot_connect": "Nie można połączyć się z dostawcą. Sprawdź adres URL i sieć."
@@ -208,14 +200,18 @@
         },
         "provider_cursor": {
           "title": "Cursor",
-          "description": "Klucz API Cursor, model i wysiłek. URL środowiska zostaje w AI Workspace.",
+          "description": "Cursor Runtime, API key, model, and effort. The URL field fills only when this Home Assistant can reach the Runtime.",
           "data": {
+            "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
+            "runtime_token": "Runtime token",
             "cursor_api_key": "Klucz API Cursor",
             "model": "Model",
             "effort": "Wysiłek",
             "assist": "Dodaj do Assist"
           },
           "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Shared secret for a Docker Runtime. Set the same value as RUNTIME_TOKEN on the container. The add-on is paired automatically; leave this empty.",
             "cursor_api_key": "Z cursor.com/dashboard/integrations. Przy edycji zostaw puste, aby zachować zapisany klucz. Zostaw puste, jeśli Runtime ma już CURSOR_API_KEY.",
             "model": "Wybierz jeden lub wpisz id. Puste używa Composer.",
             "effort": "Szybki, Wysoki lub Wysoki szybki. Composer używa Szybki, chyba że wybierzesz Wysoki.",
