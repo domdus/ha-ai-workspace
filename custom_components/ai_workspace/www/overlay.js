@@ -227,8 +227,9 @@ async function ensureHost() {
   let chatApi = null;
   let mounting = null;
   let placeToken = 0;
-  // Config add actions live in `#fab` (older HA used `ha-fab`). Skip the empty
-  // wrapper — Dashboards still has the slot, but no button.
+  // Config add actions live in `#fab` / slot="fab" (older HA used `ha-fab`).
+  // Skip the empty wrapper — Dashboards still has the slot, but no button.
+  // Integrations uses a labeled ha-button ("Add integration"), so allow wider FABs.
   const cornerButtons = () => {
     const boxes = [];
     const visit = (el, origin) => {
@@ -236,7 +237,7 @@ async function ensureHost() {
       const style = el.ownerDocument.defaultView.getComputedStyle(el);
       if (style.display === "none" || style.visibility === "hidden") return;
       const rect = el.getBoundingClientRect();
-      if (rect.width < 36 || rect.height < 36 || rect.width > 96 || rect.height > 96) return;
+      if (rect.width < 36 || rect.height < 36 || rect.height > 96 || rect.width > 320) return;
       boxes.push({
         top: origin.top + rect.top,
         bottom: origin.top + rect.bottom,

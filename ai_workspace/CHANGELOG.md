@@ -12,11 +12,13 @@
 - Change History treats HA-MCP's empty/`null` dashboard `url_path` as the default board, and watches `python_transform` writes so card moves are recorded
 - Cursor Runtime records Change History through the MCP proxy: commit waits for `lovelace_updated`, runtime defaults `hass_url` on HA OS, and prepare/commit failures log clearly
 - **MCP proxy** is the Runtime name for routing Cursor MCP, Change History, and large-result sizing; `/api/mcp-fit/` still works as an alias
-- **Shorten large MCP tool results** and **Change History** are shared options (default on) for cloud agents and Cursor; admins see Last MCP result: unchanged / area-map / truncated
+- **Shorten large MCP tool results** and **Change History** are shared options (default on) for cloud agents and Cursor; sizing is logged as `mcp proxy last tool result`, not shown in the chat header
 - Overlay Text-to-speech keeps the engine you pick (including Google Translate or Off); it no longer jumps to OpenAI
 - Existing Assist pipelines keep their STT/TTS; new pipelines still get our engines on first create. A removed engine becomes none instead of stealing another pipeline's voice
 - OpenAI TTS 429 `credit_balance_exhausted` is a provider quota issue, not this naming fix
 - Cursor Runtime URL and token live on the Cursor agent form; the URL is filled only when `/api/health` answers, not from a compose hostname guess
+- Change History icon under the reply stays when you reopen the chat if that chat has any recorded writes
+- MCP proxy no longer forwards Cursor's Authorization to upstream MCP, so built-in `/api/mcp` keeps the Home Assistant Bearer and does not spam HTTP ban warnings
 
 ## 1.1.0
 

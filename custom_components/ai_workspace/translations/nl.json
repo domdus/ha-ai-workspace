@@ -27,7 +27,7 @@
           "enable_dictate": "Microfoon in het berichtveld.",
           "allow_users": "Aangemelde gebruikers die geen beheerder zijn, kunnen de zwevende chat openen. Uit houdt het bij beheerders. Het zijbalkitem blijft alleen voor beheerders. Ze krijgen alleen de ingebouwde Home Assistant MCP Server met hun eigen rechten.",
           "house_map": "Optionele lokale index voor de bedrading van een benoemd item (triggers, gerelateerde id’s). Standaard uit. Niet om automatiseringen of aan/uit te listen — gebruik daar live MCP voor. Geen livestatus, geschiedenis of traces.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
           "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Standaard uit. Als het aan staat, kan een vraag een andere chat gebruiken waarvan de titel woorden deelt. Je hoeft niet chat te zeggen. Alleen een kort fragment, en die chat wordt niet gewijzigd.",
           "keep_chats": "Nieuwste niet-vastgezette chats per persoon. Vastgezette chats blijven altijd. Standaard 30."
@@ -96,7 +96,7 @@
           "enable_dictate": "Microfoon in het berichtveld.",
           "allow_users": "Aangemelde gebruikers die geen beheerder zijn, kunnen de zwevende chat openen. Uit houdt het bij beheerders. Het zijbalkitem blijft alleen voor beheerders. Ze krijgen alleen de ingebouwde Home Assistant MCP Server met hun eigen rechten.",
           "house_map": "Optionele lokale index voor de bedrading van een benoemd item (triggers, gerelateerde id’s). Standaard uit. Niet om automatiseringen of aan/uit te listen — gebruik daar live MCP voor. Geen livestatus, geschiedenis of traces.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
           "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Standaard uit. Als het aan staat, kan een vraag een andere chat gebruiken waarvan de titel woorden deelt. Je hoeft niet chat te zeggen. Alleen een kort fragment, en die chat wordt niet gewijzigd.",
           "keep_chats": "Nieuwste niet-vastgezette chats per persoon. Vastgezette chats blijven altijd. Standaard 30."

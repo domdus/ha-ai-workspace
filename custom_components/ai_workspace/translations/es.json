@@ -27,7 +27,7 @@
           "enable_dictate": "Micrófono en el cuadro de mensaje.",
           "allow_users": "Los usuarios conectados que no son administradores pueden abrir el chat flotante. Desactivado lo deja solo para administradores. La entrada de la barra lateral sigue siendo solo para administradores. Solo obtienen el servidor MCP integrado de Home Assistant con sus propios permisos.",
           "house_map": "Índice local opcional del cableado de un elemento con nombre (desencadenadores, ids relacionados). Desactivado por defecto. No sirve para listar automatizaciones ni on/off: usa MCP en vivo. No es estado en vivo, historial ni trazas.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
           "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Desactivado por defecto. Si está activado, una pregunta puede usar otro chat cuyo título comparta palabras con ella. No hace falta decir chat. Solo un extracto breve, y ese chat no se modifica.",
           "keep_chats": "Chats no fijados más recientes a conservar por persona. Los chats fijados se conservan siempre. Por defecto 30."
@@ -96,7 +96,7 @@
           "enable_dictate": "Micrófono en el cuadro de mensaje.",
           "allow_users": "Los usuarios conectados que no son administradores pueden abrir el chat flotante. Desactivado lo deja solo para administradores. La entrada de la barra lateral sigue siendo solo para administradores. Solo obtienen el servidor MCP integrado de Home Assistant con sus propios permisos.",
           "house_map": "Índice local opcional del cableado de un elemento con nombre (desencadenadores, ids relacionados). Desactivado por defecto. No sirve para listar automatizaciones ni on/off: usa MCP en vivo. No es estado en vivo, historial ni trazas.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
           "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Desactivado por defecto. Si está activado, una pregunta puede usar otro chat cuyo título comparta palabras con ella. No hace falta decir chat. Solo un extracto breve, y ese chat no se modifica.",
           "keep_chats": "Chats no fijados más recientes a conservar por persona. Los chats fijados se conservan siempre. Por defecto 30."

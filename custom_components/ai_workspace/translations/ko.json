@@ -27,7 +27,7 @@
           "enable_dictate": "메시지 상자의 마이크.",
           "allow_users": "관리자가 아닌 로그인한 사용자도 떠 있는 채팅을 열 수 있습니다. 끄면 관리자만 됩니다. 사이드바 항목은 계속 관리자 전용입니다. 이들은 자신의 권한으로 내장 Home Assistant MCP 서버만 사용합니다.",
           "house_map": "이름 있는 항목의 배선(트리거, 관련 id)을 위한 선택적 로컬 인덱스. 기본은 끔. 자동화 목록이나 켜짐/꺼짐용이 아닙니다. 그건 실시간 MCP를 쓰세요. 실시간 상태, 기록, 추적은 아닙니다.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
           "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "기본은 끔. 켜면 제목에 같은 단어가 있는 다른 채팅을 질문에 쓸 수 있습니다. 채팅이라고 말할 필요가 없습니다. 짧은 발췌만 사용하며 그 채팅은 바꾸지 않습니다.",
           "keep_chats": "사람당 유지할 고정되지 않은 최신 채팅. 고정된 채팅은 항상 유지됩니다. 기본값 30."
@@ -96,7 +96,7 @@
           "enable_dictate": "메시지 상자의 마이크.",
           "allow_users": "관리자가 아닌 로그인한 사용자도 떠 있는 채팅을 열 수 있습니다. 끄면 관리자만 됩니다. 사이드바 항목은 계속 관리자 전용입니다. 이들은 자신의 권한으로 내장 Home Assistant MCP 서버만 사용합니다.",
           "house_map": "이름 있는 항목의 배선(트리거, 관련 id)을 위한 선택적 로컬 인덱스. 기본은 끔. 자동화 목록이나 켜짐/꺼짐용이 아닙니다. 그건 실시간 MCP를 쓰세요. 실시간 상태, 기록, 추적은 아닙니다.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Admins see Last MCP result: unchanged / area-map / truncated after a tool returns.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
           "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "기본은 끔. 켜면 제목에 같은 단어가 있는 다른 채팅을 질문에 쓸 수 있습니다. 채팅이라고 말할 필요가 없습니다. 짧은 발췌만 사용하며 그 채팅은 바꾸지 않습니다.",
           "keep_chats": "사람당 유지할 고정되지 않은 최신 채팅. 고정된 채팅은 항상 유지됩니다. 기본값 30."

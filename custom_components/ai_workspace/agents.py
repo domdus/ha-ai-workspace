@@ -84,7 +84,7 @@ class Agent:
             bits.append(model)
         if self.effort:
             bits.append(effort or self.effort)
-        return " · ".join(bits)
+        return " / ".join(bits)
 
 
 def _text(value: Any) -> str:
