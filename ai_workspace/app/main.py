@@ -37,6 +37,7 @@ def _configure_logging() -> None:
 class SessionCreate(BaseModel):
     provider: str = "cursor"
     id: str | None = None
+    agent_id: str | None = None
 
 
 class SessionUpdate(BaseModel):
@@ -73,7 +74,9 @@ class ChatRequest(BaseModel):
     effort: str = ""
     api_key: str = ""
     question: str = Field(default="", max_length=8000)
-    handoff: str = Field(default="", max_length=20000)
+    handoff: str = Field(default="", max_length=120000)
+    history_in_ha: bool = False
+    sync_agent_id: str = ""
     shorten_mcp_results: bool | None = None
     change_history: bool | None = None
 
@@ -225,7 +228,7 @@ def create_session(request: Request, body: SessionCreate) -> dict:
     providers = request.app.state.providers
     provider = body.provider if body.provider in providers else next(iter(providers), "cursor")
     store: Store = request.app.state.store
-    session = store.create_session(_user_id(request), provider, body.id)
+    session = store.create_session(_user_id(request), provider, body.id, body.agent_id)
     return _session_dict(session)
 
 
@@ -292,16 +295,31 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
         bool(body.mcp and (body.mcp.servers or body.mcp.url)),
         len(files),
     )
-    store.add_message(
-        session.id,
-        "user",
-        message,
-        json.dumps(image_events(images) + file_events(files), ensure_ascii=False),
-    )
-    store.rename_if_default(session.id, title_from_prompt(question))
+    ha_history = bool(body.history_in_ha)
+    if not ha_history:
+        store.add_message(
+            session.id,
+            "user",
+            message,
+            json.dumps(image_events(images) + file_events(files), ensure_ascii=False),
+        )
+    # HA already owns titles and history. A rebuilt runtime DB looks like a first
+    # turn even when the UI is showing an old chat — do not retitle from that.
+    ha_owned = ha_history or bool(body.handoff.strip())
+    if not ha_owned:
+        store.rename_if_default(session.id, title_from_prompt(question))
     outbound = _with_ui_context(attach_files_to_message(message, files), body.origin)
     suggest = getattr(provider, "suggest_title", None)
-    want_title = len(store.list_messages(session.id)) <= 1 and callable(suggest) and needs_title_summary(question)
+    want_title = (
+        not ha_owned
+        and len(store.list_messages(session.id)) <= 1
+        and callable(suggest)
+        and needs_title_summary(question)
+    )
+    sync_id = body.sync_agent_id.strip()
+    if sync_id and session.agent_id != sync_id:
+        store.set_agent_id(session.id, sync_id)
+        session.agent_id = sync_id
 
     def on_agent_id(agent_id: str) -> None:
         store.set_agent_id(session.id, agent_id)
@@ -379,7 +397,10 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
             answer = (final or "".join(parts)).strip()
             if error and not answer:
                 answer = error
-            store.add_message(session.id, "assistant", answer, json.dumps(tools, ensure_ascii=False))
+            if ha_history:
+                store.touch(session.id)
+            else:
+                store.add_message(session.id, "assistant", answer, json.dumps(tools, ensure_ascii=False))
             if error is None and not disconnected:
                 yield _sse("done", {"type": "done", "answer": answer})
                 yield _sse("status", {"type": "status", "text": "Done."})

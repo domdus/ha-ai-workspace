@@ -50,8 +50,9 @@ _STOP = frozenset(
     }
 )
 _PLACEHOLDERS = frozenset({"", "new chat", "neuer chat"})
-_HANDOFF_MAX = 16
-_HANDOFF_CLIP = 1600
+_HANDOFF_MAX = 40
+_HANDOFF_CLIP = 2000
+_HANDOFF_BUDGET = 100000
 _TABLE_LINE = re.compile(
     r"""
     ^\s*
@@ -65,9 +66,11 @@ _TABLE_LINE = re.compile(
     re.VERBOSE,
 )
 HANDOFF_LEAD = (
-    "This is the same chat. The transcript below is the conversation so far, "
-    "including replies from other agents. "
-    "Continue from it. Do not greet as if this is a new chat, and do not say the chat was empty. "
+    "This is the same Home Assistant chat. AI Workspace already shows these turns; "
+    "the transcript below is the source of truth. Continue from it. "
+    "Do not greet as if this is a new chat, do not say the chat was empty, "
+    "and do not ask the user to paste earlier messages. "
+    "If they ask what you talked about, summarize this transcript. "
     "If the user says to go ahead, do the last thing you offered."
 )
 _HANDOFF_LEAD = HANDOFF_LEAD
@@ -183,16 +186,29 @@ def handoff_note(rows, title: str = "") -> str:
     if len(lines) > _HANDOFF_MAX:
         lines = lines[-_HANDOFF_MAX:]
     name = " ".join(str(title or "").split())
+    turns = (len(lines) + 1) // 2
     if name and name.casefold() not in _PLACEHOLDERS:
         lead = (
-            f'This is the same chat titled "{name[:80]}". '
-            "The transcript below is the conversation so far, including replies from other agents. "
-            "Continue from it. Do not greet as if this is a new chat, and do not say the chat was empty. "
+            f'This is the same Home Assistant chat titled "{name[:80]}". '
+            f"AI Workspace already shows this conversation ({turns} prior turn(s)); "
+            "the transcript below is the source of truth, including replies from other agents. "
+            "Continue from it. Do not greet as if this is a new chat, do not say the chat was empty, "
+            "and do not ask the user to paste earlier messages. "
+            "If they ask what you talked about, summarize this transcript. "
             "If the user says to go ahead, do the last thing you offered."
         )
     else:
         lead = _HANDOFF_LEAD
-    return f"{lead}\n\n" + "\n".join(lines)
+    return _fit_handoff(lead, lines)
+
+
+def _fit_handoff(lead: str, lines: list[str]) -> str:
+    kept = list(lines)
+    note = f"{lead}\n\n" + "\n".join(kept)
+    while kept and len(note) > _HANDOFF_BUDGET:
+        kept.pop(0)
+        note = f"{lead}\n\n" + "\n".join(kept)
+    return note
 
 
 def attach_handoff(message: str, rows, needed: bool = True, title: str = "") -> str:

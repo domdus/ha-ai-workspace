@@ -280,6 +280,8 @@ class CursorProvider:
             "on" if attach_tools else "off",
             created,
         )
+        if created and not (handoff or "").strip():
+            logger.info("cursor new agent without HA transcript session=%s", session.id)
         try:
             run = await _start_run(agent, outbound, images, run_servers)
         except Exception as exc:
@@ -436,14 +438,13 @@ def _session_idle(updated_at: str) -> bool:
 
 
 def apply_handoff(message: str, handoff: str, fresh: bool = True, question: str = "") -> str:
-    """Paste the HA transcript above the question.
+    """Paste the HA transcript above the question when the agent is new or cold.
 
-    A follow-up a few seconds later can still land on an agent that has no
-    memory of the previous turn, so the transcript goes out every time.
+    A warm in-memory agent (``fresh=False``) already holds the thread; Home
+    Assistant still builds handoff every turn for cold paths after idle or rebuild.
     """
-    del fresh
     note = (handoff or "").strip()
-    if not note:
+    if not note or not fresh:
         return message
     marker = note.split("\n", 1)[0].strip()
     body = message or ""

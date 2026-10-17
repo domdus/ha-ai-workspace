@@ -4,6 +4,21 @@ const loadChat = () =>
 
 const HOST_ID = "ha-ai-workspace-overlay";
 
+function applyHostLayout(host) {
+  if (!host) return;
+  Object.assign(host.style, {
+    position: "fixed",
+    inset: "0",
+    width: "0",
+    height: "0",
+    overflow: "visible",
+    pointerEvents: "none",
+    margin: "0",
+    padding: "0",
+    border: "0",
+  });
+}
+
 function hassObj() {
   return document.querySelector("home-assistant")?.hass;
 }
@@ -58,12 +73,19 @@ function refreshAccess(onReady) {
 
 async function ensureHost() {
   let host = document.getElementById(HOST_ID);
-  if (host) return host;
+  if (host) {
+    applyHostLayout(host);
+    return host;
+  }
   const [{ mountAiWorkspace }, { stringsFor }] = await loadChat();
   host = document.getElementById(HOST_ID);
-  if (host) return host;
+  if (host) {
+    applyHostLayout(host);
+    return host;
+  }
   host = document.createElement("div");
   host.id = HOST_ID;
+  applyHostLayout(host);
   document.body.appendChild(host);
   const ui = stringsFor(hassObj()?.locale?.language || hassObj()?.language);
   const shadow = host.attachShadow({ mode: "open" });
@@ -75,6 +97,7 @@ async function ensureHost() {
         right: var(--ha-space-4);
         bottom: var(--ai-fab-bottom, var(--ai-fab-rest));
         z-index: 9;
+        pointer-events: auto;
         transition: bottom 280ms cubic-bezier(0.16, 1, 0.3, 1);
       }
       .fab {
@@ -108,7 +131,8 @@ async function ensureHost() {
         top: 0;
         right: 0;
         width: min(420px, 100vw);
-        height: 100%;
+        height: 0;
+        max-height: 100%;
         z-index: 10;
         background: var(--primary-background-color);
         border-left: 1px solid var(--divider-color);
@@ -127,6 +151,7 @@ async function ensureHost() {
           visibility 0s linear 240ms;
       }
       .drawer.open {
+        height: 100%;
         transform: none;
         opacity: 1;
         pointer-events: auto;
@@ -359,7 +384,11 @@ async function ensureHost() {
 }
 
 function boot(tries = 0) {
-  if (document.getElementById(HOST_ID)) return;
+  const existing = document.getElementById(HOST_ID);
+  if (existing) {
+    applyHostLayout(existing);
+    return;
+  }
   const user = hassObj()?.user;
   if (!user) {
     if (tries < 50) window.setTimeout(() => boot(tries + 1), 200);
