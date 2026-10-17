@@ -41,11 +41,82 @@ function haHas(name) {
 }
 
 function haCreate(...names) {
-  for (const name of names) {
-    if (!name) continue;
-    if (!name.includes("-") || haHas(name)) return document.createElement(name);
-  }
+  const tag = names.find((name) => name && name.includes("-"));
+  if (tag) return document.createElement(tag);
   return document.createElement(names[names.length - 1] || "div");
+}
+
+async function loadHaPanel(componentName, urlPath) {
+  await customElements.whenDefined("partial-panel-resolver");
+  const resolver = document.createElement("partial-panel-resolver");
+  const panels = { [urlPath]: { url_path: urlPath, component_name: componentName } };
+  let routerOptions;
+  if (typeof resolver._getRoutes === "function") {
+    routerOptions = resolver._getRoutes(panels);
+  } else if (typeof resolver._updateRoutes === "function") {
+    resolver.hass = { panels };
+    resolver._updateRoutes();
+    routerOptions = resolver.routerOptions;
+  }
+  const load = routerOptions?.routes?.[urlPath]?.load;
+  if (typeof load === "function") await load.call(routerOptions.routes[urlPath]);
+}
+
+async function ensureHaComponents(names) {
+  const missing = names.filter((name) => name && name.includes("-") && !haHas(name));
+  if (!missing.length) return;
+  const ready = Promise.all(missing.map((name) => customElements.whenDefined(name)));
+  try {
+    if (missing.includes("ha-textarea")) await loadHaPanel("history", "history");
+    if (missing.some((name) => !haHas(name))) {
+      await loadHaPanel("config", "tmp");
+      if (haHas("ha-panel-config")) {
+        const panel = document.createElement("ha-panel-config");
+        const load = panel.routerOptions?.routes?.automation?.load;
+        if (typeof load === "function") await load.call(panel.routerOptions.routes.automation);
+      }
+    }
+  } catch (_err) {
+    /* Current page may already expose the tags. */
+  }
+  await Promise.race([ready, new Promise((resolve) => setTimeout(resolve, 8000))]);
+}
+
+let uiTheme = "standard";
+let uiThemeLoaded = false;
+
+export function haComponentsUi() {
+  return uiTheme === "ha_components";
+}
+
+function uiCreate(...names) {
+  if (!haComponentsUi()) {
+    return document.createElement(names[names.length - 1] || "div");
+  }
+  return haCreate(...names);
+}
+
+export async function prefetchUiTheme(getToken) {
+  if (uiThemeLoaded) return uiTheme;
+  const hass = hassObj();
+  const token = (typeof getToken === "function" ? getToken() : "") || hass?.auth?.data?.access_token || "";
+  if (typeof hass?.fetchWithAuth !== "function" && !token) return uiTheme;
+  const headers = { Accept: "application/json" };
+  try {
+    const response =
+      typeof hass?.fetchWithAuth === "function"
+        ? await hass.fetchWithAuth(`${API}/ui`, { headers })
+        : await fetch(`${API}/ui`, { headers: { ...headers, Authorization: `Bearer ${token}` } });
+    if (response?.status === 401 || response?.status === 403) return uiTheme;
+    if (response?.ok) {
+      const body = await response.json();
+      uiTheme = body.ui_theme === "ha_components" ? "ha_components" : "standard";
+      uiThemeLoaded = true;
+    }
+  } catch (_err) {
+    return uiTheme;
+  }
+  return uiTheme;
 }
 
 function haChipLabel(chip, text) {
@@ -441,7 +512,29 @@ function stripRemoteImages(text) {
     });
 }
 
-export function mountAiWorkspace(root, options = {}) {
+export async function mountAiWorkspace(root, options = {}) {
+  await prefetchUiTheme(options.getToken);
+  const haUi = haComponentsUi();
+  if (haUi) {
+    await ensureHaComponents([
+      "ha-textarea",
+      "ha-card",
+      "ha-alert",
+      "ha-empty-state",
+      "ha-assist-chip",
+      "ha-chip-set",
+      "ha-input",
+      "ha-input-chip",
+      "ha-list-item-button",
+      "ha-markdown",
+      "ha-dialog",
+      "ha-dialog-footer",
+      "ha-button",
+      "ha-icon-button",
+      "ha-dropdown",
+      "ha-dropdown-item",
+    ]);
+  }
   const compact = Boolean(options.compact);
   const strings = stringsFor(hassLanguage());
   const t = (key, vars = {}) => {
@@ -460,6 +553,7 @@ export function mountAiWorkspace(root, options = {}) {
   const collapsedStart = !compact && !overlayStart && localStorage.getItem(NAV_KEY) === "1";
   const wrapClass = [
     "wrap",
+    haUi ? "ui-theme-ha-components" : "ui-theme-standard",
     compact ? "compact" : "",
     options.chrome === "panel" ? "has-app-bar" : "",
     overlayStart ? "narrow" : "",
@@ -467,8 +561,36 @@ export function mountAiWorkspace(root, options = {}) {
   ]
     .filter(Boolean)
     .join(" ");
+  const themeCss = haUi
+    ? `<link rel="stylesheet" href="/ai_workspace/static/chat-layout.css${CACHE}"><link rel="stylesheet" href="/ai_workspace/static/chat-ha-components.css${CACHE}">`
+    : `<link rel="stylesheet" href="/ai_workspace/static/chat.css${CACHE}">`;
+  const bannerMarkup = haUi
+    ? `<ha-alert class="banner" alert-type="error" hidden></ha-alert>`
+    : `<p class="banner" hidden></p>`;
+  const workspaceLinkMarkup =
+    compact && hassObj()?.user?.is_admin
+      ? haUi
+        ? `<ha-button class="workspace-link" appearance="plain" size="s" href="/ai-workspace">${t("open_workspace")}</ha-button>`
+        : `<a class="workspace-link" href="/ai-workspace">${t("open_workspace")}</a>`
+      : "";
+  const scrollBottomMarkup = haUi
+    ? `<ha-icon-button class="scroll-bottom" tabindex="-1" label="${t("scroll_to_bottom")}"><ha-icon icon="mdi:arrow-down"></ha-icon></ha-icon-button>`
+    : `<button type="button" class="scroll-bottom" tabindex="-1" aria-label="${t("scroll_to_bottom")}"><ha-icon icon="mdi:arrow-down"></ha-icon></button>`;
+  const composerTag = haUi ? "ha-card" : "div";
+  const nextRemoveMarkup = haUi
+    ? `<ha-icon-button class="next-remove" label="${t("queued_remove")}"><ha-icon icon="mdi:close"></ha-icon></ha-icon-button>`
+    : `<button type="button" class="next-remove"></button>`;
+  const messageMarkup = haUi
+    ? `<label class="sr" for="ai-message">${t("message")}</label><div id="ai-message-host" class="message-host"></div>`
+    : `<label class="sr" for="ai-message">${t("message")}</label><textarea id="ai-message" class="message" rows="1" enterkeyhint="enter" placeholder="${t("placeholder")}"></textarea>`;
+  const sendMarkup = haUi
+    ? `<ha-icon-button class="send" type="button" label="${t("send")}"><ha-icon icon="mdi:send"></ha-icon></ha-icon-button>`
+    : `<ha-button class="send" size="s" appearance="accent" aria-label="${t("send")}"><ha-icon icon="mdi:arrow-up"></ha-icon></ha-button>`;
+  const agentTriggerMarkup = haUi
+    ? `<ha-button type="button" class="agent-trigger" slot="trigger" appearance="plain" size="s" aria-haspopup="menu" aria-expanded="false" aria-label="${t("agent")}"><span class="agent-trigger-label"></span><ha-icon slot="end" icon="mdi:chevron-down"></ha-icon></ha-button>`
+    : `<button type="button" class="agent-trigger" slot="trigger" aria-haspopup="menu" aria-expanded="false" aria-label="${t("agent")}"><span class="agent-trigger-label"></span><ha-icon icon="mdi:chevron-down"></ha-icon></button>`;
   root.innerHTML = `
-    <link rel="stylesheet" href="/ai_workspace/static/chat.css${CACHE}">
+    ${themeCss}
     <div class="${wrapClass}">
       <button type="button" class="nav-scrim" hidden aria-label="${t("close")}"></button>
       <aside>
@@ -503,26 +625,21 @@ export function mountAiWorkspace(root, options = {}) {
             </ha-icon-button>`}
             <h1 class="title">${t("new_chat")}</h1>
           </div>
-          <ha-alert class="banner" alert-type="error" hidden></ha-alert>
+          ${bannerMarkup}
         </header>
-        ${compact && hassObj()?.user?.is_admin ? `<ha-button class="workspace-link" appearance="plain" size="s" href="/ai-workspace">${t("open_workspace")}</ha-button>` : ""}
+        ${workspaceLinkMarkup}
         <div class="stage">
-          <div class="log"></div>
+          <div class="${haUi ? "log messages ha-scrollbar" : "log"}"></div>
           <form class="composer">
-            <ha-icon-button class="scroll-bottom" tabindex="-1" label="${t("scroll_to_bottom")}">
-              <ha-icon icon="mdi:arrow-down"></ha-icon>
-            </ha-icon-button>
-            <ha-card class="composer-box">
+            ${scrollBottomMarkup}
+            <${composerTag} class="composer-box">
               <div class="next-row" hidden>
                 <p class="next-copy"></p>
-                <ha-icon-button class="next-remove" label="${t("queued_remove")}">
-                  <ha-icon icon="mdi:close"></ha-icon>
-                </ha-icon-button>
+                ${nextRemoveMarkup}
               </div>
               <div class="attach-row" hidden></div>
               <div class="composer-row">
-              <label class="sr" for="ai-message">${t("message")}</label>
-              <div id="ai-message-host" class="message-host"></div>
+              ${messageMarkup}
               <div class="composer-actions">
               <input class="file-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif,.yaml,.yml,.json,.txt,.md,.csv,.xml,.toml,.html,.css,.js,.ts,.py,.log,.cfg,.ini,.conf" multiple hidden>
               <ha-icon-button class="attach" type="button" label="${t("attach")}">
@@ -531,18 +648,13 @@ export function mountAiWorkspace(root, options = {}) {
               <ha-icon-button class="mic" type="button" label="${t("dictate")}" hidden>
                 <ha-icon icon="mdi:microphone"></ha-icon>
               </ha-icon-button>
-              <ha-button class="send" size="s" appearance="accent" aria-label="${t("send")}">
-                <ha-icon icon="mdi:arrow-up"></ha-icon>
-              </ha-button>
+              ${sendMarkup}
               </div>
               </div>
-            </ha-card>
+            </${composerTag}>
             <div class="agent-picker" hidden>
               <ha-dropdown class="agent-menu" placement="top-start">
-                <ha-button type="button" class="agent-trigger" slot="trigger" appearance="plain" size="s" aria-haspopup="menu" aria-expanded="false" aria-label="${t("agent")}">
-                  <span class="agent-trigger-label"></span>
-                  <ha-icon slot="end" icon="mdi:chevron-down"></ha-icon>
-                </ha-button>
+                ${agentTriggerMarkup}
               </ha-dropdown>
             </div>
           </form>
@@ -571,20 +683,25 @@ export function mountAiWorkspace(root, options = {}) {
   const scrollBottomBtn = root.querySelector(".scroll-bottom");
   const messageHost = root.querySelector("#ai-message-host");
   const messageEl = (() => {
-    const el = haCreate("ha-textarea", "textarea");
-    el.id = "ai-message";
-    el.className = "message";
-    el.setAttribute("rows", "1");
-    el.setAttribute("placeholder", t("placeholder"));
-    if (el.localName === "ha-textarea") {
-      el.rows = 1;
-      el.resize = "auto";
-      el.setAttribute("resize", "auto");
-    } else {
-      el.setAttribute("enterkeyhint", "enter");
+    if (haUi) {
+      const el = uiCreate("ha-textarea");
+      el.id = "ai-message";
+      el.className = "message";
+      el.setAttribute("placeholder", t("placeholder"));
+      if (el.localName === "ha-textarea") {
+        el.rows = 1;
+        el.resize = "auto";
+        el.setAttribute("resize", "auto");
+        // Start at one row like Assist; still grows on Shift+Enter.
+        if ("label" in el) el.label = "";
+      } else {
+        el.setAttribute("rows", "1");
+        el.setAttribute("enterkeyhint", "enter");
+      }
+      messageHost?.replaceWith(el);
+      return el;
     }
-    messageHost?.replaceWith(el);
-    return el;
+    return root.querySelector(".message");
   })();
   const sendBtn = root.querySelector(".send");
   const agentPicker = root.querySelector(".agent-picker");
@@ -739,6 +856,8 @@ export function mountAiWorkspace(root, options = {}) {
     if (messageEl.localName === "textarea") {
       messageEl.style.height = "auto";
       messageEl.style.height = `${Math.min(Math.max(messageEl.scrollHeight, 36), 160)}px`;
+    } else if (messageEl.localName === "ha-textarea") {
+      messageEl.style.setProperty("--ha-textarea-max-height", "160px");
     }
     const hasDraft = Boolean(String(messageEl.value || "").trim() || pending.length);
     sendBtn.disabled = !hasDraft;
@@ -963,8 +1082,15 @@ export function mountAiWorkspace(root, options = {}) {
     label.textContent = pretty;
   }
 
+  function lastAssistantBubble() {
+    const live = logEl.querySelector(".bubble.assistant.streaming");
+    if (live) return live;
+    const bubbles = logEl.querySelectorAll(".bubble.assistant");
+    return bubbles[bubbles.length - 1] || null;
+  }
+
   function setStatus(text) {
-    const bubble = logEl.querySelector(".bubble.assistant.streaming") || logEl.querySelector(".bubble.assistant:last-of-type");
+    const bubble = lastAssistantBubble();
     if (!bubble) return;
     const busyChip = bubble.querySelector(".tools span.busy");
     if (busyChip && /^running$/i.test(String(text || "").trim())) {
@@ -1059,7 +1185,7 @@ export function mountAiWorkspace(root, options = {}) {
   function ensureToolsChrome(tools) {
     let list = tools.querySelector(".tools-list");
     if (list) return list;
-    const summary = haCreate("ha-assist-chip", "button");
+    const summary = uiCreate("ha-assist-chip", "button");
     summary.type = "button";
     summary.className = "tools-summary";
     summary.hidden = true;
@@ -1082,7 +1208,7 @@ export function mountAiWorkspace(root, options = {}) {
       tools.dataset.userToggle = "1";
       syncToolsSummary(tools);
     });
-    list = haCreate("ha-chip-set", "div");
+    list = uiCreate("ha-chip-set", "div");
     list.className = "tools-list";
     tools.append(summary, list);
     return list;
@@ -1140,7 +1266,7 @@ export function mountAiWorkspace(root, options = {}) {
         return;
       }
     }
-    const chip = haCreate("ha-assist-chip", "span");
+    const chip = uiCreate("ha-assist-chip", "span");
     chip.className = kind;
     if (name) chip.dataset.tool = name;
     if (callId) chip.dataset.callId = callId;
@@ -1188,10 +1314,10 @@ export function mountAiWorkspace(root, options = {}) {
   function addBubbleFiles(bubble, events) {
     const files = (events || []).filter((event) => event && event.type === "file" && event.name);
     if (!files.length) return files;
-    const row = haCreate("ha-chip-set", "div");
+    const row = uiCreate("ha-chip-set", "div");
     row.className = "bubble-files";
     for (const file of files) {
-      const chip = haCreate("ha-assist-chip", "span");
+      const chip = uiCreate("ha-assist-chip", "span");
       chip.className = "file-chip";
       haChipLabel(chip, file.name);
       row.appendChild(chip);
@@ -1205,11 +1331,25 @@ export function mountAiWorkspace(root, options = {}) {
     if (empty) empty.remove();
     setWelcome(false, opts.animate !== false);
     const isError = (events || []).some((event) => event && event.type === "error");
-    const bubble = isError ? haCreate("ha-alert", "ha-card", "div") : haCreate("ha-card", "div");
-    bubble.className = `bubble ${role}`;
-    if (isError) {
-      if (bubble.localName === "ha-alert") bubble.setAttribute("alert-type", "error");
-      else bubble.classList.add("error");
+    const assistWho = role === "user" ? "user" : "hass";
+    let bubble;
+    let mount;
+    if (haUi) {
+      const container = document.createElement("div");
+      container.className = `message-container ${assistWho}`;
+      bubble = document.createElement("div");
+      bubble.className = `bubble message ${role} ${assistWho}`;
+      if (isError) bubble.classList.add("error");
+      container.appendChild(bubble);
+      mount = container;
+    } else {
+      bubble = isError ? uiCreate("ha-alert", "ha-card", "div") : uiCreate("ha-card", "div");
+      bubble.className = `bubble ${role}`;
+      if (isError) {
+        if (bubble.localName === "ha-alert") bubble.setAttribute("alert-type", "error");
+        else bubble.classList.add("error");
+      }
+      mount = bubble;
     }
     if (opts.createdAt) bubble.dataset.createdAt = String(opts.createdAt);
     if (opts.animate === false || reduceMotion) bubble.classList.add("instant");
@@ -1228,15 +1368,17 @@ export function mountAiWorkspace(root, options = {}) {
       const md = document.createElement("ha-markdown");
       md.className = "text";
       md.breaks = true;
+      md.cache = true;
       md.content = rewriteAssistantLinks(content || "");
       md.hidden = !content;
       bubble.appendChild(md);
       if (content) bubble.classList.add("has-text");
     } else if (content && !((pics.length || files.length) && isDefaultImageCaption(content))) {
-      const text = haCreate("ha-markdown", "div");
+      const text = uiCreate("ha-markdown", "div");
       text.className = "text";
       if (text.localName === "ha-markdown") {
         text.breaks = true;
+        text.cache = true;
         text.content = String(content || "");
       } else {
         text.textContent = content;
@@ -1244,7 +1386,7 @@ export function mountAiWorkspace(root, options = {}) {
       bubble.appendChild(text);
       bubble.classList.add("has-text");
     }
-    logEl.appendChild(bubble);
+    logEl.appendChild(mount);
     retargetHaLinks(bubble);
     syncCopyChat();
     if (opts.follow !== false) scrollChatToBottom(opts.smooth !== false);
@@ -1765,7 +1907,7 @@ export function mountAiWorkspace(root, options = {}) {
     setWelcome(true);
     turnHasHistory = false;
     logEl.replaceChildren();
-    const note = haCreate("ha-empty-state", "p");
+    const note = uiCreate("ha-empty-state", "p");
     note.className = "empty";
     if (note.localName === "ha-empty-state") note.heading = t("empty");
     else note.textContent = t("empty");
@@ -1863,7 +2005,7 @@ export function mountAiWorkspace(root, options = {}) {
       const dialog = document.createElement("ha-dialog");
       dialog.setAttribute("header-title", title);
       dialog.setAttribute("width", "small");
-      const input = haCreate("ha-input", "ha-textfield", "input");
+      const input = uiCreate("ha-input", "ha-textfield", "input");
       input.className = "dialog-field";
       if (input.localName === "input") input.type = "text";
       else input.setAttribute("type", "text");
@@ -2025,15 +2167,24 @@ export function mountAiWorkspace(root, options = {}) {
     if (label) label.textContent = labelText;
   }
 
+  function markSessionSelected(node, on) {
+    if (!node) return;
+    node.classList.toggle("selected", on);
+    if (node.localName === "ha-list-item-button") {
+      if (on) node.setAttribute("selected", "");
+      else node.removeAttribute("selected");
+    }
+  }
+
   function selectSessionRow(id) {
     if (!sessionsEl) return;
     sessionsEl.querySelectorAll(".session-row.selected, .session.selected").forEach((node) => {
-      node.classList.remove("selected");
+      markSessionSelected(node, false);
     });
     const row = sessionsEl.querySelector(`.session-row[data-session-id="${id}"]`);
     if (!row) return;
-    row.classList.add("selected");
-    row.querySelector(".session")?.classList.add("selected");
+    markSessionSelected(row, true);
+    markSessionSelected(row.querySelector(".session"), true);
   }
 
   function bumpSession(id, title, pinned) {
@@ -2069,7 +2220,7 @@ export function mountAiWorkspace(root, options = {}) {
     row.role = "listitem";
     if (session.id === sessionId) titleEl.textContent = displayTitle(session.title);
     // ha-list-item-button ships with Home Assistant 2026.6; older frontends get a plain row.
-    const native = haAtLeast(2026, 6) || Boolean(customElements.get("ha-list-item-button"));
+    const native = haUi || haAtLeast(2026, 6) || Boolean(customElements.get("ha-list-item-button"));
     const item = document.createElement(native ? "ha-list-item-button" : "div");
     item.className = native ? "session" : "session session-plain";
     if (native) {
@@ -2090,8 +2241,8 @@ export function mountAiWorkspace(root, options = {}) {
     label.textContent = displayTitle(session.title);
     item.appendChild(label);
     if (session.id === sessionId) {
-      item.classList.add("selected");
-      row.classList.add("selected");
+      markSessionSelected(item, true);
+      markSessionSelected(row, true);
     }
     item.addEventListener("click", () => {
       closeSessionMenu();
@@ -2294,6 +2445,9 @@ export function mountAiWorkspace(root, options = {}) {
   async function watchPending(id) {
     if (!id || liveStream || !chatVisible()) return false;
     const gen = ++watchGen;
+    // Only auto-speak when we were waiting on a background reply — not when polling
+    // an already-finished chat (overlay resume, visibility, etc.).
+    let sawPending = Boolean(logEl.querySelector(".bubble.assistant.streaming"));
     for (let attempt = 0; attempt < 240; attempt += 1) {
       if (gen !== watchGen || sessionId !== id || liveStream || !chatVisible()) return false;
       let session;
@@ -2308,6 +2462,7 @@ export function mountAiWorkspace(root, options = {}) {
         continue;
       }
       if (session.pending) {
+        sawPending = true;
         ensureThinkingBubble();
         await new Promise((resolve) => window.setTimeout(resolve, 2000));
         continue;
@@ -2324,7 +2479,7 @@ export function mountAiWorkspace(root, options = {}) {
       resizeComposer();
       syncCopyChat();
       bumpSession(id, session.title, session.pinned);
-      if (voice.speak && voice.tts && !speakStarted) {
+      if (sawPending && voice.speak && voice.tts && !speakStarted) {
         const leftover = lastAssistantText();
         if (leftover) {
           speakHeld = leftover;
@@ -2484,7 +2639,7 @@ export function mountAiWorkspace(root, options = {}) {
     attachRow.replaceChildren();
     pending.forEach((item, index) => {
       if (item.kind === "file") {
-        const chip = haCreate("ha-input-chip", "div");
+        const chip = uiCreate("ha-input-chip", "div");
         chip.className = "file-chip pending";
         haChipLabel(chip, item.name);
         const drop = () => {
@@ -3157,6 +3312,8 @@ export function mountAiWorkspace(root, options = {}) {
         const body = await response.json();
         show = body.dictate === true;
         historyOn = body.change_history !== false;
+        uiTheme = body.ui_theme === "ha_components" ? "ha_components" : "standard";
+        uiThemeLoaded = true;
         voice = {
           dictate: show,
           stt: body.stt || "browser",
@@ -3612,7 +3769,7 @@ export function mountAiWorkspace(root, options = {}) {
     historyList.replaceChildren();
     const resp = await apiFetch(`${API}/activity`);
     const emptyHistory = () => {
-      const note = haCreate("ha-empty-state", "p");
+      const note = uiCreate("ha-empty-state", "p");
       note.className = "history-empty";
       if (note.localName === "ha-empty-state") note.heading = t("activity_empty");
       else note.textContent = t("activity_empty");
@@ -3631,7 +3788,7 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   function historyRow(row) {
-    const item = haCreate("ha-card", "article");
+    const item = uiCreate("ha-card", "article");
     item.className = "history-row";
     const when = document.createElement("p");
     when.className = "history-when";
@@ -3644,7 +3801,7 @@ export function mountAiWorkspace(root, options = {}) {
     const title = displayTitle(row.chat) || row.user_name || "";
     const chatId = String(row.session_id || "").trim();
     if (chatId && title) {
-      const link = haCreate("ha-button", "a");
+      const link = uiCreate("ha-button", "a");
       link.className = "history-chat";
       link.setAttribute("appearance", "plain");
       link.setAttribute("size", "s");

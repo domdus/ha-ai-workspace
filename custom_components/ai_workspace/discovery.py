@@ -145,12 +145,11 @@ def runtime_form_placeholders(*, live: bool, auto: bool) -> dict[str, str]:
     if live:
         note = "✅ Runtime found."
     elif auto:
-        note = "Auto-detected Cursor SDK on this machine."
+        note = "We found your Cursor runtime on this system."
     else:
         note = (
-            "Where this Home Assistant reaches the Cursor SDK container. "
-            "Leave empty to auto-detect. The field is filled only when that URL answers. "
-            "Loopback: http://127.0.0.1:8090. Same Docker network: http://cursor-sdk:8090."
+            "Address of your Cursor runtime, as seen from Home Assistant. "
+            "Leave empty to auto-detect when the runtime is reachable."
         )
     return {
         "runtime_url_mark": " · auto-detected" if auto and live else "",

@@ -25,6 +25,7 @@ from .const import (
     CONF_HOUSE_MAP,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
+    CONF_UI_THEME,
     CONF_KEEP_CHATS,
     CONF_MCP_KIND,
     CONF_SPEAK_REPLIES,
@@ -49,6 +50,7 @@ from .const import (
     SUBENTRY_AGENT,
     SUBENTRY_MCP,
     TTS_OFF,
+    ui_theme_of,
 )
 from .discovery import async_bind_runtime
 from .http import register_views
@@ -160,6 +162,7 @@ async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
         house_map=house_map,
         shorten_mcp_results=bool(data.get(CONF_SHORTEN_MCP_RESULTS, True)),
         change_history=bool(data.get(CONF_CHANGE_HISTORY, True)),
+        ui_theme=ui_theme_of(data.get(CONF_UI_THEME)),
         cross_chat=bool(data.get(CONF_CROSS_CHAT, False)),
         keep_chats=_keep_chats(data),
         mode=MODE_API,

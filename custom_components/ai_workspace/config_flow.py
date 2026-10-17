@@ -29,6 +29,7 @@ from .const import (
     CONF_HOUSE_MAP,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
+    CONF_UI_THEME,
     CONF_KEEP_CHATS,
     CONF_MCP_KIND,
     CONF_MCP_TOKEN,
@@ -52,7 +53,9 @@ from .const import (
     SUBENTRY_AGENT,
     SUBENTRY_MCP,
     TTS_OFF,
+    UI_THEME_HA_COMPONENTS,
     mcp_kind_options,
+    ui_theme_of,
 )
 from .mcp_config import server_slug
 from .mcp_flow import McpConnectionFlow
@@ -75,6 +78,7 @@ _SHARED_KEYS = (
     CONF_HOUSE_MAP,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
+    CONF_UI_THEME,
     CONF_CROSS_CHAT,
     CONF_KEEP_CHATS,
     CONF_SPEAK_REPLIES,
@@ -86,8 +90,7 @@ _URL_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.URL))
 _TOKEN_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
 _PROMPT_SELECTOR = TextSelector(TextSelectorConfig(multiline=True))
 _MCP_URL_NOTE = (
-    "Leave empty to auto-detect. HA-MCP is often a webhook under /api/webhook/… on this "
-    "Home Assistant (port 8123), or http://127.0.0.1:8086/mcp. Built-in MCP is /api/mcp."
+    "Leave empty to detect the server automatically. Change this only if you use a different connection than the built-in one."
 )
 
 
@@ -109,10 +112,10 @@ def _mcp_url_note(url: str, auto: bool) -> str:
         return _MCP_URL_NOTE
     path = (urlparse(url).path or "").lower()
     if "webhook" in path:
-        return "Auto-detected HA-MCP webhook. Keep this unless you use a different MCP."
+        return "We found HA-MCP automatically. Keep this unless you use a different server."
     if "/api/mcp" in path:
-        return "Auto-detected built-in Home Assistant MCP. Keep this unless you use a different MCP."
-    return "Auto-detected MCP URL. Keep this unless you use a different MCP."
+        return "We found the built-in Home Assistant server. Keep this unless you use a different one."
+    return "We found a server automatically. Keep this unless you use a different one."
 
 
 def _form_placeholders(*, mcp_url: str = "", mcp_auto: bool = False) -> dict[str, str]:
@@ -133,6 +136,10 @@ def _ui_schema(defaults: dict | None = None) -> dict:
         vol.Optional(CONF_SHORTEN_MCP_RESULTS, default=current.get(CONF_SHORTEN_MCP_RESULTS, True)): cv.boolean,
         vol.Optional(CONF_CHANGE_HISTORY, default=current.get(CONF_CHANGE_HISTORY, True)): cv.boolean,
         vol.Optional(CONF_CROSS_CHAT, default=current.get(CONF_CROSS_CHAT, False)): cv.boolean,
+        vol.Optional(
+            CONF_UI_THEME,
+            default=ui_theme_of(current.get(CONF_UI_THEME)) == UI_THEME_HA_COMPONENTS,
+        ): cv.boolean,
         vol.Optional(
             CONF_KEEP_CHATS,
             default=int(current.get(CONF_KEEP_CHATS, DEFAULT_KEEP_CHATS) or DEFAULT_KEEP_CHATS),
@@ -165,6 +172,8 @@ def _normalize(user_input: dict, hass: HomeAssistant | None = None) -> dict:
         except (TypeError, ValueError):
             keep = DEFAULT_KEEP_CHATS
         out[CONF_KEEP_CHATS] = max(1, min(keep, 500))
+    if CONF_UI_THEME in out:
+        out[CONF_UI_THEME] = ui_theme_of(out.get(CONF_UI_THEME))
     return out
 
 
@@ -409,9 +418,7 @@ class AiWorkspaceOptionsFlow(config_entries.OptionsFlow):
     async def async_step_init(self, user_input=None):
         current = self._current()
         if user_input is not None:
-            flat = _flatten(user_input)
-            if CONF_KEEP_CHATS in flat:
-                flat = _normalize(flat, self.hass)
+            flat = _normalize(_flatten(user_input), self.hass)
             merged = {**current, **flat}
             return self.async_create_entry(title="", data={key: merged.get(key) for key in _SHARED_KEYS})
         return self.async_show_form(

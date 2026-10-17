@@ -170,6 +170,21 @@ CONF_HOUSE_MAP = "house_map"
 CONF_SHORTEN_MCP_RESULTS = "shorten_mcp_results"
 CONF_CHANGE_HISTORY = "change_history"
 CONF_CROSS_CHAT = "cross_chat"
+CONF_UI_THEME = "ui_theme"
+UI_THEME_STANDARD = "standard"
+UI_THEME_HA_COMPONENTS = "ha_components"
+UI_THEMES = (UI_THEME_STANDARD, UI_THEME_HA_COMPONENTS)
+
+
+def ui_theme_of(value) -> str:
+    if value is True:
+        return UI_THEME_HA_COMPONENTS
+    text = str(value or "").strip().lower()
+    if text in {UI_THEME_HA_COMPONENTS, "true", "on", "1"}:
+        return UI_THEME_HA_COMPONENTS
+    return UI_THEME_STANDARD
+
+
 CONF_LOW_TOKEN = "low_token"
 CONF_CHECK_HOUSE = "check_house"
 CONF_KEEP_CHATS = "keep_chats"

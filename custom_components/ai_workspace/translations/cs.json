@@ -3,47 +3,51 @@
     "step": {
       "user": {
         "title": "AI Workspace",
-        "description": "Sdílené nastavení chatu. Potom přidejte prvního agenta (Cursor, OpenAI, OpenRouter, Ollama a další). Připojení a agenti jsou řádky této integrace.",
+        "description": "Sdílené nastavení chatu. Potom přidejte prvního asistenta (Cursor, OpenAI, Ollama a další) ze stránky integrace.",
         "data": {
           "stt_engine": "Řeč na text",
           "tts_engine": "Text na řeč",
           "speak_replies": "Číst odpovědi automaticky",
+          "tts_natural": "Přirozená řeč pro text na řeč",
           "enable_sidebar": "Zobrazit AI Workspace v postranním panelu",
           "enable_overlay": "Zobrazit plovoucí tlačítko AI",
           "enable_dictate": "Zobrazit tlačítko diktování",
           "allow_users": "Povolit běžné uživatele",
           "house_map": "Katalog konfigurace",
-          "shorten_mcp_results": "Shorten large MCP tool results",
-          "change_history": "Change History",
+          "shorten_mcp_results": "Zkrátit dlouhé odpovědi Home Assistant",
+          "change_history": "Historie změn",
+          "ui_theme": "Použít komponenty HA",
           "cross_chat": "Mezi chaty",
           "keep_chats": "Chaty k uchování"
         },
         "data_description": {
-          "stt_engine": "Prohlížeč používá řečový engine zařízení a potřebuje https:// nebo localhost. Engine Home Assistant (Whisper a další v Nastavení) přepíše nahrávku z této stránky. Prohlížeč musí mikrofon stejně povolit, a to jen na https:// nebo localhost.",
-          "tts_engine": "Piper, Google Translate nebo hlas AI Workspace agenta OpenAI. Přečtení odpovědi funguje i přes http://. Vypnuto nechá odpovědi jako text.",
-          "speak_replies": "Když je zvolen hlas, každá odpověď se přečte hned. Vypnuto nechá tlačítko reproduktoru pro přehrání ručně.",
-          "enable_sidebar": "Položka postranního panelu AI Workspace. Stránka zůstane na /ai-workspace, když je to vypnuté.",
-          "enable_overlay": "Zapíná nebo vypíná plovoucí tlačítko AI. V Nastavení je výš, aby nepřekrývalo systémová tlačítka.",
+          "stt_engine": "Diktování v prohlížeči potřebuje zabezpečený web (https). Nebo v Nastavení zvolte engine řeči na text Home Assistant. Prohlížeč musí mikrofon povolit.",
+          "tts_engine": "Piper, Google Translate nebo hlas jednoho z vašich AI asistentů. Vypnuto nechá odpovědi jen jako text.",
+          "speak_replies": "Když je zvolen hlas, každá odpověď se přečte hned po příchodu. Vypnuto nechá tlačítko reproduktoru pro přehrání ručně.",
+          "tts_natural": "Ve výchozím stavu zapnuto. Odstraní formátování, aby čtení znělo přirozeně. Vypnuto čte zprávu přesně tak, jak je napsaná.",
+          "enable_sidebar": "Zobrazí AI Workspace v postranním panelu. Vypnuto: správci mohou plnou stránku stále otevřít přes odkaz v nabídce.",
+          "enable_overlay": "Zapíná nebo vypíná plovoucí tlačítko AI. Na stránkách Nastavení je výš, aby nepřekrývalo systémová tlačítka.",
           "enable_dictate": "Mikrofon v poli zprávy.",
-          "allow_users": "Přihlášení uživatelé bez oprávnění správce mohou otevřít plovoucí chat. Vypnuto ho nechá jen správcům. Položka postranního panelu zůstane jen pro správce. Dostanou jen vestavěný MCP server Home Assistantu se svými vlastními oprávněními.",
-          "house_map": "Volitelný místní index zapojení pojmenované položky (spouštěče, související id). Ve výchozím stavu vypnuto. Ne pro výpis automatizací ani zap/vyp — k tomu použijte živé MCP. Ne živý stav, historie ani stopy.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
-          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
+          "allow_users": "Uživatelé bez oprávnění správce mohou otevřít plovoucí chat se stejným přístupem Home Assistant jako jejich účet. Vypnuto: jen správci. Plná stránka AI Workspace v postranním panelu zůstane jen pro správce.",
+          "house_map": "Volitelné. Pomáhá vysvětlit, jak je položka zapojená (co ji spouští, na co působí). Ve výchozím stavu vypnuto. Pro živý stav zap/vyp nebo úplné seznamy požádejte asistenta, ať se podívá do Home Assistant.",
+          "shorten_mcp_results": "Ve výchozím stavu zapnuto. Velmi dlouhé odpovědi z Home Assistant (seznamy celého domu, velké hledání) se před odesláním do AI shrnou. To šetří tokens a drží odpovědi svižné. Vypnuto pošle celý text.",
+          "change_history": "Ve výchozím stavu zapnuto. Uchovává záznam konfiguračních změn, které asistent provedl, abyste je mohli v Historii změn zkontrolovat nebo vrátit. Vypnuto: bez nových záznamů; asistent může Home Assistant dál používat.",
+          "ui_theme": "Ve výchozím stavu vypnuto. Když je zapnuto, používají se jen komponenty rozhraní Home Assistant, které mohou lépe fungovat s motivy.",
           "cross_chat": "Ve výchozím stavu vypnuto. Když je zapnuto, otázka může použít jiný chat, jehož název sdílí slova. Není třeba říkat chat. Jen krátký výňatek a ten chat se nemění.",
           "keep_chats": "Nejnovější nepřipnuté chaty na osobu. Připnuté chaty zůstanou vždy. Výchozí 30."
         },
         "sections": {
           "mcp": {
-            "name": "MCP",
+            "name": "Připojení",
             "data": {
-              "mcp_kind": "Typ MCP",
-              "mcp_url": "URL MCP{mcp_url_mark}",
-              "mcp_token": "Token MCP"
+              "mcp_kind": "Typ připojení",
+              "mcp_url": "Adresa serveru{mcp_url_mark}",
+              "mcp_token": "Přístupový klíč"
             },
             "data_description": {
-              "mcp_kind": "Jsou uvedeny jen servery MCP, které tato instance Home Assistant dosáhne. Vlastní je jakákoli HTTP URL MCP.",
+              "mcp_kind": "Servery, které tato instance Home Assistant dosáhne. Zvolte Vlastní a zadejte vlastní adresu.",
               "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Vestavěné: dlouhodobý přístupový token Home Assistant, nebo nechte prázdné pro aktuální přihlášení v tomto chatu. HA-MCP: obvykle prázdné. Vibecode: Agent Key. Vlastní: volitelný Bearer token."
+              "mcp_token": "Vestavěné: dlouhodobý přístupový token, nebo nechte prázdné pro aktuální přihlášení. HA-MCP: obvykle prázdné. Vibecode: klíč agenta. Vlastní: jen když ten server klíč vyžaduje."
             }
           },
           "prompt": {
@@ -52,14 +56,14 @@
               "system_prompt": "Systémový prompt"
             },
             "data_description": {
-              "system_prompt": "Jen tón a chování. Nechte prázdné pro vestavěný prompt. Nástroje MCP a odkazy editoru se vždy doplní; do tohoto pole nepatří."
+              "system_prompt": "Jen tón a zvyky. Nechte prázdné pro výchozí hodnotu. Asistent si vždy ponechá přístup k Home Assistant a rychlým odkazům v odpovědích."
             }
           }
         }
       }
     },
     "error": {
-      "no_runtime": "Běhové prostředí Cursor není dostupné. Spusťte ho a nastavte URL  v tomto formuláři.",
+      "no_runtime": "Běhové prostředí Cursor není dostupné. Spusťte ho a zkontrolujte adresu v tomto formuláři.",
       "required": "Toto pole je povinné.",
       "invalid_auth": "Poskytovatel tento klíč API odmítl.",
       "cannot_connect": "Poskytovatel není dostupný. Zkontrolujte URL a síť."
@@ -72,47 +76,51 @@
     "step": {
       "init": {
         "title": "AI Workspace",
-        "description": "Sdílené nastavení chatu. Připojení MCP a agenty přidáte tlačítky na stránce integrace AI Workspace.",
+        "description": "Sdílené nastavení chatu. Připojení a asistenty přidáte tlačítky na stránce integrace AI Workspace.",
         "data": {
           "stt_engine": "Řeč na text",
           "tts_engine": "Text na řeč",
           "speak_replies": "Číst odpovědi automaticky",
+          "tts_natural": "Přirozená řeč pro text na řeč",
           "enable_sidebar": "Zobrazit AI Workspace v postranním panelu",
           "enable_overlay": "Zobrazit plovoucí tlačítko AI",
           "enable_dictate": "Zobrazit tlačítko diktování",
           "allow_users": "Povolit běžné uživatele",
           "house_map": "Katalog konfigurace",
-          "shorten_mcp_results": "Shorten large MCP tool results",
-          "change_history": "Change History",
+          "shorten_mcp_results": "Zkrátit dlouhé odpovědi Home Assistant",
+          "change_history": "Historie změn",
+          "ui_theme": "Použít komponenty HA",
           "cross_chat": "Mezi chaty",
           "keep_chats": "Chaty k uchování"
         },
         "data_description": {
-          "stt_engine": "Prohlížeč používá řečový engine zařízení a potřebuje https:// nebo localhost. Engine Home Assistant (Whisper a další v Nastavení) přepíše nahrávku z této stránky. Prohlížeč musí mikrofon stejně povolit, a to jen na https:// nebo localhost.",
-          "tts_engine": "Piper, Google Translate nebo hlas AI Workspace agenta OpenAI. Přečtení odpovědi funguje i přes http://. Vypnuto nechá odpovědi jako text.",
-          "speak_replies": "Když je zvolen hlas, každá odpověď se přečte hned. Vypnuto nechá tlačítko reproduktoru pro přehrání ručně.",
-          "enable_sidebar": "Položka postranního panelu AI Workspace. Stránka zůstane na /ai-workspace, když je to vypnuté.",
-          "enable_overlay": "Zapíná nebo vypíná plovoucí tlačítko AI. V Nastavení je výš, aby nepřekrývalo systémová tlačítka.",
+          "stt_engine": "Diktování v prohlížeči potřebuje zabezpečený web (https). Nebo v Nastavení zvolte engine řeči na text Home Assistant. Prohlížeč musí mikrofon povolit.",
+          "tts_engine": "Piper, Google Translate nebo hlas jednoho z vašich AI asistentů. Vypnuto nechá odpovědi jen jako text.",
+          "speak_replies": "Když je zvolen hlas, každá odpověď se přečte hned po příchodu. Vypnuto nechá tlačítko reproduktoru pro přehrání ručně.",
+          "tts_natural": "Ve výchozím stavu zapnuto. Odstraní formátování, aby čtení znělo přirozeně. Vypnuto čte zprávu přesně tak, jak je napsaná.",
+          "enable_sidebar": "Zobrazí AI Workspace v postranním panelu. Vypnuto: správci mohou plnou stránku stále otevřít přes odkaz v nabídce.",
+          "enable_overlay": "Zapíná nebo vypíná plovoucí tlačítko AI. Na stránkách Nastavení je výš, aby nepřekrývalo systémová tlačítka.",
           "enable_dictate": "Mikrofon v poli zprávy.",
-          "allow_users": "Přihlášení uživatelé bez oprávnění správce mohou otevřít plovoucí chat. Vypnuto ho nechá jen správcům. Položka postranního panelu zůstane jen pro správce. Dostanou jen vestavěný MCP server Home Assistantu se svými vlastními oprávněními.",
-          "house_map": "Volitelný místní index zapojení pojmenované položky (spouštěče, související id). Ve výchozím stavu vypnuto. Ne pro výpis automatizací ani zap/vyp — k tomu použijte živé MCP. Ne živý stav, historie ani stopy.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
-          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
+          "allow_users": "Uživatelé bez oprávnění správce mohou otevřít plovoucí chat se stejným přístupem Home Assistant jako jejich účet. Vypnuto: jen správci. Plná stránka AI Workspace v postranním panelu zůstane jen pro správce.",
+          "house_map": "Volitelné. Pomáhá vysvětlit, jak je položka zapojená (co ji spouští, na co působí). Ve výchozím stavu vypnuto. Pro živý stav zap/vyp nebo úplné seznamy požádejte asistenta, ať se podívá do Home Assistant.",
+          "shorten_mcp_results": "Ve výchozím stavu zapnuto. Velmi dlouhé odpovědi z Home Assistant (seznamy celého domu, velké hledání) se před odesláním do AI shrnou. To šetří tokens a drží odpovědi svižné. Vypnuto pošle celý text.",
+          "change_history": "Ve výchozím stavu zapnuto. Uchovává záznam konfiguračních změn, které asistent provedl, abyste je mohli v Historii změn zkontrolovat nebo vrátit. Vypnuto: bez nových záznamů; asistent může Home Assistant dál používat.",
+          "ui_theme": "Ve výchozím stavu vypnuto. Když je zapnuto, používají se jen komponenty rozhraní Home Assistant, které mohou lépe fungovat s motivy.",
           "cross_chat": "Ve výchozím stavu vypnuto. Když je zapnuto, otázka může použít jiný chat, jehož název sdílí slova. Není třeba říkat chat. Jen krátký výňatek a ten chat se nemění.",
           "keep_chats": "Nejnovější nepřipnuté chaty na osobu. Připnuté chaty zůstanou vždy. Výchozí 30."
         },
         "sections": {
           "mcp": {
-            "name": "MCP",
+            "name": "Připojení",
             "data": {
-              "mcp_kind": "Typ MCP",
-              "mcp_url": "URL MCP{mcp_url_mark}",
-              "mcp_token": "Token MCP"
+              "mcp_kind": "Typ připojení",
+              "mcp_url": "Adresa serveru{mcp_url_mark}",
+              "mcp_token": "Přístupový klíč"
             },
             "data_description": {
-              "mcp_kind": "Jsou uvedeny jen servery MCP, které tato instance Home Assistant dosáhne. Vlastní je jakákoli HTTP URL MCP.",
+              "mcp_kind": "Servery, které tato instance Home Assistant dosáhne. Zvolte Vlastní a zadejte vlastní adresu.",
               "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Vestavěné: dlouhodobý přístupový token Home Assistant, nebo nechte prázdné pro aktuální přihlášení v tomto chatu. HA-MCP: obvykle prázdné. Vibecode: Agent Key. Vlastní: volitelný Bearer token."
+              "mcp_token": "Vestavěné: dlouhodobý přístupový token, nebo nechte prázdné pro aktuální přihlášení. HA-MCP: obvykle prázdné. Vibecode: klíč agenta. Vlastní: jen když ten server klíč vyžaduje."
             }
           },
           "prompt": {
@@ -121,14 +129,14 @@
               "system_prompt": "Systémový prompt"
             },
             "data_description": {
-              "system_prompt": "Jen tón a chování. Nechte prázdné pro vestavěný prompt. Nástroje MCP a odkazy editoru se vždy doplní; do tohoto pole nepatří."
+              "system_prompt": "Jen tón a zvyky. Nechte prázdné pro výchozí hodnotu. Asistent si vždy ponechá přístup k Home Assistant a rychlým odkazům v odpovědích."
             }
           }
         }
       }
     },
     "error": {
-      "no_runtime": "Běhové prostředí Cursor není dostupné. Spusťte ho a nastavte URL  v tomto formuláři.",
+      "no_runtime": "Běhové prostředí Cursor není dostupné. Spusťte ho a zkontrolujte adresu v tomto formuláři.",
       "required": "Toto pole je povinné.",
       "invalid_auth": "Poskytovatel tento klíč API odmítl.",
       "cannot_connect": "Poskytovatel není dostupný. Zkontrolujte URL a síť."
@@ -151,7 +159,7 @@
       "step": {
         "user": {
           "title": "Připojení",
-          "description": "Jsou uvedeny jen servery MCP, které tato instance Home Assistant dosáhne. Vlastní je jakákoli HTTP URL MCP.",
+          "description": "Zvolte, jak se tento asistent připojuje k Home Assistant a dalším službám.",
           "menu_options": {
             "ha": "MCP server Home Assistant (vestavěný)",
             "ha_mcp": "HA-MCP",
@@ -161,7 +169,7 @@
         },
         "connection": {
           "title": "Připojení",
-          "description": "Server MCP, který asistent může použít ve stejném chatu.",
+          "description": "Další služba, kterou asistent může použít během chatu.",
           "data": {
             "name": "Název",
             "url": "Adresa",
@@ -169,7 +177,7 @@
           },
           "data_description": {
             "name": "Krátký název, například Directus. Asistent podle něj odliší toto připojení od ostatních.",
-            "url": "Adresa MCP začínající https:// nebo http://. Nalezené servery se vyplní.",
+            "url": "Webová adresa (https://…). Nalezené servery se vyplní automaticky.",
             "token": "Jen když ten server chce klíč. Při úpravě nechte prázdné, aby se zachoval uložený klíč."
           }
         }
@@ -182,7 +190,7 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Běhové prostředí Cursor není dostupné. Spusťte ho a nastavte URL  v tomto formuláři.",
+        "no_runtime": "Běhové prostředí Cursor není dostupné. Spusťte ho a zkontrolujte adresu v tomto formuláři.",
         "required": "Toto pole je povinné.",
         "invalid_auth": "Poskytovatel tento klíč API odmítl.",
         "cannot_connect": "Poskytovatel není dostupný. Zkontrolujte URL a síť."
@@ -200,10 +208,10 @@
         },
         "provider_cursor": {
           "title": "Cursor",
-          "description": "Cursor Runtime, API key, model, and effort. The URL field fills only when this Home Assistant can reach the Runtime.",
+          "description": "Adresa Cursor, klíč API, model a rychlost odpovědi.",
           "data": {
-            "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
-            "runtime_token": "Runtime token",
+            "runtime_url": "Adresa běhového prostředí Cursor{runtime_url_mark}",
+            "runtime_token": "Heslo runtime",
             "cursor_api_key": "Klíč API Cursor",
             "model": "Model",
             "effort": "Úsilí",
@@ -211,11 +219,11 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Shared secret for a Docker Runtime. Set the same value as RUNTIME_TOKEN on the container. The add-on is paired automatically; leave this empty.",
-            "cursor_api_key": "Z cursor.com/dashboard/integrations. Při úpravě nechte prázdné, aby se zachoval uložený klíč. Nechte prázdné, pokud Runtime už má CURSOR_API_KEY.",
-            "model": "Vyberte jeden nebo zadejte id. Prázdné použije Composer.",
-            "effort": "Rychlé, Vysoké nebo Vysoké rychlé. Composer použije Rychlé, pokud nezvolíte Vysoké.",
-            "assist": "Přidá tohoto agenta do Home Assistant Assist. Vypnuto ho nechá jen v chatu AI Workspace a odstraní Assist pipeline, kterou tento agent přidal."
+            "runtime_token": "Stejné heslo jako u vašeho běhového prostředí Cursor. Nechte prázdné u doplňku s automatickým spárováním.",
+            "cursor_api_key": "Z účtu Cursor (Integrations). Při úpravě nechte prázdné, aby se zachoval uložený klíč.",
+            "model": "Vyberte ze seznamu nebo zadejte název modelu. Prázdné použije Composer.",
+            "effort": "Kolik času na přemýšlení povolit. Composer ve výchozím stavu použije Rychlé.",
+            "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist."
           }
         },
         "provider_cloud": {
@@ -226,7 +234,7 @@
             "api_key": "Klíč API",
             "model": "Model",
             "effort": "Úsilí",
-            "low_token": "Málo tokenů",
+            "low_token": "Režim pouze chat",
             "check_house": "Vždy nejdřív zkontrolovat dům",
             "assist": "Přidat do Assist",
             "assist_stt": "Přidat převod řeči na text",
@@ -238,17 +246,17 @@
           },
           "data_description": {
             "borrow": "Použije klíč, který už tato integrace uložila. Druhá integrace se nemění.",
-            "api_key": "Není to token Home Assistant.",
-            "model": "Vyberte jeden nebo zadejte id. Prázdné použije výchozí hodnotu poskytovatele.",
+            "api_key": "Váš klíč u poskytovatele AI, ne přihlášení do Home Assistant.",
+            "model": "Vyberte ze seznamu nebo zadejte název modelu. Prázdné použije výchozí hodnotu poskytovatele.",
             "effort": "Rychlé, Vysoké nebo Vysoké rychlé, když to model umí.",
-            "low_token": "Krátký pokyn a žádné nástroje, aby malý model stihl odpovědět. Dům tak nezkontroluje ani nezmění.",
-            "check_house": "První krok každé zprávy (kromě pozdravů a poděkování) musí zavolat nástroj, aby odpovědi o domě vycházely z živých dat. Vypněte u modelů, které nástroje spolehlivě volají samy, nebo pro úsporu jednoho kola nástrojů u obecných otázek.",
-            "assist": "Přidá tohoto agenta do Home Assistant Assist. Vypnuto ho nechá jen v chatu AI Workspace a odstraní Assist pipeline, kterou tento agent přidal.",
-            "assist_stt": "Použije API klíč tohoto agenta jako Home Assistant engine řeči na text a přiřadí ho ke všem pipeline AI Workspace Assist (včetně Cursor). Vypnuto odstraní engine řeči na text, který tento agent přidal.",
-            "stt_model": "Prázdné použije výchozí model poskytovatele. Můžete zadat i jiné id.",
-            "assist_tts": "Použije API klíč tohoto agenta jako Home Assistant engine textu na řeč a přiřadí ho ke všem pipeline AI Workspace Assist (včetně Cursor). Vypnuto odstraní engine textu na řeč, který tento agent přidal.",
-            "tts_model": "Prázdné použije gpt-4o-mini-tts. tts-1 je levnější. Můžete zadat i jiné id.",
-            "tts_voice": "Coral je výchozí. Pipeline Assist, které tento agent vytvořil, použijí tento hlas.",
+            "low_token": "Kratší odpovědi bez ovládání domu — vhodné pro malé chatovací modely.",
+            "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí o vaší instalaci podívá do Home Assistant (ne u prostého pozdravu). Vypněte, pokud to váš model už dělá sám.",
+            "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist.",
+            "assist_stt": "Přidá v Home Assistant možnost řeči na text s klíčem tohoto asistenta. Vypnuto odstraní to, co přidal.",
+            "stt_model": "Nechte prázdné pro výchozí model poskytovatele. Můžete zadat jiný název modelu.",
+            "assist_tts": "Přidá v Home Assistant možnost textu na řeč s klíčem tohoto asistenta. Vypnuto odstraní to, co přidal.",
+            "tts_model": "Nechte prázdné pro výchozí hlasový model. Můžete zadat jiný název, pokud ho poskytovatel uvádí.",
+            "tts_voice": "Coral je výchozí. Hlasy fungují pro jazyky nastavené v Assist → Jazyk.",
             "tts_speed": "Jak rychle tento hlas mluví. 1× je běžné. Platí pro AI Workspace i Assist."
           }
         },
@@ -259,17 +267,17 @@
             "api_base": "URL Ollama",
             "model": "Model",
             "effort": "Úsilí",
-            "low_token": "Málo tokenů",
+            "low_token": "Režim pouze chat",
             "check_house": "Vždy nejdřív zkontrolovat dům",
             "assist": "Přidat do Assist"
           },
           "data_description": {
-            "api_base": "Usually {example_url}",
-            "model": "Vyberte jeden nebo zadejte stažený model. Prázdné použije llama3.2.",
+            "api_base": "Obvykle {example_url}",
+            "model": "Vyberte ze seznamu nebo zadejte nainstalovaný model. Prázdné použije llama3.2.",
             "effort": "Použije se, když to model umí.",
-            "low_token": "Krátký pokyn a žádné nástroje, aby malý model stihl odpovědět. Dům tak nezkontroluje ani nezmění.",
-            "check_house": "První krok každé zprávy (kromě pozdravů a poděkování) musí zavolat nástroj, aby odpovědi o domě vycházely z živých dat. Vypněte u modelů, které nástroje spolehlivě volají samy, nebo pro úsporu jednoho kola nástrojů u obecných otázek.",
-            "assist": "Přidá tohoto agenta do Home Assistant Assist. Vypnuto ho nechá jen v chatu AI Workspace a odstraní Assist pipeline, kterou tento agent přidal."
+            "low_token": "Kratší odpovědi bez ovládání domu — vhodné pro malé chatovací modely.",
+            "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí o vaší instalaci podívá do Home Assistant (ne u prostého pozdravu). Vypněte, pokud to váš model už dělá sám.",
+            "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist."
           }
         },
         "provider_azure": {
@@ -281,7 +289,7 @@
             "model": "Nasazení",
             "azure_api_version": "Verze API",
             "effort": "Úsilí",
-            "low_token": "Málo tokenů",
+            "low_token": "Režim pouze chat",
             "check_house": "Vždy nejdřív zkontrolovat dům",
             "assist": "Přidat do Assist"
           },
@@ -289,22 +297,22 @@
             "api_key": "Klíč Azure OpenAI. Při úpravě nechte prázdné, aby se zachoval uložený klíč.",
             "api_base": "{example_url}",
             "model": "Název nasazení.",
-            "azure_api_version": "Default 2024-10-21.",
+            "azure_api_version": "Nechte výchozí hodnotu, pokud vám podpora Azure nedala jinou verzi.",
             "effort": "Použije se, když to nasazení umí.",
-            "low_token": "Krátký pokyn a žádné nástroje, aby malý model stihl odpovědět. Dům tak nezkontroluje ani nezmění.",
-            "check_house": "První krok každé zprávy (kromě pozdravů a poděkování) musí zavolat nástroj, aby odpovědi o domě vycházely z živých dat. Vypněte u modelů, které nástroje spolehlivě volají samy, nebo pro úsporu jednoho kola nástrojů u obecných otázek.",
-            "assist": "Přidá tohoto agenta do Home Assistant Assist. Vypnuto ho nechá jen v chatu AI Workspace a odstraní Assist pipeline, kterou tento agent přidal."
+            "low_token": "Kratší odpovědi bez ovládání domu — vhodné pro malé chatovací modely.",
+            "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí o vaší instalaci podívá do Home Assistant (ne u prostého pozdravu). Vypněte, pokud to váš model už dělá sám.",
+            "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist."
           }
         },
         "provider_compatible": {
           "title": "Kompatibilní s OpenAI",
-          "description": "Vlastní server, který mluví API OpenAI.",
+          "description": "Vlastní server, který funguje jako chatovací API OpenAI.",
           "data": {
             "api_key": "Klíč API",
             "api_base": "Základní URL API",
             "model": "Model",
             "effort": "Úsilí",
-            "low_token": "Málo tokenů",
+            "low_token": "Režim pouze chat",
             "check_house": "Vždy nejdřív zkontrolovat dům",
             "assist": "Přidat do Assist",
             "assist_stt": "Přidat převod řeči na text",
@@ -316,17 +324,17 @@
           },
           "data_description": {
             "api_key": "Při úpravě nechte prázdné, aby se zachoval uložený klíč.",
-            "api_base": "Základní URL serveru, včetně /v1 pokud používá tuto cestu.",
+            "api_base": "Adresa serveru. Na konec přidejte /v1, pokud to server očekává.",
             "model": "Název modelu na tom serveru.",
             "effort": "Použije se, když to server umí.",
-            "low_token": "Krátký pokyn a žádné nástroje, aby malý model stihl odpovědět. Dům tak nezkontroluje ani nezmění.",
-            "check_house": "První krok každé zprávy (kromě pozdravů a poděkování) musí zavolat nástroj, aby odpovědi o domě vycházely z živých dat. Vypněte u modelů, které nástroje spolehlivě volají samy, nebo pro úsporu jednoho kola nástrojů u obecných otázek.",
-            "assist": "Přidá tohoto agenta do Home Assistant Assist. Vypnuto ho nechá jen v chatu AI Workspace a odstraní Assist pipeline, kterou tento agent přidal.",
-            "assist_stt": "Použije API klíč tohoto agenta jako Home Assistant engine řeči na text a přiřadí ho ke všem pipeline AI Workspace Assist (včetně Cursor). Vypnuto odstraní engine řeči na text, který tento agent přidal.",
-            "stt_model": "Prázdné použije výchozí model poskytovatele. Můžete zadat i jiné id.",
-            "assist_tts": "Použije API klíč tohoto agenta jako Home Assistant engine textu na řeč a přiřadí ho ke všem pipeline AI Workspace Assist (včetně Cursor). Vypnuto odstraní engine textu na řeč, který tento agent přidal.",
-            "tts_model": "Prázdné použije gpt-4o-mini-tts. tts-1 je levnější. Můžete zadat i jiné id.",
-            "tts_voice": "Coral je výchozí. Pipeline Assist, které tento agent vytvořil, použijí tento hlas.",
+            "low_token": "Kratší odpovědi bez ovládání domu — vhodné pro malé chatovací modely.",
+            "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí o vaší instalaci podívá do Home Assistant (ne u prostého pozdravu). Vypněte, pokud to váš model už dělá sám.",
+            "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist.",
+            "assist_stt": "Přidá v Home Assistant možnost řeči na text s klíčem tohoto asistenta. Vypnuto odstraní to, co přidal.",
+            "stt_model": "Nechte prázdné pro výchozí model poskytovatele. Můžete zadat jiný název modelu.",
+            "assist_tts": "Přidá v Home Assistant možnost textu na řeč s klíčem tohoto asistenta. Vypnuto odstraní to, co přidal.",
+            "tts_model": "Nechte prázdné pro výchozí hlasový model. Můžete zadat jiný název, pokud ho poskytovatel uvádí.",
+            "tts_voice": "Coral je výchozí. Hlasy fungují pro jazyky nastavené v Assist → Jazyk.",
             "tts_speed": "Jak rychle tento hlas mluví. 1× je běžné. Platí pro AI Workspace i Assist."
           }
         }

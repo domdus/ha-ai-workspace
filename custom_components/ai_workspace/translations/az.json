@@ -3,47 +3,51 @@
     "step": {
       "user": {
         "title": "AI Workspace",
-        "description": "Ümumi söhbət ayarları. Sonra ilk agenti əlavə edin (Cursor, OpenAI, OpenRouter, Ollama və digərləri). Bağlantılar və agentlər bu inteqrasiyanın sətirləridir.",
+        "description": "Söhbət üçün ümumi ayarlar. Sonra inteqrasiya səhifəsindən ilk köməkçinizi (Cursor, OpenAI, Ollama və digərləri) əlavə edin.",
         "data": {
           "stt_engine": "Nitqdən mətnə",
           "tts_engine": "Mətndən nitqə",
           "speak_replies": "Cavabları avtomatik oxu",
+          "tts_natural": "Mətndən nitqə üçün təbii nitq",
           "enable_sidebar": "Yan paneldə AI Workspace göstər",
           "enable_overlay": "Üzən AI düyməsini göstər",
           "enable_dictate": "Diktə düyməsini göstər",
           "allow_users": "Adi istifadəçilərə icazə ver",
           "house_map": "Konfiqurasiya kataloqu",
-          "shorten_mcp_results": "Shorten large MCP tool results",
-          "change_history": "Change History",
-          "cross_chat": "Çatlar arası",
-          "keep_chats": "Saxlanılacaq çatlar"
+          "shorten_mcp_results": "Uzun Home Assistant cavablarını qısalt",
+          "change_history": "Dəyişiklik tarixçəsi",
+          "ui_theme": "HA komponentlərindən istifadə et",
+          "cross_chat": "Söhbətlər arası",
+          "keep_chats": "Saxlanılacaq söhbətlər"
         },
         "data_description": {
-          "stt_engine": "Brauzer cihazın nitq mühərrikini istifadə edir və https:// və ya localhost tələb edir. Home Assistant mühərriki (Ayarlardakı Whisper və s.) bu səhifədən yazını mətnə çevirir. Brauzer yenə də mikrofonu icazə verməlidir və bunu yalnız https:// və ya localhost-da edir.",
-          "tts_engine": "Piper, Google Translate və ya OpenAI agentinin AI Workspace səsi. Cavabı oxumaq adi http:// üzərində də işləyir. Sönülü cavabları mətn kimi buraxır.",
-          "speak_replies": "Səs seçilibsə, hər cavab gələn kimi oxunur. Sönülü səsucaldan düyməsini saxlayır ki, özünüz oxudasınız.",
-          "enable_sidebar": "Yan panel bəndi AI Workspace. Bu sönülü olsa belə səhifə /ai-workspace ünvanında qalır.",
-          "enable_overlay": "Üzən AI düyməsini yandırır və ya söndürür. Ayarlarda sistem düymələrini örtməmək üçün yuxarıda durur.",
+          "stt_engine": "Brauzer diktəsi təhlükəsiz sayt (https) tələb edir. Və ya Ayarlar altında Home Assistant nitqdən-mətnə mühərriki seçin. Brauzer mikrofona icazə verməlidir.",
+          "tts_engine": "Piper, Google Translate və ya AI köməkçilərinizdən birinin səsi. Sönülü cavabları yalnız mətn kimi saxlayır.",
+          "speak_replies": "Səs seçilibsə, hər cavab gələn kimi oxunur. Sönülü səsucaldan düyməsini saxlayır ki, cavabı özünüz oxudasınız.",
+          "tts_natural": "Defolt olaraq açıqdır. Səsləndirmə təbii olsun deyə formatlaşdırmanı silir. Sönülü mesajı olduğu kimi oxuyur.",
+          "enable_sidebar": "Yan paneldə AI Workspace göstərir. Sönülü olanda idarəçilər səhifəni menyu keçidi ilə yenə aça bilər.",
+          "enable_overlay": "Üzən AI düyməsini yandırır və ya söndürür. Ayarlar səhifələrində sistem düymələrini örtməmək üçün yuxarıda durur.",
           "enable_dictate": "Mesaj qutusunda mikrofon.",
-          "allow_users": "Administrator olmayan daxil olmuş istifadəçilər üzən çatı aça bilər. Sönülü onu administratorlara saxlayır. Yan panel bəndi administratorlara məxsus qalır. Onlar yalnız öz icazələri ilə daxili Home Assistant MCP serverini alırlar.",
-          "house_map": "Adlı elementin naqilləşməsi (tətiklər, bağlı id-lər) üçün istəyə bağlı yerli indeks. Defolt sönülü. Avtomatlaşdırmaları və ya açıq/sönülünü siyahılamaq üçün deyil — buna canlı MCP istifadə edin. Canlı vəziyyət, tarixçə və ya izlər deyil.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
-          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
-          "cross_chat": "Defolt sönülü. Yanılı olanda sual başlığında ortaq söz olan başqa çatı istifadə edə bilər. Çat demək lazım deyil. Yalnız qısa parça, və o çat dəyişmir.",
-          "keep_chats": "Hər şəxs üçün saxlanılacaq ən yeni sancılanmamış çatlar. Sancılmış çatlar həmişə qalır. Defolt 30."
+          "allow_users": "İdarəçi olmayan istifadəçilər üzən söhbəti öz hesablarının eyni Home Assistant icazəsi ilə aça bilər. Sönülü: yalnız idarəçilər. Yan paneldəki tam AI Workspace səhifəsi idarəçilərə məxsus qalır.",
+          "house_map": "İstəyə bağlı. Bir elementin necə bağlandığını izah etməyə kömək edir (nə onu işə salır, nəyə təsir edir). Defolt olaraq sönülüdür. Canlı açıq/sönülü vəziyyət və ya tam siyahılar üçün köməkçidən Home Assistant-ı yoxlamağı xahiş edin.",
+          "shorten_mcp_results": "Defolt olaraq açıqdır. Home Assistant-dan çox uzun cavablar (bütün ev siyahıları, böyük axtarışlar) AI-yə getməzdən əvvəl xülasə edilir. Bu, tokenləri qənaət edir və cavabları çevik saxlayır. Sönülü tam mətni göndərir.",
+          "change_history": "Defolt olaraq açıqdır. Köməkçinin etdiyi konfiqurasiya dəyişikliklərinin qeydini saxlayır ki, onları Dəyişiklik tarixçəsində nəzərdən keçirə və ya ləğv edəsiniz. Sönülü yeni qeydləri dayandırır; köməkçi Home Assistant-ı yenə istifadə edə bilər.",
+          "ui_theme": "Susmaya görə sönülü. Açıldıqda yalnız Home Assistant interfeys komponentləri istifadə olunur, bu da temalarla daha yaxşı işləyə bilər.",
+          "cross_chat": "Defolt olaraq sönülüdür. Açıq olanda sual başlığında ortaq sözləri olan başqa söhbətdən istifadə edə bilər. Söhbət demək lazım deyil. Yalnız qısa parça, və o söhbət dəyişmir.",
+          "keep_chats": "Hər şəxs üçün saxlanılacaq ən yeni sancılmamış söhbətlər. Sancılmış söhbətlər həmişə saxlanılır. Defolt 30."
         },
         "sections": {
           "mcp": {
-            "name": "MCP",
+            "name": "Bağlantı",
             "data": {
-              "mcp_kind": "MCP növü",
-              "mcp_url": "MCP URL{mcp_url_mark}",
-              "mcp_token": "MCP tokeni"
+              "mcp_kind": "Bağlantı növü",
+              "mcp_url": "Server ünvanı{mcp_url_mark}",
+              "mcp_token": "Giriş açarı"
             },
             "data_description": {
-              "mcp_kind": "Yalnız bu Home Assistant-ın çata bildiyi MCP serverləri siyahıdadır. Fərdi istənilən MCP HTTP URL-idir.",
+              "mcp_kind": "Bu Home Assistant-ın çata bildiyi serverlər. Öz ünvanınızı daxil etmək üçün Fərdi seçin.",
               "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Daxili: Home Assistant uzunömürlü giriş tokeni, və ya bu çatdakı cari girişi istifadə etmək üçün boş buraxın. HA-MCP: adətən boş. Vibecode: Agent Key. Fərdi: istəyə bağlı Bearer tokeni."
+              "mcp_token": "Daxili: uzunömürlü giriş tokeni, və ya cari girişi istifadə etmək üçün boş buraxın. HA-MCP: adətən boş. Vibecode: agent açarı. Fərdi: yalnız o server açar istəyəndə."
             }
           },
           "prompt": {
@@ -52,67 +56,71 @@
               "system_prompt": "Sistem promptu"
             },
             "data_description": {
-              "system_prompt": "Yalnız ton və davranış. Daxili prompt üçün boş buraxın. MCP alətləri və redaktor keçidləri həmişə əlavə olunur; bu sahəyə aid deyil."
+              "system_prompt": "Yalnız ton və vərdişlər. Defolt üçün boş buraxın. Köməkçi həmişə Home Assistant-a və cavablardakı sürətli keçidlərə çıxışı saxlayır."
             }
           }
         }
       }
     },
     "error": {
-      "no_runtime": "Cursor runtime-ə çatmaq olmur. Onu başladın və URL-ini bu formada yazın.",
+      "no_runtime": "Cursor runtime-ə çatmaq mümkün deyil. Onu işə salın və bu formadakı ünvanı yoxlayın.",
       "required": "Bu sahə tələb olunur.",
       "invalid_auth": "Provayder bu API açarını rədd etdi.",
-      "cannot_connect": "Provayderə qoşulmaq olmadı. URL-i və şəbəkəni yoxlayın."
+      "cannot_connect": "Provayderə çatmaq mümkün olmadı. URL-i və şəbəkəni yoxlayın."
     },
     "abort": {
-      "already_configured": "AI Workspace artıq konfiqurasiya olunub"
+      "already_configured": "AI Workspace artıq qurulub"
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "AI Workspace",
-        "description": "Ümumi söhbət ayarları. MCP bağlantılarını və agentləri AI Workspace inteqrasiyası səhifəsindəki düymələrlə əlavə edin.",
+        "description": "Ümumi söhbət ayarları. Bağlantıları və köməkçiləri AI Workspace inteqrasiya səhifəsindəki düymələrlə əlavə edin.",
         "data": {
           "stt_engine": "Nitqdən mətnə",
           "tts_engine": "Mətndən nitqə",
           "speak_replies": "Cavabları avtomatik oxu",
+          "tts_natural": "Mətndən nitqə üçün təbii nitq",
           "enable_sidebar": "Yan paneldə AI Workspace göstər",
           "enable_overlay": "Üzən AI düyməsini göstər",
           "enable_dictate": "Diktə düyməsini göstər",
           "allow_users": "Adi istifadəçilərə icazə ver",
           "house_map": "Konfiqurasiya kataloqu",
-          "shorten_mcp_results": "Shorten large MCP tool results",
-          "change_history": "Change History",
-          "cross_chat": "Çatlar arası",
-          "keep_chats": "Saxlanılacaq çatlar"
+          "shorten_mcp_results": "Uzun Home Assistant cavablarını qısalt",
+          "change_history": "Dəyişiklik tarixçəsi",
+          "ui_theme": "HA komponentlərindən istifadə et",
+          "cross_chat": "Söhbətlər arası",
+          "keep_chats": "Saxlanılacaq söhbətlər"
         },
         "data_description": {
-          "stt_engine": "Brauzer cihazın nitq mühərrikini istifadə edir və https:// və ya localhost tələb edir. Home Assistant mühərriki (Ayarlardakı Whisper və s.) bu səhifədən yazını mətnə çevirir. Brauzer yenə də mikrofonu icazə verməlidir və bunu yalnız https:// və ya localhost-da edir.",
-          "tts_engine": "Piper, Google Translate və ya OpenAI agentinin AI Workspace səsi. Cavabı oxumaq adi http:// üzərində də işləyir. Sönülü cavabları mətn kimi buraxır.",
-          "speak_replies": "Səs seçilibsə, hər cavab gələn kimi oxunur. Sönülü səsucaldan düyməsini saxlayır ki, özünüz oxudasınız.",
-          "enable_sidebar": "Yan panel bəndi AI Workspace. Bu sönülü olsa belə səhifə /ai-workspace ünvanında qalır.",
-          "enable_overlay": "Üzən AI düyməsini yandırır və ya söndürür. Ayarlarda sistem düymələrini örtməmək üçün yuxarıda durur.",
+          "stt_engine": "Brauzer diktəsi təhlükəsiz sayt (https) tələb edir. Və ya Ayarlar altında Home Assistant nitqdən-mətnə mühərriki seçin. Brauzer mikrofona icazə verməlidir.",
+          "tts_engine": "Piper, Google Translate və ya AI köməkçilərinizdən birinin səsi. Sönülü cavabları yalnız mətn kimi saxlayır.",
+          "speak_replies": "Səs seçilibsə, hər cavab gələn kimi oxunur. Sönülü səsucaldan düyməsini saxlayır ki, cavabı özünüz oxudasınız.",
+          "tts_natural": "Defolt olaraq açıqdır. Səsləndirmə təbii olsun deyə formatlaşdırmanı silir. Sönülü mesajı olduğu kimi oxuyur.",
+          "enable_sidebar": "Yan paneldə AI Workspace göstərir. Sönülü olanda idarəçilər səhifəni menyu keçidi ilə yenə aça bilər.",
+          "enable_overlay": "Üzən AI düyməsini yandırır və ya söndürür. Ayarlar səhifələrində sistem düymələrini örtməmək üçün yuxarıda durur.",
           "enable_dictate": "Mesaj qutusunda mikrofon.",
-          "allow_users": "Administrator olmayan daxil olmuş istifadəçilər üzən çatı aça bilər. Sönülü onu administratorlara saxlayır. Yan panel bəndi administratorlara məxsus qalır. Onlar yalnız öz icazələri ilə daxili Home Assistant MCP serverini alırlar.",
-          "house_map": "Adlı elementin naqilləşməsi (tətiklər, bağlı id-lər) üçün istəyə bağlı yerli indeks. Defolt sönülü. Avtomatlaşdırmaları və ya açıq/sönülünü siyahılamaq üçün deyil — buna canlı MCP istifadə edin. Canlı vəziyyət, tarixçə və ya izlər deyil.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
-          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
-          "cross_chat": "Defolt sönülü. Yanılı olanda sual başlığında ortaq söz olan başqa çatı istifadə edə bilər. Çat demək lazım deyil. Yalnız qısa parça, və o çat dəyişmir.",
-          "keep_chats": "Hər şəxs üçün saxlanılacaq ən yeni sancılanmamış çatlar. Sancılmış çatlar həmişə qalır. Defolt 30."
+          "allow_users": "İdarəçi olmayan istifadəçilər üzən söhbəti öz hesablarının eyni Home Assistant icazəsi ilə aça bilər. Sönülü: yalnız idarəçilər. Yan paneldəki tam AI Workspace səhifəsi idarəçilərə məxsus qalır.",
+          "house_map": "İstəyə bağlı. Bir elementin necə bağlandığını izah etməyə kömək edir (nə onu işə salır, nəyə təsir edir). Defolt olaraq sönülüdür. Canlı açıq/sönülü vəziyyət və ya tam siyahılar üçün köməkçidən Home Assistant-ı yoxlamağı xahiş edin.",
+          "shorten_mcp_results": "Defolt olaraq açıqdır. Home Assistant-dan çox uzun cavablar (bütün ev siyahıları, böyük axtarışlar) AI-yə getməzdən əvvəl xülasə edilir. Bu, tokenləri qənaət edir və cavabları çevik saxlayır. Sönülü tam mətni göndərir.",
+          "change_history": "Defolt olaraq açıqdır. Köməkçinin etdiyi konfiqurasiya dəyişikliklərinin qeydini saxlayır ki, onları Dəyişiklik tarixçəsində nəzərdən keçirə və ya ləğv edəsiniz. Sönülü yeni qeydləri dayandırır; köməkçi Home Assistant-ı yenə istifadə edə bilər.",
+          "ui_theme": "Susmaya görə sönülü. Açıldıqda yalnız Home Assistant interfeys komponentləri istifadə olunur, bu da temalarla daha yaxşı işləyə bilər.",
+          "cross_chat": "Defolt olaraq sönülüdür. Açıq olanda sual başlığında ortaq sözləri olan başqa söhbətdən istifadə edə bilər. Söhbət demək lazım deyil. Yalnız qısa parça, və o söhbət dəyişmir.",
+          "keep_chats": "Hər şəxs üçün saxlanılacaq ən yeni sancılmamış söhbətlər. Sancılmış söhbətlər həmişə saxlanılır. Defolt 30."
         },
         "sections": {
           "mcp": {
-            "name": "MCP",
+            "name": "Bağlantı",
             "data": {
-              "mcp_kind": "MCP növü",
-              "mcp_url": "MCP URL{mcp_url_mark}",
-              "mcp_token": "MCP tokeni"
+              "mcp_kind": "Bağlantı növü",
+              "mcp_url": "Server ünvanı{mcp_url_mark}",
+              "mcp_token": "Giriş açarı"
             },
             "data_description": {
-              "mcp_kind": "Yalnız bu Home Assistant-ın çata bildiyi MCP serverləri siyahıdadır. Fərdi istənilən MCP HTTP URL-idir.",
+              "mcp_kind": "Bu Home Assistant-ın çata bildiyi serverlər. Öz ünvanınızı daxil etmək üçün Fərdi seçin.",
               "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Daxili: Home Assistant uzunömürlü giriş tokeni, və ya bu çatdakı cari girişi istifadə etmək üçün boş buraxın. HA-MCP: adətən boş. Vibecode: Agent Key. Fərdi: istəyə bağlı Bearer tokeni."
+              "mcp_token": "Daxili: uzunömürlü giriş tokeni, və ya cari girişi istifadə etmək üçün boş buraxın. HA-MCP: adətən boş. Vibecode: agent açarı. Fərdi: yalnız o server açar istəyəndə."
             }
           },
           "prompt": {
@@ -121,17 +129,17 @@
               "system_prompt": "Sistem promptu"
             },
             "data_description": {
-              "system_prompt": "Yalnız ton və davranış. Daxili prompt üçün boş buraxın. MCP alətləri və redaktor keçidləri həmişə əlavə olunur; bu sahəyə aid deyil."
+              "system_prompt": "Yalnız ton və vərdişlər. Defolt üçün boş buraxın. Köməkçi həmişə Home Assistant-a və cavablardakı sürətli keçidlərə çıxışı saxlayır."
             }
           }
         }
       }
     },
     "error": {
-      "no_runtime": "Cursor runtime-ə çatmaq olmur. Onu başladın və URL-ini bu formada yazın.",
+      "no_runtime": "Cursor runtime-ə çatmaq mümkün deyil. Onu işə salın və bu formadakı ünvanı yoxlayın.",
       "required": "Bu sahə tələb olunur.",
       "invalid_auth": "Provayder bu API açarını rədd etdi.",
-      "cannot_connect": "Provayderə qoşulmaq olmadı. URL-i və şəbəkəni yoxlayın."
+      "cannot_connect": "Provayderə çatmaq mümkün olmadı. URL-i və şəbəkəni yoxlayın."
     }
   },
   "config_subentries": {
@@ -146,12 +154,12 @@
       },
       "error": {
         "required": "Bu sahə tələb olunur.",
-        "already_configured": "Bu adda bağlantı artıq var."
+        "already_configured": "Bu adlı bağlantı artıq mövcuddur."
       },
       "step": {
         "user": {
           "title": "Bağlantı",
-          "description": "Yalnız bu Home Assistant-ın çata bildiyi MCP serverləri siyahıdadır. Fərdi istənilən MCP HTTP URL-idir.",
+          "description": "Bu köməkçinin Home Assistant-a və digər xidmətlərə necə qoşulduğunu seçin.",
           "menu_options": {
             "ha": "Home Assistant MCP Server (daxili)",
             "ha_mcp": "HA-MCP",
@@ -161,16 +169,16 @@
         },
         "connection": {
           "title": "Bağlantı",
-          "description": "Köməkçinin eyni çatda istifadə edə biləcəyi MCP serveri.",
+          "description": "Köməkçinin söhbət zamanı istifadə edə biləcəyi başqa xidmət.",
           "data": {
             "name": "Ad",
             "url": "Ünvan",
             "token": "Token"
           },
           "data_description": {
-            "name": "Qısa ad, məsələn Directus. Köməkçi bununla bu bağlantını başqalarından ayırır.",
-            "url": "https:// və ya http:// ilə başlayan MCP ünvanı. Tapılan serverlər doldurulur.",
-            "token": "Yalnız həmin server açar istəyəndə. Redaktədə boş buraxın ki, saxlanmış açar qalsın."
+            "name": "Qısa ad, məsələn Directus. Köməkçi bu bağlantını digərlərindən ayırmaq üçün ondan istifadə edir.",
+            "url": "Veb ünvanı (https://…). Tapılan serverlər avtomatik doldurulur.",
+            "token": "Yalnız o server açar istəyəndə. Redaktə edərkən saxlanmış açarı saxlamaq üçün boş buraxın."
           }
         }
       }
@@ -182,28 +190,28 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Cursor runtime-ə çatmaq olmur. Onu başladın və URL-ini bu formada yazın.",
+        "no_runtime": "Cursor runtime-ə çatmaq mümkün deyil. Onu işə salın və bu formadakı ünvanı yoxlayın.",
         "required": "Bu sahə tələb olunur.",
         "invalid_auth": "Provayder bu API açarını rədd etdi.",
-        "cannot_connect": "Provayderə qoşulmaq olmadı. URL-i və şəbəkəni yoxlayın."
+        "cannot_connect": "Provayderə çatmaq mümkün olmadı. URL-i və şəbəkəni yoxlayın."
       },
       "step": {
         "provider": {
-          "title": "Təminatçı",
-          "description": "Təminatçını seçin. Növbəti ekran yalnız həmin təminatçının ehtiyacını soruşur.",
+          "title": "Provayder",
+          "description": "Provayderi seçin. Növbəti ekran yalnız o provayderin ehtiyac duyduğunu soruşur.",
           "data": {
-            "api_provider": "Təminatçı"
+            "api_provider": "Provayder"
           },
           "data_description": {
-            "api_provider": "Cursor, və ya bulud yaxud yerli model."
+            "api_provider": "Cursor, və ya bulud və ya yerli model."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
-          "description": "Cursor Runtime, API key, model, and effort. The URL field fills only when this Home Assistant can reach the Runtime.",
+          "description": "Cursor ünvanı, API açarı, model və cavab sürəti.",
           "data": {
-            "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
-            "runtime_token": "Runtime token",
+            "runtime_url": "Cursor runtime ünvanı{runtime_url_mark}",
+            "runtime_token": "Runtime parolu",
             "cursor_api_key": "Cursor API açarı",
             "model": "Model",
             "effort": "Səy",
@@ -211,44 +219,44 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Shared secret for a Docker Runtime. Set the same value as RUNTIME_TOKEN on the container. The add-on is paired automatically; leave this empty.",
-            "cursor_api_key": "cursor.com/dashboard/integrations ünvanından. Redaktədə boş buraxın ki, saxlanmış açar qalsın. Runtime-da artıq CURSOR_API_KEY varsa, boş saxlayın.",
-            "model": "Birini seçin və ya id yazın. Boş Composer istifadə edir.",
-            "effort": "Sürətli, Yüksək və ya Yüksək sürətli. Composer, Yüksək seçməsəniz, Sürətli istifadə edir.",
-            "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır və bu agentin əlavə etdiyi Assist boru xəttini silir."
+            "runtime_token": "Cursor runtime-dəki eyni parol. Avtomatik cütləşmə ilə əlavə modul istifadə edərkən boş buraxın.",
+            "cursor_api_key": "Cursor hesabınızdan (Integrations). Redaktə edərkən saxlanmış açarı saxlamaq üçün boş buraxın.",
+            "model": "Siyahıdan seçin və ya model adı yazın. Boş Composer istifadə edir.",
+            "effort": "Nə qədər düşünmə vaxtına icazə verilsin. Composer defolt olaraq Sürətli istifadə edir.",
+            "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir."
           }
         },
         "provider_cloud": {
           "title": "Bulud agenti",
-          "description": "Bu agent öz açarını saxlayır. Artıq qurulmuş inteqrasiyadan kopyalayın və ya yenisini yapışdırın. Redaktədə açarı boş buraxın ki, saxlanmış qalsın.",
+          "description": "Bu agent öz açarını saxlayır. Artıq qurulmuş inteqrasiyadan birini kopyalayın və ya yenisini yapışdırın. Redaktə edərkən saxlanmış açarı saxlamaq üçün açarı boş buraxın.",
           "data": {
             "borrow": "Açarı buradan kopyala",
             "api_key": "API açarı",
             "model": "Model",
             "effort": "Səy",
-            "low_token": "Az token",
+            "low_token": "Yalnız söhbət rejimi",
             "check_house": "Həmişə əvvəlcə evi yoxla",
             "assist": "Assist-ə əlavə et",
-            "assist_stt": "Nitqdən mətnə əlavə et",
-            "stt_model": "Nitqdən mətnə modeli",
-            "assist_tts": "Mətndən nitqə əlavə et",
-            "tts_model": "Mətndən nitqə modeli",
+            "assist_stt": "Nitqdən-mətnə əlavə et",
+            "stt_model": "Nitqdən-mətnə modeli",
+            "assist_tts": "Mətndən-nitqə əlavə et",
+            "tts_model": "Mətndən-nitqə modeli",
             "tts_voice": "Səs",
             "tts_speed": "Sürət"
           },
           "data_description": {
-            "borrow": "Həmin inteqrasiyanın artıq saxladığı açarı istifadə edir. Digər inteqrasiya dəyişmir.",
-            "api_key": "Home Assistant tokeni deyil.",
-            "model": "Birini seçin və ya id yazın. Boş təminatçının defoltunu istifadə edir.",
+            "borrow": "Həmin inteqrasiyanın artıq saxladığı açardan istifadə edir. Digər inteqrasiya dəyişməz qalır.",
+            "api_key": "AI provayderindən açarınız, Home Assistant girişiniz deyil.",
+            "model": "Siyahıdan seçin və ya model adı yazın. Boş provayderin defoltunu istifadə edir.",
             "effort": "Model dəstəkləyəndə Sürətli, Yüksək və ya Yüksək sürətli.",
-            "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
-            "check_house": "Hər mesajın ilk addımı (salam və təşəkkür istisna olmaqla) alət çağırmalıdır ki, ev haqqında cavablar canlı məlumata əsaslansın. Alətləri özü etibarlı çağıran modellər üçün və ya ümumi suallarda bir alət raundunu qənaət etmək üçün söndürün.",
-            "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır və bu agentin əlavə etdiyi Assist boru xəttini silir.",
-            "assist_stt": "Bu agentin API açarını Home Assistant nitqdən-mətnə mühərriki kimi istifadə edir və onu bütün AI Workspace Assist boru xətlərinə (Cursor daxil) bağlayır. Sönülü bu agentin əlavə etdiyi nitqdən-mətnə mühərrikini silir.",
-            "stt_model": "Boş buraxılsa təminatçının standartı istifadə olunur. Başqa id də yaza bilərsiniz.",
-            "assist_tts": "Bu agentin API açarını Home Assistant mətndən-nitqə mühərriki kimi istifadə edir və onu bütün AI Workspace Assist boru xətlərinə (Cursor daxil) bağlayır. Sönülü bu agentin əlavə etdiyi mətndən-nitqə mühərrikini silir.",
-            "tts_model": "Boş buraxılsa gpt-4o-mini-tts istifadə olunur. tts-1 ucuzdur. Başqa id də yaza bilərsiniz.",
-            "tts_voice": "Coral standartdır. Bu agentin yaratdığı Assist boru xətləri bu səsi istifadə edir.",
+            "low_token": "Ev idarəsi olmadan qısa cavablar — kiçik yalnız-söhbət modelləri üçün uyğundur.",
+            "check_house": "Defolt olaraq açıqdır. Köməkçi quraşdırmanız haqqında cavab verməzdən əvvəl Home Assistant-a baxır (sadə salamlama üçün deyil). Modeliniz bunu özü edirsə, söndürün.",
+            "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir.",
+            "assist_stt": "Bu köməkçinin açarı ilə Home Assistant-da nitqdən-mətnə seçimi əlavə edir. Sönülü əlavə etdiyini silir.",
+            "stt_model": "Provayder defoltu üçün boş buraxın. Təklif olunursa, başqa model adı yaza bilərsiniz.",
+            "assist_tts": "Bu köməkçinin açarı ilə Home Assistant-da mətndən-nitqə seçimi əlavə edir. Sönülü əlavə etdiyini silir.",
+            "tts_model": "Defolt səs modeli üçün boş buraxın. Provayderiniz siyahıya salırsa, başqa ad yaza bilərsiniz.",
+            "tts_voice": "Coral defoltdur. Səslər Assist → Dil altında təyin etdiyiniz dillər üçün işləyir.",
             "tts_speed": "Bu səsin danışma sürəti. 1× normaldır. AI Workspace və Assist üçün keçərlidir."
           }
         },
@@ -259,17 +267,17 @@
             "api_base": "Ollama URL",
             "model": "Model",
             "effort": "Səy",
-            "low_token": "Az token",
+            "low_token": "Yalnız söhbət rejimi",
             "check_house": "Həmişə əvvəlcə evi yoxla",
             "assist": "Assist-ə əlavə et"
           },
           "data_description": {
-            "api_base": "Usually {example_url}",
-            "model": "Birini seçin və ya çəkilmiş model yazın. Boş llama3.2 istifadə edir.",
+            "api_base": "Adətən {example_url}",
+            "model": "Siyahıdan seçin və ya quraşdırdığınız modeli yazın. Boş llama3.2 istifadə edir.",
             "effort": "Model dəstəkləyəndə istifadə olunur.",
-            "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
-            "check_house": "Hər mesajın ilk addımı (salam və təşəkkür istisna olmaqla) alət çağırmalıdır ki, ev haqqında cavablar canlı məlumata əsaslansın. Alətləri özü etibarlı çağıran modellər üçün və ya ümumi suallarda bir alət raundunu qənaət etmək üçün söndürün.",
-            "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır və bu agentin əlavə etdiyi Assist boru xəttini silir."
+            "low_token": "Ev idarəsi olmadan qısa cavablar — kiçik yalnız-söhbət modelləri üçün uyğundur.",
+            "check_house": "Defolt olaraq açıqdır. Köməkçi quraşdırmanız haqqında cavab verməzdən əvvəl Home Assistant-a baxır (sadə salamlama üçün deyil). Modeliniz bunu özü edirsə, söndürün.",
+            "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir."
           }
         },
         "provider_azure": {
@@ -281,52 +289,52 @@
             "model": "Yerləşdirmə",
             "azure_api_version": "API versiyası",
             "effort": "Səy",
-            "low_token": "Az token",
+            "low_token": "Yalnız söhbət rejimi",
             "check_house": "Həmişə əvvəlcə evi yoxla",
             "assist": "Assist-ə əlavə et"
           },
           "data_description": {
-            "api_key": "Azure OpenAI açarı. Redaktədə boş buraxın ki, saxlanmış açar qalsın.",
+            "api_key": "Azure OpenAI açarı. Redaktə edərkən saxlanmış açarı saxlamaq üçün boş buraxın.",
             "api_base": "{example_url}",
             "model": "Yerləşdirmə adı.",
-            "azure_api_version": "Default 2024-10-21.",
+            "azure_api_version": "Azure dəstəyi başqa versiya verməyibsə, defoltu saxlayın.",
             "effort": "Yerləşdirmə dəstəkləyəndə istifadə olunur.",
-            "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
-            "check_house": "Hər mesajın ilk addımı (salam və təşəkkür istisna olmaqla) alət çağırmalıdır ki, ev haqqında cavablar canlı məlumata əsaslansın. Alətləri özü etibarlı çağıran modellər üçün və ya ümumi suallarda bir alət raundunu qənaət etmək üçün söndürün.",
-            "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır və bu agentin əlavə etdiyi Assist boru xəttini silir."
+            "low_token": "Ev idarəsi olmadan qısa cavablar — kiçik yalnız-söhbət modelləri üçün uyğundur.",
+            "check_house": "Defolt olaraq açıqdır. Köməkçi quraşdırmanız haqqında cavab verməzdən əvvəl Home Assistant-a baxır (sadə salamlama üçün deyil). Modeliniz bunu özü edirsə, söndürün.",
+            "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir."
           }
         },
         "provider_compatible": {
           "title": "OpenAI-uyğun",
-          "description": "OpenAI API danışan fərdi server.",
+          "description": "OpenAI söhbət API-si kimi işləyən öz serveriniz.",
           "data": {
             "api_key": "API açarı",
             "api_base": "API baza URL",
             "model": "Model",
             "effort": "Səy",
-            "low_token": "Az token",
+            "low_token": "Yalnız söhbət rejimi",
             "check_house": "Həmişə əvvəlcə evi yoxla",
             "assist": "Assist-ə əlavə et",
-            "assist_stt": "Nitqdən mətnə əlavə et",
-            "stt_model": "Nitqdən mətnə modeli",
-            "assist_tts": "Mətndən nitqə əlavə et",
-            "tts_model": "Mətndən nitqə modeli",
+            "assist_stt": "Nitqdən-mətnə əlavə et",
+            "stt_model": "Nitqdən-mətnə modeli",
+            "assist_tts": "Mətndən-nitqə əlavə et",
+            "tts_model": "Mətndən-nitqə modeli",
             "tts_voice": "Səs",
             "tts_speed": "Sürət"
           },
           "data_description": {
-            "api_key": "Redaktədə boş buraxın ki, saxlanmış açar qalsın.",
-            "api_base": "Serverin baza URL-i, həmin yolu istifadə edirsə /v1 daxil.",
+            "api_key": "Redaktə edərkən saxlanmış açarı saxlamaq üçün boş buraxın.",
+            "api_base": "Server ünvanı. Serveriniz bunu gözləyirsə, sonuna /v1 əlavə edin.",
             "model": "Həmin serverdəki model adı.",
             "effort": "Server dəstəkləyəndə istifadə olunur.",
-            "low_token": "Qısa sorğu və alətsiz, kiçik model cavab verə bilsin. Evi yoxlamaq və dəyişmək olmur.",
-            "check_house": "Hər mesajın ilk addımı (salam və təşəkkür istisna olmaqla) alət çağırmalıdır ki, ev haqqında cavablar canlı məlumata əsaslansın. Alətləri özü etibarlı çağıran modellər üçün və ya ümumi suallarda bir alət raundunu qənaət etmək üçün söndürün.",
-            "assist": "Bu agenti Home Assistant Assist-ə əlavə edir. Sönülü onu yalnız AI Workspace çatında saxlayır və bu agentin əlavə etdiyi Assist boru xəttini silir.",
-            "assist_stt": "Bu agentin API açarını Home Assistant nitqdən-mətnə mühərriki kimi istifadə edir və onu bütün AI Workspace Assist boru xətlərinə (Cursor daxil) bağlayır. Sönülü bu agentin əlavə etdiyi nitqdən-mətnə mühərrikini silir.",
-            "stt_model": "Boş buraxılsa təminatçının standartı istifadə olunur. Başqa id də yaza bilərsiniz.",
-            "assist_tts": "Bu agentin API açarını Home Assistant mətndən-nitqə mühərriki kimi istifadə edir və onu bütün AI Workspace Assist boru xətlərinə (Cursor daxil) bağlayır. Sönülü bu agentin əlavə etdiyi mətndən-nitqə mühərrikini silir.",
-            "tts_model": "Boş buraxılsa gpt-4o-mini-tts istifadə olunur. tts-1 ucuzdur. Başqa id də yaza bilərsiniz.",
-            "tts_voice": "Coral standartdır. Bu agentin yaratdığı Assist boru xətləri bu səsi istifadə edir.",
+            "low_token": "Ev idarəsi olmadan qısa cavablar — kiçik yalnız-söhbət modelləri üçün uyğundur.",
+            "check_house": "Defolt olaraq açıqdır. Köməkçi quraşdırmanız haqqında cavab verməzdən əvvəl Home Assistant-a baxır (sadə salamlama üçün deyil). Modeliniz bunu özü edirsə, söndürün.",
+            "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir.",
+            "assist_stt": "Bu köməkçinin açarı ilə Home Assistant-da nitqdən-mətnə seçimi əlavə edir. Sönülü əlavə etdiyini silir.",
+            "stt_model": "Provayder defoltu üçün boş buraxın. Təklif olunursa, başqa model adı yaza bilərsiniz.",
+            "assist_tts": "Bu köməkçinin açarı ilə Home Assistant-da mətndən-nitqə seçimi əlavə edir. Sönülü əlavə etdiyini silir.",
+            "tts_model": "Defolt səs modeli üçün boş buraxın. Provayderiniz siyahıya salırsa, başqa ad yaza bilərsiniz.",
+            "tts_voice": "Coral defoltdur. Səslər Assist → Dil altında təyin etdiyiniz dillər üçün işləyir.",
             "tts_speed": "Bu səsin danışma sürəti. 1× normaldır. AI Workspace və Assist üçün keçərlidir."
           }
         }

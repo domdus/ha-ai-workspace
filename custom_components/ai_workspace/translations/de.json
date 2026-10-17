@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "AI Workspace",
-        "description": "Gemeinsame Chat-Einstellungen. Danach fügst du den ersten Agenten hinzu (Cursor, OpenAI, OpenRouter, Ollama und weitere). Verbindungen und Agenten sind Einträge dieser Integration.",
+        "description": "Gemeinsame Chat-Einstellungen. Als Nächstes legst du deinen ersten Assistenten (Cursor, OpenAI, Ollama und andere) auf der Integrationsseite an.",
         "data": {
           "stt_engine": "Sprache zu Text",
           "tts_engine": "Text zu Sprache",
@@ -14,38 +14,40 @@
           "enable_dictate": "Diktier-Schaltfläche anzeigen",
           "allow_users": "Normale Benutzer erlauben",
           "house_map": "Konfigurationskatalog",
-          "shorten_mcp_results": "Große MCP-Tool-Ergebnisse kürzen",
+          "shorten_mcp_results": "Lange Home-Assistant-Antworten kürzen",
           "change_history": "Änderungsverlauf",
           "cross_chat": "Chatübergreifend",
+          "ui_theme": "HA-Komponenten verwenden",
           "keep_chats": "Chats behalten"
         },
         "data_description": {
-          "stt_engine": "Der Browser nutzt die Spracheingabe des Geräts und braucht https:// oder localhost. Eine Home-Assistant-Engine (Whisper und andere unter Einstellungen) transkribiert eine Aufnahme von dieser Seite. Der Browser muss das Mikrofon trotzdem erlauben, und das nur über https:// oder localhost.",
-          "tts_engine": "Piper, Google Translate oder eine AI-Workspace-Stimme eines OpenAI-Agenten. Das Vorlesen der Antwort funktioniert auch über http://. Aus lässt Antworten als Text.",
+          "stt_engine": "Browser-Diktat braucht eine sichere Seite (https). Oder wähle unter Einstellungen eine Home-Assistant-Sprache-zu-Text-Engine. Der Browser muss das Mikrofon erlauben.",
+          "tts_engine": "Piper, Google Translate oder eine Stimme von einem deiner KI-Assistenten. Aus: Antworten nur als Text.",
           "speak_replies": "Wenn eine Stimme gewählt ist, wird jede Antwort vorgelesen. Aus lässt die Lautsprecher-Schaltfläche zum selbst Abspielen.",
-          "tts_natural": "Standard an. Entfernt Markdown, Links, Pfeile und ähnliche Zeichen, bevor Google Translate, Piper oder andere Engines vorlesen. Aus sendet den Chat-Text unverändert.",
-          "enable_sidebar": "Der Seitenleisteneintrag AI Workspace. Die Seite bleibt unter /ai-workspace erreichbar, wenn das aus ist.",
+          "tts_natural": "Standard an. Entfernt Formatierung, damit Vorlesen natürlich klingt. Aus liest die Nachricht wörtlich vor.",
+          "enable_sidebar": "Zeigt AI Workspace in der Seitenleiste. Aus: Administratoren können die Seite trotzdem über den Menülink öffnen.",
           "enable_overlay": "Schaltet die schwebende KI-Schaltfläche ein oder aus. Auf Einstellungen sitzt sie höher, damit sie die Systemschaltflächen nicht überdeckt.",
           "enable_dictate": "Mikrofon im Eingabefeld.",
-          "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren. Sie bekommen nur den eingebauten Home Assistant MCP Server mit ihren eigenen Rechten.",
-          "house_map": "Optionaler lokaler Index für die Verdrahtung eines benannten Eintrags (Trigger, zugehörige IDs). Standardmäßig aus. Nicht für Listen von Automatisierungen oder an/aus — dafür Live-MCP. Kein Live-Zustand, keine Historie, keine Traces.",
-          "shorten_mcp_results": "Standardmäßig an. Große MCP-Antworten (ganzes Haus, lange Listen) werden gekürzt, bevor Cloud-Modelle und Cursor sie lesen. Aus sendet die vollen Antworten. Home Assistant protokolliert die Ergebnisgröße als mcp proxy last tool result (unchanged / area-map / truncated).",
-          "change_history": "Standardmäßig an. Zeichnet Konfigurationsänderungen von Cloud-Agenten und Cursor im Änderungsverlauf auf. Aus überspringt Snapshots; der MCP-Proxy leitet Tools weiter und kann Ergebnisse weiter kürzen.",
+          "allow_users": "Benutzer ohne Administratorrechte können den schwebenden Chat mit dem gleichen Home-Assistant-Zugriff wie ihr Konto nutzen. Aus: nur Administratoren. Die AI-Workspace-Seite in der Seitenleiste bleibt nur für Administratoren.",
+          "house_map": "Optional. Hilft zu erklären, wie ein Eintrag verdrahtet ist (was ihn auslöst, was er beeinflusst). Standardmäßig aus. Für live an/aus oder volle Listen: die Assistentin soll Home Assistant direkt prüfen.",
+          "shorten_mcp_results": "Standardmäßig an. Sehr lange Antworten aus Home Assistant (Listen fürs ganze Haus, große Abfragen) werden gekürzt, bevor sie an die KI gehen. Das spart Token und hält Antworten flott. Aus sendet den vollen Text.",
+          "change_history": "Standardmäßig an. Merkt sich Konfigurationsänderungen der Assistentin, damit du sie im Änderungsverlauf prüfen oder rückgängig machen kannst. Aus: keine neuen Einträge; die Assistentin kann Home Assistant weiter nutzen.",
           "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen anderen Chat nutzen, dessen Titel Wörter mit ihr teilt. Du musst nicht Chat oder Gespräch sagen. Nur ein kurzer Auszug, und dieser Chat wird nicht geändert.",
-          "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30."
+          "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30.",
+          "ui_theme": "Standardmäßig aus. Wenn an, werden nur Home-Assistant-UI-Komponenten genutzt, die oft besser mit Themes funktionieren."
         },
         "sections": {
           "mcp": {
-            "name": "MCP",
+            "name": "Verbindung",
             "data": {
-              "mcp_kind": "MCP-Typ",
-              "mcp_url": "MCP-URL{mcp_url_mark}",
-              "mcp_token": "MCP-Token"
+              "mcp_kind": "Verbindungstyp",
+              "mcp_url": "Serveradresse{mcp_url_mark}",
+              "mcp_token": "Zugangsschlüssel"
             },
             "data_description": {
-              "mcp_kind": "Es werden nur MCP-Server gelistet, die diese Home-Assistant-Instanz erreicht. Benutzerdefiniert ist jede MCP-HTTP-URL.",
+              "mcp_kind": "Server, die diese Home-Assistant-Instanz erreicht. „Benutzerdefiniert“ für eine eigene Adresse.",
               "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Eingebaut: langlebiges Home-Assistant-Zugriffstoken, oder leer lassen, um die aktuelle Anmeldung in diesem Chat zu nutzen. HA-MCP: meist leer. Vibecode: Agent Key. Benutzerdefiniert: optionales Bearer-Token."
+              "mcp_token": "Eingebaut: langlebiges Zugriffstoken, oder leer für die aktuelle Anmeldung. HA-MCP: meist leer. Vibecode: Agent-Key. Benutzerdefiniert: nur wenn der Server einen Schlüssel verlangt."
             }
           },
           "prompt": {
@@ -54,14 +56,14 @@
               "system_prompt": "System-Prompt"
             },
             "data_description": {
-              "system_prompt": "Nur Ton und Verhalten. Leer lassen für den eingebauten Prompt. MCP-Tools und Editor-Links werden immer ergänzt und gehören nicht in dieses Feld."
+              "system_prompt": "Nur Ton und Gewohnheiten. Leer lassen für die Voreinstellung. Zugriff auf Home Assistant und Kurzlinks in Antworten bleibt immer aktiv."
             }
           }
         }
       }
     },
     "error": {
-      "no_runtime": "Die Cursor-Runtime ist nicht erreichbar. Starte sie und trage die URL in diesem Formular ein.",
+      "no_runtime": "Cursor-Runtime nicht erreichbar. Starte sie und prüfe die Adresse in diesem Formular.",
       "required": "Dieses Feld ist erforderlich.",
       "invalid_auth": "Der Anbieter hat diesen API-Schlüssel abgelehnt.",
       "cannot_connect": "Der Anbieter ist nicht erreichbar. Prüfe die URL und das Netzwerk."
@@ -74,7 +76,7 @@
     "step": {
       "init": {
         "title": "AI Workspace",
-        "description": "Gemeinsame Chat-Einstellungen. MCP-Verbindungen und Agenten fügst du über die Schaltflächen auf der Seite der AI-Workspace-Integration hinzu.",
+        "description": "Gemeinsame Chat-Einstellungen. Verbindungen und Assistenten fügst du über die Schaltflächen auf der AI-Workspace-Integrationsseite hinzu.",
         "data": {
           "stt_engine": "Sprache zu Text",
           "tts_engine": "Text zu Sprache",
@@ -85,38 +87,40 @@
           "enable_dictate": "Diktier-Schaltfläche anzeigen",
           "allow_users": "Normale Benutzer erlauben",
           "house_map": "Konfigurationskatalog",
-          "shorten_mcp_results": "Große MCP-Tool-Ergebnisse kürzen",
+          "shorten_mcp_results": "Lange Home-Assistant-Antworten kürzen",
           "change_history": "Änderungsverlauf",
           "cross_chat": "Chatübergreifend",
+          "ui_theme": "HA-Komponenten verwenden",
           "keep_chats": "Chats behalten"
         },
         "data_description": {
-          "stt_engine": "Der Browser nutzt die Spracheingabe des Geräts und braucht https:// oder localhost. Eine Home-Assistant-Engine (Whisper und andere unter Einstellungen) transkribiert eine Aufnahme von dieser Seite. Der Browser muss das Mikrofon trotzdem erlauben, und das nur über https:// oder localhost.",
-          "tts_engine": "Piper, Google Translate oder eine AI-Workspace-Stimme eines OpenAI-Agenten. Das Vorlesen der Antwort funktioniert auch über http://. Aus lässt Antworten als Text.",
+          "stt_engine": "Browser-Diktat braucht eine sichere Seite (https). Oder wähle unter Einstellungen eine Home-Assistant-Sprache-zu-Text-Engine. Der Browser muss das Mikrofon erlauben.",
+          "tts_engine": "Piper, Google Translate oder eine Stimme von einem deiner KI-Assistenten. Aus: Antworten nur als Text.",
           "speak_replies": "Wenn eine Stimme gewählt ist, wird jede Antwort vorgelesen. Aus lässt die Lautsprecher-Schaltfläche zum selbst Abspielen.",
-          "tts_natural": "Standard an. Entfernt Markdown, Links, Pfeile und ähnliche Zeichen, bevor Google Translate, Piper oder andere Engines vorlesen. Aus sendet den Chat-Text unverändert.",
-          "enable_sidebar": "Der Seitenleisteneintrag AI Workspace. Die Seite bleibt unter /ai-workspace erreichbar, wenn das aus ist.",
+          "tts_natural": "Standard an. Entfernt Formatierung, damit Vorlesen natürlich klingt. Aus liest die Nachricht wörtlich vor.",
+          "enable_sidebar": "Zeigt AI Workspace in der Seitenleiste. Aus: Administratoren können die Seite trotzdem über den Menülink öffnen.",
           "enable_overlay": "Schaltet die schwebende KI-Schaltfläche ein oder aus. Auf Einstellungen sitzt sie höher, damit sie die Systemschaltflächen nicht überdeckt.",
           "enable_dictate": "Mikrofon im Eingabefeld.",
-          "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren. Sie bekommen nur den eingebauten Home Assistant MCP Server mit ihren eigenen Rechten.",
-          "house_map": "Optionaler lokaler Index für die Verdrahtung eines benannten Eintrags (Trigger, zugehörige IDs). Standardmäßig aus. Nicht für Listen von Automatisierungen oder an/aus — dafür Live-MCP. Kein Live-Zustand, keine Historie, keine Traces.",
-          "shorten_mcp_results": "Standardmäßig an. Große MCP-Antworten (ganzes Haus, lange Listen) werden gekürzt, bevor Cloud-Modelle und Cursor sie lesen. Aus sendet die vollen Antworten. Home Assistant protokolliert die Ergebnisgröße als mcp proxy last tool result (unchanged / area-map / truncated).",
-          "change_history": "Standardmäßig an. Zeichnet Konfigurationsänderungen von Cloud-Agenten und Cursor im Änderungsverlauf auf. Aus überspringt Snapshots; der MCP-Proxy leitet Tools weiter und kann Ergebnisse weiter kürzen.",
+          "allow_users": "Benutzer ohne Administratorrechte können den schwebenden Chat mit dem gleichen Home-Assistant-Zugriff wie ihr Konto nutzen. Aus: nur Administratoren. Die AI-Workspace-Seite in der Seitenleiste bleibt nur für Administratoren.",
+          "house_map": "Optional. Hilft zu erklären, wie ein Eintrag verdrahtet ist (was ihn auslöst, was er beeinflusst). Standardmäßig aus. Für live an/aus oder volle Listen: die Assistentin soll Home Assistant direkt prüfen.",
+          "shorten_mcp_results": "Standardmäßig an. Sehr lange Antworten aus Home Assistant (Listen fürs ganze Haus, große Abfragen) werden gekürzt, bevor sie an die KI gehen. Das spart Token und hält Antworten flott. Aus sendet den vollen Text.",
+          "change_history": "Standardmäßig an. Merkt sich Konfigurationsänderungen der Assistentin, damit du sie im Änderungsverlauf prüfen oder rückgängig machen kannst. Aus: keine neuen Einträge; die Assistentin kann Home Assistant weiter nutzen.",
           "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen anderen Chat nutzen, dessen Titel Wörter mit ihr teilt. Du musst nicht Chat oder Gespräch sagen. Nur ein kurzer Auszug, und dieser Chat wird nicht geändert.",
-          "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30."
+          "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30.",
+          "ui_theme": "Standardmäßig aus. Wenn an, werden nur Home-Assistant-UI-Komponenten genutzt, die oft besser mit Themes funktionieren."
         },
         "sections": {
           "mcp": {
-            "name": "MCP",
+            "name": "Verbindung",
             "data": {
-              "mcp_kind": "MCP-Typ",
-              "mcp_url": "MCP-URL{mcp_url_mark}",
-              "mcp_token": "MCP-Token"
+              "mcp_kind": "Verbindungstyp",
+              "mcp_url": "Serveradresse{mcp_url_mark}",
+              "mcp_token": "Zugangsschlüssel"
             },
             "data_description": {
-              "mcp_kind": "Es werden nur MCP-Server gelistet, die diese Home-Assistant-Instanz erreicht. Benutzerdefiniert ist jede MCP-HTTP-URL.",
+              "mcp_kind": "Server, die diese Home-Assistant-Instanz erreicht. „Benutzerdefiniert“ für eine eigene Adresse.",
               "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Eingebaut: langlebiges Home-Assistant-Zugriffstoken, oder leer lassen, um die aktuelle Anmeldung in diesem Chat zu nutzen. HA-MCP: meist leer. Vibecode: Agent Key. Benutzerdefiniert: optionales Bearer-Token."
+              "mcp_token": "Eingebaut: langlebiges Zugriffstoken, oder leer für die aktuelle Anmeldung. HA-MCP: meist leer. Vibecode: Agent-Key. Benutzerdefiniert: nur wenn der Server einen Schlüssel verlangt."
             }
           },
           "prompt": {
@@ -125,14 +129,14 @@
               "system_prompt": "System-Prompt"
             },
             "data_description": {
-              "system_prompt": "Nur Ton und Verhalten. Leer lassen für den eingebauten Prompt. MCP-Tools und Editor-Links werden immer ergänzt und gehören nicht in dieses Feld."
+              "system_prompt": "Nur Ton und Gewohnheiten. Leer lassen für die Voreinstellung. Zugriff auf Home Assistant und Kurzlinks in Antworten bleibt immer aktiv."
             }
           }
         }
       }
     },
     "error": {
-      "no_runtime": "Die Cursor-Runtime ist nicht erreichbar. Starte sie und trage die URL in diesem Formular ein.",
+      "no_runtime": "Cursor-Runtime nicht erreichbar. Starte sie und prüfe die Adresse in diesem Formular.",
       "required": "Dieses Feld ist erforderlich.",
       "invalid_auth": "Der Anbieter hat diesen API-Schlüssel abgelehnt.",
       "cannot_connect": "Der Anbieter ist nicht erreichbar. Prüfe die URL und das Netzwerk."
@@ -155,7 +159,7 @@
       "step": {
         "user": {
           "title": "Verbindung",
-          "description": "Es werden nur MCP-Server gelistet, die diese Home-Assistant-Instanz erreicht. Benutzerdefiniert ist jede MCP-HTTP-URL.",
+          "description": "Wähle, wie der Assistent Home Assistant und andere Dienste erreicht.",
           "menu_options": {
             "ha": "Home Assistant MCP-Server (eingebaut)",
             "ha_mcp": "HA-MCP",
@@ -165,7 +169,7 @@
         },
         "connection": {
           "title": "Verbindung",
-          "description": "Ein MCP-Server, den der Assistent im selben Chat nutzen kann.",
+          "description": "Ein weiterer Dienst, den der Assistent im Chat nutzen kann.",
           "data": {
             "name": "Name",
             "url": "Adresse",
@@ -173,7 +177,7 @@
           },
           "data_description": {
             "name": "Ein kurzer Name, zum Beispiel Directus. Der Assistent unterscheidet daran diese Verbindung von den anderen.",
-            "url": "Die MCP-Adresse, beginnend mit https:// oder http://. Gefundene Server werden vorausgefüllt.",
+            "url": "Webadresse (https://…). Gefundene Server werden automatisch eingetragen.",
             "token": "Nur wenn dieser Server einen Schlüssel verlangt. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten."
           }
         }
@@ -186,7 +190,7 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Die Cursor-Runtime ist nicht erreichbar. Starte sie und trage die URL in diesem Formular ein.",
+        "no_runtime": "Cursor-Runtime nicht erreichbar. Starte sie und prüfe die Adresse in diesem Formular.",
         "required": "Dieses Feld ist erforderlich.",
         "invalid_auth": "Der Anbieter hat diesen API-Schlüssel abgelehnt.",
         "cannot_connect": "Der Anbieter ist nicht erreichbar. Prüfe die URL und das Netzwerk."
@@ -204,10 +208,10 @@
         },
         "provider_cursor": {
           "title": "Cursor",
-          "description": "Cursor-Runtime, API-Schlüssel, Modell und Aufwand. Das URL-Feld wird nur gefüllt, wenn dieses Home Assistant die Runtime erreicht.",
+          "description": "Cursor-Adresse, API-Schlüssel, Modell und Antwortgeschwindigkeit.",
           "data": {
-            "runtime_url": "Cursor-Runtime-URL{runtime_url_mark}",
-            "runtime_token": "Runtime-Token",
+            "runtime_url": "Cursor-Runtime-Adresse{runtime_url_mark}",
+            "runtime_token": "Runtime-Passwort",
             "cursor_api_key": "Cursor-API-Schlüssel",
             "model": "Modell",
             "effort": "Aufwand",
@@ -215,11 +219,11 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Gemeinsames Geheimnis für eine Docker-Runtime. Derselbe Wert wie RUNTIME_TOKEN am Container. Die App wird automatisch gekoppelt; leer lassen.",
-            "cursor_api_key": "Von cursor.com/dashboard/integrations. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten. Leer lassen, wenn die Runtime bereits CURSOR_API_KEY hat.",
-            "model": "Wähle eines oder gib eine ID ein. Leer nutzt Composer.",
-            "effort": "Schnell, Hoch oder Hoch schnell. Composer nutzt Schnell, außer du wählst Hoch.",
-            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat und entfernt die Assist-Pipeline, die dieser Agent angelegt hat."
+            "runtime_token": "Dasselbe Passwort wie auf deiner Cursor-Runtime. Leer lassen bei Add-on mit automatischer Kopplung.",
+            "cursor_api_key": "Aus deinem Cursor-Konto (Integrations). Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
+            "model": "Aus der Liste wählen oder Modellnamen eingeben. Leer nutzt Composer.",
+            "effort": "Wie viel Denkzeit erlaubt ist. Composer nutzt standardmäßig Schnell.",
+            "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat."
           }
         },
         "provider_cloud": {
@@ -230,7 +234,7 @@
             "api_key": "API-Schlüssel",
             "model": "Modell",
             "effort": "Aufwand",
-            "low_token": "Wenig Token",
+            "low_token": "Nur-Chat-Modus",
             "check_house": "Immer zuerst das Haus prüfen",
             "assist": "Zu Assist hinzufügen",
             "assist_stt": "Sprache-zu-Text anlegen",
@@ -242,17 +246,17 @@
           },
           "data_description": {
             "borrow": "Nutzt den Schlüssel, den diese Integration schon gespeichert hat. Die andere Integration bleibt unverändert.",
-            "api_key": "Kein Home-Assistant-Token.",
+            "api_key": "Schlüssel vom KI-Anbieter, nicht dein Home-Assistant-Login.",
             "model": "Wähle eines oder gib eine ID ein. Leer lässt den Standard des Anbieters.",
             "effort": "Schnell, Hoch oder Hoch schnell, wenn das Modell das unterstützt.",
-            "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
-            "check_house": "Der erste Schritt jeder Nachricht (außer Begrüßung und Dank) muss ein Werkzeug aufrufen, damit Antworten zum Haus auf Live-Daten beruhen. Ausschalten bei Modellen, die Werkzeuge zuverlässig selbst aufrufen, oder um bei allgemeinen Fragen eine Werkzeugrunde zu sparen.",
-            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat und entfernt die Assist-Pipeline, die dieser Agent angelegt hat.",
-            "assist_stt": "Nutzt den API-Schlüssel dieses Agenten als Home-Assistant-Sprache-zu-Text-Engine und hängt sie an alle AI-Workspace-Assist-Pipelines (auch Cursor). Aus entfernt die Sprache-zu-Text-Engine, die dieser Agent angelegt hat.",
-            "stt_model": "Leer nutzt den Standard des Anbieters. Whisper ist günstiger; gpt-4o-mini-transcribe ist der OpenAI-Standard. Du kannst eine andere ID eingeben.",
-            "assist_tts": "Nutzt den API-Schlüssel dieses Agenten als Home-Assistant-Text-zu-Sprache-Engine und hängt sie an alle AI-Workspace-Assist-Pipelines (auch Cursor). Aus entfernt die Text-zu-Sprache-Engine, die dieser Agent angelegt hat.",
-            "tts_model": "Leer nutzt gpt-4o-mini-tts. tts-1 ist günstiger. Du kannst eine andere ID eingeben.",
-            "tts_voice": "Coral ist der Standard. Dieselben Stimmen sprechen Deutsch, Französisch und die anderen Sprachen, die du unter Assist → Sprache wählst. Assist-Pipelines, die dieser Agent angelegt hat, nutzen diese Stimme.",
+            "low_token": "Kürzere Antworten ohne Haussteuerung — gut für kleine Chat-only-Modelle.",
+            "check_house": "Standard an. Der Assistent prüft Home Assistant, bevor er über dein Setup antwortet (nicht bei kurzen Grüßen). Aus, wenn dein Modell das ohnehin zuverlässig tut.",
+            "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat.",
+            "assist_stt": "Fügt in Home Assistant eine Sprache-zu-Text-Option mit dem Schlüssel dieses Assistenten hinzu. Aus entfernt, was er angelegt hat.",
+            "stt_model": "Leer für den Standard des Anbieters. Optional einen anderen Modellnamen eingeben.",
+            "assist_tts": "Fügt in Home Assistant eine Text-zu-Sprache-Option mit dem Schlüssel dieses Assistenten hinzu. Aus entfernt, was er angelegt hat.",
+            "tts_model": "Leer für das Standard-Sprachmodell. Optional einen anderen Namen eingeben.",
+            "tts_voice": "Coral ist der Standard. Stimmen passen zu den Sprachen unter Assist → Sprache.",
             "tts_speed": "Wie schnell diese Stimme spricht. 1× ist normal. Gilt für AI Workspace und Assist."
           }
         },
@@ -263,17 +267,17 @@
             "api_base": "Ollama-URL",
             "model": "Modell",
             "effort": "Aufwand",
-            "low_token": "Wenig Token",
+            "low_token": "Nur-Chat-Modus",
             "check_house": "Immer zuerst das Haus prüfen",
             "assist": "Zu Assist hinzufügen"
           },
           "data_description": {
-            "api_base": "Usually {example_url}",
+            "api_base": "Meist {example_url}",
             "model": "Wähle eines oder gib einen gezogenen Modellnamen ein. Leer nutzt llama3.2.",
             "effort": "Wird genutzt, wenn das Modell das unterstützt.",
-            "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
-            "check_house": "Der erste Schritt jeder Nachricht (außer Begrüßung und Dank) muss ein Werkzeug aufrufen, damit Antworten zum Haus auf Live-Daten beruhen. Ausschalten bei Modellen, die Werkzeuge zuverlässig selbst aufrufen, oder um bei allgemeinen Fragen eine Werkzeugrunde zu sparen.",
-            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat und entfernt die Assist-Pipeline, die dieser Agent angelegt hat."
+            "low_token": "Kürzere Antworten ohne Haussteuerung — gut für kleine Chat-only-Modelle.",
+            "check_house": "Standard an. Der Assistent prüft Home Assistant, bevor er über dein Setup antwortet (nicht bei kurzen Grüßen). Aus, wenn dein Modell das ohnehin zuverlässig tut.",
+            "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat."
           }
         },
         "provider_azure": {
@@ -285,7 +289,7 @@
             "model": "Bereitstellung",
             "azure_api_version": "API-Version",
             "effort": "Aufwand",
-            "low_token": "Wenig Token",
+            "low_token": "Nur-Chat-Modus",
             "check_house": "Immer zuerst das Haus prüfen",
             "assist": "Zu Assist hinzufügen"
           },
@@ -293,22 +297,22 @@
             "api_key": "Der Azure-OpenAI-Schlüssel. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
             "api_base": "{example_url}",
             "model": "Der Name der Bereitstellung.",
-            "azure_api_version": "Default 2024-10-21.",
+            "azure_api_version": "Standard lassen, außer Azure nennt dir eine andere Version.",
             "effort": "Wird genutzt, wenn die Bereitstellung das unterstützt.",
-            "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
-            "check_house": "Der erste Schritt jeder Nachricht (außer Begrüßung und Dank) muss ein Werkzeug aufrufen, damit Antworten zum Haus auf Live-Daten beruhen. Ausschalten bei Modellen, die Werkzeuge zuverlässig selbst aufrufen, oder um bei allgemeinen Fragen eine Werkzeugrunde zu sparen.",
-            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat und entfernt die Assist-Pipeline, die dieser Agent angelegt hat."
+            "low_token": "Kürzere Antworten ohne Haussteuerung — gut für kleine Chat-only-Modelle.",
+            "check_house": "Standard an. Der Assistent prüft Home Assistant, bevor er über dein Setup antwortet (nicht bei kurzen Grüßen). Aus, wenn dein Modell das ohnehin zuverlässig tut.",
+            "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat."
           }
         },
         "provider_compatible": {
           "title": "OpenAI-kompatibel",
-          "description": "Ein eigener Server, der die OpenAI-API spricht.",
+          "description": "Eigener Server, der wie die OpenAI-Chat-API funktioniert.",
           "data": {
             "api_key": "API-Schlüssel",
             "api_base": "API-Basis-URL",
             "model": "Modell",
             "effort": "Aufwand",
-            "low_token": "Wenig Token",
+            "low_token": "Nur-Chat-Modus",
             "check_house": "Immer zuerst das Haus prüfen",
             "assist": "Zu Assist hinzufügen",
             "assist_stt": "Sprache-zu-Text anlegen",
@@ -320,17 +324,17 @@
           },
           "data_description": {
             "api_key": "Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
-            "api_base": "Basis-URL des Servers, inklusive /v1 wenn dieser Pfad genutzt wird.",
+            "api_base": "Serveradresse. /v1 anhängen, wenn dein Server das erwartet.",
             "model": "Modellname auf diesem Server.",
             "effort": "Wird genutzt, wenn der Server das unterstützt.",
-            "low_token": "Kurze Anfrage ohne Werkzeuge, damit ein kleines Modell antworten kann. Das Haus lässt sich so nicht prüfen oder ändern.",
-            "check_house": "Der erste Schritt jeder Nachricht (außer Begrüßung und Dank) muss ein Werkzeug aufrufen, damit Antworten zum Haus auf Live-Daten beruhen. Ausschalten bei Modellen, die Werkzeuge zuverlässig selbst aufrufen, oder um bei allgemeinen Fragen eine Werkzeugrunde zu sparen.",
-            "assist": "Legt diesen Agenten in Home Assistant Assist an. Aus lässt ihn nur im AI-Workspace-Chat und entfernt die Assist-Pipeline, die dieser Agent angelegt hat.",
-            "assist_stt": "Nutzt den API-Schlüssel dieses Agenten als Home-Assistant-Sprache-zu-Text-Engine und hängt sie an alle AI-Workspace-Assist-Pipelines (auch Cursor). Aus entfernt die Sprache-zu-Text-Engine, die dieser Agent angelegt hat.",
-            "stt_model": "Leer nutzt den Standard des Anbieters. Whisper ist günstiger; gpt-4o-mini-transcribe ist der OpenAI-Standard. Du kannst eine andere ID eingeben.",
-            "assist_tts": "Nutzt den API-Schlüssel dieses Agenten als Home-Assistant-Text-zu-Sprache-Engine und hängt sie an alle AI-Workspace-Assist-Pipelines (auch Cursor). Aus entfernt die Text-zu-Sprache-Engine, die dieser Agent angelegt hat.",
-            "tts_model": "Leer nutzt gpt-4o-mini-tts. tts-1 ist günstiger. Du kannst eine andere ID eingeben.",
-            "tts_voice": "Coral ist der Standard. Dieselben Stimmen sprechen Deutsch, Französisch und die anderen Sprachen, die du unter Assist → Sprache wählst. Assist-Pipelines, die dieser Agent angelegt hat, nutzen diese Stimme.",
+            "low_token": "Kürzere Antworten ohne Haussteuerung — gut für kleine Chat-only-Modelle.",
+            "check_house": "Standard an. Der Assistent prüft Home Assistant, bevor er über dein Setup antwortet (nicht bei kurzen Grüßen). Aus, wenn dein Modell das ohnehin zuverlässig tut.",
+            "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat.",
+            "assist_stt": "Fügt in Home Assistant eine Sprache-zu-Text-Option mit dem Schlüssel dieses Assistenten hinzu. Aus entfernt, was er angelegt hat.",
+            "stt_model": "Leer für den Standard des Anbieters. Optional einen anderen Modellnamen eingeben.",
+            "assist_tts": "Fügt in Home Assistant eine Text-zu-Sprache-Option mit dem Schlüssel dieses Assistenten hinzu. Aus entfernt, was er angelegt hat.",
+            "tts_model": "Leer für das Standard-Sprachmodell. Optional einen anderen Namen eingeben.",
+            "tts_voice": "Coral ist der Standard. Stimmen passen zu den Sprachen unter Assist → Sprache.",
             "tts_speed": "Wie schnell diese Stimme spricht. 1× ist normal. Gilt für AI Workspace und Assist."
           }
         }

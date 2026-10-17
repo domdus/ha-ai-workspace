@@ -3,47 +3,51 @@
     "step": {
       "user": {
         "title": "AI Workspace",
-        "description": "Wspólne ustawienia czatu. Potem dodaj pierwszego agenta (Cursor, OpenAI, OpenRouter, Ollama i inne). Połączenia i agenci są wierszami tej integracji.",
+        "description": "Wspólne ustawienia czatu. Następnie dodaj pierwszego asystenta (Cursor, OpenAI, Ollama i inne) ze strony integracji.",
         "data": {
           "stt_engine": "Mowa na tekst",
           "tts_engine": "Tekst na mowę",
           "speak_replies": "Czytaj odpowiedzi automatycznie",
+          "tts_natural": "Naturalna mowa dla tekstu na mowę",
           "enable_sidebar": "Pokaż AI Workspace na pasku bocznym",
           "enable_overlay": "Pokaż pływający przycisk AI",
           "enable_dictate": "Pokaż przycisk dyktowania",
           "allow_users": "Zezwól zwykłym użytkownikom",
           "house_map": "Katalog konfiguracji",
-          "shorten_mcp_results": "Shorten large MCP tool results",
-          "change_history": "Change History",
+          "shorten_mcp_results": "Skracaj długie odpowiedzi Home Assistant",
+          "change_history": "Historia zmian",
+          "ui_theme": "Użyj komponentów HA",
           "cross_chat": "Między czatami",
           "keep_chats": "Czaty do zachowania"
         },
         "data_description": {
-          "stt_engine": "Przeglądarka używa rozpoznawania mowy urządzenia i wymaga https:// lub localhost. Silnik Home Assistant (Whisper i inne w Ustawieniach) transkrybuje nagranie z tej strony. Przeglądarka i tak musi zezwolić na mikrofon, a robi to tylko na https:// lub localhost.",
-          "tts_engine": "Piper, Google Translate lub głos AI Workspace agenta OpenAI. Odczyt odpowiedzi działa też przez http://. Wyłączone zostawia odpowiedzi jako tekst.",
-          "speak_replies": "Gdy wybrany jest głos, każda odpowiedź jest czytana od razu. Wyłączone zostawia przycisk głośnika, aby odtworzyć ją samemu.",
-          "enable_sidebar": "Pozycja paska bocznego AI Workspace. Strona zostaje pod /ai-workspace, gdy to jest wyłączone.",
-          "enable_overlay": "Włącza lub wyłącza pływający przycisk AI. W Ustawieniach jest wyżej, żeby nie zasłaniał przycisków systemowych.",
+          "stt_engine": "Dyktowanie w przeglądarce wymaga bezpiecznej strony (https). Albo wybierz silnik mowy na tekst Home Assistant w Ustawieniach. Przeglądarka musi zezwolić na mikrofon.",
+          "tts_engine": "Piper, Google Translate albo głos jednego z twoich asystentów AI. Wyłączone zostawia odpowiedzi tylko jako tekst.",
+          "speak_replies": "Gdy wybrany jest głos, każda odpowiedź jest czytana od razu po nadejściu. Wyłączone zostawia przycisk głośnika, aby odtworzyć ją samemu.",
+          "tts_natural": "Domyślnie włączone. Usuwa formatowanie, aby odczyt brzmiał naturalnie. Wyłączone czyta wiadomość dokładnie tak, jak jest napisana.",
+          "enable_sidebar": "Pokazuje AI Workspace na pasku bocznym. Wyłączone: administratorzy nadal mogą otworzyć pełną stronę przez łącze w menu.",
+          "enable_overlay": "Włącza lub wyłącza pływający przycisk AI. Na stronach Ustawień jest wyżej, żeby nie zasłaniał przycisków systemowych.",
           "enable_dictate": "Mikrofon w polu wiadomości.",
-          "allow_users": "Zalogowani użytkownicy bez uprawnień administratora mogą otworzyć pływający czat. Wyłączone zostawia go administratorom. Pozycja paska bocznego zostaje tylko dla administratorów. Dostają tylko wbudowany serwer MCP Home Assistant z własnymi uprawnieniami.",
-          "house_map": "Opcjonalny lokalny indeks okablowania nazwanego elementu (wyzwalacze, powiązane id). Domyślnie wyłączony. Nie do listowania automatyzacji ani wł/wył — do tego użyj żywego MCP. To nie stan na żywo, historia ani ślady.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
-          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
+          "allow_users": "Użytkownicy bez uprawnień administratora mogą otworzyć pływający czat z takim samym dostępem Home Assistant jak ich konto. Wyłączone: tylko administratorzy. Pełna strona AI Workspace na pasku bocznym zostaje tylko dla administratorów.",
+          "house_map": "Opcjonalne. Pomaga wyjaśnić, jak element jest podłączony (co go uruchamia, na co wpływa). Domyślnie wyłączone. Dla stanu wł/wył na żywo lub pełnych list poproś asystenta, żeby sprawdził Home Assistant.",
+          "shorten_mcp_results": "Domyślnie włączone. Bardzo długie odpowiedzi z Home Assistant (listy całego domu, duże wyszukiwania) są streszczane, zanim trafią do AI. To oszczędza tokens i utrzymuje zwięzłe odpowiedzi. Wyłączone wysyła pełny tekst.",
+          "change_history": "Domyślnie włączone. Zapisuje zmiany konfiguracji wykonane przez asystenta, żebyś mógł je przejrzeć lub cofnąć w Historii zmian. Wyłączone: bez nowych wpisów; asystent nadal może korzystać z Home Assistant.",
+          "ui_theme": "Domyślnie wyłączone. Gdy włączone, używane są tylko komponenty interfejsu Home Assistant, które mogą lepiej współpracować z motywami.",
           "cross_chat": "Domyślnie wyłączone. Gdy włączone, pytanie może użyć innego czatu, którego tytuł ma wspólne słowa. Nie trzeba mówić czat. Tylko krótki fragment i ten czat nie jest zmieniany.",
           "keep_chats": "Najnowsze nieprzypięte czaty na osobę. Przypięte czaty zostają zawsze. Domyślnie 30."
         },
         "sections": {
           "mcp": {
-            "name": "MCP",
+            "name": "Połączenie",
             "data": {
-              "mcp_kind": "Typ MCP",
-              "mcp_url": "URL MCP{mcp_url_mark}",
-              "mcp_token": "Token MCP"
+              "mcp_kind": "Typ połączenia",
+              "mcp_url": "Adres serwera{mcp_url_mark}",
+              "mcp_token": "Klucz dostępu"
             },
             "data_description": {
-              "mcp_kind": "Na liście są tylko serwery MCP, do których ta instancja Home Assistant może dotrzeć. Własny to dowolny URL HTTP MCP.",
+              "mcp_kind": "Serwery, do których ta instancja Home Assistant może dotrzeć. Wybierz Własny, aby wpisać własny adres.",
               "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Wbudowany: długotrwały token dostępu Home Assistant albo puste, aby użyć bieżącego logowania w tym czacie. HA-MCP: zwykle puste. Vibecode: Agent Key. Własny: opcjonalny token Bearer."
+              "mcp_token": "Wbudowany: długotrwały token dostępu albo puste, aby użyć bieżącego logowania. HA-MCP: zwykle puste. Vibecode: klucz agenta. Własny: tylko gdy ten serwer wymaga klucza."
             }
           },
           "prompt": {
@@ -52,14 +56,14 @@
               "system_prompt": "Prompt systemowy"
             },
             "data_description": {
-              "system_prompt": "Tylko ton i zachowanie. Zostaw puste dla wbudowanego promptu. Narzędzia MCP i linki edytora są zawsze dodawane; nie należą do tego pola."
+              "system_prompt": "Tylko ton i nawyki. Zostaw puste dla wartości domyślnej. Asystent zawsze zachowuje dostęp do Home Assistant i szybkich linków w odpowiedziach."
             }
           }
         }
       }
     },
     "error": {
-      "no_runtime": "Środowisko Cursor jest nieosiągalne. Uruchom je i ustaw URL  w tym formularzu.",
+      "no_runtime": "Nie można połączyć się ze środowiskiem Cursor. Uruchom je i sprawdź adres w tym formularzu.",
       "required": "To pole jest wymagane.",
       "invalid_auth": "Dostawca odrzucił ten klucz API.",
       "cannot_connect": "Nie można połączyć się z dostawcą. Sprawdź adres URL i sieć."
@@ -72,47 +76,51 @@
     "step": {
       "init": {
         "title": "AI Workspace",
-        "description": "Wspólne ustawienia czatu. Połączenia MCP i agentów dodasz przyciskami na stronie integracji AI Workspace.",
+        "description": "Wspólne ustawienia czatu. Połączenia i asystentów dodasz przyciskami na stronie integracji AI Workspace.",
         "data": {
           "stt_engine": "Mowa na tekst",
           "tts_engine": "Tekst na mowę",
           "speak_replies": "Czytaj odpowiedzi automatycznie",
+          "tts_natural": "Naturalna mowa dla tekstu na mowę",
           "enable_sidebar": "Pokaż AI Workspace na pasku bocznym",
           "enable_overlay": "Pokaż pływający przycisk AI",
           "enable_dictate": "Pokaż przycisk dyktowania",
           "allow_users": "Zezwól zwykłym użytkownikom",
           "house_map": "Katalog konfiguracji",
-          "shorten_mcp_results": "Shorten large MCP tool results",
-          "change_history": "Change History",
+          "shorten_mcp_results": "Skracaj długie odpowiedzi Home Assistant",
+          "change_history": "Historia zmian",
+          "ui_theme": "Użyj komponentów HA",
           "cross_chat": "Między czatami",
           "keep_chats": "Czaty do zachowania"
         },
         "data_description": {
-          "stt_engine": "Przeglądarka używa rozpoznawania mowy urządzenia i wymaga https:// lub localhost. Silnik Home Assistant (Whisper i inne w Ustawieniach) transkrybuje nagranie z tej strony. Przeglądarka i tak musi zezwolić na mikrofon, a robi to tylko na https:// lub localhost.",
-          "tts_engine": "Piper, Google Translate lub głos AI Workspace agenta OpenAI. Odczyt odpowiedzi działa też przez http://. Wyłączone zostawia odpowiedzi jako tekst.",
-          "speak_replies": "Gdy wybrany jest głos, każda odpowiedź jest czytana od razu. Wyłączone zostawia przycisk głośnika, aby odtworzyć ją samemu.",
-          "enable_sidebar": "Pozycja paska bocznego AI Workspace. Strona zostaje pod /ai-workspace, gdy to jest wyłączone.",
-          "enable_overlay": "Włącza lub wyłącza pływający przycisk AI. W Ustawieniach jest wyżej, żeby nie zasłaniał przycisków systemowych.",
+          "stt_engine": "Dyktowanie w przeglądarce wymaga bezpiecznej strony (https). Albo wybierz silnik mowy na tekst Home Assistant w Ustawieniach. Przeglądarka musi zezwolić na mikrofon.",
+          "tts_engine": "Piper, Google Translate albo głos jednego z twoich asystentów AI. Wyłączone zostawia odpowiedzi tylko jako tekst.",
+          "speak_replies": "Gdy wybrany jest głos, każda odpowiedź jest czytana od razu po nadejściu. Wyłączone zostawia przycisk głośnika, aby odtworzyć ją samemu.",
+          "tts_natural": "Domyślnie włączone. Usuwa formatowanie, aby odczyt brzmiał naturalnie. Wyłączone czyta wiadomość dokładnie tak, jak jest napisana.",
+          "enable_sidebar": "Pokazuje AI Workspace na pasku bocznym. Wyłączone: administratorzy nadal mogą otworzyć pełną stronę przez łącze w menu.",
+          "enable_overlay": "Włącza lub wyłącza pływający przycisk AI. Na stronach Ustawień jest wyżej, żeby nie zasłaniał przycisków systemowych.",
           "enable_dictate": "Mikrofon w polu wiadomości.",
-          "allow_users": "Zalogowani użytkownicy bez uprawnień administratora mogą otworzyć pływający czat. Wyłączone zostawia go administratorom. Pozycja paska bocznego zostaje tylko dla administratorów. Dostają tylko wbudowany serwer MCP Home Assistant z własnymi uprawnieniami.",
-          "house_map": "Opcjonalny lokalny indeks okablowania nazwanego elementu (wyzwalacze, powiązane id). Domyślnie wyłączony. Nie do listowania automatyzacji ani wł/wył — do tego użyj żywego MCP. To nie stan na żywo, historia ani ślady.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
-          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
+          "allow_users": "Użytkownicy bez uprawnień administratora mogą otworzyć pływający czat z takim samym dostępem Home Assistant jak ich konto. Wyłączone: tylko administratorzy. Pełna strona AI Workspace na pasku bocznym zostaje tylko dla administratorów.",
+          "house_map": "Opcjonalne. Pomaga wyjaśnić, jak element jest podłączony (co go uruchamia, na co wpływa). Domyślnie wyłączone. Dla stanu wł/wył na żywo lub pełnych list poproś asystenta, żeby sprawdził Home Assistant.",
+          "shorten_mcp_results": "Domyślnie włączone. Bardzo długie odpowiedzi z Home Assistant (listy całego domu, duże wyszukiwania) są streszczane, zanim trafią do AI. To oszczędza tokens i utrzymuje zwięzłe odpowiedzi. Wyłączone wysyła pełny tekst.",
+          "change_history": "Domyślnie włączone. Zapisuje zmiany konfiguracji wykonane przez asystenta, żebyś mógł je przejrzeć lub cofnąć w Historii zmian. Wyłączone: bez nowych wpisów; asystent nadal może korzystać z Home Assistant.",
+          "ui_theme": "Domyślnie wyłączone. Gdy włączone, używane są tylko komponenty interfejsu Home Assistant, które mogą lepiej współpracować z motywami.",
           "cross_chat": "Domyślnie wyłączone. Gdy włączone, pytanie może użyć innego czatu, którego tytuł ma wspólne słowa. Nie trzeba mówić czat. Tylko krótki fragment i ten czat nie jest zmieniany.",
           "keep_chats": "Najnowsze nieprzypięte czaty na osobę. Przypięte czaty zostają zawsze. Domyślnie 30."
         },
         "sections": {
           "mcp": {
-            "name": "MCP",
+            "name": "Połączenie",
             "data": {
-              "mcp_kind": "Typ MCP",
-              "mcp_url": "URL MCP{mcp_url_mark}",
-              "mcp_token": "Token MCP"
+              "mcp_kind": "Typ połączenia",
+              "mcp_url": "Adres serwera{mcp_url_mark}",
+              "mcp_token": "Klucz dostępu"
             },
             "data_description": {
-              "mcp_kind": "Na liście są tylko serwery MCP, do których ta instancja Home Assistant może dotrzeć. Własny to dowolny URL HTTP MCP.",
+              "mcp_kind": "Serwery, do których ta instancja Home Assistant może dotrzeć. Wybierz Własny, aby wpisać własny adres.",
               "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Wbudowany: długotrwały token dostępu Home Assistant albo puste, aby użyć bieżącego logowania w tym czacie. HA-MCP: zwykle puste. Vibecode: Agent Key. Własny: opcjonalny token Bearer."
+              "mcp_token": "Wbudowany: długotrwały token dostępu albo puste, aby użyć bieżącego logowania. HA-MCP: zwykle puste. Vibecode: klucz agenta. Własny: tylko gdy ten serwer wymaga klucza."
             }
           },
           "prompt": {
@@ -121,14 +129,14 @@
               "system_prompt": "Prompt systemowy"
             },
             "data_description": {
-              "system_prompt": "Tylko ton i zachowanie. Zostaw puste dla wbudowanego promptu. Narzędzia MCP i linki edytora są zawsze dodawane; nie należą do tego pola."
+              "system_prompt": "Tylko ton i nawyki. Zostaw puste dla wartości domyślnej. Asystent zawsze zachowuje dostęp do Home Assistant i szybkich linków w odpowiedziach."
             }
           }
         }
       }
     },
     "error": {
-      "no_runtime": "Środowisko Cursor jest nieosiągalne. Uruchom je i ustaw URL  w tym formularzu.",
+      "no_runtime": "Nie można połączyć się ze środowiskiem Cursor. Uruchom je i sprawdź adres w tym formularzu.",
       "required": "To pole jest wymagane.",
       "invalid_auth": "Dostawca odrzucił ten klucz API.",
       "cannot_connect": "Nie można połączyć się z dostawcą. Sprawdź adres URL i sieć."
@@ -151,7 +159,7 @@
       "step": {
         "user": {
           "title": "Połączenie",
-          "description": "Na liście są tylko serwery MCP, do których ta instancja Home Assistant może dotrzeć. Własny to dowolny URL HTTP MCP.",
+          "description": "Wybierz, jak ten asystent łączy się z Home Assistant i innymi usługami.",
           "menu_options": {
             "ha": "Serwer MCP Home Assistant (wbudowany)",
             "ha_mcp": "HA-MCP",
@@ -161,7 +169,7 @@
         },
         "connection": {
           "title": "Połączenie",
-          "description": "Serwer MCP, którego asystent może użyć w tym samym czacie.",
+          "description": "Inna usługa, której asystent może użyć podczas czatu.",
           "data": {
             "name": "Nazwa",
             "url": "Adres",
@@ -169,7 +177,7 @@
           },
           "data_description": {
             "name": "Krótka nazwa, na przykład Directus. Asystent rozróżnia po niej to połączenie od innych.",
-            "url": "Adres MCP, zaczynający się od https:// lub http://. Znalezione serwery są uzupełniane.",
+            "url": "Adres internetowy (https://…). Znalezione serwery są uzupełniane automatycznie.",
             "token": "Tylko gdy ten serwer wymaga klucza. Przy edycji zostaw puste, aby zachować zapisany klucz."
           }
         }
@@ -182,7 +190,7 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Środowisko Cursor jest nieosiągalne. Uruchom je i ustaw URL  w tym formularzu.",
+        "no_runtime": "Nie można połączyć się ze środowiskiem Cursor. Uruchom je i sprawdź adres w tym formularzu.",
         "required": "To pole jest wymagane.",
         "invalid_auth": "Dostawca odrzucił ten klucz API.",
         "cannot_connect": "Nie można połączyć się z dostawcą. Sprawdź adres URL i sieć."
@@ -200,10 +208,10 @@
         },
         "provider_cursor": {
           "title": "Cursor",
-          "description": "Cursor Runtime, API key, model, and effort. The URL field fills only when this Home Assistant can reach the Runtime.",
+          "description": "Adres Cursor, klucz API, model i szybkość odpowiedzi.",
           "data": {
-            "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
-            "runtime_token": "Runtime token",
+            "runtime_url": "Adres środowiska Cursor{runtime_url_mark}",
+            "runtime_token": "Hasło runtime",
             "cursor_api_key": "Klucz API Cursor",
             "model": "Model",
             "effort": "Wysiłek",
@@ -211,11 +219,11 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Shared secret for a Docker Runtime. Set the same value as RUNTIME_TOKEN on the container. The add-on is paired automatically; leave this empty.",
-            "cursor_api_key": "Z cursor.com/dashboard/integrations. Przy edycji zostaw puste, aby zachować zapisany klucz. Zostaw puste, jeśli Runtime ma już CURSOR_API_KEY.",
-            "model": "Wybierz jeden lub wpisz id. Puste używa Composer.",
-            "effort": "Szybki, Wysoki lub Wysoki szybki. Composer używa Szybki, chyba że wybierzesz Wysoki.",
-            "assist": "Dodaje tego agenta do Home Assistant Assist. Wyłączone zostawia go tylko na czacie AI Workspace i usuwa rurociąg Assist dodany przez tego agenta."
+            "runtime_token": "To samo hasło co w twoim środowisku Cursor. Zostaw puste przy dodatku z automatycznym parowaniem.",
+            "cursor_api_key": "Z konta Cursor (Integrations). Przy edycji zostaw puste, aby zachować zapisany klucz.",
+            "model": "Wybierz z listy lub wpisz nazwę modelu. Puste używa Composer.",
+            "effort": "Ile czasu na myślenie zezwolić. Composer domyślnie używa Szybki.",
+            "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist."
           }
         },
         "provider_cloud": {
@@ -226,7 +234,7 @@
             "api_key": "Klucz API",
             "model": "Model",
             "effort": "Wysiłek",
-            "low_token": "Mało tokenów",
+            "low_token": "Tryb tylko czat",
             "check_house": "Zawsze najpierw sprawdzaj dom",
             "assist": "Dodaj do Assist",
             "assist_stt": "Dodaj mowę na tekst",
@@ -238,17 +246,17 @@
           },
           "data_description": {
             "borrow": "Używa klucza już zapisanego przez tę integrację. Druga integracja zostaje bez zmian.",
-            "api_key": "To nie token Home Assistant.",
-            "model": "Wybierz jeden lub wpisz id. Puste używa domyślnego modelu dostawcy.",
+            "api_key": "Klucz od dostawcy AI, nie login Home Assistant.",
+            "model": "Wybierz z listy lub wpisz nazwę modelu. Puste używa domyślnego modelu dostawcy.",
             "effort": "Szybki, Wysoki lub Wysoki szybki, gdy model to obsługuje.",
-            "low_token": "Krótka treść i bez narzędzi, żeby mały model mógł odpowiedzieć. Nie sprawdzi ani nie zmieni domu.",
-            "check_house": "Pierwszy krok każdej wiadomości (poza powitaniami i podziękowaniami) musi wywołać narzędzie, aby odpowiedzi o domu opierały się na danych na żywo. Wyłącz dla modeli, które same niezawodnie wywołują narzędzia, lub aby zaoszczędzić rundę narzędzi przy ogólnych pytaniach.",
-            "assist": "Dodaje tego agenta do Home Assistant Assist. Wyłączone zostawia go tylko na czacie AI Workspace i usuwa rurociąg Assist dodany przez tego agenta.",
-            "assist_stt": "Używa klucza API tego agenta jako silnika mowy na tekst w Home Assistant i przypisuje go do każdej rury AI Workspace Assist (w tym Cursor). Wyłączenie usuwa silnik mowy na tekst dodany przez tego agenta.",
-            "stt_model": "Puste używa domyślnego modelu dostawcy. Możesz wpisać inne id.",
-            "assist_tts": "Używa klucza API tego agenta jako silnika tekstu na mowę w Home Assistant i przypisuje go do każdej rury AI Workspace Assist (w tym Cursor). Wyłączenie usuwa silnik tekstu na mowę dodany przez tego agenta.",
-            "tts_model": "Puste używa gpt-4o-mini-tts. tts-1 jest tańszy. Możesz wpisać inne id.",
-            "tts_voice": "Coral jest domyślny. Rury Assist utworzone przez tego agenta używają tego głosu.",
+            "low_token": "Krótsze odpowiedzi bez sterowania domem — dobre dla małych modeli tylko do czatu.",
+            "check_house": "Domyślnie włączone. Asystent sprawdza Home Assistant, zanim odpowie o twojej instalacji (nie przy zwykłych powitaniach). Wyłącz, jeśli model już robi to sam.",
+            "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist.",
+            "assist_stt": "Dodaje opcję mowy na tekst w Home Assistant z kluczem tego asystenta. Wyłączenie usuwa to, co dodał.",
+            "stt_model": "Zostaw puste dla domyślnego modelu dostawcy. Możesz wpisać inną nazwę modelu.",
+            "assist_tts": "Dodaje opcję tekstu na mowę w Home Assistant z kluczem tego asystenta. Wyłączenie usuwa to, co dodał.",
+            "tts_model": "Zostaw puste dla domyślnego modelu głosu. Możesz wpisać inną nazwę, jeśli dostawca taką podaje.",
+            "tts_voice": "Coral jest domyślny. Głosy działają dla języków ustawionych w Assist → Język.",
             "tts_speed": "Jak szybko mówi ten głos. 1× to normalne tempo. Działa w AI Workspace i Assist."
           }
         },
@@ -259,17 +267,17 @@
             "api_base": "URL Ollama",
             "model": "Model",
             "effort": "Wysiłek",
-            "low_token": "Mało tokenów",
+            "low_token": "Tryb tylko czat",
             "check_house": "Zawsze najpierw sprawdzaj dom",
             "assist": "Dodaj do Assist"
           },
           "data_description": {
-            "api_base": "Usually {example_url}",
-            "model": "Wybierz jeden lub wpisz pobrany model. Puste używa llama3.2.",
+            "api_base": "Zwykle {example_url}",
+            "model": "Wybierz z listy lub wpisz zainstalowany model. Puste używa llama3.2.",
             "effort": "Używane, gdy model to obsługuje.",
-            "low_token": "Krótka treść i bez narzędzi, żeby mały model mógł odpowiedzieć. Nie sprawdzi ani nie zmieni domu.",
-            "check_house": "Pierwszy krok każdej wiadomości (poza powitaniami i podziękowaniami) musi wywołać narzędzie, aby odpowiedzi o domu opierały się na danych na żywo. Wyłącz dla modeli, które same niezawodnie wywołują narzędzia, lub aby zaoszczędzić rundę narzędzi przy ogólnych pytaniach.",
-            "assist": "Dodaje tego agenta do Home Assistant Assist. Wyłączone zostawia go tylko na czacie AI Workspace i usuwa rurociąg Assist dodany przez tego agenta."
+            "low_token": "Krótsze odpowiedzi bez sterowania domem — dobre dla małych modeli tylko do czatu.",
+            "check_house": "Domyślnie włączone. Asystent sprawdza Home Assistant, zanim odpowie o twojej instalacji (nie przy zwykłych powitaniach). Wyłącz, jeśli model już robi to sam.",
+            "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist."
           }
         },
         "provider_azure": {
@@ -281,7 +289,7 @@
             "model": "Wdrożenie",
             "azure_api_version": "Wersja API",
             "effort": "Wysiłek",
-            "low_token": "Mało tokenów",
+            "low_token": "Tryb tylko czat",
             "check_house": "Zawsze najpierw sprawdzaj dom",
             "assist": "Dodaj do Assist"
           },
@@ -289,22 +297,22 @@
             "api_key": "Klucz Azure OpenAI. Przy edycji zostaw puste, aby zachować zapisany klucz.",
             "api_base": "{example_url}",
             "model": "Nazwa wdrożenia.",
-            "azure_api_version": "Default 2024-10-21.",
+            "azure_api_version": "Zostaw wartość domyślną, chyba że wsparcie Azure podało inną wersję.",
             "effort": "Używane, gdy wdrożenie to obsługuje.",
-            "low_token": "Krótka treść i bez narzędzi, żeby mały model mógł odpowiedzieć. Nie sprawdzi ani nie zmieni domu.",
-            "check_house": "Pierwszy krok każdej wiadomości (poza powitaniami i podziękowaniami) musi wywołać narzędzie, aby odpowiedzi o domu opierały się na danych na żywo. Wyłącz dla modeli, które same niezawodnie wywołują narzędzia, lub aby zaoszczędzić rundę narzędzi przy ogólnych pytaniach.",
-            "assist": "Dodaje tego agenta do Home Assistant Assist. Wyłączone zostawia go tylko na czacie AI Workspace i usuwa rurociąg Assist dodany przez tego agenta."
+            "low_token": "Krótsze odpowiedzi bez sterowania domem — dobre dla małych modeli tylko do czatu.",
+            "check_house": "Domyślnie włączone. Asystent sprawdza Home Assistant, zanim odpowie o twojej instalacji (nie przy zwykłych powitaniach). Wyłącz, jeśli model już robi to sam.",
+            "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist."
           }
         },
         "provider_compatible": {
           "title": "Zgodny z OpenAI",
-          "description": "Własny serwer mówiący API OpenAI.",
+          "description": "Własny serwer, który działa jak API czatu OpenAI.",
           "data": {
             "api_key": "Klucz API",
             "api_base": "Bazowy URL API",
             "model": "Model",
             "effort": "Wysiłek",
-            "low_token": "Mało tokenów",
+            "low_token": "Tryb tylko czat",
             "check_house": "Zawsze najpierw sprawdzaj dom",
             "assist": "Dodaj do Assist",
             "assist_stt": "Dodaj mowę na tekst",
@@ -316,17 +324,17 @@
           },
           "data_description": {
             "api_key": "Przy edycji zostaw puste, aby zachować zapisany klucz.",
-            "api_base": "Bazowy URL serwera, w tym /v1 jeśli używa tej ścieżki.",
+            "api_base": "Adres serwera. Dodaj /v1 na końcu, jeśli serwer tego oczekuje.",
             "model": "Nazwa modelu na tym serwerze.",
             "effort": "Używane, gdy serwer to obsługuje.",
-            "low_token": "Krótka treść i bez narzędzi, żeby mały model mógł odpowiedzieć. Nie sprawdzi ani nie zmieni domu.",
-            "check_house": "Pierwszy krok każdej wiadomości (poza powitaniami i podziękowaniami) musi wywołać narzędzie, aby odpowiedzi o domu opierały się na danych na żywo. Wyłącz dla modeli, które same niezawodnie wywołują narzędzia, lub aby zaoszczędzić rundę narzędzi przy ogólnych pytaniach.",
-            "assist": "Dodaje tego agenta do Home Assistant Assist. Wyłączone zostawia go tylko na czacie AI Workspace i usuwa rurociąg Assist dodany przez tego agenta.",
-            "assist_stt": "Używa klucza API tego agenta jako silnika mowy na tekst w Home Assistant i przypisuje go do każdej rury AI Workspace Assist (w tym Cursor). Wyłączenie usuwa silnik mowy na tekst dodany przez tego agenta.",
-            "stt_model": "Puste używa domyślnego modelu dostawcy. Możesz wpisać inne id.",
-            "assist_tts": "Używa klucza API tego agenta jako silnika tekstu na mowę w Home Assistant i przypisuje go do każdej rury AI Workspace Assist (w tym Cursor). Wyłączenie usuwa silnik tekstu na mowę dodany przez tego agenta.",
-            "tts_model": "Puste używa gpt-4o-mini-tts. tts-1 jest tańszy. Możesz wpisać inne id.",
-            "tts_voice": "Coral jest domyślny. Rury Assist utworzone przez tego agenta używają tego głosu.",
+            "low_token": "Krótsze odpowiedzi bez sterowania domem — dobre dla małych modeli tylko do czatu.",
+            "check_house": "Domyślnie włączone. Asystent sprawdza Home Assistant, zanim odpowie o twojej instalacji (nie przy zwykłych powitaniach). Wyłącz, jeśli model już robi to sam.",
+            "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist.",
+            "assist_stt": "Dodaje opcję mowy na tekst w Home Assistant z kluczem tego asystenta. Wyłączenie usuwa to, co dodał.",
+            "stt_model": "Zostaw puste dla domyślnego modelu dostawcy. Możesz wpisać inną nazwę modelu.",
+            "assist_tts": "Dodaje opcję tekstu na mowę w Home Assistant z kluczem tego asystenta. Wyłączenie usuwa to, co dodał.",
+            "tts_model": "Zostaw puste dla domyślnego modelu głosu. Możesz wpisać inną nazwę, jeśli dostawca taką podaje.",
+            "tts_voice": "Coral jest domyślny. Głosy działają dla języków ustawionych w Assist → Język.",
             "tts_speed": "Jak szybko mówi ten głos. 1× to normalne tempo. Działa w AI Workspace i Assist."
           }
         }

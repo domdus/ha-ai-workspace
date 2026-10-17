@@ -122,9 +122,10 @@ class HaAiWorkspacePanel extends HTMLElement {
     if (this._mounted || this._mounting || !this._hass || !this.shadowRoot) return;
     this._mounting = true;
     let mountAiWorkspace;
+    let prefetchUiTheme;
     let stringsFor;
     try {
-      [{ mountAiWorkspace }, { stringsFor }] = await this._mods;
+      [{ mountAiWorkspace, prefetchUiTheme }, { stringsFor }] = await this._mods;
     } catch (err) {
       this._mounting = false;
       console.error("AI Workspace failed to load", err);
@@ -132,6 +133,7 @@ class HaAiWorkspacePanel extends HTMLElement {
     }
     if (this._mounted) return;
     this._mounted = true;
+    await prefetchUiTheme(() => this._hass?.auth?.data?.access_token || "");
     const ui = stringsFor(this._hass.locale?.language || this._hass.language);
     this.shadowRoot.innerHTML = `
       <style>
@@ -142,8 +144,6 @@ class HaAiWorkspacePanel extends HTMLElement {
         }
         ha-top-app-bar-fixed {
           height: 100%;
-          background-color: var(--app-header-background-color, var(--sidebar-background-color));
-          color: var(--app-header-text-color, var(--primary-text-color));
         }
         .content {
           box-sizing: border-box;
@@ -167,7 +167,6 @@ class HaAiWorkspacePanel extends HTMLElement {
           margin: 0;
         }
       </style>
-      <link rel="stylesheet" href="/ai_workspace/static/chat.css${CACHE}">
       <ha-top-app-bar-fixed>
         <ha-menu-button slot="navigationIcon"></ha-menu-button>
         <h1 class="page-title" slot="title">${ui.title}</h1>
@@ -179,17 +178,8 @@ class HaAiWorkspacePanel extends HTMLElement {
     `;
     this._syncChrome();
     const content = this.shadowRoot.querySelector(".content");
-    const css = this.shadowRoot.querySelector("link");
-    const reveal = () => content?.classList.add("ready");
-    if (css?.sheet) {
-      reveal();
-    } else {
-      css?.addEventListener("load", reveal, { once: true });
-      css?.addEventListener("error", reveal, { once: true });
-      window.setTimeout(reveal, 400);
-    }
     this._scrollShellIntoView();
-    this._ui = mountAiWorkspace(content, {
+    this._ui = await mountAiWorkspace(content, {
       routed: true,
       narrow: this._overlayNav(),
       chrome: "panel",
@@ -207,6 +197,26 @@ class HaAiWorkspacePanel extends HTMLElement {
         window.dispatchEvent(event);
       },
     });
+    const reveal = () => content?.classList.add("ready");
+    const css = [...(content?.querySelectorAll("link[rel='stylesheet']") || [])];
+    if (css.length && css.every((link) => link.sheet)) {
+      reveal();
+    } else {
+      let left = Math.max(css.length, 1);
+      const done = () => {
+        left -= 1;
+        if (left <= 0) reveal();
+      };
+      if (css.length) {
+        for (const link of css) {
+          link.addEventListener("load", done, { once: true });
+          link.addEventListener("error", done, { once: true });
+        }
+      } else {
+        done();
+      }
+      window.setTimeout(reveal, 400);
+    }
     this.shadowRoot.querySelector(".chats-menu")?.addEventListener("click", () => {
       this._ui?.toggleNav?.();
     });

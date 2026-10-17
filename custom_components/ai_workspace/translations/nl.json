@@ -3,47 +3,51 @@
     "step": {
       "user": {
         "title": "AI Workspace",
-        "description": "Gedeelde chatinstellingen. Voeg daarna de eerste agent toe (Cursor, OpenAI, OpenRouter, Ollama en meer). Verbindingen en agents zijn regels van deze integratie.",
+        "description": "Gedeelde chatinstellingen. Voeg daarna je eerste assistent toe (Cursor, OpenAI, Ollama en andere) via de integratiepagina.",
         "data": {
           "stt_engine": "Spraak naar tekst",
           "tts_engine": "Tekst naar spraak",
           "speak_replies": "Antwoorden automatisch voorlezen",
+          "tts_natural": "Natuurlijke spraak voor tekst naar spraak",
           "enable_sidebar": "AI Workspace in de zijbalk tonen",
           "enable_overlay": "Zwevende AI-knop tonen",
           "enable_dictate": "Dicteerknop tonen",
           "allow_users": "Gewone gebruikers toestaan",
           "house_map": "Configuratiecatalogus",
-          "shorten_mcp_results": "Shorten large MCP tool results",
-          "change_history": "Change History",
+          "shorten_mcp_results": "Lange Home Assistant-antwoorden inkorten",
+          "change_history": "Wijzigingsgeschiedenis",
+          "ui_theme": "HA-componenten gebruiken",
           "cross_chat": "Tussen chats",
           "keep_chats": "Chats bewaren"
         },
         "data_description": {
-          "stt_engine": "De browser gebruikt de spraakherkenning van het apparaat en heeft https:// of localhost nodig. Een Home Assistant-engine (Whisper en andere onder Instellingen) transcribeert een opname van deze pagina. De browser moet de microfoon nog steeds toestaan, en dat doet hij alleen op https:// of localhost.",
-          "tts_engine": "Piper, Google Translate of een AI Workspace-stem van een OpenAI-agent. Het voorlezen van het antwoord werkt ook via http://. Uit laat antwoorden als tekst.",
-          "speak_replies": "Als er een stem is gekozen, wordt elk antwoord voorgelezen. Uit laat de luidsprekerknop om zelf af te spelen.",
-          "enable_sidebar": "Het zijbalkitem AI Workspace. De pagina blijft bereikbaar op /ai-workspace als dit uit staat.",
-          "enable_overlay": "Zet de zwevende AI-knop aan of uit. Op Instellingen staat hij hoger zodat hij de systeemknoppen niet bedekt.",
+          "stt_engine": "Browserdictatie heeft een beveiligde site (https) nodig. Of kies onder Instellingen een Home Assistant-spraak-naar-tekst-engine. De browser moet de microfoon toestaan.",
+          "tts_engine": "Piper, Google Translate of een stem van een van je AI-assistenten. Uit laat antwoorden alleen als tekst.",
+          "speak_replies": "Als er een stem is gekozen, wordt elk antwoord voorgelezen zodra het binnenkomt. Uit laat de luidsprekerknop om zelf af te spelen.",
+          "tts_natural": "Standaard aan. Verwijdert opmaak zodat voorlezen natuurlijk klinkt. Uit leest het bericht letterlijk voor.",
+          "enable_sidebar": "Toont AI Workspace in de zijbalk. Uit: beheerders kunnen de volledige pagina nog openen via de menulink.",
+          "enable_overlay": "Zet de zwevende AI-knop aan of uit. Op Instellingen-pagina's staat hij hoger zodat hij de systeemknoppen niet bedekt.",
           "enable_dictate": "Microfoon in het berichtveld.",
-          "allow_users": "Aangemelde gebruikers die geen beheerder zijn, kunnen de zwevende chat openen. Uit houdt het bij beheerders. Het zijbalkitem blijft alleen voor beheerders. Ze krijgen alleen de ingebouwde Home Assistant MCP Server met hun eigen rechten.",
-          "house_map": "Optionele lokale index voor de bedrading van een benoemd item (triggers, gerelateerde id’s). Standaard uit. Niet om automatiseringen of aan/uit te listen — gebruik daar live MCP voor. Geen livestatus, geschiedenis of traces.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
-          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
+          "allow_users": "Gebruikers zonder beheerdersrechten kunnen de zwevende chat openen met dezelfde Home Assistant-toegang als hun account. Uit: alleen beheerders. De volledige AI Workspace-pagina in de zijbalk blijft alleen voor beheerders.",
+          "house_map": "Optioneel. Helpt uitleggen hoe een item is aangesloten (wat het activeert, wat het beïnvloedt). Standaard uit. Voor live aan/uit of volledige lijsten: vraag de assistent om Home Assistant te raadplegen.",
+          "shorten_mcp_results": "Standaard aan. Zeer lange antwoorden van Home Assistant (lijsten van het hele huis, grote zoekopdrachten) worden samengevat voordat ze naar de AI gaan. Dat bespaart tokens en houdt antwoorden vlot. Uit stuurt de volledige tekst.",
+          "change_history": "Standaard aan. Houdt een overzicht bij van configuratiewijzigingen die de assistent heeft gedaan, zodat je ze in de Wijzigingsgeschiedenis kunt bekijken of ongedaan maken. Uit: geen nieuwe items; de assistent kan Home Assistant blijven gebruiken.",
+          "ui_theme": "Standaard uit. Als dit aan staat, worden alleen Home Assistant-interfacecomponenten gebruikt, wat beter kan werken met thema’s.",
           "cross_chat": "Standaard uit. Als het aan staat, kan een vraag een andere chat gebruiken waarvan de titel woorden deelt. Je hoeft niet chat te zeggen. Alleen een kort fragment, en die chat wordt niet gewijzigd.",
           "keep_chats": "Nieuwste niet-vastgezette chats per persoon. Vastgezette chats blijven altijd. Standaard 30."
         },
         "sections": {
           "mcp": {
-            "name": "MCP",
+            "name": "Verbinding",
             "data": {
-              "mcp_kind": "MCP-type",
-              "mcp_url": "MCP-URL{mcp_url_mark}",
-              "mcp_token": "MCP-token"
+              "mcp_kind": "Verbindingstype",
+              "mcp_url": "Serveradres{mcp_url_mark}",
+              "mcp_token": "Toegangssleutel"
             },
             "data_description": {
-              "mcp_kind": "Alleen MCP-servers die deze Home Assistant kan bereiken, staan in de lijst. Aangepast is elke MCP-HTTP-URL.",
+              "mcp_kind": "Servers die deze Home Assistant kan bereiken. Kies Aangepast om een eigen adres in te voeren.",
               "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Ingebouwd: langlevend toegangstoken van Home Assistant, of leeg laten om de huidige aanmelding in deze chat te gebruiken. HA-MCP: meestal leeg. Vibecode: Agent Key. Aangepast: optioneel Bearer-token."
+              "mcp_token": "Ingebouwd: langlevend toegangstoken, of leeg laten om je huidige aanmelding te gebruiken. HA-MCP: meestal leeg. Vibecode: agentsleutel. Aangepast: alleen als die server om een sleutel vraagt."
             }
           },
           "prompt": {
@@ -52,14 +56,14 @@
               "system_prompt": "Systeemprompt"
             },
             "data_description": {
-              "system_prompt": "Alleen toon en gedrag. Leeg laten voor de ingebouwde prompt. MCP-tools en editorlinks worden altijd toegevoegd; ze horen niet in dit veld."
+              "system_prompt": "Alleen toon en gewoonten. Leeg laten voor de standaard. De assistent houdt altijd toegang tot Home Assistant en snelle links in antwoorden."
             }
           }
         }
       }
     },
     "error": {
-      "no_runtime": "De Cursor-runtime is niet bereikbaar. Start hem en zet de URL  op dit formulier.",
+      "no_runtime": "De Cursor-runtime is niet bereikbaar. Start hem en controleer het adres op dit formulier.",
       "required": "Dit veld is verplicht.",
       "invalid_auth": "De provider heeft deze API-sleutel geweigerd.",
       "cannot_connect": "De provider is niet bereikbaar. Controleer de URL en het netwerk."
@@ -72,47 +76,51 @@
     "step": {
       "init": {
         "title": "AI Workspace",
-        "description": "Gedeelde chatinstellingen. Voeg MCP-verbindingen en agents toe met de knoppen op de pagina van de AI Workspace-integratie.",
+        "description": "Gedeelde chatinstellingen. Voeg verbindingen en assistenten toe met de knoppen op de pagina van de AI Workspace-integratie.",
         "data": {
           "stt_engine": "Spraak naar tekst",
           "tts_engine": "Tekst naar spraak",
           "speak_replies": "Antwoorden automatisch voorlezen",
+          "tts_natural": "Natuurlijke spraak voor tekst naar spraak",
           "enable_sidebar": "AI Workspace in de zijbalk tonen",
           "enable_overlay": "Zwevende AI-knop tonen",
           "enable_dictate": "Dicteerknop tonen",
           "allow_users": "Gewone gebruikers toestaan",
           "house_map": "Configuratiecatalogus",
-          "shorten_mcp_results": "Shorten large MCP tool results",
-          "change_history": "Change History",
+          "shorten_mcp_results": "Lange Home Assistant-antwoorden inkorten",
+          "change_history": "Wijzigingsgeschiedenis",
+          "ui_theme": "HA-componenten gebruiken",
           "cross_chat": "Tussen chats",
           "keep_chats": "Chats bewaren"
         },
         "data_description": {
-          "stt_engine": "De browser gebruikt de spraakherkenning van het apparaat en heeft https:// of localhost nodig. Een Home Assistant-engine (Whisper en andere onder Instellingen) transcribeert een opname van deze pagina. De browser moet de microfoon nog steeds toestaan, en dat doet hij alleen op https:// of localhost.",
-          "tts_engine": "Piper, Google Translate of een AI Workspace-stem van een OpenAI-agent. Het voorlezen van het antwoord werkt ook via http://. Uit laat antwoorden als tekst.",
-          "speak_replies": "Als er een stem is gekozen, wordt elk antwoord voorgelezen. Uit laat de luidsprekerknop om zelf af te spelen.",
-          "enable_sidebar": "Het zijbalkitem AI Workspace. De pagina blijft bereikbaar op /ai-workspace als dit uit staat.",
-          "enable_overlay": "Zet de zwevende AI-knop aan of uit. Op Instellingen staat hij hoger zodat hij de systeemknoppen niet bedekt.",
+          "stt_engine": "Browserdictatie heeft een beveiligde site (https) nodig. Of kies onder Instellingen een Home Assistant-spraak-naar-tekst-engine. De browser moet de microfoon toestaan.",
+          "tts_engine": "Piper, Google Translate of een stem van een van je AI-assistenten. Uit laat antwoorden alleen als tekst.",
+          "speak_replies": "Als er een stem is gekozen, wordt elk antwoord voorgelezen zodra het binnenkomt. Uit laat de luidsprekerknop om zelf af te spelen.",
+          "tts_natural": "Standaard aan. Verwijdert opmaak zodat voorlezen natuurlijk klinkt. Uit leest het bericht letterlijk voor.",
+          "enable_sidebar": "Toont AI Workspace in de zijbalk. Uit: beheerders kunnen de volledige pagina nog openen via de menulink.",
+          "enable_overlay": "Zet de zwevende AI-knop aan of uit. Op Instellingen-pagina's staat hij hoger zodat hij de systeemknoppen niet bedekt.",
           "enable_dictate": "Microfoon in het berichtveld.",
-          "allow_users": "Aangemelde gebruikers die geen beheerder zijn, kunnen de zwevende chat openen. Uit houdt het bij beheerders. Het zijbalkitem blijft alleen voor beheerders. Ze krijgen alleen de ingebouwde Home Assistant MCP Server met hun eigen rechten.",
-          "house_map": "Optionele lokale index voor de bedrading van een benoemd item (triggers, gerelateerde id’s). Standaard uit. Niet om automatiseringen of aan/uit te listen — gebruik daar live MCP voor. Geen livestatus, geschiedenis of traces.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
-          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
+          "allow_users": "Gebruikers zonder beheerdersrechten kunnen de zwevende chat openen met dezelfde Home Assistant-toegang als hun account. Uit: alleen beheerders. De volledige AI Workspace-pagina in de zijbalk blijft alleen voor beheerders.",
+          "house_map": "Optioneel. Helpt uitleggen hoe een item is aangesloten (wat het activeert, wat het beïnvloedt). Standaard uit. Voor live aan/uit of volledige lijsten: vraag de assistent om Home Assistant te raadplegen.",
+          "shorten_mcp_results": "Standaard aan. Zeer lange antwoorden van Home Assistant (lijsten van het hele huis, grote zoekopdrachten) worden samengevat voordat ze naar de AI gaan. Dat bespaart tokens en houdt antwoorden vlot. Uit stuurt de volledige tekst.",
+          "change_history": "Standaard aan. Houdt een overzicht bij van configuratiewijzigingen die de assistent heeft gedaan, zodat je ze in de Wijzigingsgeschiedenis kunt bekijken of ongedaan maken. Uit: geen nieuwe items; de assistent kan Home Assistant blijven gebruiken.",
+          "ui_theme": "Standaard uit. Als dit aan staat, worden alleen Home Assistant-interfacecomponenten gebruikt, wat beter kan werken met thema’s.",
           "cross_chat": "Standaard uit. Als het aan staat, kan een vraag een andere chat gebruiken waarvan de titel woorden deelt. Je hoeft niet chat te zeggen. Alleen een kort fragment, en die chat wordt niet gewijzigd.",
           "keep_chats": "Nieuwste niet-vastgezette chats per persoon. Vastgezette chats blijven altijd. Standaard 30."
         },
         "sections": {
           "mcp": {
-            "name": "MCP",
+            "name": "Verbinding",
             "data": {
-              "mcp_kind": "MCP-type",
-              "mcp_url": "MCP-URL{mcp_url_mark}",
-              "mcp_token": "MCP-token"
+              "mcp_kind": "Verbindingstype",
+              "mcp_url": "Serveradres{mcp_url_mark}",
+              "mcp_token": "Toegangssleutel"
             },
             "data_description": {
-              "mcp_kind": "Alleen MCP-servers die deze Home Assistant kan bereiken, staan in de lijst. Aangepast is elke MCP-HTTP-URL.",
+              "mcp_kind": "Servers die deze Home Assistant kan bereiken. Kies Aangepast om een eigen adres in te voeren.",
               "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Ingebouwd: langlevend toegangstoken van Home Assistant, of leeg laten om de huidige aanmelding in deze chat te gebruiken. HA-MCP: meestal leeg. Vibecode: Agent Key. Aangepast: optioneel Bearer-token."
+              "mcp_token": "Ingebouwd: langlevend toegangstoken, of leeg laten om je huidige aanmelding te gebruiken. HA-MCP: meestal leeg. Vibecode: agentsleutel. Aangepast: alleen als die server om een sleutel vraagt."
             }
           },
           "prompt": {
@@ -121,14 +129,14 @@
               "system_prompt": "Systeemprompt"
             },
             "data_description": {
-              "system_prompt": "Alleen toon en gedrag. Leeg laten voor de ingebouwde prompt. MCP-tools en editorlinks worden altijd toegevoegd; ze horen niet in dit veld."
+              "system_prompt": "Alleen toon en gewoonten. Leeg laten voor de standaard. De assistent houdt altijd toegang tot Home Assistant en snelle links in antwoorden."
             }
           }
         }
       }
     },
     "error": {
-      "no_runtime": "De Cursor-runtime is niet bereikbaar. Start hem en zet de URL  op dit formulier.",
+      "no_runtime": "De Cursor-runtime is niet bereikbaar. Start hem en controleer het adres op dit formulier.",
       "required": "Dit veld is verplicht.",
       "invalid_auth": "De provider heeft deze API-sleutel geweigerd.",
       "cannot_connect": "De provider is niet bereikbaar. Controleer de URL en het netwerk."
@@ -151,7 +159,7 @@
       "step": {
         "user": {
           "title": "Verbinding",
-          "description": "Alleen MCP-servers die deze Home Assistant kan bereiken, staan in de lijst. Aangepast is elke MCP-HTTP-URL.",
+          "description": "Kies hoe deze assistent verbinding maakt met Home Assistant en andere diensten.",
           "menu_options": {
             "ha": "Home Assistant MCP-server (ingebouwd)",
             "ha_mcp": "HA-MCP",
@@ -161,7 +169,7 @@
         },
         "connection": {
           "title": "Verbinding",
-          "description": "Een MCP-server die de assistent in dezelfde chat kan gebruiken.",
+          "description": "Een andere dienst die de assistent tijdens de chat kan gebruiken.",
           "data": {
             "name": "Naam",
             "url": "Adres",
@@ -169,8 +177,8 @@
           },
           "data_description": {
             "name": "Een korte naam, bijvoorbeeld Directus. De assistent onderscheidt hiermee deze verbinding van de andere.",
-            "url": "Het MCP-adres, beginnend met https:// of http://. Gevonden servers worden ingevuld.",
-            "token": "Alleen als die server een sleutel vraagt. Leeg laten bij bewerken om de opgeslagen sleutel te houden."
+            "url": "Webadres (https://…). Gevonden servers worden automatisch ingevuld.",
+            "token": "Alleen als die server om een sleutel vraagt. Leeg laten bij bewerken om de opgeslagen sleutel te houden."
           }
         }
       }
@@ -182,7 +190,7 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "De Cursor-runtime is niet bereikbaar. Start hem en zet de URL  op dit formulier.",
+        "no_runtime": "De Cursor-runtime is niet bereikbaar. Start hem en controleer het adres op dit formulier.",
         "required": "Dit veld is verplicht.",
         "invalid_auth": "De provider heeft deze API-sleutel geweigerd.",
         "cannot_connect": "De provider is niet bereikbaar. Controleer de URL en het netwerk."
@@ -200,10 +208,10 @@
         },
         "provider_cursor": {
           "title": "Cursor",
-          "description": "Cursor Runtime, API key, model, and effort. The URL field fills only when this Home Assistant can reach the Runtime.",
+          "description": "Cursor-adres, API-sleutel, model en antwoordsnelheid.",
           "data": {
-            "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
-            "runtime_token": "Runtime token",
+            "runtime_url": "Cursor-runtime-adres{runtime_url_mark}",
+            "runtime_token": "Runtime-wachtwoord",
             "cursor_api_key": "Cursor-API-sleutel",
             "model": "Model",
             "effort": "Inzet",
@@ -211,11 +219,11 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Shared secret for a Docker Runtime. Set the same value as RUNTIME_TOKEN on the container. The add-on is paired automatically; leave this empty.",
-            "cursor_api_key": "Van cursor.com/dashboard/integrations. Leeg laten bij bewerken om de opgeslagen sleutel te houden. Laat leeg als de Runtime al CURSOR_API_KEY heeft.",
-            "model": "Kies er een of typ een id. Leeg gebruikt Composer.",
-            "effort": "Snel, Hoog of Hoog snel. Composer gebruikt Snel tenzij je Hoog kiest.",
-            "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat en verwijdert de Assist-pijplijn die deze agent heeft toegevoegd."
+            "runtime_token": "Hetzelfde wachtwoord als op je Cursor-runtime. Leeg laten bij de add-on met automatische koppeling.",
+            "cursor_api_key": "Uit je Cursor-account (Integrations). Leeg laten bij bewerken om de opgeslagen sleutel te houden.",
+            "model": "Kies uit de lijst of typ een modelnaam. Leeg gebruikt Composer.",
+            "effort": "Hoeveel denktijd is toegestaan. Composer gebruikt standaard Snel.",
+            "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
           }
         },
         "provider_cloud": {
@@ -226,7 +234,7 @@
             "api_key": "API-sleutel",
             "model": "Model",
             "effort": "Inzet",
-            "low_token": "Weinig tokens",
+            "low_token": "Alleen-chatmodus",
             "check_house": "Altijd eerst het huis controleren",
             "assist": "Toevoegen aan Assist",
             "assist_stt": "Spraak-naar-tekst toevoegen",
@@ -238,17 +246,17 @@
           },
           "data_description": {
             "borrow": "Gebruikt de sleutel die die integratie al heeft opgeslagen. De andere integratie blijft ongewijzigd.",
-            "api_key": "Geen Home Assistant-token.",
-            "model": "Kies er een of typ een id. Leeg gebruikt de standaard van de provider.",
+            "api_key": "Je sleutel bij de AI-provider, niet je Home Assistant-aanmelding.",
+            "model": "Kies uit de lijst of typ een modelnaam. Leeg gebruikt de standaard van de provider.",
             "effort": "Snel, Hoog of Hoog snel wanneer het model dat ondersteunt.",
-            "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
-            "check_house": "De eerste stap van elk bericht (behalve begroetingen en bedankjes) moet een tool aanroepen, zodat antwoorden over het huis op live gegevens berusten. Zet dit uit voor modellen die tools zelf betrouwbaar aanroepen, of om bij algemene vragen een toolronde te besparen.",
-            "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat en verwijdert de Assist-pijplijn die deze agent heeft toegevoegd.",
-            "assist_stt": "Gebruikt de API-sleutel van deze agent als Home Assistant spraak-naar-tekst-engine en koppelt die aan elke AI Workspace Assist-pijplijn (inclusief Cursor). Uit verwijdert de spraak-naar-tekst-engine die deze agent heeft toegevoegd.",
-            "stt_model": "Leeg gebruikt de standaard van de provider. Je kunt een ander id typen.",
-            "assist_tts": "Gebruikt de API-sleutel van deze agent als Home Assistant tekst-naar-spraak-engine en koppelt die aan elke AI Workspace Assist-pijplijn (inclusief Cursor). Uit verwijdert de tekst-naar-spraak-engine die deze agent heeft toegevoegd.",
-            "tts_model": "Leeg gebruikt gpt-4o-mini-tts. tts-1 is goedkoper. Je kunt een ander id typen.",
-            "tts_voice": "Coral is de standaard. Assist-pijplijnen die deze agent heeft aangemaakt, gebruiken deze stem.",
+            "low_token": "Kortere antwoorden zonder huisbesturing — geschikt voor kleine alleen-chatmodellen.",
+            "check_house": "Standaard aan. De assistent raadpleegt Home Assistant voordat hij over je installatie antwoordt (niet bij eenvoudige groeten). Zet dit uit als je model dat al zelf doet.",
+            "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd.",
+            "assist_stt": "Voegt in Home Assistant een spraak-naar-tekst-optie toe met de sleutel van deze assistent. Uit verwijdert wat hij heeft toegevoegd.",
+            "stt_model": "Leeg laten voor de standaard van de provider. Je kunt een andere modelnaam typen.",
+            "assist_tts": "Voegt in Home Assistant een tekst-naar-spraak-optie toe met de sleutel van deze assistent. Uit verwijdert wat hij heeft toegevoegd.",
+            "tts_model": "Leeg laten voor het standaard spraakmodel. Je kunt een andere naam typen als je provider er een vermeldt.",
+            "tts_voice": "Coral is de standaard. Stemmen volgen de talen onder Assist → Taal.",
             "tts_speed": "Hoe snel deze stem spreekt. 1× is normaal. Geldt voor AI Workspace en Assist."
           }
         },
@@ -259,17 +267,17 @@
             "api_base": "Ollama-URL",
             "model": "Model",
             "effort": "Inzet",
-            "low_token": "Weinig tokens",
+            "low_token": "Alleen-chatmodus",
             "check_house": "Altijd eerst het huis controleren",
             "assist": "Toevoegen aan Assist"
           },
           "data_description": {
-            "api_base": "Usually {example_url}",
-            "model": "Kies er een of typ een opgehaald model. Leeg gebruikt llama3.2.",
+            "api_base": "Meestal {example_url}",
+            "model": "Kies uit de lijst of typ een geïnstalleerd model. Leeg gebruikt llama3.2.",
             "effort": "Gebruikt wanneer het model dat ondersteunt.",
-            "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
-            "check_house": "De eerste stap van elk bericht (behalve begroetingen en bedankjes) moet een tool aanroepen, zodat antwoorden over het huis op live gegevens berusten. Zet dit uit voor modellen die tools zelf betrouwbaar aanroepen, of om bij algemene vragen een toolronde te besparen.",
-            "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat en verwijdert de Assist-pijplijn die deze agent heeft toegevoegd."
+            "low_token": "Kortere antwoorden zonder huisbesturing — geschikt voor kleine alleen-chatmodellen.",
+            "check_house": "Standaard aan. De assistent raadpleegt Home Assistant voordat hij over je installatie antwoordt (niet bij eenvoudige groeten). Zet dit uit als je model dat al zelf doet.",
+            "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
           }
         },
         "provider_azure": {
@@ -281,7 +289,7 @@
             "model": "Implementatie",
             "azure_api_version": "API-versie",
             "effort": "Inzet",
-            "low_token": "Weinig tokens",
+            "low_token": "Alleen-chatmodus",
             "check_house": "Altijd eerst het huis controleren",
             "assist": "Toevoegen aan Assist"
           },
@@ -289,22 +297,22 @@
             "api_key": "De Azure OpenAI-sleutel. Leeg laten bij bewerken om de opgeslagen sleutel te houden.",
             "api_base": "{example_url}",
             "model": "De naam van de implementatie.",
-            "azure_api_version": "Default 2024-10-21.",
+            "azure_api_version": "Laat de standaard staan, tenzij Azure-ondersteuning je een andere versie gaf.",
             "effort": "Gebruikt wanneer de implementatie dat ondersteunt.",
-            "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
-            "check_house": "De eerste stap van elk bericht (behalve begroetingen en bedankjes) moet een tool aanroepen, zodat antwoorden over het huis op live gegevens berusten. Zet dit uit voor modellen die tools zelf betrouwbaar aanroepen, of om bij algemene vragen een toolronde te besparen.",
-            "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat en verwijdert de Assist-pijplijn die deze agent heeft toegevoegd."
+            "low_token": "Kortere antwoorden zonder huisbesturing — geschikt voor kleine alleen-chatmodellen.",
+            "check_house": "Standaard aan. De assistent raadpleegt Home Assistant voordat hij over je installatie antwoordt (niet bij eenvoudige groeten). Zet dit uit als je model dat al zelf doet.",
+            "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
           }
         },
         "provider_compatible": {
           "title": "OpenAI-compatibel",
-          "description": "Een eigen server die de OpenAI-API spreekt.",
+          "description": "Je eigen server die werkt zoals de chat-API van OpenAI.",
           "data": {
             "api_key": "API-sleutel",
             "api_base": "API-basis-URL",
             "model": "Model",
             "effort": "Inzet",
-            "low_token": "Weinig tokens",
+            "low_token": "Alleen-chatmodus",
             "check_house": "Altijd eerst het huis controleren",
             "assist": "Toevoegen aan Assist",
             "assist_stt": "Spraak-naar-tekst toevoegen",
@@ -316,17 +324,17 @@
           },
           "data_description": {
             "api_key": "Leeg laten bij bewerken om de opgeslagen sleutel te houden.",
-            "api_base": "Basis-URL van de server, inclusief /v1 als dat pad wordt gebruikt.",
+            "api_base": "Serveradres. Voeg /v1 toe aan het einde als je server dat verwacht.",
             "model": "Modelnaam op die server.",
             "effort": "Gebruikt wanneer de server dat ondersteunt.",
-            "low_token": "Een korte prompt en geen tools, zodat een klein model kan antwoorden. Het kan het huis niet bekijken of wijzigen.",
-            "check_house": "De eerste stap van elk bericht (behalve begroetingen en bedankjes) moet een tool aanroepen, zodat antwoorden over het huis op live gegevens berusten. Zet dit uit voor modellen die tools zelf betrouwbaar aanroepen, of om bij algemene vragen een toolronde te besparen.",
-            "assist": "Voegt deze agent toe aan Home Assistant Assist. Uit houdt hem alleen in de AI Workspace-chat en verwijdert de Assist-pijplijn die deze agent heeft toegevoegd.",
-            "assist_stt": "Gebruikt de API-sleutel van deze agent als Home Assistant spraak-naar-tekst-engine en koppelt die aan elke AI Workspace Assist-pijplijn (inclusief Cursor). Uit verwijdert de spraak-naar-tekst-engine die deze agent heeft toegevoegd.",
-            "stt_model": "Leeg gebruikt de standaard van de provider. Je kunt een ander id typen.",
-            "assist_tts": "Gebruikt de API-sleutel van deze agent als Home Assistant tekst-naar-spraak-engine en koppelt die aan elke AI Workspace Assist-pijplijn (inclusief Cursor). Uit verwijdert de tekst-naar-spraak-engine die deze agent heeft toegevoegd.",
-            "tts_model": "Leeg gebruikt gpt-4o-mini-tts. tts-1 is goedkoper. Je kunt een ander id typen.",
-            "tts_voice": "Coral is de standaard. Assist-pijplijnen die deze agent heeft aangemaakt, gebruiken deze stem.",
+            "low_token": "Kortere antwoorden zonder huisbesturing — geschikt voor kleine alleen-chatmodellen.",
+            "check_house": "Standaard aan. De assistent raadpleegt Home Assistant voordat hij over je installatie antwoordt (niet bij eenvoudige groeten). Zet dit uit als je model dat al zelf doet.",
+            "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd.",
+            "assist_stt": "Voegt in Home Assistant een spraak-naar-tekst-optie toe met de sleutel van deze assistent. Uit verwijdert wat hij heeft toegevoegd.",
+            "stt_model": "Leeg laten voor de standaard van de provider. Je kunt een andere modelnaam typen.",
+            "assist_tts": "Voegt in Home Assistant een tekst-naar-spraak-optie toe met de sleutel van deze assistent. Uit verwijdert wat hij heeft toegevoegd.",
+            "tts_model": "Leeg laten voor het standaard spraakmodel. Je kunt een andere naam typen als je provider er een vermeldt.",
+            "tts_voice": "Coral is de standaard. Stemmen volgen de talen onder Assist → Taal.",
             "tts_speed": "Hoe snel deze stem spreekt. 1× is normaal. Geldt voor AI Workspace en Assist."
           }
         }

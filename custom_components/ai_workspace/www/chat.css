@@ -18,6 +18,36 @@
   box-sizing: border-box;
 }
 
+:host,
+.wrap,
+.sessions,
+.chat,
+.history-list,
+textarea.message {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb-color) transparent;
+}
+
+:host::-webkit-scrollbar,
+.wrap::-webkit-scrollbar,
+.sessions::-webkit-scrollbar,
+.chat::-webkit-scrollbar,
+.history-list::-webkit-scrollbar,
+textarea.message::-webkit-scrollbar {
+  width: 0.4rem;
+  height: 0.4rem;
+}
+
+:host::-webkit-scrollbar-thumb,
+.wrap::-webkit-scrollbar-thumb,
+.sessions::-webkit-scrollbar-thumb,
+.chat::-webkit-scrollbar-thumb,
+.history-list::-webkit-scrollbar-thumb,
+textarea.message::-webkit-scrollbar-thumb {
+  border-radius: var(--ha-border-radius-sm);
+  background: var(--scrollbar-thumb-color);
+}
+
 .wrap {
   display: grid;
   grid-template-columns: var(--ai-nav-width) 1fr;
@@ -279,14 +309,14 @@ ha-button.new-chat {
 
 .sessions ha-list-item-button.selected,
 .sessions .session-plain.selected,
-.bubble.user {
+.ui-theme-standard .bubble.user {
   position: relative;
   isolation: isolate;
 }
 
 .sessions ha-list-item-button.selected::before,
 .sessions .session-plain.selected::before,
-.bubble.user::before {
+.ui-theme-standard .bubble.user::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -375,8 +405,7 @@ ha-button.new-chat {
 }
 
 .dialog-field,
-ha-input.dialog-field,
-ha-textfield.dialog-field {
+.ui-theme-standard .dialog-field {
   box-sizing: border-box;
   width: 100%;
   margin: 0;
@@ -386,13 +415,6 @@ ha-textfield.dialog-field {
   background: var(--ha-color-form-background, var(--input-fill-color, transparent));
   color: var(--primary-text-color);
   font: inherit;
-}
-
-ha-input.dialog-field,
-ha-textfield.dialog-field {
-  padding: 0;
-  border: 0;
-  background: transparent;
 }
 
 .dialog-field:focus {
@@ -463,29 +485,6 @@ h1 {
   display: block;
 }
 
-ha-alert.banner {
-  color: inherit;
-}
-
-ha-alert.banner[hidden] {
-  display: none !important;
-}
-
-ha-empty-state.empty,
-ha-empty-state.history-empty {
-  display: block;
-  margin: var(--ha-space-4) auto;
-  max-width: 28rem;
-}
-
-.history-chat[appearance="plain"] {
-  --ha-button-height: auto;
-  padding: 0;
-  min-height: 0;
-  font: inherit;
-  color: var(--primary-color);
-}
-
 .stage {
   flex: 1 0 auto;
   display: flex;
@@ -514,20 +513,15 @@ ha-empty-state.history-empty {
   padding-bottom: var(--ha-space-1);
 }
 
-.bubble,
-ha-card.bubble,
-ha-alert.bubble {
+.ui-theme-standard .bubble {
   max-width: 100%;
   padding: var(--ha-space-2) var(--ha-space-3);
   border-radius: var(--ha-border-radius-xl);
   overflow-wrap: anywhere;
   animation: bubble-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  --ha-card-border-width: 0;
-  --ha-card-box-shadow: none;
-  box-shadow: none;
 }
 
-.bubble.instant {
+.ui-theme-standard .bubble.instant {
   animation: none;
 }
 
@@ -542,49 +536,37 @@ ha-alert.bubble {
   }
 }
 
-.bubble.user {
+.ui-theme-standard .bubble.user {
   align-self: flex-end;
   max-width: 85%;
-  margin-inline-start: var(--ha-space-6);
-  border-bottom-right-radius: 0;
   background: transparent;
   color: var(--primary-text-color);
   white-space: pre-wrap;
-  --ha-card-background: transparent;
 }
 
-.bubble.assistant {
-  align-self: flex-start;
-  max-width: calc(100% - var(--ha-space-6));
-  margin-inline-end: var(--ha-space-6);
-  border-bottom-left-radius: 0;
-  background: var(--chat-background-color-hass, var(--secondary-background-color));
-  padding: var(--ha-space-2) var(--ha-space-3);
-  --ha-card-background: var(--chat-background-color-hass, var(--secondary-background-color));
+.ui-theme-standard .bubble.assistant {
+  align-self: stretch;
+  max-width: 100%;
+  background: transparent;
+  padding: var(--ha-space-1) 0 var(--ha-space-2);
 }
 
-.bubble.assistant ha-markdown.text {
+.ui-theme-standard .bubble.assistant ha-markdown.text {
   display: block;
 }
 
-.bubble.assistant ha-markdown.text[hidden] {
+.ui-theme-standard .bubble.assistant ha-markdown.text[hidden] {
   display: none;
 }
 
-.bubble.assistant ha-markdown.text a {
+.ui-theme-standard .bubble.assistant ha-markdown.text a {
   color: var(--primary-color);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
-.bubble.user .text {
+.ui-theme-standard .bubble.user .text {
   color: inherit;
-}
-
-ha-alert.bubble {
-  background: transparent;
-  padding: 0;
-  --ha-card-background: transparent;
 }
 
 .chat-actions {
@@ -617,7 +599,7 @@ ha-alert.bubble {
   color: var(--primary-text-color);
 }
 
-.bubble.error { color: var(--error-color); }
+.ui-theme-standard .bubble.error { color: var(--error-color); }
 
 .activity {
   margin: var(--ha-space-2) 0 0;
@@ -660,13 +642,6 @@ ha-alert.bubble {
   border-radius: var(--ha-border-radius-pill);
   padding: 2px var(--ha-space-2) 2px var(--ha-space-1);
   cursor: pointer;
-}
-
-ha-assist-chip.tools-summary {
-  --ha-button-height: 28px;
-  --ha-chip-label-size: var(--ha-font-size-s);
-  background: transparent;
-  padding: 0;
 }
 
 .tools-summary:hover,
@@ -887,8 +862,7 @@ ha-assist-chip.tools-summary {
   background: transparent;
 }
 
-.composer-box,
-ha-card.composer-box {
+.ui-theme-standard .composer-box {
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -899,13 +873,10 @@ ha-card.composer-box {
   border-radius: var(--ha-border-radius-3xl);
   padding: var(--ha-space-1) var(--ha-space-1) var(--ha-space-1) var(--ha-space-4);
   transition: border-color 160ms ease, box-shadow 160ms ease;
-  --ha-card-border-radius: var(--ha-border-radius-3xl);
-  --ha-card-background: var(--ha-color-form-background, var(--input-fill-color));
-  box-shadow: none;
 }
 
-.composer-box:focus-within,
-.composer-box.drop-target {
+.ui-theme-standard .composer-box:focus-within,
+.ui-theme-standard .composer-box.drop-target {
   border-color: var(--primary-color);
 }
 
@@ -950,11 +921,6 @@ ha-card.composer-box {
   font-size: var(--ha-font-size-s, 0.85rem);
   line-height: 1.2;
   cursor: pointer;
-}
-
-ha-button.agent-trigger {
-  --ha-button-height: 32px;
-  padding: 0;
 }
 
 .agent-trigger-label {
@@ -1146,8 +1112,7 @@ ha-input-chip.file-chip {
   display: none;
 }
 
-textarea,
-ha-textarea.message {
+.ui-theme-standard textarea.message {
   display: block;
   flex: 1;
   resize: none;
@@ -1162,14 +1127,6 @@ ha-textarea.message {
   overflow-y: auto;
   color: var(--primary-text-color);
   font: inherit;
-}
-
-ha-textarea.message {
-  --ha-textarea-padding-bottom: 0;
-  --ha-textarea-max-height: 160px;
-  height: auto;
-  min-height: 36px;
-  padding: 0;
 }
 
 textarea::placeholder {
@@ -1248,8 +1205,7 @@ textarea:focus {
   --md-icon-button-icon-color: var(--ha-color-on-primary-loud, var(--text-primary-color, var(--primary-background-color)));
 }
 
-.empty,
-ha-empty-state.empty {
+.ui-theme-standard .empty {
   color: var(--secondary-text-color);
   margin: 0 auto var(--ha-space-4);
   text-align: center;
@@ -1260,8 +1216,7 @@ ha-empty-state.empty {
   height: auto;
 }
 
-.workspace-link,
-ha-button.workspace-link {
+.workspace-link {
   display: block;
   margin: var(--ha-space-2) var(--ha-space-4) 0;
   color: var(--primary-color);
@@ -1484,12 +1439,10 @@ ha-button.workspace-link {
   color: var(--secondary-text-color);
 }
 
-.history-row,
-ha-card.history-row {
+.ui-theme-standard .history-row {
   padding: var(--ha-space-3) var(--ha-space-4);
   border-bottom: 1px solid var(--divider-color);
   margin: var(--ha-space-2) var(--ha-space-3);
-  --ha-card-border-radius: var(--ha-border-radius-lg);
 }
 
 .history-when,

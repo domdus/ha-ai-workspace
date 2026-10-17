@@ -53,6 +53,7 @@ class Settings:
     house_map: bool = False
     shorten_mcp_results: bool = True
     change_history: bool = True
+    ui_theme: str = "standard"
     cross_chat: bool = False
     low_token: bool = False
     check_house: bool = True

@@ -3,47 +3,51 @@
     "step": {
       "user": {
         "title": "AI Workspace",
-        "description": "Gemensamma chattinställningar. Lägg sedan till den första agenten (Cursor, OpenAI, OpenRouter, Ollama med flera). Anslutningar och agenter är rader i den här integrationen.",
+        "description": "Gemensamma chattinställningar. Lägg sedan till din första assistent (Cursor, OpenAI, Ollama och andra) från integrationens sida.",
         "data": {
           "stt_engine": "Tal till text",
           "tts_engine": "Text till tal",
           "speak_replies": "Läs upp svar automatiskt",
+          "tts_natural": "Naturligt tal för text till tal",
           "enable_sidebar": "Visa AI Workspace i sidofältet",
-          "enable_overlay": "Visa den flytande AI-knappen",
+          "enable_overlay": "Visa flytande AI-knapp",
           "enable_dictate": "Visa dikteringsknapp",
           "allow_users": "Tillåt vanliga användare",
           "house_map": "Konfigurationskatalog",
-          "shorten_mcp_results": "Shorten large MCP tool results",
-          "change_history": "Change History",
+          "shorten_mcp_results": "Korta långa Home Assistant-svar",
+          "change_history": "Ändringshistorik",
+          "ui_theme": "Använd HA-komponenter",
           "cross_chat": "Mellan chattar",
           "keep_chats": "Chattar att behålla"
         },
         "data_description": {
-          "stt_engine": "Webbläsaren använder enhetens talmotor och behöver https:// eller localhost. En Home Assistant-motor (Whisper och andra under Inställningar) transkriberar en inspelning från den här sidan. Webbläsaren måste ändå tillåta mikrofonen, och det gör den bara på https:// eller localhost.",
-          "tts_engine": "Piper, Google Translate eller en AI Workspace-röst från en OpenAI-agent. Uppläsning av svaret fungerar även över http://. Av lämnar svar som text.",
-          "speak_replies": "När en röst är vald läses varje svar upp direkt. Av lämnar högtalarknappen så att du kan spela upp själv.",
-          "enable_sidebar": "Sidofältsobjektet AI Workspace. Sidan finns kvar på /ai-workspace om det här är av.",
-          "enable_overlay": "Slår på eller av den flytande AI-knappen. På Inställningar sitter den högre så att den inte täcker systemknapparna.",
+          "stt_engine": "Webbläsarens diktering kräver en säker webbplats (https). Eller välj en tal-till-text-motor från Home Assistant under Inställningar. Webbläsaren måste tillåta mikrofonen.",
+          "tts_engine": "Piper, Google Translate eller en röst från en av dina AI-assistenter. Av lämnar svaren som enbart text.",
+          "speak_replies": "När en röst är vald läses varje svar upp när det kommer. Av behåller högtalarknappen så att du kan spela upp ett svar själv.",
+          "tts_natural": "På som standard. Tar bort formatering så att uppläsningen låter naturlig. Av läser meddelandet exakt som det är skrivet.",
+          "enable_sidebar": "Visar AI Workspace i sidofältet. Av: administratörer kan fortfarande öppna hela sidan via dess menylänk.",
+          "enable_overlay": "Sätter på eller stänger av den flytande AI-knappen. På Inställningar sitter den högre så att den inte täcker systemknappar.",
           "enable_dictate": "Mikrofon i meddelanderutan.",
-          "allow_users": "Inloggade användare som inte är administratörer kan öppna den flytande chatten. Av håller den till administratörer. Sidofältsobjektet förblir bara för administratörer. De får bara den inbyggda Home Assistant MCP-servern med sina egna behörigheter.",
-          "house_map": "Valfritt lokalt index för kopplingen av ett namngivet objekt (utlösare, relaterade id:n). Av som standard. Inte för att lista automatiseringar eller på/av — använd live-MCP till det. Inte live-status, historik eller spår.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
-          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
-          "cross_chat": "Av som standard. När det är på kan en fråga använda en annan chatt vars titel delar ord. Du behöver inte säga chatt. Bara ett kort utdrag, och den chatten ändras inte.",
-          "keep_chats": "Nyaste icke-fästa chattar per person. Fästa chattar behålls alltid. Standard 30."
+          "allow_users": "Användare utan administratörsrättigheter kan öppna den flytande chatten med samma Home Assistant-åtkomst som sitt konto. Av: endast administratörer. Hela AI Workspace-sidan i sidofältet förblir endast för administratörer.",
+          "house_map": "Valfritt. Hjälper till att förklara hur ett objekt är kopplat (vad som utlöser det, vad det påverkar). Av som standard. För live på/av-status eller fullständiga listor, be assistenten att kolla Home Assistant.",
+          "shorten_mcp_results": "På som standard. Mycket långa svar från Home Assistant (listor för hela hemmet, stora sökningar) sammanfattas innan de går till AI:n. Det sparar token och håller svaren rappt. Av skickar hela texten.",
+          "change_history": "På som standard. Sparar en förteckning över konfigurationsändringar som assistenten gjort så att du kan granska eller ångra dem i Ändringshistorik. Av stoppar nya poster; assistenten kan fortfarande använda Home Assistant.",
+          "ui_theme": "Av som standard. När det är på används bara Home Assistants gränssnittskomponenter, vilket kan fungera bättre med teman.",
+          "cross_chat": "Av som standard. När det är på kan en fråga använda en annan chatt vars titel delar ord med den. Du behöver inte nämna chatt. Bara ett kort utdrag, och den chatten ändras inte.",
+          "keep_chats": "Nyaste icke-fästa chattar att behålla per person. Fästa chattar behålls alltid. Standard 30."
         },
         "sections": {
           "mcp": {
-            "name": "MCP",
+            "name": "Anslutning",
             "data": {
-              "mcp_kind": "MCP-typ",
-              "mcp_url": "MCP-URL{mcp_url_mark}",
-              "mcp_token": "MCP-token"
+              "mcp_kind": "Anslutningstyp",
+              "mcp_url": "Serveradress{mcp_url_mark}",
+              "mcp_token": "Åtkomstnyckel"
             },
             "data_description": {
-              "mcp_kind": "Endast MCP-servrar som den här Home Assistant kan nå listas. Anpassad är valfri MCP-HTTP-URL.",
+              "mcp_kind": "Servrar som den här Home Assistant kan nå. Välj Anpassad för att ange en egen adress.",
               "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Inbyggd: långlivad åtkomsttoken för Home Assistant, eller lämna tomt för att använda den aktuella inloggningen i den här chatten. HA-MCP: oftast tomt. Vibecode: Agent Key. Anpassad: valfri Bearer-token."
+              "mcp_token": "Inbyggd: långlivad åtkomsttoken, eller lämna tomt för att använda din nuvarande inloggning. HA-MCP: vanligtvis tomt. Vibecode: agentnyckel. Anpassad: bara om den servern ber om en nyckel."
             }
           },
           "prompt": {
@@ -52,14 +56,14 @@
               "system_prompt": "Systemprompt"
             },
             "data_description": {
-              "system_prompt": "Endast ton och beteende. Lämna tomt för den inbyggda prompten. MCP-verktyg och redigerarlänkar läggs alltid till; de hör inte till det här fältet."
+              "system_prompt": "Endast ton och vanor. Lämna tomt för standardvärdet. Assistenten har alltid åtkomst till Home Assistant och snabblänkar i svar."
             }
           }
         }
       }
     },
     "error": {
-      "no_runtime": "Cursor-runtimen går inte att nå. Starta den och ange URL:en  på detta formulär.",
+      "no_runtime": "Kan inte nå Cursor-runtimen. Starta den och kontrollera adressen i det här formuläret.",
       "required": "Det här fältet är obligatoriskt.",
       "invalid_auth": "Leverantören avvisade den här API-nyckeln.",
       "cannot_connect": "Kunde inte nå leverantören. Kontrollera URL:en och nätverket."
@@ -72,47 +76,51 @@
     "step": {
       "init": {
         "title": "AI Workspace",
-        "description": "Gemensamma chattinställningar. Lägg till MCP-anslutningar och agenter med knapparna på sidan för integrationen AI Workspace.",
+        "description": "Gemensamma chattinställningar. Lägg till anslutningar och assistenter med knapparna på AI Workspace-integrationens sida.",
         "data": {
           "stt_engine": "Tal till text",
           "tts_engine": "Text till tal",
           "speak_replies": "Läs upp svar automatiskt",
+          "tts_natural": "Naturligt tal för text till tal",
           "enable_sidebar": "Visa AI Workspace i sidofältet",
-          "enable_overlay": "Visa den flytande AI-knappen",
+          "enable_overlay": "Visa flytande AI-knapp",
           "enable_dictate": "Visa dikteringsknapp",
           "allow_users": "Tillåt vanliga användare",
           "house_map": "Konfigurationskatalog",
-          "shorten_mcp_results": "Shorten large MCP tool results",
-          "change_history": "Change History",
+          "shorten_mcp_results": "Korta långa Home Assistant-svar",
+          "change_history": "Ändringshistorik",
+          "ui_theme": "Använd HA-komponenter",
           "cross_chat": "Mellan chattar",
           "keep_chats": "Chattar att behålla"
         },
         "data_description": {
-          "stt_engine": "Webbläsaren använder enhetens talmotor och behöver https:// eller localhost. En Home Assistant-motor (Whisper och andra under Inställningar) transkriberar en inspelning från den här sidan. Webbläsaren måste ändå tillåta mikrofonen, och det gör den bara på https:// eller localhost.",
-          "tts_engine": "Piper, Google Translate eller en AI Workspace-röst från en OpenAI-agent. Uppläsning av svaret fungerar även över http://. Av lämnar svar som text.",
-          "speak_replies": "När en röst är vald läses varje svar upp direkt. Av lämnar högtalarknappen så att du kan spela upp själv.",
-          "enable_sidebar": "Sidofältsobjektet AI Workspace. Sidan finns kvar på /ai-workspace om det här är av.",
-          "enable_overlay": "Slår på eller av den flytande AI-knappen. På Inställningar sitter den högre så att den inte täcker systemknapparna.",
+          "stt_engine": "Webbläsarens diktering kräver en säker webbplats (https). Eller välj en tal-till-text-motor från Home Assistant under Inställningar. Webbläsaren måste tillåta mikrofonen.",
+          "tts_engine": "Piper, Google Translate eller en röst från en av dina AI-assistenter. Av lämnar svaren som enbart text.",
+          "speak_replies": "När en röst är vald läses varje svar upp när det kommer. Av behåller högtalarknappen så att du kan spela upp ett svar själv.",
+          "tts_natural": "På som standard. Tar bort formatering så att uppläsningen låter naturlig. Av läser meddelandet exakt som det är skrivet.",
+          "enable_sidebar": "Visar AI Workspace i sidofältet. Av: administratörer kan fortfarande öppna hela sidan via dess menylänk.",
+          "enable_overlay": "Sätter på eller stänger av den flytande AI-knappen. På Inställningar sitter den högre så att den inte täcker systemknappar.",
           "enable_dictate": "Mikrofon i meddelanderutan.",
-          "allow_users": "Inloggade användare som inte är administratörer kan öppna den flytande chatten. Av håller den till administratörer. Sidofältsobjektet förblir bara för administratörer. De får bara den inbyggda Home Assistant MCP-servern med sina egna behörigheter.",
-          "house_map": "Valfritt lokalt index för kopplingen av ett namngivet objekt (utlösare, relaterade id:n). Av som standard. Inte för att lista automatiseringar eller på/av — använd live-MCP till det. Inte live-status, historik eller spår.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
-          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
-          "cross_chat": "Av som standard. När det är på kan en fråga använda en annan chatt vars titel delar ord. Du behöver inte säga chatt. Bara ett kort utdrag, och den chatten ändras inte.",
-          "keep_chats": "Nyaste icke-fästa chattar per person. Fästa chattar behålls alltid. Standard 30."
+          "allow_users": "Användare utan administratörsrättigheter kan öppna den flytande chatten med samma Home Assistant-åtkomst som sitt konto. Av: endast administratörer. Hela AI Workspace-sidan i sidofältet förblir endast för administratörer.",
+          "house_map": "Valfritt. Hjälper till att förklara hur ett objekt är kopplat (vad som utlöser det, vad det påverkar). Av som standard. För live på/av-status eller fullständiga listor, be assistenten att kolla Home Assistant.",
+          "shorten_mcp_results": "På som standard. Mycket långa svar från Home Assistant (listor för hela hemmet, stora sökningar) sammanfattas innan de går till AI:n. Det sparar token och håller svaren rappt. Av skickar hela texten.",
+          "change_history": "På som standard. Sparar en förteckning över konfigurationsändringar som assistenten gjort så att du kan granska eller ångra dem i Ändringshistorik. Av stoppar nya poster; assistenten kan fortfarande använda Home Assistant.",
+          "ui_theme": "Av som standard. När det är på används bara Home Assistants gränssnittskomponenter, vilket kan fungera bättre med teman.",
+          "cross_chat": "Av som standard. När det är på kan en fråga använda en annan chatt vars titel delar ord med den. Du behöver inte nämna chatt. Bara ett kort utdrag, och den chatten ändras inte.",
+          "keep_chats": "Nyaste icke-fästa chattar att behålla per person. Fästa chattar behålls alltid. Standard 30."
         },
         "sections": {
           "mcp": {
-            "name": "MCP",
+            "name": "Anslutning",
             "data": {
-              "mcp_kind": "MCP-typ",
-              "mcp_url": "MCP-URL{mcp_url_mark}",
-              "mcp_token": "MCP-token"
+              "mcp_kind": "Anslutningstyp",
+              "mcp_url": "Serveradress{mcp_url_mark}",
+              "mcp_token": "Åtkomstnyckel"
             },
             "data_description": {
-              "mcp_kind": "Endast MCP-servrar som den här Home Assistant kan nå listas. Anpassad är valfri MCP-HTTP-URL.",
+              "mcp_kind": "Servrar som den här Home Assistant kan nå. Välj Anpassad för att ange en egen adress.",
               "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Inbyggd: långlivad åtkomsttoken för Home Assistant, eller lämna tomt för att använda den aktuella inloggningen i den här chatten. HA-MCP: oftast tomt. Vibecode: Agent Key. Anpassad: valfri Bearer-token."
+              "mcp_token": "Inbyggd: långlivad åtkomsttoken, eller lämna tomt för att använda din nuvarande inloggning. HA-MCP: vanligtvis tomt. Vibecode: agentnyckel. Anpassad: bara om den servern ber om en nyckel."
             }
           },
           "prompt": {
@@ -121,14 +129,14 @@
               "system_prompt": "Systemprompt"
             },
             "data_description": {
-              "system_prompt": "Endast ton och beteende. Lämna tomt för den inbyggda prompten. MCP-verktyg och redigerarlänkar läggs alltid till; de hör inte till det här fältet."
+              "system_prompt": "Endast ton och vanor. Lämna tomt för standardvärdet. Assistenten har alltid åtkomst till Home Assistant och snabblänkar i svar."
             }
           }
         }
       }
     },
     "error": {
-      "no_runtime": "Cursor-runtimen går inte att nå. Starta den och ange URL:en  på detta formulär.",
+      "no_runtime": "Kan inte nå Cursor-runtimen. Starta den och kontrollera adressen i det här formuläret.",
       "required": "Det här fältet är obligatoriskt.",
       "invalid_auth": "Leverantören avvisade den här API-nyckeln.",
       "cannot_connect": "Kunde inte nå leverantören. Kontrollera URL:en och nätverket."
@@ -142,7 +150,7 @@
       },
       "entry_type": "Anslutning",
       "abort": {
-        "reconfigure_successful": "Anslutningen uppdaterades."
+        "reconfigure_successful": "Anslutningen har uppdaterats."
       },
       "error": {
         "required": "Det här fältet är obligatoriskt.",
@@ -151,7 +159,7 @@
       "step": {
         "user": {
           "title": "Anslutning",
-          "description": "Endast MCP-servrar som den här Home Assistant kan nå listas. Anpassad är valfri MCP-HTTP-URL.",
+          "description": "Välj hur den här assistenten ansluter till Home Assistant och andra tjänster.",
           "menu_options": {
             "ha": "Home Assistant MCP-server (inbyggd)",
             "ha_mcp": "HA-MCP",
@@ -161,7 +169,7 @@
         },
         "connection": {
           "title": "Anslutning",
-          "description": "En MCP-server som assistenten kan använda i samma chatt.",
+          "description": "En annan tjänst som assistenten kan använda under chatten.",
           "data": {
             "name": "Namn",
             "url": "Adress",
@@ -169,7 +177,7 @@
           },
           "data_description": {
             "name": "Ett kort namn, till exempel Directus. Assistenten använder det för att skilja den här anslutningen från de andra.",
-            "url": "MCP-adressen, som börjar med https:// eller http://. Hittade servrar fylls i.",
+            "url": "Webbadress (https://…). Upptäckta servrar fylls i automatiskt.",
             "token": "Bara om den servern ber om en nyckel. Lämna tomt vid redigering för att behålla den sparade nyckeln."
           }
         }
@@ -182,7 +190,7 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Cursor-runtimen går inte att nå. Starta den och ange URL:en  på detta formulär.",
+        "no_runtime": "Kan inte nå Cursor-runtimen. Starta den och kontrollera adressen i det här formuläret.",
         "required": "Det här fältet är obligatoriskt.",
         "invalid_auth": "Leverantören avvisade den här API-nyckeln.",
         "cannot_connect": "Kunde inte nå leverantören. Kontrollera URL:en och nätverket."
@@ -190,43 +198,43 @@
       "step": {
         "provider": {
           "title": "Leverantör",
-          "description": "Välj leverantör. Nästa skärm frågar bara efter det den leverantören behöver.",
+          "description": "Välj leverantör. Nästa skärm frågar bara efter det som den leverantören behöver.",
           "data": {
             "api_provider": "Leverantör"
           },
           "data_description": {
-            "api_provider": "Cursor, eller en moln- eller lokal modell."
+            "api_provider": "Cursor, eller en molnmodell eller lokal modell."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
-          "description": "Cursor Runtime, API key, model, and effort. The URL field fills only when this Home Assistant can reach the Runtime.",
+          "description": "Cursor-adress, API-nyckel, modell och svarshastighet.",
           "data": {
-            "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
-            "runtime_token": "Runtime token",
-            "cursor_api_key": "Cursor-API-nyckel",
+            "runtime_url": "Cursor-runtime-adress{runtime_url_mark}",
+            "runtime_token": "Runtime-lösenord",
+            "cursor_api_key": "Cursor API-nyckel",
             "model": "Modell",
             "effort": "Ansträngning",
             "assist": "Lägg till i Assist"
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Shared secret for a Docker Runtime. Set the same value as RUNTIME_TOKEN on the container. The add-on is paired automatically; leave this empty.",
-            "cursor_api_key": "Från cursor.com/dashboard/integrations. Lämna tomt vid redigering för att behålla den sparade nyckeln. Lämna tomt om Runtime redan har CURSOR_API_KEY.",
-            "model": "Välj en eller skriv ett id. Tomt använder Composer.",
-            "effort": "Snabb, Hög eller Hög snabb. Composer använder Snabb om du inte väljer Hög.",
-            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten och tar bort Assist-pipelinen som den här agenten lade till."
+            "runtime_token": "Samma lösenord som på din Cursor-runtime. Lämna tomt när du använder tillägget med automatisk parkoppling.",
+            "cursor_api_key": "Från ditt Cursor-konto (Integrations). Lämna tomt vid redigering för att behålla den sparade nyckeln.",
+            "model": "Välj från listan eller skriv ett modellnamn. Tomt använder Composer.",
+            "effort": "Hur mycket tänketid som ska tillåtas. Composer använder Snabb som standard.",
+            "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist."
           }
         },
         "provider_cloud": {
           "title": "Molnagent",
-          "description": "Den här agenten behåller en egen nyckel. Kopiera en från en redan konfigurerad integration eller klistra in en ny. Lämna nyckeln tom vid redigering för att behålla den sparade.",
+          "description": "Den här agenten behåller sin egen nyckel. Kopiera en från en integration som redan är konfigurerad, eller klistra in en ny. Lämna nyckeln tom vid redigering för att behålla den sparade nyckeln.",
           "data": {
             "borrow": "Kopiera nyckel från",
             "api_key": "API-nyckel",
             "model": "Modell",
             "effort": "Ansträngning",
-            "low_token": "Få tokens",
+            "low_token": "Endast chatt",
             "check_house": "Kontrollera alltid huset först",
             "assist": "Lägg till i Assist",
             "assist_stt": "Lägg till tal till text",
@@ -237,18 +245,18 @@
             "tts_speed": "Hastighet"
           },
           "data_description": {
-            "borrow": "Använder nyckeln som den integrationen redan har sparat. Den andra integrationen lämnas orörd.",
-            "api_key": "Inte en Home Assistant-token.",
-            "model": "Välj en eller skriv ett id. Tomt använder leverantörens standard.",
+            "borrow": "Använder nyckeln som redan sparats av den integrationen. Den andra integrationen lämnas oförändrad.",
+            "api_key": "Din nyckel från AI-leverantören, inte din Home Assistant-inloggning.",
+            "model": "Välj från listan eller skriv ett modellnamn. Tomt använder leverantörens standard.",
             "effort": "Snabb, Hög eller Hög snabb när modellen stöder det.",
-            "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
-            "check_house": "Första steget i varje meddelande (utom hälsningar och tack) måste anropa ett verktyg, så att svar om huset bygger på aktuell data. Stäng av för modeller som anropar verktyg pålitligt själva, eller för att spara en verktygsrunda på allmänna frågor.",
-            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten och tar bort Assist-pipelinen som den här agenten lade till.",
-            "assist_stt": "Använder agentens API-nyckel som en Home Assistant tal-till-text-motor och kopplar den till varje AI Workspace Assist-pipeline (även Cursor). Av tar bort tal-till-text-motorn som den här agenten lade till.",
-            "stt_model": "Tomt använder leverantörens standard. Du kan skriva ett annat id.",
-            "assist_tts": "Använder agentens API-nyckel som en Home Assistant text-till-tal-motor och kopplar den till varje AI Workspace Assist-pipeline (även Cursor). Av tar bort text-till-tal-motorn som den här agenten lade till.",
-            "tts_model": "Tomt använder gpt-4o-mini-tts. tts-1 är billigare. Du kan skriva ett annat id.",
-            "tts_voice": "Coral är standard. Assist-pipelines som den här agenten skapade använder den här rösten.",
+            "low_token": "Kortare svar utan husstyrning — bra för små modeller som bara chattar.",
+            "check_house": "På som standard. Assistenten slår upp Home Assistant innan den svarar om din installation (inte för enkla hälsningar). Stäng av om din modell redan gör det själv.",
+            "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist.",
+            "assist_stt": "Lägger till ett tal-till-text-alternativ i Home Assistant med den här assistentens nyckel. Av tar bort det den lade till.",
+            "stt_model": "Lämna tomt för leverantörens standard. Du kan skriva ett annat modellnamn om din leverantör har ett.",
+            "assist_tts": "Lägger till ett text-till-tal-alternativ i Home Assistant med den här assistentens nyckel. Av tar bort det den lade till.",
+            "tts_model": "Lämna tomt för standardröstmodellen. Du kan skriva ett annat namn om din leverantör listar ett.",
+            "tts_voice": "Coral är standard. Röster fungerar för de språk du ställer in under Assist → Språk.",
             "tts_speed": "Hur snabbt den här rösten talar. 1× är normalt. Gäller AI Workspace och Assist."
           }
         },
@@ -259,29 +267,29 @@
             "api_base": "Ollama-URL",
             "model": "Modell",
             "effort": "Ansträngning",
-            "low_token": "Få tokens",
+            "low_token": "Endast chatt",
             "check_house": "Kontrollera alltid huset först",
             "assist": "Lägg till i Assist"
           },
           "data_description": {
-            "api_base": "Usually {example_url}",
-            "model": "Välj en eller skriv en hämtad modell. Tomt använder llama3.2.",
+            "api_base": "Vanligtvis {example_url}",
+            "model": "Välj från listan eller skriv en modell du har installerat. Tomt använder llama3.2.",
             "effort": "Används när modellen stöder det.",
-            "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
-            "check_house": "Första steget i varje meddelande (utom hälsningar och tack) måste anropa ett verktyg, så att svar om huset bygger på aktuell data. Stäng av för modeller som anropar verktyg pålitligt själva, eller för att spara en verktygsrunda på allmänna frågor.",
-            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten och tar bort Assist-pipelinen som den här agenten lade till."
+            "low_token": "Kortare svar utan husstyrning — bra för små modeller som bara chattar.",
+            "check_house": "På som standard. Assistenten slår upp Home Assistant innan den svarar om din installation (inte för enkla hälsningar). Stäng av om din modell redan gör det själv.",
+            "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist."
           }
         },
         "provider_azure": {
           "title": "Azure OpenAI",
           "description": "Azure-slutpunkt, distribution och nyckel.",
           "data": {
-            "api_key": "Azure-API-nyckel",
+            "api_key": "Azure API-nyckel",
             "api_base": "Slutpunkt",
             "model": "Distribution",
             "azure_api_version": "API-version",
             "effort": "Ansträngning",
-            "low_token": "Få tokens",
+            "low_token": "Endast chatt",
             "check_house": "Kontrollera alltid huset först",
             "assist": "Lägg till i Assist"
           },
@@ -289,22 +297,22 @@
             "api_key": "Azure OpenAI-nyckeln. Lämna tomt vid redigering för att behålla den sparade nyckeln.",
             "api_base": "{example_url}",
             "model": "Distributionens namn.",
-            "azure_api_version": "Default 2024-10-21.",
+            "azure_api_version": "Behåll standardvärdet om inte Azure-supporten gett dig en annan version.",
             "effort": "Används när distributionen stöder det.",
-            "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
-            "check_house": "Första steget i varje meddelande (utom hälsningar och tack) måste anropa ett verktyg, så att svar om huset bygger på aktuell data. Stäng av för modeller som anropar verktyg pålitligt själva, eller för att spara en verktygsrunda på allmänna frågor.",
-            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten och tar bort Assist-pipelinen som den här agenten lade till."
+            "low_token": "Kortare svar utan husstyrning — bra för små modeller som bara chattar.",
+            "check_house": "På som standard. Assistenten slår upp Home Assistant innan den svarar om din installation (inte för enkla hälsningar). Stäng av om din modell redan gör det själv.",
+            "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist."
           }
         },
         "provider_compatible": {
           "title": "OpenAI-kompatibel",
-          "description": "En egen server som talar OpenAI-API:t.",
+          "description": "Din egen server som fungerar som OpenAIs chatt-API.",
           "data": {
             "api_key": "API-nyckel",
             "api_base": "API-bas-URL",
             "model": "Modell",
             "effort": "Ansträngning",
-            "low_token": "Få tokens",
+            "low_token": "Endast chatt",
             "check_house": "Kontrollera alltid huset först",
             "assist": "Lägg till i Assist",
             "assist_stt": "Lägg till tal till text",
@@ -316,23 +324,23 @@
           },
           "data_description": {
             "api_key": "Lämna tomt vid redigering för att behålla den sparade nyckeln.",
-            "api_base": "Serverns bas-URL, inklusive /v1 om den använder den sökvägen.",
+            "api_base": "Serveradress. Lägg till /v1 i slutet om din server förväntar sig det.",
             "model": "Modellnamn på den servern.",
             "effort": "Används när servern stöder det.",
-            "low_token": "En kort prompt och inga verktyg, så en liten modell kan svara. Den kan inte läsa eller ändra huset.",
-            "check_house": "Första steget i varje meddelande (utom hälsningar och tack) måste anropa ett verktyg, så att svar om huset bygger på aktuell data. Stäng av för modeller som anropar verktyg pålitligt själva, eller för att spara en verktygsrunda på allmänna frågor.",
-            "assist": "Lägger till den här agenten i Home Assistant Assist. Av håller den bara i AI Workspace-chatten och tar bort Assist-pipelinen som den här agenten lade till.",
-            "assist_stt": "Använder agentens API-nyckel som en Home Assistant tal-till-text-motor och kopplar den till varje AI Workspace Assist-pipeline (även Cursor). Av tar bort tal-till-text-motorn som den här agenten lade till.",
-            "stt_model": "Tomt använder leverantörens standard. Du kan skriva ett annat id.",
-            "assist_tts": "Använder agentens API-nyckel som en Home Assistant text-till-tal-motor och kopplar den till varje AI Workspace Assist-pipeline (även Cursor). Av tar bort text-till-tal-motorn som den här agenten lade till.",
-            "tts_model": "Tomt använder gpt-4o-mini-tts. tts-1 är billigare. Du kan skriva ett annat id.",
-            "tts_voice": "Coral är standard. Assist-pipelines som den här agenten skapade använder den här rösten.",
+            "low_token": "Kortare svar utan husstyrning — bra för små modeller som bara chattar.",
+            "check_house": "På som standard. Assistenten slår upp Home Assistant innan den svarar om din installation (inte för enkla hälsningar). Stäng av om din modell redan gör det själv.",
+            "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist.",
+            "assist_stt": "Lägger till ett tal-till-text-alternativ i Home Assistant med den här assistentens nyckel. Av tar bort det den lade till.",
+            "stt_model": "Lämna tomt för leverantörens standard. Du kan skriva ett annat modellnamn om din leverantör har ett.",
+            "assist_tts": "Lägger till ett text-till-tal-alternativ i Home Assistant med den här assistentens nyckel. Av tar bort det den lade till.",
+            "tts_model": "Lämna tomt för standardröstmodellen. Du kan skriva ett annat namn om din leverantör listar ett.",
+            "tts_voice": "Coral är standard. Röster fungerar för de språk du ställer in under Assist → Språk.",
             "tts_speed": "Hur snabbt den här rösten talar. 1× är normalt. Gäller AI Workspace och Assist."
           }
         }
       },
       "abort": {
-        "reconfigure_successful": "Agenten uppdaterades."
+        "reconfigure_successful": "Agenten har uppdaterats."
       }
     }
   },
@@ -349,7 +357,7 @@
         "openrouter": "OpenRouter",
         "ollama": "Lokal Ollama",
         "azure": "Azure OpenAI",
-        "compatible": "OpenAI-kompatibel (egen bas-URL)"
+        "compatible": "OpenAI-kompatibel (anpassad bas-URL)"
       }
     },
     "effort": {

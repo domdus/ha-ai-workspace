@@ -9,21 +9,23 @@ function haHas(name) {
 }
 
 function haCreate(...names) {
-  for (const name of names) {
-    if (!name) continue;
-    if (!name.includes("-") || haHas(name)) return document.createElement(name);
-  }
+  const tag = names.find((name) => name && name.includes("-"));
+  if (tag) return document.createElement(tag);
   return document.createElement(names[names.length - 1] || "div");
 }
 
 function setDrawerOpen(drawer, open) {
   if (!drawer) return;
-  if (drawer.localName === "ha-drawer") drawer.opened = open;
-  else drawer.classList.toggle("open", open);
+  drawer.classList.toggle("open", open);
 }
 
 function applyHostLayout(host) {
   if (!host) return;
+  host.classList.remove("open");
+  host.querySelector(":scope > .overlay-glass")?.remove();
+  if (host.parentElement && host.parentElement !== document.body) {
+    document.body.appendChild(host);
+  }
   Object.assign(host.style, {
     position: "fixed",
     inset: "0",
@@ -34,6 +36,7 @@ function applyHostLayout(host) {
     margin: "0",
     padding: "0",
     border: "0",
+    background: "transparent",
     zIndex: "calc(var(--dialog-z-index, 8) + 1)",
   });
 }
@@ -96,7 +99,9 @@ async function ensureHost() {
     applyHostLayout(host);
     return host;
   }
-  const [{ mountAiWorkspace }, { stringsFor }] = await loadChat();
+  const [{ mountAiWorkspace, prefetchUiTheme, haComponentsUi }, { stringsFor }] = await loadChat();
+  await prefetchUiTheme(() => hassObj()?.auth?.data?.access_token || "");
+  const haUi = haComponentsUi();
   host = document.getElementById(HOST_ID);
   if (host) {
     applyHostLayout(host);
@@ -115,11 +120,11 @@ async function ensureHost() {
         position: fixed;
         right: var(--ha-space-4);
         bottom: var(--ai-fab-bottom, var(--ai-fab-rest));
-        z-index: 2;
+        z-index: 1;
         pointer-events: auto;
         transition: bottom 280ms cubic-bezier(0.16, 1, 0.3, 1);
       }
-      .fab {
+      ha-button.fab {
         --ha-space-1: 0px;
         --ha-space-2: 0px;
       }
@@ -127,7 +132,7 @@ async function ensureHost() {
         --mdc-icon-size: 26px;
         margin: 0;
       }
-      .fab::part(base) {
+      ha-button.fab::part(base) {
         width: 48px;
         height: 48px;
         min-width: 48px;
@@ -137,19 +142,33 @@ async function ensureHost() {
         align-items: center;
         justify-content: center;
       }
-      .fab::part(start) {
+      ha-button.fab::part(start) {
         margin: 0;
         display: flex;
         align-items: center;
         justify-content: center;
       }
-      .fab::part(label),
-      .fab::part(end) { display: none; }
-      ha-drawer.drawer {
-        --ha-drawer-width: min(420px, 100vw);
-        z-index: 1;
+      ha-button.fab::part(label),
+      ha-button.fab::part(end) { display: none; }
+      button.fab {
+        box-sizing: border-box;
+        width: 48px;
+        height: 48px;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--text-primary-color, #fff);
+        background: var(--primary-color);
+        box-shadow: var(--ha-card-box-shadow, 0 2px 8px rgba(0, 0, 0, 0.25));
       }
-
+      button.fab ha-icon {
+        color: inherit;
+      }
       aside.drawer {
         position: fixed;
         top: 0;
@@ -176,6 +195,7 @@ async function ensureHost() {
       }
       aside.drawer.open {
         height: 100%;
+        z-index: 2;
         transform: none;
         opacity: 1;
         pointer-events: auto;
@@ -189,9 +209,9 @@ async function ensureHost() {
         .fab,
         .drawer { transition: none; }
       }
-      .bar {
+      div.bar {
         position: relative;
-        z-index: 2;
+        z-index: 1;
         box-sizing: border-box;
         display: flex;
         align-items: center;
@@ -199,7 +219,7 @@ async function ensureHost() {
         flex: none;
         height: calc(var(--header-height, 56px) + env(safe-area-inset-top, 0px));
         padding: env(safe-area-inset-top, 0px) var(--ha-space-2) 0 var(--ha-space-6, 24px);
-        background: var(--app-header-background-color, var(--sidebar-background-color));
+        background: var(--app-header-background-color, var(--primary-background-color));
         border-bottom: 1px solid var(--divider-color);
         font-weight: var(--ha-font-weight-heading);
         font-size: var(--ha-font-size-m);
@@ -222,7 +242,21 @@ async function ensureHost() {
         gap: var(--ha-space-2);
         min-width: 0;
         margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        font-weight: inherit;
         line-height: 1;
+        cursor: pointer;
+      }
+      .bar .brand:focus {
+        outline: none;
+      }
+      .bar .brand:focus-visible {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 4px;
       }
       .brand ha-icon {
         display: inline-flex;
@@ -245,31 +279,30 @@ async function ensureHost() {
           --ai-fab-rest: var(--ha-space-3);
           right: var(--ha-space-3);
         }
-        ha-drawer.drawer { --ha-drawer-width: 100vw; }
         aside.drawer { width: 100%; border-left: 0; }
-        .bar {
+        div.bar {
           padding-inline: max(var(--ha-space-6, 24px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
         }
       }
     </style>
-    <ha-button class="fab" size="l" variant="brand" appearance="accent" title="${ui.title}"><ha-icon slot="start" icon="mdi:robot"></ha-icon></ha-button>
+    ${
+      haUi
+        ? `<ha-button class="fab" size="l" variant="brand" appearance="accent" title="${ui.title}"><ha-icon slot="start" icon="mdi:robot"></ha-icon></ha-button>`
+        : `<button type="button" class="fab" title="${ui.title}"><ha-icon icon="mdi:robot"></ha-icon></button>`
+    }
     <div class="drawer-host"></div>
   `;
   const fab = shadow.querySelector(".fab");
   const drawerHost = shadow.querySelector(".drawer-host");
-  const drawer = haCreate("ha-drawer", "aside");
+  const drawer = document.createElement("aside");
   drawer.className = "drawer";
-  if (drawer.localName === "ha-drawer") {
-    drawer.setAttribute("position", "end");
-    drawer.setAttribute("type", "overlay");
-  }
-  const bar = haCreate("ha-top-app-bar-fixed", "div");
+  const bar = haUi ? haCreate("ha-top-app-bar-fixed", "div") : document.createElement("div");
   bar.className = "bar";
   bar.innerHTML = `
-        <div class="brand" slot="${bar.localName === "ha-top-app-bar-fixed" ? "title" : ""}">
+        <button type="button" class="brand" slot="${bar.localName === "ha-top-app-bar-fixed" ? "title" : ""}" aria-label="${ui.open_workspace}">
           <ha-icon icon="mdi:robot"></ha-icon>
           <span>${ui.title}</span>
-        </div>
+        </button>
         <div class="bar-actions"${bar.localName === "ha-top-app-bar-fixed" ? ' slot="actionItems"' : ""}>
           <ha-icon-button class="new-chat" label="${ui.new_chat}">
             <ha-icon icon="mdi:plus"></ha-icon>
@@ -283,7 +316,21 @@ async function ensureHost() {
   drawer.append(bar, body);
   drawerHost.replaceWith(drawer);
   const close = drawer.querySelector(".close");
-  const newChat = shadow.querySelector(".new-chat");
+  const newChat = drawer.querySelector(".new-chat");
+  const brand = drawer.querySelector(".brand");
+  const goToWorkspace = (path = "/ai-workspace") => {
+    setDrawerOpen(drawer, false);
+    const hass = hassObj();
+    if (typeof hass?.navigate === "function") {
+      hass.navigate(path);
+      return;
+    }
+    const state = history.state && typeof history.state === "object" ? history.state : { root: true };
+    history.pushState(state, "", path);
+    const event = new Event("location-changed", { bubbles: true, composed: true });
+    event.detail = { replace: false };
+    window.dispatchEvent(event);
+  };
   let chatApi = null;
   let mounting = null;
   let placeToken = 0;
@@ -371,25 +418,14 @@ async function ensureHost() {
   const mountChat = () => {
     if (chatApi) return Promise.resolve(chatApi);
     if (!mounting) {
-      const api = mountAiWorkspace(body, {
+      mounting = mountAiWorkspace(body, {
         compact: true,
         getToken: () => hassObj()?.auth?.data?.access_token || "",
-        navigate: (path) => {
-          setDrawerOpen(drawer, false);
-          const hass = hassObj();
-          if (typeof hass?.navigate === "function") {
-            hass.navigate(path);
-            return;
-          }
-          const state = history.state && typeof history.state === "object" ? history.state : { root: true };
-          history.pushState(state, "", path);
-          const event = new Event("location-changed", { bubbles: true, composed: true });
-          event.detail = { replace: false };
-          window.dispatchEvent(event);
-        },
+        navigate: goToWorkspace,
+      }).then((api) => {
+        chatApi = api;
+        return api;
       });
-      chatApi = api;
-      mounting = Promise.resolve(api);
     }
     return mounting;
   };
@@ -404,6 +440,7 @@ async function ensureHost() {
     api.startNewChat();
   });
   close.addEventListener("click", () => setDrawerOpen(drawer, false));
+  brand?.addEventListener("click", () => goToWorkspace());
   window.addEventListener("location-changed", sync);
   window.addEventListener("popstate", sync);
   window.addEventListener("resize", schedulePlace);

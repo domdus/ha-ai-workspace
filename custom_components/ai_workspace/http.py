@@ -23,6 +23,7 @@ from .const import (
     format_ui_page,
     ha_mcp_is_connected,
     parse_ui_page,
+    ui_theme_of,
     with_language_rule,
     with_ui_context,
 )
@@ -519,6 +520,7 @@ class UiView(HomeAssistantView):
                 "tts_heavy": overlay_tts_heavy(_hass(request), settings.tts_engine),
                 "tts_natural": bool(getattr(settings, "tts_natural", True)),
                 "change_history": bool(getattr(settings, "change_history", True)),
+                "ui_theme": ui_theme_of(getattr(settings, "ui_theme", "standard")),
             }
         )
 

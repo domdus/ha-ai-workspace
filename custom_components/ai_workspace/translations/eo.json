@@ -3,47 +3,51 @@
     "step": {
       "user": {
         "title": "AI Workspace",
-        "description": "Komunaj babilaj agordoj. Poste aldonu la unuan agenton (Cursor, OpenAI, OpenRouter, Ollama kaj aliaj). Konektoj kaj agentoj estas vicoj de ĉi tiu integraĵo.",
+        "description": "Komunaj agordoj por la babilejo. Poste aldonu vian unuan asistanton (Cursor, OpenAI, Ollama kaj aliaj) de la paĝo de la integraĵo.",
         "data": {
           "stt_engine": "Parolo al teksto",
           "tts_engine": "Teksto al parolo",
           "speak_replies": "Laŭtlegi respondojn aŭtomate",
+          "tts_natural": "Natura parolo por teksto al parolo",
           "enable_sidebar": "Montri AI Workspace en la flanka strio",
           "enable_overlay": "Montri ŝveban AI-butonon",
           "enable_dictate": "Montri diktan butonon",
           "allow_users": "Permesi ordinarajn uzantojn",
           "house_map": "Agorda katalogo",
-          "shorten_mcp_results": "Shorten large MCP tool results",
-          "change_history": "Change History",
+          "shorten_mcp_results": "Mallongigi longajn respondojn de Home Assistant",
+          "change_history": "Ŝanĝohistorio",
+          "ui_theme": "Uzi HA-komponentojn",
           "cross_chat": "Inter babilejoj",
           "keep_chats": "Babilejoj konservotaj"
         },
         "data_description": {
-          "stt_engine": "La foliumilo uzas la parolilon de la aparato kaj bezonas https:// aŭ localhost. Home Assistant-motoro (Whisper kaj aliaj ĉe Agordoj) transskribas registron de ĉi tiu paĝo. La foliumilo tamen devas permesi la mikrofonon, kaj tion ĝi faras nur ĉe https:// aŭ localhost.",
-          "tts_engine": "Piper, Google Translate aŭ AI Workspace-voĉo de OpenAI-agento. Laŭtlegado de la respondo funkcias ankaŭ per http://. Malŝalte lasas respondojn kiel tekston.",
-          "speak_replies": "Kiam voĉo estas elektita, ĉiu respondo estas laŭtlegata tuj. Malŝalte lasas la laŭtparolilan butonon por ludi mem.",
-          "enable_sidebar": "La flanka-stria ero AI Workspace. La paĝo restas ĉe /ai-workspace se ĉi tio estas malŝalta.",
-          "enable_overlay": "Ŝaltas aŭ malŝaltas la ŝveban AI-butonon. Ĉe Agordoj ĝi sidas pli alte por ne kovri la sistemajn butonojn.",
+          "stt_engine": "Foliumila dikto bezonas sekuran retejon (https). Aŭ elektu Home Assistant-motoron de parolo-al-teksto ĉe Agordoj. La foliumilo devas permesi la mikrofonon.",
+          "tts_engine": "Piper, Google Translate, aŭ voĉo de unu el viaj AI-asistantoj. Malŝalte lasas respondojn nur kiel tekston.",
+          "speak_replies": "Kiam voĉo estas elektita, ĉiu respondo estas laŭtlegata tuj kiam ĝi alvenas. Malŝalte lasas la laŭtparolilan butonon por ludi respondon mem.",
+          "tts_natural": "Defaŭlte ŝalta. Forigas formatadon por ke laŭtlego sonu nature. Malŝalte legas la mesaĝon ĝuste kiel skribite.",
+          "enable_sidebar": "Montras AI Workspace en la flanka strio. Malŝalte, administrantoj ankoraŭ povas malfermi la plenan paĝon per ĝia menua ligilo.",
+          "enable_overlay": "Ŝaltas aŭ malŝaltas la ŝveban AI-butonon. Ĉe paĝoj de Agordoj ĝi sidas pli alte por ne kovri sistemajn butonojn.",
           "enable_dictate": "Mikrofono en la mesaĝa kampo.",
-          "allow_users": "Ensalutintaj uzantoj kiuj ne estas administrantoj povas malfermi la ŝveban babilejon. Malŝalte lasas ĝin al administrantoj. La flanka-stria ero restas nur por administrantoj. Ili ricevas nur la enkonstruitan MCP-servilon de Home Assistant kun siaj propraj rajtoj.",
-          "house_map": "Laŭvola loka indekso por la kabligo de nomita ero (ekigiloj, rilataj id-oj). Defaŭlte malŝalta. Ne por listigi aŭtomatojn aŭ ŝaltite/malŝaltite — uzu vivan MCP por tio. Ne viva stato, historio aŭ spuroj.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
-          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
-          "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi alian babilejon kies titolo kunhavas vortojn. Ne necesas diri babilejo. Nur mallonga eltiraĵo, kaj tiu babilejo ne estas ŝanĝita.",
-          "keep_chats": "Plej novaj nealpinglitaj babilejoj po persono. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."
+          "allow_users": "Ne-administrantoj povas malfermi la ŝveban babilejon kun la sama aliro al Home Assistant kiel ilia konto. Malŝalte: nur administrantoj. La plena paĝo de AI Workspace en la flanka strio restas nur por administrantoj.",
+          "house_map": "Laŭvola. Helpas klarigi kiel unu ero estas kabligita (kio ekigas ĝin, kion ĝi influas). Defaŭlte malŝalta. Por viva stato ŝaltite/malŝaltite aŭ plenaj listoj, petu la asistanton kontroli Home Assistant.",
+          "shorten_mcp_results": "Defaŭlte ŝalta. Tre longaj respondoj de Home Assistant (tutdomaj listoj, grandaj serĉoj) estas resumitaj antaŭ ol ili iras al la AI. Tio ŝparas ĵetonojn kaj tenas respondojn rapidaj. Malŝalte sendas la plenan tekston.",
+          "change_history": "Defaŭlte ŝalta. Konservas registron de agordaj ŝanĝoj faritaj de la asistanto, por ke vi povu revizii aŭ malfari ilin en Ŝanĝohistorio. Malŝalte ĉesigas novajn enskribojn; la asistanto ankoraŭ povas uzi Home Assistant.",
+          "ui_theme": "Defaŭlte malŝaltita. Kiam ŝaltita, nur interfacaj komponantoj de Home Assistant estas uzataj, kio povas pli bone funkcii kun etosoj.",
+          "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi alian babilejon kies titolo kunhavas vortojn. Ne necesas mencii babilejon. Nur mallonga eltiraĵo, kaj tiu babilejo ne estas ŝanĝita.",
+          "keep_chats": "Plej novaj nealpinglitaj babilejoj konservotaj po persono. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."
         },
         "sections": {
           "mcp": {
-            "name": "MCP",
+            "name": "Konekto",
             "data": {
-              "mcp_kind": "MCP-tipo",
-              "mcp_url": "MCP-URL{mcp_url_mark}",
-              "mcp_token": "MCP-ĵetono"
+              "mcp_kind": "Tipo de konekto",
+              "mcp_url": "Servila adreso{mcp_url_mark}",
+              "mcp_token": "Alira ŝlosilo"
             },
             "data_description": {
-              "mcp_kind": "Nur MCP-serviloj kiujn ĉi tiu Home Assistant atingas estas listigitaj. Propra estas iu ajn MCP-HTTP-URL.",
+              "mcp_kind": "Serviloj kiujn ĉi tiu Home Assistant povas atingi. Elektu Propra por enigi vian propran adreson.",
               "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Enkonstruita: longdaŭra alira ĵetono de Home Assistant, aŭ lasu malplena por uzi la nunan ensaluton en ĉi tiu babilejo. HA-MCP: kutime malplena. Vibecode: Agent Key. Propra: laŭvola Bearer-ĵetono."
+              "mcp_token": "Enkonstruita: longdaŭra alira ĵetono, aŭ lasu malplena por uzi vian nunan ensaluton. HA-MCP: kutime malplena. Vibecode: agenta ŝlosilo. Propra: nur se tiu servilo petas ŝlosilon."
             }
           },
           "prompt": {
@@ -52,17 +56,17 @@
               "system_prompt": "Sistema prompto"
             },
             "data_description": {
-              "system_prompt": "Nur tono kaj konduto. Lasu malplena por la enkonstruita prompto. MCP-iloj kaj redaktilaj ligiloj ĉiam aldoniĝas; ili ne estas parto de ĉi tiu kampo."
+              "system_prompt": "Nur tono kaj kutimoj. Lasu malplena por la defaŭlto. La asistanto ĉiam tenas aliron al Home Assistant kaj rapidajn ligilojn en respondoj."
             }
           }
         }
       }
     },
     "error": {
-      "no_runtime": "La Cursor-rultempo ne estas atingebla. Startu ĝin kaj agordu la URL  ĉe ĉi tiu formularo.",
+      "no_runtime": "Ne povas atingi la Cursor-runtime. Startigu ĝin kaj kontrolu la adreson en ĉi tiu formularo.",
       "required": "Ĉi tiu kampo estas deviga.",
-      "invalid_auth": "La provizanto rifuzis ĉi tiun API-ŝlosilon.",
-      "cannot_connect": "Ne eblis atingi la provizanton. Kontrolu la URL-on kaj la reton."
+      "invalid_auth": "La provizanto malakceptis ĉi tiun API-ŝlosilon.",
+      "cannot_connect": "Ne povis atingi la provizanton. Kontrolu la URL-on kaj la reton."
     },
     "abort": {
       "already_configured": "AI Workspace jam estas agordita"
@@ -72,47 +76,51 @@
     "step": {
       "init": {
         "title": "AI Workspace",
-        "description": "Komunaj babilaj agordoj. Aldonu MCP-konektojn kaj agentojn per la butonoj sur la paĝo de la integraĵo AI Workspace.",
+        "description": "Komunaj babilaj agordoj. Aldonu konektojn kaj asistantojn per la butonoj sur la integraĵa paĝo de AI Workspace.",
         "data": {
           "stt_engine": "Parolo al teksto",
           "tts_engine": "Teksto al parolo",
           "speak_replies": "Laŭtlegi respondojn aŭtomate",
+          "tts_natural": "Natura parolo por teksto al parolo",
           "enable_sidebar": "Montri AI Workspace en la flanka strio",
           "enable_overlay": "Montri ŝveban AI-butonon",
           "enable_dictate": "Montri diktan butonon",
           "allow_users": "Permesi ordinarajn uzantojn",
           "house_map": "Agorda katalogo",
-          "shorten_mcp_results": "Shorten large MCP tool results",
-          "change_history": "Change History",
+          "shorten_mcp_results": "Mallongigi longajn respondojn de Home Assistant",
+          "change_history": "Ŝanĝohistorio",
+          "ui_theme": "Uzi HA-komponentojn",
           "cross_chat": "Inter babilejoj",
           "keep_chats": "Babilejoj konservotaj"
         },
         "data_description": {
-          "stt_engine": "La foliumilo uzas la parolilon de la aparato kaj bezonas https:// aŭ localhost. Home Assistant-motoro (Whisper kaj aliaj ĉe Agordoj) transskribas registron de ĉi tiu paĝo. La foliumilo tamen devas permesi la mikrofonon, kaj tion ĝi faras nur ĉe https:// aŭ localhost.",
-          "tts_engine": "Piper, Google Translate aŭ AI Workspace-voĉo de OpenAI-agento. Laŭtlegado de la respondo funkcias ankaŭ per http://. Malŝalte lasas respondojn kiel tekston.",
-          "speak_replies": "Kiam voĉo estas elektita, ĉiu respondo estas laŭtlegata tuj. Malŝalte lasas la laŭtparolilan butonon por ludi mem.",
-          "enable_sidebar": "La flanka-stria ero AI Workspace. La paĝo restas ĉe /ai-workspace se ĉi tio estas malŝalta.",
-          "enable_overlay": "Ŝaltas aŭ malŝaltas la ŝveban AI-butonon. Ĉe Agordoj ĝi sidas pli alte por ne kovri la sistemajn butonojn.",
+          "stt_engine": "Foliumila dikto bezonas sekuran retejon (https). Aŭ elektu Home Assistant-motoron de parolo-al-teksto ĉe Agordoj. La foliumilo devas permesi la mikrofonon.",
+          "tts_engine": "Piper, Google Translate, aŭ voĉo de unu el viaj AI-asistantoj. Malŝalte lasas respondojn nur kiel tekston.",
+          "speak_replies": "Kiam voĉo estas elektita, ĉiu respondo estas laŭtlegata tuj kiam ĝi alvenas. Malŝalte lasas la laŭtparolilan butonon por ludi respondon mem.",
+          "tts_natural": "Defaŭlte ŝalta. Forigas formatadon por ke laŭtlego sonu nature. Malŝalte legas la mesaĝon ĝuste kiel skribite.",
+          "enable_sidebar": "Montras AI Workspace en la flanka strio. Malŝalte, administrantoj ankoraŭ povas malfermi la plenan paĝon per ĝia menua ligilo.",
+          "enable_overlay": "Ŝaltas aŭ malŝaltas la ŝveban AI-butonon. Ĉe paĝoj de Agordoj ĝi sidas pli alte por ne kovri sistemajn butonojn.",
           "enable_dictate": "Mikrofono en la mesaĝa kampo.",
-          "allow_users": "Ensalutintaj uzantoj kiuj ne estas administrantoj povas malfermi la ŝveban babilejon. Malŝalte lasas ĝin al administrantoj. La flanka-stria ero restas nur por administrantoj. Ili ricevas nur la enkonstruitan MCP-servilon de Home Assistant kun siaj propraj rajtoj.",
-          "house_map": "Laŭvola loka indekso por la kabligo de nomita ero (ekigiloj, rilataj id-oj). Defaŭlte malŝalta. Ne por listigi aŭtomatojn aŭ ŝaltite/malŝaltite — uzu vivan MCP por tio. Ne viva stato, historio aŭ spuroj.",
-          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
-          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
-          "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi alian babilejon kies titolo kunhavas vortojn. Ne necesas diri babilejo. Nur mallonga eltiraĵo, kaj tiu babilejo ne estas ŝanĝita.",
-          "keep_chats": "Plej novaj nealpinglitaj babilejoj po persono. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."
+          "allow_users": "Ne-administrantoj povas malfermi la ŝveban babilejon kun la sama aliro al Home Assistant kiel ilia konto. Malŝalte: nur administrantoj. La plena paĝo de AI Workspace en la flanka strio restas nur por administrantoj.",
+          "house_map": "Laŭvola. Helpas klarigi kiel unu ero estas kabligita (kio ekigas ĝin, kion ĝi influas). Defaŭlte malŝalta. Por viva stato ŝaltite/malŝaltite aŭ plenaj listoj, petu la asistanton kontroli Home Assistant.",
+          "shorten_mcp_results": "Defaŭlte ŝalta. Tre longaj respondoj de Home Assistant (tutdomaj listoj, grandaj serĉoj) estas resumitaj antaŭ ol ili iras al la AI. Tio ŝparas ĵetonojn kaj tenas respondojn rapidaj. Malŝalte sendas la plenan tekston.",
+          "change_history": "Defaŭlte ŝalta. Konservas registron de agordaj ŝanĝoj faritaj de la asistanto, por ke vi povu revizii aŭ malfari ilin en Ŝanĝohistorio. Malŝalte ĉesigas novajn enskribojn; la asistanto ankoraŭ povas uzi Home Assistant.",
+          "ui_theme": "Defaŭlte malŝaltita. Kiam ŝaltita, nur interfacaj komponantoj de Home Assistant estas uzataj, kio povas pli bone funkcii kun etosoj.",
+          "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi alian babilejon kies titolo kunhavas vortojn. Ne necesas mencii babilejon. Nur mallonga eltiraĵo, kaj tiu babilejo ne estas ŝanĝita.",
+          "keep_chats": "Plej novaj nealpinglitaj babilejoj konservotaj po persono. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."
         },
         "sections": {
           "mcp": {
-            "name": "MCP",
+            "name": "Konekto",
             "data": {
-              "mcp_kind": "MCP-tipo",
-              "mcp_url": "MCP-URL{mcp_url_mark}",
-              "mcp_token": "MCP-ĵetono"
+              "mcp_kind": "Tipo de konekto",
+              "mcp_url": "Servila adreso{mcp_url_mark}",
+              "mcp_token": "Alira ŝlosilo"
             },
             "data_description": {
-              "mcp_kind": "Nur MCP-serviloj kiujn ĉi tiu Home Assistant atingas estas listigitaj. Propra estas iu ajn MCP-HTTP-URL.",
+              "mcp_kind": "Serviloj kiujn ĉi tiu Home Assistant povas atingi. Elektu Propra por enigi vian propran adreson.",
               "mcp_url": "{mcp_url_note}",
-              "mcp_token": "Enkonstruita: longdaŭra alira ĵetono de Home Assistant, aŭ lasu malplena por uzi la nunan ensaluton en ĉi tiu babilejo. HA-MCP: kutime malplena. Vibecode: Agent Key. Propra: laŭvola Bearer-ĵetono."
+              "mcp_token": "Enkonstruita: longdaŭra alira ĵetono, aŭ lasu malplena por uzi vian nunan ensaluton. HA-MCP: kutime malplena. Vibecode: agenta ŝlosilo. Propra: nur se tiu servilo petas ŝlosilon."
             }
           },
           "prompt": {
@@ -121,17 +129,17 @@
               "system_prompt": "Sistema prompto"
             },
             "data_description": {
-              "system_prompt": "Nur tono kaj konduto. Lasu malplena por la enkonstruita prompto. MCP-iloj kaj redaktilaj ligiloj ĉiam aldoniĝas; ili ne estas parto de ĉi tiu kampo."
+              "system_prompt": "Nur tono kaj kutimoj. Lasu malplena por la defaŭlto. La asistanto ĉiam tenas aliron al Home Assistant kaj rapidajn ligilojn en respondoj."
             }
           }
         }
       }
     },
     "error": {
-      "no_runtime": "La Cursor-rultempo ne estas atingebla. Startu ĝin kaj agordu la URL  ĉe ĉi tiu formularo.",
+      "no_runtime": "Ne povas atingi la Cursor-runtime. Startigu ĝin kaj kontrolu la adreson en ĉi tiu formularo.",
       "required": "Ĉi tiu kampo estas deviga.",
-      "invalid_auth": "La provizanto rifuzis ĉi tiun API-ŝlosilon.",
-      "cannot_connect": "Ne eblis atingi la provizanton. Kontrolu la URL-on kaj la reton."
+      "invalid_auth": "La provizanto malakceptis ĉi tiun API-ŝlosilon.",
+      "cannot_connect": "Ne povis atingi la provizanton. Kontrolu la URL-on kaj la reton."
     }
   },
   "config_subentries": {
@@ -151,9 +159,9 @@
       "step": {
         "user": {
           "title": "Konekto",
-          "description": "Nur MCP-serviloj kiujn ĉi tiu Home Assistant atingas estas listigitaj. Propra estas iu ajn MCP-HTTP-URL.",
+          "description": "Elektu kiel ĉi tiu asistanto konektiĝas al Home Assistant kaj aliaj servoj.",
           "menu_options": {
-            "ha": "Home Assistant MCP-servilo (enkonstruita)",
+            "ha": "Home Assistant MCP Server (enkonstruita)",
             "ha_mcp": "HA-MCP",
             "coolver": "HA Vibecode Agent (Coolver)",
             "custom": "Propra MCP-URL"
@@ -161,7 +169,7 @@
         },
         "connection": {
           "title": "Konekto",
-          "description": "MCP-servilo kiun la asistanto povas uzi en la sama babilejo.",
+          "description": "Alia servo kiun la asistanto povas uzi dum babilo.",
           "data": {
             "name": "Nomo",
             "url": "Adreso",
@@ -169,8 +177,8 @@
           },
           "data_description": {
             "name": "Mallonga nomo, ekzemple Directus. La asistanto uzas ĝin por distingi ĉi tiun konekton de la aliaj.",
-            "url": "La MCP-adreso, komencante per https:// aŭ http://. Trovitaj serviloj estas plenigitaj.",
-            "token": "Nur se tiu servilo petas ŝlosilon. Lasu malplena dum redakto por konservi la konservitan ŝlosilon."
+            "url": "Retadreso (https://…). Malkovritaj serviloj estas aŭtomate plenigitaj.",
+            "token": "Nur se tiu servilo petas ŝlosilon. Lasu malplena dum redaktado por teni la konservitan ŝlosilon."
           }
         }
       }
@@ -180,12 +188,12 @@
         "user": "Aldoni agenton",
         "reconfigure": "Redakti agenton"
       },
-      "entry_type": "Agento",
+      "entry_type": "Agent",
       "error": {
-        "no_runtime": "La Cursor-rultempo ne estas atingebla. Startu ĝin kaj agordu la URL  ĉe ĉi tiu formularo.",
+        "no_runtime": "Ne povas atingi la Cursor-runtime. Startigu ĝin kaj kontrolu la adreson en ĉi tiu formularo.",
         "required": "Ĉi tiu kampo estas deviga.",
-        "invalid_auth": "La provizanto rifuzis ĉi tiun API-ŝlosilon.",
-        "cannot_connect": "Ne eblis atingi la provizanton. Kontrolu la URL-on kaj la reton."
+        "invalid_auth": "La provizanto malakceptis ĉi tiun API-ŝlosilon.",
+        "cannot_connect": "Ne povis atingi la provizanton. Kontrolu la URL-on kaj la reton."
       },
       "step": {
         "provider": {
@@ -200,76 +208,76 @@
         },
         "provider_cursor": {
           "title": "Cursor",
-          "description": "Cursor Runtime, API key, model, and effort. The URL field fills only when this Home Assistant can reach the Runtime.",
+          "description": "Adreso de Cursor, API-ŝlosilo, modelo kaj respondorapido.",
           "data": {
-            "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
-            "runtime_token": "Runtime token",
-            "cursor_api_key": "Cursor-API-ŝlosilo",
+            "runtime_url": "Adreso de la Cursor-runtime{runtime_url_mark}",
+            "runtime_token": "Pasvorto de la runtime",
+            "cursor_api_key": "API-ŝlosilo de Cursor",
             "model": "Modelo",
-            "effort": "Peno",
+            "effort": "Penado",
             "assist": "Aldoni al Assist"
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Shared secret for a Docker Runtime. Set the same value as RUNTIME_TOKEN on the container. The add-on is paired automatically; leave this empty.",
-            "cursor_api_key": "De cursor.com/dashboard/integrations. Lasu malplena dum redakto por konservi la konservitan ŝlosilon. Lasu malplena, se la Runtime jam havas CURSOR_API_KEY.",
-            "model": "Elektu unu aŭ tajpu id. Malplena uzas Composer.",
-            "effort": "Rapida, Alta aŭ Alta rapida. Composer uzas Rapida krom se vi elektas Alta.",
-            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo kaj forigas la Assist-dukton, kiun ĉi tiu agento aldonis."
+            "runtime_token": "La sama pasvorto kiel ĉe via Cursor-runtime. Lasu malplena kiam vi uzas la aldonaĵon kun aŭtomata parigo.",
+            "cursor_api_key": "El via konto de Cursor (Integrations). Lasu malplena dum redaktado por teni la konservitan ŝlosilon.",
+            "model": "Elektu el la listo aŭ tajpu modelnomon. Malplena uzas Composer.",
+            "effort": "Kiom da pensotempo permesi. Composer defaŭlte uzas Rapida.",
+            "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist."
           }
         },
         "provider_cloud": {
           "title": "Nuba agento",
-          "description": "Ĉi tiu agento konservas propran ŝlosilon. Kopiu el jam agordita integriĝo, aŭ algluu novan. Lasu la ŝlosilon malplena dum redakto por konservi la konservitan.",
+          "description": "Ĉi tiu agento tenas sian propran ŝlosilon. Kopiu unu el integraĵo jam agordita, aŭ algluu novan. Lasu la ŝlosilon malplena dum redaktado por teni la konservitan ŝlosilon.",
           "data": {
-            "borrow": "Kopii ŝlosilon de",
+            "borrow": "Kopii ŝlosilon el",
             "api_key": "API-ŝlosilo",
             "model": "Modelo",
-            "effort": "Peno",
-            "low_token": "Malmultaj tokenoj",
+            "effort": "Penado",
+            "low_token": "Nur-babila reĝimo",
             "check_house": "Ĉiam unue kontroli la domon",
             "assist": "Aldoni al Assist",
             "assist_stt": "Aldoni parolon-al-teksto",
-            "stt_model": "Modelo parolo-al-teksto",
+            "stt_model": "Modelo de parolo-al-teksto",
             "assist_tts": "Aldoni tekston-al-parolo",
-            "tts_model": "Modelo teksto-al-parolo",
+            "tts_model": "Modelo de teksto-al-parolo",
             "tts_voice": "Voĉo",
-            "tts_speed": "Rapideco"
+            "tts_speed": "Rapido"
           },
           "data_description": {
-            "borrow": "Uzas la ŝlosilon jam konservitan de tiu integriĝo. La alia integriĝo restas kiel estas.",
-            "api_key": "Ne Home Assistant-ĵetono.",
-            "model": "Elektu unu aŭ tajpu id. Malplena uzas la defaŭlton de la provizanto.",
-            "effort": "Rapida, Alta aŭ Alta rapida kiam la modelo tion subtenas.",
-            "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
-            "check_house": "La unua paŝo de ĉiu mesaĝo (krom salutoj kaj dankoj) devas voki ilon, por ke respondoj pri la domo baziĝu sur vivaj datumoj. Malŝaltu por modeloj, kiuj mem fidinde vokas ilojn, aŭ por ŝpari ilan rondon ĉe ĝeneralaj demandoj.",
-            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo kaj forigas la Assist-dukton, kiun ĉi tiu agento aldonis.",
-            "assist_stt": "Uzas la API-ŝlosilon de ĉi tiu agento kiel Home Assistant parolo-al-teksto-motoron kaj asignas ĝin al ĉiu AI Workspace Assist-dukto (inkluzive Cursor). Malŝalte forigas la parolo-al-teksto-motoron, kiun ĉi tiu agento aldonis.",
-            "stt_model": "Malplene uzas la defaŭlton de la provizanto. Vi povas tajpi alian id.",
-            "assist_tts": "Uzas la API-ŝlosilon de ĉi tiu agento kiel Home Assistant teksto-al-parolo-motoron kaj asignas ĝin al ĉiu AI Workspace Assist-dukto (inkluzive Cursor). Malŝalte forigas la teksto-al-parolo-motoron, kiun ĉi tiu agento aldonis.",
-            "tts_model": "Malplene uzas gpt-4o-mini-tts. tts-1 estas malpli kosta. Vi povas tajpi alian id.",
-            "tts_voice": "Coral estas la defaŭlto. Assist-duktoj, kiujn ĉi tiu agento kreis, uzas ĉi tiun voĉon.",
-            "tts_speed": "Kiel rapide ĉi tiu voĉo parolas. 1× estas normala. Validas por AI Workspace kaj Assist."
+            "borrow": "Uzas la ŝlosilon jam konservitan de tiu integraĵo. La alia integraĵo restas kiel ĝi estas.",
+            "api_key": "Via ŝlosilo de la AI-provizanto, ne via ensaluto de Home Assistant.",
+            "model": "Elektu el la listo aŭ tajpu modelnomon. Malplena uzas la defaŭlton de la provizanto.",
+            "effort": "Rapida, Alta, aŭ Alta rapida kiam la modelo subtenas tion.",
+            "low_token": "Pli mallongaj respondoj sen domkontrolo — taŭga por malgrandaj nur-babilaj modeloj.",
+            "check_house": "Defaŭlte ŝalta. La asistanto konsultas Home Assistant antaŭ ol respondi pri via instalaĵo (ne por simplaj salutoj). Malŝaltu se via modelo jam faras tion memstare.",
+            "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist.",
+            "assist_stt": "Aldonas opcion de parolo-al-teksto en Home Assistant per la ŝlosilo de ĉi tiu asistanto. Malŝalte forigas tion, kion ĝi aldonis.",
+            "stt_model": "Lasu malplena por la defaŭlto de la provizanto. Vi povas tajpi alian modelnomon se via ofertas unu.",
+            "assist_tts": "Aldonas opcion de teksto-al-parolo en Home Assistant per la ŝlosilo de ĉi tiu asistanto. Malŝalte forigas tion, kion ĝi aldonis.",
+            "tts_model": "Lasu malplena por la defaŭlta voĉmodelo. Vi povas tajpi alian nomon se via provizanto listigas unu.",
+            "tts_voice": "Coral estas la defaŭlto. Voĉoj funkcias por la lingvoj kiujn vi agordis ĉe Assist → Lingvo.",
+            "tts_speed": "Kiel rapide ĉi tiu voĉo parolas. 1× estas normala. Aplikas al AI Workspace kaj Assist."
           }
         },
         "provider_ollama": {
           "title": "Ollama",
-          "description": "Indiku la adreson de la Ollama-servilo.",
+          "description": "Direktu ĉi tion al la Ollama-servilo.",
           "data": {
             "api_base": "Ollama-URL",
             "model": "Modelo",
-            "effort": "Peno",
-            "low_token": "Malmultaj tokenoj",
+            "effort": "Penado",
+            "low_token": "Nur-babila reĝimo",
             "check_house": "Ĉiam unue kontroli la domon",
             "assist": "Aldoni al Assist"
           },
           "data_description": {
-            "api_base": "Usually {example_url}",
-            "model": "Elektu unu aŭ tajpu elŝutitan modelon. Malplena uzas llama3.2.",
-            "effort": "Uzata kiam la modelo tion subtenas.",
-            "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
-            "check_house": "La unua paŝo de ĉiu mesaĝo (krom salutoj kaj dankoj) devas voki ilon, por ke respondoj pri la domo baziĝu sur vivaj datumoj. Malŝaltu por modeloj, kiuj mem fidinde vokas ilojn, aŭ por ŝpari ilan rondon ĉe ĝeneralaj demandoj.",
-            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo kaj forigas la Assist-dukton, kiun ĉi tiu agento aldonis."
+            "api_base": "Kutime {example_url}",
+            "model": "Elektu el la listo aŭ tajpu modelon kiun vi instalis. Malplena uzas llama3.2.",
+            "effort": "Uzata kiam la modelo subtenas tion.",
+            "low_token": "Pli mallongaj respondoj sen domkontrolo — taŭga por malgrandaj nur-babilaj modeloj.",
+            "check_house": "Defaŭlte ŝalta. La asistanto konsultas Home Assistant antaŭ ol respondi pri via instalaĵo (ne por simplaj salutoj). Malŝaltu se via modelo jam faras tion memstare.",
+            "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist."
           }
         },
         "provider_azure": {
@@ -280,59 +288,59 @@
             "api_base": "Finpunkto",
             "model": "Deplojo",
             "azure_api_version": "API-versio",
-            "effort": "Peno",
-            "low_token": "Malmultaj tokenoj",
+            "effort": "Penado",
+            "low_token": "Nur-babila reĝimo",
             "check_house": "Ĉiam unue kontroli la domon",
             "assist": "Aldoni al Assist"
           },
           "data_description": {
-            "api_key": "La Azure OpenAI-ŝlosilo. Lasu malplena dum redakto por konservi la konservitan ŝlosilon.",
+            "api_key": "La ŝlosilo de Azure OpenAI. Lasu malplena dum redaktado por teni la konservitan ŝlosilon.",
             "api_base": "{example_url}",
             "model": "La nomo de la deplojo.",
-            "azure_api_version": "Default 2024-10-21.",
-            "effort": "Uzata kiam la deplojo tion subtenas.",
-            "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
-            "check_house": "La unua paŝo de ĉiu mesaĝo (krom salutoj kaj dankoj) devas voki ilon, por ke respondoj pri la domo baziĝu sur vivaj datumoj. Malŝaltu por modeloj, kiuj mem fidinde vokas ilojn, aŭ por ŝpari ilan rondon ĉe ĝeneralaj demandoj.",
-            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo kaj forigas la Assist-dukton, kiun ĉi tiu agento aldonis."
+            "azure_api_version": "Lasu la defaŭlton krom se Azure-subteno donis al vi alian version.",
+            "effort": "Uzata kiam la deplojo subtenas tion.",
+            "low_token": "Pli mallongaj respondoj sen domkontrolo — taŭga por malgrandaj nur-babilaj modeloj.",
+            "check_house": "Defaŭlte ŝalta. La asistanto konsultas Home Assistant antaŭ ol respondi pri via instalaĵo (ne por simplaj salutoj). Malŝaltu se via modelo jam faras tion memstare.",
+            "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist."
           }
         },
         "provider_compatible": {
           "title": "OpenAI-kongrua",
-          "description": "Propra servilo kiu parolas la OpenAI-API.",
+          "description": "Via propra servilo kiu funkcias kiel la babila API de OpenAI.",
           "data": {
             "api_key": "API-ŝlosilo",
-            "api_base": "API-baza URL",
+            "api_base": "Baza URL de la API",
             "model": "Modelo",
-            "effort": "Peno",
-            "low_token": "Malmultaj tokenoj",
+            "effort": "Penado",
+            "low_token": "Nur-babila reĝimo",
             "check_house": "Ĉiam unue kontroli la domon",
             "assist": "Aldoni al Assist",
             "assist_stt": "Aldoni parolon-al-teksto",
-            "stt_model": "Modelo parolo-al-teksto",
+            "stt_model": "Modelo de parolo-al-teksto",
             "assist_tts": "Aldoni tekston-al-parolo",
-            "tts_model": "Modelo teksto-al-parolo",
+            "tts_model": "Modelo de teksto-al-parolo",
             "tts_voice": "Voĉo",
-            "tts_speed": "Rapideco"
+            "tts_speed": "Rapido"
           },
           "data_description": {
-            "api_key": "Lasu malplena dum redakto por konservi la konservitan ŝlosilon.",
-            "api_base": "Baza URL de la servilo, inkluzive /v1 se ĝi uzas tiun vojon.",
-            "model": "Modelnomo sur tiu servilo.",
-            "effort": "Uzata kiam la servilo tion subtenas.",
-            "low_token": "Mallonga peto kaj sen iloj, por ke malgranda modelo povu respondi. Ĝi ne povas kontroli aŭ ŝanĝi la domon.",
-            "check_house": "La unua paŝo de ĉiu mesaĝo (krom salutoj kaj dankoj) devas voki ilon, por ke respondoj pri la domo baziĝu sur vivaj datumoj. Malŝaltu por modeloj, kiuj mem fidinde vokas ilojn, aŭ por ŝpari ilan rondon ĉe ĝeneralaj demandoj.",
-            "assist": "Aldonas ĉi tiun agenton al Home Assistant Assist. Malŝalte lasas ĝin nur en la AI Workspace-babilejo kaj forigas la Assist-dukton, kiun ĉi tiu agento aldonis.",
-            "assist_stt": "Uzas la API-ŝlosilon de ĉi tiu agento kiel Home Assistant parolo-al-teksto-motoron kaj asignas ĝin al ĉiu AI Workspace Assist-dukto (inkluzive Cursor). Malŝalte forigas la parolo-al-teksto-motoron, kiun ĉi tiu agento aldonis.",
-            "stt_model": "Malplene uzas la defaŭlton de la provizanto. Vi povas tajpi alian id.",
-            "assist_tts": "Uzas la API-ŝlosilon de ĉi tiu agento kiel Home Assistant teksto-al-parolo-motoron kaj asignas ĝin al ĉiu AI Workspace Assist-dukto (inkluzive Cursor). Malŝalte forigas la teksto-al-parolo-motoron, kiun ĉi tiu agento aldonis.",
-            "tts_model": "Malplene uzas gpt-4o-mini-tts. tts-1 estas malpli kosta. Vi povas tajpi alian id.",
-            "tts_voice": "Coral estas la defaŭlto. Assist-duktoj, kiujn ĉi tiu agento kreis, uzas ĉi tiun voĉon.",
-            "tts_speed": "Kiel rapide ĉi tiu voĉo parolas. 1× estas normala. Validas por AI Workspace kaj Assist."
+            "api_key": "Lasu malplena dum redaktado por teni la konservitan ŝlosilon.",
+            "api_base": "Servila adreso. Aldonu /v1 ĉe la fino se via servilo atendas tion.",
+            "model": "Modelnomo ĉe tiu servilo.",
+            "effort": "Uzata kiam la servilo subtenas tion.",
+            "low_token": "Pli mallongaj respondoj sen domkontrolo — taŭga por malgrandaj nur-babilaj modeloj.",
+            "check_house": "Defaŭlte ŝalta. La asistanto konsultas Home Assistant antaŭ ol respondi pri via instalaĵo (ne por simplaj salutoj). Malŝaltu se via modelo jam faras tion memstare.",
+            "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist.",
+            "assist_stt": "Aldonas opcion de parolo-al-teksto en Home Assistant per la ŝlosilo de ĉi tiu asistanto. Malŝalte forigas tion, kion ĝi aldonis.",
+            "stt_model": "Lasu malplena por la defaŭlto de la provizanto. Vi povas tajpi alian modelnomon se via ofertas unu.",
+            "assist_tts": "Aldonas opcion de teksto-al-parolo en Home Assistant per la ŝlosilo de ĉi tiu asistanto. Malŝalte forigas tion, kion ĝi aldonis.",
+            "tts_model": "Lasu malplena por la defaŭlta voĉmodelo. Vi povas tajpi alian nomon se via provizanto listigas unu.",
+            "tts_voice": "Coral estas la defaŭlto. Voĉoj funkcias por la lingvoj kiujn vi agordis ĉe Assist → Lingvo.",
+            "tts_speed": "Kiel rapide ĉi tiu voĉo parolas. 1× estas normala. Aplikas al AI Workspace kaj Assist."
           }
         }
       },
       "abort": {
-        "reconfigure_successful": "Agento ĝisdatigita."
+        "reconfigure_successful": "Agent ĝisdatigita."
       }
     }
   },
@@ -362,7 +370,7 @@
     },
     "mcp_kind": {
       "options": {
-        "ha": "Home Assistant MCP-servilo (enkonstruita)",
+        "ha": "Home Assistant MCP Server (enkonstruita)",
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Propra MCP-URL"
