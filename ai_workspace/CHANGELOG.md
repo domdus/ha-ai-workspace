@@ -2,6 +2,10 @@
 
 ## 1.1.4
 
+- Overlay drawer stacks above the Home Assistant app header; compact chat sidebar z-index fixed
+- Lovelace/dashboard MCP-only rules in the system prompt (no workspace filesystem for config edits)
+- **Natural speech for text to speech** (default on) strips Markdown, links, and arrows before TTS
+- Android companion: typing while scrolled up in chat no longer forces scroll to bottom
 - Home Assistant keeps the chat transcript; the Cursor Runtime no longer duplicates turns in SQLite when `history_in_ha` is set, and warm resumes skip re-applying an empty handoff when the agent is still alive
 - Cursor handoff notes are larger and clearer so reopened chats do not look blank to the agent; HA logs when a handoff would be empty despite stored turns
 - The chat UI waits until the session is loaded before sending, and a runtime 404 resyncs the agent instead of silently starting a new chat

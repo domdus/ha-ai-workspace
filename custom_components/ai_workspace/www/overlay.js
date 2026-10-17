@@ -16,6 +16,7 @@ function applyHostLayout(host) {
     margin: "0",
     padding: "0",
     border: "0",
+    zIndex: "calc(var(--dialog-z-index, 8) + 1)",
   });
 }
 
@@ -96,7 +97,7 @@ async function ensureHost() {
         position: fixed;
         right: var(--ha-space-4);
         bottom: var(--ai-fab-bottom, var(--ai-fab-rest));
-        z-index: 9;
+        z-index: 2;
         pointer-events: auto;
         transition: bottom 280ms cubic-bezier(0.16, 1, 0.3, 1);
       }
@@ -133,7 +134,7 @@ async function ensureHost() {
         width: min(420px, 100vw);
         height: 0;
         max-height: 100%;
-        z-index: 10;
+        z-index: 1;
         background: var(--primary-background-color);
         border-left: 1px solid var(--divider-color);
         box-shadow: var(--ha-card-box-shadow);
@@ -166,6 +167,8 @@ async function ensureHost() {
         .drawer { transition: none; }
       }
       .bar {
+        position: relative;
+        z-index: 2;
         box-sizing: border-box;
         display: flex;
         align-items: center;

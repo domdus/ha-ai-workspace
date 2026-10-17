@@ -51,6 +51,15 @@ def test_match_maps_locale_to_engine_tag() -> None:
     assert voice.match_speech_language("pt-BR", ["pt_BR"], "en") == "pt_BR"
 
 
+def test_speech_text_strips_arrows_and_markdown() -> None:
+    voice = _load("voice", "voice.py")
+    spoken = voice.speech_text("**Bold** move → next step")
+    assert "**" not in spoken
+    assert "→" not in spoken
+    assert "Bold move next step" in spoken
+    assert voice.speech_text("keep stars", natural=False) == "keep stars"
+
+
 def test_speech_text_drops_links() -> None:
     voice = _load("voice", "voice.py")
     assert (

@@ -39,6 +39,7 @@ from .const import (
     CONF_STT_ENGINE,
     CONF_SYSTEM_PROMPT,
     CONF_TTS_ENGINE,
+    CONF_TTS_NATURAL,
     DEFAULT_KEEP_CHATS,
     DEFAULT_SYSTEM_PROMPT,
     DOMAIN,
@@ -79,6 +80,7 @@ _SHARED_KEYS = (
     CONF_SPEAK_REPLIES,
     CONF_STT_ENGINE,
     CONF_TTS_ENGINE,
+    CONF_TTS_NATURAL,
 )
 _URL_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.URL))
 _TOKEN_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
@@ -273,6 +275,7 @@ def _voice_schema(defaults: dict, stt: list, tts: list) -> vol.Schema:
                 SelectSelectorConfig(options=tts, mode="dropdown")
             ),
             vol.Optional(CONF_SPEAK_REPLIES, default=bool(defaults.get(CONF_SPEAK_REPLIES, False))): cv.boolean,
+            vol.Optional(CONF_TTS_NATURAL, default=bool(defaults.get(CONF_TTS_NATURAL, True))): cv.boolean,
         }
     )
 
@@ -294,6 +297,7 @@ async def _shared_form(
         CONF_STT_ENGINE: str(defaults.get(CONF_STT_ENGINE) or STT_BROWSER),
         CONF_TTS_ENGINE: saved_tts,
         CONF_SPEAK_REPLIES: bool(defaults.get(CONF_SPEAK_REPLIES, False)),
+        CONF_TTS_NATURAL: bool(defaults.get(CONF_TTS_NATURAL, True)),
     }
     fields: dict = {}
     if include_mcp:

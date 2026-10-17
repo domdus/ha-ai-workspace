@@ -12,7 +12,9 @@ from .const import DOMAIN, STT_BROWSER, TTS_OFF, is_placeholder_tts
 
 _LINK = re.compile(r"\[([^\]]+)\]\([^)]+\)")
 _URL = re.compile(r"https?://\S+")
-_MARK = re.compile(r"[*_`#]+")
+_MARK = re.compile(r"[*_`#~]+")
+_ARROW = re.compile(r"[→➡➜➤▶►▸▹↦⇒]+")
+_RULE = re.compile(r"^\s*[-*_]{3,}\s*$", re.MULTILINE)
 
 
 def match_speech_language(requested: str, supported: list[str] | tuple[str, ...] | None, default: str = "") -> str:
@@ -61,12 +63,20 @@ def _without_tables(text: str) -> str:
     return "\n".join(kept)
 
 
-def speech_text(text: str) -> str:
-    """Plain words for TTS — skip tables, markdown links, and raw URLs."""
-    out = _without_tables(str(text or ""))
+def speech_text(text: str, *, natural: bool = True) -> str:
+    """Plain words for TTS — skip tables, markdown, links, and decorative symbols."""
+    raw = str(text or "").strip()
+    if not raw:
+        return ""
+    if not natural:
+        return raw[:4000]
+    out = _without_tables(raw)
     out = _LINK.sub(r"\1", out)
     out = _URL.sub("", out)
     out = _MARK.sub("", out)
+    out = _ARROW.sub(" ", out)
+    out = _RULE.sub("", out)
+    out = re.sub(r"^\s*>\s?", "", out, flags=re.MULTILINE)
     lines = [" ".join(line.split()) for line in out.splitlines()]
     return "\n".join(line for line in lines if line).strip()[:4000]
 
@@ -217,7 +227,14 @@ async def async_transcribe(hass: HomeAssistant, engine_id: str, audio: bytes, la
     return str(getattr(result, "text", "") or "").strip()
 
 
-async def async_speak(hass: HomeAssistant, engine_id: str, text: str, language: str) -> tuple[bytes, str]:
+async def async_speak(
+    hass: HomeAssistant,
+    engine_id: str,
+    text: str,
+    language: str,
+    *,
+    natural: bool = True,
+) -> tuple[bytes, str]:
     from homeassistant.components.tts import async_create_stream
 
     try:
@@ -225,7 +242,7 @@ async def async_speak(hass: HomeAssistant, engine_id: str, text: str, language: 
     except ImportError:
         get_engine_instance = None
 
-    message = speech_text(text)
+    message = speech_text(text, natural=natural)
     if not message:
         return b"", ""
     engine = get_engine_instance(hass, engine_id) if get_engine_instance else None

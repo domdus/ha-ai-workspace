@@ -28,6 +28,7 @@ from .const import (
     CONF_KEEP_CHATS,
     CONF_MCP_KIND,
     CONF_SPEAK_REPLIES,
+    CONF_TTS_NATURAL,
     CONF_STT_ENGINE,
     CONF_SYSTEM_PROMPT,
     CONF_TTS_ENGINE,
@@ -166,6 +167,7 @@ async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
         stt_engine=str(data.get(CONF_STT_ENGINE) or STT_BROWSER).strip() or STT_BROWSER,
         tts_engine=tts,
         speak_replies=bool(data.get(CONF_SPEAK_REPLIES, False)) and tts != TTS_OFF,
+        tts_natural=bool(data.get(CONF_TTS_NATURAL, True)),
     )
 
 

@@ -1704,7 +1704,7 @@ export function mountAiWorkspace(root, options = {}) {
 
   let defaultProvider = "api";
   let agentId = "";
-  let voice = { dictate: true, stt: "browser", speak: false, tts: false, ttsHeavy: false };
+  let voice = { dictate: true, stt: "browser", speak: false, tts: false, ttsHeavy: false, ttsNatural: true };
   let turnHasHistory = false;
 
   function selectedAgent() {
@@ -2869,7 +2869,7 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   function pendingChars() {
-    return speakPending.reduce((sum, item) => sum + speechPlain(item).length, 0);
+    return speakPending.reduce((sum, item) => sum + plainForTts(item).length, 0);
   }
 
   function takePendingClip() {
@@ -2877,14 +2877,14 @@ export function mountAiWorkspace(root, options = {}) {
     while (speakPending.length) {
       const next = speakPending[0];
       const combined = clip ? `${clip}\n${next}` : next;
-      if (clip && speechPlain(combined).length > 560) break;
+      if (clip && plainForTts(combined).length > 560) break;
       speakPending.shift();
       clip = combined;
-      const size = speechPlain(clip).length;
+      const size = plainForTts(clip).length;
       if (size < 280) continue;
       if (!speakFlush) break;
       if (!speakPending.length) break;
-      if (speechPlain(`${clip}\n${speakPending[0]}`).length > 560) break;
+      if (plainForTts(`${clip}\n${speakPending[0]}`).length > 560) break;
     }
     return clip.trim();
   }
@@ -2907,8 +2907,12 @@ export function mountAiWorkspace(root, options = {}) {
     }
   }
 
+  function plainForTts(text) {
+    return speechPlain(text, { natural: voice.ttsNatural !== false });
+  }
+
   async function fetchSpeech(text, gen) {
-    const plain = speechPlain(text);
+    const plain = plainForTts(text);
     if (!plain) return null;
     const ac = new AbortController();
     const timer = window.setTimeout(() => ac.abort(), 20000);
@@ -3077,6 +3081,7 @@ export function mountAiWorkspace(root, options = {}) {
           speak: body.speak === true,
           tts: Boolean(body.tts) && body.tts !== "off",
           ttsHeavy: body.tts_heavy === true,
+          ttsNatural: body.tts_natural !== false,
         };
       }
     } catch (_err) {
@@ -3346,7 +3351,7 @@ export function mountAiWorkspace(root, options = {}) {
       }
       return;
     }
-    if (nearBottom() && !movedUp) {
+    if (nearBottom() && !movedUp && !holdFollow && !keyboardOpen) {
       clipToBottom();
       followBottom();
     }
@@ -3406,6 +3411,7 @@ export function mountAiWorkspace(root, options = {}) {
     if (wrap.classList.contains("keyboard-open")) syncKeyboardInset();
   });
   messageEl.addEventListener("input", () => {
+    if (!nearBottom()) releaseFollow();
     holdChatScroll(resizeComposer);
   });
   messageEl.addEventListener("keydown", (event) => {
@@ -3426,9 +3432,9 @@ export function mountAiWorkspace(root, options = {}) {
   const scrollBtnWatch = new ResizeObserver(() => {
     if (keyboardOpen || composerFocused()) {
       syncScrollBottomBtn();
-      return;
+      if (!pinBottom || holdFollow || !nearBottom()) return;
     }
-    if (pinBottom) followBottom();
+    if (pinBottom && nearBottom()) followBottom();
     else syncScrollBottomBtn();
   });
   scrollBtnWatch.observe(logEl);

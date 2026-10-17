@@ -69,6 +69,7 @@ class Settings:
     stt_engine: str = "browser"
     tts_engine: str = "off"
     speak_replies: bool = False
+    tts_natural: bool = True
     agent_id: str = ""
     agent_title: str = ""
 

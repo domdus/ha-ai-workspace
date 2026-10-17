@@ -17,7 +17,7 @@ from .discovery import async_bind_runtime
 from .const import (
     ACTIVITY_ROLLBACK,
     CLOUD_ONLY_MODELS,
-    DEFAULT_SYSTEM_PROMPT,
+    workspace_system_prompt,
     DOMAIN,
     MCP_COOLVER,
     format_ui_page,
@@ -275,14 +275,7 @@ async def _runtime_chat(
     if session.agent_id:
         payload["sync_agent_id"] = str(session.agent_id)
     settings = _runtime(hass).get("settings")
-    prompt = with_language_rule(
-        str(getattr(settings, "system_prompt", "") or "").strip() or DEFAULT_SYSTEM_PROMPT,
-        language,
-    )
-    if admin and getattr(settings, "house_map", False):
-        from .house_map import CATALOG_INSTRUCTIONS
-
-        prompt = f"{prompt}\n\n{CATALOG_INSTRUCTIONS}".strip()
+    prompt = with_language_rule(workspace_system_prompt(settings, admin=admin), language)
     if prompt:
         payload["message"] = f"{prompt}\n\n{payload['message']}"
     if images:
@@ -524,6 +517,7 @@ class UiView(HomeAssistantView):
                 "tts": settings.tts_engine,
                 "speak": bool(settings.speak_replies),
                 "tts_heavy": overlay_tts_heavy(_hass(request), settings.tts_engine),
+                "tts_natural": bool(getattr(settings, "tts_natural", True)),
                 "change_history": bool(getattr(settings, "change_history", True)),
             }
         )
@@ -1000,7 +994,13 @@ class SpeakView(HomeAssistantView):
         body = await request.json()
         language = str(body.get("language") or "")
         try:
-            data, mime = await async_speak(_hass(request), engine, str(body.get("text") or ""), language)
+            data, mime = await async_speak(
+                _hass(request),
+                engine,
+                str(body.get("text") or ""),
+                language,
+                natural=bool(getattr(settings, "tts_natural", True)),
+            )
         except Exception as exc:
             raise web.HTTPBadGateway(text=str(exc)[:300]) from exc
         if not data:

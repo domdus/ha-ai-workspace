@@ -25,7 +25,7 @@ from .const import (
     API_XAI,
     DEFAULT_AZURE_API_VERSION,
     BPS_KEY_INSTRUCTIONS,
-    DEFAULT_SYSTEM_PROMPT,
+    workspace_system_prompt,
     DOMAIN,
     LOW_TOKEN_PROMPT,
     EFFORT_FAST,
@@ -569,12 +569,8 @@ class ApiProvider:
         if self.settings.low_token:
             return with_language_rule(LOW_TOKEN_PROMPT, language)
         identity = _IDENTITY.format(label=self._label(), model=self._model())
-        body = (self.settings.system_prompt or "").strip() or DEFAULT_SYSTEM_PROMPT
+        body = workspace_system_prompt(self.settings, admin=admin)
         text = f"{identity}\n\n{body}\n\n{ui_link_instructions(origin)}\n\n{BPS_KEY_INSTRUCTIONS}"
-        if self.settings.house_map and admin:
-            from .house_map import CATALOG_INSTRUCTIONS
-
-            text = f"{text}\n\n{CATALOG_INSTRUCTIONS}"
         return with_language_rule(text, language)
 
     def _public(self, exc: BaseException) -> str:

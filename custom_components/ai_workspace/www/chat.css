@@ -37,6 +37,10 @@
   grid-template-columns: 1fr;
 }
 
+.wrap.compact > aside {
+  z-index: 10;
+}
+
 .wrap.keyboard-open {
   overflow: hidden;
   transition: none;

@@ -398,6 +398,7 @@ def is_builtin_assist_agent(agent_id: str, platform: str = "") -> bool:
 CONF_STT_ENGINE = "stt_engine"
 CONF_TTS_ENGINE = "tts_engine"
 CONF_SPEAK_REPLIES = "speak_replies"
+CONF_TTS_NATURAL = "tts_natural"
 CONF_AZURE_API_VERSION = "azure_api_version"
 CONF_BORROW = "borrow"
 CONF_RUNTIME_URL = "runtime_url"
@@ -471,6 +472,25 @@ Before you answer any question about this house (automations, entities, devices,
 Be concise. Call tools without announcing them; the UI already shows that. If a tool fails, say so. Ask before doing something hard to undo, such as deleting automations, unlocking doors, or turning off many devices at once.
 
 """
+LOVELACE_DASHBOARD_RULES = """
+Lovelace / dashboards (strict):
+- Dashboard and Lovelace configuration lives only in the running Home Assistant instance (storage dashboards and/or YAML on the HA host). The Cursor workspace or project folder does not contain it unless the user explicitly opened an HA config repository.
+- Forbidden for dashboard tasks: grep, glob, read, shell, or Task/explore subagents to find dashboards.yaml, .storage, ui-lovelace, or Lovelace JSON/YAML in the workspace.
+- Required: use Home Assistant MCP tools only (discover tools on the configured connection, then read/write dashboards through those tools — names vary by MCP server).
+
+Dashboard write workflow (every task):
+1. Once per task, if the MCP server exposes skill or reference guides, load its dashboard guide once (do not reload on every retry).
+2. Read with optimistic locking: use the connection's dashboard read tool with a scoped read (view/card filter) when a full pull is unnecessary.
+3. Write only with a valid config hash from that read, using patch/transform style tools when available — prefer minimal edits over replacing whole views.
+4. On hash mismatch: one read and one write retry — no filesystem fallback, no duplicate guide loads.
+5. On later writes in the same session, omit mandatory best-practice re-injection when the MCP tool allows it.
+6. Screenshots or visual verification only when the user asks or the change is large/ambiguous.
+
+Tool budget: simple card copy/move/remove conditional/reorder — target at most about twelve MCP calls total. If exceeded, stop exploratory loops; state what is missing (dashboard url_path, view id, card index) and ask the user or do one targeted read — do not spawn subagents or search the workspace.
+- Use one MCP connection for dashboard edits (the same Home Assistant this chat uses). Do not read from one connection and write to another.
+- Never invent entity_id or dashboard ids; resolve via search/entity tools before patching cards.
+- User messages may be German or other languages; MCP skill guides may be English — still load and follow them.
+""".strip()
 LOW_TOKEN_PROMPT = (
     "You help with this Home Assistant. Answer in a few short sentences. "
     "You cannot check or change the house in this mode."
@@ -534,6 +554,17 @@ def language_instruction(code: str = "") -> str:
     if name != "English":
         fallback += " Do not assume English."
     return f"{LANGUAGE_INSTRUCTION} {fallback}"
+
+
+def workspace_system_prompt(settings, *, admin: bool = True) -> str:
+    """Built-in or custom system prompt plus universal dashboard/MCP rules."""
+    base = str(getattr(settings, "system_prompt", "") or "").strip() or DEFAULT_SYSTEM_PROMPT
+    text = f"{base}\n\n{LOVELACE_DASHBOARD_RULES}".strip()
+    if admin and getattr(settings, "house_map", False):
+        from .house_map import CATALOG_INSTRUCTIONS
+
+        text = f"{text}\n\n{CATALOG_INSTRUCTIONS}".strip()
+    return text
 
 
 _CHAT_SCOPE = (
