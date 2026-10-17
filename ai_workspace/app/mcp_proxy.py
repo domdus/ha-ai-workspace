@@ -1,4 +1,4 @@
-"""Local MCP proxy that compacts oversized tool results before Cursor reads them."""
+"""MCP proxy: route Cursor MCP through the Runtime, record Change History, shorten large results."""
 
 from __future__ import annotations
 
@@ -17,7 +17,8 @@ from typing import Any
 from fastapi import HTTPException, Request
 from fastapi.responses import Response
 
-from app.tool_result import compact_mcp_response
+from app.settings import _default_hass_url, _read_options
+from app.tool_result import shorten_mcp_response
 
 logger = logging.getLogger(__name__)
 
@@ -26,16 +27,18 @@ _FORWARD = {
     "content-type",
     "mcp-session-id",
     "mcp-protocol-version",
-    "authorization",
     "last-event-id",
 }
+# Never forward Authorization from Cursor. Auth for HA /api/mcp (and other MCP
+# that needs a Bearer) is stored on the upstream when the chat wraps servers.
+# Cursor's own Authorization would overwrite that and HA logs ban warnings.
 _DROP = {"content-length", "transfer-encoding", "connection", "keep-alive"}
 
 
 _MAX_UPSTREAMS = 64
 
 
-class FitRegistry:
+class McpProxy:
     def __init__(self, secret_path: Path | None = None) -> None:
         self.secret = _load_secret(secret_path)
         self.upstreams: OrderedDict[str, dict[str, Any]] = OrderedDict()
@@ -50,7 +53,7 @@ class FitRegistry:
         for name, cfg in servers.items():
             url = str(cfg.get("url") or "")
             kind = str(cfg.get("type") or "")
-            if not url or kind == "stdio" or "/api/mcp-fit/" in url:
+            if not url or kind == "stdio" or "/api/mcp-proxy/" in url or "/api/mcp-fit/" in url:
                 wrapped[name] = cfg
                 continue
             digest = hashlib.sha256(
@@ -61,7 +64,7 @@ class FitRegistry:
             while len(self.upstreams) > _MAX_UPSTREAMS:
                 self.upstreams.popitem(last=False)
             forwarded = dict(cfg)
-            forwarded["url"] = f"{root}/api/mcp-fit/{self.secret}/{digest}"
+            forwarded["url"] = f"{root}/api/mcp-proxy/{self.secret}/{digest}"
             if actor:
                 forwarded["url"] += f"/{actor}"
             forwarded.pop("headers", None)
@@ -163,9 +166,9 @@ def tool_response_ok(status: int, raw: bytes) -> bool:
 
 async def proxy_mcp(request: Request, secret: str, digest: str, actor: str = "") -> Response:
     runtime = getattr(request.app.state, "runtime", None)
-    registry = getattr(runtime, "fit", None) if runtime is not None else None
+    registry = getattr(runtime, "proxy", None) if runtime is not None else None
     if registry is None or not registry.allows(secret, digest):
-        raise HTTPException(status_code=404, detail="MCP fit route was not found.")
+        raise HTTPException(status_code=404, detail="MCP proxy route was not found.")
     upstream = registry.upstreams[digest]
     body = await request.body()
     headers = {str(key): str(value) for key, value in (upstream.get("headers") or {}).items()}
@@ -174,14 +177,35 @@ async def proxy_mcp(request: Request, secret: str, digest: str, actor: str = "")
             headers[key] = value
     if "accept" not in {key.lower() for key in headers}:
         headers["Accept"] = "application/json, text/event-stream"
+    target = str(upstream.get("url") or "")
+    if _is_builtin_mcp(target) and not _header(headers, "authorization"):
+        logger.warning("mcp proxy refused /api/mcp without Bearer (avoids HA ban noise)")
+        raise HTTPException(status_code=502, detail="Built-in MCP needs a Home Assistant login.")
     tool_call = parse_tool_call(body) if request.method.upper() == "POST" else None
     activity_token = ""
-    if tool_call is not None:
+    if tool_call is not None and _change_history_enabled(request):
         activity_token = await _activity_prepare(request, registry, actor, tool_call)
+        if not activity_token:
+            name, _arguments = tool_call
+            base, _token = _activity_target(request)
+            who = registry.actor(actor)
+            if not base:
+                logger.warning(
+                    "activity prepare skipped for %s: runtime hass_url is not configured",
+                    name,
+                )
+            elif not who:
+                logger.info(
+                    "activity prepare skipped for %s: no chat actor for session %s",
+                    name,
+                    actor[:12] if actor else "?",
+                )
+            else:
+                logger.info("activity prepare returned no token for %s", name)
     try:
         status, response_headers, raw = await asyncio.to_thread(
             _forward,
-            str(upstream["url"]),
+            target,
             headers,
             body,
             request.method,
@@ -189,13 +213,20 @@ async def proxy_mcp(request: Request, secret: str, digest: str, actor: str = "")
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         if activity_token:
             await _activity_commit(request, activity_token, ok=False)
-        logger.warning("mcp fit proxy failed: %s", exc)
+        logger.warning("mcp proxy failed: %s", exc)
         raise HTTPException(status_code=502, detail="The MCP server did not answer.") from exc
     content_type = response_headers.get("Content-Type") or response_headers.get("content-type") or ""
     if activity_token:
         await _activity_commit(request, activity_token, ok=tool_response_ok(status, raw))
+    kind = "unchanged"
     if request.method.upper() == "POST":
-        raw = compact_mcp_response(body, raw, content_type)
+        raw, kind = shorten_mcp_response(body, raw, content_type, enabled=_shorten_enabled(request))
+        if tool_call is not None:
+            name, _arguments = tool_call
+            logger.debug("mcp proxy last tool result: %s %s", name, kind)
+            if kind not in {"unchanged", "off"}:
+                logger.info("mcp proxy last tool result: %s %s", name, kind)
+            await _note_mcp_result(request, registry, actor, name, kind)
     kept = {}
     for key, value in response_headers.items():
         if key.lower() in _DROP:
@@ -219,26 +250,92 @@ def _load_secret(path: Path | None) -> str:
         path.write_text(secret, encoding="utf-8")
         return secret
     except OSError:
-        logger.warning("mcp fit secret could not be stored", exc_info=True)
+        logger.warning("mcp proxy secret could not be stored", exc_info=True)
         return secrets.token_urlsafe(18)
+
+
+def _header(headers: dict[str, str], name: str) -> str:
+    wanted = name.lower()
+    for key, value in headers.items():
+        if key.lower() == wanted:
+            return str(value or "").strip()
+    return ""
+
+
+def _is_builtin_mcp(url: str) -> bool:
+    from urllib.parse import urlparse
+
+    path = (urlparse(str(url or "")).path or "").rstrip("/").lower()
+    return path == "/api/mcp"
 
 
 def _activity_target(request: Request) -> tuple[str, str]:
     settings = getattr(request.app.state, "settings", None)
-    base = str(getattr(settings, "hass_url", "") or "").rstrip("/")
     token = str(getattr(settings, "runtime_token", "") or "").strip()
+    base = str(getattr(settings, "hass_url", "") or "").rstrip("/")
+    if not base:
+        base = _default_hass_url(_read_options()).rstrip("/")
     return base, token
+
+
+def proxy_secret_path(data_dir: Path) -> Path:
+    """Keep the existing secret file so in-flight Cursor MCP URLs stay valid."""
+    fresh = data_dir / "mcp-proxy-secret"
+    legacy = data_dir / "mcp-fit-secret"
+    return fresh if fresh.is_file() or not legacy.is_file() else legacy
+
+
+def _shorten_enabled(request: Request) -> bool:
+    state = getattr(request.app.state, "shorten_mcp_results", None)
+    if state is not None:
+        return bool(state)
+    settings = getattr(request.app.state, "settings", None)
+    return bool(getattr(settings, "shorten_mcp_results", True))
+
+
+def _change_history_enabled(request: Request) -> bool:
+    state = getattr(request.app.state, "change_history", None)
+    if state is not None:
+        return bool(state)
+    settings = getattr(request.app.state, "settings", None)
+    return bool(getattr(settings, "change_history", True))
+
+
+async def _note_mcp_result(
+    request: Request, registry: McpProxy, actor: str, tool: str, kind: str
+) -> None:
+    who = registry.actor(actor) or {}
+    base, token = _activity_target(request)
+    if not base:
+        return
+    payload = json.dumps(
+        {"tool": tool, "kind": kind, "agent": who.get("agent") or "Cursor"}
+    ).encode()
+    headers = {"Content-Type": "application/json", "Accept": "application/json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    try:
+        await asyncio.to_thread(
+            _forward,
+            f"{base}/api/ai_workspace/mcp_proxy",
+            headers,
+            payload,
+            "POST",
+            8,
+        )
+    except (urllib.error.URLError, TimeoutError, OSError):
+        logger.debug("mcp proxy result note failed", exc_info=True)
 
 
 async def _activity_prepare(
     request: Request,
-    registry: FitRegistry,
+    registry: McpProxy,
     actor: str,
     tool_call: tuple[str, dict[str, Any]],
 ) -> str:
     who = registry.actor(actor)
     base, token = _activity_target(request)
-    if who is None or not base or not token:
+    if who is None or not base:
         return ""
     name, arguments = tool_call
     payload = {
@@ -248,20 +345,24 @@ async def _activity_prepare(
         "tool": name,
         "arguments": arguments,
     }
+    headers = {"Content-Type": "application/json", "Accept": "application/json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
     try:
         status, _headers, raw = await asyncio.to_thread(
             _forward,
             f"{base}/api/ai_workspace/activity/prepare",
-            {"Authorization": f"Bearer {token}", "Content-Type": "application/json", "Accept": "application/json"},
+            headers,
             json.dumps(payload).encode(),
             "POST",
-            8,
+            15,
         )
     except (urllib.error.URLError, TimeoutError, OSError):
         logger.warning("activity prepare failed", exc_info=True)
         return ""
     if status >= 400:
-        logger.warning("activity prepare HTTP %s", status)
+        detail = raw.decode("utf-8", "replace")[:200]
+        logger.warning("activity prepare HTTP %s: %s", status, detail)
         return ""
     try:
         body = json.loads(raw.decode("utf-8", "replace") or "{}")
@@ -272,21 +373,20 @@ async def _activity_prepare(
 
 async def _activity_commit(request: Request, token: str, *, ok: bool) -> None:
     base, runtime_token = _activity_target(request)
-    if not base or not runtime_token or not token:
+    if not base or not token:
         return
     payload = json.dumps({"token": token, "ok": ok}).encode()
+    headers = {"Content-Type": "application/json", "Accept": "application/json"}
+    if runtime_token:
+        headers["Authorization"] = f"Bearer {runtime_token}"
     try:
         await asyncio.to_thread(
             _forward,
             f"{base}/api/ai_workspace/activity/commit",
-            {
-                "Authorization": f"Bearer {runtime_token}",
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-            },
+            headers,
             payload,
             "POST",
-            8,
+            25,
         )
     except (urllib.error.URLError, TimeoutError, OSError):
         logger.warning("activity commit failed", exc_info=True)

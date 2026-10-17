@@ -25,7 +25,7 @@ from .const import (
     API_XAI,
     DEFAULT_AZURE_API_VERSION,
     BPS_KEY_INSTRUCTIONS,
-    DEFAULT_SYSTEM_PROMPT,
+    workspace_system_prompt,
     DOMAIN,
     LOW_TOKEN_PROMPT,
     EFFORT_FAST,
@@ -41,14 +41,21 @@ from .const import (
 )
 from .coolver import CoolverClient
 from .mcp_client import McpError, McpHttpClient
-from .mcp_config import public_tool_names, with_mcp_auth
+from .mcp_config import (
+    OPENAI_TOOL_NAME_MAX,
+    is_local_hass_mcp_url,
+    openai_tool_name_errors,
+    public_tool_names,
+    with_mcp_auth,
+)
 from .mcp_resolve import ha_hosts, hass_mcp_server_url
 from .models import ProviderInfo, Settings
 from .redact import redact
 from .small_talk import wants_house_tools
 from .store import Session, Store
 from .titles import clean_title, title_prompt
-from .tool_result import fit_tool_result
+from .mcp_observe import note_mcp_result
+from .tool_result import shorten_tool_result
 
 logger = logging.getLogger(__name__)
 
@@ -232,18 +239,28 @@ class McpBundle:
 
     def finish(self) -> None:
         self._routes = public_tool_names(self._groups)
+        lookup = {route: name for name, route in self._routes.items()}
         merged: list[dict] = []
+        truncated = 0
         for server, tools in self._pending:
             for tool in tools:
                 raw = str(tool.get("name") or "")
-                public = next((name for name, route in self._routes.items() if route == (server, raw)), raw)
+                public = lookup.get((server, raw), raw)
                 copied = dict(tool)
                 copied["name"] = public
                 if public != raw:
                     note = f"From {server}. "
                     copied["description"] = note + str(copied.get("description") or "")
+                if len(raw) > OPENAI_TOOL_NAME_MAX:
+                    truncated += 1
                 merged.append(copied)
         self.tools = merged
+        if truncated:
+            logger.info("MCP tools truncated to the OpenAI %s-character name limit: %s", OPENAI_TOOL_NAME_MAX, truncated)
+
+    def original_name(self, name: str) -> str:
+        route = self._routes.get(name)
+        return route[1] if route else name
 
     @property
     def names(self) -> list[str]:
@@ -344,10 +361,6 @@ async def async_check_api_key(
     return None
 
 
-def _tool_body(result: Any) -> str:
-    return fit_tool_result(result)
-
-
 def _tool_label(name: str) -> str:
     raw = str(name or "tool").strip() or "tool"
     if raw.lower() == "mcp":
@@ -367,6 +380,17 @@ def _openai_tools(mcp_tools: list[dict]) -> list[dict]:
                     "parameters": tool["inputSchema"],
                 },
             }
+        )
+    bad = openai_tool_name_errors([str((item.get("function") or {}).get("name") or "") for item in out])
+    if bad:
+        logger.error(
+            "OpenAI tool names invalid (max %s characters, [A-Za-z0-9_-]): %s",
+            OPENAI_TOOL_NAME_MAX,
+            ", ".join(bad),
+        )
+        raise McpError(
+            "An MCP tool name is longer than OpenAI allows (64 characters). "
+            "Disable one MCP connection or shorten its title."
         )
     return out
 
@@ -479,6 +503,13 @@ class ApiProvider:
     def _label(self) -> str:
         return API_SHORT_LABELS.get(self.settings.api_provider, "OpenAI")
 
+    def _tool_body(self, result: Any, name: str = "") -> str:
+        text, kind = shorten_tool_result(
+            result, enabled=bool(getattr(self.settings, "shorten_mcp_results", True))
+        )
+        note_mcp_result(self.hass, tool=name, kind=kind, agent=self._label())
+        return text
+
     def _http(self) -> ClientSession:
         return async_get_clientsession(self.hass)
 
@@ -538,12 +569,8 @@ class ApiProvider:
         if self.settings.low_token:
             return with_language_rule(LOW_TOKEN_PROMPT, language)
         identity = _IDENTITY.format(label=self._label(), model=self._model())
-        body = (self.settings.system_prompt or "").strip() or DEFAULT_SYSTEM_PROMPT
+        body = workspace_system_prompt(self.settings, admin=admin)
         text = f"{identity}\n\n{body}\n\n{ui_link_instructions(origin)}\n\n{BPS_KEY_INSTRUCTIONS}"
-        if self.settings.house_map and admin:
-            from .house_map import CATALOG_INSTRUCTIONS
-
-            text = f"{text}\n\n{CATALOG_INSTRUCTIONS}"
         return with_language_rule(text, language)
 
     def _public(self, exc: BaseException) -> str:
@@ -556,7 +583,20 @@ class ApiProvider:
             servers = {"mcp": {"type": "http", "url": hass_mcp_server_url(self.hass)}}
         else:
             servers = {}
-        return with_mcp_auth(servers, access_token=access_token, ha_hosts=ha_hosts(self.hass))
+        signed = with_mcp_auth(servers, access_token=access_token, ha_hosts=ha_hosts(self.hass))
+        return {name: cfg for name, cfg in signed.items() if not self._skip_unloaded_hass_mcp(name, cfg)}
+
+    def _skip_unloaded_hass_mcp(self, name: str, cfg: dict[str, Any]) -> bool:
+        """Built-in /api/mcp is gone when the mcp_server integration is not loaded."""
+        if self.hass is None:
+            return False
+        url = str((cfg or {}).get("url") or "")
+        if not is_local_hass_mcp_url(url, ha_hosts(self.hass)):
+            return False
+        if "mcp_server" in self.hass.config.components:
+            return False
+        logger.info("MCP connection %s skipped: Home Assistant MCP Server is not loaded", name)
+        return True
 
     def _server_kind(self, name: str, admin: bool) -> str:
         if name == "mcp":
@@ -597,11 +637,12 @@ class ApiProvider:
         payload = args if isinstance(args, dict) else {}
         if on_tool is None:
             return await mcp.call_tool(name, payload)
+        original = mcp.original_name(name)
 
-        async def call(tool_name: str, tool_args: dict) -> Any:
-            return await mcp.call_tool(tool_name, tool_args)
+        async def call(_tool_name: str, tool_args: dict) -> Any:
+            return await mcp.call_tool(name, tool_args)
 
-        return await on_tool(name, payload, call)
+        return await on_tool(original, payload, call)
 
     async def send(
         self,
@@ -650,6 +691,8 @@ class ApiProvider:
             len(bundle.tools),
             int(self.settings.low_token),
         )
+        if bundle.tools:
+            logger.debug("MCP OpenAI tool names: %s", ", ".join(tool["name"] for tool in bundle.tools))
         loop = self._anthropic if self.settings.api_provider == API_ANTHROPIC else self._openai
         force = bool(force_tools) and self.settings.check_house and not pictures and not self.settings.low_token
         try:
@@ -760,14 +803,14 @@ class ApiProvider:
                 for call in calls:
                     fn = call.get("function") or {}
                     name = str(fn.get("name") or "tool")
-                    label = _tool_label(name)
+                    label = _tool_label(mcp.original_name(name))
                     yield {"type": "tool", "name": name, "phase": "start", "text": f"Calling {label}..."}
                     try:
                         args = json.loads(fn.get("arguments") or "{}")
                     except json.JSONDecodeError:
                         args = {}
                     try:
-                        body = _tool_body(await self._invoke_tool(mcp, name, args, on_tool))
+                        body = self._tool_body(await self._invoke_tool(mcp, name, args, on_tool), name)
                     except _ERRORS as exc:
                         body = self._public(exc)
                     yield {"type": "tool", "name": name, "phase": "end", "text": f"Finished {label}"}
@@ -899,11 +942,11 @@ class ApiProvider:
                 results = []
                 for block in uses:
                     name = str(block.get("name") or "tool")
-                    label = _tool_label(name)
+                    label = _tool_label(mcp.original_name(name))
                     yield {"type": "tool", "name": name, "phase": "start", "text": f"Calling {label}..."}
                     args = block.get("input") if isinstance(block.get("input"), dict) else {}
                     try:
-                        body = _tool_body(await self._invoke_tool(mcp, name, args, on_tool))
+                        body = self._tool_body(await self._invoke_tool(mcp, name, args, on_tool), name)
                     except _ERRORS as exc:
                         body = self._public(exc)
                     yield {"type": "tool", "name": name, "phase": "end", "text": f"Finished {label}"}

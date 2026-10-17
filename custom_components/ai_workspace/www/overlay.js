@@ -4,6 +4,40 @@ const loadChat = () =>
 
 const HOST_ID = "ha-ai-workspace-overlay";
 
+function haHas(name) {
+  return Boolean(customElements.get(name));
+}
+
+function haCreate(...names) {
+  for (const name of names) {
+    if (!name) continue;
+    if (!name.includes("-") || haHas(name)) return document.createElement(name);
+  }
+  return document.createElement(names[names.length - 1] || "div");
+}
+
+function setDrawerOpen(drawer, open) {
+  if (!drawer) return;
+  if (drawer.localName === "ha-drawer") drawer.opened = open;
+  else drawer.classList.toggle("open", open);
+}
+
+function applyHostLayout(host) {
+  if (!host) return;
+  Object.assign(host.style, {
+    position: "fixed",
+    inset: "0",
+    width: "0",
+    height: "0",
+    overflow: "visible",
+    pointerEvents: "none",
+    margin: "0",
+    padding: "0",
+    border: "0",
+    zIndex: "calc(var(--dialog-z-index, 8) + 1)",
+  });
+}
+
 function hassObj() {
   return document.querySelector("home-assistant")?.hass;
 }
@@ -58,12 +92,19 @@ function refreshAccess(onReady) {
 
 async function ensureHost() {
   let host = document.getElementById(HOST_ID);
-  if (host) return host;
+  if (host) {
+    applyHostLayout(host);
+    return host;
+  }
   const [{ mountAiWorkspace }, { stringsFor }] = await loadChat();
   host = document.getElementById(HOST_ID);
-  if (host) return host;
+  if (host) {
+    applyHostLayout(host);
+    return host;
+  }
   host = document.createElement("div");
   host.id = HOST_ID;
+  applyHostLayout(host);
   document.body.appendChild(host);
   const ui = stringsFor(hassObj()?.locale?.language || hassObj()?.language);
   const shadow = host.attachShadow({ mode: "open" });
@@ -74,7 +115,8 @@ async function ensureHost() {
         position: fixed;
         right: var(--ha-space-4);
         bottom: var(--ai-fab-bottom, var(--ai-fab-rest));
-        z-index: 9;
+        z-index: 2;
+        pointer-events: auto;
         transition: bottom 280ms cubic-bezier(0.16, 1, 0.3, 1);
       }
       .fab {
@@ -103,13 +145,19 @@ async function ensureHost() {
       }
       .fab::part(label),
       .fab::part(end) { display: none; }
-      .drawer {
+      ha-drawer.drawer {
+        --ha-drawer-width: min(420px, 100vw);
+        z-index: 1;
+      }
+
+      aside.drawer {
         position: fixed;
         top: 0;
         right: 0;
         width: min(420px, 100vw);
-        height: 100%;
-        z-index: 10;
+        height: 0;
+        max-height: 100%;
+        z-index: 1;
         background: var(--primary-background-color);
         border-left: 1px solid var(--divider-color);
         box-shadow: var(--ha-card-box-shadow);
@@ -126,7 +174,8 @@ async function ensureHost() {
           opacity 200ms ease,
           visibility 0s linear 240ms;
       }
-      .drawer.open {
+      aside.drawer.open {
+        height: 100%;
         transform: none;
         opacity: 1;
         pointer-events: auto;
@@ -141,6 +190,8 @@ async function ensureHost() {
         .drawer { transition: none; }
       }
       .bar {
+        position: relative;
+        z-index: 2;
         box-sizing: border-box;
         display: flex;
         align-items: center;
@@ -194,41 +245,51 @@ async function ensureHost() {
           --ai-fab-rest: var(--ha-space-3);
           right: var(--ha-space-3);
         }
-        .drawer { width: 100%; border-left: 0; }
+        ha-drawer.drawer { --ha-drawer-width: 100vw; }
+        aside.drawer { width: 100%; border-left: 0; }
         .bar {
           padding-inline: max(var(--ha-space-6, 24px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
         }
       }
     </style>
     <ha-button class="fab" size="l" variant="brand" appearance="accent" title="${ui.title}"><ha-icon slot="start" icon="mdi:robot"></ha-icon></ha-button>
-    <aside class="drawer">
-      <div class="bar">
-        <div class="brand">
+    <div class="drawer-host"></div>
+  `;
+  const fab = shadow.querySelector(".fab");
+  const drawerHost = shadow.querySelector(".drawer-host");
+  const drawer = haCreate("ha-drawer", "aside");
+  drawer.className = "drawer";
+  if (drawer.localName === "ha-drawer") {
+    drawer.setAttribute("position", "end");
+    drawer.setAttribute("type", "overlay");
+  }
+  const bar = haCreate("ha-top-app-bar-fixed", "div");
+  bar.className = "bar";
+  bar.innerHTML = `
+        <div class="brand" slot="${bar.localName === "ha-top-app-bar-fixed" ? "title" : ""}">
           <ha-icon icon="mdi:robot"></ha-icon>
           <span>${ui.title}</span>
         </div>
-        <div class="bar-actions">
+        <div class="bar-actions"${bar.localName === "ha-top-app-bar-fixed" ? ' slot="actionItems"' : ""}>
           <ha-icon-button class="new-chat" label="${ui.new_chat}">
             <ha-icon icon="mdi:plus"></ha-icon>
           </ha-icon-button>
           <ha-icon-button class="close" label="${ui.close}">
             <ha-icon icon="mdi:close"></ha-icon>
           </ha-icon-button>
-        </div>
-      </div>
-      <div class="body"></div>
-    </aside>
-  `;
-  const fab = shadow.querySelector(".fab");
-  const drawer = shadow.querySelector(".drawer");
-  const body = shadow.querySelector(".body");
-  const close = shadow.querySelector(".close");
+        </div>`;
+  const body = document.createElement("div");
+  body.className = "body";
+  drawer.append(bar, body);
+  drawerHost.replaceWith(drawer);
+  const close = drawer.querySelector(".close");
   const newChat = shadow.querySelector(".new-chat");
   let chatApi = null;
   let mounting = null;
   let placeToken = 0;
-  // Config add actions live in `#fab` (older HA used `ha-fab`). Skip the empty
-  // wrapper — Dashboards still has the slot, but no button.
+  // Config add actions live in `#fab` / slot="fab" (older HA used `ha-fab`).
+  // Skip the empty wrapper — Dashboards still has the slot, but no button.
+  // Integrations uses a labeled ha-button ("Add integration"), so allow wider FABs.
   const cornerButtons = () => {
     const boxes = [];
     const visit = (el, origin) => {
@@ -236,7 +297,7 @@ async function ensureHost() {
       const style = el.ownerDocument.defaultView.getComputedStyle(el);
       if (style.display === "none" || style.visibility === "hidden") return;
       const rect = el.getBoundingClientRect();
-      if (rect.width < 36 || rect.height < 36 || rect.width > 96 || rect.height > 96) return;
+      if (rect.width < 36 || rect.height < 36 || rect.height > 96 || rect.width > 320) return;
       boxes.push({
         top: origin.top + rect.top,
         bottom: origin.top + rect.bottom,
@@ -304,7 +365,7 @@ async function ensureHost() {
       window.setTimeout(sync, 200);
     }
     fab.classList.toggle("hidden", hideFab());
-    if (hideFab()) drawer.classList.remove("open");
+    if (hideFab()) setDrawerOpen(drawer, false);
     schedulePlace();
   };
   const mountChat = () => {
@@ -314,7 +375,7 @@ async function ensureHost() {
         compact: true,
         getToken: () => hassObj()?.auth?.data?.access_token || "",
         navigate: (path) => {
-          drawer.classList.remove("open");
+          setDrawerOpen(drawer, false);
           const hass = hassObj();
           if (typeof hass?.navigate === "function") {
             hass.navigate(path);
@@ -333,16 +394,16 @@ async function ensureHost() {
     return mounting;
   };
   fab.addEventListener("click", async () => {
-    drawer.classList.add("open");
+    setDrawerOpen(drawer, true);
     const api = await mountChat();
     api.resume?.();
   });
   newChat.addEventListener("click", async () => {
-    drawer.classList.add("open");
+    setDrawerOpen(drawer, true);
     const api = await mountChat();
     api.startNewChat();
   });
-  close.addEventListener("click", () => drawer.classList.remove("open"));
+  close.addEventListener("click", () => setDrawerOpen(drawer, false));
   window.addEventListener("location-changed", sync);
   window.addEventListener("popstate", sync);
   window.addEventListener("resize", schedulePlace);
@@ -358,7 +419,11 @@ async function ensureHost() {
 }
 
 function boot(tries = 0) {
-  if (document.getElementById(HOST_ID)) return;
+  const existing = document.getElementById(HOST_ID);
+  if (existing) {
+    applyHostLayout(existing);
+    return;
+  }
   const user = hassObj()?.user;
   if (!user) {
     if (tries < 50) window.setTimeout(() => boot(tries + 1), 200);

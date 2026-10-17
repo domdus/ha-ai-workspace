@@ -4,7 +4,7 @@ import json
 import sqlite3
 import threading
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -49,6 +49,12 @@ class Activity:
     undone_at: str
     session_id: str = ""
     chat: str = ""
+    restore_kind: str = ""
+    restore_id: str = ""
+    restore_label: str = ""
+    logical_commit: bool = False
+    change_count: int = 0
+    restore_targets: list = field(default_factory=list)
 
 
 @dataclass
@@ -572,9 +578,36 @@ class Store:
         return self.get_activity(activity_id)
 
 
+def _restore_target(document: str) -> tuple[str, str, str]:
+    if not document:
+        return "", "", ""
+    try:
+        doc = json.loads(document)
+    except json.JSONDecodeError:
+        return "", "", ""
+    if not isinstance(doc, dict):
+        return "", "", ""
+    kind = str(doc.get("kind") or "").strip()
+    item_id = str(doc.get("entity_id") or doc.get("id") or "").strip()
+    label = str(doc.get("label") or doc.get("name") or "").strip()
+    return kind, item_id, label
+
+
 def _activity(row: sqlite3.Row) -> Activity:
+    from .logical_commit import parse_logical_document, restore_targets
+
     undone = _text(row["undone_at"])
     document = _text(row["document"])
+    logical = parse_logical_document(document)
+    targets = restore_targets(document)
+    if logical:
+        restore_kind = ", ".join(item[0] for item in targets if item[0])[:120]
+        restore_id = ", ".join(item[1] for item in targets if item[1])[:240]
+        restore_label = "; ".join(item[2] for item in targets if item[2])[:240]
+        change_count = int(logical.get("change_count") or len(targets) or 0)
+    else:
+        restore_kind, restore_id, restore_label = _restore_target(document)
+        change_count = 1 if restore_kind or restore_id or restore_label else 0
     return Activity(
         id=int(row["id"]),
         created_at=row["created_at"],
@@ -587,6 +620,12 @@ def _activity(row: sqlite3.Row) -> Activity:
         undone_at=undone,
         session_id=_text(row["session_id"]) if "session_id" in row.keys() else "",
         chat=_text(row["chat"]) if "chat" in row.keys() else "",
+        restore_kind=restore_kind,
+        restore_id=restore_id,
+        restore_label=restore_label,
+        logical_commit=bool(logical),
+        change_count=change_count,
+        restore_targets=[{"kind": k, "id": i, "label": label} for k, i, label in targets],
     )
 
 

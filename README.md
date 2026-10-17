@@ -1,21 +1,7 @@
 <div align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/custom_components/ai_workspace/brand/dark_logo.png">
-    <img src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/custom_components/ai_workspace/brand/logo.png" alt="AI Workspace" align="center" width="280">
-  </picture>
-  <br>
-  <br>
-  <em>Build your Home Assistant from the couch.</em>
-</div>
-<br>
-<p align="center">
-  <img src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai_workspace.gif" alt="AI Workspace chat demo" width="300">
-</p>
-
-<div align="center">
 
 # AI Workspace
-
+ <em>Build your Home Assistant from the couch.</em>
 ![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.12+-41BDF5.svg)![Release](https://img.shields.io/github/v/release/domdus/ha-ai-workspace)![License](https://img.shields.io/github/license/domdus/ha-ai-workspace)  
 ![GHCR](https://img.shields.io/badge/GHCR-runtime-teal)![MCP](https://img.shields.io/badge/MCP-client-purple)![Assist](https://img.shields.io/badge/Assist-ready-green)
 
@@ -24,13 +10,17 @@
 This HACS integration is an agent UI inside Home Assistant. It connects to an AI and uses the MCP server of your choice.
 You work right in Home Assistant instead of Claude Desktop, the Cursor IDE, VS Code, or any other app. Use Cursor, OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or any OpenAI-compatible provider.
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai_workspace.gif" alt="AI Workspace chat demo" width="300">
+</p>
+
 What the agent can do depends entirely on the MCP server you connect.
 
 - Polished agent chat with streamed replies
 - Attachments in chat (text files, images)
 - Deep links to devices, entities, automations, and more
 - Chat history with pins
-- Change History of the last 30 configuration changes, with rollback
+- Change History of recorded agent configuration writes (a log, not an undo). When HA-MCP is connected, **Ask to restore** tells the current chat to list HA-MCP’s edit backups
 - Several agents in one chat
 - More than one MCP connection
 - Optional floating button
@@ -48,9 +38,9 @@ An optional button on the other pages opens the same chat.
 
 Each agent can also be added as an Assist pipeline. The integration creates the pipeline for you, so you can use **Cursor AI** (or another AI) from Home Assistant's built-in Assist dialog as well.
 
-OpenAI, OpenRouter, and OpenAI-compatible agents can add **Speech-to-text** and **Text-to-speech** from the same API key (on by default). Those engines are assigned to every AI Workspace Assist pipeline, so a Cursor pipeline can listen and speak too. Google Translate is replaced when our voice exists. Cursor has no speech API of its own. Claude, Gemini, and local Ollama stay on a Home Assistant TTS engine such as Piper.
+OpenAI, OpenRouter, and OpenAI-compatible agents can add **Speech-to-text** and **Text-to-speech** from the same API key (on by default). New AI Workspace Assist pipelines get those engines so they can listen and speak. Later STT/TTS on a pipeline stay as you set them in Voice assistants, including Google Translate or none. The overlay Text-to-speech dropdown is the same: it keeps the engine you pick. Cursor has no speech API of its own. Claude, Gemini, and local Ollama stay on a Home Assistant TTS engine such as Piper unless you assign one.
 
-The OpenAI-style voices (Coral, Echo, …) speak **German, French, and many other languages**. There is no extra German voice to install: they follow the language of the reply.
+The OpenAI-style voices (Coral, Echo, …) speak **German, French, and many other languages**. They follow the language of the reply.
 
 ![Cursor in Home Assistant Assist](https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai-workspace-assists.png)
 
@@ -109,9 +99,19 @@ Open **AI Workspace** (`/ai-workspace`) and ask: `List my automations.`
 
 This integration works with **Cursor AI** through the Cursor SDK, without the desktop IDE: MCP tools, multi-step work, and agents that can be resumed. It runs headless, with no editor and no Composer UI.
 
-Install AI Workspace from HACS first ([step 1](#1-install-ai-workspace-from-hacs)). Then install the **Cursor SDK Runtime** once, for the Home Assistant you run.
+Install AI Workspace from HACS first ([step 1](#1-install-ai-workspace-from-hacs)).
 
-### Option A: Home Assistant OS / Supervised (App)
+### Option A: Use via OpenRouter
+
+Start here. You get many of the same models people use in Cursor (Claude, GPT, Gemini, Grok, and others) with one OpenRouter key. There is no Cursor SDK runtime to install.
+
+Add an **OpenRouter** agent as in [Cloud AI](#cloud-ai-api-provider-quick). Pick **OpenRouter**, paste the key (or **Copy key from** if Home Assistant already has OpenRouter), and choose a model.
+
+Cursor's own models (**Composer**, Tab completion) are not on OpenRouter. Cursor also does not list OpenRouter as a first-class BYOK provider; the desktop IDE can still talk to OpenRouter through an OpenAI base-URL override (`https://openrouter.ai/api/v1/cursor`). That is a Cursor workaround, not this integration. See [OpenRouter's Cursor notes](https://openrouter.ai/docs/cookbook/coding-agents/cursor-integration).
+
+Options B and C run the Cursor SDK yourself, when you want Composer or a Cursor API key in Home Assistant.
+
+### Option B: Home Assistant OS / Supervised (App)
 
 The Cursor SDK runs as an app on the same machine as Home Assistant.
 
@@ -125,9 +125,9 @@ Paste the Cursor API key on the app and **Start** it. Leave the Runtime URL on t
 
 Home Assistant 2026.2 renamed "Add-ons" to "Apps".
 
-### Option B: Home Assistant Container (Docker)
+### Option C: Home Assistant Container (Docker)
 
-If Home Assistant runs in Docker without the Supervisor, it needs one extra container next to it. The wiring is the same as in Option A: **AI Workspace** talks to the **Cursor SDK**, and the SDK talks to **Cursor** and to **MCP**.
+If Home Assistant runs in Docker without the Supervisor, it needs one extra container next to it. The wiring is the same as in Option B: **AI Workspace** talks to the **Cursor SDK**, and the SDK talks to **Cursor** and to **MCP**.
 
 ![Home Assistant container, Cursor SDK, Cursor Cloud AI](https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/docker-architecture.jpg)
 
@@ -190,17 +190,17 @@ docker compose -f docker-compose.runtime.yml up -d --build
 The integration and the runtime share a token, and every chat request carries it.
 
 - **App (Home Assistant OS):** nothing to do. The integration generates the token, stores it on the app, and restarts the app once.
-- **Docker:** generate one, for example with `openssl rand -hex 32`. Put it in `RUNTIME_TOKEN` on the container and in **AI Workspace → Configure → Runtime token**.
+- **Docker:** generate one, for example with `openssl rand -hex 32`. Put it in `RUNTIME_TOKEN` on the container and in **Cursor agent → Runtime token**.
 
 
 
-### Add the integration
+### Add the integration (Options B and C)
 
 After the runtime is running: **Settings → Devices & services → Add integration → AI Workspace.**
 
-- **Cursor Runtime URL:** leave empty (it should find `http://127.0.0.1:8090` or the app).
 - **MCP type:** one from [Requirements](#requirements). Leave the MCP URL empty if it shows as detected.
 - Save. Home Assistant then asks for the first agent. Choose **Cursor**.
+- **Cursor Runtime URL:** leave empty unless the form does not show **Runtime found**. It is filled only when this Home Assistant can reach the Runtime (`http://127.0.0.1:8090` or the app). Do not paste a compose hostname that never answered.
 - **Model:** pick one from the list or type an id, for example `composer-2.5`, `grok-4.7`, `gpt-5`, or `claude-sonnet-5-5`. Leave it empty to use `CURSOR_MODEL` from the runtime.
 - Paste the Cursor API key, unless the runtime already has one.
 - Open **AI Workspace** (`/ai-workspace`).
@@ -222,7 +222,7 @@ AI Workspace is one integration entry with two kinds of rows:
 - **Connection:** one row per MCP server. The first one is created during setup; **Add connection** adds more.
 - **Agent:** one row per Cursor, OpenAI, Claude, Gemini, OpenRouter, Ollama, Azure, or other provider. **Add agent** adds more.
 
-Each row has its own device. Disable a device to switch off one MCP connection or one agent without deleting it.
+Each row has its own device. Disable a device to switch off one MCP connection or one agent without deleting it. Two connections that share a tool name get a short prefix (`ha__…`, `hamcp__…`); names sent to OpenAI stay at most 64 characters. Turning off **All LLM APIs** or unloading **MCP Server** hides the built-in `/api/mcp` tools even if the connection row is still there — that is not the same as disabling the AI Workspace device.
 
 ## System Prompt
 
@@ -244,7 +244,7 @@ It does not control Home Assistant edit links. Those rules are added to every me
 | **MCP type**                               | Asked once, when you add AI Workspace: built-in MCP Server, HA-MCP, HA Vibecode Agent, or a custom URL. It becomes the first connection                                             |
 | **MCP URL**                                | Empty uses auto-detect. Paste the HA-MCP webhook or a custom URL only if needed                                                                                                     |
 | **MCP token**                              | Built-in MCP Server: empty uses the login of the person chatting. HA-MCP: usually empty. Vibecode: Agent Key                                                                        |
-| **Cursor Runtime URL** / **Runtime token** | Where the Cursor SDK Runtime listens, and the shared token. See [Runtime token](#runtime-token)                                                                                     |
+| **Cursor Runtime URL** / **Runtime token** | On the **Cursor** agent form, not AI Workspace Configure. Filled only when `/api/health` answers. See [Runtime token](#runtime-token)                                                |
 | **System prompt**                          | See [System Prompt](#system-prompt). Empty uses the built-in prompt                                                                                                                 |
 | **Show floating AI button**                | Turns the button on or off. Bottom-right robot icon. It slides up only when another corner button is on the page                                                                    |
 | **Speech to text**                         | Browser speech, or a Home Assistant engine such as Whisper. The microphone needs https:// or localhost; browsers block it on a plain http:// LAN address                            |
@@ -256,6 +256,8 @@ It does not control Home Assistant edit links. Those rules are added to every me
 | **Chats to keep**                          | Newest unpinned chats per person (default 30). Pinned chats are always kept                                                                                                         |
 | **Cross chat**                             | Off by default. When on, a question can use another chat whose title shares words with it. Only a short excerpt is used, and that chat is not changed                               |
 | **Config catalog**                         | Off by default. A local index of how automations are wired, so "what uses the kitchen light?" takes one lookup. See [why](#why-use-the-config-catalog)                              |
+| **Shorten large MCP tool results**         | On by default. Same setting for cloud agents and Cursor. See [MCP proxy](#mcp-proxy)                                                                                                |
+| **Change History**                         | On by default. Records agent configuration writes for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools. See [MCP proxy](#mcp-proxy)                   |
 | **Add to Assist**                          | On each agent. Off (the default) keeps the agent in AI Workspace only. On adds a Voice assistants pipeline for it. Off again removes that pipeline                                 |
 | **Add Speech-to-text**                     | On OpenAI, OpenRouter, and OpenAI-compatible agents. On by default. Creates a Speech-to-text engine from this agent's key and assigns it to every AI Workspace Assist pipeline. Off removes that engine |
 | **Speech-to-text model**                   | Shown with Speech-to-text. Empty uses the provider default (`gpt-4o-mini-transcribe` on OpenAI, Whisper on OpenRouter / compatible). You can pick another or type an id                 |
@@ -282,14 +284,20 @@ MCP tools answer "what is on?" well, but not "what is wired to what?". To find e
 
 
 
-## Optimization: Large listings
+## MCP proxy
 
-When an MCP tool sends back the whole house, the result is shortened before the model reads it. Entities are grouped by area as ids only, and the model can ask again for one area or one entity to load states and attributes. A shorter list keeps each entity's state and drops the bulky attributes. One entity, one room, or one automation still arrives whole. What the model receives is always valid JSON; nothing is cut off in the middle of an object. This is automatic for cloud APIs and the Cursor Runtime.
+Cursor does not call MCP from Home Assistant. HTTP MCP (HA-MCP and others) is rewritten to the **MCP proxy** in the Cursor Runtime (`/api/mcp-proxy/…`). Cloud API agents do not use that route; they call MCP inside the integration. The same three jobs still apply to both:
+
+1. **Routing** — Cursor reaches HA-MCP through the Runtime instead of the upstream URL. That is also how the Runtime can attach a chat session to each tool call.
+2. **Change History** — before and after each `tools/call`, the proxy (Cursor) or `on_tool` (cloud) snapshots config and commits a row when something actually changed. **Change History** on the integration (default on) turns this off without removing routing.
+3. **Result sizing** — large MCP JSON is shortened **before the model reads it**, with the same code on both paths. Entities are grouped by area as ids only, and the model can ask again for one area or one entity. A shorter list keeps each entity's state and drops bulky attributes. One entity, one room, or one automation still arrives whole. The model always receives valid JSON; nothing is cut off in the middle of an object.
+
+**Shorten large MCP tool results** and **Change History** are on by default. Turn either off on the AI Workspace integration; both flags are passed to the Runtime on each Cursor chat. Home Assistant logs result sizing as `mcp proxy last tool result` (`unchanged` / `area-map` / `truncated`).
 
 ## Privacy and security
 
 - **What leaves the house:** your messages, attachments, the system prompt, the page you are on, and every MCP tool result go to the AI provider you picked (or to Cursor through the runtime). Only Ollama or another local server keeps everything at home.
-- **What stays local:** chat history is stored in `config/ai_workspace/ai-workspace.sqlite`. Change History keeps the last 30 configuration changes there, with a YAML copy of each automation, script, or scene so it can be restored. API keys live in Home Assistant's config entries, like any other integration.
+- **What stays local:** chat history is stored in `config/ai_workspace/ai-workspace.sqlite`. Change History keeps a log of the last 30 recorded agent configuration writes there. Undo for HA-MCP writes belongs to HA-MCP's own edit backups; **Ask to restore** in that log asks the current chat to list and restore them. API keys live in Home Assistant's config entries, like any other integration.
 - **Who can use it:** only admins by default. The sidebar panel is always admin-only.
 - **Allow normal users:** when this is on, people who are not admins get the floating chat. They only get the built-in **Home Assistant MCP Server**, using their own login, and never the admin's MCP connections or the config catalog. What they can see and do is then whatever Home Assistant exposes to them through Assist. **Only turn this on if you trust everyone with a login to chat with an AI that can act on the house.**
 - **Voice satellites:** Assist from a satellite has no signed-in person, so it uses the tools the admin configured. The built-in MCP Server needs a login, so set a long-lived access token in that connection's **MCP token** when satellites should reach it. HA-MCP and Vibecode bring their own credentials.
@@ -309,10 +317,12 @@ Cloud AI and Ollama agents send the system prompt and the tool list of every ena
 
 ## Troubleshooting
 
-- **"Runtime token is missing or wrong."** The token on the integration and on the runtime differ. On Docker, copy `RUNTIME_TOKEN` into **Configure → Runtime token**. On the app, the integration pairs by itself as long as its own Runtime token field was never filled in; if you typed one there, use the same value as the app's **Runtime token** option.
-- **"Set RUNTIME_TOKEN on the runtime and the same token on AI Workspace."** The runtime has no token and listens beyond loopback. Without `HOST: "127.0.0.1"` it listens on all addresses. Either set `HOST: "127.0.0.1"` (host network), or set `RUNTIME_TOKEN` and put the same value in **Configure → Runtime token**.
+- **"Runtime token is missing or wrong."** The token on the Cursor agent and on the runtime differ. On Docker, copy `RUNTIME_TOKEN` into **Cursor agent → Runtime token**. On the app, the integration pairs by itself as long as its own Runtime token field was never filled in; if you typed one there, use the same value as the app's **Runtime token** option.
+- **"Set RUNTIME_TOKEN on the runtime and the same token on AI Workspace."** The runtime has no token and listens beyond loopback. Without `HOST: "127.0.0.1"` it listens on all addresses. Either set `HOST: "127.0.0.1"` (host network), or set `RUNTIME_TOKEN` and put the same value in **Cursor agent → Runtime token**.
 - **The agent invents answers instead of checking.** Check that **Always check the house first** is on for that agent. It makes the model call a tool first for every message that is not a greeting or thanks. Some providers and small local models do not honor a forced tool call. Use a model with reliable tool calling (for example GPT-4.1 mini, Claude Sonnet, Gemini 2.5, or Composer) and check that the MCP connection's device is enabled.
 - **Built-in MCP Server tools are missing in Assist.** That server needs a login, and a voice satellite has none. Set a long-lived token on the connection (see [Privacy and security](#privacy-and-security)).
+- **OpenAI rejects `function.name`.** Names over 64 characters are shortened with a stable hash. Two MCP connections that share a tool get a short prefix. Disable a connection's device to drop its tools. Turning off **All LLM APIs** is not the same as disabling that device; the built-in `/api/mcp` tools are omitted only while **MCP Server** is unloaded.
+- **OpenAI TTS 429 `credit_balance_exhausted`.** The OpenAI account is out of credit. That is separate from MCP tool names.
 - **The microphone is greyed out.** Open Home Assistant over https:// (Nabu Casa or a reverse proxy) or on localhost.
 - **More detail:** add this to `configuration.yaml` and restart, then check **Settings → System → Logs**:
   ```yaml

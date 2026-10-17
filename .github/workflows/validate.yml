@@ -42,3 +42,4 @@ jobs:
           for f in custom_components/ai_workspace/www/*.js; do
             node --input-type=module --check < "$f"
           done
+          node tests/test_send_guard.mjs

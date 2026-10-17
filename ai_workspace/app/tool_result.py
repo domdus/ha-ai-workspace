@@ -9,11 +9,16 @@ sliced, so the model always receives a complete value.
 from __future__ import annotations
 
 import json
+import logging
 import re
 from typing import Any
 
 PASS = 6000
 CEILING = 24000
+UNCHANGED = "unchanged"
+AREA_MAP = "area-map"
+TRUNCATED = "truncated"
+OFF = "off"
 _ENTITY_ID = re.compile(r"^[a-z][a-z0-9_]*\.[a-z0-9_]+$")
 _BULKY = {
     "attributes",
@@ -32,15 +37,60 @@ _AREA_NOTE = (
 _LIST_NOTE = "Further items were left out. Ask for a narrower list."
 _TEXT_NOTE = "\n[Further text was left out. Ask for a narrower question.]"
 
-
-def fit_tool_result(result: Any) -> str:
-    fitted = fit_tool_value(result)
-    if isinstance(fitted, str):
-        return fitted
-    return _dump(fitted)
+logger = logging.getLogger(__name__)
 
 
-def fit_tool_value(result: Any) -> Any:
+def classify_shorten(before: str, after: str) -> str:
+    if before == after:
+        return UNCHANGED
+    if _AREA_NOTE in after:
+        return AREA_MAP
+    return TRUNCATED
+
+
+def shorten_tool_value(result: Any, *, enabled: bool = True) -> tuple[Any, str]:
+    if not enabled:
+        return result, OFF
+    before = result if isinstance(result, str) else _dump(result)
+    fitted = _shorten_value(result)
+    after = fitted if isinstance(fitted, str) else _dump(fitted)
+    return fitted, classify_shorten(before, after)
+
+
+def shorten_tool_result(result: Any, *, enabled: bool = True) -> tuple[str, str]:
+    fitted, kind = shorten_tool_value(result, enabled=enabled)
+    text = fitted if isinstance(fitted, str) else _dump(fitted)
+    logger.debug("mcp proxy tool result: %s", kind)
+    return text, kind
+
+
+def shorten_mcp_response(
+    request_body: bytes, response_body: bytes, content_type: str, *, enabled: bool = True
+) -> tuple[bytes, str]:
+    if not enabled:
+        return response_body, OFF
+    if _request_method(request_body) != "tools/call":
+        return response_body, UNCHANGED
+    if _is_sse(response_body, content_type):
+        compacted = _compact_sse(response_body)
+        return compacted, classify_shorten(
+            response_body.decode("utf-8", "replace"), compacted.decode("utf-8", "replace")
+        )
+    try:
+        payload = json.loads(response_body)
+    except json.JSONDecodeError:
+        return response_body, UNCHANGED
+    if not isinstance(payload, dict) or "result" not in payload:
+        return response_body, UNCHANGED
+    before = _dump(payload["result"])
+    fitted, kind = shorten_tool_value(payload["result"])
+    payload["result"] = fitted
+    return json.dumps(payload, ensure_ascii=False).encode(), kind or classify_shorten(
+        before, fitted if isinstance(fitted, str) else _dump(fitted)
+    )
+
+
+def _shorten_value(result: Any) -> Any:
     if isinstance(result, str):
         stripped = result.strip()
         parsed = _try_json(stripped)
@@ -52,21 +102,6 @@ def fit_tool_value(result: Any) -> Any:
     if len(_dump(result)) <= PASS:
         return result
     return _fit(result)
-
-
-def compact_mcp_response(request_body: bytes, response_body: bytes, content_type: str) -> bytes:
-    if _request_method(request_body) != "tools/call":
-        return response_body
-    if _is_sse(response_body, content_type):
-        return _compact_sse(response_body)
-    try:
-        payload = json.loads(response_body)
-    except json.JSONDecodeError:
-        return response_body
-    if not isinstance(payload, dict) or "result" not in payload:
-        return response_body
-    payload["result"] = fit_tool_value(payload["result"])
-    return json.dumps(payload, ensure_ascii=False).encode()
 
 
 def _request_method(body: bytes) -> str:
@@ -116,7 +151,7 @@ def _compact_data(text: str) -> str:
         return text
     if not isinstance(payload, dict) or "result" not in payload:
         return text
-    payload["result"] = fit_tool_value(payload["result"])
+    payload["result"] = _shorten_value(payload["result"])
     return json.dumps(payload, ensure_ascii=False)
 
 

@@ -5,7 +5,6 @@
         "title": "AI Workspace",
         "description": "Sdílené nastavení chatu. Potom přidejte prvního agenta (Cursor, OpenAI, OpenRouter, Ollama a další). Připojení a agenti jsou řádky této integrace.",
         "data": {
-          "runtime_url": "URL běhového prostředí Cursor{runtime_url_mark}",
           "stt_engine": "Řeč na text",
           "tts_engine": "Text na řeč",
           "speak_replies": "Číst odpovědi automaticky",
@@ -14,12 +13,12 @@
           "enable_dictate": "Zobrazit tlačítko diktování",
           "allow_users": "Povolit běžné uživatele",
           "house_map": "Katalog konfigurace",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "Mezi chaty",
-          "keep_chats": "Chaty k uchování",
-          "runtime_token": "Token Runtime"
+          "keep_chats": "Chaty k uchování"
         },
         "data_description": {
-          "runtime_url": "{runtime_url_note}",
           "stt_engine": "Prohlížeč používá řečový engine zařízení a potřebuje https:// nebo localhost. Engine Home Assistant (Whisper a další v Nastavení) přepíše nahrávku z této stránky. Prohlížeč musí mikrofon stejně povolit, a to jen na https:// nebo localhost.",
           "tts_engine": "Piper, Google Translate nebo hlas AI Workspace agenta OpenAI. Přečtení odpovědi funguje i přes http://. Vypnuto nechá odpovědi jako text.",
           "speak_replies": "Když je zvolen hlas, každá odpověď se přečte hned. Vypnuto nechá tlačítko reproduktoru pro přehrání ručně.",
@@ -28,9 +27,10 @@
           "enable_dictate": "Mikrofon v poli zprávy.",
           "allow_users": "Přihlášení uživatelé bez oprávnění správce mohou otevřít plovoucí chat. Vypnuto ho nechá jen správcům. Položka postranního panelu zůstane jen pro správce. Dostanou jen vestavěný MCP server Home Assistantu se svými vlastními oprávněními.",
           "house_map": "Volitelný místní index zapojení pojmenované položky (spouštěče, související id). Ve výchozím stavu vypnuto. Ne pro výpis automatizací ani zap/vyp — k tomu použijte živé MCP. Ne živý stav, historie ani stopy.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Ve výchozím stavu vypnuto. Když je zapnuto, otázka může použít jiný chat, jehož název sdílí slova. Není třeba říkat chat. Jen krátký výňatek a ten chat se nemění.",
-          "keep_chats": "Nejnovější nepřipnuté chaty na osobu. Připnuté chaty zůstanou vždy. Výchozí 30.",
-          "runtime_token": "Sdílené tajemství pro Runtime v Dockeru. Nastavte stejnou hodnotu jako RUNTIME_TOKEN v kontejneru. Doplněk se spáruje automaticky; nechte prázdné."
+          "keep_chats": "Nejnovější nepřipnuté chaty na osobu. Připnuté chaty zůstanou vždy. Výchozí 30."
         },
         "sections": {
           "mcp": {
@@ -59,7 +59,7 @@
       }
     },
     "error": {
-      "no_runtime": "Běhové prostředí Cursor není dostupné. Spusťte ho a nastavte URL v AI Workspace.",
+      "no_runtime": "Běhové prostředí Cursor není dostupné. Spusťte ho a nastavte URL  v tomto formuláři.",
       "required": "Toto pole je povinné.",
       "invalid_auth": "Poskytovatel tento klíč API odmítl.",
       "cannot_connect": "Poskytovatel není dostupný. Zkontrolujte URL a síť."
@@ -74,7 +74,6 @@
         "title": "AI Workspace",
         "description": "Sdílené nastavení chatu. Připojení MCP a agenty přidáte tlačítky na stránce integrace AI Workspace.",
         "data": {
-          "runtime_url": "URL běhového prostředí Cursor{runtime_url_mark}",
           "stt_engine": "Řeč na text",
           "tts_engine": "Text na řeč",
           "speak_replies": "Číst odpovědi automaticky",
@@ -83,12 +82,12 @@
           "enable_dictate": "Zobrazit tlačítko diktování",
           "allow_users": "Povolit běžné uživatele",
           "house_map": "Katalog konfigurace",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "Mezi chaty",
-          "keep_chats": "Chaty k uchování",
-          "runtime_token": "Token Runtime"
+          "keep_chats": "Chaty k uchování"
         },
         "data_description": {
-          "runtime_url": "{runtime_url_note}",
           "stt_engine": "Prohlížeč používá řečový engine zařízení a potřebuje https:// nebo localhost. Engine Home Assistant (Whisper a další v Nastavení) přepíše nahrávku z této stránky. Prohlížeč musí mikrofon stejně povolit, a to jen na https:// nebo localhost.",
           "tts_engine": "Piper, Google Translate nebo hlas AI Workspace agenta OpenAI. Přečtení odpovědi funguje i přes http://. Vypnuto nechá odpovědi jako text.",
           "speak_replies": "Když je zvolen hlas, každá odpověď se přečte hned. Vypnuto nechá tlačítko reproduktoru pro přehrání ručně.",
@@ -97,9 +96,10 @@
           "enable_dictate": "Mikrofon v poli zprávy.",
           "allow_users": "Přihlášení uživatelé bez oprávnění správce mohou otevřít plovoucí chat. Vypnuto ho nechá jen správcům. Položka postranního panelu zůstane jen pro správce. Dostanou jen vestavěný MCP server Home Assistantu se svými vlastními oprávněními.",
           "house_map": "Volitelný místní index zapojení pojmenované položky (spouštěče, související id). Ve výchozím stavu vypnuto. Ne pro výpis automatizací ani zap/vyp — k tomu použijte živé MCP. Ne živý stav, historie ani stopy.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Ve výchozím stavu vypnuto. Když je zapnuto, otázka může použít jiný chat, jehož název sdílí slova. Není třeba říkat chat. Jen krátký výňatek a ten chat se nemění.",
-          "keep_chats": "Nejnovější nepřipnuté chaty na osobu. Připnuté chaty zůstanou vždy. Výchozí 30.",
-          "runtime_token": "Sdílené tajemství pro Runtime v Dockeru. Nastavte stejnou hodnotu jako RUNTIME_TOKEN v kontejneru. Doplněk se spáruje automaticky; nechte prázdné."
+          "keep_chats": "Nejnovější nepřipnuté chaty na osobu. Připnuté chaty zůstanou vždy. Výchozí 30."
         },
         "sections": {
           "mcp": {
@@ -128,7 +128,7 @@
       }
     },
     "error": {
-      "no_runtime": "Běhové prostředí Cursor není dostupné. Spusťte ho a nastavte URL v AI Workspace.",
+      "no_runtime": "Běhové prostředí Cursor není dostupné. Spusťte ho a nastavte URL  v tomto formuláři.",
       "required": "Toto pole je povinné.",
       "invalid_auth": "Poskytovatel tento klíč API odmítl.",
       "cannot_connect": "Poskytovatel není dostupný. Zkontrolujte URL a síť."
@@ -182,7 +182,7 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Běhové prostředí Cursor není dostupné. Spusťte ho a nastavte URL v AI Workspace.",
+        "no_runtime": "Běhové prostředí Cursor není dostupné. Spusťte ho a nastavte URL  v tomto formuláři.",
         "required": "Toto pole je povinné.",
         "invalid_auth": "Poskytovatel tento klíč API odmítl.",
         "cannot_connect": "Poskytovatel není dostupný. Zkontrolujte URL a síť."
@@ -200,14 +200,18 @@
         },
         "provider_cursor": {
           "title": "Cursor",
-          "description": "Klíč API Cursor, model a úsilí. URL běhového prostředí zůstane u AI Workspace.",
+          "description": "Cursor Runtime, API key, model, and effort. The URL field fills only when this Home Assistant can reach the Runtime.",
           "data": {
+            "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
+            "runtime_token": "Runtime token",
             "cursor_api_key": "Klíč API Cursor",
             "model": "Model",
             "effort": "Úsilí",
             "assist": "Přidat do Assist"
           },
           "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Shared secret for a Docker Runtime. Set the same value as RUNTIME_TOKEN on the container. The add-on is paired automatically; leave this empty.",
             "cursor_api_key": "Z cursor.com/dashboard/integrations. Při úpravě nechte prázdné, aby se zachoval uložený klíč. Nechte prázdné, pokud Runtime už má CURSOR_API_KEY.",
             "model": "Vyberte jeden nebo zadejte id. Prázdné použije Composer.",
             "effort": "Rychlé, Vysoké nebo Vysoké rychlé. Composer použije Rychlé, pokud nezvolíte Vysoké.",

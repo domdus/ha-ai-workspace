@@ -23,9 +23,12 @@ from .const import (
     CONF_ENABLE_SIDEBAR,
     CONF_ALLOW_USERS,
     CONF_HOUSE_MAP,
+    CONF_SHORTEN_MCP_RESULTS,
+    CONF_CHANGE_HISTORY,
     CONF_KEEP_CHATS,
     CONF_MCP_KIND,
     CONF_SPEAK_REPLIES,
+    CONF_TTS_NATURAL,
     CONF_STT_ENGINE,
     CONF_SYSTEM_PROMPT,
     CONF_TTS_ENGINE,
@@ -64,7 +67,14 @@ def _merged(entry: ConfigEntry) -> dict:
 
 
 def _disabled_subentries(hass: HomeAssistant, entry: ConfigEntry) -> set[str]:
-    """Rows whose service device the user disabled."""
+    """Rows whose service device the user disabled.
+
+    Reloads from `_listen_device_disable` when `disabled_by` changes, then
+    `mcp_rows()` drops those subentries so their tools never reach the model.
+    Unloading Home Assistant's MCP Server integration is a different path:
+    the subentry stays, and the API provider skips local `/api/mcp` until
+    `mcp_server` is loaded again.
+    """
     registry = dr.async_get(hass)
     return {
         device.config_subentry_id
@@ -148,6 +158,8 @@ async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
         enable_dictate=bool(data.get(CONF_ENABLE_DICTATE, True)),
         allow_users=bool(data.get(CONF_ALLOW_USERS, False)),
         house_map=house_map,
+        shorten_mcp_results=bool(data.get(CONF_SHORTEN_MCP_RESULTS, True)),
+        change_history=bool(data.get(CONF_CHANGE_HISTORY, True)),
         cross_chat=bool(data.get(CONF_CROSS_CHAT, False)),
         keep_chats=_keep_chats(data),
         mode=MODE_API,
@@ -155,6 +167,7 @@ async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
         stt_engine=str(data.get(CONF_STT_ENGINE) or STT_BROWSER).strip() or STT_BROWSER,
         tts_engine=tts,
         speak_replies=bool(data.get(CONF_SPEAK_REPLIES, False)) and tts != TTS_OFF,
+        tts_natural=bool(data.get(CONF_TTS_NATURAL, True)),
     )
 
 

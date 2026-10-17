@@ -5,7 +5,6 @@
         "title": "AI Workspace",
         "description": "Gedeelde chatinstellingen. Voeg daarna de eerste agent toe (Cursor, OpenAI, OpenRouter, Ollama en meer). Verbindingen en agents zijn regels van deze integratie.",
         "data": {
-          "runtime_url": "Cursor-runtime-URL{runtime_url_mark}",
           "stt_engine": "Spraak naar tekst",
           "tts_engine": "Tekst naar spraak",
           "speak_replies": "Antwoorden automatisch voorlezen",
@@ -14,12 +13,12 @@
           "enable_dictate": "Dicteerknop tonen",
           "allow_users": "Gewone gebruikers toestaan",
           "house_map": "Configuratiecatalogus",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "Tussen chats",
-          "keep_chats": "Chats bewaren",
-          "runtime_token": "Runtime-token"
+          "keep_chats": "Chats bewaren"
         },
         "data_description": {
-          "runtime_url": "{runtime_url_note}",
           "stt_engine": "De browser gebruikt de spraakherkenning van het apparaat en heeft https:// of localhost nodig. Een Home Assistant-engine (Whisper en andere onder Instellingen) transcribeert een opname van deze pagina. De browser moet de microfoon nog steeds toestaan, en dat doet hij alleen op https:// of localhost.",
           "tts_engine": "Piper, Google Translate of een AI Workspace-stem van een OpenAI-agent. Het voorlezen van het antwoord werkt ook via http://. Uit laat antwoorden als tekst.",
           "speak_replies": "Als er een stem is gekozen, wordt elk antwoord voorgelezen. Uit laat de luidsprekerknop om zelf af te spelen.",
@@ -28,9 +27,10 @@
           "enable_dictate": "Microfoon in het berichtveld.",
           "allow_users": "Aangemelde gebruikers die geen beheerder zijn, kunnen de zwevende chat openen. Uit houdt het bij beheerders. Het zijbalkitem blijft alleen voor beheerders. Ze krijgen alleen de ingebouwde Home Assistant MCP Server met hun eigen rechten.",
           "house_map": "Optionele lokale index voor de bedrading van een benoemd item (triggers, gerelateerde id’s). Standaard uit. Niet om automatiseringen of aan/uit te listen — gebruik daar live MCP voor. Geen livestatus, geschiedenis of traces.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Standaard uit. Als het aan staat, kan een vraag een andere chat gebruiken waarvan de titel woorden deelt. Je hoeft niet chat te zeggen. Alleen een kort fragment, en die chat wordt niet gewijzigd.",
-          "keep_chats": "Nieuwste niet-vastgezette chats per persoon. Vastgezette chats blijven altijd. Standaard 30.",
-          "runtime_token": "Gedeeld geheim voor een Docker-Runtime. Zet dezelfde waarde als RUNTIME_TOKEN op de container. De add-on wordt automatisch gekoppeld; laat leeg."
+          "keep_chats": "Nieuwste niet-vastgezette chats per persoon. Vastgezette chats blijven altijd. Standaard 30."
         },
         "sections": {
           "mcp": {
@@ -59,7 +59,7 @@
       }
     },
     "error": {
-      "no_runtime": "De Cursor-runtime is niet bereikbaar. Start hem en zet de URL op AI Workspace.",
+      "no_runtime": "De Cursor-runtime is niet bereikbaar. Start hem en zet de URL  op dit formulier.",
       "required": "Dit veld is verplicht.",
       "invalid_auth": "De provider heeft deze API-sleutel geweigerd.",
       "cannot_connect": "De provider is niet bereikbaar. Controleer de URL en het netwerk."
@@ -74,7 +74,6 @@
         "title": "AI Workspace",
         "description": "Gedeelde chatinstellingen. Voeg MCP-verbindingen en agents toe met de knoppen op de pagina van de AI Workspace-integratie.",
         "data": {
-          "runtime_url": "Cursor-runtime-URL{runtime_url_mark}",
           "stt_engine": "Spraak naar tekst",
           "tts_engine": "Tekst naar spraak",
           "speak_replies": "Antwoorden automatisch voorlezen",
@@ -83,12 +82,12 @@
           "enable_dictate": "Dicteerknop tonen",
           "allow_users": "Gewone gebruikers toestaan",
           "house_map": "Configuratiecatalogus",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "Tussen chats",
-          "keep_chats": "Chats bewaren",
-          "runtime_token": "Runtime-token"
+          "keep_chats": "Chats bewaren"
         },
         "data_description": {
-          "runtime_url": "{runtime_url_note}",
           "stt_engine": "De browser gebruikt de spraakherkenning van het apparaat en heeft https:// of localhost nodig. Een Home Assistant-engine (Whisper en andere onder Instellingen) transcribeert een opname van deze pagina. De browser moet de microfoon nog steeds toestaan, en dat doet hij alleen op https:// of localhost.",
           "tts_engine": "Piper, Google Translate of een AI Workspace-stem van een OpenAI-agent. Het voorlezen van het antwoord werkt ook via http://. Uit laat antwoorden als tekst.",
           "speak_replies": "Als er een stem is gekozen, wordt elk antwoord voorgelezen. Uit laat de luidsprekerknop om zelf af te spelen.",
@@ -97,9 +96,10 @@
           "enable_dictate": "Microfoon in het berichtveld.",
           "allow_users": "Aangemelde gebruikers die geen beheerder zijn, kunnen de zwevende chat openen. Uit houdt het bij beheerders. Het zijbalkitem blijft alleen voor beheerders. Ze krijgen alleen de ingebouwde Home Assistant MCP Server met hun eigen rechten.",
           "house_map": "Optionele lokale index voor de bedrading van een benoemd item (triggers, gerelateerde id’s). Standaard uit. Niet om automatiseringen of aan/uit te listen — gebruik daar live MCP voor. Geen livestatus, geschiedenis of traces.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Standaard uit. Als het aan staat, kan een vraag een andere chat gebruiken waarvan de titel woorden deelt. Je hoeft niet chat te zeggen. Alleen een kort fragment, en die chat wordt niet gewijzigd.",
-          "keep_chats": "Nieuwste niet-vastgezette chats per persoon. Vastgezette chats blijven altijd. Standaard 30.",
-          "runtime_token": "Gedeeld geheim voor een Docker-Runtime. Zet dezelfde waarde als RUNTIME_TOKEN op de container. De add-on wordt automatisch gekoppeld; laat leeg."
+          "keep_chats": "Nieuwste niet-vastgezette chats per persoon. Vastgezette chats blijven altijd. Standaard 30."
         },
         "sections": {
           "mcp": {
@@ -128,7 +128,7 @@
       }
     },
     "error": {
-      "no_runtime": "De Cursor-runtime is niet bereikbaar. Start hem en zet de URL op AI Workspace.",
+      "no_runtime": "De Cursor-runtime is niet bereikbaar. Start hem en zet de URL  op dit formulier.",
       "required": "Dit veld is verplicht.",
       "invalid_auth": "De provider heeft deze API-sleutel geweigerd.",
       "cannot_connect": "De provider is niet bereikbaar. Controleer de URL en het netwerk."
@@ -182,7 +182,7 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "De Cursor-runtime is niet bereikbaar. Start hem en zet de URL op AI Workspace.",
+        "no_runtime": "De Cursor-runtime is niet bereikbaar. Start hem en zet de URL  op dit formulier.",
         "required": "Dit veld is verplicht.",
         "invalid_auth": "De provider heeft deze API-sleutel geweigerd.",
         "cannot_connect": "De provider is niet bereikbaar. Controleer de URL en het netwerk."
@@ -200,14 +200,18 @@
         },
         "provider_cursor": {
           "title": "Cursor",
-          "description": "Cursor-API-sleutel, model en inzet. De runtime-URL blijft op AI Workspace.",
+          "description": "Cursor Runtime, API key, model, and effort. The URL field fills only when this Home Assistant can reach the Runtime.",
           "data": {
+            "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
+            "runtime_token": "Runtime token",
             "cursor_api_key": "Cursor-API-sleutel",
             "model": "Model",
             "effort": "Inzet",
             "assist": "Toevoegen aan Assist"
           },
           "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Shared secret for a Docker Runtime. Set the same value as RUNTIME_TOKEN on the container. The add-on is paired automatically; leave this empty.",
             "cursor_api_key": "Van cursor.com/dashboard/integrations. Leeg laten bij bewerken om de opgeslagen sleutel te houden. Laat leeg als de Runtime al CURSOR_API_KEY heeft.",
             "model": "Kies er een of typ een id. Leeg gebruikt Composer.",
             "effort": "Snel, Hoog of Hoog snel. Composer gebruikt Snel tenzij je Hoog kiest.",

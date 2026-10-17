@@ -15,16 +15,19 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .assist_agents import assist_agent_ids, async_assist_events, list_assist_agents
 from .discovery import async_bind_runtime
 from .const import (
+    ACTIVITY_ROLLBACK,
     CLOUD_ONLY_MODELS,
-    DEFAULT_SYSTEM_PROMPT,
+    workspace_system_prompt,
     DOMAIN,
     MCP_COOLVER,
     format_ui_page,
+    ha_mcp_is_connected,
     parse_ui_page,
     with_language_rule,
     with_ui_context,
 )
 from .mcp_config import with_mcp_auth
+from .mcp_observe import last_mcp_result, note_mcp_result
 from .mcp_resolve import ha_hosts, hass_mcp_server_url
 from .chat_scope import handoff_note, merge_reply_text, other_chat_note
 from .files import attach_files_to_message, file_events, parse_client_files
@@ -112,10 +115,21 @@ def _runtime_error(status: int, text: str) -> str:
         return detail.strip()[:400]
     if status == 401:
         return "The Cursor SDK Runtime refused the token. Set the same Runtime token on both sides."
+    if status == 404:
+        return (
+            "This chat exists in Home Assistant but the Cursor Runtime did not have a matching session "
+            "(often after a container rebuild). The integration retried once; if this persists, check the "
+            "Runtime URL and token on the Cursor agent."
+        )
     return f"The Cursor SDK Runtime answered HTTP {status}."
 
 
-async def _create_runtime_session(hass: HomeAssistant, user_id: str, session_id: str | None = None) -> str | None:
+async def _create_runtime_session(
+    hass: HomeAssistant,
+    user_id: str,
+    session_id: str | None = None,
+    agent_id: str | None = None,
+) -> str | None:
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
         return None
@@ -123,6 +137,8 @@ async def _create_runtime_session(hass: HomeAssistant, user_id: str, session_id:
     payload: dict[str, str] = {"provider": "cursor"}
     if session_id:
         payload["id"] = session_id
+    if agent_id:
+        payload["agent_id"] = agent_id
     try:
         resp = await http.post(
             f"{base}/api/sessions",
@@ -141,11 +157,12 @@ async def _create_runtime_session(hass: HomeAssistant, user_id: str, session_id:
     return str((body or {}).get("id") or "") or None
 
 
-async def _ensure_runtime_session(hass: HomeAssistant, user_id: str, session: Session) -> None:
+async def _ensure_runtime_session(hass: HomeAssistant, user_id: str, session: Session) -> bool:
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
-        return
+        return False
     http: ClientSession = async_get_clientsession(hass)
+    agent_id = str(session.agent_id or "").strip() or None
     try:
         existing = await http.get(
             f"{base}/api/sessions/{session.id}",
@@ -155,10 +172,15 @@ async def _ensure_runtime_session(hass: HomeAssistant, user_id: str, session: Se
         status = existing.status
         existing.release()
         if status == 200:
-            return
+            return True
     except Exception:
         logger.debug("runtime session lookup skipped", exc_info=True)
-    await _create_runtime_session(hass, user_id, session.id)
+    for _ in range(2):
+        created = await _create_runtime_session(hass, user_id, session.id, agent_id)
+        if created:
+            return True
+    logger.warning("runtime session sync failed session=%s", session.id)
+    return False
 
 
 async def _iter_sse(resp) -> AsyncIterator[tuple[str, dict]]:
@@ -206,6 +228,8 @@ def _runtime_agent_overrides(
         model = ""
     if model:
         extra["model"] = model
+    extra["shorten_mcp_results"] = bool(getattr(settings, "shorten_mcp_results", True))
+    extra["change_history"] = bool(getattr(settings, "change_history", True))
     return extra
 
 
@@ -232,22 +256,26 @@ async def _runtime_chat(
     if not base:
         yield {"type": "error", "message": "Cursor Runtime is not configured."}
         return
-    await _ensure_runtime_session(hass, user_id, session)
+    if not await _ensure_runtime_session(hass, user_id, session):
+        yield {
+            "type": "error",
+            "message": (
+                "Home Assistant could not sync this chat to the Cursor Runtime. "
+                "Check the Runtime URL and token on the Cursor agent, then try again."
+            ),
+        }
+        return
     http: ClientSession = async_get_clientsession(hass)
     payload: dict[str, Any] = {
         "message": with_ui_context(attach_files_to_message(message, files or []), origin),
         "question": (question or message).strip(),
         "origin": origin,
+        "history_in_ha": True,
     }
+    if session.agent_id:
+        payload["sync_agent_id"] = str(session.agent_id)
     settings = _runtime(hass).get("settings")
-    prompt = with_language_rule(
-        str(getattr(settings, "system_prompt", "") or "").strip() or DEFAULT_SYSTEM_PROMPT,
-        language,
-    )
-    if admin and getattr(settings, "house_map", False):
-        from .house_map import CATALOG_INSTRUCTIONS
-
-        prompt = f"{prompt}\n\n{CATALOG_INSTRUCTIONS}".strip()
+    prompt = with_language_rule(workspace_system_prompt(settings, admin=admin), language)
     if prompt:
         payload["message"] = f"{prompt}\n\n{payload['message']}"
     if images:
@@ -268,18 +296,34 @@ async def _runtime_chat(
         payload["api_key"] = api_key
     if handoff:
         payload["handoff"] = handoff
-    try:
-        sent = {**(headers or _runtime_headers_for(hass, user_id)), "Accept": "text/event-stream"}
-        if agent:
-            sent["X-Ai-Workspace-Agent"] = agent
-        resp = await http.post(
-            f"{base}/api/sessions/{session.id}/chat",
-            json=payload,
-            headers=sent,
-            timeout=ClientTimeout(total=None, sock_read=600),
-        )
-    except Exception as exc:
-        yield {"type": "error", "message": f"AI Workspace runtime is unreachable at {base}: {exc}"}
+    sent = {**(headers or _runtime_headers_for(hass, user_id)), "Accept": "text/event-stream"}
+    if agent:
+        sent["X-Ai-Workspace-Agent"] = agent
+    resp = None
+    for attempt in range(2):
+        try:
+            resp = await http.post(
+                f"{base}/api/sessions/{session.id}/chat",
+                json=payload,
+                headers=sent,
+                timeout=ClientTimeout(total=None, sock_read=600),
+            )
+        except Exception as exc:
+            yield {"type": "error", "message": f"AI Workspace runtime is unreachable at {base}: {exc}"}
+            return
+        if resp.status != 404 or attempt:
+            break
+        resp.release()
+        resp = None
+        logger.info("runtime chat 404, resyncing session=%s", session.id)
+        if not await _ensure_runtime_session(hass, user_id, session):
+            yield {
+                "type": "error",
+                "message": _runtime_error(404, ""),
+            }
+            return
+    if resp is None:
+        yield {"type": "error", "message": _runtime_error(404, "")}
         return
     try:
         if resp.status >= 400:
@@ -473,6 +517,8 @@ class UiView(HomeAssistantView):
                 "tts": settings.tts_engine,
                 "speak": bool(settings.speak_replies),
                 "tts_heavy": overlay_tts_heavy(_hass(request), settings.tts_engine),
+                "tts_natural": bool(getattr(settings, "tts_natural", True)),
+                "change_history": bool(getattr(settings, "change_history", True)),
             }
         )
 
@@ -727,6 +773,15 @@ class ChatView(HomeAssistantView):
         if assist or getattr(provider, "kind", "") == "cursor":
             rows = await hass.async_add_executor_job(store.list_messages, session.id)
             handoff = handoff_note(rows, session.title)
+            if getattr(provider, "kind", "") == "cursor":
+                logger.info(
+                    "cursor handoff session=%s prior=%s chars=%s",
+                    session.id,
+                    max(0, len(rows) - 1),
+                    len(handoff),
+                )
+                if len(rows) > 1 and not handoff:
+                    logger.warning("cursor handoff empty despite stored turns session=%s", session.id)
         access_token = _bearer(request)
         runtime_headers = _runtime_headers(request)
 
@@ -810,12 +865,27 @@ class ChatView(HomeAssistantView):
             except Exception:
                 client_gone = True
 
+        user = await hass.auth.async_get_user(user_id)
+        user_name = str(getattr(user, "name", "") or "") if user else user_id
+        agent_label = _agent_label(provider) if provider else "Agent"
+
         async def produce() -> web.StreamResponse:
             nonlocal client_gone
             parts: list[str] = []
             tools: list[dict] = []
             error: str | None = None
             final: str | None = None
+            from .logical_commit import begin_logical_commit, flush_logical_commit
+
+            if bool(getattr(settings, "change_history", True)):
+                begin_logical_commit(
+                    hass,
+                    user_id,
+                    user_name,
+                    agent_label,
+                    session.id,
+                    session.title or "",
+                )
             try:
                 try:
                     await response.prepare(request)
@@ -874,6 +944,8 @@ class ChatView(HomeAssistantView):
                 if error is None:
                     await send({"type": "done", "answer": answer})
             finally:
+                if bool(getattr(settings, "change_history", True)):
+                    await flush_logical_commit(hass, store, user_id, session.id)
                 _release_lock(data, session.id, lock)
             if error is None and callable(suggest):
                 try:
@@ -939,7 +1011,13 @@ class SpeakView(HomeAssistantView):
         body = await request.json()
         language = str(body.get("language") or "")
         try:
-            data, mime = await async_speak(_hass(request), engine, str(body.get("text") or ""), language)
+            data, mime = await async_speak(
+                _hass(request),
+                engine,
+                str(body.get("text") or ""),
+                language,
+                natural=bool(getattr(settings, "tts_natural", True)),
+            )
         except Exception as exc:
             raise web.HTTPBadGateway(text=str(exc)[:300]) from exc
         if not data:
@@ -1039,6 +1117,9 @@ async def _activity_kwargs(
 
     if not isinstance(provider, ApiProvider):
         return {}
+    settings = _runtime(hass).get("settings")
+    if not bool(getattr(settings, "change_history", True)):
+        return {}
     from .activity_ha import track_tool
 
     user = await hass.auth.async_get_user(user_id)
@@ -1064,7 +1145,8 @@ def _runtime_token_ok(request: web.Request) -> bool:
     return True
 
 
-def _activity_dict(row, chat: str = "") -> dict:
+def _activity_dict(row, chat: str = "", *, ask_restore: bool = False) -> dict:
+    undone = bool(row.undone_at)
     return {
         "id": row.id,
         "created_at": row.created_at,
@@ -1075,8 +1157,15 @@ def _activity_dict(row, chat: str = "") -> dict:
         "session_id": row.session_id or "",
         "summary": row.summary,
         "tool": row.tool,
-        "can_rollback": bool(row.can_rollback),
+        "can_rollback": bool(ACTIVITY_ROLLBACK and row.can_rollback),
         "undone_at": row.undone_at or "",
+        "ask_restore": bool(ask_restore and not undone),
+        "logical_commit": bool(getattr(row, "logical_commit", False)),
+        "change_count": int(getattr(row, "change_count", 0) or 0),
+        "restore_kind": getattr(row, "restore_kind", "") or "",
+        "restore_id": getattr(row, "restore_id", "") or "",
+        "restore_label": getattr(row, "restore_label", "") or "",
+        "restore_targets": list(getattr(row, "restore_targets", None) or []),
     }
 
 
@@ -1092,7 +1181,14 @@ class ActivityView(HomeAssistantView):
         admin = _is_admin(request)
         rows = await hass.async_add_executor_job(lambda: store.list_activity(user_id, admin=admin))
         titles = await hass.async_add_executor_job(store.session_titles, [row.session_id for row in rows])
-        return self.json([_activity_dict(row, titles.get(row.session_id) or "") for row in rows])
+        settings = _runtime(hass).get("settings")
+        ask_restore = admin and ha_mcp_is_connected(
+            str(getattr(settings, "mcp_kind", "") or "") if settings else "",
+            list(getattr(settings, "mcp_rows", None) or []) if settings else None,
+        )
+        return self.json(
+            [_activity_dict(row, titles.get(row.session_id) or "", ask_restore=ask_restore) for row in rows]
+        )
 
 
 class ActivityRollbackView(HomeAssistantView):
@@ -1114,7 +1210,7 @@ class ActivityRollbackView(HomeAssistantView):
             raise web.HTTPNotFound()
         if not _is_admin(request) and row.user_id != _user_id(request):
             raise web.HTTPNotFound()
-        if not row.can_rollback:
+        if not ACTIVITY_ROLLBACK or not row.can_rollback:
             raise web.HTTPBadRequest(text="This change cannot be rolled back.")
         raw = await hass.async_add_executor_job(store.activity_document, row_id)
         try:
@@ -1133,6 +1229,37 @@ class ActivityRollbackView(HomeAssistantView):
         return self.json(_activity_dict(shown, live))
 
 
+class McpProxyView(HomeAssistantView):
+    """Last MCP proxy result. GET is admin-only; POST is the Runtime note."""
+
+    url = "/api/ai_workspace/mcp_proxy"
+    name = "api:ai_workspace:mcp_proxy"
+    requires_auth = False
+
+    async def get(self, request: web.Request) -> web.Response:
+        if not _signed_in(request) or not _is_admin(request):
+            raise web.HTTPUnauthorized()
+        return self.json(last_mcp_result(_hass(request)) or {})
+
+    async def post(self, request: web.Request) -> web.Response:
+        if not _runtime_token_ok(request):
+            raise web.HTTPUnauthorized()
+        try:
+            body = await request.json()
+        except json.JSONDecodeError:
+            raise web.HTTPBadRequest(text="Invalid JSON.") from None
+        if not isinstance(body, dict):
+            raise web.HTTPBadRequest(text="Invalid JSON.")
+        return self.json(
+            note_mcp_result(
+                _hass(request),
+                tool=str(body.get("tool") or ""),
+                kind=str(body.get("kind") or ""),
+                agent=str(body.get("agent") or ""),
+            )
+        )
+
+
 class ActivityPrepareView(HomeAssistantView):
     """Runtime callback. Snapshots a config document before Cursor forwards a tool."""
 
@@ -1145,13 +1272,16 @@ class ActivityPrepareView(HomeAssistantView):
 
         if not _runtime_token_ok(request):
             raise web.HTTPUnauthorized()
+        hass = _hass(request)
+        settings = _runtime(hass).get("settings")
+        if not bool(getattr(settings, "change_history", True)):
+            return self.json({"token": None})
         try:
             body = await request.json()
         except json.JSONDecodeError:
             raise web.HTTPBadRequest(text="Invalid JSON.") from None
         if not isinstance(body, dict):
             raise web.HTTPBadRequest(text="Invalid JSON.")
-        hass = _hass(request)
         user_id = str(body.get("user_id") or "").strip()
         if not user_id:
             return self.json({"token": None})
@@ -1205,5 +1335,6 @@ def register_views(hass: HomeAssistant) -> None:
     hass.http.register_view(CatalogMcpView)
     hass.http.register_view(ActivityView)
     hass.http.register_view(ActivityRollbackView)
+    hass.http.register_view(McpProxyView)
     hass.http.register_view(ActivityPrepareView)
     hass.http.register_view(ActivityCommitView)

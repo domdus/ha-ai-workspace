@@ -5,32 +5,34 @@
         "title": "AI Workspace",
         "description": "Gemeinsame Chat-Einstellungen. Danach fügst du den ersten Agenten hinzu (Cursor, OpenAI, OpenRouter, Ollama und weitere). Verbindungen und Agenten sind Einträge dieser Integration.",
         "data": {
-          "runtime_url": "Cursor-Runtime-URL{runtime_url_mark}",
           "stt_engine": "Sprache zu Text",
           "tts_engine": "Text zu Sprache",
           "speak_replies": "Antworten automatisch vorlesen",
+          "tts_natural": "Natürliche Sprache für Text-zu-Sprache",
           "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
           "enable_overlay": "Schwebende KI-Schaltfläche anzeigen",
           "enable_dictate": "Diktier-Schaltfläche anzeigen",
           "allow_users": "Normale Benutzer erlauben",
           "house_map": "Konfigurationskatalog",
+          "shorten_mcp_results": "Große MCP-Tool-Ergebnisse kürzen",
+          "change_history": "Änderungsverlauf",
           "cross_chat": "Chatübergreifend",
-          "keep_chats": "Chats behalten",
-          "runtime_token": "Runtime-Token"
+          "keep_chats": "Chats behalten"
         },
         "data_description": {
-          "runtime_url": "{runtime_url_note}",
           "stt_engine": "Der Browser nutzt die Spracheingabe des Geräts und braucht https:// oder localhost. Eine Home-Assistant-Engine (Whisper und andere unter Einstellungen) transkribiert eine Aufnahme von dieser Seite. Der Browser muss das Mikrofon trotzdem erlauben, und das nur über https:// oder localhost.",
           "tts_engine": "Piper, Google Translate oder eine AI-Workspace-Stimme eines OpenAI-Agenten. Das Vorlesen der Antwort funktioniert auch über http://. Aus lässt Antworten als Text.",
           "speak_replies": "Wenn eine Stimme gewählt ist, wird jede Antwort vorgelesen. Aus lässt die Lautsprecher-Schaltfläche zum selbst Abspielen.",
+          "tts_natural": "Standard an. Entfernt Markdown, Links, Pfeile und ähnliche Zeichen, bevor Google Translate, Piper oder andere Engines vorlesen. Aus sendet den Chat-Text unverändert.",
           "enable_sidebar": "Der Seitenleisteneintrag AI Workspace. Die Seite bleibt unter /ai-workspace erreichbar, wenn das aus ist.",
           "enable_overlay": "Schaltet die schwebende KI-Schaltfläche ein oder aus. Auf Einstellungen sitzt sie höher, damit sie die Systemschaltflächen nicht überdeckt.",
           "enable_dictate": "Mikrofon im Eingabefeld.",
           "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren. Sie bekommen nur den eingebauten Home Assistant MCP Server mit ihren eigenen Rechten.",
           "house_map": "Optionaler lokaler Index für die Verdrahtung eines benannten Eintrags (Trigger, zugehörige IDs). Standardmäßig aus. Nicht für Listen von Automatisierungen oder an/aus — dafür Live-MCP. Kein Live-Zustand, keine Historie, keine Traces.",
+          "shorten_mcp_results": "Standardmäßig an. Große MCP-Antworten (ganzes Haus, lange Listen) werden gekürzt, bevor Cloud-Modelle und Cursor sie lesen. Aus sendet die vollen Antworten. Home Assistant protokolliert die Ergebnisgröße als mcp proxy last tool result (unchanged / area-map / truncated).",
+          "change_history": "Standardmäßig an. Zeichnet Konfigurationsänderungen von Cloud-Agenten und Cursor im Änderungsverlauf auf. Aus überspringt Snapshots; der MCP-Proxy leitet Tools weiter und kann Ergebnisse weiter kürzen.",
           "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen anderen Chat nutzen, dessen Titel Wörter mit ihr teilt. Du musst nicht Chat oder Gespräch sagen. Nur ein kurzer Auszug, und dieser Chat wird nicht geändert.",
-          "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30.",
-          "runtime_token": "Gemeinsames Geheimnis für eine Docker-Runtime. Trage denselben Wert als RUNTIME_TOKEN am Container ein. Das Add-on wird automatisch gekoppelt; dann leer lassen."
+          "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30."
         },
         "sections": {
           "mcp": {
@@ -59,7 +61,7 @@
       }
     },
     "error": {
-      "no_runtime": "Die Cursor-Runtime ist nicht erreichbar. Starte sie und trage die URL unter AI Workspace ein.",
+      "no_runtime": "Die Cursor-Runtime ist nicht erreichbar. Starte sie und trage die URL in diesem Formular ein.",
       "required": "Dieses Feld ist erforderlich.",
       "invalid_auth": "Der Anbieter hat diesen API-Schlüssel abgelehnt.",
       "cannot_connect": "Der Anbieter ist nicht erreichbar. Prüfe die URL und das Netzwerk."
@@ -74,32 +76,34 @@
         "title": "AI Workspace",
         "description": "Gemeinsame Chat-Einstellungen. MCP-Verbindungen und Agenten fügst du über die Schaltflächen auf der Seite der AI-Workspace-Integration hinzu.",
         "data": {
-          "runtime_url": "Cursor-Runtime-URL{runtime_url_mark}",
           "stt_engine": "Sprache zu Text",
           "tts_engine": "Text zu Sprache",
           "speak_replies": "Antworten automatisch vorlesen",
+          "tts_natural": "Natürliche Sprache für Text-zu-Sprache",
           "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
           "enable_overlay": "Schwebende KI-Schaltfläche anzeigen",
           "enable_dictate": "Diktier-Schaltfläche anzeigen",
           "allow_users": "Normale Benutzer erlauben",
           "house_map": "Konfigurationskatalog",
+          "shorten_mcp_results": "Große MCP-Tool-Ergebnisse kürzen",
+          "change_history": "Änderungsverlauf",
           "cross_chat": "Chatübergreifend",
-          "keep_chats": "Chats behalten",
-          "runtime_token": "Runtime-Token"
+          "keep_chats": "Chats behalten"
         },
         "data_description": {
-          "runtime_url": "{runtime_url_note}",
           "stt_engine": "Der Browser nutzt die Spracheingabe des Geräts und braucht https:// oder localhost. Eine Home-Assistant-Engine (Whisper und andere unter Einstellungen) transkribiert eine Aufnahme von dieser Seite. Der Browser muss das Mikrofon trotzdem erlauben, und das nur über https:// oder localhost.",
           "tts_engine": "Piper, Google Translate oder eine AI-Workspace-Stimme eines OpenAI-Agenten. Das Vorlesen der Antwort funktioniert auch über http://. Aus lässt Antworten als Text.",
           "speak_replies": "Wenn eine Stimme gewählt ist, wird jede Antwort vorgelesen. Aus lässt die Lautsprecher-Schaltfläche zum selbst Abspielen.",
+          "tts_natural": "Standard an. Entfernt Markdown, Links, Pfeile und ähnliche Zeichen, bevor Google Translate, Piper oder andere Engines vorlesen. Aus sendet den Chat-Text unverändert.",
           "enable_sidebar": "Der Seitenleisteneintrag AI Workspace. Die Seite bleibt unter /ai-workspace erreichbar, wenn das aus ist.",
           "enable_overlay": "Schaltet die schwebende KI-Schaltfläche ein oder aus. Auf Einstellungen sitzt sie höher, damit sie die Systemschaltflächen nicht überdeckt.",
           "enable_dictate": "Mikrofon im Eingabefeld.",
           "allow_users": "Angemeldete Benutzer ohne Administratorrechte können den schwebenden Chat öffnen. Aus: nur Administratoren. Der Seitenleisten-Eintrag bleibt für Administratoren. Sie bekommen nur den eingebauten Home Assistant MCP Server mit ihren eigenen Rechten.",
           "house_map": "Optionaler lokaler Index für die Verdrahtung eines benannten Eintrags (Trigger, zugehörige IDs). Standardmäßig aus. Nicht für Listen von Automatisierungen oder an/aus — dafür Live-MCP. Kein Live-Zustand, keine Historie, keine Traces.",
+          "shorten_mcp_results": "Standardmäßig an. Große MCP-Antworten (ganzes Haus, lange Listen) werden gekürzt, bevor Cloud-Modelle und Cursor sie lesen. Aus sendet die vollen Antworten. Home Assistant protokolliert die Ergebnisgröße als mcp proxy last tool result (unchanged / area-map / truncated).",
+          "change_history": "Standardmäßig an. Zeichnet Konfigurationsänderungen von Cloud-Agenten und Cursor im Änderungsverlauf auf. Aus überspringt Snapshots; der MCP-Proxy leitet Tools weiter und kann Ergebnisse weiter kürzen.",
           "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen anderen Chat nutzen, dessen Titel Wörter mit ihr teilt. Du musst nicht Chat oder Gespräch sagen. Nur ein kurzer Auszug, und dieser Chat wird nicht geändert.",
-          "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30.",
-          "runtime_token": "Gemeinsames Geheimnis für eine Docker-Runtime. Trage denselben Wert als RUNTIME_TOKEN am Container ein. Das Add-on wird automatisch gekoppelt; dann leer lassen."
+          "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30."
         },
         "sections": {
           "mcp": {
@@ -128,7 +132,7 @@
       }
     },
     "error": {
-      "no_runtime": "Die Cursor-Runtime ist nicht erreichbar. Starte sie und trage die URL unter AI Workspace ein.",
+      "no_runtime": "Die Cursor-Runtime ist nicht erreichbar. Starte sie und trage die URL in diesem Formular ein.",
       "required": "Dieses Feld ist erforderlich.",
       "invalid_auth": "Der Anbieter hat diesen API-Schlüssel abgelehnt.",
       "cannot_connect": "Der Anbieter ist nicht erreichbar. Prüfe die URL und das Netzwerk."
@@ -182,7 +186,7 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Die Cursor-Runtime ist nicht erreichbar. Starte sie und trage die URL unter AI Workspace ein.",
+        "no_runtime": "Die Cursor-Runtime ist nicht erreichbar. Starte sie und trage die URL in diesem Formular ein.",
         "required": "Dieses Feld ist erforderlich.",
         "invalid_auth": "Der Anbieter hat diesen API-Schlüssel abgelehnt.",
         "cannot_connect": "Der Anbieter ist nicht erreichbar. Prüfe die URL und das Netzwerk."
@@ -200,14 +204,18 @@
         },
         "provider_cursor": {
           "title": "Cursor",
-          "description": "Cursor-API-Schlüssel, Modell und Aufwand. Die Runtime-URL bleibt bei AI Workspace.",
+          "description": "Cursor-Runtime, API-Schlüssel, Modell und Aufwand. Das URL-Feld wird nur gefüllt, wenn dieses Home Assistant die Runtime erreicht.",
           "data": {
+            "runtime_url": "Cursor-Runtime-URL{runtime_url_mark}",
+            "runtime_token": "Runtime-Token",
             "cursor_api_key": "Cursor-API-Schlüssel",
             "model": "Modell",
             "effort": "Aufwand",
             "assist": "Zu Assist hinzufügen"
           },
           "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Gemeinsames Geheimnis für eine Docker-Runtime. Derselbe Wert wie RUNTIME_TOKEN am Container. Die App wird automatisch gekoppelt; leer lassen.",
             "cursor_api_key": "Von cursor.com/dashboard/integrations. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten. Leer lassen, wenn die Runtime bereits CURSOR_API_KEY hat.",
             "model": "Wähle eines oder gib eine ID ein. Leer nutzt Composer.",
             "effort": "Schnell, Hoch oder Hoch schnell. Composer nutzt Schnell, außer du wählst Hoch.",

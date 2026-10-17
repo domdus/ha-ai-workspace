@@ -37,6 +37,10 @@
   grid-template-columns: 1fr;
 }
 
+.wrap.compact > aside {
+  z-index: 10;
+}
+
 .wrap.keyboard-open {
   overflow: hidden;
   transition: none;
@@ -273,15 +277,24 @@ ha-button.new-chat {
   font-weight: var(--ha-font-weight-normal);
 }
 
+.sessions ha-list-item-button.selected,
+.sessions .session-plain.selected,
+.bubble.user {
+  position: relative;
+  isolation: isolate;
+}
+
 .sessions ha-list-item-button.selected::before,
-.sessions .session-plain.selected::before {
+.sessions .session-plain.selected::before,
+.bubble.user::before {
   content: "";
   position: absolute;
   inset: 0;
-  border-radius: var(--ha-border-radius-sm);
+  border-radius: inherit;
   background-color: var(--sidebar-selected-icon-color);
   opacity: var(--dark-divider-opacity);
   pointer-events: none;
+  z-index: -1;
 }
 
 .sessions ha-list-item-button.selected::part(headline) {
@@ -458,6 +471,21 @@ ha-alert.banner[hidden] {
   display: none !important;
 }
 
+ha-empty-state.empty,
+ha-empty-state.history-empty {
+  display: block;
+  margin: var(--ha-space-4) auto;
+  max-width: 28rem;
+}
+
+.history-chat[appearance="plain"] {
+  --ha-button-height: auto;
+  padding: 0;
+  min-height: 0;
+  font: inherit;
+  color: var(--primary-color);
+}
+
 .stage {
   flex: 1 0 auto;
   display: flex;
@@ -519,10 +547,10 @@ ha-alert.bubble {
   max-width: 85%;
   margin-inline-start: var(--ha-space-6);
   border-bottom-right-radius: 0;
-  background: var(--chat-background-color-user, var(--primary-color));
-  color: var(--text-primary-color, var(--primary-background-color));
+  background: transparent;
+  color: var(--primary-text-color);
   white-space: pre-wrap;
-  --ha-card-background: var(--chat-background-color-user, var(--primary-color));
+  --ha-card-background: transparent;
 }
 
 .bubble.assistant {

@@ -51,6 +51,15 @@ def test_match_maps_locale_to_engine_tag() -> None:
     assert voice.match_speech_language("pt-BR", ["pt_BR"], "en") == "pt_BR"
 
 
+def test_speech_text_strips_arrows_and_markdown() -> None:
+    voice = _load("voice", "voice.py")
+    spoken = voice.speech_text("**Bold** move → next step")
+    assert "**" not in spoken
+    assert "→" not in spoken
+    assert "Bold move next step" in spoken
+    assert voice.speech_text("keep stars", natural=False) == "keep stars"
+
+
 def test_speech_text_drops_links() -> None:
     voice = _load("voice", "voice.py")
     assert (
@@ -123,6 +132,13 @@ def test_pipeline_voice_uses_ha_engines_then_preferred() -> None:
     empty = pipes.resolve_pipeline_voice("browser", "off", language="de")
     assert empty["stt_engine"] is None
     assert empty["tts_engine"] is None
+    google = pipes.resolve_pipeline_voice(
+        "browser",
+        "tts.google_translate_en_com",
+        language="de",
+        fallback_tts="tts.open_ai_text_to_speech",
+    )
+    assert google["tts_engine"] == "tts.google_translate_en_com"
     discovered = pipes.resolve_pipeline_voice(
         "browser",
         "off",
@@ -172,7 +188,7 @@ def test_tts_language_for_maps_german_region() -> None:
     assert pipes._tts_language_for("tts.open_ai_text_to_speech", "de", engines) == "de"
 
 
-def test_pick_assist_tts_skips_google_translate() -> None:
+def test_pick_assist_tts_keeps_google_translate() -> None:
     _load("const", "const.py")
     pipes = _load("assist_pipelines", "assist_pipelines.py")
     engines = [
@@ -182,12 +198,12 @@ def test_pick_assist_tts_skips_google_translate() -> None:
         ("tts.piper", "wyoming", "piper"),
     ]
     assert pipes.pick_assist_tts(setting="tts.piper", engines=engines) == "tts.piper"
-    assert pipes.pick_assist_tts(setting="tts.google_translate_en_com", engines=engines, conversation_unique_id="openai-1") == (
+    assert pipes.pick_assist_tts(setting="tts.google_translate_en_com", engines=engines) == (
+        "tts.google_translate_en_com"
+    )
+    assert pipes.pick_assist_tts(setting="off", engines=engines, conversation_unique_id="openai-1") == (
         "tts.open_ai_text_to_speech"
     )
-    assert pipes.pick_assist_tts(setting="off", engines=engines) == "tts.open_ai_text_to_speech"
-    empty = pipes.resolve_pipeline_voice("browser", "tts.google_translate_en_com", fallback_tts="tts.open_ai_text_to_speech")
-    assert empty["tts_engine"] == "tts.open_ai_text_to_speech"
 
 
 def test_existing_engine_drops_removed_stt() -> None:
@@ -196,6 +212,14 @@ def test_existing_engine_drops_removed_stt() -> None:
     assert pipes._existing_engine("stt.whisper", engines) == "stt.whisper"
     assert pipes._existing_engine("stt.open_ai_speech_to_text", engines) == ""
     assert pipes._existing_engine("browser", engines) == "browser"
+
+
+def test_keep_pipeline_engine_leaves_none_when_gone() -> None:
+    pipes = _load("assist_pipelines", "assist_pipelines.py")
+    engines = [("tts.google_translate_en_com", "google_translate", "google")]
+    assert pipes._keep_pipeline_engine("tts.google_translate_en_com", engines) == "tts.google_translate_en_com"
+    assert pipes._keep_pipeline_engine("tts.open_ai_text_to_speech", engines) is None
+    assert pipes._keep_pipeline_engine(None, engines) is None
 
 
 def test_assist_pipeline_keeps_agent_title() -> None:

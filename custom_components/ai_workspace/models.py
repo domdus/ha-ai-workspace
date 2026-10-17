@@ -51,6 +51,8 @@ class Settings:
     enable_dictate: bool = True
     allow_users: bool = False
     house_map: bool = False
+    shorten_mcp_results: bool = True
+    change_history: bool = True
     cross_chat: bool = False
     low_token: bool = False
     check_house: bool = True
@@ -67,6 +69,7 @@ class Settings:
     stt_engine: str = "browser"
     tts_engine: str = "off"
     speak_replies: bool = False
+    tts_natural: bool = True
     agent_id: str = ""
     agent_title: str = ""
 

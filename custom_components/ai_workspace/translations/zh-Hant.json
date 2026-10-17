@@ -5,7 +5,6 @@
         "title": "AI Workspace",
         "description": "共用聊天設定。之後新增第一個代理（Cursor、OpenAI、OpenRouter、Ollama 等）。連線和代理都是此整合下的項目。",
         "data": {
-          "runtime_url": "Cursor 執行階段 URL{runtime_url_mark}",
           "stt_engine": "語音轉文字",
           "tts_engine": "文字轉語音",
           "speak_replies": "自動朗讀回覆",
@@ -14,12 +13,12 @@
           "enable_dictate": "顯示聽寫按鈕",
           "allow_users": "允許一般使用者",
           "house_map": "設定目錄",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "跨聊天",
-          "keep_chats": "要保留的聊天",
-          "runtime_token": "Runtime 權杖"
+          "keep_chats": "要保留的聊天"
         },
         "data_description": {
-          "runtime_url": "{runtime_url_note}",
           "stt_engine": "瀏覽器使用裝置語音引擎，需要 https:// 或 localhost。Home Assistant 引擎（設定中的 Whisper 等）會轉寫本頁錄音。瀏覽器仍須允許麥克風，且僅在 https:// 或 localhost 上允許。",
           "tts_engine": "Piper、Google Translate，或 OpenAI 風格代理的 AI Workspace 語音。朗讀回覆在一般 http:// 上也可用。關閉則回覆只保留文字。",
           "speak_replies": "選擇了語音時，每則回覆到達後會自動朗讀。關閉後仍保留喇叭按鈕，以便自己播放。",
@@ -28,9 +27,10 @@
           "enable_dictate": "訊息框中的麥克風。",
           "allow_users": "非管理員的已登入使用者可以開啟懸浮聊天。關閉則僅限管理員。側欄項目仍僅管理員可見。 他們只能以自己的權限使用內建的 Home Assistant MCP 伺服器。",
           "house_map": "選用的本機索引，用於已命名項目的接線（觸發器、相關 id）。預設關閉。不要用來列出自動化或開關狀態——那用即時 MCP。不是即時狀態、歷程或追蹤。",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "預設關閉。開啟後，問題可以使用標題有相同詞語的另一個聊天。不必說「聊天」。只附上短摘錄，且不修改那個聊天。",
-          "keep_chats": "每人保留的未釘選最新聊天。已釘選的聊天一律保留。預設 30。",
-          "runtime_token": "Docker Runtime 的共用密鑰。在容器上將 RUNTIME_TOKEN 設為相同的值。附加元件會自動配對，請留空。"
+          "keep_chats": "每人保留的未釘選最新聊天。已釘選的聊天一律保留。預設 30。"
         },
         "sections": {
           "mcp": {
@@ -59,7 +59,7 @@
       }
     },
     "error": {
-      "no_runtime": "無法連線 Cursor 執行階段。請啟動它並在 AI Workspace 中設定 URL。",
+      "no_runtime": "無法連線 Cursor 執行階段。請啟動它並在此表單中設定 URL。",
       "required": "此欄位為必填。",
       "invalid_auth": "提供者拒絕了此 API 金鑰。",
       "cannot_connect": "無法連線到提供者。請檢查 URL 和網路。"
@@ -74,7 +74,6 @@
         "title": "AI Workspace",
         "description": "共用聊天設定。在 AI Workspace 整合頁面上用按鈕新增 MCP 連線和代理。",
         "data": {
-          "runtime_url": "Cursor 執行階段 URL{runtime_url_mark}",
           "stt_engine": "語音轉文字",
           "tts_engine": "文字轉語音",
           "speak_replies": "自動朗讀回覆",
@@ -83,12 +82,12 @@
           "enable_dictate": "顯示聽寫按鈕",
           "allow_users": "允許一般使用者",
           "house_map": "設定目錄",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "跨聊天",
-          "keep_chats": "要保留的聊天",
-          "runtime_token": "Runtime 權杖"
+          "keep_chats": "要保留的聊天"
         },
         "data_description": {
-          "runtime_url": "{runtime_url_note}",
           "stt_engine": "瀏覽器使用裝置語音引擎，需要 https:// 或 localhost。Home Assistant 引擎（設定中的 Whisper 等）會轉寫本頁錄音。瀏覽器仍須允許麥克風，且僅在 https:// 或 localhost 上允許。",
           "tts_engine": "Piper、Google Translate，或 OpenAI 風格代理的 AI Workspace 語音。朗讀回覆在一般 http:// 上也可用。關閉則回覆只保留文字。",
           "speak_replies": "選擇了語音時，每則回覆到達後會自動朗讀。關閉後仍保留喇叭按鈕，以便自己播放。",
@@ -97,9 +96,10 @@
           "enable_dictate": "訊息框中的麥克風。",
           "allow_users": "非管理員的已登入使用者可以開啟懸浮聊天。關閉則僅限管理員。側欄項目仍僅管理員可見。 他們只能以自己的權限使用內建的 Home Assistant MCP 伺服器。",
           "house_map": "選用的本機索引，用於已命名項目的接線（觸發器、相關 id）。預設關閉。不要用來列出自動化或開關狀態——那用即時 MCP。不是即時狀態、歷程或追蹤。",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "預設關閉。開啟後，問題可以使用標題有相同詞語的另一個聊天。不必說「聊天」。只附上短摘錄，且不修改那個聊天。",
-          "keep_chats": "每人保留的未釘選最新聊天。已釘選的聊天一律保留。預設 30。",
-          "runtime_token": "Docker Runtime 的共用密鑰。在容器上將 RUNTIME_TOKEN 設為相同的值。附加元件會自動配對，請留空。"
+          "keep_chats": "每人保留的未釘選最新聊天。已釘選的聊天一律保留。預設 30。"
         },
         "sections": {
           "mcp": {
@@ -128,7 +128,7 @@
       }
     },
     "error": {
-      "no_runtime": "無法連線 Cursor 執行階段。請啟動它並在 AI Workspace 中設定 URL。",
+      "no_runtime": "無法連線 Cursor 執行階段。請啟動它並在此表單中設定 URL。",
       "required": "此欄位為必填。",
       "invalid_auth": "提供者拒絕了此 API 金鑰。",
       "cannot_connect": "無法連線到提供者。請檢查 URL 和網路。"
@@ -182,7 +182,7 @@
       },
       "entry_type": "代理",
       "error": {
-        "no_runtime": "無法連線 Cursor 執行階段。請啟動它並在 AI Workspace 中設定 URL。",
+        "no_runtime": "無法連線 Cursor 執行階段。請啟動它並在此表單中設定 URL。",
         "required": "此欄位為必填。",
         "invalid_auth": "提供者拒絕了此 API 金鑰。",
         "cannot_connect": "無法連線到提供者。請檢查 URL 和網路。"
@@ -200,14 +200,18 @@
         },
         "provider_cursor": {
           "title": "Cursor",
-          "description": "Cursor API 金鑰、模型和力度。執行階段 URL 仍在 AI Workspace。",
+          "description": "Cursor Runtime, API key, model, and effort. The URL field fills only when this Home Assistant can reach the Runtime.",
           "data": {
+            "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
+            "runtime_token": "Runtime token",
             "cursor_api_key": "Cursor API 金鑰",
             "model": "模型",
             "effort": "力度",
             "assist": "加入 Assist"
           },
           "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Shared secret for a Docker Runtime. Set the same value as RUNTIME_TOKEN on the container. The add-on is paired automatically; leave this empty.",
             "cursor_api_key": "來自 cursor.com/dashboard/integrations。編輯時留空以保留已儲存的金鑰。 如果 Runtime 已設定 CURSOR_API_KEY，請留空。",
             "model": "從列表選擇或輸入 id。留空則使用 Composer。",
             "effort": "快速、高或高快速。Composer 使用快速，除非你選擇高。",

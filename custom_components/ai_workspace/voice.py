@@ -12,7 +12,9 @@ from .const import DOMAIN, STT_BROWSER, TTS_OFF, is_placeholder_tts
 
 _LINK = re.compile(r"\[([^\]]+)\]\([^)]+\)")
 _URL = re.compile(r"https?://\S+")
-_MARK = re.compile(r"[*_`#]+")
+_MARK = re.compile(r"[*_`#~]+")
+_ARROW = re.compile(r"[→➡➜➤▶►▸▹↦⇒]+")
+_RULE = re.compile(r"^\s*[-*_]{3,}\s*$", re.MULTILINE)
 
 
 def match_speech_language(requested: str, supported: list[str] | tuple[str, ...] | None, default: str = "") -> str:
@@ -61,12 +63,20 @@ def _without_tables(text: str) -> str:
     return "\n".join(kept)
 
 
-def speech_text(text: str) -> str:
-    """Plain words for TTS — skip tables, markdown links, and raw URLs."""
-    out = _without_tables(str(text or ""))
+def speech_text(text: str, *, natural: bool = True) -> str:
+    """Plain words for TTS — skip tables, markdown, links, and decorative symbols."""
+    raw = str(text or "").strip()
+    if not raw:
+        return ""
+    if not natural:
+        return raw[:4000]
+    out = _without_tables(raw)
     out = _LINK.sub(r"\1", out)
     out = _URL.sub("", out)
     out = _MARK.sub("", out)
+    out = _ARROW.sub(" ", out)
+    out = _RULE.sub("", out)
+    out = re.sub(r"^\s*>\s?", "", out, flags=re.MULTILINE)
     lines = [" ".join(line.split()) for line in out.splitlines()]
     return "\n".join(line for line in lines if line).strip()[:4000]
 
@@ -109,20 +119,6 @@ async def async_speech_engines(hass: HomeAssistant, kind: str) -> list[dict[str,
     return options
 
 
-def preferred_workspace_tts(hass: HomeAssistant) -> str:
-    """First AI Workspace TTS entity, if any."""
-    try:
-        from homeassistant.helpers import entity_registry as er
-
-        for row in er.async_get(hass).entities.values():
-            if row.domain != "tts" or row.platform != DOMAIN or row.disabled_by is not None:
-                continue
-            return row.entity_id
-    except Exception:
-        return ""
-    return ""
-
-
 def _tts_engine_exists(hass: HomeAssistant, engine: str) -> bool:
     chosen = str(engine or "").strip()
     if not chosen or chosen == TTS_OFF:
@@ -134,7 +130,20 @@ def _tts_engine_exists(hass: HomeAssistant, engine: str) -> bool:
     except Exception:
         row = None
     if row is not None:
-        return row.disabled_by is None
+        return row.domain == "tts" and row.disabled_by is None
+    try:
+        from homeassistant.components.tts import DATA_COMPONENT, DATA_TTS_MANAGER
+
+        component = hass.data.get(DATA_COMPONENT)
+        for entity in getattr(component, "entities", []) or []:
+            if str(getattr(entity, "entity_id", "") or "") == chosen:
+                return True
+        manager = hass.data.get(DATA_TTS_MANAGER)
+        providers = getattr(manager, "providers", {}) if manager is not None else {}
+        if chosen in providers:
+            return True
+    except Exception:
+        pass
     try:
         return hass.states.get(chosen) is not None
     except Exception:
@@ -142,16 +151,13 @@ def _tts_engine_exists(hass: HomeAssistant, engine: str) -> bool:
 
 
 def resolved_overlay_tts(hass: HomeAssistant, engine: str) -> str:
-    """Use our voice in the overlay when the saved engine is Off or Google Translate."""
+    """Keep the saved overlay voice. Off if that engine is gone."""
     chosen = str(engine or "").strip() or TTS_OFF
-    if chosen != TTS_OFF and not is_placeholder_tts(chosen) and _tts_engine_exists(hass, chosen):
-        return chosen
-    ours = preferred_workspace_tts(hass)
-    if ours:
-        return ours
-    if chosen != TTS_OFF and not is_placeholder_tts(chosen):
+    if chosen == TTS_OFF:
         return TTS_OFF
-    return chosen
+    if _tts_engine_exists(hass, chosen):
+        return chosen
+    return TTS_OFF
 
 
 def overlay_tts_heavy(hass: HomeAssistant, engine: str) -> bool:
@@ -221,7 +227,14 @@ async def async_transcribe(hass: HomeAssistant, engine_id: str, audio: bytes, la
     return str(getattr(result, "text", "") or "").strip()
 
 
-async def async_speak(hass: HomeAssistant, engine_id: str, text: str, language: str) -> tuple[bytes, str]:
+async def async_speak(
+    hass: HomeAssistant,
+    engine_id: str,
+    text: str,
+    language: str,
+    *,
+    natural: bool = True,
+) -> tuple[bytes, str]:
     from homeassistant.components.tts import async_create_stream
 
     try:
@@ -229,7 +242,7 @@ async def async_speak(hass: HomeAssistant, engine_id: str, text: str, language: 
     except ImportError:
         get_engine_instance = None
 
-    message = speech_text(text)
+    message = speech_text(text, natural=natural)
     if not message:
         return b"", ""
     engine = get_engine_instance(hass, engine_id) if get_engine_instance else None

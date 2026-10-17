@@ -16,12 +16,14 @@ from .const import (
     COMPOSE_RUNTIME_URLS,
     CONF_RUNTIME_TOKEN,
     CONF_RUNTIME_URL,
+    CONF_SHORTEN_MCP_RESULTS,
+    CONF_CHANGE_HISTORY,
     DOMAIN,
     HOST_RUNTIME_URL,
 )
 from .models import ProviderInfo
 
-MISSING_RUNTIME = "Start the Cursor SDK Runtime and set its URL on AI Workspace."
+MISSING_RUNTIME = "Start the Cursor SDK Runtime and set its URL on the Cursor agent."
 BAD_TOKEN = (
     "The Cursor SDK Runtime refused the token. Set the same Runtime token on the Runtime "
     "and on AI Workspace (Configure)."
@@ -29,6 +31,9 @@ BAD_TOKEN = (
 PAIRING = "Pairing with the AI Workspace Runtime app. Try again in a minute."
 
 _LOGGER = logging.getLogger(__name__)
+_HASS_URL_OPTION = "hass_url"
+_SHORTEN_OPTION = "shorten_mcp_results"
+_HISTORY_OPTION = "change_history"
 _PROBE_COOLDOWN = 30.0
 _PAIR_WAIT = 90.0
 
@@ -105,12 +110,12 @@ async def async_token_accepted(hass: HomeAssistant, base: str, token: str) -> bo
     return status != 401
 
 
-async def async_resolve_runtime_url(hass: HomeAssistant, configured: str) -> str:
-    if configured:
-        base = configured.rstrip("/")
-        if not await async_probe_runtime(hass, base):
-            _LOGGER.warning("AI Workspace runtime at %s did not answer", base)
-        return base
+def _same_runtime_url(left: str, right: str) -> bool:
+    return str(left or "").strip().rstrip("/") == str(right or "").strip().rstrip("/")
+
+
+async def async_detect_runtime_url(hass: HomeAssistant) -> str:
+    """Return a Runtime URL only when /api/health answered. No compose-name guesses."""
     found = hassio_runtime_url(hass)
     for candidate in (found, HOST_RUNTIME_URL, *COMPOSE_RUNTIME_URLS):
         if not candidate:
@@ -119,8 +124,50 @@ async def async_resolve_runtime_url(hass: HomeAssistant, configured: str) -> str
             continue
         if await async_probe_runtime(hass, candidate):
             _LOGGER.info("AI Workspace runtime using %s", candidate)
-            return candidate
-    return found or ""
+            return candidate.rstrip("/")
+    return ""
+
+
+async def async_resolve_runtime_url(hass: HomeAssistant, configured: str) -> str:
+    configured = str(configured or "").strip().rstrip("/")
+    if configured and await async_probe_runtime(hass, configured):
+        return configured
+    detected = await async_detect_runtime_url(hass)
+    if detected:
+        return detected
+    if configured:
+        _LOGGER.warning("AI Workspace runtime at %s did not answer", configured)
+        return configured
+    return hassio_runtime_url(hass) or ""
+
+
+def runtime_form_placeholders(*, live: bool, auto: bool) -> dict[str, str]:
+    if live:
+        note = "✅ Runtime found."
+    elif auto:
+        note = "Auto-detected Cursor SDK on this machine."
+    else:
+        note = (
+            "Where this Home Assistant reaches the Cursor SDK container. "
+            "Leave empty to auto-detect. The field is filled only when that URL answers. "
+            "Loopback: http://127.0.0.1:8090. Same Docker network: http://cursor-sdk:8090."
+        )
+    return {
+        "runtime_url_mark": " · auto-detected" if auto and live else "",
+        "runtime_url_note": note,
+    }
+
+
+async def async_runtime_form_url(hass: HomeAssistant, saved: str) -> tuple[str, bool, bool]:
+    """URL to show on the Cursor form: fill from detection only when health answers."""
+    saved = str(saved or "").strip().rstrip("/")
+    detected = await async_detect_runtime_url(hass)
+    saved_live = bool(saved) and await async_probe_runtime(hass, saved)
+    if saved_live:
+        return saved, True, bool(detected) and _same_runtime_url(saved, detected)
+    if detected:
+        return detected, True, True
+    return saved, False, False
 
 
 def _entry_value(entry, key: str) -> str:
@@ -140,6 +187,55 @@ async def _async_addon_token(hass: HomeAssistant, slug: str) -> str:
     return str((info.options or {}).get(CONF_RUNTIME_TOKEN) or "").strip()
 
 
+def _shorten_mcp_results(hass: HomeAssistant) -> bool:
+    settings = (hass.data.get(DOMAIN) or {}).get("settings")
+    if settings is None:
+        return True
+    return bool(getattr(settings, CONF_SHORTEN_MCP_RESULTS, True))
+
+
+def _change_history(hass: HomeAssistant) -> bool:
+    settings = (hass.data.get(DOMAIN) or {}).get("settings")
+    if settings is None:
+        return True
+    return bool(getattr(settings, CONF_CHANGE_HISTORY, True))
+
+
+def _sync_runtime_options(hass: HomeAssistant, opts: dict) -> bool:
+    wanted_url = _runtime_hass_url(hass)
+    wanted_shorten = _shorten_mcp_results(hass)
+    wanted_history = _change_history(hass)
+    changed = False
+    if str(opts.get(_HASS_URL_OPTION) or "").rstrip("/") != wanted_url:
+        opts[_HASS_URL_OPTION] = wanted_url
+        changed = True
+    current = opts.get(_SHORTEN_OPTION)
+    if current is None or bool(current) != wanted_shorten:
+        opts[_SHORTEN_OPTION] = wanted_shorten
+        changed = True
+    current_history = opts.get(_HISTORY_OPTION)
+    if current_history is None or bool(current_history) != wanted_history:
+        opts[_HISTORY_OPTION] = wanted_history
+        changed = True
+    return changed
+
+
+def _runtime_hass_url(hass: HomeAssistant) -> str:
+    try:
+        from homeassistant.helpers.network import NoURLAvailableError, get_url
+
+        return str(
+            get_url(hass, allow_internal=True, allow_external=False, allow_ip=True, prefer_external=False)
+        ).rstrip("/")
+    except (ImportError, NoURLAvailableError):
+        pass
+    api = getattr(hass.config, "api", None)
+    port = int(getattr(api, "port", None) or 8123)
+    tls = bool(getattr(api, "use_ssl", False))
+    scheme = "https" if tls else "http"
+    return f"{scheme}://127.0.0.1:{port}"
+
+
 async def _async_pair_addon(hass: HomeAssistant, slug: str, base: str) -> str:
     """Give the Runtime app a token through the Supervisor, the way Z-Wave JS sets its keys."""
     from homeassistant.components.hassio import AddonError, AddonManager
@@ -149,10 +245,21 @@ async def _async_pair_addon(hass: HomeAssistant, slug: str, base: str) -> str:
         info = await manager.async_get_addon_info()
         token = str((info.options or {}).get(CONF_RUNTIME_TOKEN) or "").strip()
         if token and await async_token_accepted(hass, base, token):
+            opts = dict(info.options or {})
+            if _sync_runtime_options(hass, opts):
+                try:
+                    await manager.async_set_addon_options(opts)
+                except AddonError:
+                    pass
             return token
         if not token:
             token = secrets.token_urlsafe(32)
-            await manager.async_set_addon_options({**(info.options or {}), CONF_RUNTIME_TOKEN: token})
+            opts = {
+                **(info.options or {}),
+                CONF_RUNTIME_TOKEN: token,
+            }
+            _sync_runtime_options(hass, opts)
+            await manager.async_set_addon_options(opts)
         _LOGGER.info("Restarting the AI Workspace Runtime app so it picks up its token")
         await manager.async_restart_addon()
     except AddonError as exc:

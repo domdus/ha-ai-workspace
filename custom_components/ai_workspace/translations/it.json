@@ -5,7 +5,6 @@
         "title": "AI Workspace",
         "description": "Impostazioni condivise della chat. Dopo, aggiungi il primo agente (Cursor, OpenAI, OpenRouter, Ollama e altri). Connessioni e agenti sono righe di questa integrazione.",
         "data": {
-          "runtime_url": "URL runtime Cursor{runtime_url_mark}",
           "stt_engine": "Voce in testo",
           "tts_engine": "Testo in voce",
           "speak_replies": "Leggi le risposte automaticamente",
@@ -14,12 +13,12 @@
           "enable_dictate": "Mostra il pulsante dettatura",
           "allow_users": "Consenti utenti normali",
           "house_map": "Catalogo di configurazione",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "Tra chat",
-          "keep_chats": "Chat da conservare",
-          "runtime_token": "Token del Runtime"
+          "keep_chats": "Chat da conservare"
         },
         "data_description": {
-          "runtime_url": "{runtime_url_note}",
           "stt_engine": "Il browser usa il motore vocale del dispositivo e richiede https:// o localhost. Un motore Home Assistant (Whisper e altri in Impostazioni) trascrive una registrazione da questa pagina. Il browser deve comunque autorizzare il microfono, e lo fa solo su https:// o localhost.",
           "tts_engine": "Piper, Google Translate o una voce AI Workspace di un agente OpenAI. La lettura della risposta funziona anche su http://. Disattivo lascia le risposte come testo.",
           "speak_replies": "Se è scelta una voce, ogni risposta viene letta appena arriva. Disattivo lascia il pulsante dell’altoparlante per riprodurla tu.",
@@ -28,9 +27,10 @@
           "enable_dictate": "Microfono nel campo del messaggio.",
           "allow_users": "Gli utenti connessi che non sono amministratori possono aprire la chat mobile. Disattivo la riserva agli amministratori. La voce della barra laterale resta solo per gli amministratori. Ricevono solo il server MCP integrato di Home Assistant con i propri permessi.",
           "house_map": "Indice locale facoltativo del cablaggio di un elemento con nome (trigger, id correlati). Disattivo per impostazione predefinita. Non per elencare automazioni o on/off: usa MCP in diretta. Non stato in diretta, cronologia o tracce.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Disattivo per impostazione predefinita. Se attivo, una domanda può usare un’altra chat il cui titolo condivide parole con essa. Non serve dire chat. Solo un breve estratto, e quella chat non viene modificata.",
-          "keep_chats": "Chat non fissate più recenti da conservare per persona. Le chat fissate restano sempre. Predefinito 30.",
-          "runtime_token": "Segreto condiviso per un Runtime Docker. Imposta lo stesso valore come RUNTIME_TOKEN nel container. L'add-on viene associato in automatico; lascia vuoto."
+          "keep_chats": "Chat non fissate più recenti da conservare per persona. Le chat fissate restano sempre. Predefinito 30."
         },
         "sections": {
           "mcp": {
@@ -59,7 +59,7 @@
       }
     },
     "error": {
-      "no_runtime": "Il runtime Cursor non è raggiungibile. Avvialo e imposta l’URL su AI Workspace.",
+      "no_runtime": "Il runtime Cursor non è raggiungibile. Avvialo e imposta l’URL  su questo modulo.",
       "required": "Questo campo è obbligatorio.",
       "invalid_auth": "Il provider ha rifiutato questa chiave API.",
       "cannot_connect": "Impossibile raggiungere il provider. Controlla l'URL e la rete."
@@ -74,7 +74,6 @@
         "title": "AI Workspace",
         "description": "Impostazioni condivise della chat. Aggiungi connessioni MCP e agenti con i pulsanti nella pagina dell'integrazione AI Workspace.",
         "data": {
-          "runtime_url": "URL runtime Cursor{runtime_url_mark}",
           "stt_engine": "Voce in testo",
           "tts_engine": "Testo in voce",
           "speak_replies": "Leggi le risposte automaticamente",
@@ -83,12 +82,12 @@
           "enable_dictate": "Mostra il pulsante dettatura",
           "allow_users": "Consenti utenti normali",
           "house_map": "Catalogo di configurazione",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "Tra chat",
-          "keep_chats": "Chat da conservare",
-          "runtime_token": "Token del Runtime"
+          "keep_chats": "Chat da conservare"
         },
         "data_description": {
-          "runtime_url": "{runtime_url_note}",
           "stt_engine": "Il browser usa il motore vocale del dispositivo e richiede https:// o localhost. Un motore Home Assistant (Whisper e altri in Impostazioni) trascrive una registrazione da questa pagina. Il browser deve comunque autorizzare il microfono, e lo fa solo su https:// o localhost.",
           "tts_engine": "Piper, Google Translate o una voce AI Workspace di un agente OpenAI. La lettura della risposta funziona anche su http://. Disattivo lascia le risposte come testo.",
           "speak_replies": "Se è scelta una voce, ogni risposta viene letta appena arriva. Disattivo lascia il pulsante dell’altoparlante per riprodurla tu.",
@@ -97,9 +96,10 @@
           "enable_dictate": "Microfono nel campo del messaggio.",
           "allow_users": "Gli utenti connessi che non sono amministratori possono aprire la chat mobile. Disattivo la riserva agli amministratori. La voce della barra laterale resta solo per gli amministratori. Ricevono solo il server MCP integrato di Home Assistant con i propri permessi.",
           "house_map": "Indice locale facoltativo del cablaggio di un elemento con nome (trigger, id correlati). Disattivo per impostazione predefinita. Non per elencare automazioni o on/off: usa MCP in diretta. Non stato in diretta, cronologia o tracce.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Disattivo per impostazione predefinita. Se attivo, una domanda può usare un’altra chat il cui titolo condivide parole con essa. Non serve dire chat. Solo un breve estratto, e quella chat non viene modificata.",
-          "keep_chats": "Chat non fissate più recenti da conservare per persona. Le chat fissate restano sempre. Predefinito 30.",
-          "runtime_token": "Segreto condiviso per un Runtime Docker. Imposta lo stesso valore come RUNTIME_TOKEN nel container. L'add-on viene associato in automatico; lascia vuoto."
+          "keep_chats": "Chat non fissate più recenti da conservare per persona. Le chat fissate restano sempre. Predefinito 30."
         },
         "sections": {
           "mcp": {
@@ -128,7 +128,7 @@
       }
     },
     "error": {
-      "no_runtime": "Il runtime Cursor non è raggiungibile. Avvialo e imposta l’URL su AI Workspace.",
+      "no_runtime": "Il runtime Cursor non è raggiungibile. Avvialo e imposta l’URL  su questo modulo.",
       "required": "Questo campo è obbligatorio.",
       "invalid_auth": "Il provider ha rifiutato questa chiave API.",
       "cannot_connect": "Impossibile raggiungere il provider. Controlla l'URL e la rete."
@@ -182,7 +182,7 @@
       },
       "entry_type": "Agente",
       "error": {
-        "no_runtime": "Il runtime Cursor non è raggiungibile. Avvialo e imposta l’URL su AI Workspace.",
+        "no_runtime": "Il runtime Cursor non è raggiungibile. Avvialo e imposta l’URL  su questo modulo.",
         "required": "Questo campo è obbligatorio.",
         "invalid_auth": "Il provider ha rifiutato questa chiave API.",
         "cannot_connect": "Impossibile raggiungere il provider. Controlla l'URL e la rete."
@@ -200,14 +200,18 @@
         },
         "provider_cursor": {
           "title": "Cursor",
-          "description": "Chiave API Cursor, modello e impegno. L’URL del runtime resta su AI Workspace.",
+          "description": "Cursor Runtime, API key, model, and effort. The URL field fills only when this Home Assistant can reach the Runtime.",
           "data": {
+            "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
+            "runtime_token": "Runtime token",
             "cursor_api_key": "Chiave API Cursor",
             "model": "Modello",
             "effort": "Impegno",
             "assist": "Aggiungi ad Assist"
           },
           "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Shared secret for a Docker Runtime. Set the same value as RUNTIME_TOKEN on the container. The add-on is paired automatically; leave this empty.",
             "cursor_api_key": "Da cursor.com/dashboard/integrations. Lascia vuoto in modifica per conservare la chiave salvata. Lascia vuoto se il Runtime ha già CURSOR_API_KEY.",
             "model": "Scegli uno o digita un id. Vuoto usa Composer.",
             "effort": "Veloce, Alto o Alto veloce. Composer usa Veloce a meno che non scelga Alto.",

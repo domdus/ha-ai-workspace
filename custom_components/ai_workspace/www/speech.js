@@ -1,11 +1,21 @@
 const TARGET_CHARS = 280;
 const MAX_CHARS = 560;
 
-export function speechPlain(text) {
-  return String(text || "")
+const ARROW_CHARS = /[→➡➜➤▶►▸▹↦⇒]+/g;
+
+export function speechPlain(text, options = {}) {
+  const natural = options.natural !== false;
+  let out = String(text || "");
+  if (!natural) {
+    return out.trim();
+  }
+  return out
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
     .replace(/https?:\/\/\S+/g, "")
-    .replace(/[*_`#]+/g, "")
+    .replace(/[*_`#~]+/g, "")
+    .replace(ARROW_CHARS, " ")
+    .replace(/^\s*[-*_]{3,}\s*$/gm, "")
+    .replace(/^\s*>\s?/gm, "")
     .replace(/^[ \t]*[-*•]\s+/gm, "")
     .replace(/^[ \t]*\d+\.\s+/gm, "")
     .split("\n")

@@ -10,6 +10,26 @@ function hassObj() {
   return document.querySelector("home-assistant")?.hass;
 }
 
+let shellScrollPin = false;
+
+/** Reset window/body and HA panel scroll containers (e.g. after sidebar navigation). */
+export function resetHaShellScroll(startEl) {
+  if (shellScrollPin) return;
+  shellScrollPin = true;
+  window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+  const seen = new Set();
+  let node = startEl || null;
+  while (node && !seen.has(node)) {
+    seen.add(node);
+    if (node.scrollTop) node.scrollTop = 0;
+    const root = node.getRootNode?.();
+    node = node.parentElement || (root instanceof ShadowRoot ? root.host : null);
+  }
+  shellScrollPin = false;
+}
+
 function haAtLeast(year, month) {
   const [major, minor] = String(hassObj()?.config?.version || "").split(".").map(Number);
   if (!major) return true;
@@ -585,6 +605,8 @@ export function mountAiWorkspace(root, options = {}) {
     plusIcon.path = "M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z";
   }
   let sessionId = "";
+  let sessionLoad = Promise.resolve();
+  let freshChat = false;
   let routeGen = 0;
   const workspaceLink = root.querySelector(".workspace-link");
   const teardown = [];
@@ -686,6 +708,7 @@ export function mountAiWorkspace(root, options = {}) {
       restoreQueued();
       abandonStream();
       sessionId = "";
+      freshChat = true;
       titleEl.textContent = t("new_chat");
       showEmpty();
     }
@@ -751,24 +774,17 @@ export function mountAiWorkspace(root, options = {}) {
     return messageEl.matches(":focus-within") || messageEl.matches(":focus") || root.activeElement === messageEl;
   }
 
-  let pinningScroll = false;
   let keyboardRaf = 0;
   let keyboardHeight = "";
   let keyboardOpen = false;
 
   function resetOuterScroll() {
-    if (pinningScroll) return;
-    pinningScroll = true;
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-    let node = root.host || null;
-    while (node) {
-      if (node.scrollTop) node.scrollTop = 0;
-      const next = node.parentElement || node.getRootNode?.()?.host || null;
-      node = next === node ? null : next;
-    }
-    pinningScroll = false;
+    const start =
+      root.getRootNode?.()?.host ||
+      root.parentElement ||
+      root.host ||
+      null;
+    resetHaShellScroll(start);
   }
 
   function clearKeyboardLock() {
@@ -991,17 +1007,23 @@ export function mountAiWorkspace(root, options = {}) {
 
   let noticeTimer = 0;
 
+  function setBanner(text, { alertType = "error" } = {}) {
+    if (!bannerEl) return;
+    const msg = String(text || "");
+    if (bannerEl.localName === "ha-alert") {
+      bannerEl.setAttribute("alert-type", alertType);
+    }
+    bannerEl.textContent = msg;
+    bannerEl.hidden = !msg;
+  }
+
   function showNotice(text) {
-    if (!bannerEl || !text) return;
+    if (!text) return;
     clearMicHelp();
-    bannerEl.hidden = false;
-    bannerEl.textContent = text;
+    setBanner(text, { alertType: "error" });
     if (noticeTimer) clearTimeout(noticeTimer);
     noticeTimer = window.setTimeout(() => {
-      if (bannerEl.textContent === text) {
-        bannerEl.hidden = true;
-        bannerEl.textContent = "";
-      }
+      if (bannerEl && bannerEl.textContent === text) setBanner("");
     }, 6000);
   }
 
@@ -1211,9 +1233,14 @@ export function mountAiWorkspace(root, options = {}) {
       bubble.appendChild(md);
       if (content) bubble.classList.add("has-text");
     } else if (content && !((pics.length || files.length) && isDefaultImageCaption(content))) {
-      const text = document.createElement("div");
+      const text = haCreate("ha-markdown", "div");
       text.className = "text";
-      text.textContent = content;
+      if (text.localName === "ha-markdown") {
+        text.breaks = true;
+        text.content = String(content || "");
+      } else {
+        text.textContent = content;
+      }
       bubble.appendChild(text);
       bubble.classList.add("has-text");
     }
@@ -1747,7 +1774,7 @@ export function mountAiWorkspace(root, options = {}) {
 
   let defaultProvider = "api";
   let agentId = "";
-  let voice = { dictate: true, stt: "browser", speak: false, tts: false, ttsHeavy: false };
+  let voice = { dictate: true, stt: "browser", speak: false, tts: false, ttsHeavy: false, ttsNatural: true };
   let turnHasHistory = false;
 
   function selectedAgent() {
@@ -2141,13 +2168,27 @@ export function mountAiWorkspace(root, options = {}) {
       return null;
     }
     sessionId = session.id;
+    freshChat = false;
     bumpSession(session.id, session.title, session.pinned);
     goToSession(sessionId, true);
     if (compact) localStorage.setItem("ai_workspace_session", sessionId);
     return session;
   }
 
+  function knownSessionId() {
+    if (freshChat) return "";
+    if (sessionId) return sessionId;
+    if (!compact) return sessionIdFromPath();
+    return localStorage.getItem("ai_workspace_session") || "";
+  }
+
   async function openSession(id, fromUrl = false) {
+    const work = loadSession(id, fromUrl);
+    sessionLoad = work.then(() => {}, () => {});
+    return work;
+  }
+
+  async function loadSession(id, fromUrl = false) {
     if (id && id === sessionId && (streaming || liveStream)) {
       selectSessionRow(id);
       return;
@@ -2160,6 +2201,7 @@ export function mountAiWorkspace(root, options = {}) {
     if (!id) {
       routeGen += 1;
       sessionId = "";
+      freshChat = true;
       titleEl.textContent = t("new_chat");
       showEmpty();
       if (!fromUrl) goToSession("");
@@ -2178,6 +2220,7 @@ export function mountAiWorkspace(root, options = {}) {
       return;
     }
     sessionId = id;
+    freshChat = false;
     if (compact) localStorage.setItem("ai_workspace_session", id);
     if (!fromUrl) goToSession(id);
     const session = await response.json();
@@ -2202,8 +2245,8 @@ export function mountAiWorkspace(root, options = {}) {
       });
     }
     settleTools(logEl);
-    const lastUser = [...messages].reverse().find((message) => message.role === "user");
-    refreshTurnHistory(lastUser?.created_at || "");
+    // Any Change History row for this chat — not only the last user turn.
+    refreshTurnHistory();
     clipToBottom();
     stickToBottom();
     requestAnimationFrame(() => requestAnimationFrame(stickToBottom));
@@ -2908,7 +2951,7 @@ export function mountAiWorkspace(root, options = {}) {
   }
 
   function pendingChars() {
-    return speakPending.reduce((sum, item) => sum + speechPlain(item).length, 0);
+    return speakPending.reduce((sum, item) => sum + plainForTts(item).length, 0);
   }
 
   function takePendingClip() {
@@ -2916,14 +2959,14 @@ export function mountAiWorkspace(root, options = {}) {
     while (speakPending.length) {
       const next = speakPending[0];
       const combined = clip ? `${clip}\n${next}` : next;
-      if (clip && speechPlain(combined).length > 560) break;
+      if (clip && plainForTts(combined).length > 560) break;
       speakPending.shift();
       clip = combined;
-      const size = speechPlain(clip).length;
+      const size = plainForTts(clip).length;
       if (size < 280) continue;
       if (!speakFlush) break;
       if (!speakPending.length) break;
-      if (speechPlain(`${clip}\n${speakPending[0]}`).length > 560) break;
+      if (plainForTts(`${clip}\n${speakPending[0]}`).length > 560) break;
     }
     return clip.trim();
   }
@@ -2946,8 +2989,12 @@ export function mountAiWorkspace(root, options = {}) {
     }
   }
 
+  function plainForTts(text) {
+    return speechPlain(text, { natural: voice.ttsNatural !== false });
+  }
+
   async function fetchSpeech(text, gen) {
-    const plain = speechPlain(text);
+    const plain = plainForTts(text);
     if (!plain) return null;
     const ac = new AbortController();
     const timer = window.setTimeout(() => ac.abort(), 20000);
@@ -3092,27 +3139,38 @@ export function mountAiWorkspace(root, options = {}) {
     if (!visible) stopSpeech();
   }
 
+  function setChangeHistoryShown(visible) {
+    root.querySelectorAll(".history-open").forEach((btn) => {
+      btn.hidden = !visible;
+      btn.classList.toggle("is-hidden", !visible);
+    });
+    if (!visible) closeHistory();
+  }
+
   async function loadDictate() {
-    if (!micBtn) return;
     // Stay hidden until /ui explicitly allows the mic (also covers the overlay drawer).
     let show = false;
+    let historyOn = true;
     try {
       const response = await apiFetch(`${API}/ui`);
       if (response?.ok) {
         const body = await response.json();
         show = body.dictate === true;
+        historyOn = body.change_history !== false;
         voice = {
           dictate: show,
           stt: body.stt || "browser",
           speak: body.speak === true,
           tts: Boolean(body.tts) && body.tts !== "off",
           ttsHeavy: body.tts_heavy === true,
+          ttsNatural: body.tts_natural !== false,
         };
       }
     } catch (_err) {
       show = false;
     }
-    setMicShown(show);
+    setChangeHistoryShown(historyOn);
+    if (micBtn) setMicShown(show);
     syncCopyChat();
   }
 
@@ -3139,6 +3197,11 @@ export function mountAiWorkspace(root, options = {}) {
     const images = attachments.filter((item) => item.kind === "image");
     const files = attachments.filter((item) => item.kind === "file");
     if (!text && !attachments.length) return;
+    await sessionLoad;
+    if (!sessionId) {
+      const known = knownSessionId();
+      if (known) await openSession(known, true);
+    }
     abandonStream();
     const token = streamToken;
     const abort = new AbortController();
@@ -3154,7 +3217,6 @@ export function mountAiWorkspace(root, options = {}) {
     clearKeyboardLock();
     resetOuterScroll();
     sendBtn.disabled = true;
-    routeGen += 1;
     pending = [];
     renderThumbs();
     messageEl.value = "";
@@ -3179,6 +3241,7 @@ export function mountAiWorkspace(root, options = {}) {
     let chatId = "";
     liveStream = true;
     try {
+      if (token !== streamToken) return;
       if (!sessionId) {
         const created = await createSession();
         if (token !== streamToken || !created) return;
@@ -3204,17 +3267,12 @@ export function mountAiWorkspace(root, options = {}) {
       );
       if (token !== streamToken) return;
       if (response?.status === 404) {
-        const created = await createSession();
-        if (token !== streamToken || !created) return;
-        titleEl.textContent = promptTitle(text) || attachments[0]?.name || t("new_chat");
-        bumpSession(sessionId, titleEl.textContent);
-        chatId = sessionId;
-        response = await apiFetch(
-          `${API}/sessions/${chatId}/chat`,
-          { method: "POST", body: payload, signal: abort.signal },
-          { raise: true },
-        );
-        if (token !== streamToken) return;
+        const node = assistant.querySelector(".text");
+        node.content = await errorText(response);
+        node.hidden = !node.content;
+        assistant.classList.add("error", "has-text");
+        setActivity(assistant, "");
+        return;
       }
       if (!response?.ok || !response.body) {
         const node = assistant.querySelector(".text");
@@ -3375,7 +3433,7 @@ export function mountAiWorkspace(root, options = {}) {
       }
       return;
     }
-    if (nearBottom() && !movedUp) {
+    if (nearBottom() && !movedUp && !holdFollow && !keyboardOpen) {
       clipToBottom();
       followBottom();
     }
@@ -3435,6 +3493,7 @@ export function mountAiWorkspace(root, options = {}) {
     if (wrap.classList.contains("keyboard-open")) syncKeyboardInset();
   });
   messageEl.addEventListener("input", () => {
+    if (!nearBottom()) releaseFollow();
     holdChatScroll(resizeComposer);
   });
   messageEl.addEventListener("keydown", (event) => {
@@ -3455,9 +3514,9 @@ export function mountAiWorkspace(root, options = {}) {
   const scrollBtnWatch = new ResizeObserver(() => {
     if (keyboardOpen || composerFocused()) {
       syncScrollBottomBtn();
-      return;
+      if (!pinBottom || holdFollow || !nearBottom()) return;
     }
-    if (pinBottom) followBottom();
+    if (pinBottom && nearBottom()) followBottom();
     else syncScrollBottomBtn();
   });
   scrollBtnWatch.observe(logEl);
@@ -3477,6 +3536,7 @@ export function mountAiWorkspace(root, options = {}) {
     routeGen += 1;
     watchGen += 1;
     sessionId = "";
+    freshChat = true;
     renderThumbs();
     if (compact) localStorage.removeItem("ai_workspace_session");
     closeNavIfOverlay();
@@ -3535,12 +3595,9 @@ export function mountAiWorkspace(root, options = {}) {
       }
       const rows = await resp.json();
       const since = Date.parse(sinceIso || "") || 0;
-      if (!since) {
-        syncCopyChat();
-        return;
-      }
       turnHasHistory = (Array.isArray(rows) ? rows : []).some((row) => {
         if (String(row.session_id || "") !== chatId) return false;
+        if (!since) return true;
         const at = Date.parse(row.created_at || "") || 0;
         return at >= since - 2500;
       });
@@ -3587,8 +3644,10 @@ export function mountAiWorkspace(root, options = {}) {
     const title = displayTitle(row.chat) || row.user_name || "";
     const chatId = String(row.session_id || "").trim();
     if (chatId && title) {
-      const link = document.createElement("a");
+      const link = haCreate("ha-button", "a");
       link.className = "history-chat";
+      link.setAttribute("appearance", "plain");
+      link.setAttribute("size", "s");
       link.href = sessionPath(chatId);
       link.textContent = title;
       link.addEventListener("click", (event) => {
@@ -3597,9 +3656,9 @@ export function mountAiWorkspace(root, options = {}) {
         closeHistory();
         openSession(chatId);
       });
-      who.append(link, row.agent ? ` · ${row.agent}` : "");
+      who.append(link, row.agent ? ` · ${String(row.agent).replace(/Â·/g, "·")}` : "");
     } else {
-      who.textContent = [title, row.agent].filter(Boolean).join(" · ");
+      who.textContent = [title, String(row.agent || "").replace(/Â·/g, "·")].filter(Boolean).join(" · ");
     }
     item.append(when, line, who);
     if (row.undone_at) {
@@ -3607,6 +3666,26 @@ export function mountAiWorkspace(root, options = {}) {
       restored.className = "history-restored";
       restored.textContent = t("restored");
       item.appendChild(restored);
+      return item;
+    }
+    if (row.ask_restore) {
+      const button = document.createElement("ha-button");
+      button.className = "history-rollback";
+      button.setAttribute("size", "s");
+      button.setAttribute("appearance", "plain");
+      button.textContent = t("ask_restore");
+      button.addEventListener("click", async () => {
+        const ok = await askConfirm(
+          t("ask_restore"),
+          t("ask_restore_confirm", { summary: row.summary || "" }),
+          t("ask_restore"),
+        );
+        if (!ok) return;
+        closeHistory();
+        messageEl.value = restorePrompt(row);
+        form.requestSubmit();
+      });
+      item.appendChild(button);
       return item;
     }
     if (!row.can_rollback) return item;
@@ -3629,6 +3708,30 @@ export function mountAiWorkspace(root, options = {}) {
     });
     item.appendChild(button);
     return item;
+  }
+
+  function restorePrompt(row) {
+    const lines = [`Change: ${row.summary || ""}`, `When: ${row.created_at || ""}`];
+    if (row.logical_commit && row.change_count > 1) {
+      lines.push(`Logical commit: ${row.change_count} related writes in one agent turn.`);
+    }
+    const targets = Array.isArray(row.restore_targets) ? row.restore_targets : [];
+    if (targets.length) {
+      targets.forEach((target, index) => {
+        const parts = [
+          target.kind ? `Kind: ${target.kind}` : "",
+          target.id ? `Id: ${target.id}` : "",
+          target.label ? `Label: ${target.label}` : "",
+        ].filter(Boolean);
+        if (parts.length) lines.push(`${index + 1}. ${parts.join(" · ")}`);
+      });
+    } else {
+      if (row.restore_kind) lines.push(`Kind: ${row.restore_kind}`);
+      if (row.restore_id) lines.push(`Id: ${row.restore_id}`);
+      if (row.restore_label) lines.push(`Label: ${row.restore_label}`);
+    }
+    if (row.tool) lines.push(`Tool: ${row.tool}`);
+    return t("ask_restore_prompt", { details: lines.join("\n") });
   }
 
   async function openHistory() {

@@ -5,7 +5,6 @@
         "title": "AI Workspace",
         "description": "Gemensamma chattinställningar. Lägg sedan till den första agenten (Cursor, OpenAI, OpenRouter, Ollama med flera). Anslutningar och agenter är rader i den här integrationen.",
         "data": {
-          "runtime_url": "URL till Cursor-runtime{runtime_url_mark}",
           "stt_engine": "Tal till text",
           "tts_engine": "Text till tal",
           "speak_replies": "Läs upp svar automatiskt",
@@ -14,12 +13,12 @@
           "enable_dictate": "Visa dikteringsknapp",
           "allow_users": "Tillåt vanliga användare",
           "house_map": "Konfigurationskatalog",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "Mellan chattar",
-          "keep_chats": "Chattar att behålla",
-          "runtime_token": "Runtime-token"
+          "keep_chats": "Chattar att behålla"
         },
         "data_description": {
-          "runtime_url": "{runtime_url_note}",
           "stt_engine": "Webbläsaren använder enhetens talmotor och behöver https:// eller localhost. En Home Assistant-motor (Whisper och andra under Inställningar) transkriberar en inspelning från den här sidan. Webbläsaren måste ändå tillåta mikrofonen, och det gör den bara på https:// eller localhost.",
           "tts_engine": "Piper, Google Translate eller en AI Workspace-röst från en OpenAI-agent. Uppläsning av svaret fungerar även över http://. Av lämnar svar som text.",
           "speak_replies": "När en röst är vald läses varje svar upp direkt. Av lämnar högtalarknappen så att du kan spela upp själv.",
@@ -28,9 +27,10 @@
           "enable_dictate": "Mikrofon i meddelanderutan.",
           "allow_users": "Inloggade användare som inte är administratörer kan öppna den flytande chatten. Av håller den till administratörer. Sidofältsobjektet förblir bara för administratörer. De får bara den inbyggda Home Assistant MCP-servern med sina egna behörigheter.",
           "house_map": "Valfritt lokalt index för kopplingen av ett namngivet objekt (utlösare, relaterade id:n). Av som standard. Inte för att lista automatiseringar eller på/av — använd live-MCP till det. Inte live-status, historik eller spår.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Av som standard. När det är på kan en fråga använda en annan chatt vars titel delar ord. Du behöver inte säga chatt. Bara ett kort utdrag, och den chatten ändras inte.",
-          "keep_chats": "Nyaste icke-fästa chattar per person. Fästa chattar behålls alltid. Standard 30.",
-          "runtime_token": "Delad hemlighet för en Docker-Runtime. Ange samma värde som RUNTIME_TOKEN på containern. Tillägget paras automatiskt; lämna tomt."
+          "keep_chats": "Nyaste icke-fästa chattar per person. Fästa chattar behålls alltid. Standard 30."
         },
         "sections": {
           "mcp": {
@@ -59,7 +59,7 @@
       }
     },
     "error": {
-      "no_runtime": "Cursor-runtimen går inte att nå. Starta den och ange URL:en på AI Workspace.",
+      "no_runtime": "Cursor-runtimen går inte att nå. Starta den och ange URL:en  på detta formulär.",
       "required": "Det här fältet är obligatoriskt.",
       "invalid_auth": "Leverantören avvisade den här API-nyckeln.",
       "cannot_connect": "Kunde inte nå leverantören. Kontrollera URL:en och nätverket."
@@ -74,7 +74,6 @@
         "title": "AI Workspace",
         "description": "Gemensamma chattinställningar. Lägg till MCP-anslutningar och agenter med knapparna på sidan för integrationen AI Workspace.",
         "data": {
-          "runtime_url": "URL till Cursor-runtime{runtime_url_mark}",
           "stt_engine": "Tal till text",
           "tts_engine": "Text till tal",
           "speak_replies": "Läs upp svar automatiskt",
@@ -83,12 +82,12 @@
           "enable_dictate": "Visa dikteringsknapp",
           "allow_users": "Tillåt vanliga användare",
           "house_map": "Konfigurationskatalog",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "Mellan chattar",
-          "keep_chats": "Chattar att behålla",
-          "runtime_token": "Runtime-token"
+          "keep_chats": "Chattar att behålla"
         },
         "data_description": {
-          "runtime_url": "{runtime_url_note}",
           "stt_engine": "Webbläsaren använder enhetens talmotor och behöver https:// eller localhost. En Home Assistant-motor (Whisper och andra under Inställningar) transkriberar en inspelning från den här sidan. Webbläsaren måste ändå tillåta mikrofonen, och det gör den bara på https:// eller localhost.",
           "tts_engine": "Piper, Google Translate eller en AI Workspace-röst från en OpenAI-agent. Uppläsning av svaret fungerar även över http://. Av lämnar svar som text.",
           "speak_replies": "När en röst är vald läses varje svar upp direkt. Av lämnar högtalarknappen så att du kan spela upp själv.",
@@ -97,9 +96,10 @@
           "enable_dictate": "Mikrofon i meddelanderutan.",
           "allow_users": "Inloggade användare som inte är administratörer kan öppna den flytande chatten. Av håller den till administratörer. Sidofältsobjektet förblir bara för administratörer. De får bara den inbyggda Home Assistant MCP-servern med sina egna behörigheter.",
           "house_map": "Valfritt lokalt index för kopplingen av ett namngivet objekt (utlösare, relaterade id:n). Av som standard. Inte för att lista automatiseringar eller på/av — använd live-MCP till det. Inte live-status, historik eller spår.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Av som standard. När det är på kan en fråga använda en annan chatt vars titel delar ord. Du behöver inte säga chatt. Bara ett kort utdrag, och den chatten ändras inte.",
-          "keep_chats": "Nyaste icke-fästa chattar per person. Fästa chattar behålls alltid. Standard 30.",
-          "runtime_token": "Delad hemlighet för en Docker-Runtime. Ange samma värde som RUNTIME_TOKEN på containern. Tillägget paras automatiskt; lämna tomt."
+          "keep_chats": "Nyaste icke-fästa chattar per person. Fästa chattar behålls alltid. Standard 30."
         },
         "sections": {
           "mcp": {
@@ -128,7 +128,7 @@
       }
     },
     "error": {
-      "no_runtime": "Cursor-runtimen går inte att nå. Starta den och ange URL:en på AI Workspace.",
+      "no_runtime": "Cursor-runtimen går inte att nå. Starta den och ange URL:en  på detta formulär.",
       "required": "Det här fältet är obligatoriskt.",
       "invalid_auth": "Leverantören avvisade den här API-nyckeln.",
       "cannot_connect": "Kunde inte nå leverantören. Kontrollera URL:en och nätverket."
@@ -182,7 +182,7 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Cursor-runtimen går inte att nå. Starta den och ange URL:en på AI Workspace.",
+        "no_runtime": "Cursor-runtimen går inte att nå. Starta den och ange URL:en  på detta formulär.",
         "required": "Det här fältet är obligatoriskt.",
         "invalid_auth": "Leverantören avvisade den här API-nyckeln.",
         "cannot_connect": "Kunde inte nå leverantören. Kontrollera URL:en och nätverket."
@@ -200,14 +200,18 @@
         },
         "provider_cursor": {
           "title": "Cursor",
-          "description": "Cursor-API-nyckel, modell och ansträngning. Runtime-URL:en stannar på AI Workspace.",
+          "description": "Cursor Runtime, API key, model, and effort. The URL field fills only when this Home Assistant can reach the Runtime.",
           "data": {
+            "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
+            "runtime_token": "Runtime token",
             "cursor_api_key": "Cursor-API-nyckel",
             "model": "Modell",
             "effort": "Ansträngning",
             "assist": "Lägg till i Assist"
           },
           "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Shared secret for a Docker Runtime. Set the same value as RUNTIME_TOKEN on the container. The add-on is paired automatically; leave this empty.",
             "cursor_api_key": "Från cursor.com/dashboard/integrations. Lämna tomt vid redigering för att behålla den sparade nyckeln. Lämna tomt om Runtime redan har CURSOR_API_KEY.",
             "model": "Välj en eller skriv ett id. Tomt använder Composer.",
             "effort": "Snabb, Hög eller Hög snabb. Composer använder Snabb om du inte väljer Hög.",

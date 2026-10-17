@@ -5,7 +5,6 @@
         "title": "AI Workspace",
         "description": "Komunaj babilaj agordoj. Poste aldonu la unuan agenton (Cursor, OpenAI, OpenRouter, Ollama kaj aliaj). Konektoj kaj agentoj estas vicoj de ĉi tiu integraĵo.",
         "data": {
-          "runtime_url": "URL de la Cursor-rultempo{runtime_url_mark}",
           "stt_engine": "Parolo al teksto",
           "tts_engine": "Teksto al parolo",
           "speak_replies": "Laŭtlegi respondojn aŭtomate",
@@ -14,12 +13,12 @@
           "enable_dictate": "Montri diktan butonon",
           "allow_users": "Permesi ordinarajn uzantojn",
           "house_map": "Agorda katalogo",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "Inter babilejoj",
-          "keep_chats": "Babilejoj konservotaj",
-          "runtime_token": "Runtime-ĵetono"
+          "keep_chats": "Babilejoj konservotaj"
         },
         "data_description": {
-          "runtime_url": "{runtime_url_note}",
           "stt_engine": "La foliumilo uzas la parolilon de la aparato kaj bezonas https:// aŭ localhost. Home Assistant-motoro (Whisper kaj aliaj ĉe Agordoj) transskribas registron de ĉi tiu paĝo. La foliumilo tamen devas permesi la mikrofonon, kaj tion ĝi faras nur ĉe https:// aŭ localhost.",
           "tts_engine": "Piper, Google Translate aŭ AI Workspace-voĉo de OpenAI-agento. Laŭtlegado de la respondo funkcias ankaŭ per http://. Malŝalte lasas respondojn kiel tekston.",
           "speak_replies": "Kiam voĉo estas elektita, ĉiu respondo estas laŭtlegata tuj. Malŝalte lasas la laŭtparolilan butonon por ludi mem.",
@@ -28,9 +27,10 @@
           "enable_dictate": "Mikrofono en la mesaĝa kampo.",
           "allow_users": "Ensalutintaj uzantoj kiuj ne estas administrantoj povas malfermi la ŝveban babilejon. Malŝalte lasas ĝin al administrantoj. La flanka-stria ero restas nur por administrantoj. Ili ricevas nur la enkonstruitan MCP-servilon de Home Assistant kun siaj propraj rajtoj.",
           "house_map": "Laŭvola loka indekso por la kabligo de nomita ero (ekigiloj, rilataj id-oj). Defaŭlte malŝalta. Ne por listigi aŭtomatojn aŭ ŝaltite/malŝaltite — uzu vivan MCP por tio. Ne viva stato, historio aŭ spuroj.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi alian babilejon kies titolo kunhavas vortojn. Ne necesas diri babilejo. Nur mallonga eltiraĵo, kaj tiu babilejo ne estas ŝanĝita.",
-          "keep_chats": "Plej novaj nealpinglitaj babilejoj po persono. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30.",
-          "runtime_token": "Komuna sekreto por Docker-Runtime. Metu la saman valoron kiel RUNTIME_TOKEN ĉe la ujo. La aldonaĵo pariĝas aŭtomate; lasu malplena."
+          "keep_chats": "Plej novaj nealpinglitaj babilejoj po persono. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."
         },
         "sections": {
           "mcp": {
@@ -59,7 +59,7 @@
       }
     },
     "error": {
-      "no_runtime": "La Cursor-rultempo ne estas atingebla. Startu ĝin kaj agordu la URL ĉe AI Workspace.",
+      "no_runtime": "La Cursor-rultempo ne estas atingebla. Startu ĝin kaj agordu la URL  ĉe ĉi tiu formularo.",
       "required": "Ĉi tiu kampo estas deviga.",
       "invalid_auth": "La provizanto rifuzis ĉi tiun API-ŝlosilon.",
       "cannot_connect": "Ne eblis atingi la provizanton. Kontrolu la URL-on kaj la reton."
@@ -74,7 +74,6 @@
         "title": "AI Workspace",
         "description": "Komunaj babilaj agordoj. Aldonu MCP-konektojn kaj agentojn per la butonoj sur la paĝo de la integraĵo AI Workspace.",
         "data": {
-          "runtime_url": "URL de la Cursor-rultempo{runtime_url_mark}",
           "stt_engine": "Parolo al teksto",
           "tts_engine": "Teksto al parolo",
           "speak_replies": "Laŭtlegi respondojn aŭtomate",
@@ -83,12 +82,12 @@
           "enable_dictate": "Montri diktan butonon",
           "allow_users": "Permesi ordinarajn uzantojn",
           "house_map": "Agorda katalogo",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "Inter babilejoj",
-          "keep_chats": "Babilejoj konservotaj",
-          "runtime_token": "Runtime-ĵetono"
+          "keep_chats": "Babilejoj konservotaj"
         },
         "data_description": {
-          "runtime_url": "{runtime_url_note}",
           "stt_engine": "La foliumilo uzas la parolilon de la aparato kaj bezonas https:// aŭ localhost. Home Assistant-motoro (Whisper kaj aliaj ĉe Agordoj) transskribas registron de ĉi tiu paĝo. La foliumilo tamen devas permesi la mikrofonon, kaj tion ĝi faras nur ĉe https:// aŭ localhost.",
           "tts_engine": "Piper, Google Translate aŭ AI Workspace-voĉo de OpenAI-agento. Laŭtlegado de la respondo funkcias ankaŭ per http://. Malŝalte lasas respondojn kiel tekston.",
           "speak_replies": "Kiam voĉo estas elektita, ĉiu respondo estas laŭtlegata tuj. Malŝalte lasas la laŭtparolilan butonon por ludi mem.",
@@ -97,9 +96,10 @@
           "enable_dictate": "Mikrofono en la mesaĝa kampo.",
           "allow_users": "Ensalutintaj uzantoj kiuj ne estas administrantoj povas malfermi la ŝveban babilejon. Malŝalte lasas ĝin al administrantoj. La flanka-stria ero restas nur por administrantoj. Ili ricevas nur la enkonstruitan MCP-servilon de Home Assistant kun siaj propraj rajtoj.",
           "house_map": "Laŭvola loka indekso por la kabligo de nomita ero (ekigiloj, rilataj id-oj). Defaŭlte malŝalta. Ne por listigi aŭtomatojn aŭ ŝaltite/malŝaltite — uzu vivan MCP por tio. Ne viva stato, historio aŭ spuroj.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi alian babilejon kies titolo kunhavas vortojn. Ne necesas diri babilejo. Nur mallonga eltiraĵo, kaj tiu babilejo ne estas ŝanĝita.",
-          "keep_chats": "Plej novaj nealpinglitaj babilejoj po persono. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30.",
-          "runtime_token": "Komuna sekreto por Docker-Runtime. Metu la saman valoron kiel RUNTIME_TOKEN ĉe la ujo. La aldonaĵo pariĝas aŭtomate; lasu malplena."
+          "keep_chats": "Plej novaj nealpinglitaj babilejoj po persono. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."
         },
         "sections": {
           "mcp": {
@@ -128,7 +128,7 @@
       }
     },
     "error": {
-      "no_runtime": "La Cursor-rultempo ne estas atingebla. Startu ĝin kaj agordu la URL ĉe AI Workspace.",
+      "no_runtime": "La Cursor-rultempo ne estas atingebla. Startu ĝin kaj agordu la URL  ĉe ĉi tiu formularo.",
       "required": "Ĉi tiu kampo estas deviga.",
       "invalid_auth": "La provizanto rifuzis ĉi tiun API-ŝlosilon.",
       "cannot_connect": "Ne eblis atingi la provizanton. Kontrolu la URL-on kaj la reton."
@@ -182,7 +182,7 @@
       },
       "entry_type": "Agento",
       "error": {
-        "no_runtime": "La Cursor-rultempo ne estas atingebla. Startu ĝin kaj agordu la URL ĉe AI Workspace.",
+        "no_runtime": "La Cursor-rultempo ne estas atingebla. Startu ĝin kaj agordu la URL  ĉe ĉi tiu formularo.",
         "required": "Ĉi tiu kampo estas deviga.",
         "invalid_auth": "La provizanto rifuzis ĉi tiun API-ŝlosilon.",
         "cannot_connect": "Ne eblis atingi la provizanton. Kontrolu la URL-on kaj la reton."
@@ -200,14 +200,18 @@
         },
         "provider_cursor": {
           "title": "Cursor",
-          "description": "Cursor-API-ŝlosilo, modelo kaj peno. La rultempa URL restas ĉe AI Workspace.",
+          "description": "Cursor Runtime, API key, model, and effort. The URL field fills only when this Home Assistant can reach the Runtime.",
           "data": {
+            "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
+            "runtime_token": "Runtime token",
             "cursor_api_key": "Cursor-API-ŝlosilo",
             "model": "Modelo",
             "effort": "Peno",
             "assist": "Aldoni al Assist"
           },
           "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Shared secret for a Docker Runtime. Set the same value as RUNTIME_TOKEN on the container. The add-on is paired automatically; leave this empty.",
             "cursor_api_key": "De cursor.com/dashboard/integrations. Lasu malplena dum redakto por konservi la konservitan ŝlosilon. Lasu malplena, se la Runtime jam havas CURSOR_API_KEY.",
             "model": "Elektu unu aŭ tajpu id. Malplena uzas Composer.",
             "effort": "Rapida, Alta aŭ Alta rapida. Composer uzas Rapida krom se vi elektas Alta.",

@@ -5,7 +5,6 @@
         "title": "AI Workspace",
         "description": "Общие настройки чата. Затем добавьте первого агента (Cursor, OpenAI, OpenRouter, Ollama и другие). Подключения и агенты — это строки этой интеграции.",
         "data": {
-          "runtime_url": "URL среды выполнения Cursor{runtime_url_mark}",
           "stt_engine": "Речь в текст",
           "tts_engine": "Текст в речь",
           "speak_replies": "Читать ответы автоматически",
@@ -14,12 +13,12 @@
           "enable_dictate": "Показать кнопку диктовки",
           "allow_users": "Разрешить обычным пользователям",
           "house_map": "Каталог конфигурации",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "Между чатами",
-          "keep_chats": "Чаты для хранения",
-          "runtime_token": "Токен Runtime"
+          "keep_chats": "Чаты для хранения"
         },
         "data_description": {
-          "runtime_url": "{runtime_url_note}",
           "stt_engine": "Браузер использует распознавание речи устройства и требует https:// или localhost. Движок Home Assistant (Whisper и другие в Настройках) расшифровывает запись с этой страницы. Браузер всё равно должен разрешить микрофон, и делает это только на https:// или localhost.",
           "tts_engine": "Piper, Google Translate или голос AI Workspace агента OpenAI. Озвучивание ответа работает и по http://. Выкл оставляет ответы текстом.",
           "speak_replies": "Если выбран голос, каждый ответ читается сразу. Выкл оставляет кнопку динамика, чтобы воспроизвести ответ самому.",
@@ -28,9 +27,10 @@
           "enable_dictate": "Микрофон в поле сообщения.",
           "allow_users": "Вошедшие пользователи без прав администратора могут открыть плавающий чат. Выкл оставляет его администраторам. Пункт боковой панели остаётся только для администраторов. Они получают только встроенный MCP-сервер Home Assistant со своими правами.",
           "house_map": "Необязательный локальный индекс связей именованного элемента (триггеры, связанные id). По умолчанию выкл. Не для списка автоматизаций или вкл/выкл — для этого живой MCP. Не живое состояние, история или трассировки.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "По умолчанию выкл. Если вкл, вопрос может использовать другой чат, в названии которого есть общие слова. Не нужно говорить чат. Только короткий фрагмент, и этот чат не меняется.",
-          "keep_chats": "Новые незакреплённые чаты на человека. Закреплённые чаты сохраняются всегда. По умолчанию 30.",
-          "runtime_token": "Общий секрет для Runtime в Docker. Укажите то же значение в RUNTIME_TOKEN контейнера. Дополнение связывается автоматически; оставьте пустым."
+          "keep_chats": "Новые незакреплённые чаты на человека. Закреплённые чаты сохраняются всегда. По умолчанию 30."
         },
         "sections": {
           "mcp": {
@@ -59,7 +59,7 @@
       }
     },
     "error": {
-      "no_runtime": "Среда выполнения Cursor недоступна. Запустите её и укажите URL в AI Workspace.",
+      "no_runtime": "Среда выполнения Cursor недоступна. Запустите её и укажите URL в этой форме.",
       "required": "Это поле обязательно.",
       "invalid_auth": "Провайдер отклонил этот API-ключ.",
       "cannot_connect": "Не удалось связаться с провайдером. Проверьте URL и сеть."
@@ -74,7 +74,6 @@
         "title": "AI Workspace",
         "description": "Общие настройки чата. MCP-подключения и агентов добавляйте кнопками на странице интеграции AI Workspace.",
         "data": {
-          "runtime_url": "URL среды выполнения Cursor{runtime_url_mark}",
           "stt_engine": "Речь в текст",
           "tts_engine": "Текст в речь",
           "speak_replies": "Читать ответы автоматически",
@@ -83,12 +82,12 @@
           "enable_dictate": "Показать кнопку диктовки",
           "allow_users": "Разрешить обычным пользователям",
           "house_map": "Каталог конфигурации",
+          "shorten_mcp_results": "Shorten large MCP tool results",
+          "change_history": "Change History",
           "cross_chat": "Между чатами",
-          "keep_chats": "Чаты для хранения",
-          "runtime_token": "Токен Runtime"
+          "keep_chats": "Чаты для хранения"
         },
         "data_description": {
-          "runtime_url": "{runtime_url_note}",
           "stt_engine": "Браузер использует распознавание речи устройства и требует https:// или localhost. Движок Home Assistant (Whisper и другие в Настройках) расшифровывает запись с этой страницы. Браузер всё равно должен разрешить микрофон, и делает это только на https:// или localhost.",
           "tts_engine": "Piper, Google Translate или голос AI Workspace агента OpenAI. Озвучивание ответа работает и по http://. Выкл оставляет ответы текстом.",
           "speak_replies": "Если выбран голос, каждый ответ читается сразу. Выкл оставляет кнопку динамика, чтобы воспроизвести ответ самому.",
@@ -97,9 +96,10 @@
           "enable_dictate": "Микрофон в поле сообщения.",
           "allow_users": "Вошедшие пользователи без прав администратора могут открыть плавающий чат. Выкл оставляет его администраторам. Пункт боковой панели остаётся только для администраторов. Они получают только встроенный MCP-сервер Home Assistant со своими правами.",
           "house_map": "Необязательный локальный индекс связей именованного элемента (триггеры, связанные id). По умолчанию выкл. Не для списка автоматизаций или вкл/выкл — для этого живой MCP. Не живое состояние, история или трассировки.",
+          "shorten_mcp_results": "On by default. Large MCP replies (the whole house, long lists) are shortened before cloud models and Cursor read them. Off sends the full replies. Home Assistant logs result sizing as mcp proxy last tool result (unchanged / area-map / truncated).",
+          "change_history": "On by default. Records agent configuration writes in Change History for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools and can still shorten results.",
           "cross_chat": "По умолчанию выкл. Если вкл, вопрос может использовать другой чат, в названии которого есть общие слова. Не нужно говорить чат. Только короткий фрагмент, и этот чат не меняется.",
-          "keep_chats": "Новые незакреплённые чаты на человека. Закреплённые чаты сохраняются всегда. По умолчанию 30.",
-          "runtime_token": "Общий секрет для Runtime в Docker. Укажите то же значение в RUNTIME_TOKEN контейнера. Дополнение связывается автоматически; оставьте пустым."
+          "keep_chats": "Новые незакреплённые чаты на человека. Закреплённые чаты сохраняются всегда. По умолчанию 30."
         },
         "sections": {
           "mcp": {
@@ -128,7 +128,7 @@
       }
     },
     "error": {
-      "no_runtime": "Среда выполнения Cursor недоступна. Запустите её и укажите URL в AI Workspace.",
+      "no_runtime": "Среда выполнения Cursor недоступна. Запустите её и укажите URL в этой форме.",
       "required": "Это поле обязательно.",
       "invalid_auth": "Провайдер отклонил этот API-ключ.",
       "cannot_connect": "Не удалось связаться с провайдером. Проверьте URL и сеть."
@@ -182,7 +182,7 @@
       },
       "entry_type": "Агент",
       "error": {
-        "no_runtime": "Среда выполнения Cursor недоступна. Запустите её и укажите URL в AI Workspace.",
+        "no_runtime": "Среда выполнения Cursor недоступна. Запустите её и укажите URL в этой форме.",
         "required": "Это поле обязательно.",
         "invalid_auth": "Провайдер отклонил этот API-ключ.",
         "cannot_connect": "Не удалось связаться с провайдером. Проверьте URL и сеть."
@@ -200,14 +200,18 @@
         },
         "provider_cursor": {
           "title": "Cursor",
-          "description": "Ключ API Cursor, модель и усилия. URL среды выполнения остаётся в AI Workspace.",
+          "description": "Cursor Runtime, API key, model, and effort. The URL field fills only when this Home Assistant can reach the Runtime.",
           "data": {
+            "runtime_url": "Cursor Runtime URL{runtime_url_mark}",
+            "runtime_token": "Runtime token",
             "cursor_api_key": "Ключ API Cursor",
             "model": "Модель",
             "effort": "Усилия",
             "assist": "Добавить в Assist"
           },
           "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Shared secret for a Docker Runtime. Set the same value as RUNTIME_TOKEN on the container. The add-on is paired automatically; leave this empty.",
             "cursor_api_key": "С cursor.com/dashboard/integrations. При правке оставьте пустым, чтобы сохранить ключ. Оставьте пустым, если у Runtime уже есть CURSOR_API_KEY.",
             "model": "Выберите один или введите id. Пустое значение использует Composer.",
             "effort": "Быстрый, Высокий или Высокий быстрый. Composer использует Быстрый, если не выбрать Высокий.",
