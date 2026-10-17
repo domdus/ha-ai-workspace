@@ -10,6 +10,26 @@ function hassObj() {
   return document.querySelector("home-assistant")?.hass;
 }
 
+let shellScrollPin = false;
+
+/** Reset window/body and HA panel scroll containers (e.g. after sidebar navigation). */
+export function resetHaShellScroll(startEl) {
+  if (shellScrollPin) return;
+  shellScrollPin = true;
+  window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+  const seen = new Set();
+  let node = startEl || null;
+  while (node && !seen.has(node)) {
+    seen.add(node);
+    if (node.scrollTop) node.scrollTop = 0;
+    const root = node.getRootNode?.();
+    node = node.parentElement || (root instanceof ShadowRoot ? root.host : null);
+  }
+  shellScrollPin = false;
+}
+
 function haAtLeast(year, month) {
   const [major, minor] = String(hassObj()?.config?.version || "").split(".").map(Number);
   if (!major) return true;
@@ -545,6 +565,8 @@ export function mountAiWorkspace(root, options = {}) {
     plusIcon.path = "M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z";
   }
   let sessionId = "";
+  let sessionLoad = Promise.resolve();
+  let freshChat = false;
   let routeGen = 0;
   const workspaceLink = root.querySelector(".workspace-link");
   const teardown = [];
@@ -646,6 +668,7 @@ export function mountAiWorkspace(root, options = {}) {
       restoreQueued();
       abandonStream();
       sessionId = "";
+      freshChat = true;
       titleEl.textContent = t("new_chat");
       showEmpty();
     }
@@ -707,24 +730,17 @@ export function mountAiWorkspace(root, options = {}) {
     return root.activeElement === messageEl || messageEl.matches(":focus");
   }
 
-  let pinningScroll = false;
   let keyboardRaf = 0;
   let keyboardHeight = "";
   let keyboardOpen = false;
 
   function resetOuterScroll() {
-    if (pinningScroll) return;
-    pinningScroll = true;
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-    let node = root.host || null;
-    while (node) {
-      if (node.scrollTop) node.scrollTop = 0;
-      const next = node.parentElement || node.getRootNode?.()?.host || null;
-      node = next === node ? null : next;
-    }
-    pinningScroll = false;
+    const start =
+      root.getRootNode?.()?.host ||
+      root.parentElement ||
+      root.host ||
+      null;
+    resetHaShellScroll(start);
   }
 
   function clearKeyboardLock() {
@@ -2082,13 +2098,27 @@ export function mountAiWorkspace(root, options = {}) {
       return null;
     }
     sessionId = session.id;
+    freshChat = false;
     bumpSession(session.id, session.title, session.pinned);
     goToSession(sessionId, true);
     if (compact) localStorage.setItem("ai_workspace_session", sessionId);
     return session;
   }
 
+  function knownSessionId() {
+    if (freshChat) return "";
+    if (sessionId) return sessionId;
+    if (!compact) return sessionIdFromPath();
+    return localStorage.getItem("ai_workspace_session") || "";
+  }
+
   async function openSession(id, fromUrl = false) {
+    const work = loadSession(id, fromUrl);
+    sessionLoad = work.then(() => {}, () => {});
+    return work;
+  }
+
+  async function loadSession(id, fromUrl = false) {
     if (id && id === sessionId && (streaming || liveStream)) {
       selectSessionRow(id);
       return;
@@ -2101,6 +2131,7 @@ export function mountAiWorkspace(root, options = {}) {
     if (!id) {
       routeGen += 1;
       sessionId = "";
+      freshChat = true;
       titleEl.textContent = t("new_chat");
       showEmpty();
       if (!fromUrl) goToSession("");
@@ -2119,6 +2150,7 @@ export function mountAiWorkspace(root, options = {}) {
       return;
     }
     sessionId = id;
+    freshChat = false;
     if (compact) localStorage.setItem("ai_workspace_session", id);
     if (!fromUrl) goToSession(id);
     const session = await response.json();
@@ -3078,6 +3110,11 @@ export function mountAiWorkspace(root, options = {}) {
     const images = attachments.filter((item) => item.kind === "image");
     const files = attachments.filter((item) => item.kind === "file");
     if (!text && !attachments.length) return;
+    await sessionLoad;
+    if (!sessionId) {
+      const known = knownSessionId();
+      if (known) await openSession(known, true);
+    }
     abandonStream();
     const token = streamToken;
     const abort = new AbortController();
@@ -3093,7 +3130,6 @@ export function mountAiWorkspace(root, options = {}) {
     clearKeyboardLock();
     resetOuterScroll();
     sendBtn.disabled = true;
-    routeGen += 1;
     pending = [];
     renderThumbs();
     messageEl.value = "";
@@ -3118,6 +3154,7 @@ export function mountAiWorkspace(root, options = {}) {
     let chatId = "";
     liveStream = true;
     try {
+      if (token !== streamToken) return;
       if (!sessionId) {
         const created = await createSession();
         if (token !== streamToken || !created) return;
@@ -3143,17 +3180,12 @@ export function mountAiWorkspace(root, options = {}) {
       );
       if (token !== streamToken) return;
       if (response?.status === 404) {
-        const created = await createSession();
-        if (token !== streamToken || !created) return;
-        titleEl.textContent = promptTitle(text) || attachments[0]?.name || t("new_chat");
-        bumpSession(sessionId, titleEl.textContent);
-        chatId = sessionId;
-        response = await apiFetch(
-          `${API}/sessions/${chatId}/chat`,
-          { method: "POST", body: payload, signal: abort.signal },
-          { raise: true },
-        );
-        if (token !== streamToken) return;
+        const node = assistant.querySelector(".text");
+        node.content = await errorText(response);
+        node.hidden = !node.content;
+        assistant.classList.add("error", "has-text");
+        setActivity(assistant, "");
+        return;
       }
       if (!response?.ok || !response.body) {
         const node = assistant.querySelector(".text");
@@ -3416,6 +3448,7 @@ export function mountAiWorkspace(root, options = {}) {
     routeGen += 1;
     watchGen += 1;
     sessionId = "";
+    freshChat = true;
     renderThumbs();
     if (compact) localStorage.removeItem("ai_workspace_session");
     closeNavIfOverlay();

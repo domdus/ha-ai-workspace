@@ -68,10 +68,19 @@ class Store:
     def close(self) -> None:
         self._conn.close()
 
-    def create_session(self, user_id: str, provider: str, session_id: str | None = None) -> Session:
+    def create_session(
+        self,
+        user_id: str,
+        provider: str,
+        session_id: str | None = None,
+        agent_id: str | None = None,
+    ) -> Session:
         if session_id:
             existing = self.get_session(user_id, session_id)
             if existing is not None:
+                if agent_id and not existing.agent_id:
+                    self.set_agent_id(existing.id, agent_id)
+                    existing.agent_id = agent_id
                 return existing
         now = _now()
         session = Session(
@@ -79,7 +88,7 @@ class Store:
             user_id=user_id,
             provider=provider,
             title="New Chat",
-            agent_id=None,
+            agent_id=(agent_id or None),
             created_at=now,
             updated_at=now,
         )

@@ -258,8 +258,7 @@ def test_apply_handoff_goes_with_every_follow_up() -> None:
     note = "This is the same chat.\n\nUser: Status?"
     assert apply_handoff("And now?", note, True).startswith("This is the same chat.")
     again = apply_handoff("And now?", note, False)
-    assert "User: Status?" in again
-    assert again.endswith("And now?")
+    assert again == "And now?"
     already = f"{note}\n\nAnd now?"
     assert apply_handoff(already, note, True) == already
     message = "System prompt about the house.\n\nWhat did we talk about?"

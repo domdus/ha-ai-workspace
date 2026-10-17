@@ -1,5 +1,19 @@
 const CACHE = new URL(import.meta.url).search;
 
+function resetHaShellScroll(startEl) {
+  window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+  const seen = new Set();
+  let node = startEl || null;
+  while (node && !seen.has(node)) {
+    seen.add(node);
+    if (node.scrollTop) node.scrollTop = 0;
+    const root = node.getRootNode?.();
+    node = node.parentElement || (root instanceof ShadowRoot ? root.host : null);
+  }
+}
+
 class HaAiWorkspacePanel extends HTMLElement {
   constructor() {
     super();
@@ -26,6 +40,15 @@ class HaAiWorkspacePanel extends HTMLElement {
       this._syncChrome();
       this._ui?.setNarrow?.(this._overlayNav());
     };
+    this._onNav = () => {
+      if (!location.pathname.startsWith("/ai-workspace")) return;
+      this._scrollShellIntoView();
+    };
+  }
+
+  _scrollShellIntoView() {
+    resetHaShellScroll(this);
+    requestAnimationFrame(() => resetHaShellScroll(this));
   }
 
   set hass(hass) {
@@ -42,6 +65,7 @@ class HaAiWorkspacePanel extends HTMLElement {
 
   set route(route) {
     this._route = route;
+    this._scrollShellIntoView();
     this._ui?.applyRoute?.();
   }
 
@@ -55,11 +79,16 @@ class HaAiWorkspacePanel extends HTMLElement {
       panel.style.height = "100%";
     }
     this._mq.addEventListener("change", this._onMq);
+    window.addEventListener("location-changed", this._onNav);
+    window.addEventListener("popstate", this._onNav);
+    this._scrollShellIntoView();
     this._mount();
   }
 
   disconnectedCallback() {
     this._mq.removeEventListener("change", this._onMq);
+    window.removeEventListener("location-changed", this._onNav);
+    window.removeEventListener("popstate", this._onNav);
     // HA sometimes moves the panel; only tear down when it stays detached.
     window.setTimeout(() => {
       if (this.isConnected || !this._ui) return;
@@ -113,6 +142,8 @@ class HaAiWorkspacePanel extends HTMLElement {
         }
         ha-top-app-bar-fixed {
           height: 100%;
+          background-color: var(--app-header-background-color, var(--sidebar-background-color));
+          color: var(--app-header-text-color, var(--primary-text-color));
         }
         .content {
           box-sizing: border-box;
@@ -157,6 +188,7 @@ class HaAiWorkspacePanel extends HTMLElement {
       css?.addEventListener("error", reveal, { once: true });
       window.setTimeout(reveal, 400);
     }
+    this._scrollShellIntoView();
     this._ui = mountAiWorkspace(content, {
       routed: true,
       narrow: this._overlayNav(),

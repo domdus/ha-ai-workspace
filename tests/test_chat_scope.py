@@ -82,7 +82,8 @@ def test_handoff_skips_current_prompt() -> None:
         Row("user", "Turn the hallway off."),
     ]
     note = scope.handoff_note(rows)
-    assert "same chat" in note
+    assert "same Home Assistant chat" in note
+    assert "source of truth" in note
     assert "Continue from it" in note
     assert "Which lights are on?" in note
     assert "Kitchen and hallway." in note
@@ -109,6 +110,28 @@ def test_handoff_drops_failed_replies() -> None:
     assert "List automations" in note
     assert "MCP HTTP 401" not in note
     assert scope.handoff_note([Row("user", "Hello")]) == ""
+
+
+def test_handoff_keeps_recent_turns_inside_budget() -> None:
+    scope = _scope()
+
+    class Row:
+        def __init__(self, role, content, events="[]"):
+            self.role = role
+            self.content = content
+            self.events = events
+
+    rows = []
+    for index in range(12):
+        rows.append(Row("user", f"Question {index} " + ("lights " * 400)))
+        rows.append(Row("assistant", f"Answer {index} " + ("kitchen " * 400)))
+    rows.append(Row("user", "What did we talk about?"))
+    note = scope.handoff_note(rows, "Kitchen lights")
+    assert "source of truth" in note
+    assert "What did we talk about?" not in note
+    assert "Question 11" in note
+    assert "Answer 11" in note
+    assert len(note) <= scope._HANDOFF_BUDGET
 
 
 def test_excerpt_is_read_only() -> None:

@@ -15,12 +15,14 @@ class FakeCursor:
         self.last_message = None
         self.last_mcp = None
         self.last_model = None
+        self.last_handoff = None
 
     async def send(self, session: Session, message: str, on_agent_id, images=None, mcp=None, model=None, **_kwargs):
         self.last_message = message
         self.last_images = images
         self.last_mcp = mcp
         self.last_model = model
+        self.last_handoff = _kwargs.get("handoff", "")
         on_agent_id("agent-local-1")
         yield {"type": "status", "text": "Thinking..."}
         yield {"type": "text", "delta": "Moisture is 18%."}
@@ -222,6 +224,68 @@ def test_chat_accepts_mcp_and_model_from_request(tmp_path: Path) -> None:
         assert streamed.status_code == 200
         assert provider.last_model == "composer-2.6"
         assert provider.last_mcp["servers"]["mcp"]["url"].endswith("/mcp_test")
+
+
+def test_ha_proxied_chat_does_not_store_messages_on_runtime(tmp_path: Path) -> None:
+    provider = FakeCursor()
+    app = create_app(settings(tmp_path), {"cursor": provider})
+    with TestClient(app) as client:
+        created = client.post("/api/sessions", json={"provider": "cursor"})
+        session_id = created.json()["id"]
+        streamed = client.post(
+            f"/api/sessions/{session_id}/chat",
+            json={
+                "message": "Follow up",
+                "history_in_ha": True,
+                "handoff": "This is the same chat.\n\nUser: Hi\nAssistant: Hello.",
+            },
+        )
+        assert streamed.status_code == 200
+        detail = client.get(f"/api/sessions/{session_id}")
+        assert detail.json()["messages"] == []
+
+
+def test_create_session_keeps_agent_id_for_resume(tmp_path: Path) -> None:
+    app = create_app(settings(tmp_path), {"cursor": FakeCursor()})
+    with TestClient(app) as client:
+        first = client.post(
+            "/api/sessions",
+            json={"provider": "cursor", "id": "fixed-chat", "agent_id": "cloud-abc"},
+        )
+        assert first.status_code == 201
+        assert first.json()["agent_id"] == "cloud-abc"
+        again = client.post(
+            "/api/sessions",
+            json={"provider": "cursor", "id": "fixed-chat", "agent_id": "cloud-abc"},
+        )
+        assert again.status_code == 201
+        assert again.json()["agent_id"] == "cloud-abc"
+
+
+def test_handoff_keeps_runtime_from_retitling_an_old_chat(tmp_path: Path) -> None:
+    provider = FakeCursorTitled()
+    app = create_app(settings(tmp_path), {"cursor": provider})
+    note = (
+        'This is the same Home Assistant chat titled "Kitchen lights".\n\n'
+        "User: Which lights are on?\n"
+        "Assistant: Kitchen and hallway."
+    )
+    with TestClient(app) as client:
+        created = client.post("/api/sessions", json={"provider": "cursor"})
+        session_id = created.json()["id"]
+        streamed = client.post(
+            f"/api/sessions/{session_id}/chat",
+            json={
+                "message": "Worüber haben wir hier gesprochen?",
+                "question": "Worüber haben wir hier gesprochen?",
+                "handoff": note,
+            },
+        )
+        assert streamed.status_code == 200
+        assert "event: title" not in streamed.text
+        assert provider.last_handoff == note
+        detail = client.get(f"/api/sessions/{session_id}")
+        assert detail.json()["title"] == "New Chat"
 
 
 def test_empty_chat_without_images_is_rejected(tmp_path: Path) -> None:

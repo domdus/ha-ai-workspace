@@ -273,15 +273,24 @@ ha-button.new-chat {
   font-weight: var(--ha-font-weight-normal);
 }
 
+.sessions ha-list-item-button.selected,
+.sessions .session-plain.selected,
+.bubble.user {
+  position: relative;
+  isolation: isolate;
+}
+
 .sessions ha-list-item-button.selected::before,
-.sessions .session-plain.selected::before {
+.sessions .session-plain.selected::before,
+.bubble.user::before {
   content: "";
   position: absolute;
   inset: 0;
-  border-radius: var(--ha-border-radius-sm);
+  border-radius: inherit;
   background-color: var(--sidebar-selected-icon-color);
   opacity: var(--dark-divider-opacity);
   pointer-events: none;
+  z-index: -1;
 }
 
 .sessions ha-list-item-button.selected::part(headline) {
@@ -492,10 +501,8 @@ h1 {
 .bubble.user {
   align-self: flex-end;
   max-width: 85%;
-  background: var(
-    --ha-color-fill-primary-quiet-resting,
-    color-mix(in srgb, var(--primary-color) 18%, transparent)
-  );
+  /* No extra base fill — same accent wash as the selected chat row in the list. */
+  background: transparent;
   color: var(--primary-text-color);
   white-space: pre-wrap;
 }

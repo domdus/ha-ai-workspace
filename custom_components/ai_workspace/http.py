@@ -115,10 +115,21 @@ def _runtime_error(status: int, text: str) -> str:
         return detail.strip()[:400]
     if status == 401:
         return "The Cursor SDK Runtime refused the token. Set the same Runtime token on both sides."
+    if status == 404:
+        return (
+            "This chat exists in Home Assistant but the Cursor Runtime did not have a matching session "
+            "(often after a container rebuild). The integration retried once; if this persists, check the "
+            "Runtime URL and token on the Cursor agent."
+        )
     return f"The Cursor SDK Runtime answered HTTP {status}."
 
 
-async def _create_runtime_session(hass: HomeAssistant, user_id: str, session_id: str | None = None) -> str | None:
+async def _create_runtime_session(
+    hass: HomeAssistant,
+    user_id: str,
+    session_id: str | None = None,
+    agent_id: str | None = None,
+) -> str | None:
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
         return None
@@ -126,6 +137,8 @@ async def _create_runtime_session(hass: HomeAssistant, user_id: str, session_id:
     payload: dict[str, str] = {"provider": "cursor"}
     if session_id:
         payload["id"] = session_id
+    if agent_id:
+        payload["agent_id"] = agent_id
     try:
         resp = await http.post(
             f"{base}/api/sessions",
@@ -144,11 +157,12 @@ async def _create_runtime_session(hass: HomeAssistant, user_id: str, session_id:
     return str((body or {}).get("id") or "") or None
 
 
-async def _ensure_runtime_session(hass: HomeAssistant, user_id: str, session: Session) -> None:
+async def _ensure_runtime_session(hass: HomeAssistant, user_id: str, session: Session) -> bool:
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
-        return
+        return False
     http: ClientSession = async_get_clientsession(hass)
+    agent_id = str(session.agent_id or "").strip() or None
     try:
         existing = await http.get(
             f"{base}/api/sessions/{session.id}",
@@ -158,10 +172,15 @@ async def _ensure_runtime_session(hass: HomeAssistant, user_id: str, session: Se
         status = existing.status
         existing.release()
         if status == 200:
-            return
+            return True
     except Exception:
         logger.debug("runtime session lookup skipped", exc_info=True)
-    await _create_runtime_session(hass, user_id, session.id)
+    for _ in range(2):
+        created = await _create_runtime_session(hass, user_id, session.id, agent_id)
+        if created:
+            return True
+    logger.warning("runtime session sync failed session=%s", session.id)
+    return False
 
 
 async def _iter_sse(resp) -> AsyncIterator[tuple[str, dict]]:
@@ -237,13 +256,24 @@ async def _runtime_chat(
     if not base:
         yield {"type": "error", "message": "Cursor Runtime is not configured."}
         return
-    await _ensure_runtime_session(hass, user_id, session)
+    if not await _ensure_runtime_session(hass, user_id, session):
+        yield {
+            "type": "error",
+            "message": (
+                "Home Assistant could not sync this chat to the Cursor Runtime. "
+                "Check the Runtime URL and token on the Cursor agent, then try again."
+            ),
+        }
+        return
     http: ClientSession = async_get_clientsession(hass)
     payload: dict[str, Any] = {
         "message": with_ui_context(attach_files_to_message(message, files or []), origin),
         "question": (question or message).strip(),
         "origin": origin,
+        "history_in_ha": True,
     }
+    if session.agent_id:
+        payload["sync_agent_id"] = str(session.agent_id)
     settings = _runtime(hass).get("settings")
     prompt = with_language_rule(
         str(getattr(settings, "system_prompt", "") or "").strip() or DEFAULT_SYSTEM_PROMPT,
@@ -273,18 +303,34 @@ async def _runtime_chat(
         payload["api_key"] = api_key
     if handoff:
         payload["handoff"] = handoff
-    try:
-        sent = {**(headers or _runtime_headers_for(hass, user_id)), "Accept": "text/event-stream"}
-        if agent:
-            sent["X-Ai-Workspace-Agent"] = agent
-        resp = await http.post(
-            f"{base}/api/sessions/{session.id}/chat",
-            json=payload,
-            headers=sent,
-            timeout=ClientTimeout(total=None, sock_read=600),
-        )
-    except Exception as exc:
-        yield {"type": "error", "message": f"AI Workspace runtime is unreachable at {base}: {exc}"}
+    sent = {**(headers or _runtime_headers_for(hass, user_id)), "Accept": "text/event-stream"}
+    if agent:
+        sent["X-Ai-Workspace-Agent"] = agent
+    resp = None
+    for attempt in range(2):
+        try:
+            resp = await http.post(
+                f"{base}/api/sessions/{session.id}/chat",
+                json=payload,
+                headers=sent,
+                timeout=ClientTimeout(total=None, sock_read=600),
+            )
+        except Exception as exc:
+            yield {"type": "error", "message": f"AI Workspace runtime is unreachable at {base}: {exc}"}
+            return
+        if resp.status != 404 or attempt:
+            break
+        resp.release()
+        resp = None
+        logger.info("runtime chat 404, resyncing session=%s", session.id)
+        if not await _ensure_runtime_session(hass, user_id, session):
+            yield {
+                "type": "error",
+                "message": _runtime_error(404, ""),
+            }
+            return
+    if resp is None:
+        yield {"type": "error", "message": _runtime_error(404, "")}
         return
     try:
         if resp.status >= 400:
@@ -733,6 +779,15 @@ class ChatView(HomeAssistantView):
         if assist or getattr(provider, "kind", "") == "cursor":
             rows = await hass.async_add_executor_job(store.list_messages, session.id)
             handoff = handoff_note(rows, session.title)
+            if getattr(provider, "kind", "") == "cursor":
+                logger.info(
+                    "cursor handoff session=%s prior=%s chars=%s",
+                    session.id,
+                    max(0, len(rows) - 1),
+                    len(handoff),
+                )
+                if len(rows) > 1 and not handoff:
+                    logger.warning("cursor handoff empty despite stored turns session=%s", session.id)
         access_token = _bearer(request)
         runtime_headers = _runtime_headers(request)
 
