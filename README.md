@@ -40,7 +40,7 @@ Each agent can also be added as an Assist pipeline. The integration creates the 
 
 OpenAI, OpenRouter, and OpenAI-compatible agents can add **Speech-to-text** and **Text-to-speech** from the same API key (on by default). New AI Workspace Assist pipelines get those engines so they can listen and speak. Later STT/TTS on a pipeline stay as you set them in Voice assistants, including Google Translate or none. The overlay Text-to-speech dropdown is the same: it keeps the engine you pick. Cursor has no speech API of its own. Claude, Gemini, and local Ollama stay on a Home Assistant TTS engine such as Piper unless you assign one.
 
-The OpenAI-style voices (Coral, Echo, …) speak **German, French, and many other languages**. There is no extra German voice to install: they follow the language of the reply.
+The OpenAI-style voices (Coral, Echo, …) speak **German, French, and many other languages**. They follow the language of the reply.
 
 ![Cursor in Home Assistant Assist](https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai-workspace-assists.png)
 
