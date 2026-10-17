@@ -548,6 +548,21 @@ async def commit(hass: HomeAssistant, store: Store, token: str, *, ok: bool) -> 
         else:
             return
     chat = _session_title(hass, pending.session_id) or pending.chat
+    doc_dict = document if isinstance(document, dict) else None
+    from .logical_commit import queue_activity_fragment
+
+    if queue_activity_fragment(
+        hass,
+        user_id=pending.user_id,
+        user_name=pending.user_name,
+        agent=pending.agent,
+        session_id=pending.session_id,
+        chat=chat,
+        summary=text,
+        tool=pending.tool,
+        document=doc_dict,
+    ):
+        return
     row = await hass.async_add_executor_job(
         store.add_activity,
         pending.user_id,

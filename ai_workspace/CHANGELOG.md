@@ -6,6 +6,7 @@
 - Lovelace/dashboard MCP-only rules in the system prompt (no workspace filesystem for config edits)
 - **Natural speech for text to speech** (default on) strips Markdown, links, and arrows before TTS
 - Android companion: typing while scrolled up in chat no longer forces scroll to bottom
+- Change History groups config writes from one agent turn into one **logical commit**; **Ask to restore** lists every target in the batch for HA-MCP edit backups
 - Home Assistant keeps the chat transcript; the Cursor Runtime no longer duplicates turns in SQLite when `history_in_ha` is set, and warm resumes skip re-applying an empty handoff when the agent is still alive
 - Cursor handoff notes are larger and clearer so reopened chats do not look blank to the agent; HA logs when a handoff would be empty despite stored turns
 - The chat UI waits until the session is loaded before sending, and a runtime 404 resyncs the agent instead of silently starting a new chat

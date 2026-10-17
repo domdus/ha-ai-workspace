@@ -3627,9 +3627,24 @@ export function mountAiWorkspace(root, options = {}) {
 
   function restorePrompt(row) {
     const lines = [`Change: ${row.summary || ""}`, `When: ${row.created_at || ""}`];
-    if (row.restore_kind) lines.push(`Kind: ${row.restore_kind}`);
-    if (row.restore_id) lines.push(`Id: ${row.restore_id}`);
-    if (row.restore_label) lines.push(`Label: ${row.restore_label}`);
+    if (row.logical_commit && row.change_count > 1) {
+      lines.push(`Logical commit: ${row.change_count} related writes in one agent turn.`);
+    }
+    const targets = Array.isArray(row.restore_targets) ? row.restore_targets : [];
+    if (targets.length) {
+      targets.forEach((target, index) => {
+        const parts = [
+          target.kind ? `Kind: ${target.kind}` : "",
+          target.id ? `Id: ${target.id}` : "",
+          target.label ? `Label: ${target.label}` : "",
+        ].filter(Boolean);
+        if (parts.length) lines.push(`${index + 1}. ${parts.join(" · ")}`);
+      });
+    } else {
+      if (row.restore_kind) lines.push(`Kind: ${row.restore_kind}`);
+      if (row.restore_id) lines.push(`Id: ${row.restore_id}`);
+      if (row.restore_label) lines.push(`Label: ${row.restore_label}`);
+    }
     if (row.tool) lines.push(`Tool: ${row.tool}`);
     return t("ask_restore_prompt", { details: lines.join("\n") });
   }

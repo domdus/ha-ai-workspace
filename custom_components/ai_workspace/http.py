@@ -865,12 +865,27 @@ class ChatView(HomeAssistantView):
             except Exception:
                 client_gone = True
 
+        user = await hass.auth.async_get_user(user_id)
+        user_name = str(getattr(user, "name", "") or "") if user else user_id
+        agent_label = _agent_label(provider) if provider else "Agent"
+
         async def produce() -> web.StreamResponse:
             nonlocal client_gone
             parts: list[str] = []
             tools: list[dict] = []
             error: str | None = None
             final: str | None = None
+            from .logical_commit import begin_logical_commit, flush_logical_commit
+
+            if bool(getattr(settings, "change_history", True)):
+                begin_logical_commit(
+                    hass,
+                    user_id,
+                    user_name,
+                    agent_label,
+                    session.id,
+                    session.title or "",
+                )
             try:
                 try:
                     await response.prepare(request)
@@ -929,6 +944,8 @@ class ChatView(HomeAssistantView):
                 if error is None:
                     await send({"type": "done", "answer": answer})
             finally:
+                if bool(getattr(settings, "change_history", True)):
+                    await flush_logical_commit(hass, store, user_id, session.id)
                 _release_lock(data, session.id, lock)
             if error is None and callable(suggest):
                 try:
@@ -1143,9 +1160,12 @@ def _activity_dict(row, chat: str = "", *, ask_restore: bool = False) -> dict:
         "can_rollback": bool(ACTIVITY_ROLLBACK and row.can_rollback),
         "undone_at": row.undone_at or "",
         "ask_restore": bool(ask_restore and not undone),
+        "logical_commit": bool(getattr(row, "logical_commit", False)),
+        "change_count": int(getattr(row, "change_count", 0) or 0),
         "restore_kind": getattr(row, "restore_kind", "") or "",
         "restore_id": getattr(row, "restore_id", "") or "",
         "restore_label": getattr(row, "restore_label", "") or "",
+        "restore_targets": list(getattr(row, "restore_targets", None) or []),
     }
 
 
