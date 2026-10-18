@@ -854,8 +854,16 @@ export async function mountAiWorkspace(root, options = {}) {
   function resizeComposer() {
     const holdTop = chatEl.scrollTop;
     if (messageEl.localName === "textarea") {
+      const minH = 36;
+      const maxH = 160;
       messageEl.style.height = "auto";
-      messageEl.style.height = `${Math.min(Math.max(messageEl.scrollHeight, 36), 160)}px`;
+      const scrollH = messageEl.scrollHeight;
+      const h = Math.min(Math.max(scrollH, minH), maxH);
+      messageEl.style.height = `${h}px`;
+      // Avoid a stray in-field scrollbar until content actually exceeds the cap.
+      const overflows = scrollH > maxH;
+      messageEl.style.overflowY = overflows ? "auto" : "hidden";
+      messageEl.classList.toggle("message-overflows", overflows);
     } else if (messageEl.localName === "ha-textarea") {
       messageEl.style.setProperty("--ha-textarea-max-height", "160px");
     }
@@ -1439,7 +1447,15 @@ export async function mountAiWorkspace(root, options = {}) {
     let row = logEl.querySelector(".chat-actions");
     const hasChat = Boolean(logEl.querySelector(".bubble.has-text, .bubble .bubble-files, .bubble .bubble-images"));
     const busy = streaming || Boolean(logEl.querySelector(".bubble.streaming"));
-    if (!hasChat || busy) {
+    const speechActive =
+      speakStarted ||
+      speakBusy ||
+      speakPending.length > 0 ||
+      speakInflight.length > 0 ||
+      Boolean(replyAudio && !replyAudio.ended);
+    const showSpeak = Boolean(voice.tts && (hasChat || busy || speechActive));
+    const showCopy = hasChat && !busy;
+    if (!showCopy && !showSpeak) {
       if (row) row.hidden = true;
       return;
     }
@@ -1468,6 +1484,8 @@ export async function mountAiWorkspace(root, options = {}) {
       });
       row.appendChild(btn);
     }
+    const copyBtn = row.querySelector(".copy-chat");
+    if (copyBtn) copyBtn.hidden = !showCopy;
     let speakBtn = row.querySelector(".speak-chat");
     if (voice.tts) {
       if (!speakBtn) {
@@ -3022,6 +3040,7 @@ export async function mountAiWorkspace(root, options = {}) {
   function setSpeakUi(state) {
     const btn = logEl.querySelector(".speak-chat");
     if (!btn) return;
+    syncCopyChat();
     const icon = btn.querySelector("ha-icon");
     if (state === "playing") {
       icon?.setAttribute("icon", "mdi:pause");
@@ -3081,6 +3100,7 @@ export async function mountAiWorkspace(root, options = {}) {
       speakStarted = true;
       queueSpeech(piece);
     }
+    if (taken.pieces.length) syncCopyChat();
     if (flush) fillSpeakAhead();
   }
 
@@ -3230,7 +3250,8 @@ export async function mountAiWorkspace(root, options = {}) {
 
   async function toggleSpeak() {
     if (replyAudio && !replyAudio.paused && !replyAudio.ended) {
-      replyAudio.pause();
+      if (streaming || speakPending.length || speakInflight.length) haltSpeech();
+      else replyAudio.pause();
       return;
     }
     if (speechPaused()) {
@@ -3368,6 +3389,7 @@ export async function mountAiWorkspace(root, options = {}) {
     if (keepComposerFocus()) messageEl.focus();
     else hideKeyboard();
     streaming = true;
+    syncCopyChat();
     turnHasHistory = false;
     const turnSince = new Date().toISOString();
     watchGen += 1;

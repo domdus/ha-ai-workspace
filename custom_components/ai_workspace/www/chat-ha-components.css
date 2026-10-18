@@ -114,6 +114,14 @@
   padding-bottom: var(--ha-space-2);
 }
 
+/* Mobile: hide the inner prompt scrollbar; content still scrolls when tall. */
+@media (pointer: coarse) {
+  .ui-theme-ha-components ha-textarea.message::part(textarea) {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+}
+
 .ui-theme-ha-components textarea.message {
   flex: 1 1 auto;
   min-width: 0;

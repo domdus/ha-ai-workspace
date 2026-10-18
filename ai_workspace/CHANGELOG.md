@@ -13,6 +13,8 @@
 - Overlay and sidebar panel scroll correctly on open and when navigating to `/ai-workspace`; user bubbles match the selected chat row styling
 - **Use HA Components** (off by default): chat, overlay, and panel can use native Home Assistant widgets and Assist-style messages so themes apply more cleanly; Standard template unchanged
 - HA Components composer uses `ha-card`, `ha-textarea`, and Assist-style send control; thin scrollbars on chat and session lists
+- Speak/pause control stays available during the first auto-read reply; pause stops in-flight TTS
+- Thin scrollbars apply on desktop only; Standard mobile prompt avoids a visible in-field scrollbar until text hits the height cap
 
 ## 1.1.3
 

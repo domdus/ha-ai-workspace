@@ -21,37 +21,39 @@
   box-sizing: border-box;
 }
 
-:host,
-.wrap,
-.sessions,
-.chat,
-.history-list,
-ha-textarea.message,
-textarea.message {
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb-color) transparent;
-}
+@media (hover: hover) and (pointer: fine) {
+  :host,
+  .wrap,
+  .sessions,
+  .chat,
+  .history-list,
+  ha-textarea.message,
+  textarea.message {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb-color) transparent;
+  }
 
-:host::-webkit-scrollbar,
-.wrap::-webkit-scrollbar,
-.sessions::-webkit-scrollbar,
-.chat::-webkit-scrollbar,
-.history-list::-webkit-scrollbar,
-ha-textarea.message::-webkit-scrollbar,
-textarea.message::-webkit-scrollbar {
-  width: 0.4rem;
-  height: 0.4rem;
-}
+  :host::-webkit-scrollbar,
+  .wrap::-webkit-scrollbar,
+  .sessions::-webkit-scrollbar,
+  .chat::-webkit-scrollbar,
+  .history-list::-webkit-scrollbar,
+  ha-textarea.message::-webkit-scrollbar,
+  textarea.message::-webkit-scrollbar {
+    width: 0.4rem;
+    height: 0.4rem;
+  }
 
-:host::-webkit-scrollbar-thumb,
-.wrap::-webkit-scrollbar-thumb,
-.sessions::-webkit-scrollbar-thumb,
-.chat::-webkit-scrollbar-thumb,
-.history-list::-webkit-scrollbar-thumb,
-ha-textarea.message::-webkit-scrollbar-thumb,
-textarea.message::-webkit-scrollbar-thumb {
-  border-radius: var(--ha-border-radius-sm);
-  background: var(--scrollbar-thumb-color);
+  :host::-webkit-scrollbar-thumb,
+  .wrap::-webkit-scrollbar-thumb,
+  .sessions::-webkit-scrollbar-thumb,
+  .chat::-webkit-scrollbar-thumb,
+  .history-list::-webkit-scrollbar-thumb,
+  ha-textarea.message::-webkit-scrollbar-thumb,
+  textarea.message::-webkit-scrollbar-thumb {
+    border-radius: var(--ha-border-radius-sm);
+    background: var(--scrollbar-thumb-color);
+  }
 }
 
 .wrap {
