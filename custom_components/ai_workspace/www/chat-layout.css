@@ -444,14 +444,31 @@ h1 {
   overflow: visible;
   padding: var(--ha-space-3) var(--ai-inline-pad) calc(8rem + var(--ha-space-8));
   width: min(calc(var(--ai-chat-width) + 2 * var(--ai-inline-pad)), 100%);
+  max-width: 100%;
+  min-width: 0;
   margin-inline: auto;
   display: flex;
   flex-direction: column;
   gap: var(--ha-space-4);
 }
 
+.ui-theme-ha-components .log.messages {
+  padding: 0 var(--ha-space-3) var(--ha-space-4);
+  padding-bottom: calc(8rem + var(--ha-space-8));
+  gap: 0;
+}
+
 .chat.welcome .log {
   padding-bottom: var(--ha-space-1);
+}
+
+.ui-theme-ha-components .chat.welcome .log.messages {
+  padding-bottom: var(--ha-space-1);
+}
+
+.ui-theme-ha-components .chat.welcome .composer {
+  width: min(calc(var(--ai-chat-width) + 2 * var(--ha-space-3)), 100%);
+  margin-inline: auto;
 }
 
 .chat-actions {
@@ -614,6 +631,13 @@ h1 {
   pointer-events: none;
 }
 
+.agent-trigger-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
 .next-row {
   display: flex;
   align-items: flex-start;
@@ -706,6 +730,33 @@ textarea.message {
   width: 100%;
 }
 
+/* ha-assist-chat composer: same horizontal gutter as .log.messages (space-3). */
+.ui-theme-ha-components .composer {
+  padding: 0 var(--ha-space-3) var(--ha-space-4);
+  width: 100%;
+  max-width: 100%;
+  background: transparent;
+  overflow: visible;
+}
+
+.ui-theme-ha-components .agent-picker {
+  overflow: visible;
+  z-index: 5;
+  margin: var(--ha-space-1) 0 var(--ha-space-2);
+}
+
+.ui-theme-ha-components ha-dropdown.agent-menu {
+  overflow: visible;
+}
+
+.ui-theme-ha-components .composer .input {
+  padding: var(--ha-space-1) 0 0;
+}
+
+.ui-theme-ha-components #message-input::part(wa-base) {
+  padding-right: var(--ha-space-1);
+}
+
 .send,
 .mic,
 .attach {
@@ -785,6 +836,11 @@ textarea.message {
 
   .composer {
     padding-inline: max(var(--ha-space-4, 16px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+  }
+
+  .ui-theme-ha-components .log.messages,
+  .ui-theme-ha-components .composer {
+    padding-inline: max(var(--ha-space-3, 12px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
   }
 
   .wrap:not(.compact) {

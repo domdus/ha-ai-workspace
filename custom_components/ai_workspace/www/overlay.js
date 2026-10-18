@@ -422,6 +422,10 @@ async function ensureHost() {
         compact: true,
         getToken: () => hassObj()?.auth?.data?.access_token || "",
         navigate: goToWorkspace,
+        onRemount: (api) => {
+          chatApi = api;
+          mounting = Promise.resolve(api);
+        },
       }).then((api) => {
         chatApi = api;
         return api;

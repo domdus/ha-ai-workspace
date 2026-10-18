@@ -618,10 +618,14 @@ URL rules (wrong ids open a blank editor):
 - Entities: [Name](/config/entities/entity/{entity_id}) using the full entity_id (light.kitchen).
 - Helpers (input_boolean, input_number, counter, timer, schedule, …): [Name](/config/entities/entity/{entity_id}) using the helper entity_id, not a generic /config/helpers list.
 - Dashboards and views: [Media](/lovelace/media) or [Overview](/lovelace/0). Never write a bare /lovelace/... path without a Markdown link.
-Take id, unique_id, and device_id from the MCP tool result. If a tool only returned entity_id for an automation, look up its id before linking.
+Take id, unique_id, and device_id from the MCP tool result. If edit ids are missing from a bulk list, resolve them with one batch entity-registry (or equivalent) call — never one full config get per row.
 
 Never list plain names. Never put names in a markdown table unless every name cell is already a Markdown link. Example: | [Bewässerung](/config/automation/edit/balcony_irrigation) | on |"""
 MCP_FIRST_INSTRUCTIONS = """Home Assistant lives in the MCP tools (home-assistant / ha-mcp), not in this workspace. For automations, entities, devices, scripts, or house state, call those MCP tools first. Do not use grep, glob, read, or shell to hunt for automations.yaml or HA config — those files are not here."""
+MCP_BULK_LIST_INSTRUCTIONS = """Bulk lists (automations, scripts, scenes, entities, helpers):
+- Answer with one or two Home Assistant MCP calls: a domain-filtered listing that returns every matching item with live state (on/off) when the user asked for it. Use entity search/list tools with domain_filter (or the server equivalent), not one get-config call per item.
+- For automation, script, and scene edit links, use config id / unique_id from that listing (entity attributes such as id, or registry unique_id in the same batch). Never call ha_config_get_automation, ha_config_get_script, or ha_config_get_scene once per row only to learn the edit id. Load full config for a single named item only when the user asks what it triggers, conditions, or actions do.
+- A full automation list with links and on/off should take about 1–3 MCP calls total, not dozens."""
 BPS_KEY_INSTRUCTIONS = (
     "If a write tool has BestPracticeKey, call ha_get_skill_guide, copy the acknowledgment key "
     "from the top of the result, and pass it as BestPracticeKey. Do not ask the user for it."
@@ -629,7 +633,7 @@ BPS_KEY_INSTRUCTIONS = (
 
 
 def ui_link_instructions(origin: str = "") -> str:
-    text = f"{TONE_INSTRUCTIONS} {MCP_FIRST_INSTRUCTIONS} {HA_LINK_INSTRUCTIONS}"
+    text = f"{TONE_INSTRUCTIONS} {MCP_FIRST_INSTRUCTIONS} {MCP_BULK_LIST_INSTRUCTIONS} {HA_LINK_INSTRUCTIONS}"
     origin = str(origin or "").strip().rstrip("/")
     if origin:
         text = (

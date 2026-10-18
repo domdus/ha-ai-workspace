@@ -35,15 +35,15 @@ TOOL_ALIASES = frozenset({"search_house_map"})
 CATALOG_SERVER = "catalog"
 TOOL_DESCRIPTION = (
     "Find static wiring for a named item: ids, automation triggers, acts_on, depends_on, related_config_ids. "
-    "Do not use this to list all automations or for on/off. Home Assistant MCP already returns every item "
-    "with live state in a short payload. Default detail is compact (name and id). "
-    "Pass detail=wiring only when asking what one named automation is wired to. Not live state."
+    "Never use this for list all automations, counts, or on/off — use Home Assistant MCP with a domain listing instead. "
+    "Never chain search_catalog with per-item ha_config_get_* calls just to build a list with edit links. "
+    "Default detail is compact (name and id). Pass detail=wiring only for one named automation's wiring. Not live state."
 )
 CATALOG_INSTRUCTIONS = (
-    "For counts, lists, names, and on/off, call the Home Assistant tools; they return every item with live state "
-    "and cost fewer tokens than the catalog. "
-    "search_catalog is a capped static index for the wiring of one named item (triggers, what it acts on, related ids). "
-    "Default detail is compact. Use detail=wiring only for one named item."
+    "For counts, lists, names, and on/off, call the Home Assistant MCP tools first (domain-filtered listing, 1–3 calls). "
+    "search_catalog is a capped static index for wiring of one named item (triggers, acts_on, related ids). "
+    "Default detail is compact. Use detail=wiring only for one named item. "
+    "The catalog has no live on/off and is a poor substitute for a full live list."
 )
 HOUSE_MAP_INSTRUCTIONS = CATALOG_INSTRUCTIONS
 

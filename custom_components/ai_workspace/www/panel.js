@@ -184,6 +184,9 @@ class HaAiWorkspacePanel extends HTMLElement {
       narrow: this._overlayNav(),
       chrome: "panel",
       getToken: () => this._hass?.auth?.data?.access_token || "",
+      onRemount: (api) => {
+        this._ui = api;
+      },
       navigate: (path, options = {}) => {
         const hass = this._hass;
         if (typeof hass?.navigate === "function") {

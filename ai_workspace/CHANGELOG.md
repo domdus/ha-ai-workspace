@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.0
+
+- **Use HA Components** composer matches Assist: `ha-input` with attach/mic/send in the end slot, not a custom textarea row
+- Chat HTML paints immediately; HA widget chunks load in the background instead of a blank panel for several seconds
+- Switching **Use HA Components** applies without reopening the panel (theme remount)
+- Wide markdown/tables stay inside bubbles; agent picker and composer align with the message column on mobile
+- New chat shows the welcome headline again; the empty-state prompt uses the same width as Standard
+- Agents listing automations/scripts should use a few domain/registry MCP calls, not one config get per row
+
 ## 1.1.4
 
 - Overlay drawer stacks above the Home Assistant app header; compact chat sidebar z-index fixed

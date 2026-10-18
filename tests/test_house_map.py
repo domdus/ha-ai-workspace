@@ -73,7 +73,7 @@ def test_catalog_detail_compact_strips_wiring() -> None:
 def test_catalog_instructions_are_not_list_first() -> None:
     text = (ROOT / "custom_components" / "ai_workspace" / "house_map.py").read_text()
     assert "call search_catalog first" not in text
-    assert "For counts, lists, names, and on/off, call the Home Assistant tools" in text
+    assert "For counts, lists, names, and on/off, call the Home Assistant MCP tools first" in text
     assert "Do not call" not in text
     assert "detail=wiring" in text
 

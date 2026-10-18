@@ -17,6 +17,8 @@ def test_runtime_user_message_includes_automation_edit_links() -> None:
     assert "/config/automation/edit/" in text
     assert "Welche Automatisierungen gibt es?" in text
     assert "markdown table" in text.lower() or "Markdown link" in text
+    assert "ha_config_get_automation" in text
+    assert "1–3 MCP calls" in text or "1-3 MCP calls" in text
 
 
 def test_unclear_prompt_falls_back_to_ha_language() -> None:
