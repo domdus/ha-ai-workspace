@@ -16,6 +16,7 @@
           "house_map": "Katalog konfiguracji",
           "shorten_mcp_results": "Skracaj długie odpowiedzi Home Assistant",
           "change_history": "Historia zmian",
+          "track_usage": "Śledź użycie i koszty",
           "ui_theme": "Użyj komponentów HA",
           "cross_chat": "Między czatami",
           "keep_chats": "Czaty do zachowania"
@@ -32,6 +33,7 @@
           "house_map": "Opcjonalne. Pomaga wyjaśnić, jak element jest podłączony (co go uruchamia, na co wpływa). Domyślnie wyłączone. Dla stanu wł/wył na żywo lub pełnych list poproś asystenta, żeby sprawdził Home Assistant.",
           "shorten_mcp_results": "Domyślnie włączone. Bardzo długie odpowiedzi z Home Assistant (listy całego domu, duże wyszukiwania) są streszczane, zanim trafią do AI. To oszczędza tokens i utrzymuje zwięzłe odpowiedzi. Wyłączone wysyła pełny tekst.",
           "change_history": "Domyślnie włączone. Zapisuje zmiany konfiguracji wykonane przez asystenta, żebyś mógł je przejrzeć lub cofnąć w Historii zmian. Wyłączone: bez nowych wpisów; asystent nadal może korzystać z Home Assistant.",
+          "track_usage": "Domyślnie włączone. Zapisuje tokeny i szacowany koszt USD po każdej turze Cursor lub chmury. Pokazuje stronę Użycie w czacie i tworzy czujniki Home Assistant do własnych pulpitów. Wyłączone: bez nowych wpisów; historia zostaje.",
           "ui_theme": "Domyślnie wyłączone. Gdy włączone, używane są tylko komponenty interfejsu Home Assistant, które mogą lepiej współpracować z motywami.",
           "cross_chat": "Domyślnie wyłączone. Gdy włączone, pytanie może użyć innego czatu, którego tytuł ma wspólne słowa. Nie trzeba mówić czat. Tylko krótki fragment i ten czat nie jest zmieniany.",
           "keep_chats": "Najnowsze nieprzypięte czaty na osobę. Przypięte czaty zostają zawsze. Domyślnie 30."

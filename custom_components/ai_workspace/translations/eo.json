@@ -16,6 +16,7 @@
           "house_map": "Agorda katalogo",
           "shorten_mcp_results": "Mallongigi longajn respondojn de Home Assistant",
           "change_history": "Ŝanĝohistorio",
+          "track_usage": "Registri uzon kaj kostojn",
           "ui_theme": "Uzi HA-komponentojn",
           "cross_chat": "Inter babilejoj",
           "keep_chats": "Babilejoj konservotaj"
@@ -32,6 +33,7 @@
           "house_map": "Laŭvola. Helpas klarigi kiel unu ero estas kabligita (kio ekigas ĝin, kion ĝi influas). Defaŭlte malŝalta. Por viva stato ŝaltite/malŝaltite aŭ plenaj listoj, petu la asistanton kontroli Home Assistant.",
           "shorten_mcp_results": "Defaŭlte ŝalta. Tre longaj respondoj de Home Assistant (tutdomaj listoj, grandaj serĉoj) estas resumitaj antaŭ ol ili iras al la AI. Tio ŝparas ĵetonojn kaj tenas respondojn rapidaj. Malŝalte sendas la plenan tekston.",
           "change_history": "Defaŭlte ŝalta. Konservas registron de agordaj ŝanĝoj faritaj de la asistanto, por ke vi povu revizii aŭ malfari ilin en Ŝanĝohistorio. Malŝalte ĉesigas novajn enskribojn; la asistanto ankoraŭ povas uzi Home Assistant.",
+          "track_usage": "Defaŭlte ŝalta. Registras ĵetonojn kaj taksitan USD-koston post ĉiu Cursor aŭ nuba vico. Montras paĝon Uzo en la babilejo kaj kreas Home-Assistant-sensilojn por viaj propraj paneloj. Malŝalte ĉesigas novajn enskribojn; ekzistanta historio restas.",
           "ui_theme": "Defaŭlte malŝaltita. Kiam ŝaltita, nur interfacaj komponantoj de Home Assistant estas uzataj, kio povas pli bone funkcii kun etosoj.",
           "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi alian babilejon kies titolo kunhavas vortojn. Ne necesas mencii babilejon. Nur mallonga eltiraĵo, kaj tiu babilejo ne estas ŝanĝita.",
           "keep_chats": "Plej novaj nealpinglitaj babilejoj konservotaj po persono. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."

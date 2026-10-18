@@ -21,6 +21,7 @@ What the agent can do depends entirely on the MCP server you connect.
 - Deep links to devices, entities, automations, and more
 - Chat history with pins
 - Change History of recorded agent configuration writes (a log, not an undo). When HA-MCP is connected, **Ask to restore** tells the current chat to list HA-MCP’s edit backups
+- Usage and costs: tokens and estimated USD per agent and chat, plus Home Assistant sensors for your own dashboards
 - Several agents in one chat
 - More than one MCP connection
 - Optional floating button
@@ -258,6 +259,7 @@ It does not control Home Assistant edit links. Those rules are added to every me
 | **Config catalog**                         | Off by default. A local index of how automations are wired, so "what uses the kitchen light?" takes one lookup. See [why](#why-use-the-config-catalog)                              |
 | **Shorten large MCP tool results**         | On by default. Same setting for cloud agents and Cursor. See [MCP proxy](#mcp-proxy)                                                                                                |
 | **Change History**                         | On by default. Records agent configuration writes for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools. See [MCP proxy](#mcp-proxy)                   |
+| **Track usage and costs**                  | On by default. Records tokens and USD after each Cursor or cloud turn. Opens as **Usage** next to Change History. Off stops new records; sensors and history stay. See [Cost](#cost) |
 | **Add to Assist**                          | On each agent. Off (the default) keeps the agent in AI Workspace only. On adds a Voice assistants pipeline for it. Off again removes that pipeline                                 |
 | **Add Speech-to-text**                     | On OpenAI, OpenRouter, and OpenAI-compatible agents. On by default. Creates a Speech-to-text engine from this agent's key and assigns it to every AI Workspace Assist pipeline. Off removes that engine |
 | **Speech-to-text model**                   | Shown with Speech-to-text. Empty uses the provider default (`gpt-4o-mini-transcribe` on OpenAI, Whisper on OpenRouter / compatible). You can pick another or type an id                 |
@@ -297,7 +299,7 @@ Cursor does not call MCP from Home Assistant. HTTP MCP (HA-MCP and others) is re
 ## Privacy and security
 
 - **What leaves the house:** your messages, attachments, the system prompt, the page you are on, and every MCP tool result go to the AI provider you picked (or to Cursor through the runtime). Only Ollama or another local server keeps everything at home.
-- **What stays local:** chat history is stored in `config/ai_workspace/ai-workspace.sqlite`. Change History keeps a log of the last 30 recorded agent configuration writes there. Undo for HA-MCP writes belongs to HA-MCP's own edit backups; **Ask to restore** in that log asks the current chat to list and restore them. API keys live in Home Assistant's config entries, like any other integration.
+- **What stays local:** chat history is stored in `config/ai_workspace/ai-workspace.sqlite`. Change History keeps a log of the last 30 recorded agent configuration writes there. Usage rows (tokens and estimated cost, not message text) live in the same database. Undo for HA-MCP writes belongs to HA-MCP's own edit backups; **Ask to restore** in that log asks the current chat to list and restore them. API keys live in Home Assistant's config entries, like any other integration.
 - **Who can use it:** only admins by default. The sidebar panel is always admin-only.
 - **Allow normal users:** when this is on, people who are not admins get the floating chat. They only get the built-in **Home Assistant MCP Server**, using their own login, and never the admin's MCP connections or the config catalog. What they can see and do is then whatever Home Assistant exposes to them through Assist. **Only turn this on if you trust everyone with a login to chat with an AI that can act on the house.**
 - **Voice satellites:** Assist from a satellite has no signed-in person, so it uses the tools the admin configured. The built-in MCP Server needs a login, so set a long-lived access token in that connection's **MCP token** when satellites should reach it. HA-MCP and Vibecode bring their own credentials.
@@ -306,6 +308,13 @@ Cursor does not call MCP from Home Assistant. HTTP MCP (HA-MCP and others) is re
 
 
 ## Cost
+
+**Track usage and costs** (on by default) records tokens and USD after each Cursor or cloud turn, including Assist. Open **Usage** next to Change History for today, this month, all time, and a row per agent. Each chat also shows a short usage line.
+
+- **Cursor:** token counts come from the SDK `usage` object. If the account exposes billed cents (`get_usage`), that amount is stored as the cost. Otherwise the list-price estimate for Composer is used.
+- **Cloud agents:** prompt and completion tokens from the provider `usage` field, including cache and reasoning when present. Cost is list price (OpenAI, Anthropic, Gemini, DeepSeek, Qwen, Grok, Azure, OpenRouter, compatible). OpenRouter’s reported `cost` is used when it is present. Ollama is stored as $0.
+- **Home Assistant sensors:** device **AI Workspace usage** plus each agent — cost/tokens/turns for today, this month, and total, and the last turn’s cost, tokens, and model. Put them on any Lovelace dashboard. Event `ai_workspace_usage` fires after every recorded turn.
+- Unknown models still store tokens; cost stays empty until the price table knows the id.
 
 Cloud AI and Ollama agents send the system prompt and the tool list of every enabled MCP connection with each message. HA-MCP offers about 80 tools. Even with their descriptions shortened, that is several thousand tokens before you type anything. Each tool call adds its result and one more request, which sends the prompt and the tool list again. A greeting or thanks is sent without tools.
 

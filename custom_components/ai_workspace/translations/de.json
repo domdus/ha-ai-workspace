@@ -16,6 +16,7 @@
           "house_map": "Konfigurationskatalog",
           "shorten_mcp_results": "Lange Home-Assistant-Antworten kürzen",
           "change_history": "Änderungsverlauf",
+          "track_usage": "Nutzung und Kosten aufzeichnen",
           "cross_chat": "Chatübergreifend",
           "ui_theme": "HA-Komponenten verwenden",
           "keep_chats": "Chats behalten"
@@ -32,6 +33,7 @@
           "house_map": "Optional. Hilft zu erklären, wie ein Eintrag verdrahtet ist (was ihn auslöst, was er beeinflusst). Standardmäßig aus. Für live an/aus oder volle Listen: die Assistentin soll Home Assistant direkt prüfen.",
           "shorten_mcp_results": "Standardmäßig an. Sehr lange Antworten aus Home Assistant (Listen fürs ganze Haus, große Abfragen) werden gekürzt, bevor sie an die KI gehen. Das spart Token und hält Antworten flott. Aus sendet den vollen Text.",
           "change_history": "Standardmäßig an. Merkt sich Konfigurationsänderungen der Assistentin, damit du sie im Änderungsverlauf prüfen oder rückgängig machen kannst. Aus: keine neuen Einträge; die Assistentin kann Home Assistant weiter nutzen.",
+          "track_usage": "Standardmäßig an. Zeichnet Token und geschätzte USD-Kosten nach jedem Cursor- oder Cloud-Turn auf. Zeigt eine Nutzungsseite im Chat und legt Home-Assistant-Sensoren an. Aus: keine neuen Einträge; vorhandene Historie bleibt.",
           "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen anderen Chat nutzen, dessen Titel Wörter mit ihr teilt. Du musst nicht Chat oder Gespräch sagen. Nur ein kurzer Auszug, und dieser Chat wird nicht geändert.",
           "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30.",
           "ui_theme": "Standardmäßig aus. Wenn an, werden nur Home-Assistant-UI-Komponenten genutzt, die oft besser mit Themes funktionieren."
@@ -89,6 +91,7 @@
           "house_map": "Konfigurationskatalog",
           "shorten_mcp_results": "Lange Home-Assistant-Antworten kürzen",
           "change_history": "Änderungsverlauf",
+          "track_usage": "Nutzung und Kosten aufzeichnen",
           "cross_chat": "Chatübergreifend",
           "ui_theme": "HA-Komponenten verwenden",
           "keep_chats": "Chats behalten"
@@ -105,6 +108,7 @@
           "house_map": "Optional. Hilft zu erklären, wie ein Eintrag verdrahtet ist (was ihn auslöst, was er beeinflusst). Standardmäßig aus. Für live an/aus oder volle Listen: die Assistentin soll Home Assistant direkt prüfen.",
           "shorten_mcp_results": "Standardmäßig an. Sehr lange Antworten aus Home Assistant (Listen fürs ganze Haus, große Abfragen) werden gekürzt, bevor sie an die KI gehen. Das spart Token und hält Antworten flott. Aus sendet den vollen Text.",
           "change_history": "Standardmäßig an. Merkt sich Konfigurationsänderungen der Assistentin, damit du sie im Änderungsverlauf prüfen oder rückgängig machen kannst. Aus: keine neuen Einträge; die Assistentin kann Home Assistant weiter nutzen.",
+          "track_usage": "Standardmäßig an. Zeichnet Token und geschätzte USD-Kosten nach jedem Cursor- oder Cloud-Turn auf. Zeigt eine Nutzungsseite im Chat und legt Home-Assistant-Sensoren an. Aus: keine neuen Einträge; vorhandene Historie bleibt.",
           "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen anderen Chat nutzen, dessen Titel Wörter mit ihr teilt. Du musst nicht Chat oder Gespräch sagen. Nur ein kurzer Auszug, und dieser Chat wird nicht geändert.",
           "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30.",
           "ui_theme": "Standardmäßig aus. Wenn an, werden nur Home-Assistant-UI-Komponenten genutzt, die oft besser mit Themes funktionieren."

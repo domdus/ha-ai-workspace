@@ -25,6 +25,7 @@ from .const import (
     CONF_HOUSE_MAP,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
+    CONF_TRACK_USAGE,
     CONF_UI_THEME,
     CONF_KEEP_CHATS,
     CONF_MCP_KIND,
@@ -59,7 +60,7 @@ from .mcp_resolve import async_resolve_mcp_url, infer_mcp_kind
 from .models import Settings
 
 _LOGGER = logging.getLogger(__name__)
-_PLATFORMS = [Platform.CONVERSATION, Platform.STT, Platform.TTS]
+_PLATFORMS = [Platform.CONVERSATION, Platform.SENSOR, Platform.STT, Platform.TTS]
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -162,6 +163,7 @@ async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
         house_map=house_map,
         shorten_mcp_results=bool(data.get(CONF_SHORTEN_MCP_RESULTS, True)),
         change_history=bool(data.get(CONF_CHANGE_HISTORY, True)),
+        track_usage=bool(data.get(CONF_TRACK_USAGE, True)),
         ui_theme=ui_theme_of(data.get(CONF_UI_THEME)),
         cross_chat=bool(data.get(CONF_CROSS_CHAT, False)),
         keep_chats=_keep_chats(data),

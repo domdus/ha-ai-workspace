@@ -16,6 +16,7 @@
           "house_map": "Catálogo de configuración",
           "shorten_mcp_results": "Acortar las respuestas largas de Home Assistant",
           "change_history": "Historial de cambios",
+          "track_usage": "Registrar uso y costes",
           "ui_theme": "Usar componentes de HA",
           "cross_chat": "Entre chats",
           "keep_chats": "Chats a conservar"
@@ -32,6 +33,7 @@
           "house_map": "Opcional. Ayuda a explicar cómo está conectado un elemento (qué lo dispara, a qué afecta). Desactivado por defecto. Para el estado encendido/apagado en vivo o listas completas, pide al asistente que consulte Home Assistant.",
           "shorten_mcp_results": "Activado por defecto. Las respuestas muy largas de Home Assistant (listas de toda la casa, búsquedas grandes) se resumen antes de ir a la IA. Eso ahorra tokens y mantiene las respuestas ágiles. Desactivado envía el texto completo.",
           "change_history": "Activado por defecto. Guarda un registro de los cambios de configuración que hizo el asistente para revisarlos o deshacerlos en el historial de cambios. Desactivado: no hay entradas nuevas; el asistente puede seguir usando Home Assistant.",
+          "track_usage": "Activado por defecto. Registra tokens y el coste estimado en USD tras cada turno de Cursor o la nube. Muestra una página de Uso en el chat y crea sensores de Home Assistant para tus propios paneles. Desactivado: no hay registros nuevos; el historial se queda.",
           "ui_theme": "Desactivado por defecto. Si está activado, solo se usan componentes de la interfaz de Home Assistant, que pueden ir mejor con los temas.",
           "cross_chat": "Desactivado por defecto. Si está activado, una pregunta puede usar otro chat cuyo título comparta palabras. No hace falta decir chat. Solo un extracto breve, y ese chat no se modifica.",
           "keep_chats": "Chats no fijados más recientes a conservar por persona. Los chats fijados se conservan siempre. Por defecto 30."

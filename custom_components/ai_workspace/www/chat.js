@@ -655,9 +655,14 @@ export async function mountAiWorkspace(root, options = {}) {
       <aside>
         <div class="nav-head">
           <div class="nav-toolbar">
-            <ha-icon-button class="history-open" label="${t("activity")}">
-              <ha-icon icon="mdi:history"></ha-icon>
-            </ha-icon-button>
+            <div class="nav-tools">
+              <ha-icon-button class="history-open" label="${t("activity")}">
+                <ha-icon icon="mdi:history"></ha-icon>
+              </ha-icon-button>
+              <ha-icon-button class="usage-open" label="${t("usage")}">
+                <ha-icon icon="mdi:chart-bar"></ha-icon>
+              </ha-icon-button>
+            </div>
             <ha-icon-button class="nav-toggle" label="${t("hide_chats")}">
               <ha-icon icon="mdi:dock-left"></ha-icon>
             </ha-icon-button>
@@ -682,8 +687,12 @@ export async function mountAiWorkspace(root, options = {}) {
             ${compact ? "" : `<ha-icon-button class="history-open header-history" label="${t("activity")}">
               <ha-icon icon="mdi:history"></ha-icon>
             </ha-icon-button>`}
+            <ha-icon-button class="usage-open header-usage" label="${t("usage")}">
+              <ha-icon icon="mdi:chart-bar"></ha-icon>
+            </ha-icon-button>
             <h1 class="title">${t("new_chat")}</h1>
           </div>
+          <p class="chat-usage" hidden></p>
           ${bannerMarkup}
         </header>
         ${workspaceLinkMarkup}
@@ -727,6 +736,15 @@ export async function mountAiWorkspace(root, options = {}) {
           </ha-icon-button>
         </div>
         <div class="history-list"></div>
+      </div>
+      <div class="usage" hidden aria-hidden="true">
+        <div class="usage-bar">
+          <span>${t("usage")}</span>
+          <ha-icon-button class="usage-close" label="${t("close")}">
+            <ha-icon icon="mdi:close"></ha-icon>
+          </ha-icon-button>
+        </div>
+        <div class="usage-list"></div>
       </div>
     </div>
   `;
@@ -2445,6 +2463,7 @@ export async function mountAiWorkspace(root, options = {}) {
       showEmpty();
       if (!fromUrl) goToSession("");
       selectSessionRow("");
+      refreshChatUsage();
       return;
     }
     if (fromUrl && id === sessionId) return;
@@ -2467,6 +2486,7 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!sessionsEl?.querySelector(".session-row")) await loadSessions();
     selectSessionRow(id);
     if (session.pending) watchPending(id);
+    refreshChatUsage();
   }
 
   function paintSession(session) {
@@ -3373,6 +3393,21 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!visible) closeHistory();
   }
 
+  function setUsageShown(visible) {
+    root.querySelectorAll(".usage-open").forEach((btn) => {
+      btn.hidden = !visible;
+      btn.classList.toggle("is-hidden", !visible);
+    });
+    if (!visible) {
+      closeUsage();
+      const line = root.querySelector(".chat-usage");
+      if (line) {
+        line.hidden = true;
+        line.textContent = "";
+      }
+    }
+  }
+
   async function remountForUiTheme(nextTheme) {
     if (uiRemountInFlight || nextTheme === activeUiTheme) return;
     uiRemountInFlight = true;
@@ -3392,16 +3427,20 @@ export async function mountAiWorkspace(root, options = {}) {
     }
   }
 
+  let usageTracking = true;
+
   async function loadDictate() {
     // Stay hidden until /ui explicitly allows the mic (also covers the overlay drawer).
     let show = false;
     let historyOn = true;
+    let usageOn = true;
     try {
       const response = await apiFetch(`${API}/ui`);
       if (response?.ok) {
         const body = await response.json();
         show = body.dictate === true;
         historyOn = body.change_history !== false;
+        usageOn = body.track_usage !== false;
         const nextTheme = body.ui_theme === "ha_components" ? "ha_components" : "standard";
         uiTheme = nextTheme;
         uiThemeLoaded = true;
@@ -3421,7 +3460,9 @@ export async function mountAiWorkspace(root, options = {}) {
     } catch (_err) {
       show = false;
     }
+    usageTracking = usageOn;
     setChangeHistoryShown(historyOn);
+    setUsageShown(usageOn);
     setMicShown(show);
     syncCopyChat();
   }
@@ -3598,6 +3639,8 @@ export async function mountAiWorkspace(root, options = {}) {
         } else if (name === "title" && data.title) {
           applySessionTitle(chatId, data.title);
           bumpSession(chatId, data.title);
+        } else if (name === "usage") {
+          applyTurnUsage(data);
         }
         scrollChatToBottom();
       });
@@ -3835,11 +3878,15 @@ export async function mountAiWorkspace(root, options = {}) {
     titleEl.textContent = t("new_chat");
     showEmpty();
     selectSessionRow("");
+    refreshChatUsage();
     if (keepComposerFocus()) messageEl.focus({ preventScroll: true });
   }
 
   const historyEl = root.querySelector(".history");
   const historyList = root.querySelector(".history-list");
+  const usageEl = root.querySelector(".usage");
+  const usageList = root.querySelector(".usage-list");
+  const chatUsageEl = root.querySelector(".chat-usage");
 
   function activityWhen(iso) {
     const date = new Date(iso);
@@ -4024,6 +4071,7 @@ export async function mountAiWorkspace(root, options = {}) {
 
   async function openHistory() {
     if (!historyEl) return;
+    closeUsage();
     historyEl.hidden = false;
     historyEl.setAttribute("aria-hidden", "false");
     syncHistoryButtons(true);
@@ -4050,6 +4098,196 @@ export async function mountAiWorkspace(root, options = {}) {
     closeHistory();
   });
 
+  function money(usd) {
+    if (usd == null || Number.isNaN(Number(usd))) return t("usage_unknown_cost");
+    return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 4 }).format(Number(usd));
+  }
+
+  function tokenLabel(count) {
+    const n = Number(count) || 0;
+    if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+    if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k`;
+    return String(n);
+  }
+
+  function usageLine(summary) {
+    if (!summary) return "";
+    const bits = [`${tokenLabel(summary.total_tokens || 0)} ${t("usage_tokens")}`];
+    if (summary.cost_usd != null) bits.push(money(summary.cost_usd));
+    else if (summary.missing_cost) bits.push(t("usage_unknown_cost"));
+    if (summary.turns) bits.push(`${summary.turns} ${t("usage_turns")}`);
+    return bits.join(" · ");
+  }
+
+  function applyTurnUsage(data) {
+    if (!data || !usageTracking) return;
+    if (chatUsageEl) {
+      const cost = data.cost_usd == null ? t("usage_unknown_cost") : money(data.cost_usd);
+      chatUsageEl.hidden = false;
+      chatUsageEl.textContent = `${t("usage_last")}: ${tokenLabel(data.total_tokens || 0)} · ${cost}`;
+    }
+    refreshChatUsage();
+    if (usageIsOpen()) loadUsage();
+  }
+
+  async function refreshChatUsage() {
+    if (!chatUsageEl || !usageTracking) return;
+    if (!sessionId) {
+      chatUsageEl.hidden = true;
+      chatUsageEl.textContent = "";
+      return;
+    }
+    try {
+      const resp = await apiFetch(`${API}/usage?session_id=${encodeURIComponent(sessionId)}`);
+      if (!resp?.ok) return;
+      const body = await resp.json();
+      const summary = body.session;
+      if (!summary || !summary.turns) {
+        chatUsageEl.hidden = true;
+        return;
+      }
+      chatUsageEl.hidden = false;
+      chatUsageEl.textContent = `${t("usage_this_chat")}: ${usageLine(summary)}`;
+    } catch (_err) {
+      /* keep last */
+    }
+  }
+
+  function metricCard(label, summary) {
+    const card = document.createElement("article");
+    card.className = "usage-card";
+    const title = document.createElement("p");
+    title.className = "usage-card-title";
+    title.textContent = label;
+    const cost = document.createElement("p");
+    cost.className = "usage-card-cost";
+    cost.textContent = summary?.missing_cost && !summary.cost_usd ? t("usage_unknown_cost") : money(summary?.cost_usd || 0);
+    const meta = document.createElement("p");
+    meta.className = "usage-card-meta";
+    meta.textContent = `${tokenLabel(summary?.total_tokens || 0)} ${t("usage_tokens")} · ${summary?.turns || 0} ${t("usage_turns")}`;
+    card.append(title, cost, meta);
+    return card;
+  }
+
+  async function loadUsage() {
+    if (!usageList) return;
+    usageList.replaceChildren();
+    const resp = await apiFetch(`${API}/usage${sessionId ? `?session_id=${encodeURIComponent(sessionId)}` : ""}`);
+    if (!resp || !resp.ok) {
+      const note = document.createElement("p");
+      note.className = "usage-empty";
+      note.textContent = t("usage_empty");
+      usageList.appendChild(note);
+      return;
+    }
+    const body = await resp.json();
+    if (body.enabled === false) {
+      const note = document.createElement("p");
+      note.className = "usage-empty";
+      note.textContent = t("usage_disabled");
+      usageList.appendChild(note);
+      return;
+    }
+    const grid = document.createElement("div");
+    grid.className = "usage-grid";
+    grid.append(
+      metricCard(t("usage_today"), body.totals?.today),
+      metricCard(t("usage_month"), body.totals?.month),
+      metricCard(t("usage_all"), body.totals?.all),
+    );
+    usageList.appendChild(grid);
+    if (body.session && body.session.turns) {
+      const chatCard = metricCard(t("usage_this_chat"), body.session);
+      usageList.appendChild(chatCard);
+    }
+    const agents = Array.isArray(body.agents) ? body.agents : [];
+    if (agents.length) {
+      const heading = document.createElement("p");
+      heading.className = "usage-heading";
+      heading.textContent = t("usage_agents");
+      usageList.appendChild(heading);
+      for (const agent of agents) {
+        const row = document.createElement("article");
+        row.className = "usage-agent";
+        const name = document.createElement("p");
+        name.className = "usage-agent-name";
+        name.textContent = agent.title || agent.id || t("agent");
+        const today = document.createElement("p");
+        today.className = "usage-agent-today";
+        today.textContent = `${t("usage_today")}: ${usageLine(agent.today)}`;
+        const all = document.createElement("p");
+        all.className = "usage-agent-all";
+        all.textContent = `${t("usage_all")}: ${usageLine(agent.all)}`;
+        row.append(name, today, all);
+        usageList.appendChild(row);
+      }
+    }
+    if (!body.totals?.all?.turns) {
+      const note = document.createElement("p");
+      note.className = "usage-empty";
+      note.textContent = t("usage_empty");
+      usageList.appendChild(note);
+    }
+    const hint = document.createElement("p");
+    hint.className = "usage-hint";
+    hint.textContent = t("usage_ha_hint");
+    usageList.appendChild(hint);
+  }
+
+  function syncUsageButtons(open) {
+    root.querySelectorAll(".usage-open").forEach((btn) => {
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+  }
+
+  function usageIsOpen() {
+    return wrap.classList.contains("usage-open") || Boolean(usageEl && !usageEl.hidden);
+  }
+
+  function closeUsage() {
+    wrap.classList.remove("usage-open");
+    syncUsageButtons(false);
+    if (!usageEl) return;
+    usageEl.setAttribute("aria-hidden", "true");
+    const hide = (event) => {
+      if (event && event.target !== usageEl) return;
+      if (event && event.propertyName && event.propertyName !== "transform") return;
+      if (!wrap.classList.contains("usage-open")) usageEl.hidden = true;
+    };
+    if (usageEl.hidden) return;
+    usageEl.addEventListener("transitionend", hide, { once: true });
+    window.setTimeout(() => hide(), 320);
+  }
+
+  async function openUsage() {
+    if (!usageEl) return;
+    closeHistory();
+    usageEl.hidden = false;
+    usageEl.setAttribute("aria-hidden", "false");
+    syncUsageButtons(true);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => wrap.classList.add("usage-open"));
+    });
+    await loadUsage();
+  }
+
+  function toggleUsage() {
+    if (usageIsOpen()) closeUsage();
+    else openUsage();
+  }
+
+  root.querySelectorAll(".usage-open").forEach((btn) => {
+    btn.setAttribute("aria-expanded", "false");
+    btn.addEventListener("click", (event) => {
+      event.preventDefault();
+      toggleUsage();
+    });
+  });
+  root.querySelector(".usage-close")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    closeUsage();
+  });
+
   root.querySelectorAll(".nav-toggle").forEach((btn) => {
     btn.addEventListener("click", (event) => {
       event.preventDefault();
@@ -4065,6 +4303,10 @@ export async function mountAiWorkspace(root, options = {}) {
     if (event.key !== "Escape") return;
     if (wrap.classList.contains("history-open")) {
       closeHistory();
+      return;
+    }
+    if (wrap.classList.contains("usage-open")) {
+      closeUsage();
       return;
     }
     if (root.querySelector("ha-dialog[open]")) return;

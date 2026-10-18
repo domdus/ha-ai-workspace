@@ -16,6 +16,7 @@
           "house_map": "Konfiqurasiya kataloqu",
           "shorten_mcp_results": "Uzun Home Assistant cavablarını qısalt",
           "change_history": "Dəyişiklik tarixçəsi",
+          "track_usage": "İstifadə və xərcləri izlə",
           "ui_theme": "HA komponentlərindən istifadə et",
           "cross_chat": "Söhbətlər arası",
           "keep_chats": "Saxlanılacaq söhbətlər"
@@ -32,6 +33,7 @@
           "house_map": "İstəyə bağlı. Bir elementin necə bağlandığını izah etməyə kömək edir (nə onu işə salır, nəyə təsir edir). Defolt olaraq sönülüdür. Canlı açıq/sönülü vəziyyət və ya tam siyahılar üçün köməkçidən Home Assistant-ı yoxlamağı xahiş edin.",
           "shorten_mcp_results": "Defolt olaraq açıqdır. Home Assistant-dan çox uzun cavablar (bütün ev siyahıları, böyük axtarışlar) AI-yə getməzdən əvvəl xülasə edilir. Bu, tokenləri qənaət edir və cavabları çevik saxlayır. Sönülü tam mətni göndərir.",
           "change_history": "Defolt olaraq açıqdır. Köməkçinin etdiyi konfiqurasiya dəyişikliklərinin qeydini saxlayır ki, onları Dəyişiklik tarixçəsində nəzərdən keçirə və ya ləğv edəsiniz. Sönülü yeni qeydləri dayandırır; köməkçi Home Assistant-ı yenə istifadə edə bilər.",
+          "track_usage": "Defolt olaraq açıqdır. Hər Cursor və ya bulud turundan sonra token və təxmini USD xərcini yazır. Söhbətdə İstifadə səhifəsi göstərir və öz panelləriniz üçün Home Assistant sensorları yaradır. Sönülü yeni qeydləri dayandırır; mövcud tarixçə qalır.",
           "ui_theme": "Susmaya görə sönülü. Açıldıqda yalnız Home Assistant interfeys komponentləri istifadə olunur, bu da temalarla daha yaxşı işləyə bilər.",
           "cross_chat": "Defolt olaraq sönülüdür. Açıq olanda sual başlığında ortaq sözləri olan başqa söhbətdən istifadə edə bilər. Söhbət demək lazım deyil. Yalnız qısa parça, və o söhbət dəyişmir.",
           "keep_chats": "Hər şəxs üçün saxlanılacaq ən yeni sancılmamış söhbətlər. Sancılmış söhbətlər həmişə saxlanılır. Defolt 30."

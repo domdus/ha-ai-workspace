@@ -16,6 +16,7 @@
           "house_map": "Catalogo di configurazione",
           "shorten_mcp_results": "Accorcia le risposte lunghe di Home Assistant",
           "change_history": "Cronologia delle modifiche",
+          "track_usage": "Monitora uso e costi",
           "ui_theme": "Usa componenti HA",
           "cross_chat": "Tra chat",
           "keep_chats": "Chat da conservare"
@@ -32,6 +33,7 @@
           "house_map": "Facoltativo. Aiuta a spiegare come è collegato un elemento (cosa lo attiva, cosa influenza). Disattivo per impostazione predefinita. Per lo stato acceso/spento in tempo reale o elenchi completi, chiedi all'assistente di consultare Home Assistant.",
           "shorten_mcp_results": "Attivo per impostazione predefinita. Le risposte molto lunghe di Home Assistant (elenchi di tutta la casa, ricerche ampie) vengono riassunte prima di andare all'IA. Così si risparmiano tokens e le risposte restano snelle. Disattivo invia il testo completo.",
           "change_history": "Attivo per impostazione predefinita. Conserva una traccia delle modifiche di configurazione fatte dall'assistente, così puoi rivederle o annullarle nella Cronologia delle modifiche. Disattivo: niente nuove voci; l'assistente può comunque usare Home Assistant.",
+          "track_usage": "Attivo per impostazione predefinita. Registra token e costo USD stimato dopo ogni turno Cursor o cloud. Mostra una pagina Uso nella chat e crea sensori Home Assistant per le tue dashboard. Disattivo: niente nuovi record; la cronologia resta.",
           "ui_theme": "Disattivato di default. Se attivo, vengono usati solo i componenti dell’interfaccia di Home Assistant, che possono funzionare meglio con i temi.",
           "cross_chat": "Disattivo per impostazione predefinita. Se attivo, una domanda può usare un'altra chat il cui titolo condivide parole con essa. Non serve dire chat. Solo un breve estratto, e quella chat non viene modificata.",
           "keep_chats": "Chat non fissate più recenti da conservare per persona. Le chat fissate restano sempre. Predefinito 30."

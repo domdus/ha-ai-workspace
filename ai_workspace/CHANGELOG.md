@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0b1
+
+- Optional **Track usage and costs** (on by default): records tokens and USD after each Cursor or cloud turn
+- Usage page in the chat (sidebar button next to Change History) lists today / month / all-time and each agent
+- Each chat shows a usage line; Cursor uses billed cents from the SDK when available, cloud agents use list prices (cache and reasoning included when the provider sends them)
+- Home Assistant sensors on **AI Workspace usage** plus each agent: cost, tokens, turns, last model — for your own Lovelace dashboards
+- Event `ai_workspace_usage` fires after every recorded turn
+
 ## 1.2.1
 
 - HA Components: agent picker sits in the composer column so it lines up with the prompt on desktop new chat

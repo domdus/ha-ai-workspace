@@ -29,6 +29,7 @@ from .const import (
     CONF_HOUSE_MAP,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
+    CONF_TRACK_USAGE,
     CONF_UI_THEME,
     CONF_KEEP_CHATS,
     CONF_MCP_KIND,
@@ -78,6 +79,7 @@ _SHARED_KEYS = (
     CONF_HOUSE_MAP,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
+    CONF_TRACK_USAGE,
     CONF_UI_THEME,
     CONF_CROSS_CHAT,
     CONF_KEEP_CHATS,
@@ -135,6 +137,7 @@ def _ui_schema(defaults: dict | None = None) -> dict:
         vol.Optional(CONF_HOUSE_MAP, default=current.get(CONF_HOUSE_MAP, False)): cv.boolean,
         vol.Optional(CONF_SHORTEN_MCP_RESULTS, default=current.get(CONF_SHORTEN_MCP_RESULTS, True)): cv.boolean,
         vol.Optional(CONF_CHANGE_HISTORY, default=current.get(CONF_CHANGE_HISTORY, True)): cv.boolean,
+        vol.Optional(CONF_TRACK_USAGE, default=current.get(CONF_TRACK_USAGE, True)): cv.boolean,
         vol.Optional(CONF_CROSS_CHAT, default=current.get(CONF_CROSS_CHAT, False)): cv.boolean,
         vol.Optional(
             CONF_UI_THEME,

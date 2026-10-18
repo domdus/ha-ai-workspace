@@ -16,6 +16,7 @@
           "house_map": "配置目录",
           "shorten_mcp_results": "缩短过长的 Home Assistant 回复",
           "change_history": "更改历史",
+          "track_usage": "跟踪用量和费用",
           "ui_theme": "使用 HA 组件",
           "cross_chat": "跨聊天",
           "keep_chats": "要保留的聊天"
@@ -32,6 +33,7 @@
           "house_map": "可选。帮助说明某个项目如何连接（由什么触发、会影响什么）。默认关闭。若要查看实时开关状态或完整列表，请让助手查询 Home Assistant。",
           "shorten_mcp_results": "默认开启。来自 Home Assistant 的超长回复（全屋列表、大型搜索）会在送给 AI 之前先摘要。这样可节省 token，回复也更干脆。关闭则发送全文。",
           "change_history": "默认开启。记录助手所做的配置更改，便于你在更改历史中查看或撤销。关闭后不再新增记录；助手仍可使用 Home Assistant。",
+          "track_usage": "默认开启。每次 Cursor 或云端回合后记录 token 和估算的美元费用。在聊天中显示用量页面，并创建可供你自己仪表板使用的 Home Assistant 传感器。关闭后不再新增记录；已有历史保留。",
           "ui_theme": "默认关闭。开启后只使用 Home Assistant 界面组件，可能更适合主题。",
           "cross_chat": "默认关闭。开启后，问题可以使用标题有相同词语的另一段聊天。不必提到聊天。只取一小段摘录，且不会改动那段聊天。",
           "keep_chats": "每人保留的最新未置顶聊天。置顶聊天始终保留。默认 30。"
