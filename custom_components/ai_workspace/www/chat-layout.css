@@ -787,12 +787,19 @@ textarea.message {
   overflow: visible;
 }
 
-.ui-theme-ha-components .composer-box,
-.ui-theme-ha-components .agent-picker {
+.ui-theme-ha-components .composer-box {
   width: min(calc(var(--ai-chat-width) + 2 * var(--ai-inline-pad)), 100%);
   max-width: 100%;
   margin-inline: auto;
   padding-inline: var(--ha-space-3);
+  box-sizing: border-box;
+}
+
+.ui-theme-ha-components .composer-box .agent-picker {
+  width: 100%;
+  max-width: 100%;
+  padding-inline: 0;
+  margin-inline: 0;
   box-sizing: border-box;
 }
 
@@ -812,6 +819,7 @@ textarea.message {
   z-index: 5;
   margin-top: var(--ha-space-1);
   margin-bottom: var(--ha-space-2);
+  margin-left: 0;
 }
 
 .ui-theme-ha-components ha-dropdown.agent-menu {
@@ -913,8 +921,18 @@ textarea.message {
     padding-inline: max(var(--ha-space-4, 16px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
   }
 
-  .ui-theme-ha-components .log.messages,
+  .ui-theme-ha-components .log.messages {
+    padding-inline: max(var(--ha-space-3, 12px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+  }
+
+  /* Gutter lives on composer-box / picker only — avoid stacking with .composer padding. */
   .ui-theme-ha-components .composer {
+    padding-inline: 0;
+  }
+
+  .ui-theme-ha-components .composer-box {
+    width: 100%;
+    max-width: 100%;
     padding-inline: max(var(--ha-space-3, 12px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
   }
 

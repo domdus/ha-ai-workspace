@@ -698,6 +698,11 @@ export async function mountAiWorkspace(root, options = {}) {
               </div>
               <div class="attach-row" hidden></div>
               ${haComposerInputMarkup}
+              <div class="agent-picker" hidden>
+                <ha-dropdown class="agent-menu" placement="top-start">
+                  ${agentTriggerMarkup}
+                </ha-dropdown>
+              </div>
             </${composerTag}>` : `<${composerTag} class="composer-box">
               <div class="next-row" hidden>
                 <p class="next-copy"></p>
@@ -705,12 +710,12 @@ export async function mountAiWorkspace(root, options = {}) {
               </div>
               <div class="attach-row" hidden></div>
               ${standardComposerRowMarkup}
-            </${composerTag}>`}
+            </${composerTag}>
             <div class="agent-picker" hidden>
               <ha-dropdown class="agent-menu" placement="top-start">
                 ${agentTriggerMarkup}
               </ha-dropdown>
-            </div>
+            </div>`}
           </form>
         </div>
       </section>

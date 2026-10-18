@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.1
+
+- HA Components: agent picker sits in the composer column so it lines up with the prompt on desktop new chat
+- HA Components mobile: composer gutter is no longer doubled (outer bar + inner box padding)
+
 ## 1.2.0
 
 - **Use HA Components** composer matches Assist: `ha-input` with attach/mic/send in the end slot, not a custom textarea row
