@@ -7,7 +7,7 @@
 - HA Components composer and agent picker keep an opaque page background so chat text does not show through on scroll
 - Switching **Use HA Components** applies without reopening the panel (theme remount)
 - Wide markdown/tables stay inside bubbles; agent picker and composer align with the message column on mobile
-- New chat shows the welcome headline again; the empty-state prompt uses the same width as Standard
+- New chat shows the welcome headline again; sticky prompt, picker, and empty-state use the same max width as Standard
 - Agents listing automations/scripts should use a few domain/registry MCP calls, not one config get per row
 
 ## 1.1.4

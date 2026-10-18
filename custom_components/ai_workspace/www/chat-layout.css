@@ -467,8 +467,6 @@ h1 {
 }
 
 .ui-theme-ha-components .chat.welcome .composer {
-  width: min(calc(var(--ai-chat-width) + 2 * var(--ha-space-3)), 100%);
-  margin-inline: auto;
   background: transparent;
 }
 
@@ -731,11 +729,12 @@ textarea.message {
   width: 100%;
 }
 
-/* ha-assist-chat composer: same horizontal gutter as .log.messages (space-3). */
+/* ha-assist-chat composer: same max width as Standard; space-3 gutter like .log.messages. */
 .ui-theme-ha-components .composer {
   padding: 0 var(--ha-space-3) var(--ha-space-4);
-  width: 100%;
+  width: min(calc(var(--ai-chat-width) + 2 * var(--ai-inline-pad)), 100%);
   max-width: 100%;
+  margin-inline: auto;
   background: var(--primary-background-color);
   overflow: visible;
 }
