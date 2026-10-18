@@ -4,6 +4,7 @@
 
 - **Use HA Components** composer matches Assist: `ha-input` with attach/mic/send in the end slot, not a custom textarea row
 - Chat HTML paints immediately; HA widget chunks load in the background instead of a blank panel for several seconds
+- HA Components composer and agent picker keep an opaque page background so chat text does not show through on scroll
 - Switching **Use HA Components** applies without reopening the panel (theme remount)
 - Wide markdown/tables stay inside bubbles; agent picker and composer align with the message column on mobile
 - New chat shows the welcome headline again; the empty-state prompt uses the same width as Standard
