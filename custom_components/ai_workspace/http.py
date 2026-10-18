@@ -42,6 +42,7 @@ from .redact import redact
 from .small_talk import wants_house_tools
 from .store import Session, Store
 from .titles import accept_generated_title, needs_title_summary, title_from_prompt
+from .usage_record import dashboard_payload, finalize_usage, record_usage_turn
 
 logger = logging.getLogger(__name__)
 
@@ -520,6 +521,7 @@ class UiView(HomeAssistantView):
                 "tts_heavy": overlay_tts_heavy(_hass(request), settings.tts_engine),
                 "tts_natural": bool(getattr(settings, "tts_natural", True)),
                 "change_history": bool(getattr(settings, "change_history", True)),
+                "track_usage": bool(getattr(settings, "track_usage", True)),
                 "ui_theme": ui_theme_of(getattr(settings, "ui_theme", "standard")),
             }
         )
@@ -915,6 +917,23 @@ class ChatView(HomeAssistantView):
                             )
                         elif kind == "error":
                             error = str(event.get("message") or "The agent failed.")
+                        elif kind == "usage":
+                            billed = finalize_usage(
+                                event,
+                                model=str(event.get("model") or getattr(provider, "model", "") or ""),
+                                run_id=str(event.get("run_id") or ""),
+                            )
+                            if billed is None:
+                                continue
+                            event = await record_usage_turn(
+                                hass,
+                                store=store,
+                                user_id=user_id,
+                                session_id=session.id,
+                                provider=provider,
+                                usage=billed,
+                                origin="chat",
+                            )
                         elif kind == "title":
                             label = accept_generated_title(message, str(event.get("title") or ""))
                             applied = None
@@ -1324,9 +1343,26 @@ class ActivityCommitView(HomeAssistantView):
         return self.json({"ok": True})
 
 
+class UsageView(HomeAssistantView):
+    url = "/api/ai_workspace/usage"
+    name = "api:ai_workspace:usage"
+    requires_auth = True
+
+    async def get(self, request: web.Request) -> web.Response:
+        _user_id(request)
+        hass = _hass(request)
+        store: Store = _runtime(hass)["store"]
+        session_id = str(request.query.get("session_id") or "").strip()
+        payload = await hass.async_add_executor_job(
+            lambda: dashboard_payload(hass, store, session_id=session_id)
+        )
+        return self.json(payload)
+
+
 def register_views(hass: HomeAssistant) -> None:
     hass.http.register_view(HealthView)
     hass.http.register_view(UiView)
+    hass.http.register_view(UsageView)
     hass.http.register_view(ProvidersView)
     hass.http.register_view(SpeechView)
     hass.http.register_view(SpeakView)

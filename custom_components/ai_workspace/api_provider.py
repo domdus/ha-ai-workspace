@@ -56,6 +56,7 @@ from .store import Session, Store
 from .titles import clean_title, title_prompt
 from .mcp_observe import note_mcp_result
 from .tool_result import shorten_tool_result
+from .usage_cost import TokenUsage, estimate_cost, parse_usage, usage_payload
 
 logger = logging.getLogger(__name__)
 
@@ -769,6 +770,7 @@ class ApiProvider:
         url = self._chat_url()
         headers = self._auth_headers()
         said: list[str] = []
+        usage = TokenUsage(model=self._model())
         for round_no in range(_MAX_ROUNDS + 1):
             last = round_no == _MAX_ROUNDS
             payload: dict[str, Any] = {"model": self._model(), "messages": messages}
@@ -788,6 +790,9 @@ class ApiProvider:
             reply: dict[str, Any] = {}
             gap = bool(said)
             async for kind, value in self._openai_round(http, url, headers, payload):
+                if kind == "usage":
+                    usage = usage.add(value)
+                    continue
                 if kind == "message":
                     reply = value
                     continue
@@ -821,6 +826,9 @@ class ApiProvider:
         if not text and last:
             yield {"type": "error", "message": "The model kept calling tools without finishing."}
             return
+        billed = estimate_cost(usage, model=self._model())
+        if not billed.empty():
+            yield usage_payload(billed)
         yield {"type": "result", "text": text, "status": "finished"}
 
     async def _openai_round(
@@ -839,15 +847,19 @@ class ApiProvider:
         content = str(reply.get("content") or "")
         if content:
             yield "text", content
+        piece = parse_usage(data, model=self._model())
+        if not piece.empty():
+            yield "usage", piece
         yield "message", reply
 
     async def _openai_stream(
         self, http: ClientSession, url: str, headers: dict, payload: dict
     ) -> AsyncIterator[tuple[str, Any]]:
-        body = {**payload, "stream": True}
+        body = {**payload, "stream": True, "stream_options": {"include_usage": True}}
         resp = await self._open(http, url, headers, body, stream=True)
         parts: list[str] = []
         calls: dict[int, dict[str, Any]] = {}
+        usage = TokenUsage(model=self._model())
         try:
             async for _event, raw in _sse(resp):
                 if raw == "[DONE]":
@@ -860,6 +872,9 @@ class ApiProvider:
                     continue
                 if chunk.get("error"):
                     raise ApiError(resp.status, _friendly_api_error(resp.status, raw))
+                piece = parse_usage(chunk, model=self._model())
+                if not piece.empty():
+                    usage = usage.add(piece)
                 for choice in chunk.get("choices") or []:
                     delta = choice.get("delta") or {}
                     text = delta.get("content")
@@ -887,6 +902,8 @@ class ApiProvider:
             for number, call in enumerate(ordered):
                 call["id"] = call["id"] or f"call_{number}"
             reply["tool_calls"] = ordered
+        if not usage.empty():
+            yield "usage", usage
         yield "message", reply
 
     async def _anthropic(
@@ -908,6 +925,7 @@ class ApiProvider:
         url = f"{self._base()}/messages"
         headers = self._anthropic_headers()
         said: list[str] = []
+        usage = TokenUsage(model=self._model())
         for round_no in range(_MAX_ROUNDS + 1):
             last = round_no == _MAX_ROUNDS
             payload: dict[str, Any] = {
@@ -927,6 +945,9 @@ class ApiProvider:
             blocks: list[dict] = []
             gap = bool(said)
             async for kind, value in self._anthropic_round(http, url, headers, payload):
+                if kind == "usage":
+                    usage = usage.add(value)
+                    continue
                 if kind == "message":
                     blocks = value
                     continue
@@ -958,6 +979,9 @@ class ApiProvider:
         if not text and last:
             yield {"type": "error", "message": "The model kept calling tools without finishing."}
             return
+        billed = estimate_cost(usage, model=self._model())
+        if not billed.empty():
+            yield usage_payload(billed)
         yield {"type": "result", "text": text, "status": "finished"}
 
     async def _anthropic_round(
@@ -975,6 +999,9 @@ class ApiProvider:
         for block in blocks:
             if block.get("type") == "text" and block.get("text"):
                 yield "text", str(block["text"])
+        piece = parse_usage(data, model=self._model())
+        if not piece.empty():
+            yield "usage", piece
         yield "message", blocks
 
     async def _anthropic_stream(
@@ -983,6 +1010,7 @@ class ApiProvider:
         resp = await self._open(http, url, headers, {**payload, "stream": True}, stream=True)
         blocks: dict[int, dict[str, Any]] = {}
         partial: dict[int, list[str]] = {}
+        usage = TokenUsage(model=self._model())
         try:
             async for event, raw in _sse(resp):
                 try:
@@ -1019,6 +1047,11 @@ class ApiProvider:
                             block["input"] = json.loads(raw_input) if raw_input else {}
                         except json.JSONDecodeError:
                             block["input"] = {}
+                elif kind in {"message_start", "message_delta"}:
+                    blob = data.get("usage") or (data.get("message") or {}).get("usage")
+                    piece = parse_usage(blob, model=self._model())
+                    if not piece.empty():
+                        usage = usage.add(piece)
                 elif kind == "error":
                     err = data.get("error") or {}
                     raise ApiError(resp.status, str(err.get("message") or "The model provider failed."))
@@ -1026,6 +1059,8 @@ class ApiProvider:
                     break
         finally:
             resp.release()
+        if not usage.empty():
+            yield "usage", usage
         yield "message", [blocks[index] for index in sorted(blocks)]
 
     async def _open(
@@ -1081,6 +1116,12 @@ class ApiProvider:
                 logger.info("%s refused a forced tool call; letting the model choose", self._label())
                 self._force = False
                 body.pop("tool_choice", None)
+                attempt -= 1
+                continue
+            if stream and resp.status in {400, 422} and body.get("stream_options") and (
+                "stream_options" in low or "include_usage" in low or "stream" in low
+            ):
+                body.pop("stream_options", None)
                 attempt -= 1
                 continue
             if stream and resp.status in {400, 404, 415, 422} and "stream" in low:

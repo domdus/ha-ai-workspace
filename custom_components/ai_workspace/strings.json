@@ -16,6 +16,7 @@
           "house_map": "Config catalog",
           "shorten_mcp_results": "Shorten long Home Assistant answers",
           "change_history": "Change History",
+          "track_usage": "Track usage and costs",
           "ui_theme": "Use HA Components",
           "cross_chat": "Cross chat",
           "keep_chats": "Chats to keep"
@@ -32,6 +33,7 @@
           "house_map": "Optional. Helps explain how one item is wired (what triggers it, what it affects). Off by default. For live on/off state or full lists, ask the assistant to check Home Assistant.",
           "shorten_mcp_results": "On by default. Very long answers from Home Assistant (whole-home lists, big searches) are summarized before they go to the AI. That saves tokens and keeps replies snappy. Off sends the full text.",
           "change_history": "On by default. Keeps a record of configuration changes the assistant made so you can review or undo them in Change History. Off stops new entries; the assistant can still use Home Assistant.",
+          "track_usage": "On by default. Records tokens and estimated USD cost after each Cursor or cloud turn. Shows a Usage page in the chat and creates Home Assistant sensors you can put on your own dashboards. Off stops new records; existing history stays.",
           "ui_theme": "Off by default. When on, only Home Assistant UI components are used which may work better with themes.",
           "cross_chat": "Off by default. When on, a question can use another chat whose title shares words with it. You do not have to mention chat. A short excerpt only, and that chat is not changed.",
           "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30."
@@ -89,6 +91,7 @@
           "house_map": "Config catalog",
           "shorten_mcp_results": "Shorten long Home Assistant answers",
           "change_history": "Change History",
+          "track_usage": "Track usage and costs",
           "ui_theme": "Use HA Components",
           "cross_chat": "Cross chat",
           "keep_chats": "Chats to keep"
@@ -105,6 +108,7 @@
           "house_map": "Optional. Helps explain how one item is wired (what triggers it, what it affects). Off by default. For live on/off state or full lists, ask the assistant to check Home Assistant.",
           "shorten_mcp_results": "On by default. Very long answers from Home Assistant (whole-home lists, big searches) are summarized before they go to the AI. That saves tokens and keeps replies snappy. Off sends the full text.",
           "change_history": "On by default. Keeps a record of configuration changes the assistant made so you can review or undo them in Change History. Off stops new entries; the assistant can still use Home Assistant.",
+          "track_usage": "On by default. Records tokens and estimated USD cost after each Cursor or cloud turn. Shows a Usage page in the chat and creates Home Assistant sensors you can put on your own dashboards. Off stops new records; existing history stays.",
           "ui_theme": "Off by default. When on, only Home Assistant UI components are used which may work better with themes.",
           "cross_chat": "Off by default. When on, a question can use another chat whose title shares words with it. You do not have to mention chat. A short excerpt only, and that chat is not changed.",
           "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30."

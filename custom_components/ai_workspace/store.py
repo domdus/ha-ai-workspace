@@ -116,6 +116,30 @@ class Store:
                 undone_at TEXT
             );
             CREATE INDEX IF NOT EXISTS activity_created ON activity(created_at);
+            CREATE TABLE IF NOT EXISTS usage_turns (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                created_at TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                session_id TEXT NOT NULL DEFAULT '',
+                agent_id TEXT NOT NULL DEFAULT '',
+                agent TEXT NOT NULL DEFAULT '',
+                provider TEXT NOT NULL DEFAULT '',
+                model TEXT NOT NULL DEFAULT '',
+                prompt_tokens INTEGER NOT NULL DEFAULT 0,
+                completion_tokens INTEGER NOT NULL DEFAULT 0,
+                cache_read_tokens INTEGER NOT NULL DEFAULT 0,
+                cache_write_tokens INTEGER NOT NULL DEFAULT 0,
+                reasoning_tokens INTEGER NOT NULL DEFAULT 0,
+                total_tokens INTEGER NOT NULL DEFAULT 0,
+                cost_usd REAL,
+                cost_source TEXT NOT NULL DEFAULT '',
+                charged_cents INTEGER,
+                run_id TEXT NOT NULL DEFAULT '',
+                origin TEXT NOT NULL DEFAULT ''
+            );
+            CREATE INDEX IF NOT EXISTS usage_turns_created ON usage_turns(created_at);
+            CREATE INDEX IF NOT EXISTS usage_turns_agent ON usage_turns(agent_id, created_at);
+            CREATE INDEX IF NOT EXISTS usage_turns_session ON usage_turns(session_id);
             """
         )
         cols = {row[1] for row in self._conn.execute("PRAGMA table_info(sessions)")}
@@ -381,6 +405,7 @@ class Store:
             return False
         with self._lock:
             self._conn.execute("DELETE FROM messages WHERE session_id = ?", (_text(session_id),))
+            self._conn.execute("DELETE FROM usage_turns WHERE session_id = ?", (_text(session_id),))
             self._conn.execute("DELETE FROM sessions WHERE id = ?", (_text(session_id),))
             self._conn.commit()
         return True
@@ -409,6 +434,7 @@ class Store:
             drop = [str(row["id"]) for row in rows[keep:]]
             for session_id in drop:
                 self._conn.execute("DELETE FROM messages WHERE session_id = ?", (session_id,))
+                self._conn.execute("DELETE FROM usage_turns WHERE session_id = ?", (session_id,))
                 self._conn.execute("DELETE FROM sessions WHERE id = ? AND user_id = ?", (session_id, user_id))
             self._conn.commit()
         return drop
@@ -576,6 +602,194 @@ class Store:
             )
             self._conn.commit()
         return self.get_activity(activity_id)
+
+    def add_usage(
+        self,
+        *,
+        user_id: str,
+        session_id: str = "",
+        agent_id: str = "",
+        agent: str = "",
+        provider: str = "",
+        model: str = "",
+        prompt_tokens: int = 0,
+        completion_tokens: int = 0,
+        cache_read_tokens: int = 0,
+        cache_write_tokens: int = 0,
+        reasoning_tokens: int = 0,
+        total_tokens: int = 0,
+        cost_usd: float | None = None,
+        cost_source: str = "",
+        charged_cents: int | None = None,
+        run_id: str = "",
+        origin: str = "",
+    ) -> int:
+        now = _now()
+        total = int(total_tokens or 0) or (int(prompt_tokens or 0) + int(completion_tokens or 0))
+        with self._lock:
+            cursor = self._conn.execute(
+                """
+                INSERT INTO usage_turns (
+                    created_at, user_id, session_id, agent_id, agent, provider, model,
+                    prompt_tokens, completion_tokens, cache_read_tokens, cache_write_tokens,
+                    reasoning_tokens, total_tokens, cost_usd, cost_source, charged_cents,
+                    run_id, origin
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    now,
+                    _text(user_id),
+                    _text(session_id),
+                    _text(agent_id),
+                    _text(agent),
+                    _text(provider),
+                    _text(model),
+                    int(prompt_tokens or 0),
+                    int(completion_tokens or 0),
+                    int(cache_read_tokens or 0),
+                    int(cache_write_tokens or 0),
+                    int(reasoning_tokens or 0),
+                    total,
+                    None if cost_usd is None else float(cost_usd),
+                    _text(cost_source),
+                    None if charged_cents is None else int(charged_cents),
+                    _text(run_id),
+                    _text(origin),
+                ),
+            )
+            self._conn.commit()
+            return int(cursor.lastrowid)
+
+    def summarize_usage(
+        self,
+        *,
+        since: str | None = None,
+        until: str | None = None,
+        agent_id: str | None = None,
+        session_id: str | None = None,
+    ) -> dict:
+        clauses = ["1=1"]
+        params: list[object] = []
+        if since:
+            clauses.append("created_at >= ?")
+            params.append(since)
+        if until:
+            clauses.append("created_at < ?")
+            params.append(until)
+        if agent_id:
+            clauses.append("agent_id = ?")
+            params.append(_text(agent_id))
+        if session_id:
+            clauses.append("session_id = ?")
+            params.append(_text(session_id))
+        where = " AND ".join(clauses)
+        with self._lock:
+            row = self._conn.execute(
+                f"""
+                SELECT
+                    COUNT(*) AS turns,
+                    COALESCE(SUM(prompt_tokens), 0) AS prompt_tokens,
+                    COALESCE(SUM(completion_tokens), 0) AS completion_tokens,
+                    COALESCE(SUM(cache_read_tokens), 0) AS cache_read_tokens,
+                    COALESCE(SUM(cache_write_tokens), 0) AS cache_write_tokens,
+                    COALESCE(SUM(total_tokens), 0) AS total_tokens,
+                    COALESCE(SUM(cost_usd), 0) AS cost_usd,
+                    SUM(CASE WHEN cost_usd IS NULL THEN 1 ELSE 0 END) AS missing_cost
+                FROM usage_turns
+                WHERE {where}
+                """,
+                params,
+            ).fetchone()
+        return {
+            "turns": int(row["turns"] or 0),
+            "prompt_tokens": int(row["prompt_tokens"] or 0),
+            "completion_tokens": int(row["completion_tokens"] or 0),
+            "cache_read_tokens": int(row["cache_read_tokens"] or 0),
+            "cache_write_tokens": int(row["cache_write_tokens"] or 0),
+            "total_tokens": int(row["total_tokens"] or 0),
+            "cost_usd": round(float(row["cost_usd"] or 0), 6),
+            "missing_cost": bool(row["missing_cost"]),
+        }
+
+    def usage_by_agent(self, *, since: str | None = None, until: str | None = None) -> list[dict]:
+        clauses = ["1=1"]
+        params: list[object] = []
+        if since:
+            clauses.append("created_at >= ?")
+            params.append(since)
+        if until:
+            clauses.append("created_at < ?")
+            params.append(until)
+        where = " AND ".join(clauses)
+        with self._lock:
+            rows = self._conn.execute(
+                f"""
+                SELECT
+                    agent_id,
+                    MAX(agent) AS agent,
+                    MAX(provider) AS provider,
+                    MAX(model) AS model,
+                    COUNT(*) AS turns,
+                    COALESCE(SUM(prompt_tokens), 0) AS prompt_tokens,
+                    COALESCE(SUM(completion_tokens), 0) AS completion_tokens,
+                    COALESCE(SUM(total_tokens), 0) AS total_tokens,
+                    COALESCE(SUM(cost_usd), 0) AS cost_usd,
+                    SUM(CASE WHEN cost_usd IS NULL THEN 1 ELSE 0 END) AS missing_cost
+                FROM usage_turns
+                WHERE {where}
+                GROUP BY agent_id
+                ORDER BY cost_usd DESC, total_tokens DESC
+                """,
+                params,
+            ).fetchall()
+        return [
+            {
+                "agent_id": _text(row["agent_id"]),
+                "agent": _text(row["agent"]),
+                "provider": _text(row["provider"]),
+                "model": _text(row["model"]),
+                "turns": int(row["turns"] or 0),
+                "prompt_tokens": int(row["prompt_tokens"] or 0),
+                "completion_tokens": int(row["completion_tokens"] or 0),
+                "total_tokens": int(row["total_tokens"] or 0),
+                "cost_usd": round(float(row["cost_usd"] or 0), 6),
+                "missing_cost": bool(row["missing_cost"]),
+            }
+            for row in rows
+        ]
+
+    def last_usage(self, *, agent_id: str | None = None, session_id: str | None = None) -> dict | None:
+        clauses = ["1=1"]
+        params: list[object] = []
+        if agent_id:
+            clauses.append("agent_id = ?")
+            params.append(_text(agent_id))
+        if session_id:
+            clauses.append("session_id = ?")
+            params.append(_text(session_id))
+        where = " AND ".join(clauses)
+        with self._lock:
+            row = self._conn.execute(
+                f"SELECT * FROM usage_turns WHERE {where} ORDER BY id DESC LIMIT 1",
+                params,
+            ).fetchone()
+        if not row:
+            return None
+        return {
+            "id": int(row["id"]),
+            "created_at": row["created_at"],
+            "agent_id": _text(row["agent_id"]),
+            "agent": _text(row["agent"]),
+            "provider": _text(row["provider"]),
+            "model": _text(row["model"]),
+            "prompt_tokens": int(row["prompt_tokens"] or 0),
+            "completion_tokens": int(row["completion_tokens"] or 0),
+            "total_tokens": int(row["total_tokens"] or 0),
+            "cost_usd": None if row["cost_usd"] is None else round(float(row["cost_usd"]), 6),
+            "cost_source": _text(row["cost_source"]),
+            "session_id": _text(row["session_id"]),
+            "origin": _text(row["origin"]),
+        }
 
 
 def _restore_target(document: str) -> tuple[str, str, str]:

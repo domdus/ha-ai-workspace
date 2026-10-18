@@ -16,6 +16,7 @@
           "house_map": "Configuratiecatalogus",
           "shorten_mcp_results": "Lange Home Assistant-antwoorden inkorten",
           "change_history": "Wijzigingsgeschiedenis",
+          "track_usage": "Gebruik en kosten bijhouden",
           "ui_theme": "HA-componenten gebruiken",
           "cross_chat": "Tussen chats",
           "keep_chats": "Chats bewaren"
@@ -32,6 +33,7 @@
           "house_map": "Optioneel. Helpt uitleggen hoe een item is aangesloten (wat het activeert, wat het beïnvloedt). Standaard uit. Voor live aan/uit of volledige lijsten: vraag de assistent om Home Assistant te raadplegen.",
           "shorten_mcp_results": "Standaard aan. Zeer lange antwoorden van Home Assistant (lijsten van het hele huis, grote zoekopdrachten) worden samengevat voordat ze naar de AI gaan. Dat bespaart tokens en houdt antwoorden vlot. Uit stuurt de volledige tekst.",
           "change_history": "Standaard aan. Houdt een overzicht bij van configuratiewijzigingen die de assistent heeft gedaan, zodat je ze in de Wijzigingsgeschiedenis kunt bekijken of ongedaan maken. Uit: geen nieuwe items; de assistent kan Home Assistant blijven gebruiken.",
+          "track_usage": "Standaard aan. Noteert tokens en geschatte USD-kosten na elke Cursor- of cloudbeurt. Toont een Gebruik-pagina in de chat en maakt Home Assistant-sensoren voor je eigen dashboards. Uit: geen nieuwe records; bestaande geschiedenis blijft.",
           "ui_theme": "Standaard uit. Als dit aan staat, worden alleen Home Assistant-interfacecomponenten gebruikt, wat beter kan werken met thema’s.",
           "cross_chat": "Standaard uit. Als het aan staat, kan een vraag een andere chat gebruiken waarvan de titel woorden deelt. Je hoeft niet chat te zeggen. Alleen een kort fragment, en die chat wordt niet gewijzigd.",
           "keep_chats": "Nieuwste niet-vastgezette chats per persoon. Vastgezette chats blijven altijd. Standaard 30."

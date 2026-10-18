@@ -23,6 +23,9 @@ def _settings(provider: str) -> Settings:
 class _Bundle:
     tools = [_TOOL]
 
+    def original_name(self, name):
+        return name
+
     async def call_tool(self, name, args):
         return {"content": [{"type": "text", "text": "3 automations"}]}
 

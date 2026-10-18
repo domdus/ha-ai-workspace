@@ -16,6 +16,7 @@
           "house_map": "Catalogue de configuration",
           "shorten_mcp_results": "Raccourcir les longues réponses de Home Assistant",
           "change_history": "Historique des modifications",
+          "track_usage": "Suivre l’utilisation et les coûts",
           "ui_theme": "Utiliser les composants HA",
           "cross_chat": "Entre discussions",
           "keep_chats": "Discussions à conserver"
@@ -32,6 +33,7 @@
           "house_map": "Facultatif. Aide à expliquer comment un élément est branché (ce qui le déclenche, ce qu'il influence). Désactivé par défaut. Pour l'état allumé/éteint en direct ou les listes complètes, demandez à l'assistant de consulter Home Assistant.",
           "shorten_mcp_results": "Activé par défaut. Les très longues réponses de Home Assistant (listes de toute la maison, grandes recherches) sont résumées avant d'aller à l'IA. Cela économise des jetons et garde des réponses rapides. Désactivé envoie le texte complet.",
           "change_history": "Activé par défaut. Conserve une trace des changements de configuration faits par l'assistant, pour les revoir ou les annuler dans l'historique des modifications. Désactivé : plus de nouvelles entrées ; l'assistant peut toujours utiliser Home Assistant.",
+          "track_usage": "Activé par défaut. Enregistre les jetons et le coût USD estimé après chaque tour Cursor ou cloud. Affiche une page Utilisation dans le chat et crée des capteurs Home Assistant pour vos tableaux de bord. Désactivé : plus de nouveaux enregistrements ; l’historique reste.",
           "ui_theme": "Désactivé par défaut. Si activé, seuls les composants d’interface Home Assistant sont utilisés, ce qui peut mieux convenir aux thèmes.",
           "cross_chat": "Désactivé par défaut. Si activé, une question peut s'appuyer sur une autre discussion dont le titre partage des mots. Inutile de dire discussion. Un court extrait seulement, et cette discussion n'est pas modifiée.",
           "keep_chats": "Discussions non épinglées les plus récentes à conserver par personne. Les discussions épinglées sont toujours conservées. Par défaut 30."

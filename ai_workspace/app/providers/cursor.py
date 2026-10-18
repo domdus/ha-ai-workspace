@@ -331,6 +331,9 @@ class CursorProvider:
             return
         if final:
             yield {"type": "result", "text": str(final), "run_id": str(run_id), "status": str(status)}
+        usage_event = await _cursor_usage(agent, result, str(run_id), used_model)
+        if usage_event:
+            yield usage_event
 
     async def suggest_title(
         self,
@@ -498,6 +501,105 @@ def _nested_text(value: Any) -> str:
         if text:
             return text
     return _nested_text(str(value))
+
+
+def _int_usage(value: object) -> int:
+    try:
+        if value is None or value is False:
+            return 0
+        return max(0, int(float(value)))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _usage_from(blob: Any) -> dict[str, Any]:
+    data = blob if isinstance(blob, dict) else {}
+    if blob is not None and not data:
+        for name in (
+            "prompt_tokens",
+            "completion_tokens",
+            "input_tokens",
+            "output_tokens",
+            "total_tokens",
+            "cache_read_tokens",
+            "cache_write_tokens",
+            "cache_read_input_tokens",
+            "cache_creation_input_tokens",
+            "charged_cents",
+            "total_cents",
+            "cost",
+        ):
+            if hasattr(blob, name):
+                data[name] = getattr(blob, name)
+    prompt = _int_usage(
+        data.get("prompt_tokens") or data.get("input_tokens") or data.get("inputTokens")
+    )
+    completion = _int_usage(
+        data.get("completion_tokens") or data.get("output_tokens") or data.get("outputTokens")
+    )
+    cache_read = _int_usage(
+        data.get("cache_read_tokens") or data.get("cache_read_input_tokens")
+    )
+    cache_write = _int_usage(
+        data.get("cache_write_tokens") or data.get("cache_creation_input_tokens")
+    )
+    total = _int_usage(data.get("total_tokens")) or (prompt + completion)
+    cents = data.get("charged_cents")
+    if cents is None:
+        cents = data.get("total_cents")
+    charged = _int_usage(cents) if cents is not None else None
+    cost = data.get("cost")
+    try:
+        cost_usd = float(cost) if cost is not None else None
+    except (TypeError, ValueError):
+        cost_usd = None
+    if charged is not None:
+        cost_usd = charged / 100.0
+    return {
+        "prompt_tokens": prompt,
+        "completion_tokens": completion,
+        "cache_read_tokens": cache_read,
+        "cache_write_tokens": cache_write,
+        "total_tokens": total,
+        "charged_cents": charged,
+        "cost_usd": cost_usd,
+    }
+
+
+async def _cursor_usage(agent: Any, result: Any, run_id: str, model: str) -> dict[str, Any] | None:
+    import asyncio
+
+    billed = None
+    if run_id and hasattr(agent, "get_usage"):
+        try:
+            billed = await asyncio.wait_for(agent.get_usage(run_id=run_id), 4)
+        except Exception:
+            logger.debug("cursor get_usage skipped run=%s", run_id, exc_info=True)
+    tokens = _usage_from(getattr(result, "usage", None) if result is not None else None)
+    extra = _usage_from(billed)
+    prompt = extra["prompt_tokens"] or tokens["prompt_tokens"]
+    completion = extra["completion_tokens"] or tokens["completion_tokens"]
+    cache_read = extra["cache_read_tokens"] or tokens["cache_read_tokens"]
+    cache_write = extra["cache_write_tokens"] or tokens["cache_write_tokens"]
+    total = extra["total_tokens"] or tokens["total_tokens"] or (prompt + completion)
+    charged = extra["charged_cents"] if extra["charged_cents"] is not None else tokens["charged_cents"]
+    cost = extra["cost_usd"] if extra["cost_usd"] is not None else tokens["cost_usd"]
+    if not (prompt or completion or total or charged or cost):
+        return None
+    event = {
+        "type": "usage",
+        "model": _model_id(getattr(result, "model", None)) or model,
+        "prompt_tokens": prompt,
+        "completion_tokens": completion,
+        "cache_read_tokens": cache_read,
+        "cache_write_tokens": cache_write,
+        "total_tokens": total,
+        "cost_usd": cost,
+        "charged_cents": charged,
+        "cost_source": "cursor_sdk" if charged is not None else "",
+        "run_id": run_id,
+    }
+    return event
 
 
 def _request_id(result: Any) -> str:

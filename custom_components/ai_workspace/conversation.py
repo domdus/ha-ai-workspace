@@ -23,6 +23,7 @@ from .http import _create_runtime_session, async_agent_events
 from .small_talk import wants_house_tools
 from .store import Store
 from .titles import accept_generated_title, needs_title_summary, title_from_prompt
+from .usage_record import finalize_usage, record_usage_turn
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -305,6 +306,22 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
                         )
                     elif kind == "error":
                         error = str(event.get("message") or "The agent failed.")
+                    elif kind == "usage":
+                        billed = finalize_usage(
+                            event,
+                            model=str(event.get("model") or getattr(provider, "model", "") or ""),
+                            run_id=str(event.get("run_id") or ""),
+                        )
+                        if billed is not None:
+                            await record_usage_turn(
+                                self.hass,
+                                store=store,
+                                user_id=user_id,
+                                session_id=session.id,
+                                provider=provider,
+                                usage=billed,
+                                origin="assist",
+                            )
                 if started:
                     return
                 answer = (final or error or "").strip() or "The agent returned nothing."
