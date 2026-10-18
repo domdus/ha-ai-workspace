@@ -830,13 +830,14 @@ textarea.message {
   padding: var(--ha-space-1) 0 0;
 }
 
-.ui-theme-ha-components #message-input {
+.ui-theme-ha-components #message-input,
+.ui-theme-ha-components ha-textarea.message {
   display: block;
   width: 100%;
   max-width: 100%;
 }
 
-.ui-theme-ha-components #message-input::part(wa-base) {
+.ui-theme-ha-components ha-textarea.message::part(wa-base) {
   padding-right: var(--ha-space-1);
 }
 

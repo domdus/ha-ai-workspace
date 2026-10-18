@@ -107,6 +107,7 @@ const HA_COMPONENT_PRELOAD = [
   "ha-assist-chip",
   "ha-chip-set",
   "ha-input",
+  "ha-textarea",
   "ha-input-chip",
   "ha-list-item-button",
   "ha-markdown",
@@ -635,15 +636,18 @@ export async function mountAiWorkspace(root, options = {}) {
               </div>`;
   const haComposerInputMarkup = `
               <div class="input">
-                ${fileInputMarkup}
                 <div class="composer-fallback">${standardComposerRowMarkup}</div>
-                <ha-input id="message-input" label="${htmlAttr(t("message"))}" placeholder="${htmlAttr(t("placeholder"))}">
-                  <div slot="end">
-                    ${attachBtnMarkup}
-                    ${micBtnMarkup}
-                    ${sendMarkup}
+                <div class="composer-native">
+                  <div class="composer-row">
+                    <ha-textarea id="message-input" class="message" label="${htmlAttr(t("message"))}" placeholder="${htmlAttr(t("placeholder"))}" rows="1" resize="auto"></ha-textarea>
+                    <div class="composer-actions">
+                      ${fileInputMarkup}
+                      ${attachBtnMarkup}
+                      ${micBtnMarkup}
+                      ${sendMarkup}
+                    </div>
                   </div>
-                </ha-input>
+                </div>
               </div>`;
   const agentTriggerMarkup = haUi
     ? `<ha-button type="button" class="agent-trigger" slot="trigger" appearance="plain" size="s" aria-haspopup="menu" aria-expanded="false" aria-label="${t("agent")}"><span class="agent-trigger-label"></span><ha-icon slot="end" icon="mdi:chevron-down"></ha-icon></ha-button>`
@@ -742,20 +746,32 @@ export async function mountAiWorkspace(root, options = {}) {
   const scrollBottomBtn = root.querySelector(".scroll-bottom");
   let messageEl = root.querySelector("#ai-message") || root.querySelector("#message-input");
   function syncComposerField() {
-    const haInput = root.querySelector("#message-input");
-    if (haUi && haInput && haHas("ha-input")) messageEl = haInput;
-    else messageEl = root.querySelector("#ai-message") || haInput;
+    const haField = root.querySelector("#message-input");
+    if (haUi && haField?.localName === "ha-textarea" && haHas("ha-textarea")) messageEl = haField;
+    else if (haUi && haField?.localName === "ha-input" && haHas("ha-input")) messageEl = haField;
+    else messageEl = root.querySelector("#ai-message") || haField;
   }
   syncComposerField();
-  const sendBtn = root.querySelector(".send");
+  function composerControls(selector) {
+    return form ? [...form.querySelectorAll(selector)] : [];
+  }
+  function setComposerDisabled(selector, disabled) {
+    for (const el of composerControls(selector)) el.disabled = disabled;
+  }
+  function primaryMicButton() {
+    return composerControls(".mic").find((btn) => !btn.hidden && !btn.classList.contains("is-hidden"));
+  }
+  function setMicListening(active) {
+    for (const btn of composerControls(".mic")) {
+      btn.classList.toggle("listening", active);
+      btn.label = active ? t("stop_dictate") : t("dictate");
+    }
+  }
   const agentPicker = root.querySelector(".agent-picker");
   const agentTrigger = root.querySelector(".agent-trigger");
   const agentLabel = root.querySelector(".agent-trigger-label");
   const agentMenu = root.querySelector(".agent-menu");
-  const micBtn = root.querySelector(".mic");
-  const micIcon = micBtn?.querySelector("ha-icon");
-  const attachBtn = root.querySelector(".attach");
-  const fileInput = root.querySelector(".file-input");
+  const fileInput = form.querySelector(".file-input");
   const attachRow = root.querySelector(".attach-row");
   const nextRow = root.querySelector(".next-row");
   const nextCopy = root.querySelector(".next-copy");
@@ -777,7 +793,7 @@ export async function mountAiWorkspace(root, options = {}) {
   }
   bindHaTree(root);
   if (haUi) {
-    customElements.whenDefined("ha-input").then(() => {
+    customElements.whenDefined("ha-textarea").then(() => {
       syncComposerField();
       bindHaTree(form);
       resizeComposer();
@@ -930,10 +946,10 @@ export async function mountAiWorkspace(root, options = {}) {
       messageEl.classList.toggle("message-overflows", overflows);
     }
     const hasDraft = Boolean(String(messageEl.value || "").trim() || pending.length);
-    if (sendBtn) sendBtn.disabled = !hasDraft;
-    if (attachBtn) attachBtn.disabled = pending.length >= MAX_ATTACH;
+    setComposerDisabled(".send", !hasDraft);
+    setComposerDisabled(".attach", pending.length >= MAX_ATTACH);
     const prompt = streaming ? t("placeholder_next") : t("placeholder");
-    if (messageEl.localName === "ha-input") {
+    if (messageEl.localName === "ha-input" || messageEl.localName === "ha-textarea") {
       if ("placeholder" in messageEl) messageEl.placeholder = prompt;
     } else {
       if ("placeholder" in messageEl) messageEl.placeholder = prompt;
@@ -957,7 +973,7 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function hideKeyboard() {
     messageEl.blur();
-    sendBtn.blur();
+    composerControls(".send").forEach((btn) => btn.blur());
     const active = document.activeElement;
     if (active && active !== document.body && typeof active.blur === "function") active.blur();
     clearKeyboardLock();
@@ -2800,15 +2816,11 @@ export async function mountAiWorkspace(root, options = {}) {
       .filter(Boolean);
   }
 
-  attachBtn?.addEventListener("click", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (pending.length >= MAX_ATTACH) return;
-    fileInput?.click();
-  });
-  fileInput?.addEventListener("change", async () => {
-    await addFiles([...fileInput.files]);
-    fileInput.value = "";
+  form.querySelectorAll(".file-input").forEach((input) => {
+    input.addEventListener("change", async () => {
+      await addFiles([...input.files]);
+      input.value = "";
+    });
   });
   ["dragenter", "dragover"].forEach((name) => {
     box.addEventListener(name, (event) => {
@@ -2842,9 +2854,11 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function stopSpeech() {
     listening = false;
-    micBtn?.classList.remove("listening");
-    if (micBtn) micBtn.label = t("dictate");
-    if (micIcon) micIcon.setAttribute("icon", "mdi:microphone");
+    for (const btn of composerControls(".mic")) {
+      btn.classList.remove("listening");
+      btn.label = t("dictate");
+      btn.querySelector("ha-icon")?.setAttribute("icon", "mdi:microphone");
+    }
     try {
       recognition?.stop();
     } catch (_err) {
@@ -2878,7 +2892,7 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function startSpeech() {
-    if (micBtn?.hidden) return;
+    if (!primaryMicButton()) return;
     if (!SpeechRecognitionAPI || !window.isSecureContext) {
       showMicHelp();
       return;
@@ -2902,7 +2916,7 @@ export async function mountAiWorkspace(root, options = {}) {
       };
       recognition.onerror = (event) => {
         if (event.error === "not-allowed") {
-          if (micBtn) micBtn.label = t("mic_blocked");
+          for (const btn of composerControls(".mic")) btn.label = t("mic_blocked");
           showMicHelp();
         }
         if (event.error !== "no-speech") stopSpeech();
@@ -2919,8 +2933,7 @@ export async function mountAiWorkspace(root, options = {}) {
     recognition.lang = speechLanguage();
     speechBase = messageEl.value.trim();
     listening = true;
-    micBtn.classList.add("listening");
-    micBtn.label = t("stop_dictate");
+    setMicListening(true);
     try {
       recognition.start();
     } catch (_err) {
@@ -3046,8 +3059,7 @@ export async function mountAiWorkspace(root, options = {}) {
         },
       };
       listening = true;
-      micBtn.classList.add("listening");
-      micBtn.label = t("stop_dictate");
+      setMicListening(true);
     } catch (err) {
       stream?.getTracks().forEach((track) => track.stop());
       ctx?.close().catch(() => {});
@@ -3337,24 +3349,6 @@ export async function mountAiWorkspace(root, options = {}) {
     for (const piece of taken.pieces) queueSpeech(piece);
   }
 
-  if (micBtn) {
-    micBtn.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      const engine = voice.stt && voice.stt !== "browser";
-      if (listening) {
-        if (engine) finishEngineSpeech();
-        else stopSpeech();
-        return;
-      }
-      if (engine) {
-        startEngineSpeech().catch(() => showMicHelp());
-        return;
-      }
-      startSpeech();
-    });
-  }
-
   function lastAssistantText() {
     const bubbles = [...logEl.querySelectorAll(".bubble.assistant")];
     for (let i = bubbles.length - 1; i >= 0; i -= 1) {
@@ -3366,12 +3360,13 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function setMicShown(show) {
-    if (!micBtn) return;
     const visible = Boolean(show);
-    micBtn.classList.toggle("is-hidden", !visible);
-    if (visible) micBtn.removeAttribute("hidden");
-    else micBtn.setAttribute("hidden", "");
-    micBtn.hidden = !visible;
+    for (const btn of composerControls(".mic")) {
+      btn.classList.toggle("is-hidden", !visible);
+      if (visible) btn.removeAttribute("hidden");
+      else btn.setAttribute("hidden", "");
+      btn.hidden = !visible;
+    }
     if (!visible) stopSpeech();
   }
 
@@ -3432,7 +3427,7 @@ export async function mountAiWorkspace(root, options = {}) {
       show = false;
     }
     setChangeHistoryShown(historyOn);
-    if (micBtn) setMicShown(show);
+    setMicShown(show);
     syncCopyChat();
   }
 
@@ -3479,7 +3474,7 @@ export async function mountAiWorkspace(root, options = {}) {
     watchGen += 1;
     clearKeyboardLock();
     resetOuterScroll();
-    sendBtn.disabled = true;
+    setComposerDisabled(".send", true);
     pending = [];
     renderThumbs();
     messageEl.value = "";
@@ -3758,8 +3753,11 @@ export async function mountAiWorkspace(root, options = {}) {
     if (wrap.classList.contains("keyboard-open")) syncKeyboardInset();
   });
   function fromComposerField(event) {
-    const node = event.target;
-    return node?.id === "ai-message" || node?.id === "message-input" || node?.localName === "ha-input";
+    for (const node of event.composedPath?.() || [event.target]) {
+      if (node?.id === "ai-message" || node?.id === "message-input") return true;
+      if (node?.localName === "ha-input" || node?.localName === "ha-textarea") return true;
+    }
+    return false;
   }
   form.addEventListener("input", (event) => {
     if (!fromComposerField(event)) return;
@@ -3774,9 +3772,36 @@ export async function mountAiWorkspace(root, options = {}) {
     event.preventDefault();
     form.requestSubmit();
   });
-  sendBtn.addEventListener("click", (event) => {
+  form.addEventListener("click", (event) => {
+    const attach = event.target.closest?.(".attach");
+    if (attach?.closest?.(".composer")) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (pending.length >= MAX_ATTACH) return;
+      attach.closest(".composer-row, .input")?.querySelector(".file-input")?.click();
+      return;
+    }
+    const send = event.target.closest?.(".send");
+    if (send?.closest?.(".composer")) {
+      event.preventDefault();
+      form.requestSubmit();
+      return;
+    }
+    const mic = event.target.closest?.(".mic");
+    if (!mic?.closest?.(".composer") || mic.hidden) return;
     event.preventDefault();
-    form.requestSubmit();
+    event.stopPropagation();
+    const engine = voice.stt && voice.stt !== "browser";
+    if (listening) {
+      if (engine) finishEngineSpeech();
+      else stopSpeech();
+      return;
+    }
+    if (engine) {
+      startEngineSpeech().catch(() => showMicHelp());
+      return;
+    }
+    startSpeech();
   });
   scrollBottomBtn?.addEventListener("click", (event) => {
     event.preventDefault();

@@ -4,6 +4,8 @@
 
 - HA Components: agent picker sits in the composer column so it lines up with the prompt on desktop new chat
 - HA Components mobile: composer gutter is no longer doubled (outer bar + inner box padding)
+- HA Components: send/attach/mic work on the visible composer (delegated clicks; fallback duplicate buttons no longer steal listeners)
+- HA Components: multiline prompt with `ha-textarea` (auto resize); Standard-style textarea fallback until the widget defines
 
 ## 1.2.0
 
