@@ -8,6 +8,8 @@
 - Switching **Use HA Components** applies without reopening the panel (theme remount)
 - Wide markdown/tables stay inside bubbles; agent picker and composer align with the message column on mobile
 - New chat shows the welcome headline again; sticky prompt, picker, and empty-state use the same max width as Standard
+- Overlay drawer and sidebar panel mount chat inside `ha-top-app-bar-fixed` so the body is not 0px tall; Change History links no longer pick up message-row icon styles
+- HA Components shows a Standard-style textarea until `ha-input` defines; session titles stay visible on plain session rows
 - Agents listing automations/scripts should use a few domain/registry MCP calls, not one config get per row
 
 ## 1.1.4

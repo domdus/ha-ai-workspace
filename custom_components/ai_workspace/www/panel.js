@@ -131,10 +131,14 @@ class HaAiWorkspacePanel extends HTMLElement {
       console.error("AI Workspace failed to load", err);
       return;
     }
-    if (this._mounted) return;
+    if (this._mounted) {
+      this._mounting = false;
+      return;
+    }
     this._mounted = true;
     await prefetchUiTheme(() => this._hass?.auth?.data?.access_token || "");
     const ui = stringsFor(this._hass.locale?.language || this._hass.language);
+    await customElements.whenDefined("ha-top-app-bar-fixed");
     this.shadowRoot.innerHTML = `
       <style>
         :host {
@@ -143,14 +147,12 @@ class HaAiWorkspacePanel extends HTMLElement {
           min-height: 0;
         }
         ha-top-app-bar-fixed {
+          display: block;
           height: 100%;
         }
         .content {
           box-sizing: border-box;
-          height: calc(
-            100vh - var(--header-height, 56px) - var(--safe-area-inset-top, 0px) -
-              var(--safe-area-inset-bottom, 0px)
-          );
+          height: 100%;
           min-height: 0;
           overflow: hidden;
         }
@@ -166,40 +168,58 @@ class HaAiWorkspacePanel extends HTMLElement {
           line-height: inherit;
           margin: 0;
         }
-      </style>
-      <ha-top-app-bar-fixed>
-        <ha-menu-button slot="navigationIcon"></ha-menu-button>
-        <h1 class="page-title" slot="title">${ui.title}</h1>
-        <ha-icon-button class="chats-menu" slot="actionItems" label="${ui.chats}" hidden>
-          <ha-icon icon="mdi:forum-outline"></ha-icon>
-        </ha-icon-button>
-        <div class="content"></div>
-      </ha-top-app-bar-fixed>
-    `;
-    this._syncChrome();
-    const content = this.shadowRoot.querySelector(".content");
-    this._scrollShellIntoView();
-    this._ui = await mountAiWorkspace(content, {
-      routed: true,
-      narrow: this._overlayNav(),
-      chrome: "panel",
-      getToken: () => this._hass?.auth?.data?.access_token || "",
-      onRemount: (api) => {
-        this._ui = api;
-      },
-      navigate: (path, options = {}) => {
-        const hass = this._hass;
-        if (typeof hass?.navigate === "function") {
-          hass.navigate(path, options);
-          return;
+        .mount-error {
+          margin: var(--ha-space-4);
+          color: var(--error-color);
         }
-        const state = history.state && typeof history.state === "object" ? history.state : { root: true };
-        history[options.replace ? "replaceState" : "pushState"](state, "", path);
-        const event = new Event("location-changed", { bubbles: true, composed: true });
-        event.detail = { replace: Boolean(options.replace) };
-        window.dispatchEvent(event);
-      },
-    });
+      </style>
+    `;
+    const bar = document.createElement("ha-top-app-bar-fixed");
+    bar.innerHTML = `
+      <ha-menu-button slot="navigationIcon"></ha-menu-button>
+      <h1 class="page-title" slot="title">${ui.title}</h1>
+      <ha-icon-button class="chats-menu" slot="actionItems" label="${ui.chats}" hidden>
+        <ha-icon icon="mdi:forum-outline"></ha-icon>
+      </ha-icon-button>
+    `;
+    const content = document.createElement("div");
+    content.className = "content";
+    bar.appendChild(content);
+    this.shadowRoot.appendChild(bar);
+    this._syncChrome();
+    this._scrollShellIntoView();
+    let mountError = null;
+    try {
+      this._ui = await mountAiWorkspace(content, {
+        routed: true,
+        narrow: this._overlayNav(),
+        chrome: "panel",
+        getToken: () => this._hass?.auth?.data?.access_token || "",
+        onRemount: (api) => {
+          this._ui = api;
+        },
+        navigate: (path, options = {}) => {
+          const hass = this._hass;
+          if (typeof hass?.navigate === "function") {
+            hass.navigate(path, options);
+            return;
+          }
+          const state = history.state && typeof history.state === "object" ? history.state : { root: true };
+          history[options.replace ? "replaceState" : "pushState"](state, "", path);
+          const event = new Event("location-changed", { bubbles: true, composed: true });
+          event.detail = { replace: Boolean(options.replace) };
+          window.dispatchEvent(event);
+        },
+      });
+    } catch (err) {
+      mountError = err;
+      console.error("AI Workspace mount failed", err);
+      if (content) {
+        content.innerHTML = `<p class="mount-error">AI Workspace failed to load. Check the browser console.</p>`;
+      }
+    } finally {
+      this._mounting = false;
+    }
     const reveal = () => content?.classList.add("ready");
     const css = [...(content?.querySelectorAll("link[rel='stylesheet']") || [])];
     if (css.length && css.every((link) => link.sheet)) {
@@ -220,9 +240,11 @@ class HaAiWorkspacePanel extends HTMLElement {
       }
       window.setTimeout(reveal, 400);
     }
-    this.shadowRoot.querySelector(".chats-menu")?.addEventListener("click", () => {
-      this._ui?.toggleNav?.();
-    });
+    if (!mountError) {
+      this.shadowRoot.querySelector(".chats-menu")?.addEventListener("click", () => {
+        this._ui?.toggleNav?.();
+      });
+    }
   }
 }
 

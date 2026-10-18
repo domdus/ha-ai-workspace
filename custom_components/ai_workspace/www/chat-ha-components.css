@@ -134,23 +134,69 @@
   width: 100%;
 }
 
-.ui-theme-ha-components ha-card.history-row {
+.ui-theme-ha-components .history-row {
+  display: block;
+  padding: var(--ha-space-3) var(--ha-space-4);
   margin: var(--ha-space-2) var(--ha-space-3);
 }
 
-/* Undefined tags (config chunk still loading) — keep layout, avoid a blank page. */
-.ui-theme-ha-components ha-input:not(:defined) {
+/* HA Components loads chat-layout.css only — mirror Standard composer chrome here. */
+.ui-theme-ha-components .composer-fallback {
+  display: none;
+}
+
+.ui-theme-ha-components .composer .input:has(ha-input:not(:defined)) .composer-fallback {
+  display: block;
+}
+
+.ui-theme-ha-components .composer .input:has(ha-input:not(:defined)) > ha-input {
+  display: none !important;
+}
+
+.ui-theme-ha-components .composer .input:has(ha-input:defined) .composer-fallback {
+  display: none !important;
+}
+
+.ui-theme-ha-components .composer-fallback .composer-row {
   display: flex;
-  align-items: center;
-  justify-content: flex-end;
+  align-items: flex-end;
   gap: var(--ha-space-1);
-  box-sizing: border-box;
   width: 100%;
-  min-height: 56px;
-  padding-inline: var(--ha-space-4) var(--ha-space-1);
+  box-sizing: border-box;
+  background: var(--ha-color-form-background, var(--input-fill-color));
   border: 1px solid var(--ha-color-border-neutral-normal, var(--divider-color));
-  border-radius: var(--ha-border-radius-xl, 28px);
-  background: var(--ha-color-surface-default, var(--secondary-background-color, var(--card-background-color)));
+  border-radius: var(--ha-border-radius-3xl);
+  padding: var(--ha-space-1) var(--ha-space-1) var(--ha-space-1) var(--ha-space-4);
+}
+
+.ui-theme-ha-components .composer-fallback .composer-row:focus-within {
+  border-color: var(--primary-color);
+}
+
+.ui-theme-ha-components textarea.message {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  min-height: 36px;
+  max-height: 160px;
+  margin: 0;
+  padding: var(--ha-space-2) 0;
+  border: 0;
+  resize: none;
+  background: transparent;
+  color: var(--primary-text-color);
+  font: inherit;
+  line-height: 1.45;
+  field-sizing: content;
+}
+
+.ui-theme-ha-components textarea.message::placeholder {
+  color: var(--secondary-text-color);
+}
+
+.ui-theme-ha-components .composer .input:has(ha-input:defined) > ha-input {
+  display: block;
+  width: 100%;
 }
 
 .ui-theme-ha-components ha-markdown:not(:defined) {

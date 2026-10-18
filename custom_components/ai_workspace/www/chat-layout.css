@@ -241,10 +241,13 @@ ha-button.new-chat {
 
 .sessions ha-list-item-button {
   flex: 1 1 auto;
+  display: flex;
+  align-items: center;
   width: 100%;
   min-width: 0;
   margin: 0;
   box-sizing: border-box;
+  border-radius: var(--ha-border-radius-sm);
   position: relative;
   color: var(--sidebar-text-color);
   min-height: 40px;
@@ -270,6 +273,14 @@ ha-button.new-chat {
   color: var(--sidebar-selected-icon-color);
 }
 
+.sessions ha-list-item-button::part(base):hover,
+.sessions .session-plain:hover {
+  background-color: var(
+    --ha-color-fill-neutral-quiet-hover,
+    color-mix(in srgb, var(--primary-text-color) 8%, transparent)
+  );
+}
+
 .sessions .session-plain {
   flex: 1 1 auto;
   display: flex;
@@ -280,9 +291,15 @@ ha-button.new-chat {
   height: 40px;
   box-sizing: border-box;
   padding: 0 var(--ha-space-3, 12px);
+  border-radius: var(--ha-border-radius-sm, 6px);
   position: relative;
   color: var(--sidebar-text-color);
   cursor: pointer;
+}
+
+.sessions .session-plain .item-text {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .sessions ha-list-item-button .item-text,
@@ -295,6 +312,24 @@ ha-button.new-chat {
   font-weight: var(--ha-font-weight-normal);
 }
 
+.sessions ha-list-item-button.selected,
+.sessions .session-plain.selected {
+  position: relative;
+  isolation: isolate;
+}
+
+.sessions ha-list-item-button.selected::before,
+.sessions .session-plain.selected::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: var(--sidebar-selected-icon-color);
+  opacity: var(--dark-divider-opacity);
+  pointer-events: none;
+  z-index: -1;
+}
+
 .sessions .session-plain.selected .item-text {
   color: var(--sidebar-selected-icon-color);
 }
@@ -303,9 +338,15 @@ ha-button.new-chat {
   position: relative;
   display: flex;
   align-items: center;
+  gap: var(--ha-space-1);
   min-width: 0;
   height: 40px;
   margin: 0 var(--ha-space-1);
+}
+
+.session-row > .session.session-plain {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .sessions ha-list-item-button::part(end) {
@@ -378,7 +419,8 @@ ha-button.new-chat {
 }
 
 .chat.welcome {
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 header {
@@ -434,8 +476,11 @@ h1 {
 }
 
 .chat.welcome .stage {
+  flex: 1 1 auto;
+  min-height: 0;
   justify-content: center;
-  padding-block: var(--ha-space-6) var(--ha-space-12);
+  justify-content: safe center;
+  padding-block: var(--ha-space-6) var(--ha-space-8);
   padding-inline: 0;
 }
 
@@ -463,10 +508,14 @@ h1 {
 }
 
 .ui-theme-ha-components .chat.welcome .log.messages {
-  padding-bottom: var(--ha-space-1);
+  flex: 0 0 auto;
+  height: auto;
+  overflow: visible;
+  padding: 0 var(--ha-space-3) var(--ha-space-2);
 }
 
 .ui-theme-ha-components .chat.welcome .composer {
+  flex: 0 0 auto;
   background: transparent;
 }
 
@@ -478,13 +527,13 @@ h1 {
 }
 
 .chat-actions[hidden],
-.history-chat[hidden] {
+.chat-actions .history-chat[hidden] {
   display: none !important;
 }
 
-.copy-chat,
-.speak-chat,
-.history-chat {
+.chat-actions .copy-chat,
+.chat-actions .speak-chat,
+.chat-actions .history-chat {
   --mdc-icon-button-size: 32px;
   --mdc-icon-size: 18px;
   color: var(--secondary-text-color);
@@ -729,14 +778,22 @@ textarea.message {
   width: 100%;
 }
 
-/* ha-assist-chat composer: same max width as Standard; space-3 gutter like .log.messages. */
+/* Full-bleed sticky chrome; prompt + picker use Standard's 720px column. */
 .ui-theme-ha-components .composer {
-  padding: 0 var(--ha-space-3) var(--ha-space-4);
+  padding: 0 0 var(--ha-space-4);
+  width: 100%;
+  max-width: 100%;
+  background: var(--primary-background-color);
+  overflow: visible;
+}
+
+.ui-theme-ha-components .composer-box,
+.ui-theme-ha-components .agent-picker {
   width: min(calc(var(--ai-chat-width) + 2 * var(--ai-inline-pad)), 100%);
   max-width: 100%;
   margin-inline: auto;
-  background: var(--primary-background-color);
-  overflow: visible;
+  padding-inline: var(--ha-space-3);
+  box-sizing: border-box;
 }
 
 .ui-theme-ha-components .chat:not(.welcome) .composer::before {
@@ -753,7 +810,8 @@ textarea.message {
 .ui-theme-ha-components .agent-picker {
   overflow: visible;
   z-index: 5;
-  margin: var(--ha-space-1) 0 var(--ha-space-2);
+  margin-top: var(--ha-space-1);
+  margin-bottom: var(--ha-space-2);
 }
 
 .ui-theme-ha-components ha-dropdown.agent-menu {
@@ -762,6 +820,12 @@ textarea.message {
 
 .ui-theme-ha-components .composer .input {
   padding: var(--ha-space-1) 0 0;
+}
+
+.ui-theme-ha-components #message-input {
+  display: block;
+  width: 100%;
+  max-width: 100%;
 }
 
 .ui-theme-ha-components #message-input::part(wa-base) {
@@ -996,6 +1060,21 @@ textarea.message {
 .history-empty {
   margin: var(--ha-space-4);
   color: var(--secondary-text-color);
+}
+
+.history-row {
+  padding: var(--ha-space-3) var(--ha-space-4);
+  border-bottom: 1px solid var(--divider-color);
+  margin: var(--ha-space-2) var(--ha-space-3);
+}
+
+.history-row .history-chat {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.history-row .history-chat:hover {
+  text-decoration: underline;
 }
 
 .history-when,

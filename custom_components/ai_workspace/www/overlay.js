@@ -102,6 +102,9 @@ async function ensureHost() {
   const [{ mountAiWorkspace, prefetchUiTheme, haComponentsUi }, { stringsFor }] = await loadChat();
   await prefetchUiTheme(() => hassObj()?.auth?.data?.access_token || "");
   const haUi = haComponentsUi();
+  if (haUi) {
+    await customElements.whenDefined("ha-top-app-bar-fixed");
+  }
   host = document.getElementById(HOST_ID);
   if (host) {
     applyHostLayout(host);
@@ -209,6 +212,19 @@ async function ensureHost() {
         .fab,
         .drawer { transition: none; }
       }
+      ha-top-app-bar-fixed.bar {
+        flex: 1 1 auto;
+        min-height: 0;
+        height: 100%;
+        max-height: 100%;
+        display: block;
+      }
+      ha-top-app-bar-fixed.bar .body {
+        box-sizing: border-box;
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+      }
       div.bar {
         position: relative;
         z-index: 1;
@@ -272,7 +288,12 @@ async function ensureHost() {
         line-height: 1;
       }
       .bar-actions { display: flex; align-items: center; }
-      .body { flex: 1; min-height: 0; height: 100%; }
+      div.bar + .body {
+        flex: 1 1 auto;
+        min-height: 0;
+        height: auto;
+        overflow: hidden;
+      }
       .hidden { display: none !important; }
       @media (max-width: 870px) {
         .fab {
@@ -280,7 +301,8 @@ async function ensureHost() {
           right: var(--ha-space-3);
         }
         aside.drawer { width: 100%; border-left: 0; }
-        div.bar {
+        div.bar,
+        ha-top-app-bar-fixed.bar {
           padding-inline: max(var(--ha-space-6, 24px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
         }
       }
@@ -313,7 +335,12 @@ async function ensureHost() {
         </div>`;
   const body = document.createElement("div");
   body.className = "body";
-  drawer.append(bar, body);
+  if (bar.localName === "ha-top-app-bar-fixed") {
+    bar.appendChild(body);
+    drawer.appendChild(bar);
+  } else {
+    drawer.append(bar, body);
+  }
   drawerHost.replaceWith(drawer);
   const close = drawer.querySelector(".close");
   const newChat = drawer.querySelector(".new-chat");
