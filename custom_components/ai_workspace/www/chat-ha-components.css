@@ -141,29 +141,23 @@
 }
 
 /* HA Components loads chat-layout.css only — mirror Standard composer chrome here. */
-.ui-theme-ha-components .composer-fallback,
-.ui-theme-ha-components .composer-native {
+.ui-theme-ha-components .composer-fallback {
   display: none;
 }
 
-.ui-theme-ha-components .composer .input:has(ha-textarea:not(:defined)) .composer-fallback {
+.ui-theme-ha-components .composer .input:has(ha-input:not(:defined)) .composer-fallback {
   display: block;
 }
 
-.ui-theme-ha-components .composer .input:has(ha-textarea:not(:defined)) .composer-native {
+.ui-theme-ha-components .composer .input:has(ha-input:not(:defined)) > ha-input {
   display: none !important;
 }
 
-.ui-theme-ha-components .composer .input:has(ha-textarea:defined) .composer-fallback {
+.ui-theme-ha-components .composer .input:has(ha-input:defined) .composer-fallback {
   display: none !important;
 }
 
-.ui-theme-ha-components .composer .input:has(ha-textarea:defined) .composer-native {
-  display: block;
-}
-
-.ui-theme-ha-components .composer-fallback .composer-row,
-.ui-theme-ha-components .composer-native .composer-row {
+.ui-theme-ha-components .composer-fallback .composer-row {
   display: flex;
   align-items: flex-end;
   gap: var(--ha-space-1);
@@ -175,20 +169,14 @@
   padding: var(--ha-space-1) var(--ha-space-1) var(--ha-space-1) var(--ha-space-4);
 }
 
-.ui-theme-ha-components .composer-fallback .composer-row:focus-within,
-.ui-theme-ha-components .composer-native .composer-row:focus-within {
+.ui-theme-ha-components .composer-fallback .composer-row:focus-within {
   border-color: var(--primary-color);
 }
 
-.ui-theme-ha-components textarea.message,
-.ui-theme-ha-components ha-textarea.message {
+.ui-theme-ha-components textarea.message {
   flex: 1 1 auto;
   min-width: 0;
   width: 100%;
-  max-width: 100%;
-}
-
-.ui-theme-ha-components textarea.message {
   min-height: 36px;
   max-height: 160px;
   margin: 0;
@@ -206,8 +194,9 @@
   color: var(--secondary-text-color);
 }
 
-.ui-theme-ha-components ha-textarea.message {
-  --ha-textarea-max-height: 160px;
+.ui-theme-ha-components .composer .input:has(ha-input:defined) > ha-input {
+  display: block;
+  width: 100%;
 }
 
 .ui-theme-ha-components ha-markdown:not(:defined) {

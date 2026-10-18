@@ -107,7 +107,6 @@ const HA_COMPONENT_PRELOAD = [
   "ha-assist-chip",
   "ha-chip-set",
   "ha-input",
-  "ha-textarea",
   "ha-input-chip",
   "ha-list-item-button",
   "ha-markdown",
@@ -636,18 +635,15 @@ export async function mountAiWorkspace(root, options = {}) {
               </div>`;
   const haComposerInputMarkup = `
               <div class="input">
+                ${fileInputMarkup}
                 <div class="composer-fallback">${standardComposerRowMarkup}</div>
-                <div class="composer-native">
-                  <div class="composer-row">
-                    <ha-textarea id="message-input" class="message" label="${htmlAttr(t("message"))}" placeholder="${htmlAttr(t("placeholder"))}" rows="1" resize="auto"></ha-textarea>
-                    <div class="composer-actions">
-                      ${fileInputMarkup}
-                      ${attachBtnMarkup}
-                      ${micBtnMarkup}
-                      ${sendMarkup}
-                    </div>
+                <ha-input id="message-input" class="message" label="${htmlAttr(t("message"))}" placeholder="${htmlAttr(t("placeholder"))}">
+                  <div slot="end">
+                    ${attachBtnMarkup}
+                    ${micBtnMarkup}
+                    ${sendMarkup}
                   </div>
-                </div>
+                </ha-input>
               </div>`;
   const agentTriggerMarkup = haUi
     ? `<ha-button type="button" class="agent-trigger" slot="trigger" appearance="plain" size="s" aria-haspopup="menu" aria-expanded="false" aria-label="${t("agent")}"><span class="agent-trigger-label"></span><ha-icon slot="end" icon="mdi:chevron-down"></ha-icon></ha-button>`
@@ -747,8 +743,7 @@ export async function mountAiWorkspace(root, options = {}) {
   let messageEl = root.querySelector("#ai-message") || root.querySelector("#message-input");
   function syncComposerField() {
     const haField = root.querySelector("#message-input");
-    if (haUi && haField?.localName === "ha-textarea" && haHas("ha-textarea")) messageEl = haField;
-    else if (haUi && haField?.localName === "ha-input" && haHas("ha-input")) messageEl = haField;
+    if (haUi && haField?.localName === "ha-input" && haHas("ha-input")) messageEl = haField;
     else messageEl = root.querySelector("#ai-message") || haField;
   }
   syncComposerField();
@@ -793,7 +788,7 @@ export async function mountAiWorkspace(root, options = {}) {
   }
   bindHaTree(root);
   if (haUi) {
-    customElements.whenDefined("ha-textarea").then(() => {
+    customElements.whenDefined("ha-input").then(() => {
       syncComposerField();
       bindHaTree(form);
       resizeComposer();
@@ -949,7 +944,7 @@ export async function mountAiWorkspace(root, options = {}) {
     setComposerDisabled(".send", !hasDraft);
     setComposerDisabled(".attach", pending.length >= MAX_ATTACH);
     const prompt = streaming ? t("placeholder_next") : t("placeholder");
-    if (messageEl.localName === "ha-input" || messageEl.localName === "ha-textarea") {
+    if (messageEl.localName === "ha-input") {
       if ("placeholder" in messageEl) messageEl.placeholder = prompt;
     } else {
       if ("placeholder" in messageEl) messageEl.placeholder = prompt;
@@ -3755,7 +3750,7 @@ export async function mountAiWorkspace(root, options = {}) {
   function fromComposerField(event) {
     for (const node of event.composedPath?.() || [event.target]) {
       if (node?.id === "ai-message" || node?.id === "message-input") return true;
-      if (node?.localName === "ha-input" || node?.localName === "ha-textarea") return true;
+      if (node?.localName === "ha-input") return true;
     }
     return false;
   }
