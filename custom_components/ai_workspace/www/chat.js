@@ -1240,6 +1240,18 @@ export async function mountAiWorkspace(root, options = {}) {
     return raw;
   }
 
+  function toolsBusy(root) {
+    return Boolean(root?.querySelector(".tools .busy"));
+  }
+
+  function pendingStatus(bubble, text) {
+    const pretty = prettyStatus(text);
+    if (pretty) return pretty;
+    if (!bubble?.classList.contains("streaming") || bubble.classList.contains("error")) return "";
+    if (bubble.classList.contains("has-text") && !toolsBusy(bubble)) return "";
+    return t("working");
+  }
+
   function ensureActivitySlot(bubble) {
     let el = bubble.querySelector(".activity");
     if (!el) {
@@ -1261,7 +1273,7 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function setActivity(bubble, text) {
     if (!bubble) return;
-    const pretty = prettyStatus(text);
+    const pretty = pendingStatus(bubble, text);
     const el = ensureActivitySlot(bubble);
     let label = el.querySelector(".label");
     if (!label) {
@@ -1292,11 +1304,6 @@ export async function mountAiWorkspace(root, options = {}) {
   function setStatus(text) {
     const bubble = lastAssistantBubble();
     if (!bubble) return;
-    const busyChip = bubble.querySelector(".tools span.busy");
-    if (busyChip && /^running$/i.test(String(text || "").trim())) {
-      setActivity(bubble, "");
-      return;
-    }
     setActivity(bubble, text);
   }
 
@@ -2005,7 +2012,7 @@ export async function mountAiWorkspace(root, options = {}) {
     styleMarkdownTables(streamNode);
     const bubble = streamNode.closest(".bubble");
     bubble?.classList.toggle("has-text", Boolean(visible));
-    if (visible && bubble && !bubble.querySelector(".tools span.busy")) setActivity(bubble, "");
+    if (visible && bubble) setActivity(bubble, "");
     if (bubble) retargetHaLinks(bubble);
     return true;
   }
@@ -3719,7 +3726,7 @@ export async function mountAiWorkspace(root, options = {}) {
             else assistant.appendChild(tools);
           }
           addChip(tools, data, true);
-          if (assistant.querySelector(".tools span.busy")) setActivity(assistant, "");
+          setActivity(assistant, "");
         } else if (name === "status") {
           setStatus(data.text);
         } else if (name === "error") {
@@ -3754,9 +3761,9 @@ export async function mountAiWorkspace(root, options = {}) {
             }
           }
           settleTools(assistant);
-          setActivity(assistant, "");
           streaming = false;
           assistant.classList.remove("streaming");
+          setActivity(assistant, "");
           resizeComposer();
           bumpSession(chatId, titleEl.textContent);
           waitForStream().then(() => {

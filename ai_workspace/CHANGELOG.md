@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.0b10
+
+- The chat keeps showing **Working…** while the agent runs tools or is still busy after its first words, and clears it when the reply ends
+
 ## 1.3.0b9
 
 - Setup and Configure load again on Home Assistant 2025.12 to 2026.8. The voice row needed a library that only ships from 2026.9
