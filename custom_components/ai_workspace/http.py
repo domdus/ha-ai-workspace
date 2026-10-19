@@ -1031,14 +1031,20 @@ class SpeakView(HomeAssistantView):
             raise web.HTTPBadRequest(text="Text-to-speech is off.")
         body = await request.json()
         language = str(body.get("language") or "")
+        from .usage_record import tts_usage_scope
+
         try:
-            data, mime = await async_speak(
-                _hass(request),
-                engine,
-                str(body.get("text") or ""),
-                language,
-                natural=bool(getattr(settings, "tts_natural", True)),
-            )
+            with tts_usage_scope(
+                user_id=_user_id(request),
+                session_id=str(body.get("session_id") or ""),
+            ):
+                data, mime = await async_speak(
+                    _hass(request),
+                    engine,
+                    str(body.get("text") or ""),
+                    language,
+                    natural=bool(getattr(settings, "tts_natural", True)),
+                )
         except Exception as exc:
             raise web.HTTPBadGateway(text=str(exc)[:300]) from exc
         if not data:

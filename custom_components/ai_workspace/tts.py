@@ -97,6 +97,9 @@ class AiWorkspaceTTSEntity(tts.TextToSpeechEntity):
         self._tts_model = agent.tts_model or default_tts_model(agent.provider)
         self._tts_voice = agent.tts_voice or DEFAULT_TTS_VOICE
         self._tts_speed = float(agent.tts_speed or 1.0)
+        self.id = agent.id
+        self.title = agent.title
+        self.kind = agent.provider
         self._attr_unique_id = f"{agent.id}-tts"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"agent:{agent.id}")},
@@ -161,6 +164,18 @@ class AiWorkspaceTTSEntity(tts.TextToSpeechEntity):
             raise HomeAssistantError("Text-to-speech timed out.") from err
         if not body:
             raise HomeAssistantError("Text-to-speech returned no audio.")
+        try:
+            from .usage_record import record_tts_usage
+
+            provider = ((self.hass.data.get(DOMAIN) or {}).get("providers") or {}).get(self._agent_id) or self
+            await record_tts_usage(
+                self.hass,
+                text=text,
+                model=str(payload.get("model") or self._tts_model),
+                provider=provider,
+            )
+        except Exception:
+            _LOGGER.debug("tts usage not recorded", exc_info=True)
         return body
 
     def _voice_from(self, options: dict[str, Any]) -> str:

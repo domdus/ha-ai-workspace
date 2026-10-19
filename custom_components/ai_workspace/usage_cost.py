@@ -99,6 +99,17 @@ _ALIASES = {
     "deepseek-chat-v3": "deepseek-chat",
     "qwen2.5:latest": "qwen2.5",
     "llama3.2:latest": "llama3.2",
+    "openai/gpt-4o-mini-tts": "gpt-4o-mini-tts",
+    "openai/tts-1": "tts-1",
+    "openai/tts-1-hd": "tts-1-hd",
+}
+
+# USD per character for /audio/speech. Separate from chat token prices so
+# gpt-4o-mini-tts never inherits gpt-4o-mini chat rates.
+_SPEECH_PRICES: dict[str, dict[str, float]] = {
+    "gpt-4o-mini-tts": {"character": 0.60 / 1_000_000},
+    "tts-1": {"character": 15.0 / 1_000_000},
+    "tts-1-hd": {"character": 30.0 / 1_000_000},
 }
 
 
@@ -110,6 +121,7 @@ class TokenUsage:
     cache_write_tokens: int = 0
     reasoning_tokens: int = 0
     total_tokens: int = 0
+    characters: int = 0
     cost_usd: float | None = None
     charged_cents: int | None = None
     cost_source: str = ""
@@ -130,6 +142,7 @@ class TokenUsage:
             cache_write_tokens=self.cache_write_tokens + other.cache_write_tokens,
             reasoning_tokens=self.reasoning_tokens + other.reasoning_tokens,
             total_tokens=self.total_tokens + other.total_tokens,
+            characters=self.characters + other.characters,
             cost_usd=cost,
             charged_cents=cents,
             cost_source=other.cost_source or self.cost_source,
@@ -144,6 +157,7 @@ class TokenUsage:
             or self.total_tokens
             or self.cache_read_tokens
             or self.cache_write_tokens
+            or self.characters
             or self.charged_cents
             or (self.cost_usd is not None and self.cost_usd != 0)
         )
@@ -240,6 +254,22 @@ def lookup_price(model: str) -> tuple[str, dict[str, float] | None]:
     return key, None
 
 
+def lookup_speech_price(model: str) -> tuple[str, dict[str, float] | None]:
+    raw = normalize_model(model)
+    if not raw:
+        return "", None
+    key = _ALIASES.get(raw, raw)
+    if key in _SPEECH_PRICES:
+        return key, _SPEECH_PRICES[key]
+    best = ""
+    for candidate in _SPEECH_PRICES:
+        if key.startswith(candidate) and len(candidate) > len(best):
+            best = candidate
+    if best:
+        return best, _SPEECH_PRICES[best]
+    return key, None
+
+
 def parse_usage(blob: object, *, model: str = "", run_id: str = "") -> TokenUsage:
     data = _as_dict(blob)
     nested = data.get("usage") or data.get("usageMetadata")
@@ -333,6 +363,17 @@ def estimate_cost(usage: TokenUsage, model: str = "") -> TokenUsage:
     return replace(out, cost_usd=round(cost, 8), cost_source="estimate")
 
 
+def estimate_tts_cost(text: str, model: str = "") -> TokenUsage:
+    """List-price estimate for OpenAI-style /audio/speech (characters, not tokens)."""
+    chars = len(str(text or ""))
+    name, rates = lookup_speech_price(model)
+    out = TokenUsage(model=str(model or name or "").strip(), characters=chars)
+    if not chars or not rates:
+        return out
+    cost = chars * float(rates.get("character") or 0.0)
+    return replace(out, cost_usd=round(cost, 8), cost_source="estimate")
+
+
 def usage_payload(usage: TokenUsage) -> dict[str, Any]:
     return {
         "type": "usage",
@@ -343,6 +384,7 @@ def usage_payload(usage: TokenUsage) -> dict[str, Any]:
         "cache_write_tokens": usage.cache_write_tokens,
         "reasoning_tokens": usage.reasoning_tokens,
         "total_tokens": usage.total_tokens or (usage.prompt_tokens + usage.completion_tokens),
+        "characters": usage.characters,
         "cost_usd": usage.cost_usd,
         "cost_source": usage.cost_source,
         "charged_cents": usage.charged_cents,
@@ -358,6 +400,7 @@ def empty_summary() -> dict[str, Any]:
         "cache_read_tokens": 0,
         "cache_write_tokens": 0,
         "total_tokens": 0,
+        "characters": 0,
         "cost_usd": 0.0,
         "missing_cost": False,
     }

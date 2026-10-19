@@ -74,3 +74,23 @@ def test_openrouter_prefix_and_longest_match():
     assert rates is not None
     key, _rates = mod.lookup_price("gpt-5")
     assert key == "gpt-5"
+
+
+def test_tts_uses_character_prices_not_chat_tokens():
+    billed = mod.estimate_tts_cost("Hello world", "gpt-4o-mini-tts")
+    assert billed.characters == 11
+    assert billed.prompt_tokens == 0
+    assert billed.total_tokens == 0
+    assert billed.cost_source == "estimate"
+    assert billed.cost_usd == round(11 * (0.60 / 1_000_000), 8)
+    key, rates = mod.lookup_speech_price("openai/gpt-4o-mini-tts")
+    assert key == "gpt-4o-mini-tts"
+    assert rates is not None
+    hd = mod.estimate_tts_cost("ab", "tts-1-hd")
+    std = mod.estimate_tts_cost("ab", "tts-1")
+    assert hd.cost_usd == round(2 * (30.0 / 1_000_000), 8)
+    assert std.cost_usd == round(2 * (15.0 / 1_000_000), 8)
+    assert hd.cost_usd > std.cost_usd
+    unknown = mod.estimate_tts_cost("hello", "piper-voice")
+    assert unknown.characters == 5
+    assert unknown.cost_usd is None

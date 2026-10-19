@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.0b2
+
+- Track OpenAI-style **text-to-speech** when it is used (Assist, overlay speaker, auto-read): character list prices for `gpt-4o-mini-tts`, `tts-1`, and `tts-1-hd`
+- Usage page shows **Speech today**; Home Assistant gets Speech cost today/total on the workspace and each agent
+
 ## 1.3.0b1
 
 - Optional **Track usage and costs** (on by default): records tokens and USD after each Cursor or cloud turn
