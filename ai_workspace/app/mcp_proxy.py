@@ -89,15 +89,36 @@ class McpProxy:
 def parse_tool_call(body: bytes) -> tuple[str, dict[str, Any]] | None:
     """Return the tool name and arguments when this MCP body is a tools/call."""
     raw = (body or b"").strip()
-    if not raw or not raw.startswith(b"{"):
+    if not raw:
         return None
-    try:
-        payload = json.loads(raw)
-    except json.JSONDecodeError:
+    payload: Any
+    if raw.startswith(b"{") or raw.startswith(b"["):
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError:
+            return None
+    else:
+        payload = None
+        for chunk in _json_messages(raw.decode("utf-8", "replace")):
+            try:
+                payload = json.loads(chunk)
+            except json.JSONDecodeError:
+                continue
+            break
+        if payload is None:
+            return None
+    messages = payload if isinstance(payload, list) else [payload]
+    for message in messages:
+        found = _tool_call_from_message(message)
+        if found is not None:
+            return found
+    return None
+
+
+def _tool_call_from_message(message: Any) -> tuple[str, dict[str, Any]] | None:
+    if not isinstance(message, dict) or message.get("method") != "tools/call":
         return None
-    if not isinstance(payload, dict) or payload.get("method") != "tools/call":
-        return None
-    params = payload.get("params") if isinstance(payload.get("params"), dict) else {}
+    params = message.get("params") if isinstance(message.get("params"), dict) else {}
     name = str(params.get("name") or "").strip()
     if not name:
         return None

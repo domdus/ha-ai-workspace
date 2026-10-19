@@ -112,10 +112,14 @@ class Settings:
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.workspace_dir.mkdir(parents=True, exist_ok=True)
         self.state_dir.mkdir(parents=True, exist_ok=True)
-        (self.workspace_dir / "AGENTS.md").write_text(CURSOR_IDENTITY, encoding="utf-8")
+        agents = self.workspace_dir / "AGENTS.md"
+        if not agents.exists():
+            agents.write_text(CURSOR_IDENTITY, encoding="utf-8")
         rules = self.workspace_dir / ".cursor" / "rules"
-        rules.mkdir(parents=True, exist_ok=True)
-        (rules / "home-assistant.mdc").write_text(CURSOR_RULE, encoding="utf-8")
+        rule = rules / "home-assistant.mdc"
+        if not rule.exists():
+            rules.mkdir(parents=True, exist_ok=True)
+            rule.write_text(CURSOR_RULE, encoding="utf-8")
 
     @classmethod
     def from_env(cls) -> Settings:

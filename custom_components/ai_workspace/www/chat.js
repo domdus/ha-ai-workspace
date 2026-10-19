@@ -765,10 +765,10 @@ export async function mountAiWorkspace(root, options = {}) {
             </ha-icon-button>
             ${compact ? "" : `<ha-icon-button class="history-open header-history" label="${t("activity")}">
               <ha-icon icon="mdi:history"></ha-icon>
-            </ha-icon-button>`}
+            </ha-icon-button>
             <ha-icon-button class="usage-open header-usage" label="${t("usage")}">
               <ha-icon icon="mdi:chart-bar"></ha-icon>
-            </ha-icon-button>
+            </ha-icon-button>`}
             <h1 class="title">${t("new_chat")}</h1>
           </div>
           <p class="chat-usage" hidden></p>
@@ -1651,9 +1651,10 @@ export async function mountAiWorkspace(root, options = {}) {
       speakPending.length > 0 ||
       speakInflight.length > 0 ||
       Boolean(replyAudio && !replyAudio.ended);
-    const showSpeak = Boolean(voice.tts && (hasChat || busy || speechActive));
+    const showSpeak = Boolean(voice.tts && ((hasChat && !busy) || speechActive));
     const showCopy = hasChat && !busy;
-    if (!showCopy && !showSpeak) {
+    const showHistory = Boolean(turnHasHistory);
+    if (!showCopy && !showSpeak && !showHistory) {
       if (row) row.hidden = true;
       return;
     }
@@ -1701,7 +1702,7 @@ export async function mountAiWorkspace(root, options = {}) {
         });
         row.appendChild(speakBtn);
       }
-      speakBtn.hidden = false;
+      speakBtn.hidden = !showSpeak;
     } else if (speakBtn) {
       speakBtn.hidden = true;
     }

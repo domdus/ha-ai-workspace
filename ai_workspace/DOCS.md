@@ -30,6 +30,18 @@ If Home Assistant runs in another container on a bridge network, set `HOST: "0.0
 
 Do not publish port 8090 or MCP to the internet. The agent runs here and calls MCP on the LAN.
 
+Composer’s cwd is `WORKSPACE_DIR` (default `/data/workspace`). Bind a host directory only if you want extra files on disk; do not mount Home Assistant `/config`. House edits stay on MCP. Example:
+
+```yaml
+    environment:
+      WORKSPACE_DIR: /workspace
+    volumes:
+      - ai-workspace-data:/data
+      - /path/on/host:/workspace
+```
+
+The runtime seeds `AGENTS.md` and `.cursor/rules/home-assistant.mdc` only when those files are missing. Optional `GIT_REPO` plus `GIT_SSH_KEY` (mounted key file) clones into that folder on first start; credentials stay on the container, not the integration. The Home Assistant OS app cannot bind an arbitrary host path.
+
 ## Extra MCP servers
 
 Home Assistant MCP and extra MCP connections are configured on the **AI Workspace** integration, then sent with each chat. Only HTTP MCP servers are accepted from the integration. The Docker Runtime can still mount an `mcp.json` or set `MCP_URL` if you need a file fallback (that is also the only place for stdio servers). The app form does not ask for MCP.

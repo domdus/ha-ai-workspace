@@ -30,7 +30,7 @@ _WRITE = {
     "replace",
     "transform",
 }
-_SKIP = {"reload"}
+_SKIP = {"reload", "backup"}
 _DELETE = {"remove", "delete"}
 _STATE = {"turn", "toggle", "press", "notify", "lock", "unlock", "play", "broadcast", "call"}
 _KINDS = (
@@ -131,15 +131,15 @@ def dashboard_store_id(url_path: object) -> str:
 def dashboard_id_from_args(args: dict) -> str:
     # HA-MCP omits url_path or sends null for the default Lovelace board.
     if "url_path" in args:
-        return _text(args.get("url_path")) or "lovelace"
+        return dashboard_store_id(args.get("url_path"))
     found = _text(args.get("dashboard_id"))
     if found:
-        return found
+        return dashboard_store_id(found)
     path = _text(args.get("path"))
     # JSON Patch pointers look like /views/0/title — not a dashboard id.
-    if path.startswith("/") or path.startswith("views"):
+    if not path or path.startswith("/") or path.startswith("views"):
         return ""
-    return path
+    return dashboard_store_id(path)
 
 
 def dashboard_args(args: dict) -> bool:

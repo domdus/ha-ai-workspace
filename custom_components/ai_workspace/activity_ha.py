@@ -194,6 +194,7 @@ async def prepare(
     else:
         if change.kind == "dashboard":
             dashboard_docs = await _snapshot_all_dashboards(hass)
+            watch = await collect_index(hass)
         if change.action != "create":
             document = await snapshot(hass, change)
             if document is None and change.kind == "dashboard":
@@ -206,7 +207,8 @@ async def prepare(
                 label=change.label,
                 domain=change.domain,
             )
-            watch = await collect_index(hass)
+            if watch is None:
+                watch = await collect_index(hass)
         found = ""
         if isinstance(document, dict):
             found = str(document.get("label") or "")
@@ -336,8 +338,6 @@ def _pick_dashboard_doc(docs: dict[str, dict[str, Any]], item_id: str | None) ->
     for alt in (store_id.replace("-", "_"), store_id.replace("_", "-")):
         if alt in docs:
             return docs[alt]
-    if len(docs) == 1:
-        return next(iter(docs.values()))
     return None
 
 
@@ -379,7 +379,8 @@ def _summary_from_events(pending: Pending) -> str:
             store_id = dashboard_store_id(item[1])
             doc = _pick_dashboard_doc(pending.dashboard_docs, store_id)
             label = str((doc or {}).get("label") or store_id or "Overview")
-            return f"Updated dashboard {label}"
+            action = "Updated" if doc is not None else "Created"
+            return f"{action} dashboard {label}"
         if item[0] == "entity":
             entity_id = str(item[1] or "")
             doc = pending.entity_docs.get(entity_id)
@@ -423,13 +424,15 @@ async def _apply_events(hass: HomeAssistant, pending: Pending) -> tuple[dict[str
         before = _pick_dashboard_doc(pending.dashboard_docs, store_id)
         label = str((before or {}).get("label") or store_id or "Overview")
         action = "update"
-        if before is not None:
-            current = await snapshot(
-                hass,
-                Change(kind="dashboard", action="update", item_id=store_id, label="", domain="lovelace"),
-            )
-            if current is None:
-                action = "delete"
+        current = await snapshot(
+            hass,
+            Change(kind="dashboard", action="update", item_id=store_id, label="", domain="lovelace"),
+        )
+        if before is None:
+            action = "create"
+            label = str((current or {}).get("label") or label)
+        elif current is None:
+            action = "delete"
         text = summary(
             Change(kind="dashboard", action=action, item_id=store_id, label=label, domain="lovelace"),
             label,
@@ -456,17 +459,14 @@ async def _apply_events(hass: HomeAssistant, pending: Pending) -> tuple[dict[str
 
 
 async def _dashboard_docs_changed(hass: HomeAssistant, docs: dict[str, dict[str, Any]]) -> bool:
-    if not docs:
-        return False
-    current = await _dashboard_index(hass)
+    current = await _snapshot_all_dashboards(hass)
+    if set(current) != set(docs):
+        return True
     for store_id, doc in docs.items():
-        config = doc.get("config")
-        if not isinstance(config, dict):
-            continue
-        key = f"dashboard:{store_id}"
-        digest = json.dumps(config, sort_keys=True, default=str, ensure_ascii=False)
-        now = current.get(key)
-        if now is not None and now[1] != digest:
+        now = current.get(store_id)
+        if now is None:
+            return True
+        if not _same_body(doc.get("config"), now.get("config")):
             return True
     return False
 
@@ -1046,11 +1046,15 @@ async def _load_board_config(board: Any) -> dict[str, Any] | None:
 
 async def _snapshot_board(board: Any, stored_key: str, label: str = "") -> dict[str, Any] | None:
     config = await _load_board_config(board)
-    if config is None:
-        return None
     meta = dict(getattr(board, "config", None) or {})
     title = str(meta.get("title") or label or stored_key or "Overview")
-    return {"kind": "dashboard", "id": stored_key, "label": title, "config": config, "meta": meta}
+    return {
+        "kind": "dashboard",
+        "id": stored_key,
+        "label": title,
+        "config": config if isinstance(config, dict) else {},
+        "meta": meta,
+    }
 
 
 async def _snapshot_all_dashboards(hass: HomeAssistant) -> dict[str, dict[str, Any]]:

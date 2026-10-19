@@ -186,6 +186,36 @@ docker compose -f docker-compose.runtime.yml up -d --build
 
 `127.0.0.1:8090:8090` still keeps port **8090** off the LAN. If Home Assistant is another container on the same bridge, set the Runtime URL to `http://cursor-sdk:8090`. A runtime that listens on anything other than loopback refuses chats until `RUNTIME_TOKEN` is set.
 
+**Optional: files on disk.** Composer’s working directory is `WORKSPACE_DIR` (default `/data/workspace` in the named volume). That volume keeps whatever the agent writes. On a first start the runtime seeds `AGENTS.md` and `.cursor/rules/home-assistant.mdc` only if they are missing; it does not overwrite a checkout or bind mount. House automations and dashboards stay on MCP; this disk is only for extra files you choose to give the agent.
+
+Bind a host directory if you want it to read and write a project next to the chat:
+
+```yaml
+    environment:
+      WORKSPACE_DIR: /workspace
+    volumes:
+      - ai-workspace-data:/data
+      - /path/on/host:/workspace
+```
+
+Do not mount Home Assistant `/config`. Cursor state still lives under `/data`. The Home Assistant OS app cannot bind an arbitrary host path this way.
+
+**Optional: git checkout.** The runtime image includes git. Set `GIT_REPO` on the container (not on the AI Workspace integration) and it clones into `WORKSPACE_DIR` on first start. Later starts keep the existing `.git` directory. A private repo uses a mounted SSH key:
+
+```yaml
+    environment:
+      GIT_REPO: git@github.com:example/my-repo.git
+      GIT_BRANCH: main
+      GIT_SSH_KEY: /run/secrets/git_ssh
+      GIT_USER_NAME: AI Workspace
+      GIT_USER_EMAIL: ai-workspace@local
+    volumes:
+      - ai-workspace-data:/data
+      - /home/me/.ssh/id_ed25519:/run/secrets/git_ssh:ro
+```
+
+`GIT_SSH_KEY` is a file path inside the container (or the PEM text). HTTPS instead of SSH can use `GIT_TOKEN` (a PAT); the token is not stored in `.git/config`. Clone is skipped if the workspace already has a checkout or other project files. House edits stay on MCP. The agent can commit and push if the key or token allows it.
+
 ### Runtime token
 
 The integration and the runtime share a token, and every chat request carries it.

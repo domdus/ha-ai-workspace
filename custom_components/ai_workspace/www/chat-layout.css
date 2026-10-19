@@ -197,14 +197,11 @@
 .compact .nav-toolbar .history-open,
 .compact .nav-toolbar .usage-open,
 .compact .header-history,
+.compact .header-usage,
 .compact .nav-scrim,
 .compact .chat-nav-toggle,
 .compact .new-chat-icon {
   display: none !important;
-}
-
-.compact .header-usage {
-  display: inline-flex;
 }
 
 .compact aside {
@@ -545,6 +542,8 @@ h1 {
 }
 
 .chat-actions[hidden],
+.chat-actions .copy-chat[hidden],
+.chat-actions .speak-chat[hidden],
 .chat-actions .history-chat[hidden] {
   display: none !important;
 }
@@ -890,8 +889,7 @@ textarea.message {
 
 .wrap.narrow .chat-nav-toggle,
 .wrap.narrow .header-history,
-.wrap.narrow .header-usage,
-.wrap.compact .header-usage {
+.wrap.narrow .header-usage {
   display: inline-flex;
 }
 

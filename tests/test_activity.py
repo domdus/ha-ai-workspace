@@ -96,7 +96,7 @@ def test_dashboard_store_id_maps_default_and_view_urls():
 
 
 def test_dashboard_id_ignores_json_patch_paths():
-    assert activity.dashboard_id_from_args({"url_path": "default", "patch": [{"op": "replace", "path": "/views/0/title", "value": "Home"}]}) == "default"
+    assert activity.dashboard_id_from_args({"url_path": "default", "patch": [{"op": "replace", "path": "/views/0/title", "value": "Home"}]}) == "lovelace"
     assert activity.dashboard_id_from_args({"path": "/views/0/sections/1"}) == ""
     assert activity.dashboard_args({"url_path": "lovelace", "python_transform": "config['views'][0]['path'] = 'home'"}) is True
     assert activity.dashboard_args({"python_transform": "config['conditions'] = []", "identifier": "automation.x"}) is False
@@ -125,10 +125,23 @@ def test_hashed_dashboard_tool_still_looks_like_a_write():
     change = activity.classify("a1b2c3d4e5f6", args)
     assert change is not None
     assert change.kind == "dashboard"
-    assert change.item_id == "default"
+    assert change.item_id == "lovelace"
     assert activity.looks_like_config_write("a1b2c3d4e5f6", args) is True
     assert activity.classify("ha_call_service", {"entity_id": "light.kitchen", "url_path": "lovelace"}) is None
     assert activity.looks_like_config_write("ha_call_service", {"entity_id": "light.kitchen"}) is False
+
+
+def test_backup_list_is_not_a_config_write():
+    args = {"scope": "edits", "action": "list", "domain": "dashboard", "entity_id": "home"}
+    assert activity.classify("ha_manage_backup", args) is None
+    assert activity.looks_like_config_write("ha_manage_backup", args) is False
+    assert activity.watches_config("ha_manage_backup") is False
+
+
+def test_dashboard_id_from_args_maps_default():
+    assert activity.dashboard_id_from_args({"url_path": "default"}) == "lovelace"
+    assert activity.dashboard_id_from_args({"url_path": None}) == "lovelace"
+    assert activity.dashboard_id_from_args({"patch": [{"op": "add", "path": "/views/-", "value": {}}]}) == ""
 
 
 def test_null_url_path_is_the_default_dashboard():
