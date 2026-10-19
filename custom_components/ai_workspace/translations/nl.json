@@ -57,6 +57,7 @@
             "description": "Wat elk bericht verstuurt en hoe uitgaven worden bijgehouden.",
             "data": {
               "low_token": "Tokenverbruik verminderen",
+              "check_house": "Altijd eerst het huis controleren",
               "prompt_cache": "Promptcache",
               "track_usage": "Gebruik en kosten bijhouden",
               "show_chat_usage": "Kosten in de chatkop tonen",
@@ -64,6 +65,7 @@
             },
             "data_description": {
               "low_token": "Stuurt minder mee met elk bericht om geld te besparen bij Cloud-, Ollama- en Azure-agents (Cursor valt hierbuiten). Uit geeft de betrouwbaarste antwoorden over je huis. Extreme is alleen chat en kan het huis niet bedienen.",
+              "check_house": "Standaard aan. De assistent kijkt in Home Assistant voordat hij vragen over je huis beantwoordt, zodat lijsten en statussen echt zijn, niet geraden. Begroetingen worden overgeslagen. Met “Tokenverbruik verminderen” op Light controleert hij altijd; op Medium en Extreme nooit. Zet het uit voor algemene vragen of voor een model dat al zelf controleert.",
               "prompt_cache": "Standaard aan. Laat de provider het deel dat in elk bericht terugkomt (instructies en toollijst) tegen een veel lagere prijs hergebruiken. Claude heeft deze schakelaar nodig; GPT cachet meestal zelf. Cursor en Ollama negeren hem.",
               "track_usage": "Standaard aan. Noteert na elk antwoord tokens en geschatte kosten en toont ze op de Gebruik-pagina. Uit: geen nieuwe records; bestaande geschiedenis blijft.",
               "show_chat_usage": "Standaard aan. Toont tokens en kosten onder de chattitel. Uit verbergt alleen die regel; bijhouden en de Gebruik-pagina blijven.",
@@ -164,6 +166,7 @@
             "description": "Wat elk bericht verstuurt en hoe uitgaven worden bijgehouden.",
             "data": {
               "low_token": "Tokenverbruik verminderen",
+              "check_house": "Altijd eerst het huis controleren",
               "prompt_cache": "Promptcache",
               "track_usage": "Gebruik en kosten bijhouden",
               "show_chat_usage": "Kosten in de chatkop tonen",
@@ -171,6 +174,7 @@
             },
             "data_description": {
               "low_token": "Stuurt minder mee met elk bericht om geld te besparen bij Cloud-, Ollama- en Azure-agents (Cursor valt hierbuiten). Uit geeft de betrouwbaarste antwoorden over je huis. Extreme is alleen chat en kan het huis niet bedienen.",
+              "check_house": "Standaard aan. De assistent kijkt in Home Assistant voordat hij vragen over je huis beantwoordt, zodat lijsten en statussen echt zijn, niet geraden. Begroetingen worden overgeslagen. Met “Tokenverbruik verminderen” op Light controleert hij altijd; op Medium en Extreme nooit. Zet het uit voor algemene vragen of voor een model dat al zelf controleert.",
               "prompt_cache": "Standaard aan. Laat de provider het deel dat in elk bericht terugkomt (instructies en toollijst) tegen een veel lagere prijs hergebruiken. Claude heeft deze schakelaar nodig; GPT cachet meestal zelf. Cursor en Ollama negeren hem.",
               "track_usage": "Standaard aan. Noteert na elk antwoord tokens en geschatte kosten en toont ze op de Gebruik-pagina. Uit: geen nieuwe records; bestaande geschiedenis blijft.",
               "show_chat_usage": "Standaard aan. Toont tokens en kosten onder de chattitel. Uit verbergt alleen die regel; bijhouden en de Gebruik-pagina blijven.",
@@ -314,7 +318,6 @@
             "api_key": "API-sleutel",
             "model": "Model",
             "effort": "Inzet",
-            "check_house": "Altijd eerst het huis controleren",
             "assist": "Toevoegen aan Assist",
             "assist_stt": "Spraak-naar-tekst toevoegen",
             "stt_model": "Spraak-naar-tekst-model",
@@ -328,7 +331,6 @@
             "api_key": "Je sleutel bij de AI-provider, niet je Home Assistant-aanmelding.",
             "model": "Kies uit de lijst of typ een modelnaam. Leeg gebruikt de standaard van de provider.",
             "effort": "Meer inzet betekent meer nadenken: betere antwoorden op moeilijke vragen, maar trager en meer tokens. Wordt genegeerd als het model het niet ondersteunt.",
-            "check_house": "Standaard aan. De assistent kijkt in Home Assistant voordat hij vragen over je huis beantwoordt, zodat lijsten en statussen echt zijn, niet geraden. Begroetingen worden overgeslagen. Met “Tokenverbruik verminderen” op Light controleert hij altijd; op Medium en Extreme nooit. Zet het uit voor algemene vragen of voor een model dat al zelf controleert.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd.",
             "assist_stt": "Voegt in Home Assistant een spraak-naar-tekst-optie toe met de sleutel van deze assistent. Uit verwijdert wat hij heeft toegevoegd.",
             "stt_model": "Leeg laten voor de standaard van de provider. Je kunt een andere modelnaam typen.",
@@ -345,14 +347,12 @@
             "api_base": "Ollama-URL",
             "model": "Model",
             "effort": "Inzet",
-            "check_house": "Altijd eerst het huis controleren",
             "assist": "Toevoegen aan Assist"
           },
           "data_description": {
             "api_base": "Meestal {example_url}",
             "model": "Kies uit de lijst of typ een geïnstalleerd model. Leeg gebruikt llama3.2.",
             "effort": "Meer inzet betekent meer nadenken: betere antwoorden op moeilijke vragen, maar trager en meer tokens. Wordt genegeerd als het model het niet ondersteunt.",
-            "check_house": "Standaard aan. De assistent kijkt in Home Assistant voordat hij vragen over je huis beantwoordt, zodat lijsten en statussen echt zijn, niet geraden. Begroetingen worden overgeslagen. Met “Tokenverbruik verminderen” op Light controleert hij altijd; op Medium en Extreme nooit. Zet het uit voor algemene vragen of voor een model dat al zelf controleert.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
           }
         },
@@ -365,7 +365,6 @@
             "model": "Implementatie",
             "azure_api_version": "API-versie",
             "effort": "Inzet",
-            "check_house": "Altijd eerst het huis controleren",
             "assist": "Toevoegen aan Assist"
           },
           "data_description": {
@@ -374,7 +373,6 @@
             "model": "De naam van de implementatie.",
             "azure_api_version": "Laat de standaard staan, tenzij Azure-ondersteuning je een andere versie gaf.",
             "effort": "Meer inzet betekent meer nadenken: betere antwoorden op moeilijke vragen, maar trager en meer tokens. Wordt genegeerd als het model het niet ondersteunt.",
-            "check_house": "Standaard aan. De assistent kijkt in Home Assistant voordat hij vragen over je huis beantwoordt, zodat lijsten en statussen echt zijn, niet geraden. Begroetingen worden overgeslagen. Met “Tokenverbruik verminderen” op Light controleert hij altijd; op Medium en Extreme nooit. Zet het uit voor algemene vragen of voor een model dat al zelf controleert.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
           }
         },
@@ -386,7 +384,6 @@
             "api_base": "API-basis-URL",
             "model": "Model",
             "effort": "Inzet",
-            "check_house": "Altijd eerst het huis controleren",
             "assist": "Toevoegen aan Assist",
             "assist_stt": "Spraak-naar-tekst toevoegen",
             "stt_model": "Spraak-naar-tekst-model",
@@ -400,7 +397,6 @@
             "api_base": "Serveradres. Voeg /v1 toe aan het einde als je server dat verwacht.",
             "model": "Modelnaam op die server.",
             "effort": "Meer inzet betekent meer nadenken: betere antwoorden op moeilijke vragen, maar trager en meer tokens. Wordt genegeerd als het model het niet ondersteunt.",
-            "check_house": "Standaard aan. De assistent kijkt in Home Assistant voordat hij vragen over je huis beantwoordt, zodat lijsten en statussen echt zijn, niet geraden. Begroetingen worden overgeslagen. Met “Tokenverbruik verminderen” op Light controleert hij altijd; op Medium en Extreme nooit. Zet het uit voor algemene vragen of voor een model dat al zelf controleert.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd.",
             "assist_stt": "Voegt in Home Assistant een spraak-naar-tekst-optie toe met de sleutel van deze assistent. Uit verwijdert wat hij heeft toegevoegd.",
             "stt_model": "Leeg laten voor de standaard van de provider. Je kunt een andere modelnaam typen.",

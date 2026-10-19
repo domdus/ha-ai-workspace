@@ -103,6 +103,7 @@ YAML_SHARED_KEYS = (
     CONF_HOUSE_MAP,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
+    CONF_CHECK_HOUSE,
     CONF_TRACK_USAGE,
     CONF_SHOW_CHAT_USAGE,
     CONF_HA_USAGE_SENSORS,
@@ -127,6 +128,7 @@ YAML_OPTION_DEFAULTS = {
     CONF_HOUSE_MAP: False,
     CONF_SHORTEN_MCP_RESULTS: True,
     CONF_CHANGE_HISTORY: True,
+    CONF_CHECK_HOUSE: True,
     CONF_TRACK_USAGE: True,
     CONF_SHOW_CHAT_USAGE: True,
     CONF_HA_USAGE_SENSORS: False,
@@ -165,6 +167,7 @@ def _normalize_option(key: str, value: Any) -> Any:
         CONF_HOUSE_MAP,
         CONF_SHORTEN_MCP_RESULTS,
         CONF_CHANGE_HISTORY,
+        CONF_CHECK_HOUSE,
         CONF_TRACK_USAGE,
         CONF_SHOW_CHAT_USAGE,
         CONF_HA_USAGE_SENSORS,
@@ -235,6 +238,7 @@ YAML_SCHEMA = vol.Schema(
         vol.Optional(CONF_HOUSE_MAP): cv.boolean,
         vol.Optional(CONF_SHORTEN_MCP_RESULTS): cv.boolean,
         vol.Optional(CONF_CHANGE_HISTORY): cv.boolean,
+        vol.Optional(CONF_CHECK_HOUSE): cv.boolean,
         vol.Optional(CONF_TRACK_USAGE): cv.boolean,
         vol.Optional(CONF_SHOW_CHAT_USAGE): cv.boolean,
         vol.Optional(CONF_HA_USAGE_SENSORS): cv.boolean,
@@ -344,7 +348,6 @@ def agent_payload(row: dict[str, Any], unique: str) -> dict[str, Any]:
         CONF_API_BASE: "" if cursor else str(row.get("api_base") or "").strip(),
         CONF_MODEL: str(row.get("model") or "").strip(),
         CONF_EFFORT: effort,
-        CONF_CHECK_HOUSE: (not cursor) and bool(row.get("check_house", True)),
         CONF_ASSIST: assist_enabled(raw, new=True) if "assist" in row else assist_enabled({}, new=True),
         CONF_ASSIST_STT: assist_stt_enabled(raw, provider) if provider_supports_stt(provider) else False,
         CONF_STT_MODEL: str(row.get("stt_model") or "").strip() if provider_supports_stt(provider) else "",
@@ -374,6 +377,10 @@ def usage_subentry_dict() -> dict[str, Any]:
 
 def entry_from_yaml(conf: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     options = options_from_yaml(conf, fill_defaults=True)
+    if CONF_CHECK_HOUSE not in conf:
+        agents = [row for row in (conf.get(YAML_AGENTS) or []) if str(row.get("provider") or "") != MODE_CURSOR]
+        if agents and all(not bool(row.get("check_house", True)) for row in agents):
+            options[CONF_CHECK_HOUSE] = False
     subentries = connections_from_yaml(conf, fill_default=True) + agents_from_yaml(conf)
     if options.get(CONF_HA_USAGE_SENSORS):
         subentries.append(usage_subentry_dict())

@@ -57,6 +57,7 @@
             "description": "Was jede Nachricht sendet und wie Ausgaben erfasst werden.",
             "data": {
               "low_token": "Tokenverbrauch reduzieren",
+              "check_house": "Immer zuerst das Haus prüfen",
               "prompt_cache": "Prompt-Cache",
               "track_usage": "Nutzung und Kosten aufzeichnen",
               "show_chat_usage": "Kosten in der Chat-Kopfzeile anzeigen",
@@ -64,6 +65,7 @@
             },
             "data_description": {
               "low_token": "Sendet mit jeder Nachricht weniger, um bei Cloud-, Ollama- und Azure-Agenten Geld zu sparen (Cursor ist nicht betroffen). Aus liefert die verlässlichsten Antworten über dein Zuhause. Extreme ist nur Chat und kann das Haus nicht steuern.",
+              "check_house": "Standardmäßig an. Der Assistent schaut in Home Assistant nach, bevor er Fragen zu deinem Zuhause beantwortet. Listen und Zustände sind dann echt, nicht geraten. Begrüßungen werden übersprungen. Mit Tokenverbrauch reduzieren auf Light prüft er immer, bei Medium und Extreme nie. Ausschalten für allgemeine Fragen oder ein Modell, das das schon von selbst tut.",
               "prompt_cache": "Standardmäßig an. Der Anbieter darf den Teil, der sich in jeder Nachricht wiederholt (Anweisungen und Tool-Liste), deutlich günstiger wiederverwenden. Claude braucht diesen Schalter, GPT cacht meist von selbst. Cursor und Ollama ignorieren ihn.",
               "track_usage": "Standardmäßig an. Speichert nach jeder Antwort Tokens und geschätzte Kosten und zeigt sie auf der Seite Nutzung. Aus stoppt neue Einträge; der Verlauf bleibt.",
               "show_chat_usage": "Standard an. Zeigt Token und Kosten unter dem Chattitel. Aus blendet nur diese Zeile; Aufzeichnung und die Nutzungsseite bleiben.",
@@ -164,6 +166,7 @@
             "description": "Was jede Nachricht sendet und wie Ausgaben erfasst werden.",
             "data": {
               "low_token": "Tokenverbrauch reduzieren",
+              "check_house": "Immer zuerst das Haus prüfen",
               "prompt_cache": "Prompt-Cache",
               "track_usage": "Nutzung und Kosten aufzeichnen",
               "show_chat_usage": "Kosten in der Chat-Kopfzeile anzeigen",
@@ -171,6 +174,7 @@
             },
             "data_description": {
               "low_token": "Sendet mit jeder Nachricht weniger, um bei Cloud-, Ollama- und Azure-Agenten Geld zu sparen (Cursor ist nicht betroffen). Aus liefert die verlässlichsten Antworten über dein Zuhause. Extreme ist nur Chat und kann das Haus nicht steuern.",
+              "check_house": "Standardmäßig an. Der Assistent schaut in Home Assistant nach, bevor er Fragen zu deinem Zuhause beantwortet. Listen und Zustände sind dann echt, nicht geraten. Begrüßungen werden übersprungen. Mit Tokenverbrauch reduzieren auf Light prüft er immer, bei Medium und Extreme nie. Ausschalten für allgemeine Fragen oder ein Modell, das das schon von selbst tut.",
               "prompt_cache": "Standardmäßig an. Der Anbieter darf den Teil, der sich in jeder Nachricht wiederholt (Anweisungen und Tool-Liste), deutlich günstiger wiederverwenden. Claude braucht diesen Schalter, GPT cacht meist von selbst. Cursor und Ollama ignorieren ihn.",
               "track_usage": "Standardmäßig an. Speichert nach jeder Antwort Tokens und geschätzte Kosten und zeigt sie auf der Seite Nutzung. Aus stoppt neue Einträge; der Verlauf bleibt.",
               "show_chat_usage": "Standard an. Zeigt Token und Kosten unter dem Chattitel. Aus blendet nur diese Zeile; Aufzeichnung und die Nutzungsseite bleiben.",
@@ -314,7 +318,6 @@
             "api_key": "API-Schlüssel",
             "model": "Modell",
             "effort": "Aufwand",
-            "check_house": "Immer zuerst das Haus prüfen",
             "assist": "Zu Assist hinzufügen",
             "assist_stt": "Sprache-zu-Text anlegen",
             "stt_model": "Sprache-zu-Text-Modell",
@@ -328,7 +331,6 @@
             "api_key": "Schlüssel vom KI-Anbieter, nicht dein Home-Assistant-Login.",
             "model": "Wähle eines oder gib eine ID ein. Leer lässt den Standard des Anbieters.",
             "effort": "Mehr Aufwand heißt mehr Nachdenken: bessere Antworten auf schwere Fragen, aber langsamer und mehr Tokens. Wird ignoriert, wenn das Modell es nicht unterstützt.",
-            "check_house": "Standardmäßig an. Der Assistent schaut in Home Assistant nach, bevor er Fragen zu deinem Zuhause beantwortet. Listen und Zustände sind dann echt, nicht geraten. Begrüßungen werden übersprungen. Mit Tokenverbrauch reduzieren auf Light prüft er immer, bei Medium und Extreme nie. Ausschalten für allgemeine Fragen oder ein Modell, das das schon von selbst tut.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat.",
             "assist_stt": "Fügt in Home Assistant eine Sprache-zu-Text-Option mit dem Schlüssel dieses Assistenten hinzu. Aus entfernt, was er angelegt hat.",
             "stt_model": "Leer für den Standard des Anbieters. Optional einen anderen Modellnamen eingeben.",
@@ -345,14 +347,12 @@
             "api_base": "Ollama-URL",
             "model": "Modell",
             "effort": "Aufwand",
-            "check_house": "Immer zuerst das Haus prüfen",
             "assist": "Zu Assist hinzufügen"
           },
           "data_description": {
             "api_base": "Meist {example_url}",
             "model": "Wähle eines oder gib einen gezogenen Modellnamen ein. Leer nutzt llama3.2.",
             "effort": "Mehr Aufwand heißt mehr Nachdenken: bessere Antworten auf schwere Fragen, aber langsamer und mehr Tokens. Wird ignoriert, wenn das Modell es nicht unterstützt.",
-            "check_house": "Standardmäßig an. Der Assistent schaut in Home Assistant nach, bevor er Fragen zu deinem Zuhause beantwortet. Listen und Zustände sind dann echt, nicht geraten. Begrüßungen werden übersprungen. Mit Tokenverbrauch reduzieren auf Light prüft er immer, bei Medium und Extreme nie. Ausschalten für allgemeine Fragen oder ein Modell, das das schon von selbst tut.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat."
           }
         },
@@ -365,7 +365,6 @@
             "model": "Bereitstellung",
             "azure_api_version": "API-Version",
             "effort": "Aufwand",
-            "check_house": "Immer zuerst das Haus prüfen",
             "assist": "Zu Assist hinzufügen"
           },
           "data_description": {
@@ -374,7 +373,6 @@
             "model": "Der Name der Bereitstellung.",
             "azure_api_version": "Standard lassen, außer Azure nennt dir eine andere Version.",
             "effort": "Mehr Aufwand heißt mehr Nachdenken: bessere Antworten auf schwere Fragen, aber langsamer und mehr Tokens. Wird ignoriert, wenn das Modell es nicht unterstützt.",
-            "check_house": "Standardmäßig an. Der Assistent schaut in Home Assistant nach, bevor er Fragen zu deinem Zuhause beantwortet. Listen und Zustände sind dann echt, nicht geraten. Begrüßungen werden übersprungen. Mit Tokenverbrauch reduzieren auf Light prüft er immer, bei Medium und Extreme nie. Ausschalten für allgemeine Fragen oder ein Modell, das das schon von selbst tut.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat."
           }
         },
@@ -386,7 +384,6 @@
             "api_base": "API-Basis-URL",
             "model": "Modell",
             "effort": "Aufwand",
-            "check_house": "Immer zuerst das Haus prüfen",
             "assist": "Zu Assist hinzufügen",
             "assist_stt": "Sprache-zu-Text anlegen",
             "stt_model": "Sprache-zu-Text-Modell",
@@ -400,7 +397,6 @@
             "api_base": "Serveradresse. /v1 anhängen, wenn dein Server das erwartet.",
             "model": "Modellname auf diesem Server.",
             "effort": "Mehr Aufwand heißt mehr Nachdenken: bessere Antworten auf schwere Fragen, aber langsamer und mehr Tokens. Wird ignoriert, wenn das Modell es nicht unterstützt.",
-            "check_house": "Standardmäßig an. Der Assistent schaut in Home Assistant nach, bevor er Fragen zu deinem Zuhause beantwortet. Listen und Zustände sind dann echt, nicht geraten. Begrüßungen werden übersprungen. Mit Tokenverbrauch reduzieren auf Light prüft er immer, bei Medium und Extreme nie. Ausschalten für allgemeine Fragen oder ein Modell, das das schon von selbst tut.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat.",
             "assist_stt": "Fügt in Home Assistant eine Sprache-zu-Text-Option mit dem Schlüssel dieses Assistenten hinzu. Aus entfernt, was er angelegt hat.",
             "stt_model": "Leer für den Standard des Anbieters. Optional einen anderen Modellnamen eingeben.",

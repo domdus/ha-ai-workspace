@@ -57,6 +57,7 @@
             "description": "Ce que chaque message envoie et comment les dépenses sont suivies.",
             "data": {
               "low_token": "Réduire la consommation de jetons",
+              "check_house": "Toujours vérifier la maison d'abord",
               "prompt_cache": "Cache de prompt",
               "track_usage": "Suivre l’utilisation et les coûts",
               "show_chat_usage": "Afficher le coût dans l’en-tête du chat",
@@ -64,6 +65,7 @@
             },
             "data_description": {
               "low_token": "Envoie moins à chaque message pour économiser de l’argent avec les agents Cloud, Ollama et Azure (Cursor n’est pas concerné). Désactivé donne les réponses les plus fiables sur votre maison. Extreme sert uniquement à discuter et ne peut pas piloter la maison.",
+              "check_house": "Activé par défaut. L’assistant consulte Home Assistant avant de répondre aux questions sur votre maison, pour que listes et états soient réels, pas devinés. Les salutations sont ignorées. Avec « Réduire la consommation de jetons » sur Light, il vérifie toujours ; sur Medium et Extreme, jamais. Désactivez pour des questions générales ou un modèle qui vérifie déjà tout seul.",
               "prompt_cache": "Activé par défaut. Permet au fournisseur de réutiliser, à un prix bien plus bas, la partie qui se répète dans chaque message (instructions et liste d’outils). Claude a besoin de cette option ; GPT met surtout en cache tout seul. Cursor et Ollama l’ignorent.",
               "track_usage": "Activé par défaut. Enregistre les jetons et le coût estimé après chaque réponse et les affiche sur la page Utilisation. Désactivé : plus de nouveaux enregistrements ; l’historique existant reste.",
               "show_chat_usage": "Activé par défaut. Affiche jetons et coût sous le titre du chat. Désactivé : seule cette ligne disparaît ; le suivi et la page Utilisation restent.",
@@ -164,6 +166,7 @@
             "description": "Ce que chaque message envoie et comment les dépenses sont suivies.",
             "data": {
               "low_token": "Réduire la consommation de jetons",
+              "check_house": "Toujours vérifier la maison d'abord",
               "prompt_cache": "Cache de prompt",
               "track_usage": "Suivre l’utilisation et les coûts",
               "show_chat_usage": "Afficher le coût dans l’en-tête du chat",
@@ -171,6 +174,7 @@
             },
             "data_description": {
               "low_token": "Envoie moins à chaque message pour économiser de l’argent avec les agents Cloud, Ollama et Azure (Cursor n’est pas concerné). Désactivé donne les réponses les plus fiables sur votre maison. Extreme sert uniquement à discuter et ne peut pas piloter la maison.",
+              "check_house": "Activé par défaut. L’assistant consulte Home Assistant avant de répondre aux questions sur votre maison, pour que listes et états soient réels, pas devinés. Les salutations sont ignorées. Avec « Réduire la consommation de jetons » sur Light, il vérifie toujours ; sur Medium et Extreme, jamais. Désactivez pour des questions générales ou un modèle qui vérifie déjà tout seul.",
               "prompt_cache": "Activé par défaut. Permet au fournisseur de réutiliser, à un prix bien plus bas, la partie qui se répète dans chaque message (instructions et liste d’outils). Claude a besoin de cette option ; GPT met surtout en cache tout seul. Cursor et Ollama l’ignorent.",
               "track_usage": "Activé par défaut. Enregistre les jetons et le coût estimé après chaque réponse et les affiche sur la page Utilisation. Désactivé : plus de nouveaux enregistrements ; l’historique existant reste.",
               "show_chat_usage": "Activé par défaut. Affiche jetons et coût sous le titre du chat. Désactivé : seule cette ligne disparaît ; le suivi et la page Utilisation restent.",
@@ -314,7 +318,6 @@
             "api_key": "Clé API",
             "model": "Modèle",
             "effort": "Effort",
-            "check_house": "Toujours vérifier la maison d'abord",
             "assist": "Ajouter à Assist",
             "assist_stt": "Ajouter parole vers texte",
             "stt_model": "Modèle parole vers texte",
@@ -328,7 +331,6 @@
             "api_key": "Votre clé chez le fournisseur d'IA, pas votre identifiant Home Assistant.",
             "model": "Choisissez dans la liste ou saisissez un nom de modèle. Vide utilise le défaut du fournisseur.",
             "effort": "Plus d’effort signifie plus de réflexion : de meilleures réponses aux questions difficiles, mais plus lent et plus de jetons. Ignoré si le modèle ne le prend pas en charge.",
-            "check_house": "Activé par défaut. L’assistant consulte Home Assistant avant de répondre aux questions sur votre maison, pour que listes et états soient réels, pas devinés. Les salutations sont ignorées. Avec « Réduire la consommation de jetons » sur Light, il vérifie toujours ; sur Medium et Extreme, jamais. Désactivez pour des questions générales ou un modèle qui vérifie déjà tout seul.",
             "assist": "Affiche aussi cet assistant sous Home Assistant Assist (voix). Désactivé : chat AI Workspace uniquement, et retire ce qu'il a ajouté à Assist.",
             "assist_stt": "Ajoute une option parole vers texte dans Home Assistant avec la clé de cet assistant. Désactivé retire ce qu'il a ajouté.",
             "stt_model": "Laissez vide pour le défaut du fournisseur. Vous pouvez saisir un autre nom de modèle.",
@@ -345,14 +347,12 @@
             "api_base": "URL Ollama",
             "model": "Modèle",
             "effort": "Effort",
-            "check_house": "Toujours vérifier la maison d'abord",
             "assist": "Ajouter à Assist"
           },
           "data_description": {
             "api_base": "En général {example_url}",
             "model": "Choisissez dans la liste ou saisissez un modèle installé. Vide utilise llama3.2.",
             "effort": "Plus d’effort signifie plus de réflexion : de meilleures réponses aux questions difficiles, mais plus lent et plus de jetons. Ignoré si le modèle ne le prend pas en charge.",
-            "check_house": "Activé par défaut. L’assistant consulte Home Assistant avant de répondre aux questions sur votre maison, pour que listes et états soient réels, pas devinés. Les salutations sont ignorées. Avec « Réduire la consommation de jetons » sur Light, il vérifie toujours ; sur Medium et Extreme, jamais. Désactivez pour des questions générales ou un modèle qui vérifie déjà tout seul.",
             "assist": "Affiche aussi cet assistant sous Home Assistant Assist (voix). Désactivé : chat AI Workspace uniquement, et retire ce qu'il a ajouté à Assist."
           }
         },
@@ -365,7 +365,6 @@
             "model": "Déploiement",
             "azure_api_version": "Version de l'API",
             "effort": "Effort",
-            "check_house": "Toujours vérifier la maison d'abord",
             "assist": "Ajouter à Assist"
           },
           "data_description": {
@@ -374,7 +373,6 @@
             "model": "Le nom du déploiement.",
             "azure_api_version": "Gardez la valeur par défaut sauf si le support Azure vous a donné une autre version.",
             "effort": "Plus d’effort signifie plus de réflexion : de meilleures réponses aux questions difficiles, mais plus lent et plus de jetons. Ignoré si le modèle ne le prend pas en charge.",
-            "check_house": "Activé par défaut. L’assistant consulte Home Assistant avant de répondre aux questions sur votre maison, pour que listes et états soient réels, pas devinés. Les salutations sont ignorées. Avec « Réduire la consommation de jetons » sur Light, il vérifie toujours ; sur Medium et Extreme, jamais. Désactivez pour des questions générales ou un modèle qui vérifie déjà tout seul.",
             "assist": "Affiche aussi cet assistant sous Home Assistant Assist (voix). Désactivé : chat AI Workspace uniquement, et retire ce qu'il a ajouté à Assist."
           }
         },
@@ -386,7 +384,6 @@
             "api_base": "URL de base de l'API",
             "model": "Modèle",
             "effort": "Effort",
-            "check_house": "Toujours vérifier la maison d'abord",
             "assist": "Ajouter à Assist",
             "assist_stt": "Ajouter parole vers texte",
             "stt_model": "Modèle parole vers texte",
@@ -400,7 +397,6 @@
             "api_base": "Adresse du serveur. Ajoutez /v1 à la fin si votre serveur l'attend.",
             "model": "Nom du modèle sur ce serveur.",
             "effort": "Plus d’effort signifie plus de réflexion : de meilleures réponses aux questions difficiles, mais plus lent et plus de jetons. Ignoré si le modèle ne le prend pas en charge.",
-            "check_house": "Activé par défaut. L’assistant consulte Home Assistant avant de répondre aux questions sur votre maison, pour que listes et états soient réels, pas devinés. Les salutations sont ignorées. Avec « Réduire la consommation de jetons » sur Light, il vérifie toujours ; sur Medium et Extreme, jamais. Désactivez pour des questions générales ou un modèle qui vérifie déjà tout seul.",
             "assist": "Affiche aussi cet assistant sous Home Assistant Assist (voix). Désactivé : chat AI Workspace uniquement, et retire ce qu'il a ajouté à Assist.",
             "assist_stt": "Ajoute une option parole vers texte dans Home Assistant avec la clé de cet assistant. Désactivé retire ce qu'il a ajouté.",
             "stt_model": "Laissez vide pour le défaut du fournisseur. Vous pouvez saisir un autre nom de modèle.",

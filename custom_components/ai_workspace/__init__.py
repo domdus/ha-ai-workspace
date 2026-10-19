@@ -25,6 +25,7 @@ from .const import (
     CONF_HOUSE_MAP,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
+    CONF_CHECK_HOUSE,
     CONF_LOW_TOKEN,
     CONF_PROMPT_CACHE,
     CONF_TRACK_USAGE,
@@ -178,6 +179,7 @@ async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
         ha_usage_sensors=bool(data.get(CONF_HA_USAGE_SENSORS, False)),
         token_mode=_workspace_token_mode(entry, data),
         prompt_cache=_workspace_prompt_cache(entry, data),
+        check_house=_workspace_check_house(entry, data),
         ui_theme=ui_theme_of(data.get(CONF_UI_THEME)),
         cross_chat=bool(data.get(CONF_CROSS_CHAT, False)),
         keep_chats=_keep_chats(data),
@@ -205,7 +207,7 @@ def _one_provider(hass: HomeAssistant, settings: Settings, agent, store):
         effort=agent.effort,
         token_mode=settings.token_mode,
         prompt_cache=settings.prompt_cache,
-        check_house=agent.check_house,
+        check_house=settings.check_house,
         azure_api_version=agent.azure_api_version,
         agent_id=agent.id,
         agent_title=agent.title,
@@ -218,6 +220,15 @@ def _workspace_prompt_cache(entry: ConfigEntry, data: dict) -> bool:
         return bool(data.get(CONF_PROMPT_CACHE, True))
     agents = [agent for agent in entry_agents(entry) if agent.mode != MODE_CURSOR]
     if agents and all(not agent.prompt_cache for agent in agents):
+        return False
+    return True
+
+
+def _workspace_check_house(entry: ConfigEntry, data: dict) -> bool:
+    if CONF_CHECK_HOUSE in data or CONF_CHECK_HOUSE in (entry.options or {}):
+        return bool(data.get(CONF_CHECK_HOUSE, True))
+    agents = [agent for agent in entry_agents(entry) if agent.mode != MODE_CURSOR]
+    if agents and all(not agent.check_house for agent in agents):
         return False
     return True
 

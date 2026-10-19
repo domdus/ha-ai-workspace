@@ -57,6 +57,7 @@
             "description": "What each message sends and how spending is tracked.",
             "data": {
               "low_token": "Reduce token usage",
+              "check_house": "Always check the house first",
               "prompt_cache": "Prompt cache",
               "track_usage": "Track usage and costs",
               "show_chat_usage": "Show cost in chat header",
@@ -64,6 +65,7 @@
             },
             "data_description": {
               "low_token": "Sends less with each message to save money on Cloud, Ollama, and Azure agents (Cursor is not affected). Off gives the most reliable answers about your home. Extreme is chat only and cannot control the house.",
+              "check_house": "On by default. Cloud, Ollama, and Azure agents look at Home Assistant before answering questions about your home, so lists and states are real, not guessed. Greetings are skipped. Cursor is not affected. With Reduce token usage on Light it always checks; on Medium and Extreme it never does. Turn it off for general questions or for a model that already checks on its own.",
               "prompt_cache": "On by default. Lets the provider reuse the part that repeats in every message (instructions and tool list) at a much lower price. Claude needs this switch; GPT mostly caches on its own. Cursor and Ollama ignore it.",
               "track_usage": "On by default. Records tokens and estimated cost after each reply and shows them on the Usage page. Off stops new records; existing history stays.",
               "show_chat_usage": "On by default. Shows tokens and cost under the chat title. Off hides only that line; tracking and the Usage page stay.",
@@ -164,6 +166,7 @@
             "description": "What each message sends and how spending is tracked.",
             "data": {
               "low_token": "Reduce token usage",
+              "check_house": "Always check the house first",
               "prompt_cache": "Prompt cache",
               "track_usage": "Track usage and costs",
               "show_chat_usage": "Show cost in chat header",
@@ -171,6 +174,7 @@
             },
             "data_description": {
               "low_token": "Sends less with each message to save money on Cloud, Ollama, and Azure agents (Cursor is not affected). Off gives the most reliable answers about your home. Extreme is chat only and cannot control the house.",
+              "check_house": "On by default. Cloud, Ollama, and Azure agents look at Home Assistant before answering questions about your home, so lists and states are real, not guessed. Greetings are skipped. Cursor is not affected. With Reduce token usage on Light it always checks; on Medium and Extreme it never does. Turn it off for general questions or for a model that already checks on its own.",
               "prompt_cache": "On by default. Lets the provider reuse the part that repeats in every message (instructions and tool list) at a much lower price. Claude needs this switch; GPT mostly caches on its own. Cursor and Ollama ignore it.",
               "track_usage": "On by default. Records tokens and estimated cost after each reply and shows them on the Usage page. Off stops new records; existing history stays.",
               "show_chat_usage": "On by default. Shows tokens and cost under the chat title. Off hides only that line; tracking and the Usage page stay.",
@@ -314,7 +318,6 @@
             "api_key": "API key",
             "model": "Model",
             "effort": "Effort",
-            "check_house": "Always check the house first",
             "assist": "Add to Assist",
             "assist_stt": "Add Speech-to-text",
             "stt_model": "Speech-to-text model",
@@ -328,7 +331,6 @@
             "api_key": "Your key from the AI provider, not your Home Assistant login.",
             "model": "Pick from the list or type a model name. Empty uses the provider default.",
             "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
-            "check_house": "On by default. The assistant looks at Home Assistant before it answers questions about your home, so lists and states are real, not guessed. Greetings are skipped. With Reduce token usage on Light it always checks; on Medium and Extreme it never does. Turn it off for general questions or for a model that already checks on its own.",
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist.",
             "assist_stt": "Adds a Speech-to-text option in Home Assistant using this assistant's key. Off removes what it added.",
             "stt_model": "Leave empty for the provider default. You can type another model name if yours offers one.",
@@ -345,14 +347,12 @@
             "api_base": "Ollama URL",
             "model": "Model",
             "effort": "Effort",
-            "check_house": "Always check the house first",
             "assist": "Add to Assist"
           },
           "data_description": {
             "api_base": "Usually {example_url}",
             "model": "Pick from the list or type a model you installed. Empty uses llama3.2.",
             "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
-            "check_house": "On by default. The assistant looks at Home Assistant before it answers questions about your home, so lists and states are real, not guessed. Greetings are skipped. With Reduce token usage on Light it always checks; on Medium and Extreme it never does. Turn it off for general questions or for a model that already checks on its own.",
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           }
         },
@@ -365,7 +365,6 @@
             "model": "Deployment",
             "azure_api_version": "API version",
             "effort": "Effort",
-            "check_house": "Always check the house first",
             "assist": "Add to Assist"
           },
           "data_description": {
@@ -374,7 +373,6 @@
             "model": "The deployment name.",
             "azure_api_version": "Leave the default unless Azure support gave you another version.",
             "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
-            "check_house": "On by default. The assistant looks at Home Assistant before it answers questions about your home, so lists and states are real, not guessed. Greetings are skipped. With Reduce token usage on Light it always checks; on Medium and Extreme it never does. Turn it off for general questions or for a model that already checks on its own.",
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           }
         },
@@ -386,7 +384,6 @@
             "api_base": "API base URL",
             "model": "Model",
             "effort": "Effort",
-            "check_house": "Always check the house first",
             "assist": "Add to Assist",
             "assist_stt": "Add Speech-to-text",
             "stt_model": "Speech-to-text model",
@@ -400,7 +397,6 @@
             "api_base": "Server address. Add /v1 at the end if your server expects that.",
             "model": "Model name on that server.",
             "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
-            "check_house": "On by default. The assistant looks at Home Assistant before it answers questions about your home, so lists and states are real, not guessed. Greetings are skipped. With Reduce token usage on Light it always checks; on Medium and Extreme it never does. Turn it off for general questions or for a model that already checks on its own.",
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist.",
             "assist_stt": "Adds a Speech-to-text option in Home Assistant using this assistant's key. Off removes what it added.",
             "stt_model": "Leave empty for the provider default. You can type another model name if yours offers one.",

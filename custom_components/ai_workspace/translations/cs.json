@@ -57,6 +57,7 @@
             "description": "Co každá zpráva odesílá a jak se sledují výdaje.",
             "data": {
               "low_token": "Snížit spotřebu tokenů",
+              "check_house": "Vždy nejdřív zkontrolovat dům",
               "prompt_cache": "Mezipaměť promptu",
               "track_usage": "Sledovat využití a náklady",
               "show_chat_usage": "Zobrazit cenu v záhlaví chatu",
@@ -64,6 +65,7 @@
             },
             "data_description": {
               "low_token": "S každou zprávou posílá méně, aby šetřil peníze u agentů Cloud, Ollama a Azure (Cursoru se to netýká). Vypnuto dává nejspolehlivější odpovědi o vaší domácnosti. Extreme je jen chat a nemůže ovládat dům.",
+              "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí na otázky o vaší domácnosti podívá do Home Assistant, takže seznamy a stavy jsou skutečné, ne odhadnuté. Pozdravy se přeskakují. Při „Snížit spotřebu tokenů“ na Light kontroluje vždy; na Medium a Extreme nikdy. Vypněte pro obecné otázky nebo pro model, který už kontroluje sám.",
               "prompt_cache": "Ve výchozím stavu zapnuto. Umožní poskytovateli znovu použít část, která se opakuje v každé zprávě (pokyny a seznam nástrojů), za mnohem nižší cenu. Claude tento přepínač potřebuje; GPT většinou cachuje sám. Cursor a Ollama ho ignorují.",
               "track_usage": "Ve výchozím stavu zapnuto. Po každé odpovědi zaznamená tokeny a odhadované náklady a ukáže je na stránce Využití. Vypnuto: bez nových záznamů; dosavadní historie zůstane.",
               "show_chat_usage": "Ve výchozím stavu zapnuto. Zobrazí tokeny a cenu pod názvem chatu. Vypnuto schová jen tento řádek; sledování a stránka Využití zůstanou.",
@@ -164,6 +166,7 @@
             "description": "Co každá zpráva odesílá a jak se sledují výdaje.",
             "data": {
               "low_token": "Snížit spotřebu tokenů",
+              "check_house": "Vždy nejdřív zkontrolovat dům",
               "prompt_cache": "Mezipaměť promptu",
               "track_usage": "Sledovat využití a náklady",
               "show_chat_usage": "Zobrazit cenu v záhlaví chatu",
@@ -171,6 +174,7 @@
             },
             "data_description": {
               "low_token": "S každou zprávou posílá méně, aby šetřil peníze u agentů Cloud, Ollama a Azure (Cursoru se to netýká). Vypnuto dává nejspolehlivější odpovědi o vaší domácnosti. Extreme je jen chat a nemůže ovládat dům.",
+              "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí na otázky o vaší domácnosti podívá do Home Assistant, takže seznamy a stavy jsou skutečné, ne odhadnuté. Pozdravy se přeskakují. Při „Snížit spotřebu tokenů“ na Light kontroluje vždy; na Medium a Extreme nikdy. Vypněte pro obecné otázky nebo pro model, který už kontroluje sám.",
               "prompt_cache": "Ve výchozím stavu zapnuto. Umožní poskytovateli znovu použít část, která se opakuje v každé zprávě (pokyny a seznam nástrojů), za mnohem nižší cenu. Claude tento přepínač potřebuje; GPT většinou cachuje sám. Cursor a Ollama ho ignorují.",
               "track_usage": "Ve výchozím stavu zapnuto. Po každé odpovědi zaznamená tokeny a odhadované náklady a ukáže je na stránce Využití. Vypnuto: bez nových záznamů; dosavadní historie zůstane.",
               "show_chat_usage": "Ve výchozím stavu zapnuto. Zobrazí tokeny a cenu pod názvem chatu. Vypnuto schová jen tento řádek; sledování a stránka Využití zůstanou.",
@@ -314,7 +318,6 @@
             "api_key": "Klíč API",
             "model": "Model",
             "effort": "Úsilí",
-            "check_house": "Vždy nejdřív zkontrolovat dům",
             "assist": "Přidat do Assist",
             "assist_stt": "Přidat převod řeči na text",
             "stt_model": "Model řeči na text",
@@ -328,7 +331,6 @@
             "api_key": "Váš klíč u poskytovatele AI, ne přihlášení do Home Assistant.",
             "model": "Vyberte ze seznamu nebo zadejte název modelu. Prázdné použije výchozí hodnotu poskytovatele.",
             "effort": "Větší úsilí znamená víc přemýšlení: lepší odpovědi na těžké otázky, ale pomaleji a víc tokenů. Ignoruje se, pokud to model nepodporuje.",
-            "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí na otázky o vaší domácnosti podívá do Home Assistant, takže seznamy a stavy jsou skutečné, ne odhadnuté. Pozdravy se přeskakují. Při „Snížit spotřebu tokenů“ na Light kontroluje vždy; na Medium a Extreme nikdy. Vypněte pro obecné otázky nebo pro model, který už kontroluje sám.",
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist.",
             "assist_stt": "Přidá v Home Assistant možnost řeči na text s klíčem tohoto asistenta. Vypnuto odstraní to, co přidal.",
             "stt_model": "Nechte prázdné pro výchozí model poskytovatele. Můžete zadat jiný název modelu.",
@@ -345,14 +347,12 @@
             "api_base": "URL Ollama",
             "model": "Model",
             "effort": "Úsilí",
-            "check_house": "Vždy nejdřív zkontrolovat dům",
             "assist": "Přidat do Assist"
           },
           "data_description": {
             "api_base": "Obvykle {example_url}",
             "model": "Vyberte ze seznamu nebo zadejte nainstalovaný model. Prázdné použije llama3.2.",
             "effort": "Větší úsilí znamená víc přemýšlení: lepší odpovědi na těžké otázky, ale pomaleji a víc tokenů. Ignoruje se, pokud to model nepodporuje.",
-            "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí na otázky o vaší domácnosti podívá do Home Assistant, takže seznamy a stavy jsou skutečné, ne odhadnuté. Pozdravy se přeskakují. Při „Snížit spotřebu tokenů“ na Light kontroluje vždy; na Medium a Extreme nikdy. Vypněte pro obecné otázky nebo pro model, který už kontroluje sám.",
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist."
           }
         },
@@ -365,7 +365,6 @@
             "model": "Nasazení",
             "azure_api_version": "Verze API",
             "effort": "Úsilí",
-            "check_house": "Vždy nejdřív zkontrolovat dům",
             "assist": "Přidat do Assist"
           },
           "data_description": {
@@ -374,7 +373,6 @@
             "model": "Název nasazení.",
             "azure_api_version": "Nechte výchozí hodnotu, pokud vám podpora Azure nedala jinou verzi.",
             "effort": "Větší úsilí znamená víc přemýšlení: lepší odpovědi na těžké otázky, ale pomaleji a víc tokenů. Ignoruje se, pokud to model nepodporuje.",
-            "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí na otázky o vaší domácnosti podívá do Home Assistant, takže seznamy a stavy jsou skutečné, ne odhadnuté. Pozdravy se přeskakují. Při „Snížit spotřebu tokenů“ na Light kontroluje vždy; na Medium a Extreme nikdy. Vypněte pro obecné otázky nebo pro model, který už kontroluje sám.",
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist."
           }
         },
@@ -386,7 +384,6 @@
             "api_base": "Základní URL API",
             "model": "Model",
             "effort": "Úsilí",
-            "check_house": "Vždy nejdřív zkontrolovat dům",
             "assist": "Přidat do Assist",
             "assist_stt": "Přidat převod řeči na text",
             "stt_model": "Model řeči na text",
@@ -400,7 +397,6 @@
             "api_base": "Adresa serveru. Na konec přidejte /v1, pokud to server očekává.",
             "model": "Název modelu na tom serveru.",
             "effort": "Větší úsilí znamená víc přemýšlení: lepší odpovědi na těžké otázky, ale pomaleji a víc tokenů. Ignoruje se, pokud to model nepodporuje.",
-            "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí na otázky o vaší domácnosti podívá do Home Assistant, takže seznamy a stavy jsou skutečné, ne odhadnuté. Pozdravy se přeskakují. Při „Snížit spotřebu tokenů“ na Light kontroluje vždy; na Medium a Extreme nikdy. Vypněte pro obecné otázky nebo pro model, který už kontroluje sám.",
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist.",
             "assist_stt": "Přidá v Home Assistant možnost řeči na text s klíčem tohoto asistenta. Vypnuto odstraní to, co přidal.",
             "stt_model": "Nechte prázdné pro výchozí model poskytovatele. Můžete zadat jiný název modelu.",

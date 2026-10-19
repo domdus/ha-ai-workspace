@@ -57,6 +57,7 @@
             "description": "Vad varje meddelande skickar och hur kostnader följs upp.",
             "data": {
               "low_token": "Minska tokenanvändning",
+              "check_house": "Kontrollera alltid huset först",
               "prompt_cache": "Promptcache",
               "track_usage": "Spåra användning och kostnader",
               "show_chat_usage": "Visa kostnad i chatthuvudet",
@@ -64,6 +65,7 @@
             },
             "data_description": {
               "low_token": "Skickar mindre med varje meddelande för att spara pengar med Cloud-, Ollama- och Azure-agenter (Cursor påverkas inte). Av ger de mest pålitliga svaren om ditt hem. Extreme är bara chatt och kan inte styra huset.",
+              "check_house": "På som standard. Assistenten kollar i Home Assistant innan den svarar på frågor om ditt hem, så att listor och tillstånd är verkliga, inte gissade. Hälsningar hoppas över. Med ”Minska tokenanvändning” på Light kollar den alltid; på Medium och Extreme aldrig. Stäng av för allmänna frågor eller för en modell som redan kollar själv.",
               "prompt_cache": "På som standard. Låter leverantören återanvända den del som upprepas i varje meddelande (instruktioner och verktygslista) till ett mycket lägre pris. Claude behöver den här inställningen; GPT cachar oftast själv. Cursor och Ollama ignorerar den.",
               "track_usage": "På som standard. Sparar token och uppskattad kostnad efter varje svar och visar dem på sidan Användning. Av stoppar nya poster; befintlig historik finns kvar.",
               "show_chat_usage": "På som standard. Visar token och kostnad under chattiteln. Av döljer bara den raden; spårning och sidan Användning finns kvar.",
@@ -164,6 +166,7 @@
             "description": "Vad varje meddelande skickar och hur kostnader följs upp.",
             "data": {
               "low_token": "Minska tokenanvändning",
+              "check_house": "Kontrollera alltid huset först",
               "prompt_cache": "Promptcache",
               "track_usage": "Spåra användning och kostnader",
               "show_chat_usage": "Visa kostnad i chatthuvudet",
@@ -171,6 +174,7 @@
             },
             "data_description": {
               "low_token": "Skickar mindre med varje meddelande för att spara pengar med Cloud-, Ollama- och Azure-agenter (Cursor påverkas inte). Av ger de mest pålitliga svaren om ditt hem. Extreme är bara chatt och kan inte styra huset.",
+              "check_house": "På som standard. Assistenten kollar i Home Assistant innan den svarar på frågor om ditt hem, så att listor och tillstånd är verkliga, inte gissade. Hälsningar hoppas över. Med ”Minska tokenanvändning” på Light kollar den alltid; på Medium och Extreme aldrig. Stäng av för allmänna frågor eller för en modell som redan kollar själv.",
               "prompt_cache": "På som standard. Låter leverantören återanvända den del som upprepas i varje meddelande (instruktioner och verktygslista) till ett mycket lägre pris. Claude behöver den här inställningen; GPT cachar oftast själv. Cursor och Ollama ignorerar den.",
               "track_usage": "På som standard. Sparar token och uppskattad kostnad efter varje svar och visar dem på sidan Användning. Av stoppar nya poster; befintlig historik finns kvar.",
               "show_chat_usage": "På som standard. Visar token och kostnad under chattiteln. Av döljer bara den raden; spårning och sidan Användning finns kvar.",
@@ -314,7 +318,6 @@
             "api_key": "API-nyckel",
             "model": "Modell",
             "effort": "Ansträngning",
-            "check_house": "Kontrollera alltid huset först",
             "assist": "Lägg till i Assist",
             "assist_stt": "Lägg till tal till text",
             "stt_model": "Tal-till-text-modell",
@@ -328,7 +331,6 @@
             "api_key": "Din nyckel från AI-leverantören, inte din Home Assistant-inloggning.",
             "model": "Välj från listan eller skriv ett modellnamn. Tomt använder leverantörens standard.",
             "effort": "Mer ansträngning betyder mer tänkande: bättre svar på svåra frågor, men långsammare och fler token. Ignoreras om modellen inte stöder det.",
-            "check_house": "På som standard. Assistenten kollar i Home Assistant innan den svarar på frågor om ditt hem, så att listor och tillstånd är verkliga, inte gissade. Hälsningar hoppas över. Med ”Minska tokenanvändning” på Light kollar den alltid; på Medium och Extreme aldrig. Stäng av för allmänna frågor eller för en modell som redan kollar själv.",
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist.",
             "assist_stt": "Lägger till ett tal-till-text-alternativ i Home Assistant med den här assistentens nyckel. Av tar bort det den lade till.",
             "stt_model": "Lämna tomt för leverantörens standard. Du kan skriva ett annat modellnamn om din leverantör har ett.",
@@ -345,14 +347,12 @@
             "api_base": "Ollama-URL",
             "model": "Modell",
             "effort": "Ansträngning",
-            "check_house": "Kontrollera alltid huset först",
             "assist": "Lägg till i Assist"
           },
           "data_description": {
             "api_base": "Vanligtvis {example_url}",
             "model": "Välj från listan eller skriv en modell du har installerat. Tomt använder llama3.2.",
             "effort": "Mer ansträngning betyder mer tänkande: bättre svar på svåra frågor, men långsammare och fler token. Ignoreras om modellen inte stöder det.",
-            "check_house": "På som standard. Assistenten kollar i Home Assistant innan den svarar på frågor om ditt hem, så att listor och tillstånd är verkliga, inte gissade. Hälsningar hoppas över. Med ”Minska tokenanvändning” på Light kollar den alltid; på Medium och Extreme aldrig. Stäng av för allmänna frågor eller för en modell som redan kollar själv.",
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist."
           }
         },
@@ -365,7 +365,6 @@
             "model": "Distribution",
             "azure_api_version": "API-version",
             "effort": "Ansträngning",
-            "check_house": "Kontrollera alltid huset först",
             "assist": "Lägg till i Assist"
           },
           "data_description": {
@@ -374,7 +373,6 @@
             "model": "Distributionens namn.",
             "azure_api_version": "Behåll standardvärdet om inte Azure-supporten gett dig en annan version.",
             "effort": "Mer ansträngning betyder mer tänkande: bättre svar på svåra frågor, men långsammare och fler token. Ignoreras om modellen inte stöder det.",
-            "check_house": "På som standard. Assistenten kollar i Home Assistant innan den svarar på frågor om ditt hem, så att listor och tillstånd är verkliga, inte gissade. Hälsningar hoppas över. Med ”Minska tokenanvändning” på Light kollar den alltid; på Medium och Extreme aldrig. Stäng av för allmänna frågor eller för en modell som redan kollar själv.",
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist."
           }
         },
@@ -386,7 +384,6 @@
             "api_base": "API-bas-URL",
             "model": "Modell",
             "effort": "Ansträngning",
-            "check_house": "Kontrollera alltid huset först",
             "assist": "Lägg till i Assist",
             "assist_stt": "Lägg till tal till text",
             "stt_model": "Tal-till-text-modell",
@@ -400,7 +397,6 @@
             "api_base": "Serveradress. Lägg till /v1 i slutet om din server förväntar sig det.",
             "model": "Modellnamn på den servern.",
             "effort": "Mer ansträngning betyder mer tänkande: bättre svar på svåra frågor, men långsammare och fler token. Ignoreras om modellen inte stöder det.",
-            "check_house": "På som standard. Assistenten kollar i Home Assistant innan den svarar på frågor om ditt hem, så att listor och tillstånd är verkliga, inte gissade. Hälsningar hoppas över. Med ”Minska tokenanvändning” på Light kollar den alltid; på Medium och Extreme aldrig. Stäng av för allmänna frågor eller för en modell som redan kollar själv.",
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist.",
             "assist_stt": "Lägger till ett tal-till-text-alternativ i Home Assistant med den här assistentens nyckel. Av tar bort det den lade till.",
             "stt_model": "Lämna tomt för leverantörens standard. Du kan skriva ett annat modellnamn om din leverantör har ett.",

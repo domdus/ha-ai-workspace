@@ -31,6 +31,7 @@ from .const import (
     CONF_HOUSE_MAP,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
+    CONF_CHECK_HOUSE,
     CONF_TRACK_USAGE,
     CONF_SHOW_CHAT_USAGE,
     CONF_HA_USAGE_SENSORS,
@@ -93,6 +94,7 @@ _SHARED_KEYS = (
     CONF_HOUSE_MAP,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
+    CONF_CHECK_HOUSE,
     CONF_TRACK_USAGE,
     CONF_SHOW_CHAT_USAGE,
     CONF_HA_USAGE_SENSORS,
@@ -180,6 +182,7 @@ def _cost_schema(current: dict) -> vol.Schema:
             ): SelectSelector(
                 SelectSelectorConfig(options=list(TOKEN_MODES), mode="dropdown", translation_key="low_token")
             ),
+            vol.Optional(CONF_CHECK_HOUSE, default=bool(current.get(CONF_CHECK_HOUSE, True))): cv.boolean,
             vol.Optional(CONF_PROMPT_CACHE, default=bool(current.get(CONF_PROMPT_CACHE, True))): cv.boolean,
             vol.Optional(CONF_TRACK_USAGE, default=current.get(CONF_TRACK_USAGE, True)): cv.boolean,
             vol.Optional(CONF_SHOW_CHAT_USAGE, default=current.get(CONF_SHOW_CHAT_USAGE, True)): cv.boolean,
@@ -518,6 +521,10 @@ class AiWorkspaceOptionsFlow(config_entries.OptionsFlow):
             agents = [agent for agent in entry_agents(self.config_entry) if agent.mode != MODE_CURSOR]
             if agents and all(not agent.prompt_cache for agent in agents):
                 current[CONF_PROMPT_CACHE] = False
+        if CONF_CHECK_HOUSE not in current:
+            agents = [agent for agent in entry_agents(self.config_entry) if agent.mode != MODE_CURSOR]
+            if agents and all(not agent.check_house for agent in agents):
+                current[CONF_CHECK_HOUSE] = False
         if user_input is not None:
             flat = _normalize(_flatten(user_input), self.hass)
             merged = {**current, **flat}

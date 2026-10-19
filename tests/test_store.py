@@ -71,14 +71,19 @@ def test_usage_turns_sum_and_prune(tmp_path: Path) -> None:
     assert last is not None
     assert last["model"] == "gpt-5-mini"
     assert last["origin"] == "assist"
-    store.prune_sessions("user-1", keep=1)
+    store.delete_session("user-1", session.id)
+    assert store.get_session("user-1", session.id) is None
+    after_delete = store.summarize_usage()
+    assert after_delete["turns"] == 2
+    assert after_delete["total_tokens"] == 135
+    assert after_delete["cost_usd"] == 0.0123
     leftover = store.create_session("user-1", "openai")
     store.add_usage(user_id="user-1", session_id=leftover.id, agent_id="gpt-1", total_tokens=3, cost_usd=0.0)
     dropped = store.prune_sessions("user-1", keep=1)
-    assert session.id in dropped or leftover.id in dropped
-    remaining = store.summarize_usage(session_id=session.id)
-    if session.id in dropped:
-        assert remaining["turns"] == 0
+    assert leftover.id not in dropped
+    after_prune = store.summarize_usage()
+    assert after_prune["turns"] == 3
+    assert after_prune["total_tokens"] == 138
     store.close()
 
 

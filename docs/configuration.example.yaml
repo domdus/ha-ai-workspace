@@ -17,6 +17,7 @@ ai_workspace:
   show_chat_usage: true
   ha_usage_sensors: false
   low_token: "off" # off | light | medium | extreme
+  check_house: true
   prompt_cache: true
   ui_theme: standard # standard | ha_components
   cross_chat: false
@@ -47,7 +48,6 @@ ai_workspace:
       api_key: !secret openai_api_key
       model: gpt-5
       effort: default # default | fast | high | high_fast
-      check_house: true
       assist: true
       assist_stt: true
       stt_model: gpt-4o-mini-transcribe
@@ -60,14 +60,12 @@ ai_workspace:
       provider: anthropic
       api_key: !secret anthropic_api_key
       model: claude-sonnet-5-5
-      check_house: true
       assist: false
     - id: ollama
       title: Ollama
       provider: ollama
       api_base: http://127.0.0.1:11434/v1
       model: llama3.2
-      check_house: true
       assist: false
     - id: azure
       title: Azure OpenAI
@@ -76,7 +74,6 @@ ai_workspace:
       api_base: https://YOUR-RESOURCE.openai.azure.com
       azure_api_version: "2024-10-21"
       model: gpt-4o
-      check_house: true
       assist: false
     - id: compatible
       title: LM Studio

@@ -6,7 +6,7 @@
 
 **Show cost in chat header** (on by default) puts a short usage line under the chat title. Turn it off if you only want the Usage page.
 
-Off on **Track usage and costs** stops new records. Existing history stays.
+Off on **Track usage and costs** stops new records. Existing history stays. Deleting a chat removes the messages, not the usage: the provider already billed that turn, so it stays on the Usage page.
 
 ## Where prices come from
 
@@ -49,7 +49,7 @@ The expensive part is the MCP tool list (and extra tool rounds), not the chat hi
 
 | Mode | Tools | History | Check house | Prompt | Typical save vs Off on a house-check turn |
 | --- | --- | --- | --- | --- | --- |
-| **Off** | All enabled MCP tools | Last 12 | Agent toggle (on by default) | Full | — |
+| **Off** | All enabled MCP tools | Last 12 | Shared toggle (on by default) | Full | — |
 | **Light** | Yes | Last 12 | Always on | Full | About **5–20%**. Still pays for tools and a forced house check. Skips extras such as auto-title and effort. |
 | **Medium** | Yes | Last 4 | Off | Short, tools allowed | About **25–45%**. No forced extra round; tool schemas still dominate. |
 | **Extreme** | No | None | Off | Two sentences; cannot control the house | About **80–95%**. |

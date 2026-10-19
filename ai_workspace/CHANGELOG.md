@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.0b12
+
+- **Always check the house first** is a shared AI Workspace setting under Cost and tokens, not a per-agent toggle. Cursor is unchanged. If every cloud agent already had it off, that stays off.
+- Deleting a chat (or pruning old chats) keeps its usage and cost on the Usage page; those turns were already billed.
+
 ## 1.3.0b11
 
 - A provider that does not answer in time now says so (“The provider did not answer in time”) instead of “The agent failed.”

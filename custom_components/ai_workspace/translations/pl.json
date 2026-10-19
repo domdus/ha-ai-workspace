@@ -57,6 +57,7 @@
             "description": "Co wysyła każda wiadomość i jak śledzone są wydatki.",
             "data": {
               "low_token": "Zmniejsz zużycie tokenów",
+              "check_house": "Zawsze najpierw sprawdzaj dom",
               "prompt_cache": "Pamięć promptu",
               "track_usage": "Śledź użycie i koszty",
               "show_chat_usage": "Pokaż koszt w nagłówku czatu",
@@ -64,6 +65,7 @@
             },
             "data_description": {
               "low_token": "Wysyła mniej z każdą wiadomością, żeby oszczędzać pieniądze przy agentach Cloud, Ollama i Azure (nie dotyczy Cursor). Wyłączone daje najbardziej wiarygodne odpowiedzi o twoim domu. Extreme to tylko czat i nie może sterować domem.",
+              "check_house": "Domyślnie włączone. Asystent sprawdza Home Assistant, zanim odpowie na pytania o twój dom, więc listy i stany są prawdziwe, a nie zgadywane. Powitania są pomijane. Przy „Zmniejsz zużycie tokenów” na Light sprawdza zawsze; na Medium i Extreme nigdy. Wyłącz dla ogólnych pytań lub dla modelu, który już sam sprawdza.",
               "prompt_cache": "Domyślnie włączone. Pozwala dostawcy ponownie użyć, znacznie taniej, części powtarzającej się w każdej wiadomości (instrukcje i lista narzędzi). Claude potrzebuje tego przełącznika; GPT zwykle cache’uje sam. Cursor i Ollama go ignorują.",
               "track_usage": "Domyślnie włączone. Po każdej odpowiedzi zapisuje tokeny i szacowany koszt i pokazuje je na stronie Użycie. Wyłączone: bez nowych wpisów; dotychczasowa historia zostaje.",
               "show_chat_usage": "Domyślnie włączone. Pokazuje tokeny i koszt pod tytułem czatu. Wyłączenie ukrywa tylko tę linię; śledzenie i strona Użycie zostają.",
@@ -164,6 +166,7 @@
             "description": "Co wysyła każda wiadomość i jak śledzone są wydatki.",
             "data": {
               "low_token": "Zmniejsz zużycie tokenów",
+              "check_house": "Zawsze najpierw sprawdzaj dom",
               "prompt_cache": "Pamięć promptu",
               "track_usage": "Śledź użycie i koszty",
               "show_chat_usage": "Pokaż koszt w nagłówku czatu",
@@ -171,6 +174,7 @@
             },
             "data_description": {
               "low_token": "Wysyła mniej z każdą wiadomością, żeby oszczędzać pieniądze przy agentach Cloud, Ollama i Azure (nie dotyczy Cursor). Wyłączone daje najbardziej wiarygodne odpowiedzi o twoim domu. Extreme to tylko czat i nie może sterować domem.",
+              "check_house": "Domyślnie włączone. Asystent sprawdza Home Assistant, zanim odpowie na pytania o twój dom, więc listy i stany są prawdziwe, a nie zgadywane. Powitania są pomijane. Przy „Zmniejsz zużycie tokenów” na Light sprawdza zawsze; na Medium i Extreme nigdy. Wyłącz dla ogólnych pytań lub dla modelu, który już sam sprawdza.",
               "prompt_cache": "Domyślnie włączone. Pozwala dostawcy ponownie użyć, znacznie taniej, części powtarzającej się w każdej wiadomości (instrukcje i lista narzędzi). Claude potrzebuje tego przełącznika; GPT zwykle cache’uje sam. Cursor i Ollama go ignorują.",
               "track_usage": "Domyślnie włączone. Po każdej odpowiedzi zapisuje tokeny i szacowany koszt i pokazuje je na stronie Użycie. Wyłączone: bez nowych wpisów; dotychczasowa historia zostaje.",
               "show_chat_usage": "Domyślnie włączone. Pokazuje tokeny i koszt pod tytułem czatu. Wyłączenie ukrywa tylko tę linię; śledzenie i strona Użycie zostają.",
@@ -314,7 +318,6 @@
             "api_key": "Klucz API",
             "model": "Model",
             "effort": "Wysiłek",
-            "check_house": "Zawsze najpierw sprawdzaj dom",
             "assist": "Dodaj do Assist",
             "assist_stt": "Dodaj mowę na tekst",
             "stt_model": "Model mowy na tekst",
@@ -328,7 +331,6 @@
             "api_key": "Klucz od dostawcy AI, nie login Home Assistant.",
             "model": "Wybierz z listy lub wpisz nazwę modelu. Puste używa domyślnego modelu dostawcy.",
             "effort": "Większy wysiłek to więcej myślenia: lepsze odpowiedzi na trudne pytania, ale wolniej i więcej tokenów. Ignorowane, gdy model tego nie obsługuje.",
-            "check_house": "Domyślnie włączone. Asystent sprawdza Home Assistant, zanim odpowie na pytania o twój dom, więc listy i stany są prawdziwe, a nie zgadywane. Powitania są pomijane. Przy „Zmniejsz zużycie tokenów” na Light sprawdza zawsze; na Medium i Extreme nigdy. Wyłącz dla ogólnych pytań lub dla modelu, który już sam sprawdza.",
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist.",
             "assist_stt": "Dodaje opcję mowy na tekst w Home Assistant z kluczem tego asystenta. Wyłączenie usuwa to, co dodał.",
             "stt_model": "Zostaw puste dla domyślnego modelu dostawcy. Możesz wpisać inną nazwę modelu.",
@@ -345,14 +347,12 @@
             "api_base": "URL Ollama",
             "model": "Model",
             "effort": "Wysiłek",
-            "check_house": "Zawsze najpierw sprawdzaj dom",
             "assist": "Dodaj do Assist"
           },
           "data_description": {
             "api_base": "Zwykle {example_url}",
             "model": "Wybierz z listy lub wpisz zainstalowany model. Puste używa llama3.2.",
             "effort": "Większy wysiłek to więcej myślenia: lepsze odpowiedzi na trudne pytania, ale wolniej i więcej tokenów. Ignorowane, gdy model tego nie obsługuje.",
-            "check_house": "Domyślnie włączone. Asystent sprawdza Home Assistant, zanim odpowie na pytania o twój dom, więc listy i stany są prawdziwe, a nie zgadywane. Powitania są pomijane. Przy „Zmniejsz zużycie tokenów” na Light sprawdza zawsze; na Medium i Extreme nigdy. Wyłącz dla ogólnych pytań lub dla modelu, który już sam sprawdza.",
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist."
           }
         },
@@ -365,7 +365,6 @@
             "model": "Wdrożenie",
             "azure_api_version": "Wersja API",
             "effort": "Wysiłek",
-            "check_house": "Zawsze najpierw sprawdzaj dom",
             "assist": "Dodaj do Assist"
           },
           "data_description": {
@@ -374,7 +373,6 @@
             "model": "Nazwa wdrożenia.",
             "azure_api_version": "Zostaw wartość domyślną, chyba że wsparcie Azure podało inną wersję.",
             "effort": "Większy wysiłek to więcej myślenia: lepsze odpowiedzi na trudne pytania, ale wolniej i więcej tokenów. Ignorowane, gdy model tego nie obsługuje.",
-            "check_house": "Domyślnie włączone. Asystent sprawdza Home Assistant, zanim odpowie na pytania o twój dom, więc listy i stany są prawdziwe, a nie zgadywane. Powitania są pomijane. Przy „Zmniejsz zużycie tokenów” na Light sprawdza zawsze; na Medium i Extreme nigdy. Wyłącz dla ogólnych pytań lub dla modelu, który już sam sprawdza.",
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist."
           }
         },
@@ -386,7 +384,6 @@
             "api_base": "Bazowy URL API",
             "model": "Model",
             "effort": "Wysiłek",
-            "check_house": "Zawsze najpierw sprawdzaj dom",
             "assist": "Dodaj do Assist",
             "assist_stt": "Dodaj mowę na tekst",
             "stt_model": "Model mowy na tekst",
@@ -400,7 +397,6 @@
             "api_base": "Adres serwera. Dodaj /v1 na końcu, jeśli serwer tego oczekuje.",
             "model": "Nazwa modelu na tym serwerze.",
             "effort": "Większy wysiłek to więcej myślenia: lepsze odpowiedzi na trudne pytania, ale wolniej i więcej tokenów. Ignorowane, gdy model tego nie obsługuje.",
-            "check_house": "Domyślnie włączone. Asystent sprawdza Home Assistant, zanim odpowie na pytania o twój dom, więc listy i stany są prawdziwe, a nie zgadywane. Powitania są pomijane. Przy „Zmniejsz zużycie tokenów” na Light sprawdza zawsze; na Medium i Extreme nigdy. Wyłącz dla ogólnych pytań lub dla modelu, który już sam sprawdza.",
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist.",
             "assist_stt": "Dodaje opcję mowy na tekst w Home Assistant z kluczem tego asystenta. Wyłączenie usuwa to, co dodał.",
             "stt_model": "Zostaw puste dla domyślnego modelu dostawcy. Możesz wpisać inną nazwę modelu.",

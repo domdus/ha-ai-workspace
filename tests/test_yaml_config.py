@@ -5,6 +5,7 @@ import yaml
 from custom_components.ai_workspace.const import (
     CONF_API_PROVIDER,
     CONF_ASSIST,
+    CONF_CHECK_HOUSE,
     CONF_HA_USAGE_SENSORS,
     CONF_LOW_TOKEN,
     CONF_TRACK_USAGE,
@@ -104,4 +105,14 @@ def test_entry_from_yaml_includes_default_connection() -> None:
     assert kinds.count("agent") == 1
     assert kinds.count("usage") == 1
     assert options[CONF_HA_USAGE_SENSORS] is True
+    assert options[CONF_CHECK_HOUSE] is True
     assert agents_from_yaml({}) == []
+    off, _subs = entry_from_yaml(
+        {
+            "agents": [
+                {"provider": "openai", "api_key": "sk", "check_house": False},
+                {"provider": "anthropic", "api_key": "x", "check_house": False},
+            ]
+        }
+    )
+    assert off[CONF_CHECK_HOUSE] is False

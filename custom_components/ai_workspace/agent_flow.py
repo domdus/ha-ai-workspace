@@ -215,8 +215,6 @@ def _fields_schema(step: str, current: dict, borrows: list[dict[str, str]], *, n
         fields[vol.Optional(CONF_API_KEY, default="")] = _PASSWORD
         fields.update(_model_field(provider, current))
     fields.update(_effort_field(current))
-    if step != "cursor":
-        fields[vol.Optional(CONF_CHECK_HOUSE, default=bool(current.get(CONF_CHECK_HOUSE, True)))] = cv.boolean
     fields[vol.Optional(CONF_ASSIST, default=assist_enabled(current, new=new))] = cv.boolean
     if provider_supports_stt(provider):
         fields[vol.Optional(CONF_ASSIST_STT, default=assist_stt_enabled(current, provider))] = cv.boolean
@@ -378,7 +376,6 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                     CONF_API_BASE: "" if provider == MODE_CURSOR else base,
                     CONF_MODEL: model,
                     CONF_EFFORT: "" if effort == EFFORT_DEFAULT else effort,
-                    CONF_CHECK_HOUSE: provider != MODE_CURSOR and bool(user_input.get(CONF_CHECK_HOUSE, True)),
                     CONF_ASSIST: bool(user_input.get(CONF_ASSIST, assist_enabled(current, new=not self._editing))),
                     CONF_ASSIST_STT: bool(user_input.get(CONF_ASSIST_STT, assist_stt_enabled(current, provider)))
                     if provider_supports_stt(provider)
@@ -402,6 +399,8 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                 }
                 if provider != MODE_CURSOR and CONF_PROMPT_CACHE in current:
                     data[CONF_PROMPT_CACHE] = bool(current.get(CONF_PROMPT_CACHE))
+                if provider != MODE_CURSOR and CONF_CHECK_HOUSE in current:
+                    data[CONF_CHECK_HOUSE] = bool(current.get(CONF_CHECK_HOUSE))
                 return self._finish(provider, data)
             self._current = merged
         example = "https://YOUR-RESOURCE.openai.azure.com" if step == "azure" else default_api_base(API_OLLAMA)

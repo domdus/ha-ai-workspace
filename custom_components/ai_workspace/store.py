@@ -444,17 +444,17 @@ class Store:
         ]
 
     def delete_session(self, user_id: str, session_id: str) -> bool:
+        """Remove the chat and its messages. Usage turns stay: the provider already billed them."""
         if self.get_session(user_id, session_id) is None:
             return False
         with self._lock:
             self._conn.execute("DELETE FROM messages WHERE session_id = ?", (_text(session_id),))
-            self._conn.execute("DELETE FROM usage_turns WHERE session_id = ?", (_text(session_id),))
             self._conn.execute("DELETE FROM sessions WHERE id = ?", (_text(session_id),))
             self._conn.commit()
         return True
 
     def prune_sessions(self, user_id: str, keep: int) -> list[str]:
-        """Drop oldest unpinned chats beyond keep. Pinned chats are never removed."""
+        """Drop oldest unpinned chats beyond keep. Pinned chats and usage turns stay."""
         user_id = _text(user_id)
         try:
             keep = int(keep)
@@ -477,7 +477,6 @@ class Store:
             drop = [str(row["id"]) for row in rows[keep:]]
             for session_id in drop:
                 self._conn.execute("DELETE FROM messages WHERE session_id = ?", (session_id,))
-                self._conn.execute("DELETE FROM usage_turns WHERE session_id = ?", (session_id,))
                 self._conn.execute("DELETE FROM sessions WHERE id = ? AND user_id = ?", (session_id, user_id))
             self._conn.commit()
         return drop

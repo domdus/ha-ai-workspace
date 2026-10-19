@@ -54,8 +54,9 @@ Tappable links to automations, entities, helpers, and devices are always added. 
 | Option | What it does | Why it matters |
 | --- | --- | --- |
 | **Reduce token usage** | Off, Light, Medium, or Extreme for every Cloud, Ollama, and Azure agent. Not on Cursor. | [How much each message sends](cost.md#reduce-token-usage), and what you give up for a lower bill. |
+| **Always check the house first** | On by default. Not on Cursor. With **Light** it always checks; **Medium** and **Extreme** ignore this toggle. | [Why this is on](#always-check-the-house-first). One extra tool round on questions that do not need the house. |
 | **Prompt cache** | On by default. Applied when the model supports it. Ignored on Cursor and Ollama. | [The repeated tool list costs much less](cost.md#prompt-cache) after the first round. |
-| **Track usage and costs** | On by default. Records tokens and estimated cost. Sidebar **Usage** opens `/ai-workspace/usage`. | [See what you spend](cost.md). Off stops new records; history stays. |
+| **Track usage and costs** | On by default. Records tokens and estimated cost. Sidebar **Usage** opens `/ai-workspace/usage`. | [See what you spend](cost.md). Off stops new records; history stays. Deleting a chat does not remove its usage. |
 | **Show cost in chat header** | On by default. Tokens and cost under the chat title. | Cost at a glance. Off hides only that line. |
 | **Add Home Assistant usage sensors** | Off by default. Creates cost, token, and turn sensors. | [For your own dashboards and automations](cost.md#home-assistant-sensors). The Usage page does not need them. |
 
@@ -87,7 +88,6 @@ On each agent (**Add agent**, or the edit button on an agent row).
 | --- | --- | --- |
 | **Copy key from** | Uses a key already stored by OpenRouter, OpenAI, Claude, Gemini, Ollama, or Azure in Home Assistant. That other integration stays as it is. | You do not paste the same key twice. |
 | **Effort** | Default, Fast, High, or High fast, when the model supports it. If it does not, the request still goes through. | High thinks longer: better on hard questions, but slower and more tokens. Fast is cheaper and quicker. |
-| **Always check the house first** | Not on Cursor. On by default. With **Light** it always checks; **Medium** and **Extreme** ignore this toggle. | [Why this is on](#always-check-the-house-first). |
 | **Cursor runtime address / Runtime password** | Only on Cursor agents. Leave the address empty when the form shows **Runtime found**. | Pairs Home Assistant with the Cursor runtime. See [Runtime token](../README.md#runtime-token). |
 | **Add to Assist** | On adds a Voice assistants pipeline for this agent. Off removes it again and keeps the agent in AI Workspace only. | Use the same model from Home Assistant’s Assist dialog. |
 | **Add Speech-to-text / Text-to-speech** | On OpenAI, OpenRouter, and OpenAI-compatible agents. On by default. Uses this agent’s key. Off removes that engine. | Listen and speak with the same key. Cursor, Claude, Gemini, and Ollama have no speech API of their own. |
@@ -100,7 +100,7 @@ With **Always check the house first**, the model must call a Home Assistant tool
 
 It is on by default because a wrong answer about the house costs more than one extra tool call. Greetings, thanks, and messages with images or files are never forced. Cursor agents are not affected.
 
-Turn it off for an agent you mostly use for general questions, or for a model that already checks the house on its own. **Medium** and **Extreme** token modes also skip this, because those modes are trying to spend less.
+Turn it off if you mostly ask general questions, or if your models already check the house on their own. **Medium** and **Extreme** token modes also skip this, because those modes are trying to spend less.
 
 ## Config catalog
 
