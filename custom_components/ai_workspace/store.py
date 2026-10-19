@@ -30,9 +30,13 @@ def _usage_where(
     origin: str | None = None,
     model: str | None = None,
     exclude_tts: bool = False,
+    user_id: str | None = None,
 ) -> tuple[str, list[object]]:
     clauses = ["1=1"]
     params: list[object] = []
+    if user_id:
+        clauses.append("user_id = ?")
+        params.append(_text(user_id))
     if since:
         clauses.append("created_at >= ?")
         params.append(since)
@@ -711,6 +715,7 @@ class Store:
         session_id: str | None = None,
         origin: str | None = None,
         model: str | None = None,
+        user_id: str | None = None,
     ) -> dict:
         where, params = _usage_where(
             since=since,
@@ -719,6 +724,7 @@ class Store:
             session_id=session_id,
             origin=origin,
             model=model,
+            user_id=user_id,
         )
         with self._lock:
             row = self._conn.execute(
@@ -757,8 +763,9 @@ class Store:
         until: str | None = None,
         agent_id: str | None = None,
         model: str | None = None,
+        user_id: str | None = None,
     ) -> list[dict]:
-        where, params = _usage_where(since=since, until=until, agent_id=agent_id, model=model)
+        where, params = _usage_where(since=since, until=until, agent_id=agent_id, model=model, user_id=user_id)
         with self._lock:
             rows = self._conn.execute(
                 f"""
@@ -796,16 +803,10 @@ class Store:
             for row in rows
         ]
 
-    def last_usage(self, *, agent_id: str | None = None, session_id: str | None = None) -> dict | None:
-        clauses = ["1=1"]
-        params: list[object] = []
-        if agent_id:
-            clauses.append("agent_id = ?")
-            params.append(_text(agent_id))
-        if session_id:
-            clauses.append("session_id = ?")
-            params.append(_text(session_id))
-        where = " AND ".join(clauses)
+    def last_usage(
+        self, *, agent_id: str | None = None, session_id: str | None = None, user_id: str | None = None
+    ) -> dict | None:
+        where, params = _usage_where(agent_id=agent_id, session_id=session_id, user_id=user_id)
         with self._lock:
             row = self._conn.execute(
                 f"SELECT * FROM usage_turns WHERE {where} ORDER BY id DESC LIMIT 1",
@@ -837,6 +838,7 @@ class Store:
         until: str | None = None,
         agent_id: str | None = None,
         model: str | None = None,
+        user_id: str | None = None,
     ) -> list[dict]:
         where, params = _usage_where(
             since=since,
@@ -844,6 +846,7 @@ class Store:
             agent_id=agent_id,
             model=model,
             exclude_tts=True,
+            user_id=user_id,
         )
         with self._lock:
             rows = self._conn.execute(
@@ -894,17 +897,19 @@ class Store:
             )
         return models
 
-    def usage_filter_choices(self, *, agent_id: str | None = None) -> dict:
-        model_where, model_params = _usage_where(agent_id=agent_id)
+    def usage_filter_choices(self, *, agent_id: str | None = None, user_id: str | None = None) -> dict:
+        model_where, model_params = _usage_where(agent_id=agent_id, user_id=user_id)
+        agent_where, agent_params = _usage_where(user_id=user_id)
         with self._lock:
             agents = self._conn.execute(
-                """
+                f"""
                 SELECT agent_id, MAX(agent) AS agent
                 FROM usage_turns
-                WHERE TRIM(COALESCE(agent_id, '')) != ''
+                WHERE TRIM(COALESCE(agent_id, '')) != '' AND {agent_where}
                 GROUP BY agent_id
                 ORDER BY agent COLLATE NOCASE
                 """,
+                agent_params,
             ).fetchall()
             models = self._conn.execute(
                 f"""
@@ -930,6 +935,7 @@ class Store:
         until: str | None = None,
         agent_id: str | None = None,
         model: str | None = None,
+        user_id: str | None = None,
     ) -> list[dict]:
         where, params = _usage_where(
             since=since,
@@ -937,6 +943,7 @@ class Store:
             agent_id=agent_id,
             model=model,
             exclude_tts=True,
+            user_id=user_id,
         )
         with self._lock:
             rows = self._conn.execute(

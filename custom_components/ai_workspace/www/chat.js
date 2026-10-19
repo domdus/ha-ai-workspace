@@ -1,6 +1,7 @@
 const CACHE = new URL(import.meta.url).search;
 const { stringsFor } = await import(`./i18n.js${CACHE}`);
 const { takeSpeech, speechPlain } = await import(`./speech.js${CACHE}`);
+const { stripRemoteMedia, watchRenderedMedia } = await import(`./media_guard.js${CACHE}`);
 
 const API = "/api/ai_workspace";
 
@@ -46,9 +47,15 @@ function haCreate(...names) {
   return document.createElement(names[names.length - 1] || "div");
 }
 
-function fillHaMarkdown(el, body) {
-  const text = String(body || "");
+function setMarkdown(el, body) {
+  const text = stripRemoteMedia(String(body || ""));
   el.content = text;
+  watchRenderedMedia(el);
+  return text;
+}
+
+function fillHaMarkdown(el, body) {
+  const text = setMarkdown(el, body);
   styleMarkdownTables(el);
   if (!text || haHas("ha-markdown")) return;
   el.textContent = text;
@@ -401,17 +408,17 @@ function pathForEntity(entityId, info) {
   const domain = String(entityId || "").split(".")[0];
   if (domain === "automation") {
     const id = configId(info);
-    if (id && !looksLikeEntityId(id)) return `/config/automation/edit/${id}`;
+    if (id && !looksLikeEntityId(id)) return `/config/automation/edit/${encodeURIComponent(id)}`;
   }
   if (domain === "script") {
     const id = configId(info) || String(entityId).replace(/^script\./, "");
-    if (id) return `/config/script/edit/${id}`;
+    if (id) return `/config/script/edit/${encodeURIComponent(id)}`;
   }
   if (domain === "scene") {
     const id = configId(info) || String(entityId).replace(/^scene\./, "");
-    if (id) return `/config/scene/edit/${id}`;
+    if (id) return `/config/scene/edit/${encodeURIComponent(id)}`;
   }
-  return `/config/entities/entity/${entityId}`;
+  return `/config/entities/entity/${encodeURIComponent(entityId)}`;
 }
 
 function entityIdFromHaPath(path) {
@@ -443,15 +450,15 @@ function rewriteHaPath(pathname) {
     if (looksLikeEntityId(raw) || info?.state || info?.entry) {
       if (domain === "automation" || kind === "automation") {
         const id = configId(info);
-        if (id && !looksLikeEntityId(id)) return `/config/automation/edit/${id}`;
+        if (id && !looksLikeEntityId(id)) return `/config/automation/edit/${encodeURIComponent(id)}`;
       }
       if (domain === "script" || kind === "script") {
         const id = configId(info) || entityId.replace(/^script\./, "");
-        if (id) return `/config/script/edit/${id}`;
+        if (id) return `/config/script/edit/${encodeURIComponent(id)}`;
       }
       if (domain === "scene" || kind === "scene") {
         const id = configId(info) || entityId.replace(/^scene\./, "");
-        if (id) return `/config/scene/edit/${id}`;
+        if (id) return `/config/scene/edit/${encodeURIComponent(id)}`;
       }
       if (looksLikeEntityId(raw) && domain !== kind) return pathForEntity(entityId, info);
     }
@@ -567,7 +574,7 @@ function haLinkCatalog() {
   for (const device of Object.values(hass.devices || {})) {
     const id = device?.id;
     if (!id) continue;
-    rememberUniqueName(nameToPath, device.name_by_user || device.name, `/config/devices/device/${id}`);
+    rememberUniqueName(nameToPath, device.name_by_user || device.name, `/config/devices/device/${encodeURIComponent(id)}`);
   }
   const names = [];
   for (const row of nameToPath.values()) {
@@ -625,30 +632,6 @@ function linkifyHaMentions(content, mentions = true) {
     text = text.replace(re, (_whole, lead, matched) => `${lead}${hold(`[${matched}](${paths.get(matched)})`)}`);
   }
   return text.replace(/\u0000HA(\d+)\u0000/g, (_m, index) => held[Number(index)] || "");
-}
-
-function safeImageUrl(raw) {
-  const value = String(raw || "").trim().replace(/^<|>$/g, "");
-  if (/^data:image\//i.test(value)) return true;
-  if (value.startsWith("/") && !value.startsWith("//")) return true;
-  try {
-    return new URL(value).origin === window.location.origin;
-  } catch (_err) {
-    return false;
-  }
-}
-
-function stripRemoteImages(text) {
-  return String(text || "")
-    .replace(/!\[([^\]]*)\]\(\s*(<[^>]*>|[^)\s]+)(?:\s+"[^"]*")?\s*\)/g, (whole, alt, url) => {
-      if (safeImageUrl(url)) return whole;
-      const target = url.replace(/^<|>$/g, "");
-      return `[${alt || target}](${target})`;
-    })
-    .replace(/<img\b[^>]*>/gi, (tag) => {
-      const src = /\bsrc\s*=\s*["']?([^"'\s>]+)/i.exec(tag)?.[1] || "";
-      return safeImageUrl(src) ? tag : "";
-    });
 }
 
 export async function mountAiWorkspace(root, options = {}) {
@@ -1318,7 +1301,7 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function rewriteAssistantLinks(content, mentions = true) {
-    let text = stripRemoteImages(content);
+    let text = stripRemoteMedia(content);
     const here = window.location.origin;
     if (!/^https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?$/i.test(here)) {
       text = text.replace(/https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?/gi, here);
@@ -2017,7 +2000,7 @@ export async function mountAiWorkspace(root, options = {}) {
     const visible = rewriteAssistantLinks(stableStreamMarkdown(streamFull, done), done);
     if (visible === streamPainted) return false;
     streamPainted = visible;
-    streamNode.content = visible;
+    setMarkdown(streamNode, visible);
     streamNode.hidden = !visible;
     styleMarkdownTables(streamNode);
     const bubble = streamNode.closest(".bubble");
@@ -2770,6 +2753,7 @@ export async function mountAiWorkspace(root, options = {}) {
   let recognition = null;
   let capture = null;
   let captureStarting = false;
+  let captureTicket = 0;
   let listening = false;
   let speechBase = "";
 
@@ -3005,6 +2989,7 @@ export async function mountAiWorkspace(root, options = {}) {
     } catch (_err) {
       /* already stopped */
     }
+    captureTicket += 1;
     const active = capture;
     capture = null;
     active?.stop().catch(() => {});
@@ -3174,10 +3159,16 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     if (capture || captureStarting) return;
     captureStarting = true;
+    const ticket = ++captureTicket;
     let stream = null;
     let ctx = null;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1 } });
+      if (ticket !== captureTicket) {
+        // Stopped or sent while the browser was still asking for the microphone.
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
       ctx = new AudioContext();
       const source = ctx.createMediaStreamSource(stream);
       const proc = ctx.createScriptProcessor(4096, 1, 1);
@@ -3700,7 +3691,7 @@ export async function mountAiWorkspace(root, options = {}) {
       if (token !== streamToken) return;
       if (response?.status === 404) {
         const node = assistant.querySelector(".text");
-        node.content = await errorText(response);
+        setMarkdown(node, await errorText(response));
         node.hidden = !node.content;
         assistant.classList.add("error", "has-text");
         setActivity(assistant, "");
@@ -3708,7 +3699,7 @@ export async function mountAiWorkspace(root, options = {}) {
       }
       if (!response?.ok || !response.body) {
         const node = assistant.querySelector(".text");
-        node.content = await errorText(response);
+        setMarkdown(node, await errorText(response));
         node.hidden = !node.content;
         assistant.classList.add("error", "has-text");
         setActivity(assistant, "");
@@ -3738,7 +3729,7 @@ export async function mountAiWorkspace(root, options = {}) {
           assistant.classList.add("error");
           const textNode = assistant.querySelector(".text");
           if (!streamFull) {
-            textNode.content = data.message || t("error");
+            setMarkdown(textNode, data.message || t("error"));
             textNode.hidden = !textNode.content;
             assistant.classList.add("has-text");
           }
@@ -3796,7 +3787,7 @@ export async function mountAiWorkspace(root, options = {}) {
         assistant.classList.add("error");
         const node = assistant.querySelector(".text");
         if (!streamFull) {
-          node.content = String(error?.message || error);
+          setMarkdown(node, String(error?.message || error));
           node.hidden = !node.content;
           assistant.classList.add("has-text");
         }
@@ -4036,6 +4027,9 @@ export async function mountAiWorkspace(root, options = {}) {
   let usageModel = "";
   let usageSince = "";
   let usageUntil = "";
+  let usageLoadGen = 0;
+  let usagePickerQuiet = false;
+  let usageSelectQuiet = false;
 
   function activityWhen(iso) {
     const date = new Date(iso);
@@ -4562,19 +4556,21 @@ export async function mountAiWorkspace(root, options = {}) {
     if (start > end) [start, end] = [end, start];
     const today = usagePresetRange("today");
     const month = usagePresetRange("month");
+    let nextRange = "custom";
+    let nextSince = "";
+    let nextUntil = "";
     if (usageSameDay(start, today.start) && usageSameDay(end, today.end)) {
-      usageRange = "today";
-      usageSince = "";
-      usageUntil = "";
+      nextRange = "today";
     } else if (usageSameDay(start, month.start) && usageSameDay(end, month.end)) {
-      usageRange = "month";
-      usageSince = "";
-      usageUntil = "";
+      nextRange = "month";
     } else {
-      usageRange = "custom";
-      usageSince = usageDayText(start);
-      usageUntil = usageDayText(end);
+      nextSince = usageDayText(start);
+      nextUntil = usageDayText(end);
     }
+    if (usageRange === nextRange && usageSince === nextSince && usageUntil === nextUntil) return;
+    usageRange = nextRange;
+    usageSince = nextSince;
+    usageUntil = nextUntil;
     loadUsage();
   }
 
@@ -4591,19 +4587,25 @@ export async function mountAiWorkspace(root, options = {}) {
       options.push({ value: current, label: current });
     }
     const value = current || "all";
+    usageSelectQuiet = true;
     if (select.localName === "ha-select") {
       select.options = options;
       select.value = value;
-      return;
+    } else {
+      select.replaceChildren();
+      for (const item of options) {
+        const opt = document.createElement("option");
+        opt.value = item.value === "all" ? "" : item.value;
+        opt.textContent = item.label;
+        select.appendChild(opt);
+      }
+      select.value = current || "";
     }
-    select.replaceChildren();
-    for (const item of options) {
-      const opt = document.createElement("option");
-      opt.value = item.value === "all" ? "" : item.value;
-      opt.textContent = item.label;
-      select.appendChild(opt);
-    }
-    select.value = current || "";
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        usageSelectQuiet = false;
+      });
+    });
   }
 
   function createUsageSelect(className, label, onChange) {
@@ -4625,8 +4627,6 @@ export async function mountAiWorkspace(root, options = {}) {
     return wrap;
   }
 
-  let usagePickerQuiet = false;
-
   function createUsageDateFilter() {
     const tag = haHas("ha-date-range-nav")
       ? "ha-date-range-nav"
@@ -4640,6 +4640,7 @@ export async function mountAiWorkspace(root, options = {}) {
       const hass = hassObj();
       if (hass && "hass" in picker) picker.hass = hass;
       const { start, end } = usageCurrentRange();
+      usagePickerQuiet = true;
       picker.startDate = start;
       picker.endDate = end;
       picker.addEventListener("value-changed", (event) => {
@@ -4649,6 +4650,11 @@ export async function mountAiWorkspace(root, options = {}) {
         const endDate = value.endDate instanceof Date ? value.endDate : picker.endDate;
         if (!(startDate instanceof Date) || !(endDate instanceof Date)) return;
         applyUsagePickerRange(startDate, endDate);
+      });
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          usagePickerQuiet = false;
+        });
       });
       return [picker];
     }
@@ -4709,7 +4715,11 @@ export async function mountAiWorkspace(root, options = {}) {
       usagePickerQuiet = true;
       picker.startDate = start;
       picker.endDate = end;
-      usagePickerQuiet = false;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          usagePickerQuiet = false;
+        });
+      });
       return;
     }
     const fromInput = host?.querySelector(".usage-filter-from");
@@ -4727,12 +4737,18 @@ export async function mountAiWorkspace(root, options = {}) {
       host?.querySelectorAll("ha-date-range-nav, ha-date-range-picker, .usage-native-dates").forEach((el) => el.remove());
       usageFiltersEl.append(
         createUsageSelect("usage-filter-agent", t("usage_filter_agent"), (value) => {
-          usageAgent = usageSelectValue(value);
+          if (usageSelectQuiet) return;
+          const next = usageSelectValue(value);
+          if (next === usageAgent) return;
+          usageAgent = next;
           usageModel = "";
           loadUsage();
         }),
         createUsageSelect("usage-filter-model", t("usage_filter_model"), (value) => {
-          usageModel = usageSelectValue(value);
+          if (usageSelectQuiet) return;
+          const next = usageSelectValue(value);
+          if (next === usageModel) return;
+          usageModel = next;
           loadUsage();
         }),
       );
@@ -4745,8 +4761,10 @@ export async function mountAiWorkspace(root, options = {}) {
 
   async function loadUsage() {
     if (!usageList) return;
+    const gen = ++usageLoadGen;
+    const stale = () => gen !== usageLoadGen;
     await ensureHaComponents(["ha-select", "ha-date-range-nav", "ha-date-range-picker"]);
-    usageList.replaceChildren();
+    if (stale()) return;
     renderUsageRange(usageRange);
     const query = new URLSearchParams({ range: usageRange });
     if (sessionId) query.set("session_id", sessionId);
@@ -4755,21 +4773,28 @@ export async function mountAiWorkspace(root, options = {}) {
     if (usageSince) query.set("since", usageSince);
     if (usageUntil) query.set("until", usageUntil);
     const resp = await apiFetch(`${API}/usage?${query}`);
+    if (stale()) return;
     if (!resp || !resp.ok) {
       renderUsageFilters();
+      if (stale()) return;
       const note = document.createElement("p");
       note.className = "usage-empty";
       note.textContent = t("usage_empty");
-      usageList.appendChild(note);
+      usageList.replaceChildren(note);
       return;
     }
     const body = await resp.json();
+    if (stale()) return;
     renderUsageFilters(body);
+    if (stale()) return;
+    const frag = document.createDocumentFragment();
     if (body.enabled === false) {
       const note = document.createElement("p");
       note.className = "usage-empty";
       note.textContent = t("usage_disabled");
-      usageList.appendChild(note);
+      frag.appendChild(note);
+      if (stale()) return;
+      usageList.replaceChildren(frag);
       return;
     }
     const grid = document.createElement("div");
@@ -4782,26 +4807,26 @@ export async function mountAiWorkspace(root, options = {}) {
       metricCard(t("usage_month"), body.totals?.month),
       metricCard(t("usage_all"), body.totals?.all),
     );
-    usageList.appendChild(grid);
+    frag.appendChild(grid);
     if (body.session && body.session.turns) {
-      usageList.appendChild(metricCard(t("usage_this_chat"), body.session));
+      frag.appendChild(metricCard(t("usage_this_chat"), body.session));
     }
     if (body.tts?.today?.turns || body.tts?.all?.turns) {
-      usageList.appendChild(metricCard(t("usage_tts"), body.tts.today, "tts"));
+      frag.appendChild(metricCard(t("usage_tts"), body.tts.today, "tts"));
     }
     const kpis = body.kpis || {};
     if (kpis.most_spend || kpis.most_used || kpis.most_efficient || kpis.leanest) {
       const heading = document.createElement("p");
       heading.className = "usage-heading";
       heading.textContent = t("usage_compare");
-      usageList.appendChild(heading);
+      frag.appendChild(heading);
       const kpiGrid = document.createElement("div");
       kpiGrid.className = "usage-kpis";
       if (kpis.most_spend) kpiGrid.appendChild(kpiCard(t("usage_kpi_spend"), kpis.most_spend));
       if (kpis.most_used) kpiGrid.appendChild(kpiCard(t("usage_kpi_used"), kpis.most_used));
       if (kpis.most_efficient) kpiGrid.appendChild(kpiCard(t("usage_kpi_efficient"), kpis.most_efficient));
       if (kpis.leanest) kpiGrid.appendChild(kpiCard(t("usage_kpi_lean"), kpis.leanest));
-      usageList.appendChild(kpiGrid);
+      frag.appendChild(kpiGrid);
     }
     const days = Array.isArray(body.days) ? body.days : [];
     if (days.length) {
@@ -4813,29 +4838,29 @@ export async function mountAiWorkspace(root, options = {}) {
       else if (body.range === "custom" && from) chartsHead.textContent = t("usage_days_from", { from });
       else if (body.range === "custom" && to) chartsHead.textContent = t("usage_days_until", { to });
       else chartsHead.textContent = t("usage_days");
-      usageList.appendChild(chartsHead);
+      frag.appendChild(chartsHead);
       const charts = document.createElement("div");
       charts.className = "usage-charts";
       charts.append(
         usageChart(t("usage_chart_cost"), days, "cost_usd", (value) => money(value)),
         usageChart(t("usage_chart_tokens"), days, "total_tokens", (value) => tokenLabel(value)),
       );
-      usageList.appendChild(charts);
+      frag.appendChild(charts);
     }
     const models = Array.isArray(body.models) ? body.models : [];
     if (models.length) {
       const heading = document.createElement("p");
       heading.className = "usage-heading";
       heading.textContent = t("usage_models");
-      usageList.appendChild(heading);
-      usageList.appendChild(modelTable(models));
+      frag.appendChild(heading);
+      frag.appendChild(modelTable(models));
     }
     const agents = Array.isArray(body.agents) ? body.agents : [];
     if (agents.length) {
       const heading = document.createElement("p");
       heading.className = "usage-heading";
       heading.textContent = t("usage_agents");
-      usageList.appendChild(heading);
+      frag.appendChild(heading);
       for (const agent of agents) {
         const row = document.createElement("article");
         row.className = "usage-agent";
@@ -4849,19 +4874,21 @@ export async function mountAiWorkspace(root, options = {}) {
         all.className = "usage-agent-all";
         all.textContent = `${t("usage_all")}: ${usageLine(agent.all)}`;
         row.append(name, today, all);
-        usageList.appendChild(row);
+        frag.appendChild(row);
       }
     }
     if (!body.totals?.all?.turns) {
       const note = document.createElement("p");
       note.className = "usage-empty";
       note.textContent = t("usage_empty");
-      usageList.appendChild(note);
+      frag.appendChild(note);
     }
     const hint = document.createElement("p");
     hint.className = "usage-hint";
     hint.textContent = t("usage_ha_hint");
-    usageList.appendChild(hint);
+    frag.appendChild(hint);
+    if (stale()) return;
+    usageList.replaceChildren(frag);
   }
 
   function syncUsageButtons(open) {
@@ -4911,6 +4938,7 @@ export async function mountAiWorkspace(root, options = {}) {
   function openUsagePage() {
     closeHistory();
     closeNavIfOverlay();
+    const already = wrap.classList.contains("page-usage") && Boolean(usageEl) && !usageEl.hidden;
     wrap.classList.add("page-usage");
     wrap.classList.remove("usage-open");
     if (usageEl) {
@@ -4918,7 +4946,7 @@ export async function mountAiWorkspace(root, options = {}) {
       usageEl.setAttribute("aria-hidden", "false");
     }
     syncUsageButtons(true);
-    loadUsage();
+    if (!already) loadUsage();
   }
 
   function closeUsagePage() {

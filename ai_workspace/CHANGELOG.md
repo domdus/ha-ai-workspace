@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.3.0b9
+
+- Setup and Configure load again on Home Assistant 2025.12 to 2026.8. The voice row needed a library that only ships from 2026.9
+- When no MCP server is found, the first setup form says to add Home Assistant’s **Model Context Protocol Server** integration (or HA-MCP) instead of asking to leave the address empty
+- The config catalog rebuilds once after a burst of registry changes (startup, bulk renames) instead of once per change
+- Change History looks up chat titles off Home Assistant’s event loop
+
+Security hardening:
+
+- Cursor agents in chats from normal users and voice satellites only get MCP tools (no shell, files, or web). Signed-in admins keep the full toolset. The restriction is sent again on every resume, and an SDK that cannot apply it refuses to start the agent instead of falling back to all tools. The title helper no longer retries with tools
+- Chat replies, user messages, and error texts no longer load off-site images, video, or audio. Reference-style images, `srcset`, `poster`, quoted `>` in attributes, and single-quoted titles are covered, and rendered replies are checked again in the page
+- Home Assistant accepts the runtime’s callbacks (Change History, MCP notes) without a runtime token only from the same machine, and keeps at most 100 pending Change History entries
+- Runtime without a token (loopback only) answers only `127.0.0.1` / `localhost` host names, which blocks DNS rebinding. `/docs` and `/openapi.json` are off, the MCP proxy secret is hidden in the access log, and chat attachments have size limits
+- Usage page: normal users see only their own usage. The config catalog MCP endpoint is admin-only. Broken JSON gets a 400 instead of a server error
+- Assist users that no longer exist are not treated as admins
+- `GIT_TOKEN` is passed to `git clone` as an HTTP header in the environment, not in the clone URL, so it does not show up in the process list
+- Deep links to automations, scripts, scenes, entities, and devices escape their ids
+- Stopping or sending while the browser still asks for the microphone no longer leaves the mic recording
+
 ## 1.3.0b8
 
 - Usage page filters use Home Assistant’s own dropdowns and date range picker (with a plain fallback), and the main buttons use the accent style

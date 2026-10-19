@@ -43,6 +43,21 @@ def test_bootstrap_skips_existing_checkout(tmp_path: Path, monkeypatch: pytest.M
     assert (workspace / "kept.txt").read_text(encoding="utf-8") == "stay\n"
 
 
+def test_git_token_goes_in_env_not_command_line(monkeypatch: pytest.MonkeyPatch) -> None:
+    import base64
+
+    from app.git_bootstrap import _git_env
+
+    monkeypatch.setenv("GIT_TOKEN", "secret-pat")
+    monkeypatch.delenv("GIT_SSH_KEY", raising=False)
+    env = _git_env("https://github.com/org/repo.git")
+    assert "GIT_TOKEN" not in env
+    assert env["GIT_CONFIG_KEY_0"] == "http.https://github.com/.extraHeader"
+    basic = env["GIT_CONFIG_VALUE_0"].removeprefix("Authorization: Basic ")
+    assert base64.b64decode(basic).decode() == "x-access-token:secret-pat"
+    assert "GIT_CONFIG_COUNT" not in _git_env("git@github.com:org/repo.git")
+
+
 def test_redact_url_strips_userinfo() -> None:
     assert _redact_url("https://x-access-token:secret@github.com/org/repo.git") == "https://github.com/org/repo.git"
     assert _redact_url("git@github.com:org/repo.git") == "git@github.com:org/repo.git"

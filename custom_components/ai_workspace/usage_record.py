@@ -294,6 +294,7 @@ def dashboard_payload(
     model: str = "",
     since: str = "",
     until: str = "",
+    user_id: str = "",
 ) -> dict[str, Any]:
     settings = (hass.data.get(DOMAIN) or {}).get("settings")
     enabled = bool(getattr(settings, "track_usage", True))
@@ -320,7 +321,8 @@ def dashboard_payload(
         compare_since, compare_until = from_iso, to_iso
     else:
         compare_since, compare_until = month, None
-    filt = {"agent_id": agent_filter, "model": model_filter}
+    owner = str(user_id or "").strip() or None
+    filt = {"agent_id": agent_filter, "model": model_filter, "user_id": owner}
     tz = zone_info(hass)
     if chosen == "custom":
         chart_end = datetime.fromisoformat(compare_until or tomorrow).astimezone(tz)
@@ -346,7 +348,7 @@ def dashboard_payload(
         if chosen == "custom"
         else None,
     }
-    last = store.last_usage(agent_id=agent_filter)
+    last = store.last_usage(agent_id=agent_filter, user_id=owner)
     providers = (hass.data.get(DOMAIN) or {}).get("providers") or {}
     agents_cfg = list(providers.items())
     by_id = {row["agent_id"]: row for row in store.usage_by_agent(since=today, until=tomorrow, **filt)}
@@ -364,9 +366,11 @@ def dashboard_payload(
                 "title": provider_label(provider),
                 "provider": provider_kind(provider),
                 "model": provider_model(provider),
-                "today": store.summarize_usage(since=today, until=tomorrow, agent_id=cfg_id, model=model_filter),
-                "month": store.summarize_usage(since=month, agent_id=cfg_id, model=model_filter),
-                "all": store.summarize_usage(agent_id=cfg_id, model=model_filter),
+                "today": store.summarize_usage(
+                    since=today, until=tomorrow, agent_id=cfg_id, model=model_filter, user_id=owner
+                ),
+                "month": store.summarize_usage(since=month, agent_id=cfg_id, model=model_filter, user_id=owner),
+                "all": store.summarize_usage(agent_id=cfg_id, model=model_filter, user_id=owner),
             }
         )
     for extra_id, row in all_by.items():
@@ -381,15 +385,18 @@ def dashboard_payload(
                 "provider": row.get("provider") or "",
                 "model": row.get("model") or "",
                 "today": by_id.get(extra_id)
-                or store.summarize_usage(since=today, until=tomorrow, agent_id=extra_id, model=model_filter),
-                "month": month_by.get(extra_id) or store.summarize_usage(since=month, agent_id=extra_id, model=model_filter),
+                or store.summarize_usage(
+                    since=today, until=tomorrow, agent_id=extra_id, model=model_filter, user_id=owner
+                ),
+                "month": month_by.get(extra_id)
+                or store.summarize_usage(since=month, agent_id=extra_id, model=model_filter, user_id=owner),
                 "all": row,
             }
         )
     if model_filter and not agent_filter:
         agents = [row for row in agents if int((row.get("all") or {}).get("turns") or 0) > 0]
     session = store.summarize_usage(session_id=session_id, **filt) if session_id else None
-    last_session = store.last_usage(session_id=session_id) if session_id else None
+    last_session = store.last_usage(session_id=session_id, user_id=owner) if session_id else None
     tts = {
         "today": store.summarize_usage(since=today, until=tomorrow, origin="tts", **filt),
         "month": store.summarize_usage(since=month, origin="tts", **filt),
@@ -408,7 +415,7 @@ def dashboard_payload(
     for cfg_id, provider in agents_cfg:
         seen_filters.add(cfg_id)
         filter_agents.append({"id": cfg_id, "title": provider_label(provider)})
-    choices = store.usage_filter_choices(agent_id=agent_filter)
+    choices = store.usage_filter_choices(agent_id=agent_filter, user_id=owner)
     for row in choices["agents"]:
         if row["id"] in seen_filters:
             continue

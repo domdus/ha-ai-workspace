@@ -7,6 +7,7 @@ from app.providers.base import ProviderInfo
 from app.settings import Settings
 from app.store import Session
 
+LOCAL = "http://127.0.0.1"
 
 class FakeCursor:
     def __init__(self) -> None:
@@ -50,9 +51,52 @@ def settings(tmp_path: Path, auth_mode: str = "dev", host: str = "127.0.0.1", to
     )
 
 
+def test_open_loopback_mode_refuses_other_host_names(tmp_path: Path) -> None:
+    app = create_app(settings(tmp_path), {"cursor": FakeCursor()})
+    with TestClient(app, base_url="http://rebound.example:8090") as client:
+        assert client.get("/api/sessions").status_code == 403
+        assert client.get("/").status_code == 403
+    with TestClient(app, base_url="http://localhost:8090") as client:
+        assert client.get("/api/sessions").status_code == 200
+    with TestClient(app, base_url="http://[::1]:8090") as client:
+        assert client.get("/api/sessions").status_code == 200
+
+
+def test_api_docs_are_hidden(tmp_path: Path) -> None:
+    app = create_app(settings(tmp_path, token="s3cret"), {"cursor": FakeCursor()})
+    with TestClient(app, base_url=LOCAL) as client:
+        assert client.get("/docs").status_code == 404
+        assert client.get("/openapi.json").status_code == 404
+
+
+def test_chat_rejects_oversized_attachments(tmp_path: Path) -> None:
+    app = create_app(settings(tmp_path), {"cursor": FakeCursor()})
+    with TestClient(app, base_url=LOCAL) as client:
+        session = client.post("/api/sessions", json={"provider": "cursor"}).json()
+        url = f"/api/sessions/{session['id']}/chat"
+        many = [{"name": "a.png", "mime": "image/png", "data": "AA=="}] * 5
+        assert client.post(url, json={"message": "hi", "images": many}).status_code == 422
+        huge = [{"name": "a.png", "mime": "image/png", "data": "A" * 6_000_004}]
+        assert client.post(url, json={"message": "hi", "images": huge}).status_code == 422
+
+
+def test_access_log_hides_proxy_secret() -> None:
+    import logging
+
+    from app.main import _HideProxySecret
+
+    record = logging.LogRecord(
+        "uvicorn.access", logging.INFO, "", 0, '%s - "%s %s HTTP/%s" %d',
+        ("127.0.0.1:5000", "POST", "/api/mcp-proxy/abc123secret/digest/actor", "1.1", 200), None,
+    )
+    _HideProxySecret().filter(record)
+    assert "abc123secret" not in record.getMessage()
+    assert "/api/mcp-proxy/***/digest/actor" in record.getMessage()
+
+
 def test_token_is_required_when_set(tmp_path: Path) -> None:
     app = create_app(settings(tmp_path, token="s3cret"), {"cursor": FakeCursor()})
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOCAL) as client:
         assert client.get("/api/health").status_code == 200
         assert client.get("/api/sessions").status_code == 401
         assert client.get("/api/sessions", headers={"Authorization": "Bearer wrong"}).status_code == 401
@@ -61,7 +105,7 @@ def test_token_is_required_when_set(tmp_path: Path) -> None:
 
 def test_network_bound_runtime_without_token_refuses_chat(tmp_path: Path) -> None:
     app = create_app(settings(tmp_path, host="0.0.0.0"), {"cursor": FakeCursor()})
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOCAL) as client:
         health = client.get("/api/health").json()
         assert health["token_required"] is True
         assert client.post("/api/sessions", json={"provider": "cursor"}).status_code == 401
@@ -69,7 +113,7 @@ def test_network_bound_runtime_without_token_refuses_chat(tmp_path: Path) -> Non
 
 def test_chat_keeps_agent_id_and_transcript(tmp_path: Path) -> None:
     app = create_app(settings(tmp_path), {"cursor": FakeCursor()})
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOCAL) as client:
         created = client.post("/api/sessions", json={"provider": "cursor"})
         assert created.status_code == 201
         session_id = created.json()["id"]
@@ -96,7 +140,7 @@ class FakeCursorTitled(FakeCursor):
 
 def test_chat_keeps_short_first_prompt_as_title(tmp_path: Path) -> None:
     app = create_app(settings(tmp_path), {"cursor": FakeCursorTitled()})
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOCAL) as client:
         created = client.post("/api/sessions", json={"provider": "cursor"})
         session_id = created.json()["id"]
         streamed = client.post(
@@ -111,7 +155,7 @@ def test_chat_keeps_short_first_prompt_as_title(tmp_path: Path) -> None:
 
 def test_chat_summarizes_long_first_prompt(tmp_path: Path) -> None:
     app = create_app(settings(tmp_path), {"cursor": FakeCursorTitled()})
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOCAL) as client:
         created = client.post("/api/sessions", json={"provider": "cursor"})
         session_id = created.json()["id"]
         streamed = client.post(
@@ -132,7 +176,7 @@ def test_chat_summarizes_long_first_prompt(tmp_path: Path) -> None:
 
 def test_ingress_requires_a_user(tmp_path: Path) -> None:
     app = create_app(settings(tmp_path, "ingress"), {"cursor": FakeCursor()})
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOCAL) as client:
         missing = client.get("/api/sessions")
         assert missing.status_code == 401
         ok = client.get("/api/sessions", headers={"X-Remote-User-Id": "ha-user"})
@@ -142,7 +186,7 @@ def test_ingress_requires_a_user(tmp_path: Path) -> None:
 
 def test_rename_and_delete_session(tmp_path: Path) -> None:
     app = create_app(settings(tmp_path), {"cursor": FakeCursor()})
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOCAL) as client:
         created = client.post("/api/sessions", json={"provider": "cursor"})
         session_id = created.json()["id"]
         renamed = client.patch(f"/api/sessions/{session_id}", json={"title": "Kitchen leak"})
@@ -159,7 +203,7 @@ PNG_1PX = (
 def test_chat_accepts_image_without_text(tmp_path: Path) -> None:
     provider = FakeCursor()
     app = create_app(settings(tmp_path), {"cursor": provider})
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOCAL) as client:
         created = client.post("/api/sessions", json={"provider": "cursor"})
         session_id = created.json()["id"]
         streamed = client.post(
@@ -183,7 +227,7 @@ def test_chat_accepts_yaml_file_without_text(tmp_path: Path) -> None:
     provider = FakeCursor()
     app = create_app(settings(tmp_path), {"cursor": provider})
     yaml_text = "id: porch_light\nalias: Porch light\n"
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOCAL) as client:
         created = client.post("/api/sessions", json={"provider": "cursor"})
         session_id = created.json()["id"]
         streamed = client.post(
@@ -206,7 +250,7 @@ def test_chat_accepts_yaml_file_without_text(tmp_path: Path) -> None:
 def test_chat_accepts_mcp_and_model_from_request(tmp_path: Path) -> None:
     provider = FakeCursor()
     app = create_app(settings(tmp_path), {"cursor": provider})
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOCAL) as client:
         created = client.post("/api/sessions", json={"provider": "cursor"})
         session_id = created.json()["id"]
         streamed = client.post(
@@ -229,7 +273,7 @@ def test_chat_accepts_mcp_and_model_from_request(tmp_path: Path) -> None:
 def test_ha_proxied_chat_does_not_store_messages_on_runtime(tmp_path: Path) -> None:
     provider = FakeCursor()
     app = create_app(settings(tmp_path), {"cursor": provider})
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOCAL) as client:
         created = client.post("/api/sessions", json={"provider": "cursor"})
         session_id = created.json()["id"]
         streamed = client.post(
@@ -247,7 +291,7 @@ def test_ha_proxied_chat_does_not_store_messages_on_runtime(tmp_path: Path) -> N
 
 def test_create_session_keeps_agent_id_for_resume(tmp_path: Path) -> None:
     app = create_app(settings(tmp_path), {"cursor": FakeCursor()})
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOCAL) as client:
         first = client.post(
             "/api/sessions",
             json={"provider": "cursor", "id": "fixed-chat", "agent_id": "cloud-abc"},
@@ -270,7 +314,7 @@ def test_handoff_keeps_runtime_from_retitling_an_old_chat(tmp_path: Path) -> Non
         "User: Which lights are on?\n"
         "Assistant: Kitchen and hallway."
     )
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOCAL) as client:
         created = client.post("/api/sessions", json={"provider": "cursor"})
         session_id = created.json()["id"]
         streamed = client.post(
@@ -290,7 +334,7 @@ def test_handoff_keeps_runtime_from_retitling_an_old_chat(tmp_path: Path) -> Non
 
 def test_empty_chat_without_images_is_rejected(tmp_path: Path) -> None:
     app = create_app(settings(tmp_path), {"cursor": FakeCursor()})
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOCAL) as client:
         created = client.post("/api/sessions", json={"provider": "cursor"})
         session_id = created.json()["id"]
         streamed = client.post(f"/api/sessions/{session_id}/chat", json={"message": "  "})

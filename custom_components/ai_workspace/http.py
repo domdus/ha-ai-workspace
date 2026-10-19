@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import hmac
+import ipaddress
 import json
 import logging
 from urllib.parse import urlparse
@@ -238,6 +239,11 @@ def _runtime_agent_overrides(
     return extra
 
 
+def _full_tools(user_id: str, admin: bool) -> bool:
+    """Shell and file tools only for a signed-in administrator, never for a voice satellite."""
+    return bool(admin) and bool(user_id) and user_id != "assist"
+
+
 async def _runtime_chat(
     hass: HomeAssistant,
     user_id: str,
@@ -276,6 +282,7 @@ async def _runtime_chat(
         "question": (question or message).strip(),
         "origin": origin,
         "history_in_ha": True,
+        "full_tools": _full_tools(user_id, admin),
     }
     if session.agent_id:
         payload["sync_agent_id"] = str(session.agent_id)
@@ -589,7 +596,7 @@ class SessionsView(HomeAssistantView):
 
     async def post(self, request: web.Request) -> web.Response:
         hass: HomeAssistant = _hass(request)
-        body = await request.json()
+        body = await _json_body(request)
         data = _runtime(hass)
         providers = data.get("providers") or {}
         known_assist = assist_agent_ids(hass)
@@ -637,7 +644,7 @@ class SessionView(HomeAssistantView):
     async def patch(self, request: web.Request, session_id: str) -> web.Response:
         hass: HomeAssistant = _hass(request)
         store: Store = _runtime(hass)["store"]
-        body = await request.json()
+        body = await _json_body(request)
         title = str(body.get("title") or "").strip()
         pinned = body.get("pinned")
         session = await hass.async_add_executor_job(store.get_session, _user_id(request), session_id)
@@ -688,6 +695,16 @@ def _is_admin(request: web.Request) -> bool:
     return bool(getattr(request.get("hass_user"), "is_admin", False))
 
 
+async def _json_body(request: web.Request) -> dict[str, Any]:
+    try:
+        body = await request.json()
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        raise web.HTTPBadRequest(text="Invalid JSON.") from None
+    if not isinstance(body, dict):
+        raise web.HTTPBadRequest(text="Invalid JSON.")
+    return body
+
+
 class ChatView(HomeAssistantView):
     url = "/api/ai_workspace/sessions/{session_id}/chat"
     name = "api:ai_workspace:chat"
@@ -703,7 +720,7 @@ class ChatView(HomeAssistantView):
         session = await hass.async_add_executor_job(store.get_session, user_id, session_id)
         if session is None:
             raise web.HTTPNotFound(text="Chat not found.")
-        body = await request.json()
+        body = await _json_body(request)
         images = parse_client_images(body.get("images"))
         files = parse_client_files(body.get("files"))
         message = caption_for(str(body.get("message") or ""), len(images), len(files))
@@ -1034,7 +1051,7 @@ class SpeakView(HomeAssistantView):
         engine = str(settings.tts_engine or "")
         if not engine or engine == TTS_OFF:
             raise web.HTTPBadRequest(text="Text-to-speech is off.")
-        body = await request.json()
+        body = await _json_body(request)
         language = str(body.get("language") or "")
         from .usage_record import tts_usage_scope
 
@@ -1067,6 +1084,8 @@ class HouseMapMcpView(HomeAssistantView):
     async def post(self, request: web.Request) -> web.Response:
         hass = _hass(request)
         _user_id(request)
+        if not _is_admin(request):
+            raise web.HTTPForbidden(text="The config catalog is for administrators.")
         settings = _runtime(hass).get("settings")
         if not getattr(settings, "house_map", False):
             return web.json_response(
@@ -1173,8 +1192,15 @@ def _runtime_token_ok(request: web.Request) -> bool:
     provided = value.strip() if scheme.lower() == "bearer" else ""
     if expected:
         return bool(provided) and hmac.compare_digest(provided.encode(), expected.encode())
-    # Same as the Runtime chat API: an empty token means the local Runtime may call in.
-    return True
+    # Without a token only a Runtime on this host (bound to loopback) may call in.
+    return _loopback_remote(request)
+
+
+def _loopback_remote(request: web.Request) -> bool:
+    try:
+        return ipaddress.ip_address(str(request.remote or "").split("%", 1)[0]).is_loopback
+    except ValueError:
+        return False
 
 
 def _activity_dict(row, chat: str = "", *, ask_restore: bool = False) -> dict:
@@ -1360,7 +1386,7 @@ class UsageView(HomeAssistantView):
     requires_auth = True
 
     async def get(self, request: web.Request) -> web.Response:
-        _user_id(request)
+        owner = "" if _is_admin(request) else _user_id(request)
         hass = _hass(request)
         store: Store = _runtime(hass)["store"]
         session_id = str(request.query.get("session_id") or "").strip()
@@ -1379,6 +1405,7 @@ class UsageView(HomeAssistantView):
                 model=model,
                 since=since,
                 until=until,
+                user_id=owner,
             )
         )
         return self.json(payload)

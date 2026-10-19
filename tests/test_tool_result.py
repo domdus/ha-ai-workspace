@@ -258,7 +258,7 @@ def test_proxy_returns_a_fitted_tool_result(tmp_path: Path) -> None:
             ),
             providers={},
         )
-        with TestClient(app) as client:
+        with TestClient(app, base_url="http://127.0.0.1") as client:
             registry = McpProxy()
             client.app.state.runtime = type("Runtime", (), {"proxy": registry})()
             wrapped = registry.wrap(

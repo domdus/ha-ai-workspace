@@ -69,7 +69,7 @@ async def _is_admin(hass: HomeAssistant, user_id: str) -> bool:
         user = await hass.auth.async_get_user(user_id)
     except Exception:
         return False
-    return user is None or bool(user.is_admin)
+    return user is not None and bool(user.is_admin)
 
 
 def _agent_device_active(hass: HomeAssistant, entry_id: str, subentry_id: str | None) -> bool:

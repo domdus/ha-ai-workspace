@@ -112,6 +112,11 @@ _PROMPT_SELECTOR = TextSelector(TextSelectorConfig(multiline=True))
 _MCP_URL_NOTE = (
     "Leave empty to detect the server automatically. Change this only if you use a different connection than the built-in one."
 )
+_MCP_NONE_FOUND = (
+    "No MCP server found yet. Add Home Assistant's built-in **Model Context Protocol Server** integration "
+    "(Settings → Devices & services → Add integration) or install HA-MCP, then open this form again. "
+    "Or enter the address of another MCP server here."
+)
 
 
 def _same_url(left: str, right: str) -> bool:
@@ -127,7 +132,9 @@ def _looks_detected_mcp(url: str) -> bool:
     return parsed.port in {8086, 9583, 9584} or host in {"ha-mcp"}
 
 
-def _mcp_url_note(url: str, auto: bool) -> str:
+def _mcp_url_note(url: str, auto: bool, none_found: bool = False) -> str:
+    if none_found:
+        return _MCP_NONE_FOUND
     if not auto:
         return _MCP_URL_NOTE
     path = (urlparse(url).path or "").lower()
@@ -138,10 +145,10 @@ def _mcp_url_note(url: str, auto: bool) -> str:
     return "We found a server automatically. Keep this unless you use a different one."
 
 
-def _form_placeholders(*, mcp_url: str = "", mcp_auto: bool = False) -> dict[str, str]:
+def _form_placeholders(*, mcp_url: str = "", mcp_auto: bool = False, none_found: bool = False) -> dict[str, str]:
     return {
         "mcp_url_mark": " · auto-detected" if mcp_auto else "",
-        "mcp_url_note": _mcp_url_note(mcp_url, mcp_auto),
+        "mcp_url_note": _mcp_url_note(mcp_url, mcp_auto, none_found),
     }
 
 
@@ -315,7 +322,11 @@ class _SideBySide(Selector):
         return self._nested(value)
 
     def serialize(self) -> dict:
-        from probatio import to_field_list
+        try:
+            from probatio import to_field_list
+        except ImportError:
+            # Home Assistant before 2026.9 ships voluptuous-serialize instead.
+            from voluptuous_serialize import convert as to_field_list
 
         return {
             "type": "grid",
@@ -469,6 +480,7 @@ class AiWorkspaceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         placeholders = _form_placeholders(
             mcp_url=str(defaults.get(CONF_MCP_URL) or ""),
             mcp_auto=mcp_auto,
+            none_found=list(kinds or []) == [MCP_CUSTOM],
         )
         return self.async_show_form(
             step_id="user",

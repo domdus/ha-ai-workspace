@@ -254,6 +254,77 @@ def test_old_chat_does_not_resume_empty_thread(tmp_path: Path, monkeypatch) -> N
     assert resumed == []
 
 
+def test_restricted_chat_passes_mcp_only_on_create_and_resume(tmp_path: Path, monkeypatch) -> None:
+    _install_fake_sdk(monkeypatch)
+    seen: list[tuple[str, object]] = []
+
+    class FakeClient:
+        async def create_agent(self, options):
+            seen.append(("create", getattr(options, "tools", None)))
+            return SimpleNamespace(agent_id="fresh")
+
+        async def resume_agent(self, agent_id, options):
+            seen.append(("resume", getattr(options, "tools", None)))
+            return SimpleNamespace(agent_id=agent_id)
+
+    runtime = CursorRuntime(_settings(tmp_path))
+    runtime._client = FakeClient()
+    session = Session("s1", "u1", "cursor", "Chat", "old-agent", "t", "t")
+    asyncio.run(runtime.open_agent(session, {}, tools=["mcp"]))
+    assert seen == [("resume", ["mcp"])]
+    agent, created = asyncio.run(runtime.open_agent(session, {}))
+    assert created
+    assert agent.agent_id == "fresh"
+    assert seen[-1] == ("create", None)
+    asyncio.run(runtime.open_agent(session, {}, tools=["mcp"]))
+    assert seen[-1] == ("create", ["mcp"])
+
+
+def test_tool_restriction_is_never_dropped(tmp_path: Path, monkeypatch) -> None:
+    _install_fake_sdk(monkeypatch)
+    import cursor_sdk
+
+    class OldAgentOptions:
+        def __init__(self, tools=None, **kwargs):
+            if tools is not None:
+                raise TypeError("unexpected keyword argument 'tools'")
+            self.__dict__.update(kwargs)
+
+    monkeypatch.setattr(cursor_sdk, "AgentOptions", OldAgentOptions)
+    runtime = CursorRuntime(_settings(tmp_path))
+    try:
+        runtime._agent_options("ha-x", {}, tools=["mcp"])
+    except TypeError:
+        pass
+    else:
+        raise AssertionError("an SDK without tools support must not get an unrestricted agent")
+
+
+def test_send_restricts_tools_unless_full_tools(tmp_path: Path, monkeypatch) -> None:
+    from app.providers.cursor import CursorProvider
+
+    _install_fake_sdk(monkeypatch)
+    settings = _settings(tmp_path)
+    runtime = CursorRuntime(settings)
+    provider = CursorProvider(settings, runtime)
+    seen: list = []
+
+    async def fake_open(session, servers, **kwargs):
+        seen.append(kwargs.get("tools"))
+        raise RuntimeError("stop")
+
+    monkeypatch.setattr(runtime, "open_agent", fake_open)
+    monkeypatch.setattr(runtime, "wrap_mcp", lambda servers, actor="": servers)
+    session = Session("s1", "u1", "cursor", "Chat", None, "t", "t")
+
+    async def run(**kwargs):
+        return [event async for event in provider.send(session, "Hi", lambda _id: None, **kwargs)]
+
+    asyncio.run(run())
+    asyncio.run(run(full_tools=True))
+    assert seen == [["mcp"], None]
+
+
 def test_apply_handoff_goes_with_every_follow_up() -> None:
     note = "This is the same chat.\n\nUser: Status?"
     assert apply_handoff("And now?", note, True).startswith("This is the same chat.")

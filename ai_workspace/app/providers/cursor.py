@@ -31,6 +31,10 @@ _MISSING_KEY = (
 # The HA transcript is still pasted on every turn, including a quick follow-up.
 _IDLE_RESTORE = 120.0
 
+# Chats from non-admins and voice satellites get MCP tools only: no shell, files or web.
+# The SDK does not save tools with the agent, so they are passed again on every resume.
+_RESTRICTED_TOOLS = ("mcp",)
+
 
 class CursorRuntime:
     """One local Cursor bridge for the process. Agent handles stay open so follow-ups keep context."""
@@ -87,17 +91,14 @@ class CursorRuntime:
         if mcp_servers:
             kwargs["mcp_servers"] = mcp_servers
         if tools is not None:
-            kwargs["tools"] = tools
+            kwargs["tools"] = list(tools)
         try:
             return AgentOptions(**kwargs)
         except TypeError:
-            kwargs.pop("tools", None)
-            try:
-                return AgentOptions(**kwargs)
-            except TypeError:
-                if resolved:
-                    kwargs["model"] = resolved
-                return AgentOptions(**kwargs)
+            if not resolved:
+                raise
+            kwargs["model"] = resolved
+            return AgentOptions(**kwargs)
 
     async def open_agent(
         self,
@@ -107,13 +108,14 @@ class CursorRuntime:
         effort: str = "",
         api_key: str = "",
         config_key: str | None = None,
+        tools: list[str] | None = None,
     ) -> tuple[Any, bool]:
         from cursor_sdk import AgentNotFoundError
 
         resolved_model = (model or "").strip() or self.settings.model
         resolved_key = (api_key or "").strip() or self.settings.cursor_api_key
         key_tag = hashlib.sha256(resolved_key.encode()).hexdigest()[:16] if resolved_key else ""
-        fingerprint = config_key or _agent_fingerprint(mcp_servers, resolved_model, effort, key_tag)
+        fingerprint = config_key or _agent_fingerprint(mcp_servers, resolved_model, effort, key_tag, tools)
         cached = self._agents.get(session.id)
         previous = self._mcp_by_session.get(session.id)
         cold = self._cold(session)
@@ -129,7 +131,12 @@ class CursorRuntime:
             self.drop(session.id)
         client = await self.client()
         options = self._agent_options(
-            f"ha-{session.id[:8]}", mcp_servers, model=resolved_model, effort=effort, api_key=resolved_key
+            f"ha-{session.id[:8]}",
+            mcp_servers,
+            tools=tools,
+            model=resolved_model,
+            effort=effort,
+            api_key=resolved_key,
         )
         agent = None
         # A cold cloud thread often comes back empty. Start a new agent and let the HA transcript resume the chat.
@@ -223,6 +230,7 @@ class CursorProvider:
         api_key: str = "",
         handoff: str = "",
         question: str = "",
+        full_tools: bool = False,
     ) -> AsyncIterator[dict]:
         key = (api_key or "").strip() or self.settings.cursor_api_key
         if not key:
@@ -247,7 +255,8 @@ class CursorProvider:
             )
         used_model = (model or "").strip() or self.settings.model
         key_tag = hashlib.sha256(key.encode()).hexdigest()[:16] if key else ""
-        config_key = _agent_fingerprint(mcp_servers, used_model, effort, key_tag)
+        tools = None if full_tools else list(_RESTRICTED_TOOLS)
+        config_key = _agent_fingerprint(mcp_servers, used_model, effort, key_tag, tools)
         wrapped = self.runtime.wrap_mcp(mcp_servers, session.id)
         asked = (question or "").strip()
         attach_tools = bool(images) or wants_house_tools(asked or message)
@@ -264,6 +273,7 @@ class CursorProvider:
                 effort=effort,
                 api_key=key,
                 config_key=config_key,
+                tools=tools,
             )
         except Exception as exc:
             yield {"type": "error", "message": _public_error(exc, self.settings.cursor_api_key)}
@@ -349,13 +359,8 @@ class CursorProvider:
         used = (model or "").strip() or self.settings.model
         try:
             client = await self.runtime.client()
-            try:
-                options = self.runtime._agent_options("ha-title", {}, tools=[], model=used, api_key=key)
-                agent = await client.create_agent(options)
-            except Exception:
-                logger.debug("title agent without tools failed, retrying", exc_info=True)
-                options = self.runtime._agent_options("ha-title", {}, model=used, api_key=key)
-                agent = await client.create_agent(options)
+            options = self.runtime._agent_options("ha-title", {}, tools=[], model=used, api_key=key)
+            agent = await client.create_agent(options)
             run = await agent.send(title_prompt(user, assistant))
             result = await run.wait()
             if getattr(result, "status", "") == "error":
@@ -414,13 +419,16 @@ def _mcp_identity(servers: dict) -> dict[str, dict[str, str]]:
     return out
 
 
-def _agent_fingerprint(servers: dict, model: str, effort: str, key_tag: str) -> str:
+def _agent_fingerprint(
+    servers: dict, model: str, effort: str, key_tag: str, tools: list[str] | None = None
+) -> str:
     return json.dumps(
         {
             "mcp": _mcp_identity(servers),
             "model": _model_fingerprint(model, effort),
             "effort": effort,
             "key": key_tag,
+            "tools": None if tools is None else sorted(tools),
         },
         sort_keys=True,
         default=str,

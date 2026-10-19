@@ -142,3 +142,33 @@ def test_dashboard_payload_filters(tmp_path) -> None:
     assert swapped["filters"]["since"] == "2026-10-01"
     assert swapped["filters"]["until"] == "2026-10-19"
     store.close()
+
+
+def test_dashboard_payload_for_one_user_hides_other_users(tmp_path) -> None:
+    store = Store(tmp_path / "usage.sqlite")
+    now = datetime(2026, 10, 19, 12, 0, tzinfo=timezone.utc).isoformat()
+    store.add_usage(
+        user_id="admin", session_id="a1", agent_id="claude-1", agent="Claude", model="claude-sonnet-4-5",
+        total_tokens=5000, cost_usd=2.0, origin="chat", created_at=now,
+    )
+    store.add_usage(
+        user_id="kid", session_id="k1", agent_id="gpt-1", agent="OpenAI", model="gpt-5-mini",
+        total_tokens=100, cost_usd=0.01, origin="chat", created_at=now,
+    )
+    hass = SimpleNamespace(
+        config=SimpleNamespace(time_zone="UTC"),
+        data={DOMAIN: {"settings": SimpleNamespace(track_usage=True), "providers": {}}},
+    )
+    bounds = ("2026-10-19T00:00:00+00:00", "2026-10-20T00:00:00+00:00", "2026-10-01T00:00:00+00:00")
+    with patch("custom_components.ai_workspace.usage_record.day_bounds", return_value=bounds):
+        mine = dashboard_payload(hass, store, range_key="all", user_id="kid")
+        everyone = dashboard_payload(hass, store, range_key="all")
+        other_chat = dashboard_payload(hass, store, range_key="all", user_id="kid", session_id="a1")
+    assert mine["totals"]["all"]["turns"] == 1
+    assert mine["totals"]["all"]["total_tokens"] == 100
+    assert {row["model"] for row in mine["models"]} == {"gpt-5-mini"}
+    assert [row["id"] for row in mine["agents"]] == ["gpt-1"]
+    assert "claude-sonnet-4-5" not in mine["filters"]["models"]
+    assert everyone["totals"]["all"]["turns"] == 2
+    assert other_chat["session"]["turns"] == 0
+    store.close()

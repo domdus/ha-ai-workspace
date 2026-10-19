@@ -40,6 +40,7 @@ from .store import Store
 logger = logging.getLogger(__name__)
 
 _PENDING_TTL = 600
+_PENDING_MAX = 100
 # Lovelace often fires lovelace_updated after the MCP HTTP response returns.
 _SETTLE_DELAYS = (0.15, 0.25, 0.35, 0.45)
 _EVENT_LOVELACE = "lovelace_updated"
@@ -91,6 +92,8 @@ def _drop_old(pending: dict[str, Pending]) -> None:
     cutoff = time.monotonic() - _PENDING_TTL
     for key in [item for item, row in pending.items() if row.at < cutoff]:
         _unsub(pending.pop(key))
+    while len(pending) >= _PENDING_MAX:
+        _unsub(pending.pop(next(iter(pending))))
 
 
 def _unsub(row: Pending | None) -> None:
@@ -271,7 +274,7 @@ async def prepare(
         document=document if isinstance(document, dict) else None,
         watch=watch,
         session_id=str(session_id or ""),
-        chat=_session_title(hass, session_id),
+        chat=await _session_title(hass, session_id),
         at=time.monotonic(),
         dashboard_docs=dashboard_docs,
         entity_docs=entity_docs,
@@ -547,7 +550,7 @@ async def commit(hass: HomeAssistant, store: Store, token: str, *, ok: bool) -> 
             text = event_text or _summary_from_events(pending)
         else:
             return
-    chat = _session_title(hass, pending.session_id) or pending.chat
+    chat = await _session_title(hass, pending.session_id) or pending.chat
     doc_dict = document if isinstance(document, dict) else None
     from .logical_commit import queue_activity_fragment
 
@@ -638,11 +641,11 @@ def _write_change_file(store: Store, row, document: dict[str, Any]) -> None:
     write_utf8_file_atomic(str(path), header + dump(body))
 
 
-def _session_title(hass: HomeAssistant, session_id: str) -> str:
+async def _session_title(hass: HomeAssistant, session_id: str) -> str:
     store = (hass.data.get(DOMAIN) or {}).get("store")
     if store is None or not str(session_id or "").strip():
         return ""
-    return str(store.session_title(session_id) or "")
+    return str(await hass.async_add_executor_job(store.session_title, session_id) or "")
 
 
 def _read_yaml(path: str) -> Any:

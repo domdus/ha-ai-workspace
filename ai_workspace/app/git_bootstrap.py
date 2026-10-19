@@ -7,6 +7,7 @@ never read from the Home Assistant integration. A workspace that already has
 
 from __future__ import annotations
 
+import base64
 import logging
 import os
 import shutil
@@ -40,18 +41,16 @@ def bootstrap_git(workspace: Path) -> None:
     if not _may_clone(workspace):
         logger.info("git skip clone: workspace already has files")
         return
-    env = _git_env()
+    env = _git_env(repo)
     _clear_seed(workspace)
-    url = _clone_url(repo)
     dest = str(workspace)
     cmd = [git, "clone"]
     branch = os.environ.get("GIT_BRANCH", "").strip()
     if branch:
         cmd.extend(["--branch", branch])
-    cmd.extend([url, dest])
+    cmd.extend([repo, dest])
     logger.info("git clone %s -> %s", _redact_url(repo), dest)
     _run(cmd, env=env)
-    _set_origin(git, workspace, repo, env)
     _configure_identity(git, workspace, env)
 
 
@@ -72,9 +71,14 @@ def _clear_seed(workspace: Path) -> None:
         shutil.rmtree(cursor)
 
 
-def _git_env() -> dict[str, str]:
-    env = {key: value for key, value in os.environ.items() if key != "GIT_SSH_KEY"}
+def _git_env(repo: str = "") -> dict[str, str]:
+    env = {key: value for key, value in os.environ.items() if key not in {"GIT_SSH_KEY", "GIT_TOKEN"}}
     env["GIT_TERMINAL_PROMPT"] = "0"
+    header = _token_header(repo)
+    if header:
+        # Passed as git config through the environment so the token never shows up in the process list.
+        env["GIT_CONFIG_COUNT"] = "1"
+        env["GIT_CONFIG_KEY_0"], env["GIT_CONFIG_VALUE_0"] = header
     key = _prepare_ssh_key()
     if key is not None:
         known = Path(tempfile.gettempdir()) / "ai-workspace-known-hosts"
@@ -102,22 +106,16 @@ def _prepare_ssh_key() -> Path | None:
     return dest
 
 
-def _clone_url(repo: str) -> str:
+def _token_header(repo: str) -> tuple[str, str] | None:
     token = os.environ.get("GIT_TOKEN", "").strip()
     if not token:
-        return repo
+        return None
     parsed = urlparse(repo)
     if parsed.scheme not in {"http", "https"} or not parsed.hostname:
-        return repo
-    auth = f"x-access-token:{token}"
-    netloc = f"{auth}@{parsed.hostname}" + (f":{parsed.port}" if parsed.port else "")
-    return urlunparse(parsed._replace(netloc=netloc))
-
-
-def _set_origin(git: str, workspace: Path, repo: str, env: dict[str, str]) -> None:
-    if _clone_url(repo) == repo:
-        return
-    _run([git, "-C", str(workspace), "remote", "set-url", "origin", repo], env=env)
+        return None
+    origin = f"{parsed.scheme}://{parsed.hostname}" + (f":{parsed.port}" if parsed.port else "")
+    basic = base64.b64encode(f"x-access-token:{token}".encode()).decode("ascii")
+    return f"http.{origin}/.extraHeader", f"Authorization: Basic {basic}"
 
 
 def _configure_identity(git: str, workspace: Path, env: dict[str, str]) -> None:
