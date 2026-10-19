@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.0b11
+
+- A provider that does not answer in time now says so (“The provider did not answer in time”) instead of “The agent failed.”
+- An AI Workspace entry from an old test build gets a clear log message to delete and re-add it, instead of Home Assistant’s generic migration error
+- Troubleshooting explains that `config/ai_workspace/` (chats, Change History, usage, workspace) stays after removing the integration
+
 ## 1.3.0b10
 
 - The chat keeps showing **Working…** while the agent runs tools or is still busy after its first words, and clears it when the reply ends

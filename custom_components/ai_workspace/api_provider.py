@@ -706,7 +706,12 @@ class ApiProvider:
         return with_language_rule(text, language)
 
     def _public(self, exc: BaseException) -> str:
-        return redact(str(exc), [self.settings.api_key, self.settings.cursor_api_key, self.settings.mcp_token])
+        text = str(exc).strip()
+        if isinstance(exc, TimeoutError) and not text:
+            return "The provider did not answer in time. Try again, or pick a faster model."
+        if not text:
+            text = type(exc).__name__
+        return redact(text, [self.settings.api_key, self.settings.cursor_api_key, self.settings.mcp_token])
 
     def _servers(self, access_token: str, admin: bool) -> dict[str, dict[str, Any]]:
         if admin:

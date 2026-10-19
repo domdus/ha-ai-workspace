@@ -108,6 +108,22 @@ def test_catalog_refresh_waits_for_registry_events_to_settle() -> None:
     assert house_map._EVENT_COOLDOWN >= 5
 
 
+def test_timeout_has_a_readable_message() -> None:
+    from custom_components.ai_workspace.api_provider import ApiProvider
+
+    stub = SimpleNamespace(settings=SimpleNamespace(api_key="sk-secret", cursor_api_key="", mcp_token=""))
+    assert "did not answer in time" in ApiProvider._public(stub, TimeoutError())
+    assert ApiProvider._public(stub, RuntimeError()) == "RuntimeError"
+    assert "sk-secret" not in ApiProvider._public(stub, RuntimeError("bad key sk-secret"))
+
+
+def test_migrate_entry_accepts_current_version_only() -> None:
+    from custom_components.ai_workspace import async_migrate_entry
+
+    assert asyncio.run(async_migrate_entry(None, SimpleNamespace(version=2)))
+    assert not asyncio.run(async_migrate_entry(None, SimpleNamespace(version=1)))
+
+
 def test_full_tools_only_for_signed_in_admin() -> None:
     assert _full_tools("user-1", True)
     assert not _full_tools("user-1", False)

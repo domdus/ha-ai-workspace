@@ -402,6 +402,18 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     return True
 
 
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Every released version uses entry version 2; older test builds cannot be converted."""
+    if entry.version == 2:
+        return True
+    _LOGGER.error(
+        "AI Workspace entry version %s is not supported by this release. "
+        "Delete AI Workspace under Settings → Devices & services and add it again",
+        entry.version,
+    )
+    return False
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     from .house_map import async_setup_house_map
     from .http import _prune_all_chats

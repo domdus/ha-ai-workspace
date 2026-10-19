@@ -23,4 +23,4 @@ logger:
 1. **Settings → Devices & services → AI Workspace → ⋮ → Delete.** That removes all connections, agents, and their Assist pipelines.
 2. **HACS → AI Workspace → Remove**, then restart.
 3. Runtime: remove the **app**, or run `docker compose down -v` in the runtime compose folder. `-v` also deletes the `ai-workspace-data` volume with the Cursor state; leave it out to keep that. Use `docker rm -f cursor-sdk` if an old container remains.
-4. Optional: delete `config/ai_workspace/` to remove the chat history.
+4. Optional: delete `config/ai_workspace/`. Removing the integration keeps this folder on purpose, so a reinstall still has your chats. It holds the chat history, Change History snapshots, usage and cost records, and the workspace folder.
