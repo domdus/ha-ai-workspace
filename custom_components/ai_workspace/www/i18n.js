@@ -83,6 +83,9 @@ export const I18N = {
     usage_last: "Last turn",
     usage_disabled: "Usage tracking is off in AI Workspace settings.",
     usage_ha_hint: "Home Assistant also has sensors under AI Workspace usage for your own dashboards.",
+    usage_tts: "Speech today",
+    usage_characters: "Characters",
+    usage_reads: "Reads",
   },
   de: {
     title: "AI Workspace",
@@ -168,6 +171,9 @@ export const I18N = {
     usage_last: "Letzter Turn",
     usage_disabled: "Nutzungsaufzeichnung ist in den AI-Workspace-Einstellungen aus.",
     usage_ha_hint: "Home Assistant hat zusätzlich Sensoren unter AI Workspace usage für eigene Dashboards.",
+    usage_tts: "Sprache heute",
+    usage_characters: "Zeichen",
+    usage_reads: "Vorlesen",
   },
   fr: {
     title: "AI Workspace",

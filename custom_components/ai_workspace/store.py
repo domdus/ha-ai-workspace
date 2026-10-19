@@ -135,7 +135,8 @@ class Store:
                 cost_source TEXT NOT NULL DEFAULT '',
                 charged_cents INTEGER,
                 run_id TEXT NOT NULL DEFAULT '',
-                origin TEXT NOT NULL DEFAULT ''
+                origin TEXT NOT NULL DEFAULT '',
+                characters INTEGER NOT NULL DEFAULT 0
             );
             CREATE INDEX IF NOT EXISTS usage_turns_created ON usage_turns(created_at);
             CREATE INDEX IF NOT EXISTS usage_turns_agent ON usage_turns(agent_id, created_at);
@@ -150,6 +151,9 @@ class Store:
             self._conn.execute("ALTER TABLE activity ADD COLUMN session_id TEXT NOT NULL DEFAULT ''")
         if "chat" not in activity_cols:
             self._conn.execute("ALTER TABLE activity ADD COLUMN chat TEXT NOT NULL DEFAULT ''")
+        usage_cols = {row[1] for row in self._conn.execute("PRAGMA table_info(usage_turns)")}
+        if "characters" not in usage_cols:
+            self._conn.execute("ALTER TABLE usage_turns ADD COLUMN characters INTEGER NOT NULL DEFAULT 0")
         self._conn.commit()
 
     def close(self) -> None:
@@ -623,6 +627,7 @@ class Store:
         charged_cents: int | None = None,
         run_id: str = "",
         origin: str = "",
+        characters: int = 0,
     ) -> int:
         now = _now()
         total = int(total_tokens or 0) or (int(prompt_tokens or 0) + int(completion_tokens or 0))
@@ -633,8 +638,8 @@ class Store:
                     created_at, user_id, session_id, agent_id, agent, provider, model,
                     prompt_tokens, completion_tokens, cache_read_tokens, cache_write_tokens,
                     reasoning_tokens, total_tokens, cost_usd, cost_source, charged_cents,
-                    run_id, origin
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    run_id, origin, characters
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     now,
@@ -655,6 +660,7 @@ class Store:
                     None if charged_cents is None else int(charged_cents),
                     _text(run_id),
                     _text(origin),
+                    int(characters or 0),
                 ),
             )
             self._conn.commit()
@@ -667,6 +673,7 @@ class Store:
         until: str | None = None,
         agent_id: str | None = None,
         session_id: str | None = None,
+        origin: str | None = None,
     ) -> dict:
         clauses = ["1=1"]
         params: list[object] = []
@@ -682,6 +689,9 @@ class Store:
         if session_id:
             clauses.append("session_id = ?")
             params.append(_text(session_id))
+        if origin:
+            clauses.append("origin = ?")
+            params.append(_text(origin))
         where = " AND ".join(clauses)
         with self._lock:
             row = self._conn.execute(
@@ -693,6 +703,7 @@ class Store:
                     COALESCE(SUM(cache_read_tokens), 0) AS cache_read_tokens,
                     COALESCE(SUM(cache_write_tokens), 0) AS cache_write_tokens,
                     COALESCE(SUM(total_tokens), 0) AS total_tokens,
+                    COALESCE(SUM(characters), 0) AS characters,
                     COALESCE(SUM(cost_usd), 0) AS cost_usd,
                     SUM(CASE WHEN cost_usd IS NULL THEN 1 ELSE 0 END) AS missing_cost
                 FROM usage_turns
@@ -707,6 +718,7 @@ class Store:
             "cache_read_tokens": int(row["cache_read_tokens"] or 0),
             "cache_write_tokens": int(row["cache_write_tokens"] or 0),
             "total_tokens": int(row["total_tokens"] or 0),
+            "characters": int(row["characters"] or 0),
             "cost_usd": round(float(row["cost_usd"] or 0), 6),
             "missing_cost": bool(row["missing_cost"]),
         }
@@ -785,6 +797,7 @@ class Store:
             "prompt_tokens": int(row["prompt_tokens"] or 0),
             "completion_tokens": int(row["completion_tokens"] or 0),
             "total_tokens": int(row["total_tokens"] or 0),
+            "characters": int(row["characters"] or 0) if "characters" in row.keys() else 0,
             "cost_usd": None if row["cost_usd"] is None else round(float(row["cost_usd"]), 6),
             "cost_source": _text(row["cost_source"]),
             "session_id": _text(row["session_id"]),

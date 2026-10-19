@@ -80,3 +80,29 @@ def test_usage_turns_sum_and_prune(tmp_path: Path) -> None:
     if session.id in dropped:
         assert remaining["turns"] == 0
     store.close()
+
+
+def test_usage_tts_origin_and_characters(tmp_path: Path) -> None:
+    store = Store(tmp_path / "tts.sqlite")
+    store.add_usage(
+        user_id="user-1",
+        session_id="chat-1",
+        agent_id="openai-1",
+        agent="OpenAI",
+        provider="openai",
+        model="gpt-4o-mini-tts",
+        characters=40,
+        cost_usd=0.000024,
+        cost_source="estimate",
+        origin="tts",
+    )
+    speech = store.summarize_usage(origin="tts")
+    chat = store.summarize_usage(origin="chat")
+    assert speech["turns"] == 1
+    assert speech["characters"] == 40
+    assert speech["total_tokens"] == 0
+    assert chat["turns"] == 0
+    last = store.last_usage()
+    assert last is not None
+    assert last["origin"] == "tts"
+    store.close()

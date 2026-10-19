@@ -313,7 +313,8 @@ Cursor does not call MCP from Home Assistant. HTTP MCP (HA-MCP and others) is re
 
 - **Cursor:** token counts come from the SDK `usage` object. If the account exposes billed cents (`get_usage`), that amount is stored as the cost. Otherwise the list-price estimate for Composer is used.
 - **Cloud agents:** prompt and completion tokens from the provider `usage` field, including cache and reasoning when present. Cost is list price (OpenAI, Anthropic, Gemini, DeepSeek, Qwen, Grok, Azure, OpenRouter, compatible). OpenRouter’s reported `cost` is used when it is present. Ollama is stored as $0.
-- **Home Assistant sensors:** device **AI Workspace usage** plus each agent — cost/tokens/turns for today, this month, and total, and the last turn’s cost, tokens, and model. Put them on any Lovelace dashboard. Event `ai_workspace_usage` fires after every recorded turn.
+- **Text-to-speech:** when an OpenAI-style AI Workspace voice is used (Assist, overlay speaker, auto-read), characters of spoken text are priced (`gpt-4o-mini-tts`, `tts-1`, `tts-1-hd`) and stored with origin `tts`. Piper and other Home Assistant engines are not billed here.
+- **Home Assistant sensors:** device **AI Workspace usage** plus each agent — cost/tokens/turns for today, this month, and total, last turn, and speech cost today/total. Event `ai_workspace_usage` fires after every recorded turn.
 - Unknown models still store tokens; cost stays empty until the price table knows the id.
 
 Cloud AI and Ollama agents send the system prompt and the tool list of every enabled MCP connection with each message. HA-MCP offers about 80 tools. Even with their descriptions shortened, that is several thousand tokens before you type anything. Each tool call adds its result and one more request, which sends the prompt and the tool list again. A greeting or thanks is sent without tools.

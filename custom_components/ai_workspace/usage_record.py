@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import logging
+from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Iterator
 from zoneinfo import ZoneInfo
 
 from homeassistant.core import HomeAssistant
@@ -18,11 +20,14 @@ from .usage_cost import (
     SIGNAL_USAGE_UPDATE,
     TokenUsage,
     estimate_cost,
+    estimate_tts_cost,
     parse_usage,
     usage_payload,
 )
 
 _LOGGER = logging.getLogger(__name__)
+_TTS_USER: ContextVar[str] = ContextVar("ai_workspace_tts_user", default="")
+_TTS_SESSION: ContextVar[str] = ContextVar("ai_workspace_tts_session", default="")
 
 
 def zone_info(hass: HomeAssistant) -> ZoneInfo:
@@ -66,7 +71,12 @@ def provider_label(provider: Any) -> str:
 
 
 def provider_kind(provider: Any) -> str:
-    return str(getattr(provider, "kind", "") or getattr(getattr(provider, "settings", None), "api_provider", "") or "")
+    return str(
+        getattr(provider, "kind", "")
+        or getattr(provider, "provider", "")
+        or getattr(getattr(provider, "settings", None), "api_provider", "")
+        or ""
+    )
 
 
 def provider_model(provider: Any, fallback: str = "") -> str:
@@ -122,6 +132,7 @@ async def record_usage_turn(
             cache_write_tokens=int(payload.get("cache_write_tokens") or 0),
             reasoning_tokens=int(payload.get("reasoning_tokens") or 0),
             total_tokens=int(payload.get("total_tokens") or 0),
+            characters=int(payload.get("characters") or 0),
             cost_usd=payload.get("cost_usd"),
             cost_source=str(payload.get("cost_source") or ""),
             charged_cents=payload.get("charged_cents"),
@@ -140,6 +151,45 @@ async def record_usage_turn(
         payload.get("cost_source"),
     )
     return payload
+
+
+@contextmanager
+def tts_usage_scope(*, user_id: str = "", session_id: str = "") -> Iterator[None]:
+    """Attach the current chat user/session to an in-flight overlay TTS call."""
+    user_token = _TTS_USER.set(str(user_id or ""))
+    session_token = _TTS_SESSION.set(str(session_id or ""))
+    try:
+        yield
+    finally:
+        _TTS_USER.reset(user_token)
+        _TTS_SESSION.reset(session_token)
+
+
+async def record_tts_usage(
+    hass: HomeAssistant,
+    *,
+    text: str,
+    model: str,
+    provider: Any | None = None,
+    user_id: str = "",
+    session_id: str = "",
+) -> dict[str, Any] | None:
+    data = hass.data.get(DOMAIN) or {}
+    store = data.get("store")
+    if store is None:
+        return None
+    usage = estimate_tts_cost(text, model)
+    if usage.empty():
+        return None
+    return await record_usage_turn(
+        hass,
+        store=store,
+        user_id=user_id or _TTS_USER.get(),
+        session_id=session_id or _TTS_SESSION.get(),
+        provider=provider,
+        usage=usage,
+        origin="tts",
+    )
 
 
 def dashboard_payload(hass: HomeAssistant, store: Store, *, session_id: str = "") -> dict[str, Any]:
@@ -188,9 +238,16 @@ def dashboard_payload(hass: HomeAssistant, store: Store, *, session_id: str = ""
         )
     session = store.summarize_usage(session_id=session_id) if session_id else None
     last_session = store.last_usage(session_id=session_id) if session_id else None
+    tts = {
+        "today": store.summarize_usage(since=today, until=tomorrow, origin="tts"),
+        "month": store.summarize_usage(since=month, origin="tts"),
+        "all": store.summarize_usage(origin="tts"),
+        "session": store.summarize_usage(session_id=session_id, origin="tts") if session_id else None,
+    }
     return {
         "enabled": enabled,
         "totals": totals,
+        "tts": tts,
         "last": last,
         "agents": agents,
         "session": session,

@@ -3263,7 +3263,7 @@ export async function mountAiWorkspace(root, options = {}) {
     try {
       const response = await apiFetch(`${API}/tts`, {
         method: "POST",
-        body: JSON.stringify({ text: plain, language: speechLanguage() }),
+        body: JSON.stringify({ text: plain, language: speechLanguage(), session_id: sessionId || "" }),
         signal: ac.signal,
       });
       if (gen !== speakGen || !response?.ok) return null;
@@ -4153,7 +4153,7 @@ export async function mountAiWorkspace(root, options = {}) {
     }
   }
 
-  function metricCard(label, summary) {
+  function metricCard(label, summary, kind) {
     const card = document.createElement("article");
     card.className = "usage-card";
     const title = document.createElement("p");
@@ -4164,7 +4164,11 @@ export async function mountAiWorkspace(root, options = {}) {
     cost.textContent = summary?.missing_cost && !summary.cost_usd ? t("usage_unknown_cost") : money(summary?.cost_usd || 0);
     const meta = document.createElement("p");
     meta.className = "usage-card-meta";
-    meta.textContent = `${tokenLabel(summary?.total_tokens || 0)} ${t("usage_tokens")} · ${summary?.turns || 0} ${t("usage_turns")}`;
+    if (kind === "tts") {
+      meta.textContent = `${tokenLabel(summary?.characters || 0)} ${t("usage_characters")} · ${summary?.turns || 0} ${t("usage_reads")}`;
+    } else {
+      meta.textContent = `${tokenLabel(summary?.total_tokens || 0)} ${t("usage_tokens")} · ${summary?.turns || 0} ${t("usage_turns")}`;
+    }
     card.append(title, cost, meta);
     return card;
   }
@@ -4199,6 +4203,9 @@ export async function mountAiWorkspace(root, options = {}) {
     if (body.session && body.session.turns) {
       const chatCard = metricCard(t("usage_this_chat"), body.session);
       usageList.appendChild(chatCard);
+    }
+    if (body.tts?.today?.turns || body.tts?.all?.turns) {
+      usageList.appendChild(metricCard(t("usage_tts"), body.tts.today, "tts"));
     }
     const agents = Array.isArray(body.agents) ? body.agents : [];
     if (agents.length) {

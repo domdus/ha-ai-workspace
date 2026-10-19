@@ -45,6 +45,10 @@ async def async_setup_entry(
         WorkspaceLastSensor(hass, entry, hub, "last_tokens", "Last turn tokens", "tokens"),
         WorkspaceLastSensor(hass, entry, hub, "last_model", "Last model", "model"),
         WorkspaceLastSensor(hass, entry, hub, "last_agent", "Last agent", "agent"),
+        WorkspaceUsageSensor(hass, entry, hub, "cost_tts_today", "Speech cost today", "cost", "today", source="tts"),
+        WorkspaceUsageSensor(
+            hass, entry, hub, "cost_tts_total", "Speech cost total", "cost", "all", increasing=True, source="tts"
+        ),
     ]
     for agent in agents:
         entities.extend(
@@ -66,6 +70,21 @@ async def async_setup_entry(
                 AgentLastSensor(hass, entry, hub, agent, "last_cost", "Last turn cost", "cost"),
                 AgentLastSensor(hass, entry, hub, agent, "last_tokens", "Last turn tokens", "tokens"),
                 AgentLastSensor(hass, entry, hub, agent, "last_model", "Last model", "model"),
+                AgentUsageSensor(
+                    hass, entry, hub, agent, "cost_tts_today", "Speech cost today", "cost", "today", source="tts"
+                ),
+                AgentUsageSensor(
+                    hass,
+                    entry,
+                    hub,
+                    agent,
+                    "cost_tts_total",
+                    "Speech cost total",
+                    "cost",
+                    "all",
+                    increasing=True,
+                    source="tts",
+                ),
             ]
         )
     async_add_entities(entities)
@@ -83,8 +102,14 @@ class UsageHub:
             "month": empty_summary(),
             "all": empty_summary(),
         }
+        self.tts_windows: dict[str, dict] = {
+            "today": empty_summary(),
+            "month": empty_summary(),
+            "all": empty_summary(),
+        }
         self.last: dict | None = None
         self.agent_windows: dict[str, dict[str, dict]] = {}
+        self.agent_tts_windows: dict[str, dict[str, dict]] = {}
         self.agent_last: dict[str, dict | None] = {}
         self._unsub: list[Callable[[], None]] = []
         self._entities: list[_UsageBase] = []
@@ -133,7 +158,11 @@ class UsageHub:
                         "month": self.store.summarize_usage(since=month),
                         "all": self.store.summarize_usage(),
                         "last": self.store.last_usage(),
+                        "tts_today": self.store.summarize_usage(since=today, until=tomorrow, origin="tts"),
+                        "tts_month": self.store.summarize_usage(since=month, origin="tts"),
+                        "tts_all": self.store.summarize_usage(origin="tts"),
                         "agent_windows": {},
+                        "agent_tts_windows": {},
                         "agent_last": {},
                     }
                     for agent_id in agent_ids:
@@ -142,13 +171,25 @@ class UsageHub:
                             "month": self.store.summarize_usage(since=month, agent_id=agent_id),
                             "all": self.store.summarize_usage(agent_id=agent_id),
                         }
+                        payload["agent_tts_windows"][agent_id] = {
+                            "today": self.store.summarize_usage(
+                                since=today, until=tomorrow, agent_id=agent_id, origin="tts"
+                            ),
+                            "all": self.store.summarize_usage(agent_id=agent_id, origin="tts"),
+                        }
                         payload["agent_last"][agent_id] = self.store.last_usage(agent_id=agent_id)
                     return payload
 
                 data = await self.hass.async_add_executor_job(load)
                 self.windows = {key: data[key] for key in ("today", "month", "all")}
+                self.tts_windows = {
+                    "today": data["tts_today"],
+                    "month": data["tts_month"],
+                    "all": data["tts_all"],
+                }
                 self.last = data["last"]
                 self.agent_windows = data["agent_windows"]
+                self.agent_tts_windows = data["agent_tts_windows"]
                 self.agent_last = data["agent_last"]
                 for entity in list(self._entities):
                     entity.apply_hub()
@@ -227,6 +268,7 @@ def _summary_attrs(summary: dict | None, extra: dict | None = None) -> dict:
         "missing_cost": bool(row.get("missing_cost")),
         "cost_usd": row.get("cost_usd") or 0,
         "total_tokens": row.get("total_tokens") or 0,
+        "characters": row.get("characters") or 0,
     }
     if extra:
         attrs.update(extra)
@@ -245,10 +287,12 @@ class WorkspaceUsageSensor(_UsageBase):
         window: str,
         *,
         increasing: bool = False,
+        source: str = "",
     ) -> None:
         super().__init__(hass, entry, hub)
         self._kind = kind
         self._window = window
+        self._source = source
         self._attr_name = name
         self._attr_unique_id = f"{entry.entry_id}_usage_{unique}"
         self._attr_device_info = DeviceInfo(
@@ -265,11 +309,15 @@ class WorkspaceUsageSensor(_UsageBase):
             _style_tokens(self, increasing=increasing, total=resettable)
         else:
             _style_turns(self, increasing=increasing, total=resettable)
+        if source == "tts":
+            self._attr_icon = "mdi:account-voice"
+            self._attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def apply_hub(self) -> None:
-        summary = self._hub.windows.get(self._window) or empty_summary()
+        pool = self._hub.tts_windows if self._source == "tts" else self._hub.windows
+        summary = pool.get(self._window) or empty_summary()
         self._attr_native_value = _from_summary(self._kind, summary)
-        self._attr_extra_state_attributes = _summary_attrs(summary)
+        self._attr_extra_state_attributes = _summary_attrs(summary, {"origin": "tts"} if self._source == "tts" else None)
         self.async_write_ha_state()
 
 
@@ -335,11 +383,13 @@ class AgentUsageSensor(_UsageBase):
         window: str,
         *,
         increasing: bool = False,
+        source: str = "",
     ) -> None:
         super().__init__(hass, entry, hub)
         self._agent = agent
         self._kind = kind
         self._window = window
+        self._source = source
         self._attr_name = name
         self._attr_unique_id = f"{entry.entry_id}_{agent.id}_usage_{unique}"
         self._attr_device_info = DeviceInfo(
@@ -356,13 +406,19 @@ class AgentUsageSensor(_UsageBase):
             _style_tokens(self, increasing=increasing, total=resettable)
         else:
             _style_turns(self, increasing=increasing, total=resettable)
-        if window == "today":
+        if window == "today" or source == "tts":
             self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        if source == "tts":
+            self._attr_icon = "mdi:account-voice"
 
     def apply_hub(self) -> None:
-        summary = (self._hub.agent_windows.get(self._agent.id) or {}).get(self._window)
+        pool = self._hub.agent_tts_windows if self._source == "tts" else self._hub.agent_windows
+        summary = (pool.get(self._agent.id) or {}).get(self._window)
+        extra = {"agent_id": self._agent.id}
+        if self._source == "tts":
+            extra["origin"] = "tts"
         self._attr_native_value = _from_summary(self._kind, summary)
-        self._attr_extra_state_attributes = _summary_attrs(summary, {"agent_id": self._agent.id})
+        self._attr_extra_state_attributes = _summary_attrs(summary, extra)
         self.async_write_ha_state()
 
 
