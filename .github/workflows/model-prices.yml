@@ -1,0 +1,38 @@
+name: Model prices
+
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: beta
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Refresh from LiteLLM
+        run: python3 scripts/sync_model_prices.py
+
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          base: beta
+          branch: chore/model-prices
+          add-paths: custom_components/ai_workspace/model_prices.json
+          commit-message: "Update model prices from LiteLLM"
+          title: "Update model prices from LiteLLM"
+          body: |
+            Weekly refresh of `custom_components/ai_workspace/model_prices.json` from
+            [LiteLLM's price list](https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json).
+            Check the diff for surprising price jumps before merging.
+          delete-branch: true
