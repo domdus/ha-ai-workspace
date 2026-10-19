@@ -162,7 +162,16 @@
   },
   "config_subentries": {
     "usage": {
-      "entry_type": "Utilisation"
+      "initiate_flow": {
+        "user": "Ajouter des capteurs d’utilisation"
+      },
+      "entry_type": "Utilisation",
+      "step": {
+        "user": {
+          "title": "Utilisation",
+          "description": "Capteurs de jetons et de coût pour cet espace de travail."
+        }
+      }
     },
     "mcp": {
       "initiate_flow": {

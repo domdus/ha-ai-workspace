@@ -162,7 +162,16 @@
   },
   "config_subentries": {
     "usage": {
-      "entry_type": "Использование"
+      "initiate_flow": {
+        "user": "Добавить датчики использования"
+      },
+      "entry_type": "Использование",
+      "step": {
+        "user": {
+          "title": "Использование",
+          "description": "Датчики токенов и стоимости в этом рабочем пространстве."
+        }
+      }
     },
     "mcp": {
       "initiate_flow": {

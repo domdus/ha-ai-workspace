@@ -162,7 +162,16 @@
   },
   "config_subentries": {
     "usage": {
-      "entry_type": "Gebruik"
+      "initiate_flow": {
+        "user": "Gebruikssensoren toevoegen"
+      },
+      "entry_type": "Gebruik",
+      "step": {
+        "user": {
+          "title": "Gebruik",
+          "description": "Sensoren voor tokens en kosten in deze werkruimte."
+        }
+      }
     },
     "mcp": {
       "initiate_flow": {

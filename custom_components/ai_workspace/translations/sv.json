@@ -162,7 +162,16 @@
   },
   "config_subentries": {
     "usage": {
-      "entry_type": "Användning"
+      "initiate_flow": {
+        "user": "Lägg till användningssensorer"
+      },
+      "entry_type": "Användning",
+      "step": {
+        "user": {
+          "title": "Användning",
+          "description": "Sensorer för token och kostnad i den här arbetsytan."
+        }
+      }
     },
     "mcp": {
       "initiate_flow": {

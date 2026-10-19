@@ -162,7 +162,16 @@
   },
   "config_subentries": {
     "usage": {
-      "entry_type": "Využití"
+      "initiate_flow": {
+        "user": "Přidat senzory využití"
+      },
+      "entry_type": "Využití",
+      "step": {
+        "user": {
+          "title": "Využití",
+          "description": "Senzory tokenů a nákladů v tomto workspace."
+        }
+      }
     },
     "mcp": {
       "initiate_flow": {

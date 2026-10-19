@@ -162,7 +162,16 @@
   },
   "config_subentries": {
     "usage": {
-      "entry_type": "Uzo"
+      "initiate_flow": {
+        "user": "Aldoni uzosensilojn"
+      },
+      "entry_type": "Uzo",
+      "step": {
+        "user": {
+          "title": "Uzo",
+          "description": "Sensiloj por ĵetonoj kaj kosto en ĉi tiu laborspaco."
+        }
+      }
     },
     "mcp": {
       "initiate_flow": {

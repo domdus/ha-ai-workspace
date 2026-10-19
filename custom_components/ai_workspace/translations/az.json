@@ -162,7 +162,16 @@
   },
   "config_subentries": {
     "usage": {
-      "entry_type": "İstifadə"
+      "initiate_flow": {
+        "user": "İstifadə sensorları əlavə et"
+      },
+      "entry_type": "İstifadə",
+      "step": {
+        "user": {
+          "title": "İstifadə",
+          "description": "Bu iş sahəsində token və xərc sensorları."
+        }
+      }
     },
     "mcp": {
       "initiate_flow": {

@@ -162,7 +162,16 @@
   },
   "config_subentries": {
     "usage": {
-      "entry_type": "Utilizzo"
+      "initiate_flow": {
+        "user": "Aggiungi sensori di utilizzo"
+      },
+      "entry_type": "Utilizzo",
+      "step": {
+        "user": {
+          "title": "Utilizzo",
+          "description": "Sensori di token e costi in questo spazio di lavoro."
+        }
+      }
     },
     "mcp": {
       "initiate_flow": {

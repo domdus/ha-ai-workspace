@@ -162,7 +162,16 @@
   },
   "config_subentries": {
     "usage": {
-      "entry_type": "用量"
+      "initiate_flow": {
+        "user": "添加用量传感器"
+      },
+      "entry_type": "用量",
+      "step": {
+        "user": {
+          "title": "用量",
+          "description": "此工作区的 token 和费用传感器。"
+        }
+      }
     },
     "mcp": {
       "initiate_flow": {

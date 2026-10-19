@@ -162,7 +162,16 @@
   },
   "config_subentries": {
     "usage": {
-      "entry_type": "사용량"
+      "initiate_flow": {
+        "user": "사용량 센서 추가"
+      },
+      "entry_type": "사용량",
+      "step": {
+        "user": {
+          "title": "사용량",
+          "description": "이 워크스페이스의 토큰과 비용 센서입니다."
+        }
+      }
     },
     "mcp": {
       "initiate_flow": {
