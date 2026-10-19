@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.0b6
+
+- GPT-5 / o-series no longer get the Medium/Extreme reply cap (`max_completion_tokens` 1024/256), which spent the budget on hidden reasoning and returned no text
+- Cloud “Working” status uses the same translation as Cursor (German **Arbeitet**, and the other UI languages)
+- Streaming paints every frame again; incomplete markdown tables are still held
+
 ## 1.3.0b5
 
 - OpenAI GPT-5 / o-series sends `max_completion_tokens` (retries the other field if a provider 400s)

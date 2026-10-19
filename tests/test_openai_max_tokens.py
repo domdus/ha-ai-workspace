@@ -60,7 +60,7 @@ def test_rewrite_does_not_undo_the_fix() -> None:
     assert body == {"max_completion_tokens": 256}
 
 
-def test_openai_medium_sends_max_completion_tokens_for_gpt5() -> None:
+def test_gpt5_medium_skips_a_brevity_cap() -> None:
     payloads: list[dict] = []
     provider = ApiProvider(None, _settings(), None)
 
@@ -73,8 +73,25 @@ def test_openai_medium_sends_max_completion_tokens_for_gpt5() -> None:
         return [event async for event in provider._openai(None, [], "Hi", _Bundle(), "", [], "en", True, False)]
 
     asyncio.run(collect())
-    assert payloads[0]["max_completion_tokens"] == 1024
+    assert "max_completion_tokens" not in payloads[0]
     assert "max_tokens" not in payloads[0]
+
+
+def test_gpt4o_medium_still_caps_max_tokens() -> None:
+    payloads: list[dict] = []
+    provider = ApiProvider(None, _settings(model="gpt-4o"), None)
+
+    async def fake_round(_http, _url, _headers, payload):
+        payloads.append(dict(payload))
+        yield "message", {"role": "assistant", "content": "Hi"}
+
+    async def collect():
+        provider._openai_round = fake_round
+        return [event async for event in provider._openai(None, [], "Hi", _Bundle(), "", [], "en", True, False)]
+
+    asyncio.run(collect())
+    assert payloads[0]["max_tokens"] == 1024
+    assert "max_completion_tokens" not in payloads[0]
 
 
 def test_ollama_medium_keeps_max_tokens() -> None:

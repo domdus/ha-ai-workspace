@@ -1237,6 +1237,7 @@ export async function mountAiWorkspace(root, options = {}) {
     if (/^no mcp servers configured\.?$/i.test(raw)) return "";
     if (/^mcp:\s/i.test(raw)) return "";
     if (/^running$/i.test(raw)) return t("working");
+    if (/^working\.{0,3}$/i.test(raw)) return t("working");
     if (/^thinking\.{0,3}$/i.test(raw)) return t("thinking");
     return raw;
   }
@@ -1905,7 +1906,6 @@ export async function mountAiWorkspace(root, options = {}) {
   let streamBuf = "";
   let streamFull = "";
   let streamPainted = "";
-  let streamPaintAt = 0;
   let streamDrainRaf = 0;
   let streamDrainLast = 0;
   let streamWaiters = [];
@@ -1982,7 +1982,6 @@ export async function mountAiWorkspace(root, options = {}) {
     streamBuf = "";
     streamFull = "";
     streamPainted = "";
-    streamPaintAt = 0;
     streamNode = null;
     streamFinal = false;
     haltSpeech();
@@ -2000,13 +1999,8 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!streamNode) return false;
     const done = streamFinal && !streamBuf;
     const visible = rewriteAssistantLinks(stableStreamMarkdown(streamFull, done), done);
-    const now = performance.now();
     if (visible === streamPainted) return false;
-    if (!force && !done && streamPainted && now - streamPaintAt < 48 && !visible.endsWith("\n")) {
-      return false;
-    }
     streamPainted = visible;
-    streamPaintAt = now;
     streamNode.content = visible;
     streamNode.hidden = !visible;
     styleMarkdownTables(streamNode);
@@ -3654,7 +3648,6 @@ export async function mountAiWorkspace(root, options = {}) {
     streamFull = "";
     streamBuf = "";
     streamPainted = "";
-    streamPaintAt = 0;
     const tools = document.createElement("div");
     tools.className = "tools";
     ensureActivitySlot(assistant);

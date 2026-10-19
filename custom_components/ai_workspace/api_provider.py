@@ -427,6 +427,20 @@ def _openai_output_limit_key(model: str) -> str:
     return "max_tokens"
 
 
+def _apply_openai_reply_limit(payload: dict[str, Any], model: str, limit: int | None) -> None:
+    """Cap visible length on classic Chat Completions. Skip GPT-5 / o-series:
+
+    Those models count hidden reasoning against max_completion_tokens, so a
+    256/1024 brevity cap finishes the turn with tools billed and no text.
+    """
+    if not limit:
+        return
+    key = _openai_output_limit_key(model)
+    if key == "max_completion_tokens":
+        return
+    payload[key] = limit
+
+
 def _rewrite_output_limit(body: dict, text: str) -> bool:
     """Swap max_tokens / max_completion_tokens when the model names the other one."""
     low = text.lower()
@@ -852,13 +866,15 @@ class ApiProvider:
                 blocks = data.get("content") or []
                 raw = "".join(str(b.get("text") or "") for b in blocks if b.get("type") == "text")
             else:
+                limit_key = _openai_output_limit_key(self._model())
+                title_limit = 256 if limit_key == "max_completion_tokens" else 32
                 data = await self._post(
                     http,
                     self._chat_url(),
                     self._auth_headers(),
                     {
                         "model": self._model(),
-                        _openai_output_limit_key(self._model()): 32,
+                        limit_key: title_limit,
                         "messages": [
                             {"role": "system", "content": system},
                             {"role": "user", "content": prompt},
@@ -899,7 +915,7 @@ class ApiProvider:
             last = round_no == _MAX_ROUNDS
             payload: dict[str, Any] = {"model": self._model(), "messages": messages}
             if reply_limit:
-                payload[_openai_output_limit_key(self._model())] = reply_limit
+                _apply_openai_reply_limit(payload, self._model(), reply_limit)
             else:
                 self._effort_body(payload)
             if tools:
