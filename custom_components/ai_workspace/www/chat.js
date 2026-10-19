@@ -2506,7 +2506,8 @@ export async function mountAiWorkspace(root, options = {}) {
       sessionAction(t("rename"), "rename"),
       sessionAction(t("delete"), "delete", "danger"),
     );
-    row.append(item, menu);
+    item.append(menu);
+    row.append(item);
     return row;
   }
 

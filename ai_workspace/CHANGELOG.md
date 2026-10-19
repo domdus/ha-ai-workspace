@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.0b5
+
+- OpenAI GPT-5 / o-series sends `max_completion_tokens` (retries the other field if a provider 400s)
+- Chat history **…** menu sits inside the selected/hover row
+
 ## 1.3.0b4
 
 - Chat header usage line no longer prefixes “This chat:”

@@ -419,6 +419,28 @@ def _cached_text_block(text: str) -> dict[str, Any]:
     return {"type": "text", "text": text, "cache_control": dict(_CACHE_MARK)}
 
 
+def _openai_output_limit_key(model: str) -> str:
+    """GPT-5 / o-series Chat Completions reject max_tokens."""
+    ident = str(model or "").rsplit("/", 1)[-1].lower().strip()
+    if ident.startswith(("gpt-5", "gpt-6", "o1", "o3", "o4", "codex")):
+        return "max_completion_tokens"
+    return "max_tokens"
+
+
+def _rewrite_output_limit(body: dict, text: str) -> bool:
+    """Swap max_tokens / max_completion_tokens when the model names the other one."""
+    low = text.lower()
+    if "max_tokens" in body and "max_completion_tokens" in low:
+        body["max_completion_tokens"] = body.pop("max_tokens")
+        return True
+    if "max_completion_tokens" in body and (
+        "unknown" in low or "unsupported" in low or "unrecognized" in low or "not supported" in low
+    ) and "use 'max_completion_tokens'" not in low and "use max_completion_tokens" not in low:
+        body["max_tokens"] = body.pop("max_completion_tokens")
+        return True
+    return False
+
+
 def _strip_prompt_cache(body: dict) -> bool:
     """Drop cache markers in place. True when something was removed."""
     changed = False
@@ -836,7 +858,7 @@ class ApiProvider:
                     self._auth_headers(),
                     {
                         "model": self._model(),
-                        "max_tokens": 32,
+                        _openai_output_limit_key(self._model()): 32,
                         "messages": [
                             {"role": "system", "content": system},
                             {"role": "user", "content": prompt},
@@ -877,7 +899,7 @@ class ApiProvider:
             last = round_no == _MAX_ROUNDS
             payload: dict[str, Any] = {"model": self._model(), "messages": messages}
             if reply_limit:
-                payload["max_tokens"] = reply_limit
+                payload[_openai_output_limit_key(self._model())] = reply_limit
             else:
                 self._effort_body(payload)
             if tools:
@@ -1229,6 +1251,10 @@ class ApiProvider:
             ) and _strip_prompt_cache(body):
                 logger.info("%s refused prompt cache; sending without it", self._label())
                 self._prompt_cache = False
+                attempt -= 1
+                continue
+            if resp.status in {400, 422} and _rewrite_output_limit(body, text):
+                logger.info("%s refused the output-length field; retrying with the one it asked for", self._label())
                 attempt -= 1
                 continue
             if stream and resp.status in {400, 422} and body.get("stream_options") and (

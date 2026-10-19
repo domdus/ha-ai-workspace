@@ -307,7 +307,7 @@ ha-button.new-chat {
   min-width: 0;
   height: 40px;
   box-sizing: border-box;
-  padding: 0 var(--ha-space-3, 12px);
+  padding: 0 2px 0 var(--ha-space-3, 12px);
   border-radius: var(--ha-border-radius-sm, 6px);
   position: relative;
   color: var(--sidebar-text-color);
@@ -374,6 +374,7 @@ ha-button.new-chat {
 
 .session-row ha-dropdown.session-menu {
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   height: 28px;
 }
