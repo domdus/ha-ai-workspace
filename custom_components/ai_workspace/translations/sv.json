@@ -18,6 +18,7 @@
           "change_history": "Ändringshistorik",
           "track_usage": "Spåra användning och kostnader",
           "show_chat_usage": "Visa kostnad i chatthuvudet",
+          "ha_usage_sensors": "Lägg till Home Assistant-användningssensorer",
           "low_token": "Minska tokenanvändning",
           "prompt_cache": "Promptcache",
           "ui_theme": "Använd HA-komponenter",
@@ -36,8 +37,9 @@
           "house_map": "Valfritt. Hjälper till att förklara hur ett objekt är kopplat (vad som utlöser det, vad det påverkar). Av som standard. För live på/av-status eller fullständiga listor, be assistenten att kolla Home Assistant.",
           "shorten_mcp_results": "På som standard. Mycket långa svar från Home Assistant (listor för hela hemmet, stora sökningar) sammanfattas innan de går till AI:n. Det sparar token och håller svaren rappt. Av skickar hela texten.",
           "change_history": "På som standard. Sparar en förteckning över konfigurationsändringar som assistenten gjort så att du kan granska eller ångra dem i Ändringshistorik. Av stoppar nya poster; assistenten kan fortfarande använda Home Assistant.",
-          "track_usage": "På som standard. Sparar token och uppskattad USD-kostnad efter varje Cursor- eller molntur. Visar en Användning-sida i chatten och skapar Home Assistant-sensorer för egna paneler. Av stoppar nya poster; historiken finns kvar.",
+          "track_usage": "På som standard. Sparar token och uppskattad USD-kostnad efter varje Cursor- eller molntur. Visar en Användning-sida i chatten. Av stoppar nya poster; historiken finns kvar.",
           "show_chat_usage": "På som standard. Visar token och kostnad under chattiteln. Av döljer bara den raden; spårning och sidan Användning finns kvar.",
+          "ha_usage_sensors": "Av som standard. Skapar sensorer för kostnad, token och turer på en Usage-enhet och varje agent för egna paneler. Av tar bort dem.",
           "low_token": "Hur mycket som skickas varje tur, för alla Cloud- / Ollama- / Azure-agenter.",
           "prompt_cache": "På som standard. Återanvänder systemprompten och verktygslistan så senare rundor kostar mindre. Stäng av för att jämföra. Claude behöver detta; GPT cachar ofta själv. Ignoreras på Ollama.",
           "ui_theme": "Av som standard. När det är på används bara Home Assistants gränssnittskomponenter, vilket kan fungera bättre med teman.",
@@ -102,7 +104,8 @@
           "keep_chats": "Chattar att behålla",
           "low_token": "Minska tokenanvändning",
           "prompt_cache": "Promptcache",
-          "show_chat_usage": "Visa kostnad i chatthuvudet"
+          "show_chat_usage": "Visa kostnad i chatthuvudet",
+          "ha_usage_sensors": "Lägg till Home Assistant-användningssensorer"
         },
         "data_description": {
           "stt_engine": "Webbläsarens diktering kräver en säker webbplats (https). Eller välj en tal-till-text-motor från Home Assistant under Inställningar. Webbläsaren måste tillåta mikrofonen.",
@@ -121,7 +124,8 @@
           "keep_chats": "Nyaste icke-fästa chattar att behålla per person. Fästa chattar behålls alltid. Standard 30.",
           "low_token": "Hur mycket som skickas varje tur, för alla Cloud- / Ollama- / Azure-agenter.",
           "prompt_cache": "På som standard. Återanvänder systemprompten och verktygslistan så senare rundor kostar mindre. Stäng av för att jämföra. Claude behöver detta; GPT cachar ofta själv. Ignoreras på Ollama.",
-          "show_chat_usage": "På som standard. Visar token och kostnad under chattiteln. Av döljer bara den raden; spårning och sidan Användning finns kvar."
+          "show_chat_usage": "På som standard. Visar token och kostnad under chattiteln. Av döljer bara den raden; spårning och sidan Användning finns kvar.",
+          "ha_usage_sensors": "Av som standard. Skapar sensorer för kostnad, token och turer på en Usage-enhet och varje agent för egna paneler. Av tar bort dem."
         },
         "sections": {
           "mcp": {

@@ -18,6 +18,7 @@
           "change_history": "Change History",
           "track_usage": "Track usage and costs",
           "show_chat_usage": "Show cost in chat header",
+          "ha_usage_sensors": "Add Home Assistant usage sensors",
           "low_token": "Reduce token usage",
           "prompt_cache": "Prompt cache",
           "ui_theme": "Use HA Components",
@@ -36,10 +37,11 @@
           "house_map": "Optional. Helps explain how one item is wired (what triggers it, what it affects). Off by default. For live on/off state or full lists, ask the assistant to check Home Assistant.",
           "shorten_mcp_results": "On by default. Very long answers from Home Assistant (whole-home lists, big searches) are summarized before they go to the AI. That saves tokens and keeps replies snappy. Off sends the full text.",
           "change_history": "On by default. Keeps a record of configuration changes the assistant made so you can review or undo them in Change History. Off stops new entries; the assistant can still use Home Assistant.",
-          "track_usage": "On by default. Records tokens and estimated USD cost after each Cursor or cloud turn. Shows a Usage page in the chat and creates Home Assistant sensors you can put on your own dashboards. Off stops new records; existing history stays.",
+          "track_usage": "On by default. Records tokens and estimated USD cost after each Cursor or cloud turn. Shows a Usage page in the chat. Off stops new records; existing history stays.",
           "show_chat_usage": "On by default. Shows tokens and cost under the chat title. Off hides only that line; tracking and the Usage page stay.",
-          "low_token": "How much to send each turn, for every Cloud / Ollama / Azure agent. Off is full. Light keeps tools and history and still checks the house (~5–20% less). Medium keeps tools with a short prompt (~25–45%). Extreme is chat-only (~80–95% less on a house-check turn).",
-          "prompt_cache": "On by default. Applied when the model supports it (Claude needs this; GPT often caches on its own). Ignored on Cursor and Ollama. Turn off to compare.",
+          "ha_usage_sensors": "Off by default. Creates cost, token, and turn sensors on a Usage device and on each agent for your own dashboards. Off removes those sensors.",
+          "low_token": "How much each turn sends, for every Cloud / Ollama / Azure agent.",
+          "prompt_cache": "On by default. Claude needs this to cache the repeated tool list; GPT often caches on its own. Cursor and Ollama ignore it. Leave it on so later rounds of a turn cost less.",
           "ui_theme": "Off by default. When on, only Home Assistant UI components are used which may work better with themes.",
           "cross_chat": "Off by default. When on, a question can use another chat whose title shares words with it. You do not have to mention chat. A short excerpt only, and that chat is not changed.",
           "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30."
@@ -99,6 +101,7 @@
           "change_history": "Change History",
           "track_usage": "Track usage and costs",
           "show_chat_usage": "Show cost in chat header",
+          "ha_usage_sensors": "Add Home Assistant usage sensors",
           "low_token": "Reduce token usage",
           "prompt_cache": "Prompt cache",
           "ui_theme": "Use HA Components",
@@ -117,10 +120,11 @@
           "house_map": "Optional. Helps explain how one item is wired (what triggers it, what it affects). Off by default. For live on/off state or full lists, ask the assistant to check Home Assistant.",
           "shorten_mcp_results": "On by default. Very long answers from Home Assistant (whole-home lists, big searches) are summarized before they go to the AI. That saves tokens and keeps replies snappy. Off sends the full text.",
           "change_history": "On by default. Keeps a record of configuration changes the assistant made so you can review or undo them in Change History. Off stops new entries; the assistant can still use Home Assistant.",
-          "track_usage": "On by default. Records tokens and estimated USD cost after each Cursor or cloud turn. Shows a Usage page in the chat and creates Home Assistant sensors you can put on your own dashboards. Off stops new records; existing history stays.",
+          "track_usage": "On by default. Records tokens and estimated USD cost after each Cursor or cloud turn. Shows a Usage page in the chat. Off stops new records; existing history stays.",
           "show_chat_usage": "On by default. Shows tokens and cost under the chat title. Off hides only that line; tracking and the Usage page stay.",
-          "low_token": "How much to send each turn, for every Cloud / Ollama / Azure agent. Off is full. Light keeps tools and history and still checks the house (~5–20% less). Medium keeps tools with a short prompt (~25–45%). Extreme is chat-only (~80–95% less on a house-check turn).",
-          "prompt_cache": "On by default. Applied when the model supports it (Claude needs this; GPT often caches on its own). Ignored on Cursor and Ollama. Turn off to compare.",
+          "ha_usage_sensors": "Off by default. Creates cost, token, and turn sensors on a Usage device and on each agent for your own dashboards. Off removes those sensors.",
+          "low_token": "How much each turn sends, for every Cloud / Ollama / Azure agent.",
+          "prompt_cache": "On by default. Claude needs this to cache the repeated tool list; GPT often caches on its own. Cursor and Ollama ignore it. Leave it on so later rounds of a turn cost less.",
           "ui_theme": "Off by default. When on, only Home Assistant UI components are used which may work better with themes.",
           "cross_chat": "Off by default. When on, a question can use another chat whose title shares words with it. You do not have to mention chat. A short excerpt only, and that chat is not changed.",
           "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30."
@@ -389,10 +393,10 @@
     },
     "low_token": {
       "options": {
-        "off": "Off",
-        "light": "Light",
-        "medium": "Medium",
-        "extreme": "Extreme"
+        "off": "Off (full)",
+        "light": "Light (tools and history, about 5–20% less)",
+        "medium": "Medium (short prompt, about 25–45% less)",
+        "extreme": "Extreme (chat only, about 80–95% less)"
       }
     }
   }

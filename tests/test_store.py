@@ -150,6 +150,16 @@ def test_usage_by_model_and_daily_events(tmp_path: Path) -> None:
     assert models["gpt-5-mini"]["cost_per_1k"] == 0.041667
     events = store.usage_events(since=(now - timedelta(days=3)).isoformat())
     assert len(events) == 3
+    claude = store.summarize_usage(agent_id="claude-1")
+    assert claude["turns"] == 2 and claude["cost_usd"] == 0.5
+    sonnet = store.usage_by_model(model="claude-sonnet-4-5")
+    assert len(sonnet) == 1 and sonnet[0]["turns"] == 2
+    gpt_events = store.usage_events(model="gpt-5-mini")
+    assert len(gpt_events) == 1
+    choices = store.usage_filter_choices()
+    assert {row["id"] for row in choices["agents"]} == {"claude-1", "gpt-1"}
+    assert "claude-sonnet-4-5" in choices["models"]
+    assert set(store.usage_filter_choices(agent_id="gpt-1")["models"]) == {"gpt-4o-mini-tts", "gpt-5-mini"}
     store.close()
 
 

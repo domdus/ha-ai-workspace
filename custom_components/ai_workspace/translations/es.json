@@ -18,6 +18,7 @@
           "change_history": "Historial de cambios",
           "track_usage": "Registrar uso y costes",
           "show_chat_usage": "Mostrar el coste en la cabecera del chat",
+          "ha_usage_sensors": "Añadir sensores de uso de Home Assistant",
           "low_token": "Reducir el uso de tokens",
           "prompt_cache": "Caché de prompt",
           "ui_theme": "Usar componentes de HA",
@@ -36,8 +37,9 @@
           "house_map": "Opcional. Ayuda a explicar cómo está conectado un elemento (qué lo dispara, a qué afecta). Desactivado por defecto. Para el estado encendido/apagado en vivo o listas completas, pide al asistente que consulte Home Assistant.",
           "shorten_mcp_results": "Activado por defecto. Las respuestas muy largas de Home Assistant (listas de toda la casa, búsquedas grandes) se resumen antes de ir a la IA. Eso ahorra tokens y mantiene las respuestas ágiles. Desactivado envía el texto completo.",
           "change_history": "Activado por defecto. Guarda un registro de los cambios de configuración que hizo el asistente para revisarlos o deshacerlos en el historial de cambios. Desactivado: no hay entradas nuevas; el asistente puede seguir usando Home Assistant.",
-          "track_usage": "Activado por defecto. Registra tokens y el coste estimado en USD tras cada turno de Cursor o la nube. Muestra una página de Uso en el chat y crea sensores de Home Assistant para tus propios paneles. Desactivado: no hay registros nuevos; el historial se queda.",
+          "track_usage": "Activado por defecto. Registra tokens y el coste estimado en USD tras cada turno de Cursor o la nube. Muestra una página de Uso en el chat. Desactivado: no hay registros nuevos; el historial se queda.",
           "show_chat_usage": "Activado por defecto. Muestra tokens y coste bajo el título del chat. Desactivado oculta solo esa línea; el registro y la página de Uso siguen.",
+          "ha_usage_sensors": "Desactivado por defecto. Crea sensores de coste, tokens y turnos en un dispositivo Usage y en cada agente para tus paneles. Desactivado los elimina.",
           "low_token": "Cuánto enviar en cada turno, para todos los agentes Cloud / Ollama / Azure.",
           "prompt_cache": "Activado por defecto. Reutiliza el prompt de sistema y la lista de herramientas para que las rondas siguientes cuesten menos. Apágalo para comparar. Claude lo necesita; GPT a menudo cachea solo. Se ignora en Ollama.",
           "ui_theme": "Desactivado por defecto. Si está activado, solo se usan componentes de la interfaz de Home Assistant, que pueden ir mejor con los temas.",
@@ -102,7 +104,8 @@
           "keep_chats": "Chats a conservar",
           "low_token": "Reducir el uso de tokens",
           "prompt_cache": "Caché de prompt",
-          "show_chat_usage": "Mostrar el coste en la cabecera del chat"
+          "show_chat_usage": "Mostrar el coste en la cabecera del chat",
+          "ha_usage_sensors": "Añadir sensores de uso de Home Assistant"
         },
         "data_description": {
           "stt_engine": "El dictado del navegador necesita un sitio seguro (https). O elige un motor de voz a texto de Home Assistant en Ajustes. El navegador debe permitir el micrófono.",
@@ -121,7 +124,8 @@
           "keep_chats": "Chats no fijados más recientes a conservar por persona. Los chats fijados se conservan siempre. Por defecto 30.",
           "low_token": "Cuánto enviar en cada turno, para todos los agentes Cloud / Ollama / Azure.",
           "prompt_cache": "Activado por defecto. Reutiliza el prompt de sistema y la lista de herramientas para que las rondas siguientes cuesten menos. Apágalo para comparar. Claude lo necesita; GPT a menudo cachea solo. Se ignora en Ollama.",
-          "show_chat_usage": "Activado por defecto. Muestra tokens y coste bajo el título del chat. Desactivado oculta solo esa línea; el registro y la página de Uso siguen."
+          "show_chat_usage": "Activado por defecto. Muestra tokens y coste bajo el título del chat. Desactivado oculta solo esa línea; el registro y la página de Uso siguen.",
+          "ha_usage_sensors": "Desactivado por defecto. Crea sensores de coste, tokens y turnos en un dispositivo Usage y en cada agente para tus paneles. Desactivado los elimina."
         },
         "sections": {
           "mcp": {

@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.0b7
+
+- Cursor runtime (Docker): optional `GIT_REPO` clones a project into the agent’s workspace on first start (SSH key or token stays on the container). `AGENTS.md` and the Home Assistant rule are only seeded when missing
+- Change History records Lovelace dashboard edits, including new dashboards
+- Queued follow-up message has its cancel button again while the agent is busy
+- **Add Home Assistant usage sensors** is a separate option (off by default). Track usage still records to the Usage page; HA entities are created only if you opt in, and turning it off removes them
+- Optional `configuration.yaml` for AI Workspace (UI still works). Keys you omit keep the saved value; `connections:` / `agents:` replace those rows. Example: `docs/configuration.example.yaml`
+- `/ai-workspace/usage` scrolls again, and the page filters by agent, model, and date range
+- Collapsed sidebar stacks History and Usage with the other rail icons
+- README is the intro, features, and install; settings, cost, privacy, MCP, and troubleshooting live under `docs/`
+
 ## 1.3.0b6
 
 - GPT-5 / o-series no longer get the Medium/Extreme reply cap (`max_completion_tokens` 1024/256), which spent the budget on hidden reasoning and returned no text

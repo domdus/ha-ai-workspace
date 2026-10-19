@@ -18,6 +18,7 @@
           "change_history": "更改历史",
           "track_usage": "跟踪用量和费用",
           "show_chat_usage": "在聊天标题栏显示费用",
+          "ha_usage_sensors": "添加 Home Assistant 用量传感器",
           "low_token": "降低 Token 用量",
           "prompt_cache": "Prompt 缓存",
           "ui_theme": "使用 HA 组件",
@@ -36,8 +37,9 @@
           "house_map": "可选。帮助说明某个项目如何连接（由什么触发、会影响什么）。默认关闭。若要查看实时开关状态或完整列表，请让助手查询 Home Assistant。",
           "shorten_mcp_results": "默认开启。来自 Home Assistant 的超长回复（全屋列表、大型搜索）会在送给 AI 之前先摘要。这样可节省 token，回复也更干脆。关闭则发送全文。",
           "change_history": "默认开启。记录助手所做的配置更改，便于你在更改历史中查看或撤销。关闭后不再新增记录；助手仍可使用 Home Assistant。",
-          "track_usage": "默认开启。每次 Cursor 或云端回合后记录 token 和估算的美元费用。在聊天中显示用量页面，并创建可供你自己仪表板使用的 Home Assistant 传感器。关闭后不再新增记录；已有历史保留。",
+          "track_usage": "默认开启。每次 Cursor 或云端回合后记录 token 和估算的美元费用。在聊天中显示用量页面。关闭后不再新增记录；已有历史保留。",
           "show_chat_usage": "默认开启。在聊天标题下显示 token 和费用。关闭只隐藏这一行；记录和用量页面仍在。",
+          "ha_usage_sensors": "默认关闭。在 Usage 设备和每个助手上创建费用、token 和回合传感器，供你自己的仪表板使用。关闭后会移除这些传感器。",
           "low_token": "每个 Cloud / Ollama / Azure 助手每轮发送多少。",
           "prompt_cache": "默认开启。复用重复的系统提示和工具列表，让后续轮次更便宜。关闭以便对比。Claude 需要此项；GPT 常常自行缓存。Ollama 上忽略。",
           "ui_theme": "默认关闭。开启后只使用 Home Assistant 界面组件，可能更适合主题。",
@@ -102,7 +104,8 @@
           "keep_chats": "要保留的聊天",
           "low_token": "降低 Token 用量",
           "prompt_cache": "Prompt 缓存",
-          "show_chat_usage": "在聊天标题栏显示费用"
+          "show_chat_usage": "在聊天标题栏显示费用",
+          "ha_usage_sensors": "添加 Home Assistant 用量传感器"
         },
         "data_description": {
           "stt_engine": "浏览器听写需要安全站点 (https)。也可在设置中选择 Home Assistant 的语音转文字引擎。浏览器必须允许使用麦克风。",
@@ -121,7 +124,8 @@
           "keep_chats": "每人保留的最新未置顶聊天。置顶聊天始终保留。默认 30。",
           "low_token": "每个 Cloud / Ollama / Azure 助手每轮发送多少。",
           "prompt_cache": "默认开启。复用重复的系统提示和工具列表，让后续轮次更便宜。关闭以便对比。Claude 需要此项；GPT 常常自行缓存。Ollama 上忽略。",
-          "show_chat_usage": "默认开启。在聊天标题下显示 token 和费用。关闭只隐藏这一行；记录和用量页面仍在。"
+          "show_chat_usage": "默认开启。在聊天标题下显示 token 和费用。关闭只隐藏这一行；记录和用量页面仍在。",
+          "ha_usage_sensors": "默认关闭。在 Usage 设备和每个助手上创建费用、token 和回合传感器，供你自己的仪表板使用。关闭后会移除这些传感器。"
         },
         "sections": {
           "mcp": {

@@ -55,6 +55,7 @@ class Settings:
     change_history: bool = True
     track_usage: bool = True
     show_chat_usage: bool = True
+    ha_usage_sensors: bool = False
     ui_theme: str = "standard"
     cross_chat: bool = False
     token_mode: str = "off"

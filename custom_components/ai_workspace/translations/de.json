@@ -18,6 +18,7 @@
           "change_history": "Änderungsverlauf",
           "track_usage": "Nutzung und Kosten aufzeichnen",
           "show_chat_usage": "Kosten in der Chat-Kopfzeile anzeigen",
+          "ha_usage_sensors": "Home-Assistant-Nutzungssensoren hinzufügen",
           "low_token": "Tokenverbrauch reduzieren",
           "prompt_cache": "Prompt-Cache",
           "cross_chat": "Chatübergreifend",
@@ -36,10 +37,11 @@
           "house_map": "Optional. Hilft zu erklären, wie ein Eintrag verdrahtet ist (was ihn auslöst, was er beeinflusst). Standardmäßig aus. Für live an/aus oder volle Listen: die Assistentin soll Home Assistant direkt prüfen.",
           "shorten_mcp_results": "Standardmäßig an. Sehr lange Antworten aus Home Assistant (Listen fürs ganze Haus, große Abfragen) werden gekürzt, bevor sie an die KI gehen. Das spart Token und hält Antworten flott. Aus sendet den vollen Text.",
           "change_history": "Standardmäßig an. Merkt sich Konfigurationsänderungen der Assistentin, damit du sie im Änderungsverlauf prüfen oder rückgängig machen kannst. Aus: keine neuen Einträge; die Assistentin kann Home Assistant weiter nutzen.",
-          "track_usage": "Standardmäßig an. Zeichnet Token und geschätzte USD-Kosten nach jedem Cursor- oder Cloud-Turn auf. Zeigt eine Nutzungsseite im Chat und legt Home-Assistant-Sensoren an. Aus: keine neuen Einträge; vorhandene Historie bleibt.",
+          "track_usage": "Standardmäßig an. Zeichnet Token und geschätzte USD-Kosten nach jedem Cursor- oder Cloud-Turn auf. Zeigt eine Nutzungsseite im Chat. Aus: keine neuen Einträge; vorhandene Historie bleibt.",
           "show_chat_usage": "Standard an. Zeigt Token und Kosten unter dem Chattitel. Aus blendet nur diese Zeile; Aufzeichnung und die Nutzungsseite bleiben.",
-          "low_token": "Wie viel jeder Zug sendet, für alle Cloud-/Ollama-/Azure-Agenten. Aus ist voll. Light: Tools und Verlauf, prüft das Haus (~5–20 % weniger). Medium: Tools, kurzer Prompt (~25–45 %). Extreme: nur Chat (~80–95 % weniger bei einer Hausprüfung).",
-          "prompt_cache": "Standard an. Wird genutzt, wo das Modell das unterstützt (Claude braucht das; GPT cached oft von selbst). Wird bei Cursor und Ollama ignoriert. Aus zum Vergleich.",
+          "ha_usage_sensors": "Standardmäßig aus. Legt Sensoren für Kosten, Token und Runden auf einem Nutzungsgerät und jedem Agenten an, die du auf eigene Dashboards legen kannst. Aus entfernt diese Sensoren.",
+          "low_token": "Wie viel jeder Zug sendet, für alle Cloud-/Ollama-/Azure-Agenten.",
+          "prompt_cache": "Standard an. Claude braucht das, um die wiederholte Tool-Liste zu cachen; GPT cached oft von selbst. Wird bei Cursor und Ollama ignoriert. Lass es an, damit spätere Runden eines Turns weniger kosten.",
           "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen anderen Chat nutzen, dessen Titel Wörter mit ihr teilt. Du musst nicht Chat oder Gespräch sagen. Nur ein kurzer Auszug, und dieser Chat wird nicht geändert.",
           "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30.",
           "ui_theme": "Standardmäßig aus. Wenn an, werden nur Home-Assistant-UI-Komponenten genutzt, die oft besser mit Themes funktionieren."
@@ -99,6 +101,7 @@
           "change_history": "Änderungsverlauf",
           "track_usage": "Nutzung und Kosten aufzeichnen",
           "show_chat_usage": "Kosten in der Chat-Kopfzeile anzeigen",
+          "ha_usage_sensors": "Home-Assistant-Nutzungssensoren hinzufügen",
           "low_token": "Tokenverbrauch reduzieren",
           "prompt_cache": "Prompt-Cache",
           "cross_chat": "Chatübergreifend",
@@ -117,10 +120,11 @@
           "house_map": "Optional. Hilft zu erklären, wie ein Eintrag verdrahtet ist (was ihn auslöst, was er beeinflusst). Standardmäßig aus. Für live an/aus oder volle Listen: die Assistentin soll Home Assistant direkt prüfen.",
           "shorten_mcp_results": "Standardmäßig an. Sehr lange Antworten aus Home Assistant (Listen fürs ganze Haus, große Abfragen) werden gekürzt, bevor sie an die KI gehen. Das spart Token und hält Antworten flott. Aus sendet den vollen Text.",
           "change_history": "Standardmäßig an. Merkt sich Konfigurationsänderungen der Assistentin, damit du sie im Änderungsverlauf prüfen oder rückgängig machen kannst. Aus: keine neuen Einträge; die Assistentin kann Home Assistant weiter nutzen.",
-          "track_usage": "Standardmäßig an. Zeichnet Token und geschätzte USD-Kosten nach jedem Cursor- oder Cloud-Turn auf. Zeigt eine Nutzungsseite im Chat und legt Home-Assistant-Sensoren an. Aus: keine neuen Einträge; vorhandene Historie bleibt.",
+          "track_usage": "Standardmäßig an. Zeichnet Token und geschätzte USD-Kosten nach jedem Cursor- oder Cloud-Turn auf. Zeigt eine Nutzungsseite im Chat. Aus: keine neuen Einträge; vorhandene Historie bleibt.",
           "show_chat_usage": "Standard an. Zeigt Token und Kosten unter dem Chattitel. Aus blendet nur diese Zeile; Aufzeichnung und die Nutzungsseite bleiben.",
-          "low_token": "Wie viel jeder Zug sendet, für alle Cloud-/Ollama-/Azure-Agenten. Aus ist voll. Light: Tools und Verlauf, prüft das Haus (~5–20 % weniger). Medium: Tools, kurzer Prompt (~25–45 %). Extreme: nur Chat (~80–95 % weniger bei einer Hausprüfung).",
-          "prompt_cache": "Standard an. Wird genutzt, wo das Modell das unterstützt (Claude braucht das; GPT cached oft von selbst). Wird bei Cursor und Ollama ignoriert. Aus zum Vergleich.",
+          "ha_usage_sensors": "Standardmäßig aus. Legt Sensoren für Kosten, Token und Runden auf einem Nutzungsgerät und jedem Agenten an, die du auf eigene Dashboards legen kannst. Aus entfernt diese Sensoren.",
+          "low_token": "Wie viel jeder Zug sendet, für alle Cloud-/Ollama-/Azure-Agenten.",
+          "prompt_cache": "Standard an. Claude braucht das, um die wiederholte Tool-Liste zu cachen; GPT cached oft von selbst. Wird bei Cursor und Ollama ignoriert. Lass es an, damit spätere Runden eines Turns weniger kosten.",
           "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen anderen Chat nutzen, dessen Titel Wörter mit ihr teilt. Du musst nicht Chat oder Gespräch sagen. Nur ein kurzer Auszug, und dieser Chat wird nicht geändert.",
           "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30.",
           "ui_theme": "Standardmäßig aus. Wenn an, werden nur Home-Assistant-UI-Komponenten genutzt, die oft besser mit Themes funktionieren."
@@ -389,10 +393,10 @@
     },
     "low_token": {
       "options": {
-        "off": "Aus",
-        "light": "Light",
-        "medium": "Medium",
-        "extreme": "Extreme"
+        "off": "Aus (voll)",
+        "light": "Light (Tools und Verlauf, ca. 5–20 % weniger)",
+        "medium": "Medium (kurzer Prompt, ca. 25–45 % weniger)",
+        "extreme": "Extreme (nur Chat, ca. 80–95 % weniger)"
       }
     }
   }

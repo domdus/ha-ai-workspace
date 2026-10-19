@@ -132,6 +132,11 @@ def usage_device_ident(entry_id: str) -> str:
     return f"{entry_id}:usage"
 
 
+def is_usage_sensor_unique_id(unique_id: str | None) -> bool:
+    """True for workspace/agent usage sensors, not conversation/STT/TTS."""
+    return "_usage_" in str(unique_id or "")
+
+
 CONF_AGENT_ID = "agent_id"
 CONF_RUNTIME_TOKEN = "runtime_token"
 STT_BROWSER = "browser"
@@ -179,6 +184,7 @@ CONF_SHORTEN_MCP_RESULTS = "shorten_mcp_results"
 CONF_CHANGE_HISTORY = "change_history"
 CONF_TRACK_USAGE = "track_usage"
 CONF_SHOW_CHAT_USAGE = "show_chat_usage"
+CONF_HA_USAGE_SENSORS = "ha_usage_sensors"
 CONF_CROSS_CHAT = "cross_chat"
 CONF_UI_THEME = "ui_theme"
 UI_THEME_STANDARD = "standard"

@@ -8,10 +8,9 @@ from types import MappingProxyType
 
 from homeassistant.components import frontend, panel_custom
 from homeassistant.components.http import StaticPathConfig
-from homeassistant.config_entries import ConfigEntry, ConfigSubentry
+from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry, ConfigSubentry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
@@ -30,6 +29,7 @@ from .const import (
     CONF_PROMPT_CACHE,
     CONF_TRACK_USAGE,
     CONF_SHOW_CHAT_USAGE,
+    CONF_HA_USAGE_SENSORS,
     CONF_UI_THEME,
     CONF_KEEP_CHATS,
     CONF_MCP_KIND,
@@ -59,6 +59,7 @@ from .const import (
     TTS_OFF,
     token_mode_of,
     usage_device_ident,
+    is_usage_sensor_unique_id,
     ui_theme_of,
 )
 from .discovery import async_bind_runtime
@@ -66,11 +67,12 @@ from .http import register_views
 from .mcp_config import mcp_servers_from_saved
 from .mcp_resolve import async_resolve_mcp_url, infer_mcp_kind
 from .models import Settings
+from . import yaml_config
+from .yaml_config import YAML_STORAGE, async_apply_yaml
 
+CONFIG_SCHEMA = yaml_config.CONFIG_SCHEMA
 _LOGGER = logging.getLogger(__name__)
 _PLATFORMS = [Platform.CONVERSATION, Platform.SENSOR, Platform.STT, Platform.TTS]
-
-CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 def _merged(entry: ConfigEntry) -> dict:
@@ -173,6 +175,7 @@ async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
         change_history=bool(data.get(CONF_CHANGE_HISTORY, True)),
         track_usage=bool(data.get(CONF_TRACK_USAGE, True)),
         show_chat_usage=bool(data.get(CONF_SHOW_CHAT_USAGE, True)),
+        ha_usage_sensors=bool(data.get(CONF_HA_USAGE_SENSORS, False)),
         token_mode=_workspace_token_mode(entry, data),
         prompt_cache=_workspace_prompt_cache(entry, data),
         ui_theme=ui_theme_of(data.get(CONF_UI_THEME)),
@@ -243,9 +246,38 @@ def _ensure_usage_subentry(hass: HomeAssistant, entry: ConfigEntry) -> str | Non
     return sub.subentry_id
 
 
-def _sync_subentry_devices(hass: HomeAssistant, entry: ConfigEntry) -> None:
+def _remove_ha_usage_sensors(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Drop usage sensors, the Usage device, and its subentry when the option is off."""
+    entities = er.async_get(hass)
+    for row in list(er.async_entries_for_config_entry(entities, entry.entry_id)):
+        if row.domain != "sensor" or row.platform != DOMAIN:
+            continue
+        if not is_usage_sensor_unique_id(row.unique_id):
+            continue
+        entities.async_remove(row.entity_id)
+    registry = dr.async_get(hass)
+    usage_ident = (DOMAIN, usage_device_ident(entry.entry_id))
+    for device in list(dr.async_entries_for_config_entry(registry, entry.entry_id)):
+        if usage_ident in device.identifiers:
+            registry.async_remove_device(device.id)
+    sub_id = next((sub.subentry_id for sub in entry.subentries.values() if sub.subentry_type == SUBENTRY_USAGE), None)
+    if not sub_id:
+        return
+    remover = getattr(hass.config_entries, "async_remove_subentry", None)
+    if not callable(remover):
+        return
+    try:
+        remover(entry, sub_id, reload_after=False)
+    except TypeError:
+        remover(entry, sub_id)
+
+
+def _sync_subentry_devices(hass: HomeAssistant, entry: ConfigEntry, *, ha_usage_sensors: bool) -> None:
     """One service device per connection and agent row, so each row can be disabled on its own."""
-    _ensure_usage_subentry(hass, entry)
+    if ha_usage_sensors:
+        _ensure_usage_subentry(hass, entry)
+    else:
+        _remove_ha_usage_sensors(hass, entry)
     registry = dr.async_get(hass)
     wanted: set[str] = set()
     usage_ident = (DOMAIN, usage_device_ident(entry.entry_id))
@@ -255,6 +287,8 @@ def _sync_subentry_devices(hass: HomeAssistant, entry: ConfigEntry) -> None:
         elif sub.subentry_type == SUBENTRY_AGENT:
             ident, model, name = f"agent:{agent_device_key(sub)}", "Agent", str(sub.title or "Agent")
         elif sub.subentry_type == SUBENTRY_USAGE:
+            if not ha_usage_sensors:
+                continue
             ident, model, name = usage_device_ident(entry.entry_id), "Usage", "AI Workspace"
         else:
             continue
@@ -287,7 +321,7 @@ def _sync_subentry_devices(hass: HomeAssistant, entry: ConfigEntry) -> None:
             entry_type=dr.DeviceEntryType.SERVICE,
         )
     for device in list(dr.async_entries_for_config_entry(registry, entry.entry_id)):
-        if usage_ident in device.identifiers:
+        if ha_usage_sensors and usage_ident in device.identifiers:
             continue
         if not device.config_subentry_id or device.config_subentry_id not in wanted:
             for entity_id in _conversation_entities(hass, device_id=device.id):
@@ -354,11 +388,28 @@ async def _register_frontend(hass: HomeAssistant, settings: Settings) -> None:
     _set_overlay_js(hass, settings.enable_overlay)
 
 
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    """Import optional configuration.yaml. The UI still works without it."""
+    conf = config.get(DOMAIN)
+    if conf:
+        hass.data[YAML_STORAGE] = conf
+        if not hass.config_entries.async_entries(DOMAIN):
+            hass.async_create_task(
+                hass.config_entries.flow.async_init(
+                    DOMAIN, context={"source": SOURCE_IMPORT}, data=dict(conf)
+                )
+            )
+    return True
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     from .house_map import async_setup_house_map
     from .http import _prune_all_chats
     from .store import Store
 
+    yaml_conf = hass.data.get(YAML_STORAGE)
+    if yaml_conf:
+        await async_apply_yaml(hass, entry, yaml_conf)
     settings = await _build_settings(hass, entry)
     await hass.async_add_executor_job(settings.ensure_dirs)
     store = await hass.async_add_executor_job(Store, settings.data_dir / "ai-workspace.sqlite")
@@ -373,7 +424,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "runtime_token": "",
     }
     hass.data[DOMAIN] = bucket
-    _sync_subentry_devices(hass, entry)
+    _sync_subentry_devices(hass, entry, ha_usage_sensors=settings.ha_usage_sensors)
     _listen_device_disable(hass, entry)
     disabled = _disabled_subentries(hass, entry)
     bucket["providers"] = {

@@ -18,6 +18,7 @@
           "change_history": "Dəyişiklik tarixçəsi",
           "track_usage": "İstifadə və xərcləri izlə",
           "show_chat_usage": "Çat başlığında xərci göstər",
+          "ha_usage_sensors": "Home Assistant istifadə sensorlarını əlavə et",
           "low_token": "Token istifadəsini azalt",
           "prompt_cache": "Prompt keşi",
           "ui_theme": "HA komponentlərindən istifadə et",
@@ -36,8 +37,9 @@
           "house_map": "İstəyə bağlı. Bir elementin necə bağlandığını izah etməyə kömək edir (nə onu işə salır, nəyə təsir edir). Defolt olaraq sönülüdür. Canlı açıq/sönülü vəziyyət və ya tam siyahılar üçün köməkçidən Home Assistant-ı yoxlamağı xahiş edin.",
           "shorten_mcp_results": "Defolt olaraq açıqdır. Home Assistant-dan çox uzun cavablar (bütün ev siyahıları, böyük axtarışlar) AI-yə getməzdən əvvəl xülasə edilir. Bu, tokenləri qənaət edir və cavabları çevik saxlayır. Sönülü tam mətni göndərir.",
           "change_history": "Defolt olaraq açıqdır. Köməkçinin etdiyi konfiqurasiya dəyişikliklərinin qeydini saxlayır ki, onları Dəyişiklik tarixçəsində nəzərdən keçirə və ya ləğv edəsiniz. Sönülü yeni qeydləri dayandırır; köməkçi Home Assistant-ı yenə istifadə edə bilər.",
-          "track_usage": "Defolt olaraq açıqdır. Hər Cursor və ya bulud turundan sonra token və təxmini USD xərcini yazır. Söhbətdə İstifadə səhifəsi göstərir və öz panelləriniz üçün Home Assistant sensorları yaradır. Sönülü yeni qeydləri dayandırır; mövcud tarixçə qalır.",
+          "track_usage": "Defolt olaraq açıqdır. Hər Cursor və ya bulud turundan sonra token və təxmini USD xərcini yazır. Söhbətdə İstifadə səhifəsi göstərir. Sönülü yeni qeydləri dayandırır; mövcud tarixçə qalır.",
           "show_chat_usage": "Defolt olaraq açıqdır. Çat başlığının altında token və xərci göstərir. Sönülü yalnız bu sətri gizlədir; izləmə və İstifadə səhifəsi qalır.",
+          "ha_usage_sensors": "Defolt olaraq bağlıdır. Usage cihazında və hər agentdə xərc, token və tur sensorları yaradır. Söndürmək onları silir.",
           "low_token": "Hər turda nə qədər göndərilsin, bütün Cloud / Ollama / Azure agentlər üçün.",
           "prompt_cache": "Defolt olaraq açıqdır. Təkrar sistem promptunu və alət siyahısını yenidən istifadə edir ki, növbəti raundlar ucuz olsun. Müqayisə üçün söndürün. Claude buna ehtiyac duyur; GPT çox vaxt özü keşləyir. Ollama-da nəzərə alınmır.",
           "ui_theme": "Susmaya görə sönülü. Açıldıqda yalnız Home Assistant interfeys komponentləri istifadə olunur, bu da temalarla daha yaxşı işləyə bilər.",
@@ -102,7 +104,8 @@
           "keep_chats": "Saxlanılacaq söhbətlər",
           "low_token": "Token istifadəsini azalt",
           "prompt_cache": "Prompt keşi",
-          "show_chat_usage": "Çat başlığında xərci göstər"
+          "show_chat_usage": "Çat başlığında xərci göstər",
+          "ha_usage_sensors": "Home Assistant istifadə sensorlarını əlavə et"
         },
         "data_description": {
           "stt_engine": "Brauzer diktəsi təhlükəsiz sayt (https) tələb edir. Və ya Ayarlar altında Home Assistant nitqdən-mətnə mühərriki seçin. Brauzer mikrofona icazə verməlidir.",
@@ -121,7 +124,8 @@
           "keep_chats": "Hər şəxs üçün saxlanılacaq ən yeni sancılmamış söhbətlər. Sancılmış söhbətlər həmişə saxlanılır. Defolt 30.",
           "low_token": "Hər turda nə qədər göndərilsin, bütün Cloud / Ollama / Azure agentlər üçün.",
           "prompt_cache": "Defolt olaraq açıqdır. Təkrar sistem promptunu və alət siyahısını yenidən istifadə edir ki, növbəti raundlar ucuz olsun. Müqayisə üçün söndürün. Claude buna ehtiyac duyur; GPT çox vaxt özü keşləyir. Ollama-da nəzərə alınmır.",
-          "show_chat_usage": "Defolt olaraq açıqdır. Çat başlığının altında token və xərci göstərir. Sönülü yalnız bu sətri gizlədir; izləmə və İstifadə səhifəsi qalır."
+          "show_chat_usage": "Defolt olaraq açıqdır. Çat başlığının altında token və xərci göstərir. Sönülü yalnız bu sətri gizlədir; izləmə və İstifadə səhifəsi qalır.",
+          "ha_usage_sensors": "Defolt olaraq bağlıdır. Usage cihazında və hər agentdə xərc, token və tur sensorları yaradır. Söndürmək onları silir."
         },
         "sections": {
           "mcp": {

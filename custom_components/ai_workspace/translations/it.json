@@ -18,6 +18,7 @@
           "change_history": "Cronologia delle modifiche",
           "track_usage": "Monitora uso e costi",
           "show_chat_usage": "Mostra il costo nell’intestazione della chat",
+          "ha_usage_sensors": "Aggiungi sensori di uso Home Assistant",
           "low_token": "Riduci uso token",
           "prompt_cache": "Cache del prompt",
           "ui_theme": "Usa componenti HA",
@@ -36,8 +37,9 @@
           "house_map": "Facoltativo. Aiuta a spiegare come è collegato un elemento (cosa lo attiva, cosa influenza). Disattivo per impostazione predefinita. Per lo stato acceso/spento in tempo reale o elenchi completi, chiedi all'assistente di consultare Home Assistant.",
           "shorten_mcp_results": "Attivo per impostazione predefinita. Le risposte molto lunghe di Home Assistant (elenchi di tutta la casa, ricerche ampie) vengono riassunte prima di andare all'IA. Così si risparmiano tokens e le risposte restano snelle. Disattivo invia il testo completo.",
           "change_history": "Attivo per impostazione predefinita. Conserva una traccia delle modifiche di configurazione fatte dall'assistente, così puoi rivederle o annullarle nella Cronologia delle modifiche. Disattivo: niente nuove voci; l'assistente può comunque usare Home Assistant.",
-          "track_usage": "Attivo per impostazione predefinita. Registra token e costo USD stimato dopo ogni turno Cursor o cloud. Mostra una pagina Uso nella chat e crea sensori Home Assistant per le tue dashboard. Disattivo: niente nuovi record; la cronologia resta.",
+          "track_usage": "Attivo per impostazione predefinita. Registra token e costo USD stimato dopo ogni turno Cursor o cloud. Mostra una pagina Uso nella chat. Disattivo: niente nuovi record; la cronologia resta.",
           "show_chat_usage": "Attivo di default. Mostra token e costo sotto il titolo della chat. Disattivo nasconde solo quella riga; il tracciamento e la pagina Uso restano.",
+          "ha_usage_sensors": "Disattivo per impostazione predefinita. Crea sensori di costo, token e turni su un dispositivo Usage e su ogni agente per le tue dashboard. Disattivo li rimuove.",
           "low_token": "Quanto inviare a ogni turno, per tutti gli agenti Cloud / Ollama / Azure.",
           "prompt_cache": "Attivo di default. Riutilizza prompt di sistema e elenco strumenti così i round successivi costano meno. Disattiva per confrontare. Claude lo richiede; GPT spesso memorizza da solo. Ignorato su Ollama.",
           "ui_theme": "Disattivato di default. Se attivo, vengono usati solo i componenti dell’interfaccia di Home Assistant, che possono funzionare meglio con i temi.",
@@ -102,7 +104,8 @@
           "keep_chats": "Chat da conservare",
           "low_token": "Riduci uso token",
           "prompt_cache": "Cache del prompt",
-          "show_chat_usage": "Mostra il costo nell’intestazione della chat"
+          "show_chat_usage": "Mostra il costo nell’intestazione della chat",
+          "ha_usage_sensors": "Aggiungi sensori di uso Home Assistant"
         },
         "data_description": {
           "stt_engine": "La dettatura del browser richiede un sito sicuro (https). Oppure scegli un motore voce in testo di Home Assistant in Impostazioni. Il browser deve autorizzare il microfono.",
@@ -121,7 +124,8 @@
           "keep_chats": "Chat non fissate più recenti da conservare per persona. Le chat fissate restano sempre. Predefinito 30.",
           "low_token": "Quanto inviare a ogni turno, per tutti gli agenti Cloud / Ollama / Azure.",
           "prompt_cache": "Attivo di default. Riutilizza prompt di sistema e elenco strumenti così i round successivi costano meno. Disattiva per confrontare. Claude lo richiede; GPT spesso memorizza da solo. Ignorato su Ollama.",
-          "show_chat_usage": "Attivo di default. Mostra token e costo sotto il titolo della chat. Disattivo nasconde solo quella riga; il tracciamento e la pagina Uso restano."
+          "show_chat_usage": "Attivo di default. Mostra token e costo sotto il titolo della chat. Disattivo nasconde solo quella riga; il tracciamento e la pagina Uso restano.",
+          "ha_usage_sensors": "Disattivo per impostazione predefinita. Crea sensori di costo, token e turni su un dispositivo Usage e su ogni agente per le tue dashboard. Disattivo li rimuove."
         },
         "sections": {
           "mcp": {

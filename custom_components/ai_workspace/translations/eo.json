@@ -18,6 +18,7 @@
           "change_history": "Ŝanĝohistorio",
           "track_usage": "Registri uzon kaj kostojn",
           "show_chat_usage": "Montri koston en la babila kapo",
+          "ha_usage_sensors": "Aldoni Home-Assistant-uzosensilojn",
           "low_token": "Malaltigi ĵetonan uzon",
           "prompt_cache": "Invita kaŝmemoro",
           "ui_theme": "Uzi HA-komponentojn",
@@ -36,8 +37,9 @@
           "house_map": "Laŭvola. Helpas klarigi kiel unu ero estas kabligita (kio ekigas ĝin, kion ĝi influas). Defaŭlte malŝalta. Por viva stato ŝaltite/malŝaltite aŭ plenaj listoj, petu la asistanton kontroli Home Assistant.",
           "shorten_mcp_results": "Defaŭlte ŝalta. Tre longaj respondoj de Home Assistant (tutdomaj listoj, grandaj serĉoj) estas resumitaj antaŭ ol ili iras al la AI. Tio ŝparas ĵetonojn kaj tenas respondojn rapidaj. Malŝalte sendas la plenan tekston.",
           "change_history": "Defaŭlte ŝalta. Konservas registron de agordaj ŝanĝoj faritaj de la asistanto, por ke vi povu revizii aŭ malfari ilin en Ŝanĝohistorio. Malŝalte ĉesigas novajn enskribojn; la asistanto ankoraŭ povas uzi Home Assistant.",
-          "track_usage": "Defaŭlte ŝalta. Registras ĵetonojn kaj taksitan USD-koston post ĉiu Cursor aŭ nuba vico. Montras paĝon Uzo en la babilejo kaj kreas Home-Assistant-sensilojn por viaj propraj paneloj. Malŝalte ĉesigas novajn enskribojn; ekzistanta historio restas.",
+          "track_usage": "Defaŭlte ŝalta. Registras ĵetonojn kaj taksitan USD-koston post ĉiu Cursor aŭ nuba vico. Montras paĝon Uzo en la babilejo. Malŝalte ĉesigas novajn enskribojn; ekzistanta historio restas.",
           "show_chat_usage": "Defaŭlte ŝaltita. Montras ĵetonojn kaj koston sub la babila titolo. Malŝalte kaŝas nur tiun linion; registrado kaj la paĝo Uzo restas.",
+          "ha_usage_sensors": "Defaŭlte malŝalta. Kreas sensilojn pri kosto, ĵetonoj kaj vicoj sur Usage-aparato kaj ĉiu agento por viaj paneloj. Malŝalte forigas ilin.",
           "low_token": "Kiom sendi ĉiun vicon, por ĉiu Cloud / Ollama / Azure-agento.",
           "prompt_cache": "Defaŭlte ŝaltita. Reuzas la sisteman prompton kaj iloliston por ke postaj rundoj kostu malpli. Malŝaltu por kompari. Claude bezonas tion; GPT ofte kaŝas mem. Ignorata ĉe Ollama.",
           "ui_theme": "Defaŭlte malŝaltita. Kiam ŝaltita, nur interfacaj komponantoj de Home Assistant estas uzataj, kio povas pli bone funkcii kun etosoj.",
@@ -102,7 +104,8 @@
           "keep_chats": "Babilejoj konservotaj",
           "low_token": "Malaltigi ĵetonan uzon",
           "prompt_cache": "Invita kaŝmemoro",
-          "show_chat_usage": "Montri koston en la babila kapo"
+          "show_chat_usage": "Montri koston en la babila kapo",
+          "ha_usage_sensors": "Aldoni Home-Assistant-uzosensilojn"
         },
         "data_description": {
           "stt_engine": "Foliumila dikto bezonas sekuran retejon (https). Aŭ elektu Home Assistant-motoron de parolo-al-teksto ĉe Agordoj. La foliumilo devas permesi la mikrofonon.",
@@ -121,7 +124,8 @@
           "keep_chats": "Plej novaj nealpinglitaj babilejoj konservotaj po persono. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30.",
           "low_token": "Kiom sendi ĉiun vicon, por ĉiu Cloud / Ollama / Azure-agento.",
           "prompt_cache": "Defaŭlte ŝaltita. Reuzas la sisteman prompton kaj iloliston por ke postaj rundoj kostu malpli. Malŝaltu por kompari. Claude bezonas tion; GPT ofte kaŝas mem. Ignorata ĉe Ollama.",
-          "show_chat_usage": "Defaŭlte ŝaltita. Montras ĵetonojn kaj koston sub la babila titolo. Malŝalte kaŝas nur tiun linion; registrado kaj la paĝo Uzo restas."
+          "show_chat_usage": "Defaŭlte ŝaltita. Montras ĵetonojn kaj koston sub la babila titolo. Malŝalte kaŝas nur tiun linion; registrado kaj la paĝo Uzo restas.",
+          "ha_usage_sensors": "Defaŭlte malŝalta. Kreas sensilojn pri kosto, ĵetonoj kaj vicoj sur Usage-aparato kaj ĉiu agento por viaj paneloj. Malŝalte forigas ilin."
         },
         "sections": {
           "mcp": {

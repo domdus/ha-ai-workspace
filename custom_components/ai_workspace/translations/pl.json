@@ -18,6 +18,7 @@
           "change_history": "Historia zmian",
           "track_usage": "Śledź użycie i koszty",
           "show_chat_usage": "Pokaż koszt w nagłówku czatu",
+          "ha_usage_sensors": "Dodaj czujniki użycia Home Assistant",
           "low_token": "Zmniejsz zużycie tokenów",
           "prompt_cache": "Pamięć promptu",
           "ui_theme": "Użyj komponentów HA",
@@ -36,8 +37,9 @@
           "house_map": "Opcjonalne. Pomaga wyjaśnić, jak element jest podłączony (co go uruchamia, na co wpływa). Domyślnie wyłączone. Dla stanu wł/wył na żywo lub pełnych list poproś asystenta, żeby sprawdził Home Assistant.",
           "shorten_mcp_results": "Domyślnie włączone. Bardzo długie odpowiedzi z Home Assistant (listy całego domu, duże wyszukiwania) są streszczane, zanim trafią do AI. To oszczędza tokens i utrzymuje zwięzłe odpowiedzi. Wyłączone wysyła pełny tekst.",
           "change_history": "Domyślnie włączone. Zapisuje zmiany konfiguracji wykonane przez asystenta, żebyś mógł je przejrzeć lub cofnąć w Historii zmian. Wyłączone: bez nowych wpisów; asystent nadal może korzystać z Home Assistant.",
-          "track_usage": "Domyślnie włączone. Zapisuje tokeny i szacowany koszt USD po każdej turze Cursor lub chmury. Pokazuje stronę Użycie w czacie i tworzy czujniki Home Assistant do własnych pulpitów. Wyłączone: bez nowych wpisów; historia zostaje.",
+          "track_usage": "Domyślnie włączone. Zapisuje tokeny i szacowany koszt USD po każdej turze Cursor lub chmury. Pokazuje stronę Użycie w czacie. Wyłączone: bez nowych wpisów; historia zostaje.",
           "show_chat_usage": "Domyślnie włączone. Pokazuje tokeny i koszt pod tytułem czatu. Wyłączenie ukrywa tylko tę linię; śledzenie i strona Użycie zostają.",
+          "ha_usage_sensors": "Domyślnie wyłączone. Tworzy czujniki kosztów, tokenów i tur na urządzeniu Usage i przy każdym agencie na własne pulpity. Wyłączenie je usuwa.",
           "low_token": "Ile wysyłać w turze, dla wszystkich agentów Cloud / Ollama / Azure.",
           "prompt_cache": "Domyślnie włączone. Ponownie używa promptu systemowego i listy narzędzi, by kolejne rundy kosztowały mniej. Wyłącz, żeby porównać. Claude tego potrzebuje; GPT często cache’uje sam. Ignorowane w Ollama.",
           "ui_theme": "Domyślnie wyłączone. Gdy włączone, używane są tylko komponenty interfejsu Home Assistant, które mogą lepiej współpracować z motywami.",
@@ -102,7 +104,8 @@
           "keep_chats": "Czaty do zachowania",
           "low_token": "Zmniejsz zużycie tokenów",
           "prompt_cache": "Pamięć promptu",
-          "show_chat_usage": "Pokaż koszt w nagłówku czatu"
+          "show_chat_usage": "Pokaż koszt w nagłówku czatu",
+          "ha_usage_sensors": "Dodaj czujniki użycia Home Assistant"
         },
         "data_description": {
           "stt_engine": "Dyktowanie w przeglądarce wymaga bezpiecznej strony (https). Albo wybierz silnik mowy na tekst Home Assistant w Ustawieniach. Przeglądarka musi zezwolić na mikrofon.",
@@ -121,7 +124,8 @@
           "keep_chats": "Najnowsze nieprzypięte czaty na osobę. Przypięte czaty zostają zawsze. Domyślnie 30.",
           "low_token": "Ile wysyłać w turze, dla wszystkich agentów Cloud / Ollama / Azure.",
           "prompt_cache": "Domyślnie włączone. Ponownie używa promptu systemowego i listy narzędzi, by kolejne rundy kosztowały mniej. Wyłącz, żeby porównać. Claude tego potrzebuje; GPT często cache’uje sam. Ignorowane w Ollama.",
-          "show_chat_usage": "Domyślnie włączone. Pokazuje tokeny i koszt pod tytułem czatu. Wyłączenie ukrywa tylko tę linię; śledzenie i strona Użycie zostają."
+          "show_chat_usage": "Domyślnie włączone. Pokazuje tokeny i koszt pod tytułem czatu. Wyłączenie ukrywa tylko tę linię; śledzenie i strona Użycie zostają.",
+          "ha_usage_sensors": "Domyślnie wyłączone. Tworzy czujniki kosztów, tokenów i tur na urządzeniu Usage i przy każdym agencie na własne pulpity. Wyłączenie je usuwa."
         },
         "sections": {
           "mcp": {

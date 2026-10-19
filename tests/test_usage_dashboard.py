@@ -1,14 +1,35 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
+from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
-from custom_components.ai_workspace.usage_record import daily_series, model_kpis, usage_range_of
+from custom_components.ai_workspace.const import DOMAIN
+from custom_components.ai_workspace.store import Store
+from custom_components.ai_workspace.usage_record import (
+    daily_series,
+    dashboard_payload,
+    model_kpis,
+    parse_usage_day,
+    usage_day_text,
+    usage_range_of,
+)
 
 
 def test_usage_range_of() -> None:
     assert usage_range_of("today") == "today"
     assert usage_range_of("ALL") == "all"
+    assert usage_range_of("custom") == "custom"
     assert usage_range_of("nope") == "month"
     assert usage_range_of(None) == "month"
+
+
+def test_parse_usage_day() -> None:
+    hass = SimpleNamespace(config=SimpleNamespace(time_zone="UTC"))
+    assert usage_day_text("2026-10-19T12:00:00") == "2026-10-19"
+    assert usage_day_text("nope") == ""
+    assert parse_usage_day(hass, "2026-10-19") == "2026-10-19T00:00:00+00:00"
+    assert parse_usage_day(hass, "2026-10-19", end=True) == "2026-10-20T00:00:00+00:00"
+    assert parse_usage_day(hass, "nope") is None
 
 
 def test_daily_series_fills_empty_days() -> None:
@@ -58,3 +79,66 @@ def test_model_kpis_picks_spend_used_efficient_lean() -> None:
     assert kpis["most_used"]["model"] == "gpt-5-mini"
     assert kpis["most_efficient"]["model"] == "llama3.2"
     assert kpis["leanest"]["model"] == "llama3.2"
+
+
+def test_dashboard_payload_filters(tmp_path) -> None:
+    store = Store(tmp_path / "usage.sqlite")
+    now = datetime(2026, 10, 19, 12, 0, tzinfo=timezone.utc)
+    store.add_usage(
+        user_id="user-1",
+        session_id="s1",
+        agent_id="claude-1",
+        agent="Claude",
+        provider="anthropic",
+        model="claude-sonnet-4-5",
+        total_tokens=2200,
+        cost_usd=0.40,
+        origin="chat",
+        created_at=now.isoformat(),
+    )
+    store.add_usage(
+        user_id="user-1",
+        session_id="s2",
+        agent_id="gpt-1",
+        agent="OpenAI",
+        provider="openai",
+        model="gpt-5-mini",
+        total_tokens=480,
+        cost_usd=0.02,
+        origin="chat",
+        created_at=now.isoformat(),
+    )
+    store.add_usage(
+        user_id="user-1",
+        session_id="s1",
+        agent_id="claude-1",
+        agent="Claude",
+        provider="anthropic",
+        model="claude-sonnet-4-5",
+        total_tokens=900,
+        cost_usd=0.10,
+        origin="chat",
+        created_at=(now - timedelta(days=10)).isoformat(),
+    )
+    hass = SimpleNamespace(
+        config=SimpleNamespace(time_zone="UTC"),
+        data={DOMAIN: {"settings": SimpleNamespace(track_usage=True), "providers": {}}},
+    )
+    bounds = ("2026-10-19T00:00:00+00:00", "2026-10-20T00:00:00+00:00", "2026-10-01T00:00:00+00:00")
+    with patch("custom_components.ai_workspace.usage_record.day_bounds", return_value=bounds):
+        month = dashboard_payload(hass, store, range_key="month", agent_id="claude-1")
+        custom = dashboard_payload(hass, store, since="2026-10-18", until="2026-10-19")
+        swapped = dashboard_payload(hass, store, since="2026-10-19", until="2026-10-01")
+    assert month["range"] == "month"
+    assert month["totals"]["today"]["turns"] == 1
+    assert month["totals"]["month"]["turns"] == 2
+    assert {row["model"] for row in month["models"]} == {"claude-sonnet-4-5"}
+    assert month["filters"]["agent_id"] == "claude-1"
+    assert "claude-sonnet-4-5" in month["filters"]["models"]
+    assert custom["range"] == "custom"
+    assert custom["totals"]["selected"]["turns"] == 2
+    assert custom["filters"]["since"] == "2026-10-18"
+    assert custom["filters"]["until"] == "2026-10-19"
+    assert swapped["filters"]["since"] == "2026-10-01"
+    assert swapped["filters"]["until"] == "2026-10-19"
+    store.close()

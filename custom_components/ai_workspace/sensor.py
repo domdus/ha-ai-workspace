@@ -28,6 +28,9 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
+    settings = (hass.data.get(DOMAIN) or {}).get("settings")
+    if not bool(getattr(settings, "ha_usage_sensors", False)):
+        return
     store: Store = hass.data[DOMAIN]["store"]
     agents = entry_agents(entry)
     hub = UsageHub(hass, store, [agent.id for agent in agents])

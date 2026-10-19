@@ -156,6 +156,11 @@
   margin: 0 0 var(--ha-space-2);
 }
 
+.wrap.nav-collapsed .nav-tools {
+  flex-direction: column;
+  align-items: center;
+}
+
 .wrap.nav-collapsed .nav-toolbar .nav-toggle {
   order: -1;
 }
@@ -1452,6 +1457,7 @@ textarea:focus {
   z-index: 5;
   display: flex;
   flex-direction: column;
+  min-height: 0;
   background: var(--card-background-color, var(--primary-background-color));
   color: var(--primary-text-color);
   border-inline-end: 1px solid var(--divider-color);
@@ -1579,14 +1585,55 @@ textarea:focus {
   gap: var(--ha-space-2);
 }
 
+.usage-toolbar {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--ha-space-2);
+  padding: var(--ha-space-2) var(--ha-space-4);
+  border-bottom: 1px solid var(--divider-color);
+}
+
 .usage-range {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 4px;
 }
 
 .usage-range-btn[aria-pressed="true"] {
   font-weight: var(--ha-font-weight-heading);
+}
+
+.usage-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--ha-space-2);
+  min-width: 0;
+  flex: 1;
+}
+
+.usage-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: var(--ha-font-size-xs);
+  color: var(--secondary-text-color);
+}
+
+.usage-filter select,
+.usage-filter input {
+  color: var(--primary-text-color);
+  background: var(--secondary-background-color, var(--card-background-color));
+  border: 1px solid var(--divider-color);
+  border-radius: var(--ha-border-radius-sm, 8px);
+  padding: 4px 8px;
+  font: inherit;
+  font-size: var(--ha-font-size-s);
+  max-width: 180px;
 }
 
 .wrap.page-usage .chat {
@@ -1603,7 +1650,9 @@ textarea:focus {
   left: auto;
   width: auto;
   min-width: 0;
+  min-height: 0;
   height: 100%;
+  overflow: hidden;
   grid-column: 2;
   grid-row: 1;
   z-index: 1;
@@ -1626,6 +1675,11 @@ textarea:focus {
   .wrap.page-usage:not(.compact) .usage[hidden] {
     grid-column: 1;
   }
+}
+
+.wrap.page-usage .usage-filter select,
+.wrap.page-usage .usage-filter input {
+  max-width: 220px;
 }
 
 .wrap.page-usage .usage-list {

@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 
 import voluptuous as vol
 from homeassistant import config_entries
+from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers import config_validation as cv
@@ -32,6 +33,7 @@ from .const import (
     CONF_CHANGE_HISTORY,
     CONF_TRACK_USAGE,
     CONF_SHOW_CHAT_USAGE,
+    CONF_HA_USAGE_SENSORS,
     CONF_LOW_TOKEN,
     CONF_PROMPT_CACHE,
     CONF_UI_THEME,
@@ -90,6 +92,7 @@ _SHARED_KEYS = (
     CONF_CHANGE_HISTORY,
     CONF_TRACK_USAGE,
     CONF_SHOW_CHAT_USAGE,
+    CONF_HA_USAGE_SENSORS,
     CONF_LOW_TOKEN,
     CONF_PROMPT_CACHE,
     CONF_UI_THEME,
@@ -151,6 +154,7 @@ def _ui_schema(defaults: dict | None = None) -> dict:
         vol.Optional(CONF_CHANGE_HISTORY, default=current.get(CONF_CHANGE_HISTORY, True)): cv.boolean,
         vol.Optional(CONF_TRACK_USAGE, default=current.get(CONF_TRACK_USAGE, True)): cv.boolean,
         vol.Optional(CONF_SHOW_CHAT_USAGE, default=current.get(CONF_SHOW_CHAT_USAGE, True)): cv.boolean,
+        vol.Optional(CONF_HA_USAGE_SENSORS, default=bool(current.get(CONF_HA_USAGE_SENSORS, False))): cv.boolean,
         vol.Optional(CONF_LOW_TOKEN, default=token_mode_of(current.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF))): SelectSelector(
             SelectSelectorConfig(options=list(TOKEN_MODES), mode="dropdown", translation_key="low_token")
         ),
@@ -383,6 +387,9 @@ class AiWorkspaceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Ask for the first agent right after the integration is added."""
         from homeassistant.config_entries import SOURCE_USER, FlowType
 
+        if self.source == SOURCE_IMPORT:
+            return result
+
         created = result.get("result")
         flow_type = getattr(FlowType, "CONFIG_SUBENTRIES_FLOW", None)
         if created is None or flow_type is None:
@@ -398,6 +405,19 @@ class AiWorkspaceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         result["next_flow"] = (flow_type, started["flow_id"])
         return result
 
+    async def async_step_import(self, user_input=None):
+        await self.async_set_unique_id(DOMAIN)
+        self._abort_if_unique_id_configured()
+        from .yaml_config import entry_from_yaml
+
+        options, subentries = entry_from_yaml(user_input or {})
+        return self.async_create_entry(
+            title="AI Workspace",
+            data={},
+            options=options,
+            subentries=subentries,
+        )
+
     async def async_step_user(self, user_input=None):
         if self._async_current_entries():
             return self.async_abort(reason="single_instance_allowed")
@@ -409,11 +429,14 @@ class AiWorkspaceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if not errors:
                 flat = await _restore_auto_mcp(self.hass, flat)
                 await self.async_set_unique_id(DOMAIN)
+                subentries = [_primary_connection(flat)]
+                if bool(flat.get(CONF_HA_USAGE_SENSORS, False)):
+                    subentries.append(_usage_subentry())
                 return self.async_create_entry(
                     title="AI Workspace",
                     data={},
                     options={key: flat.get(key) for key in _SHARED_KEYS},
-                    subentries=[_primary_connection(flat), _usage_subentry()],
+                    subentries=subentries,
                 )
             saved = flat
         defaults, mcp_auto, kinds = await _prepare_mcp_form(self.hass, saved)

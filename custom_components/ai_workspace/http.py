@@ -1365,8 +1365,21 @@ class UsageView(HomeAssistantView):
         store: Store = _runtime(hass)["store"]
         session_id = str(request.query.get("session_id") or "").strip()
         range_key = str(request.query.get("range") or "month").strip()
+        agent_id = str(request.query.get("agent_id") or "").strip()
+        model = str(request.query.get("model") or "").strip()
+        since = str(request.query.get("since") or "").strip()
+        until = str(request.query.get("until") or "").strip()
         payload = await hass.async_add_executor_job(
-            lambda: dashboard_payload(hass, store, session_id=session_id, range_key=range_key)
+            lambda: dashboard_payload(
+                hass,
+                store,
+                session_id=session_id,
+                range_key=range_key,
+                agent_id=agent_id,
+                model=model,
+                since=since,
+                until=until,
+            )
         )
         return self.json(payload)
 

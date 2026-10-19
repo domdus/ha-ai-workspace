@@ -820,11 +820,14 @@ export async function mountAiWorkspace(root, options = {}) {
         <div class="usage-bar">
           <span>${t("usage")}</span>
           <div class="usage-bar-actions">
-            <div class="usage-range"></div>
             <ha-icon-button class="usage-close" label="${t("usage_back")}">
               <ha-icon icon="mdi:close"></ha-icon>
             </ha-icon-button>
           </div>
+        </div>
+        <div class="usage-toolbar">
+          <div class="usage-range"></div>
+          <div class="usage-filters"></div>
         </div>
         <div class="usage-list"></div>
       </div>
@@ -4014,8 +4017,13 @@ export async function mountAiWorkspace(root, options = {}) {
   const usageEl = root.querySelector(".usage");
   const usageList = root.querySelector(".usage-list");
   const usageRangeEl = root.querySelector(".usage-range");
+  const usageFiltersEl = root.querySelector(".usage-filters");
   const chatUsageEl = root.querySelector(".chat-usage");
   let usageRange = "month";
+  let usageAgent = "";
+  let usageModel = "";
+  let usageSince = "";
+  let usageUntil = "";
 
   function activityWhen(iso) {
     const date = new Date(iso);
@@ -4460,12 +4468,101 @@ export async function mountAiWorkspace(root, options = {}) {
       btn.setAttribute("aria-pressed", current === key ? "true" : "false");
       btn.textContent = t(`usage_${key}`);
       btn.addEventListener("click", () => {
-        if (usageRange === key) return;
+        if (usageRange === key && !usageSince && !usageUntil) return;
         usageRange = key;
+        usageSince = "";
+        usageUntil = "";
         loadUsage();
       });
       usageRangeEl.appendChild(btn);
     }
+  }
+
+  function fillUsageSelect(select, items, current) {
+    if (!select) return;
+    select.replaceChildren();
+    const all = document.createElement("option");
+    all.value = "";
+    all.textContent = t("usage_filter_all");
+    select.appendChild(all);
+    for (const item of items) {
+      const opt = document.createElement("option");
+      opt.value = item.id || item;
+      opt.textContent = item.title || item;
+      select.appendChild(opt);
+    }
+    if (current && ![...select.options].some((opt) => opt.value === current)) {
+      const extra = document.createElement("option");
+      extra.value = current;
+      extra.textContent = current;
+      select.appendChild(extra);
+    }
+    select.value = current || "";
+  }
+
+  function renderUsageFilters(body) {
+    if (!usageFiltersEl) return;
+    const filters = body?.filters || {};
+    if (!usageFiltersEl.childElementCount) {
+      const agentWrap = document.createElement("label");
+      agentWrap.className = "usage-filter";
+      const agentCap = document.createElement("span");
+      agentCap.textContent = t("usage_filter_agent");
+      const agentSelect = document.createElement("select");
+      agentSelect.className = "usage-filter-agent";
+      agentSelect.addEventListener("change", () => {
+        usageAgent = agentSelect.value;
+        usageModel = "";
+        loadUsage();
+      });
+      agentWrap.append(agentCap, agentSelect);
+      const modelWrap = document.createElement("label");
+      modelWrap.className = "usage-filter";
+      const modelCap = document.createElement("span");
+      modelCap.textContent = t("usage_filter_model");
+      const modelSelect = document.createElement("select");
+      modelSelect.className = "usage-filter-model";
+      modelSelect.addEventListener("change", () => {
+        usageModel = modelSelect.value;
+        loadUsage();
+      });
+      modelWrap.append(modelCap, modelSelect);
+      const fromWrap = document.createElement("label");
+      fromWrap.className = "usage-filter";
+      const fromCap = document.createElement("span");
+      fromCap.textContent = t("usage_filter_from");
+      const fromInput = document.createElement("input");
+      fromInput.type = "date";
+      fromInput.className = "usage-filter-from";
+      fromInput.addEventListener("change", () => {
+        usageSince = fromInput.value;
+        usageRange = usageSince || usageUntil ? "custom" : "month";
+        loadUsage();
+      });
+      fromWrap.append(fromCap, fromInput);
+      const toWrap = document.createElement("label");
+      toWrap.className = "usage-filter";
+      const toCap = document.createElement("span");
+      toCap.textContent = t("usage_filter_to");
+      const toInput = document.createElement("input");
+      toInput.type = "date";
+      toInput.className = "usage-filter-to";
+      toInput.addEventListener("change", () => {
+        usageUntil = toInput.value;
+        usageRange = usageSince || usageUntil ? "custom" : "month";
+        loadUsage();
+      });
+      toWrap.append(toCap, toInput);
+      usageFiltersEl.append(agentWrap, modelWrap, fromWrap, toWrap);
+    }
+    const agentSelect = usageFiltersEl.querySelector(".usage-filter-agent");
+    const modelSelect = usageFiltersEl.querySelector(".usage-filter-model");
+    const fromInput = usageFiltersEl.querySelector(".usage-filter-from");
+    const toInput = usageFiltersEl.querySelector(".usage-filter-to");
+    fillUsageSelect(agentSelect, Array.isArray(filters.agents) ? filters.agents : [], usageAgent);
+    fillUsageSelect(modelSelect, Array.isArray(filters.models) ? filters.models : [], usageModel);
+    if (fromInput) fromInput.value = usageSince;
+    if (toInput) toInput.value = usageUntil;
   }
 
   async function loadUsage() {
@@ -4474,8 +4571,13 @@ export async function mountAiWorkspace(root, options = {}) {
     renderUsageRange(usageRange);
     const query = new URLSearchParams({ range: usageRange });
     if (sessionId) query.set("session_id", sessionId);
+    if (usageAgent) query.set("agent_id", usageAgent);
+    if (usageModel) query.set("model", usageModel);
+    if (usageSince) query.set("since", usageSince);
+    if (usageUntil) query.set("until", usageUntil);
     const resp = await apiFetch(`${API}/usage?${query}`);
     if (!resp || !resp.ok) {
+      renderUsageFilters();
       const note = document.createElement("p");
       note.className = "usage-empty";
       note.textContent = t("usage_empty");
@@ -4483,6 +4585,7 @@ export async function mountAiWorkspace(root, options = {}) {
       return;
     }
     const body = await resp.json();
+    renderUsageFilters(body);
     if (body.enabled === false) {
       const note = document.createElement("p");
       note.className = "usage-empty";
@@ -4492,6 +4595,9 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     const grid = document.createElement("div");
     grid.className = "usage-grid";
+    if (body.range === "custom" && body.totals?.selected) {
+      grid.append(metricCard(t("usage_selected"), body.totals.selected));
+    }
     grid.append(
       metricCard(t("usage_today"), body.totals?.today),
       metricCard(t("usage_month"), body.totals?.month),
@@ -4522,7 +4628,12 @@ export async function mountAiWorkspace(root, options = {}) {
     if (days.length) {
       const chartsHead = document.createElement("p");
       chartsHead.className = "usage-heading";
-      chartsHead.textContent = t("usage_days");
+      const from = body.filters?.since || "";
+      const to = body.filters?.until || "";
+      if (body.range === "custom" && from && to) chartsHead.textContent = t("usage_days_range", { from, to });
+      else if (body.range === "custom" && from) chartsHead.textContent = t("usage_days_from", { from });
+      else if (body.range === "custom" && to) chartsHead.textContent = t("usage_days_until", { to });
+      else chartsHead.textContent = t("usage_days");
       usageList.appendChild(chartsHead);
       const charts = document.createElement("div");
       charts.className = "usage-charts";

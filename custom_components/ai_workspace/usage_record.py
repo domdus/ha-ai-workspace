@@ -192,13 +192,34 @@ async def record_tts_usage(
     )
 
 
-USAGE_RANGES = ("today", "month", "all")
+USAGE_RANGES = ("today", "month", "all", "custom")
 USAGE_CHART_DAYS = 30
+USAGE_CUSTOM_CHART_MAX = 90
 
 
 def usage_range_of(value: object) -> str:
     key = str(value or "month").strip().lower()
     return key if key in USAGE_RANGES else "month"
+
+
+def usage_day_text(value: object) -> str:
+    text = str(value or "").strip()[:10]
+    try:
+        datetime.strptime(text, "%Y-%m-%d")
+    except ValueError:
+        return ""
+    return text
+
+
+def parse_usage_day(hass: HomeAssistant, value: object, *, end: bool = False) -> str | None:
+    text = usage_day_text(value)
+    if not text:
+        return None
+    day = datetime.strptime(text, "%Y-%m-%d").date()
+    start = datetime(day.year, day.month, day.day, tzinfo=zone_info(hass))
+    if end:
+        start = start + timedelta(days=1)
+    return start.isoformat()
 
 
 def _parse_usage_time(value: object) -> datetime | None:
@@ -269,47 +290,89 @@ def dashboard_payload(
     *,
     session_id: str = "",
     range_key: str = "month",
+    agent_id: str = "",
+    model: str = "",
+    since: str = "",
+    until: str = "",
 ) -> dict[str, Any]:
     settings = (hass.data.get(DOMAIN) or {}).get("settings")
     enabled = bool(getattr(settings, "track_usage", True))
     today, tomorrow, month = day_bounds(hass)
-    chosen = usage_range_of(range_key)
+    agent_filter = str(agent_id or "").strip() or None
+    model_filter = str(model or "").strip() or None
+    since_day = usage_day_text(since)
+    until_day = usage_day_text(until)
+    if since_day and until_day and until_day < since_day:
+        since_day, until_day = until_day, since_day
+    from_iso = parse_usage_day(hass, since_day) if since_day else None
+    to_iso = parse_usage_day(hass, until_day, end=True) if until_day else None
+    if from_iso or to_iso:
+        chosen = "custom"
+    else:
+        chosen = usage_range_of(range_key)
+        if chosen == "custom":
+            chosen = "month"
     if chosen == "today":
         compare_since, compare_until = today, tomorrow
     elif chosen == "all":
         compare_since, compare_until = None, None
+    elif chosen == "custom":
+        compare_since, compare_until = from_iso, to_iso
     else:
         compare_since, compare_until = month, None
+    filt = {"agent_id": agent_filter, "model": model_filter}
     tz = zone_info(hass)
-    chart_start = datetime.fromisoformat(today).astimezone(tz) - timedelta(days=USAGE_CHART_DAYS - 1)
+    if chosen == "custom":
+        chart_end = datetime.fromisoformat(compare_until or tomorrow).astimezone(tz)
+        if compare_since:
+            chart_start = datetime.fromisoformat(compare_since).astimezone(tz)
+            chart_days = max(1, (chart_end.date() - chart_start.date()).days)
+            if chart_days > USAGE_CUSTOM_CHART_MAX:
+                chart_start = chart_end - timedelta(days=USAGE_CUSTOM_CHART_MAX)
+                chart_days = USAGE_CUSTOM_CHART_MAX
+        else:
+            chart_start = chart_end - timedelta(days=USAGE_CHART_DAYS)
+            chart_days = USAGE_CHART_DAYS
+        chart_until = compare_until or tomorrow
+    else:
+        chart_start = datetime.fromisoformat(today).astimezone(tz) - timedelta(days=USAGE_CHART_DAYS - 1)
+        chart_days = USAGE_CHART_DAYS
+        chart_until = tomorrow
     totals = {
-        "today": store.summarize_usage(since=today, until=tomorrow),
-        "month": store.summarize_usage(since=month),
-        "all": store.summarize_usage(),
+        "today": store.summarize_usage(since=today, until=tomorrow, **filt),
+        "month": store.summarize_usage(since=month, **filt),
+        "all": store.summarize_usage(**filt),
+        "selected": store.summarize_usage(since=compare_since, until=compare_until, **filt)
+        if chosen == "custom"
+        else None,
     }
-    last = store.last_usage()
+    last = store.last_usage(agent_id=agent_filter)
     providers = (hass.data.get(DOMAIN) or {}).get("providers") or {}
     agents_cfg = list(providers.items())
-    by_id = {row["agent_id"]: row for row in store.usage_by_agent(since=today, until=tomorrow)}
-    month_by = {row["agent_id"]: row for row in store.usage_by_agent(since=month)}
-    all_by = {row["agent_id"]: row for row in store.usage_by_agent()}
+    by_id = {row["agent_id"]: row for row in store.usage_by_agent(since=today, until=tomorrow, **filt)}
+    month_by = {row["agent_id"]: row for row in store.usage_by_agent(since=month, **filt)}
+    all_by = {row["agent_id"]: row for row in store.usage_by_agent(**filt)}
     agents = []
     seen: set[str] = set()
-    for agent_id, provider in agents_cfg:
-        seen.add(agent_id)
+    for cfg_id, provider in agents_cfg:
+        if agent_filter and cfg_id != agent_filter:
+            continue
+        seen.add(cfg_id)
         agents.append(
             {
-                "id": agent_id,
+                "id": cfg_id,
                 "title": provider_label(provider),
                 "provider": provider_kind(provider),
                 "model": provider_model(provider),
-                "today": store.summarize_usage(since=today, until=tomorrow, agent_id=agent_id),
-                "month": store.summarize_usage(since=month, agent_id=agent_id),
-                "all": store.summarize_usage(agent_id=agent_id),
+                "today": store.summarize_usage(since=today, until=tomorrow, agent_id=cfg_id, model=model_filter),
+                "month": store.summarize_usage(since=month, agent_id=cfg_id, model=model_filter),
+                "all": store.summarize_usage(agent_id=cfg_id, model=model_filter),
             }
         )
     for extra_id, row in all_by.items():
         if extra_id in seen:
+            continue
+        if agent_filter and extra_id != agent_filter:
             continue
         agents.append(
             {
@@ -317,26 +380,58 @@ def dashboard_payload(
                 "title": row.get("agent") or extra_id or "Unknown",
                 "provider": row.get("provider") or "",
                 "model": row.get("model") or "",
-                "today": by_id.get(extra_id) or store.summarize_usage(since=today, until=tomorrow, agent_id=extra_id),
-                "month": month_by.get(extra_id) or store.summarize_usage(since=month, agent_id=extra_id),
+                "today": by_id.get(extra_id)
+                or store.summarize_usage(since=today, until=tomorrow, agent_id=extra_id, model=model_filter),
+                "month": month_by.get(extra_id) or store.summarize_usage(since=month, agent_id=extra_id, model=model_filter),
                 "all": row,
             }
         )
-    session = store.summarize_usage(session_id=session_id) if session_id else None
+    if model_filter and not agent_filter:
+        agents = [row for row in agents if int((row.get("all") or {}).get("turns") or 0) > 0]
+    session = store.summarize_usage(session_id=session_id, **filt) if session_id else None
     last_session = store.last_usage(session_id=session_id) if session_id else None
     tts = {
-        "today": store.summarize_usage(since=today, until=tomorrow, origin="tts"),
-        "month": store.summarize_usage(since=month, origin="tts"),
-        "all": store.summarize_usage(origin="tts"),
-        "session": store.summarize_usage(session_id=session_id, origin="tts") if session_id else None,
+        "today": store.summarize_usage(since=today, until=tomorrow, origin="tts", **filt),
+        "month": store.summarize_usage(since=month, origin="tts", **filt),
+        "all": store.summarize_usage(origin="tts", **filt),
+        "session": store.summarize_usage(session_id=session_id, origin="tts", **filt) if session_id else None,
     }
-    models = store.usage_by_model(since=compare_since, until=compare_until)
+    models = store.usage_by_model(since=compare_since, until=compare_until, **filt)
     days = daily_series(
-        store.usage_events(since=chart_start.isoformat(), until=tomorrow),
+        store.usage_events(since=chart_start.isoformat(), until=chart_until, **filt),
         start=chart_start,
-        days=USAGE_CHART_DAYS,
+        days=chart_days,
         tz=tz,
     )
+    filter_agents = []
+    seen_filters: set[str] = set()
+    for cfg_id, provider in agents_cfg:
+        seen_filters.add(cfg_id)
+        filter_agents.append({"id": cfg_id, "title": provider_label(provider)})
+    choices = store.usage_filter_choices(agent_id=agent_filter)
+    for row in choices["agents"]:
+        if row["id"] in seen_filters:
+            continue
+        seen_filters.add(row["id"])
+        filter_agents.append(row)
+    model_ids: list[str] = []
+    seen_models: set[str] = set()
+
+    def _add_model(name: object) -> None:
+        text = str(name or "").strip()
+        if text and text not in seen_models:
+            seen_models.add(text)
+            model_ids.append(text)
+
+    if agent_filter:
+        provider = providers.get(agent_filter)
+        if provider is not None:
+            _add_model(provider_model(provider))
+    else:
+        for provider in providers.values():
+            _add_model(provider_model(provider))
+    for name in choices["models"]:
+        _add_model(name)
     return {
         "enabled": enabled,
         "range": chosen,
@@ -349,4 +444,12 @@ def dashboard_payload(
         "days": days,
         "session": session,
         "session_last": last_session,
+        "filters": {
+            "agent_id": agent_filter or "",
+            "model": model_filter or "",
+            "since": since_day,
+            "until": until_day,
+            "agents": filter_agents,
+            "models": model_ids,
+        },
     }

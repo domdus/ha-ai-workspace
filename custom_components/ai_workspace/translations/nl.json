@@ -18,6 +18,7 @@
           "change_history": "Wijzigingsgeschiedenis",
           "track_usage": "Gebruik en kosten bijhouden",
           "show_chat_usage": "Kosten in de chatkop tonen",
+          "ha_usage_sensors": "Home Assistant-gebruikssensoren toevoegen",
           "low_token": "Tokenverbruik verminderen",
           "prompt_cache": "Promptcache",
           "ui_theme": "HA-componenten gebruiken",
@@ -36,8 +37,9 @@
           "house_map": "Optioneel. Helpt uitleggen hoe een item is aangesloten (wat het activeert, wat het beïnvloedt). Standaard uit. Voor live aan/uit of volledige lijsten: vraag de assistent om Home Assistant te raadplegen.",
           "shorten_mcp_results": "Standaard aan. Zeer lange antwoorden van Home Assistant (lijsten van het hele huis, grote zoekopdrachten) worden samengevat voordat ze naar de AI gaan. Dat bespaart tokens en houdt antwoorden vlot. Uit stuurt de volledige tekst.",
           "change_history": "Standaard aan. Houdt een overzicht bij van configuratiewijzigingen die de assistent heeft gedaan, zodat je ze in de Wijzigingsgeschiedenis kunt bekijken of ongedaan maken. Uit: geen nieuwe items; de assistent kan Home Assistant blijven gebruiken.",
-          "track_usage": "Standaard aan. Noteert tokens en geschatte USD-kosten na elke Cursor- of cloudbeurt. Toont een Gebruik-pagina in de chat en maakt Home Assistant-sensoren voor je eigen dashboards. Uit: geen nieuwe records; bestaande geschiedenis blijft.",
+          "track_usage": "Standaard aan. Noteert tokens en geschatte USD-kosten na elke Cursor- of cloudbeurt. Toont een Gebruik-pagina in de chat. Uit: geen nieuwe records; bestaande geschiedenis blijft.",
           "show_chat_usage": "Standaard aan. Toont tokens en kosten onder de chattitel. Uit verbergt alleen die regel; bijhouden en de Gebruik-pagina blijven.",
+          "ha_usage_sensors": "Standaard uit. Maakt sensoren voor kosten, tokens en beurten op een Usage-apparaat en bij elke agent voor je eigen dashboards. Uit verwijdert die sensoren.",
           "low_token": "Hoeveel per beurt, voor alle Cloud- / Ollama- / Azure-agents.",
           "prompt_cache": "Standaard aan. Hergebruikt de herhaalde systeemprompt en tool-lijst zodat latere rondes minder kosten. Uit om te vergelijken. Claude heeft dit nodig; GPT cachet vaak zelf. Wordt bij Ollama genegeerd.",
           "ui_theme": "Standaard uit. Als dit aan staat, worden alleen Home Assistant-interfacecomponenten gebruikt, wat beter kan werken met thema’s.",
@@ -102,7 +104,8 @@
           "keep_chats": "Chats bewaren",
           "low_token": "Tokenverbruik verminderen",
           "prompt_cache": "Promptcache",
-          "show_chat_usage": "Kosten in de chatkop tonen"
+          "show_chat_usage": "Kosten in de chatkop tonen",
+          "ha_usage_sensors": "Home Assistant-gebruikssensoren toevoegen"
         },
         "data_description": {
           "stt_engine": "Browserdictatie heeft een beveiligde site (https) nodig. Of kies onder Instellingen een Home Assistant-spraak-naar-tekst-engine. De browser moet de microfoon toestaan.",
@@ -121,7 +124,8 @@
           "keep_chats": "Nieuwste niet-vastgezette chats per persoon. Vastgezette chats blijven altijd. Standaard 30.",
           "low_token": "Hoeveel per beurt, voor alle Cloud- / Ollama- / Azure-agents.",
           "prompt_cache": "Standaard aan. Hergebruikt de herhaalde systeemprompt en tool-lijst zodat latere rondes minder kosten. Uit om te vergelijken. Claude heeft dit nodig; GPT cachet vaak zelf. Wordt bij Ollama genegeerd.",
-          "show_chat_usage": "Standaard aan. Toont tokens en kosten onder de chattitel. Uit verbergt alleen die regel; bijhouden en de Gebruik-pagina blijven."
+          "show_chat_usage": "Standaard aan. Toont tokens en kosten onder de chattitel. Uit verbergt alleen die regel; bijhouden en de Gebruik-pagina blijven.",
+          "ha_usage_sensors": "Standaard uit. Maakt sensoren voor kosten, tokens en beurten op een Usage-apparaat en bij elke agent voor je eigen dashboards. Uit verwijdert die sensoren."
         },
         "sections": {
           "mcp": {

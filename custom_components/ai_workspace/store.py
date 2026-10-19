@@ -21,6 +21,41 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _usage_where(
+    *,
+    since: str | None = None,
+    until: str | None = None,
+    agent_id: str | None = None,
+    session_id: str | None = None,
+    origin: str | None = None,
+    model: str | None = None,
+    exclude_tts: bool = False,
+) -> tuple[str, list[object]]:
+    clauses = ["1=1"]
+    params: list[object] = []
+    if since:
+        clauses.append("created_at >= ?")
+        params.append(since)
+    if until:
+        clauses.append("created_at < ?")
+        params.append(until)
+    if agent_id:
+        clauses.append("agent_id = ?")
+        params.append(_text(agent_id))
+    if session_id:
+        clauses.append("session_id = ?")
+        params.append(_text(session_id))
+    if origin:
+        clauses.append("origin = ?")
+        params.append(_text(origin))
+    elif exclude_tts:
+        clauses.append("origin != 'tts'")
+    if model:
+        clauses.append("CASE WHEN TRIM(model) = '' THEN agent_id ELSE model END = ?")
+        params.append(_text(model))
+    return " AND ".join(clauses), params
+
+
 @dataclass
 class Session:
     id: str
@@ -675,25 +710,16 @@ class Store:
         agent_id: str | None = None,
         session_id: str | None = None,
         origin: str | None = None,
+        model: str | None = None,
     ) -> dict:
-        clauses = ["1=1"]
-        params: list[object] = []
-        if since:
-            clauses.append("created_at >= ?")
-            params.append(since)
-        if until:
-            clauses.append("created_at < ?")
-            params.append(until)
-        if agent_id:
-            clauses.append("agent_id = ?")
-            params.append(_text(agent_id))
-        if session_id:
-            clauses.append("session_id = ?")
-            params.append(_text(session_id))
-        if origin:
-            clauses.append("origin = ?")
-            params.append(_text(origin))
-        where = " AND ".join(clauses)
+        where, params = _usage_where(
+            since=since,
+            until=until,
+            agent_id=agent_id,
+            session_id=session_id,
+            origin=origin,
+            model=model,
+        )
         with self._lock:
             row = self._conn.execute(
                 f"""
@@ -724,16 +750,15 @@ class Store:
             "missing_cost": bool(row["missing_cost"]),
         }
 
-    def usage_by_agent(self, *, since: str | None = None, until: str | None = None) -> list[dict]:
-        clauses = ["1=1"]
-        params: list[object] = []
-        if since:
-            clauses.append("created_at >= ?")
-            params.append(since)
-        if until:
-            clauses.append("created_at < ?")
-            params.append(until)
-        where = " AND ".join(clauses)
+    def usage_by_agent(
+        self,
+        *,
+        since: str | None = None,
+        until: str | None = None,
+        agent_id: str | None = None,
+        model: str | None = None,
+    ) -> list[dict]:
+        where, params = _usage_where(since=since, until=until, agent_id=agent_id, model=model)
         with self._lock:
             rows = self._conn.execute(
                 f"""
@@ -810,16 +835,16 @@ class Store:
         *,
         since: str | None = None,
         until: str | None = None,
+        agent_id: str | None = None,
+        model: str | None = None,
     ) -> list[dict]:
-        clauses = ["origin != 'tts'"]
-        params: list[object] = []
-        if since:
-            clauses.append("created_at >= ?")
-            params.append(since)
-        if until:
-            clauses.append("created_at < ?")
-            params.append(until)
-        where = " AND ".join(clauses)
+        where, params = _usage_where(
+            since=since,
+            until=until,
+            agent_id=agent_id,
+            model=model,
+            exclude_tts=True,
+        )
         with self._lock:
             rows = self._conn.execute(
                 f"""
@@ -869,21 +894,50 @@ class Store:
             )
         return models
 
+    def usage_filter_choices(self, *, agent_id: str | None = None) -> dict:
+        model_where, model_params = _usage_where(agent_id=agent_id)
+        with self._lock:
+            agents = self._conn.execute(
+                """
+                SELECT agent_id, MAX(agent) AS agent
+                FROM usage_turns
+                WHERE TRIM(COALESCE(agent_id, '')) != ''
+                GROUP BY agent_id
+                ORDER BY agent COLLATE NOCASE
+                """,
+            ).fetchall()
+            models = self._conn.execute(
+                f"""
+                SELECT DISTINCT CASE WHEN TRIM(model) = '' THEN agent_id ELSE model END AS model_key
+                FROM usage_turns
+                WHERE {model_where}
+                ORDER BY model_key COLLATE NOCASE
+                """,
+                model_params,
+            ).fetchall()
+        return {
+            "agents": [
+                {"id": _text(row["agent_id"]), "title": _text(row["agent"]) or _text(row["agent_id"])}
+                for row in agents
+            ],
+            "models": [_text(row["model_key"]) for row in models if _text(row["model_key"])],
+        }
+
     def usage_events(
         self,
         *,
         since: str | None = None,
         until: str | None = None,
+        agent_id: str | None = None,
+        model: str | None = None,
     ) -> list[dict]:
-        clauses = ["origin != 'tts'"]
-        params: list[object] = []
-        if since:
-            clauses.append("created_at >= ?")
-            params.append(since)
-        if until:
-            clauses.append("created_at < ?")
-            params.append(until)
-        where = " AND ".join(clauses)
+        where, params = _usage_where(
+            since=since,
+            until=until,
+            agent_id=agent_id,
+            model=model,
+            exclude_tts=True,
+        )
         with self._lock:
             rows = self._conn.execute(
                 f"""
