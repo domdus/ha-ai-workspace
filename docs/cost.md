@@ -1,17 +1,27 @@
 # Cost and tokens
 
-**Track usage and costs** (on by default) records tokens and estimated USD after each Cursor or cloud turn, including Assist. The sidebar **Usage** button opens `/ai-workspace/usage`: today / month / all-time totals, filters for agent, model, and date, 30-day cost and token charts, and a model comparison (tokens per turn, cost per turn, highest spend, most used, cheapest turn).
+![AI Workspace Usage page](ai-workspace_usage.png)
+
+**Track usage and costs** (on by default) records tokens and estimated cost in USD after each Cursor or cloud reply, including Assist. The sidebar **Usage** button opens `/ai-workspace/usage`: today / month / all-time totals, filters for agent, model, and date, 30-day cost and token charts, and a model comparison (tokens per turn, cost per turn, highest spend, most used, cheapest turn).
 
 **Show cost in chat header** (on by default) puts a short usage line under the chat title. Turn it off if you only want the Usage page.
 
 Off on **Track usage and costs** stops new records. Existing history stays.
+
+## Where prices come from
+
+The cost math is a small version of what [LiteLLM](https://github.com/BerriAI/litellm) does. LiteLLM is an open-source project that keeps a community-maintained list of list prices for thousands of models: input, output, cache read, and cache write per token. AI Workspace keeps a copy with only the providers it supports. A weekly job refreshes it, so new models and price changes arrive with the next update of AI Workspace.
+
+For each reply, AI Workspace multiplies the tokens the provider reports by those prices. Cached input is priced at the cache rate, and reasoning tokens count as output. Cursor and local models are not in LiteLLM's list. Cursor uses the billed amount when your account reports it and an estimate otherwise. Local models count as $0.
+
+The result is an estimate based on public list prices. Your provider's invoice is what counts: discounts, free tiers, taxes, and minimum charges are not included.
 
 ## What is counted
 
 - **Cursor:** token counts come from the SDK. If the Cursor account exposes billed cents, that amount is stored as the cost. Otherwise the list-price estimate for Composer is used.
 - **Cloud agents:** prompt and completion tokens from the provider, including cache and reasoning when they send them. Cost is list price (OpenAI, Anthropic, Gemini, DeepSeek, Qwen, Grok, Azure, OpenRouter, compatible). OpenRouter’s reported cost is used when it is present. Ollama is stored as $0.
 - **Text-to-speech:** when an OpenAI-style AI Workspace voice is used (Assist, overlay speaker, auto-read), characters of spoken text are priced (`gpt-4o-mini-tts`, `tts-1`, and `tts-1-hd`). Piper and other Home Assistant engines are not billed here.
-- Unknown models still store tokens. Cost stays empty until the price table knows that model id.
+- Unknown models still store tokens. Cost stays empty until the price list knows that model name.
 
 ## Home Assistant sensors
 
@@ -64,4 +74,4 @@ Cursor and Ollama ignore this setting. Local Ollama is not billed per token here
 
 Cache-read tokens show up on the Usage page when the provider reports them. If a provider rejects the extra cache fields, the request is retried without them for the rest of that agent session.
 
-Turn it off only if a provider is misbehaving with cache fields. You do not need to turn it off to “compare” costs: Usage already shows cache reads when they happen.
+There is little reason to turn it off. A provider that does not support it is handled automatically, as described above.

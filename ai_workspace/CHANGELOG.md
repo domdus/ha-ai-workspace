@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0b8
+
+- Usage page filters use Home Assistant’s own dropdowns and date range picker (with a plain fallback), and the main buttons use the accent style
+- Cost estimates use a filtered copy of [LiteLLM](https://github.com/BerriAI/litellm)’s price list (310 models). A weekly workflow opens a pull request when prices change. Several older hand-kept prices were off (for example DeepSeek output and `gpt-6-astra`)
+- `gpt-4o-mini-tts` speech is priced by audio length (about $0.015 a minute) instead of text input only, which was about 25× too low
+- OpenRouter Claude names such as `anthropic/claude-sonnet-4.5` find Anthropic’s price
+- AI Workspace settings are grouped into **Chat**, **Cost and tokens**, and **Home Assistant answers** (collapsed), with plainer help texts
+- Missing **Track usage and costs** labels in the settings form and the Usage page texts are now translated in every language
+- Docker extras for the Cursor runtime (bridge network, files on disk, git) moved to `docs/cursor-runtime.md`; README shows the Usage page
+
 ## 1.3.0b7
 
 - Cursor runtime (Docker): optional `GIT_REPO` clones a project into the agent’s workspace on first start (SSH key or token stays on the container). `AGENTS.md` and the Home Assistant rule are only seeded when missing

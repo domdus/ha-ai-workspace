@@ -153,6 +153,7 @@ async function loadHaPanel(componentName, urlPath) {
 
 /** Config/automation chunk preload runs at most once per full HA page load. */
 let haComponentsLoaderTriggered = false;
+let haDatePickerLoaderTriggered = false;
 
 async function ensureHaComponents(names) {
   const missing = names.filter((name) => name && name.includes("-") && !haHas(name));
@@ -169,6 +170,16 @@ async function ensureHaComponents(names) {
         const panel = document.createElement("ha-panel-config");
         const load = panel.routerOptions?.routes?.automation?.load;
         if (typeof load === "function") await load.call(panel.routerOptions.routes.automation);
+      }
+    }
+    const wantDate = missing.some((name) => String(name).startsWith("ha-date-range"));
+    if (wantDate && !haDatePickerLoaderTriggered) {
+      haDatePickerLoaderTriggered = true;
+      if (!haHas("ha-date-range-nav") && !haHas("ha-date-range-picker")) {
+        await loadHaPanel("logbook", "logbook");
+      }
+      if (!haHas("ha-date-range-nav") && !haHas("ha-date-range-picker")) {
+        await loadHaPanel("history", "history");
       }
     }
   } catch (_err) {
@@ -195,6 +206,7 @@ const HA_COMPONENT_PRELOAD = [
   "ha-icon-button",
   "ha-dropdown",
   "ha-dropdown-item",
+  "ha-select",
 ];
 
 let uiTheme = "standard";
@@ -750,7 +762,7 @@ export async function mountAiWorkspace(root, options = {}) {
           <ha-icon-button class="new-chat-icon" label="${t("new_chat")}">
             <ha-icon icon="mdi:plus"></ha-icon>
           </ha-icon-button>
-          <ha-button class="new-chat" size="s">
+          <ha-button class="new-chat" size="s" variant="brand" appearance="accent">
             <ha-svg-icon slot="start" path="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"></ha-svg-icon>
             ${t("new_chat")}
           </ha-button>
@@ -4455,12 +4467,16 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function renderUsageRange(current) {
     if (!usageRangeEl) return;
+    const keep = [
+      ...usageRangeEl.querySelectorAll("ha-date-range-nav, ha-date-range-picker, .usage-native-dates"),
+    ];
     usageRangeEl.replaceChildren();
     for (const key of ["today", "month", "all"]) {
-      const btn = document.createElement(haUi ? "ha-button" : "button");
+      const btn = document.createElement(haHas("ha-button") ? "ha-button" : "button");
       btn.className = "usage-range-btn";
-      if (haUi) {
+      if (btn.localName === "ha-button") {
         btn.setAttribute("size", "s");
+        btn.setAttribute("variant", "brand");
         btn.setAttribute("appearance", current === key ? "accent" : "plain");
       } else {
         btn.type = "button";
@@ -4476,97 +4492,260 @@ export async function mountAiWorkspace(root, options = {}) {
       });
       usageRangeEl.appendChild(btn);
     }
+    for (const el of keep) usageRangeEl.appendChild(el);
+  }
+
+  function canUseHaSelect() {
+    if (!haHas("ha-select")) return false;
+    const el = document.createElement("ha-select");
+    return "options" in el;
+  }
+
+  function usageFilterSelectEl(className) {
+    return usageFiltersEl?.querySelector(`ha-select.${className}, select.${className}`);
+  }
+
+  function usageSelectValue(raw) {
+    const value = raw == null ? "" : String(raw);
+    return !value || value === "all" ? "" : value;
+  }
+
+  function usageDayText(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  function usageDayDate(text, end = false) {
+    const match = String(text || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+    const date = match
+      ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+      : new Date();
+    if (end) date.setHours(23, 59, 59, 999);
+    else date.setHours(0, 0, 0, 0);
+    return date;
+  }
+
+  function usageSameDay(left, right) {
+    return left.getFullYear() === right.getFullYear()
+      && left.getMonth() === right.getMonth()
+      && left.getDate() === right.getDate();
+  }
+
+  function usagePresetRange(key) {
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+    if (key === "today") {
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      return { start, end };
+    }
+    const start = new Date(end.getFullYear(), end.getMonth(), 1);
+    start.setHours(0, 0, 0, 0);
+    return { start, end };
+  }
+
+  function usageCurrentRange() {
+    if (usageSince || usageUntil) {
+      return {
+        start: usageDayDate(usageSince || usageUntil, false),
+        end: usageDayDate(usageUntil || usageSince, true),
+      };
+    }
+    return usagePresetRange(usageRange === "today" ? "today" : "month");
+  }
+
+  function applyUsagePickerRange(startDate, endDate) {
+    let start = startDate;
+    let end = endDate;
+    if (start > end) [start, end] = [end, start];
+    const today = usagePresetRange("today");
+    const month = usagePresetRange("month");
+    if (usageSameDay(start, today.start) && usageSameDay(end, today.end)) {
+      usageRange = "today";
+      usageSince = "";
+      usageUntil = "";
+    } else if (usageSameDay(start, month.start) && usageSameDay(end, month.end)) {
+      usageRange = "month";
+      usageSince = "";
+      usageUntil = "";
+    } else {
+      usageRange = "custom";
+      usageSince = usageDayText(start);
+      usageUntil = usageDayText(end);
+    }
+    loadUsage();
   }
 
   function fillUsageSelect(select, items, current) {
     if (!select) return;
+    const options = [
+      { value: "all", label: t("usage_filter_all") },
+      ...items.map((item) => ({
+        value: String(item.id || item),
+        label: String(item.title || item),
+      })),
+    ];
+    if (current && !options.some((item) => item.value === current)) {
+      options.push({ value: current, label: current });
+    }
+    const value = current || "all";
+    if (select.localName === "ha-select") {
+      select.options = options;
+      select.value = value;
+      return;
+    }
     select.replaceChildren();
-    const all = document.createElement("option");
-    all.value = "";
-    all.textContent = t("usage_filter_all");
-    select.appendChild(all);
-    for (const item of items) {
+    for (const item of options) {
       const opt = document.createElement("option");
-      opt.value = item.id || item;
-      opt.textContent = item.title || item;
+      opt.value = item.value === "all" ? "" : item.value;
+      opt.textContent = item.label;
       select.appendChild(opt);
     }
-    if (current && ![...select.options].some((opt) => opt.value === current)) {
-      const extra = document.createElement("option");
-      extra.value = current;
-      extra.textContent = current;
-      select.appendChild(extra);
-    }
     select.value = current || "";
+  }
+
+  function createUsageSelect(className, label, onChange) {
+    if (canUseHaSelect()) {
+      const select = document.createElement("ha-select");
+      select.className = `${className} usage-filter`;
+      select.label = label;
+      select.addEventListener("selected", (event) => onChange(event.detail?.value));
+      return select;
+    }
+    const wrap = document.createElement("label");
+    wrap.className = "usage-filter";
+    const cap = document.createElement("span");
+    cap.textContent = label;
+    const select = document.createElement("select");
+    select.className = className;
+    select.addEventListener("change", () => onChange(select.value));
+    wrap.append(cap, select);
+    return wrap;
+  }
+
+  let usagePickerQuiet = false;
+
+  function createUsageDateFilter() {
+    const tag = haHas("ha-date-range-nav")
+      ? "ha-date-range-nav"
+      : haHas("ha-date-range-picker")
+        ? "ha-date-range-picker"
+        : "";
+    if (tag) {
+      const picker = document.createElement(tag);
+      picker.className = "usage-filter usage-filter-dates";
+      if ("extendedPresets" in picker) picker.extendedPresets = true;
+      const hass = hassObj();
+      if (hass && "hass" in picker) picker.hass = hass;
+      const { start, end } = usageCurrentRange();
+      picker.startDate = start;
+      picker.endDate = end;
+      picker.addEventListener("value-changed", (event) => {
+        if (usagePickerQuiet) return;
+        const value = event.detail?.value || {};
+        const startDate = value.startDate instanceof Date ? value.startDate : picker.startDate;
+        const endDate = value.endDate instanceof Date ? value.endDate : picker.endDate;
+        if (!(startDate instanceof Date) || !(endDate instanceof Date)) return;
+        applyUsagePickerRange(startDate, endDate);
+      });
+      return [picker];
+    }
+    const wrap = document.createElement("div");
+    wrap.className = "usage-native-dates";
+    const fromWrap = document.createElement("label");
+    fromWrap.className = "usage-filter";
+    const fromCap = document.createElement("span");
+    fromCap.textContent = t("usage_filter_from");
+    const fromInput = document.createElement("input");
+    fromInput.type = "date";
+    fromInput.className = "usage-filter-from";
+    fromInput.addEventListener("change", () => {
+      usageSince = fromInput.value;
+      usageRange = usageSince || usageUntil ? "custom" : "month";
+      loadUsage();
+    });
+    fromWrap.append(fromCap, fromInput);
+    const toWrap = document.createElement("label");
+    toWrap.className = "usage-filter";
+    const toCap = document.createElement("span");
+    toCap.textContent = t("usage_filter_to");
+    const toInput = document.createElement("input");
+    toInput.type = "date";
+    toInput.className = "usage-filter-to";
+    toInput.addEventListener("change", () => {
+      usageUntil = toInput.value;
+      usageRange = usageSince || usageUntil ? "custom" : "month";
+      loadUsage();
+    });
+    toWrap.append(toCap, toInput);
+    wrap.append(fromWrap, toWrap);
+    return [wrap];
+  }
+
+  function usageDateHost() {
+    return usageRangeEl || usageFiltersEl;
+  }
+
+  function usageFiltersNeedRebuild() {
+    const host = usageDateHost();
+    if (!usageFiltersEl?.childElementCount) return true;
+    const wantPicker = haHas("ha-date-range-nav") || haHas("ha-date-range-picker");
+    const hasPicker = Boolean(host?.querySelector("ha-date-range-nav, ha-date-range-picker"));
+    const wantSelect = canUseHaSelect();
+    const hasSelect = Boolean(usageFiltersEl.querySelector("ha-select"));
+    return wantPicker !== hasPicker || wantSelect !== hasSelect;
+  }
+
+  function syncUsageDateFilter() {
+    const host = usageDateHost();
+    const picker = host?.querySelector("ha-date-range-nav, ha-date-range-picker");
+    if (picker) {
+      const { start, end } = usageCurrentRange();
+      if (picker.startDate?.getTime?.() === start.getTime() && picker.endDate?.getTime?.() === end.getTime()) {
+        return;
+      }
+      usagePickerQuiet = true;
+      picker.startDate = start;
+      picker.endDate = end;
+      usagePickerQuiet = false;
+      return;
+    }
+    const fromInput = host?.querySelector(".usage-filter-from");
+    const toInput = host?.querySelector(".usage-filter-to");
+    if (fromInput) fromInput.value = usageSince;
+    if (toInput) toInput.value = usageUntil;
   }
 
   function renderUsageFilters(body) {
     if (!usageFiltersEl) return;
     const filters = body?.filters || {};
-    if (!usageFiltersEl.childElementCount) {
-      const agentWrap = document.createElement("label");
-      agentWrap.className = "usage-filter";
-      const agentCap = document.createElement("span");
-      agentCap.textContent = t("usage_filter_agent");
-      const agentSelect = document.createElement("select");
-      agentSelect.className = "usage-filter-agent";
-      agentSelect.addEventListener("change", () => {
-        usageAgent = agentSelect.value;
-        usageModel = "";
-        loadUsage();
-      });
-      agentWrap.append(agentCap, agentSelect);
-      const modelWrap = document.createElement("label");
-      modelWrap.className = "usage-filter";
-      const modelCap = document.createElement("span");
-      modelCap.textContent = t("usage_filter_model");
-      const modelSelect = document.createElement("select");
-      modelSelect.className = "usage-filter-model";
-      modelSelect.addEventListener("change", () => {
-        usageModel = modelSelect.value;
-        loadUsage();
-      });
-      modelWrap.append(modelCap, modelSelect);
-      const fromWrap = document.createElement("label");
-      fromWrap.className = "usage-filter";
-      const fromCap = document.createElement("span");
-      fromCap.textContent = t("usage_filter_from");
-      const fromInput = document.createElement("input");
-      fromInput.type = "date";
-      fromInput.className = "usage-filter-from";
-      fromInput.addEventListener("change", () => {
-        usageSince = fromInput.value;
-        usageRange = usageSince || usageUntil ? "custom" : "month";
-        loadUsage();
-      });
-      fromWrap.append(fromCap, fromInput);
-      const toWrap = document.createElement("label");
-      toWrap.className = "usage-filter";
-      const toCap = document.createElement("span");
-      toCap.textContent = t("usage_filter_to");
-      const toInput = document.createElement("input");
-      toInput.type = "date";
-      toInput.className = "usage-filter-to";
-      toInput.addEventListener("change", () => {
-        usageUntil = toInput.value;
-        usageRange = usageSince || usageUntil ? "custom" : "month";
-        loadUsage();
-      });
-      toWrap.append(toCap, toInput);
-      usageFiltersEl.append(agentWrap, modelWrap, fromWrap, toWrap);
+    if (usageFiltersNeedRebuild()) {
+      usageFiltersEl.replaceChildren();
+      const host = usageDateHost();
+      host?.querySelectorAll("ha-date-range-nav, ha-date-range-picker, .usage-native-dates").forEach((el) => el.remove());
+      usageFiltersEl.append(
+        createUsageSelect("usage-filter-agent", t("usage_filter_agent"), (value) => {
+          usageAgent = usageSelectValue(value);
+          usageModel = "";
+          loadUsage();
+        }),
+        createUsageSelect("usage-filter-model", t("usage_filter_model"), (value) => {
+          usageModel = usageSelectValue(value);
+          loadUsage();
+        }),
+      );
+      host?.append(...createUsageDateFilter());
     }
-    const agentSelect = usageFiltersEl.querySelector(".usage-filter-agent");
-    const modelSelect = usageFiltersEl.querySelector(".usage-filter-model");
-    const fromInput = usageFiltersEl.querySelector(".usage-filter-from");
-    const toInput = usageFiltersEl.querySelector(".usage-filter-to");
-    fillUsageSelect(agentSelect, Array.isArray(filters.agents) ? filters.agents : [], usageAgent);
-    fillUsageSelect(modelSelect, Array.isArray(filters.models) ? filters.models : [], usageModel);
-    if (fromInput) fromInput.value = usageSince;
-    if (toInput) toInput.value = usageUntil;
+    fillUsageSelect(usageFilterSelectEl("usage-filter-agent"), Array.isArray(filters.agents) ? filters.agents : [], usageAgent);
+    fillUsageSelect(usageFilterSelectEl("usage-filter-model"), Array.isArray(filters.models) ? filters.models : [], usageModel);
+    syncUsageDateFilter();
   }
 
   async function loadUsage() {
     if (!usageList) return;
+    await ensureHaComponents(["ha-select", "ha-date-range-nav", "ha-date-range-picker"]);
     usageList.replaceChildren();
     renderUsageRange(usageRange);
     const query = new URLSearchParams({ range: usageRange });

@@ -8,43 +8,13 @@
           "stt_engine": "Speech to text",
           "tts_engine": "Text to speech",
           "speak_replies": "Speak replies automatically",
-          "tts_natural": "Natural speech for text to speech",
-          "enable_sidebar": "Show AI Workspace in the sidebar",
-          "enable_overlay": "Show floating AI button",
-          "enable_dictate": "Show dictate button",
-          "allow_users": "Allow normal users",
-          "house_map": "Config catalog",
-          "shorten_mcp_results": "Shorten long Home Assistant answers",
-          "change_history": "Change History",
-          "track_usage": "Track usage and costs",
-          "show_chat_usage": "Show cost in chat header",
-          "ha_usage_sensors": "Add Home Assistant usage sensors",
-          "low_token": "Reduce token usage",
-          "prompt_cache": "Prompt cache",
-          "ui_theme": "Use HA Components",
-          "cross_chat": "Cross chat",
-          "keep_chats": "Chats to keep"
+          "tts_natural": "Natural speech for text to speech"
         },
         "data_description": {
           "stt_engine": "Browser dictation needs a secure site (https). Or choose a Home Assistant speech-to-text engine under Settings. The browser must allow the microphone.",
           "tts_engine": "Piper, Google Translate, or a voice from one of your AI assistants. Off keeps replies as text only.",
           "speak_replies": "When a voice is selected, each reply is read as it arrives. Off keeps the speaker button so you can play a reply yourself.",
-          "tts_natural": "On by default. Removes formatting so read-aloud sounds natural. Off reads the message exactly as written.",
-          "enable_sidebar": "Shows AI Workspace in the sidebar. When off, administrators can still open the full page if they use its menu link.",
-          "enable_overlay": "Turns the floating AI button on or off. On Settings pages it sits higher so it does not cover system buttons.",
-          "enable_dictate": "Microphone in the message box.",
-          "allow_users": "Non-admin users can open the floating chat with the same Home Assistant access as their account. Off: administrators only. The full AI Workspace page in the sidebar stays admin-only.",
-          "house_map": "Optional. Helps explain how one item is wired (what triggers it, what it affects). Off by default. For live on/off state or full lists, ask the assistant to check Home Assistant.",
-          "shorten_mcp_results": "On by default. Very long answers from Home Assistant (whole-home lists, big searches) are summarized before they go to the AI. That saves tokens and keeps replies snappy. Off sends the full text.",
-          "change_history": "On by default. Keeps a record of configuration changes the assistant made so you can review or undo them in Change History. Off stops new entries; the assistant can still use Home Assistant.",
-          "track_usage": "On by default. Records tokens and estimated USD cost after each Cursor or cloud turn. Shows a Usage page in the chat. Off stops new records; existing history stays.",
-          "show_chat_usage": "On by default. Shows tokens and cost under the chat title. Off hides only that line; tracking and the Usage page stay.",
-          "ha_usage_sensors": "Off by default. Creates cost, token, and turn sensors on a Usage device and on each agent for your own dashboards. Off removes those sensors.",
-          "low_token": "How much each turn sends, for every Cloud / Ollama / Azure agent.",
-          "prompt_cache": "On by default. Claude needs this to cache the repeated tool list; GPT often caches on its own. Cursor and Ollama ignore it. Leave it on so later rounds of a turn cost less.",
-          "ui_theme": "Off by default. When on, only Home Assistant UI components are used which may work better with themes.",
-          "cross_chat": "Off by default. When on, a question can use another chat whose title shares words with it. You do not have to mention chat. A short excerpt only, and that chat is not changed.",
-          "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30."
+          "tts_natural": "On by default. Removes formatting so read-aloud sounds natural. Off reads the message exactly as written."
         },
         "sections": {
           "mcp": {
@@ -58,6 +28,60 @@
               "mcp_kind": "Servers this Home Assistant can reach. Pick Custom to enter your own address.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Built-in: long-lived access token, or leave empty to use your current login. HA-MCP: usually empty. Vibecode: agent key. Custom: only if that server asks for a key."
+            }
+          },
+          "chat": {
+            "name": "Chat",
+            "description": "Where the chat appears and who can use it.",
+            "data": {
+              "enable_sidebar": "Show AI Workspace in the sidebar",
+              "enable_overlay": "Show floating AI button",
+              "enable_dictate": "Show dictate button",
+              "allow_users": "Allow normal users",
+              "ui_theme": "Use HA Components",
+              "cross_chat": "Cross chat",
+              "keep_chats": "Chats to keep"
+            },
+            "data_description": {
+              "enable_sidebar": "Adds AI Workspace to the Home Assistant sidebar. When off, administrators can still open /ai-workspace directly.",
+              "enable_overlay": "A round AI button in the corner of every Home Assistant page, so you can ask without leaving the page. On Settings pages it sits higher so it does not cover other buttons.",
+              "enable_dictate": "Microphone button in the message box. Hide it if you never dictate.",
+              "allow_users": "Off: administrators only. On: non-admin users get the floating chat, with the same Home Assistant access as their own login. The full AI Workspace page stays admin-only. Only turn this on if you trust everyone who has a login.",
+              "ui_theme": "Off by default. Builds the chat from Home Assistant's own UI parts. Try it if the chat does not match your theme.",
+              "cross_chat": "Off by default. When on, a question can use a short excerpt from another chat whose title shares words with it, without you mentioning that chat. Helps when you already talked about the same room or automation. The other chat is not changed.",
+              "keep_chats": "Newest unpinned chats kept per person. Older ones are deleted so the list does not grow forever. Pinned chats are always kept. Default 30."
+            }
+          },
+          "cost": {
+            "name": "Cost and tokens",
+            "description": "What each message sends and how spending is tracked.",
+            "data": {
+              "low_token": "Reduce token usage",
+              "prompt_cache": "Prompt cache",
+              "track_usage": "Track usage and costs",
+              "show_chat_usage": "Show cost in chat header",
+              "ha_usage_sensors": "Add Home Assistant usage sensors"
+            },
+            "data_description": {
+              "low_token": "Sends less with each message to save money on Cloud, Ollama, and Azure agents (Cursor is not affected). Off gives the most reliable answers about your home. Extreme is chat only and cannot control the house.",
+              "prompt_cache": "On by default. Lets the provider reuse the part that repeats in every message (instructions and tool list) at a much lower price. Claude needs this switch; GPT mostly caches on its own. Cursor and Ollama ignore it.",
+              "track_usage": "On by default. Records tokens and estimated cost after each reply and shows them on the Usage page. Off stops new records; existing history stays.",
+              "show_chat_usage": "On by default. Shows tokens and cost under the chat title. Off hides only that line; tracking and the Usage page stay.",
+              "ha_usage_sensors": "Off by default. Only needed for your own dashboards or automations: adds cost, token, and turn sensors on a Usage device and on each agent. The Usage page works without them. Turning this off removes the sensors."
+            }
+          },
+          "house": {
+            "name": "Home Assistant answers",
+            "description": "How the assistant reads your setup and records its changes. The defaults suit most homes.",
+            "data": {
+              "house_map": "Config catalog",
+              "shorten_mcp_results": "Shorten long Home Assistant answers",
+              "change_history": "Change History"
+            },
+            "data_description": {
+              "house_map": "Off by default. A local index of how automations, entities, and areas are connected, so one lookup answers questions like “what uses the kitchen light?”. Adds a little to every message, so turn it on only if you often ask how things are wired. Live states still come from Home Assistant.",
+              "shorten_mcp_results": "On by default. Very long answers from Home Assistant (whole-home lists, big searches) are summarized before they go to the AI. Saves tokens and keeps replies quick. Off sends the full text.",
+              "change_history": "On by default. Keeps a record of every configuration change the assistant makes, so you can see what changed and ask it to restore an earlier version. Off stops new entries; the assistant can still make changes."
             }
           },
           "prompt": {
@@ -91,43 +115,13 @@
           "stt_engine": "Speech to text",
           "tts_engine": "Text to speech",
           "speak_replies": "Speak replies automatically",
-          "tts_natural": "Natural speech for text to speech",
-          "enable_sidebar": "Show AI Workspace in the sidebar",
-          "enable_overlay": "Show floating AI button",
-          "enable_dictate": "Show dictate button",
-          "allow_users": "Allow normal users",
-          "house_map": "Config catalog",
-          "shorten_mcp_results": "Shorten long Home Assistant answers",
-          "change_history": "Change History",
-          "track_usage": "Track usage and costs",
-          "show_chat_usage": "Show cost in chat header",
-          "ha_usage_sensors": "Add Home Assistant usage sensors",
-          "low_token": "Reduce token usage",
-          "prompt_cache": "Prompt cache",
-          "ui_theme": "Use HA Components",
-          "cross_chat": "Cross chat",
-          "keep_chats": "Chats to keep"
+          "tts_natural": "Natural speech for text to speech"
         },
         "data_description": {
           "stt_engine": "Browser dictation needs a secure site (https). Or choose a Home Assistant speech-to-text engine under Settings. The browser must allow the microphone.",
           "tts_engine": "Piper, Google Translate, or a voice from one of your AI assistants. Off keeps replies as text only.",
           "speak_replies": "When a voice is selected, each reply is read as it arrives. Off keeps the speaker button so you can play a reply yourself.",
-          "tts_natural": "On by default. Removes formatting so read-aloud sounds natural. Off reads the message exactly as written.",
-          "enable_sidebar": "Shows AI Workspace in the sidebar. When off, administrators can still open the full page if they use its menu link.",
-          "enable_overlay": "Turns the floating AI button on or off. On Settings pages it sits higher so it does not cover system buttons.",
-          "enable_dictate": "Microphone in the message box.",
-          "allow_users": "Non-admin users can open the floating chat with the same Home Assistant access as their account. Off: administrators only. The full AI Workspace page in the sidebar stays admin-only.",
-          "house_map": "Optional. Helps explain how one item is wired (what triggers it, what it affects). Off by default. For live on/off state or full lists, ask the assistant to check Home Assistant.",
-          "shorten_mcp_results": "On by default. Very long answers from Home Assistant (whole-home lists, big searches) are summarized before they go to the AI. That saves tokens and keeps replies snappy. Off sends the full text.",
-          "change_history": "On by default. Keeps a record of configuration changes the assistant made so you can review or undo them in Change History. Off stops new entries; the assistant can still use Home Assistant.",
-          "track_usage": "On by default. Records tokens and estimated USD cost after each Cursor or cloud turn. Shows a Usage page in the chat. Off stops new records; existing history stays.",
-          "show_chat_usage": "On by default. Shows tokens and cost under the chat title. Off hides only that line; tracking and the Usage page stay.",
-          "ha_usage_sensors": "Off by default. Creates cost, token, and turn sensors on a Usage device and on each agent for your own dashboards. Off removes those sensors.",
-          "low_token": "How much each turn sends, for every Cloud / Ollama / Azure agent.",
-          "prompt_cache": "On by default. Claude needs this to cache the repeated tool list; GPT often caches on its own. Cursor and Ollama ignore it. Leave it on so later rounds of a turn cost less.",
-          "ui_theme": "Off by default. When on, only Home Assistant UI components are used which may work better with themes.",
-          "cross_chat": "Off by default. When on, a question can use another chat whose title shares words with it. You do not have to mention chat. A short excerpt only, and that chat is not changed.",
-          "keep_chats": "Newest unpinned chats to keep per person. Pinned chats are always kept. Default 30."
+          "tts_natural": "On by default. Removes formatting so read-aloud sounds natural. Off reads the message exactly as written."
         },
         "sections": {
           "mcp": {
@@ -141,6 +135,60 @@
               "mcp_kind": "Servers this Home Assistant can reach. Pick Custom to enter your own address.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Built-in: long-lived access token, or leave empty to use your current login. HA-MCP: usually empty. Vibecode: agent key. Custom: only if that server asks for a key."
+            }
+          },
+          "chat": {
+            "name": "Chat",
+            "description": "Where the chat appears and who can use it.",
+            "data": {
+              "enable_sidebar": "Show AI Workspace in the sidebar",
+              "enable_overlay": "Show floating AI button",
+              "enable_dictate": "Show dictate button",
+              "allow_users": "Allow normal users",
+              "ui_theme": "Use HA Components",
+              "cross_chat": "Cross chat",
+              "keep_chats": "Chats to keep"
+            },
+            "data_description": {
+              "enable_sidebar": "Adds AI Workspace to the Home Assistant sidebar. When off, administrators can still open /ai-workspace directly.",
+              "enable_overlay": "A round AI button in the corner of every Home Assistant page, so you can ask without leaving the page. On Settings pages it sits higher so it does not cover other buttons.",
+              "enable_dictate": "Microphone button in the message box. Hide it if you never dictate.",
+              "allow_users": "Off: administrators only. On: non-admin users get the floating chat, with the same Home Assistant access as their own login. The full AI Workspace page stays admin-only. Only turn this on if you trust everyone who has a login.",
+              "ui_theme": "Off by default. Builds the chat from Home Assistant's own UI parts. Try it if the chat does not match your theme.",
+              "cross_chat": "Off by default. When on, a question can use a short excerpt from another chat whose title shares words with it, without you mentioning that chat. Helps when you already talked about the same room or automation. The other chat is not changed.",
+              "keep_chats": "Newest unpinned chats kept per person. Older ones are deleted so the list does not grow forever. Pinned chats are always kept. Default 30."
+            }
+          },
+          "cost": {
+            "name": "Cost and tokens",
+            "description": "What each message sends and how spending is tracked.",
+            "data": {
+              "low_token": "Reduce token usage",
+              "prompt_cache": "Prompt cache",
+              "track_usage": "Track usage and costs",
+              "show_chat_usage": "Show cost in chat header",
+              "ha_usage_sensors": "Add Home Assistant usage sensors"
+            },
+            "data_description": {
+              "low_token": "Sends less with each message to save money on Cloud, Ollama, and Azure agents (Cursor is not affected). Off gives the most reliable answers about your home. Extreme is chat only and cannot control the house.",
+              "prompt_cache": "On by default. Lets the provider reuse the part that repeats in every message (instructions and tool list) at a much lower price. Claude needs this switch; GPT mostly caches on its own. Cursor and Ollama ignore it.",
+              "track_usage": "On by default. Records tokens and estimated cost after each reply and shows them on the Usage page. Off stops new records; existing history stays.",
+              "show_chat_usage": "On by default. Shows tokens and cost under the chat title. Off hides only that line; tracking and the Usage page stay.",
+              "ha_usage_sensors": "Off by default. Only needed for your own dashboards or automations: adds cost, token, and turn sensors on a Usage device and on each agent. The Usage page works without them. Turning this off removes the sensors."
+            }
+          },
+          "house": {
+            "name": "Home Assistant answers",
+            "description": "How the assistant reads your setup and records its changes. The defaults suit most homes.",
+            "data": {
+              "house_map": "Config catalog",
+              "shorten_mcp_results": "Shorten long Home Assistant answers",
+              "change_history": "Change History"
+            },
+            "data_description": {
+              "house_map": "Off by default. A local index of how automations, entities, and areas are connected, so one lookup answers questions like “what uses the kitchen light?”. Adds a little to every message, so turn it on only if you often ask how things are wired. Live states still come from Home Assistant.",
+              "shorten_mcp_results": "On by default. Very long answers from Home Assistant (whole-home lists, big searches) are summarized before they go to the AI. Saves tokens and keeps replies quick. Off sends the full text.",
+              "change_history": "On by default. Keeps a record of every configuration change the assistant makes, so you can see what changed and ask it to restore an earlier version. Off stops new entries; the assistant can still make changes."
             }
           },
           "prompt": {
@@ -279,8 +327,8 @@
             "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
             "api_key": "Your key from the AI provider, not your Home Assistant login.",
             "model": "Pick from the list or type a model name. Empty uses the provider default.",
-            "effort": "Fast, High, or High fast when the model supports it.",
-            "check_house": "On by default for Off. The assistant looks up Home Assistant before answering about your setup (not for simple greetings). Light always checks. Medium and Extreme ignore this. Turn off if your model already does that on its own.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "check_house": "On by default. The assistant looks at Home Assistant before it answers questions about your home, so lists and states are real, not guessed. Greetings are skipped. With Reduce token usage on Light it always checks; on Medium and Extreme it never does. Turn it off for general questions or for a model that already checks on its own.",
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist.",
             "assist_stt": "Adds a Speech-to-text option in Home Assistant using this assistant's key. Off removes what it added.",
             "stt_model": "Leave empty for the provider default. You can type another model name if yours offers one.",
@@ -303,8 +351,8 @@
           "data_description": {
             "api_base": "Usually {example_url}",
             "model": "Pick from the list or type a model you installed. Empty uses llama3.2.",
-            "effort": "Used when the model supports it.",
-            "check_house": "On by default for Off. The assistant looks up Home Assistant before answering about your setup (not for simple greetings). Light always checks. Medium and Extreme ignore this. Turn off if your model already does that on its own.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "check_house": "On by default. The assistant looks at Home Assistant before it answers questions about your home, so lists and states are real, not guessed. Greetings are skipped. With Reduce token usage on Light it always checks; on Medium and Extreme it never does. Turn it off for general questions or for a model that already checks on its own.",
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           }
         },
@@ -325,8 +373,8 @@
             "api_base": "{example_url}",
             "model": "The deployment name.",
             "azure_api_version": "Leave the default unless Azure support gave you another version.",
-            "effort": "Used when the deployment supports it.",
-            "check_house": "On by default for Off. The assistant looks up Home Assistant before answering about your setup (not for simple greetings). Light always checks. Medium and Extreme ignore this. Turn off if your model already does that on its own.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "check_house": "On by default. The assistant looks at Home Assistant before it answers questions about your home, so lists and states are real, not guessed. Greetings are skipped. With Reduce token usage on Light it always checks; on Medium and Extreme it never does. Turn it off for general questions or for a model that already checks on its own.",
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           }
         },
@@ -351,8 +399,8 @@
             "api_key": "Leave blank when editing to keep the saved key.",
             "api_base": "Server address. Add /v1 at the end if your server expects that.",
             "model": "Model name on that server.",
-            "effort": "Used when the server supports it.",
-            "check_house": "On by default for Off. The assistant looks up Home Assistant before answering about your setup (not for simple greetings). Light always checks. Medium and Extreme ignore this. Turn off if your model already does that on its own.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "check_house": "On by default. The assistant looks at Home Assistant before it answers questions about your home, so lists and states are real, not guessed. Greetings are skipped. With Reduce token usage on Light it always checks; on Medium and Extreme it never does. Turn it off for general questions or for a model that already checks on its own.",
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist.",
             "assist_stt": "Adds a Speech-to-text option in Home Assistant using this assistant's key. Off removes what it added.",
             "stt_model": "Leave empty for the provider default. You can type another model name if yours offers one.",

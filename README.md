@@ -20,8 +20,8 @@ What the agent can do depends entirely on the MCP server you connect.
 - Attachments in chat (text files, images)
 - Deep links to devices, entities, automations, and more
 - Chat history with pins
-- Change History of recorded agent configuration writes (a log, not an undo). When HA-MCP is connected, **Ask to restore** tells the current chat to list HA-MCP’s edit backups
-- Usage and costs: tokens and estimated USD per agent and chat, with optional Home Assistant sensors for your own dashboards
+- Change History: a list of every change the assistant made to your setup. With HA-MCP, **Ask to restore** has the assistant roll a change back from HA-MCP’s backups
+- Usage and costs: tokens and estimated cost per agent, model, and chat, with optional Home Assistant sensors for your own dashboards
 - Several agents in one chat
 - More than one MCP connection
 - Optional floating button
@@ -39,11 +39,15 @@ An optional button on the other pages opens the same chat.
 
 Each agent can also be added as an Assist pipeline. The integration creates the pipeline for you, so you can use **Cursor AI** (or another AI) from Home Assistant's built-in Assist dialog as well.
 
-OpenAI, OpenRouter, and OpenAI-compatible agents can add **Speech-to-text** and **Text-to-speech** from the same API key (on by default). New AI Workspace Assist pipelines get those engines so they can listen and speak. Later STT/TTS on a pipeline stay as you set them in Voice assistants, including Google Translate or none. The overlay Text-to-speech dropdown is the same: it keeps the engine you pick. Cursor has no speech API of its own. Claude, Gemini, and local Ollama stay on a Home Assistant TTS engine such as Piper unless you assign one.
+OpenAI, OpenRouter, and OpenAI-compatible agents can also listen and speak with the same API key (**Speech-to-text** and **Text-to-speech**, on by default). New Assist pipelines from AI Workspace get those voices automatically. You can still change them under **Settings → Voice assistants**. Cursor, Claude, Gemini, and Ollama have no voice of their own and use a Home Assistant engine such as Piper.
 
 The OpenAI-style voices (Coral, Echo, …) speak **German, French, and many other languages**. They follow the language of the reply.
 
 ![Cursor in Home Assistant Assist](https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai-workspace-assists.png)
+
+The **Usage** page shows tokens and estimated cost per agent, model, and day, so you can see which model is worth it for your home. Prices come from the public price list of [LiteLLM](https://github.com/BerriAI/litellm). AI Workspace uses a small copy of that list, refreshed every week. More in [Cost and tokens](docs/cost.md).
+
+![AI Workspace Usage page](https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai-workspace_usage.png)
 
 ## Requirements
 
@@ -100,7 +104,7 @@ Open **AI Workspace** (`/ai-workspace`) and ask: `List my automations.`
 
 ## Cursor AI (Advanced)
 
-This integration works with **Cursor AI** through the Cursor SDK, without the desktop IDE: MCP tools, multi-step work, and agents that can be resumed. It runs headless, with no editor and no Composer UI.
+Use **Cursor AI** in Home Assistant through the Cursor SDK, without the Cursor desktop app. The agent uses your MCP tools, works through tasks with several steps, and picks up where it left off in each chat. There is no editor: you chat in AI Workspace.
 
 Install AI Workspace from HACS first ([step 1](#1-install-ai-workspace-from-hacs)).
 
@@ -134,7 +138,7 @@ If Home Assistant runs in Docker without the Supervisor, it needs one extra cont
 
 ![Home Assistant container, Cursor SDK, Cursor Cloud AI](https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/docker-architecture.jpg)
 
-Paste your Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) into `[docker-compose.runtime.yml](docker-compose.runtime.yml)`:
+Paste your Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) into [docker-compose.runtime.yml](docker-compose.runtime.yml):
 
 ```yaml
 name: ai-workspace-runtime
@@ -171,52 +175,9 @@ That pulls the image from [GHCR](https://github.com/domdus/ha-ai-workspace/pkgs/
 docker compose -f docker-compose.runtime.yml up -d --build
 ```
 
-**Host network** (`network_mode: host`, as above) is the same as a typical Home Assistant Container. MCP at `127.0.0.1` on this machine works, and `HOST: 127.0.0.1` keeps port **8090** off the LAN. The runtime token is optional here.
+**Host network** (`network_mode: host`, as above) matches a typical Home Assistant Container. The runtime reaches MCP at `127.0.0.1` on this machine, and `HOST: 127.0.0.1` keeps port **8090** off your network. The runtime token is optional here.
 
-**Bridge network** is Docker's default when you leave out `network_mode: host`. Inside the container, `127.0.0.1` is the container itself, not Home Assistant, so loopback MCP URLs are rewritten to the Docker host. Remove `network_mode` and use:
-
-```yaml
-    ports:
-      - "127.0.0.1:8090:8090"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    environment:
-      HOST: "0.0.0.0"
-      RUNTIME_TOKEN: "a-long-random-value"
-      REWRITE_LOOPBACK_HOST: host.docker.internal
-```
-
-`127.0.0.1:8090:8090` still keeps port **8090** off the LAN. If Home Assistant is another container on the same bridge, set the Runtime URL to `http://cursor-sdk:8090`. A runtime that listens on anything other than loopback refuses chats until `RUNTIME_TOKEN` is set.
-
-**Optional: files on disk.** Composer’s working directory is `WORKSPACE_DIR` (default `/data/workspace` in the named volume). That volume keeps whatever the agent writes. On a first start the runtime seeds `AGENTS.md` and `.cursor/rules/home-assistant.mdc` only if they are missing; it does not overwrite a checkout or bind mount. House automations and dashboards stay on MCP; this disk is only for extra files you choose to give the agent.
-
-Bind a host directory if you want it to read and write a project next to the chat:
-
-```yaml
-    environment:
-      WORKSPACE_DIR: /workspace
-    volumes:
-      - ai-workspace-data:/data
-      - /path/on/host:/workspace
-```
-
-Do not mount Home Assistant `/config`. Cursor state still lives under `/data`. The Home Assistant OS app cannot bind an arbitrary host path this way.
-
-**Optional: git checkout.** The runtime image includes git. Set `GIT_REPO` on the container (not on the AI Workspace integration) and it clones into `WORKSPACE_DIR` on first start. Later starts keep the existing `.git` directory. A private repo uses a mounted SSH key:
-
-```yaml
-    environment:
-      GIT_REPO: git@github.com:example/my-repo.git
-      GIT_BRANCH: main
-      GIT_SSH_KEY: /run/secrets/git_ssh
-      GIT_USER_NAME: AI Workspace
-      GIT_USER_EMAIL: ai-workspace@local
-    volumes:
-      - ai-workspace-data:/data
-      - /home/me/.ssh/id_ed25519:/run/secrets/git_ssh:ro
-```
-
-`GIT_SSH_KEY` is a file path inside the container (or the PEM text). HTTPS instead of SSH can use `GIT_TOKEN` (a PAT); the token is not stored in `.git/config`. Clone is skipped if the workspace already has a checkout or other project files. House edits stay on MCP. The agent can commit and push if the key or token allows it.
+Running Docker's default bridge network instead, giving the agent a folder of files, or letting it work in a git repository: see [Cursor runtime in Docker](docs/cursor-runtime.md).
 
 ### Runtime token
 
@@ -234,7 +195,7 @@ After the runtime is running: **Settings → Devices & services → Add integrat
 - **MCP type:** one from [Requirements](#requirements). Leave the MCP URL empty if it shows as detected.
 - Save. Home Assistant then asks for the first agent. Choose **Cursor**.
 - **Cursor Runtime URL:** leave empty unless the form does not show **Runtime found**. It is filled only when this Home Assistant can reach the Runtime (`http://127.0.0.1:8090` or the app). Do not paste a Docker hostname unless Home Assistant can reach that container.
-- **Model:** pick one from the list or type an id, for example `composer-2.5`, `grok-4.7`, `gpt-5`, or `claude-sonnet-5-5`. Leave it empty to use `CURSOR_MODEL` from the runtime.
+- **Model:** pick one from the list or type a model name, for example `composer-2.5`, `grok-4.7`, `gpt-5`, or `claude-sonnet-5-5`. Leave it empty to use `CURSOR_MODEL` from the runtime.
 - Paste the Cursor API key, unless the runtime already has one.
 - Open **AI Workspace** (`/ai-workspace`).
 
@@ -252,8 +213,9 @@ Install as in [Cloud AI](#cloud-ai-api-provider-quick). Pick **Ollama** and poin
 
 The [docs](docs/README.md) go further once you are up and running:
 
-- [Settings](docs/settings.md) — system prompt, options, and YAML
-- [Cost and tokens](docs/cost.md) — Usage page, token modes, and prompt cache
+- [Settings](docs/settings.md) — every option, what it does, and why it matters
+- [Cost and tokens](docs/cost.md) — Usage page, where prices come from, token modes, and prompt cache
+- [Cursor runtime in Docker](docs/cursor-runtime.md) — bridge network, files on disk, and git
 - [Privacy](docs/privacy.md) — what leaves the house, who can chat, Assist satellites
 - [MCP and Change History](docs/mcp.md) — connections, large tool results, and the change log
 - [Troubleshooting](docs/troubleshooting.md) — common errors and how to remove AI Workspace

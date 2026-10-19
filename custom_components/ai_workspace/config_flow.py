@@ -79,6 +79,9 @@ _LOGGER = logging.getLogger(__name__)
 SECTION_MCP = "mcp"
 SECTION_PROMPT = "prompt"
 SECTION_VOICE = "voice"
+SECTION_CHAT = "chat"
+SECTION_COST = "cost"
+SECTION_HOUSE = "house"
 _SHARED_KEYS = (
     CONF_SYSTEM_PROMPT,
     CONF_RUNTIME_URL,
@@ -142,33 +145,54 @@ def _form_placeholders(*, mcp_url: str = "", mcp_auto: bool = False) -> dict[str
     }
 
 
-def _ui_schema(defaults: dict | None = None) -> dict:
-    current = defaults or {}
-    return {
-        vol.Optional(CONF_ENABLE_SIDEBAR, default=current.get(CONF_ENABLE_SIDEBAR, True)): cv.boolean,
-        vol.Optional(CONF_ENABLE_OVERLAY, default=current.get(CONF_ENABLE_OVERLAY, True)): cv.boolean,
-        vol.Optional(CONF_ENABLE_DICTATE, default=current.get(CONF_ENABLE_DICTATE, True)): cv.boolean,
-        vol.Optional(CONF_ALLOW_USERS, default=current.get(CONF_ALLOW_USERS, False)): cv.boolean,
-        vol.Optional(CONF_HOUSE_MAP, default=current.get(CONF_HOUSE_MAP, False)): cv.boolean,
-        vol.Optional(CONF_SHORTEN_MCP_RESULTS, default=current.get(CONF_SHORTEN_MCP_RESULTS, True)): cv.boolean,
-        vol.Optional(CONF_CHANGE_HISTORY, default=current.get(CONF_CHANGE_HISTORY, True)): cv.boolean,
-        vol.Optional(CONF_TRACK_USAGE, default=current.get(CONF_TRACK_USAGE, True)): cv.boolean,
-        vol.Optional(CONF_SHOW_CHAT_USAGE, default=current.get(CONF_SHOW_CHAT_USAGE, True)): cv.boolean,
-        vol.Optional(CONF_HA_USAGE_SENSORS, default=bool(current.get(CONF_HA_USAGE_SENSORS, False))): cv.boolean,
-        vol.Optional(CONF_LOW_TOKEN, default=token_mode_of(current.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF))): SelectSelector(
-            SelectSelectorConfig(options=list(TOKEN_MODES), mode="dropdown", translation_key="low_token")
-        ),
-        vol.Optional(CONF_PROMPT_CACHE, default=bool(current.get(CONF_PROMPT_CACHE, True))): cv.boolean,
-        vol.Optional(CONF_CROSS_CHAT, default=current.get(CONF_CROSS_CHAT, False)): cv.boolean,
-        vol.Optional(
-            CONF_UI_THEME,
-            default=ui_theme_of(current.get(CONF_UI_THEME)) == UI_THEME_HA_COMPONENTS,
-        ): cv.boolean,
-        vol.Optional(
-            CONF_KEEP_CHATS,
-            default=int(current.get(CONF_KEEP_CHATS, DEFAULT_KEEP_CHATS) or DEFAULT_KEEP_CHATS),
-        ): NumberSelector(NumberSelectorConfig(min=1, max=500, mode="box", step=1)),
-    }
+def _chat_schema(current: dict) -> vol.Schema:
+    return vol.Schema(
+        {
+            vol.Optional(CONF_ENABLE_SIDEBAR, default=current.get(CONF_ENABLE_SIDEBAR, True)): cv.boolean,
+            vol.Optional(CONF_ENABLE_OVERLAY, default=current.get(CONF_ENABLE_OVERLAY, True)): cv.boolean,
+            vol.Optional(CONF_ENABLE_DICTATE, default=current.get(CONF_ENABLE_DICTATE, True)): cv.boolean,
+            vol.Optional(CONF_ALLOW_USERS, default=current.get(CONF_ALLOW_USERS, False)): cv.boolean,
+            vol.Optional(
+                CONF_UI_THEME,
+                default=ui_theme_of(current.get(CONF_UI_THEME)) == UI_THEME_HA_COMPONENTS,
+            ): cv.boolean,
+            vol.Optional(CONF_CROSS_CHAT, default=current.get(CONF_CROSS_CHAT, False)): cv.boolean,
+            vol.Optional(
+                CONF_KEEP_CHATS,
+                default=int(current.get(CONF_KEEP_CHATS, DEFAULT_KEEP_CHATS) or DEFAULT_KEEP_CHATS),
+            ): NumberSelector(NumberSelectorConfig(min=1, max=500, mode="box", step=1)),
+        }
+    )
+
+
+def _cost_schema(current: dict) -> vol.Schema:
+    return vol.Schema(
+        {
+            vol.Optional(
+                CONF_LOW_TOKEN, default=token_mode_of(current.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF))
+            ): SelectSelector(
+                SelectSelectorConfig(options=list(TOKEN_MODES), mode="dropdown", translation_key="low_token")
+            ),
+            vol.Optional(CONF_PROMPT_CACHE, default=bool(current.get(CONF_PROMPT_CACHE, True))): cv.boolean,
+            vol.Optional(CONF_TRACK_USAGE, default=current.get(CONF_TRACK_USAGE, True)): cv.boolean,
+            vol.Optional(CONF_SHOW_CHAT_USAGE, default=current.get(CONF_SHOW_CHAT_USAGE, True)): cv.boolean,
+            vol.Optional(
+                CONF_HA_USAGE_SENSORS, default=bool(current.get(CONF_HA_USAGE_SENSORS, False))
+            ): cv.boolean,
+        }
+    )
+
+
+def _house_schema(current: dict) -> vol.Schema:
+    return vol.Schema(
+        {
+            vol.Optional(CONF_HOUSE_MAP, default=current.get(CONF_HOUSE_MAP, False)): cv.boolean,
+            vol.Optional(
+                CONF_SHORTEN_MCP_RESULTS, default=current.get(CONF_SHORTEN_MCP_RESULTS, True)
+            ): cv.boolean,
+            vol.Optional(CONF_CHANGE_HISTORY, default=current.get(CONF_CHANGE_HISTORY, True)): cv.boolean,
+        }
+    )
 
 
 def _mcp_url_for_form(current: dict, hass: HomeAssistant | None = None) -> str:
@@ -265,7 +289,7 @@ def _prompt_schema(current: dict) -> vol.Schema:
 
 def _flatten(user_input: dict) -> dict:
     out = dict(user_input)
-    for key in (SECTION_MCP, SECTION_PROMPT, SECTION_VOICE):
+    for key in (SECTION_MCP, SECTION_CHAT, SECTION_VOICE, SECTION_COST, SECTION_HOUSE, SECTION_PROMPT):
         nested = out.pop(key, None)
         if isinstance(nested, dict):
             out.update(nested)
@@ -337,9 +361,11 @@ async def _shared_form(
     fields: dict = {}
     if include_mcp:
         fields[vol.Required(SECTION_MCP)] = section(_mcp_schema(defaults, hass, kinds or []), {"collapsed": False})
-    fields[vol.Required(SECTION_PROMPT)] = section(_prompt_schema(defaults), {"collapsed": True})
+    fields[vol.Required(SECTION_CHAT)] = section(_chat_schema(defaults), {"collapsed": False})
     fields[vol.Optional(SECTION_VOICE, default=voice)] = _SideBySide(_voice_schema(voice, stt, tts))
-    fields.update(_ui_schema(defaults))
+    fields[vol.Required(SECTION_COST)] = section(_cost_schema(defaults), {"collapsed": False})
+    fields[vol.Required(SECTION_HOUSE)] = section(_house_schema(defaults), {"collapsed": True})
+    fields[vol.Required(SECTION_PROMPT)] = section(_prompt_schema(defaults), {"collapsed": True})
     return vol.Schema(fields, extra=vol.ALLOW_EXTRA)
 
 

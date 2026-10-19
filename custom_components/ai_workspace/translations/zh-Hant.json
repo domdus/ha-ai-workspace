@@ -8,43 +8,13 @@
           "stt_engine": "語音轉文字",
           "tts_engine": "文字轉語音",
           "speak_replies": "自動朗讀回覆",
-          "tts_natural": "文字轉語音使用自然朗讀",
-          "enable_sidebar": "在側邊欄顯示 AI Workspace",
-          "enable_overlay": "顯示浮動 AI 按鈕",
-          "enable_dictate": "顯示聽寫按鈕",
-          "allow_users": "允許一般使用者",
-          "house_map": "設定目錄",
-          "shorten_mcp_results": "縮短過長的 Home Assistant 回覆",
-          "change_history": "變更歷史",
-          "track_usage": "追蹤用量與費用",
-          "show_chat_usage": "在聊天標題列顯示費用",
-          "ha_usage_sensors": "新增 Home Assistant 用量感測器",
-          "low_token": "降低 Token 用量",
-          "prompt_cache": "Prompt 快取",
-          "ui_theme": "使用 HA 元件",
-          "cross_chat": "跨聊天",
-          "keep_chats": "要保留的聊天"
+          "tts_natural": "文字轉語音使用自然朗讀"
         },
         "data_description": {
           "stt_engine": "瀏覽器聽寫需要安全網站 (https)。也可在設定中選擇 Home Assistant 的語音轉文字引擎。瀏覽器必須允許使用麥克風。",
           "tts_engine": "Piper、Google Translate，或你某個 AI 助手的聲音。關閉則回覆僅顯示為文字。",
           "speak_replies": "選擇聲音後，每則回覆到達時都會朗讀。關閉則保留揚聲器按鈕，方便你自行播放。",
-          "tts_natural": "預設開啟。去掉格式，讓朗讀聽起來更自然。關閉則按原文逐字朗讀。",
-          "enable_sidebar": "在側邊欄顯示 AI Workspace。關閉後，管理員仍可透過其選單連結開啟完整頁面。",
-          "enable_overlay": "開啟或關閉浮動 AI 按鈕。在設定頁面上位置較高，以免擋住系統按鈕。",
-          "enable_dictate": "訊息框中的麥克風。",
-          "allow_users": "非管理員使用者可以用與其帳號相同的 Home Assistant 權限開啟浮動聊天。關閉：僅限管理員。側邊欄中的 AI Workspace 完整頁面始終僅限管理員。",
-          "house_map": "選用。協助說明某個項目如何連接（由什麼觸發、會影響什麼）。預設關閉。若要查看即時開關狀態或完整清單，請讓助手查詢 Home Assistant。",
-          "shorten_mcp_results": "預設開啟。來自 Home Assistant 的超長回覆（全屋清單、大型搜尋）會在送給 AI 之前先摘要。這樣可節省 token，回覆也更俐落。關閉則傳送全文。",
-          "change_history": "預設開啟。記錄助手所做的設定變更，便於你在變更歷史中檢視或復原。關閉後不再新增紀錄；助手仍可使用 Home Assistant。",
-          "track_usage": "預設開啟。每次 Cursor 或雲端回合後記錄 token 與估算的美元費用。在聊天中顯示用量頁面。關閉後不再新增紀錄；既有歷史保留。",
-          "show_chat_usage": "預設開啟。在聊天標題下顯示 token 與費用。關閉只隱藏這一行；紀錄與用量頁面仍在。",
-          "ha_usage_sensors": "預設關閉。在 Usage 裝置與每個助手上建立費用、token 與回合感測器，供你自己的儀表板使用。關閉後會移除這些感測器。",
-          "low_token": "每個 Cloud / Ollama / Azure 助手每輪傳送多少。",
-          "prompt_cache": "預設開啟。重複使用系統提示與工具清單，讓後續輪次更便宜。關閉以便比較。Claude 需要此項；GPT 常常自行快取。Ollama 上忽略。",
-          "ui_theme": "預設關閉。開啟後只使用 Home Assistant 介面元件，可能更適合佈景主題。",
-          "cross_chat": "預設關閉。開啟後，問題可以使用標題有相同詞語的另一段聊天。不必提到聊天。只取一小段摘錄，且不會改動那段聊天。",
-          "keep_chats": "每人保留的最新未釘選聊天。釘選聊天一律保留。預設 30。"
+          "tts_natural": "預設開啟。去掉格式，讓朗讀聽起來更自然。關閉則按原文逐字朗讀。"
         },
         "sections": {
           "mcp": {
@@ -58,6 +28,60 @@
               "mcp_kind": "此 Home Assistant 能夠連線的伺服器。選擇自訂可輸入你自己的位址。",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "內建：長期存取權杖，或留空以使用目前登入。HA-MCP：通常留空。Vibecode：智慧體金鑰。自訂：僅當該伺服器要求金鑰時填寫。"
+            }
+          },
+          "chat": {
+            "name": "聊天",
+            "description": "聊天顯示的位置以及誰可以使用。",
+            "data": {
+              "enable_sidebar": "在側邊欄顯示 AI Workspace",
+              "enable_overlay": "顯示浮動 AI 按鈕",
+              "enable_dictate": "顯示聽寫按鈕",
+              "allow_users": "允許一般使用者",
+              "ui_theme": "使用 HA 元件",
+              "cross_chat": "跨聊天",
+              "keep_chats": "要保留的聊天"
+            },
+            "data_description": {
+              "enable_sidebar": "將 AI Workspace 加入 Home Assistant 側邊欄。關閉後，管理員仍可直接開啟 /ai-workspace。",
+              "enable_overlay": "每個 Home Assistant 頁面角落的圓形 AI 按鈕，不必離開頁面就能提問。在設定頁面上位置較高，以免擋住其他按鈕。",
+              "enable_dictate": "訊息框中的麥克風按鈕。如果從不聽寫，可以隱藏。",
+              "allow_users": "關閉：僅限管理員。開啟：非管理員使用者可使用浮動聊天，權限與其自己的 Home Assistant 帳號相同。完整的 AI Workspace 頁面始終僅限管理員。只有在你信任所有擁有帳號的人時才開啟。",
+              "ui_theme": "預設關閉。用 Home Assistant 內建的介面元件組成聊天。如果聊天與你的佈景主題不搭，可以試試。",
+              "cross_chat": "預設關閉。開啟後，問題可以使用另一段標題有相同詞語的聊天中的簡短摘錄，不必你提到那段聊天。適合已經聊過同一房間或自動化的情況。另一段聊天不會被改動。",
+              "keep_chats": "每人保留的最新未釘選聊天數。較舊的會被刪除，以免清單無限增長。釘選聊天一律保留。預設 30。"
+            }
+          },
+          "cost": {
+            "name": "費用和權杖",
+            "description": "每則訊息傳送的內容以及如何記錄花費。",
+            "data": {
+              "low_token": "降低 Token 用量",
+              "prompt_cache": "Prompt 快取",
+              "track_usage": "追蹤用量與費用",
+              "show_chat_usage": "在聊天標題列顯示費用",
+              "ha_usage_sensors": "新增 Home Assistant 用量感測器"
+            },
+            "data_description": {
+              "low_token": "每則訊息傳送較少內容，為 Cloud、Ollama 和 Azure 助手省錢（不影響 Cursor）。關閉可獲得關於你家最可靠的回答。Extreme 僅供聊天，無法控制家居。",
+              "prompt_cache": "預設開啟。讓服務供應商以低得多的價格重複使用每則訊息中重複的部分（指示與工具清單）。Claude 需要此開關；GPT 大多會自行快取。Cursor 和 Ollama 會忽略它。",
+              "track_usage": "預設開啟。每次回覆後記錄 token 與估算費用，並顯示在用量頁面。關閉後不再新增紀錄；既有歷史保留。",
+              "show_chat_usage": "預設開啟。在聊天標題下顯示 token 與費用。關閉只隱藏這一行；紀錄與用量頁面仍在。",
+              "ha_usage_sensors": "預設關閉。僅在你自己的儀表板或自動化中需要：在 Usage 裝置與每個助手上新增費用、token 與回合感測器。用量頁面不需要它們也能使用。關閉後會移除這些感測器。"
+            }
+          },
+          "house": {
+            "name": "Home Assistant 回覆",
+            "description": "助理如何讀取你的設定並記錄它所做的變更。預設值適合大多數家庭。",
+            "data": {
+              "house_map": "設定目錄",
+              "shorten_mcp_results": "縮短過長的 Home Assistant 回覆",
+              "change_history": "變更歷史"
+            },
+            "data_description": {
+              "house_map": "預設關閉。一個關於自動化、實體與分區如何關聯的本機索引，一次查詢就能回答「哪些東西用到廚房燈？」這類問題。每則訊息會稍微增加一點內容，所以只有經常詢問東西如何關聯時才開啟。即時狀態仍來自 Home Assistant。",
+              "shorten_mcp_results": "預設開啟。來自 Home Assistant 的超長回覆（全屋清單、大型搜尋）會在送給 AI 之前先摘要。節省 token，讓回覆保持快速。關閉則傳送全文。",
+              "change_history": "預設開啟。記錄助手所做的每一項設定變更，方便你查看改了什麼，並請它還原到先前的版本。關閉後不再新增紀錄；助手仍可進行變更。"
             }
           },
           "prompt": {
@@ -91,41 +115,13 @@
           "stt_engine": "語音轉文字",
           "tts_engine": "文字轉語音",
           "speak_replies": "自動朗讀回覆",
-          "tts_natural": "文字轉語音使用自然朗讀",
-          "enable_sidebar": "在側邊欄顯示 AI Workspace",
-          "enable_overlay": "顯示浮動 AI 按鈕",
-          "enable_dictate": "顯示聽寫按鈕",
-          "allow_users": "允許一般使用者",
-          "house_map": "設定目錄",
-          "shorten_mcp_results": "縮短過長的 Home Assistant 回覆",
-          "change_history": "變更歷史",
-          "ui_theme": "使用 HA 元件",
-          "cross_chat": "跨聊天",
-          "keep_chats": "要保留的聊天",
-          "low_token": "降低 Token 用量",
-          "prompt_cache": "Prompt 快取",
-          "show_chat_usage": "在聊天標題列顯示費用",
-          "ha_usage_sensors": "新增 Home Assistant 用量感測器"
+          "tts_natural": "文字轉語音使用自然朗讀"
         },
         "data_description": {
           "stt_engine": "瀏覽器聽寫需要安全網站 (https)。也可在設定中選擇 Home Assistant 的語音轉文字引擎。瀏覽器必須允許使用麥克風。",
           "tts_engine": "Piper、Google Translate，或你某個 AI 助手的聲音。關閉則回覆僅顯示為文字。",
           "speak_replies": "選擇聲音後，每則回覆到達時都會朗讀。關閉則保留揚聲器按鈕，方便你自行播放。",
-          "tts_natural": "預設開啟。去掉格式，讓朗讀聽起來更自然。關閉則按原文逐字朗讀。",
-          "enable_sidebar": "在側邊欄顯示 AI Workspace。關閉後，管理員仍可透過其選單連結開啟完整頁面。",
-          "enable_overlay": "開啟或關閉浮動 AI 按鈕。在設定頁面上位置較高，以免擋住系統按鈕。",
-          "enable_dictate": "訊息框中的麥克風。",
-          "allow_users": "非管理員使用者可以用與其帳號相同的 Home Assistant 權限開啟浮動聊天。關閉：僅限管理員。側邊欄中的 AI Workspace 完整頁面始終僅限管理員。",
-          "house_map": "選用。協助說明某個項目如何連接（由什麼觸發、會影響什麼）。預設關閉。若要查看即時開關狀態或完整清單，請讓助手查詢 Home Assistant。",
-          "shorten_mcp_results": "預設開啟。來自 Home Assistant 的超長回覆（全屋清單、大型搜尋）會在送給 AI 之前先摘要。這樣可節省 token，回覆也更俐落。關閉則傳送全文。",
-          "change_history": "預設開啟。記錄助手所做的設定變更，便於你在變更歷史中檢視或復原。關閉後不再新增紀錄；助手仍可使用 Home Assistant。",
-          "ui_theme": "預設關閉。開啟後只使用 Home Assistant 介面元件，可能更適合佈景主題。",
-          "cross_chat": "預設關閉。開啟後，問題可以使用標題有相同詞語的另一段聊天。不必提到聊天。只取一小段摘錄，且不會改動那段聊天。",
-          "keep_chats": "每人保留的最新未釘選聊天。釘選聊天一律保留。預設 30。",
-          "low_token": "每個 Cloud / Ollama / Azure 助手每輪傳送多少。",
-          "prompt_cache": "預設開啟。重複使用系統提示與工具清單，讓後續輪次更便宜。關閉以便比較。Claude 需要此項；GPT 常常自行快取。Ollama 上忽略。",
-          "show_chat_usage": "預設開啟。在聊天標題下顯示 token 與費用。關閉只隱藏這一行；紀錄與用量頁面仍在。",
-          "ha_usage_sensors": "預設關閉。在 Usage 裝置與每個助手上建立費用、token 與回合感測器，供你自己的儀表板使用。關閉後會移除這些感測器。"
+          "tts_natural": "預設開啟。去掉格式，讓朗讀聽起來更自然。關閉則按原文逐字朗讀。"
         },
         "sections": {
           "mcp": {
@@ -139,6 +135,60 @@
               "mcp_kind": "此 Home Assistant 能夠連線的伺服器。選擇自訂可輸入你自己的位址。",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "內建：長期存取權杖，或留空以使用目前登入。HA-MCP：通常留空。Vibecode：智慧體金鑰。自訂：僅當該伺服器要求金鑰時填寫。"
+            }
+          },
+          "chat": {
+            "name": "聊天",
+            "description": "聊天顯示的位置以及誰可以使用。",
+            "data": {
+              "enable_sidebar": "在側邊欄顯示 AI Workspace",
+              "enable_overlay": "顯示浮動 AI 按鈕",
+              "enable_dictate": "顯示聽寫按鈕",
+              "allow_users": "允許一般使用者",
+              "ui_theme": "使用 HA 元件",
+              "cross_chat": "跨聊天",
+              "keep_chats": "要保留的聊天"
+            },
+            "data_description": {
+              "enable_sidebar": "將 AI Workspace 加入 Home Assistant 側邊欄。關閉後，管理員仍可直接開啟 /ai-workspace。",
+              "enable_overlay": "每個 Home Assistant 頁面角落的圓形 AI 按鈕，不必離開頁面就能提問。在設定頁面上位置較高，以免擋住其他按鈕。",
+              "enable_dictate": "訊息框中的麥克風按鈕。如果從不聽寫，可以隱藏。",
+              "allow_users": "關閉：僅限管理員。開啟：非管理員使用者可使用浮動聊天，權限與其自己的 Home Assistant 帳號相同。完整的 AI Workspace 頁面始終僅限管理員。只有在你信任所有擁有帳號的人時才開啟。",
+              "ui_theme": "預設關閉。用 Home Assistant 內建的介面元件組成聊天。如果聊天與你的佈景主題不搭，可以試試。",
+              "cross_chat": "預設關閉。開啟後，問題可以使用另一段標題有相同詞語的聊天中的簡短摘錄，不必你提到那段聊天。適合已經聊過同一房間或自動化的情況。另一段聊天不會被改動。",
+              "keep_chats": "每人保留的最新未釘選聊天數。較舊的會被刪除，以免清單無限增長。釘選聊天一律保留。預設 30。"
+            }
+          },
+          "cost": {
+            "name": "費用和權杖",
+            "description": "每則訊息傳送的內容以及如何記錄花費。",
+            "data": {
+              "low_token": "降低 Token 用量",
+              "prompt_cache": "Prompt 快取",
+              "track_usage": "追蹤用量與費用",
+              "show_chat_usage": "在聊天標題列顯示費用",
+              "ha_usage_sensors": "新增 Home Assistant 用量感測器"
+            },
+            "data_description": {
+              "low_token": "每則訊息傳送較少內容，為 Cloud、Ollama 和 Azure 助手省錢（不影響 Cursor）。關閉可獲得關於你家最可靠的回答。Extreme 僅供聊天，無法控制家居。",
+              "prompt_cache": "預設開啟。讓服務供應商以低得多的價格重複使用每則訊息中重複的部分（指示與工具清單）。Claude 需要此開關；GPT 大多會自行快取。Cursor 和 Ollama 會忽略它。",
+              "track_usage": "預設開啟。每次回覆後記錄 token 與估算費用，並顯示在用量頁面。關閉後不再新增紀錄；既有歷史保留。",
+              "show_chat_usage": "預設開啟。在聊天標題下顯示 token 與費用。關閉只隱藏這一行；紀錄與用量頁面仍在。",
+              "ha_usage_sensors": "預設關閉。僅在你自己的儀表板或自動化中需要：在 Usage 裝置與每個助手上新增費用、token 與回合感測器。用量頁面不需要它們也能使用。關閉後會移除這些感測器。"
+            }
+          },
+          "house": {
+            "name": "Home Assistant 回覆",
+            "description": "助理如何讀取你的設定並記錄它所做的變更。預設值適合大多數家庭。",
+            "data": {
+              "house_map": "設定目錄",
+              "shorten_mcp_results": "縮短過長的 Home Assistant 回覆",
+              "change_history": "變更歷史"
+            },
+            "data_description": {
+              "house_map": "預設關閉。一個關於自動化、實體與分區如何關聯的本機索引，一次查詢就能回答「哪些東西用到廚房燈？」這類問題。每則訊息會稍微增加一點內容，所以只有經常詢問東西如何關聯時才開啟。即時狀態仍來自 Home Assistant。",
+              "shorten_mcp_results": "預設開啟。來自 Home Assistant 的超長回覆（全屋清單、大型搜尋）會在送給 AI 之前先摘要。節省 token，讓回覆保持快速。關閉則傳送全文。",
+              "change_history": "預設開啟。記錄助手所做的每一項設定變更，方便你查看改了什麼，並請它還原到先前的版本。關閉後不再新增紀錄；助手仍可進行變更。"
             }
           },
           "prompt": {
@@ -277,8 +327,8 @@
             "borrow": "使用該整合已儲存的金鑰。另一個整合保持不變。",
             "api_key": "來自 AI 供應商的金鑰，不是 Home Assistant 登入憑證。",
             "model": "從清單中選擇或輸入模型名稱。留空則使用供應商預設值。",
-            "effort": "在模型支援時為快速、高或高且快速。",
-            "check_house": "預設開啟。助手在回答有關你的安裝的問題前會查詢 Home Assistant（簡單問候除外）。若模型已自行完成，請關閉。",
+            "effort": "推理強度越高，思考越多：難題回答更好，但更慢、消耗更多 token。模型不支援時忽略。",
+            "check_house": "預設開啟。助手在回答有關你家的問題前會先查看 Home Assistant，因此清單與狀態是真實的，而不是猜的。問候會略過。「降低 Token 用量」為 Light 時一律查看；為 Medium 與 Extreme 時從不查看。對於一般性問題，或模型已會自行查看時，可以關閉。",
             "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。",
             "assist_stt": "使用此助手的金鑰在 Home Assistant 中新增語音轉文字選項。關閉則移除它新增的內容。",
             "stt_model": "留空則使用供應商預設值。若有其他模型名稱，可以輸入。",
@@ -301,8 +351,8 @@
           "data_description": {
             "api_base": "通常為 {example_url}",
             "model": "從清單中選擇或輸入已安裝的模型。留空則使用 llama3.2。",
-            "effort": "在模型支援時使用。",
-            "check_house": "預設開啟。助手在回答有關你的安裝的問題前會查詢 Home Assistant（簡單問候除外）。若模型已自行完成，請關閉。",
+            "effort": "推理強度越高，思考越多：難題回答更好，但更慢、消耗更多 token。模型不支援時忽略。",
+            "check_house": "預設開啟。助手在回答有關你家的問題前會先查看 Home Assistant，因此清單與狀態是真實的，而不是猜的。問候會略過。「降低 Token 用量」為 Light 時一律查看；為 Medium 與 Extreme 時從不查看。對於一般性問題，或模型已會自行查看時，可以關閉。",
             "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。"
           }
         },
@@ -323,8 +373,8 @@
             "api_base": "{example_url}",
             "model": "部署名稱。",
             "azure_api_version": "除非 Azure 支援提供了其他版本，否則請保留預設值。",
-            "effort": "在部署支援時使用。",
-            "check_house": "預設開啟。助手在回答有關你的安裝的問題前會查詢 Home Assistant（簡單問候除外）。若模型已自行完成，請關閉。",
+            "effort": "推理強度越高，思考越多：難題回答更好，但更慢、消耗更多 token。模型不支援時忽略。",
+            "check_house": "預設開啟。助手在回答有關你家的問題前會先查看 Home Assistant，因此清單與狀態是真實的，而不是猜的。問候會略過。「降低 Token 用量」為 Light 時一律查看；為 Medium 與 Extreme 時從不查看。對於一般性問題，或模型已會自行查看時，可以關閉。",
             "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。"
           }
         },
@@ -349,8 +399,8 @@
             "api_key": "編輯時留空可保留已儲存的金鑰。",
             "api_base": "伺服器位址。若伺服器需要，請在結尾加上 /v1。",
             "model": "該伺服器上的模型名稱。",
-            "effort": "在伺服器支援時使用。",
-            "check_house": "預設開啟。助手在回答有關你的安裝的問題前會查詢 Home Assistant（簡單問候除外）。若模型已自行完成，請關閉。",
+            "effort": "推理強度越高，思考越多：難題回答更好，但更慢、消耗更多 token。模型不支援時忽略。",
+            "check_house": "預設開啟。助手在回答有關你家的問題前會先查看 Home Assistant，因此清單與狀態是真實的，而不是猜的。問候會略過。「降低 Token 用量」為 Light 時一律查看；為 Medium 與 Extreme 時從不查看。對於一般性問題，或模型已會自行查看時，可以關閉。",
             "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。",
             "assist_stt": "使用此助手的金鑰在 Home Assistant 中新增語音轉文字選項。關閉則移除它新增的內容。",
             "stt_model": "留空則使用供應商預設值。若有其他模型名稱，可以輸入。",

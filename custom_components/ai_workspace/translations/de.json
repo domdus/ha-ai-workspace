@@ -8,43 +8,13 @@
           "stt_engine": "Sprache zu Text",
           "tts_engine": "Text zu Sprache",
           "speak_replies": "Antworten automatisch vorlesen",
-          "tts_natural": "Natürliche Sprache für Text-zu-Sprache",
-          "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
-          "enable_overlay": "Schwebende KI-Schaltfläche anzeigen",
-          "enable_dictate": "Diktier-Schaltfläche anzeigen",
-          "allow_users": "Normale Benutzer erlauben",
-          "house_map": "Konfigurationskatalog",
-          "shorten_mcp_results": "Lange Home-Assistant-Antworten kürzen",
-          "change_history": "Änderungsverlauf",
-          "track_usage": "Nutzung und Kosten aufzeichnen",
-          "show_chat_usage": "Kosten in der Chat-Kopfzeile anzeigen",
-          "ha_usage_sensors": "Home-Assistant-Nutzungssensoren hinzufügen",
-          "low_token": "Tokenverbrauch reduzieren",
-          "prompt_cache": "Prompt-Cache",
-          "cross_chat": "Chatübergreifend",
-          "ui_theme": "HA-Komponenten verwenden",
-          "keep_chats": "Chats behalten"
+          "tts_natural": "Natürliche Sprache für Text-zu-Sprache"
         },
         "data_description": {
           "stt_engine": "Browser-Diktat braucht eine sichere Seite (https). Oder wähle unter Einstellungen eine Home-Assistant-Sprache-zu-Text-Engine. Der Browser muss das Mikrofon erlauben.",
           "tts_engine": "Piper, Google Translate oder eine Stimme von einem deiner KI-Assistenten. Aus: Antworten nur als Text.",
           "speak_replies": "Wenn eine Stimme gewählt ist, wird jede Antwort vorgelesen. Aus lässt die Lautsprecher-Schaltfläche zum selbst Abspielen.",
-          "tts_natural": "Standard an. Entfernt Formatierung, damit Vorlesen natürlich klingt. Aus liest die Nachricht wörtlich vor.",
-          "enable_sidebar": "Zeigt AI Workspace in der Seitenleiste. Aus: Administratoren können die Seite trotzdem über den Menülink öffnen.",
-          "enable_overlay": "Schaltet die schwebende KI-Schaltfläche ein oder aus. Auf Einstellungen sitzt sie höher, damit sie die Systemschaltflächen nicht überdeckt.",
-          "enable_dictate": "Mikrofon im Eingabefeld.",
-          "allow_users": "Benutzer ohne Administratorrechte können den schwebenden Chat mit dem gleichen Home-Assistant-Zugriff wie ihr Konto nutzen. Aus: nur Administratoren. Die AI-Workspace-Seite in der Seitenleiste bleibt nur für Administratoren.",
-          "house_map": "Optional. Hilft zu erklären, wie ein Eintrag verdrahtet ist (was ihn auslöst, was er beeinflusst). Standardmäßig aus. Für live an/aus oder volle Listen: die Assistentin soll Home Assistant direkt prüfen.",
-          "shorten_mcp_results": "Standardmäßig an. Sehr lange Antworten aus Home Assistant (Listen fürs ganze Haus, große Abfragen) werden gekürzt, bevor sie an die KI gehen. Das spart Token und hält Antworten flott. Aus sendet den vollen Text.",
-          "change_history": "Standardmäßig an. Merkt sich Konfigurationsänderungen der Assistentin, damit du sie im Änderungsverlauf prüfen oder rückgängig machen kannst. Aus: keine neuen Einträge; die Assistentin kann Home Assistant weiter nutzen.",
-          "track_usage": "Standardmäßig an. Zeichnet Token und geschätzte USD-Kosten nach jedem Cursor- oder Cloud-Turn auf. Zeigt eine Nutzungsseite im Chat. Aus: keine neuen Einträge; vorhandene Historie bleibt.",
-          "show_chat_usage": "Standard an. Zeigt Token und Kosten unter dem Chattitel. Aus blendet nur diese Zeile; Aufzeichnung und die Nutzungsseite bleiben.",
-          "ha_usage_sensors": "Standardmäßig aus. Legt Sensoren für Kosten, Token und Runden auf einem Nutzungsgerät und jedem Agenten an, die du auf eigene Dashboards legen kannst. Aus entfernt diese Sensoren.",
-          "low_token": "Wie viel jeder Zug sendet, für alle Cloud-/Ollama-/Azure-Agenten.",
-          "prompt_cache": "Standard an. Claude braucht das, um die wiederholte Tool-Liste zu cachen; GPT cached oft von selbst. Wird bei Cursor und Ollama ignoriert. Lass es an, damit spätere Runden eines Turns weniger kosten.",
-          "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen anderen Chat nutzen, dessen Titel Wörter mit ihr teilt. Du musst nicht Chat oder Gespräch sagen. Nur ein kurzer Auszug, und dieser Chat wird nicht geändert.",
-          "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30.",
-          "ui_theme": "Standardmäßig aus. Wenn an, werden nur Home-Assistant-UI-Komponenten genutzt, die oft besser mit Themes funktionieren."
+          "tts_natural": "Standard an. Entfernt Formatierung, damit Vorlesen natürlich klingt. Aus liest die Nachricht wörtlich vor."
         },
         "sections": {
           "mcp": {
@@ -58,6 +28,60 @@
               "mcp_kind": "Server, die diese Home-Assistant-Instanz erreicht. „Benutzerdefiniert“ für eine eigene Adresse.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Eingebaut: langlebiges Zugriffstoken, oder leer für die aktuelle Anmeldung. HA-MCP: meist leer. Vibecode: Agent-Key. Benutzerdefiniert: nur wenn der Server einen Schlüssel verlangt."
+            }
+          },
+          "chat": {
+            "name": "Chat",
+            "description": "Wo der Chat erscheint und wer ihn nutzen darf.",
+            "data": {
+              "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
+              "enable_overlay": "Schwebende KI-Schaltfläche anzeigen",
+              "enable_dictate": "Diktier-Schaltfläche anzeigen",
+              "allow_users": "Normale Benutzer erlauben",
+              "ui_theme": "HA-Komponenten verwenden",
+              "cross_chat": "Chatübergreifend",
+              "keep_chats": "Chats behalten"
+            },
+            "data_description": {
+              "enable_sidebar": "Zeigt AI Workspace in der Seitenleiste. Wenn aus, können Administratoren /ai-workspace weiterhin direkt öffnen.",
+              "enable_overlay": "Ein runder KI-Button in der Ecke jeder Home-Assistant-Seite, damit du fragen kannst, ohne die Seite zu verlassen. Auf Einstellungsseiten sitzt er höher, damit er keine anderen Buttons verdeckt.",
+              "enable_dictate": "Mikrofon-Button im Nachrichtenfeld. Ausblenden, wenn du nie diktierst.",
+              "allow_users": "Aus: nur Administratoren. An: normale Benutzer bekommen den schwebenden Chat, mit denselben Home-Assistant-Rechten wie ihr eigenes Konto. Die volle AI-Workspace-Seite bleibt nur für Administratoren. Nur einschalten, wenn du allen mit Login vertraust.",
+              "ui_theme": "Standardmäßig aus. Baut den Chat aus den UI-Bausteinen von Home Assistant. Probier es, wenn der Chat nicht zu deinem Theme passt.",
+              "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen kurzen Auszug aus einem anderen Chat nutzen, dessen Titel gleiche Wörter enthält, ohne dass du ihn erwähnst. Hilft, wenn du denselben Raum oder dieselbe Automation schon besprochen hast. Der andere Chat bleibt unverändert.",
+              "keep_chats": "Neueste nicht angeheftete Chats pro Person. Ältere werden gelöscht, damit die Liste nicht endlos wächst. Angeheftete Chats bleiben immer. Standard 30."
+            }
+          },
+          "cost": {
+            "name": "Kosten und Tokens",
+            "description": "Was jede Nachricht sendet und wie Ausgaben erfasst werden.",
+            "data": {
+              "low_token": "Tokenverbrauch reduzieren",
+              "prompt_cache": "Prompt-Cache",
+              "track_usage": "Nutzung und Kosten aufzeichnen",
+              "show_chat_usage": "Kosten in der Chat-Kopfzeile anzeigen",
+              "ha_usage_sensors": "Home-Assistant-Nutzungssensoren hinzufügen"
+            },
+            "data_description": {
+              "low_token": "Sendet mit jeder Nachricht weniger, um bei Cloud-, Ollama- und Azure-Agenten Geld zu sparen (Cursor ist nicht betroffen). Aus liefert die verlässlichsten Antworten über dein Zuhause. Extreme ist nur Chat und kann das Haus nicht steuern.",
+              "prompt_cache": "Standardmäßig an. Der Anbieter darf den Teil, der sich in jeder Nachricht wiederholt (Anweisungen und Tool-Liste), deutlich günstiger wiederverwenden. Claude braucht diesen Schalter, GPT cacht meist von selbst. Cursor und Ollama ignorieren ihn.",
+              "track_usage": "Standardmäßig an. Speichert nach jeder Antwort Tokens und geschätzte Kosten und zeigt sie auf der Seite Nutzung. Aus stoppt neue Einträge; der Verlauf bleibt.",
+              "show_chat_usage": "Standard an. Zeigt Token und Kosten unter dem Chattitel. Aus blendet nur diese Zeile; Aufzeichnung und die Nutzungsseite bleiben.",
+              "ha_usage_sensors": "Standardmäßig aus. Nur für eigene Dashboards oder Automationen nötig: legt Kosten-, Token- und Durchgangs-Sensoren auf einem Nutzungs-Gerät und an jedem Agenten an. Die Seite Nutzung funktioniert ohne sie. Ausschalten entfernt die Sensoren."
+            }
+          },
+          "house": {
+            "name": "Antworten aus Home Assistant",
+            "description": "Wie der Assistent dein Setup liest und seine Änderungen festhält. Die Standardwerte passen für die meisten.",
+            "data": {
+              "house_map": "Konfigurationskatalog",
+              "shorten_mcp_results": "Lange Home-Assistant-Antworten kürzen",
+              "change_history": "Änderungsverlauf"
+            },
+            "data_description": {
+              "house_map": "Standardmäßig aus. Ein lokaler Index, wie Automationen, Entitäten und Bereiche zusammenhängen, damit eine Abfrage Fragen wie „Was nutzt das Küchenlicht?“ beantwortet. Fügt jeder Nachricht etwas hinzu, also nur einschalten, wenn du oft fragst, wie Dinge verknüpft sind. Live-Zustände kommen weiter aus Home Assistant.",
+              "shorten_mcp_results": "Standardmäßig an. Sehr lange Antworten von Home Assistant (Listen des ganzen Hauses, große Suchen) werden zusammengefasst, bevor sie an die KI gehen. Spart Tokens und hält Antworten flott. Aus sendet den vollen Text.",
+              "change_history": "Standardmäßig an. Protokolliert jede Konfigurationsänderung des Assistenten, damit du siehst, was sich geändert hat, und eine frühere Version wiederherstellen lassen kannst. Aus stoppt neue Einträge; der Assistent kann weiterhin Änderungen machen."
             }
           },
           "prompt": {
@@ -91,43 +115,13 @@
           "stt_engine": "Sprache zu Text",
           "tts_engine": "Text zu Sprache",
           "speak_replies": "Antworten automatisch vorlesen",
-          "tts_natural": "Natürliche Sprache für Text-zu-Sprache",
-          "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
-          "enable_overlay": "Schwebende KI-Schaltfläche anzeigen",
-          "enable_dictate": "Diktier-Schaltfläche anzeigen",
-          "allow_users": "Normale Benutzer erlauben",
-          "house_map": "Konfigurationskatalog",
-          "shorten_mcp_results": "Lange Home-Assistant-Antworten kürzen",
-          "change_history": "Änderungsverlauf",
-          "track_usage": "Nutzung und Kosten aufzeichnen",
-          "show_chat_usage": "Kosten in der Chat-Kopfzeile anzeigen",
-          "ha_usage_sensors": "Home-Assistant-Nutzungssensoren hinzufügen",
-          "low_token": "Tokenverbrauch reduzieren",
-          "prompt_cache": "Prompt-Cache",
-          "cross_chat": "Chatübergreifend",
-          "ui_theme": "HA-Komponenten verwenden",
-          "keep_chats": "Chats behalten"
+          "tts_natural": "Natürliche Sprache für Text-zu-Sprache"
         },
         "data_description": {
           "stt_engine": "Browser-Diktat braucht eine sichere Seite (https). Oder wähle unter Einstellungen eine Home-Assistant-Sprache-zu-Text-Engine. Der Browser muss das Mikrofon erlauben.",
           "tts_engine": "Piper, Google Translate oder eine Stimme von einem deiner KI-Assistenten. Aus: Antworten nur als Text.",
           "speak_replies": "Wenn eine Stimme gewählt ist, wird jede Antwort vorgelesen. Aus lässt die Lautsprecher-Schaltfläche zum selbst Abspielen.",
-          "tts_natural": "Standard an. Entfernt Formatierung, damit Vorlesen natürlich klingt. Aus liest die Nachricht wörtlich vor.",
-          "enable_sidebar": "Zeigt AI Workspace in der Seitenleiste. Aus: Administratoren können die Seite trotzdem über den Menülink öffnen.",
-          "enable_overlay": "Schaltet die schwebende KI-Schaltfläche ein oder aus. Auf Einstellungen sitzt sie höher, damit sie die Systemschaltflächen nicht überdeckt.",
-          "enable_dictate": "Mikrofon im Eingabefeld.",
-          "allow_users": "Benutzer ohne Administratorrechte können den schwebenden Chat mit dem gleichen Home-Assistant-Zugriff wie ihr Konto nutzen. Aus: nur Administratoren. Die AI-Workspace-Seite in der Seitenleiste bleibt nur für Administratoren.",
-          "house_map": "Optional. Hilft zu erklären, wie ein Eintrag verdrahtet ist (was ihn auslöst, was er beeinflusst). Standardmäßig aus. Für live an/aus oder volle Listen: die Assistentin soll Home Assistant direkt prüfen.",
-          "shorten_mcp_results": "Standardmäßig an. Sehr lange Antworten aus Home Assistant (Listen fürs ganze Haus, große Abfragen) werden gekürzt, bevor sie an die KI gehen. Das spart Token und hält Antworten flott. Aus sendet den vollen Text.",
-          "change_history": "Standardmäßig an. Merkt sich Konfigurationsänderungen der Assistentin, damit du sie im Änderungsverlauf prüfen oder rückgängig machen kannst. Aus: keine neuen Einträge; die Assistentin kann Home Assistant weiter nutzen.",
-          "track_usage": "Standardmäßig an. Zeichnet Token und geschätzte USD-Kosten nach jedem Cursor- oder Cloud-Turn auf. Zeigt eine Nutzungsseite im Chat. Aus: keine neuen Einträge; vorhandene Historie bleibt.",
-          "show_chat_usage": "Standard an. Zeigt Token und Kosten unter dem Chattitel. Aus blendet nur diese Zeile; Aufzeichnung und die Nutzungsseite bleiben.",
-          "ha_usage_sensors": "Standardmäßig aus. Legt Sensoren für Kosten, Token und Runden auf einem Nutzungsgerät und jedem Agenten an, die du auf eigene Dashboards legen kannst. Aus entfernt diese Sensoren.",
-          "low_token": "Wie viel jeder Zug sendet, für alle Cloud-/Ollama-/Azure-Agenten.",
-          "prompt_cache": "Standard an. Claude braucht das, um die wiederholte Tool-Liste zu cachen; GPT cached oft von selbst. Wird bei Cursor und Ollama ignoriert. Lass es an, damit spätere Runden eines Turns weniger kosten.",
-          "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen anderen Chat nutzen, dessen Titel Wörter mit ihr teilt. Du musst nicht Chat oder Gespräch sagen. Nur ein kurzer Auszug, und dieser Chat wird nicht geändert.",
-          "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30.",
-          "ui_theme": "Standardmäßig aus. Wenn an, werden nur Home-Assistant-UI-Komponenten genutzt, die oft besser mit Themes funktionieren."
+          "tts_natural": "Standard an. Entfernt Formatierung, damit Vorlesen natürlich klingt. Aus liest die Nachricht wörtlich vor."
         },
         "sections": {
           "mcp": {
@@ -141,6 +135,60 @@
               "mcp_kind": "Server, die diese Home-Assistant-Instanz erreicht. „Benutzerdefiniert“ für eine eigene Adresse.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Eingebaut: langlebiges Zugriffstoken, oder leer für die aktuelle Anmeldung. HA-MCP: meist leer. Vibecode: Agent-Key. Benutzerdefiniert: nur wenn der Server einen Schlüssel verlangt."
+            }
+          },
+          "chat": {
+            "name": "Chat",
+            "description": "Wo der Chat erscheint und wer ihn nutzen darf.",
+            "data": {
+              "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
+              "enable_overlay": "Schwebende KI-Schaltfläche anzeigen",
+              "enable_dictate": "Diktier-Schaltfläche anzeigen",
+              "allow_users": "Normale Benutzer erlauben",
+              "ui_theme": "HA-Komponenten verwenden",
+              "cross_chat": "Chatübergreifend",
+              "keep_chats": "Chats behalten"
+            },
+            "data_description": {
+              "enable_sidebar": "Zeigt AI Workspace in der Seitenleiste. Wenn aus, können Administratoren /ai-workspace weiterhin direkt öffnen.",
+              "enable_overlay": "Ein runder KI-Button in der Ecke jeder Home-Assistant-Seite, damit du fragen kannst, ohne die Seite zu verlassen. Auf Einstellungsseiten sitzt er höher, damit er keine anderen Buttons verdeckt.",
+              "enable_dictate": "Mikrofon-Button im Nachrichtenfeld. Ausblenden, wenn du nie diktierst.",
+              "allow_users": "Aus: nur Administratoren. An: normale Benutzer bekommen den schwebenden Chat, mit denselben Home-Assistant-Rechten wie ihr eigenes Konto. Die volle AI-Workspace-Seite bleibt nur für Administratoren. Nur einschalten, wenn du allen mit Login vertraust.",
+              "ui_theme": "Standardmäßig aus. Baut den Chat aus den UI-Bausteinen von Home Assistant. Probier es, wenn der Chat nicht zu deinem Theme passt.",
+              "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen kurzen Auszug aus einem anderen Chat nutzen, dessen Titel gleiche Wörter enthält, ohne dass du ihn erwähnst. Hilft, wenn du denselben Raum oder dieselbe Automation schon besprochen hast. Der andere Chat bleibt unverändert.",
+              "keep_chats": "Neueste nicht angeheftete Chats pro Person. Ältere werden gelöscht, damit die Liste nicht endlos wächst. Angeheftete Chats bleiben immer. Standard 30."
+            }
+          },
+          "cost": {
+            "name": "Kosten und Tokens",
+            "description": "Was jede Nachricht sendet und wie Ausgaben erfasst werden.",
+            "data": {
+              "low_token": "Tokenverbrauch reduzieren",
+              "prompt_cache": "Prompt-Cache",
+              "track_usage": "Nutzung und Kosten aufzeichnen",
+              "show_chat_usage": "Kosten in der Chat-Kopfzeile anzeigen",
+              "ha_usage_sensors": "Home-Assistant-Nutzungssensoren hinzufügen"
+            },
+            "data_description": {
+              "low_token": "Sendet mit jeder Nachricht weniger, um bei Cloud-, Ollama- und Azure-Agenten Geld zu sparen (Cursor ist nicht betroffen). Aus liefert die verlässlichsten Antworten über dein Zuhause. Extreme ist nur Chat und kann das Haus nicht steuern.",
+              "prompt_cache": "Standardmäßig an. Der Anbieter darf den Teil, der sich in jeder Nachricht wiederholt (Anweisungen und Tool-Liste), deutlich günstiger wiederverwenden. Claude braucht diesen Schalter, GPT cacht meist von selbst. Cursor und Ollama ignorieren ihn.",
+              "track_usage": "Standardmäßig an. Speichert nach jeder Antwort Tokens und geschätzte Kosten und zeigt sie auf der Seite Nutzung. Aus stoppt neue Einträge; der Verlauf bleibt.",
+              "show_chat_usage": "Standard an. Zeigt Token und Kosten unter dem Chattitel. Aus blendet nur diese Zeile; Aufzeichnung und die Nutzungsseite bleiben.",
+              "ha_usage_sensors": "Standardmäßig aus. Nur für eigene Dashboards oder Automationen nötig: legt Kosten-, Token- und Durchgangs-Sensoren auf einem Nutzungs-Gerät und an jedem Agenten an. Die Seite Nutzung funktioniert ohne sie. Ausschalten entfernt die Sensoren."
+            }
+          },
+          "house": {
+            "name": "Antworten aus Home Assistant",
+            "description": "Wie der Assistent dein Setup liest und seine Änderungen festhält. Die Standardwerte passen für die meisten.",
+            "data": {
+              "house_map": "Konfigurationskatalog",
+              "shorten_mcp_results": "Lange Home-Assistant-Antworten kürzen",
+              "change_history": "Änderungsverlauf"
+            },
+            "data_description": {
+              "house_map": "Standardmäßig aus. Ein lokaler Index, wie Automationen, Entitäten und Bereiche zusammenhängen, damit eine Abfrage Fragen wie „Was nutzt das Küchenlicht?“ beantwortet. Fügt jeder Nachricht etwas hinzu, also nur einschalten, wenn du oft fragst, wie Dinge verknüpft sind. Live-Zustände kommen weiter aus Home Assistant.",
+              "shorten_mcp_results": "Standardmäßig an. Sehr lange Antworten von Home Assistant (Listen des ganzen Hauses, große Suchen) werden zusammengefasst, bevor sie an die KI gehen. Spart Tokens und hält Antworten flott. Aus sendet den vollen Text.",
+              "change_history": "Standardmäßig an. Protokolliert jede Konfigurationsänderung des Assistenten, damit du siehst, was sich geändert hat, und eine frühere Version wiederherstellen lassen kannst. Aus stoppt neue Einträge; der Assistent kann weiterhin Änderungen machen."
             }
           },
           "prompt": {
@@ -279,8 +327,8 @@
             "borrow": "Nutzt den Schlüssel, den diese Integration schon gespeichert hat. Die andere Integration bleibt unverändert.",
             "api_key": "Schlüssel vom KI-Anbieter, nicht dein Home-Assistant-Login.",
             "model": "Wähle eines oder gib eine ID ein. Leer lässt den Standard des Anbieters.",
-            "effort": "Schnell, Hoch oder Hoch schnell, wenn das Modell das unterstützt.",
-            "check_house": "Standard an bei Aus. Der Assistent prüft Home Assistant, bevor er über dein Setup antwortet (nicht bei kurzen Grüßen). Light prüft immer. Medium und Extreme ignorieren das. Aus, wenn dein Modell das ohnehin zuverlässig tut.",
+            "effort": "Mehr Aufwand heißt mehr Nachdenken: bessere Antworten auf schwere Fragen, aber langsamer und mehr Tokens. Wird ignoriert, wenn das Modell es nicht unterstützt.",
+            "check_house": "Standardmäßig an. Der Assistent schaut in Home Assistant nach, bevor er Fragen zu deinem Zuhause beantwortet. Listen und Zustände sind dann echt, nicht geraten. Begrüßungen werden übersprungen. Mit Tokenverbrauch reduzieren auf Light prüft er immer, bei Medium und Extreme nie. Ausschalten für allgemeine Fragen oder ein Modell, das das schon von selbst tut.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat.",
             "assist_stt": "Fügt in Home Assistant eine Sprache-zu-Text-Option mit dem Schlüssel dieses Assistenten hinzu. Aus entfernt, was er angelegt hat.",
             "stt_model": "Leer für den Standard des Anbieters. Optional einen anderen Modellnamen eingeben.",
@@ -303,8 +351,8 @@
           "data_description": {
             "api_base": "Meist {example_url}",
             "model": "Wähle eines oder gib einen gezogenen Modellnamen ein. Leer nutzt llama3.2.",
-            "effort": "Wird genutzt, wenn das Modell das unterstützt.",
-            "check_house": "Standard an bei Aus. Der Assistent prüft Home Assistant, bevor er über dein Setup antwortet (nicht bei kurzen Grüßen). Light prüft immer. Medium und Extreme ignorieren das. Aus, wenn dein Modell das ohnehin zuverlässig tut.",
+            "effort": "Mehr Aufwand heißt mehr Nachdenken: bessere Antworten auf schwere Fragen, aber langsamer und mehr Tokens. Wird ignoriert, wenn das Modell es nicht unterstützt.",
+            "check_house": "Standardmäßig an. Der Assistent schaut in Home Assistant nach, bevor er Fragen zu deinem Zuhause beantwortet. Listen und Zustände sind dann echt, nicht geraten. Begrüßungen werden übersprungen. Mit Tokenverbrauch reduzieren auf Light prüft er immer, bei Medium und Extreme nie. Ausschalten für allgemeine Fragen oder ein Modell, das das schon von selbst tut.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat."
           }
         },
@@ -325,8 +373,8 @@
             "api_base": "{example_url}",
             "model": "Der Name der Bereitstellung.",
             "azure_api_version": "Standard lassen, außer Azure nennt dir eine andere Version.",
-            "effort": "Wird genutzt, wenn die Bereitstellung das unterstützt.",
-            "check_house": "Standard an bei Aus. Der Assistent prüft Home Assistant, bevor er über dein Setup antwortet (nicht bei kurzen Grüßen). Light prüft immer. Medium und Extreme ignorieren das. Aus, wenn dein Modell das ohnehin zuverlässig tut.",
+            "effort": "Mehr Aufwand heißt mehr Nachdenken: bessere Antworten auf schwere Fragen, aber langsamer und mehr Tokens. Wird ignoriert, wenn das Modell es nicht unterstützt.",
+            "check_house": "Standardmäßig an. Der Assistent schaut in Home Assistant nach, bevor er Fragen zu deinem Zuhause beantwortet. Listen und Zustände sind dann echt, nicht geraten. Begrüßungen werden übersprungen. Mit Tokenverbrauch reduzieren auf Light prüft er immer, bei Medium und Extreme nie. Ausschalten für allgemeine Fragen oder ein Modell, das das schon von selbst tut.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat."
           }
         },
@@ -351,8 +399,8 @@
             "api_key": "Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
             "api_base": "Serveradresse. /v1 anhängen, wenn dein Server das erwartet.",
             "model": "Modellname auf diesem Server.",
-            "effort": "Wird genutzt, wenn der Server das unterstützt.",
-            "check_house": "Standard an bei Aus. Der Assistent prüft Home Assistant, bevor er über dein Setup antwortet (nicht bei kurzen Grüßen). Light prüft immer. Medium und Extreme ignorieren das. Aus, wenn dein Modell das ohnehin zuverlässig tut.",
+            "effort": "Mehr Aufwand heißt mehr Nachdenken: bessere Antworten auf schwere Fragen, aber langsamer und mehr Tokens. Wird ignoriert, wenn das Modell es nicht unterstützt.",
+            "check_house": "Standardmäßig an. Der Assistent schaut in Home Assistant nach, bevor er Fragen zu deinem Zuhause beantwortet. Listen und Zustände sind dann echt, nicht geraten. Begrüßungen werden übersprungen. Mit Tokenverbrauch reduzieren auf Light prüft er immer, bei Medium und Extreme nie. Ausschalten für allgemeine Fragen oder ein Modell, das das schon von selbst tut.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat.",
             "assist_stt": "Fügt in Home Assistant eine Sprache-zu-Text-Option mit dem Schlüssel dieses Assistenten hinzu. Aus entfernt, was er angelegt hat.",
             "stt_model": "Leer für den Standard des Anbieters. Optional einen anderen Modellnamen eingeben.",

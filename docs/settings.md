@@ -24,36 +24,73 @@ What you write here replaces the built-in prompt. Leave the field empty to keep 
 
 Tappable links to automations, entities, helpers, and devices are always added. You do not need to mention those in the prompt.
 
-## Options
+## AI Workspace settings
+
+**Configure** on the AI Workspace entry. The form has the same groups as below. These settings apply to every agent.
+
+### Chat
+
+| Option | What it does | Why it matters |
+| --- | --- | --- |
+| **Show AI Workspace in the sidebar** | Sidebar item. `/ai-workspace` still works when this is off. | Keep the sidebar tidy; admins can still open the full page. |
+| **Show floating AI button** | Bottom-right robot icon on other Home Assistant pages. It slides up when another corner button is already there. | Open the same chat without leaving the page you are on. |
+| **Show dictate button** | Microphone in the message box. On by default. | Hide it if you never dictate. |
+| **Allow normal users** | Off by default. Non-admins get the floating chat only, with the same Home Assistant access as their own login. | [Privacy](privacy.md). Only turn this on if you trust everyone with a login. |
+| **Use HA Components** | Off by default. Builds the chat from Home Assistant’s own UI parts. | Can look better with some themes. |
+| **Cross chat** | Off by default. A question can use a short excerpt from another chat whose title shares words with it. That other chat is not changed. | Helps when you already discussed a room or automation in a different chat. |
+| **Chats to keep** | Newest unpinned chats per person (default 30). Pinned chats are always kept. | Stops the history list growing forever. |
+
+### Voice
+
+| Option | What it does | Why it matters |
+| --- | --- | --- |
+| **Speech to text** | Browser speech, or a Home Assistant engine such as Whisper. The microphone needs https:// or localhost. | Dictate instead of typing. Browsers block the microphone on a plain http:// address. |
+| **Text to speech** | Piper, Google Translate, or a voice from an OpenAI-style agent. The speaker button works on http:// too. Off leaves replies as text. | Hear replies. OpenAI-style voices follow the language of the reply (German, French, and others). |
+| **Speak replies automatically** | Off by default. When a voice is selected, each reply is read as it arrives. | Hands-free. Off still leaves the speaker button. |
+| **Natural speech for text to speech** | On by default. Removes formatting such as lists, links, and symbols before reading. | Sounds like a person talking instead of reading out punctuation. |
+
+### Cost and tokens
+
+| Option | What it does | Why it matters |
+| --- | --- | --- |
+| **Reduce token usage** | Off, Light, Medium, or Extreme for every Cloud, Ollama, and Azure agent. Not on Cursor. | [How much each message sends](cost.md#reduce-token-usage), and what you give up for a lower bill. |
+| **Prompt cache** | On by default. Applied when the model supports it. Ignored on Cursor and Ollama. | [The repeated tool list costs much less](cost.md#prompt-cache) after the first round. |
+| **Track usage and costs** | On by default. Records tokens and estimated cost. Sidebar **Usage** opens `/ai-workspace/usage`. | [See what you spend](cost.md). Off stops new records; history stays. |
+| **Show cost in chat header** | On by default. Tokens and cost under the chat title. | Cost at a glance. Off hides only that line. |
+| **Add Home Assistant usage sensors** | Off by default. Creates cost, token, and turn sensors. | [For your own dashboards and automations](cost.md#home-assistant-sensors). The Usage page does not need them. |
+
+### Home Assistant answers
+
+Collapsed by default. The defaults suit most homes.
+
+| Option | What it does | Why it matters |
+| --- | --- | --- |
+| **Config catalog** | Off by default. A local index of how automations, entities, and areas are connected. | [Why this is off by default](#config-catalog). |
+| **Shorten long Home Assistant answers** | On by default. Very long lists are summarized before they go to the model. | [Saves tokens](mcp.md#shorten-long-home-assistant-answers) and keeps replies quick. |
+| **Change History** | On by default. Records every configuration change the assistant made. | [See what changed](mcp.md#change-history) and ask the assistant to restore it. |
+
+### System prompt
+
+Collapsed by default. See [System prompt](#system-prompt). Empty uses the built-in text.
+
+## Connection settings
+
+| Option | What it does | Why it matters |
+| --- | --- | --- |
+| **Connection type / Server address / Access key** | Asked when you add AI Workspace, and again on **Add connection**. Leave the address empty to use the detected one. Built-in MCP Server: an empty key uses the login of the person chatting. HA-MCP: usually empty. Vibecode: agent key. | This is how the model reaches Home Assistant. See [MCP](mcp.md). |
+
+## Agent settings
+
+On each agent (**Add agent**, or the edit button on an agent row).
 
 | Option | What it does | Why it matters |
 | --- | --- | --- |
 | **Copy key from** | Uses a key already stored by OpenRouter, OpenAI, Claude, Gemini, Ollama, or Azure in Home Assistant. That other integration stays as it is. | You do not paste the same key twice. |
-| **Effort** | Default, Fast, High, or High fast, when the model supports it. If it does not, the request still goes through. | Some models spend more hidden reasoning on High; Fast is cheaper and quicker. |
-| **Always check the house first** | Not on Cursor. On by default when token usage is **Off**. **Light** always checks. **Medium** and **Extreme** ignore this toggle. | [Why this is on](#always-check-the-house-first). |
-| **MCP type / URL / token** | Asked when you add AI Workspace (and again on **Add connection**). Empty URL uses auto-detect. Built-in MCP Server: empty token uses the login of the person chatting. HA-MCP: usually empty. Vibecode: Agent Key. | This is how the model reaches Home Assistant. See [MCP](mcp.md). |
-| **Cursor Runtime URL / Runtime token** | On the **Cursor** agent form, not Configure. Leave URL empty when the form shows **Runtime found**. | Pairs Home Assistant with the Cursor runtime. See [Runtime token](../README.md#runtime-token). |
-| **System prompt** | See [System prompt](#system-prompt). Empty uses the built-in text. | Your house rules, without repeating them in every chat. |
-| **Show floating AI button** | Bottom-right robot icon on other Home Assistant pages. It slides up when another corner button is already there. | Open the same chat without leaving the page you are on. |
-| **Speech to text** | Browser speech, or a Home Assistant engine such as Whisper. The microphone needs https:// or localhost. | Dictate instead of typing. Browsers block the mic on a plain http:// LAN address. |
-| **Text to speech** | Piper, Google Translate, or a voice from an OpenAI-style agent. The speaker button works on http:// too. Off leaves replies as text. | Hear replies. OpenAI-style voices follow the language of the reply (German, French, and others). |
-| **Speak replies automatically** | Off by default. When a voice is selected, each reply is read as it arrives. | Hands-free. Off still leaves the speaker button. |
-| **Show dictate button** | Microphone in the prompt field. On by default. | Hide it if you never dictate. |
-| **Show AI Workspace in the sidebar** | Sidebar item. `/ai-workspace` still works when this is off. | Keep the sidebar tidy; admins can still open the full page. |
-| **Allow normal users** | Off by default. Non-admins get the floating chat only. | [Privacy](privacy.md). Only turn this on if you trust everyone with a login. |
-| **Chats to keep** | Newest unpinned chats per person (default 30). Pinned chats are always kept. | Stops the history list growing forever. |
-| **Cross chat** | Off by default. A question can use a short excerpt from another chat whose title shares words with it. That other chat is not changed. | Helps when you already discussed a room or automation in a different thread. |
-| **Config catalog** | Off by default. A local index of how automations are wired. | [Why this is off by default](#config-catalog). |
-| **Shorten long Home Assistant answers** | On by default. Very long lists are summarized before they go to the model. | [Saves tokens](mcp.md#shorten-long-home-assistant-answers) and keeps replies snappy. |
-| **Change History** | On by default. Records configuration writes the agent made. | [A log of what changed](mcp.md#change-history), not an undo by itself. |
-| **Track usage and costs** | On by default. Records tokens and estimated USD. Sidebar **Usage** opens `/ai-workspace/usage`. | [See what you spend](cost.md). Off stops new records; history stays. |
-| **Show cost in chat header** | On by default. Tokens and cost under the chat title. | Glanceable cost. Off hides only that line. |
-| **Add Home Assistant usage sensors** | Off by default. Creates cost/token/turn entities. | [For your own dashboards](cost.md#home-assistant-sensors). Off if you do not want extra entities. |
-| **Reduce token usage** | Shared: Off, Light, Medium, or Extreme for every Cloud / Ollama / Azure agent. Not on Cursor. | [How much each turn sends](cost.md#reduce-token-usage). |
-| **Prompt cache** | Shared, on by default. Applied when the model supports it. Ignored on Cursor and Ollama. | [Cheaper repeats of the same tool list](cost.md#prompt-cache). |
-| **Use HA Components** | Off by default. Uses only Home Assistant UI widgets. | Can sit better with some themes. |
-| **Add to Assist** | On each agent. Off keeps the agent in AI Workspace only. On adds a Voice assistants pipeline. Off again removes that pipeline. | Same model from Home Assistant’s Assist dialog. |
-| **Add Speech-to-text / Text-to-speech** | On OpenAI, OpenRouter, and OpenAI-compatible agents. On by default. Uses this agent’s key. Off removes that engine. | Listen and speak from the same key. Cursor, Claude, Gemini, and Ollama have no speech API of their own. |
+| **Effort** | Default, Fast, High, or High fast, when the model supports it. If it does not, the request still goes through. | High thinks longer: better on hard questions, but slower and more tokens. Fast is cheaper and quicker. |
+| **Always check the house first** | Not on Cursor. On by default. With **Light** it always checks; **Medium** and **Extreme** ignore this toggle. | [Why this is on](#always-check-the-house-first). |
+| **Cursor runtime address / Runtime password** | Only on Cursor agents. Leave the address empty when the form shows **Runtime found**. | Pairs Home Assistant with the Cursor runtime. See [Runtime token](../README.md#runtime-token). |
+| **Add to Assist** | On adds a Voice assistants pipeline for this agent. Off removes it again and keeps the agent in AI Workspace only. | Use the same model from Home Assistant’s Assist dialog. |
+| **Add Speech-to-text / Text-to-speech** | On OpenAI, OpenRouter, and OpenAI-compatible agents. On by default. Uses this agent’s key. Off removes that engine. | Listen and speak with the same key. Cursor, Claude, Gemini, and Ollama have no speech API of their own. |
 
 ## Always check the house first
 

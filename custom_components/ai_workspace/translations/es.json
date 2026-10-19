@@ -8,43 +8,13 @@
           "stt_engine": "Voz a texto",
           "tts_engine": "Texto a voz",
           "speak_replies": "Leer las respuestas automáticamente",
-          "tts_natural": "Voz natural para texto a voz",
-          "enable_sidebar": "Mostrar AI Workspace en la barra lateral",
-          "enable_overlay": "Mostrar el botón flotante de IA",
-          "enable_dictate": "Mostrar el botón de dictado",
-          "allow_users": "Permitir usuarios normales",
-          "house_map": "Catálogo de configuración",
-          "shorten_mcp_results": "Acortar las respuestas largas de Home Assistant",
-          "change_history": "Historial de cambios",
-          "track_usage": "Registrar uso y costes",
-          "show_chat_usage": "Mostrar el coste en la cabecera del chat",
-          "ha_usage_sensors": "Añadir sensores de uso de Home Assistant",
-          "low_token": "Reducir el uso de tokens",
-          "prompt_cache": "Caché de prompt",
-          "ui_theme": "Usar componentes de HA",
-          "cross_chat": "Entre chats",
-          "keep_chats": "Chats a conservar"
+          "tts_natural": "Voz natural para texto a voz"
         },
         "data_description": {
           "stt_engine": "El dictado del navegador necesita un sitio seguro (https). O elige un motor de voz a texto de Home Assistant en Ajustes. El navegador debe permitir el micrófono.",
           "tts_engine": "Piper, Google Translate o una voz de uno de tus asistentes de IA. Desactivado deja las respuestas solo como texto.",
           "speak_replies": "Si hay una voz elegida, cada respuesta se lee al llegar. Desactivado deja el botón del altavoz para reproducirla tú.",
-          "tts_natural": "Activado por defecto. Quita el formato para que la lectura suene natural. Desactivado lee el mensaje tal cual.",
-          "enable_sidebar": "Muestra AI Workspace en la barra lateral. Desactivado: los administradores aún pueden abrir la página con su enlace de menú.",
-          "enable_overlay": "Activa o desactiva el botón flotante de IA. En Ajustes se sitúa más arriba para no tapar los botones del sistema.",
-          "enable_dictate": "Micrófono en el cuadro de mensaje.",
-          "allow_users": "Los usuarios sin derechos de administrador pueden abrir el chat flotante con el mismo acceso a Home Assistant que su cuenta. Desactivado: solo administradores. La página de AI Workspace en la barra lateral sigue siendo solo para administradores.",
-          "house_map": "Opcional. Ayuda a explicar cómo está conectado un elemento (qué lo dispara, a qué afecta). Desactivado por defecto. Para el estado encendido/apagado en vivo o listas completas, pide al asistente que consulte Home Assistant.",
-          "shorten_mcp_results": "Activado por defecto. Las respuestas muy largas de Home Assistant (listas de toda la casa, búsquedas grandes) se resumen antes de ir a la IA. Eso ahorra tokens y mantiene las respuestas ágiles. Desactivado envía el texto completo.",
-          "change_history": "Activado por defecto. Guarda un registro de los cambios de configuración que hizo el asistente para revisarlos o deshacerlos en el historial de cambios. Desactivado: no hay entradas nuevas; el asistente puede seguir usando Home Assistant.",
-          "track_usage": "Activado por defecto. Registra tokens y el coste estimado en USD tras cada turno de Cursor o la nube. Muestra una página de Uso en el chat. Desactivado: no hay registros nuevos; el historial se queda.",
-          "show_chat_usage": "Activado por defecto. Muestra tokens y coste bajo el título del chat. Desactivado oculta solo esa línea; el registro y la página de Uso siguen.",
-          "ha_usage_sensors": "Desactivado por defecto. Crea sensores de coste, tokens y turnos en un dispositivo Usage y en cada agente para tus paneles. Desactivado los elimina.",
-          "low_token": "Cuánto enviar en cada turno, para todos los agentes Cloud / Ollama / Azure.",
-          "prompt_cache": "Activado por defecto. Reutiliza el prompt de sistema y la lista de herramientas para que las rondas siguientes cuesten menos. Apágalo para comparar. Claude lo necesita; GPT a menudo cachea solo. Se ignora en Ollama.",
-          "ui_theme": "Desactivado por defecto. Si está activado, solo se usan componentes de la interfaz de Home Assistant, que pueden ir mejor con los temas.",
-          "cross_chat": "Desactivado por defecto. Si está activado, una pregunta puede usar otro chat cuyo título comparta palabras. No hace falta decir chat. Solo un extracto breve, y ese chat no se modifica.",
-          "keep_chats": "Chats no fijados más recientes a conservar por persona. Los chats fijados se conservan siempre. Por defecto 30."
+          "tts_natural": "Activado por defecto. Quita el formato para que la lectura suene natural. Desactivado lee el mensaje tal cual."
         },
         "sections": {
           "mcp": {
@@ -58,6 +28,60 @@
               "mcp_kind": "Servidores a los que llega esta instancia de Home Assistant. Elige Personalizado para escribir tu propia dirección.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Integrado: token de acceso de larga duración, o déjalo vacío para usar el inicio de sesión actual. HA-MCP: normalmente vacío. Vibecode: clave de agente. Personalizado: solo si ese servidor pide una clave."
+            }
+          },
+          "chat": {
+            "name": "Chat",
+            "description": "Dónde aparece el chat y quién puede usarlo.",
+            "data": {
+              "enable_sidebar": "Mostrar AI Workspace en la barra lateral",
+              "enable_overlay": "Mostrar el botón flotante de IA",
+              "enable_dictate": "Mostrar el botón de dictado",
+              "allow_users": "Permitir usuarios normales",
+              "ui_theme": "Usar componentes de HA",
+              "cross_chat": "Entre chats",
+              "keep_chats": "Chats a conservar"
+            },
+            "data_description": {
+              "enable_sidebar": "Añade AI Workspace a la barra lateral de Home Assistant. Desactivado: los administradores aún pueden abrir /ai-workspace directamente.",
+              "enable_overlay": "Un botón redondo de IA en la esquina de cada página de Home Assistant, para preguntar sin salir de la página. En las páginas de Ajustes se sitúa más arriba para no tapar otros botones.",
+              "enable_dictate": "Botón de micrófono en el cuadro de mensaje. Ocúltalo si nunca dictas.",
+              "allow_users": "Desactivado: solo administradores. Activado: los usuarios no administradores tienen el chat flotante, con el mismo acceso a Home Assistant que su propia cuenta. La página completa de AI Workspace sigue siendo solo para administradores. Actívalo solo si confías en todos los que tienen una cuenta.",
+              "ui_theme": "Desactivado por defecto. Construye el chat con los elementos de interfaz propios de Home Assistant. Pruébalo si el chat no encaja con tu tema.",
+              "cross_chat": "Desactivado por defecto. Si está activado, una pregunta puede usar un extracto breve de otro chat cuyo título comparta palabras con ella, sin que menciones ese chat. Ayuda si ya hablaste de la misma habitación o automatización. El otro chat no se modifica.",
+              "keep_chats": "Chats no fijados más recientes que se conservan por persona. Los más antiguos se eliminan para que la lista no crezca sin fin. Los chats fijados se conservan siempre. Por defecto 30."
+            }
+          },
+          "cost": {
+            "name": "Coste y tokens",
+            "description": "Qué envía cada mensaje y cómo se registra el gasto.",
+            "data": {
+              "low_token": "Reducir el uso de tokens",
+              "prompt_cache": "Caché de prompt",
+              "track_usage": "Registrar uso y costes",
+              "show_chat_usage": "Mostrar el coste en la cabecera del chat",
+              "ha_usage_sensors": "Añadir sensores de uso de Home Assistant"
+            },
+            "data_description": {
+              "low_token": "Envía menos con cada mensaje para ahorrar dinero con los agentes Cloud, Ollama y Azure (Cursor no se ve afectado). Desactivado da las respuestas más fiables sobre tu casa. Extreme es solo chat y no puede controlar la casa.",
+              "prompt_cache": "Activado por defecto. Permite al proveedor reutilizar, a un precio mucho menor, la parte que se repite en cada mensaje (instrucciones y lista de herramientas). Claude necesita esta opción; GPT casi siempre usa caché por su cuenta. Cursor y Ollama la ignoran.",
+              "track_usage": "Activado por defecto. Registra tokens y el coste estimado tras cada respuesta y los muestra en la página de Uso. Desactivado: no hay registros nuevos; el historial existente se queda.",
+              "show_chat_usage": "Activado por defecto. Muestra tokens y coste bajo el título del chat. Desactivado oculta solo esa línea; el registro y la página de Uso siguen.",
+              "ha_usage_sensors": "Desactivado por defecto. Solo hace falta para tus propios paneles o automatizaciones: añade sensores de coste, tokens y turnos en un dispositivo Usage y en cada agente. La página de Uso funciona sin ellos. Al desactivarlo se eliminan los sensores."
+            }
+          },
+          "house": {
+            "name": "Respuestas de Home Assistant",
+            "description": "Cómo el asistente lee tu instalación y registra sus cambios. Los valores por defecto sirven para la mayoría de casas.",
+            "data": {
+              "house_map": "Catálogo de configuración",
+              "shorten_mcp_results": "Acortar las respuestas largas de Home Assistant",
+              "change_history": "Historial de cambios"
+            },
+            "data_description": {
+              "house_map": "Desactivado por defecto. Un índice local de cómo se relacionan automatizaciones, entidades y áreas, para que una sola consulta responda preguntas como «¿qué usa la luz de la cocina?». Añade un poco a cada mensaje, así que actívalo solo si preguntas a menudo cómo están conectadas las cosas. Los estados en vivo siguen viniendo de Home Assistant.",
+              "shorten_mcp_results": "Activado por defecto. Las respuestas muy largas de Home Assistant (listas de toda la casa, búsquedas grandes) se resumen antes de ir a la IA. Ahorra tokens y mantiene las respuestas rápidas. Desactivado envía el texto completo.",
+              "change_history": "Activado por defecto. Guarda un registro de cada cambio de configuración que hace el asistente, para que veas qué cambió y le pidas restaurar una versión anterior. Desactivado: no hay entradas nuevas; el asistente puede seguir haciendo cambios."
             }
           },
           "prompt": {
@@ -91,41 +115,13 @@
           "stt_engine": "Voz a texto",
           "tts_engine": "Texto a voz",
           "speak_replies": "Leer las respuestas automáticamente",
-          "tts_natural": "Voz natural para texto a voz",
-          "enable_sidebar": "Mostrar AI Workspace en la barra lateral",
-          "enable_overlay": "Mostrar el botón flotante de IA",
-          "enable_dictate": "Mostrar el botón de dictado",
-          "allow_users": "Permitir usuarios normales",
-          "house_map": "Catálogo de configuración",
-          "shorten_mcp_results": "Acortar las respuestas largas de Home Assistant",
-          "change_history": "Historial de cambios",
-          "ui_theme": "Usar componentes de HA",
-          "cross_chat": "Entre chats",
-          "keep_chats": "Chats a conservar",
-          "low_token": "Reducir el uso de tokens",
-          "prompt_cache": "Caché de prompt",
-          "show_chat_usage": "Mostrar el coste en la cabecera del chat",
-          "ha_usage_sensors": "Añadir sensores de uso de Home Assistant"
+          "tts_natural": "Voz natural para texto a voz"
         },
         "data_description": {
           "stt_engine": "El dictado del navegador necesita un sitio seguro (https). O elige un motor de voz a texto de Home Assistant en Ajustes. El navegador debe permitir el micrófono.",
           "tts_engine": "Piper, Google Translate o una voz de uno de tus asistentes de IA. Desactivado deja las respuestas solo como texto.",
           "speak_replies": "Si hay una voz elegida, cada respuesta se lee al llegar. Desactivado deja el botón del altavoz para reproducirla tú.",
-          "tts_natural": "Activado por defecto. Quita el formato para que la lectura suene natural. Desactivado lee el mensaje tal cual.",
-          "enable_sidebar": "Muestra AI Workspace en la barra lateral. Desactivado: los administradores aún pueden abrir la página con su enlace de menú.",
-          "enable_overlay": "Activa o desactiva el botón flotante de IA. En Ajustes se sitúa más arriba para no tapar los botones del sistema.",
-          "enable_dictate": "Micrófono en el cuadro de mensaje.",
-          "allow_users": "Los usuarios sin derechos de administrador pueden abrir el chat flotante con el mismo acceso a Home Assistant que su cuenta. Desactivado: solo administradores. La página de AI Workspace en la barra lateral sigue siendo solo para administradores.",
-          "house_map": "Opcional. Ayuda a explicar cómo está conectado un elemento (qué lo dispara, a qué afecta). Desactivado por defecto. Para el estado encendido/apagado en vivo o listas completas, pide al asistente que consulte Home Assistant.",
-          "shorten_mcp_results": "Activado por defecto. Las respuestas muy largas de Home Assistant (listas de toda la casa, búsquedas grandes) se resumen antes de ir a la IA. Eso ahorra tokens y mantiene las respuestas ágiles. Desactivado envía el texto completo.",
-          "change_history": "Activado por defecto. Guarda un registro de los cambios de configuración que hizo el asistente para revisarlos o deshacerlos en el historial de cambios. Desactivado: no hay entradas nuevas; el asistente puede seguir usando Home Assistant.",
-          "ui_theme": "Desactivado por defecto. Si está activado, solo se usan componentes de la interfaz de Home Assistant, que pueden ir mejor con los temas.",
-          "cross_chat": "Desactivado por defecto. Si está activado, una pregunta puede usar otro chat cuyo título comparta palabras. No hace falta decir chat. Solo un extracto breve, y ese chat no se modifica.",
-          "keep_chats": "Chats no fijados más recientes a conservar por persona. Los chats fijados se conservan siempre. Por defecto 30.",
-          "low_token": "Cuánto enviar en cada turno, para todos los agentes Cloud / Ollama / Azure.",
-          "prompt_cache": "Activado por defecto. Reutiliza el prompt de sistema y la lista de herramientas para que las rondas siguientes cuesten menos. Apágalo para comparar. Claude lo necesita; GPT a menudo cachea solo. Se ignora en Ollama.",
-          "show_chat_usage": "Activado por defecto. Muestra tokens y coste bajo el título del chat. Desactivado oculta solo esa línea; el registro y la página de Uso siguen.",
-          "ha_usage_sensors": "Desactivado por defecto. Crea sensores de coste, tokens y turnos en un dispositivo Usage y en cada agente para tus paneles. Desactivado los elimina."
+          "tts_natural": "Activado por defecto. Quita el formato para que la lectura suene natural. Desactivado lee el mensaje tal cual."
         },
         "sections": {
           "mcp": {
@@ -139,6 +135,60 @@
               "mcp_kind": "Servidores a los que llega esta instancia de Home Assistant. Elige Personalizado para escribir tu propia dirección.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Integrado: token de acceso de larga duración, o déjalo vacío para usar el inicio de sesión actual. HA-MCP: normalmente vacío. Vibecode: clave de agente. Personalizado: solo si ese servidor pide una clave."
+            }
+          },
+          "chat": {
+            "name": "Chat",
+            "description": "Dónde aparece el chat y quién puede usarlo.",
+            "data": {
+              "enable_sidebar": "Mostrar AI Workspace en la barra lateral",
+              "enable_overlay": "Mostrar el botón flotante de IA",
+              "enable_dictate": "Mostrar el botón de dictado",
+              "allow_users": "Permitir usuarios normales",
+              "ui_theme": "Usar componentes de HA",
+              "cross_chat": "Entre chats",
+              "keep_chats": "Chats a conservar"
+            },
+            "data_description": {
+              "enable_sidebar": "Añade AI Workspace a la barra lateral de Home Assistant. Desactivado: los administradores aún pueden abrir /ai-workspace directamente.",
+              "enable_overlay": "Un botón redondo de IA en la esquina de cada página de Home Assistant, para preguntar sin salir de la página. En las páginas de Ajustes se sitúa más arriba para no tapar otros botones.",
+              "enable_dictate": "Botón de micrófono en el cuadro de mensaje. Ocúltalo si nunca dictas.",
+              "allow_users": "Desactivado: solo administradores. Activado: los usuarios no administradores tienen el chat flotante, con el mismo acceso a Home Assistant que su propia cuenta. La página completa de AI Workspace sigue siendo solo para administradores. Actívalo solo si confías en todos los que tienen una cuenta.",
+              "ui_theme": "Desactivado por defecto. Construye el chat con los elementos de interfaz propios de Home Assistant. Pruébalo si el chat no encaja con tu tema.",
+              "cross_chat": "Desactivado por defecto. Si está activado, una pregunta puede usar un extracto breve de otro chat cuyo título comparta palabras con ella, sin que menciones ese chat. Ayuda si ya hablaste de la misma habitación o automatización. El otro chat no se modifica.",
+              "keep_chats": "Chats no fijados más recientes que se conservan por persona. Los más antiguos se eliminan para que la lista no crezca sin fin. Los chats fijados se conservan siempre. Por defecto 30."
+            }
+          },
+          "cost": {
+            "name": "Coste y tokens",
+            "description": "Qué envía cada mensaje y cómo se registra el gasto.",
+            "data": {
+              "low_token": "Reducir el uso de tokens",
+              "prompt_cache": "Caché de prompt",
+              "track_usage": "Registrar uso y costes",
+              "show_chat_usage": "Mostrar el coste en la cabecera del chat",
+              "ha_usage_sensors": "Añadir sensores de uso de Home Assistant"
+            },
+            "data_description": {
+              "low_token": "Envía menos con cada mensaje para ahorrar dinero con los agentes Cloud, Ollama y Azure (Cursor no se ve afectado). Desactivado da las respuestas más fiables sobre tu casa. Extreme es solo chat y no puede controlar la casa.",
+              "prompt_cache": "Activado por defecto. Permite al proveedor reutilizar, a un precio mucho menor, la parte que se repite en cada mensaje (instrucciones y lista de herramientas). Claude necesita esta opción; GPT casi siempre usa caché por su cuenta. Cursor y Ollama la ignoran.",
+              "track_usage": "Activado por defecto. Registra tokens y el coste estimado tras cada respuesta y los muestra en la página de Uso. Desactivado: no hay registros nuevos; el historial existente se queda.",
+              "show_chat_usage": "Activado por defecto. Muestra tokens y coste bajo el título del chat. Desactivado oculta solo esa línea; el registro y la página de Uso siguen.",
+              "ha_usage_sensors": "Desactivado por defecto. Solo hace falta para tus propios paneles o automatizaciones: añade sensores de coste, tokens y turnos en un dispositivo Usage y en cada agente. La página de Uso funciona sin ellos. Al desactivarlo se eliminan los sensores."
+            }
+          },
+          "house": {
+            "name": "Respuestas de Home Assistant",
+            "description": "Cómo el asistente lee tu instalación y registra sus cambios. Los valores por defecto sirven para la mayoría de casas.",
+            "data": {
+              "house_map": "Catálogo de configuración",
+              "shorten_mcp_results": "Acortar las respuestas largas de Home Assistant",
+              "change_history": "Historial de cambios"
+            },
+            "data_description": {
+              "house_map": "Desactivado por defecto. Un índice local de cómo se relacionan automatizaciones, entidades y áreas, para que una sola consulta responda preguntas como «¿qué usa la luz de la cocina?». Añade un poco a cada mensaje, así que actívalo solo si preguntas a menudo cómo están conectadas las cosas. Los estados en vivo siguen viniendo de Home Assistant.",
+              "shorten_mcp_results": "Activado por defecto. Las respuestas muy largas de Home Assistant (listas de toda la casa, búsquedas grandes) se resumen antes de ir a la IA. Ahorra tokens y mantiene las respuestas rápidas. Desactivado envía el texto completo.",
+              "change_history": "Activado por defecto. Guarda un registro de cada cambio de configuración que hace el asistente, para que veas qué cambió y le pidas restaurar una versión anterior. Desactivado: no hay entradas nuevas; el asistente puede seguir haciendo cambios."
             }
           },
           "prompt": {
@@ -277,8 +327,8 @@
             "borrow": "Usa la clave que esa integración ya tiene guardada. La otra integración no se modifica.",
             "api_key": "Tu clave del proveedor de IA, no tu inicio de sesión de Home Assistant.",
             "model": "Elige de la lista o escribe un nombre de modelo. Vacío usa el valor predeterminado del proveedor.",
-            "effort": "Rápido, Alto o Alto rápido cuando el modelo lo admite.",
-            "check_house": "Activado por defecto. El asistente consulta Home Assistant antes de responder sobre tu instalación (no para un simple saludo). Desactívalo si tu modelo ya lo hace por su cuenta.",
+            "effort": "Más esfuerzo significa pensar más: mejores respuestas a preguntas difíciles, pero más lento y con más tokens. Se ignora si el modelo no lo admite.",
+            "check_house": "Activado por defecto. El asistente consulta Home Assistant antes de responder preguntas sobre tu casa, para que las listas y los estados sean reales, no inventados. Los saludos se omiten. Con «Reducir el uso de tokens» en Light siempre consulta; en Medium y Extreme nunca. Desactívalo para preguntas generales o para un modelo que ya consulta por su cuenta.",
             "assist": "También lista este asistente en Home Assistant Assist (voz). Desactivado: solo el chat de AI Workspace, y quita lo que añadió a Assist.",
             "assist_stt": "Añade una opción de voz a texto en Home Assistant con la clave de este asistente. Desactivado quita lo que añadió.",
             "stt_model": "Déjalo vacío para el valor predeterminado del proveedor. Puedes escribir otro nombre de modelo.",
@@ -301,8 +351,8 @@
           "data_description": {
             "api_base": "Normalmente {example_url}",
             "model": "Elige de la lista o escribe un modelo instalado. Vacío usa llama3.2.",
-            "effort": "Se usa cuando el modelo lo admite.",
-            "check_house": "Activado por defecto. El asistente consulta Home Assistant antes de responder sobre tu instalación (no para un simple saludo). Desactívalo si tu modelo ya lo hace por su cuenta.",
+            "effort": "Más esfuerzo significa pensar más: mejores respuestas a preguntas difíciles, pero más lento y con más tokens. Se ignora si el modelo no lo admite.",
+            "check_house": "Activado por defecto. El asistente consulta Home Assistant antes de responder preguntas sobre tu casa, para que las listas y los estados sean reales, no inventados. Los saludos se omiten. Con «Reducir el uso de tokens» en Light siempre consulta; en Medium y Extreme nunca. Desactívalo para preguntas generales o para un modelo que ya consulta por su cuenta.",
             "assist": "También lista este asistente en Home Assistant Assist (voz). Desactivado: solo el chat de AI Workspace, y quita lo que añadió a Assist."
           }
         },
@@ -323,8 +373,8 @@
             "api_base": "{example_url}",
             "model": "El nombre de la implementación.",
             "azure_api_version": "Deja el valor predeterminado salvo que el soporte de Azure te diera otra versión.",
-            "effort": "Se usa cuando la implementación lo admite.",
-            "check_house": "Activado por defecto. El asistente consulta Home Assistant antes de responder sobre tu instalación (no para un simple saludo). Desactívalo si tu modelo ya lo hace por su cuenta.",
+            "effort": "Más esfuerzo significa pensar más: mejores respuestas a preguntas difíciles, pero más lento y con más tokens. Se ignora si el modelo no lo admite.",
+            "check_house": "Activado por defecto. El asistente consulta Home Assistant antes de responder preguntas sobre tu casa, para que las listas y los estados sean reales, no inventados. Los saludos se omiten. Con «Reducir el uso de tokens» en Light siempre consulta; en Medium y Extreme nunca. Desactívalo para preguntas generales o para un modelo que ya consulta por su cuenta.",
             "assist": "También lista este asistente en Home Assistant Assist (voz). Desactivado: solo el chat de AI Workspace, y quita lo que añadió a Assist."
           }
         },
@@ -349,8 +399,8 @@
             "api_key": "Déjalo en blanco al editar para conservar la clave guardada.",
             "api_base": "Dirección del servidor. Añade /v1 al final si tu servidor lo espera.",
             "model": "Nombre del modelo en ese servidor.",
-            "effort": "Se usa cuando el servidor lo admite.",
-            "check_house": "Activado por defecto. El asistente consulta Home Assistant antes de responder sobre tu instalación (no para un simple saludo). Desactívalo si tu modelo ya lo hace por su cuenta.",
+            "effort": "Más esfuerzo significa pensar más: mejores respuestas a preguntas difíciles, pero más lento y con más tokens. Se ignora si el modelo no lo admite.",
+            "check_house": "Activado por defecto. El asistente consulta Home Assistant antes de responder preguntas sobre tu casa, para que las listas y los estados sean reales, no inventados. Los saludos se omiten. Con «Reducir el uso de tokens» en Light siempre consulta; en Medium y Extreme nunca. Desactívalo para preguntas generales o para un modelo que ya consulta por su cuenta.",
             "assist": "También lista este asistente en Home Assistant Assist (voz). Desactivado: solo el chat de AI Workspace, y quita lo que añadió a Assist.",
             "assist_stt": "Añade una opción de voz a texto en Home Assistant con la clave de este asistente. Desactivado quita lo que añadió.",
             "stt_model": "Déjalo vacío para el valor predeterminado del proveedor. Puedes escribir otro nombre de modelo.",

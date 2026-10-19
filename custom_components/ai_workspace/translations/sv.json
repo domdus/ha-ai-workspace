@@ -8,43 +8,13 @@
           "stt_engine": "Tal till text",
           "tts_engine": "Text till tal",
           "speak_replies": "Läs upp svar automatiskt",
-          "tts_natural": "Naturligt tal för text till tal",
-          "enable_sidebar": "Visa AI Workspace i sidofältet",
-          "enable_overlay": "Visa flytande AI-knapp",
-          "enable_dictate": "Visa dikteringsknapp",
-          "allow_users": "Tillåt vanliga användare",
-          "house_map": "Konfigurationskatalog",
-          "shorten_mcp_results": "Korta långa Home Assistant-svar",
-          "change_history": "Ändringshistorik",
-          "track_usage": "Spåra användning och kostnader",
-          "show_chat_usage": "Visa kostnad i chatthuvudet",
-          "ha_usage_sensors": "Lägg till Home Assistant-användningssensorer",
-          "low_token": "Minska tokenanvändning",
-          "prompt_cache": "Promptcache",
-          "ui_theme": "Använd HA-komponenter",
-          "cross_chat": "Mellan chattar",
-          "keep_chats": "Chattar att behålla"
+          "tts_natural": "Naturligt tal för text till tal"
         },
         "data_description": {
           "stt_engine": "Webbläsarens diktering kräver en säker webbplats (https). Eller välj en tal-till-text-motor från Home Assistant under Inställningar. Webbläsaren måste tillåta mikrofonen.",
           "tts_engine": "Piper, Google Translate eller en röst från en av dina AI-assistenter. Av lämnar svaren som enbart text.",
           "speak_replies": "När en röst är vald läses varje svar upp när det kommer. Av behåller högtalarknappen så att du kan spela upp ett svar själv.",
-          "tts_natural": "På som standard. Tar bort formatering så att uppläsningen låter naturlig. Av läser meddelandet exakt som det är skrivet.",
-          "enable_sidebar": "Visar AI Workspace i sidofältet. Av: administratörer kan fortfarande öppna hela sidan via dess menylänk.",
-          "enable_overlay": "Sätter på eller stänger av den flytande AI-knappen. På Inställningar sitter den högre så att den inte täcker systemknappar.",
-          "enable_dictate": "Mikrofon i meddelanderutan.",
-          "allow_users": "Användare utan administratörsrättigheter kan öppna den flytande chatten med samma Home Assistant-åtkomst som sitt konto. Av: endast administratörer. Hela AI Workspace-sidan i sidofältet förblir endast för administratörer.",
-          "house_map": "Valfritt. Hjälper till att förklara hur ett objekt är kopplat (vad som utlöser det, vad det påverkar). Av som standard. För live på/av-status eller fullständiga listor, be assistenten att kolla Home Assistant.",
-          "shorten_mcp_results": "På som standard. Mycket långa svar från Home Assistant (listor för hela hemmet, stora sökningar) sammanfattas innan de går till AI:n. Det sparar token och håller svaren rappt. Av skickar hela texten.",
-          "change_history": "På som standard. Sparar en förteckning över konfigurationsändringar som assistenten gjort så att du kan granska eller ångra dem i Ändringshistorik. Av stoppar nya poster; assistenten kan fortfarande använda Home Assistant.",
-          "track_usage": "På som standard. Sparar token och uppskattad USD-kostnad efter varje Cursor- eller molntur. Visar en Användning-sida i chatten. Av stoppar nya poster; historiken finns kvar.",
-          "show_chat_usage": "På som standard. Visar token och kostnad under chattiteln. Av döljer bara den raden; spårning och sidan Användning finns kvar.",
-          "ha_usage_sensors": "Av som standard. Skapar sensorer för kostnad, token och turer på en Usage-enhet och varje agent för egna paneler. Av tar bort dem.",
-          "low_token": "Hur mycket som skickas varje tur, för alla Cloud- / Ollama- / Azure-agenter.",
-          "prompt_cache": "På som standard. Återanvänder systemprompten och verktygslistan så senare rundor kostar mindre. Stäng av för att jämföra. Claude behöver detta; GPT cachar ofta själv. Ignoreras på Ollama.",
-          "ui_theme": "Av som standard. När det är på används bara Home Assistants gränssnittskomponenter, vilket kan fungera bättre med teman.",
-          "cross_chat": "Av som standard. När det är på kan en fråga använda en annan chatt vars titel delar ord med den. Du behöver inte nämna chatt. Bara ett kort utdrag, och den chatten ändras inte.",
-          "keep_chats": "Nyaste icke-fästa chattar att behålla per person. Fästa chattar behålls alltid. Standard 30."
+          "tts_natural": "På som standard. Tar bort formatering så att uppläsningen låter naturlig. Av läser meddelandet exakt som det är skrivet."
         },
         "sections": {
           "mcp": {
@@ -58,6 +28,60 @@
               "mcp_kind": "Servrar som den här Home Assistant kan nå. Välj Anpassad för att ange en egen adress.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Inbyggd: långlivad åtkomsttoken, eller lämna tomt för att använda din nuvarande inloggning. HA-MCP: vanligtvis tomt. Vibecode: agentnyckel. Anpassad: bara om den servern ber om en nyckel."
+            }
+          },
+          "chat": {
+            "name": "Chatt",
+            "description": "Var chatten visas och vem som får använda den.",
+            "data": {
+              "enable_sidebar": "Visa AI Workspace i sidofältet",
+              "enable_overlay": "Visa flytande AI-knapp",
+              "enable_dictate": "Visa dikteringsknapp",
+              "allow_users": "Tillåt vanliga användare",
+              "ui_theme": "Använd HA-komponenter",
+              "cross_chat": "Mellan chattar",
+              "keep_chats": "Chattar att behålla"
+            },
+            "data_description": {
+              "enable_sidebar": "Lägger till AI Workspace i Home Assistants sidofält. Av: administratörer kan fortfarande öppna /ai-workspace direkt.",
+              "enable_overlay": "En rund AI-knapp i hörnet av varje Home Assistant-sida, så att du kan fråga utan att lämna sidan. På Inställningar-sidor sitter den högre så att den inte täcker andra knappar.",
+              "enable_dictate": "Mikrofonknapp i meddelanderutan. Dölj den om du aldrig dikterar.",
+              "allow_users": "Av: endast administratörer. På: användare utan administratörsrättigheter får den flytande chatten, med samma Home Assistant-åtkomst som sitt eget konto. Hela AI Workspace-sidan förblir endast för administratörer. Slå bara på detta om du litar på alla som har ett konto.",
+              "ui_theme": "Av som standard. Bygger chatten av Home Assistants egna gränssnittsdelar. Prova det om chatten inte passar ditt tema.",
+              "cross_chat": "Av som standard. När det är på kan en fråga använda ett kort utdrag ur en annan chatt vars titel delar ord med den, utan att du nämner den chatten. Hjälper när du redan pratat om samma rum eller automation. Den andra chatten ändras inte.",
+              "keep_chats": "Nyaste icke-fästa chattar som behålls per person. Äldre tas bort så att listan inte växer i det oändliga. Fästa chattar behålls alltid. Standard 30."
+            }
+          },
+          "cost": {
+            "name": "Kostnad och tokens",
+            "description": "Vad varje meddelande skickar och hur kostnader följs upp.",
+            "data": {
+              "low_token": "Minska tokenanvändning",
+              "prompt_cache": "Promptcache",
+              "track_usage": "Spåra användning och kostnader",
+              "show_chat_usage": "Visa kostnad i chatthuvudet",
+              "ha_usage_sensors": "Lägg till Home Assistant-användningssensorer"
+            },
+            "data_description": {
+              "low_token": "Skickar mindre med varje meddelande för att spara pengar med Cloud-, Ollama- och Azure-agenter (Cursor påverkas inte). Av ger de mest pålitliga svaren om ditt hem. Extreme är bara chatt och kan inte styra huset.",
+              "prompt_cache": "På som standard. Låter leverantören återanvända den del som upprepas i varje meddelande (instruktioner och verktygslista) till ett mycket lägre pris. Claude behöver den här inställningen; GPT cachar oftast själv. Cursor och Ollama ignorerar den.",
+              "track_usage": "På som standard. Sparar token och uppskattad kostnad efter varje svar och visar dem på sidan Användning. Av stoppar nya poster; befintlig historik finns kvar.",
+              "show_chat_usage": "På som standard. Visar token och kostnad under chattiteln. Av döljer bara den raden; spårning och sidan Användning finns kvar.",
+              "ha_usage_sensors": "Av som standard. Behövs bara för egna instrumentpaneler eller automationer: lägger till sensorer för kostnad, token och turer på en Usage-enhet och på varje agent. Sidan Användning fungerar utan dem. Stänger du av tas sensorerna bort."
+            }
+          },
+          "house": {
+            "name": "Svar från Home Assistant",
+            "description": "Hur assistenten läser din installation och loggar sina ändringar. Standardvärdena passar de flesta hem.",
+            "data": {
+              "house_map": "Konfigurationskatalog",
+              "shorten_mcp_results": "Korta långa Home Assistant-svar",
+              "change_history": "Ändringshistorik"
+            },
+            "data_description": {
+              "house_map": "Av som standard. Ett lokalt register över hur automationer, entiteter och områden hänger ihop, så att en enda sökning besvarar frågor som ”vad använder köksbelysningen?”. Lägger till lite i varje meddelande, så slå bara på det om du ofta frågar hur saker är kopplade. Aktuella tillstånd kommer fortfarande från Home Assistant.",
+              "shorten_mcp_results": "På som standard. Mycket långa svar från Home Assistant (listor för hela hemmet, stora sökningar) sammanfattas innan de går till AI:n. Sparar token och håller svaren snabba. Av skickar hela texten.",
+              "change_history": "På som standard. Sparar varje konfigurationsändring som assistenten gör, så att du ser vad som ändrats och kan be den återställa en tidigare version. Av stoppar nya poster; assistenten kan fortfarande göra ändringar."
             }
           },
           "prompt": {
@@ -91,41 +115,13 @@
           "stt_engine": "Tal till text",
           "tts_engine": "Text till tal",
           "speak_replies": "Läs upp svar automatiskt",
-          "tts_natural": "Naturligt tal för text till tal",
-          "enable_sidebar": "Visa AI Workspace i sidofältet",
-          "enable_overlay": "Visa flytande AI-knapp",
-          "enable_dictate": "Visa dikteringsknapp",
-          "allow_users": "Tillåt vanliga användare",
-          "house_map": "Konfigurationskatalog",
-          "shorten_mcp_results": "Korta långa Home Assistant-svar",
-          "change_history": "Ändringshistorik",
-          "ui_theme": "Använd HA-komponenter",
-          "cross_chat": "Mellan chattar",
-          "keep_chats": "Chattar att behålla",
-          "low_token": "Minska tokenanvändning",
-          "prompt_cache": "Promptcache",
-          "show_chat_usage": "Visa kostnad i chatthuvudet",
-          "ha_usage_sensors": "Lägg till Home Assistant-användningssensorer"
+          "tts_natural": "Naturligt tal för text till tal"
         },
         "data_description": {
           "stt_engine": "Webbläsarens diktering kräver en säker webbplats (https). Eller välj en tal-till-text-motor från Home Assistant under Inställningar. Webbläsaren måste tillåta mikrofonen.",
           "tts_engine": "Piper, Google Translate eller en röst från en av dina AI-assistenter. Av lämnar svaren som enbart text.",
           "speak_replies": "När en röst är vald läses varje svar upp när det kommer. Av behåller högtalarknappen så att du kan spela upp ett svar själv.",
-          "tts_natural": "På som standard. Tar bort formatering så att uppläsningen låter naturlig. Av läser meddelandet exakt som det är skrivet.",
-          "enable_sidebar": "Visar AI Workspace i sidofältet. Av: administratörer kan fortfarande öppna hela sidan via dess menylänk.",
-          "enable_overlay": "Sätter på eller stänger av den flytande AI-knappen. På Inställningar sitter den högre så att den inte täcker systemknappar.",
-          "enable_dictate": "Mikrofon i meddelanderutan.",
-          "allow_users": "Användare utan administratörsrättigheter kan öppna den flytande chatten med samma Home Assistant-åtkomst som sitt konto. Av: endast administratörer. Hela AI Workspace-sidan i sidofältet förblir endast för administratörer.",
-          "house_map": "Valfritt. Hjälper till att förklara hur ett objekt är kopplat (vad som utlöser det, vad det påverkar). Av som standard. För live på/av-status eller fullständiga listor, be assistenten att kolla Home Assistant.",
-          "shorten_mcp_results": "På som standard. Mycket långa svar från Home Assistant (listor för hela hemmet, stora sökningar) sammanfattas innan de går till AI:n. Det sparar token och håller svaren rappt. Av skickar hela texten.",
-          "change_history": "På som standard. Sparar en förteckning över konfigurationsändringar som assistenten gjort så att du kan granska eller ångra dem i Ändringshistorik. Av stoppar nya poster; assistenten kan fortfarande använda Home Assistant.",
-          "ui_theme": "Av som standard. När det är på används bara Home Assistants gränssnittskomponenter, vilket kan fungera bättre med teman.",
-          "cross_chat": "Av som standard. När det är på kan en fråga använda en annan chatt vars titel delar ord med den. Du behöver inte nämna chatt. Bara ett kort utdrag, och den chatten ändras inte.",
-          "keep_chats": "Nyaste icke-fästa chattar att behålla per person. Fästa chattar behålls alltid. Standard 30.",
-          "low_token": "Hur mycket som skickas varje tur, för alla Cloud- / Ollama- / Azure-agenter.",
-          "prompt_cache": "På som standard. Återanvänder systemprompten och verktygslistan så senare rundor kostar mindre. Stäng av för att jämföra. Claude behöver detta; GPT cachar ofta själv. Ignoreras på Ollama.",
-          "show_chat_usage": "På som standard. Visar token och kostnad under chattiteln. Av döljer bara den raden; spårning och sidan Användning finns kvar.",
-          "ha_usage_sensors": "Av som standard. Skapar sensorer för kostnad, token och turer på en Usage-enhet och varje agent för egna paneler. Av tar bort dem."
+          "tts_natural": "På som standard. Tar bort formatering så att uppläsningen låter naturlig. Av läser meddelandet exakt som det är skrivet."
         },
         "sections": {
           "mcp": {
@@ -139,6 +135,60 @@
               "mcp_kind": "Servrar som den här Home Assistant kan nå. Välj Anpassad för att ange en egen adress.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Inbyggd: långlivad åtkomsttoken, eller lämna tomt för att använda din nuvarande inloggning. HA-MCP: vanligtvis tomt. Vibecode: agentnyckel. Anpassad: bara om den servern ber om en nyckel."
+            }
+          },
+          "chat": {
+            "name": "Chatt",
+            "description": "Var chatten visas och vem som får använda den.",
+            "data": {
+              "enable_sidebar": "Visa AI Workspace i sidofältet",
+              "enable_overlay": "Visa flytande AI-knapp",
+              "enable_dictate": "Visa dikteringsknapp",
+              "allow_users": "Tillåt vanliga användare",
+              "ui_theme": "Använd HA-komponenter",
+              "cross_chat": "Mellan chattar",
+              "keep_chats": "Chattar att behålla"
+            },
+            "data_description": {
+              "enable_sidebar": "Lägger till AI Workspace i Home Assistants sidofält. Av: administratörer kan fortfarande öppna /ai-workspace direkt.",
+              "enable_overlay": "En rund AI-knapp i hörnet av varje Home Assistant-sida, så att du kan fråga utan att lämna sidan. På Inställningar-sidor sitter den högre så att den inte täcker andra knappar.",
+              "enable_dictate": "Mikrofonknapp i meddelanderutan. Dölj den om du aldrig dikterar.",
+              "allow_users": "Av: endast administratörer. På: användare utan administratörsrättigheter får den flytande chatten, med samma Home Assistant-åtkomst som sitt eget konto. Hela AI Workspace-sidan förblir endast för administratörer. Slå bara på detta om du litar på alla som har ett konto.",
+              "ui_theme": "Av som standard. Bygger chatten av Home Assistants egna gränssnittsdelar. Prova det om chatten inte passar ditt tema.",
+              "cross_chat": "Av som standard. När det är på kan en fråga använda ett kort utdrag ur en annan chatt vars titel delar ord med den, utan att du nämner den chatten. Hjälper när du redan pratat om samma rum eller automation. Den andra chatten ändras inte.",
+              "keep_chats": "Nyaste icke-fästa chattar som behålls per person. Äldre tas bort så att listan inte växer i det oändliga. Fästa chattar behålls alltid. Standard 30."
+            }
+          },
+          "cost": {
+            "name": "Kostnad och tokens",
+            "description": "Vad varje meddelande skickar och hur kostnader följs upp.",
+            "data": {
+              "low_token": "Minska tokenanvändning",
+              "prompt_cache": "Promptcache",
+              "track_usage": "Spåra användning och kostnader",
+              "show_chat_usage": "Visa kostnad i chatthuvudet",
+              "ha_usage_sensors": "Lägg till Home Assistant-användningssensorer"
+            },
+            "data_description": {
+              "low_token": "Skickar mindre med varje meddelande för att spara pengar med Cloud-, Ollama- och Azure-agenter (Cursor påverkas inte). Av ger de mest pålitliga svaren om ditt hem. Extreme är bara chatt och kan inte styra huset.",
+              "prompt_cache": "På som standard. Låter leverantören återanvända den del som upprepas i varje meddelande (instruktioner och verktygslista) till ett mycket lägre pris. Claude behöver den här inställningen; GPT cachar oftast själv. Cursor och Ollama ignorerar den.",
+              "track_usage": "På som standard. Sparar token och uppskattad kostnad efter varje svar och visar dem på sidan Användning. Av stoppar nya poster; befintlig historik finns kvar.",
+              "show_chat_usage": "På som standard. Visar token och kostnad under chattiteln. Av döljer bara den raden; spårning och sidan Användning finns kvar.",
+              "ha_usage_sensors": "Av som standard. Behövs bara för egna instrumentpaneler eller automationer: lägger till sensorer för kostnad, token och turer på en Usage-enhet och på varje agent. Sidan Användning fungerar utan dem. Stänger du av tas sensorerna bort."
+            }
+          },
+          "house": {
+            "name": "Svar från Home Assistant",
+            "description": "Hur assistenten läser din installation och loggar sina ändringar. Standardvärdena passar de flesta hem.",
+            "data": {
+              "house_map": "Konfigurationskatalog",
+              "shorten_mcp_results": "Korta långa Home Assistant-svar",
+              "change_history": "Ändringshistorik"
+            },
+            "data_description": {
+              "house_map": "Av som standard. Ett lokalt register över hur automationer, entiteter och områden hänger ihop, så att en enda sökning besvarar frågor som ”vad använder köksbelysningen?”. Lägger till lite i varje meddelande, så slå bara på det om du ofta frågar hur saker är kopplade. Aktuella tillstånd kommer fortfarande från Home Assistant.",
+              "shorten_mcp_results": "På som standard. Mycket långa svar från Home Assistant (listor för hela hemmet, stora sökningar) sammanfattas innan de går till AI:n. Sparar token och håller svaren snabba. Av skickar hela texten.",
+              "change_history": "På som standard. Sparar varje konfigurationsändring som assistenten gör, så att du ser vad som ändrats och kan be den återställa en tidigare version. Av stoppar nya poster; assistenten kan fortfarande göra ändringar."
             }
           },
           "prompt": {
@@ -277,8 +327,8 @@
             "borrow": "Använder nyckeln som redan sparats av den integrationen. Den andra integrationen lämnas oförändrad.",
             "api_key": "Din nyckel från AI-leverantören, inte din Home Assistant-inloggning.",
             "model": "Välj från listan eller skriv ett modellnamn. Tomt använder leverantörens standard.",
-            "effort": "Snabb, Hög eller Hög snabb när modellen stöder det.",
-            "check_house": "På som standard. Assistenten slår upp Home Assistant innan den svarar om din installation (inte för enkla hälsningar). Stäng av om din modell redan gör det själv.",
+            "effort": "Mer ansträngning betyder mer tänkande: bättre svar på svåra frågor, men långsammare och fler token. Ignoreras om modellen inte stöder det.",
+            "check_house": "På som standard. Assistenten kollar i Home Assistant innan den svarar på frågor om ditt hem, så att listor och tillstånd är verkliga, inte gissade. Hälsningar hoppas över. Med ”Minska tokenanvändning” på Light kollar den alltid; på Medium och Extreme aldrig. Stäng av för allmänna frågor eller för en modell som redan kollar själv.",
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist.",
             "assist_stt": "Lägger till ett tal-till-text-alternativ i Home Assistant med den här assistentens nyckel. Av tar bort det den lade till.",
             "stt_model": "Lämna tomt för leverantörens standard. Du kan skriva ett annat modellnamn om din leverantör har ett.",
@@ -301,8 +351,8 @@
           "data_description": {
             "api_base": "Vanligtvis {example_url}",
             "model": "Välj från listan eller skriv en modell du har installerat. Tomt använder llama3.2.",
-            "effort": "Används när modellen stöder det.",
-            "check_house": "På som standard. Assistenten slår upp Home Assistant innan den svarar om din installation (inte för enkla hälsningar). Stäng av om din modell redan gör det själv.",
+            "effort": "Mer ansträngning betyder mer tänkande: bättre svar på svåra frågor, men långsammare och fler token. Ignoreras om modellen inte stöder det.",
+            "check_house": "På som standard. Assistenten kollar i Home Assistant innan den svarar på frågor om ditt hem, så att listor och tillstånd är verkliga, inte gissade. Hälsningar hoppas över. Med ”Minska tokenanvändning” på Light kollar den alltid; på Medium och Extreme aldrig. Stäng av för allmänna frågor eller för en modell som redan kollar själv.",
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist."
           }
         },
@@ -323,8 +373,8 @@
             "api_base": "{example_url}",
             "model": "Distributionens namn.",
             "azure_api_version": "Behåll standardvärdet om inte Azure-supporten gett dig en annan version.",
-            "effort": "Används när distributionen stöder det.",
-            "check_house": "På som standard. Assistenten slår upp Home Assistant innan den svarar om din installation (inte för enkla hälsningar). Stäng av om din modell redan gör det själv.",
+            "effort": "Mer ansträngning betyder mer tänkande: bättre svar på svåra frågor, men långsammare och fler token. Ignoreras om modellen inte stöder det.",
+            "check_house": "På som standard. Assistenten kollar i Home Assistant innan den svarar på frågor om ditt hem, så att listor och tillstånd är verkliga, inte gissade. Hälsningar hoppas över. Med ”Minska tokenanvändning” på Light kollar den alltid; på Medium och Extreme aldrig. Stäng av för allmänna frågor eller för en modell som redan kollar själv.",
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist."
           }
         },
@@ -349,8 +399,8 @@
             "api_key": "Lämna tomt vid redigering för att behålla den sparade nyckeln.",
             "api_base": "Serveradress. Lägg till /v1 i slutet om din server förväntar sig det.",
             "model": "Modellnamn på den servern.",
-            "effort": "Används när servern stöder det.",
-            "check_house": "På som standard. Assistenten slår upp Home Assistant innan den svarar om din installation (inte för enkla hälsningar). Stäng av om din modell redan gör det själv.",
+            "effort": "Mer ansträngning betyder mer tänkande: bättre svar på svåra frågor, men långsammare och fler token. Ignoreras om modellen inte stöder det.",
+            "check_house": "På som standard. Assistenten kollar i Home Assistant innan den svarar på frågor om ditt hem, så att listor och tillstånd är verkliga, inte gissade. Hälsningar hoppas över. Med ”Minska tokenanvändning” på Light kollar den alltid; på Medium och Extreme aldrig. Stäng av för allmänna frågor eller för en modell som redan kollar själv.",
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist.",
             "assist_stt": "Lägger till ett tal-till-text-alternativ i Home Assistant med den här assistentens nyckel. Av tar bort det den lade till.",
             "stt_model": "Lämna tomt för leverantörens standard. Du kan skriva ett annat modellnamn om din leverantör har ett.",

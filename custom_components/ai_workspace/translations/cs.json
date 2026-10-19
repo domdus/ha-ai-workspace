@@ -8,43 +8,13 @@
           "stt_engine": "Řeč na text",
           "tts_engine": "Text na řeč",
           "speak_replies": "Číst odpovědi automaticky",
-          "tts_natural": "Přirozená řeč pro text na řeč",
-          "enable_sidebar": "Zobrazit AI Workspace v postranním panelu",
-          "enable_overlay": "Zobrazit plovoucí tlačítko AI",
-          "enable_dictate": "Zobrazit tlačítko diktování",
-          "allow_users": "Povolit běžné uživatele",
-          "house_map": "Katalog konfigurace",
-          "shorten_mcp_results": "Zkrátit dlouhé odpovědi Home Assistant",
-          "change_history": "Historie změn",
-          "track_usage": "Sledovat využití a náklady",
-          "show_chat_usage": "Zobrazit cenu v záhlaví chatu",
-          "ha_usage_sensors": "Přidat senzory využití Home Assistant",
-          "low_token": "Snížit spotřebu tokenů",
-          "prompt_cache": "Mezipaměť promptu",
-          "ui_theme": "Použít komponenty HA",
-          "cross_chat": "Mezi chaty",
-          "keep_chats": "Chaty k uchování"
+          "tts_natural": "Přirozená řeč pro text na řeč"
         },
         "data_description": {
           "stt_engine": "Diktování v prohlížeči potřebuje zabezpečený web (https). Nebo v Nastavení zvolte engine řeči na text Home Assistant. Prohlížeč musí mikrofon povolit.",
           "tts_engine": "Piper, Google Translate nebo hlas jednoho z vašich AI asistentů. Vypnuto nechá odpovědi jen jako text.",
           "speak_replies": "Když je zvolen hlas, každá odpověď se přečte hned po příchodu. Vypnuto nechá tlačítko reproduktoru pro přehrání ručně.",
-          "tts_natural": "Ve výchozím stavu zapnuto. Odstraní formátování, aby čtení znělo přirozeně. Vypnuto čte zprávu přesně tak, jak je napsaná.",
-          "enable_sidebar": "Zobrazí AI Workspace v postranním panelu. Vypnuto: správci mohou plnou stránku stále otevřít přes odkaz v nabídce.",
-          "enable_overlay": "Zapíná nebo vypíná plovoucí tlačítko AI. Na stránkách Nastavení je výš, aby nepřekrývalo systémová tlačítka.",
-          "enable_dictate": "Mikrofon v poli zprávy.",
-          "allow_users": "Uživatelé bez oprávnění správce mohou otevřít plovoucí chat se stejným přístupem Home Assistant jako jejich účet. Vypnuto: jen správci. Plná stránka AI Workspace v postranním panelu zůstane jen pro správce.",
-          "house_map": "Volitelné. Pomáhá vysvětlit, jak je položka zapojená (co ji spouští, na co působí). Ve výchozím stavu vypnuto. Pro živý stav zap/vyp nebo úplné seznamy požádejte asistenta, ať se podívá do Home Assistant.",
-          "shorten_mcp_results": "Ve výchozím stavu zapnuto. Velmi dlouhé odpovědi z Home Assistant (seznamy celého domu, velké hledání) se před odesláním do AI shrnou. To šetří tokens a drží odpovědi svižné. Vypnuto pošle celý text.",
-          "change_history": "Ve výchozím stavu zapnuto. Uchovává záznam konfiguračních změn, které asistent provedl, abyste je mohli v Historii změn zkontrolovat nebo vrátit. Vypnuto: bez nových záznamů; asistent může Home Assistant dál používat.",
-          "track_usage": "Ve výchozím stavu zapnuto. Po každém Cursor nebo cloudovém tahu zaznamená tokeny a odhadované náklady v USD. V chatu ukáže stránku Využití. Vypnuto: bez nových záznamů; historie zůstane.",
-          "show_chat_usage": "Ve výchozím stavu zapnuto. Zobrazí tokeny a cenu pod názvem chatu. Vypnuto schová jen tento řádek; sledování a stránka Využití zůstanou.",
-          "ha_usage_sensors": "Ve výchozím stavu vypnuto. Vytvoří senzory nákladů, tokenů a tahů na zařízení Usage a u každého agenta pro vlastní panely. Vypnuto je odebere.",
-          "low_token": "Kolik posílat v každém tahu, pro všechny agenty Cloud / Ollama / Azure.",
-          "prompt_cache": "Ve výchozím stavu zapnuto. Znovu použije systémový prompt a seznam nástrojů, aby další kola stály méně. Vypněte pro srovnání. Claude to potřebuje; GPT často cachuje sám. U Ollama se ignoruje.",
-          "ui_theme": "Ve výchozím stavu vypnuto. Když je zapnuto, používají se jen komponenty rozhraní Home Assistant, které mohou lépe fungovat s motivy.",
-          "cross_chat": "Ve výchozím stavu vypnuto. Když je zapnuto, otázka může použít jiný chat, jehož název sdílí slova. Není třeba říkat chat. Jen krátký výňatek a ten chat se nemění.",
-          "keep_chats": "Nejnovější nepřipnuté chaty na osobu. Připnuté chaty zůstanou vždy. Výchozí 30."
+          "tts_natural": "Ve výchozím stavu zapnuto. Odstraní formátování, aby čtení znělo přirozeně. Vypnuto čte zprávu přesně tak, jak je napsaná."
         },
         "sections": {
           "mcp": {
@@ -58,6 +28,60 @@
               "mcp_kind": "Servery, které tato instance Home Assistant dosáhne. Zvolte Vlastní a zadejte vlastní adresu.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Vestavěné: dlouhodobý přístupový token, nebo nechte prázdné pro aktuální přihlášení. HA-MCP: obvykle prázdné. Vibecode: klíč agenta. Vlastní: jen když ten server klíč vyžaduje."
+            }
+          },
+          "chat": {
+            "name": "Chat",
+            "description": "Kde se chat zobrazuje a kdo ho smí používat.",
+            "data": {
+              "enable_sidebar": "Zobrazit AI Workspace v postranním panelu",
+              "enable_overlay": "Zobrazit plovoucí tlačítko AI",
+              "enable_dictate": "Zobrazit tlačítko diktování",
+              "allow_users": "Povolit běžné uživatele",
+              "ui_theme": "Použít komponenty HA",
+              "cross_chat": "Mezi chaty",
+              "keep_chats": "Chaty k uchování"
+            },
+            "data_description": {
+              "enable_sidebar": "Přidá AI Workspace do postranního panelu Home Assistant. Vypnuto: správci mohou /ai-workspace stále otevřít přímo.",
+              "enable_overlay": "Kulaté tlačítko AI v rohu každé stránky Home Assistant, takže se můžete zeptat bez opuštění stránky. Na stránkách Nastavení je výš, aby nepřekrývalo jiná tlačítka.",
+              "enable_dictate": "Tlačítko mikrofonu v poli zprávy. Skryjte ho, pokud nikdy nediktujete.",
+              "allow_users": "Vypnuto: jen správci. Zapnuto: uživatelé bez oprávnění správce dostanou plovoucí chat se stejným přístupem k Home Assistant jako jejich vlastní účet. Plná stránka AI Workspace zůstane jen pro správce. Zapněte jen, pokud věříte všem, kdo mají účet.",
+              "ui_theme": "Ve výchozím stavu vypnuto. Sestaví chat z vlastních prvků rozhraní Home Assistant. Zkuste to, pokud chat neladí s vaším motivem.",
+              "cross_chat": "Ve výchozím stavu vypnuto. Když je zapnuto, otázka může použít krátký výňatek z jiného chatu, jehož název má společná slova, aniž byste ho zmínili. Pomáhá, když jste už o stejné místnosti nebo automatizaci mluvili. Druhý chat se nemění.",
+              "keep_chats": "Nejnovější nepřipnuté chaty uchované na osobu. Starší se mažou, aby seznam nerostl donekonečna. Připnuté chaty zůstanou vždy. Výchozí 30."
+            }
+          },
+          "cost": {
+            "name": "Náklady a tokeny",
+            "description": "Co každá zpráva odesílá a jak se sledují výdaje.",
+            "data": {
+              "low_token": "Snížit spotřebu tokenů",
+              "prompt_cache": "Mezipaměť promptu",
+              "track_usage": "Sledovat využití a náklady",
+              "show_chat_usage": "Zobrazit cenu v záhlaví chatu",
+              "ha_usage_sensors": "Přidat senzory využití Home Assistant"
+            },
+            "data_description": {
+              "low_token": "S každou zprávou posílá méně, aby šetřil peníze u agentů Cloud, Ollama a Azure (Cursoru se to netýká). Vypnuto dává nejspolehlivější odpovědi o vaší domácnosti. Extreme je jen chat a nemůže ovládat dům.",
+              "prompt_cache": "Ve výchozím stavu zapnuto. Umožní poskytovateli znovu použít část, která se opakuje v každé zprávě (pokyny a seznam nástrojů), za mnohem nižší cenu. Claude tento přepínač potřebuje; GPT většinou cachuje sám. Cursor a Ollama ho ignorují.",
+              "track_usage": "Ve výchozím stavu zapnuto. Po každé odpovědi zaznamená tokeny a odhadované náklady a ukáže je na stránce Využití. Vypnuto: bez nových záznamů; dosavadní historie zůstane.",
+              "show_chat_usage": "Ve výchozím stavu zapnuto. Zobrazí tokeny a cenu pod názvem chatu. Vypnuto schová jen tento řádek; sledování a stránka Využití zůstanou.",
+              "ha_usage_sensors": "Ve výchozím stavu vypnuto. Potřeba jen pro vlastní panely nebo automatizace: přidá senzory nákladů, tokenů a tahů na zařízení Usage a ke každému agentovi. Stránka Využití funguje i bez nich. Vypnutím se senzory odeberou."
+            }
+          },
+          "house": {
+            "name": "Odpovědi z Home Assistant",
+            "description": "Jak asistent čte vaše nastavení a zaznamenává své změny. Výchozí hodnoty vyhovují většině domácností.",
+            "data": {
+              "house_map": "Katalog konfigurace",
+              "shorten_mcp_results": "Zkrátit dlouhé odpovědi Home Assistant",
+              "change_history": "Historie změn"
+            },
+            "data_description": {
+              "house_map": "Ve výchozím stavu vypnuto. Místní index propojení automatizací, entit a oblastí, takže jedno vyhledání odpoví na otázky jako „co používá světlo v kuchyni?“. Ke každé zprávě trochu přidá, proto ho zapněte, jen pokud se často ptáte, jak jsou věci propojené. Živé stavy dál přicházejí z Home Assistant.",
+              "shorten_mcp_results": "Ve výchozím stavu zapnuto. Velmi dlouhé odpovědi z Home Assistant (seznamy celého domu, velká hledání) se před odesláním do AI shrnou. Šetří tokeny a drží odpovědi rychlé. Vypnuto pošle celý text.",
+              "change_history": "Ve výchozím stavu zapnuto. Zaznamenává každou změnu konfigurace, kterou asistent udělá, takže vidíte, co se změnilo, a můžete ho požádat o obnovení dřívější verze. Vypnuto: bez nových záznamů; asistent může dál provádět změny."
             }
           },
           "prompt": {
@@ -91,41 +115,13 @@
           "stt_engine": "Řeč na text",
           "tts_engine": "Text na řeč",
           "speak_replies": "Číst odpovědi automaticky",
-          "tts_natural": "Přirozená řeč pro text na řeč",
-          "enable_sidebar": "Zobrazit AI Workspace v postranním panelu",
-          "enable_overlay": "Zobrazit plovoucí tlačítko AI",
-          "enable_dictate": "Zobrazit tlačítko diktování",
-          "allow_users": "Povolit běžné uživatele",
-          "house_map": "Katalog konfigurace",
-          "shorten_mcp_results": "Zkrátit dlouhé odpovědi Home Assistant",
-          "change_history": "Historie změn",
-          "ui_theme": "Použít komponenty HA",
-          "cross_chat": "Mezi chaty",
-          "keep_chats": "Chaty k uchování",
-          "low_token": "Snížit spotřebu tokenů",
-          "prompt_cache": "Mezipaměť promptu",
-          "show_chat_usage": "Zobrazit cenu v záhlaví chatu",
-          "ha_usage_sensors": "Přidat senzory využití Home Assistant"
+          "tts_natural": "Přirozená řeč pro text na řeč"
         },
         "data_description": {
           "stt_engine": "Diktování v prohlížeči potřebuje zabezpečený web (https). Nebo v Nastavení zvolte engine řeči na text Home Assistant. Prohlížeč musí mikrofon povolit.",
           "tts_engine": "Piper, Google Translate nebo hlas jednoho z vašich AI asistentů. Vypnuto nechá odpovědi jen jako text.",
           "speak_replies": "Když je zvolen hlas, každá odpověď se přečte hned po příchodu. Vypnuto nechá tlačítko reproduktoru pro přehrání ručně.",
-          "tts_natural": "Ve výchozím stavu zapnuto. Odstraní formátování, aby čtení znělo přirozeně. Vypnuto čte zprávu přesně tak, jak je napsaná.",
-          "enable_sidebar": "Zobrazí AI Workspace v postranním panelu. Vypnuto: správci mohou plnou stránku stále otevřít přes odkaz v nabídce.",
-          "enable_overlay": "Zapíná nebo vypíná plovoucí tlačítko AI. Na stránkách Nastavení je výš, aby nepřekrývalo systémová tlačítka.",
-          "enable_dictate": "Mikrofon v poli zprávy.",
-          "allow_users": "Uživatelé bez oprávnění správce mohou otevřít plovoucí chat se stejným přístupem Home Assistant jako jejich účet. Vypnuto: jen správci. Plná stránka AI Workspace v postranním panelu zůstane jen pro správce.",
-          "house_map": "Volitelné. Pomáhá vysvětlit, jak je položka zapojená (co ji spouští, na co působí). Ve výchozím stavu vypnuto. Pro živý stav zap/vyp nebo úplné seznamy požádejte asistenta, ať se podívá do Home Assistant.",
-          "shorten_mcp_results": "Ve výchozím stavu zapnuto. Velmi dlouhé odpovědi z Home Assistant (seznamy celého domu, velké hledání) se před odesláním do AI shrnou. To šetří tokens a drží odpovědi svižné. Vypnuto pošle celý text.",
-          "change_history": "Ve výchozím stavu zapnuto. Uchovává záznam konfiguračních změn, které asistent provedl, abyste je mohli v Historii změn zkontrolovat nebo vrátit. Vypnuto: bez nových záznamů; asistent může Home Assistant dál používat.",
-          "ui_theme": "Ve výchozím stavu vypnuto. Když je zapnuto, používají se jen komponenty rozhraní Home Assistant, které mohou lépe fungovat s motivy.",
-          "cross_chat": "Ve výchozím stavu vypnuto. Když je zapnuto, otázka může použít jiný chat, jehož název sdílí slova. Není třeba říkat chat. Jen krátký výňatek a ten chat se nemění.",
-          "keep_chats": "Nejnovější nepřipnuté chaty na osobu. Připnuté chaty zůstanou vždy. Výchozí 30.",
-          "low_token": "Kolik posílat v každém tahu, pro všechny agenty Cloud / Ollama / Azure.",
-          "prompt_cache": "Ve výchozím stavu zapnuto. Znovu použije systémový prompt a seznam nástrojů, aby další kola stály méně. Vypněte pro srovnání. Claude to potřebuje; GPT často cachuje sám. U Ollama se ignoruje.",
-          "show_chat_usage": "Ve výchozím stavu zapnuto. Zobrazí tokeny a cenu pod názvem chatu. Vypnuto schová jen tento řádek; sledování a stránka Využití zůstanou.",
-          "ha_usage_sensors": "Ve výchozím stavu vypnuto. Vytvoří senzory nákladů, tokenů a tahů na zařízení Usage a u každého agenta pro vlastní panely. Vypnuto je odebere."
+          "tts_natural": "Ve výchozím stavu zapnuto. Odstraní formátování, aby čtení znělo přirozeně. Vypnuto čte zprávu přesně tak, jak je napsaná."
         },
         "sections": {
           "mcp": {
@@ -139,6 +135,60 @@
               "mcp_kind": "Servery, které tato instance Home Assistant dosáhne. Zvolte Vlastní a zadejte vlastní adresu.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Vestavěné: dlouhodobý přístupový token, nebo nechte prázdné pro aktuální přihlášení. HA-MCP: obvykle prázdné. Vibecode: klíč agenta. Vlastní: jen když ten server klíč vyžaduje."
+            }
+          },
+          "chat": {
+            "name": "Chat",
+            "description": "Kde se chat zobrazuje a kdo ho smí používat.",
+            "data": {
+              "enable_sidebar": "Zobrazit AI Workspace v postranním panelu",
+              "enable_overlay": "Zobrazit plovoucí tlačítko AI",
+              "enable_dictate": "Zobrazit tlačítko diktování",
+              "allow_users": "Povolit běžné uživatele",
+              "ui_theme": "Použít komponenty HA",
+              "cross_chat": "Mezi chaty",
+              "keep_chats": "Chaty k uchování"
+            },
+            "data_description": {
+              "enable_sidebar": "Přidá AI Workspace do postranního panelu Home Assistant. Vypnuto: správci mohou /ai-workspace stále otevřít přímo.",
+              "enable_overlay": "Kulaté tlačítko AI v rohu každé stránky Home Assistant, takže se můžete zeptat bez opuštění stránky. Na stránkách Nastavení je výš, aby nepřekrývalo jiná tlačítka.",
+              "enable_dictate": "Tlačítko mikrofonu v poli zprávy. Skryjte ho, pokud nikdy nediktujete.",
+              "allow_users": "Vypnuto: jen správci. Zapnuto: uživatelé bez oprávnění správce dostanou plovoucí chat se stejným přístupem k Home Assistant jako jejich vlastní účet. Plná stránka AI Workspace zůstane jen pro správce. Zapněte jen, pokud věříte všem, kdo mají účet.",
+              "ui_theme": "Ve výchozím stavu vypnuto. Sestaví chat z vlastních prvků rozhraní Home Assistant. Zkuste to, pokud chat neladí s vaším motivem.",
+              "cross_chat": "Ve výchozím stavu vypnuto. Když je zapnuto, otázka může použít krátký výňatek z jiného chatu, jehož název má společná slova, aniž byste ho zmínili. Pomáhá, když jste už o stejné místnosti nebo automatizaci mluvili. Druhý chat se nemění.",
+              "keep_chats": "Nejnovější nepřipnuté chaty uchované na osobu. Starší se mažou, aby seznam nerostl donekonečna. Připnuté chaty zůstanou vždy. Výchozí 30."
+            }
+          },
+          "cost": {
+            "name": "Náklady a tokeny",
+            "description": "Co každá zpráva odesílá a jak se sledují výdaje.",
+            "data": {
+              "low_token": "Snížit spotřebu tokenů",
+              "prompt_cache": "Mezipaměť promptu",
+              "track_usage": "Sledovat využití a náklady",
+              "show_chat_usage": "Zobrazit cenu v záhlaví chatu",
+              "ha_usage_sensors": "Přidat senzory využití Home Assistant"
+            },
+            "data_description": {
+              "low_token": "S každou zprávou posílá méně, aby šetřil peníze u agentů Cloud, Ollama a Azure (Cursoru se to netýká). Vypnuto dává nejspolehlivější odpovědi o vaší domácnosti. Extreme je jen chat a nemůže ovládat dům.",
+              "prompt_cache": "Ve výchozím stavu zapnuto. Umožní poskytovateli znovu použít část, která se opakuje v každé zprávě (pokyny a seznam nástrojů), za mnohem nižší cenu. Claude tento přepínač potřebuje; GPT většinou cachuje sám. Cursor a Ollama ho ignorují.",
+              "track_usage": "Ve výchozím stavu zapnuto. Po každé odpovědi zaznamená tokeny a odhadované náklady a ukáže je na stránce Využití. Vypnuto: bez nových záznamů; dosavadní historie zůstane.",
+              "show_chat_usage": "Ve výchozím stavu zapnuto. Zobrazí tokeny a cenu pod názvem chatu. Vypnuto schová jen tento řádek; sledování a stránka Využití zůstanou.",
+              "ha_usage_sensors": "Ve výchozím stavu vypnuto. Potřeba jen pro vlastní panely nebo automatizace: přidá senzory nákladů, tokenů a tahů na zařízení Usage a ke každému agentovi. Stránka Využití funguje i bez nich. Vypnutím se senzory odeberou."
+            }
+          },
+          "house": {
+            "name": "Odpovědi z Home Assistant",
+            "description": "Jak asistent čte vaše nastavení a zaznamenává své změny. Výchozí hodnoty vyhovují většině domácností.",
+            "data": {
+              "house_map": "Katalog konfigurace",
+              "shorten_mcp_results": "Zkrátit dlouhé odpovědi Home Assistant",
+              "change_history": "Historie změn"
+            },
+            "data_description": {
+              "house_map": "Ve výchozím stavu vypnuto. Místní index propojení automatizací, entit a oblastí, takže jedno vyhledání odpoví na otázky jako „co používá světlo v kuchyni?“. Ke každé zprávě trochu přidá, proto ho zapněte, jen pokud se často ptáte, jak jsou věci propojené. Živé stavy dál přicházejí z Home Assistant.",
+              "shorten_mcp_results": "Ve výchozím stavu zapnuto. Velmi dlouhé odpovědi z Home Assistant (seznamy celého domu, velká hledání) se před odesláním do AI shrnou. Šetří tokeny a drží odpovědi rychlé. Vypnuto pošle celý text.",
+              "change_history": "Ve výchozím stavu zapnuto. Zaznamenává každou změnu konfigurace, kterou asistent udělá, takže vidíte, co se změnilo, a můžete ho požádat o obnovení dřívější verze. Vypnuto: bez nových záznamů; asistent může dál provádět změny."
             }
           },
           "prompt": {
@@ -277,8 +327,8 @@
             "borrow": "Použije klíč, který už tato integrace uložila. Druhá integrace se nemění.",
             "api_key": "Váš klíč u poskytovatele AI, ne přihlášení do Home Assistant.",
             "model": "Vyberte ze seznamu nebo zadejte název modelu. Prázdné použije výchozí hodnotu poskytovatele.",
-            "effort": "Rychlé, Vysoké nebo Vysoké rychlé, když to model umí.",
-            "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí o vaší instalaci podívá do Home Assistant (ne u prostého pozdravu). Vypněte, pokud to váš model už dělá sám.",
+            "effort": "Větší úsilí znamená víc přemýšlení: lepší odpovědi na těžké otázky, ale pomaleji a víc tokenů. Ignoruje se, pokud to model nepodporuje.",
+            "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí na otázky o vaší domácnosti podívá do Home Assistant, takže seznamy a stavy jsou skutečné, ne odhadnuté. Pozdravy se přeskakují. Při „Snížit spotřebu tokenů“ na Light kontroluje vždy; na Medium a Extreme nikdy. Vypněte pro obecné otázky nebo pro model, který už kontroluje sám.",
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist.",
             "assist_stt": "Přidá v Home Assistant možnost řeči na text s klíčem tohoto asistenta. Vypnuto odstraní to, co přidal.",
             "stt_model": "Nechte prázdné pro výchozí model poskytovatele. Můžete zadat jiný název modelu.",
@@ -301,8 +351,8 @@
           "data_description": {
             "api_base": "Obvykle {example_url}",
             "model": "Vyberte ze seznamu nebo zadejte nainstalovaný model. Prázdné použije llama3.2.",
-            "effort": "Použije se, když to model umí.",
-            "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí o vaší instalaci podívá do Home Assistant (ne u prostého pozdravu). Vypněte, pokud to váš model už dělá sám.",
+            "effort": "Větší úsilí znamená víc přemýšlení: lepší odpovědi na těžké otázky, ale pomaleji a víc tokenů. Ignoruje se, pokud to model nepodporuje.",
+            "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí na otázky o vaší domácnosti podívá do Home Assistant, takže seznamy a stavy jsou skutečné, ne odhadnuté. Pozdravy se přeskakují. Při „Snížit spotřebu tokenů“ na Light kontroluje vždy; na Medium a Extreme nikdy. Vypněte pro obecné otázky nebo pro model, který už kontroluje sám.",
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist."
           }
         },
@@ -323,8 +373,8 @@
             "api_base": "{example_url}",
             "model": "Název nasazení.",
             "azure_api_version": "Nechte výchozí hodnotu, pokud vám podpora Azure nedala jinou verzi.",
-            "effort": "Použije se, když to nasazení umí.",
-            "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí o vaší instalaci podívá do Home Assistant (ne u prostého pozdravu). Vypněte, pokud to váš model už dělá sám.",
+            "effort": "Větší úsilí znamená víc přemýšlení: lepší odpovědi na těžké otázky, ale pomaleji a víc tokenů. Ignoruje se, pokud to model nepodporuje.",
+            "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí na otázky o vaší domácnosti podívá do Home Assistant, takže seznamy a stavy jsou skutečné, ne odhadnuté. Pozdravy se přeskakují. Při „Snížit spotřebu tokenů“ na Light kontroluje vždy; na Medium a Extreme nikdy. Vypněte pro obecné otázky nebo pro model, který už kontroluje sám.",
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist."
           }
         },
@@ -349,8 +399,8 @@
             "api_key": "Při úpravě nechte prázdné, aby se zachoval uložený klíč.",
             "api_base": "Adresa serveru. Na konec přidejte /v1, pokud to server očekává.",
             "model": "Název modelu na tom serveru.",
-            "effort": "Použije se, když to server umí.",
-            "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí o vaší instalaci podívá do Home Assistant (ne u prostého pozdravu). Vypněte, pokud to váš model už dělá sám.",
+            "effort": "Větší úsilí znamená víc přemýšlení: lepší odpovědi na těžké otázky, ale pomaleji a víc tokenů. Ignoruje se, pokud to model nepodporuje.",
+            "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí na otázky o vaší domácnosti podívá do Home Assistant, takže seznamy a stavy jsou skutečné, ne odhadnuté. Pozdravy se přeskakují. Při „Snížit spotřebu tokenů“ na Light kontroluje vždy; na Medium a Extreme nikdy. Vypněte pro obecné otázky nebo pro model, který už kontroluje sám.",
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist.",
             "assist_stt": "Přidá v Home Assistant možnost řeči na text s klíčem tohoto asistenta. Vypnuto odstraní to, co přidal.",
             "stt_model": "Nechte prázdné pro výchozí model poskytovatele. Můžete zadat jiný název modelu.",

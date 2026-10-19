@@ -1,5 +1,7 @@
 """Mini LiteLLM-style cost math: vendor prices + usage from provider replies.
 
+List prices come from model_prices.json, a filtered copy of LiteLLM's price list
+(https://github.com/BerriAI/litellm) refreshed by scripts/sync_model_prices.py.
 Cursor billed cents win when the SDK reports them. Cloud agents use list prices
 (per token) plus cache/reasoning when those fields exist. Unknown models still
 record tokens with cost left empty.
@@ -8,85 +10,53 @@ record tokens with cost left empty.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+import json
+import logging
+from pathlib import Path
 from typing import Any
+
+_LOGGER = logging.getLogger(__name__)
 
 SIGNAL_USAGE_UPDATE = "ai_workspace_usage_update"
 EVENT_USAGE = "ai_workspace_usage"
 
-# USD per token. Keep aliases so dated / vendor-prefixed ids still match.
-# Figures are public list prices (approximate, 2026). Cursor values are estimates
+PRICE_FILE = Path(__file__).with_name("model_prices.json")
+
+# USD per token for models LiteLLM does not list. Cursor values are estimates
 # unless charged_cents is present on the turn.
-_PRICES: dict[str, dict[str, float]] = {
-    # Cursor (estimate until SDK billed cents arrive)
+_EXTRA_PRICES: dict[str, dict[str, float]] = {
     "composer-2.5": {"input": 1.25e-6, "output": 6.0e-6, "cache_read": 1.25e-7},
     "composer-2": {"input": 1.25e-6, "output": 6.0e-6, "cache_read": 1.25e-7},
     "composer-1.5": {"input": 1.25e-6, "output": 6.0e-6, "cache_read": 1.25e-7},
     "cursor-small": {"input": 1.5e-7, "output": 6.0e-7},
-    # OpenAI
-    "gpt-5": {"input": 1.25e-6, "output": 1.0e-5, "cache_read": 1.25e-7},
-    "gpt-5-mini": {"input": 2.5e-7, "output": 2.0e-6, "cache_read": 2.5e-8},
-    "gpt-5-nano": {"input": 5.0e-8, "output": 4.0e-7, "cache_read": 5.0e-9},
-    "gpt-4.1": {"input": 2.0e-6, "output": 8.0e-6, "cache_read": 5.0e-7},
-    "gpt-4.1-mini": {"input": 4.0e-7, "output": 1.6e-6, "cache_read": 1.0e-7},
-    "gpt-4.1-nano": {"input": 1.0e-7, "output": 4.0e-7, "cache_read": 2.5e-8},
-    "gpt-4o": {"input": 2.5e-6, "output": 1.0e-5, "cache_read": 1.25e-6},
-    "gpt-4o-mini": {"input": 1.5e-7, "output": 6.0e-7, "cache_read": 7.5e-8},
-    "o3": {"input": 2.0e-6, "output": 8.0e-6, "cache_read": 5.0e-7},
-    "o3-mini": {"input": 1.1e-6, "output": 4.4e-6, "cache_read": 5.5e-7},
-    "o4-mini": {"input": 1.1e-6, "output": 4.4e-6, "cache_read": 2.75e-7},
-    "gpt-6-astra": {"input": 1.25e-6, "output": 1.0e-5, "cache_read": 1.25e-7},
-    "gpt-6.1-sol": {"input": 1.25e-6, "output": 1.0e-5, "cache_read": 1.25e-7},
-    # Anthropic
-    "claude-opus-4": {"input": 1.5e-5, "output": 7.5e-5, "cache_read": 1.5e-6, "cache_write": 1.875e-5},
     "claude-opus-4-1": {"input": 1.5e-5, "output": 7.5e-5, "cache_read": 1.5e-6, "cache_write": 1.875e-5},
-    "claude-opus-4-5": {"input": 5.0e-6, "output": 2.5e-5, "cache_read": 5.0e-7, "cache_write": 6.25e-6},
-    "claude-opus-5-5": {"input": 5.0e-6, "output": 2.5e-5, "cache_read": 5.0e-7, "cache_write": 6.25e-6},
-    "claude-sonnet-4": {"input": 3.0e-6, "output": 1.5e-5, "cache_read": 3.0e-7, "cache_write": 3.75e-6},
-    "claude-sonnet-4-5": {"input": 3.0e-6, "output": 1.5e-5, "cache_read": 3.0e-7, "cache_write": 3.75e-6},
-    "claude-sonnet-5-5": {"input": 3.0e-6, "output": 1.5e-5, "cache_read": 3.0e-7, "cache_write": 3.75e-6},
-    "claude-haiku-4-5": {"input": 8.0e-7, "output": 4.0e-6, "cache_read": 8.0e-8, "cache_write": 1.0e-6},
-    "claude-haiku-5-5": {"input": 8.0e-7, "output": 4.0e-6, "cache_read": 8.0e-8, "cache_write": 1.0e-6},
-    "claude-3-5-sonnet": {"input": 3.0e-6, "output": 1.5e-5, "cache_read": 3.0e-7, "cache_write": 3.75e-6},
-    "claude-3-5-haiku": {"input": 8.0e-7, "output": 4.0e-6, "cache_read": 8.0e-8, "cache_write": 1.0e-6},
-    "claude-3-opus": {"input": 1.5e-5, "output": 7.5e-5, "cache_read": 1.5e-6, "cache_write": 1.875e-5},
-    "claude-3-haiku": {"input": 2.5e-7, "output": 1.25e-6, "cache_read": 3.0e-8, "cache_write": 3.0e-7},
-    # Google
-    "gemini-2.5-pro": {"input": 1.25e-6, "output": 1.0e-5, "cache_read": 3.125e-7},
-    "gemini-2.5-flash": {"input": 3.0e-7, "output": 2.5e-6, "cache_read": 7.5e-8},
-    "gemini-2.0-flash": {"input": 1.0e-7, "output": 4.0e-7, "cache_read": 2.5e-8},
-    "gemini-2.0-flash-lite": {"input": 7.5e-8, "output": 3.0e-7},
     "gemini-1.5-pro": {"input": 1.25e-6, "output": 5.0e-6},
     "gemini-1.5-flash": {"input": 7.5e-8, "output": 3.0e-7},
-    "gemini-3.8-flash": {"input": 3.0e-7, "output": 2.5e-6, "cache_read": 7.5e-8},
-    # DeepSeek
-    "deepseek-chat": {"input": 2.7e-7, "output": 1.1e-6, "cache_read": 2.7e-8},
-    "deepseek-reasoner": {"input": 5.5e-7, "output": 2.19e-6, "cache_read": 1.4e-7},
-    "deepseek-v3": {"input": 2.7e-7, "output": 1.1e-6, "cache_read": 2.7e-8},
-    "deepseek-flash": {"input": 1.4e-7, "output": 2.8e-7, "cache_read": 1.4e-8},
-    "deepseek-v4-pro": {"input": 5.5e-7, "output": 2.19e-6, "cache_read": 1.4e-7},
-    # Qwen / Alibaba
-    "qwen-plus": {"input": 4.0e-7, "output": 1.2e-6, "cache_read": 1.0e-7},
-    "qwen-turbo": {"input": 5.0e-8, "output": 2.0e-7},
-    "qwen-max": {"input": 1.6e-6, "output": 6.4e-6},
     "qwen3-plus": {"input": 4.0e-7, "output": 1.2e-6, "cache_read": 1.0e-7},
-    "qwen3.7-plus": {"input": 4.0e-7, "output": 1.2e-6, "cache_read": 1.0e-7},
-    "qwen3.8-max": {"input": 1.6e-6, "output": 6.4e-6},
-    "qwen3.8-flash": {"input": 5.0e-8, "output": 2.0e-7},
     "qwen2.5": {"input": 4.0e-7, "output": 1.2e-6},
-    # xAI
     "grok-4": {"input": 3.0e-6, "output": 1.5e-5, "cache_read": 7.5e-7},
-    "grok-4.3": {"input": 3.0e-6, "output": 1.5e-5, "cache_read": 7.5e-7},
-    "grok-4.7": {"input": 3.0e-6, "output": 1.5e-5, "cache_read": 7.5e-7},
-    "grok-3": {"input": 3.0e-6, "output": 1.5e-5},
-    "grok-3-mini": {"input": 3.0e-7, "output": 5.0e-7},
-    "grok-2": {"input": 2.0e-6, "output": 1.0e-5},
-    "grok-2-vision": {"input": 2.0e-6, "output": 1.0e-5},
-    # Local
+}
+
+# Local models run on your own hardware; these always win.
+_LOCAL_PRICES: dict[str, dict[str, float]] = {
     "llama3.2": {"input": 0.0, "output": 0.0},
     "llama3.1": {"input": 0.0, "output": 0.0},
     "mistral": {"input": 0.0, "output": 0.0},
     "gemma3": {"input": 0.0, "output": 0.0},
 }
+
+
+def _load_price_file(path: Path = PRICE_FILE) -> tuple[dict, dict]:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as err:
+        _LOGGER.warning("Model price list %s could not be read: %s", path.name, err)
+        return {}, {}
+    return dict(data.get("models") or {}), dict(data.get("speech") or {})
+
+
+_SYNCED_PRICES, _SYNCED_SPEECH = _load_price_file()
+_PRICES: dict[str, dict[str, float]] = {**_EXTRA_PRICES, **_SYNCED_PRICES, **_LOCAL_PRICES}
 
 _ALIASES = {
     "gpt-5-chat-latest": "gpt-5",
@@ -105,11 +75,13 @@ _ALIASES = {
 }
 
 # USD per character for /audio/speech. Separate from chat token prices so
-# gpt-4o-mini-tts never inherits gpt-4o-mini chat rates.
+# gpt-4o-mini-tts never inherits gpt-4o-mini chat rates. gpt-4o-mini-tts is
+# billed per audio second (about $0.015 a minute, roughly 15 characters a second).
 _SPEECH_PRICES: dict[str, dict[str, float]] = {
-    "gpt-4o-mini-tts": {"character": 0.60 / 1_000_000},
+    "gpt-4o-mini-tts": {"character": 0.015 / 60 / 15},
     "tts-1": {"character": 15.0 / 1_000_000},
     "tts-1-hd": {"character": 30.0 / 1_000_000},
+    **_SYNCED_SPEECH,
 }
 
 
@@ -239,6 +211,10 @@ def lookup_price(model: str) -> tuple[str, dict[str, float] | None]:
     key = _ALIASES.get(raw, raw)
     if key in _PRICES:
         return key, _PRICES[key]
+    # OpenRouter writes claude-sonnet-4.5 where Anthropic uses claude-sonnet-4-5.
+    dashed = key.replace(".", "-")
+    if dashed in _PRICES:
+        return dashed, _PRICES[dashed]
     best = ""
     for candidate in _PRICES:
         if key.startswith(candidate) and len(candidate) > len(best):

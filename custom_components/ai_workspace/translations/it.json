@@ -8,43 +8,13 @@
           "stt_engine": "Voce in testo",
           "tts_engine": "Testo in voce",
           "speak_replies": "Leggi le risposte automaticamente",
-          "tts_natural": "Voce naturale per il testo in voce",
-          "enable_sidebar": "Mostra AI Workspace nella barra laterale",
-          "enable_overlay": "Mostra il pulsante IA mobile",
-          "enable_dictate": "Mostra il pulsante dettatura",
-          "allow_users": "Consenti utenti normali",
-          "house_map": "Catalogo di configurazione",
-          "shorten_mcp_results": "Accorcia le risposte lunghe di Home Assistant",
-          "change_history": "Cronologia delle modifiche",
-          "track_usage": "Monitora uso e costi",
-          "show_chat_usage": "Mostra il costo nell’intestazione della chat",
-          "ha_usage_sensors": "Aggiungi sensori di uso Home Assistant",
-          "low_token": "Riduci uso token",
-          "prompt_cache": "Cache del prompt",
-          "ui_theme": "Usa componenti HA",
-          "cross_chat": "Tra chat",
-          "keep_chats": "Chat da conservare"
+          "tts_natural": "Voce naturale per il testo in voce"
         },
         "data_description": {
           "stt_engine": "La dettatura del browser richiede un sito sicuro (https). Oppure scegli un motore voce in testo di Home Assistant in Impostazioni. Il browser deve autorizzare il microfono.",
           "tts_engine": "Piper, Google Translate o una voce di uno dei tuoi assistenti IA. Disattivo lascia le risposte solo come testo.",
           "speak_replies": "Se è scelta una voce, ogni risposta viene letta appena arriva. Disattivo lascia il pulsante dell'altoparlante per riprodurla tu.",
-          "tts_natural": "Attivo per impostazione predefinita. Rimuove la formattazione così la lettura suona naturale. Disattivo legge il messaggio esattamente come è scritto.",
-          "enable_sidebar": "Mostra AI Workspace nella barra laterale. Disattivo: gli amministratori possono comunque aprire la pagina completa tramite il collegamento del menu.",
-          "enable_overlay": "Attiva o disattiva il pulsante IA mobile. Nelle pagine Impostazioni sta più in alto per non coprire i pulsanti di sistema.",
-          "enable_dictate": "Microfono nel campo del messaggio.",
-          "allow_users": "Gli utenti senza diritti di amministratore possono aprire la chat mobile con lo stesso accesso Home Assistant del loro account. Disattivo: solo amministratori. La pagina completa di AI Workspace nella barra laterale resta riservata agli amministratori.",
-          "house_map": "Facoltativo. Aiuta a spiegare come è collegato un elemento (cosa lo attiva, cosa influenza). Disattivo per impostazione predefinita. Per lo stato acceso/spento in tempo reale o elenchi completi, chiedi all'assistente di consultare Home Assistant.",
-          "shorten_mcp_results": "Attivo per impostazione predefinita. Le risposte molto lunghe di Home Assistant (elenchi di tutta la casa, ricerche ampie) vengono riassunte prima di andare all'IA. Così si risparmiano tokens e le risposte restano snelle. Disattivo invia il testo completo.",
-          "change_history": "Attivo per impostazione predefinita. Conserva una traccia delle modifiche di configurazione fatte dall'assistente, così puoi rivederle o annullarle nella Cronologia delle modifiche. Disattivo: niente nuove voci; l'assistente può comunque usare Home Assistant.",
-          "track_usage": "Attivo per impostazione predefinita. Registra token e costo USD stimato dopo ogni turno Cursor o cloud. Mostra una pagina Uso nella chat. Disattivo: niente nuovi record; la cronologia resta.",
-          "show_chat_usage": "Attivo di default. Mostra token e costo sotto il titolo della chat. Disattivo nasconde solo quella riga; il tracciamento e la pagina Uso restano.",
-          "ha_usage_sensors": "Disattivo per impostazione predefinita. Crea sensori di costo, token e turni su un dispositivo Usage e su ogni agente per le tue dashboard. Disattivo li rimuove.",
-          "low_token": "Quanto inviare a ogni turno, per tutti gli agenti Cloud / Ollama / Azure.",
-          "prompt_cache": "Attivo di default. Riutilizza prompt di sistema e elenco strumenti così i round successivi costano meno. Disattiva per confrontare. Claude lo richiede; GPT spesso memorizza da solo. Ignorato su Ollama.",
-          "ui_theme": "Disattivato di default. Se attivo, vengono usati solo i componenti dell’interfaccia di Home Assistant, che possono funzionare meglio con i temi.",
-          "cross_chat": "Disattivo per impostazione predefinita. Se attivo, una domanda può usare un'altra chat il cui titolo condivide parole con essa. Non serve dire chat. Solo un breve estratto, e quella chat non viene modificata.",
-          "keep_chats": "Chat non fissate più recenti da conservare per persona. Le chat fissate restano sempre. Predefinito 30."
+          "tts_natural": "Attivo per impostazione predefinita. Rimuove la formattazione così la lettura suona naturale. Disattivo legge il messaggio esattamente come è scritto."
         },
         "sections": {
           "mcp": {
@@ -58,6 +28,60 @@
               "mcp_kind": "Server che questa istanza Home Assistant può raggiungere. Scegli Personalizzato per inserire un indirizzo tuo.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Integrato: token di accesso di lunga durata, oppure lascia vuoto per usare l'accesso attuale. HA-MCP: di solito vuoto. Vibecode: chiave agente. Personalizzato: solo se quel server richiede una chiave."
+            }
+          },
+          "chat": {
+            "name": "Chat",
+            "description": "Dove appare la chat e chi può usarla.",
+            "data": {
+              "enable_sidebar": "Mostra AI Workspace nella barra laterale",
+              "enable_overlay": "Mostra il pulsante IA mobile",
+              "enable_dictate": "Mostra il pulsante dettatura",
+              "allow_users": "Consenti utenti normali",
+              "ui_theme": "Usa componenti HA",
+              "cross_chat": "Tra chat",
+              "keep_chats": "Chat da conservare"
+            },
+            "data_description": {
+              "enable_sidebar": "Aggiunge AI Workspace alla barra laterale di Home Assistant. Disattivo: gli amministratori possono comunque aprire /ai-workspace direttamente.",
+              "enable_overlay": "Un pulsante IA rotondo nell'angolo di ogni pagina di Home Assistant, così puoi chiedere senza lasciare la pagina. Nelle pagine Impostazioni sta più in alto per non coprire altri pulsanti.",
+              "enable_dictate": "Pulsante microfono nel campo del messaggio. Nascondilo se non detti mai.",
+              "allow_users": "Disattivo: solo amministratori. Attivo: gli utenti non amministratori hanno la chat mobile, con lo stesso accesso a Home Assistant del proprio account. La pagina completa di AI Workspace resta solo per gli amministratori. Attivalo solo se ti fidi di tutti quelli che hanno un account.",
+              "ui_theme": "Disattivo per impostazione predefinita. Costruisce la chat con gli elementi dell'interfaccia di Home Assistant. Provalo se la chat non si adatta al tuo tema.",
+              "cross_chat": "Disattivo per impostazione predefinita. Se attivo, una domanda può usare un breve estratto di un'altra chat il cui titolo ha parole in comune, senza che tu la nomini. Utile se hai già parlato della stessa stanza o automazione. L'altra chat non viene modificata.",
+              "keep_chats": "Chat non fissate più recenti conservate per persona. Le più vecchie vengono eliminate così l'elenco non cresce all'infinito. Le chat fissate restano sempre. Predefinito 30."
+            }
+          },
+          "cost": {
+            "name": "Costi e token",
+            "description": "Cosa invia ogni messaggio e come viene registrata la spesa.",
+            "data": {
+              "low_token": "Riduci uso token",
+              "prompt_cache": "Cache del prompt",
+              "track_usage": "Monitora uso e costi",
+              "show_chat_usage": "Mostra il costo nell’intestazione della chat",
+              "ha_usage_sensors": "Aggiungi sensori di uso Home Assistant"
+            },
+            "data_description": {
+              "low_token": "Invia meno a ogni messaggio per risparmiare con gli agenti Cloud, Ollama e Azure (Cursor non è interessato). Disattivato dà le risposte più affidabili sulla tua casa. Extreme è solo chat e non può controllare la casa.",
+              "prompt_cache": "Attivo per impostazione predefinita. Permette al fornitore di riutilizzare a un prezzo molto più basso la parte che si ripete in ogni messaggio (istruzioni ed elenco strumenti). Claude ha bisogno di questa opzione; GPT di solito usa la cache da solo. Cursor e Ollama la ignorano.",
+              "track_usage": "Attivo per impostazione predefinita. Registra token e costo stimato dopo ogni risposta e li mostra nella pagina Uso. Disattivo: niente nuovi record; la cronologia esistente resta.",
+              "show_chat_usage": "Attivo di default. Mostra token e costo sotto il titolo della chat. Disattivo nasconde solo quella riga; il tracciamento e la pagina Uso restano.",
+              "ha_usage_sensors": "Disattivo per impostazione predefinita. Serve solo per dashboard o automazioni tue: aggiunge sensori di costo, token e turni su un dispositivo Usage e su ogni agente. La pagina Uso funziona anche senza. Disattivandolo i sensori vengono rimossi."
+            }
+          },
+          "house": {
+            "name": "Risposte da Home Assistant",
+            "description": "Come l'assistente legge la tua configurazione e registra le sue modifiche. I valori predefiniti vanno bene per la maggior parte delle case.",
+            "data": {
+              "house_map": "Catalogo di configurazione",
+              "shorten_mcp_results": "Accorcia le risposte lunghe di Home Assistant",
+              "change_history": "Cronologia delle modifiche"
+            },
+            "data_description": {
+              "house_map": "Disattivo per impostazione predefinita. Un indice locale di come automazioni, entità e aree sono collegate, così una sola ricerca risponde a domande come «cosa usa la luce della cucina?». Aggiunge un po' a ogni messaggio, quindi attivalo solo se chiedi spesso come sono collegate le cose. Gli stati in tempo reale arrivano sempre da Home Assistant.",
+              "shorten_mcp_results": "Attivo per impostazione predefinita. Le risposte molto lunghe di Home Assistant (elenchi di tutta la casa, ricerche ampie) vengono riassunte prima di andare all'IA. Risparmia token e mantiene le risposte rapide. Disattivo invia il testo completo.",
+              "change_history": "Attivo per impostazione predefinita. Registra ogni modifica di configurazione fatta dall'assistente, così puoi vedere cosa è cambiato e chiedergli di ripristinare una versione precedente. Disattivo: niente nuove voci; l'assistente può comunque fare modifiche."
             }
           },
           "prompt": {
@@ -91,41 +115,13 @@
           "stt_engine": "Voce in testo",
           "tts_engine": "Testo in voce",
           "speak_replies": "Leggi le risposte automaticamente",
-          "tts_natural": "Voce naturale per il testo in voce",
-          "enable_sidebar": "Mostra AI Workspace nella barra laterale",
-          "enable_overlay": "Mostra il pulsante IA mobile",
-          "enable_dictate": "Mostra il pulsante dettatura",
-          "allow_users": "Consenti utenti normali",
-          "house_map": "Catalogo di configurazione",
-          "shorten_mcp_results": "Accorcia le risposte lunghe di Home Assistant",
-          "change_history": "Cronologia delle modifiche",
-          "ui_theme": "Usa componenti HA",
-          "cross_chat": "Tra chat",
-          "keep_chats": "Chat da conservare",
-          "low_token": "Riduci uso token",
-          "prompt_cache": "Cache del prompt",
-          "show_chat_usage": "Mostra il costo nell’intestazione della chat",
-          "ha_usage_sensors": "Aggiungi sensori di uso Home Assistant"
+          "tts_natural": "Voce naturale per il testo in voce"
         },
         "data_description": {
           "stt_engine": "La dettatura del browser richiede un sito sicuro (https). Oppure scegli un motore voce in testo di Home Assistant in Impostazioni. Il browser deve autorizzare il microfono.",
           "tts_engine": "Piper, Google Translate o una voce di uno dei tuoi assistenti IA. Disattivo lascia le risposte solo come testo.",
           "speak_replies": "Se è scelta una voce, ogni risposta viene letta appena arriva. Disattivo lascia il pulsante dell'altoparlante per riprodurla tu.",
-          "tts_natural": "Attivo per impostazione predefinita. Rimuove la formattazione così la lettura suona naturale. Disattivo legge il messaggio esattamente come è scritto.",
-          "enable_sidebar": "Mostra AI Workspace nella barra laterale. Disattivo: gli amministratori possono comunque aprire la pagina completa tramite il collegamento del menu.",
-          "enable_overlay": "Attiva o disattiva il pulsante IA mobile. Nelle pagine Impostazioni sta più in alto per non coprire i pulsanti di sistema.",
-          "enable_dictate": "Microfono nel campo del messaggio.",
-          "allow_users": "Gli utenti senza diritti di amministratore possono aprire la chat mobile con lo stesso accesso Home Assistant del loro account. Disattivo: solo amministratori. La pagina completa di AI Workspace nella barra laterale resta riservata agli amministratori.",
-          "house_map": "Facoltativo. Aiuta a spiegare come è collegato un elemento (cosa lo attiva, cosa influenza). Disattivo per impostazione predefinita. Per lo stato acceso/spento in tempo reale o elenchi completi, chiedi all'assistente di consultare Home Assistant.",
-          "shorten_mcp_results": "Attivo per impostazione predefinita. Le risposte molto lunghe di Home Assistant (elenchi di tutta la casa, ricerche ampie) vengono riassunte prima di andare all'IA. Così si risparmiano tokens e le risposte restano snelle. Disattivo invia il testo completo.",
-          "change_history": "Attivo per impostazione predefinita. Conserva una traccia delle modifiche di configurazione fatte dall'assistente, così puoi rivederle o annullarle nella Cronologia delle modifiche. Disattivo: niente nuove voci; l'assistente può comunque usare Home Assistant.",
-          "ui_theme": "Disattivato di default. Se attivo, vengono usati solo i componenti dell’interfaccia di Home Assistant, che possono funzionare meglio con i temi.",
-          "cross_chat": "Disattivo per impostazione predefinita. Se attivo, una domanda può usare un'altra chat il cui titolo condivide parole con essa. Non serve dire chat. Solo un breve estratto, e quella chat non viene modificata.",
-          "keep_chats": "Chat non fissate più recenti da conservare per persona. Le chat fissate restano sempre. Predefinito 30.",
-          "low_token": "Quanto inviare a ogni turno, per tutti gli agenti Cloud / Ollama / Azure.",
-          "prompt_cache": "Attivo di default. Riutilizza prompt di sistema e elenco strumenti così i round successivi costano meno. Disattiva per confrontare. Claude lo richiede; GPT spesso memorizza da solo. Ignorato su Ollama.",
-          "show_chat_usage": "Attivo di default. Mostra token e costo sotto il titolo della chat. Disattivo nasconde solo quella riga; il tracciamento e la pagina Uso restano.",
-          "ha_usage_sensors": "Disattivo per impostazione predefinita. Crea sensori di costo, token e turni su un dispositivo Usage e su ogni agente per le tue dashboard. Disattivo li rimuove."
+          "tts_natural": "Attivo per impostazione predefinita. Rimuove la formattazione così la lettura suona naturale. Disattivo legge il messaggio esattamente come è scritto."
         },
         "sections": {
           "mcp": {
@@ -139,6 +135,60 @@
               "mcp_kind": "Server che questa istanza Home Assistant può raggiungere. Scegli Personalizzato per inserire un indirizzo tuo.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Integrato: token di accesso di lunga durata, oppure lascia vuoto per usare l'accesso attuale. HA-MCP: di solito vuoto. Vibecode: chiave agente. Personalizzato: solo se quel server richiede una chiave."
+            }
+          },
+          "chat": {
+            "name": "Chat",
+            "description": "Dove appare la chat e chi può usarla.",
+            "data": {
+              "enable_sidebar": "Mostra AI Workspace nella barra laterale",
+              "enable_overlay": "Mostra il pulsante IA mobile",
+              "enable_dictate": "Mostra il pulsante dettatura",
+              "allow_users": "Consenti utenti normali",
+              "ui_theme": "Usa componenti HA",
+              "cross_chat": "Tra chat",
+              "keep_chats": "Chat da conservare"
+            },
+            "data_description": {
+              "enable_sidebar": "Aggiunge AI Workspace alla barra laterale di Home Assistant. Disattivo: gli amministratori possono comunque aprire /ai-workspace direttamente.",
+              "enable_overlay": "Un pulsante IA rotondo nell'angolo di ogni pagina di Home Assistant, così puoi chiedere senza lasciare la pagina. Nelle pagine Impostazioni sta più in alto per non coprire altri pulsanti.",
+              "enable_dictate": "Pulsante microfono nel campo del messaggio. Nascondilo se non detti mai.",
+              "allow_users": "Disattivo: solo amministratori. Attivo: gli utenti non amministratori hanno la chat mobile, con lo stesso accesso a Home Assistant del proprio account. La pagina completa di AI Workspace resta solo per gli amministratori. Attivalo solo se ti fidi di tutti quelli che hanno un account.",
+              "ui_theme": "Disattivo per impostazione predefinita. Costruisce la chat con gli elementi dell'interfaccia di Home Assistant. Provalo se la chat non si adatta al tuo tema.",
+              "cross_chat": "Disattivo per impostazione predefinita. Se attivo, una domanda può usare un breve estratto di un'altra chat il cui titolo ha parole in comune, senza che tu la nomini. Utile se hai già parlato della stessa stanza o automazione. L'altra chat non viene modificata.",
+              "keep_chats": "Chat non fissate più recenti conservate per persona. Le più vecchie vengono eliminate così l'elenco non cresce all'infinito. Le chat fissate restano sempre. Predefinito 30."
+            }
+          },
+          "cost": {
+            "name": "Costi e token",
+            "description": "Cosa invia ogni messaggio e come viene registrata la spesa.",
+            "data": {
+              "low_token": "Riduci uso token",
+              "prompt_cache": "Cache del prompt",
+              "track_usage": "Monitora uso e costi",
+              "show_chat_usage": "Mostra il costo nell’intestazione della chat",
+              "ha_usage_sensors": "Aggiungi sensori di uso Home Assistant"
+            },
+            "data_description": {
+              "low_token": "Invia meno a ogni messaggio per risparmiare con gli agenti Cloud, Ollama e Azure (Cursor non è interessato). Disattivato dà le risposte più affidabili sulla tua casa. Extreme è solo chat e non può controllare la casa.",
+              "prompt_cache": "Attivo per impostazione predefinita. Permette al fornitore di riutilizzare a un prezzo molto più basso la parte che si ripete in ogni messaggio (istruzioni ed elenco strumenti). Claude ha bisogno di questa opzione; GPT di solito usa la cache da solo. Cursor e Ollama la ignorano.",
+              "track_usage": "Attivo per impostazione predefinita. Registra token e costo stimato dopo ogni risposta e li mostra nella pagina Uso. Disattivo: niente nuovi record; la cronologia esistente resta.",
+              "show_chat_usage": "Attivo di default. Mostra token e costo sotto il titolo della chat. Disattivo nasconde solo quella riga; il tracciamento e la pagina Uso restano.",
+              "ha_usage_sensors": "Disattivo per impostazione predefinita. Serve solo per dashboard o automazioni tue: aggiunge sensori di costo, token e turni su un dispositivo Usage e su ogni agente. La pagina Uso funziona anche senza. Disattivandolo i sensori vengono rimossi."
+            }
+          },
+          "house": {
+            "name": "Risposte da Home Assistant",
+            "description": "Come l'assistente legge la tua configurazione e registra le sue modifiche. I valori predefiniti vanno bene per la maggior parte delle case.",
+            "data": {
+              "house_map": "Catalogo di configurazione",
+              "shorten_mcp_results": "Accorcia le risposte lunghe di Home Assistant",
+              "change_history": "Cronologia delle modifiche"
+            },
+            "data_description": {
+              "house_map": "Disattivo per impostazione predefinita. Un indice locale di come automazioni, entità e aree sono collegate, così una sola ricerca risponde a domande come «cosa usa la luce della cucina?». Aggiunge un po' a ogni messaggio, quindi attivalo solo se chiedi spesso come sono collegate le cose. Gli stati in tempo reale arrivano sempre da Home Assistant.",
+              "shorten_mcp_results": "Attivo per impostazione predefinita. Le risposte molto lunghe di Home Assistant (elenchi di tutta la casa, ricerche ampie) vengono riassunte prima di andare all'IA. Risparmia token e mantiene le risposte rapide. Disattivo invia il testo completo.",
+              "change_history": "Attivo per impostazione predefinita. Registra ogni modifica di configurazione fatta dall'assistente, così puoi vedere cosa è cambiato e chiedergli di ripristinare una versione precedente. Disattivo: niente nuove voci; l'assistente può comunque fare modifiche."
             }
           },
           "prompt": {
@@ -277,8 +327,8 @@
             "borrow": "Usa la chiave già salvata da quell'integrazione. L'altra integrazione non viene modificata.",
             "api_key": "La chiave del fornitore IA, non l'accesso a Home Assistant.",
             "model": "Scegli dall'elenco o digita un nome di modello. Vuoto usa il valore predefinito del fornitore.",
-            "effort": "Veloce, Alto o Alto veloce quando il modello lo supporta.",
-            "check_house": "Attivo per impostazione predefinita. L'assistente consulta Home Assistant prima di rispondere sulla tua installazione (non per i saluti semplici). Disattivalo se il modello lo fa già da solo.",
+            "effort": "Più impegno significa più ragionamento: risposte migliori alle domande difficili, ma più lento e con più token. Ignorato se il modello non lo supporta.",
+            "check_house": "Attivo per impostazione predefinita. L'assistente consulta Home Assistant prima di rispondere a domande sulla tua casa, così elenchi e stati sono reali, non indovinati. I saluti vengono saltati. Con «Riduci uso token» su Light controlla sempre; su Medium ed Extreme mai. Disattivalo per domande generiche o per un modello che controlla già da solo.",
             "assist": "Elenca anche questo assistente in Home Assistant Assist (voce). Disattivo: solo chat AI Workspace, e rimuove ciò che ha aggiunto ad Assist.",
             "assist_stt": "Aggiunge un'opzione voce in testo in Home Assistant con la chiave di questo assistente. Disattivo rimuove ciò che ha aggiunto.",
             "stt_model": "Lascia vuoto per il valore predefinito del fornitore. Puoi digitare un altro nome di modello.",
@@ -301,8 +351,8 @@
           "data_description": {
             "api_base": "Di solito {example_url}",
             "model": "Scegli dall'elenco o digita un modello installato. Vuoto usa llama3.2.",
-            "effort": "Usato quando il modello lo supporta.",
-            "check_house": "Attivo per impostazione predefinita. L'assistente consulta Home Assistant prima di rispondere sulla tua installazione (non per i saluti semplici). Disattivalo se il modello lo fa già da solo.",
+            "effort": "Più impegno significa più ragionamento: risposte migliori alle domande difficili, ma più lento e con più token. Ignorato se il modello non lo supporta.",
+            "check_house": "Attivo per impostazione predefinita. L'assistente consulta Home Assistant prima di rispondere a domande sulla tua casa, così elenchi e stati sono reali, non indovinati. I saluti vengono saltati. Con «Riduci uso token» su Light controlla sempre; su Medium ed Extreme mai. Disattivalo per domande generiche o per un modello che controlla già da solo.",
             "assist": "Elenca anche questo assistente in Home Assistant Assist (voce). Disattivo: solo chat AI Workspace, e rimuove ciò che ha aggiunto ad Assist."
           }
         },
@@ -323,8 +373,8 @@
             "api_base": "{example_url}",
             "model": "Il nome della distribuzione.",
             "azure_api_version": "Lascia il valore predefinito, a meno che il supporto Azure non ti abbia dato un'altra versione.",
-            "effort": "Usato quando la distribuzione lo supporta.",
-            "check_house": "Attivo per impostazione predefinita. L'assistente consulta Home Assistant prima di rispondere sulla tua installazione (non per i saluti semplici). Disattivalo se il modello lo fa già da solo.",
+            "effort": "Più impegno significa più ragionamento: risposte migliori alle domande difficili, ma più lento e con più token. Ignorato se il modello non lo supporta.",
+            "check_house": "Attivo per impostazione predefinita. L'assistente consulta Home Assistant prima di rispondere a domande sulla tua casa, così elenchi e stati sono reali, non indovinati. I saluti vengono saltati. Con «Riduci uso token» su Light controlla sempre; su Medium ed Extreme mai. Disattivalo per domande generiche o per un modello che controlla già da solo.",
             "assist": "Elenca anche questo assistente in Home Assistant Assist (voce). Disattivo: solo chat AI Workspace, e rimuove ciò che ha aggiunto ad Assist."
           }
         },
@@ -349,8 +399,8 @@
             "api_key": "Lascia vuoto in modifica per conservare la chiave salvata.",
             "api_base": "Indirizzo del server. Aggiungi /v1 alla fine se il server se lo aspetta.",
             "model": "Nome del modello su quel server.",
-            "effort": "Usato quando il server lo supporta.",
-            "check_house": "Attivo per impostazione predefinita. L'assistente consulta Home Assistant prima di rispondere sulla tua installazione (non per i saluti semplici). Disattivalo se il modello lo fa già da solo.",
+            "effort": "Più impegno significa più ragionamento: risposte migliori alle domande difficili, ma più lento e con più token. Ignorato se il modello non lo supporta.",
+            "check_house": "Attivo per impostazione predefinita. L'assistente consulta Home Assistant prima di rispondere a domande sulla tua casa, così elenchi e stati sono reali, non indovinati. I saluti vengono saltati. Con «Riduci uso token» su Light controlla sempre; su Medium ed Extreme mai. Disattivalo per domande generiche o per un modello che controlla già da solo.",
             "assist": "Elenca anche questo assistente in Home Assistant Assist (voce). Disattivo: solo chat AI Workspace, e rimuove ciò che ha aggiunto ad Assist.",
             "assist_stt": "Aggiunge un'opzione voce in testo in Home Assistant con la chiave di questo assistente. Disattivo rimuove ciò che ha aggiunto.",
             "stt_model": "Lascia vuoto per il valore predefinito del fornitore. Puoi digitare un altro nome di modello.",

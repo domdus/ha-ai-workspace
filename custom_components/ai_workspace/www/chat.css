@@ -1589,7 +1589,7 @@ textarea:focus {
   flex: none;
   display: flex;
   flex-wrap: wrap;
-  align-items: end;
+  align-items: center;
   gap: var(--ha-space-2);
   padding: var(--ha-space-2) var(--ha-space-4);
   border-bottom: 1px solid var(--divider-color);
@@ -1609,7 +1609,7 @@ textarea:focus {
 .usage-filters {
   display: flex;
   flex-wrap: wrap;
-  align-items: end;
+  align-items: center;
   gap: var(--ha-space-2);
   min-width: 0;
   flex: 1;
@@ -1634,6 +1634,24 @@ textarea:focus {
   font: inherit;
   font-size: var(--ha-font-size-s);
   max-width: 180px;
+}
+
+ha-select.usage-filter {
+  min-width: 140px;
+  max-width: 220px;
+}
+
+.usage-native-dates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ha-space-2);
+}
+
+ha-date-range-nav.usage-filter-dates,
+ha-date-range-picker.usage-filter-dates {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .wrap.page-usage .chat {
@@ -1678,7 +1696,8 @@ textarea:focus {
 }
 
 .wrap.page-usage .usage-filter select,
-.wrap.page-usage .usage-filter input {
+.wrap.page-usage .usage-filter input,
+.wrap.page-usage ha-select.usage-filter {
   max-width: 220px;
 }
 
