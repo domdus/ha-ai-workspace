@@ -68,6 +68,7 @@
   background: var(--primary-background-color);
   position: relative;
   transition: grid-template-columns 280ms cubic-bezier(0.16, 1, 0.3, 1);
+  --ai-keyboard-inset: 0px;
 }
 
 .wrap.nav-collapsed {
@@ -427,7 +428,7 @@ ha-button.new-chat {
   overflow-anchor: none;
   overscroll-behavior: contain;
   scroll-behavior: auto;
-  scroll-padding-bottom: calc(8rem + var(--ha-space-6));
+  scroll-padding-bottom: calc(8rem + var(--ha-space-6) + var(--ai-keyboard-inset, 0px));
 }
 
 .chat.welcome {
@@ -611,7 +612,7 @@ h1 {
 
 .composer {
   position: sticky;
-  bottom: 0;
+  bottom: var(--ai-keyboard-inset, 0px);
   z-index: 3;
   display: flex;
   flex-direction: column;
@@ -620,6 +621,7 @@ h1 {
   width: min(calc(var(--ai-chat-width) + 2 * var(--ai-inline-pad)), 100%);
   margin-inline: auto;
   margin-top: auto;
+  margin-bottom: var(--ai-keyboard-inset, 0px);
   background: var(--primary-background-color);
 }
 

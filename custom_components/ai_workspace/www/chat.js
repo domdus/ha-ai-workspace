@@ -49,11 +49,90 @@ function haCreate(...names) {
 function fillHaMarkdown(el, body) {
   const text = String(body || "");
   el.content = text;
+  styleMarkdownTables(el);
   if (!text || haHas("ha-markdown")) return;
   el.textContent = text;
   customElements.whenDefined("ha-markdown").then(() => {
     if (el.isConnected) el.textContent = "";
+    styleMarkdownTables(el);
   });
+}
+
+function isPipeTableLine(line) {
+  return String(line || "").trim().startsWith("|");
+}
+
+function isPipeTableSep(line) {
+  return /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?\s*$/.test(String(line || ""));
+}
+
+function streamFenceOpen(text) {
+  const marks = String(text || "").match(/^```/gm);
+  return Boolean(marks && marks.length % 2);
+}
+
+/** Hold incomplete markdown tables so columns do not dance while a row is still arriving. */
+function stableStreamMarkdown(text, done) {
+  if (done || !text || streamFenceOpen(text)) return text;
+  const lines = text.split("\n");
+  if (!text.endsWith("\n") && lines.length) {
+    const last = lines[lines.length - 1];
+    if (isPipeTableLine(last) || isPipeTableSep(last)) lines.pop();
+  }
+  let end = lines.length - 1;
+  while (end >= 0 && !lines[end].trim()) end -= 1;
+  if (end < 0 || !(isPipeTableLine(lines[end]) || isPipeTableSep(lines[end]))) {
+    return lines.join("\n");
+  }
+  let start = end;
+  while (start >= 0 && (isPipeTableLine(lines[start]) || isPipeTableSep(lines[start]) || !lines[start].trim())) {
+    start -= 1;
+  }
+  start += 1;
+  const block = [];
+  for (let i = start; i <= end; i += 1) {
+    if (lines[i].trim()) block.push(lines[i]);
+  }
+  const sepAt = block.findIndex(isPipeTableSep);
+  if (sepAt < 1) lines.splice(start);
+  return lines.join("\n");
+}
+
+let markdownTableSheet;
+
+function markdownTableStyleSheet() {
+  if (markdownTableSheet !== undefined) return markdownTableSheet;
+  markdownTableSheet = null;
+  if (typeof CSSStyleSheet !== "function") return null;
+  try {
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync(
+      "table{table-layout:fixed;width:100%;max-width:100%}"
+      + "th,td{overflow-wrap:anywhere;word-break:break-word;vertical-align:top}",
+    );
+    markdownTableSheet = sheet;
+  } catch (_err) {
+    markdownTableSheet = null;
+  }
+  return markdownTableSheet;
+}
+
+function styleMarkdownTables(md) {
+  if (!md) return;
+  const apply = () => {
+    const sheet = markdownTableStyleSheet();
+    if (!sheet) return;
+    const roots = [];
+    if (md.shadowRoot) roots.push(md.shadowRoot);
+    const inner = md.querySelector?.("ha-markdown-element");
+    if (inner?.shadowRoot) roots.push(inner.shadowRoot);
+    for (const root of roots) {
+      if (!root.adoptedStyleSheets || root.adoptedStyleSheets.includes(sheet)) continue;
+      root.adoptedStyleSheets = [...root.adoptedStyleSheets, sheet];
+    }
+  };
+  apply();
+  if (!md.shadowRoot) requestAnimationFrame(apply);
 }
 
 async function loadHaPanel(componentName, urlPath) {
@@ -997,7 +1076,7 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   let keyboardRaf = 0;
-  let keyboardHeight = "";
+  let keyboardInset = 0;
   let keyboardOpen = false;
 
   function resetOuterScroll() {
@@ -1011,9 +1090,10 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function clearKeyboardLock() {
     keyboardOpen = false;
-    keyboardHeight = "";
+    keyboardInset = 0;
     wrap.classList.remove("keyboard-open");
     wrap.style.height = "";
+    wrap.style.removeProperty("--ai-keyboard-inset");
   }
 
   function syncKeyboardInset() {
@@ -1026,31 +1106,29 @@ export async function mountAiWorkspace(root, options = {}) {
     keyboardRaf = 0;
     if (keepComposerFocus()) return;
     const vv = window.visualViewport;
-    const inset = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
-    const open = composerFocused() && inset > 80;
+    // Overlay keyboards shrink visualViewport.height. Ignore offsetTop so IME
+    // pan does not chase the composer (that loop is the rubber-band).
+    const next = vv ? Math.max(0, Math.round(window.innerHeight - vv.height)) : 0;
+    const open = composerFocused() && next > 80;
     if (!open) {
       if (keyboardOpen) clearKeyboardLock();
       return;
     }
-    const top = wrap.getBoundingClientRect().top;
-    const visibleBottom = (vv?.offsetTop || 0) + (vv?.height || window.innerHeight);
-    const nextH = `${Math.max(180, Math.round(visibleBottom - Math.max(0, top)))}px`;
-    if (nextH === keyboardHeight && keyboardOpen) return;
+    if (keyboardOpen && Math.abs(next - keyboardInset) < 8) return;
     const opened = !keyboardOpen;
     keyboardOpen = true;
-    keyboardHeight = nextH;
+    keyboardInset = next;
+    wrap.style.setProperty("--ai-keyboard-inset", `${next}px`);
     if (opened) {
       if (followRaf) {
         cancelAnimationFrame(followRaf);
         followRaf = 0;
       }
-      resetOuterScroll();
       wrap.classList.add("keyboard-open");
-    }
-    wrap.style.height = nextH;
-    if (opened && pinBottom && !holdFollow) {
-      chatEl.scrollTop = Math.max(0, chatEl.scrollHeight - chatEl.clientHeight);
-      lastScrollTop = chatEl.scrollTop;
+      if (pinBottom && !holdFollow) {
+        chatEl.scrollTop = Math.max(0, chatEl.scrollHeight - chatEl.clientHeight);
+        lastScrollTop = chatEl.scrollTop;
+      }
     }
   }
 
@@ -1806,6 +1884,8 @@ export async function mountAiWorkspace(root, options = {}) {
   let streamNode = null;
   let streamBuf = "";
   let streamFull = "";
+  let streamPainted = "";
+  let streamPaintAt = 0;
   let streamDrainRaf = 0;
   let streamDrainLast = 0;
   let streamWaiters = [];
@@ -1881,6 +1961,8 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     streamBuf = "";
     streamFull = "";
+    streamPainted = "";
+    streamPaintAt = 0;
     streamNode = null;
     streamFinal = false;
     haltSpeech();
@@ -1894,14 +1976,25 @@ export async function mountAiWorkspace(root, options = {}) {
     resizeComposer();
   }
 
-  function writeStreamVisible() {
-    if (!streamNode) return;
-    streamNode.content = rewriteAssistantLinks(streamFull, streamFinal && !streamBuf);
-    streamNode.hidden = !streamFull;
+  function writeStreamVisible(force = false) {
+    if (!streamNode) return false;
+    const done = streamFinal && !streamBuf;
+    const visible = rewriteAssistantLinks(stableStreamMarkdown(streamFull, done), done);
+    const now = performance.now();
+    if (visible === streamPainted) return false;
+    if (!force && !done && streamPainted && now - streamPaintAt < 48 && !visible.endsWith("\n")) {
+      return false;
+    }
+    streamPainted = visible;
+    streamPaintAt = now;
+    streamNode.content = visible;
+    streamNode.hidden = !visible;
+    styleMarkdownTables(streamNode);
     const bubble = streamNode.closest(".bubble");
-    bubble?.classList.toggle("has-text", Boolean(streamFull));
-    if (streamFull && bubble && !bubble.querySelector(".tools span.busy")) setActivity(bubble, "");
+    bubble?.classList.toggle("has-text", Boolean(visible));
+    if (visible && bubble && !bubble.querySelector(".tools span.busy")) setActivity(bubble, "");
     if (bubble) retargetHaLinks(bubble);
+    return true;
   }
 
   function takeStreamChunk(dt) {
@@ -1934,7 +2027,7 @@ export async function mountAiWorkspace(root, options = {}) {
     } else if (streamBuf) {
       streamFull += takeStreamChunk(dt);
     }
-    writeStreamVisible();
+    writeStreamVisible(!streamBuf);
     easeToBottom(dt);
     if (streamBuf) {
       streamDrainRaf = requestAnimationFrame(pumpStream);
@@ -1957,7 +2050,7 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     streamFull += streamBuf;
     streamBuf = "";
-    writeStreamVisible();
+    writeStreamVisible(true);
     finishStreamWaiters();
   }
 
@@ -1995,7 +2088,9 @@ export async function mountAiWorkspace(root, options = {}) {
       if (dist > 0) writeScrollTop(max);
       return false;
     }
-    writeScrollTop(chatEl.scrollTop + dist * (1 - Math.exp(-dt * 10)));
+    const eased = dist * (1 - Math.exp(-dt * 5.5));
+    const step = Math.min(dist, Math.max(eased, 48 * dt), 720 * dt);
+    writeScrollTop(chatEl.scrollTop + step);
     return true;
   }
 
@@ -3526,6 +3621,8 @@ export async function mountAiWorkspace(root, options = {}) {
     stickToBottom();
     streamFull = "";
     streamBuf = "";
+    streamPainted = "";
+    streamPaintAt = 0;
     const tools = document.createElement("div");
     tools.className = "tools";
     ensureActivitySlot(assistant);
@@ -3642,7 +3739,7 @@ export async function mountAiWorkspace(root, options = {}) {
         } else if (name === "usage") {
           applyTurnUsage(data);
         }
-        scrollChatToBottom();
+        if (name !== "text") scrollChatToBottom();
       });
       await waitForStream();
       streamNode = null;
@@ -3788,7 +3885,11 @@ export async function mountAiWorkspace(root, options = {}) {
   }
   listen(window.visualViewport, "resize", syncKeyboardInset);
   listen(window.visualViewport, "scroll", () => {
-    if (wrap.classList.contains("keyboard-open")) syncKeyboardInset();
+    if (!composerFocused()) return;
+    const vv = window.visualViewport;
+    const next = vv ? Math.max(0, Math.round(window.innerHeight - vv.height)) : 0;
+    if (Math.abs(next - keyboardInset) < 24) return;
+    syncKeyboardInset();
   });
   function fromComposerField(event) {
     for (const node of event.composedPath?.() || [event.target]) {

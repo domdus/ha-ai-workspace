@@ -17,7 +17,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .agents import Agent, entry_agents
-from .const import DOMAIN
+from .const import DOMAIN, provider_token_mode, token_mode_allows_extras
 from .chat_scope import handoff_note, merge_reply_text, other_chat_note
 from .http import _create_runtime_session, async_agent_events
 from .small_talk import wants_house_tools
@@ -219,13 +219,13 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
             await self.hass.async_add_executor_job(store.set_provider, user_id, session.id, self._agent_id)
             session.provider = self._agent_id
 
-        low_token = bool(getattr(getattr(provider, "settings", None), "low_token", False))
-        extra = "" if low_token else str(user_input.extra_system_prompt or "").strip()
+        extras = token_mode_allows_extras(provider_token_mode(provider))
+        extra = "" if not extras else str(user_input.extra_system_prompt or "").strip()
         outbound = f"{extra}\n\n{text}" if extra else text
         cross = bool(getattr(data.get("settings"), "cross_chat", False))
         note = (
             ""
-            if low_token
+            if not extras
             else await self.hass.async_add_executor_job(
                 other_chat_note, store, user_id, session.id, text, cross
             )
@@ -251,10 +251,8 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
                 rows = await self.hass.async_add_executor_job(store.list_messages, session.id)
                 handoff = handoff_note(rows, session.title)
             suggest = (
-                None
-                if low_token
-                else getattr(provider, "suggest_title", None)
-                if count <= 1 and needs_title_summary(text)
+                getattr(provider, "suggest_title", None)
+                if extras and count <= 1 and needs_title_summary(text)
                 else None
             )
             parts: list[str] = []

@@ -238,7 +238,8 @@
             "api_key": "API key",
             "model": "Model",
             "effort": "Effort",
-            "low_token": "Chat-only mode",
+            "low_token": "Token usage",
+            "prompt_cache": "Prompt cache",
             "check_house": "Always check the house first",
             "assist": "Add to Assist",
             "assist_stt": "Add Speech-to-text",
@@ -253,8 +254,9 @@
             "api_key": "Your key from the AI provider, not your Home Assistant login.",
             "model": "Pick from the list or type a model name. Empty uses the provider default.",
             "effort": "Fast, High, or High fast when the model supports it.",
-            "low_token": "Shorter answers without house control — good for small chat-only models.",
-            "check_house": "On by default. The assistant looks up Home Assistant before answering about your setup (not for simple greetings). Turn off if your model already does that on its own.",
+            "low_token": "How much to send each turn. Off is full. Light keeps tools and history and still checks the house (~5–20% less). Medium keeps tools with a short prompt (~25–45%). Extreme is chat-only (~80–95% less on a house-check turn).",
+            "prompt_cache": "On by default. Reuses the repeated system prompt and tool list so later rounds cost less. Turn off to compare. Claude needs this; GPT often caches on its own. Ignored on Ollama.",
+            "check_house": "On by default for Off. The assistant looks up Home Assistant before answering about your setup (not for simple greetings). Light always checks. Medium and Extreme ignore this. Turn off if your model already does that on its own.",
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist.",
             "assist_stt": "Adds a Speech-to-text option in Home Assistant using this assistant's key. Off removes what it added.",
             "stt_model": "Leave empty for the provider default. You can type another model name if yours offers one.",
@@ -271,7 +273,8 @@
             "api_base": "Ollama URL",
             "model": "Model",
             "effort": "Effort",
-            "low_token": "Chat-only mode",
+            "low_token": "Token usage",
+            "prompt_cache": "Prompt cache",
             "check_house": "Always check the house first",
             "assist": "Add to Assist"
           },
@@ -279,8 +282,9 @@
             "api_base": "Usually {example_url}",
             "model": "Pick from the list or type a model you installed. Empty uses llama3.2.",
             "effort": "Used when the model supports it.",
-            "low_token": "Shorter answers without house control — good for small chat-only models.",
-            "check_house": "On by default. The assistant looks up Home Assistant before answering about your setup (not for simple greetings). Turn off if your model already does that on its own.",
+            "low_token": "How much to send each turn. Off is full. Light keeps tools and history and still checks the house (~5–20% less). Medium keeps tools with a short prompt (~25–45%). Extreme is chat-only (~80–95% less on a house-check turn).",
+            "prompt_cache": "On by default. Reuses the repeated system prompt and tool list so later rounds cost less. Turn off to compare. Claude needs this; GPT often caches on its own. Ignored on Ollama.",
+            "check_house": "On by default for Off. The assistant looks up Home Assistant before answering about your setup (not for simple greetings). Light always checks. Medium and Extreme ignore this. Turn off if your model already does that on its own.",
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           }
         },
@@ -293,7 +297,8 @@
             "model": "Deployment",
             "azure_api_version": "API version",
             "effort": "Effort",
-            "low_token": "Chat-only mode",
+            "low_token": "Token usage",
+            "prompt_cache": "Prompt cache",
             "check_house": "Always check the house first",
             "assist": "Add to Assist"
           },
@@ -303,8 +308,9 @@
             "model": "The deployment name.",
             "azure_api_version": "Leave the default unless Azure support gave you another version.",
             "effort": "Used when the deployment supports it.",
-            "low_token": "Shorter answers without house control — good for small chat-only models.",
-            "check_house": "On by default. The assistant looks up Home Assistant before answering about your setup (not for simple greetings). Turn off if your model already does that on its own.",
+            "low_token": "How much to send each turn. Off is full. Light keeps tools and history and still checks the house (~5–20% less). Medium keeps tools with a short prompt (~25–45%). Extreme is chat-only (~80–95% less on a house-check turn).",
+            "prompt_cache": "On by default. Reuses the repeated system prompt and tool list so later rounds cost less. Turn off to compare. Claude needs this; GPT often caches on its own. Ignored on Ollama.",
+            "check_house": "On by default for Off. The assistant looks up Home Assistant before answering about your setup (not for simple greetings). Light always checks. Medium and Extreme ignore this. Turn off if your model already does that on its own.",
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           }
         },
@@ -316,7 +322,8 @@
             "api_base": "API base URL",
             "model": "Model",
             "effort": "Effort",
-            "low_token": "Chat-only mode",
+            "low_token": "Token usage",
+            "prompt_cache": "Prompt cache",
             "check_house": "Always check the house first",
             "assist": "Add to Assist",
             "assist_stt": "Add Speech-to-text",
@@ -331,8 +338,9 @@
             "api_base": "Server address. Add /v1 at the end if your server expects that.",
             "model": "Model name on that server.",
             "effort": "Used when the server supports it.",
-            "low_token": "Shorter answers without house control — good for small chat-only models.",
-            "check_house": "On by default. The assistant looks up Home Assistant before answering about your setup (not for simple greetings). Turn off if your model already does that on its own.",
+            "low_token": "How much to send each turn. Off is full. Light keeps tools and history and still checks the house (~5–20% less). Medium keeps tools with a short prompt (~25–45%). Extreme is chat-only (~80–95% less on a house-check turn).",
+            "prompt_cache": "On by default. Reuses the repeated system prompt and tool list so later rounds cost less. Turn off to compare. Claude needs this; GPT often caches on its own. Ignored on Ollama.",
+            "check_house": "On by default for Off. The assistant looks up Home Assistant before answering about your setup (not for simple greetings). Light always checks. Medium and Extreme ignore this. Turn off if your model already does that on its own.",
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist.",
             "assist_stt": "Adds a Speech-to-text option in Home Assistant using this assistant's key. Off removes what it added.",
             "stt_model": "Leave empty for the provider default. You can type another model name if yours offers one.",
@@ -378,6 +386,14 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Custom MCP URL"
+      }
+    },
+    "low_token": {
+      "options": {
+        "off": "Off",
+        "light": "Light",
+        "medium": "Medium",
+        "extreme": "Extreme"
       }
     }
   }

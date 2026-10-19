@@ -236,7 +236,8 @@
             "api_key": "API-nyckel",
             "model": "Modell",
             "effort": "Ansträngning",
-            "low_token": "Endast chatt",
+            "low_token": "Tokenanvändning",
+            "prompt_cache": "Promptcache",
             "check_house": "Kontrollera alltid huset först",
             "assist": "Lägg till i Assist",
             "assist_stt": "Lägg till tal till text",
@@ -251,7 +252,8 @@
             "api_key": "Din nyckel från AI-leverantören, inte din Home Assistant-inloggning.",
             "model": "Välj från listan eller skriv ett modellnamn. Tomt använder leverantörens standard.",
             "effort": "Snabb, Hög eller Hög snabb när modellen stöder det.",
-            "low_token": "Kortare svar utan husstyrning — bra för små modeller som bara chattar.",
+            "low_token": "Hur mycket som skickas varje tur. Av är fullt. Light: verktyg och historik, kollar huset (~5–20 % mindre). Medium: verktyg, kort prompt (~25–45 %). Extreme: bara chatt (~80–95 % mindre vid huskontroll).",
+            "prompt_cache": "På som standard. Återanvänder systemprompten och verktygslistan så senare rundor kostar mindre. Stäng av för att jämföra. Claude behöver detta; GPT cachar ofta själv. Ignoreras på Ollama.",
             "check_house": "På som standard. Assistenten slår upp Home Assistant innan den svarar om din installation (inte för enkla hälsningar). Stäng av om din modell redan gör det själv.",
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist.",
             "assist_stt": "Lägger till ett tal-till-text-alternativ i Home Assistant med den här assistentens nyckel. Av tar bort det den lade till.",
@@ -269,7 +271,8 @@
             "api_base": "Ollama-URL",
             "model": "Modell",
             "effort": "Ansträngning",
-            "low_token": "Endast chatt",
+            "low_token": "Tokenanvändning",
+            "prompt_cache": "Promptcache",
             "check_house": "Kontrollera alltid huset först",
             "assist": "Lägg till i Assist"
           },
@@ -277,7 +280,8 @@
             "api_base": "Vanligtvis {example_url}",
             "model": "Välj från listan eller skriv en modell du har installerat. Tomt använder llama3.2.",
             "effort": "Används när modellen stöder det.",
-            "low_token": "Kortare svar utan husstyrning — bra för små modeller som bara chattar.",
+            "low_token": "Hur mycket som skickas varje tur. Av är fullt. Light: verktyg och historik, kollar huset (~5–20 % mindre). Medium: verktyg, kort prompt (~25–45 %). Extreme: bara chatt (~80–95 % mindre vid huskontroll).",
+            "prompt_cache": "På som standard. Återanvänder systemprompten och verktygslistan så senare rundor kostar mindre. Stäng av för att jämföra. Claude behöver detta; GPT cachar ofta själv. Ignoreras på Ollama.",
             "check_house": "På som standard. Assistenten slår upp Home Assistant innan den svarar om din installation (inte för enkla hälsningar). Stäng av om din modell redan gör det själv.",
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist."
           }
@@ -291,7 +295,8 @@
             "model": "Distribution",
             "azure_api_version": "API-version",
             "effort": "Ansträngning",
-            "low_token": "Endast chatt",
+            "low_token": "Tokenanvändning",
+            "prompt_cache": "Promptcache",
             "check_house": "Kontrollera alltid huset först",
             "assist": "Lägg till i Assist"
           },
@@ -301,7 +306,8 @@
             "model": "Distributionens namn.",
             "azure_api_version": "Behåll standardvärdet om inte Azure-supporten gett dig en annan version.",
             "effort": "Används när distributionen stöder det.",
-            "low_token": "Kortare svar utan husstyrning — bra för små modeller som bara chattar.",
+            "low_token": "Hur mycket som skickas varje tur. Av är fullt. Light: verktyg och historik, kollar huset (~5–20 % mindre). Medium: verktyg, kort prompt (~25–45 %). Extreme: bara chatt (~80–95 % mindre vid huskontroll).",
+            "prompt_cache": "På som standard. Återanvänder systemprompten och verktygslistan så senare rundor kostar mindre. Stäng av för att jämföra. Claude behöver detta; GPT cachar ofta själv. Ignoreras på Ollama.",
             "check_house": "På som standard. Assistenten slår upp Home Assistant innan den svarar om din installation (inte för enkla hälsningar). Stäng av om din modell redan gör det själv.",
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist."
           }
@@ -314,7 +320,8 @@
             "api_base": "API-bas-URL",
             "model": "Modell",
             "effort": "Ansträngning",
-            "low_token": "Endast chatt",
+            "low_token": "Tokenanvändning",
+            "prompt_cache": "Promptcache",
             "check_house": "Kontrollera alltid huset först",
             "assist": "Lägg till i Assist",
             "assist_stt": "Lägg till tal till text",
@@ -329,7 +336,8 @@
             "api_base": "Serveradress. Lägg till /v1 i slutet om din server förväntar sig det.",
             "model": "Modellnamn på den servern.",
             "effort": "Används när servern stöder det.",
-            "low_token": "Kortare svar utan husstyrning — bra för små modeller som bara chattar.",
+            "low_token": "Hur mycket som skickas varje tur. Av är fullt. Light: verktyg och historik, kollar huset (~5–20 % mindre). Medium: verktyg, kort prompt (~25–45 %). Extreme: bara chatt (~80–95 % mindre vid huskontroll).",
+            "prompt_cache": "På som standard. Återanvänder systemprompten och verktygslistan så senare rundor kostar mindre. Stäng av för att jämföra. Claude behöver detta; GPT cachar ofta själv. Ignoreras på Ollama.",
             "check_house": "På som standard. Assistenten slår upp Home Assistant innan den svarar om din installation (inte för enkla hälsningar). Stäng av om din modell redan gör det själv.",
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist.",
             "assist_stt": "Lägger till ett tal-till-text-alternativ i Home Assistant med den här assistentens nyckel. Av tar bort det den lade till.",
@@ -376,6 +384,14 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Anpassad MCP-URL"
+      }
+    },
+    "low_token": {
+      "options": {
+        "off": "Av",
+        "light": "Light",
+        "medium": "Medium",
+        "extreme": "Extreme"
       }
     }
   }

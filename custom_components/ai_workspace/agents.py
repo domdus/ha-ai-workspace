@@ -26,6 +26,7 @@ from .const import (
     CONF_CURSOR_API_KEY,
     CONF_EFFORT,
     CONF_LOW_TOKEN,
+    CONF_PROMPT_CACHE,
     CONF_MODE,
     CONF_MODEL,
     DEFAULT_AZURE_API_VERSION,
@@ -43,6 +44,8 @@ from .const import (
     resolved_tts_voice,
     default_api_base,
     default_api_model,
+    token_mode_of,
+    TOKEN_MODE_OFF,
 )
 
 _KEY_NAMES = ("api_key", "token", "openai_api_key", "azure_api_key")
@@ -69,7 +72,8 @@ class Agent:
     tts_model: str = ""
     tts_voice: str = ""
     tts_speed: float = 1.0
-    low_token: bool = False
+    token_mode: str = TOKEN_MODE_OFF
+    prompt_cache: bool = True
     check_house: bool = True
     azure_api_version: str = DEFAULT_AZURE_API_VERSION
     cursor_api_key: str = ""
@@ -122,7 +126,8 @@ def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Age
         tts_model=resolved_tts_model(raw, provider),
         tts_voice=resolved_tts_voice(raw),
         tts_speed=resolved_tts_speed(raw),
-        low_token=bool(raw.get(CONF_LOW_TOKEN, False)),
+        token_mode=token_mode_of(raw.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF)),
+        prompt_cache=bool(raw.get(CONF_PROMPT_CACHE, True)),
         check_house=bool(raw.get(CONF_CHECK_HOUSE, True)),
         azure_api_version=_text(raw.get(CONF_AZURE_API_VERSION)) or DEFAULT_AZURE_API_VERSION,
         cursor_api_key=_text(raw.get(CONF_CURSOR_API_KEY)),

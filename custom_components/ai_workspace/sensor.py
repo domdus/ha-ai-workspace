@@ -15,7 +15,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
 
 from .agents import Agent, entry_agents
-from .const import DOMAIN
+from .const import DOMAIN, usage_device_ident
 from .store import Store
 from .usage_cost import SIGNAL_USAGE_UPDATE, empty_summary
 from .usage_record import day_bounds, provider_label
@@ -31,27 +31,29 @@ async def async_setup_entry(
     store: Store = hass.data[DOMAIN]["store"]
     agents = entry_agents(entry)
     hub = UsageHub(hass, store, [agent.id for agent in agents])
-    entities: list[SensorEntity] = [
-        WorkspaceUsageSensor(hass, entry, hub, "cost_today", "Cost today", "cost", "today"),
-        WorkspaceUsageSensor(hass, entry, hub, "cost_month", "Cost this month", "cost", "month"),
-        WorkspaceUsageSensor(hass, entry, hub, "cost_total", "Cost total", "cost", "all", increasing=True),
-        WorkspaceUsageSensor(hass, entry, hub, "tokens_today", "Tokens today", "tokens", "today"),
-        WorkspaceUsageSensor(hass, entry, hub, "tokens_month", "Tokens this month", "tokens", "month"),
-        WorkspaceUsageSensor(hass, entry, hub, "tokens_total", "Tokens total", "tokens", "all", increasing=True),
-        WorkspaceUsageSensor(hass, entry, hub, "turns_today", "Turns today", "turns", "today"),
-        WorkspaceUsageSensor(hass, entry, hub, "turns_month", "Turns this month", "turns", "month"),
-        WorkspaceUsageSensor(hass, entry, hub, "turns_total", "Turns total", "turns", "all", increasing=True),
-        WorkspaceLastSensor(hass, entry, hub, "last_cost", "Last turn cost", "cost"),
-        WorkspaceLastSensor(hass, entry, hub, "last_tokens", "Last turn tokens", "tokens"),
-        WorkspaceLastSensor(hass, entry, hub, "last_model", "Last model", "model"),
-        WorkspaceLastSensor(hass, entry, hub, "last_agent", "Last agent", "agent"),
-        WorkspaceUsageSensor(hass, entry, hub, "cost_tts_today", "Speech cost today", "cost", "today", source="tts"),
-        WorkspaceUsageSensor(
-            hass, entry, hub, "cost_tts_total", "Speech cost total", "cost", "all", increasing=True, source="tts"
-        ),
-    ]
+    async_add_entities(
+        [
+            WorkspaceUsageSensor(hass, entry, hub, "cost_today", "Cost today", "cost", "today"),
+            WorkspaceUsageSensor(hass, entry, hub, "cost_month", "Cost this month", "cost", "month"),
+            WorkspaceUsageSensor(hass, entry, hub, "cost_total", "Cost total", "cost", "all", increasing=True),
+            WorkspaceUsageSensor(hass, entry, hub, "tokens_today", "Tokens today", "tokens", "today"),
+            WorkspaceUsageSensor(hass, entry, hub, "tokens_month", "Tokens this month", "tokens", "month"),
+            WorkspaceUsageSensor(hass, entry, hub, "tokens_total", "Tokens total", "tokens", "all", increasing=True),
+            WorkspaceUsageSensor(hass, entry, hub, "turns_today", "Turns today", "turns", "today"),
+            WorkspaceUsageSensor(hass, entry, hub, "turns_month", "Turns this month", "turns", "month"),
+            WorkspaceUsageSensor(hass, entry, hub, "turns_total", "Turns total", "turns", "all", increasing=True),
+            WorkspaceLastSensor(hass, entry, hub, "last_cost", "Last turn cost", "cost"),
+            WorkspaceLastSensor(hass, entry, hub, "last_tokens", "Last turn tokens", "tokens"),
+            WorkspaceLastSensor(hass, entry, hub, "last_model", "Last model", "model"),
+            WorkspaceLastSensor(hass, entry, hub, "last_agent", "Last agent", "agent"),
+            WorkspaceUsageSensor(hass, entry, hub, "cost_tts_today", "Speech cost today", "cost", "today", source="tts"),
+            WorkspaceUsageSensor(
+                hass, entry, hub, "cost_tts_total", "Speech cost total", "cost", "all", increasing=True, source="tts"
+            ),
+        ]
+    )
     for agent in agents:
-        entities.extend(
+        async_add_entities(
             [
                 AgentUsageSensor(hass, entry, hub, agent, "cost_today", "Cost today", "cost", "today"),
                 AgentUsageSensor(hass, entry, hub, agent, "cost_month", "Cost this month", "cost", "month"),
@@ -85,9 +87,9 @@ async def async_setup_entry(
                     increasing=True,
                     source="tts",
                 ),
-            ]
+            ],
+            config_subentry_id=agent.subentry_id or None,
         )
-    async_add_entities(entities)
 
 
 class UsageHub:
@@ -296,7 +298,7 @@ class WorkspaceUsageSensor(_UsageBase):
         self._attr_name = name
         self._attr_unique_id = f"{entry.entry_id}_usage_{unique}"
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"{entry.entry_id}:usage")},
+            identifiers={(DOMAIN, usage_device_ident(entry.entry_id))},
             name="AI Workspace usage",
             manufacturer="AI Workspace",
             model="Usage",
@@ -337,7 +339,7 @@ class WorkspaceLastSensor(_UsageBase):
         self._attr_unique_id = f"{entry.entry_id}_usage_{unique}"
         self._attr_entity_category = EntityCategory.DIAGNOSTIC
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"{entry.entry_id}:usage")},
+            identifiers={(DOMAIN, usage_device_ident(entry.entry_id))},
             name="AI Workspace usage",
             manufacturer="AI Workspace",
             model="Usage",

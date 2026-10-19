@@ -236,7 +236,8 @@
             "api_key": "API 金鑰",
             "model": "模型",
             "effort": "推理強度",
-            "low_token": "僅聊天模式",
+            "low_token": "Token 用量",
+            "prompt_cache": "Prompt 快取",
             "check_house": "一律先檢查住宅",
             "assist": "新增至 Assist",
             "assist_stt": "新增語音轉文字",
@@ -251,7 +252,8 @@
             "api_key": "來自 AI 供應商的金鑰，不是 Home Assistant 登入憑證。",
             "model": "從清單中選擇或輸入模型名稱。留空則使用供應商預設值。",
             "effort": "在模型支援時為快速、高或高且快速。",
-            "low_token": "更短的回覆且不控制住宅 — 適合小型僅聊天模型。",
+            "low_token": "每輪傳送量。關閉為完整。Light 保留工具與歷史並檢查房屋（約少 5–20%）。Medium 以短提示保留工具（約少 25–45%）。Extreme 僅聊天（房屋檢查一輪約少 80–95%）。",
+            "prompt_cache": "預設開啟。重複使用系統提示與工具清單，讓後續輪次更便宜。關閉以便比較。Claude 需要此項；GPT 常常自行快取。Ollama 上忽略。",
             "check_house": "預設開啟。助手在回答有關你的安裝的問題前會查詢 Home Assistant（簡單問候除外）。若模型已自行完成，請關閉。",
             "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。",
             "assist_stt": "使用此助手的金鑰在 Home Assistant 中新增語音轉文字選項。關閉則移除它新增的內容。",
@@ -269,7 +271,8 @@
             "api_base": "Ollama 網址",
             "model": "模型",
             "effort": "推理強度",
-            "low_token": "僅聊天模式",
+            "low_token": "Token 用量",
+            "prompt_cache": "Prompt 快取",
             "check_house": "一律先檢查住宅",
             "assist": "新增至 Assist"
           },
@@ -277,7 +280,8 @@
             "api_base": "通常為 {example_url}",
             "model": "從清單中選擇或輸入已安裝的模型。留空則使用 llama3.2。",
             "effort": "在模型支援時使用。",
-            "low_token": "更短的回覆且不控制住宅 — 適合小型僅聊天模型。",
+            "low_token": "每輪傳送量。關閉為完整。Light 保留工具與歷史並檢查房屋（約少 5–20%）。Medium 以短提示保留工具（約少 25–45%）。Extreme 僅聊天（房屋檢查一輪約少 80–95%）。",
+            "prompt_cache": "預設開啟。重複使用系統提示與工具清單，讓後續輪次更便宜。關閉以便比較。Claude 需要此項；GPT 常常自行快取。Ollama 上忽略。",
             "check_house": "預設開啟。助手在回答有關你的安裝的問題前會查詢 Home Assistant（簡單問候除外）。若模型已自行完成，請關閉。",
             "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。"
           }
@@ -291,7 +295,8 @@
             "model": "部署",
             "azure_api_version": "API 版本",
             "effort": "推理強度",
-            "low_token": "僅聊天模式",
+            "low_token": "Token 用量",
+            "prompt_cache": "Prompt 快取",
             "check_house": "一律先檢查住宅",
             "assist": "新增至 Assist"
           },
@@ -301,7 +306,8 @@
             "model": "部署名稱。",
             "azure_api_version": "除非 Azure 支援提供了其他版本，否則請保留預設值。",
             "effort": "在部署支援時使用。",
-            "low_token": "更短的回覆且不控制住宅 — 適合小型僅聊天模型。",
+            "low_token": "每輪傳送量。關閉為完整。Light 保留工具與歷史並檢查房屋（約少 5–20%）。Medium 以短提示保留工具（約少 25–45%）。Extreme 僅聊天（房屋檢查一輪約少 80–95%）。",
+            "prompt_cache": "預設開啟。重複使用系統提示與工具清單，讓後續輪次更便宜。關閉以便比較。Claude 需要此項；GPT 常常自行快取。Ollama 上忽略。",
             "check_house": "預設開啟。助手在回答有關你的安裝的問題前會查詢 Home Assistant（簡單問候除外）。若模型已自行完成，請關閉。",
             "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。"
           }
@@ -314,7 +320,8 @@
             "api_base": "API 基礎網址",
             "model": "模型",
             "effort": "推理強度",
-            "low_token": "僅聊天模式",
+            "low_token": "Token 用量",
+            "prompt_cache": "Prompt 快取",
             "check_house": "一律先檢查住宅",
             "assist": "新增至 Assist",
             "assist_stt": "新增語音轉文字",
@@ -329,7 +336,8 @@
             "api_base": "伺服器位址。若伺服器需要，請在結尾加上 /v1。",
             "model": "該伺服器上的模型名稱。",
             "effort": "在伺服器支援時使用。",
-            "low_token": "更短的回覆且不控制住宅 — 適合小型僅聊天模型。",
+            "low_token": "每輪傳送量。關閉為完整。Light 保留工具與歷史並檢查房屋（約少 5–20%）。Medium 以短提示保留工具（約少 25–45%）。Extreme 僅聊天（房屋檢查一輪約少 80–95%）。",
+            "prompt_cache": "預設開啟。重複使用系統提示與工具清單，讓後續輪次更便宜。關閉以便比較。Claude 需要此項；GPT 常常自行快取。Ollama 上忽略。",
             "check_house": "預設開啟。助手在回答有關你的安裝的問題前會查詢 Home Assistant（簡單問候除外）。若模型已自行完成，請關閉。",
             "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。",
             "assist_stt": "使用此助手的金鑰在 Home Assistant 中新增語音轉文字選項。關閉則移除它新增的內容。",
@@ -376,6 +384,14 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "自訂 MCP URL"
+      }
+    },
+    "low_token": {
+      "options": {
+        "off": "關閉",
+        "light": "Light",
+        "medium": "Medium",
+        "extreme": "Extreme"
       }
     }
   }

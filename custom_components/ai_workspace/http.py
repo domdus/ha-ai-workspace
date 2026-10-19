@@ -26,6 +26,9 @@ from .const import (
     ui_theme_of,
     with_language_rule,
     with_ui_context,
+    provider_token_mode,
+    token_mode_allows_extras,
+    token_mode_allows_files,
 )
 from .mcp_config import with_mcp_auth
 from .mcp_observe import last_mcp_result, note_mcp_result
@@ -749,7 +752,8 @@ class ChatView(HomeAssistantView):
             await async_bind_runtime(hass, data)
             providers = data.get("providers") or {}
         provider = None if assist else (providers.get(session.provider) or _send_provider(data, session))
-        low_token = bool(getattr(getattr(provider, "settings", None), "low_token", False))
+        token_mode = provider_token_mode(provider)
+        extras = token_mode_allows_extras(token_mode)
         origin = _frontend_origin(request, body)
         page_note = format_ui_page(parse_ui_page(body.get("page")))
         events_json = json.dumps(image_events(images) + file_events(files), ensure_ascii=False)
@@ -758,17 +762,17 @@ class ChatView(HomeAssistantView):
         count = await hass.async_add_executor_job(lambda: len(store.list_messages(session.id)))
         suggest = (
             getattr(provider, "suggest_title", None)
-            if not low_token and count <= 1 and needs_title_summary(message)
+            if extras and count <= 1 and needs_title_summary(message)
             else None
         )
-        outbound = message if low_token else attach_files_to_message(message, files)
-        if page_note and not low_token:
+        outbound = attach_files_to_message(message, files) if token_mode_allows_files(token_mode) else message
+        if page_note and extras:
             outbound = f"{page_note}\n\n{outbound}"
         language = str(body.get("language") or "").strip()
         cross = bool(getattr(settings, "cross_chat", False))
         note = (
             ""
-            if low_token
+            if not extras
             else await hass.async_add_executor_job(other_chat_note, store, user_id, session.id, message, cross)
         )
         if note:

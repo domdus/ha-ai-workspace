@@ -210,7 +210,7 @@ After the runtime is running: **Settings → Devices & services → Add integrat
 
 ## Local AI (Ollama)
 
-This works like Cloud AI, with **Ollama** (or LM Studio) on your own hardware. The chat never leaves the house. The model must support tool calls. Turn on **Low token** on that agent when the machine is small: the chat then sends a short prompt and no tools, so it can answer questions, but it cannot check or change the house.
+This works like Cloud AI, with **Ollama** (or LM Studio) on your own hardware. The chat never leaves the house. The model must support tool calls. On a small machine set **Token usage** to **Extreme** on that agent: the chat then sends a short prompt and no tools, so it can answer questions, but it cannot check or change the house. **Medium** still sends tools with a short prompt. See [Token usage](#token-usage).
 
 Install as in [Cloud AI](#cloud-ai-api-provider-quick). Pick **Ollama** and point the API Base URL at your Ollama server.
 
@@ -240,8 +240,9 @@ It does not control Home Assistant edit links. Those rules are added to every me
 | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Copy key from**                          | Uses the key already stored by OpenRouter, OpenAI, Claude, Gemini, Ollama, or Azure in Home Assistant. That integration stays as it is                                              |
 | **Effort**                                 | Default, Fast, High, or High fast when the model supports it. A provider that rejects it is retried without                                                                         |
-| **Low token**                              | Not on Cursor. Sends a short prompt and no tools                                                                                                                                    |
-| **Always check the house first**           | Not on Cursor. On by default. The model must call a tool before it answers, so lists, counts, and states come from Home Assistant. See [why](#why-the-agent-checks-the-house-first) |
+| **Token usage**                            | Not on Cursor. Off / Light / Medium / Extreme. Cuts how much is sent each turn. Extreme can save about **80–95%** of tokens on a house-check turn. See [Token usage](#token-usage) |
+| **Prompt cache**                           | Not on Cursor. On by default. Asks the provider to reuse the repeated system prompt and tool list so later rounds cost less. Turn off to compare. See [Prompt cache](#prompt-cache) |
+| **Always check the house first**           | Not on Cursor. On by default for **Off**. **Light** always checks. **Medium** and **Extreme** ignore this toggle. See [why](#why-the-agent-checks-the-house-first)                  |
 | **MCP type**                               | Asked once, when you add AI Workspace: built-in MCP Server, HA-MCP, HA Vibecode Agent, or a custom URL. It becomes the first connection                                             |
 | **MCP URL**                                | Empty uses auto-detect. Paste the HA-MCP webhook or a custom URL only if needed                                                                                                     |
 | **MCP token**                              | Built-in MCP Server: empty uses the login of the person chatting. HA-MCP: usually empty. Vibecode: Agent Key                                                                        |
@@ -319,9 +320,43 @@ Cursor does not call MCP from Home Assistant. HTTP MCP (HA-MCP and others) is re
 
 Cloud AI and Ollama agents send the system prompt and the tool list of every enabled MCP connection with each message. HA-MCP offers about 80 tools. Even with their descriptions shortened, that is several thousand tokens before you type anything. Each tool call adds its result and one more request, which sends the prompt and the tool list again. A greeting or thanks is sent without tools.
 
-- **History:** the last 12 messages of the chat are sent again, each cut to 2,000 characters. Tool results from earlier messages are not.
+A typical house-check turn on **Off** is often around **$0.40**; a turn with a long thread and many tool rounds can reach **$0.90+**. Most of that is the tool list and tool results as input, not your last sentence.
+
+- **History:** the last 12 messages of the chat are sent again, each cut to 2,000 characters. Tool results from earlier messages are not. This is normal for Chat Completions APIs; it is not the main cost.
 - **[Always check the house first](#why-the-agent-checks-the-house-first):** a question that needs no house data, like a poem or a YAML explanation, still costs one tool call and one more request.
-- **To spend less:** pick a small model for everyday questions, use **Low token** for chat without tools, disable the device of an MCP connection you do not need, and start a new chat when the topic changes.
+- **To spend less:** pick a small model for everyday questions, set **Token usage** on that agent (see below), disable the device of an MCP connection you do not need, and start a new chat when the topic changes.
+
+### Token usage
+
+On each Cloud / Ollama / Azure agent (not Cursor): **Off**, **Light**, **Medium**, or **Extreme**. Saved `low_token: true` becomes Extreme.
+
+The expensive part is the MCP tool list (and extra tool rounds), not the 12-message history. That is why Medium still costs a large share of Off, and Extreme is the only mode that usually saves most of a house-check turn.
+
+| Mode | Tools | History | Check house | Prompt | Typical save vs Off on a house-check turn |
+| --- | --- | --- | --- | --- | --- |
+| **Off** | All enabled MCP tools | Last 12 | Agent toggle (on by default) | Full | — |
+| **Light** | Yes | Last 12 | Always on | Full | About **5–20%** (skips extras, auto-title, and effort; still pays for tools and a forced house check) |
+| **Medium** | Yes | Last 4 | Off | Short, tools allowed | About **25–45%** (no forced extra round, shorter prompt; tool schemas still dominate) |
+| **Extreme** | No | None | Off | Two sentences; cannot control the house | About **80–95%** |
+
+All of Light / Medium / Extreme also skip the current-page note, Assist extra prompt, cross-chat excerpts, auto-title, and effort. Medium and Extreme clip the user message to 1,200 characters and cap the reply (`max_tokens` 1,024 / 256). Light still attaches files and images; Medium and Extreme do not.
+
+**Light** is the “still accurate” house mode, not the cheapest. It can cost **more** than Medium because it always checks the house first. Use Extreme for a small local model or cheap Q&A; Medium when the agent should still call MCP; Off when you want the full product.
+
+### Prompt cache
+
+Separate from **Token usage**. Token modes change *what* is sent. Prompt cache discounts the *same* prefix when it repeats (system prompt + MCP tools on every round). Existing agents get it without reconfiguring.
+
+| Provider | What we send | How reliable |
+| --- | --- | --- |
+| **Claude** | `cache_control` on the tool list, system prompt, and the request (5-minute cache) | Explicit. This is the switch that actually turns Claude caching on. |
+| **OpenAI / Azure / GPT via OpenRouter** | A stable `prompt_cache_key`. Prefixes over ~1,024 tokens are cached automatically | Mostly automatic even with the switch off. The key helps hits across chats for the same agent. |
+| **OpenRouter + Claude** | Same as Claude, in OpenRouter’s chat format | Same as Claude. |
+| **Ollama** | Nothing | Ignored. Local models are not billed per token here. |
+
+Turn it **off** on one agent to A/B against Usage: cache-read tokens show up in the recorded usage when the provider reports them. Cache reads are typically ~10% of the input price, so after the first round of a house-check turn the tool-list *cost* can drop about **90%** even though the token count still looks large. Combined with Extreme you skip the tools; combined with Off you keep house control at a fraction of that ~$0.40 turn.
+
+If a provider rejects the extra fields, the request is retried without them for the rest of that agent session.
 
 
 

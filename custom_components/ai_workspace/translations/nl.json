@@ -236,7 +236,8 @@
             "api_key": "API-sleutel",
             "model": "Model",
             "effort": "Inzet",
-            "low_token": "Alleen-chatmodus",
+            "low_token": "Tokenverbruik",
+            "prompt_cache": "Promptcache",
             "check_house": "Altijd eerst het huis controleren",
             "assist": "Toevoegen aan Assist",
             "assist_stt": "Spraak-naar-tekst toevoegen",
@@ -251,7 +252,8 @@
             "api_key": "Je sleutel bij de AI-provider, niet je Home Assistant-aanmelding.",
             "model": "Kies uit de lijst of typ een modelnaam. Leeg gebruikt de standaard van de provider.",
             "effort": "Snel, Hoog of Hoog snel wanneer het model dat ondersteunt.",
-            "low_token": "Kortere antwoorden zonder huisbesturing — geschikt voor kleine alleen-chatmodellen.",
+            "low_token": "Hoeveel per beurt. Uit is volledig. Light: tools + geschiedenis, controleert het huis (~5–20% minder). Medium: tools, korte prompt (~25–45%). Extreme: alleen chat (~80–95% minder bij een huiscontrole).",
+            "prompt_cache": "Standaard aan. Hergebruikt de herhaalde systeemprompt en tool-lijst zodat latere rondes minder kosten. Uit om te vergelijken. Claude heeft dit nodig; GPT cachet vaak zelf. Wordt bij Ollama genegeerd.",
             "check_house": "Standaard aan. De assistent raadpleegt Home Assistant voordat hij over je installatie antwoordt (niet bij eenvoudige groeten). Zet dit uit als je model dat al zelf doet.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd.",
             "assist_stt": "Voegt in Home Assistant een spraak-naar-tekst-optie toe met de sleutel van deze assistent. Uit verwijdert wat hij heeft toegevoegd.",
@@ -269,7 +271,8 @@
             "api_base": "Ollama-URL",
             "model": "Model",
             "effort": "Inzet",
-            "low_token": "Alleen-chatmodus",
+            "low_token": "Tokenverbruik",
+            "prompt_cache": "Promptcache",
             "check_house": "Altijd eerst het huis controleren",
             "assist": "Toevoegen aan Assist"
           },
@@ -277,7 +280,8 @@
             "api_base": "Meestal {example_url}",
             "model": "Kies uit de lijst of typ een geïnstalleerd model. Leeg gebruikt llama3.2.",
             "effort": "Gebruikt wanneer het model dat ondersteunt.",
-            "low_token": "Kortere antwoorden zonder huisbesturing — geschikt voor kleine alleen-chatmodellen.",
+            "low_token": "Hoeveel per beurt. Uit is volledig. Light: tools + geschiedenis, controleert het huis (~5–20% minder). Medium: tools, korte prompt (~25–45%). Extreme: alleen chat (~80–95% minder bij een huiscontrole).",
+            "prompt_cache": "Standaard aan. Hergebruikt de herhaalde systeemprompt en tool-lijst zodat latere rondes minder kosten. Uit om te vergelijken. Claude heeft dit nodig; GPT cachet vaak zelf. Wordt bij Ollama genegeerd.",
             "check_house": "Standaard aan. De assistent raadpleegt Home Assistant voordat hij over je installatie antwoordt (niet bij eenvoudige groeten). Zet dit uit als je model dat al zelf doet.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
           }
@@ -291,7 +295,8 @@
             "model": "Implementatie",
             "azure_api_version": "API-versie",
             "effort": "Inzet",
-            "low_token": "Alleen-chatmodus",
+            "low_token": "Tokenverbruik",
+            "prompt_cache": "Promptcache",
             "check_house": "Altijd eerst het huis controleren",
             "assist": "Toevoegen aan Assist"
           },
@@ -301,7 +306,8 @@
             "model": "De naam van de implementatie.",
             "azure_api_version": "Laat de standaard staan, tenzij Azure-ondersteuning je een andere versie gaf.",
             "effort": "Gebruikt wanneer de implementatie dat ondersteunt.",
-            "low_token": "Kortere antwoorden zonder huisbesturing — geschikt voor kleine alleen-chatmodellen.",
+            "low_token": "Hoeveel per beurt. Uit is volledig. Light: tools + geschiedenis, controleert het huis (~5–20% minder). Medium: tools, korte prompt (~25–45%). Extreme: alleen chat (~80–95% minder bij een huiscontrole).",
+            "prompt_cache": "Standaard aan. Hergebruikt de herhaalde systeemprompt en tool-lijst zodat latere rondes minder kosten. Uit om te vergelijken. Claude heeft dit nodig; GPT cachet vaak zelf. Wordt bij Ollama genegeerd.",
             "check_house": "Standaard aan. De assistent raadpleegt Home Assistant voordat hij over je installatie antwoordt (niet bij eenvoudige groeten). Zet dit uit als je model dat al zelf doet.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
           }
@@ -314,7 +320,8 @@
             "api_base": "API-basis-URL",
             "model": "Model",
             "effort": "Inzet",
-            "low_token": "Alleen-chatmodus",
+            "low_token": "Tokenverbruik",
+            "prompt_cache": "Promptcache",
             "check_house": "Altijd eerst het huis controleren",
             "assist": "Toevoegen aan Assist",
             "assist_stt": "Spraak-naar-tekst toevoegen",
@@ -329,7 +336,8 @@
             "api_base": "Serveradres. Voeg /v1 toe aan het einde als je server dat verwacht.",
             "model": "Modelnaam op die server.",
             "effort": "Gebruikt wanneer de server dat ondersteunt.",
-            "low_token": "Kortere antwoorden zonder huisbesturing — geschikt voor kleine alleen-chatmodellen.",
+            "low_token": "Hoeveel per beurt. Uit is volledig. Light: tools + geschiedenis, controleert het huis (~5–20% minder). Medium: tools, korte prompt (~25–45%). Extreme: alleen chat (~80–95% minder bij een huiscontrole).",
+            "prompt_cache": "Standaard aan. Hergebruikt de herhaalde systeemprompt en tool-lijst zodat latere rondes minder kosten. Uit om te vergelijken. Claude heeft dit nodig; GPT cachet vaak zelf. Wordt bij Ollama genegeerd.",
             "check_house": "Standaard aan. De assistent raadpleegt Home Assistant voordat hij over je installatie antwoordt (niet bij eenvoudige groeten). Zet dit uit als je model dat al zelf doet.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd.",
             "assist_stt": "Voegt in Home Assistant een spraak-naar-tekst-optie toe met de sleutel van deze assistent. Uit verwijdert wat hij heeft toegevoegd.",
@@ -376,6 +384,14 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Aangepaste MCP-URL"
+      }
+    },
+    "low_token": {
+      "options": {
+        "off": "Uit",
+        "light": "Light",
+        "medium": "Medium",
+        "extreme": "Extreme"
       }
     }
   }

@@ -238,7 +238,8 @@
             "api_key": "API-Schlüssel",
             "model": "Modell",
             "effort": "Aufwand",
-            "low_token": "Nur-Chat-Modus",
+            "low_token": "Tokenverbrauch",
+            "prompt_cache": "Prompt-Cache",
             "check_house": "Immer zuerst das Haus prüfen",
             "assist": "Zu Assist hinzufügen",
             "assist_stt": "Sprache-zu-Text anlegen",
@@ -253,8 +254,9 @@
             "api_key": "Schlüssel vom KI-Anbieter, nicht dein Home-Assistant-Login.",
             "model": "Wähle eines oder gib eine ID ein. Leer lässt den Standard des Anbieters.",
             "effort": "Schnell, Hoch oder Hoch schnell, wenn das Modell das unterstützt.",
-            "low_token": "Kürzere Antworten ohne Haussteuerung — gut für kleine Chat-only-Modelle.",
-            "check_house": "Standard an. Der Assistent prüft Home Assistant, bevor er über dein Setup antwortet (nicht bei kurzen Grüßen). Aus, wenn dein Modell das ohnehin zuverlässig tut.",
+            "low_token": "Wie viel jeder Zug sendet. Aus ist voll. Light: Tools und Verlauf, prüft das Haus (~5–20 % weniger). Medium: Tools, kurzer Prompt (~25–45 %). Extreme: nur Chat (~80–95 % weniger bei einer Hausprüfung).",
+            "prompt_cache": "Standard an. Nutzt den wiederholten Systemprompt und die Tool-Liste erneut, damit spätere Runden weniger kosten. Aus zum Vergleich. Claude braucht das; GPT cached oft von selbst. Wird bei Ollama ignoriert.",
+            "check_house": "Standard an bei Aus. Der Assistent prüft Home Assistant, bevor er über dein Setup antwortet (nicht bei kurzen Grüßen). Light prüft immer. Medium und Extreme ignorieren das. Aus, wenn dein Modell das ohnehin zuverlässig tut.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat.",
             "assist_stt": "Fügt in Home Assistant eine Sprache-zu-Text-Option mit dem Schlüssel dieses Assistenten hinzu. Aus entfernt, was er angelegt hat.",
             "stt_model": "Leer für den Standard des Anbieters. Optional einen anderen Modellnamen eingeben.",
@@ -271,7 +273,8 @@
             "api_base": "Ollama-URL",
             "model": "Modell",
             "effort": "Aufwand",
-            "low_token": "Nur-Chat-Modus",
+            "low_token": "Tokenverbrauch",
+            "prompt_cache": "Prompt-Cache",
             "check_house": "Immer zuerst das Haus prüfen",
             "assist": "Zu Assist hinzufügen"
           },
@@ -279,8 +282,9 @@
             "api_base": "Meist {example_url}",
             "model": "Wähle eines oder gib einen gezogenen Modellnamen ein. Leer nutzt llama3.2.",
             "effort": "Wird genutzt, wenn das Modell das unterstützt.",
-            "low_token": "Kürzere Antworten ohne Haussteuerung — gut für kleine Chat-only-Modelle.",
-            "check_house": "Standard an. Der Assistent prüft Home Assistant, bevor er über dein Setup antwortet (nicht bei kurzen Grüßen). Aus, wenn dein Modell das ohnehin zuverlässig tut.",
+            "low_token": "Wie viel jeder Zug sendet. Aus ist voll. Light: Tools und Verlauf, prüft das Haus (~5–20 % weniger). Medium: Tools, kurzer Prompt (~25–45 %). Extreme: nur Chat (~80–95 % weniger bei einer Hausprüfung).",
+            "prompt_cache": "Standard an. Nutzt den wiederholten Systemprompt und die Tool-Liste erneut, damit spätere Runden weniger kosten. Aus zum Vergleich. Claude braucht das; GPT cached oft von selbst. Wird bei Ollama ignoriert.",
+            "check_house": "Standard an bei Aus. Der Assistent prüft Home Assistant, bevor er über dein Setup antwortet (nicht bei kurzen Grüßen). Light prüft immer. Medium und Extreme ignorieren das. Aus, wenn dein Modell das ohnehin zuverlässig tut.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat."
           }
         },
@@ -293,7 +297,8 @@
             "model": "Bereitstellung",
             "azure_api_version": "API-Version",
             "effort": "Aufwand",
-            "low_token": "Nur-Chat-Modus",
+            "low_token": "Tokenverbrauch",
+            "prompt_cache": "Prompt-Cache",
             "check_house": "Immer zuerst das Haus prüfen",
             "assist": "Zu Assist hinzufügen"
           },
@@ -303,8 +308,9 @@
             "model": "Der Name der Bereitstellung.",
             "azure_api_version": "Standard lassen, außer Azure nennt dir eine andere Version.",
             "effort": "Wird genutzt, wenn die Bereitstellung das unterstützt.",
-            "low_token": "Kürzere Antworten ohne Haussteuerung — gut für kleine Chat-only-Modelle.",
-            "check_house": "Standard an. Der Assistent prüft Home Assistant, bevor er über dein Setup antwortet (nicht bei kurzen Grüßen). Aus, wenn dein Modell das ohnehin zuverlässig tut.",
+            "low_token": "Wie viel jeder Zug sendet. Aus ist voll. Light: Tools und Verlauf, prüft das Haus (~5–20 % weniger). Medium: Tools, kurzer Prompt (~25–45 %). Extreme: nur Chat (~80–95 % weniger bei einer Hausprüfung).",
+            "prompt_cache": "Standard an. Nutzt den wiederholten Systemprompt und die Tool-Liste erneut, damit spätere Runden weniger kosten. Aus zum Vergleich. Claude braucht das; GPT cached oft von selbst. Wird bei Ollama ignoriert.",
+            "check_house": "Standard an bei Aus. Der Assistent prüft Home Assistant, bevor er über dein Setup antwortet (nicht bei kurzen Grüßen). Light prüft immer. Medium und Extreme ignorieren das. Aus, wenn dein Modell das ohnehin zuverlässig tut.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat."
           }
         },
@@ -316,7 +322,8 @@
             "api_base": "API-Basis-URL",
             "model": "Modell",
             "effort": "Aufwand",
-            "low_token": "Nur-Chat-Modus",
+            "low_token": "Tokenverbrauch",
+            "prompt_cache": "Prompt-Cache",
             "check_house": "Immer zuerst das Haus prüfen",
             "assist": "Zu Assist hinzufügen",
             "assist_stt": "Sprache-zu-Text anlegen",
@@ -331,8 +338,9 @@
             "api_base": "Serveradresse. /v1 anhängen, wenn dein Server das erwartet.",
             "model": "Modellname auf diesem Server.",
             "effort": "Wird genutzt, wenn der Server das unterstützt.",
-            "low_token": "Kürzere Antworten ohne Haussteuerung — gut für kleine Chat-only-Modelle.",
-            "check_house": "Standard an. Der Assistent prüft Home Assistant, bevor er über dein Setup antwortet (nicht bei kurzen Grüßen). Aus, wenn dein Modell das ohnehin zuverlässig tut.",
+            "low_token": "Wie viel jeder Zug sendet. Aus ist voll. Light: Tools und Verlauf, prüft das Haus (~5–20 % weniger). Medium: Tools, kurzer Prompt (~25–45 %). Extreme: nur Chat (~80–95 % weniger bei einer Hausprüfung).",
+            "prompt_cache": "Standard an. Nutzt den wiederholten Systemprompt und die Tool-Liste erneut, damit spätere Runden weniger kosten. Aus zum Vergleich. Claude braucht das; GPT cached oft von selbst. Wird bei Ollama ignoriert.",
+            "check_house": "Standard an bei Aus. Der Assistent prüft Home Assistant, bevor er über dein Setup antwortet (nicht bei kurzen Grüßen). Light prüft immer. Medium und Extreme ignorieren das. Aus, wenn dein Modell das ohnehin zuverlässig tut.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat.",
             "assist_stt": "Fügt in Home Assistant eine Sprache-zu-Text-Option mit dem Schlüssel dieses Assistenten hinzu. Aus entfernt, was er angelegt hat.",
             "stt_model": "Leer für den Standard des Anbieters. Optional einen anderen Modellnamen eingeben.",
@@ -378,6 +386,14 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Benutzerdefinierte MCP-URL"
+      }
+    },
+    "low_token": {
+      "options": {
+        "off": "Aus",
+        "light": "Light",
+        "medium": "Medium",
+        "extreme": "Extreme"
       }
     }
   }

@@ -51,6 +51,7 @@ from .const import (
     SUBENTRY_AGENT,
     SUBENTRY_MCP,
     TTS_OFF,
+    usage_device_ident,
     ui_theme_of,
 )
 from .discovery import async_bind_runtime
@@ -189,7 +190,8 @@ def _one_provider(hass: HomeAssistant, settings: Settings, agent, store):
         api_base=agent.api_base,
         model=agent.model,
         effort=agent.effort,
-        low_token=agent.low_token,
+        token_mode=agent.token_mode,
+        prompt_cache=agent.prompt_cache,
         check_house=agent.check_house,
         azure_api_version=agent.azure_api_version,
         agent_id=agent.id,
@@ -219,7 +221,18 @@ def _sync_subentry_devices(hass: HomeAssistant, entry: ConfigEntry) -> None:
             model=model,
             entry_type=dr.DeviceEntryType.SERVICE,
         )
+    usage_ident = (DOMAIN, usage_device_ident(entry.entry_id))
+    registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={usage_ident},
+        name="AI Workspace usage",
+        manufacturer="AI Workspace",
+        model="Usage",
+        entry_type=dr.DeviceEntryType.SERVICE,
+    )
     for device in list(dr.async_entries_for_config_entry(registry, entry.entry_id)):
+        if usage_ident in device.identifiers:
+            continue
         if not device.config_subentry_id or device.config_subentry_id not in wanted:
             for entity_id in _conversation_entities(hass, device_id=device.id):
                 hass.async_create_task(async_remove_assist_pipeline(hass, entity_id))

@@ -124,6 +124,13 @@ EFFORTS = {
 }
 SUBENTRY_AGENT = "agent"
 SUBENTRY_MCP = "mcp"
+
+
+def usage_device_ident(entry_id: str) -> str:
+    """Device identifiers for workspace-wide usage sensors (not an agent subentry)."""
+    return f"{entry_id}:usage"
+
+
 CONF_AGENT_ID = "agent_id"
 CONF_RUNTIME_TOKEN = "runtime_token"
 STT_BROWSER = "browser"
@@ -187,7 +194,14 @@ def ui_theme_of(value) -> str:
 
 
 CONF_LOW_TOKEN = "low_token"
+TOKEN_MODE_OFF = "off"
+TOKEN_MODE_LIGHT = "light"
+TOKEN_MODE_MEDIUM = "medium"
+TOKEN_MODE_EXTREME = "extreme"
+TOKEN_MODES = (TOKEN_MODE_OFF, TOKEN_MODE_LIGHT, TOKEN_MODE_MEDIUM, TOKEN_MODE_EXTREME)
+_TOKEN_MODE_ON = {"1", "true", "on", "yes", TOKEN_MODE_EXTREME}
 CONF_CHECK_HOUSE = "check_house"
+CONF_PROMPT_CACHE = "prompt_cache"
 CONF_KEEP_CHATS = "keep_chats"
 DEFAULT_KEEP_CHATS = 30
 CONF_EFFORT = "effort"
@@ -511,6 +525,82 @@ LOW_TOKEN_PROMPT = (
     "You help with this Home Assistant. Answer in a few short sentences. "
     "You cannot check or change the house in this mode."
 )
+LOW_TOKEN_MEDIUM_PROMPT = (
+    "You help with this Home Assistant. Be brief. "
+    "Use the connected tools to inspect or change the house. "
+    "Do not invent entity ids or states."
+)
+
+
+def token_mode_of(value) -> str:
+    """Map saved agent config (bool or string) to off/light/medium/extreme."""
+    if value is True:
+        return TOKEN_MODE_EXTREME
+    if value is False or value is None:
+        return TOKEN_MODE_OFF
+    text = str(value).strip().lower()
+    if text in _TOKEN_MODE_ON:
+        return TOKEN_MODE_EXTREME
+    if text in TOKEN_MODES:
+        return text
+    return TOKEN_MODE_OFF
+
+
+def settings_token_mode(settings) -> str:
+    if settings is None:
+        return TOKEN_MODE_OFF
+    return token_mode_of(getattr(settings, "token_mode", None))
+
+
+def provider_token_mode(provider) -> str:
+    return settings_token_mode(getattr(provider, "settings", None) if provider is not None else None)
+
+
+def token_mode_allows_tools(mode: str) -> bool:
+    return mode != TOKEN_MODE_EXTREME
+
+
+def token_mode_history_limit(mode: str) -> int:
+    if mode == TOKEN_MODE_LIGHT:
+        return 12
+    if mode == TOKEN_MODE_MEDIUM:
+        return 4
+    if mode == TOKEN_MODE_OFF:
+        return 12
+    return 0
+
+
+def token_mode_allows_extras(mode: str) -> bool:
+    """Page note, Assist extra prompt, cross-chat, auto title, effort."""
+    return mode == TOKEN_MODE_OFF
+
+
+def token_mode_allows_files(mode: str) -> bool:
+    return mode in {TOKEN_MODE_OFF, TOKEN_MODE_LIGHT}
+
+
+def token_mode_checks_house(mode: str, check_house: bool) -> bool:
+    if mode == TOKEN_MODE_LIGHT:
+        return True
+    if mode == TOKEN_MODE_OFF:
+        return bool(check_house)
+    return False
+
+
+def token_mode_reply_limit(mode: str) -> int | None:
+    if mode == TOKEN_MODE_EXTREME:
+        return 256
+    if mode == TOKEN_MODE_MEDIUM:
+        return 1024
+    return None
+
+
+def token_mode_clip_user(mode: str) -> int | None:
+    if mode in {TOKEN_MODE_EXTREME, TOKEN_MODE_MEDIUM}:
+        return 1200
+    return None
+
+
 LANGUAGE_INSTRUCTION = (
     "Always answer in the same language the user wrote their latest message in."
 )

@@ -62,6 +62,7 @@
   background: var(--primary-background-color);
   position: relative;
   transition: grid-template-columns 280ms cubic-bezier(0.16, 1, 0.3, 1);
+  --ai-keyboard-inset: 0px;
 }
 
 .wrap.nav-collapsed {
@@ -447,7 +448,7 @@ ha-button.new-chat {
   overflow-anchor: none;
   overscroll-behavior: contain;
   scroll-behavior: auto;
-  scroll-padding-bottom: calc(8rem + var(--ha-space-6));
+  scroll-padding-bottom: calc(8rem + var(--ha-space-6) + var(--ai-keyboard-inset, 0px));
 }
 
 .chat.welcome {
@@ -567,6 +568,25 @@ h1 {
 
 .ui-theme-standard .bubble.assistant ha-markdown.text {
   display: block;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.ui-theme-standard .bubble.assistant ha-markdown table,
+.ui-theme-standard .bubble.assistant ha-markdown-element table {
+  table-layout: fixed;
+  width: 100%;
+  max-width: 100%;
+}
+
+.ui-theme-standard .bubble.assistant ha-markdown th,
+.ui-theme-standard .bubble.assistant ha-markdown td,
+.ui-theme-standard .bubble.assistant ha-markdown-element th,
+.ui-theme-standard .bubble.assistant ha-markdown-element td {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  vertical-align: top;
 }
 
 .ui-theme-standard .bubble.assistant ha-markdown.text[hidden] {
@@ -786,7 +806,7 @@ h1 {
 
 .composer {
   position: sticky;
-  bottom: 0;
+  bottom: var(--ai-keyboard-inset, 0px);
   z-index: 3;
   display: flex;
   flex-direction: column;
@@ -795,6 +815,7 @@ h1 {
   width: min(calc(var(--ai-chat-width) + 2 * var(--ai-inline-pad)), 100%);
   margin-inline: auto;
   margin-top: auto;
+  margin-bottom: var(--ai-keyboard-inset, 0px);
   background: var(--primary-background-color);
 }
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.0b3
+
+- **Token usage** on Cloud / Ollama / Azure agents is a dropdown: Off, Light, Medium, Extreme (old “chat-only” / `low_token: true` is Extreme)
+- Light keeps tools and history and always checks the house; Medium keeps tools with a short prompt; Extreme is chat-only and can save about 80–95% of tokens on a house-check turn
+- **Prompt cache** (on by default, not Cursor): Claude `cache_control` and an OpenAI `prompt_cache_key` so the repeated tool list is billed cheaper on later rounds; turn off to compare. A provider that rejects it is retried without
+- Agent usage sensors sit on the agent subentry again (with conversation / STT / TTS), so Devices & services nests them under Claude, Cursor, OpenAI, … instead of “devices not belonging to a subentry”. Workspace totals stay on the **AI Workspace usage** device
+- Android: prompt bar no longer rubber-bands above the keyboard once the chat has a few messages (it was resizing the whole panel every visual-viewport tick)
+- Streaming follow-scroll is smoother (paints ~50ms / on newlines, slower catch-up). Tables wait for a complete header before showing, then keep fixed columns so they do not grow and shrink mid-row
+
 ## 1.3.0b2
 
 - Track OpenAI-style **text-to-speech** when it is used (Assist, overlay speaker, auto-read): character list prices for `gpt-4o-mini-tts`, `tts-1`, and `tts-1-hd`

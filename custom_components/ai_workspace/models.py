@@ -56,7 +56,8 @@ class Settings:
     track_usage: bool = True
     ui_theme: str = "standard"
     cross_chat: bool = False
-    low_token: bool = False
+    token_mode: str = "off"
+    prompt_cache: bool = True
     check_house: bool = True
     keep_chats: int = 30
     mode: str = "cursor"
