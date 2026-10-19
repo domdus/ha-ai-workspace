@@ -17,6 +17,9 @@
           "shorten_mcp_results": "Skracaj długie odpowiedzi Home Assistant",
           "change_history": "Historia zmian",
           "track_usage": "Śledź użycie i koszty",
+          "show_chat_usage": "Pokaż koszt w nagłówku czatu",
+          "low_token": "Zmniejsz zużycie tokenów",
+          "prompt_cache": "Pamięć promptu",
           "ui_theme": "Użyj komponentów HA",
           "cross_chat": "Między czatami",
           "keep_chats": "Czaty do zachowania"
@@ -34,6 +37,9 @@
           "shorten_mcp_results": "Domyślnie włączone. Bardzo długie odpowiedzi z Home Assistant (listy całego domu, duże wyszukiwania) są streszczane, zanim trafią do AI. To oszczędza tokens i utrzymuje zwięzłe odpowiedzi. Wyłączone wysyła pełny tekst.",
           "change_history": "Domyślnie włączone. Zapisuje zmiany konfiguracji wykonane przez asystenta, żebyś mógł je przejrzeć lub cofnąć w Historii zmian. Wyłączone: bez nowych wpisów; asystent nadal może korzystać z Home Assistant.",
           "track_usage": "Domyślnie włączone. Zapisuje tokeny i szacowany koszt USD po każdej turze Cursor lub chmury. Pokazuje stronę Użycie w czacie i tworzy czujniki Home Assistant do własnych pulpitów. Wyłączone: bez nowych wpisów; historia zostaje.",
+          "show_chat_usage": "Domyślnie włączone. Pokazuje tokeny i koszt pod tytułem czatu. Wyłączenie ukrywa tylko tę linię; śledzenie i strona Użycie zostają.",
+          "low_token": "Ile wysyłać w turze, dla wszystkich agentów Cloud / Ollama / Azure.",
+          "prompt_cache": "Domyślnie włączone. Ponownie używa promptu systemowego i listy narzędzi, by kolejne rundy kosztowały mniej. Wyłącz, żeby porównać. Claude tego potrzebuje; GPT często cache’uje sam. Ignorowane w Ollama.",
           "ui_theme": "Domyślnie wyłączone. Gdy włączone, używane są tylko komponenty interfejsu Home Assistant, które mogą lepiej współpracować z motywami.",
           "cross_chat": "Domyślnie wyłączone. Gdy włączone, pytanie może użyć innego czatu, którego tytuł ma wspólne słowa. Nie trzeba mówić czat. Tylko krótki fragment i ten czat nie jest zmieniany.",
           "keep_chats": "Najnowsze nieprzypięte czaty na osobę. Przypięte czaty zostają zawsze. Domyślnie 30."
@@ -93,7 +99,10 @@
           "change_history": "Historia zmian",
           "ui_theme": "Użyj komponentów HA",
           "cross_chat": "Między czatami",
-          "keep_chats": "Czaty do zachowania"
+          "keep_chats": "Czaty do zachowania",
+          "low_token": "Zmniejsz zużycie tokenów",
+          "prompt_cache": "Pamięć promptu",
+          "show_chat_usage": "Pokaż koszt w nagłówku czatu"
         },
         "data_description": {
           "stt_engine": "Dyktowanie w przeglądarce wymaga bezpiecznej strony (https). Albo wybierz silnik mowy na tekst Home Assistant w Ustawieniach. Przeglądarka musi zezwolić na mikrofon.",
@@ -109,7 +118,10 @@
           "change_history": "Domyślnie włączone. Zapisuje zmiany konfiguracji wykonane przez asystenta, żebyś mógł je przejrzeć lub cofnąć w Historii zmian. Wyłączone: bez nowych wpisów; asystent nadal może korzystać z Home Assistant.",
           "ui_theme": "Domyślnie wyłączone. Gdy włączone, używane są tylko komponenty interfejsu Home Assistant, które mogą lepiej współpracować z motywami.",
           "cross_chat": "Domyślnie wyłączone. Gdy włączone, pytanie może użyć innego czatu, którego tytuł ma wspólne słowa. Nie trzeba mówić czat. Tylko krótki fragment i ten czat nie jest zmieniany.",
-          "keep_chats": "Najnowsze nieprzypięte czaty na osobę. Przypięte czaty zostają zawsze. Domyślnie 30."
+          "keep_chats": "Najnowsze nieprzypięte czaty na osobę. Przypięte czaty zostają zawsze. Domyślnie 30.",
+          "low_token": "Ile wysyłać w turze, dla wszystkich agentów Cloud / Ollama / Azure.",
+          "prompt_cache": "Domyślnie włączone. Ponownie używa promptu systemowego i listy narzędzi, by kolejne rundy kosztowały mniej. Wyłącz, żeby porównać. Claude tego potrzebuje; GPT często cache’uje sam. Ignorowane w Ollama.",
+          "show_chat_usage": "Domyślnie włączone. Pokazuje tokeny i koszt pod tytułem czatu. Wyłączenie ukrywa tylko tę linię; śledzenie i strona Użycie zostają."
         },
         "sections": {
           "mcp": {
@@ -145,6 +157,9 @@
     }
   },
   "config_subentries": {
+    "usage": {
+      "entry_type": "Użycie"
+    },
     "mcp": {
       "initiate_flow": {
         "user": "Dodaj połączenie",
@@ -236,8 +251,6 @@
             "api_key": "Klucz API",
             "model": "Model",
             "effort": "Wysiłek",
-            "low_token": "Zużycie tokenów",
-            "prompt_cache": "Pamięć promptu",
             "check_house": "Zawsze najpierw sprawdzaj dom",
             "assist": "Dodaj do Assist",
             "assist_stt": "Dodaj mowę na tekst",
@@ -252,8 +265,6 @@
             "api_key": "Klucz od dostawcy AI, nie login Home Assistant.",
             "model": "Wybierz z listy lub wpisz nazwę modelu. Puste używa domyślnego modelu dostawcy.",
             "effort": "Szybki, Wysoki lub Wysoki szybki, gdy model to obsługuje.",
-            "low_token": "Ile wysyłać w turze. Wyłączone to pełny tryb. Light: narzędzia i historia, sprawdza dom (~5–20% mniej). Medium: narzędzia, krótki prompt (~25–45%). Extreme: tylko czat (~80–95% mniej przy sprawdzeniu domu).",
-            "prompt_cache": "Domyślnie włączone. Ponownie używa promptu systemowego i listy narzędzi, by kolejne rundy kosztowały mniej. Wyłącz, żeby porównać. Claude tego potrzebuje; GPT często cache’uje sam. Ignorowane w Ollama.",
             "check_house": "Domyślnie włączone. Asystent sprawdza Home Assistant, zanim odpowie o twojej instalacji (nie przy zwykłych powitaniach). Wyłącz, jeśli model już robi to sam.",
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist.",
             "assist_stt": "Dodaje opcję mowy na tekst w Home Assistant z kluczem tego asystenta. Wyłączenie usuwa to, co dodał.",
@@ -271,8 +282,6 @@
             "api_base": "URL Ollama",
             "model": "Model",
             "effort": "Wysiłek",
-            "low_token": "Zużycie tokenów",
-            "prompt_cache": "Pamięć promptu",
             "check_house": "Zawsze najpierw sprawdzaj dom",
             "assist": "Dodaj do Assist"
           },
@@ -280,8 +289,6 @@
             "api_base": "Zwykle {example_url}",
             "model": "Wybierz z listy lub wpisz zainstalowany model. Puste używa llama3.2.",
             "effort": "Używane, gdy model to obsługuje.",
-            "low_token": "Ile wysyłać w turze. Wyłączone to pełny tryb. Light: narzędzia i historia, sprawdza dom (~5–20% mniej). Medium: narzędzia, krótki prompt (~25–45%). Extreme: tylko czat (~80–95% mniej przy sprawdzeniu domu).",
-            "prompt_cache": "Domyślnie włączone. Ponownie używa promptu systemowego i listy narzędzi, by kolejne rundy kosztowały mniej. Wyłącz, żeby porównać. Claude tego potrzebuje; GPT często cache’uje sam. Ignorowane w Ollama.",
             "check_house": "Domyślnie włączone. Asystent sprawdza Home Assistant, zanim odpowie o twojej instalacji (nie przy zwykłych powitaniach). Wyłącz, jeśli model już robi to sam.",
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist."
           }
@@ -295,8 +302,6 @@
             "model": "Wdrożenie",
             "azure_api_version": "Wersja API",
             "effort": "Wysiłek",
-            "low_token": "Zużycie tokenów",
-            "prompt_cache": "Pamięć promptu",
             "check_house": "Zawsze najpierw sprawdzaj dom",
             "assist": "Dodaj do Assist"
           },
@@ -306,8 +311,6 @@
             "model": "Nazwa wdrożenia.",
             "azure_api_version": "Zostaw wartość domyślną, chyba że wsparcie Azure podało inną wersję.",
             "effort": "Używane, gdy wdrożenie to obsługuje.",
-            "low_token": "Ile wysyłać w turze. Wyłączone to pełny tryb. Light: narzędzia i historia, sprawdza dom (~5–20% mniej). Medium: narzędzia, krótki prompt (~25–45%). Extreme: tylko czat (~80–95% mniej przy sprawdzeniu domu).",
-            "prompt_cache": "Domyślnie włączone. Ponownie używa promptu systemowego i listy narzędzi, by kolejne rundy kosztowały mniej. Wyłącz, żeby porównać. Claude tego potrzebuje; GPT często cache’uje sam. Ignorowane w Ollama.",
             "check_house": "Domyślnie włączone. Asystent sprawdza Home Assistant, zanim odpowie o twojej instalacji (nie przy zwykłych powitaniach). Wyłącz, jeśli model już robi to sam.",
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist."
           }
@@ -320,8 +323,6 @@
             "api_base": "Bazowy URL API",
             "model": "Model",
             "effort": "Wysiłek",
-            "low_token": "Zużycie tokenów",
-            "prompt_cache": "Pamięć promptu",
             "check_house": "Zawsze najpierw sprawdzaj dom",
             "assist": "Dodaj do Assist",
             "assist_stt": "Dodaj mowę na tekst",
@@ -336,8 +337,6 @@
             "api_base": "Adres serwera. Dodaj /v1 na końcu, jeśli serwer tego oczekuje.",
             "model": "Nazwa modelu na tym serwerze.",
             "effort": "Używane, gdy serwer to obsługuje.",
-            "low_token": "Ile wysyłać w turze. Wyłączone to pełny tryb. Light: narzędzia i historia, sprawdza dom (~5–20% mniej). Medium: narzędzia, krótki prompt (~25–45%). Extreme: tylko czat (~80–95% mniej przy sprawdzeniu domu).",
-            "prompt_cache": "Domyślnie włączone. Ponownie używa promptu systemowego i listy narzędzi, by kolejne rundy kosztowały mniej. Wyłącz, żeby porównać. Claude tego potrzebuje; GPT często cache’uje sam. Ignorowane w Ollama.",
             "check_house": "Domyślnie włączone. Asystent sprawdza Home Assistant, zanim odpowie o twojej instalacji (nie przy zwykłych powitaniach). Wyłącz, jeśli model już robi to sam.",
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist.",
             "assist_stt": "Dodaje opcję mowy na tekst w Home Assistant z kluczem tego asystenta. Wyłączenie usuwa to, co dodał.",

@@ -17,6 +17,9 @@
           "shorten_mcp_results": "Mallongigi longajn respondojn de Home Assistant",
           "change_history": "Ŝanĝohistorio",
           "track_usage": "Registri uzon kaj kostojn",
+          "show_chat_usage": "Montri koston en la babila kapo",
+          "low_token": "Malaltigi ĵetonan uzon",
+          "prompt_cache": "Invita kaŝmemoro",
           "ui_theme": "Uzi HA-komponentojn",
           "cross_chat": "Inter babilejoj",
           "keep_chats": "Babilejoj konservotaj"
@@ -34,6 +37,9 @@
           "shorten_mcp_results": "Defaŭlte ŝalta. Tre longaj respondoj de Home Assistant (tutdomaj listoj, grandaj serĉoj) estas resumitaj antaŭ ol ili iras al la AI. Tio ŝparas ĵetonojn kaj tenas respondojn rapidaj. Malŝalte sendas la plenan tekston.",
           "change_history": "Defaŭlte ŝalta. Konservas registron de agordaj ŝanĝoj faritaj de la asistanto, por ke vi povu revizii aŭ malfari ilin en Ŝanĝohistorio. Malŝalte ĉesigas novajn enskribojn; la asistanto ankoraŭ povas uzi Home Assistant.",
           "track_usage": "Defaŭlte ŝalta. Registras ĵetonojn kaj taksitan USD-koston post ĉiu Cursor aŭ nuba vico. Montras paĝon Uzo en la babilejo kaj kreas Home-Assistant-sensilojn por viaj propraj paneloj. Malŝalte ĉesigas novajn enskribojn; ekzistanta historio restas.",
+          "show_chat_usage": "Defaŭlte ŝaltita. Montras ĵetonojn kaj koston sub la babila titolo. Malŝalte kaŝas nur tiun linion; registrado kaj la paĝo Uzo restas.",
+          "low_token": "Kiom sendi ĉiun vicon, por ĉiu Cloud / Ollama / Azure-agento.",
+          "prompt_cache": "Defaŭlte ŝaltita. Reuzas la sisteman prompton kaj iloliston por ke postaj rundoj kostu malpli. Malŝaltu por kompari. Claude bezonas tion; GPT ofte kaŝas mem. Ignorata ĉe Ollama.",
           "ui_theme": "Defaŭlte malŝaltita. Kiam ŝaltita, nur interfacaj komponantoj de Home Assistant estas uzataj, kio povas pli bone funkcii kun etosoj.",
           "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi alian babilejon kies titolo kunhavas vortojn. Ne necesas mencii babilejon. Nur mallonga eltiraĵo, kaj tiu babilejo ne estas ŝanĝita.",
           "keep_chats": "Plej novaj nealpinglitaj babilejoj konservotaj po persono. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."
@@ -93,7 +99,10 @@
           "change_history": "Ŝanĝohistorio",
           "ui_theme": "Uzi HA-komponentojn",
           "cross_chat": "Inter babilejoj",
-          "keep_chats": "Babilejoj konservotaj"
+          "keep_chats": "Babilejoj konservotaj",
+          "low_token": "Malaltigi ĵetonan uzon",
+          "prompt_cache": "Invita kaŝmemoro",
+          "show_chat_usage": "Montri koston en la babila kapo"
         },
         "data_description": {
           "stt_engine": "Foliumila dikto bezonas sekuran retejon (https). Aŭ elektu Home Assistant-motoron de parolo-al-teksto ĉe Agordoj. La foliumilo devas permesi la mikrofonon.",
@@ -109,7 +118,10 @@
           "change_history": "Defaŭlte ŝalta. Konservas registron de agordaj ŝanĝoj faritaj de la asistanto, por ke vi povu revizii aŭ malfari ilin en Ŝanĝohistorio. Malŝalte ĉesigas novajn enskribojn; la asistanto ankoraŭ povas uzi Home Assistant.",
           "ui_theme": "Defaŭlte malŝaltita. Kiam ŝaltita, nur interfacaj komponantoj de Home Assistant estas uzataj, kio povas pli bone funkcii kun etosoj.",
           "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi alian babilejon kies titolo kunhavas vortojn. Ne necesas mencii babilejon. Nur mallonga eltiraĵo, kaj tiu babilejo ne estas ŝanĝita.",
-          "keep_chats": "Plej novaj nealpinglitaj babilejoj konservotaj po persono. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."
+          "keep_chats": "Plej novaj nealpinglitaj babilejoj konservotaj po persono. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30.",
+          "low_token": "Kiom sendi ĉiun vicon, por ĉiu Cloud / Ollama / Azure-agento.",
+          "prompt_cache": "Defaŭlte ŝaltita. Reuzas la sisteman prompton kaj iloliston por ke postaj rundoj kostu malpli. Malŝaltu por kompari. Claude bezonas tion; GPT ofte kaŝas mem. Ignorata ĉe Ollama.",
+          "show_chat_usage": "Defaŭlte ŝaltita. Montras ĵetonojn kaj koston sub la babila titolo. Malŝalte kaŝas nur tiun linion; registrado kaj la paĝo Uzo restas."
         },
         "sections": {
           "mcp": {
@@ -145,6 +157,9 @@
     }
   },
   "config_subentries": {
+    "usage": {
+      "entry_type": "Uzo"
+    },
     "mcp": {
       "initiate_flow": {
         "user": "Aldoni konekton",
@@ -236,8 +251,6 @@
             "api_key": "API-ŝlosilo",
             "model": "Modelo",
             "effort": "Penado",
-            "low_token": "Ĵetona uzo",
-            "prompt_cache": "Invita kaŝmemoro",
             "check_house": "Ĉiam unue kontroli la domon",
             "assist": "Aldoni al Assist",
             "assist_stt": "Aldoni parolon-al-teksto",
@@ -252,8 +265,6 @@
             "api_key": "Via ŝlosilo de la AI-provizanto, ne via ensaluto de Home Assistant.",
             "model": "Elektu el la listo aŭ tajpu modelnomon. Malplena uzas la defaŭlton de la provizanto.",
             "effort": "Rapida, Alta, aŭ Alta rapida kiam la modelo subtenas tion.",
-            "low_token": "Kiom sendi ĉiun vicon. Malŝaltita estas plena. Light: iloj kaj historio, kontrolas la domon (~5–20% malpli). Medium: iloj, mallonga prompto (~25–45%). Extreme: nur babilo (~80–95% malpli ĉe domkontrolo).",
-            "prompt_cache": "Defaŭlte ŝaltita. Reuzas la sisteman prompton kaj iloliston por ke postaj rundoj kostu malpli. Malŝaltu por kompari. Claude bezonas tion; GPT ofte kaŝas mem. Ignorata ĉe Ollama.",
             "check_house": "Defaŭlte ŝalta. La asistanto konsultas Home Assistant antaŭ ol respondi pri via instalaĵo (ne por simplaj salutoj). Malŝaltu se via modelo jam faras tion memstare.",
             "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist.",
             "assist_stt": "Aldonas opcion de parolo-al-teksto en Home Assistant per la ŝlosilo de ĉi tiu asistanto. Malŝalte forigas tion, kion ĝi aldonis.",
@@ -271,8 +282,6 @@
             "api_base": "Ollama-URL",
             "model": "Modelo",
             "effort": "Penado",
-            "low_token": "Ĵetona uzo",
-            "prompt_cache": "Invita kaŝmemoro",
             "check_house": "Ĉiam unue kontroli la domon",
             "assist": "Aldoni al Assist"
           },
@@ -280,8 +289,6 @@
             "api_base": "Kutime {example_url}",
             "model": "Elektu el la listo aŭ tajpu modelon kiun vi instalis. Malplena uzas llama3.2.",
             "effort": "Uzata kiam la modelo subtenas tion.",
-            "low_token": "Kiom sendi ĉiun vicon. Malŝaltita estas plena. Light: iloj kaj historio, kontrolas la domon (~5–20% malpli). Medium: iloj, mallonga prompto (~25–45%). Extreme: nur babilo (~80–95% malpli ĉe domkontrolo).",
-            "prompt_cache": "Defaŭlte ŝaltita. Reuzas la sisteman prompton kaj iloliston por ke postaj rundoj kostu malpli. Malŝaltu por kompari. Claude bezonas tion; GPT ofte kaŝas mem. Ignorata ĉe Ollama.",
             "check_house": "Defaŭlte ŝalta. La asistanto konsultas Home Assistant antaŭ ol respondi pri via instalaĵo (ne por simplaj salutoj). Malŝaltu se via modelo jam faras tion memstare.",
             "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist."
           }
@@ -295,8 +302,6 @@
             "model": "Deplojo",
             "azure_api_version": "API-versio",
             "effort": "Penado",
-            "low_token": "Ĵetona uzo",
-            "prompt_cache": "Invita kaŝmemoro",
             "check_house": "Ĉiam unue kontroli la domon",
             "assist": "Aldoni al Assist"
           },
@@ -306,8 +311,6 @@
             "model": "La nomo de la deplojo.",
             "azure_api_version": "Lasu la defaŭlton krom se Azure-subteno donis al vi alian version.",
             "effort": "Uzata kiam la deplojo subtenas tion.",
-            "low_token": "Kiom sendi ĉiun vicon. Malŝaltita estas plena. Light: iloj kaj historio, kontrolas la domon (~5–20% malpli). Medium: iloj, mallonga prompto (~25–45%). Extreme: nur babilo (~80–95% malpli ĉe domkontrolo).",
-            "prompt_cache": "Defaŭlte ŝaltita. Reuzas la sisteman prompton kaj iloliston por ke postaj rundoj kostu malpli. Malŝaltu por kompari. Claude bezonas tion; GPT ofte kaŝas mem. Ignorata ĉe Ollama.",
             "check_house": "Defaŭlte ŝalta. La asistanto konsultas Home Assistant antaŭ ol respondi pri via instalaĵo (ne por simplaj salutoj). Malŝaltu se via modelo jam faras tion memstare.",
             "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist."
           }
@@ -320,8 +323,6 @@
             "api_base": "Baza URL de la API",
             "model": "Modelo",
             "effort": "Penado",
-            "low_token": "Ĵetona uzo",
-            "prompt_cache": "Invita kaŝmemoro",
             "check_house": "Ĉiam unue kontroli la domon",
             "assist": "Aldoni al Assist",
             "assist_stt": "Aldoni parolon-al-teksto",
@@ -336,8 +337,6 @@
             "api_base": "Servila adreso. Aldonu /v1 ĉe la fino se via servilo atendas tion.",
             "model": "Modelnomo ĉe tiu servilo.",
             "effort": "Uzata kiam la servilo subtenas tion.",
-            "low_token": "Kiom sendi ĉiun vicon. Malŝaltita estas plena. Light: iloj kaj historio, kontrolas la domon (~5–20% malpli). Medium: iloj, mallonga prompto (~25–45%). Extreme: nur babilo (~80–95% malpli ĉe domkontrolo).",
-            "prompt_cache": "Defaŭlte ŝaltita. Reuzas la sisteman prompton kaj iloliston por ke postaj rundoj kostu malpli. Malŝaltu por kompari. Claude bezonas tion; GPT ofte kaŝas mem. Ignorata ĉe Ollama.",
             "check_house": "Defaŭlte ŝalta. La asistanto konsultas Home Assistant antaŭ ol respondi pri via instalaĵo (ne por simplaj salutoj). Malŝaltu se via modelo jam faras tion memstare.",
             "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist.",
             "assist_stt": "Aldonas opcion de parolo-al-teksto en Home Assistant per la ŝlosilo de ĉi tiu asistanto. Malŝalte forigas tion, kion ĝi aldonis.",

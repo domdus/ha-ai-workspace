@@ -124,6 +124,7 @@ EFFORTS = {
 }
 SUBENTRY_AGENT = "agent"
 SUBENTRY_MCP = "mcp"
+SUBENTRY_USAGE = "usage"
 
 
 def usage_device_ident(entry_id: str) -> str:
@@ -177,6 +178,7 @@ CONF_HOUSE_MAP = "house_map"
 CONF_SHORTEN_MCP_RESULTS = "shorten_mcp_results"
 CONF_CHANGE_HISTORY = "change_history"
 CONF_TRACK_USAGE = "track_usage"
+CONF_SHOW_CHAT_USAGE = "show_chat_usage"
 CONF_CROSS_CHAT = "cross_chat"
 CONF_UI_THEME = "ui_theme"
 UI_THEME_STANDARD = "standard"

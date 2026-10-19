@@ -17,6 +17,9 @@
           "shorten_mcp_results": "Acortar las respuestas largas de Home Assistant",
           "change_history": "Historial de cambios",
           "track_usage": "Registrar uso y costes",
+          "show_chat_usage": "Mostrar el coste en la cabecera del chat",
+          "low_token": "Reducir el uso de tokens",
+          "prompt_cache": "Caché de prompt",
           "ui_theme": "Usar componentes de HA",
           "cross_chat": "Entre chats",
           "keep_chats": "Chats a conservar"
@@ -34,6 +37,9 @@
           "shorten_mcp_results": "Activado por defecto. Las respuestas muy largas de Home Assistant (listas de toda la casa, búsquedas grandes) se resumen antes de ir a la IA. Eso ahorra tokens y mantiene las respuestas ágiles. Desactivado envía el texto completo.",
           "change_history": "Activado por defecto. Guarda un registro de los cambios de configuración que hizo el asistente para revisarlos o deshacerlos en el historial de cambios. Desactivado: no hay entradas nuevas; el asistente puede seguir usando Home Assistant.",
           "track_usage": "Activado por defecto. Registra tokens y el coste estimado en USD tras cada turno de Cursor o la nube. Muestra una página de Uso en el chat y crea sensores de Home Assistant para tus propios paneles. Desactivado: no hay registros nuevos; el historial se queda.",
+          "show_chat_usage": "Activado por defecto. Muestra tokens y coste bajo el título del chat. Desactivado oculta solo esa línea; el registro y la página de Uso siguen.",
+          "low_token": "Cuánto enviar en cada turno, para todos los agentes Cloud / Ollama / Azure.",
+          "prompt_cache": "Activado por defecto. Reutiliza el prompt de sistema y la lista de herramientas para que las rondas siguientes cuesten menos. Apágalo para comparar. Claude lo necesita; GPT a menudo cachea solo. Se ignora en Ollama.",
           "ui_theme": "Desactivado por defecto. Si está activado, solo se usan componentes de la interfaz de Home Assistant, que pueden ir mejor con los temas.",
           "cross_chat": "Desactivado por defecto. Si está activado, una pregunta puede usar otro chat cuyo título comparta palabras. No hace falta decir chat. Solo un extracto breve, y ese chat no se modifica.",
           "keep_chats": "Chats no fijados más recientes a conservar por persona. Los chats fijados se conservan siempre. Por defecto 30."
@@ -93,7 +99,10 @@
           "change_history": "Historial de cambios",
           "ui_theme": "Usar componentes de HA",
           "cross_chat": "Entre chats",
-          "keep_chats": "Chats a conservar"
+          "keep_chats": "Chats a conservar",
+          "low_token": "Reducir el uso de tokens",
+          "prompt_cache": "Caché de prompt",
+          "show_chat_usage": "Mostrar el coste en la cabecera del chat"
         },
         "data_description": {
           "stt_engine": "El dictado del navegador necesita un sitio seguro (https). O elige un motor de voz a texto de Home Assistant en Ajustes. El navegador debe permitir el micrófono.",
@@ -109,7 +118,10 @@
           "change_history": "Activado por defecto. Guarda un registro de los cambios de configuración que hizo el asistente para revisarlos o deshacerlos en el historial de cambios. Desactivado: no hay entradas nuevas; el asistente puede seguir usando Home Assistant.",
           "ui_theme": "Desactivado por defecto. Si está activado, solo se usan componentes de la interfaz de Home Assistant, que pueden ir mejor con los temas.",
           "cross_chat": "Desactivado por defecto. Si está activado, una pregunta puede usar otro chat cuyo título comparta palabras. No hace falta decir chat. Solo un extracto breve, y ese chat no se modifica.",
-          "keep_chats": "Chats no fijados más recientes a conservar por persona. Los chats fijados se conservan siempre. Por defecto 30."
+          "keep_chats": "Chats no fijados más recientes a conservar por persona. Los chats fijados se conservan siempre. Por defecto 30.",
+          "low_token": "Cuánto enviar en cada turno, para todos los agentes Cloud / Ollama / Azure.",
+          "prompt_cache": "Activado por defecto. Reutiliza el prompt de sistema y la lista de herramientas para que las rondas siguientes cuesten menos. Apágalo para comparar. Claude lo necesita; GPT a menudo cachea solo. Se ignora en Ollama.",
+          "show_chat_usage": "Activado por defecto. Muestra tokens y coste bajo el título del chat. Desactivado oculta solo esa línea; el registro y la página de Uso siguen."
         },
         "sections": {
           "mcp": {
@@ -145,6 +157,9 @@
     }
   },
   "config_subentries": {
+    "usage": {
+      "entry_type": "Uso"
+    },
     "mcp": {
       "initiate_flow": {
         "user": "Añadir conexión",
@@ -236,8 +251,6 @@
             "api_key": "Clave API",
             "model": "Modelo",
             "effort": "Esfuerzo",
-            "low_token": "Uso de tokens",
-            "prompt_cache": "Caché de prompt",
             "check_house": "Comprobar siempre la casa primero",
             "assist": "Añadir a Assist",
             "assist_stt": "Añadir voz a texto",
@@ -252,8 +265,6 @@
             "api_key": "Tu clave del proveedor de IA, no tu inicio de sesión de Home Assistant.",
             "model": "Elige de la lista o escribe un nombre de modelo. Vacío usa el valor predeterminado del proveedor.",
             "effort": "Rápido, Alto o Alto rápido cuando el modelo lo admite.",
-            "low_token": "Cuánto enviar en cada turno. Desactivado es completo. Light: herramientas e historial, comprueba la casa (~5–20 % menos). Medium: herramientas, prompt corto (~25–45 %). Extreme: solo chat (~80–95 % menos en una comprobación).",
-            "prompt_cache": "Activado por defecto. Reutiliza el prompt de sistema y la lista de herramientas para que las rondas siguientes cuesten menos. Apágalo para comparar. Claude lo necesita; GPT a menudo cachea solo. Se ignora en Ollama.",
             "check_house": "Activado por defecto. El asistente consulta Home Assistant antes de responder sobre tu instalación (no para un simple saludo). Desactívalo si tu modelo ya lo hace por su cuenta.",
             "assist": "También lista este asistente en Home Assistant Assist (voz). Desactivado: solo el chat de AI Workspace, y quita lo que añadió a Assist.",
             "assist_stt": "Añade una opción de voz a texto en Home Assistant con la clave de este asistente. Desactivado quita lo que añadió.",
@@ -271,8 +282,6 @@
             "api_base": "URL de Ollama",
             "model": "Modelo",
             "effort": "Esfuerzo",
-            "low_token": "Uso de tokens",
-            "prompt_cache": "Caché de prompt",
             "check_house": "Comprobar siempre la casa primero",
             "assist": "Añadir a Assist"
           },
@@ -280,8 +289,6 @@
             "api_base": "Normalmente {example_url}",
             "model": "Elige de la lista o escribe un modelo instalado. Vacío usa llama3.2.",
             "effort": "Se usa cuando el modelo lo admite.",
-            "low_token": "Cuánto enviar en cada turno. Desactivado es completo. Light: herramientas e historial, comprueba la casa (~5–20 % menos). Medium: herramientas, prompt corto (~25–45 %). Extreme: solo chat (~80–95 % menos en una comprobación).",
-            "prompt_cache": "Activado por defecto. Reutiliza el prompt de sistema y la lista de herramientas para que las rondas siguientes cuesten menos. Apágalo para comparar. Claude lo necesita; GPT a menudo cachea solo. Se ignora en Ollama.",
             "check_house": "Activado por defecto. El asistente consulta Home Assistant antes de responder sobre tu instalación (no para un simple saludo). Desactívalo si tu modelo ya lo hace por su cuenta.",
             "assist": "También lista este asistente en Home Assistant Assist (voz). Desactivado: solo el chat de AI Workspace, y quita lo que añadió a Assist."
           }
@@ -295,8 +302,6 @@
             "model": "Implementación",
             "azure_api_version": "Versión de la API",
             "effort": "Esfuerzo",
-            "low_token": "Uso de tokens",
-            "prompt_cache": "Caché de prompt",
             "check_house": "Comprobar siempre la casa primero",
             "assist": "Añadir a Assist"
           },
@@ -306,8 +311,6 @@
             "model": "El nombre de la implementación.",
             "azure_api_version": "Deja el valor predeterminado salvo que el soporte de Azure te diera otra versión.",
             "effort": "Se usa cuando la implementación lo admite.",
-            "low_token": "Cuánto enviar en cada turno. Desactivado es completo. Light: herramientas e historial, comprueba la casa (~5–20 % menos). Medium: herramientas, prompt corto (~25–45 %). Extreme: solo chat (~80–95 % menos en una comprobación).",
-            "prompt_cache": "Activado por defecto. Reutiliza el prompt de sistema y la lista de herramientas para que las rondas siguientes cuesten menos. Apágalo para comparar. Claude lo necesita; GPT a menudo cachea solo. Se ignora en Ollama.",
             "check_house": "Activado por defecto. El asistente consulta Home Assistant antes de responder sobre tu instalación (no para un simple saludo). Desactívalo si tu modelo ya lo hace por su cuenta.",
             "assist": "También lista este asistente en Home Assistant Assist (voz). Desactivado: solo el chat de AI Workspace, y quita lo que añadió a Assist."
           }
@@ -320,8 +323,6 @@
             "api_base": "URL base de la API",
             "model": "Modelo",
             "effort": "Esfuerzo",
-            "low_token": "Uso de tokens",
-            "prompt_cache": "Caché de prompt",
             "check_house": "Comprobar siempre la casa primero",
             "assist": "Añadir a Assist",
             "assist_stt": "Añadir voz a texto",
@@ -336,8 +337,6 @@
             "api_base": "Dirección del servidor. Añade /v1 al final si tu servidor lo espera.",
             "model": "Nombre del modelo en ese servidor.",
             "effort": "Se usa cuando el servidor lo admite.",
-            "low_token": "Cuánto enviar en cada turno. Desactivado es completo. Light: herramientas e historial, comprueba la casa (~5–20 % menos). Medium: herramientas, prompt corto (~25–45 %). Extreme: solo chat (~80–95 % menos en una comprobación).",
-            "prompt_cache": "Activado por defecto. Reutiliza el prompt de sistema y la lista de herramientas para que las rondas siguientes cuesten menos. Apágalo para comparar. Claude lo necesita; GPT a menudo cachea solo. Se ignora en Ollama.",
             "check_house": "Activado por defecto. El asistente consulta Home Assistant antes de responder sobre tu instalación (no para un simple saludo). Desactívalo si tu modelo ya lo hace por su cuenta.",
             "assist": "También lista este asistente en Home Assistant Assist (voz). Desactivado: solo el chat de AI Workspace, y quita lo que añadió a Assist.",
             "assist_stt": "Añade una opción de voz a texto en Home Assistant con la clave de este asistente. Desactivado quita lo que añadió.",

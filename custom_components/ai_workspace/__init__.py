@@ -4,10 +4,11 @@ import asyncio
 import logging
 from dataclasses import replace
 from pathlib import Path
+from types import MappingProxyType
 
 from homeassistant.components import frontend, panel_custom
 from homeassistant.components.http import StaticPathConfig
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
@@ -25,7 +26,10 @@ from .const import (
     CONF_HOUSE_MAP,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
+    CONF_LOW_TOKEN,
+    CONF_PROMPT_CACHE,
     CONF_TRACK_USAGE,
+    CONF_SHOW_CHAT_USAGE,
     CONF_UI_THEME,
     CONF_KEEP_CHATS,
     CONF_MCP_KIND,
@@ -50,7 +54,10 @@ from .const import (
     STT_BROWSER,
     SUBENTRY_AGENT,
     SUBENTRY_MCP,
+    SUBENTRY_USAGE,
+    TOKEN_MODE_OFF,
     TTS_OFF,
+    token_mode_of,
     usage_device_ident,
     ui_theme_of,
 )
@@ -165,6 +172,9 @@ async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
         shorten_mcp_results=bool(data.get(CONF_SHORTEN_MCP_RESULTS, True)),
         change_history=bool(data.get(CONF_CHANGE_HISTORY, True)),
         track_usage=bool(data.get(CONF_TRACK_USAGE, True)),
+        show_chat_usage=bool(data.get(CONF_SHOW_CHAT_USAGE, True)),
+        token_mode=_workspace_token_mode(entry, data),
+        prompt_cache=_workspace_prompt_cache(entry, data),
         ui_theme=ui_theme_of(data.get(CONF_UI_THEME)),
         cross_chat=bool(data.get(CONF_CROSS_CHAT, False)),
         keep_chats=_keep_chats(data),
@@ -190,8 +200,8 @@ def _one_provider(hass: HomeAssistant, settings: Settings, agent, store):
         api_base=agent.api_base,
         model=agent.model,
         effort=agent.effort,
-        token_mode=agent.token_mode,
-        prompt_cache=agent.prompt_cache,
+        token_mode=settings.token_mode,
+        prompt_cache=settings.prompt_cache,
         check_house=agent.check_house,
         azure_api_version=agent.azure_api_version,
         agent_id=agent.id,
@@ -200,36 +210,82 @@ def _one_provider(hass: HomeAssistant, settings: Settings, agent, store):
     return ApiProvider(hass, agent_settings, store)
 
 
+def _workspace_prompt_cache(entry: ConfigEntry, data: dict) -> bool:
+    if CONF_PROMPT_CACHE in data or CONF_PROMPT_CACHE in (entry.options or {}):
+        return bool(data.get(CONF_PROMPT_CACHE, True))
+    agents = [agent for agent in entry_agents(entry) if agent.mode != MODE_CURSOR]
+    if agents and all(not agent.prompt_cache for agent in agents):
+        return False
+    return True
+
+
+def _workspace_token_mode(entry: ConfigEntry, data: dict) -> str:
+    if CONF_LOW_TOKEN in data or CONF_LOW_TOKEN in (entry.options or {}):
+        return token_mode_of(data.get(CONF_LOW_TOKEN))
+    for agent in entry_agents(entry):
+        if agent.token_mode != TOKEN_MODE_OFF:
+            return agent.token_mode
+    return TOKEN_MODE_OFF
+
+
+def _ensure_usage_subentry(hass: HomeAssistant, entry: ConfigEntry) -> str | None:
+    """Nest workspace sensors under a Usage subentry so HA does not use the leftover-devices heading."""
+    for sub in entry.subentries.values():
+        if sub.subentry_type == SUBENTRY_USAGE:
+            return sub.subentry_id
+    sub = ConfigSubentry(
+        data=MappingProxyType({}),
+        subentry_type=SUBENTRY_USAGE,
+        title="Usage",
+        unique_id="usage",
+    )
+    hass.config_entries.async_add_subentry(entry, sub)
+    return sub.subentry_id
+
+
 def _sync_subentry_devices(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """One service device per connection and agent row, so each row can be disabled on its own."""
+    _ensure_usage_subentry(hass, entry)
     registry = dr.async_get(hass)
     wanted: set[str] = set()
+    usage_ident = (DOMAIN, usage_device_ident(entry.entry_id))
     for sub in entry.subentries.values():
         if sub.subentry_type == SUBENTRY_MCP:
-            ident, model = f"mcp:{sub.subentry_id}", "Connection"
+            ident, model, name = f"mcp:{sub.subentry_id}", "Connection", str(sub.title or "Connection")
         elif sub.subentry_type == SUBENTRY_AGENT:
-            ident, model = f"agent:{agent_device_key(sub)}", "Agent"
+            ident, model, name = f"agent:{agent_device_key(sub)}", "Agent", str(sub.title or "Agent")
+        elif sub.subentry_type == SUBENTRY_USAGE:
+            ident, model, name = usage_device_ident(entry.entry_id), "Usage", "AI Workspace"
         else:
             continue
         wanted.add(sub.subentry_id)
+        identifiers = {(DOMAIN, ident)}
+        existing = next(
+            (
+                device
+                for device in dr.async_entries_for_config_entry(registry, entry.entry_id)
+                if identifiers & set(device.identifiers)
+            ),
+            None,
+        )
+        if existing is not None:
+            updates = {}
+            if not existing.name_by_user and existing.name != name:
+                updates["name"] = name
+            if existing.config_subentry_id != sub.subentry_id:
+                updates["new_config_subentry_id"] = sub.subentry_id
+            if updates:
+                registry.async_update_device(existing.id, **updates)
+            continue
         registry.async_get_or_create(
             config_entry_id=entry.entry_id,
             config_subentry_id=sub.subentry_id,
-            identifiers={(DOMAIN, ident)},
-            name=str(sub.title or model),
+            identifiers=identifiers,
+            name=name,
             manufacturer="AI Workspace",
             model=model,
             entry_type=dr.DeviceEntryType.SERVICE,
         )
-    usage_ident = (DOMAIN, usage_device_ident(entry.entry_id))
-    registry.async_get_or_create(
-        config_entry_id=entry.entry_id,
-        identifiers={usage_ident},
-        name="AI Workspace usage",
-        manufacturer="AI Workspace",
-        model="Usage",
-        entry_type=dr.DeviceEntryType.SERVICE,
-    )
     for device in list(dr.async_entries_for_config_entry(registry, entry.entry_id)):
         if usage_ident in device.identifiers:
             continue

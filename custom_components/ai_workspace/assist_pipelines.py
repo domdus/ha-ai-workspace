@@ -7,7 +7,7 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 
-from .const import DEFAULT_TTS_VOICE, DOMAIN, STT_BROWSER, TTS_LANGUAGES, TTS_OFF, is_placeholder_tts
+from .const import DEFAULT_TTS_VOICE, DOMAIN, STT_BROWSER, TTS_LANGUAGES, is_placeholder_tts
 
 _LOGGER = logging.getLogger(__name__)
 _OPENAI_STT_PLATFORM = "openai_conversation"

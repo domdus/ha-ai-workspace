@@ -628,8 +628,9 @@ class Store:
         run_id: str = "",
         origin: str = "",
         characters: int = 0,
+        created_at: str | None = None,
     ) -> int:
-        now = _now()
+        now = _text(created_at) or _now()
         total = int(total_tokens or 0) or (int(prompt_tokens or 0) + int(completion_tokens or 0))
         with self._lock:
             cursor = self._conn.execute(
@@ -804,6 +805,105 @@ class Store:
             "origin": _text(row["origin"]),
         }
 
+    def usage_by_model(
+        self,
+        *,
+        since: str | None = None,
+        until: str | None = None,
+    ) -> list[dict]:
+        clauses = ["origin != 'tts'"]
+        params: list[object] = []
+        if since:
+            clauses.append("created_at >= ?")
+            params.append(since)
+        if until:
+            clauses.append("created_at < ?")
+            params.append(until)
+        where = " AND ".join(clauses)
+        with self._lock:
+            rows = self._conn.execute(
+                f"""
+                SELECT
+                    CASE WHEN TRIM(model) = '' THEN agent_id ELSE model END AS model_key,
+                    MAX(model) AS model,
+                    MAX(agent) AS agent,
+                    MAX(agent_id) AS agent_id,
+                    MAX(provider) AS provider,
+                    COUNT(*) AS turns,
+                    COALESCE(SUM(prompt_tokens), 0) AS prompt_tokens,
+                    COALESCE(SUM(completion_tokens), 0) AS completion_tokens,
+                    COALESCE(SUM(cache_read_tokens), 0) AS cache_read_tokens,
+                    COALESCE(SUM(total_tokens), 0) AS total_tokens,
+                    COALESCE(SUM(cost_usd), 0) AS cost_usd,
+                    SUM(CASE WHEN cost_usd IS NULL THEN 1 ELSE 0 END) AS missing_cost
+                FROM usage_turns
+                WHERE {where}
+                GROUP BY model_key
+                ORDER BY cost_usd DESC, total_tokens DESC
+                """,
+                params,
+            ).fetchall()
+        models = []
+        for row in rows:
+            turns = int(row["turns"] or 0)
+            tokens = int(row["total_tokens"] or 0)
+            missing = bool(row["missing_cost"])
+            cost = None if missing and not row["cost_usd"] else round(float(row["cost_usd"] or 0), 6)
+            models.append(
+                {
+                    "model": _text(row["model"]) or _text(row["agent"]) or _text(row["model_key"]) or "Unknown",
+                    "agent": _text(row["agent"]),
+                    "agent_id": _text(row["agent_id"]),
+                    "provider": _text(row["provider"]),
+                    "turns": turns,
+                    "prompt_tokens": int(row["prompt_tokens"] or 0),
+                    "completion_tokens": int(row["completion_tokens"] or 0),
+                    "cache_read_tokens": int(row["cache_read_tokens"] or 0),
+                    "total_tokens": tokens,
+                    "cost_usd": cost,
+                    "missing_cost": missing,
+                    "tokens_per_turn": round(tokens / turns, 1) if turns else 0.0,
+                    "cost_per_turn": None if cost is None or not turns else round(cost / turns, 6),
+                    "cost_per_1k": None if cost is None or not tokens else round(cost / tokens * 1000, 6),
+                }
+            )
+        return models
+
+    def usage_events(
+        self,
+        *,
+        since: str | None = None,
+        until: str | None = None,
+    ) -> list[dict]:
+        clauses = ["origin != 'tts'"]
+        params: list[object] = []
+        if since:
+            clauses.append("created_at >= ?")
+            params.append(since)
+        if until:
+            clauses.append("created_at < ?")
+            params.append(until)
+        where = " AND ".join(clauses)
+        with self._lock:
+            rows = self._conn.execute(
+                f"""
+                SELECT created_at, total_tokens, cost_usd, origin
+                FROM usage_turns
+                WHERE {where}
+                ORDER BY created_at ASC
+                """,
+                params,
+            ).fetchall()
+        return [
+            {
+                "created_at": row["created_at"],
+                "total_tokens": int(row["total_tokens"] or 0),
+                "cost_usd": None if row["cost_usd"] is None else float(row["cost_usd"]),
+                "origin": _text(row["origin"]),
+            }
+            for row in rows
+        ]
+
 
 def _restore_target(document: str) -> tuple[str, str, str]:
     if not document:
@@ -821,12 +921,16 @@ def _restore_target(document: str) -> tuple[str, str, str]:
 
 
 def _activity(row: sqlite3.Row) -> Activity:
-    from .logical_commit import parse_logical_document, restore_targets
-
     undone = _text(row["undone_at"])
     document = _text(row["document"])
-    logical = parse_logical_document(document)
-    targets = restore_targets(document)
+    try:
+        from .logical_commit import parse_logical_document, restore_targets
+
+        logical = parse_logical_document(document)
+        targets = restore_targets(document)
+    except ImportError:
+        logical = None
+        targets = []
     if logical:
         restore_kind = ", ".join(item[0] for item in targets if item[0])[:120]
         restore_id = ", ".join(item[1] for item in targets if item[1])[:240]

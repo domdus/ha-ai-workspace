@@ -17,6 +17,9 @@
           "shorten_mcp_results": "Zkrátit dlouhé odpovědi Home Assistant",
           "change_history": "Historie změn",
           "track_usage": "Sledovat využití a náklady",
+          "show_chat_usage": "Zobrazit cenu v záhlaví chatu",
+          "low_token": "Snížit spotřebu tokenů",
+          "prompt_cache": "Mezipaměť promptu",
           "ui_theme": "Použít komponenty HA",
           "cross_chat": "Mezi chaty",
           "keep_chats": "Chaty k uchování"
@@ -34,6 +37,9 @@
           "shorten_mcp_results": "Ve výchozím stavu zapnuto. Velmi dlouhé odpovědi z Home Assistant (seznamy celého domu, velké hledání) se před odesláním do AI shrnou. To šetří tokens a drží odpovědi svižné. Vypnuto pošle celý text.",
           "change_history": "Ve výchozím stavu zapnuto. Uchovává záznam konfiguračních změn, které asistent provedl, abyste je mohli v Historii změn zkontrolovat nebo vrátit. Vypnuto: bez nových záznamů; asistent může Home Assistant dál používat.",
           "track_usage": "Ve výchozím stavu zapnuto. Po každém Cursor nebo cloudovém tahu zaznamená tokeny a odhadované náklady v USD. V chatu ukáže stránku Využití a vytvoří senzory Home Assistant pro vlastní panely. Vypnuto: bez nových záznamů; historie zůstane.",
+          "show_chat_usage": "Ve výchozím stavu zapnuto. Zobrazí tokeny a cenu pod názvem chatu. Vypnuto schová jen tento řádek; sledování a stránka Využití zůstanou.",
+          "low_token": "Kolik posílat v každém tahu, pro všechny agenty Cloud / Ollama / Azure.",
+          "prompt_cache": "Ve výchozím stavu zapnuto. Znovu použije systémový prompt a seznam nástrojů, aby další kola stály méně. Vypněte pro srovnání. Claude to potřebuje; GPT často cachuje sám. U Ollama se ignoruje.",
           "ui_theme": "Ve výchozím stavu vypnuto. Když je zapnuto, používají se jen komponenty rozhraní Home Assistant, které mohou lépe fungovat s motivy.",
           "cross_chat": "Ve výchozím stavu vypnuto. Když je zapnuto, otázka může použít jiný chat, jehož název sdílí slova. Není třeba říkat chat. Jen krátký výňatek a ten chat se nemění.",
           "keep_chats": "Nejnovější nepřipnuté chaty na osobu. Připnuté chaty zůstanou vždy. Výchozí 30."
@@ -93,7 +99,10 @@
           "change_history": "Historie změn",
           "ui_theme": "Použít komponenty HA",
           "cross_chat": "Mezi chaty",
-          "keep_chats": "Chaty k uchování"
+          "keep_chats": "Chaty k uchování",
+          "low_token": "Snížit spotřebu tokenů",
+          "prompt_cache": "Mezipaměť promptu",
+          "show_chat_usage": "Zobrazit cenu v záhlaví chatu"
         },
         "data_description": {
           "stt_engine": "Diktování v prohlížeči potřebuje zabezpečený web (https). Nebo v Nastavení zvolte engine řeči na text Home Assistant. Prohlížeč musí mikrofon povolit.",
@@ -109,7 +118,10 @@
           "change_history": "Ve výchozím stavu zapnuto. Uchovává záznam konfiguračních změn, které asistent provedl, abyste je mohli v Historii změn zkontrolovat nebo vrátit. Vypnuto: bez nových záznamů; asistent může Home Assistant dál používat.",
           "ui_theme": "Ve výchozím stavu vypnuto. Když je zapnuto, používají se jen komponenty rozhraní Home Assistant, které mohou lépe fungovat s motivy.",
           "cross_chat": "Ve výchozím stavu vypnuto. Když je zapnuto, otázka může použít jiný chat, jehož název sdílí slova. Není třeba říkat chat. Jen krátký výňatek a ten chat se nemění.",
-          "keep_chats": "Nejnovější nepřipnuté chaty na osobu. Připnuté chaty zůstanou vždy. Výchozí 30."
+          "keep_chats": "Nejnovější nepřipnuté chaty na osobu. Připnuté chaty zůstanou vždy. Výchozí 30.",
+          "low_token": "Kolik posílat v každém tahu, pro všechny agenty Cloud / Ollama / Azure.",
+          "prompt_cache": "Ve výchozím stavu zapnuto. Znovu použije systémový prompt a seznam nástrojů, aby další kola stály méně. Vypněte pro srovnání. Claude to potřebuje; GPT často cachuje sám. U Ollama se ignoruje.",
+          "show_chat_usage": "Ve výchozím stavu zapnuto. Zobrazí tokeny a cenu pod názvem chatu. Vypnuto schová jen tento řádek; sledování a stránka Využití zůstanou."
         },
         "sections": {
           "mcp": {
@@ -145,6 +157,9 @@
     }
   },
   "config_subentries": {
+    "usage": {
+      "entry_type": "Využití"
+    },
     "mcp": {
       "initiate_flow": {
         "user": "Přidat připojení",
@@ -236,8 +251,6 @@
             "api_key": "Klíč API",
             "model": "Model",
             "effort": "Úsilí",
-            "low_token": "Spotřeba tokenů",
-            "prompt_cache": "Mezipaměť promptu",
             "check_house": "Vždy nejdřív zkontrolovat dům",
             "assist": "Přidat do Assist",
             "assist_stt": "Přidat převod řeči na text",
@@ -252,8 +265,6 @@
             "api_key": "Váš klíč u poskytovatele AI, ne přihlášení do Home Assistant.",
             "model": "Vyberte ze seznamu nebo zadejte název modelu. Prázdné použije výchozí hodnotu poskytovatele.",
             "effort": "Rychlé, Vysoké nebo Vysoké rychlé, když to model umí.",
-            "low_token": "Kolik se posílá každý tah. Vypnuto je plné. Light: nástroje a historie, kontroluje dům (~5–20 % méně). Medium: nástroje, krátký prompt (~25–45 %). Extreme: jen chat (~80–95 % méně při kontrole domu).",
-            "prompt_cache": "Ve výchozím stavu zapnuto. Znovu použije systémový prompt a seznam nástrojů, aby další kola stály méně. Vypněte pro srovnání. Claude to potřebuje; GPT často cachuje sám. U Ollama se ignoruje.",
             "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí o vaší instalaci podívá do Home Assistant (ne u prostého pozdravu). Vypněte, pokud to váš model už dělá sám.",
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist.",
             "assist_stt": "Přidá v Home Assistant možnost řeči na text s klíčem tohoto asistenta. Vypnuto odstraní to, co přidal.",
@@ -271,8 +282,6 @@
             "api_base": "URL Ollama",
             "model": "Model",
             "effort": "Úsilí",
-            "low_token": "Spotřeba tokenů",
-            "prompt_cache": "Mezipaměť promptu",
             "check_house": "Vždy nejdřív zkontrolovat dům",
             "assist": "Přidat do Assist"
           },
@@ -280,8 +289,6 @@
             "api_base": "Obvykle {example_url}",
             "model": "Vyberte ze seznamu nebo zadejte nainstalovaný model. Prázdné použije llama3.2.",
             "effort": "Použije se, když to model umí.",
-            "low_token": "Kolik se posílá každý tah. Vypnuto je plné. Light: nástroje a historie, kontroluje dům (~5–20 % méně). Medium: nástroje, krátký prompt (~25–45 %). Extreme: jen chat (~80–95 % méně při kontrole domu).",
-            "prompt_cache": "Ve výchozím stavu zapnuto. Znovu použije systémový prompt a seznam nástrojů, aby další kola stály méně. Vypněte pro srovnání. Claude to potřebuje; GPT často cachuje sám. U Ollama se ignoruje.",
             "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí o vaší instalaci podívá do Home Assistant (ne u prostého pozdravu). Vypněte, pokud to váš model už dělá sám.",
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist."
           }
@@ -295,8 +302,6 @@
             "model": "Nasazení",
             "azure_api_version": "Verze API",
             "effort": "Úsilí",
-            "low_token": "Spotřeba tokenů",
-            "prompt_cache": "Mezipaměť promptu",
             "check_house": "Vždy nejdřív zkontrolovat dům",
             "assist": "Přidat do Assist"
           },
@@ -306,8 +311,6 @@
             "model": "Název nasazení.",
             "azure_api_version": "Nechte výchozí hodnotu, pokud vám podpora Azure nedala jinou verzi.",
             "effort": "Použije se, když to nasazení umí.",
-            "low_token": "Kolik se posílá každý tah. Vypnuto je plné. Light: nástroje a historie, kontroluje dům (~5–20 % méně). Medium: nástroje, krátký prompt (~25–45 %). Extreme: jen chat (~80–95 % méně při kontrole domu).",
-            "prompt_cache": "Ve výchozím stavu zapnuto. Znovu použije systémový prompt a seznam nástrojů, aby další kola stály méně. Vypněte pro srovnání. Claude to potřebuje; GPT často cachuje sám. U Ollama se ignoruje.",
             "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí o vaší instalaci podívá do Home Assistant (ne u prostého pozdravu). Vypněte, pokud to váš model už dělá sám.",
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist."
           }
@@ -320,8 +323,6 @@
             "api_base": "Základní URL API",
             "model": "Model",
             "effort": "Úsilí",
-            "low_token": "Spotřeba tokenů",
-            "prompt_cache": "Mezipaměť promptu",
             "check_house": "Vždy nejdřív zkontrolovat dům",
             "assist": "Přidat do Assist",
             "assist_stt": "Přidat převod řeči na text",
@@ -336,8 +337,6 @@
             "api_base": "Adresa serveru. Na konec přidejte /v1, pokud to server očekává.",
             "model": "Název modelu na tom serveru.",
             "effort": "Použije se, když to server umí.",
-            "low_token": "Kolik se posílá každý tah. Vypnuto je plné. Light: nástroje a historie, kontroluje dům (~5–20 % méně). Medium: nástroje, krátký prompt (~25–45 %). Extreme: jen chat (~80–95 % méně při kontrole domu).",
-            "prompt_cache": "Ve výchozím stavu zapnuto. Znovu použije systémový prompt a seznam nástrojů, aby další kola stály méně. Vypněte pro srovnání. Claude to potřebuje; GPT často cachuje sám. U Ollama se ignoruje.",
             "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí o vaší instalaci podívá do Home Assistant (ne u prostého pozdravu). Vypněte, pokud to váš model už dělá sám.",
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist.",
             "assist_stt": "Přidá v Home Assistant možnost řeči na text s klíčem tohoto asistenta. Vypnuto odstraní to, co přidal.",

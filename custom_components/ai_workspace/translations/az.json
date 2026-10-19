@@ -17,6 +17,9 @@
           "shorten_mcp_results": "Uzun Home Assistant cavablarını qısalt",
           "change_history": "Dəyişiklik tarixçəsi",
           "track_usage": "İstifadə və xərcləri izlə",
+          "show_chat_usage": "Çat başlığında xərci göstər",
+          "low_token": "Token istifadəsini azalt",
+          "prompt_cache": "Prompt keşi",
           "ui_theme": "HA komponentlərindən istifadə et",
           "cross_chat": "Söhbətlər arası",
           "keep_chats": "Saxlanılacaq söhbətlər"
@@ -34,6 +37,9 @@
           "shorten_mcp_results": "Defolt olaraq açıqdır. Home Assistant-dan çox uzun cavablar (bütün ev siyahıları, böyük axtarışlar) AI-yə getməzdən əvvəl xülasə edilir. Bu, tokenləri qənaət edir və cavabları çevik saxlayır. Sönülü tam mətni göndərir.",
           "change_history": "Defolt olaraq açıqdır. Köməkçinin etdiyi konfiqurasiya dəyişikliklərinin qeydini saxlayır ki, onları Dəyişiklik tarixçəsində nəzərdən keçirə və ya ləğv edəsiniz. Sönülü yeni qeydləri dayandırır; köməkçi Home Assistant-ı yenə istifadə edə bilər.",
           "track_usage": "Defolt olaraq açıqdır. Hər Cursor və ya bulud turundan sonra token və təxmini USD xərcini yazır. Söhbətdə İstifadə səhifəsi göstərir və öz panelləriniz üçün Home Assistant sensorları yaradır. Sönülü yeni qeydləri dayandırır; mövcud tarixçə qalır.",
+          "show_chat_usage": "Defolt olaraq açıqdır. Çat başlığının altında token və xərci göstərir. Sönülü yalnız bu sətri gizlədir; izləmə və İstifadə səhifəsi qalır.",
+          "low_token": "Hər turda nə qədər göndərilsin, bütün Cloud / Ollama / Azure agentlər üçün.",
+          "prompt_cache": "Defolt olaraq açıqdır. Təkrar sistem promptunu və alət siyahısını yenidən istifadə edir ki, növbəti raundlar ucuz olsun. Müqayisə üçün söndürün. Claude buna ehtiyac duyur; GPT çox vaxt özü keşləyir. Ollama-da nəzərə alınmır.",
           "ui_theme": "Susmaya görə sönülü. Açıldıqda yalnız Home Assistant interfeys komponentləri istifadə olunur, bu da temalarla daha yaxşı işləyə bilər.",
           "cross_chat": "Defolt olaraq sönülüdür. Açıq olanda sual başlığında ortaq sözləri olan başqa söhbətdən istifadə edə bilər. Söhbət demək lazım deyil. Yalnız qısa parça, və o söhbət dəyişmir.",
           "keep_chats": "Hər şəxs üçün saxlanılacaq ən yeni sancılmamış söhbətlər. Sancılmış söhbətlər həmişə saxlanılır. Defolt 30."
@@ -93,7 +99,10 @@
           "change_history": "Dəyişiklik tarixçəsi",
           "ui_theme": "HA komponentlərindən istifadə et",
           "cross_chat": "Söhbətlər arası",
-          "keep_chats": "Saxlanılacaq söhbətlər"
+          "keep_chats": "Saxlanılacaq söhbətlər",
+          "low_token": "Token istifadəsini azalt",
+          "prompt_cache": "Prompt keşi",
+          "show_chat_usage": "Çat başlığında xərci göstər"
         },
         "data_description": {
           "stt_engine": "Brauzer diktəsi təhlükəsiz sayt (https) tələb edir. Və ya Ayarlar altında Home Assistant nitqdən-mətnə mühərriki seçin. Brauzer mikrofona icazə verməlidir.",
@@ -109,7 +118,10 @@
           "change_history": "Defolt olaraq açıqdır. Köməkçinin etdiyi konfiqurasiya dəyişikliklərinin qeydini saxlayır ki, onları Dəyişiklik tarixçəsində nəzərdən keçirə və ya ləğv edəsiniz. Sönülü yeni qeydləri dayandırır; köməkçi Home Assistant-ı yenə istifadə edə bilər.",
           "ui_theme": "Susmaya görə sönülü. Açıldıqda yalnız Home Assistant interfeys komponentləri istifadə olunur, bu da temalarla daha yaxşı işləyə bilər.",
           "cross_chat": "Defolt olaraq sönülüdür. Açıq olanda sual başlığında ortaq sözləri olan başqa söhbətdən istifadə edə bilər. Söhbət demək lazım deyil. Yalnız qısa parça, və o söhbət dəyişmir.",
-          "keep_chats": "Hər şəxs üçün saxlanılacaq ən yeni sancılmamış söhbətlər. Sancılmış söhbətlər həmişə saxlanılır. Defolt 30."
+          "keep_chats": "Hər şəxs üçün saxlanılacaq ən yeni sancılmamış söhbətlər. Sancılmış söhbətlər həmişə saxlanılır. Defolt 30.",
+          "low_token": "Hər turda nə qədər göndərilsin, bütün Cloud / Ollama / Azure agentlər üçün.",
+          "prompt_cache": "Defolt olaraq açıqdır. Təkrar sistem promptunu və alət siyahısını yenidən istifadə edir ki, növbəti raundlar ucuz olsun. Müqayisə üçün söndürün. Claude buna ehtiyac duyur; GPT çox vaxt özü keşləyir. Ollama-da nəzərə alınmır.",
+          "show_chat_usage": "Defolt olaraq açıqdır. Çat başlığının altında token və xərci göstərir. Sönülü yalnız bu sətri gizlədir; izləmə və İstifadə səhifəsi qalır."
         },
         "sections": {
           "mcp": {
@@ -145,6 +157,9 @@
     }
   },
   "config_subentries": {
+    "usage": {
+      "entry_type": "İstifadə"
+    },
     "mcp": {
       "initiate_flow": {
         "user": "Bağlantı əlavə et",
@@ -236,8 +251,6 @@
             "api_key": "API açarı",
             "model": "Model",
             "effort": "Səy",
-            "low_token": "Token istifadəsi",
-            "prompt_cache": "Prompt keşi",
             "check_house": "Həmişə əvvəlcə evi yoxla",
             "assist": "Assist-ə əlavə et",
             "assist_stt": "Nitqdən-mətnə əlavə et",
@@ -252,8 +265,6 @@
             "api_key": "AI provayderindən açarınız, Home Assistant girişiniz deyil.",
             "model": "Siyahıdan seçin və ya model adı yazın. Boş provayderin defoltunu istifadə edir.",
             "effort": "Model dəstəkləyəndə Sürətli, Yüksək və ya Yüksək sürətli.",
-            "low_token": "Hər gedişdə nə qədər. Söndür tamdır. Light: alətlər və tarixçə, evi yoxlayır (~5–20% az). Medium: alətlər, qısa prompt (~25–45%). Extreme: yalnız söhbət (ev yoxlamasında ~80–95% az).",
-            "prompt_cache": "Defolt olaraq açıqdır. Təkrar sistem promptunu və alət siyahısını yenidən istifadə edir ki, növbəti raundlar ucuz olsun. Müqayisə üçün söndürün. Claude buna ehtiyac duyur; GPT çox vaxt özü keşləyir. Ollama-da nəzərə alınmır.",
             "check_house": "Defolt olaraq açıqdır. Köməkçi quraşdırmanız haqqında cavab verməzdən əvvəl Home Assistant-a baxır (sadə salamlama üçün deyil). Modeliniz bunu özü edirsə, söndürün.",
             "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir.",
             "assist_stt": "Bu köməkçinin açarı ilə Home Assistant-da nitqdən-mətnə seçimi əlavə edir. Sönülü əlavə etdiyini silir.",
@@ -271,8 +282,6 @@
             "api_base": "Ollama URL",
             "model": "Model",
             "effort": "Səy",
-            "low_token": "Token istifadəsi",
-            "prompt_cache": "Prompt keşi",
             "check_house": "Həmişə əvvəlcə evi yoxla",
             "assist": "Assist-ə əlavə et"
           },
@@ -280,8 +289,6 @@
             "api_base": "Adətən {example_url}",
             "model": "Siyahıdan seçin və ya quraşdırdığınız modeli yazın. Boş llama3.2 istifadə edir.",
             "effort": "Model dəstəkləyəndə istifadə olunur.",
-            "low_token": "Hər gedişdə nə qədər. Söndür tamdır. Light: alətlər və tarixçə, evi yoxlayır (~5–20% az). Medium: alətlər, qısa prompt (~25–45%). Extreme: yalnız söhbət (ev yoxlamasında ~80–95% az).",
-            "prompt_cache": "Defolt olaraq açıqdır. Təkrar sistem promptunu və alət siyahısını yenidən istifadə edir ki, növbəti raundlar ucuz olsun. Müqayisə üçün söndürün. Claude buna ehtiyac duyur; GPT çox vaxt özü keşləyir. Ollama-da nəzərə alınmır.",
             "check_house": "Defolt olaraq açıqdır. Köməkçi quraşdırmanız haqqında cavab verməzdən əvvəl Home Assistant-a baxır (sadə salamlama üçün deyil). Modeliniz bunu özü edirsə, söndürün.",
             "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir."
           }
@@ -295,8 +302,6 @@
             "model": "Yerləşdirmə",
             "azure_api_version": "API versiyası",
             "effort": "Səy",
-            "low_token": "Token istifadəsi",
-            "prompt_cache": "Prompt keşi",
             "check_house": "Həmişə əvvəlcə evi yoxla",
             "assist": "Assist-ə əlavə et"
           },
@@ -306,8 +311,6 @@
             "model": "Yerləşdirmə adı.",
             "azure_api_version": "Azure dəstəyi başqa versiya verməyibsə, defoltu saxlayın.",
             "effort": "Yerləşdirmə dəstəkləyəndə istifadə olunur.",
-            "low_token": "Hər gedişdə nə qədər. Söndür tamdır. Light: alətlər və tarixçə, evi yoxlayır (~5–20% az). Medium: alətlər, qısa prompt (~25–45%). Extreme: yalnız söhbət (ev yoxlamasında ~80–95% az).",
-            "prompt_cache": "Defolt olaraq açıqdır. Təkrar sistem promptunu və alət siyahısını yenidən istifadə edir ki, növbəti raundlar ucuz olsun. Müqayisə üçün söndürün. Claude buna ehtiyac duyur; GPT çox vaxt özü keşləyir. Ollama-da nəzərə alınmır.",
             "check_house": "Defolt olaraq açıqdır. Köməkçi quraşdırmanız haqqında cavab verməzdən əvvəl Home Assistant-a baxır (sadə salamlama üçün deyil). Modeliniz bunu özü edirsə, söndürün.",
             "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir."
           }
@@ -320,8 +323,6 @@
             "api_base": "API baza URL",
             "model": "Model",
             "effort": "Səy",
-            "low_token": "Token istifadəsi",
-            "prompt_cache": "Prompt keşi",
             "check_house": "Həmişə əvvəlcə evi yoxla",
             "assist": "Assist-ə əlavə et",
             "assist_stt": "Nitqdən-mətnə əlavə et",
@@ -336,8 +337,6 @@
             "api_base": "Server ünvanı. Serveriniz bunu gözləyirsə, sonuna /v1 əlavə edin.",
             "model": "Həmin serverdəki model adı.",
             "effort": "Server dəstəkləyəndə istifadə olunur.",
-            "low_token": "Hər gedişdə nə qədər. Söndür tamdır. Light: alətlər və tarixçə, evi yoxlayır (~5–20% az). Medium: alətlər, qısa prompt (~25–45%). Extreme: yalnız söhbət (ev yoxlamasında ~80–95% az).",
-            "prompt_cache": "Defolt olaraq açıqdır. Təkrar sistem promptunu və alət siyahısını yenidən istifadə edir ki, növbəti raundlar ucuz olsun. Müqayisə üçün söndürün. Claude buna ehtiyac duyur; GPT çox vaxt özü keşləyir. Ollama-da nəzərə alınmır.",
             "check_house": "Defolt olaraq açıqdır. Köməkçi quraşdırmanız haqqında cavab verməzdən əvvəl Home Assistant-a baxır (sadə salamlama üçün deyil). Modeliniz bunu özü edirsə, söndürün.",
             "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir.",
             "assist_stt": "Bu köməkçinin açarı ilə Home Assistant-da nitqdən-mətnə seçimi əlavə edir. Sönülü əlavə etdiyini silir.",

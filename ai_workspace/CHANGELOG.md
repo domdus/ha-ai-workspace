@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.0b4
+
+- Chat header usage line no longer prefixes “This chat:”
+- Workspace sensors sit under a **Usage** subentry as device **AI Workspace** (no leftover “devices not belonging to a subentry” group)
+- **Reduce token usage** is back on the shared AI Workspace form, not on each agent
+- **Prompt cache** is a shared AI Workspace setting (applied when the model supports it; Cursor and Ollama ignore it), not per agent
+- **Usage** is a full page at `/ai-workspace/usage`: 30-day cost/token charts, and model comparison (tokens per turn, cost per turn, highest spend, most used, cheapest turn)
+- **Show cost in chat header** is a shared option (on by default); off hides the header line without stopping tracking or the Usage page
+
 ## 1.3.0b3
 
 - **Token usage** on Cloud / Ollama / Azure agents is a dropdown: Off, Light, Medium, Extreme (old “chat-only” / `low_token: true` is Extreme)

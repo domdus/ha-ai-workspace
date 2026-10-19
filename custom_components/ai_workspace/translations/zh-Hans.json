@@ -17,6 +17,9 @@
           "shorten_mcp_results": "缩短过长的 Home Assistant 回复",
           "change_history": "更改历史",
           "track_usage": "跟踪用量和费用",
+          "show_chat_usage": "在聊天标题栏显示费用",
+          "low_token": "降低 Token 用量",
+          "prompt_cache": "Prompt 缓存",
           "ui_theme": "使用 HA 组件",
           "cross_chat": "跨聊天",
           "keep_chats": "要保留的聊天"
@@ -34,6 +37,9 @@
           "shorten_mcp_results": "默认开启。来自 Home Assistant 的超长回复（全屋列表、大型搜索）会在送给 AI 之前先摘要。这样可节省 token，回复也更干脆。关闭则发送全文。",
           "change_history": "默认开启。记录助手所做的配置更改，便于你在更改历史中查看或撤销。关闭后不再新增记录；助手仍可使用 Home Assistant。",
           "track_usage": "默认开启。每次 Cursor 或云端回合后记录 token 和估算的美元费用。在聊天中显示用量页面，并创建可供你自己仪表板使用的 Home Assistant 传感器。关闭后不再新增记录；已有历史保留。",
+          "show_chat_usage": "默认开启。在聊天标题下显示 token 和费用。关闭只隐藏这一行；记录和用量页面仍在。",
+          "low_token": "每个 Cloud / Ollama / Azure 助手每轮发送多少。",
+          "prompt_cache": "默认开启。复用重复的系统提示和工具列表，让后续轮次更便宜。关闭以便对比。Claude 需要此项；GPT 常常自行缓存。Ollama 上忽略。",
           "ui_theme": "默认关闭。开启后只使用 Home Assistant 界面组件，可能更适合主题。",
           "cross_chat": "默认关闭。开启后，问题可以使用标题有相同词语的另一段聊天。不必提到聊天。只取一小段摘录，且不会改动那段聊天。",
           "keep_chats": "每人保留的最新未置顶聊天。置顶聊天始终保留。默认 30。"
@@ -93,7 +99,10 @@
           "change_history": "更改历史",
           "ui_theme": "使用 HA 组件",
           "cross_chat": "跨聊天",
-          "keep_chats": "要保留的聊天"
+          "keep_chats": "要保留的聊天",
+          "low_token": "降低 Token 用量",
+          "prompt_cache": "Prompt 缓存",
+          "show_chat_usage": "在聊天标题栏显示费用"
         },
         "data_description": {
           "stt_engine": "浏览器听写需要安全站点 (https)。也可在设置中选择 Home Assistant 的语音转文字引擎。浏览器必须允许使用麦克风。",
@@ -109,7 +118,10 @@
           "change_history": "默认开启。记录助手所做的配置更改，便于你在更改历史中查看或撤销。关闭后不再新增记录；助手仍可使用 Home Assistant。",
           "ui_theme": "默认关闭。开启后只使用 Home Assistant 界面组件，可能更适合主题。",
           "cross_chat": "默认关闭。开启后，问题可以使用标题有相同词语的另一段聊天。不必提到聊天。只取一小段摘录，且不会改动那段聊天。",
-          "keep_chats": "每人保留的最新未置顶聊天。置顶聊天始终保留。默认 30。"
+          "keep_chats": "每人保留的最新未置顶聊天。置顶聊天始终保留。默认 30。",
+          "low_token": "每个 Cloud / Ollama / Azure 助手每轮发送多少。",
+          "prompt_cache": "默认开启。复用重复的系统提示和工具列表，让后续轮次更便宜。关闭以便对比。Claude 需要此项；GPT 常常自行缓存。Ollama 上忽略。",
+          "show_chat_usage": "默认开启。在聊天标题下显示 token 和费用。关闭只隐藏这一行；记录和用量页面仍在。"
         },
         "sections": {
           "mcp": {
@@ -145,6 +157,9 @@
     }
   },
   "config_subentries": {
+    "usage": {
+      "entry_type": "用量"
+    },
     "mcp": {
       "initiate_flow": {
         "user": "添加连接",
@@ -236,8 +251,6 @@
             "api_key": "API 密钥",
             "model": "模型",
             "effort": "推理强度",
-            "low_token": "Token 用量",
-            "prompt_cache": "Prompt 缓存",
             "check_house": "始终先检查住宅",
             "assist": "添加到 Assist",
             "assist_stt": "添加语音转文字",
@@ -252,8 +265,6 @@
             "api_key": "来自 AI 提供商的密钥，不是 Home Assistant 登录凭据。",
             "model": "从列表中选择或输入模型名称。留空则使用提供商默认值。",
             "effort": "在模型支持时为快速、高或高且快速。",
-            "low_token": "每轮发送量。关闭为完整。Light 保留工具和历史并检查房屋（约少 5–20%）。Medium 用短提示保留工具（约少 25–45%）。Extreme 仅聊天（房屋检查一轮约少 80–95%）。",
-            "prompt_cache": "默认开启。复用重复的系统提示和工具列表，让后续轮次更便宜。关闭以便对比。Claude 需要此项；GPT 常常自行缓存。Ollama 上忽略。",
             "check_house": "默认开启。助手在回答有关你的安装的问题前会查询 Home Assistant（简单问候除外）。若模型已自行完成，请关闭。",
             "assist": "同时在 Home Assistant Assist（语音）下列出此助手。关闭则仅留在 AI Workspace 聊天中，并移除它在 Assist 中添加的内容。",
             "assist_stt": "使用此助手的密钥在 Home Assistant 中添加语音转文字选项。关闭则移除它添加的内容。",
@@ -271,8 +282,6 @@
             "api_base": "Ollama 网址",
             "model": "模型",
             "effort": "推理强度",
-            "low_token": "Token 用量",
-            "prompt_cache": "Prompt 缓存",
             "check_house": "始终先检查住宅",
             "assist": "添加到 Assist"
           },
@@ -280,8 +289,6 @@
             "api_base": "通常为 {example_url}",
             "model": "从列表中选择或输入已安装的模型。留空则使用 llama3.2。",
             "effort": "在模型支持时使用。",
-            "low_token": "每轮发送量。关闭为完整。Light 保留工具和历史并检查房屋（约少 5–20%）。Medium 用短提示保留工具（约少 25–45%）。Extreme 仅聊天（房屋检查一轮约少 80–95%）。",
-            "prompt_cache": "默认开启。复用重复的系统提示和工具列表，让后续轮次更便宜。关闭以便对比。Claude 需要此项；GPT 常常自行缓存。Ollama 上忽略。",
             "check_house": "默认开启。助手在回答有关你的安装的问题前会查询 Home Assistant（简单问候除外）。若模型已自行完成，请关闭。",
             "assist": "同时在 Home Assistant Assist（语音）下列出此助手。关闭则仅留在 AI Workspace 聊天中，并移除它在 Assist 中添加的内容。"
           }
@@ -295,8 +302,6 @@
             "model": "部署",
             "azure_api_version": "API 版本",
             "effort": "推理强度",
-            "low_token": "Token 用量",
-            "prompt_cache": "Prompt 缓存",
             "check_house": "始终先检查住宅",
             "assist": "添加到 Assist"
           },
@@ -306,8 +311,6 @@
             "model": "部署名称。",
             "azure_api_version": "除非 Azure 支持提供了其他版本，否则请保留默认值。",
             "effort": "在部署支持时使用。",
-            "low_token": "每轮发送量。关闭为完整。Light 保留工具和历史并检查房屋（约少 5–20%）。Medium 用短提示保留工具（约少 25–45%）。Extreme 仅聊天（房屋检查一轮约少 80–95%）。",
-            "prompt_cache": "默认开启。复用重复的系统提示和工具列表，让后续轮次更便宜。关闭以便对比。Claude 需要此项；GPT 常常自行缓存。Ollama 上忽略。",
             "check_house": "默认开启。助手在回答有关你的安装的问题前会查询 Home Assistant（简单问候除外）。若模型已自行完成，请关闭。",
             "assist": "同时在 Home Assistant Assist（语音）下列出此助手。关闭则仅留在 AI Workspace 聊天中，并移除它在 Assist 中添加的内容。"
           }
@@ -320,8 +323,6 @@
             "api_base": "API 基础网址",
             "model": "模型",
             "effort": "推理强度",
-            "low_token": "Token 用量",
-            "prompt_cache": "Prompt 缓存",
             "check_house": "始终先检查住宅",
             "assist": "添加到 Assist",
             "assist_stt": "添加语音转文字",
@@ -336,8 +337,6 @@
             "api_base": "服务器地址。若服务器需要，请在末尾加上 /v1。",
             "model": "该服务器上的模型名称。",
             "effort": "在服务器支持时使用。",
-            "low_token": "每轮发送量。关闭为完整。Light 保留工具和历史并检查房屋（约少 5–20%）。Medium 用短提示保留工具（约少 25–45%）。Extreme 仅聊天（房屋检查一轮约少 80–95%）。",
-            "prompt_cache": "默认开启。复用重复的系统提示和工具列表，让后续轮次更便宜。关闭以便对比。Claude 需要此项；GPT 常常自行缓存。Ollama 上忽略。",
             "check_house": "默认开启。助手在回答有关你的安装的问题前会查询 Home Assistant（简单问候除外）。若模型已自行完成，请关闭。",
             "assist": "同时在 Home Assistant Assist（语音）下列出此助手。关闭则仅留在 AI Workspace 聊天中，并移除它在 Assist 中添加的内容。",
             "assist_stt": "使用此助手的密钥在 Home Assistant 中添加语音转文字选项。关闭则移除它添加的内容。",

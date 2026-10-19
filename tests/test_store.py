@@ -82,6 +82,77 @@ def test_usage_turns_sum_and_prune(tmp_path: Path) -> None:
     store.close()
 
 
+def test_usage_by_model_and_daily_events(tmp_path: Path) -> None:
+    from datetime import datetime, timedelta, timezone
+
+    store = Store(tmp_path / "models.sqlite")
+    now = datetime(2026, 10, 19, 12, 0, tzinfo=timezone.utc)
+    store.add_usage(
+        user_id="user-1",
+        session_id="s1",
+        agent_id="claude-1",
+        agent="Claude",
+        provider="anthropic",
+        model="claude-sonnet-4-5",
+        prompt_tokens=2000,
+        completion_tokens=200,
+        cache_read_tokens=1500,
+        total_tokens=2200,
+        cost_usd=0.40,
+        origin="chat",
+        created_at=now.isoformat(),
+    )
+    store.add_usage(
+        user_id="user-1",
+        session_id="s1",
+        agent_id="claude-1",
+        agent="Claude",
+        provider="anthropic",
+        model="claude-sonnet-4-5",
+        prompt_tokens=800,
+        completion_tokens=100,
+        total_tokens=900,
+        cost_usd=0.10,
+        origin="chat",
+        created_at=(now - timedelta(days=2)).isoformat(),
+    )
+    store.add_usage(
+        user_id="user-1",
+        session_id="s2",
+        agent_id="gpt-1",
+        agent="OpenAI",
+        provider="openai",
+        model="gpt-5-mini",
+        prompt_tokens=400,
+        completion_tokens=80,
+        total_tokens=480,
+        cost_usd=0.02,
+        origin="chat",
+        created_at=now.isoformat(),
+    )
+    store.add_usage(
+        user_id="user-1",
+        session_id="s2",
+        agent_id="gpt-1",
+        agent="OpenAI",
+        provider="openai",
+        model="gpt-4o-mini-tts",
+        characters=40,
+        cost_usd=0.0001,
+        origin="tts",
+        created_at=now.isoformat(),
+    )
+    models = {row["model"]: row for row in store.usage_by_model()}
+    assert "gpt-4o-mini-tts" not in models
+    assert models["claude-sonnet-4-5"]["turns"] == 2
+    assert models["claude-sonnet-4-5"]["tokens_per_turn"] == 1550.0
+    assert models["claude-sonnet-4-5"]["cost_per_turn"] == 0.25
+    assert models["gpt-5-mini"]["cost_per_1k"] == 0.041667
+    events = store.usage_events(since=(now - timedelta(days=3)).isoformat())
+    assert len(events) == 3
+    store.close()
+
+
 def test_usage_tts_origin_and_characters(tmp_path: Path) -> None:
     store = Store(tmp_path / "tts.sqlite")
     store.add_usage(

@@ -1,7 +1,10 @@
 from pathlib import Path
+from types import SimpleNamespace
 
+from custom_components.ai_workspace.__init__ import _workspace_prompt_cache
 from custom_components.ai_workspace.agents import agent_from_mapping
 from custom_components.ai_workspace.api_provider import ApiProvider, _strip_prompt_cache
+from custom_components.ai_workspace.const import SUBENTRY_AGENT
 from custom_components.ai_workspace.models import Settings
 
 
@@ -26,6 +29,38 @@ def test_agent_defaults_prompt_cache_on() -> None:
     off = agent_from_mapping("b", "OpenAI", {"api_provider": "openai", "prompt_cache": False})
     assert on.prompt_cache is True
     assert off.prompt_cache is False
+
+
+def _entry(*agents, options=None):
+    subs = {}
+    for index, raw in enumerate(agents):
+        subs[f"sub-{index}"] = SimpleNamespace(
+            subentry_type=SUBENTRY_AGENT,
+            subentry_id=f"sub-{index}",
+            unique_id=f"agent-{index}",
+            title=raw.get("title", "Agent"),
+            data=raw,
+        )
+    return SimpleNamespace(options=options or {}, subentries=subs)
+
+
+def test_workspace_prompt_cache_defaults_on() -> None:
+    assert _workspace_prompt_cache(_entry(), {}) is True
+    assert _workspace_prompt_cache(_entry({"api_provider": "openai"}), {}) is True
+
+
+def test_workspace_prompt_cache_uses_shared_option() -> None:
+    entry = _entry({"api_provider": "openai", "prompt_cache": True}, options={"prompt_cache": False})
+    assert _workspace_prompt_cache(entry, {"prompt_cache": False}) is False
+
+
+def test_workspace_prompt_cache_migrates_all_agents_off() -> None:
+    entry = _entry(
+        {"api_provider": "openai", "prompt_cache": False},
+        {"api_provider": "anthropic", "prompt_cache": False},
+        {"api_provider": "cursor"},
+    )
+    assert _workspace_prompt_cache(entry, {}) is False
 
 
 def test_anthropic_marks_system_and_last_tool() -> None:

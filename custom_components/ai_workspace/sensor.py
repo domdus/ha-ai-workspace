@@ -15,7 +15,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
 
 from .agents import Agent, entry_agents
-from .const import DOMAIN, usage_device_ident
+from .const import DOMAIN, SUBENTRY_USAGE, usage_device_ident
 from .store import Store
 from .usage_cost import SIGNAL_USAGE_UPDATE, empty_summary
 from .usage_record import day_bounds, provider_label
@@ -31,6 +31,7 @@ async def async_setup_entry(
     store: Store = hass.data[DOMAIN]["store"]
     agents = entry_agents(entry)
     hub = UsageHub(hass, store, [agent.id for agent in agents])
+    usage_sub = next((sub.subentry_id for sub in entry.subentries.values() if sub.subentry_type == SUBENTRY_USAGE), None)
     async_add_entities(
         [
             WorkspaceUsageSensor(hass, entry, hub, "cost_today", "Cost today", "cost", "today"),
@@ -50,7 +51,8 @@ async def async_setup_entry(
             WorkspaceUsageSensor(
                 hass, entry, hub, "cost_tts_total", "Speech cost total", "cost", "all", increasing=True, source="tts"
             ),
-        ]
+        ],
+        config_subentry_id=usage_sub,
     )
     for agent in agents:
         async_add_entities(
@@ -299,7 +301,7 @@ class WorkspaceUsageSensor(_UsageBase):
         self._attr_unique_id = f"{entry.entry_id}_usage_{unique}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, usage_device_ident(entry.entry_id))},
-            name="AI Workspace usage",
+            name="AI Workspace",
             manufacturer="AI Workspace",
             model="Usage",
             entry_type=DeviceEntryType.SERVICE,
@@ -340,7 +342,7 @@ class WorkspaceLastSensor(_UsageBase):
         self._attr_entity_category = EntityCategory.DIAGNOSTIC
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, usage_device_ident(entry.entry_id))},
-            name="AI Workspace usage",
+            name="AI Workspace",
             manufacturer="AI Workspace",
             model="Usage",
             entry_type=DeviceEntryType.SERVICE,

@@ -525,6 +525,7 @@ class UiView(HomeAssistantView):
                 "tts_natural": bool(getattr(settings, "tts_natural", True)),
                 "change_history": bool(getattr(settings, "change_history", True)),
                 "track_usage": bool(getattr(settings, "track_usage", True)),
+                "show_chat_usage": bool(getattr(settings, "show_chat_usage", True)),
                 "ui_theme": ui_theme_of(getattr(settings, "ui_theme", "standard")),
             }
         )
@@ -1363,8 +1364,9 @@ class UsageView(HomeAssistantView):
         hass = _hass(request)
         store: Store = _runtime(hass)["store"]
         session_id = str(request.query.get("session_id") or "").strip()
+        range_key = str(request.query.get("range") or "month").strip()
         payload = await hass.async_add_executor_job(
-            lambda: dashboard_payload(hass, store, session_id=session_id)
+            lambda: dashboard_payload(hass, store, session_id=session_id, range_key=range_key)
         )
         return self.json(payload)
 

@@ -20,6 +20,7 @@ from homeassistant.helpers.selector import (
 )
 
 from .agent_flow import AgentSubentryFlow
+from .agents import entry_agents
 from .const import (
     CONF_ALLOW_USERS,
     CONF_CROSS_CHAT,
@@ -30,6 +31,9 @@ from .const import (
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
     CONF_TRACK_USAGE,
+    CONF_SHOW_CHAT_USAGE,
+    CONF_LOW_TOKEN,
+    CONF_PROMPT_CACHE,
     CONF_UI_THEME,
     CONF_KEEP_CHATS,
     CONF_MCP_KIND,
@@ -50,12 +54,17 @@ from .const import (
     MCP_CUSTOM,
     MCP_HA,
     MCP_KINDS,
+    MODE_CURSOR,
     STT_BROWSER,
     SUBENTRY_AGENT,
     SUBENTRY_MCP,
+    SUBENTRY_USAGE,
+    TOKEN_MODE_OFF,
+    TOKEN_MODES,
     TTS_OFF,
     UI_THEME_HA_COMPONENTS,
     mcp_kind_options,
+    token_mode_of,
     ui_theme_of,
 )
 from .mcp_config import server_slug
@@ -80,6 +89,9 @@ _SHARED_KEYS = (
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
     CONF_TRACK_USAGE,
+    CONF_SHOW_CHAT_USAGE,
+    CONF_LOW_TOKEN,
+    CONF_PROMPT_CACHE,
     CONF_UI_THEME,
     CONF_CROSS_CHAT,
     CONF_KEEP_CHATS,
@@ -138,6 +150,11 @@ def _ui_schema(defaults: dict | None = None) -> dict:
         vol.Optional(CONF_SHORTEN_MCP_RESULTS, default=current.get(CONF_SHORTEN_MCP_RESULTS, True)): cv.boolean,
         vol.Optional(CONF_CHANGE_HISTORY, default=current.get(CONF_CHANGE_HISTORY, True)): cv.boolean,
         vol.Optional(CONF_TRACK_USAGE, default=current.get(CONF_TRACK_USAGE, True)): cv.boolean,
+        vol.Optional(CONF_SHOW_CHAT_USAGE, default=current.get(CONF_SHOW_CHAT_USAGE, True)): cv.boolean,
+        vol.Optional(CONF_LOW_TOKEN, default=token_mode_of(current.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF))): SelectSelector(
+            SelectSelectorConfig(options=list(TOKEN_MODES), mode="dropdown", translation_key="low_token")
+        ),
+        vol.Optional(CONF_PROMPT_CACHE, default=bool(current.get(CONF_PROMPT_CACHE, True))): cv.boolean,
         vol.Optional(CONF_CROSS_CHAT, default=current.get(CONF_CROSS_CHAT, False)): cv.boolean,
         vol.Optional(
             CONF_UI_THEME,
@@ -177,6 +194,8 @@ def _normalize(user_input: dict, hass: HomeAssistant | None = None) -> dict:
         out[CONF_KEEP_CHATS] = max(1, min(keep, 500))
     if CONF_UI_THEME in out:
         out[CONF_UI_THEME] = ui_theme_of(out.get(CONF_UI_THEME))
+    if CONF_LOW_TOKEN in out:
+        out[CONF_LOW_TOKEN] = token_mode_of(out.get(CONF_LOW_TOKEN))
     return out
 
 
@@ -330,6 +349,15 @@ def _mcp_errors(flat: dict) -> dict:
     return errors
 
 
+def _usage_subentry() -> dict:
+    return {
+        "subentry_type": SUBENTRY_USAGE,
+        "title": "Usage",
+        "unique_id": "usage",
+        "data": {},
+    }
+
+
 def _primary_connection(flat: dict) -> dict:
     kind = str(flat.get(CONF_MCP_KIND) or MCP_CUSTOM)
     url = str(flat.get(CONF_MCP_URL) or "")
@@ -385,7 +413,7 @@ class AiWorkspaceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     title="AI Workspace",
                     data={},
                     options={key: flat.get(key) for key in _SHARED_KEYS},
-                    subentries=[_primary_connection(flat)],
+                    subentries=[_primary_connection(flat), _usage_subentry()],
                 )
             saved = flat
         defaults, mcp_auto, kinds = await _prepare_mcp_form(self.hass, saved)
@@ -420,6 +448,15 @@ class AiWorkspaceOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input=None):
         current = self._current()
+        if CONF_LOW_TOKEN not in current:
+            for agent in entry_agents(self.config_entry):
+                if agent.token_mode != TOKEN_MODE_OFF:
+                    current[CONF_LOW_TOKEN] = agent.token_mode
+                    break
+        if CONF_PROMPT_CACHE not in current:
+            agents = [agent for agent in entry_agents(self.config_entry) if agent.mode != MODE_CURSOR]
+            if agents and all(not agent.prompt_cache for agent in agents):
+                current[CONF_PROMPT_CACHE] = False
         if user_input is not None:
             flat = _normalize(_flatten(user_input), self.hass)
             merged = {**current, **flat}

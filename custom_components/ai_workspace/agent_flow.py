@@ -33,7 +33,6 @@ from .const import (
     CONF_CHECK_HOUSE,
     CONF_CURSOR_API_KEY,
     CONF_EFFORT,
-    CONF_LOW_TOKEN,
     CONF_PROMPT_CACHE,
     CONF_MODE,
     CONF_MODEL,
@@ -62,9 +61,6 @@ from .const import (
     stt_model_choices,
     tts_model_choices,
     submitted_model,
-    token_mode_of,
-    TOKEN_MODE_OFF,
-    TOKEN_MODES,
 )
 from .discovery import (
     async_detect_runtime_url,
@@ -220,12 +216,6 @@ def _fields_schema(step: str, current: dict, borrows: list[dict[str, str]], *, n
         fields.update(_model_field(provider, current))
     fields.update(_effort_field(current))
     if step != "cursor":
-        fields[vol.Optional(CONF_LOW_TOKEN, default=token_mode_of(current.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF)))] = (
-            SelectSelector(
-                SelectSelectorConfig(options=list(TOKEN_MODES), mode="dropdown", translation_key="low_token")
-            )
-        )
-        fields[vol.Optional(CONF_PROMPT_CACHE, default=bool(current.get(CONF_PROMPT_CACHE, True)))] = cv.boolean
         fields[vol.Optional(CONF_CHECK_HOUSE, default=bool(current.get(CONF_CHECK_HOUSE, True)))] = cv.boolean
     fields[vol.Optional(CONF_ASSIST, default=assist_enabled(current, new=new))] = cv.boolean
     if provider_supports_stt(provider):
@@ -388,10 +378,6 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                     CONF_API_BASE: "" if provider == MODE_CURSOR else base,
                     CONF_MODEL: model,
                     CONF_EFFORT: "" if effort == EFFORT_DEFAULT else effort,
-                    CONF_LOW_TOKEN: TOKEN_MODE_OFF
-                    if provider == MODE_CURSOR
-                    else token_mode_of(user_input.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF)),
-                    CONF_PROMPT_CACHE: provider != MODE_CURSOR and bool(user_input.get(CONF_PROMPT_CACHE, True)),
                     CONF_CHECK_HOUSE: provider != MODE_CURSOR and bool(user_input.get(CONF_CHECK_HOUSE, True)),
                     CONF_ASSIST: bool(user_input.get(CONF_ASSIST, assist_enabled(current, new=not self._editing))),
                     CONF_ASSIST_STT: bool(user_input.get(CONF_ASSIST_STT, assist_stt_enabled(current, provider)))
@@ -414,6 +400,8 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                     else "",
                     CONF_AZURE_API_VERSION: version if provider == API_AZURE else "",
                 }
+                if provider != MODE_CURSOR and CONF_PROMPT_CACHE in current:
+                    data[CONF_PROMPT_CACHE] = bool(current.get(CONF_PROMPT_CACHE))
                 return self._finish(provider, data)
             self._current = merged
         example = "https://YOUR-RESOURCE.openai.azure.com" if step == "azure" else default_api_base(API_OLLAMA)

@@ -210,7 +210,7 @@ After the runtime is running: **Settings → Devices & services → Add integrat
 
 ## Local AI (Ollama)
 
-This works like Cloud AI, with **Ollama** (or LM Studio) on your own hardware. The chat never leaves the house. The model must support tool calls. On a small machine set **Token usage** to **Extreme** on that agent: the chat then sends a short prompt and no tools, so it can answer questions, but it cannot check or change the house. **Medium** still sends tools with a short prompt. See [Token usage](#token-usage).
+This works like Cloud AI, with **Ollama** (or LM Studio) on your own hardware. The chat never leaves the house. The model must support tool calls. On a small machine set **Reduce token usage** to **Extreme** in AI Workspace settings: the chat then sends a short prompt and no tools, so it can answer questions, but it cannot check or change the house. **Medium** still sends tools with a short prompt. See [Token usage](#token-usage).
 
 Install as in [Cloud AI](#cloud-ai-api-provider-quick). Pick **Ollama** and point the API Base URL at your Ollama server.
 
@@ -218,8 +218,9 @@ Install as in [Cloud AI](#cloud-ai-api-provider-quick). Pick **Ollama** and poin
 
 ## How it is organized
 
-AI Workspace is one integration entry with two kinds of rows:
+AI Workspace is one integration entry with three kinds of rows:
 
+- **Usage:** workspace-wide cost and token sensors on a device named **AI Workspace**. Created automatically.
 - **Connection:** one row per MCP server. The first one is created during setup; **Add connection** adds more.
 - **Agent:** one row per Cursor, OpenAI, Claude, Gemini, OpenRouter, Ollama, Azure, or other provider. **Add agent** adds more.
 
@@ -240,8 +241,6 @@ It does not control Home Assistant edit links. Those rules are added to every me
 | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Copy key from**                          | Uses the key already stored by OpenRouter, OpenAI, Claude, Gemini, Ollama, or Azure in Home Assistant. That integration stays as it is                                              |
 | **Effort**                                 | Default, Fast, High, or High fast when the model supports it. A provider that rejects it is retried without                                                                         |
-| **Token usage**                            | Not on Cursor. Off / Light / Medium / Extreme. Cuts how much is sent each turn. Extreme can save about **80–95%** of tokens on a house-check turn. See [Token usage](#token-usage) |
-| **Prompt cache**                           | Not on Cursor. On by default. Asks the provider to reuse the repeated system prompt and tool list so later rounds cost less. Turn off to compare. See [Prompt cache](#prompt-cache) |
 | **Always check the house first**           | Not on Cursor. On by default for **Off**. **Light** always checks. **Medium** and **Extreme** ignore this toggle. See [why](#why-the-agent-checks-the-house-first)                  |
 | **MCP type**                               | Asked once, when you add AI Workspace: built-in MCP Server, HA-MCP, HA Vibecode Agent, or a custom URL. It becomes the first connection                                             |
 | **MCP URL**                                | Empty uses auto-detect. Paste the HA-MCP webhook or a custom URL only if needed                                                                                                     |
@@ -260,7 +259,10 @@ It does not control Home Assistant edit links. Those rules are added to every me
 | **Config catalog**                         | Off by default. A local index of how automations are wired, so "what uses the kitchen light?" takes one lookup. See [why](#why-use-the-config-catalog)                              |
 | **Shorten large MCP tool results**         | On by default. Same setting for cloud agents and Cursor. See [MCP proxy](#mcp-proxy)                                                                                                |
 | **Change History**                         | On by default. Records agent configuration writes for cloud agents and Cursor. Off skips snapshots; the MCP proxy still routes tools. See [MCP proxy](#mcp-proxy)                   |
-| **Track usage and costs**                  | On by default. Records tokens and USD after each Cursor or cloud turn. Opens as **Usage** next to Change History. Off stops new records; sensors and history stay. See [Cost](#cost) |
+| **Track usage and costs**                  | On by default. Records tokens and USD after each Cursor or cloud turn. Sidebar **Usage** opens `/ai-workspace/usage`. Off stops new records; sensors and history stay. See [Cost](#cost) |
+| **Show cost in chat header**               | On by default. Tokens and cost under the chat title. Off hides only that line; tracking and the Usage page stay                                                                      |
+| **Reduce token usage**                     | Shared. Off, Light, Medium, or Extreme for every Cloud / Ollama / Azure agent. Not on Cursor. See [Token usage](#token-usage)                                                        |
+| **Prompt cache**                           | Shared, on by default. Applied when the model supports it (Claude, GPT). Ignored on Cursor and Ollama. Turn off to compare. See [Prompt cache](#prompt-cache)                        |
 | **Add to Assist**                          | On each agent. Off (the default) keeps the agent in AI Workspace only. On adds a Voice assistants pipeline for it. Off again removes that pipeline                                 |
 | **Add Speech-to-text**                     | On OpenAI, OpenRouter, and OpenAI-compatible agents. On by default. Creates a Speech-to-text engine from this agent's key and assigns it to every AI Workspace Assist pipeline. Off removes that engine |
 | **Speech-to-text model**                   | Shown with Speech-to-text. Empty uses the provider default (`gpt-4o-mini-transcribe` on OpenAI, Whisper on OpenRouter / compatible). You can pick another or type an id                 |
@@ -310,12 +312,12 @@ Cursor does not call MCP from Home Assistant. HTTP MCP (HA-MCP and others) is re
 
 ## Cost
 
-**Track usage and costs** (on by default) records tokens and USD after each Cursor or cloud turn, including Assist. Open **Usage** next to Change History for today, this month, all time, and a row per agent. Each chat also shows a short usage line.
+**Track usage and costs** (on by default) records tokens and USD after each Cursor or cloud turn, including Assist. The sidebar **Usage** button opens `/ai-workspace/usage`: today / month / all-time totals, 30-day cost and token charts, and a model comparison (tokens per turn, cost per turn, highest spend, most used, cheapest turn). **Show cost in chat header** (on by default) puts a short usage line under the chat title; turn it off if you only want the Usage page.
 
 - **Cursor:** token counts come from the SDK `usage` object. If the account exposes billed cents (`get_usage`), that amount is stored as the cost. Otherwise the list-price estimate for Composer is used.
 - **Cloud agents:** prompt and completion tokens from the provider `usage` field, including cache and reasoning when present. Cost is list price (OpenAI, Anthropic, Gemini, DeepSeek, Qwen, Grok, Azure, OpenRouter, compatible). OpenRouter’s reported `cost` is used when it is present. Ollama is stored as $0.
 - **Text-to-speech:** when an OpenAI-style AI Workspace voice is used (Assist, overlay speaker, auto-read), characters of spoken text are priced (`gpt-4o-mini-tts`, `tts-1`, `tts-1-hd`) and stored with origin `tts`. Piper and other Home Assistant engines are not billed here.
-- **Home Assistant sensors:** device **AI Workspace usage** plus each agent — cost/tokens/turns for today, this month, and total, last turn, and speech cost today/total. Event `ai_workspace_usage` fires after every recorded turn.
+- **Home Assistant sensors:** device **AI Workspace** under **Usage**, plus each agent — cost/tokens/turns for today, this month, and total, last turn, and speech cost today/total. Event `ai_workspace_usage` fires after every recorded turn.
 - Unknown models still store tokens; cost stays empty until the price table knows the id.
 
 Cloud AI and Ollama agents send the system prompt and the tool list of every enabled MCP connection with each message. HA-MCP offers about 80 tools. Even with their descriptions shortened, that is several thousand tokens before you type anything. Each tool call adds its result and one more request, which sends the prompt and the tool list again. A greeting or thanks is sent without tools.
@@ -324,11 +326,11 @@ A typical house-check turn on **Off** is often around **$0.40**; a turn with a l
 
 - **History:** the last 12 messages of the chat are sent again, each cut to 2,000 characters. Tool results from earlier messages are not. This is normal for Chat Completions APIs; it is not the main cost.
 - **[Always check the house first](#why-the-agent-checks-the-house-first):** a question that needs no house data, like a poem or a YAML explanation, still costs one tool call and one more request.
-- **To spend less:** pick a small model for everyday questions, set **Token usage** on that agent (see below), disable the device of an MCP connection you do not need, and start a new chat when the topic changes.
+- **To spend less:** pick a small model for everyday questions, set **Reduce token usage** in AI Workspace settings (see below), disable the device of an MCP connection you do not need, and start a new chat when the topic changes.
 
 ### Token usage
 
-On each Cloud / Ollama / Azure agent (not Cursor): **Off**, **Light**, **Medium**, or **Extreme**. Saved `low_token: true` becomes Extreme.
+**Reduce token usage** is a shared AI Workspace setting (not per agent, and not on Cursor): **Off**, **Light**, **Medium**, or **Extreme**. Saved `low_token: true` becomes Extreme.
 
 The expensive part is the MCP tool list (and extra tool rounds), not the 12-message history. That is why Medium still costs a large share of Off, and Extreme is the only mode that usually saves most of a house-check turn.
 
@@ -345,7 +347,7 @@ All of Light / Medium / Extreme also skip the current-page note, Assist extra pr
 
 ### Prompt cache
 
-Separate from **Token usage**. Token modes change *what* is sent. Prompt cache discounts the *same* prefix when it repeats (system prompt + MCP tools on every round). Existing agents get it without reconfiguring.
+Shared AI Workspace setting (not per agent), separate from **Reduce token usage**. Token modes change *what* is sent. Prompt cache discounts the *same* prefix when it repeats (system prompt + MCP tools on every round). Applied when the agent or model supports it — Cursor and Ollama ignore it. Existing installs keep it on without reconfiguring; if every cloud agent had it off, that stays off until you change the workspace option.
 
 | Provider | What we send | How reliable |
 | --- | --- | --- |
@@ -354,7 +356,7 @@ Separate from **Token usage**. Token modes change *what* is sent. Prompt cache d
 | **OpenRouter + Claude** | Same as Claude, in OpenRouter’s chat format | Same as Claude. |
 | **Ollama** | Nothing | Ignored. Local models are not billed per token here. |
 
-Turn it **off** on one agent to A/B against Usage: cache-read tokens show up in the recorded usage when the provider reports them. Cache reads are typically ~10% of the input price, so after the first round of a house-check turn the tool-list *cost* can drop about **90%** even though the token count still looks large. Combined with Extreme you skip the tools; combined with Off you keep house control at a fraction of that ~$0.40 turn.
+Turn it **off** to A/B against Usage (workspace-wide): cache-read tokens show up in the recorded usage when the provider reports them. Cache reads are typically ~10% of the input price, so after the first round of a house-check turn the tool-list *cost* can drop about **90%** even though the token count still looks large. Combined with Extreme you skip the tools; combined with Off you keep house control at a fraction of that ~$0.40 turn.
 
 If a provider rejects the extra fields, the request is retried without them for the rest of that agent session.
 

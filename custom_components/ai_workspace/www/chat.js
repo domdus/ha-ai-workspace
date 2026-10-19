@@ -819,9 +819,12 @@ export async function mountAiWorkspace(root, options = {}) {
       <div class="usage" hidden aria-hidden="true">
         <div class="usage-bar">
           <span>${t("usage")}</span>
-          <ha-icon-button class="usage-close" label="${t("close")}">
-            <ha-icon icon="mdi:close"></ha-icon>
-          </ha-icon-button>
+          <div class="usage-bar-actions">
+            <div class="usage-range"></div>
+            <ha-icon-button class="usage-close" label="${t("usage_back")}">
+              <ha-icon icon="mdi:close"></ha-icon>
+            </ha-icon-button>
+          </div>
         </div>
         <div class="usage-list"></div>
       </div>
@@ -960,9 +963,19 @@ export async function mountAiWorkspace(root, options = {}) {
 
   setNarrow(options.narrow);
 
+  function workspaceRoute(pathname = location.pathname) {
+    const clean = String(pathname || "").replace(/\/$/, "") || "/";
+    if (clean === "/ai-workspace/usage") return { view: "usage", sessionId: "" };
+    const match = String(pathname || "").match(/^\/ai-workspace(?:\/conversations)?\/([0-9a-fA-F-]{8,})\/?$/);
+    return { view: "chat", sessionId: match ? match[1] : "" };
+  }
+
   function sessionIdFromPath(pathname = location.pathname) {
-    const match = pathname.match(/^\/ai-workspace(?:\/conversations)?\/([0-9a-fA-F-]{8,})\/?$/);
-    return match ? match[1] : "";
+    return workspaceRoute(pathname).sessionId;
+  }
+
+  function usagePath() {
+    return "/ai-workspace/usage";
   }
 
   function sessionPath(id) {
@@ -988,8 +1001,15 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function applyRoute() {
     if (compact || !routed) return;
-    const id = sessionIdFromPath();
-    if (id === sessionId) return;
+    const route = workspaceRoute();
+    if (route.view === "usage") {
+      openUsagePage();
+      return;
+    }
+    const leavingUsage = wrap.classList.contains("page-usage");
+    closeUsagePage();
+    const id = route.sessionId;
+    if (id === sessionId && !leavingUsage) return;
     if (id) openSession(id, true);
     else {
       restoreQueued();
@@ -3494,7 +3514,8 @@ export async function mountAiWorkspace(root, options = {}) {
       btn.classList.toggle("is-hidden", !visible);
     });
     if (!visible) {
-      closeUsage();
+      if (wrap.classList.contains("page-usage")) leaveUsage();
+      closeUsageOverlay();
       const line = root.querySelector(".chat-usage");
       if (line) {
         line.hidden = true;
@@ -3523,12 +3544,14 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   let usageTracking = true;
+  let showChatUsage = true;
 
   async function loadDictate() {
     // Stay hidden until /ui explicitly allows the mic (also covers the overlay drawer).
     let show = false;
     let historyOn = true;
     let usageOn = true;
+    let headerUsageOn = true;
     try {
       const response = await apiFetch(`${API}/ui`);
       if (response?.ok) {
@@ -3536,6 +3559,7 @@ export async function mountAiWorkspace(root, options = {}) {
         show = body.dictate === true;
         historyOn = body.change_history !== false;
         usageOn = body.track_usage !== false;
+        headerUsageOn = body.show_chat_usage !== false;
         const nextTheme = body.ui_theme === "ha_components" ? "ha_components" : "standard";
         uiTheme = nextTheme;
         uiThemeLoaded = true;
@@ -3556,8 +3580,15 @@ export async function mountAiWorkspace(root, options = {}) {
       show = false;
     }
     usageTracking = usageOn;
+    showChatUsage = usageOn && headerUsageOn;
     setChangeHistoryShown(historyOn);
     setUsageShown(usageOn);
+    if (!showChatUsage && chatUsageEl) {
+      chatUsageEl.hidden = true;
+      chatUsageEl.textContent = "";
+    } else if (showChatUsage) {
+      refreshChatUsage();
+    }
     setMicShown(show);
     syncCopyChat();
   }
@@ -3987,7 +4018,9 @@ export async function mountAiWorkspace(root, options = {}) {
   const historyList = root.querySelector(".history-list");
   const usageEl = root.querySelector(".usage");
   const usageList = root.querySelector(".usage-list");
+  const usageRangeEl = root.querySelector(".usage-range");
   const chatUsageEl = root.querySelector(".chat-usage");
+  let usageRange = "month";
 
   function activityWhen(iso) {
     const date = new Date(iso);
@@ -4172,7 +4205,7 @@ export async function mountAiWorkspace(root, options = {}) {
 
   async function openHistory() {
     if (!historyEl) return;
-    closeUsage();
+    if (!wrap.classList.contains("page-usage")) closeUsageOverlay();
     historyEl.hidden = false;
     historyEl.setAttribute("aria-hidden", "false");
     syncHistoryButtons(true);
@@ -4222,17 +4255,23 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function applyTurnUsage(data) {
     if (!data || !usageTracking) return;
-    if (chatUsageEl) {
+    if (chatUsageEl && showChatUsage) {
       const cost = data.cost_usd == null ? t("usage_unknown_cost") : money(data.cost_usd);
       chatUsageEl.hidden = false;
       chatUsageEl.textContent = `${t("usage_last")}: ${tokenLabel(data.total_tokens || 0)} · ${cost}`;
     }
     refreshChatUsage();
-    if (usageIsOpen()) loadUsage();
+    if (usageIsVisible()) loadUsage();
   }
 
   async function refreshChatUsage() {
-    if (!chatUsageEl || !usageTracking) return;
+    if (!chatUsageEl || !usageTracking || !showChatUsage) {
+      if (chatUsageEl) {
+        chatUsageEl.hidden = true;
+        chatUsageEl.textContent = "";
+      }
+      return;
+    }
     if (!sessionId) {
       chatUsageEl.hidden = true;
       chatUsageEl.textContent = "";
@@ -4248,7 +4287,7 @@ export async function mountAiWorkspace(root, options = {}) {
         return;
       }
       chatUsageEl.hidden = false;
-      chatUsageEl.textContent = `${t("usage_this_chat")}: ${usageLine(summary)}`;
+      chatUsageEl.textContent = usageLine(summary);
     } catch (_err) {
       /* keep last */
     }
@@ -4274,10 +4313,173 @@ export async function mountAiWorkspace(root, options = {}) {
     return card;
   }
 
+  function kpiCard(label, row) {
+    const card = document.createElement("article");
+    card.className = "usage-card usage-kpi";
+    const title = document.createElement("p");
+    title.className = "usage-card-title";
+    title.textContent = label;
+    const name = document.createElement("p");
+    name.className = "usage-kpi-model";
+    name.textContent = row?.model || "—";
+    const meta = document.createElement("p");
+    meta.className = "usage-card-meta";
+    const bits = [];
+    if (row) bits.push(usageLine(row));
+    if (row?.tokens_per_turn) bits.push(`${tokenLabel(row.tokens_per_turn)} ${t("usage_tokens_per_turn")}`);
+    if (row?.cost_per_turn != null) bits.push(`${money(row.cost_per_turn)} ${t("usage_cost_per_turn")}`);
+    meta.textContent = bits.join(" · ") || t("usage_empty");
+    card.append(title, name, meta);
+    return card;
+  }
+
+  function svgNode(name, attrs = {}) {
+    const node = document.createElementNS("http://www.w3.org/2000/svg", name);
+    for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value));
+    return node;
+  }
+
+  function usageChart(title, points, valueKey, formatTick) {
+    const card = document.createElement("article");
+    card.className = "usage-chart";
+    const heading = document.createElement("p");
+    heading.className = "usage-chart-title";
+    heading.textContent = title;
+    const svg = svgNode("svg", { viewBox: "0 0 640 180", role: "img", class: "usage-chart-svg" });
+    svg.setAttribute("aria-label", title);
+    const values = (Array.isArray(points) ? points : []).map((point) => Number(point[valueKey]) || 0);
+    const max = Math.max(...values, 0);
+    const padL = 6;
+    const padR = 6;
+    const padT = 10;
+    const padB = 28;
+    const width = 640;
+    const height = 180;
+    const innerW = width - padL - padR;
+    const innerH = height - padT - padB;
+    const count = Math.max(values.length, 1);
+    const gap = innerW / count;
+    const barW = Math.max(3, gap * 0.62);
+    const axis = svgNode("line", {
+      x1: padL,
+      x2: width - padR,
+      y1: height - padB,
+      y2: height - padB,
+      class: "usage-chart-axis",
+    });
+    svg.appendChild(axis);
+    values.forEach((value, index) => {
+      const barHeight = max > 0 ? (value / max) * innerH : 0;
+      const x = padL + index * gap + (gap - barW) / 2;
+      const y = height - padB - barHeight;
+      const rect = svgNode("rect", {
+        x,
+        y: value > 0 ? y : height - padB,
+        width: barW,
+        height: value > 0 ? Math.max(barHeight, 1) : 0,
+        rx: 2,
+        class: "usage-chart-bar",
+      });
+      const tip = svgNode("title");
+      const day = points[index]?.date || "";
+      tip.textContent = `${day}: ${formatTick(value)}`;
+      rect.appendChild(tip);
+      svg.appendChild(rect);
+    });
+    if (points.length) {
+      const first = svgNode("text", { x: padL, y: height - 8, class: "usage-chart-label" });
+      first.textContent = String(points[0].date || "").slice(5);
+      const last = svgNode("text", { x: width - padR, y: height - 8, class: "usage-chart-label", "text-anchor": "end" });
+      last.textContent = String(points[points.length - 1].date || "").slice(5);
+      svg.append(first, last);
+    }
+    card.append(heading, svg);
+    return card;
+  }
+
+  function modelTable(models) {
+    const wrapTable = document.createElement("div");
+    wrapTable.className = "usage-table-wrap";
+    const table = document.createElement("table");
+    table.className = "usage-table";
+    const head = document.createElement("thead");
+    const headRow = document.createElement("tr");
+    for (const label of [
+      t("usage_model"),
+      t("usage_turns"),
+      t("usage_tokens"),
+      t("usage_cost"),
+      t("usage_tokens_per_turn"),
+      t("usage_cost_per_turn"),
+      t("usage_per_1k"),
+    ]) {
+      const th = document.createElement("th");
+      th.textContent = label;
+      if (label !== t("usage_model")) th.className = "num";
+      headRow.appendChild(th);
+    }
+    head.appendChild(headRow);
+    const body = document.createElement("tbody");
+    for (const row of models) {
+      const tr = document.createElement("tr");
+      const cells = [
+        row.model || t("usage_model"),
+        String(row.turns || 0),
+        tokenLabel(row.total_tokens || 0),
+        row.cost_usd == null && row.missing_cost ? t("usage_unknown_cost") : money(row.cost_usd || 0),
+        tokenLabel(row.tokens_per_turn || 0),
+        row.cost_per_turn == null ? "—" : money(row.cost_per_turn),
+        row.cost_per_1k == null ? "—" : money(row.cost_per_1k),
+      ];
+      cells.forEach((value, index) => {
+        const td = document.createElement("td");
+        td.textContent = value;
+        if (index) td.className = "num";
+        if (index === 0 && row.agent && row.agent !== row.model) {
+          const sub = document.createElement("span");
+          sub.className = "usage-table-agent";
+          sub.textContent = ` · ${row.agent}`;
+          td.appendChild(sub);
+        }
+        tr.appendChild(td);
+      });
+      body.appendChild(tr);
+    }
+    table.append(head, body);
+    wrapTable.appendChild(table);
+    return wrapTable;
+  }
+
+  function renderUsageRange(current) {
+    if (!usageRangeEl) return;
+    usageRangeEl.replaceChildren();
+    for (const key of ["today", "month", "all"]) {
+      const btn = document.createElement(haUi ? "ha-button" : "button");
+      btn.className = "usage-range-btn";
+      if (haUi) {
+        btn.setAttribute("size", "s");
+        btn.setAttribute("appearance", current === key ? "accent" : "plain");
+      } else {
+        btn.type = "button";
+      }
+      btn.setAttribute("aria-pressed", current === key ? "true" : "false");
+      btn.textContent = t(`usage_${key}`);
+      btn.addEventListener("click", () => {
+        if (usageRange === key) return;
+        usageRange = key;
+        loadUsage();
+      });
+      usageRangeEl.appendChild(btn);
+    }
+  }
+
   async function loadUsage() {
     if (!usageList) return;
     usageList.replaceChildren();
-    const resp = await apiFetch(`${API}/usage${sessionId ? `?session_id=${encodeURIComponent(sessionId)}` : ""}`);
+    renderUsageRange(usageRange);
+    const query = new URLSearchParams({ range: usageRange });
+    if (sessionId) query.set("session_id", sessionId);
+    const resp = await apiFetch(`${API}/usage?${query}`);
     if (!resp || !resp.ok) {
       const note = document.createElement("p");
       note.className = "usage-empty";
@@ -4302,11 +4504,46 @@ export async function mountAiWorkspace(root, options = {}) {
     );
     usageList.appendChild(grid);
     if (body.session && body.session.turns) {
-      const chatCard = metricCard(t("usage_this_chat"), body.session);
-      usageList.appendChild(chatCard);
+      usageList.appendChild(metricCard(t("usage_this_chat"), body.session));
     }
     if (body.tts?.today?.turns || body.tts?.all?.turns) {
       usageList.appendChild(metricCard(t("usage_tts"), body.tts.today, "tts"));
+    }
+    const kpis = body.kpis || {};
+    if (kpis.most_spend || kpis.most_used || kpis.most_efficient || kpis.leanest) {
+      const heading = document.createElement("p");
+      heading.className = "usage-heading";
+      heading.textContent = t("usage_compare");
+      usageList.appendChild(heading);
+      const kpiGrid = document.createElement("div");
+      kpiGrid.className = "usage-kpis";
+      if (kpis.most_spend) kpiGrid.appendChild(kpiCard(t("usage_kpi_spend"), kpis.most_spend));
+      if (kpis.most_used) kpiGrid.appendChild(kpiCard(t("usage_kpi_used"), kpis.most_used));
+      if (kpis.most_efficient) kpiGrid.appendChild(kpiCard(t("usage_kpi_efficient"), kpis.most_efficient));
+      if (kpis.leanest) kpiGrid.appendChild(kpiCard(t("usage_kpi_lean"), kpis.leanest));
+      usageList.appendChild(kpiGrid);
+    }
+    const days = Array.isArray(body.days) ? body.days : [];
+    if (days.length) {
+      const chartsHead = document.createElement("p");
+      chartsHead.className = "usage-heading";
+      chartsHead.textContent = t("usage_days");
+      usageList.appendChild(chartsHead);
+      const charts = document.createElement("div");
+      charts.className = "usage-charts";
+      charts.append(
+        usageChart(t("usage_chart_cost"), days, "cost_usd", (value) => money(value)),
+        usageChart(t("usage_chart_tokens"), days, "total_tokens", (value) => tokenLabel(value)),
+      );
+      usageList.appendChild(charts);
+    }
+    const models = Array.isArray(body.models) ? body.models : [];
+    if (models.length) {
+      const heading = document.createElement("p");
+      heading.className = "usage-heading";
+      heading.textContent = t("usage_models");
+      usageList.appendChild(heading);
+      usageList.appendChild(modelTable(models));
     }
     const agents = Array.isArray(body.agents) ? body.agents : [];
     if (agents.length) {
@@ -4345,29 +4582,36 @@ export async function mountAiWorkspace(root, options = {}) {
   function syncUsageButtons(open) {
     root.querySelectorAll(".usage-open").forEach((btn) => {
       btn.setAttribute("aria-expanded", open ? "true" : "false");
+      if (open) btn.setAttribute("aria-current", "page");
+      else btn.removeAttribute("aria-current");
     });
   }
 
   function usageIsOpen() {
-    return wrap.classList.contains("usage-open") || Boolean(usageEl && !usageEl.hidden);
+    return wrap.classList.contains("usage-open") || Boolean(usageEl && !usageEl.hidden && !wrap.classList.contains("page-usage"));
   }
 
-  function closeUsage() {
+  function usageIsVisible() {
+    return wrap.classList.contains("page-usage") || usageIsOpen();
+  }
+
+  function closeUsageOverlay() {
     wrap.classList.remove("usage-open");
+    if (wrap.classList.contains("page-usage")) return;
     syncUsageButtons(false);
     if (!usageEl) return;
     usageEl.setAttribute("aria-hidden", "true");
     const hide = (event) => {
       if (event && event.target !== usageEl) return;
       if (event && event.propertyName && event.propertyName !== "transform") return;
-      if (!wrap.classList.contains("usage-open")) usageEl.hidden = true;
+      if (!wrap.classList.contains("usage-open") && !wrap.classList.contains("page-usage")) usageEl.hidden = true;
     };
     if (usageEl.hidden) return;
     usageEl.addEventListener("transitionend", hide, { once: true });
     window.setTimeout(() => hide(), 320);
   }
 
-  async function openUsage() {
+  function openUsageOverlay() {
     if (!usageEl) return;
     closeHistory();
     usageEl.hidden = false;
@@ -4376,24 +4620,63 @@ export async function mountAiWorkspace(root, options = {}) {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => wrap.classList.add("usage-open"));
     });
-    await loadUsage();
+    loadUsage();
   }
 
-  function toggleUsage() {
-    if (usageIsOpen()) closeUsage();
-    else openUsage();
+  function openUsagePage() {
+    closeHistory();
+    closeNavIfOverlay();
+    wrap.classList.add("page-usage");
+    wrap.classList.remove("usage-open");
+    if (usageEl) {
+      usageEl.hidden = false;
+      usageEl.setAttribute("aria-hidden", "false");
+    }
+    syncUsageButtons(true);
+    loadUsage();
+  }
+
+  function closeUsagePage() {
+    if (!wrap.classList.contains("page-usage")) return;
+    wrap.classList.remove("page-usage");
+    syncUsageButtons(false);
+    if (!usageEl) return;
+    usageEl.hidden = true;
+    usageEl.setAttribute("aria-hidden", "true");
+  }
+
+  function leaveUsage() {
+    if (routed) goToSession(sessionId || "");
+    else closeUsageOverlay();
+  }
+
+  function goToUsage() {
+    if (wrap.classList.contains("page-usage") || (!routed && typeof navigate === "function" && location.pathname.replace(/\/$/, "") === usagePath())) {
+      return;
+    }
+    if (routed || typeof navigate === "function") {
+      const path = usagePath();
+      if (typeof navigate === "function") navigate(path);
+      else {
+        history.pushState(null, "", path);
+        window.dispatchEvent(new CustomEvent("location-changed"));
+      }
+      return;
+    }
+    if (usageIsOpen()) closeUsageOverlay();
+    else openUsageOverlay();
   }
 
   root.querySelectorAll(".usage-open").forEach((btn) => {
     btn.setAttribute("aria-expanded", "false");
     btn.addEventListener("click", (event) => {
       event.preventDefault();
-      toggleUsage();
+      goToUsage();
     });
   });
   root.querySelector(".usage-close")?.addEventListener("click", (event) => {
     event.preventDefault();
-    closeUsage();
+    leaveUsage();
   });
 
   root.querySelectorAll(".nav-toggle").forEach((btn) => {
@@ -4413,8 +4696,12 @@ export async function mountAiWorkspace(root, options = {}) {
       closeHistory();
       return;
     }
+    if (wrap.classList.contains("page-usage")) {
+      leaveUsage();
+      return;
+    }
     if (wrap.classList.contains("usage-open")) {
-      closeUsage();
+      closeUsageOverlay();
       return;
     }
     if (root.querySelector("ha-dialog[open]")) return;
@@ -4456,10 +4743,15 @@ export async function mountAiWorkspace(root, options = {}) {
 
   loadProviders();
   loadDictate();
+  const startRoute = compact || !routed ? { view: "chat", sessionId: "" } : workspaceRoute();
   const startId =
     options.restoreSessionId ||
-    (compact ? localStorage.getItem("ai_workspace_session") || "" : sessionIdFromPath());
-  if (startId) openSession(startId, true);
+    (compact ? localStorage.getItem("ai_workspace_session") || "" : startRoute.sessionId);
+  if (!compact && routed && startRoute.view === "usage") {
+    showEmpty();
+    loadSessions();
+    openUsagePage();
+  } else if (startId) openSession(startId, true);
   else {
     showEmpty();
     loadSessions();

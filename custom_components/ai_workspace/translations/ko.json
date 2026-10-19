@@ -17,6 +17,9 @@
           "shorten_mcp_results": "긴 Home Assistant 답변 줄이기",
           "change_history": "변경 기록",
           "track_usage": "사용량 및 비용 추적",
+          "show_chat_usage": "채팅 헤더에 비용 표시",
+          "low_token": "토큰 사용량 줄이기",
+          "prompt_cache": "프롬프트 캐시",
           "ui_theme": "HA 구성 요소 사용",
           "cross_chat": "채팅 간 참조",
           "keep_chats": "유지할 채팅"
@@ -34,6 +37,9 @@
           "shorten_mcp_results": "기본값은 켜짐입니다. Home Assistant의 매우 긴 답변(집 전체 목록, 큰 검색)은 AI로 가기 전에 요약됩니다. 토큰을 아끼고 답변을 빠르게 유지합니다. 끄면 전체 텍스트를 보냅니다.",
           "change_history": "기본값은 켜짐입니다. 어시스턴트가 만든 구성 변경을 기록해 변경 기록에서 검토하거나 되돌릴 수 있습니다. 끄면 새 항목이 추가되지 않습니다. 어시스턴트는 계속 Home Assistant를 사용할 수 있습니다.",
           "track_usage": "기본값은 켜짐입니다. Cursor 또는 클라우드 턴마다 토큰과 예상 USD 비용을 기록합니다. 채팅에 사용량 페이지를 표시하고 사용자 대시보드용 Home Assistant 센서를 만듭니다. 끄면 새 기록이 중단되고 기존 기록은 남습니다.",
+          "show_chat_usage": "기본으로 켜짐. 채팅 제목 아래에 토큰과 비용을 표시합니다. 끄면 그 줄만 숨기고, 추적과 사용량 페이지는 그대로입니다.",
+          "low_token": "Cloud / Ollama / Azure 에이전트마다 매 턴 전송량.",
+          "prompt_cache": "기본으로 켜짐. 반복되는 시스템 프롬프트와 도구 목록을 재사용해 이후 라운드 비용을 줄입니다. 비교하려면 끄세요. Claude는 이 설정이 필요하고, GPT는 종종 스스로 캐시합니다. Ollama에서는 무시됩니다.",
           "ui_theme": "기본값은 꺼짐입니다. 켜면 Home Assistant UI 구성 요소만 사용하며, 테마와 더 잘 맞을 수 있습니다.",
           "cross_chat": "기본값은 꺼짐입니다. 켜면 제목에 같은 단어가 있는 다른 채팅을 질문에 쓸 수 있습니다. 채팅이라고 말할 필요가 없습니다. 짧은 발췌만 사용하며 그 채팅은 바꾸지 않습니다.",
           "keep_chats": "사람당 유지할 고정되지 않은 최신 채팅입니다. 고정된 채팅은 항상 유지됩니다. 기본값 30."
@@ -93,7 +99,10 @@
           "change_history": "변경 기록",
           "ui_theme": "HA 구성 요소 사용",
           "cross_chat": "채팅 간 참조",
-          "keep_chats": "유지할 채팅"
+          "keep_chats": "유지할 채팅",
+          "low_token": "토큰 사용량 줄이기",
+          "prompt_cache": "프롬프트 캐시",
+          "show_chat_usage": "채팅 헤더에 비용 표시"
         },
         "data_description": {
           "stt_engine": "브라우저 받아쓰기는 보안 사이트(https)가 필요합니다. 또는 설정에서 Home Assistant 음성-텍스트 엔진을 선택하세요. 브라우저가 마이크를 허용해야 합니다.",
@@ -109,7 +118,10 @@
           "change_history": "기본값은 켜짐입니다. 어시스턴트가 만든 구성 변경을 기록해 변경 기록에서 검토하거나 되돌릴 수 있습니다. 끄면 새 항목이 추가되지 않습니다. 어시스턴트는 계속 Home Assistant를 사용할 수 있습니다.",
           "ui_theme": "기본값은 꺼짐입니다. 켜면 Home Assistant UI 구성 요소만 사용하며, 테마와 더 잘 맞을 수 있습니다.",
           "cross_chat": "기본값은 꺼짐입니다. 켜면 제목에 같은 단어가 있는 다른 채팅을 질문에 쓸 수 있습니다. 채팅이라고 말할 필요가 없습니다. 짧은 발췌만 사용하며 그 채팅은 바꾸지 않습니다.",
-          "keep_chats": "사람당 유지할 고정되지 않은 최신 채팅입니다. 고정된 채팅은 항상 유지됩니다. 기본값 30."
+          "keep_chats": "사람당 유지할 고정되지 않은 최신 채팅입니다. 고정된 채팅은 항상 유지됩니다. 기본값 30.",
+          "low_token": "Cloud / Ollama / Azure 에이전트마다 매 턴 전송량.",
+          "prompt_cache": "기본으로 켜짐. 반복되는 시스템 프롬프트와 도구 목록을 재사용해 이후 라운드 비용을 줄입니다. 비교하려면 끄세요. Claude는 이 설정이 필요하고, GPT는 종종 스스로 캐시합니다. Ollama에서는 무시됩니다.",
+          "show_chat_usage": "기본으로 켜짐. 채팅 제목 아래에 토큰과 비용을 표시합니다. 끄면 그 줄만 숨기고, 추적과 사용량 페이지는 그대로입니다."
         },
         "sections": {
           "mcp": {
@@ -145,6 +157,9 @@
     }
   },
   "config_subentries": {
+    "usage": {
+      "entry_type": "사용량"
+    },
     "mcp": {
       "initiate_flow": {
         "user": "연결 추가",
@@ -236,8 +251,6 @@
             "api_key": "API 키",
             "model": "모델",
             "effort": "노력",
-            "low_token": "토큰 사용량",
-            "prompt_cache": "프롬프트 캐시",
             "check_house": "항상 먼저 집을 확인",
             "assist": "Assist에 추가",
             "assist_stt": "음성-텍스트 추가",
@@ -252,8 +265,6 @@
             "api_key": "AI 제공자의 키이며 Home Assistant 로그인이 아닙니다.",
             "model": "목록에서 고르거나 모델 이름을 입력하세요. 비우면 제공자 기본값을 사용합니다.",
             "effort": "모델이 지원하면 빠름, 높음 또는 높음+빠름입니다.",
-            "low_token": "매 턴 전송량. 끄기는 전체. Light는 도구와 기록을 유지하고 집을 확인(~5–20% 절약). Medium은 짧은 프롬프트로 도구 유지(~25–45%). Extreme은 채팅 전용(집 확인 턴에서 ~80–95% 절약).",
-            "prompt_cache": "기본으로 켜짐. 반복되는 시스템 프롬프트와 도구 목록을 재사용해 이후 라운드 비용을 줄입니다. 비교하려면 끄세요. Claude는 이 설정이 필요하고, GPT는 종종 스스로 캐시합니다. Ollama에서는 무시됩니다.",
             "check_house": "기본값은 켜짐입니다. 어시스턴트가 설치에 대해 답하기 전에 Home Assistant를 확인합니다(간단한 인사 제외). 모델이 이미 스스로 한다면 끄세요.",
             "assist": "이 어시스턴트를 Home Assistant Assist(음성)에도 표시합니다. 끄면 AI Workspace 채팅에만 두고 Assist에 추가한 항목을 제거합니다.",
             "assist_stt": "이 어시스턴트의 키로 Home Assistant에 음성-텍스트 옵션을 추가합니다. 끄면 추가한 항목을 제거합니다.",
@@ -271,8 +282,6 @@
             "api_base": "Ollama URL",
             "model": "모델",
             "effort": "노력",
-            "low_token": "토큰 사용량",
-            "prompt_cache": "프롬프트 캐시",
             "check_house": "항상 먼저 집을 확인",
             "assist": "Assist에 추가"
           },
@@ -280,8 +289,6 @@
             "api_base": "보통 {example_url}",
             "model": "목록에서 고르거나 설치한 모델을 입력하세요. 비우면 llama3.2를 사용합니다.",
             "effort": "모델이 지원할 때 사용합니다.",
-            "low_token": "매 턴 전송량. 끄기는 전체. Light는 도구와 기록을 유지하고 집을 확인(~5–20% 절약). Medium은 짧은 프롬프트로 도구 유지(~25–45%). Extreme은 채팅 전용(집 확인 턴에서 ~80–95% 절약).",
-            "prompt_cache": "기본으로 켜짐. 반복되는 시스템 프롬프트와 도구 목록을 재사용해 이후 라운드 비용을 줄입니다. 비교하려면 끄세요. Claude는 이 설정이 필요하고, GPT는 종종 스스로 캐시합니다. Ollama에서는 무시됩니다.",
             "check_house": "기본값은 켜짐입니다. 어시스턴트가 설치에 대해 답하기 전에 Home Assistant를 확인합니다(간단한 인사 제외). 모델이 이미 스스로 한다면 끄세요.",
             "assist": "이 어시스턴트를 Home Assistant Assist(음성)에도 표시합니다. 끄면 AI Workspace 채팅에만 두고 Assist에 추가한 항목을 제거합니다."
           }
@@ -295,8 +302,6 @@
             "model": "배포",
             "azure_api_version": "API 버전",
             "effort": "노력",
-            "low_token": "토큰 사용량",
-            "prompt_cache": "프롬프트 캐시",
             "check_house": "항상 먼저 집을 확인",
             "assist": "Assist에 추가"
           },
@@ -306,8 +311,6 @@
             "model": "배포 이름입니다.",
             "azure_api_version": "Azure 지원에서 다른 버전을 안내하지 않았다면 기본값을 유지하세요.",
             "effort": "배포가 지원할 때 사용합니다.",
-            "low_token": "매 턴 전송량. 끄기는 전체. Light는 도구와 기록을 유지하고 집을 확인(~5–20% 절약). Medium은 짧은 프롬프트로 도구 유지(~25–45%). Extreme은 채팅 전용(집 확인 턴에서 ~80–95% 절약).",
-            "prompt_cache": "기본으로 켜짐. 반복되는 시스템 프롬프트와 도구 목록을 재사용해 이후 라운드 비용을 줄입니다. 비교하려면 끄세요. Claude는 이 설정이 필요하고, GPT는 종종 스스로 캐시합니다. Ollama에서는 무시됩니다.",
             "check_house": "기본값은 켜짐입니다. 어시스턴트가 설치에 대해 답하기 전에 Home Assistant를 확인합니다(간단한 인사 제외). 모델이 이미 스스로 한다면 끄세요.",
             "assist": "이 어시스턴트를 Home Assistant Assist(음성)에도 표시합니다. 끄면 AI Workspace 채팅에만 두고 Assist에 추가한 항목을 제거합니다."
           }
@@ -320,8 +323,6 @@
             "api_base": "API 기본 URL",
             "model": "모델",
             "effort": "노력",
-            "low_token": "토큰 사용량",
-            "prompt_cache": "프롬프트 캐시",
             "check_house": "항상 먼저 집을 확인",
             "assist": "Assist에 추가",
             "assist_stt": "음성-텍스트 추가",
@@ -336,8 +337,6 @@
             "api_base": "서버 주소입니다. 서버가 요구하면 끝에 /v1을 붙이세요.",
             "model": "해당 서버의 모델 이름입니다.",
             "effort": "서버가 지원할 때 사용합니다.",
-            "low_token": "매 턴 전송량. 끄기는 전체. Light는 도구와 기록을 유지하고 집을 확인(~5–20% 절약). Medium은 짧은 프롬프트로 도구 유지(~25–45%). Extreme은 채팅 전용(집 확인 턴에서 ~80–95% 절약).",
-            "prompt_cache": "기본으로 켜짐. 반복되는 시스템 프롬프트와 도구 목록을 재사용해 이후 라운드 비용을 줄입니다. 비교하려면 끄세요. Claude는 이 설정이 필요하고, GPT는 종종 스스로 캐시합니다. Ollama에서는 무시됩니다.",
             "check_house": "기본값은 켜짐입니다. 어시스턴트가 설치에 대해 답하기 전에 Home Assistant를 확인합니다(간단한 인사 제외). 모델이 이미 스스로 한다면 끄세요.",
             "assist": "이 어시스턴트를 Home Assistant Assist(음성)에도 표시합니다. 끄면 AI Workspace 채팅에만 두고 Assist에 추가한 항목을 제거합니다.",
             "assist_stt": "이 어시스턴트의 키로 Home Assistant에 음성-텍스트 옵션을 추가합니다. 끄면 추가한 항목을 제거합니다.",

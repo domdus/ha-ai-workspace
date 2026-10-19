@@ -17,6 +17,9 @@
           "shorten_mcp_results": "Lange Home-Assistant-Antworten kürzen",
           "change_history": "Änderungsverlauf",
           "track_usage": "Nutzung und Kosten aufzeichnen",
+          "show_chat_usage": "Kosten in der Chat-Kopfzeile anzeigen",
+          "low_token": "Tokenverbrauch reduzieren",
+          "prompt_cache": "Prompt-Cache",
           "cross_chat": "Chatübergreifend",
           "ui_theme": "HA-Komponenten verwenden",
           "keep_chats": "Chats behalten"
@@ -34,6 +37,9 @@
           "shorten_mcp_results": "Standardmäßig an. Sehr lange Antworten aus Home Assistant (Listen fürs ganze Haus, große Abfragen) werden gekürzt, bevor sie an die KI gehen. Das spart Token und hält Antworten flott. Aus sendet den vollen Text.",
           "change_history": "Standardmäßig an. Merkt sich Konfigurationsänderungen der Assistentin, damit du sie im Änderungsverlauf prüfen oder rückgängig machen kannst. Aus: keine neuen Einträge; die Assistentin kann Home Assistant weiter nutzen.",
           "track_usage": "Standardmäßig an. Zeichnet Token und geschätzte USD-Kosten nach jedem Cursor- oder Cloud-Turn auf. Zeigt eine Nutzungsseite im Chat und legt Home-Assistant-Sensoren an. Aus: keine neuen Einträge; vorhandene Historie bleibt.",
+          "show_chat_usage": "Standard an. Zeigt Token und Kosten unter dem Chattitel. Aus blendet nur diese Zeile; Aufzeichnung und die Nutzungsseite bleiben.",
+          "low_token": "Wie viel jeder Zug sendet, für alle Cloud-/Ollama-/Azure-Agenten. Aus ist voll. Light: Tools und Verlauf, prüft das Haus (~5–20 % weniger). Medium: Tools, kurzer Prompt (~25–45 %). Extreme: nur Chat (~80–95 % weniger bei einer Hausprüfung).",
+          "prompt_cache": "Standard an. Wird genutzt, wo das Modell das unterstützt (Claude braucht das; GPT cached oft von selbst). Wird bei Cursor und Ollama ignoriert. Aus zum Vergleich.",
           "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen anderen Chat nutzen, dessen Titel Wörter mit ihr teilt. Du musst nicht Chat oder Gespräch sagen. Nur ein kurzer Auszug, und dieser Chat wird nicht geändert.",
           "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30.",
           "ui_theme": "Standardmäßig aus. Wenn an, werden nur Home-Assistant-UI-Komponenten genutzt, die oft besser mit Themes funktionieren."
@@ -92,6 +98,9 @@
           "shorten_mcp_results": "Lange Home-Assistant-Antworten kürzen",
           "change_history": "Änderungsverlauf",
           "track_usage": "Nutzung und Kosten aufzeichnen",
+          "show_chat_usage": "Kosten in der Chat-Kopfzeile anzeigen",
+          "low_token": "Tokenverbrauch reduzieren",
+          "prompt_cache": "Prompt-Cache",
           "cross_chat": "Chatübergreifend",
           "ui_theme": "HA-Komponenten verwenden",
           "keep_chats": "Chats behalten"
@@ -109,6 +118,9 @@
           "shorten_mcp_results": "Standardmäßig an. Sehr lange Antworten aus Home Assistant (Listen fürs ganze Haus, große Abfragen) werden gekürzt, bevor sie an die KI gehen. Das spart Token und hält Antworten flott. Aus sendet den vollen Text.",
           "change_history": "Standardmäßig an. Merkt sich Konfigurationsänderungen der Assistentin, damit du sie im Änderungsverlauf prüfen oder rückgängig machen kannst. Aus: keine neuen Einträge; die Assistentin kann Home Assistant weiter nutzen.",
           "track_usage": "Standardmäßig an. Zeichnet Token und geschätzte USD-Kosten nach jedem Cursor- oder Cloud-Turn auf. Zeigt eine Nutzungsseite im Chat und legt Home-Assistant-Sensoren an. Aus: keine neuen Einträge; vorhandene Historie bleibt.",
+          "show_chat_usage": "Standard an. Zeigt Token und Kosten unter dem Chattitel. Aus blendet nur diese Zeile; Aufzeichnung und die Nutzungsseite bleiben.",
+          "low_token": "Wie viel jeder Zug sendet, für alle Cloud-/Ollama-/Azure-Agenten. Aus ist voll. Light: Tools und Verlauf, prüft das Haus (~5–20 % weniger). Medium: Tools, kurzer Prompt (~25–45 %). Extreme: nur Chat (~80–95 % weniger bei einer Hausprüfung).",
+          "prompt_cache": "Standard an. Wird genutzt, wo das Modell das unterstützt (Claude braucht das; GPT cached oft von selbst). Wird bei Cursor und Ollama ignoriert. Aus zum Vergleich.",
           "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen anderen Chat nutzen, dessen Titel Wörter mit ihr teilt. Du musst nicht Chat oder Gespräch sagen. Nur ein kurzer Auszug, und dieser Chat wird nicht geändert.",
           "keep_chats": "Neueste nicht angepinnte Chats pro Person. Angepinnte Chats bleiben immer. Standard 30.",
           "ui_theme": "Standardmäßig aus. Wenn an, werden nur Home-Assistant-UI-Komponenten genutzt, die oft besser mit Themes funktionieren."
@@ -147,6 +159,9 @@
     }
   },
   "config_subentries": {
+    "usage": {
+      "entry_type": "Nutzung"
+    },
     "mcp": {
       "initiate_flow": {
         "user": "Verbindung hinzufügen",
@@ -238,8 +253,6 @@
             "api_key": "API-Schlüssel",
             "model": "Modell",
             "effort": "Aufwand",
-            "low_token": "Tokenverbrauch",
-            "prompt_cache": "Prompt-Cache",
             "check_house": "Immer zuerst das Haus prüfen",
             "assist": "Zu Assist hinzufügen",
             "assist_stt": "Sprache-zu-Text anlegen",
@@ -254,8 +267,6 @@
             "api_key": "Schlüssel vom KI-Anbieter, nicht dein Home-Assistant-Login.",
             "model": "Wähle eines oder gib eine ID ein. Leer lässt den Standard des Anbieters.",
             "effort": "Schnell, Hoch oder Hoch schnell, wenn das Modell das unterstützt.",
-            "low_token": "Wie viel jeder Zug sendet. Aus ist voll. Light: Tools und Verlauf, prüft das Haus (~5–20 % weniger). Medium: Tools, kurzer Prompt (~25–45 %). Extreme: nur Chat (~80–95 % weniger bei einer Hausprüfung).",
-            "prompt_cache": "Standard an. Nutzt den wiederholten Systemprompt und die Tool-Liste erneut, damit spätere Runden weniger kosten. Aus zum Vergleich. Claude braucht das; GPT cached oft von selbst. Wird bei Ollama ignoriert.",
             "check_house": "Standard an bei Aus. Der Assistent prüft Home Assistant, bevor er über dein Setup antwortet (nicht bei kurzen Grüßen). Light prüft immer. Medium und Extreme ignorieren das. Aus, wenn dein Modell das ohnehin zuverlässig tut.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat.",
             "assist_stt": "Fügt in Home Assistant eine Sprache-zu-Text-Option mit dem Schlüssel dieses Assistenten hinzu. Aus entfernt, was er angelegt hat.",
@@ -273,8 +284,6 @@
             "api_base": "Ollama-URL",
             "model": "Modell",
             "effort": "Aufwand",
-            "low_token": "Tokenverbrauch",
-            "prompt_cache": "Prompt-Cache",
             "check_house": "Immer zuerst das Haus prüfen",
             "assist": "Zu Assist hinzufügen"
           },
@@ -282,8 +291,6 @@
             "api_base": "Meist {example_url}",
             "model": "Wähle eines oder gib einen gezogenen Modellnamen ein. Leer nutzt llama3.2.",
             "effort": "Wird genutzt, wenn das Modell das unterstützt.",
-            "low_token": "Wie viel jeder Zug sendet. Aus ist voll. Light: Tools und Verlauf, prüft das Haus (~5–20 % weniger). Medium: Tools, kurzer Prompt (~25–45 %). Extreme: nur Chat (~80–95 % weniger bei einer Hausprüfung).",
-            "prompt_cache": "Standard an. Nutzt den wiederholten Systemprompt und die Tool-Liste erneut, damit spätere Runden weniger kosten. Aus zum Vergleich. Claude braucht das; GPT cached oft von selbst. Wird bei Ollama ignoriert.",
             "check_house": "Standard an bei Aus. Der Assistent prüft Home Assistant, bevor er über dein Setup antwortet (nicht bei kurzen Grüßen). Light prüft immer. Medium und Extreme ignorieren das. Aus, wenn dein Modell das ohnehin zuverlässig tut.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat."
           }
@@ -297,8 +304,6 @@
             "model": "Bereitstellung",
             "azure_api_version": "API-Version",
             "effort": "Aufwand",
-            "low_token": "Tokenverbrauch",
-            "prompt_cache": "Prompt-Cache",
             "check_house": "Immer zuerst das Haus prüfen",
             "assist": "Zu Assist hinzufügen"
           },
@@ -308,8 +313,6 @@
             "model": "Der Name der Bereitstellung.",
             "azure_api_version": "Standard lassen, außer Azure nennt dir eine andere Version.",
             "effort": "Wird genutzt, wenn die Bereitstellung das unterstützt.",
-            "low_token": "Wie viel jeder Zug sendet. Aus ist voll. Light: Tools und Verlauf, prüft das Haus (~5–20 % weniger). Medium: Tools, kurzer Prompt (~25–45 %). Extreme: nur Chat (~80–95 % weniger bei einer Hausprüfung).",
-            "prompt_cache": "Standard an. Nutzt den wiederholten Systemprompt und die Tool-Liste erneut, damit spätere Runden weniger kosten. Aus zum Vergleich. Claude braucht das; GPT cached oft von selbst. Wird bei Ollama ignoriert.",
             "check_house": "Standard an bei Aus. Der Assistent prüft Home Assistant, bevor er über dein Setup antwortet (nicht bei kurzen Grüßen). Light prüft immer. Medium und Extreme ignorieren das. Aus, wenn dein Modell das ohnehin zuverlässig tut.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat."
           }
@@ -322,8 +325,6 @@
             "api_base": "API-Basis-URL",
             "model": "Modell",
             "effort": "Aufwand",
-            "low_token": "Tokenverbrauch",
-            "prompt_cache": "Prompt-Cache",
             "check_house": "Immer zuerst das Haus prüfen",
             "assist": "Zu Assist hinzufügen",
             "assist_stt": "Sprache-zu-Text anlegen",
@@ -338,8 +339,6 @@
             "api_base": "Serveradresse. /v1 anhängen, wenn dein Server das erwartet.",
             "model": "Modellname auf diesem Server.",
             "effort": "Wird genutzt, wenn der Server das unterstützt.",
-            "low_token": "Wie viel jeder Zug sendet. Aus ist voll. Light: Tools und Verlauf, prüft das Haus (~5–20 % weniger). Medium: Tools, kurzer Prompt (~25–45 %). Extreme: nur Chat (~80–95 % weniger bei einer Hausprüfung).",
-            "prompt_cache": "Standard an. Nutzt den wiederholten Systemprompt und die Tool-Liste erneut, damit spätere Runden weniger kosten. Aus zum Vergleich. Claude braucht das; GPT cached oft von selbst. Wird bei Ollama ignoriert.",
             "check_house": "Standard an bei Aus. Der Assistent prüft Home Assistant, bevor er über dein Setup antwortet (nicht bei kurzen Grüßen). Light prüft immer. Medium und Extreme ignorieren das. Aus, wenn dein Modell das ohnehin zuverlässig tut.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat.",
             "assist_stt": "Fügt in Home Assistant eine Sprache-zu-Text-Option mit dem Schlüssel dieses Assistenten hinzu. Aus entfernt, was er angelegt hat.",

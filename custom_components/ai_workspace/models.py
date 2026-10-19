@@ -54,6 +54,7 @@ class Settings:
     shorten_mcp_results: bool = True
     change_history: bool = True
     track_usage: bool = True
+    show_chat_usage: bool = True
     ui_theme: str = "standard"
     cross_chat: bool = False
     token_mode: str = "off"
