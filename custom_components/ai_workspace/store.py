@@ -594,12 +594,16 @@ def _restore_target(document: str) -> tuple[str, str, str]:
 
 
 def _activity(row: sqlite3.Row) -> Activity:
-    from .logical_commit import parse_logical_document, restore_targets
-
     undone = _text(row["undone_at"])
     document = _text(row["document"])
-    logical = parse_logical_document(document)
-    targets = restore_targets(document)
+    try:
+        from .logical_commit import parse_logical_document, restore_targets
+
+        logical = parse_logical_document(document)
+        targets = restore_targets(document)
+    except ImportError:
+        logical = None
+        targets = []
     if logical:
         restore_kind = ", ".join(item[0] for item in targets if item[0])[:120]
         restore_id = ", ".join(item[1] for item in targets if item[1])[:240]
