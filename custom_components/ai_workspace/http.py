@@ -1223,7 +1223,9 @@ def _activity_dict(row, chat: str = "", *, ask_restore: bool = False) -> dict:
         "tool": row.tool,
         "can_rollback": bool(ACTIVITY_ROLLBACK and row.can_rollback),
         "undone_at": row.undone_at or "",
-        "ask_restore": bool(ask_restore and not undone),
+        "ask_restore": bool(
+            ask_restore and not undone and not (ACTIVITY_ROLLBACK and row.can_rollback)
+        ),
         "logical_commit": bool(getattr(row, "logical_commit", False)),
         "change_count": int(getattr(row, "change_count", 0) or 0),
         "restore_kind": getattr(row, "restore_kind", "") or "",

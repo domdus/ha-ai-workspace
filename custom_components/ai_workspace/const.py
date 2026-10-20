@@ -9,8 +9,8 @@ STATIC_URL = "/ai_workspace/static"
 VERSION = json.loads(
     (Path(__file__).parent / "manifest.json").read_text(encoding="utf-8")
 )["version"]
-# Observer snapshots sit beside MCP writes, not on them. Do not offer rollback as safety.
-ACTIVITY_ROLLBACK = False
+# Restore from the snapshot Change History took before the write.
+ACTIVITY_ROLLBACK = True
 OVERLAY_JS = f"{STATIC_URL}/overlay.js?v={VERSION}"
 PANEL_JS = f"{STATIC_URL}/panel.js?v={VERSION}"
 DEFAULT_MODEL = "composer-2.5"

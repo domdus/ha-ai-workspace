@@ -27,7 +27,7 @@ Turn it off if you want every attribute of a large list in one shot and you acce
 
 On by default, for cloud agents and Cursor.
 
-This is a **log** of configuration writes the agent actually made (the last 30), not an undo button. Open it from the sidebar. When HA-MCP is connected, **Ask to restore** tells the current chat to list HA-MCP’s edit backups and restore the matching ones.
+This is a **log** of configuration writes the agent actually made (the last 30). Open it from the sidebar. **Rollback** puts back the snapshot Change History took before that write. If there is no snapshot and HA-MCP is connected, **Ask to restore** tells the current chat to undo the change with whatever backup or config tools it actually has.
 
 Turn **Change History** off if you do not want snapshots. The agent can still use Home Assistant; only the log stops.
 

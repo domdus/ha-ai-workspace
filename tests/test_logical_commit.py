@@ -65,3 +65,8 @@ def test_merge_logical_summary_and_targets() -> None:
     targets = lc.restore_targets(raw)
     assert len(targets) == 2
     assert any(t[0] == "dashboard" for t in targets)
+    docs = lc.documents_to_restore(doc)
+    assert [item.get("kind") for item in docs] == ["dashboard", "automation"]
+    assert lc.documents_to_restore({"kind": "dashboard", "id": "lovelace"}) == [
+        {"kind": "dashboard", "id": "lovelace"}
+    ]

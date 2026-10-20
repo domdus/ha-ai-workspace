@@ -700,6 +700,24 @@ async def commit(hass: HomeAssistant, store: Store, token: str, *, ok: bool) -> 
 
 
 async def rollback(hass: HomeAssistant, document: dict[str, Any]) -> None:
+    from .logical_commit import documents_to_restore
+
+    docs = documents_to_restore(document)
+    restored = 0
+    last_error: ActivityError | None = None
+    for doc in docs:
+        try:
+            await _rollback_one(hass, doc)
+        except ActivityError as exc:
+            last_error = exc
+            continue
+        restored += 1
+    if restored:
+        return
+    raise last_error or ActivityError("This change has nothing to restore.")
+
+
+async def _rollback_one(hass: HomeAssistant, document: dict[str, Any]) -> None:
     kind = str(document.get("kind") or "")
     if kind in _YAML:
         await _restore_yaml(hass, kind, document)
