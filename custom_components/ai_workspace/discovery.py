@@ -219,7 +219,22 @@ def _sync_runtime_options(hass: HomeAssistant, opts: dict) -> bool:
     return changed
 
 
+def _on_supervisor(hass: HomeAssistant) -> bool:
+    try:
+        from homeassistant.components.hassio import is_hassio
+
+        return bool(is_hassio(hass))
+    except Exception:
+        return hass.data.get("hassio") is not None
+
+
 def _runtime_hass_url(hass: HomeAssistant) -> str:
+    # The Runtime add-on is not on the host network. 127.0.0.1 inside that
+    # container is the add-on, not Core, so Change History callbacks never land.
+    if _on_supervisor(hass):
+        api = getattr(hass.config, "api", None)
+        port = int(getattr(api, "port", None) or 8123)
+        return f"http://homeassistant:{port}"
     try:
         from homeassistant.helpers.network import NoURLAvailableError, get_url
 

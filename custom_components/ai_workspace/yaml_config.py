@@ -79,6 +79,7 @@ from .const import (
     assist_tts_enabled,
     provider_supports_stt,
     provider_supports_tts,
+    provider_supports_tts_speed,
     resolved_tts_speed,
     token_mode_of,
     tts_speed_choice,
@@ -354,7 +355,7 @@ def agent_payload(row: dict[str, Any], unique: str) -> dict[str, Any]:
         CONF_ASSIST_TTS: assist_tts_enabled(raw, provider) if provider_supports_tts(provider) else False,
         CONF_TTS_MODEL: str(row.get("tts_model") or "").strip() if provider_supports_tts(provider) else "",
         CONF_TTS_VOICE: str(row.get("tts_voice") or "").strip() if provider_supports_tts(provider) else "",
-        CONF_TTS_SPEED: tts_speed_choice(resolved_tts_speed(raw)) if provider_supports_tts(provider) else "",
+        CONF_TTS_SPEED: tts_speed_choice(resolved_tts_speed(raw)) if provider_supports_tts_speed(provider) else "",
         CONF_AZURE_API_VERSION: str(row.get("azure_api_version") or DEFAULT_AZURE_API_VERSION)
         if provider == API_AZURE
         else "",

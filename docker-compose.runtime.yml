@@ -37,6 +37,7 @@ services:
       DATA_DIR: /data
       HOST: "127.0.0.1"
       PORT: "8090"
+      HASS_URL: "http://127.0.0.1:8123"
     volumes:
       - ai-workspace-data:/data
     restart: unless-stopped

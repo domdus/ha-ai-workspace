@@ -168,6 +168,89 @@ def test_usage_by_model_and_daily_events(tmp_path: Path) -> None:
     store.close()
 
 
+def test_claude_exclusive_cache_counts_in_summaries(tmp_path: Path) -> None:
+    store = Store(tmp_path / "claude-cache.sqlite")
+    counted = 36 + 280912 + 73502 + 2987
+    with store._lock:
+        store._conn.execute(
+            """
+            INSERT INTO usage_turns (
+                created_at, user_id, session_id, agent_id, agent, provider, model,
+                prompt_tokens, completion_tokens, cache_read_tokens, cache_write_tokens,
+                total_tokens, cost_usd, origin
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "2026-10-20T12:00:00+00:00",
+                "user-1",
+                "s-claude",
+                "claude-1",
+                "Claude",
+                "anthropic",
+                "claude-sonnet-5-5",
+                36,
+                2987,
+                280912,
+                73502,
+                3023,
+                0.241716,
+                "chat",
+            ),
+        )
+        store._conn.commit()
+    summary = store.summarize_usage(agent_id="claude-1")
+    assert summary["total_tokens"] == counted
+    assert summary["cache_read_tokens"] == 280912
+    assert summary["cache_write_tokens"] == 73502
+    events = store.usage_events()
+    assert events[0]["total_tokens"] == counted
+    last = store.last_usage(session_id="s-claude")
+    assert last is not None
+    assert last["total_tokens"] == counted
+    models = store.usage_by_model(model="claude-sonnet-5-5")
+    assert models[0]["total_tokens"] == counted
+    assert models[0]["tokens_per_turn"] == float(counted)
+    store.close()
+
+
+def test_usage_chat_choices_skip_deleted_sessions(tmp_path: Path) -> None:
+    store = Store(tmp_path / "chats.sqlite")
+    keep = store.create_session("user-1", "anthropic")
+    gone = store.create_session("user-1", "anthropic")
+    store.rename_session("user-1", keep.id, "Kitchen")
+    store.add_usage(
+        user_id="user-1",
+        session_id=keep.id,
+        agent_id="claude-1",
+        agent="Claude",
+        model="claude-sonnet-5-5",
+        total_tokens=100,
+        cost_usd=0.4,
+        origin="chat",
+    )
+    store.add_usage(
+        user_id="user-1",
+        session_id=gone.id,
+        agent_id="claude-1",
+        agent="Claude",
+        model="claude-sonnet-5-5",
+        total_tokens=50,
+        cost_usd=0.2,
+        origin="chat",
+    )
+    store.delete_session("user-1", gone.id)
+    chats = store.usage_chat_choices(user_id="user-1")
+    assert [row["id"] for row in chats] == [keep.id]
+    assert chats[0]["title"] == "Kitchen"
+    remaining = store.summarize_usage()
+    assert remaining["turns"] == 2
+    assert remaining["cost_usd"] == 0.6
+    scoped = store.summarize_usage(session_id=keep.id)
+    assert scoped["turns"] == 1
+    assert scoped["cost_usd"] == 0.4
+    store.close()
+
+
 def test_usage_tts_origin_and_characters(tmp_path: Path) -> None:
     store = Store(tmp_path / "tts.sqlite")
     store.add_usage(

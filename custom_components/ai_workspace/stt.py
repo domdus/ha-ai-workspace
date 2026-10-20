@@ -1,13 +1,14 @@
-"""Speech-to-text from an OpenAI-style agent key, for Assist pipelines."""
+"""Speech-to-text from an agent key, for Assist pipelines."""
 
 from __future__ import annotations
 
 import io
+import json
 import logging
 import wave
 from collections.abc import AsyncIterable
 
-from aiohttp import FormData
+from aiohttp import ClientTimeout, FormData
 from homeassistant.components import stt
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -18,11 +19,14 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .agents import Agent, entry_agents
 from .const import (
+    API_GEMINI,
     API_OPENROUTER,
     DOMAIN,
     default_api_base,
     default_stt_model,
+    gemini_generate_content_url,
 )
+from .voice import gemini_response_text, gemini_transcribe_payload
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -105,7 +109,7 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """One STT entity per OpenAI-style agent that has Speech-to-text on."""
+    """One STT entity per agent that has Speech-to-text on."""
     from .assist_pipelines import async_prune_voice_entities, async_refresh_assist_pipelines
 
     keep: set[str] = set()
@@ -198,21 +202,50 @@ class AiWorkspaceSTTEntity(stt.SpeechToTextEntity):
     def _base(self) -> str:
         return (self._api_base or default_api_base(self._provider) or "https://api.openai.com/v1").rstrip("/")
 
-    async def async_process_audio_stream(
-        self, metadata: stt.SpeechMetadata, stream: AsyncIterable[bytes]
-    ) -> stt.SpeechResult:
-        audio = bytearray()
-        async for chunk in stream:
-            audio.extend(chunk)
-        payload = bytes(audio)
-        if metadata.format == stt.AudioFormats.WAV:
-            buf = io.BytesIO()
-            with wave.open(buf, "wb") as wav:
-                wav.setnchannels(metadata.channel.value)
-                wav.setsampwidth(metadata.bit_rate.value // 8)
-                wav.setframerate(metadata.sample_rate.value)
-                wav.writeframes(payload)
-            payload = buf.getvalue()
+    def _headers(self) -> dict[str, str]:
+        headers = {"Authorization": f"Bearer {self._api_key}"}
+        if self._provider == API_GEMINI:
+            headers["x-goog-api-key"] = self._api_key
+        if self._provider == API_OPENROUTER:
+            headers["HTTP-Referer"] = "https://github.com/domdus/ha-ai-workspace"
+            headers["X-Title"] = "AI Workspace"
+        return headers
+
+    def _audio_file(self, metadata: stt.SpeechMetadata, payload: bytes) -> bytes:
+        if metadata.format != stt.AudioFormats.WAV:
+            return payload
+        buf = io.BytesIO()
+        with wave.open(buf, "wb") as wav:
+            wav.setnchannels(metadata.channel.value)
+            wav.setsampwidth(metadata.bit_rate.value // 8)
+            wav.setframerate(metadata.sample_rate.value)
+            wav.writeframes(payload)
+        return buf.getvalue()
+
+    async def _transcribe_gemini(self, metadata: stt.SpeechMetadata, payload: bytes) -> str:
+        model = self._stt_model or default_stt_model(API_GEMINI)
+        mime = "audio/ogg" if metadata.format == stt.AudioFormats.OGG else "audio/wav"
+        url = gemini_generate_content_url(self._api_base, model)
+        body = gemini_transcribe_payload(payload, mime, str(metadata.language or ""))
+        session = async_get_clientsession(self.hass)
+        async with session.post(
+            url,
+            json=body,
+            headers=self._headers(),
+            timeout=ClientTimeout(total=45, sock_connect=10),
+        ) as resp:
+            raw = await resp.read()
+            if resp.status >= 400:
+                detail = raw.decode("utf-8", errors="replace")[:300]
+                _LOGGER.warning("Speech-to-text HTTP %s: %s", resp.status, detail)
+                return ""
+        try:
+            data = json.loads(raw.decode("utf-8")) if raw else {}
+        except ValueError:
+            return ""
+        return gemini_response_text(data if isinstance(data, dict) else {})
+
+    async def _transcribe_openai(self, metadata: stt.SpeechMetadata, payload: bytes) -> str:
         form = FormData()
         form.add_field(
             "file",
@@ -225,25 +258,36 @@ class AiWorkspaceSTTEntity(stt.SpeechToTextEntity):
         lang = str(metadata.language or "").split("-", 1)[0].strip()
         if lang:
             form.add_field("language", lang)
-        headers = {"Authorization": f"Bearer {self._api_key}"}
-        if self._provider == API_OPENROUTER:
-            headers["HTTP-Referer"] = "https://github.com/domdus/ha-ai-workspace"
-            headers["X-Title"] = "AI Workspace"
         session = async_get_clientsession(self.hass)
+        async with session.post(
+            f"{self._base()}/audio/transcriptions",
+            data=form,
+            headers=self._headers(),
+            timeout=ClientTimeout(total=45, sock_connect=10),
+        ) as resp:
+            body = await resp.json(content_type=None)
+            if resp.status >= 400:
+                _LOGGER.warning("Speech-to-text HTTP %s: %s", resp.status, body)
+                return ""
+        return str((body or {}).get("text") or "").strip()
+
+    async def async_process_audio_stream(
+        self, metadata: stt.SpeechMetadata, stream: AsyncIterable[bytes]
+    ) -> stt.SpeechResult:
+        audio = bytearray()
+        async for chunk in stream:
+            audio.extend(chunk)
+        payload = self._audio_file(metadata, bytes(audio))
+        if not payload:
+            return stt.SpeechResult(None, stt.SpeechResultState.ERROR)
         try:
-            async with session.post(
-                f"{self._base()}/audio/transcriptions",
-                data=form,
-                headers=headers,
-            ) as resp:
-                body = await resp.json(content_type=None)
-                if resp.status >= 400:
-                    _LOGGER.warning("Speech-to-text HTTP %s: %s", resp.status, body)
-                    return stt.SpeechResult(None, stt.SpeechResultState.ERROR)
+            if self._provider == API_GEMINI:
+                text = await self._transcribe_gemini(metadata, payload)
+            else:
+                text = await self._transcribe_openai(metadata, payload)
         except Exception:
             _LOGGER.exception("Speech-to-text failed")
             return stt.SpeechResult(None, stt.SpeechResultState.ERROR)
-        text = str((body or {}).get("text") or "").strip()
         if not text:
             return stt.SpeechResult(None, stt.SpeechResultState.ERROR)
         return stt.SpeechResult(text, stt.SpeechResultState.SUCCESS)

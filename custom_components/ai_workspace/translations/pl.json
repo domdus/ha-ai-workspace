@@ -58,7 +58,6 @@
             "data": {
               "low_token": "Zmniejsz zużycie tokenów",
               "check_house": "Zawsze najpierw sprawdzaj dom",
-              "prompt_cache": "Pamięć promptu",
               "track_usage": "Śledź użycie i koszty",
               "show_chat_usage": "Pokaż koszt w nagłówku czatu",
               "ha_usage_sensors": "Dodaj czujniki użycia Home Assistant"
@@ -66,7 +65,6 @@
             "data_description": {
               "low_token": "Wysyła mniej z każdą wiadomością, żeby oszczędzać pieniądze przy agentach Cloud, Ollama i Azure (nie dotyczy Cursor). Wyłączone daje najbardziej wiarygodne odpowiedzi o twoim domu. Extreme to tylko czat i nie może sterować domem.",
               "check_house": "Domyślnie włączone. Asystent sprawdza Home Assistant, zanim odpowie na pytania o twój dom, więc listy i stany są prawdziwe, a nie zgadywane. Powitania są pomijane. Przy „Zmniejsz zużycie tokenów” na Light sprawdza zawsze; na Medium i Extreme nigdy. Wyłącz dla ogólnych pytań lub dla modelu, który już sam sprawdza.",
-              "prompt_cache": "Domyślnie włączone. Pozwala dostawcy ponownie użyć, znacznie taniej, części powtarzającej się w każdej wiadomości (instrukcje i lista narzędzi). Claude potrzebuje tego przełącznika; GPT zwykle cache’uje sam. Cursor i Ollama go ignorują.",
               "track_usage": "Domyślnie włączone. Po każdej odpowiedzi zapisuje tokeny i szacowany koszt i pokazuje je na stronie Użycie. Wyłączone: bez nowych wpisów; dotychczasowa historia zostaje.",
               "show_chat_usage": "Domyślnie włączone. Pokazuje tokeny i koszt pod tytułem czatu. Wyłączenie ukrywa tylko tę linię; śledzenie i strona Użycie zostają.",
               "ha_usage_sensors": "Domyślnie wyłączone. Potrzebne tylko do własnych pulpitów lub automatyzacji: dodaje czujniki kosztów, tokenów i tur na urządzeniu Usage i przy każdym agencie. Strona Użycie działa bez nich. Wyłączenie usuwa czujniki."
@@ -167,7 +165,6 @@
             "data": {
               "low_token": "Zmniejsz zużycie tokenów",
               "check_house": "Zawsze najpierw sprawdzaj dom",
-              "prompt_cache": "Pamięć promptu",
               "track_usage": "Śledź użycie i koszty",
               "show_chat_usage": "Pokaż koszt w nagłówku czatu",
               "ha_usage_sensors": "Dodaj czujniki użycia Home Assistant"
@@ -175,7 +172,6 @@
             "data_description": {
               "low_token": "Wysyła mniej z każdą wiadomością, żeby oszczędzać pieniądze przy agentach Cloud, Ollama i Azure (nie dotyczy Cursor). Wyłączone daje najbardziej wiarygodne odpowiedzi o twoim domu. Extreme to tylko czat i nie może sterować domem.",
               "check_house": "Domyślnie włączone. Asystent sprawdza Home Assistant, zanim odpowie na pytania o twój dom, więc listy i stany są prawdziwe, a nie zgadywane. Powitania są pomijane. Przy „Zmniejsz zużycie tokenów” na Light sprawdza zawsze; na Medium i Extreme nigdy. Wyłącz dla ogólnych pytań lub dla modelu, który już sam sprawdza.",
-              "prompt_cache": "Domyślnie włączone. Pozwala dostawcy ponownie użyć, znacznie taniej, części powtarzającej się w każdej wiadomości (instrukcje i lista narzędzi). Claude potrzebuje tego przełącznika; GPT zwykle cache’uje sam. Cursor i Ollama go ignorują.",
               "track_usage": "Domyślnie włączone. Po każdej odpowiedzi zapisuje tokeny i szacowany koszt i pokazuje je na stronie Użycie. Wyłączone: bez nowych wpisów; dotychczasowa historia zostaje.",
               "show_chat_usage": "Domyślnie włączone. Pokazuje tokeny i koszt pod tytułem czatu. Wyłączenie ukrywa tylko tę linię; śledzenie i strona Użycie zostają.",
               "ha_usage_sensors": "Domyślnie wyłączone. Potrzebne tylko do własnych pulpitów lub automatyzacji: dodaje czujniki kosztów, tokenów i tur na urządzeniu Usage i przy każdym agencie. Strona Użycie działa bez nich. Wyłączenie usuwa czujniki."
@@ -304,7 +300,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "To samo hasło co w twoim środowisku Cursor. Zostaw puste przy dodatku z automatycznym parowaniem.",
-            "cursor_api_key": "Z konta Cursor (Integrations). Przy edycji zostaw puste, aby zachować zapisany klucz.",
+            "cursor_api_key": "Z konta Cursor (Integrations). Przy edycji zostaw puste, aby zachować zapisany klucz. [Pobierz klucz API]({api_key_url})",
             "model": "Wybierz z listy lub wpisz nazwę modelu. Puste używa Composer.",
             "effort": "Ile czasu na myślenie zezwolić. Composer domyślnie używa Szybki.",
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist."
@@ -328,7 +324,7 @@
           },
           "data_description": {
             "borrow": "Używa klucza już zapisanego przez tę integrację. Druga integracja zostaje bez zmian.",
-            "api_key": "Klucz od dostawcy AI, nie login Home Assistant.",
+            "api_key": "Klucz od dostawcy AI, nie login Home Assistant. [Pobierz klucz API]({api_key_url})",
             "model": "Wybierz z listy lub wpisz nazwę modelu. Puste używa domyślnego modelu dostawcy.",
             "effort": "Większy wysiłek to więcej myślenia: lepsze odpowiedzi na trudne pytania, ale wolniej i więcej tokenów. Ignorowane, gdy model tego nie obsługuje.",
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist.",
@@ -368,7 +364,7 @@
             "assist": "Dodaj do Assist"
           },
           "data_description": {
-            "api_key": "Klucz Azure OpenAI. Przy edycji zostaw puste, aby zachować zapisany klucz.",
+            "api_key": "Klucz Azure OpenAI. Przy edycji zostaw puste, aby zachować zapisany klucz. [Pobierz klucz API]({api_key_url})",
             "api_base": "{example_url}",
             "model": "Nazwa wdrożenia.",
             "azure_api_version": "Zostaw wartość domyślną, chyba że wsparcie Azure podało inną wersję.",

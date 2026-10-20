@@ -124,7 +124,7 @@ def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Age
         stt_model=resolved_stt_model(raw, provider),
         assist_tts=assist_tts_enabled(raw, provider),
         tts_model=resolved_tts_model(raw, provider),
-        tts_voice=resolved_tts_voice(raw),
+        tts_voice=resolved_tts_voice(raw, provider),
         tts_speed=resolved_tts_speed(raw),
         token_mode=token_mode_of(raw.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF)),
         prompt_cache=bool(raw.get(CONF_PROMPT_CACHE, True)),

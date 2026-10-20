@@ -271,6 +271,7 @@ def _summary_attrs(summary: dict | None, extra: dict | None = None) -> dict:
         "prompt_tokens": row.get("prompt_tokens") or 0,
         "completion_tokens": row.get("completion_tokens") or 0,
         "cache_read_tokens": row.get("cache_read_tokens") or 0,
+        "cache_write_tokens": row.get("cache_write_tokens") or 0,
         "turns": row.get("turns") or 0,
         "missing_cost": bool(row.get("missing_cost")),
         "cost_usd": row.get("cost_usd") or 0,

@@ -58,7 +58,6 @@
             "data": {
               "low_token": "Reduce token usage",
               "check_house": "Always check the house first",
-              "prompt_cache": "Prompt cache",
               "track_usage": "Track usage and costs",
               "show_chat_usage": "Show cost in chat header",
               "ha_usage_sensors": "Add Home Assistant usage sensors"
@@ -66,7 +65,6 @@
             "data_description": {
               "low_token": "Sends less with each message to save money on Cloud, Ollama, and Azure agents (Cursor is not affected). Off gives the most reliable answers about your home. Extreme is chat only and cannot control the house.",
               "check_house": "On by default. Cloud, Ollama, and Azure agents look at Home Assistant before answering questions about your home, so lists and states are real, not guessed. Greetings are skipped. Cursor is not affected. With Reduce token usage on Light it always checks; on Medium and Extreme it never does. Turn it off for general questions or for a model that already checks on its own.",
-              "prompt_cache": "On by default. Lets the provider reuse the part that repeats in every message (instructions and tool list) at a much lower price. Claude needs this switch; GPT mostly caches on its own. Cursor and Ollama ignore it.",
               "track_usage": "On by default. Records tokens and estimated cost after each reply and shows them on the Usage page. Off stops new records; existing history stays.",
               "show_chat_usage": "On by default. Shows tokens and cost under the chat title. Off hides only that line; tracking and the Usage page stay.",
               "ha_usage_sensors": "Off by default. Only needed for your own dashboards or automations: adds cost, token, and turn sensors on a Usage device and on each agent. The Usage page works without them. Turning this off removes the sensors."
@@ -167,7 +165,6 @@
             "data": {
               "low_token": "Reduce token usage",
               "check_house": "Always check the house first",
-              "prompt_cache": "Prompt cache",
               "track_usage": "Track usage and costs",
               "show_chat_usage": "Show cost in chat header",
               "ha_usage_sensors": "Add Home Assistant usage sensors"
@@ -175,7 +172,6 @@
             "data_description": {
               "low_token": "Sends less with each message to save money on Cloud, Ollama, and Azure agents (Cursor is not affected). Off gives the most reliable answers about your home. Extreme is chat only and cannot control the house.",
               "check_house": "On by default. Cloud, Ollama, and Azure agents look at Home Assistant before answering questions about your home, so lists and states are real, not guessed. Greetings are skipped. Cursor is not affected. With Reduce token usage on Light it always checks; on Medium and Extreme it never does. Turn it off for general questions or for a model that already checks on its own.",
-              "prompt_cache": "On by default. Lets the provider reuse the part that repeats in every message (instructions and tool list) at a much lower price. Claude needs this switch; GPT mostly caches on its own. Cursor and Ollama ignore it.",
               "track_usage": "On by default. Records tokens and estimated cost after each reply and shows them on the Usage page. Off stops new records; existing history stays.",
               "show_chat_usage": "On by default. Shows tokens and cost under the chat title. Off hides only that line; tracking and the Usage page stay.",
               "ha_usage_sensors": "Off by default. Only needed for your own dashboards or automations: adds cost, token, and turn sensors on a Usage device and on each agent. The Usage page works without them. Turning this off removes the sensors."
@@ -304,7 +300,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "Same password as on your Cursor runtime. Leave empty when using the add-on with automatic pairing.",
-            "cursor_api_key": "From your Cursor account (Integrations). Leave blank when editing to keep the saved key.",
+            "cursor_api_key": "From your Cursor account (Integrations). Leave blank when editing to keep the saved key. [Get an API key]({api_key_url})",
             "model": "Pick from the list or type a model name. Empty uses Composer.",
             "effort": "How much thinking time to allow. Composer defaults to Fast.",
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
@@ -328,7 +324,7 @@
           },
           "data_description": {
             "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
-            "api_key": "Your key from the AI provider, not your Home Assistant login.",
+            "api_key": "Your key from the AI provider, not your Home Assistant login. [Get an API key]({api_key_url})",
             "model": "Pick from the list or type a model name. Empty uses the provider default.",
             "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist.",
@@ -336,7 +332,7 @@
             "stt_model": "Leave empty for the provider default. You can type another model name if yours offers one.",
             "assist_tts": "Adds a Text-to-speech option in Home Assistant using this assistant's key. Off removes what it added.",
             "tts_model": "Leave empty for the default voice model. You can type another name if your provider lists one.",
-            "tts_voice": "Coral is the default. Voices work for the languages you set under Assist → Language.",
+            "tts_voice": "Coral is the OpenAI default. Kore is the Gemini default. Voices work for the languages you set under Assist → Language.",
             "tts_speed": "How fast this voice speaks. 1× is normal. Applies to AI Workspace and Assist."
           }
         },
@@ -368,7 +364,7 @@
             "assist": "Add to Assist"
           },
           "data_description": {
-            "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key.",
+            "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key. [Get an API key]({api_key_url})",
             "api_base": "{example_url}",
             "model": "The deployment name.",
             "azure_api_version": "Leave the default unless Azure support gave you another version.",
@@ -402,7 +398,7 @@
             "stt_model": "Leave empty for the provider default. You can type another model name if yours offers one.",
             "assist_tts": "Adds a Text-to-speech option in Home Assistant using this assistant's key. Off removes what it added.",
             "tts_model": "Leave empty for the default voice model. You can type another name if your provider lists one.",
-            "tts_voice": "Coral is the default. Voices work for the languages you set under Assist → Language.",
+            "tts_voice": "Coral is the OpenAI default. Kore is the Gemini default. Voices work for the languages you set under Assist → Language.",
             "tts_speed": "How fast this voice speaks. 1× is normal. Applies to AI Workspace and Assist."
           }
         }

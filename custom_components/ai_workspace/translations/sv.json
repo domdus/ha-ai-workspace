@@ -58,7 +58,6 @@
             "data": {
               "low_token": "Minska tokenanvändning",
               "check_house": "Kontrollera alltid huset först",
-              "prompt_cache": "Promptcache",
               "track_usage": "Spåra användning och kostnader",
               "show_chat_usage": "Visa kostnad i chatthuvudet",
               "ha_usage_sensors": "Lägg till Home Assistant-användningssensorer"
@@ -66,7 +65,6 @@
             "data_description": {
               "low_token": "Skickar mindre med varje meddelande för att spara pengar med Cloud-, Ollama- och Azure-agenter (Cursor påverkas inte). Av ger de mest pålitliga svaren om ditt hem. Extreme är bara chatt och kan inte styra huset.",
               "check_house": "På som standard. Assistenten kollar i Home Assistant innan den svarar på frågor om ditt hem, så att listor och tillstånd är verkliga, inte gissade. Hälsningar hoppas över. Med ”Minska tokenanvändning” på Light kollar den alltid; på Medium och Extreme aldrig. Stäng av för allmänna frågor eller för en modell som redan kollar själv.",
-              "prompt_cache": "På som standard. Låter leverantören återanvända den del som upprepas i varje meddelande (instruktioner och verktygslista) till ett mycket lägre pris. Claude behöver den här inställningen; GPT cachar oftast själv. Cursor och Ollama ignorerar den.",
               "track_usage": "På som standard. Sparar token och uppskattad kostnad efter varje svar och visar dem på sidan Användning. Av stoppar nya poster; befintlig historik finns kvar.",
               "show_chat_usage": "På som standard. Visar token och kostnad under chattiteln. Av döljer bara den raden; spårning och sidan Användning finns kvar.",
               "ha_usage_sensors": "Av som standard. Behövs bara för egna instrumentpaneler eller automationer: lägger till sensorer för kostnad, token och turer på en Usage-enhet och på varje agent. Sidan Användning fungerar utan dem. Stänger du av tas sensorerna bort."
@@ -167,7 +165,6 @@
             "data": {
               "low_token": "Minska tokenanvändning",
               "check_house": "Kontrollera alltid huset först",
-              "prompt_cache": "Promptcache",
               "track_usage": "Spåra användning och kostnader",
               "show_chat_usage": "Visa kostnad i chatthuvudet",
               "ha_usage_sensors": "Lägg till Home Assistant-användningssensorer"
@@ -175,7 +172,6 @@
             "data_description": {
               "low_token": "Skickar mindre med varje meddelande för att spara pengar med Cloud-, Ollama- och Azure-agenter (Cursor påverkas inte). Av ger de mest pålitliga svaren om ditt hem. Extreme är bara chatt och kan inte styra huset.",
               "check_house": "På som standard. Assistenten kollar i Home Assistant innan den svarar på frågor om ditt hem, så att listor och tillstånd är verkliga, inte gissade. Hälsningar hoppas över. Med ”Minska tokenanvändning” på Light kollar den alltid; på Medium och Extreme aldrig. Stäng av för allmänna frågor eller för en modell som redan kollar själv.",
-              "prompt_cache": "På som standard. Låter leverantören återanvända den del som upprepas i varje meddelande (instruktioner och verktygslista) till ett mycket lägre pris. Claude behöver den här inställningen; GPT cachar oftast själv. Cursor och Ollama ignorerar den.",
               "track_usage": "På som standard. Sparar token och uppskattad kostnad efter varje svar och visar dem på sidan Användning. Av stoppar nya poster; befintlig historik finns kvar.",
               "show_chat_usage": "På som standard. Visar token och kostnad under chattiteln. Av döljer bara den raden; spårning och sidan Användning finns kvar.",
               "ha_usage_sensors": "Av som standard. Behövs bara för egna instrumentpaneler eller automationer: lägger till sensorer för kostnad, token och turer på en Usage-enhet och på varje agent. Sidan Användning fungerar utan dem. Stänger du av tas sensorerna bort."
@@ -304,7 +300,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "Samma lösenord som på din Cursor-runtime. Lämna tomt när du använder tillägget med automatisk parkoppling.",
-            "cursor_api_key": "Från ditt Cursor-konto (Integrations). Lämna tomt vid redigering för att behålla den sparade nyckeln.",
+            "cursor_api_key": "Från ditt Cursor-konto (Integrations). Lämna tomt vid redigering för att behålla den sparade nyckeln. [Hämta API-nyckel]({api_key_url})",
             "model": "Välj från listan eller skriv ett modellnamn. Tomt använder Composer.",
             "effort": "Hur mycket tänketid som ska tillåtas. Composer använder Snabb som standard.",
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist."
@@ -328,7 +324,7 @@
           },
           "data_description": {
             "borrow": "Använder nyckeln som redan sparats av den integrationen. Den andra integrationen lämnas oförändrad.",
-            "api_key": "Din nyckel från AI-leverantören, inte din Home Assistant-inloggning.",
+            "api_key": "Din nyckel från AI-leverantören, inte din Home Assistant-inloggning. [Hämta API-nyckel]({api_key_url})",
             "model": "Välj från listan eller skriv ett modellnamn. Tomt använder leverantörens standard.",
             "effort": "Mer ansträngning betyder mer tänkande: bättre svar på svåra frågor, men långsammare och fler token. Ignoreras om modellen inte stöder det.",
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist.",
@@ -368,7 +364,7 @@
             "assist": "Lägg till i Assist"
           },
           "data_description": {
-            "api_key": "Azure OpenAI-nyckeln. Lämna tomt vid redigering för att behålla den sparade nyckeln.",
+            "api_key": "Azure OpenAI-nyckeln. Lämna tomt vid redigering för att behålla den sparade nyckeln. [Hämta API-nyckel]({api_key_url})",
             "api_base": "{example_url}",
             "model": "Distributionens namn.",
             "azure_api_version": "Behåll standardvärdet om inte Azure-supporten gett dig en annan version.",

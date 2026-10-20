@@ -35,6 +35,10 @@ _EXTRA_PRICES: dict[str, dict[str, float]] = {
     "qwen3-plus": {"input": 4.0e-7, "output": 1.2e-6, "cache_read": 1.0e-7},
     "qwen2.5": {"input": 4.0e-7, "output": 1.2e-6},
     "grok-4": {"input": 3.0e-6, "output": 1.5e-5, "cache_read": 7.5e-7},
+    "gemini-2.5-flash-preview-tts": {"input": 5.0e-7, "output": 1.0e-5},
+    "gemini-2.5-flash-tts": {"input": 5.0e-7, "output": 1.0e-5},
+    "gemini-3.8-flash-tts": {"input": 5.0e-7, "output": 1.0e-5},
+    "gemini-3.8-flash-lite-tts": {"input": 2.5e-7, "output": 5.0e-6},
 }
 
 # Local models run on your own hardware; these always win.
@@ -107,13 +111,23 @@ class TokenUsage:
         cents = None
         if self.charged_cents is not None or other.charged_cents is not None:
             cents = (self.charged_cents or 0) + (other.charged_cents or 0)
+        prompt = self.prompt_tokens + other.prompt_tokens
+        completion = self.completion_tokens + other.completion_tokens
+        cache_read = self.cache_read_tokens + other.cache_read_tokens
+        cache_write = self.cache_write_tokens + other.cache_write_tokens
         return TokenUsage(
-            prompt_tokens=self.prompt_tokens + other.prompt_tokens,
-            completion_tokens=self.completion_tokens + other.completion_tokens,
-            cache_read_tokens=self.cache_read_tokens + other.cache_read_tokens,
-            cache_write_tokens=self.cache_write_tokens + other.cache_write_tokens,
+            prompt_tokens=prompt,
+            completion_tokens=completion,
+            cache_read_tokens=cache_read,
+            cache_write_tokens=cache_write,
             reasoning_tokens=self.reasoning_tokens + other.reasoning_tokens,
-            total_tokens=self.total_tokens + other.total_tokens,
+            total_tokens=counted_tokens(
+                prompt,
+                completion,
+                cache_read,
+                cache_write,
+                self.total_tokens + other.total_tokens,
+            ),
             characters=self.characters + other.characters,
             cost_usd=cost,
             charged_cents=cents,
@@ -285,9 +299,13 @@ def parse_usage(blob: object, *, model: str = "", run_id: str = "") -> TokenUsag
         or data.get("thoughtsTokenCount")
         or details_out.get("reasoning_tokens")
     )
-    total = _int(data.get("total_tokens") or data.get("totalTokenCount"))
-    if not total:
-        total = prompt + completion
+    total = counted_tokens(
+        prompt,
+        completion,
+        cache_read,
+        cache_write,
+        _int(data.get("total_tokens") or data.get("totalTokenCount")),
+    )
     cost = _float(data.get("cost") if data.get("cost") is not None else data.get("total_cost"))
     cents = data.get("charged_cents")
     if cents is None:
@@ -318,6 +336,37 @@ def parse_usage(blob: object, *, model: str = "", run_id: str = "") -> TokenUsag
     )
 
 
+def counted_tokens(
+    prompt_tokens: int = 0,
+    completion_tokens: int = 0,
+    cache_read_tokens: int = 0,
+    cache_write_tokens: int = 0,
+    total_tokens: int = 0,
+) -> int:
+    """Tokens Anthropic-style invoices count.
+
+    OpenAI folds cache into ``prompt_tokens``. Claude reports uncached input
+    separately, so cache read/write must be added or a house-check looks like a
+    few thousand tokens while the bill is hundreds of thousands.
+    """
+    prompt = int(prompt_tokens or 0)
+    completion = int(completion_tokens or 0)
+    read = int(cache_read_tokens or 0)
+    write = int(cache_write_tokens or 0)
+    stored = int(total_tokens or 0)
+    if prompt >= read + write:
+        return stored or (prompt + completion)
+    return prompt + read + write + completion
+
+
+def uncached_prompt_tokens(prompt_tokens: int, cache_read_tokens: int, cache_write_tokens: int) -> int:
+    prompt = int(prompt_tokens or 0)
+    cached = int(cache_read_tokens or 0) + int(cache_write_tokens or 0)
+    if prompt >= cached:
+        return max(0, prompt - cached)
+    return max(0, prompt)
+
+
 def estimate_cost(usage: TokenUsage, model: str = "") -> TokenUsage:
     if usage.charged_cents is not None:
         return replace(usage, cost_usd=usage.charged_cents / 100.0, cost_source="cursor_sdk")
@@ -325,9 +374,17 @@ def estimate_cost(usage: TokenUsage, model: str = "") -> TokenUsage:
         return usage
     name, rates = lookup_price(model or usage.model)
     out = replace(usage, model=usage.model or name)
+    tokens = counted_tokens(
+        out.prompt_tokens,
+        out.completion_tokens,
+        out.cache_read_tokens,
+        out.cache_write_tokens,
+        out.total_tokens,
+    )
+    out = replace(out, total_tokens=tokens)
     if not rates:
         return out
-    billed_prompt = max(0, out.prompt_tokens - out.cache_read_tokens - out.cache_write_tokens)
+    billed_prompt = uncached_prompt_tokens(out.prompt_tokens, out.cache_read_tokens, out.cache_write_tokens)
     cost = billed_prompt * rates.get("input", 0.0)
     cost += out.cache_read_tokens * rates.get("cache_read", rates.get("input", 0.0) * 0.1)
     cost += out.cache_write_tokens * rates.get("cache_write", rates.get("input", 0.0) * 1.25)
@@ -359,7 +416,13 @@ def usage_payload(usage: TokenUsage) -> dict[str, Any]:
         "cache_read_tokens": usage.cache_read_tokens,
         "cache_write_tokens": usage.cache_write_tokens,
         "reasoning_tokens": usage.reasoning_tokens,
-        "total_tokens": usage.total_tokens or (usage.prompt_tokens + usage.completion_tokens),
+        "total_tokens": counted_tokens(
+            usage.prompt_tokens,
+            usage.completion_tokens,
+            usage.cache_read_tokens,
+            usage.cache_write_tokens,
+            usage.total_tokens,
+        ),
         "characters": usage.characters,
         "cost_usd": usage.cost_usd,
         "cost_source": usage.cost_source,

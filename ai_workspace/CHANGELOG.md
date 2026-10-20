@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.3.0
+
+First stable 1.3. Includes the 1.3.0b1–b12 betas (usage and cost, Change History, Cursor runtime, Gemini speech, and the security work in b9).
+
+- Change History records Lovelace card add, duplicate, move, and delete again. Named writes are kept even when Home Assistant is slow to fire `lovelace_updated`, dashboard snapshots reload from storage, and Cursor Runtime callbacks reach Core: `127.0.0.1` on host-network Docker, `homeassistant` on a bridge or HA OS add-on. A turn-level safety net still writes a row if prepare/commit never lands.
+- The floating chat drawer uses Home Assistant’s app bar in the standard template too
+- Prompt cache stays on by default and is no longer on Configure; `prompt_cache: false` in YAML still turns it off
+- Agent forms include a **Get an API key** link to that provider’s console
+- HTTP 503 from a model provider is retried a few times, like 429
+- HACS downloads a release zip (`ai_workspace.zip`) and the repo has brand icons for the store listing
+- Gemini agents can add Home Assistant speech-to-text and text-to-speech engines (native generateContent; TTS default voice Kore). Existing Gemini agents stay off until you turn each on
+- The speak control stays hidden until an assistant reply exists, instead of appearing while the agent is still working
+- A cloud turn that calls tools and then returns no text now says so, instead of leaving an empty assistant bubble
+- Claude Usage totals now count cache read and write tokens (Anthropic reports those separately). Empty cloud turns still record the cost of the tools they ran
+- The Usage page top cards are workspace totals. Filter by an existing chat instead of a “This chat” card; deleted chats stay in the unfiltered totals
+
 ## 1.3.0b12
 
 - **Always check the house first** is a shared AI Workspace setting under Cost and tokens, not a per-agent toggle. Cursor is unchanged. If every cloud agent already had it off, that stays off.

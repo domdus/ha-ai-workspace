@@ -58,7 +58,6 @@
             "data": {
               "low_token": "降低 Token 用量",
               "check_house": "一律先檢查住宅",
-              "prompt_cache": "Prompt 快取",
               "track_usage": "追蹤用量與費用",
               "show_chat_usage": "在聊天標題列顯示費用",
               "ha_usage_sensors": "新增 Home Assistant 用量感測器"
@@ -66,7 +65,6 @@
             "data_description": {
               "low_token": "每則訊息傳送較少內容，為 Cloud、Ollama 和 Azure 助手省錢（不影響 Cursor）。關閉可獲得關於你家最可靠的回答。Extreme 僅供聊天，無法控制家居。",
               "check_house": "預設開啟。助手在回答有關你家的問題前會先查看 Home Assistant，因此清單與狀態是真實的，而不是猜的。問候會略過。「降低 Token 用量」為 Light 時一律查看；為 Medium 與 Extreme 時從不查看。對於一般性問題，或模型已會自行查看時，可以關閉。",
-              "prompt_cache": "預設開啟。讓服務供應商以低得多的價格重複使用每則訊息中重複的部分（指示與工具清單）。Claude 需要此開關；GPT 大多會自行快取。Cursor 和 Ollama 會忽略它。",
               "track_usage": "預設開啟。每次回覆後記錄 token 與估算費用，並顯示在用量頁面。關閉後不再新增紀錄；既有歷史保留。",
               "show_chat_usage": "預設開啟。在聊天標題下顯示 token 與費用。關閉只隱藏這一行；紀錄與用量頁面仍在。",
               "ha_usage_sensors": "預設關閉。僅在你自己的儀表板或自動化中需要：在 Usage 裝置與每個助手上新增費用、token 與回合感測器。用量頁面不需要它們也能使用。關閉後會移除這些感測器。"
@@ -167,7 +165,6 @@
             "data": {
               "low_token": "降低 Token 用量",
               "check_house": "一律先檢查住宅",
-              "prompt_cache": "Prompt 快取",
               "track_usage": "追蹤用量與費用",
               "show_chat_usage": "在聊天標題列顯示費用",
               "ha_usage_sensors": "新增 Home Assistant 用量感測器"
@@ -175,7 +172,6 @@
             "data_description": {
               "low_token": "每則訊息傳送較少內容，為 Cloud、Ollama 和 Azure 助手省錢（不影響 Cursor）。關閉可獲得關於你家最可靠的回答。Extreme 僅供聊天，無法控制家居。",
               "check_house": "預設開啟。助手在回答有關你家的問題前會先查看 Home Assistant，因此清單與狀態是真實的，而不是猜的。問候會略過。「降低 Token 用量」為 Light 時一律查看；為 Medium 與 Extreme 時從不查看。對於一般性問題，或模型已會自行查看時，可以關閉。",
-              "prompt_cache": "預設開啟。讓服務供應商以低得多的價格重複使用每則訊息中重複的部分（指示與工具清單）。Claude 需要此開關；GPT 大多會自行快取。Cursor 和 Ollama 會忽略它。",
               "track_usage": "預設開啟。每次回覆後記錄 token 與估算費用，並顯示在用量頁面。關閉後不再新增紀錄；既有歷史保留。",
               "show_chat_usage": "預設開啟。在聊天標題下顯示 token 與費用。關閉只隱藏這一行；紀錄與用量頁面仍在。",
               "ha_usage_sensors": "預設關閉。僅在你自己的儀表板或自動化中需要：在 Usage 裝置與每個助手上新增費用、token 與回合感測器。用量頁面不需要它們也能使用。關閉後會移除這些感測器。"
@@ -304,7 +300,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "與 Cursor runtime 上相同的密碼。使用含自動配對的附加元件時請留空。",
-            "cursor_api_key": "來自你的 Cursor 帳戶（Integrations）。編輯時留空可保留已儲存的金鑰。",
+            "cursor_api_key": "來自你的 Cursor 帳戶（Integrations）。編輯時留空可保留已儲存的金鑰。 [取得 API 金鑰]({api_key_url})",
             "model": "從清單中選擇或輸入模型名稱。留空則使用 Composer。",
             "effort": "允許多長的思考時間。Composer 預設使用快速。",
             "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。"
@@ -328,7 +324,7 @@
           },
           "data_description": {
             "borrow": "使用該整合已儲存的金鑰。另一個整合保持不變。",
-            "api_key": "來自 AI 供應商的金鑰，不是 Home Assistant 登入憑證。",
+            "api_key": "來自 AI 供應商的金鑰，不是 Home Assistant 登入憑證。 [取得 API 金鑰]({api_key_url})",
             "model": "從清單中選擇或輸入模型名稱。留空則使用供應商預設值。",
             "effort": "推理強度越高，思考越多：難題回答更好，但更慢、消耗更多 token。模型不支援時忽略。",
             "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。",
@@ -368,7 +364,7 @@
             "assist": "新增至 Assist"
           },
           "data_description": {
-            "api_key": "Azure OpenAI 金鑰。編輯時留空可保留已儲存的金鑰。",
+            "api_key": "Azure OpenAI 金鑰。編輯時留空可保留已儲存的金鑰。 [取得 API 金鑰]({api_key_url})",
             "api_base": "{example_url}",
             "model": "部署名稱。",
             "azure_api_version": "除非 Azure 支援提供了其他版本，否則請保留預設值。",

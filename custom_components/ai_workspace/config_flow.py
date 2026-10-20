@@ -108,6 +108,17 @@ _SHARED_KEYS = (
     CONF_TTS_ENGINE,
     CONF_TTS_NATURAL,
 )
+
+
+def _stored_shared(values: dict) -> dict:
+    """Keep YAML-only keys such as prompt_cache when they were already set."""
+    return {
+        key: values[key]
+        for key in _SHARED_KEYS
+        if key in values and values[key] is not None
+    }
+
+
 _URL_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.URL))
 _TOKEN_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
 _PROMPT_SELECTOR = TextSelector(TextSelectorConfig(multiline=True))
@@ -183,7 +194,6 @@ def _cost_schema(current: dict) -> vol.Schema:
                 SelectSelectorConfig(options=list(TOKEN_MODES), mode="dropdown", translation_key="low_token")
             ),
             vol.Optional(CONF_CHECK_HOUSE, default=bool(current.get(CONF_CHECK_HOUSE, True))): cv.boolean,
-            vol.Optional(CONF_PROMPT_CACHE, default=bool(current.get(CONF_PROMPT_CACHE, True))): cv.boolean,
             vol.Optional(CONF_TRACK_USAGE, default=current.get(CONF_TRACK_USAGE, True)): cv.boolean,
             vol.Optional(CONF_SHOW_CHAT_USAGE, default=current.get(CONF_SHOW_CHAT_USAGE, True)): cv.boolean,
             vol.Optional(
@@ -475,7 +485,7 @@ class AiWorkspaceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 return self.async_create_entry(
                     title="AI Workspace",
                     data={},
-                    options={key: flat.get(key) for key in _SHARED_KEYS},
+                    options=_stored_shared(flat),
                     subentries=subentries,
                 )
             saved = flat
@@ -528,7 +538,7 @@ class AiWorkspaceOptionsFlow(config_entries.OptionsFlow):
         if user_input is not None:
             flat = _normalize(_flatten(user_input), self.hass)
             merged = {**current, **flat}
-            return self.async_create_entry(title="", data={key: merged.get(key) for key in _SHARED_KEYS})
+            return self.async_create_entry(title="", data=_stored_shared(merged))
         return self.async_show_form(
             step_id="init",
             data_schema=await _shared_form(self.hass, current, None, include_mcp=False),

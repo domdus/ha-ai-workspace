@@ -154,6 +154,28 @@ def test_null_url_path_is_the_default_dashboard():
     assert activity.looks_like_config_write("a1b2c3d4e5f6", {"python_transform": "config['views'] = []"}) is True
 
 
+def test_omitted_url_path_python_transform_is_dashboard():
+    args = {"python_transform": "config['views'][0]['cards'].append({})"}
+    assert activity.dashboard_args(args) is True
+    hashed = activity.classify("a1b2c3d4e5f6", args)
+    assert hashed is not None
+    assert hashed.kind == "dashboard"
+    assert hashed.item_id == "lovelace"
+    named = activity.classify("ha_config_set_dashboard", args)
+    assert named is not None
+    assert named.item_id == "lovelace"
+    assert named.action == "update"
+    assert activity.dashboard_args({"identifier": 1775990764950, "python_transform": "config['conditions'] = []"}) is False
+
+
+def test_should_keep_named_write_without_lovelace_event():
+    assert activity.should_keep_activity(ok=True, summary="Updated dashboard Home") is True
+    assert activity.should_keep_activity(ok=False, summary="Updated dashboard Home") is False
+    assert activity.should_keep_activity(ok=False, summary="Updated dashboard Home", events=True) is True
+    assert activity.should_keep_activity(ok=True, summary="", indexed=True) is True
+    assert activity.should_keep_activity(ok=True, summary="") is False
+
+
 def test_changed_index_keys():
     before = {"dashboard:lovelace": ("Home", "aaa"), "entity:light.kitchen": ("Kitchen", "one")}
     after = {"dashboard:lovelace": ("Home", "bbb"), "entity:light.kitchen": ("Kitchen", "one")}

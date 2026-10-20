@@ -220,27 +220,31 @@ CONF_ASSIST_TTS = "assist_tts"
 CONF_TTS_MODEL = "tts_model"
 CONF_TTS_VOICE = "tts_voice"
 CONF_TTS_SPEED = "tts_speed"
-STT_PROVIDERS = frozenset({API_OPENAI, API_OPENROUTER, API_COMPATIBLE})
-TTS_PROVIDERS = STT_PROVIDERS
+STT_PROVIDERS = frozenset({API_OPENAI, API_OPENROUTER, API_COMPATIBLE, API_GEMINI})
+TTS_PROVIDERS = frozenset({API_OPENAI, API_OPENROUTER, API_COMPATIBLE, API_GEMINI})
 _STT_MODEL = {
     API_OPENAI: "gpt-4o-mini-transcribe",
     API_OPENROUTER: "openai/whisper-1",
     API_COMPATIBLE: "whisper-1",
+    API_GEMINI: "gemini-3.8-flash",
 }
 _STT_MODEL_CHOICES = {
     API_OPENAI: ["gpt-4o-mini-transcribe", "gpt-4o-transcribe", "whisper-1"],
     API_OPENROUTER: ["openai/whisper-1", "openai/gpt-4o-mini-transcribe", "openai/gpt-4o-transcribe"],
     API_COMPATIBLE: ["whisper-1", "gpt-4o-mini-transcribe", "gpt-4o-transcribe"],
+    API_GEMINI: ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.5-pro"],
 }
 _TTS_MODEL = {
     API_OPENAI: "gpt-4o-mini-tts",
     API_OPENROUTER: "openai/gpt-4o-mini-tts",
     API_COMPATIBLE: "gpt-4o-mini-tts",
+    API_GEMINI: "gemini-3.8-flash-tts",
 }
 _TTS_MODEL_CHOICES = {
     API_OPENAI: ["gpt-4o-mini-tts", "tts-1-hd", "tts-1"],
     API_OPENROUTER: ["openai/gpt-4o-mini-tts", "openai/tts-1-hd", "openai/tts-1"],
     API_COMPATIBLE: ["gpt-4o-mini-tts", "tts-1-hd", "tts-1"],
+    API_GEMINI: ["gemini-3.8-flash-tts", "gemini-3.8-flash-lite-tts", "gemini-2.5-flash-preview-tts"],
 }
 TTS_VOICES = [
     "coral",
@@ -258,6 +262,69 @@ TTS_VOICES = [
     "verse",
 ]
 DEFAULT_TTS_VOICE = "coral"
+DEFAULT_GEMINI_TTS_VOICE = "Kore"
+GEMINI_TTS_VOICES = [
+    "Kore",
+    "Puck",
+    "Charon",
+    "Zephyr",
+    "Fenrir",
+    "Leda",
+    "Orus",
+    "Aoede",
+    "Callirrhoe",
+    "Autonoe",
+    "Enceladus",
+    "Iapetus",
+    "Umbriel",
+    "Algieba",
+    "Despina",
+    "Erinome",
+    "Algenib",
+    "RasAlgethi",
+    "Laomedeia",
+    "Achernar",
+    "Alnilam",
+    "Schedar",
+    "Gacrux",
+    "Pulcherrima",
+    "Achird",
+    "Zubenelgenubi",
+    "Vindemiatrix",
+    "Sadachbia",
+    "Sadaltager",
+    "Sulafat",
+]
+_GEMINI_SPEECH_LANGUAGE = {
+    "ar": "ar-EG",
+    "cmn": "cmn-CN",
+    "cs": "cs-CZ",
+    "da": "da-DK",
+    "de": "de-DE",
+    "el": "el-GR",
+    "en": "en-US",
+    "es": "es-ES",
+    "fi": "fi-FI",
+    "fr": "fr-FR",
+    "hi": "hi-IN",
+    "hu": "hu-HU",
+    "id": "id-ID",
+    "it": "it-IT",
+    "ja": "ja-JP",
+    "ko": "ko-KR",
+    "nb": "nb-NO",
+    "nl": "nl-NL",
+    "pl": "pl-PL",
+    "pt": "pt-BR",
+    "ro": "ro-RO",
+    "ru": "ru-RU",
+    "sv": "sv-SE",
+    "th": "th-TH",
+    "tr": "tr-TR",
+    "uk": "uk-UA",
+    "vi": "vi-VN",
+    "zh": "cmn-CN",
+}
 DEFAULT_TTS_SPEED = 1.0
 TTS_SPEEDS = (1.0, 1.25, 1.5, 2.0, 3.0, 4.0)
 # ISO 639-1 tags for OpenAI /audio/speech. One voice speaks all of these.
@@ -337,7 +404,7 @@ def assist_enabled(raw: dict, *, new: bool = False) -> bool:
 
 
 def provider_supports_stt(kind: str) -> bool:
-    """True when this provider has an OpenAI-style /audio/transcriptions API."""
+    """True when this provider can register a Home Assistant STT engine."""
     return str(kind or "") in STT_PROVIDERS
 
 
@@ -355,19 +422,62 @@ def resolved_stt_model(raw: dict, provider: str = "") -> str:
     return stored or default_stt_model(kind)
 
 
-def assist_stt_enabled(raw: dict, provider: str = "") -> bool:
-    """OpenAI-style agents transcribe for Assist unless the row turned it off."""
+def assist_stt_enabled(raw: dict, provider: str = "", *, new: bool = False) -> bool:
+    """OpenAI-style agents transcribe unless turned off. Gemini is opt-in on existing rows."""
     kind = str(provider or raw.get(CONF_API_PROVIDER) or "")
     if not provider_supports_stt(kind):
         return False
     if CONF_ASSIST_STT not in raw:
+        if kind == API_GEMINI:
+            return bool(new)
         return True
     return bool(raw.get(CONF_ASSIST_STT))
 
 
 def provider_supports_tts(kind: str) -> bool:
-    """True when this provider has an OpenAI-style /audio/speech API."""
+    """True when this provider can register a Home Assistant TTS engine."""
     return str(kind or "") in TTS_PROVIDERS
+
+
+def provider_supports_tts_speed(kind: str) -> bool:
+    """Gemini has no OpenAI-style speed multiplier."""
+    return provider_supports_tts(kind) and str(kind or "") != API_GEMINI
+
+
+def tts_voices(kind: str) -> list[str]:
+    if str(kind or "") == API_GEMINI:
+        return list(GEMINI_TTS_VOICES)
+    return list(TTS_VOICES)
+
+
+def default_tts_voice(kind: str) -> str:
+    if str(kind or "") == API_GEMINI:
+        return DEFAULT_GEMINI_TTS_VOICE
+    return DEFAULT_TTS_VOICE
+
+
+def gemini_speech_language(language: str) -> str:
+    """Map Home Assistant's language tag to Gemini speechConfig.languageCode."""
+    raw = str(language or "").strip().replace("_", "-")
+    if not raw:
+        return "en-US"
+    if "-" in raw:
+        primary, region = raw.split("-", 1)
+        if region:
+            if primary.casefold() == "zh":
+                return "cmn-CN" if region.casefold() in {"cn", "hans", "cmn"} else "cmn-TW"
+            return f"{primary}-{region.upper() if len(region) == 2 else region}"
+    primary = raw.split("-", 1)[0].casefold()
+    return _GEMINI_SPEECH_LANGUAGE.get(primary, "en-US")
+
+
+def gemini_generate_content_url(api_base: str, model: str) -> str:
+    """Native generateContent URL from the OpenAI-compatible Gemini base."""
+    base = str(api_base or default_api_base(API_GEMINI) or "").strip().rstrip("/")
+    if base.endswith("/openai"):
+        base = base[: -len("/openai")]
+    name = str(model or default_tts_model(API_GEMINI)).strip() or default_tts_model(API_GEMINI)
+    return f"{base}/models/{name}:generateContent"
 
 
 def default_tts_model(kind: str) -> str:
@@ -384,9 +494,15 @@ def resolved_tts_model(raw: dict, provider: str = "") -> str:
     return stored or default_tts_model(kind)
 
 
-def resolved_tts_voice(raw: dict) -> str:
-    stored = str(raw.get(CONF_TTS_VOICE) or "").strip().casefold()
-    return stored or DEFAULT_TTS_VOICE
+def resolved_tts_voice(raw: dict, provider: str = "") -> str:
+    kind = str(provider or raw.get(CONF_API_PROVIDER) or "")
+    stored = str(raw.get(CONF_TTS_VOICE) or "").strip()
+    if kind == API_GEMINI:
+        voices = {name.casefold(): name for name in GEMINI_TTS_VOICES}
+        if stored:
+            return voices.get(stored.casefold(), stored)
+        return DEFAULT_GEMINI_TTS_VOICE
+    return stored.casefold() or DEFAULT_TTS_VOICE
 
 
 def tts_speed_choice(value: float) -> str:
@@ -403,12 +519,14 @@ def resolved_tts_speed(raw: dict) -> float:
     return max(0.25, min(4.0, value))
 
 
-def assist_tts_enabled(raw: dict, provider: str = "") -> bool:
-    """OpenAI-style agents speak for Assist unless the row turned it off."""
+def assist_tts_enabled(raw: dict, provider: str = "", *, new: bool = False) -> bool:
+    """OpenAI-style agents speak unless turned off. Gemini is opt-in on existing rows."""
     kind = str(provider or raw.get(CONF_API_PROVIDER) or "")
     if not provider_supports_tts(kind):
         return False
     if CONF_ASSIST_TTS not in raw:
+        if kind == API_GEMINI:
+            return bool(new)
         return True
     return bool(raw.get(CONF_ASSIST_TTS))
 
@@ -447,6 +565,24 @@ CONF_API_BASE = "api_base"
 CONF_SYSTEM_PROMPT = "system_prompt"
 MODE_CURSOR = "cursor"
 MODE_API = "api"
+API_KEY_URLS = {
+    API_OPENAI: "https://platform.openai.com/api-keys",
+    API_ANTHROPIC: "https://console.anthropic.com/settings/keys",
+    API_GEMINI: "https://aistudio.google.com/apikey",
+    API_DEEPSEEK: "https://platform.deepseek.com/api_keys",
+    API_QWEN: "https://modelstudio.console.alibabacloud.com/?tab=playground#/api-key",
+    API_XAI: "https://console.x.ai/",
+    API_OPENROUTER: "https://openrouter.ai/keys",
+    API_AZURE: "https://oai.azure.com/",
+    MODE_CURSOR: "https://cursor.com/dashboard/integrations",
+}
+
+
+def api_key_url(kind: str) -> str:
+    """Provider console that issues API keys. Empty when there is no public key page."""
+    return API_KEY_URLS.get(kind, "")
+
+
 ADDON_SLUG = "ai_workspace"
 ADDON_PORT = 8090
 MCP_HA = "ha"

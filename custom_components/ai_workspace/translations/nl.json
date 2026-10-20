@@ -58,7 +58,6 @@
             "data": {
               "low_token": "Tokenverbruik verminderen",
               "check_house": "Altijd eerst het huis controleren",
-              "prompt_cache": "Promptcache",
               "track_usage": "Gebruik en kosten bijhouden",
               "show_chat_usage": "Kosten in de chatkop tonen",
               "ha_usage_sensors": "Home Assistant-gebruikssensoren toevoegen"
@@ -66,7 +65,6 @@
             "data_description": {
               "low_token": "Stuurt minder mee met elk bericht om geld te besparen bij Cloud-, Ollama- en Azure-agents (Cursor valt hierbuiten). Uit geeft de betrouwbaarste antwoorden over je huis. Extreme is alleen chat en kan het huis niet bedienen.",
               "check_house": "Standaard aan. De assistent kijkt in Home Assistant voordat hij vragen over je huis beantwoordt, zodat lijsten en statussen echt zijn, niet geraden. Begroetingen worden overgeslagen. Met “Tokenverbruik verminderen” op Light controleert hij altijd; op Medium en Extreme nooit. Zet het uit voor algemene vragen of voor een model dat al zelf controleert.",
-              "prompt_cache": "Standaard aan. Laat de provider het deel dat in elk bericht terugkomt (instructies en toollijst) tegen een veel lagere prijs hergebruiken. Claude heeft deze schakelaar nodig; GPT cachet meestal zelf. Cursor en Ollama negeren hem.",
               "track_usage": "Standaard aan. Noteert na elk antwoord tokens en geschatte kosten en toont ze op de Gebruik-pagina. Uit: geen nieuwe records; bestaande geschiedenis blijft.",
               "show_chat_usage": "Standaard aan. Toont tokens en kosten onder de chattitel. Uit verbergt alleen die regel; bijhouden en de Gebruik-pagina blijven.",
               "ha_usage_sensors": "Standaard uit. Alleen nodig voor je eigen dashboards of automatiseringen: voegt sensoren voor kosten, tokens en beurten toe op een Usage-apparaat en bij elke agent. De Gebruik-pagina werkt ook zonder. Uitzetten verwijdert de sensoren."
@@ -167,7 +165,6 @@
             "data": {
               "low_token": "Tokenverbruik verminderen",
               "check_house": "Altijd eerst het huis controleren",
-              "prompt_cache": "Promptcache",
               "track_usage": "Gebruik en kosten bijhouden",
               "show_chat_usage": "Kosten in de chatkop tonen",
               "ha_usage_sensors": "Home Assistant-gebruikssensoren toevoegen"
@@ -175,7 +172,6 @@
             "data_description": {
               "low_token": "Stuurt minder mee met elk bericht om geld te besparen bij Cloud-, Ollama- en Azure-agents (Cursor valt hierbuiten). Uit geeft de betrouwbaarste antwoorden over je huis. Extreme is alleen chat en kan het huis niet bedienen.",
               "check_house": "Standaard aan. De assistent kijkt in Home Assistant voordat hij vragen over je huis beantwoordt, zodat lijsten en statussen echt zijn, niet geraden. Begroetingen worden overgeslagen. Met “Tokenverbruik verminderen” op Light controleert hij altijd; op Medium en Extreme nooit. Zet het uit voor algemene vragen of voor een model dat al zelf controleert.",
-              "prompt_cache": "Standaard aan. Laat de provider het deel dat in elk bericht terugkomt (instructies en toollijst) tegen een veel lagere prijs hergebruiken. Claude heeft deze schakelaar nodig; GPT cachet meestal zelf. Cursor en Ollama negeren hem.",
               "track_usage": "Standaard aan. Noteert na elk antwoord tokens en geschatte kosten en toont ze op de Gebruik-pagina. Uit: geen nieuwe records; bestaande geschiedenis blijft.",
               "show_chat_usage": "Standaard aan. Toont tokens en kosten onder de chattitel. Uit verbergt alleen die regel; bijhouden en de Gebruik-pagina blijven.",
               "ha_usage_sensors": "Standaard uit. Alleen nodig voor je eigen dashboards of automatiseringen: voegt sensoren voor kosten, tokens en beurten toe op een Usage-apparaat en bij elke agent. De Gebruik-pagina werkt ook zonder. Uitzetten verwijdert de sensoren."
@@ -304,7 +300,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "Hetzelfde wachtwoord als op je Cursor-runtime. Leeg laten bij de add-on met automatische koppeling.",
-            "cursor_api_key": "Uit je Cursor-account (Integrations). Leeg laten bij bewerken om de opgeslagen sleutel te houden.",
+            "cursor_api_key": "Uit je Cursor-account (Integrations). Leeg laten bij bewerken om de opgeslagen sleutel te houden. [API-sleutel ophalen]({api_key_url})",
             "model": "Kies uit de lijst of typ een modelnaam. Leeg gebruikt Composer.",
             "effort": "Hoeveel denktijd is toegestaan. Composer gebruikt standaard Snel.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
@@ -328,7 +324,7 @@
           },
           "data_description": {
             "borrow": "Gebruikt de sleutel die die integratie al heeft opgeslagen. De andere integratie blijft ongewijzigd.",
-            "api_key": "Je sleutel bij de AI-provider, niet je Home Assistant-aanmelding.",
+            "api_key": "Je sleutel bij de AI-provider, niet je Home Assistant-aanmelding. [API-sleutel ophalen]({api_key_url})",
             "model": "Kies uit de lijst of typ een modelnaam. Leeg gebruikt de standaard van de provider.",
             "effort": "Meer inzet betekent meer nadenken: betere antwoorden op moeilijke vragen, maar trager en meer tokens. Wordt genegeerd als het model het niet ondersteunt.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd.",
@@ -368,7 +364,7 @@
             "assist": "Toevoegen aan Assist"
           },
           "data_description": {
-            "api_key": "De Azure OpenAI-sleutel. Leeg laten bij bewerken om de opgeslagen sleutel te houden.",
+            "api_key": "De Azure OpenAI-sleutel. Leeg laten bij bewerken om de opgeslagen sleutel te houden. [API-sleutel ophalen]({api_key_url})",
             "api_base": "{example_url}",
             "model": "De naam van de implementatie.",
             "azure_api_version": "Laat de standaard staan, tenzij Azure-ondersteuning je een andere versie gaf.",

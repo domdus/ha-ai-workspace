@@ -68,6 +68,45 @@ def test_openai_usage_and_gpt5_mini_not_gpt5():
     assert billed.cost_usd == (900 * rates["input"]) + (100 * rates["cache_read"]) + (200 * rates["output"])
 
 
+def test_claude_exclusive_cache_tokens_match_list_price():
+    usage = mod.parse_usage(
+        {
+            "usage": {
+                "input_tokens": 36,
+                "output_tokens": 2987,
+                "cache_read_input_tokens": 280912,
+                "cache_creation_input_tokens": 73502,
+            }
+        },
+        model="claude-sonnet-5-5",
+    )
+    billed = mod.estimate_cost(usage, "claude-sonnet-5-5")
+    _key, rates = mod.lookup_price("claude-sonnet-5-5")
+    assert billed.total_tokens == 36 + 280912 + 73502 + 2987
+    assert billed.cost_usd == round(
+        36 * rates["input"]
+        + 280912 * rates["cache_read"]
+        + 73502 * rates["cache_write"]
+        + 2987 * rates["output"],
+        8,
+    )
+    payload = mod.usage_payload(billed)
+    assert payload["total_tokens"] == billed.total_tokens
+    inclusive = mod.parse_usage(
+        {
+            "usage": {
+                "input_tokens": 50,
+                "output_tokens": 10,
+                "cache_read_input_tokens": 20,
+                "cache_creation_input_tokens": 5,
+            }
+        }
+    )
+    assert inclusive.total_tokens == 60
+    assert mod.uncached_prompt_tokens(50, 20, 5) == 25
+    assert mod.uncached_prompt_tokens(36, 280912, 73502) == 36
+
+
 def test_anthropic_cache_and_cursor_cents():
     claude = mod.parse_usage(
         {
@@ -133,3 +172,14 @@ def test_tts_uses_character_prices_not_chat_tokens():
     unknown = mod.estimate_tts_cost("hello", "piper-voice")
     assert unknown.characters == 5
     assert unknown.cost_usd is None
+    gemini = mod.estimate_cost(
+        mod.parse_usage({"promptTokenCount": 8, "candidatesTokenCount": 40, "totalTokenCount": 48}),
+        "gemini-3.8-flash-tts",
+    )
+    assert gemini.prompt_tokens == 8
+    assert gemini.completion_tokens == 40
+    assert gemini.cost_usd is not None
+    flash = mod.lookup_price("gemini-2.5-flash")
+    tts = mod.lookup_price("gemini-3.8-flash-tts")
+    assert tts[1] is not None
+    assert flash[0] != tts[0]

@@ -58,7 +58,6 @@
             "data": {
               "low_token": "토큰 사용량 줄이기",
               "check_house": "항상 먼저 집을 확인",
-              "prompt_cache": "프롬프트 캐시",
               "track_usage": "사용량 및 비용 추적",
               "show_chat_usage": "채팅 헤더에 비용 표시",
               "ha_usage_sensors": "Home Assistant 사용량 센서 추가"
@@ -66,7 +65,6 @@
             "data_description": {
               "low_token": "메시지마다 보내는 양을 줄여 Cloud, Ollama, Azure 에이전트 비용을 아낍니다(Cursor는 영향 없음). 끄기가 집에 대해 가장 신뢰할 수 있는 답변을 줍니다. Extreme은 채팅 전용이며 집을 제어할 수 없습니다.",
               "check_house": "기본값은 켜짐입니다. 어시스턴트가 집에 관한 질문에 답하기 전에 Home Assistant를 확인하므로 목록과 상태가 추측이 아닌 실제 값입니다. 인사는 건너뜁니다. ‘토큰 사용량 줄이기’가 Light이면 항상 확인하고, Medium과 Extreme에서는 확인하지 않습니다. 일반적인 질문에 쓰거나 모델이 이미 스스로 확인한다면 끄세요.",
-              "prompt_cache": "기본값은 켜짐입니다. 모든 메시지에서 반복되는 부분(지침과 도구 목록)을 제공업체가 훨씬 낮은 가격으로 재사용하게 합니다. Claude는 이 스위치가 필요하고, GPT는 대부분 스스로 캐시합니다. Cursor와 Ollama는 무시합니다.",
               "track_usage": "기본값은 켜짐입니다. 답변마다 토큰과 예상 비용을 기록해 사용량 페이지에 표시합니다. 끄면 새 기록이 중단되고 기존 기록은 남습니다.",
               "show_chat_usage": "기본으로 켜짐. 채팅 제목 아래에 토큰과 비용을 표시합니다. 끄면 그 줄만 숨기고, 추적과 사용량 페이지는 그대로입니다.",
               "ha_usage_sensors": "기본값은 꺼짐입니다. 직접 만든 대시보드나 자동화에만 필요합니다. Usage 장치와 각 에이전트에 비용, 토큰, 턴 센서를 추가합니다. 사용량 페이지는 이 센서 없이도 작동합니다. 끄면 센서가 제거됩니다."
@@ -167,7 +165,6 @@
             "data": {
               "low_token": "토큰 사용량 줄이기",
               "check_house": "항상 먼저 집을 확인",
-              "prompt_cache": "프롬프트 캐시",
               "track_usage": "사용량 및 비용 추적",
               "show_chat_usage": "채팅 헤더에 비용 표시",
               "ha_usage_sensors": "Home Assistant 사용량 센서 추가"
@@ -175,7 +172,6 @@
             "data_description": {
               "low_token": "메시지마다 보내는 양을 줄여 Cloud, Ollama, Azure 에이전트 비용을 아낍니다(Cursor는 영향 없음). 끄기가 집에 대해 가장 신뢰할 수 있는 답변을 줍니다. Extreme은 채팅 전용이며 집을 제어할 수 없습니다.",
               "check_house": "기본값은 켜짐입니다. 어시스턴트가 집에 관한 질문에 답하기 전에 Home Assistant를 확인하므로 목록과 상태가 추측이 아닌 실제 값입니다. 인사는 건너뜁니다. ‘토큰 사용량 줄이기’가 Light이면 항상 확인하고, Medium과 Extreme에서는 확인하지 않습니다. 일반적인 질문에 쓰거나 모델이 이미 스스로 확인한다면 끄세요.",
-              "prompt_cache": "기본값은 켜짐입니다. 모든 메시지에서 반복되는 부분(지침과 도구 목록)을 제공업체가 훨씬 낮은 가격으로 재사용하게 합니다. Claude는 이 스위치가 필요하고, GPT는 대부분 스스로 캐시합니다. Cursor와 Ollama는 무시합니다.",
               "track_usage": "기본값은 켜짐입니다. 답변마다 토큰과 예상 비용을 기록해 사용량 페이지에 표시합니다. 끄면 새 기록이 중단되고 기존 기록은 남습니다.",
               "show_chat_usage": "기본으로 켜짐. 채팅 제목 아래에 토큰과 비용을 표시합니다. 끄면 그 줄만 숨기고, 추적과 사용량 페이지는 그대로입니다.",
               "ha_usage_sensors": "기본값은 꺼짐입니다. 직접 만든 대시보드나 자동화에만 필요합니다. Usage 장치와 각 에이전트에 비용, 토큰, 턴 센서를 추가합니다. 사용량 페이지는 이 센서 없이도 작동합니다. 끄면 센서가 제거됩니다."
@@ -304,7 +300,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "Cursor 런타임과 같은 비밀번호입니다. 자동 페어링 애드온을 쓰면 비워 두세요.",
-            "cursor_api_key": "Cursor 계정(Integrations)에서 가져옵니다. 수정 시 비워 두면 저장된 키를 유지합니다.",
+            "cursor_api_key": "Cursor 계정(Integrations)에서 가져옵니다. 수정 시 비워 두면 저장된 키를 유지합니다. [API 키 받기]({api_key_url})",
             "model": "목록에서 고르거나 모델 이름을 입력하세요. 비우면 Composer를 사용합니다.",
             "effort": "생각할 시간을 얼마나 줄지 정합니다. Composer 기본값은 빠름입니다.",
             "assist": "이 어시스턴트를 Home Assistant Assist(음성)에도 표시합니다. 끄면 AI Workspace 채팅에만 두고 Assist에 추가한 항목을 제거합니다."
@@ -328,7 +324,7 @@
           },
           "data_description": {
             "borrow": "해당 통합구성요소에 이미 저장된 키를 사용합니다. 다른 통합구성요소는 그대로 둡니다.",
-            "api_key": "AI 제공자의 키이며 Home Assistant 로그인이 아닙니다.",
+            "api_key": "AI 제공자의 키이며 Home Assistant 로그인이 아닙니다. [API 키 받기]({api_key_url})",
             "model": "목록에서 고르거나 모델 이름을 입력하세요. 비우면 제공자 기본값을 사용합니다.",
             "effort": "노력이 클수록 더 많이 생각합니다. 어려운 질문에 더 나은 답을 주지만 느리고 토큰을 더 씁니다. 모델이 지원하지 않으면 무시됩니다.",
             "assist": "이 어시스턴트를 Home Assistant Assist(음성)에도 표시합니다. 끄면 AI Workspace 채팅에만 두고 Assist에 추가한 항목을 제거합니다.",
@@ -368,7 +364,7 @@
             "assist": "Assist에 추가"
           },
           "data_description": {
-            "api_key": "Azure OpenAI 키입니다. 수정 시 비워 두면 저장된 키를 유지합니다.",
+            "api_key": "Azure OpenAI 키입니다. 수정 시 비워 두면 저장된 키를 유지합니다. [API 키 받기]({api_key_url})",
             "api_base": "{example_url}",
             "model": "배포 이름입니다.",
             "azure_api_version": "Azure 지원에서 다른 버전을 안내하지 않았다면 기본값을 유지하세요.",

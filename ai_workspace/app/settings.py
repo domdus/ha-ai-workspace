@@ -61,6 +61,10 @@ def _bool_opt(options: dict | None, key: str, env: str, default: bool = True) ->
     return str(raw).strip().lower() not in {"0", "false", "no", "off"}
 
 
+def _listen_host() -> str:
+    return (os.environ.get("HOST") or "0.0.0.0").strip() or "0.0.0.0"
+
+
 def _default_hass_url(options: dict | None = None) -> str:
     for key in ("HASS_URL", "HOMEASSISTANT_URL"):
         value = os.environ.get(key, "").strip()
@@ -69,7 +73,9 @@ def _default_hass_url(options: dict | None = None) -> str:
     saved = str((options or {}).get("hass_url") or "").strip()
     if saved:
         return saved.rstrip("/")
-    if os.environ.get("SUPERVISOR_TOKEN"):
+    # Host-network runtime (HOST 127.0.0.1) shares the machine with Core.
+    # Bridge / add-on containers reach Core as hostname homeassistant.
+    if _listen_host() in {"127.0.0.1", "localhost", "::1"}:
         return "http://127.0.0.1:8123"
     return "http://homeassistant:8123"
 

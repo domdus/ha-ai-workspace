@@ -58,7 +58,6 @@
             "data": {
               "low_token": "Tokenverbrauch reduzieren",
               "check_house": "Immer zuerst das Haus prüfen",
-              "prompt_cache": "Prompt-Cache",
               "track_usage": "Nutzung und Kosten aufzeichnen",
               "show_chat_usage": "Kosten in der Chat-Kopfzeile anzeigen",
               "ha_usage_sensors": "Home-Assistant-Nutzungssensoren hinzufügen"
@@ -66,7 +65,6 @@
             "data_description": {
               "low_token": "Sendet mit jeder Nachricht weniger, um bei Cloud-, Ollama- und Azure-Agenten Geld zu sparen (Cursor ist nicht betroffen). Aus liefert die verlässlichsten Antworten über dein Zuhause. Extreme ist nur Chat und kann das Haus nicht steuern.",
               "check_house": "Standardmäßig an. Der Assistent schaut in Home Assistant nach, bevor er Fragen zu deinem Zuhause beantwortet. Listen und Zustände sind dann echt, nicht geraten. Begrüßungen werden übersprungen. Mit Tokenverbrauch reduzieren auf Light prüft er immer, bei Medium und Extreme nie. Ausschalten für allgemeine Fragen oder ein Modell, das das schon von selbst tut.",
-              "prompt_cache": "Standardmäßig an. Der Anbieter darf den Teil, der sich in jeder Nachricht wiederholt (Anweisungen und Tool-Liste), deutlich günstiger wiederverwenden. Claude braucht diesen Schalter, GPT cacht meist von selbst. Cursor und Ollama ignorieren ihn.",
               "track_usage": "Standardmäßig an. Speichert nach jeder Antwort Tokens und geschätzte Kosten und zeigt sie auf der Seite Nutzung. Aus stoppt neue Einträge; der Verlauf bleibt.",
               "show_chat_usage": "Standard an. Zeigt Token und Kosten unter dem Chattitel. Aus blendet nur diese Zeile; Aufzeichnung und die Nutzungsseite bleiben.",
               "ha_usage_sensors": "Standardmäßig aus. Nur für eigene Dashboards oder Automationen nötig: legt Kosten-, Token- und Durchgangs-Sensoren auf einem Nutzungs-Gerät und an jedem Agenten an. Die Seite Nutzung funktioniert ohne sie. Ausschalten entfernt die Sensoren."
@@ -167,7 +165,6 @@
             "data": {
               "low_token": "Tokenverbrauch reduzieren",
               "check_house": "Immer zuerst das Haus prüfen",
-              "prompt_cache": "Prompt-Cache",
               "track_usage": "Nutzung und Kosten aufzeichnen",
               "show_chat_usage": "Kosten in der Chat-Kopfzeile anzeigen",
               "ha_usage_sensors": "Home-Assistant-Nutzungssensoren hinzufügen"
@@ -175,7 +172,6 @@
             "data_description": {
               "low_token": "Sendet mit jeder Nachricht weniger, um bei Cloud-, Ollama- und Azure-Agenten Geld zu sparen (Cursor ist nicht betroffen). Aus liefert die verlässlichsten Antworten über dein Zuhause. Extreme ist nur Chat und kann das Haus nicht steuern.",
               "check_house": "Standardmäßig an. Der Assistent schaut in Home Assistant nach, bevor er Fragen zu deinem Zuhause beantwortet. Listen und Zustände sind dann echt, nicht geraten. Begrüßungen werden übersprungen. Mit Tokenverbrauch reduzieren auf Light prüft er immer, bei Medium und Extreme nie. Ausschalten für allgemeine Fragen oder ein Modell, das das schon von selbst tut.",
-              "prompt_cache": "Standardmäßig an. Der Anbieter darf den Teil, der sich in jeder Nachricht wiederholt (Anweisungen und Tool-Liste), deutlich günstiger wiederverwenden. Claude braucht diesen Schalter, GPT cacht meist von selbst. Cursor und Ollama ignorieren ihn.",
               "track_usage": "Standardmäßig an. Speichert nach jeder Antwort Tokens und geschätzte Kosten und zeigt sie auf der Seite Nutzung. Aus stoppt neue Einträge; der Verlauf bleibt.",
               "show_chat_usage": "Standard an. Zeigt Token und Kosten unter dem Chattitel. Aus blendet nur diese Zeile; Aufzeichnung und die Nutzungsseite bleiben.",
               "ha_usage_sensors": "Standardmäßig aus. Nur für eigene Dashboards oder Automationen nötig: legt Kosten-, Token- und Durchgangs-Sensoren auf einem Nutzungs-Gerät und an jedem Agenten an. Die Seite Nutzung funktioniert ohne sie. Ausschalten entfernt die Sensoren."
@@ -304,7 +300,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "Dasselbe Passwort wie auf deiner Cursor-Runtime. Leer lassen bei Add-on mit automatischer Kopplung.",
-            "cursor_api_key": "Aus deinem Cursor-Konto (Integrations). Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
+            "cursor_api_key": "Aus deinem Cursor-Konto (Integrations). Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten. [API-Schlüssel holen]({api_key_url})",
             "model": "Aus der Liste wählen oder Modellnamen eingeben. Leer nutzt Composer.",
             "effort": "Wie viel Denkzeit erlaubt ist. Composer nutzt standardmäßig Schnell.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat."
@@ -328,7 +324,7 @@
           },
           "data_description": {
             "borrow": "Nutzt den Schlüssel, den diese Integration schon gespeichert hat. Die andere Integration bleibt unverändert.",
-            "api_key": "Schlüssel vom KI-Anbieter, nicht dein Home-Assistant-Login.",
+            "api_key": "Schlüssel vom KI-Anbieter, nicht dein Home-Assistant-Login. [API-Schlüssel holen]({api_key_url})",
             "model": "Wähle eines oder gib eine ID ein. Leer lässt den Standard des Anbieters.",
             "effort": "Mehr Aufwand heißt mehr Nachdenken: bessere Antworten auf schwere Fragen, aber langsamer und mehr Tokens. Wird ignoriert, wenn das Modell es nicht unterstützt.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat.",
@@ -368,7 +364,7 @@
             "assist": "Zu Assist hinzufügen"
           },
           "data_description": {
-            "api_key": "Der Azure-OpenAI-Schlüssel. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
+            "api_key": "Der Azure-OpenAI-Schlüssel. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten. [API-Schlüssel holen]({api_key_url})",
             "api_base": "{example_url}",
             "model": "Der Name der Bereitstellung.",
             "azure_api_version": "Standard lassen, außer Azure nennt dir eine andere Version.",

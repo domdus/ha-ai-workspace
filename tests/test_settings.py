@@ -80,9 +80,15 @@ def test_default_hass_url(monkeypatch) -> None:
     monkeypatch.delenv("HASS_URL", raising=False)
     monkeypatch.delenv("HOMEASSISTANT_URL", raising=False)
     monkeypatch.delenv("SUPERVISOR_TOKEN", raising=False)
+    monkeypatch.delenv("HOST", raising=False)
     assert _default_hass_url({}) == "http://homeassistant:8123"
-    monkeypatch.setenv("SUPERVISOR_TOKEN", "x")
+    monkeypatch.setenv("HOST", "0.0.0.0")
+    assert _default_hass_url({}) == "http://homeassistant:8123"
+    monkeypatch.setenv("HOST", "127.0.0.1")
     assert _default_hass_url({}) == "http://127.0.0.1:8123"
+    monkeypatch.delenv("HOST", raising=False)
+    monkeypatch.setenv("SUPERVISOR_TOKEN", "x")
+    assert _default_hass_url({}) == "http://homeassistant:8123"
     assert _default_hass_url({"hass_url": "http://ha.local:8123"}) == "http://ha.local:8123"
     monkeypatch.setenv("HASS_URL", "http://env:8123/")
     assert _default_hass_url({}) == "http://env:8123"

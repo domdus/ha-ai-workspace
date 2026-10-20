@@ -18,7 +18,7 @@ ai_workspace:
   ha_usage_sensors: false
   low_token: "off" # off | light | medium | extreme
   check_house: true
-  prompt_cache: true
+  # prompt_cache: false  # YAML only; omit to keep the default (on)
   ui_theme: standard # standard | ha_components
   cross_chat: false
   keep_chats: 30
@@ -55,6 +55,17 @@ ai_workspace:
       tts_model: gpt-4o-mini-tts
       tts_voice: coral
       tts_speed: 1
+    - id: gemini
+      title: Gemini
+      provider: gemini
+      api_key: !secret gemini_api_key
+      model: gemini-3.8-flash
+      assist: false
+      assist_stt: true
+      stt_model: gemini-3.8-flash
+      assist_tts: true
+      tts_model: gemini-3.8-flash-tts
+      tts_voice: Kore
     - id: claude
       title: Claude
       provider: anthropic

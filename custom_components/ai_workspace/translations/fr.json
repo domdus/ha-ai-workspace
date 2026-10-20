@@ -58,7 +58,6 @@
             "data": {
               "low_token": "Réduire la consommation de jetons",
               "check_house": "Toujours vérifier la maison d'abord",
-              "prompt_cache": "Cache de prompt",
               "track_usage": "Suivre l’utilisation et les coûts",
               "show_chat_usage": "Afficher le coût dans l’en-tête du chat",
               "ha_usage_sensors": "Ajouter des capteurs d’utilisation Home Assistant"
@@ -66,7 +65,6 @@
             "data_description": {
               "low_token": "Envoie moins à chaque message pour économiser de l’argent avec les agents Cloud, Ollama et Azure (Cursor n’est pas concerné). Désactivé donne les réponses les plus fiables sur votre maison. Extreme sert uniquement à discuter et ne peut pas piloter la maison.",
               "check_house": "Activé par défaut. L’assistant consulte Home Assistant avant de répondre aux questions sur votre maison, pour que listes et états soient réels, pas devinés. Les salutations sont ignorées. Avec « Réduire la consommation de jetons » sur Light, il vérifie toujours ; sur Medium et Extreme, jamais. Désactivez pour des questions générales ou un modèle qui vérifie déjà tout seul.",
-              "prompt_cache": "Activé par défaut. Permet au fournisseur de réutiliser, à un prix bien plus bas, la partie qui se répète dans chaque message (instructions et liste d’outils). Claude a besoin de cette option ; GPT met surtout en cache tout seul. Cursor et Ollama l’ignorent.",
               "track_usage": "Activé par défaut. Enregistre les jetons et le coût estimé après chaque réponse et les affiche sur la page Utilisation. Désactivé : plus de nouveaux enregistrements ; l’historique existant reste.",
               "show_chat_usage": "Activé par défaut. Affiche jetons et coût sous le titre du chat. Désactivé : seule cette ligne disparaît ; le suivi et la page Utilisation restent.",
               "ha_usage_sensors": "Désactivé par défaut. Utile seulement pour vos propres tableaux de bord ou automatisations : ajoute des capteurs de coût, de jetons et de tours sur un appareil Usage et sur chaque agent. La page Utilisation fonctionne sans eux. Désactiver supprime les capteurs."
@@ -167,7 +165,6 @@
             "data": {
               "low_token": "Réduire la consommation de jetons",
               "check_house": "Toujours vérifier la maison d'abord",
-              "prompt_cache": "Cache de prompt",
               "track_usage": "Suivre l’utilisation et les coûts",
               "show_chat_usage": "Afficher le coût dans l’en-tête du chat",
               "ha_usage_sensors": "Ajouter des capteurs d’utilisation Home Assistant"
@@ -175,7 +172,6 @@
             "data_description": {
               "low_token": "Envoie moins à chaque message pour économiser de l’argent avec les agents Cloud, Ollama et Azure (Cursor n’est pas concerné). Désactivé donne les réponses les plus fiables sur votre maison. Extreme sert uniquement à discuter et ne peut pas piloter la maison.",
               "check_house": "Activé par défaut. L’assistant consulte Home Assistant avant de répondre aux questions sur votre maison, pour que listes et états soient réels, pas devinés. Les salutations sont ignorées. Avec « Réduire la consommation de jetons » sur Light, il vérifie toujours ; sur Medium et Extreme, jamais. Désactivez pour des questions générales ou un modèle qui vérifie déjà tout seul.",
-              "prompt_cache": "Activé par défaut. Permet au fournisseur de réutiliser, à un prix bien plus bas, la partie qui se répète dans chaque message (instructions et liste d’outils). Claude a besoin de cette option ; GPT met surtout en cache tout seul. Cursor et Ollama l’ignorent.",
               "track_usage": "Activé par défaut. Enregistre les jetons et le coût estimé après chaque réponse et les affiche sur la page Utilisation. Désactivé : plus de nouveaux enregistrements ; l’historique existant reste.",
               "show_chat_usage": "Activé par défaut. Affiche jetons et coût sous le titre du chat. Désactivé : seule cette ligne disparaît ; le suivi et la page Utilisation restent.",
               "ha_usage_sensors": "Désactivé par défaut. Utile seulement pour vos propres tableaux de bord ou automatisations : ajoute des capteurs de coût, de jetons et de tours sur un appareil Usage et sur chaque agent. La page Utilisation fonctionne sans eux. Désactiver supprime les capteurs."
@@ -304,7 +300,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "Le même mot de passe que sur votre runtime Cursor. Laissez vide avec le module complémentaire et l'appairage automatique.",
-            "cursor_api_key": "Depuis votre compte Cursor (Integrations). Laissez vide à la modification pour garder la clé enregistrée.",
+            "cursor_api_key": "Depuis votre compte Cursor (Integrations). Laissez vide à la modification pour garder la clé enregistrée. [Obtenir une clé API]({api_key_url})",
             "model": "Choisissez dans la liste ou saisissez un nom de modèle. Vide utilise Composer.",
             "effort": "Combien de temps de réflexion autoriser. Composer utilise Rapide par défaut.",
             "assist": "Affiche aussi cet assistant sous Home Assistant Assist (voix). Désactivé : chat AI Workspace uniquement, et retire ce qu'il a ajouté à Assist."
@@ -328,7 +324,7 @@
           },
           "data_description": {
             "borrow": "Utilise la clé déjà enregistrée par cette intégration. L'autre intégration n'est pas modifiée.",
-            "api_key": "Votre clé chez le fournisseur d'IA, pas votre identifiant Home Assistant.",
+            "api_key": "Votre clé chez le fournisseur d'IA, pas votre identifiant Home Assistant. [Obtenir une clé API]({api_key_url})",
             "model": "Choisissez dans la liste ou saisissez un nom de modèle. Vide utilise le défaut du fournisseur.",
             "effort": "Plus d’effort signifie plus de réflexion : de meilleures réponses aux questions difficiles, mais plus lent et plus de jetons. Ignoré si le modèle ne le prend pas en charge.",
             "assist": "Affiche aussi cet assistant sous Home Assistant Assist (voix). Désactivé : chat AI Workspace uniquement, et retire ce qu'il a ajouté à Assist.",
@@ -368,7 +364,7 @@
             "assist": "Ajouter à Assist"
           },
           "data_description": {
-            "api_key": "La clé Azure OpenAI. Laissez vide à la modification pour garder la clé enregistrée.",
+            "api_key": "La clé Azure OpenAI. Laissez vide à la modification pour garder la clé enregistrée. [Obtenir une clé API]({api_key_url})",
             "api_base": "{example_url}",
             "model": "Le nom du déploiement.",
             "azure_api_version": "Gardez la valeur par défaut sauf si le support Azure vous a donné une autre version.",

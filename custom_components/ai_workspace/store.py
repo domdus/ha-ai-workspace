@@ -8,6 +8,33 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
+# Claude reports uncached input separately. Count cache read/write on those rows
+# so the Usage page matches the tokens Anthropic actually bills.
+_COUNTED_TOKENS = """
+CASE
+  WHEN prompt_tokens >= cache_read_tokens + cache_write_tokens
+    THEN CASE WHEN total_tokens > 0 THEN total_tokens ELSE prompt_tokens + completion_tokens END
+  ELSE prompt_tokens + cache_read_tokens + cache_write_tokens + completion_tokens
+END
+"""
+
+
+def _counted_tokens(
+    prompt_tokens: int = 0,
+    completion_tokens: int = 0,
+    cache_read_tokens: int = 0,
+    cache_write_tokens: int = 0,
+    total_tokens: int = 0,
+) -> int:
+    prompt = int(prompt_tokens or 0)
+    completion = int(completion_tokens or 0)
+    read = int(cache_read_tokens or 0)
+    write = int(cache_write_tokens or 0)
+    stored = int(total_tokens or 0)
+    if prompt >= read + write:
+        return stored or (prompt + completion)
+    return prompt + read + write + completion
+
 
 def _text(value: object) -> str:
     if value is None:
@@ -669,7 +696,13 @@ class Store:
         created_at: str | None = None,
     ) -> int:
         now = _text(created_at) or _now()
-        total = int(total_tokens or 0) or (int(prompt_tokens or 0) + int(completion_tokens or 0))
+        total = _counted_tokens(
+            prompt_tokens,
+            completion_tokens,
+            cache_read_tokens,
+            cache_write_tokens,
+            total_tokens,
+        )
         with self._lock:
             cursor = self._conn.execute(
                 """
@@ -734,7 +767,7 @@ class Store:
                     COALESCE(SUM(completion_tokens), 0) AS completion_tokens,
                     COALESCE(SUM(cache_read_tokens), 0) AS cache_read_tokens,
                     COALESCE(SUM(cache_write_tokens), 0) AS cache_write_tokens,
-                    COALESCE(SUM(total_tokens), 0) AS total_tokens,
+                    COALESCE(SUM({_COUNTED_TOKENS}), 0) AS total_tokens,
                     COALESCE(SUM(characters), 0) AS characters,
                     COALESCE(SUM(cost_usd), 0) AS cost_usd,
                     SUM(CASE WHEN cost_usd IS NULL THEN 1 ELSE 0 END) AS missing_cost
@@ -761,10 +794,18 @@ class Store:
         since: str | None = None,
         until: str | None = None,
         agent_id: str | None = None,
+        session_id: str | None = None,
         model: str | None = None,
         user_id: str | None = None,
     ) -> list[dict]:
-        where, params = _usage_where(since=since, until=until, agent_id=agent_id, model=model, user_id=user_id)
+        where, params = _usage_where(
+            since=since,
+            until=until,
+            agent_id=agent_id,
+            session_id=session_id,
+            model=model,
+            user_id=user_id,
+        )
         with self._lock:
             rows = self._conn.execute(
                 f"""
@@ -776,7 +817,9 @@ class Store:
                     COUNT(*) AS turns,
                     COALESCE(SUM(prompt_tokens), 0) AS prompt_tokens,
                     COALESCE(SUM(completion_tokens), 0) AS completion_tokens,
-                    COALESCE(SUM(total_tokens), 0) AS total_tokens,
+                    COALESCE(SUM(cache_read_tokens), 0) AS cache_read_tokens,
+                    COALESCE(SUM(cache_write_tokens), 0) AS cache_write_tokens,
+                    COALESCE(SUM({_COUNTED_TOKENS}), 0) AS total_tokens,
                     COALESCE(SUM(cost_usd), 0) AS cost_usd,
                     SUM(CASE WHEN cost_usd IS NULL THEN 1 ELSE 0 END) AS missing_cost
                 FROM usage_turns
@@ -795,6 +838,8 @@ class Store:
                 "turns": int(row["turns"] or 0),
                 "prompt_tokens": int(row["prompt_tokens"] or 0),
                 "completion_tokens": int(row["completion_tokens"] or 0),
+                "cache_read_tokens": int(row["cache_read_tokens"] or 0),
+                "cache_write_tokens": int(row["cache_write_tokens"] or 0),
                 "total_tokens": int(row["total_tokens"] or 0),
                 "cost_usd": round(float(row["cost_usd"] or 0), 6),
                 "missing_cost": bool(row["missing_cost"]),
@@ -813,6 +858,10 @@ class Store:
             ).fetchone()
         if not row:
             return None
+        prompt = int(row["prompt_tokens"] or 0)
+        completion = int(row["completion_tokens"] or 0)
+        cache_read = int(row["cache_read_tokens"] or 0) if "cache_read_tokens" in row.keys() else 0
+        cache_write = int(row["cache_write_tokens"] or 0) if "cache_write_tokens" in row.keys() else 0
         return {
             "id": int(row["id"]),
             "created_at": row["created_at"],
@@ -820,9 +869,13 @@ class Store:
             "agent": _text(row["agent"]),
             "provider": _text(row["provider"]),
             "model": _text(row["model"]),
-            "prompt_tokens": int(row["prompt_tokens"] or 0),
-            "completion_tokens": int(row["completion_tokens"] or 0),
-            "total_tokens": int(row["total_tokens"] or 0),
+            "prompt_tokens": prompt,
+            "completion_tokens": completion,
+            "cache_read_tokens": cache_read,
+            "cache_write_tokens": cache_write,
+            "total_tokens": _counted_tokens(
+                prompt, completion, cache_read, cache_write, int(row["total_tokens"] or 0)
+            ),
             "characters": int(row["characters"] or 0) if "characters" in row.keys() else 0,
             "cost_usd": None if row["cost_usd"] is None else round(float(row["cost_usd"]), 6),
             "cost_source": _text(row["cost_source"]),
@@ -836,6 +889,7 @@ class Store:
         since: str | None = None,
         until: str | None = None,
         agent_id: str | None = None,
+        session_id: str | None = None,
         model: str | None = None,
         user_id: str | None = None,
     ) -> list[dict]:
@@ -843,6 +897,7 @@ class Store:
             since=since,
             until=until,
             agent_id=agent_id,
+            session_id=session_id,
             model=model,
             exclude_tts=True,
             user_id=user_id,
@@ -860,7 +915,8 @@ class Store:
                     COALESCE(SUM(prompt_tokens), 0) AS prompt_tokens,
                     COALESCE(SUM(completion_tokens), 0) AS completion_tokens,
                     COALESCE(SUM(cache_read_tokens), 0) AS cache_read_tokens,
-                    COALESCE(SUM(total_tokens), 0) AS total_tokens,
+                    COALESCE(SUM(cache_write_tokens), 0) AS cache_write_tokens,
+                    COALESCE(SUM({_COUNTED_TOKENS}), 0) AS total_tokens,
                     COALESCE(SUM(cost_usd), 0) AS cost_usd,
                     SUM(CASE WHEN cost_usd IS NULL THEN 1 ELSE 0 END) AS missing_cost
                 FROM usage_turns
@@ -886,6 +942,7 @@ class Store:
                     "prompt_tokens": int(row["prompt_tokens"] or 0),
                     "completion_tokens": int(row["completion_tokens"] or 0),
                     "cache_read_tokens": int(row["cache_read_tokens"] or 0),
+                    "cache_write_tokens": int(row["cache_write_tokens"] or 0),
                     "total_tokens": tokens,
                     "cost_usd": cost,
                     "missing_cost": missing,
@@ -927,12 +984,54 @@ class Store:
             "models": [_text(row["model_key"]) for row in models if _text(row["model_key"])],
         }
 
+    def usage_chat_choices(
+        self,
+        *,
+        agent_id: str | None = None,
+        model: str | None = None,
+        user_id: str | None = None,
+        limit: int = 100,
+    ) -> list[dict]:
+        """Existing chats that still have a session row and at least one usage turn."""
+        clauses = ["1=1"]
+        params: list[object] = []
+        if user_id:
+            clauses.append("s.user_id = ?")
+            params.append(_text(user_id))
+        if agent_id:
+            clauses.append("u.agent_id = ?")
+            params.append(_text(agent_id))
+        if model:
+            clauses.append("CASE WHEN TRIM(u.model) = '' THEN u.agent_id ELSE u.model END = ?")
+            params.append(_text(model))
+        where = " AND ".join(clauses)
+        cap = max(1, min(int(limit or 100), 200))
+        with self._lock:
+            rows = self._conn.execute(
+                f"""
+                SELECT s.id AS id, MAX(s.title) AS title
+                FROM sessions s
+                INNER JOIN usage_turns u ON u.session_id = s.id
+                WHERE {where}
+                GROUP BY s.id
+                ORDER BY MAX(s.updated_at) DESC, s.id DESC
+                LIMIT {cap}
+                """,
+                params,
+            ).fetchall()
+        return [
+            {"id": _text(row["id"]), "title": _text(row["title"]) or _text(row["id"])}
+            for row in rows
+            if _text(row["id"])
+        ]
+
     def usage_events(
         self,
         *,
         since: str | None = None,
         until: str | None = None,
         agent_id: str | None = None,
+        session_id: str | None = None,
         model: str | None = None,
         user_id: str | None = None,
     ) -> list[dict]:
@@ -940,6 +1039,7 @@ class Store:
             since=since,
             until=until,
             agent_id=agent_id,
+            session_id=session_id,
             model=model,
             exclude_tts=True,
             user_id=user_id,
@@ -947,7 +1047,7 @@ class Store:
         with self._lock:
             rows = self._conn.execute(
                 f"""
-                SELECT created_at, total_tokens, cost_usd, origin
+                SELECT created_at, {_COUNTED_TOKENS} AS total_tokens, cost_usd, origin
                 FROM usage_turns
                 WHERE {where}
                 ORDER BY created_at ASC

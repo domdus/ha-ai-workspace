@@ -7,6 +7,7 @@ import hashlib
 import hmac
 import json
 import logging
+import os
 import secrets
 import urllib.error
 import urllib.request
@@ -290,13 +291,34 @@ def _is_builtin_mcp(url: str) -> bool:
     return path == "/api/mcp"
 
 
+def runtime_callback_base(hass_url: str, listen_host: str | None = None) -> str:
+    """Reach Core from this Runtime: loopback on host network, Docker DNS on a bridge."""
+    from urllib.parse import urlparse
+
+    from app.mcp_config import _LOOPBACK, rewrite_loopback_url
+
+    base = str(hass_url or "").rstrip("/")
+    listen = (listen_host if listen_host is not None else os.environ.get("HOST") or "0.0.0.0").strip() or "0.0.0.0"
+    on_loopback = listen.lower() in _LOOPBACK
+    name = (urlparse(base).hostname or "").lower()
+    if name in _LOOPBACK and not on_loopback:
+        target = (os.environ.get("REWRITE_LOOPBACK_HOST") or "homeassistant").strip()
+        return rewrite_loopback_url(base, target)
+    if name in {"homeassistant", "hass"} and on_loopback:
+        parsed = urlparse(base)
+        port = f":{parsed.port}" if parsed.port else ""
+        return f"{parsed.scheme or 'http'}://127.0.0.1{port}"
+    return rewrite_loopback_url(base)
+
+
 def _activity_target(request: Request) -> tuple[str, str]:
     settings = getattr(request.app.state, "settings", None)
     token = str(getattr(settings, "runtime_token", "") or "").strip()
     base = str(getattr(settings, "hass_url", "") or "").rstrip("/")
     if not base:
         base = _default_hass_url(_read_options()).rstrip("/")
-    return base, token
+    listen = str(getattr(settings, "host", "") or "")
+    return runtime_callback_base(base, listen), token
 
 
 def proxy_secret_path(data_dir: Path) -> Path:

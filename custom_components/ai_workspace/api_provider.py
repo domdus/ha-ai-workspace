@@ -153,6 +153,8 @@ def _retry_wait(resp, text: str) -> float | None:
         return min(value + 0.05, 5.0)
     if resp.status == 429:
         return 0.5
+    if resp.status == 503:
+        return 1.0
     return None
 
 
@@ -969,12 +971,19 @@ class ApiProvider:
                 continue
             break
         text = "".join(said).strip()
-        if not text and last:
-            yield {"type": "error", "message": "The model kept calling tools without finishing."}
-            return
         billed = estimate_cost(usage, model=self._model())
         if not billed.empty():
             yield usage_payload(billed)
+        if not text:
+            yield {
+                "type": "error",
+                "message": (
+                    "The model kept calling tools without finishing."
+                    if last
+                    else "The model finished without a reply. Try sending again."
+                ),
+            }
+            return
         yield {"type": "result", "text": text, "status": "finished"}
 
     async def _openai_round(
@@ -1125,12 +1134,19 @@ class ApiProvider:
                 continue
             break
         text = "".join(said).strip()
-        if not text and last:
-            yield {"type": "error", "message": "The model kept calling tools without finishing."}
-            return
         billed = estimate_cost(usage, model=self._model())
         if not billed.empty():
             yield usage_payload(billed)
+        if not text:
+            yield {
+                "type": "error",
+                "message": (
+                    "The model kept calling tools without finishing."
+                    if last
+                    else "The model finished without a reply. Try sending again."
+                ),
+            }
+            return
         yield {"type": "result", "text": text, "status": "finished"}
 
     async def _anthropic_round(
@@ -1223,9 +1239,10 @@ class ApiProvider:
         attempts: int = 4,
         stream: bool = False,
     ) -> ClientResponse:
-        """A successful response; retries rate limits and drops effort the model refuses."""
+        """A successful response; retries 429/503 and drops effort the model refuses."""
         body = dict(payload)
         last = ""
+        last_status = 0
         retries = max(1, attempts)
         attempt = 0
         while attempt < retries:
@@ -1243,11 +1260,13 @@ class ApiProvider:
             text = await resp.text()
             resp.release()
             last = text
+            last_status = resp.status
             low = text.lower()
-            if resp.status == 429:
+            if resp.status in {429, 503}:
                 wait = _retry_wait(resp, text)
                 if wait is not None and attempt < retries:
-                    logger.warning("api rate limited, retry in %.2fs", wait)
+                    why = "rate limited" if resp.status == 429 else "unavailable"
+                    logger.warning("api %s, retry in %.2fs", why, wait)
                     await asyncio.sleep(wait)
                     continue
             if resp.status == 400 and any(key in body for key in _EFFORT_KEYS) and (
@@ -1287,7 +1306,7 @@ class ApiProvider:
             if stream and resp.status in {400, 404, 415, 422} and "stream" in low:
                 raise _StreamUnsupported
             raise ApiError(resp.status, _friendly_api_error(resp.status, text))
-        raise ApiError(429, _friendly_api_error(429, last))
+        raise ApiError(last_status or 429, _friendly_api_error(last_status or 429, last))
 
     async def _post(
         self,

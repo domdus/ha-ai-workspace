@@ -29,6 +29,7 @@ from .activity import (
     entity_ids_from_args,
     index_items,
     looks_like_config_write,
+    should_keep_activity,
     summary,
     tool_succeeded,
     watches_config,
@@ -107,6 +108,13 @@ def _unsub(row: Pending | None) -> None:
     row.unsubs.clear()
 
 
+def session_has_pending(hass: HomeAssistant, session_id: str) -> bool:
+    sid = str(session_id or "").strip()
+    if not sid:
+        return False
+    return any(str(row.session_id or "") == sid for row in _pending(hass).values())
+
+
 def _listen(hass: HomeAssistant, row: Pending) -> None:
     @callback
     def on_lovelace(event: Event) -> None:
@@ -137,6 +145,112 @@ def _listen(hass: HomeAssistant, row: Pending) -> None:
         hass.bus.async_listen(_EVENT_SCRIPT_RELOADED, on_yaml_reload),
         hass.bus.async_listen(_EVENT_SCENE_RELOADED, on_yaml_reload),
     ]
+
+
+def unsub_turn(row) -> None:
+    for unsub in getattr(row, "unsubs", []) or []:
+        try:
+            unsub()
+        except Exception:
+            logger.debug("turn listener unsubscribe failed", exc_info=True)
+    if hasattr(row, "unsubs"):
+        row.unsubs = []
+
+
+def _listen_turn(hass: HomeAssistant, row) -> None:
+    if getattr(row, "unsubs", None):
+        unsub_turn(row)
+
+    @callback
+    def on_lovelace(event: Event) -> None:
+        data = event.data if isinstance(event.data, dict) else {}
+        row.events.append(("dashboard", data.get("url_path")))
+
+    @callback
+    def on_entity(event: Event) -> None:
+        data = event.data if isinstance(event.data, dict) else {}
+        entity_id = data.get("entity_id") or data.get("old_entity_id")
+        row.events.append(("entity", entity_id, str(data.get("action") or "update")))
+
+    @callback
+    def on_yaml_reload(event: Event) -> None:
+        if event.event_type == _EVENT_SCRIPT_RELOADED:
+            kind = "script"
+        elif event.event_type == _EVENT_SCENE_RELOADED:
+            kind = "scene"
+        else:
+            kind = "automation"
+        data = event.data if isinstance(event.data, dict) else {}
+        row.events.append(("yaml", kind, data.get("id") or data.get("entity_id")))
+
+    row.unsubs = [
+        hass.bus.async_listen(_EVENT_LOVELACE, on_lovelace),
+        hass.bus.async_listen(_EVENT_ENTITY_REGISTRY, on_entity),
+        hass.bus.async_listen(_EVENT_AUTOMATION_RELOADED, on_yaml_reload),
+        hass.bus.async_listen(_EVENT_SCRIPT_RELOADED, on_yaml_reload),
+        hass.bus.async_listen(_EVENT_SCENE_RELOADED, on_yaml_reload),
+    ]
+
+
+async def attach_turn_watch(hass: HomeAssistant, user_id: str, session_id: str) -> None:
+    """Snapshot dashboards and listen for Lovelace while this chat turn is open.
+
+    Cursor config writes go Runtime → HA prepare/commit. If that callback never
+    lands, the turn still has a before-image and ``lovelace_updated`` events.
+    """
+    from .logical_commit import turn_bucket
+
+    row = turn_bucket(hass, user_id, session_id)
+    if row is None:
+        return
+    _listen_turn(hass, row)
+    row.dashboard_docs = await _snapshot_all_dashboards(hass, force=True)
+
+
+async def harvest_turn_changes(hass: HomeAssistant, row) -> None:
+    """Fill an empty logical commit from Lovelace events or dashboard diffs."""
+    from .logical_commit import ActivityFragment
+
+    if row is None or getattr(row, "fragments", None):
+        return
+    before = dict(getattr(row, "dashboard_docs", None) or {})
+    current = await _snapshot_all_dashboards(hass, force=True)
+    changed: list[str] = []
+    if before:
+        for store_id, doc in current.items():
+            prior = before.get(store_id)
+            if prior is None or not _same_body((prior or {}).get("config"), doc.get("config")):
+                changed.append(store_id)
+        for store_id in before:
+            if store_id not in current:
+                changed.append(store_id)
+    if not changed:
+        for item in getattr(row, "events", []) or []:
+            if item and item[0] == "dashboard":
+                store_id = dashboard_store_id(item[1])
+                if store_id not in changed:
+                    changed.append(store_id)
+    seen: set[str] = set()
+    for store_id in changed:
+        if store_id in seen:
+            continue
+        seen.add(store_id)
+        prior = before.get(store_id)
+        now = current.get(store_id)
+        label = str((prior or now or {}).get("label") or store_id or "Overview")
+        if prior is None:
+            action = "Created"
+        elif now is None:
+            action = "Deleted"
+        else:
+            action = "Updated"
+        row.fragments.append(
+            ActivityFragment(
+                summary=f"{action} dashboard {label}",
+                tool="lovelace_updated",
+                document=prior if isinstance(prior, dict) else now,
+            )
+        )
 
 
 async def track_tool(
@@ -328,6 +442,7 @@ async def _document_changed(hass: HomeAssistant, document: dict[str, Any]) -> bo
             label="",
             domain=str(document.get("domain") or ""),
         ),
+        force=True,
     )
     if current is None:
         return True
@@ -430,6 +545,7 @@ async def _apply_events(hass: HomeAssistant, pending: Pending) -> tuple[dict[str
         current = await snapshot(
             hass,
             Change(kind="dashboard", action="update", item_id=store_id, label="", domain="lovelace"),
+            force=True,
         )
         if before is None:
             action = "create"
@@ -462,7 +578,7 @@ async def _apply_events(hass: HomeAssistant, pending: Pending) -> tuple[dict[str
 
 
 async def _dashboard_docs_changed(hass: HomeAssistant, docs: dict[str, dict[str, Any]]) -> bool:
-    current = await _snapshot_all_dashboards(hass)
+    current = await _snapshot_all_dashboards(hass, force=True)
     if set(current) != set(docs):
         return True
     for store_id, doc in docs.items():
@@ -483,7 +599,7 @@ async def _activity_settle(hass: HomeAssistant, pending: Pending) -> None:
         if pending.events:
             return
         if pending.watch is not None:
-            after = await collect_index(hass)
+            after = await collect_index(hass, force=True)
             if describe_index(pending.watch, after):
                 return
         if document is not None and await _document_changed(hass, document):
@@ -510,9 +626,10 @@ async def commit(hass: HomeAssistant, store: Store, token: str, *, ok: bool) -> 
         text = event_text
     if event_doc is not None:
         document = event_doc
-    after = None
+    indexed = ""
+    changed = False
     if pending.watch is not None:
-        after = await collect_index(hass)
+        after = await collect_index(hass, force=True)
         indexed = describe_index(pending.watch, after)
         if indexed:
             text = event_text or indexed
@@ -521,33 +638,34 @@ async def commit(hass: HomeAssistant, store: Store, token: str, *, ok: bool) -> 
                 document = attached
             elif event_doc is None:
                 document = pending.document
-        elif not pending.events and not text:
-            return
-        elif not ok and not pending.events:
-            logger.info("activity skipped %s ok=false unchanged", pending.tool)
-            return
-    elif isinstance(document, dict):
-        # A description-only or action-alias edit is still a change. Keep it
-        # when the document moved, even if the tool result looked like a failure.
-        # HA may return from the config API before automations.yaml is flushed.
-        changed = await _document_changed(hass, document) or bool(pending.events)
-        if not changed:
+    if isinstance(document, dict):
+        changed = await _document_changed(hass, document)
+        if not changed and pending.dashboard_docs:
+            changed = await _dashboard_docs_changed(hass, pending.dashboard_docs)
+        if not changed and not pending.events and not indexed:
             for delay in (0.2, 0.35):
                 await asyncio.sleep(delay)
-                changed = await _document_changed(hass, document) or bool(pending.events)
-                if changed:
+                changed = await _document_changed(hass, document)
+                if not changed and pending.dashboard_docs:
+                    changed = await _dashboard_docs_changed(hass, pending.dashboard_docs)
+                if changed or pending.events:
                     break
-        if not ok and not changed and not pending.events:
-            logger.info("activity skipped %s ok=false unchanged", pending.tool)
-            return
-        if ok and not changed and not pending.events and not text:
-            logger.info("activity skipped %s ok=true unchanged", pending.tool)
-            return
-    elif not ok and not pending.events:
+    elif pending.dashboard_docs:
+        changed = await _dashboard_docs_changed(hass, pending.dashboard_docs)
+    if not should_keep_activity(
+        ok=ok,
+        summary=text,
+        events=bool(pending.events),
+        indexed=bool(indexed),
+        changed=changed,
+    ):
+        logger.info("activity skipped %s ok=%s unchanged", pending.tool, ok)
         return
     if not text:
         if pending.events:
             text = event_text or _summary_from_events(pending)
+        elif indexed:
+            text = indexed
         else:
             return
     chat = await _session_title(hass, pending.session_id) or pending.chat
@@ -598,7 +716,7 @@ async def rollback(hass: HomeAssistant, document: dict[str, Any]) -> None:
     raise ActivityError("This change has nothing to restore.")
 
 
-async def snapshot(hass: HomeAssistant, change: Change) -> dict[str, Any] | None:
+async def snapshot(hass: HomeAssistant, change: Change, force: bool = False) -> dict[str, Any] | None:
     if change.kind in _YAML:
         file_doc = await hass.async_add_executor_job(_snapshot_yaml, hass, change)
         return file_doc or _snapshot_live(hass, change)
@@ -607,14 +725,14 @@ async def snapshot(hass: HomeAssistant, change: Change) -> dict[str, Any] | None
     if change.kind == "entity":
         return _snapshot_entity(hass, change)
     if change.kind == "dashboard":
-        return await _snapshot_dashboard(hass, change)
+        return await _snapshot_dashboard(hass, change, force=force)
     return None
 
 
-async def collect_index(hass: HomeAssistant) -> dict[str, tuple[str, str]]:
+async def collect_index(hass: HomeAssistant, force: bool = False) -> dict[str, tuple[str, str]]:
     yaml_index = await hass.async_add_executor_job(_yaml_index, hass)
     yaml_index.update(_entity_index(hass))
-    yaml_index.update(await _dashboard_index(hass))
+    yaml_index.update(await _dashboard_index(hass, force=force))
     return yaml_index
 
 
@@ -1038,17 +1156,19 @@ def _resolve_board(hass: HomeAssistant, item_id: str) -> tuple[str, Any]:
     return store_id, None
 
 
-async def _load_board_config(board: Any) -> dict[str, Any] | None:
+async def _load_board_config(board: Any, force: bool = False) -> dict[str, Any] | None:
     try:
-        config = await board.async_load(False)
+        config = await board.async_load(force)
     except Exception:
         logger.debug("dashboard async_load skipped", exc_info=True)
         return None
     return config if isinstance(config, dict) else None
 
 
-async def _snapshot_board(board: Any, stored_key: str, label: str = "") -> dict[str, Any] | None:
-    config = await _load_board_config(board)
+async def _snapshot_board(
+    board: Any, stored_key: str, label: str = "", force: bool = False
+) -> dict[str, Any] | None:
+    config = await _load_board_config(board, force=force)
     meta = dict(getattr(board, "config", None) or {})
     title = str(meta.get("title") or label or stored_key or "Overview")
     return {
@@ -1060,30 +1180,30 @@ async def _snapshot_board(board: Any, stored_key: str, label: str = "") -> dict[
     }
 
 
-async def _snapshot_all_dashboards(hass: HomeAssistant) -> dict[str, dict[str, Any]]:
+async def _snapshot_all_dashboards(hass: HomeAssistant, force: bool = False) -> dict[str, dict[str, Any]]:
     found: dict[str, dict[str, Any]] = {}
     for key, board in _dashboards(hass).items():
         stored = _board_store_key(key)
-        doc = await _snapshot_board(board, stored)
+        doc = await _snapshot_board(board, stored, force=force)
         if doc:
             found[stored] = doc
     return found
 
 
-async def _snapshot_dashboard(hass: HomeAssistant, change: Change) -> dict[str, Any] | None:
+async def _snapshot_dashboard(hass: HomeAssistant, change: Change, force: bool = False) -> dict[str, Any] | None:
     store_id, board = _resolve_board(hass, change.item_id)
     if board is None:
         return None
-    return await _snapshot_board(board, store_id, change.label)
+    return await _snapshot_board(board, store_id, change.label, force=force)
 
 
-async def _dashboard_index(hass: HomeAssistant) -> dict[str, tuple[str, str]]:
+async def _dashboard_index(hass: HomeAssistant, force: bool = False) -> dict[str, tuple[str, str]]:
     found: dict[str, tuple[str, str]] = {}
     for key, board in _dashboards(hass).items():
         stored = _board_store_key(key)
         meta = dict(getattr(board, "config", None) or {})
         label = str(meta.get("title") or stored)
-        config = await _load_board_config(board)
+        config = await _load_board_config(board, force=force)
         body = config if isinstance(config, dict) else meta
         found.update(index_items("dashboard", [{"id": stored, "title": label, "config": body}], ("title",)))
     return found

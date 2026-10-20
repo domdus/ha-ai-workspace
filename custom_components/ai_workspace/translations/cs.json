@@ -58,7 +58,6 @@
             "data": {
               "low_token": "Snížit spotřebu tokenů",
               "check_house": "Vždy nejdřív zkontrolovat dům",
-              "prompt_cache": "Mezipaměť promptu",
               "track_usage": "Sledovat využití a náklady",
               "show_chat_usage": "Zobrazit cenu v záhlaví chatu",
               "ha_usage_sensors": "Přidat senzory využití Home Assistant"
@@ -66,7 +65,6 @@
             "data_description": {
               "low_token": "S každou zprávou posílá méně, aby šetřil peníze u agentů Cloud, Ollama a Azure (Cursoru se to netýká). Vypnuto dává nejspolehlivější odpovědi o vaší domácnosti. Extreme je jen chat a nemůže ovládat dům.",
               "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí na otázky o vaší domácnosti podívá do Home Assistant, takže seznamy a stavy jsou skutečné, ne odhadnuté. Pozdravy se přeskakují. Při „Snížit spotřebu tokenů“ na Light kontroluje vždy; na Medium a Extreme nikdy. Vypněte pro obecné otázky nebo pro model, který už kontroluje sám.",
-              "prompt_cache": "Ve výchozím stavu zapnuto. Umožní poskytovateli znovu použít část, která se opakuje v každé zprávě (pokyny a seznam nástrojů), za mnohem nižší cenu. Claude tento přepínač potřebuje; GPT většinou cachuje sám. Cursor a Ollama ho ignorují.",
               "track_usage": "Ve výchozím stavu zapnuto. Po každé odpovědi zaznamená tokeny a odhadované náklady a ukáže je na stránce Využití. Vypnuto: bez nových záznamů; dosavadní historie zůstane.",
               "show_chat_usage": "Ve výchozím stavu zapnuto. Zobrazí tokeny a cenu pod názvem chatu. Vypnuto schová jen tento řádek; sledování a stránka Využití zůstanou.",
               "ha_usage_sensors": "Ve výchozím stavu vypnuto. Potřeba jen pro vlastní panely nebo automatizace: přidá senzory nákladů, tokenů a tahů na zařízení Usage a ke každému agentovi. Stránka Využití funguje i bez nich. Vypnutím se senzory odeberou."
@@ -167,7 +165,6 @@
             "data": {
               "low_token": "Snížit spotřebu tokenů",
               "check_house": "Vždy nejdřív zkontrolovat dům",
-              "prompt_cache": "Mezipaměť promptu",
               "track_usage": "Sledovat využití a náklady",
               "show_chat_usage": "Zobrazit cenu v záhlaví chatu",
               "ha_usage_sensors": "Přidat senzory využití Home Assistant"
@@ -175,7 +172,6 @@
             "data_description": {
               "low_token": "S každou zprávou posílá méně, aby šetřil peníze u agentů Cloud, Ollama a Azure (Cursoru se to netýká). Vypnuto dává nejspolehlivější odpovědi o vaší domácnosti. Extreme je jen chat a nemůže ovládat dům.",
               "check_house": "Ve výchozím stavu zapnuto. Asistent se před odpovědí na otázky o vaší domácnosti podívá do Home Assistant, takže seznamy a stavy jsou skutečné, ne odhadnuté. Pozdravy se přeskakují. Při „Snížit spotřebu tokenů“ na Light kontroluje vždy; na Medium a Extreme nikdy. Vypněte pro obecné otázky nebo pro model, který už kontroluje sám.",
-              "prompt_cache": "Ve výchozím stavu zapnuto. Umožní poskytovateli znovu použít část, která se opakuje v každé zprávě (pokyny a seznam nástrojů), za mnohem nižší cenu. Claude tento přepínač potřebuje; GPT většinou cachuje sám. Cursor a Ollama ho ignorují.",
               "track_usage": "Ve výchozím stavu zapnuto. Po každé odpovědi zaznamená tokeny a odhadované náklady a ukáže je na stránce Využití. Vypnuto: bez nových záznamů; dosavadní historie zůstane.",
               "show_chat_usage": "Ve výchozím stavu zapnuto. Zobrazí tokeny a cenu pod názvem chatu. Vypnuto schová jen tento řádek; sledování a stránka Využití zůstanou.",
               "ha_usage_sensors": "Ve výchozím stavu vypnuto. Potřeba jen pro vlastní panely nebo automatizace: přidá senzory nákladů, tokenů a tahů na zařízení Usage a ke každému agentovi. Stránka Využití funguje i bez nich. Vypnutím se senzory odeberou."
@@ -304,7 +300,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "Stejné heslo jako u vašeho běhového prostředí Cursor. Nechte prázdné u doplňku s automatickým spárováním.",
-            "cursor_api_key": "Z účtu Cursor (Integrations). Při úpravě nechte prázdné, aby se zachoval uložený klíč.",
+            "cursor_api_key": "Z účtu Cursor (Integrations). Při úpravě nechte prázdné, aby se zachoval uložený klíč. [Získat API klíč]({api_key_url})",
             "model": "Vyberte ze seznamu nebo zadejte název modelu. Prázdné použije Composer.",
             "effort": "Kolik času na přemýšlení povolit. Composer ve výchozím stavu použije Rychlé.",
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist."
@@ -328,7 +324,7 @@
           },
           "data_description": {
             "borrow": "Použije klíč, který už tato integrace uložila. Druhá integrace se nemění.",
-            "api_key": "Váš klíč u poskytovatele AI, ne přihlášení do Home Assistant.",
+            "api_key": "Váš klíč u poskytovatele AI, ne přihlášení do Home Assistant. [Získat API klíč]({api_key_url})",
             "model": "Vyberte ze seznamu nebo zadejte název modelu. Prázdné použije výchozí hodnotu poskytovatele.",
             "effort": "Větší úsilí znamená víc přemýšlení: lepší odpovědi na těžké otázky, ale pomaleji a víc tokenů. Ignoruje se, pokud to model nepodporuje.",
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist.",
@@ -368,7 +364,7 @@
             "assist": "Přidat do Assist"
           },
           "data_description": {
-            "api_key": "Klíč Azure OpenAI. Při úpravě nechte prázdné, aby se zachoval uložený klíč.",
+            "api_key": "Klíč Azure OpenAI. Při úpravě nechte prázdné, aby se zachoval uložený klíč. [Získat API klíč]({api_key_url})",
             "api_base": "{example_url}",
             "model": "Název nasazení.",
             "azure_api_version": "Nechte výchozí hodnotu, pokud vám podpora Azure nedala jinou verzi.",

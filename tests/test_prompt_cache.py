@@ -4,7 +4,8 @@ from types import SimpleNamespace
 from custom_components.ai_workspace.__init__ import _workspace_prompt_cache
 from custom_components.ai_workspace.agents import agent_from_mapping
 from custom_components.ai_workspace.api_provider import ApiProvider, _strip_prompt_cache
-from custom_components.ai_workspace.const import SUBENTRY_AGENT
+from custom_components.ai_workspace.config_flow import _cost_schema, _stored_shared
+from custom_components.ai_workspace.const import CONF_CHECK_HOUSE, CONF_PROMPT_CACHE, SUBENTRY_AGENT
 from custom_components.ai_workspace.models import Settings
 
 
@@ -22,6 +23,18 @@ def _settings(provider: str, **overrides) -> Settings:
     }
     values.update(overrides)
     return Settings(**values)
+
+
+def test_prompt_cache_not_on_configure_form() -> None:
+    fields = [getattr(key, "schema", key) for key in _cost_schema({}).schema]
+    assert CONF_PROMPT_CACHE not in fields
+    assert CONF_CHECK_HOUSE in fields
+
+
+def test_stored_shared_keeps_existing_prompt_cache_off() -> None:
+    saved = _stored_shared({"enable_sidebar": True, CONF_PROMPT_CACHE: False})
+    assert saved[CONF_PROMPT_CACHE] is False
+    assert CONF_PROMPT_CACHE not in _stored_shared({"enable_sidebar": True})
 
 
 def test_agent_defaults_prompt_cache_on() -> None:

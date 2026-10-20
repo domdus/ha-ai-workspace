@@ -142,6 +142,20 @@ def dashboard_id_from_args(args: dict) -> str:
     return dashboard_store_id(path)
 
 
+def _yaml_kind_from_ids(args: dict) -> str:
+    if _text(args.get("automation_id")):
+        return "automation"
+    if _text(args.get("script_id")):
+        return "script"
+    if _text(args.get("scene_id")):
+        return "scene"
+    ident = _from_args(args, "identifier", "entity_id", "id")
+    for prefix, kind in (("automation.", "automation"), ("script.", "script"), ("scene.", "scene")):
+        if ident.startswith(prefix):
+            return kind
+    return ""
+
+
 def dashboard_args(args: dict) -> bool:
     if dashboard_id_from_args(args):
         return True
@@ -149,7 +163,18 @@ def dashboard_args(args: dict) -> bool:
     if isinstance(patch, list) and patch:
         return True
     config = args.get("config")
-    return isinstance(config, dict) and ("views" in config or "sections" in config or "cards" in config)
+    if isinstance(config, dict) and ("views" in config or "sections" in config or "cards" in config):
+        return True
+    # HA-MCP omits url_path for the default board and sends python_transform only.
+    transform = args.get("python_transform")
+    if transform in (None, ""):
+        return False
+    if _yaml_kind_from_ids(args) or entity_ids_from_args(args):
+        return False
+    blob = str(transform)
+    if any(token in blob for token in ("views", "cards", "sections", "lovelace", "badges", "grid_options")):
+        return True
+    return not _from_args(args, "identifier", "id")
 
 
 def entity_ids_from_args(args: dict) -> list[str]:
@@ -164,17 +189,7 @@ def yaml_kind_from_args(args: dict) -> str:
     """Automation, script, or scene from arguments when the tool name lost those words."""
     if dashboard_args(args):
         return ""
-    if _text(args.get("automation_id")):
-        return "automation"
-    if _text(args.get("script_id")):
-        return "script"
-    if _text(args.get("scene_id")):
-        return "scene"
-    ident = _from_args(args, "identifier", "entity_id", "id")
-    for prefix, kind in (("automation.", "automation"), ("script.", "script"), ("scene.", "scene")):
-        if ident.startswith(prefix):
-            return kind
-    return ""
+    return _yaml_kind_from_ids(args)
 
 
 def looks_like_config_write(name: str, arguments: dict | None) -> bool:
@@ -228,7 +243,7 @@ def classify(name: str, arguments: dict | None) -> Change | None:
         if not domain and "." in item_id:
             domain = item_id.split(".", 1)[0]
     elif kind == "dashboard":
-        item_id = dashboard_id_from_args(args)
+        item_id = dashboard_id_from_args(args) or "lovelace"
         domain = "lovelace"
     else:
         ids = entity_ids_from_args(args)
@@ -292,6 +307,25 @@ def changed_index_keys(
 
 def tool_succeeded(result: object) -> bool:
     return not (isinstance(result, dict) and result.get("isError") is True)
+
+
+def should_keep_activity(
+    *,
+    ok: bool,
+    summary: str,
+    events: bool = False,
+    indexed: bool = False,
+    changed: bool = False,
+) -> bool:
+    """Keep a Change History row when the house moved, or a named write succeeded.
+
+    Lovelace often returns from MCP before ``lovelace_updated`` and before the
+    cached ``async_load(False)`` view catches up. A successful classified write
+    still happened.
+    """
+    if events or indexed or changed:
+        return True
+    return bool(ok and str(summary or "").strip())
 
 
 def index_items(kind: str, items: object, label_keys: tuple[str, ...] = ("alias", "name", "title")) -> dict[str, tuple[str, str]]:

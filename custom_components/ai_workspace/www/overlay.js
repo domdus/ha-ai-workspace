@@ -4,16 +4,6 @@ const loadChat = () =>
 
 const HOST_ID = "ha-ai-workspace-overlay";
 
-function haHas(name) {
-  return Boolean(customElements.get(name));
-}
-
-function haCreate(...names) {
-  const tag = names.find((name) => name && name.includes("-"));
-  if (tag) return document.createElement(tag);
-  return document.createElement(names[names.length - 1] || "div");
-}
-
 function setDrawerOpen(drawer, open) {
   if (!drawer) return;
   drawer.classList.toggle("open", open);
@@ -102,9 +92,7 @@ async function ensureHost() {
   const [{ mountAiWorkspace, prefetchUiTheme, haComponentsUi }, { stringsFor }] = await loadChat();
   await prefetchUiTheme(() => hassObj()?.auth?.data?.access_token || "");
   const haUi = haComponentsUi();
-  if (haUi) {
-    await customElements.whenDefined("ha-top-app-bar-fixed");
-  }
+  await customElements.whenDefined("ha-top-app-bar-fixed");
   host = document.getElementById(HOST_ID);
   if (host) {
     applyHostLayout(host);
@@ -225,21 +213,6 @@ async function ensureHost() {
         min-height: 0;
         overflow: hidden;
       }
-      div.bar {
-        position: relative;
-        z-index: 1;
-        box-sizing: border-box;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex: none;
-        height: calc(var(--header-height, 56px) + env(safe-area-inset-top, 0px));
-        padding: env(safe-area-inset-top, 0px) var(--ha-space-2) 0 var(--ha-space-6, 24px);
-        background: var(--app-header-background-color, var(--primary-background-color));
-        border-bottom: 1px solid var(--divider-color);
-        font-weight: var(--ha-font-weight-heading);
-        font-size: var(--ha-font-size-m);
-      }
       .bar ha-icon-button {
         --mdc-icon-button-size: 40px;
         --ha-icon-button-size: 40px;
@@ -288,12 +261,6 @@ async function ensureHost() {
         line-height: 1;
       }
       .bar-actions { display: flex; align-items: center; }
-      div.bar + .body {
-        flex: 1 1 auto;
-        min-height: 0;
-        height: auto;
-        overflow: hidden;
-      }
       .hidden { display: none !important; }
       @media (max-width: 870px) {
         .fab {
@@ -301,7 +268,6 @@ async function ensureHost() {
           right: var(--ha-space-3);
         }
         aside.drawer { width: 100%; border-left: 0; }
-        div.bar,
         ha-top-app-bar-fixed.bar {
           padding-inline: max(var(--ha-space-6, 24px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
         }
@@ -318,14 +284,14 @@ async function ensureHost() {
   const drawerHost = shadow.querySelector(".drawer-host");
   const drawer = document.createElement("aside");
   drawer.className = "drawer";
-  const bar = haUi ? haCreate("ha-top-app-bar-fixed", "div") : document.createElement("div");
+  const bar = document.createElement("ha-top-app-bar-fixed");
   bar.className = "bar";
   bar.innerHTML = `
-        <button type="button" class="brand" slot="${bar.localName === "ha-top-app-bar-fixed" ? "title" : ""}" aria-label="${ui.open_workspace}">
+        <button type="button" class="brand" slot="title" aria-label="${ui.open_workspace}">
           <ha-icon icon="mdi:robot"></ha-icon>
           <span>${ui.title}</span>
         </button>
-        <div class="bar-actions"${bar.localName === "ha-top-app-bar-fixed" ? ' slot="actionItems"' : ""}>
+        <div class="bar-actions" slot="actionItems">
           <ha-icon-button class="new-chat" label="${ui.new_chat}">
             <ha-icon icon="mdi:plus"></ha-icon>
           </ha-icon-button>
@@ -335,12 +301,8 @@ async function ensureHost() {
         </div>`;
   const body = document.createElement("div");
   body.className = "body";
-  if (bar.localName === "ha-top-app-bar-fixed") {
-    bar.appendChild(body);
-    drawer.appendChild(bar);
-  } else {
-    drawer.append(bar, body);
-  }
+  bar.appendChild(body);
+  drawer.appendChild(bar);
   drawerHost.replaceWith(drawer);
   const close = drawer.querySelector(".close");
   const newChat = drawer.querySelector(".new-chat");

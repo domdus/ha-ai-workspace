@@ -171,4 +171,49 @@ def test_dashboard_payload_for_one_user_hides_other_users(tmp_path) -> None:
     assert "claude-sonnet-4-5" not in mine["filters"]["models"]
     assert everyone["totals"]["all"]["turns"] == 2
     assert other_chat["session"]["turns"] == 0
+    assert other_chat["totals"]["all"]["turns"] == 0
+    store.close()
+
+
+def test_dashboard_chat_filter_scopes_totals(tmp_path) -> None:
+    store = Store(tmp_path / "usage.sqlite")
+    now = datetime(2026, 10, 19, 12, 0, tzinfo=timezone.utc).isoformat()
+    kitchen = store.create_session("user-1", "anthropic")
+    other = store.create_session("user-1", "openai")
+    store.rename_session("user-1", kitchen.id, "Kitchen leak")
+    store.add_usage(
+        user_id="user-1",
+        session_id=kitchen.id,
+        agent_id="claude-1",
+        agent="Claude",
+        model="claude-sonnet-5-5",
+        total_tokens=2200,
+        cost_usd=0.40,
+        origin="chat",
+        created_at=now,
+    )
+    store.add_usage(
+        user_id="user-1",
+        session_id=other.id,
+        agent_id="gpt-1",
+        agent="OpenAI",
+        model="gpt-5-mini",
+        total_tokens=480,
+        cost_usd=0.02,
+        origin="chat",
+        created_at=now,
+    )
+    hass = SimpleNamespace(
+        config=SimpleNamespace(time_zone="UTC"),
+        data={DOMAIN: {"settings": SimpleNamespace(track_usage=True), "providers": {}}},
+    )
+    bounds = ("2026-10-19T00:00:00+00:00", "2026-10-20T00:00:00+00:00", "2026-10-01T00:00:00+00:00")
+    with patch("custom_components.ai_workspace.usage_record.day_bounds", return_value=bounds):
+        filtered = dashboard_payload(hass, store, range_key="all", session_id=kitchen.id)
+        everyone = dashboard_payload(hass, store, range_key="all")
+    assert filtered["totals"]["all"]["turns"] == 1
+    assert filtered["totals"]["all"]["cost_usd"] == 0.4
+    assert filtered["filters"]["session_id"] == kitchen.id
+    assert {row["id"] for row in filtered["filters"]["chats"]} == {kitchen.id, other.id}
+    assert everyone["totals"]["all"]["turns"] == 2
     store.close()

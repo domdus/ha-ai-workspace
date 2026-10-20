@@ -44,6 +44,31 @@ def test_pending_activity_is_capped() -> None:
     assert "k0" not in pending
 
 
+def test_dashboard_load_bypasses_cache_when_forced() -> None:
+    class Board:
+        def __init__(self) -> None:
+            self.calls: list[bool] = []
+
+        async def async_load(self, force):
+            self.calls.append(bool(force))
+            return {"views": []}
+
+    board = Board()
+    assert asyncio.run(activity_ha._load_board_config(board, False)) == {"views": []}
+    assert asyncio.run(activity_ha._load_board_config(board, True)) == {"views": []}
+    assert board.calls == [False, True]
+
+
+def test_harvest_ignores_dashboards_without_a_before_snapshot() -> None:
+    class Hass:
+        def __init__(self) -> None:
+            self.data = {DOMAIN: {}}
+
+    row = SimpleNamespace(fragments=[], events=[], dashboard_docs={})
+    asyncio.run(activity_ha.harvest_turn_changes(Hass(), row))
+    assert row.fragments == []
+
+
 def _voice_grid():
     import voluptuous as vol
 

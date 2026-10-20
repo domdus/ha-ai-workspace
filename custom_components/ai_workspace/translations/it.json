@@ -58,7 +58,6 @@
             "data": {
               "low_token": "Riduci uso token",
               "check_house": "Controlla sempre prima la casa",
-              "prompt_cache": "Cache del prompt",
               "track_usage": "Monitora uso e costi",
               "show_chat_usage": "Mostra il costo nell’intestazione della chat",
               "ha_usage_sensors": "Aggiungi sensori di uso Home Assistant"
@@ -66,7 +65,6 @@
             "data_description": {
               "low_token": "Invia meno a ogni messaggio per risparmiare con gli agenti Cloud, Ollama e Azure (Cursor non è interessato). Disattivato dà le risposte più affidabili sulla tua casa. Extreme è solo chat e non può controllare la casa.",
               "check_house": "Attivo per impostazione predefinita. L'assistente consulta Home Assistant prima di rispondere a domande sulla tua casa, così elenchi e stati sono reali, non indovinati. I saluti vengono saltati. Con «Riduci uso token» su Light controlla sempre; su Medium ed Extreme mai. Disattivalo per domande generiche o per un modello che controlla già da solo.",
-              "prompt_cache": "Attivo per impostazione predefinita. Permette al fornitore di riutilizzare a un prezzo molto più basso la parte che si ripete in ogni messaggio (istruzioni ed elenco strumenti). Claude ha bisogno di questa opzione; GPT di solito usa la cache da solo. Cursor e Ollama la ignorano.",
               "track_usage": "Attivo per impostazione predefinita. Registra token e costo stimato dopo ogni risposta e li mostra nella pagina Uso. Disattivo: niente nuovi record; la cronologia esistente resta.",
               "show_chat_usage": "Attivo di default. Mostra token e costo sotto il titolo della chat. Disattivo nasconde solo quella riga; il tracciamento e la pagina Uso restano.",
               "ha_usage_sensors": "Disattivo per impostazione predefinita. Serve solo per dashboard o automazioni tue: aggiunge sensori di costo, token e turni su un dispositivo Usage e su ogni agente. La pagina Uso funziona anche senza. Disattivandolo i sensori vengono rimossi."
@@ -167,7 +165,6 @@
             "data": {
               "low_token": "Riduci uso token",
               "check_house": "Controlla sempre prima la casa",
-              "prompt_cache": "Cache del prompt",
               "track_usage": "Monitora uso e costi",
               "show_chat_usage": "Mostra il costo nell’intestazione della chat",
               "ha_usage_sensors": "Aggiungi sensori di uso Home Assistant"
@@ -175,7 +172,6 @@
             "data_description": {
               "low_token": "Invia meno a ogni messaggio per risparmiare con gli agenti Cloud, Ollama e Azure (Cursor non è interessato). Disattivato dà le risposte più affidabili sulla tua casa. Extreme è solo chat e non può controllare la casa.",
               "check_house": "Attivo per impostazione predefinita. L'assistente consulta Home Assistant prima di rispondere a domande sulla tua casa, così elenchi e stati sono reali, non indovinati. I saluti vengono saltati. Con «Riduci uso token» su Light controlla sempre; su Medium ed Extreme mai. Disattivalo per domande generiche o per un modello che controlla già da solo.",
-              "prompt_cache": "Attivo per impostazione predefinita. Permette al fornitore di riutilizzare a un prezzo molto più basso la parte che si ripete in ogni messaggio (istruzioni ed elenco strumenti). Claude ha bisogno di questa opzione; GPT di solito usa la cache da solo. Cursor e Ollama la ignorano.",
               "track_usage": "Attivo per impostazione predefinita. Registra token e costo stimato dopo ogni risposta e li mostra nella pagina Uso. Disattivo: niente nuovi record; la cronologia esistente resta.",
               "show_chat_usage": "Attivo di default. Mostra token e costo sotto il titolo della chat. Disattivo nasconde solo quella riga; il tracciamento e la pagina Uso restano.",
               "ha_usage_sensors": "Disattivo per impostazione predefinita. Serve solo per dashboard o automazioni tue: aggiunge sensori di costo, token e turni su un dispositivo Usage e su ogni agente. La pagina Uso funziona anche senza. Disattivandolo i sensori vengono rimossi."
@@ -304,7 +300,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "La stessa password del tuo runtime Cursor. Lascia vuoto con l'add-on e l'associazione automatica.",
-            "cursor_api_key": "Dal tuo account Cursor (Integrations). Lascia vuoto in modifica per conservare la chiave salvata.",
+            "cursor_api_key": "Dal tuo account Cursor (Integrations). Lascia vuoto in modifica per conservare la chiave salvata. [Ottieni una chiave API]({api_key_url})",
             "model": "Scegli dall'elenco o digita un nome di modello. Vuoto usa Composer.",
             "effort": "Quanto tempo di ragionamento consentire. Composer usa Veloce per impostazione predefinita.",
             "assist": "Elenca anche questo assistente in Home Assistant Assist (voce). Disattivo: solo chat AI Workspace, e rimuove ciò che ha aggiunto ad Assist."
@@ -328,7 +324,7 @@
           },
           "data_description": {
             "borrow": "Usa la chiave già salvata da quell'integrazione. L'altra integrazione non viene modificata.",
-            "api_key": "La chiave del fornitore IA, non l'accesso a Home Assistant.",
+            "api_key": "La chiave del fornitore IA, non l'accesso a Home Assistant. [Ottieni una chiave API]({api_key_url})",
             "model": "Scegli dall'elenco o digita un nome di modello. Vuoto usa il valore predefinito del fornitore.",
             "effort": "Più impegno significa più ragionamento: risposte migliori alle domande difficili, ma più lento e con più token. Ignorato se il modello non lo supporta.",
             "assist": "Elenca anche questo assistente in Home Assistant Assist (voce). Disattivo: solo chat AI Workspace, e rimuove ciò che ha aggiunto ad Assist.",
@@ -368,7 +364,7 @@
             "assist": "Aggiungi ad Assist"
           },
           "data_description": {
-            "api_key": "La chiave Azure OpenAI. Lascia vuoto in modifica per conservare la chiave salvata.",
+            "api_key": "La chiave Azure OpenAI. Lascia vuoto in modifica per conservare la chiave salvata. [Ottieni una chiave API]({api_key_url})",
             "api_base": "{example_url}",
             "model": "Il nome della distribuzione.",
             "azure_api_version": "Lascia il valore predefinito, a meno che il supporto Azure non ti abbia dato un'altra versione.",

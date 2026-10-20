@@ -58,7 +58,6 @@
             "data": {
               "low_token": "Token istifadəsini azalt",
               "check_house": "Həmişə əvvəlcə evi yoxla",
-              "prompt_cache": "Prompt keşi",
               "track_usage": "İstifadə və xərcləri izlə",
               "show_chat_usage": "Çat başlığında xərci göstər",
               "ha_usage_sensors": "Home Assistant istifadə sensorlarını əlavə et"
@@ -66,7 +65,6 @@
             "data_description": {
               "low_token": "Cloud, Ollama və Azure agentlərində pula qənaət etmək üçün hər mesajla daha az göndərir (Cursor-a təsir etmir). Söndür evinizlə bağlı ən etibarlı cavabları verir. Extreme yalnız söhbətdir və evi idarə edə bilməz.",
               "check_house": "Defolt olaraq açıqdır. Köməkçi eviniz haqqında suallara cavab verməzdən əvvəl Home Assistant-a baxır, beləliklə siyahılar və vəziyyətlər təxmini deyil, realdır. Salamlaşmalar ötürülür. “Token istifadəsini azalt” Light olanda həmişə yoxlayır; Medium və Extreme-də heç vaxt. Ümumi suallar üçün və ya artıq özü yoxlayan model üçün söndürün.",
-              "prompt_cache": "Defolt olaraq açıqdır. Provayderə hər mesajda təkrarlanan hissəni (təlimatlar və alət siyahısı) çox daha ucuz qiymətə yenidən istifadə etməyə imkan verir. Claude-a bu açar lazımdır; GPT əsasən özü keşləyir. Cursor və Ollama bunu nəzərə almır.",
               "track_usage": "Defolt olaraq açıqdır. Hər cavabdan sonra token və təxmini xərci yazır və İstifadə səhifəsində göstərir. Sönülü yeni qeydləri dayandırır; mövcud tarixçə qalır.",
               "show_chat_usage": "Defolt olaraq açıqdır. Çat başlığının altında token və xərci göstərir. Sönülü yalnız bu sətri gizlədir; izləmə və İstifadə səhifəsi qalır.",
               "ha_usage_sensors": "Defolt olaraq sönülüdür. Yalnız öz panelləriniz və ya avtomatlaşdırmalarınız üçün lazımdır: Usage cihazında və hər agentdə xərc, token və tur sensorları əlavə edir. İstifadə səhifəsi onlarsız da işləyir. Söndürmək sensorları silir."
@@ -167,7 +165,6 @@
             "data": {
               "low_token": "Token istifadəsini azalt",
               "check_house": "Həmişə əvvəlcə evi yoxla",
-              "prompt_cache": "Prompt keşi",
               "track_usage": "İstifadə və xərcləri izlə",
               "show_chat_usage": "Çat başlığında xərci göstər",
               "ha_usage_sensors": "Home Assistant istifadə sensorlarını əlavə et"
@@ -175,7 +172,6 @@
             "data_description": {
               "low_token": "Cloud, Ollama və Azure agentlərində pula qənaət etmək üçün hər mesajla daha az göndərir (Cursor-a təsir etmir). Söndür evinizlə bağlı ən etibarlı cavabları verir. Extreme yalnız söhbətdir və evi idarə edə bilməz.",
               "check_house": "Defolt olaraq açıqdır. Köməkçi eviniz haqqında suallara cavab verməzdən əvvəl Home Assistant-a baxır, beləliklə siyahılar və vəziyyətlər təxmini deyil, realdır. Salamlaşmalar ötürülür. “Token istifadəsini azalt” Light olanda həmişə yoxlayır; Medium və Extreme-də heç vaxt. Ümumi suallar üçün və ya artıq özü yoxlayan model üçün söndürün.",
-              "prompt_cache": "Defolt olaraq açıqdır. Provayderə hər mesajda təkrarlanan hissəni (təlimatlar və alət siyahısı) çox daha ucuz qiymətə yenidən istifadə etməyə imkan verir. Claude-a bu açar lazımdır; GPT əsasən özü keşləyir. Cursor və Ollama bunu nəzərə almır.",
               "track_usage": "Defolt olaraq açıqdır. Hər cavabdan sonra token və təxmini xərci yazır və İstifadə səhifəsində göstərir. Sönülü yeni qeydləri dayandırır; mövcud tarixçə qalır.",
               "show_chat_usage": "Defolt olaraq açıqdır. Çat başlığının altında token və xərci göstərir. Sönülü yalnız bu sətri gizlədir; izləmə və İstifadə səhifəsi qalır.",
               "ha_usage_sensors": "Defolt olaraq sönülüdür. Yalnız öz panelləriniz və ya avtomatlaşdırmalarınız üçün lazımdır: Usage cihazında və hər agentdə xərc, token və tur sensorları əlavə edir. İstifadə səhifəsi onlarsız da işləyir. Söndürmək sensorları silir."
@@ -304,7 +300,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "Cursor runtime-dəki eyni parol. Avtomatik cütləşmə ilə əlavə modul istifadə edərkən boş buraxın.",
-            "cursor_api_key": "Cursor hesabınızdan (Integrations). Redaktə edərkən saxlanmış açarı saxlamaq üçün boş buraxın.",
+            "cursor_api_key": "Cursor hesabınızdan (Integrations). Redaktə edərkən saxlanmış açarı saxlamaq üçün boş buraxın. [API açarı al]({api_key_url})",
             "model": "Siyahıdan seçin və ya model adı yazın. Boş Composer istifadə edir.",
             "effort": "Nə qədər düşünmə vaxtına icazə verilsin. Composer defolt olaraq Sürətli istifadə edir.",
             "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir."
@@ -328,7 +324,7 @@
           },
           "data_description": {
             "borrow": "Həmin inteqrasiyanın artıq saxladığı açardan istifadə edir. Digər inteqrasiya dəyişməz qalır.",
-            "api_key": "AI provayderindən açarınız, Home Assistant girişiniz deyil.",
+            "api_key": "AI provayderindən açarınız, Home Assistant girişiniz deyil. [API açarı al]({api_key_url})",
             "model": "Siyahıdan seçin və ya model adı yazın. Boş provayderin defoltunu istifadə edir.",
             "effort": "Daha çox səy daha çox düşünmək deməkdir: çətin suallara daha yaxşı cavablar, amma daha yavaş və daha çox token. Model dəstəkləmirsə, nəzərə alınmır.",
             "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir.",
@@ -368,7 +364,7 @@
             "assist": "Assist-ə əlavə et"
           },
           "data_description": {
-            "api_key": "Azure OpenAI açarı. Redaktə edərkən saxlanmış açarı saxlamaq üçün boş buraxın.",
+            "api_key": "Azure OpenAI açarı. Redaktə edərkən saxlanmış açarı saxlamaq üçün boş buraxın. [API açarı al]({api_key_url})",
             "api_base": "{example_url}",
             "model": "Yerləşdirmə adı.",
             "azure_api_version": "Azure dəstəyi başqa versiya verməyibsə, defoltu saxlayın.",

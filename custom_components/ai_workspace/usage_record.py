@@ -173,12 +173,16 @@ async def record_tts_usage(
     provider: Any | None = None,
     user_id: str = "",
     session_id: str = "",
+    usage: TokenUsage | None = None,
 ) -> dict[str, Any] | None:
     data = hass.data.get(DOMAIN) or {}
     store = data.get("store")
     if store is None:
         return None
-    usage = estimate_tts_cost(text, model)
+    if usage is not None and not usage.empty():
+        usage = estimate_cost(usage, model or usage.model)
+    else:
+        usage = estimate_tts_cost(text, model)
     if usage.empty():
         return None
     return await record_usage_turn(
@@ -322,7 +326,13 @@ def dashboard_payload(
     else:
         compare_since, compare_until = month, None
     owner = str(user_id or "").strip() or None
-    filt = {"agent_id": agent_filter, "model": model_filter, "user_id": owner}
+    session_filter = str(session_id or "").strip() or None
+    filt = {
+        "agent_id": agent_filter,
+        "model": model_filter,
+        "session_id": session_filter,
+        "user_id": owner,
+    }
     tz = zone_info(hass)
     if chosen == "custom":
         chart_end = datetime.fromisoformat(compare_until or tomorrow).astimezone(tz)
@@ -348,7 +358,7 @@ def dashboard_payload(
         if chosen == "custom"
         else None,
     }
-    last = store.last_usage(agent_id=agent_filter, user_id=owner)
+    last = store.last_usage(agent_id=agent_filter, session_id=session_filter, user_id=owner)
     providers = (hass.data.get(DOMAIN) or {}).get("providers") or {}
     agents_cfg = list(providers.items())
     by_id = {row["agent_id"]: row for row in store.usage_by_agent(since=today, until=tomorrow, **filt)}
@@ -367,10 +377,23 @@ def dashboard_payload(
                 "provider": provider_kind(provider),
                 "model": provider_model(provider),
                 "today": store.summarize_usage(
-                    since=today, until=tomorrow, agent_id=cfg_id, model=model_filter, user_id=owner
+                    since=today,
+                    until=tomorrow,
+                    agent_id=cfg_id,
+                    model=model_filter,
+                    session_id=session_filter,
+                    user_id=owner,
                 ),
-                "month": store.summarize_usage(since=month, agent_id=cfg_id, model=model_filter, user_id=owner),
-                "all": store.summarize_usage(agent_id=cfg_id, model=model_filter, user_id=owner),
+                "month": store.summarize_usage(
+                    since=month,
+                    agent_id=cfg_id,
+                    model=model_filter,
+                    session_id=session_filter,
+                    user_id=owner,
+                ),
+                "all": store.summarize_usage(
+                    agent_id=cfg_id, model=model_filter, session_id=session_filter, user_id=owner
+                ),
             }
         )
     for extra_id, row in all_by.items():
@@ -386,22 +409,33 @@ def dashboard_payload(
                 "model": row.get("model") or "",
                 "today": by_id.get(extra_id)
                 or store.summarize_usage(
-                    since=today, until=tomorrow, agent_id=extra_id, model=model_filter, user_id=owner
+                    since=today,
+                    until=tomorrow,
+                    agent_id=extra_id,
+                    model=model_filter,
+                    session_id=session_filter,
+                    user_id=owner,
                 ),
                 "month": month_by.get(extra_id)
-                or store.summarize_usage(since=month, agent_id=extra_id, model=model_filter, user_id=owner),
+                or store.summarize_usage(
+                    since=month,
+                    agent_id=extra_id,
+                    model=model_filter,
+                    session_id=session_filter,
+                    user_id=owner,
+                ),
                 "all": row,
             }
         )
-    if model_filter and not agent_filter:
+    if (model_filter or session_filter) and not agent_filter:
         agents = [row for row in agents if int((row.get("all") or {}).get("turns") or 0) > 0]
-    session = store.summarize_usage(session_id=session_id, **filt) if session_id else None
-    last_session = store.last_usage(session_id=session_id, user_id=owner) if session_id else None
+    session = store.summarize_usage(**filt) if session_filter else None
+    last_session = store.last_usage(session_id=session_filter, user_id=owner) if session_filter else None
     tts = {
         "today": store.summarize_usage(since=today, until=tomorrow, origin="tts", **filt),
         "month": store.summarize_usage(since=month, origin="tts", **filt),
         "all": store.summarize_usage(origin="tts", **filt),
-        "session": store.summarize_usage(session_id=session_id, origin="tts", **filt) if session_id else None,
+        "session": store.summarize_usage(origin="tts", **filt) if session_filter else None,
     }
     models = store.usage_by_model(since=compare_since, until=compare_until, **filt)
     days = daily_series(
@@ -454,9 +488,13 @@ def dashboard_payload(
         "filters": {
             "agent_id": agent_filter or "",
             "model": model_filter or "",
+            "session_id": session_filter or "",
             "since": since_day,
             "until": until_day,
             "agents": filter_agents,
             "models": model_ids,
+            "chats": store.usage_chat_choices(
+                agent_id=agent_filter, model=model_filter, user_id=owner
+            ),
         },
     }

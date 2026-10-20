@@ -54,22 +54,29 @@ def test_speech_to_text_defaults_on_for_openai_style_agents() -> None:
     assert const.provider_supports_stt("openai")
     assert const.provider_supports_stt("openrouter")
     assert const.provider_supports_stt("compatible")
+    assert const.provider_supports_stt("gemini")
     assert not const.provider_supports_stt("cursor")
     assert not const.provider_supports_stt("anthropic")
     assert not const.provider_supports_stt("azure")
     assert const.default_stt_model("openai") == "gpt-4o-mini-transcribe"
     assert const.default_stt_model("openrouter") == "openai/whisper-1"
     assert const.default_stt_model("compatible") == "whisper-1"
+    assert const.default_stt_model("gemini") == "gemini-3.8-flash"
     assert const.assist_stt_enabled({}, "openai") is True
     assert const.assist_stt_enabled({"api_provider": "openai"}) is True
     assert const.assist_stt_enabled({"assist_stt": False}, "openai") is False
     assert const.assist_stt_enabled({"assist_stt": True}, "openai") is True
     assert const.assist_stt_enabled({}, "cursor") is False
     assert const.assist_stt_enabled({"assist_stt": True}, "cursor") is False
+    assert const.assist_stt_enabled({}, "gemini") is False
+    assert const.assist_stt_enabled({}, "gemini", new=True) is True
+    assert const.assist_stt_enabled({"assist_stt": True}, "gemini") is True
     assert const.stt_model_choices("openai")[0] == "gpt-4o-mini-transcribe"
+    assert const.stt_model_choices("gemini")[0] == "gemini-3.8-flash"
     assert const.resolved_stt_model({}, "openai") == "gpt-4o-mini-transcribe"
     assert const.resolved_stt_model({"stt_model": "whisper-1"}, "openai") == "whisper-1"
     assert const.resolved_stt_model({}, "openrouter") == "openai/whisper-1"
+    assert const.resolved_stt_model({}, "gemini") == "gemini-3.8-flash"
 
 
 def test_text_to_speech_defaults_on_for_openai_style_agents() -> None:
@@ -77,16 +84,24 @@ def test_text_to_speech_defaults_on_for_openai_style_agents() -> None:
     assert const.provider_supports_tts("openai")
     assert const.provider_supports_tts("openrouter")
     assert const.provider_supports_tts("compatible")
+    assert const.provider_supports_tts("gemini")
     assert not const.provider_supports_tts("cursor")
     assert not const.provider_supports_tts("anthropic")
-    assert not const.provider_supports_tts("gemini")
+    assert not const.provider_supports_tts_speed("gemini")
+    assert const.provider_supports_tts_speed("openai")
     assert const.default_tts_model("openai") == "gpt-4o-mini-tts"
     assert const.default_tts_model("openrouter") == "openai/gpt-4o-mini-tts"
+    assert const.default_tts_model("gemini") == "gemini-3.8-flash-tts"
     assert const.assist_tts_enabled({}, "openai") is True
     assert const.assist_tts_enabled({"assist_tts": False}, "openai") is False
     assert const.assist_tts_enabled({}, "cursor") is False
+    assert const.assist_tts_enabled({}, "gemini") is False
+    assert const.assist_tts_enabled({}, "gemini", new=True) is True
+    assert const.assist_tts_enabled({"assist_tts": True}, "gemini") is True
     assert const.resolved_tts_voice({}) == "coral"
     assert const.resolved_tts_voice({"tts_voice": "nova"}) == "nova"
+    assert const.resolved_tts_voice({}, "gemini") == "Kore"
+    assert const.resolved_tts_voice({"tts_voice": "puck"}, "gemini") == "Puck"
     assert const.resolved_tts_speed({}) == 1.0
     assert const.resolved_tts_speed({"tts_speed": "1.5"}) == 1.5
     assert const.resolved_tts_speed({"tts_speed": "9"}) == 4.0

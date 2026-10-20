@@ -5,6 +5,8 @@ import yaml
 from custom_components.ai_workspace.const import (
     CONF_API_PROVIDER,
     CONF_ASSIST,
+    CONF_ASSIST_STT,
+    CONF_ASSIST_TTS,
     CONF_CHECK_HOUSE,
     CONF_HA_USAGE_SENSORS,
     CONF_LOW_TOKEN,
@@ -96,6 +98,23 @@ def test_agents_get_stable_ids_and_cursor_mode() -> None:
     assert openai["data"][CONF_ASSIST] is True
     silent = agent_payload({"provider": "anthropic", "api_key": "x"}, "claude")
     assert silent["data"][CONF_ASSIST] is False
+    gemini = agent_payload({"provider": "gemini", "api_key": "g"}, "gemini")
+    assert gemini["data"][CONF_ASSIST_TTS] is False
+    assert gemini["data"][CONF_ASSIST_STT] is False
+    spoken = agent_payload(
+        {
+            "provider": "gemini",
+            "api_key": "g",
+            "assist_stt": True,
+            "assist_tts": True,
+            "tts_voice": "Puck",
+        },
+        "gemini-2",
+    )
+    assert spoken["data"][CONF_ASSIST_STT] is True
+    assert spoken["data"][CONF_ASSIST_TTS] is True
+    assert spoken["data"]["tts_voice"] == "Puck"
+    assert spoken["data"]["tts_speed"] == ""
 
 
 def test_entry_from_yaml_includes_default_connection() -> None:

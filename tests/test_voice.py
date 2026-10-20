@@ -229,3 +229,91 @@ def test_assist_pipeline_keeps_agent_title() -> None:
     assert pipes.conversation_pipeline_name("", None, "OpenAI") == "OpenAI"
     assert pipes.conversation_pipeline_name("Ollama", "AI Workspace") == "Ollama"
     assert pipes.conversation_pipeline_name("AI Workspace", "Agent", "") == "AI Workspace"
+
+
+def test_gemini_tts_url_strips_openai_compat_suffix() -> None:
+    const = _load("const", "const.py")
+    url = const.gemini_generate_content_url("", "gemini-3.8-flash-tts")
+    assert url.endswith("/v1beta/models/gemini-3.8-flash-tts:generateContent")
+    assert "/openai/" not in url
+    custom = const.gemini_generate_content_url(
+        "https://example.googleapis.com/v1beta/openai",
+        "gemini-2.5-flash-preview-tts",
+    )
+    assert custom == "https://example.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent"
+    assert const.gemini_speech_language("de") == "de-DE"
+    assert const.gemini_speech_language("de-DE") == "de-DE"
+    assert const.gemini_speech_language("en") == "en-US"
+
+
+def test_gemini_inline_audio_wraps_pcm_and_keeps_wav() -> None:
+    import base64
+    import wave
+    from io import BytesIO
+
+    voice = _load("voice", "voice.py")
+    pcm = b"\x01\x00" * 24
+    wrapped = voice.pcm_wav(pcm, sample_rate=24000)
+    with wave.open(BytesIO(wrapped), "rb") as handle:
+        assert handle.getframerate() == 24000
+        assert handle.getnchannels() == 1
+        assert handle.readframes(24) == pcm
+    body = voice.gemini_speech_payload("Hallo", "Puck", "de")
+    assert body["contents"][0]["parts"][0]["text"] == "Hallo"
+    assert body["generationConfig"]["speechConfig"]["voiceConfig"]["prebuiltVoiceConfig"]["voiceName"] == "Puck"
+    assert body["generationConfig"]["speechConfig"]["languageCode"] == "de-DE"
+    encoded = base64.b64encode(pcm).decode("ascii")
+    audio = voice.gemini_inline_audio(
+        {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [
+                            {
+                                "inlineData": {
+                                    "mimeType": "audio/L16;codec=pcm;rate=24000",
+                                    "data": encoded,
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    )
+    with wave.open(BytesIO(audio), "rb") as handle:
+        assert handle.readframes(24) == pcm
+    wav_b64 = base64.b64encode(wrapped).decode("ascii")
+    kept = voice.gemini_inline_audio(
+        {"candidates": [{"content": {"parts": [{"inlineData": {"mimeType": "audio/wav", "data": wav_b64}}]}}]}
+    )
+    assert kept.startswith(b"RIFF")
+
+
+def test_gemini_transcribe_payload_and_response_text() -> None:
+    import base64
+
+    voice = _load("voice", "voice.py")
+    audio = b"RIFF" + b"\x00" * 12
+    body = voice.gemini_transcribe_payload(audio, "audio/wav", "de")
+    parts = body["contents"][0]["parts"]
+    assert "de-DE" in parts[0]["text"]
+    assert "transcript only" in parts[0]["text"].casefold()
+    assert parts[1]["inlineData"]["mimeType"] == "audio/wav"
+    assert base64.b64decode(parts[1]["inlineData"]["data"]) == audio
+    text = voice.gemini_response_text(
+        {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [
+                            {"thought": True, "text": "hmm"},
+                            {"text": "  Licht an.  "},
+                        ]
+                    }
+                }
+            ]
+        }
+    )
+    assert text == "Licht an."
+    assert voice.gemini_response_text({}) == ""

@@ -1646,17 +1646,22 @@ export async function mountAiWorkspace(root, options = {}) {
     }
   }
 
+  function speechLive() {
+    return Boolean(
+      speakStarted ||
+        speakBusy ||
+        speakPending.length > 0 ||
+        speakInflight.length > 0 ||
+        (replyObjectUrl && replyAudio && !replyAudio.ended),
+    );
+  }
+
   function syncCopyChat() {
     let row = logEl.querySelector(".chat-actions");
     const hasChat = Boolean(logEl.querySelector(".bubble.has-text, .bubble .bubble-files, .bubble .bubble-images"));
     const busy = streaming || Boolean(logEl.querySelector(".bubble.streaming"));
-    const speechActive =
-      speakStarted ||
-      speakBusy ||
-      speakPending.length > 0 ||
-      speakInflight.length > 0 ||
-      Boolean(replyAudio && !replyAudio.ended);
-    const showSpeak = Boolean(voice.tts && ((hasChat && !busy) || speechActive));
+    const live = speechLive();
+    const showSpeak = Boolean(voice.tts && (live || (Boolean(lastAssistantText()) && !busy)));
     const showCopy = hasChat && !busy;
     const showHistory = Boolean(turnHasHistory);
     if (!showCopy && !showSpeak && !showHistory) {
@@ -3290,6 +3295,7 @@ export async function mountAiWorkspace(root, options = {}) {
     speakHeld = "";
     speakRaw = "";
     speakStarted = false;
+    speakBusy = false;
     speakFromUser = false;
     speakFlush = false;
     speakPending.length = 0;
@@ -4032,6 +4038,7 @@ export async function mountAiWorkspace(root, options = {}) {
   let usageRange = "month";
   let usageAgent = "";
   let usageModel = "";
+  let usageChat = "";
   let usageSince = "";
   let usageUntil = "";
   let usageLoadGen = 0;
@@ -4260,9 +4267,15 @@ export async function mountAiWorkspace(root, options = {}) {
     return String(n);
   }
 
+  function cachedTokens(summary) {
+    return Number(summary?.cache_read_tokens || 0) + Number(summary?.cache_write_tokens || 0);
+  }
+
   function usageLine(summary) {
     if (!summary) return "";
     const bits = [`${tokenLabel(summary.total_tokens || 0)} ${t("usage_tokens")}`];
+    const cached = cachedTokens(summary);
+    if (cached) bits.push(`${tokenLabel(cached)} ${t("usage_cached")}`);
     if (summary.cost_usd != null) bits.push(money(summary.cost_usd));
     else if (summary.missing_cost) bits.push(t("usage_unknown_cost"));
     if (summary.turns) bits.push(`${summary.turns} ${t("usage_turns")}`);
@@ -4323,7 +4336,11 @@ export async function mountAiWorkspace(root, options = {}) {
     if (kind === "tts") {
       meta.textContent = `${tokenLabel(summary?.characters || 0)} ${t("usage_characters")} · ${summary?.turns || 0} ${t("usage_reads")}`;
     } else {
-      meta.textContent = `${tokenLabel(summary?.total_tokens || 0)} ${t("usage_tokens")} · ${summary?.turns || 0} ${t("usage_turns")}`;
+      const cached = cachedTokens(summary);
+      const bits = [`${tokenLabel(summary?.total_tokens || 0)} ${t("usage_tokens")}`];
+      if (cached) bits.push(`${tokenLabel(cached)} ${t("usage_cached")}`);
+      bits.push(`${summary?.turns || 0} ${t("usage_turns")}`);
+      meta.textContent = bits.join(" · ");
     }
     card.append(title, cost, meta);
     return card;
@@ -4708,7 +4725,8 @@ export async function mountAiWorkspace(root, options = {}) {
     const hasPicker = Boolean(host?.querySelector("ha-date-range-nav, ha-date-range-picker"));
     const wantSelect = canUseHaSelect();
     const hasSelect = Boolean(usageFiltersEl.querySelector("ha-select"));
-    return wantPicker !== hasPicker || wantSelect !== hasSelect;
+    const hasChat = Boolean(usageFiltersEl.querySelector(".usage-filter-chat"));
+    return wantPicker !== hasPicker || wantSelect !== hasSelect || !hasChat;
   }
 
   function syncUsageDateFilter() {
@@ -4758,11 +4776,25 @@ export async function mountAiWorkspace(root, options = {}) {
           usageModel = next;
           loadUsage();
         }),
+        createUsageSelect("usage-filter-chat", t("usage_filter_chat"), (value) => {
+          if (usageSelectQuiet) return;
+          const next = usageSelectValue(value);
+          if (next === usageChat) return;
+          usageChat = next;
+          loadUsage();
+        }),
       );
       host?.append(...createUsageDateFilter());
     }
+    const chats = Array.isArray(filters.chats) ? filters.chats : [];
+    if (usageChat && !chats.some((row) => String(row.id || row) === usageChat)) {
+      usageChat = "";
+      loadUsage();
+      return;
+    }
     fillUsageSelect(usageFilterSelectEl("usage-filter-agent"), Array.isArray(filters.agents) ? filters.agents : [], usageAgent);
     fillUsageSelect(usageFilterSelectEl("usage-filter-model"), Array.isArray(filters.models) ? filters.models : [], usageModel);
+    fillUsageSelect(usageFilterSelectEl("usage-filter-chat"), chats, usageChat);
     syncUsageDateFilter();
   }
 
@@ -4774,7 +4806,7 @@ export async function mountAiWorkspace(root, options = {}) {
     if (stale()) return;
     renderUsageRange(usageRange);
     const query = new URLSearchParams({ range: usageRange });
-    if (sessionId) query.set("session_id", sessionId);
+    if (usageChat) query.set("session_id", usageChat);
     if (usageAgent) query.set("agent_id", usageAgent);
     if (usageModel) query.set("model", usageModel);
     if (usageSince) query.set("since", usageSince);
@@ -4815,9 +4847,6 @@ export async function mountAiWorkspace(root, options = {}) {
       metricCard(t("usage_all"), body.totals?.all),
     );
     frag.appendChild(grid);
-    if (body.session && body.session.turns) {
-      frag.appendChild(metricCard(t("usage_this_chat"), body.session));
-    }
     if (body.tts?.today?.turns || body.tts?.all?.turns) {
       frag.appendChild(metricCard(t("usage_tts"), body.tts.today, "tts"));
     }

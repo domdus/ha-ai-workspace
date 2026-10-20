@@ -912,6 +912,12 @@ class ChatView(HomeAssistantView):
                     session.id,
                     session.title or "",
                 )
+                try:
+                    from .activity_ha import attach_turn_watch
+
+                    await attach_turn_watch(hass, user_id, session.id)
+                except Exception:
+                    logger.debug("change history turn watch skipped", exc_info=True)
             try:
                 try:
                     await response.prepare(request)

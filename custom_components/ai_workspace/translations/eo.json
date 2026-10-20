@@ -58,7 +58,6 @@
             "data": {
               "low_token": "Malaltigi ĵetonan uzon",
               "check_house": "Ĉiam unue kontroli la domon",
-              "prompt_cache": "Invita kaŝmemoro",
               "track_usage": "Registri uzon kaj kostojn",
               "show_chat_usage": "Montri koston en la babila kapo",
               "ha_usage_sensors": "Aldoni Home-Assistant-uzosensilojn"
@@ -66,7 +65,6 @@
             "data_description": {
               "low_token": "Sendas malpli kun ĉiu mesaĝo por ŝpari monon ĉe Cloud-, Ollama- kaj Azure-agentoj (Cursor ne estas tuŝita). Malŝaltita donas la plej fidindajn respondojn pri via hejmo. Extreme estas nur babilado kaj ne povas regi la domon.",
               "check_house": "Defaŭlte ŝalta. La asistanto rigardas en Home Assistant antaŭ ol respondi demandojn pri via hejmo, do listoj kaj statoj estas veraj, ne divenitaj. Salutoj estas preterlasitaj. Kun „Malaltigi ĵetonan uzon“ je Light ĝi ĉiam kontrolas; je Medium kaj Extreme neniam. Malŝaltu por ĝeneralaj demandoj aŭ por modelo, kiu jam kontrolas memstare.",
-              "prompt_cache": "Defaŭlte ŝalta. Permesas al la provizanto reuzi la parton, kiu ripetiĝas en ĉiu mesaĝo (instrukcioj kaj ilolisto), je multe pli malalta prezo. Claude bezonas ĉi tiun ŝaltilon; GPT plejparte kaŝmemorigas mem. Cursor kaj Ollama ignoras ĝin.",
               "track_usage": "Defaŭlte ŝalta. Registras ĵetonojn kaj taksitan koston post ĉiu respondo kaj montras ilin sur la paĝo Uzo. Malŝalte ĉesigas novajn enskribojn; ekzistanta historio restas.",
               "show_chat_usage": "Defaŭlte ŝaltita. Montras ĵetonojn kaj koston sub la babila titolo. Malŝalte kaŝas nur tiun linion; registrado kaj la paĝo Uzo restas.",
               "ha_usage_sensors": "Defaŭlte malŝalta. Necesa nur por viaj propraj paneloj aŭ aŭtomatigoj: aldonas sensilojn pri kosto, ĵetonoj kaj vicoj sur Usage-aparato kaj ĉe ĉiu agento. La paĝo Uzo funkcias sen ili. Malŝalti forigas la sensilojn."
@@ -167,7 +165,6 @@
             "data": {
               "low_token": "Malaltigi ĵetonan uzon",
               "check_house": "Ĉiam unue kontroli la domon",
-              "prompt_cache": "Invita kaŝmemoro",
               "track_usage": "Registri uzon kaj kostojn",
               "show_chat_usage": "Montri koston en la babila kapo",
               "ha_usage_sensors": "Aldoni Home-Assistant-uzosensilojn"
@@ -175,7 +172,6 @@
             "data_description": {
               "low_token": "Sendas malpli kun ĉiu mesaĝo por ŝpari monon ĉe Cloud-, Ollama- kaj Azure-agentoj (Cursor ne estas tuŝita). Malŝaltita donas la plej fidindajn respondojn pri via hejmo. Extreme estas nur babilado kaj ne povas regi la domon.",
               "check_house": "Defaŭlte ŝalta. La asistanto rigardas en Home Assistant antaŭ ol respondi demandojn pri via hejmo, do listoj kaj statoj estas veraj, ne divenitaj. Salutoj estas preterlasitaj. Kun „Malaltigi ĵetonan uzon“ je Light ĝi ĉiam kontrolas; je Medium kaj Extreme neniam. Malŝaltu por ĝeneralaj demandoj aŭ por modelo, kiu jam kontrolas memstare.",
-              "prompt_cache": "Defaŭlte ŝalta. Permesas al la provizanto reuzi la parton, kiu ripetiĝas en ĉiu mesaĝo (instrukcioj kaj ilolisto), je multe pli malalta prezo. Claude bezonas ĉi tiun ŝaltilon; GPT plejparte kaŝmemorigas mem. Cursor kaj Ollama ignoras ĝin.",
               "track_usage": "Defaŭlte ŝalta. Registras ĵetonojn kaj taksitan koston post ĉiu respondo kaj montras ilin sur la paĝo Uzo. Malŝalte ĉesigas novajn enskribojn; ekzistanta historio restas.",
               "show_chat_usage": "Defaŭlte ŝaltita. Montras ĵetonojn kaj koston sub la babila titolo. Malŝalte kaŝas nur tiun linion; registrado kaj la paĝo Uzo restas.",
               "ha_usage_sensors": "Defaŭlte malŝalta. Necesa nur por viaj propraj paneloj aŭ aŭtomatigoj: aldonas sensilojn pri kosto, ĵetonoj kaj vicoj sur Usage-aparato kaj ĉe ĉiu agento. La paĝo Uzo funkcias sen ili. Malŝalti forigas la sensilojn."
@@ -304,7 +300,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "La sama pasvorto kiel ĉe via Cursor-runtime. Lasu malplena kiam vi uzas la aldonaĵon kun aŭtomata parigo.",
-            "cursor_api_key": "El via konto de Cursor (Integrations). Lasu malplena dum redaktado por teni la konservitan ŝlosilon.",
+            "cursor_api_key": "El via konto de Cursor (Integrations). Lasu malplena dum redaktado por teni la konservitan ŝlosilon. [Akiri API-ŝlosilon]({api_key_url})",
             "model": "Elektu el la listo aŭ tajpu modelnomon. Malplena uzas Composer.",
             "effort": "Kiom da pensotempo permesi. Composer defaŭlte uzas Rapida.",
             "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist."
@@ -328,7 +324,7 @@
           },
           "data_description": {
             "borrow": "Uzas la ŝlosilon jam konservitan de tiu integraĵo. La alia integraĵo restas kiel ĝi estas.",
-            "api_key": "Via ŝlosilo de la AI-provizanto, ne via ensaluto de Home Assistant.",
+            "api_key": "Via ŝlosilo de la AI-provizanto, ne via ensaluto de Home Assistant. [Akiri API-ŝlosilon]({api_key_url})",
             "model": "Elektu el la listo aŭ tajpu modelnomon. Malplena uzas la defaŭlton de la provizanto.",
             "effort": "Pli da penado signifas pli da pensado: pli bonaj respondoj al malfacilaj demandoj, sed pli malrapide kaj pli da ĵetonoj. Ignorata se la modelo ne subtenas ĝin.",
             "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist.",
@@ -368,7 +364,7 @@
             "assist": "Aldoni al Assist"
           },
           "data_description": {
-            "api_key": "La ŝlosilo de Azure OpenAI. Lasu malplena dum redaktado por teni la konservitan ŝlosilon.",
+            "api_key": "La ŝlosilo de Azure OpenAI. Lasu malplena dum redaktado por teni la konservitan ŝlosilon. [Akiri API-ŝlosilon]({api_key_url})",
             "api_base": "{example_url}",
             "model": "La nomo de la deplojo.",
             "azure_api_version": "Lasu la defaŭlton krom se Azure-subteno donis al vi alian version.",

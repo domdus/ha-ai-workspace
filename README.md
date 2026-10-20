@@ -39,7 +39,7 @@ An optional button on the other pages opens the same chat.
 
 Each agent can also be added as an Assist pipeline. The integration creates the pipeline for you, so you can use **Cursor AI** (or another AI) from Home Assistant's built-in Assist dialog as well.
 
-OpenAI, OpenRouter, and OpenAI-compatible agents can also listen and speak with the same API key (**Speech-to-text** and **Text-to-speech**, on by default). New Assist pipelines from AI Workspace get those voices automatically. You can still change them under **Settings → Voice assistants**. Cursor, Claude, Gemini, and Ollama have no voice of their own and use a Home Assistant engine such as Piper.
+OpenAI, OpenRouter, and OpenAI-compatible agents can also listen and speak with the same API key (**Speech-to-text** and **Text-to-speech**, on by default). Gemini can too, with native Google speech (existing Gemini agents stay off until you turn each on). New Assist pipelines from AI Workspace get those voices automatically. You can still change them under **Settings → Voice assistants**. Cursor, Claude, Azure, and Ollama have no voice of their own and use a Home Assistant engine such as Piper.
 
 The OpenAI-style voices (Coral, Echo, …) speak **German, French, and many other languages**. They follow the language of the reply.
 
@@ -87,7 +87,7 @@ Until it is in the default HACS store, add it as a custom repository: **HACS →
 
 - **MCP type:** one from [Requirements](#requirements). Leave the MCP URL empty if it shows as detected.
 - Save. Home Assistant then asks for the first **agent**.
-- Pick the provider. Paste the key, or choose **Copy key from** when OpenRouter, OpenAI, Claude, Gemini, Ollama, or Azure is already set up. The key is checked before it is saved.
+- Pick the provider. Paste the key, use **Get an API key** under the field, or choose **Copy key from** when OpenRouter, OpenAI, Claude, Gemini, Ollama, or Azure is already set up. The key is checked before it is saved.
 - Add more agents later with **Add agent** on the AI Workspace entry. The chat shows an agent picker when more than one is set up.
 
 You can also put the same settings in `configuration.yaml`. See [YAML configuration](docs/settings.md#yaml-configuration).
