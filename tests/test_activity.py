@@ -205,7 +205,7 @@ def test_activity_rows_are_private_and_capped(tmp_path: Path):
         "Cursor",
         "Updated automation Morning",
         "ha_config_set_automation",
-        '{"kind":"automation"}',
+        '{"kind":"automation","id":"morning","item":{"alias":"Morning"}}',
         "chat-1",
         "Morning lights",
     )
@@ -257,3 +257,12 @@ def test_ha_mcp_is_connected():
     assert const.ha_mcp_is_connected("ha", [{"kind": "ha_mcp"}]) is True
     assert const.ha_mcp_is_connected("custom", [{"kind": "ha"}]) is False
     assert const.ha_mcp_is_connected("", None) is False
+
+
+def test_activity_restore_flags_keep_ha_mcp_and_native_paths():
+    const = _load("ai_workspace_const", "const.py")
+    assert const.activity_restore_flags(snapshot=True, undone=False, admin=True, ha_mcp=True) == (True, True)
+    assert const.activity_restore_flags(snapshot=True, undone=False, admin=True, ha_mcp=False) == (True, False)
+    assert const.activity_restore_flags(snapshot=False, undone=False, admin=True, ha_mcp=False) == (False, True)
+    assert const.activity_restore_flags(snapshot=True, undone=True, admin=True, ha_mcp=True) == (False, False)
+    assert const.activity_restore_flags(snapshot=False, undone=False, admin=False, ha_mcp=True) == (False, False)

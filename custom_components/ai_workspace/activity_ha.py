@@ -1234,6 +1234,11 @@ async def _restore_dashboard(hass: HomeAssistant, document: dict[str, Any]) -> N
     _store_id, board = _resolve_board(hass, str(document.get("id") or ""))
     if board is None:
         board = await _recreate_dashboard(hass, str(document.get("id") or ""), document.get("meta") or {})
+    current = await _load_board_config(board, force=True)
+    if isinstance(current, dict) and _same_body(current, config):
+        raise ActivityError(
+            "The saved snapshot already matches the live dashboard. Ask to restore and pick an HA-MCP backup from before this change."
+        )
     try:
         await board.async_save(config)
     except Exception as exc:

@@ -17,6 +17,7 @@ from .assist_agents import assist_agent_ids, async_assist_events, list_assist_ag
 from .discovery import async_bind_runtime
 from .const import (
     ACTIVITY_ROLLBACK,
+    activity_restore_flags,
     CLOUD_ONLY_MODELS,
     workspace_system_prompt,
     DOMAIN,
@@ -1209,8 +1210,14 @@ def _loopback_remote(request: web.Request) -> bool:
         return False
 
 
-def _activity_dict(row, chat: str = "", *, ask_restore: bool = False) -> dict:
+def _activity_dict(row, chat: str = "", *, admin: bool = False, ha_mcp: bool = False) -> dict:
     undone = bool(row.undone_at)
+    can_rollback, ask = activity_restore_flags(
+        snapshot=bool(row.can_rollback),
+        undone=undone,
+        admin=admin,
+        ha_mcp=ha_mcp,
+    )
     return {
         "id": row.id,
         "created_at": row.created_at,
@@ -1221,11 +1228,9 @@ def _activity_dict(row, chat: str = "", *, ask_restore: bool = False) -> dict:
         "session_id": row.session_id or "",
         "summary": row.summary,
         "tool": row.tool,
-        "can_rollback": bool(ACTIVITY_ROLLBACK and row.can_rollback),
+        "can_rollback": can_rollback,
         "undone_at": row.undone_at or "",
-        "ask_restore": bool(
-            ask_restore and not undone and not (ACTIVITY_ROLLBACK and row.can_rollback)
-        ),
+        "ask_restore": ask,
         "logical_commit": bool(getattr(row, "logical_commit", False)),
         "change_count": int(getattr(row, "change_count", 0) or 0),
         "restore_kind": getattr(row, "restore_kind", "") or "",
@@ -1248,12 +1253,15 @@ class ActivityView(HomeAssistantView):
         rows = await hass.async_add_executor_job(lambda: store.list_activity(user_id, admin=admin))
         titles = await hass.async_add_executor_job(store.session_titles, [row.session_id for row in rows])
         settings = _runtime(hass).get("settings")
-        ask_restore = admin and ha_mcp_is_connected(
+        ha_mcp = ha_mcp_is_connected(
             str(getattr(settings, "mcp_kind", "") or "") if settings else "",
             list(getattr(settings, "mcp_rows", None) or []) if settings else None,
         )
         return self.json(
-            [_activity_dict(row, titles.get(row.session_id) or "", ask_restore=ask_restore) for row in rows]
+            [
+                _activity_dict(row, titles.get(row.session_id) or "", admin=admin, ha_mcp=ha_mcp)
+                for row in rows
+            ]
         )
 
 

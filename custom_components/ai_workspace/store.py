@@ -1084,13 +1084,15 @@ def _activity(row: sqlite3.Row) -> Activity:
     undone = _text(row["undone_at"])
     document = _text(row["document"])
     try:
-        from .logical_commit import parse_logical_document, restore_targets
+        from .logical_commit import document_is_restorable, parse_logical_document, restore_targets
 
         logical = parse_logical_document(document)
         targets = restore_targets(document)
+        restorable = document_is_restorable(document)
     except ImportError:
         logical = None
         targets = []
+        restorable = bool(document)
     if logical:
         restore_kind = ", ".join(item[0] for item in targets if item[0])[:120]
         restore_id = ", ".join(item[1] for item in targets if item[1])[:240]
@@ -1107,7 +1109,7 @@ def _activity(row: sqlite3.Row) -> Activity:
         agent=row["agent"],
         summary=row["summary"],
         tool=row["tool"],
-        can_rollback=bool(document) and not undone,
+        can_rollback=restorable and not undone,
         undone_at=undone,
         session_id=_text(row["session_id"]) if "session_id" in row.keys() else "",
         chat=_text(row["chat"]) if "chat" in row.keys() else "",

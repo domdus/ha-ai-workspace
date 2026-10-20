@@ -8,7 +8,7 @@ Your messages, attachments, the system prompt, the page you are on, and every MC
 
 Chat history is stored in `config/ai_workspace/ai-workspace.sqlite`. Change History keeps a log of the last 30 recorded configuration writes there. Usage rows (tokens and estimated cost, not message text) live in the same database.
 
-Change History keeps a before-image of each recorded write and can restore it with **Rollback**. **Ask to restore** only appears when that snapshot is missing; it asks the current chat to undo the change with the tools it actually has.
+Change History keeps a before-image of each recorded write and can restore it with **Rollback**, with or without HA-MCP. **Ask to restore** still appears when HA-MCP is connected (or when that snapshot is missing), so the chat can use HA-MCP backups or dashboard tools.
 
 API keys live in Home Assistant’s config entries, like any other integration.
 
