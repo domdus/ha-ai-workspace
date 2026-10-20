@@ -480,6 +480,14 @@ def gemini_generate_content_url(api_base: str, model: str) -> str:
     return f"{base}/models/{name}:generateContent"
 
 
+def gemini_generate_content_headers(api_key: str) -> dict[str, str]:
+    """AI Studio keys on generateContent. A Bearer header is treated as OAuth and returns 401."""
+    key = str(api_key or "").strip()
+    if not key:
+        return {}
+    return {"x-goog-api-key": key}
+
+
 def default_tts_model(kind: str) -> str:
     return _TTS_MODEL.get(str(kind or ""), "gpt-4o-mini-tts")
 

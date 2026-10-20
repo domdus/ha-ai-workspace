@@ -12,6 +12,7 @@
   --ai-chat-width: 720px;
   --ai-nav-width: 256px;
   --ai-inline-pad: var(--ha-space-4);
+  --ai-message-inline-pad: var(--ai-inline-pad);
 }
 
 *, *::before, *::after {
@@ -1289,7 +1290,10 @@ textarea:focus {
 
 .workspace-link {
   display: block;
-  margin: var(--ha-space-2) var(--ha-space-4) 0;
+  width: max-content;
+  max-width: 100%;
+  margin: var(--ha-space-2) var(--ai-message-inline-pad) 0;
+  padding-inline: 0;
   color: var(--primary-color);
   text-decoration: none;
   font-size: var(--ha-font-size-s);

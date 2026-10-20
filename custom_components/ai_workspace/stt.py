@@ -24,6 +24,7 @@ from .const import (
     DOMAIN,
     default_api_base,
     default_stt_model,
+    gemini_generate_content_headers,
     gemini_generate_content_url,
 )
 from .voice import gemini_response_text, gemini_transcribe_payload
@@ -231,7 +232,7 @@ class AiWorkspaceSTTEntity(stt.SpeechToTextEntity):
         async with session.post(
             url,
             json=body,
-            headers=self._headers(),
+            headers=gemini_generate_content_headers(self._api_key),
             timeout=ClientTimeout(total=45, sock_connect=10),
         ) as resp:
             raw = await resp.read()

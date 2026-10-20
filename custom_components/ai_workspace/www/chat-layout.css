@@ -15,6 +15,11 @@
   --ai-chat-width: 720px;
   --ai-nav-width: 256px;
   --ai-inline-pad: var(--ha-space-4);
+  --ai-message-inline-pad: var(--ai-inline-pad);
+}
+
+.ui-theme-ha-components {
+  --ai-message-inline-pad: var(--ha-space-3);
 }
 
 *, *::before, *::after {
@@ -518,7 +523,7 @@ h1 {
 }
 
 .ui-theme-ha-components .log.messages {
-  padding: 0 var(--ha-space-3) var(--ha-space-4);
+  padding: 0 var(--ai-message-inline-pad) var(--ha-space-4);
   padding-bottom: calc(8rem + var(--ha-space-8));
   gap: 0;
 }
@@ -531,7 +536,7 @@ h1 {
   flex: 0 0 auto;
   height: auto;
   overflow: visible;
-  padding: 0 var(--ha-space-3) var(--ha-space-2);
+  padding: 0 var(--ai-message-inline-pad) var(--ha-space-2);
 }
 
 .ui-theme-ha-components .chat.welcome .composer {
@@ -876,7 +881,15 @@ textarea.message {
 
 .workspace-link {
   display: block;
-  margin: var(--ha-space-2) var(--ha-space-4) 0;
+  width: max-content;
+  max-width: 100%;
+  margin: var(--ha-space-2) var(--ai-message-inline-pad) 0;
+  padding-inline: 0;
+}
+
+.ui-theme-ha-components .workspace-link::part(base) {
+  padding-inline: 0;
+  justify-content: flex-start;
 }
 
 .sr {
@@ -942,12 +955,16 @@ textarea.message {
     --ai-inline-pad: max(var(--ha-space-6, 24px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
   }
 
+  .ui-theme-ha-components {
+    --ai-message-inline-pad: max(var(--ha-space-3, 12px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+  }
+
   .composer {
     padding-inline: max(var(--ha-space-4, 16px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
   }
 
   .ui-theme-ha-components .log.messages {
-    padding-inline: max(var(--ha-space-3, 12px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+    padding-inline: var(--ai-message-inline-pad);
   }
 
   /* Gutter lives on composer-box / picker only — avoid stacking with .composer padding. */

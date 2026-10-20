@@ -41,13 +41,10 @@ def test_agent_form_strings_include_key_link():
             assert "]({api_key_url})" in text, f"{path.name} {step}.{field}"
 
 
-def test_hacs_zip_release_and_brand_icon():
+def test_hacs_uses_git_archive_and_has_brand_icon():
     hacs = json.loads((ROOT / "hacs.json").read_text(encoding="utf-8"))
-    assert hacs["zip_release"] is True
-    assert hacs["filename"] == "ai_workspace.zip"
+    assert "zip_release" not in hacs
+    assert "filename" not in hacs
     icon = BASE / "brand" / "icon.png"
     assert icon.is_file()
     assert icon.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
-    workflow = (ROOT / ".github" / "workflows" / "release-zip.yml").read_text(encoding="utf-8")
-    assert "cd custom_components/ai_workspace" in workflow
-    assert "zip -r ../../dist/ai_workspace.zip ." in workflow
