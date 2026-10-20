@@ -4160,6 +4160,27 @@ export async function mountAiWorkspace(root, options = {}) {
       item.appendChild(restored);
       return item;
     }
+    if (row.can_rollback) {
+      const button = document.createElement("ha-button");
+      button.className = "history-rollback";
+      button.setAttribute("size", "s");
+      button.setAttribute("appearance", "plain");
+      button.textContent = t("rollback");
+      button.addEventListener("click", async () => {
+        const ok = await askConfirm(t("rollback"), t("rollback_confirm", { summary: row.summary || "" }), t("rollback"));
+        if (!ok) return;
+        button.disabled = true;
+        const resp = await apiFetch(`${API}/activity/${row.id}/rollback`, { method: "POST", body: "{}" });
+        if (!resp || !resp.ok) {
+          button.disabled = false;
+          button.textContent = t("rollback_failed");
+          return;
+        }
+        await loadHistory();
+      });
+      item.appendChild(button);
+      return item;
+    }
     if (row.ask_restore) {
       const button = document.createElement("ha-button");
       button.className = "history-rollback";
@@ -4180,25 +4201,6 @@ export async function mountAiWorkspace(root, options = {}) {
       item.appendChild(button);
       return item;
     }
-    if (!row.can_rollback) return item;
-    const button = document.createElement("ha-button");
-    button.className = "history-rollback";
-    button.setAttribute("size", "s");
-    button.setAttribute("appearance", "plain");
-    button.textContent = t("rollback");
-    button.addEventListener("click", async () => {
-      const ok = await askConfirm(t("rollback"), t("rollback_confirm", { summary: row.summary || "" }), t("rollback"));
-      if (!ok) return;
-      button.disabled = true;
-      const resp = await apiFetch(`${API}/activity/${row.id}/rollback`, { method: "POST", body: "{}" });
-      if (!resp || !resp.ok) {
-        button.disabled = false;
-        button.textContent = t("rollback_failed");
-        return;
-      }
-      await loadHistory();
-    });
-    item.appendChild(button);
     return item;
   }
 

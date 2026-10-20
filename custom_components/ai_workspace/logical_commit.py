@@ -235,6 +235,20 @@ def _target_from_document(doc: dict[str, Any]) -> tuple[str, str, str]:
     return kind, item_id, label
 
 
+def documents_to_restore(document: dict[str, Any]) -> list[dict[str, Any]]:
+    """Nested snapshots inside a logical commit, or the single document."""
+    if not isinstance(document, dict):
+        return []
+    if document.get("kind") == _LOGICAL_KIND or document.get("logical_commit"):
+        out: list[dict[str, Any]] = []
+        for change in document.get("changes") or []:
+            nested = change.get("document") if isinstance(change, dict) else None
+            if isinstance(nested, dict):
+                out.append(nested)
+        return out
+    return [document]
+
+
 def restore_targets(document: str) -> list[tuple[str, str, str]]:
     doc = parse_logical_document(document)
     if doc is None:

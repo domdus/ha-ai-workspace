@@ -2,6 +2,7 @@
 
 ## 1.3.1
 
+- Change History **Rollback** restores the snapshot taken before the write. HA-MCP backups stay available; this does not depend on `ha_manage_backup`.
 - HACS 1.3.0 installed the integration one folder too deep (`custom_components/ai_workspace/ai_workspace/`), so Home Assistant could not find it. The release zip now has `manifest.json` at its root.
 
 ## 1.3.0

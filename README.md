@@ -20,7 +20,7 @@ What the agent can do depends entirely on the MCP server you connect.
 - Attachments in chat (text files, images)
 - Deep links to devices, entities, automations, and more
 - Chat history with pins
-- Change History: a list of every change the assistant made to your setup. With HA-MCP, **Ask to restore** has the assistant roll a change back from HA-MCP’s backups
+- Change History: a list of every change the assistant made to your setup, with **Rollback** from the snapshot taken before the write
 - Usage and costs: tokens and estimated cost per agent, model, and chat, with optional Home Assistant sensors for your own dashboards
 - Several agents in one chat
 - More than one MCP connection
