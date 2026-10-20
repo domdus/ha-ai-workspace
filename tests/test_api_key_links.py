@@ -48,3 +48,6 @@ def test_hacs_zip_release_and_brand_icon():
     icon = BASE / "brand" / "icon.png"
     assert icon.is_file()
     assert icon.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
+    workflow = (ROOT / ".github" / "workflows" / "release-zip.yml").read_text(encoding="utf-8")
+    assert "cd custom_components/ai_workspace" in workflow
+    assert "zip -r ../../dist/ai_workspace.zip ." in workflow

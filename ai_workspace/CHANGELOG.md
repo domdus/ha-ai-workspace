@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.1
+
+- HACS 1.3.0 installed the integration one folder too deep (`custom_components/ai_workspace/ai_workspace/`), so Home Assistant could not find it. The release zip now has `manifest.json` at its root.
+
 ## 1.3.0
 
 First stable 1.3. Includes the 1.3.0b1–b12 betas (usage and cost, Change History, Cursor runtime, Gemini speech, and the security work in b9).

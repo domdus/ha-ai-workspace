@@ -16,7 +16,11 @@ jobs:
       - name: Pack integration
         run: |
           mkdir -p dist
-          (cd custom_components && zip -r ../dist/ai_workspace.zip ai_workspace)
+          # HACS extractall()s this zip into custom_components/ai_workspace/,
+          # so manifest.json must sit at the archive root — not ai_workspace/manifest.json.
+          (cd custom_components/ai_workspace && zip -r ../../dist/ai_workspace.zip . -x '*.pyc' -x '*__pycache__*')
+          unzip -l dist/ai_workspace.zip | grep -q ' manifest.json$' \
+            || { echo "manifest.json is not at the root of the archive"; exit 1; }
 
       - name: Upload release asset
         env:
