@@ -10,6 +10,7 @@ from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.event import async_track_time_interval
 from datetime import timedelta
 
@@ -50,6 +51,7 @@ HOUSE_MAP_INSTRUCTIONS = CATALOG_INSTRUCTIONS
 _COMPACT_LIMIT = 80
 _WIRING_LIMIT = 24
 _REFRESH_SECONDS = 15 * 60
+_EVENT_COOLDOWN = 10.0
 _ACTOR_DOMAINS = {
     "switch",
     "light",
@@ -363,11 +365,15 @@ async def async_setup_house_map(hass: HomeAssistant, store: Store, enabled: bool
 
     await _refresh()
 
+    # Startup and bulk renames fire hundreds of registry events; rebuild once after they settle.
+    debouncer = Debouncer(hass, _LOGGER, cooldown=_EVENT_COOLDOWN, immediate=False, function=_refresh)
+
     @callback
     def _schedule(_event: Event | None = None) -> None:
-        hass.async_create_task(_refresh())
+        debouncer.async_schedule_call()
 
     unsubs = [
+        debouncer.async_cancel,
         hass.bus.async_listen(er.EVENT_ENTITY_REGISTRY_UPDATED, _schedule),
         hass.bus.async_listen(ar.EVENT_AREA_REGISTRY_UPDATED, _schedule),
         hass.bus.async_listen("automation_reloaded", _schedule),

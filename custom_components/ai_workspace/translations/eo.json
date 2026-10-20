@@ -8,33 +8,13 @@
           "stt_engine": "Parolo al teksto",
           "tts_engine": "Teksto al parolo",
           "speak_replies": "Laŭtlegi respondojn aŭtomate",
-          "tts_natural": "Natura parolo por teksto al parolo",
-          "enable_sidebar": "Montri AI Workspace en la flanka strio",
-          "enable_overlay": "Montri ŝveban AI-butonon",
-          "enable_dictate": "Montri diktan butonon",
-          "allow_users": "Permesi ordinarajn uzantojn",
-          "house_map": "Agorda katalogo",
-          "shorten_mcp_results": "Mallongigi longajn respondojn de Home Assistant",
-          "change_history": "Ŝanĝohistorio",
-          "ui_theme": "Uzi HA-komponentojn",
-          "cross_chat": "Inter babilejoj",
-          "keep_chats": "Babilejoj konservotaj"
+          "tts_natural": "Natura parolo por teksto al parolo"
         },
         "data_description": {
           "stt_engine": "Foliumila dikto bezonas sekuran retejon (https). Aŭ elektu Home Assistant-motoron de parolo-al-teksto ĉe Agordoj. La foliumilo devas permesi la mikrofonon.",
           "tts_engine": "Piper, Google Translate, aŭ voĉo de unu el viaj AI-asistantoj. Malŝalte lasas respondojn nur kiel tekston.",
           "speak_replies": "Kiam voĉo estas elektita, ĉiu respondo estas laŭtlegata tuj kiam ĝi alvenas. Malŝalte lasas la laŭtparolilan butonon por ludi respondon mem.",
-          "tts_natural": "Defaŭlte ŝalta. Forigas formatadon por ke laŭtlego sonu nature. Malŝalte legas la mesaĝon ĝuste kiel skribite.",
-          "enable_sidebar": "Montras AI Workspace en la flanka strio. Malŝalte, administrantoj ankoraŭ povas malfermi la plenan paĝon per ĝia menua ligilo.",
-          "enable_overlay": "Ŝaltas aŭ malŝaltas la ŝveban AI-butonon. Ĉe paĝoj de Agordoj ĝi sidas pli alte por ne kovri sistemajn butonojn.",
-          "enable_dictate": "Mikrofono en la mesaĝa kampo.",
-          "allow_users": "Ne-administrantoj povas malfermi la ŝveban babilejon kun la sama aliro al Home Assistant kiel ilia konto. Malŝalte: nur administrantoj. La plena paĝo de AI Workspace en la flanka strio restas nur por administrantoj.",
-          "house_map": "Laŭvola. Helpas klarigi kiel unu ero estas kabligita (kio ekigas ĝin, kion ĝi influas). Defaŭlte malŝalta. Por viva stato ŝaltite/malŝaltite aŭ plenaj listoj, petu la asistanton kontroli Home Assistant.",
-          "shorten_mcp_results": "Defaŭlte ŝalta. Tre longaj respondoj de Home Assistant (tutdomaj listoj, grandaj serĉoj) estas resumitaj antaŭ ol ili iras al la AI. Tio ŝparas ĵetonojn kaj tenas respondojn rapidaj. Malŝalte sendas la plenan tekston.",
-          "change_history": "Defaŭlte ŝalta. Konservas registron de agordaj ŝanĝoj faritaj de la asistanto, por ke vi povu revizii aŭ malfari ilin en Ŝanĝohistorio. Malŝalte ĉesigas novajn enskribojn; la asistanto ankoraŭ povas uzi Home Assistant.",
-          "ui_theme": "Defaŭlte malŝaltita. Kiam ŝaltita, nur interfacaj komponantoj de Home Assistant estas uzataj, kio povas pli bone funkcii kun etosoj.",
-          "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi alian babilejon kies titolo kunhavas vortojn. Ne necesas mencii babilejon. Nur mallonga eltiraĵo, kaj tiu babilejo ne estas ŝanĝita.",
-          "keep_chats": "Plej novaj nealpinglitaj babilejoj konservotaj po persono. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."
+          "tts_natural": "Defaŭlte ŝalta. Forigas formatadon por ke laŭtlego sonu nature. Malŝalte legas la mesaĝon ĝuste kiel skribite."
         },
         "sections": {
           "mcp": {
@@ -48,6 +28,60 @@
               "mcp_kind": "Serviloj kiujn ĉi tiu Home Assistant povas atingi. Elektu Propra por enigi vian propran adreson.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Enkonstruita: longdaŭra alira ĵetono, aŭ lasu malplena por uzi vian nunan ensaluton. HA-MCP: kutime malplena. Vibecode: agenta ŝlosilo. Propra: nur se tiu servilo petas ŝlosilon."
+            }
+          },
+          "chat": {
+            "name": "Babilejo",
+            "description": "Kie la babilejo aperas kaj kiu rajtas uzi ĝin.",
+            "data": {
+              "enable_sidebar": "Montri AI Workspace en la flanka strio",
+              "enable_overlay": "Montri ŝveban AI-butonon",
+              "enable_dictate": "Montri diktan butonon",
+              "allow_users": "Permesi ordinarajn uzantojn",
+              "ui_theme": "Uzi HA-komponentojn",
+              "cross_chat": "Inter babilejoj",
+              "keep_chats": "Babilejoj konservotaj"
+            },
+            "data_description": {
+              "enable_sidebar": "Aldonas AI Workspace al la flanka strio de Home Assistant. Malŝalte, administrantoj ankoraŭ povas malfermi /ai-workspace rekte.",
+              "enable_overlay": "Ronda AI-butono en la angulo de ĉiu paĝo de Home Assistant, por ke vi povu demandi sen forlasi la paĝon. Ĉe paĝoj de Agordoj ĝi sidas pli alte por ne kovri aliajn butonojn.",
+              "enable_dictate": "Mikrofona butono en la mesaĝa kampo. Kaŝu ĝin se vi neniam diktas.",
+              "allow_users": "Malŝalte: nur administrantoj. Ŝalte: ne-administrantoj ricevas la ŝveban babilejon, kun la sama aliro al Home Assistant kiel ilia propra konto. La plena paĝo de AI Workspace restas nur por administrantoj. Ŝaltu ĉi tion nur se vi fidas ĉiujn, kiuj havas konton.",
+              "ui_theme": "Defaŭlte malŝalta. Konstruas la babilejon el la propraj interfacaj partoj de Home Assistant. Provu ĝin se la babilejo ne kongruas kun via etoso.",
+              "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi mallongan eltiraĵon el alia babilejo, kies titolo kunhavas vortojn kun ĝi, sen ke vi mencias tiun babilejon. Helpas kiam vi jam parolis pri la sama ĉambro aŭ aŭtomatigo. La alia babilejo ne ŝanĝiĝas.",
+              "keep_chats": "Plej novaj nealpinglitaj babilejoj konservataj po persono. Pli malnovaj estas forigitaj, por ke la listo ne kresku senfine. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."
+            }
+          },
+          "cost": {
+            "name": "Kosto kaj ĵetonoj",
+            "description": "Kion ĉiu mesaĝo sendas kaj kiel elspezoj estas registrataj.",
+            "data": {
+              "low_token": "Malaltigi ĵetonan uzon",
+              "check_house": "Ĉiam unue kontroli la domon",
+              "track_usage": "Registri uzon kaj kostojn",
+              "show_chat_usage": "Montri koston en la babila kapo",
+              "ha_usage_sensors": "Aldoni Home-Assistant-uzosensilojn"
+            },
+            "data_description": {
+              "low_token": "Sendas malpli kun ĉiu mesaĝo por ŝpari monon ĉe Cloud-, Ollama- kaj Azure-agentoj (Cursor ne estas tuŝita). Malŝaltita donas la plej fidindajn respondojn pri via hejmo. Extreme estas nur babilado kaj ne povas regi la domon.",
+              "check_house": "Defaŭlte ŝalta. La asistanto rigardas en Home Assistant antaŭ ol respondi demandojn pri via hejmo, do listoj kaj statoj estas veraj, ne divenitaj. Salutoj estas preterlasitaj. Kun „Malaltigi ĵetonan uzon“ je Light ĝi ĉiam kontrolas; je Medium kaj Extreme neniam. Malŝaltu por ĝeneralaj demandoj aŭ por modelo, kiu jam kontrolas memstare.",
+              "track_usage": "Defaŭlte ŝalta. Registras ĵetonojn kaj taksitan koston post ĉiu respondo kaj montras ilin sur la paĝo Uzo. Malŝalte ĉesigas novajn enskribojn; ekzistanta historio restas.",
+              "show_chat_usage": "Defaŭlte ŝaltita. Montras ĵetonojn kaj koston sub la babila titolo. Malŝalte kaŝas nur tiun linion; registrado kaj la paĝo Uzo restas.",
+              "ha_usage_sensors": "Defaŭlte malŝalta. Necesa nur por viaj propraj paneloj aŭ aŭtomatigoj: aldonas sensilojn pri kosto, ĵetonoj kaj vicoj sur Usage-aparato kaj ĉe ĉiu agento. La paĝo Uzo funkcias sen ili. Malŝalti forigas la sensilojn."
+            }
+          },
+          "house": {
+            "name": "Respondoj de Home Assistant",
+            "description": "Kiel la asistanto legas vian agordon kaj registras siajn ŝanĝojn. La defaŭltoj taŭgas por plej multaj hejmoj.",
+            "data": {
+              "house_map": "Agorda katalogo",
+              "shorten_mcp_results": "Mallongigi longajn respondojn de Home Assistant",
+              "change_history": "Ŝanĝohistorio"
+            },
+            "data_description": {
+              "house_map": "Defaŭlte malŝalta. Loka indekso pri kiel aŭtomatigoj, entoj kaj areoj estas ligitaj, por ke unu serĉo respondu demandojn kiel „kio uzas la kuirejan lumon?“. Aldonas iomete al ĉiu mesaĝo, do ŝaltu ĝin nur se vi ofte demandas kiel aferoj estas kunligitaj. Vivaj statoj ankoraŭ venas el Home Assistant.",
+              "shorten_mcp_results": "Defaŭlte ŝalta. Tre longaj respondoj de Home Assistant (tutdomaj listoj, grandaj serĉoj) estas resumitaj antaŭ ol ili iras al la AI. Ŝparas ĵetonojn kaj tenas respondojn rapidaj. Malŝalte sendas la plenan tekston.",
+              "change_history": "Defaŭlte ŝalta. Registras ĉiun agordan ŝanĝon, kiun la asistanto faras, por ke vi vidu kio ŝanĝiĝis kaj petu ĝin restarigi pli fruan version. Malŝalte ĉesigas novajn enskribojn; la asistanto ankoraŭ povas fari ŝanĝojn."
             }
           },
           "prompt": {
@@ -81,33 +115,13 @@
           "stt_engine": "Parolo al teksto",
           "tts_engine": "Teksto al parolo",
           "speak_replies": "Laŭtlegi respondojn aŭtomate",
-          "tts_natural": "Natura parolo por teksto al parolo",
-          "enable_sidebar": "Montri AI Workspace en la flanka strio",
-          "enable_overlay": "Montri ŝveban AI-butonon",
-          "enable_dictate": "Montri diktan butonon",
-          "allow_users": "Permesi ordinarajn uzantojn",
-          "house_map": "Agorda katalogo",
-          "shorten_mcp_results": "Mallongigi longajn respondojn de Home Assistant",
-          "change_history": "Ŝanĝohistorio",
-          "ui_theme": "Uzi HA-komponentojn",
-          "cross_chat": "Inter babilejoj",
-          "keep_chats": "Babilejoj konservotaj"
+          "tts_natural": "Natura parolo por teksto al parolo"
         },
         "data_description": {
           "stt_engine": "Foliumila dikto bezonas sekuran retejon (https). Aŭ elektu Home Assistant-motoron de parolo-al-teksto ĉe Agordoj. La foliumilo devas permesi la mikrofonon.",
           "tts_engine": "Piper, Google Translate, aŭ voĉo de unu el viaj AI-asistantoj. Malŝalte lasas respondojn nur kiel tekston.",
           "speak_replies": "Kiam voĉo estas elektita, ĉiu respondo estas laŭtlegata tuj kiam ĝi alvenas. Malŝalte lasas la laŭtparolilan butonon por ludi respondon mem.",
-          "tts_natural": "Defaŭlte ŝalta. Forigas formatadon por ke laŭtlego sonu nature. Malŝalte legas la mesaĝon ĝuste kiel skribite.",
-          "enable_sidebar": "Montras AI Workspace en la flanka strio. Malŝalte, administrantoj ankoraŭ povas malfermi la plenan paĝon per ĝia menua ligilo.",
-          "enable_overlay": "Ŝaltas aŭ malŝaltas la ŝveban AI-butonon. Ĉe paĝoj de Agordoj ĝi sidas pli alte por ne kovri sistemajn butonojn.",
-          "enable_dictate": "Mikrofono en la mesaĝa kampo.",
-          "allow_users": "Ne-administrantoj povas malfermi la ŝveban babilejon kun la sama aliro al Home Assistant kiel ilia konto. Malŝalte: nur administrantoj. La plena paĝo de AI Workspace en la flanka strio restas nur por administrantoj.",
-          "house_map": "Laŭvola. Helpas klarigi kiel unu ero estas kabligita (kio ekigas ĝin, kion ĝi influas). Defaŭlte malŝalta. Por viva stato ŝaltite/malŝaltite aŭ plenaj listoj, petu la asistanton kontroli Home Assistant.",
-          "shorten_mcp_results": "Defaŭlte ŝalta. Tre longaj respondoj de Home Assistant (tutdomaj listoj, grandaj serĉoj) estas resumitaj antaŭ ol ili iras al la AI. Tio ŝparas ĵetonojn kaj tenas respondojn rapidaj. Malŝalte sendas la plenan tekston.",
-          "change_history": "Defaŭlte ŝalta. Konservas registron de agordaj ŝanĝoj faritaj de la asistanto, por ke vi povu revizii aŭ malfari ilin en Ŝanĝohistorio. Malŝalte ĉesigas novajn enskribojn; la asistanto ankoraŭ povas uzi Home Assistant.",
-          "ui_theme": "Defaŭlte malŝaltita. Kiam ŝaltita, nur interfacaj komponantoj de Home Assistant estas uzataj, kio povas pli bone funkcii kun etosoj.",
-          "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi alian babilejon kies titolo kunhavas vortojn. Ne necesas mencii babilejon. Nur mallonga eltiraĵo, kaj tiu babilejo ne estas ŝanĝita.",
-          "keep_chats": "Plej novaj nealpinglitaj babilejoj konservotaj po persono. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."
+          "tts_natural": "Defaŭlte ŝalta. Forigas formatadon por ke laŭtlego sonu nature. Malŝalte legas la mesaĝon ĝuste kiel skribite."
         },
         "sections": {
           "mcp": {
@@ -121,6 +135,60 @@
               "mcp_kind": "Serviloj kiujn ĉi tiu Home Assistant povas atingi. Elektu Propra por enigi vian propran adreson.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Enkonstruita: longdaŭra alira ĵetono, aŭ lasu malplena por uzi vian nunan ensaluton. HA-MCP: kutime malplena. Vibecode: agenta ŝlosilo. Propra: nur se tiu servilo petas ŝlosilon."
+            }
+          },
+          "chat": {
+            "name": "Babilejo",
+            "description": "Kie la babilejo aperas kaj kiu rajtas uzi ĝin.",
+            "data": {
+              "enable_sidebar": "Montri AI Workspace en la flanka strio",
+              "enable_overlay": "Montri ŝveban AI-butonon",
+              "enable_dictate": "Montri diktan butonon",
+              "allow_users": "Permesi ordinarajn uzantojn",
+              "ui_theme": "Uzi HA-komponentojn",
+              "cross_chat": "Inter babilejoj",
+              "keep_chats": "Babilejoj konservotaj"
+            },
+            "data_description": {
+              "enable_sidebar": "Aldonas AI Workspace al la flanka strio de Home Assistant. Malŝalte, administrantoj ankoraŭ povas malfermi /ai-workspace rekte.",
+              "enable_overlay": "Ronda AI-butono en la angulo de ĉiu paĝo de Home Assistant, por ke vi povu demandi sen forlasi la paĝon. Ĉe paĝoj de Agordoj ĝi sidas pli alte por ne kovri aliajn butonojn.",
+              "enable_dictate": "Mikrofona butono en la mesaĝa kampo. Kaŝu ĝin se vi neniam diktas.",
+              "allow_users": "Malŝalte: nur administrantoj. Ŝalte: ne-administrantoj ricevas la ŝveban babilejon, kun la sama aliro al Home Assistant kiel ilia propra konto. La plena paĝo de AI Workspace restas nur por administrantoj. Ŝaltu ĉi tion nur se vi fidas ĉiujn, kiuj havas konton.",
+              "ui_theme": "Defaŭlte malŝalta. Konstruas la babilejon el la propraj interfacaj partoj de Home Assistant. Provu ĝin se la babilejo ne kongruas kun via etoso.",
+              "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi mallongan eltiraĵon el alia babilejo, kies titolo kunhavas vortojn kun ĝi, sen ke vi mencias tiun babilejon. Helpas kiam vi jam parolis pri la sama ĉambro aŭ aŭtomatigo. La alia babilejo ne ŝanĝiĝas.",
+              "keep_chats": "Plej novaj nealpinglitaj babilejoj konservataj po persono. Pli malnovaj estas forigitaj, por ke la listo ne kresku senfine. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."
+            }
+          },
+          "cost": {
+            "name": "Kosto kaj ĵetonoj",
+            "description": "Kion ĉiu mesaĝo sendas kaj kiel elspezoj estas registrataj.",
+            "data": {
+              "low_token": "Malaltigi ĵetonan uzon",
+              "check_house": "Ĉiam unue kontroli la domon",
+              "track_usage": "Registri uzon kaj kostojn",
+              "show_chat_usage": "Montri koston en la babila kapo",
+              "ha_usage_sensors": "Aldoni Home-Assistant-uzosensilojn"
+            },
+            "data_description": {
+              "low_token": "Sendas malpli kun ĉiu mesaĝo por ŝpari monon ĉe Cloud-, Ollama- kaj Azure-agentoj (Cursor ne estas tuŝita). Malŝaltita donas la plej fidindajn respondojn pri via hejmo. Extreme estas nur babilado kaj ne povas regi la domon.",
+              "check_house": "Defaŭlte ŝalta. La asistanto rigardas en Home Assistant antaŭ ol respondi demandojn pri via hejmo, do listoj kaj statoj estas veraj, ne divenitaj. Salutoj estas preterlasitaj. Kun „Malaltigi ĵetonan uzon“ je Light ĝi ĉiam kontrolas; je Medium kaj Extreme neniam. Malŝaltu por ĝeneralaj demandoj aŭ por modelo, kiu jam kontrolas memstare.",
+              "track_usage": "Defaŭlte ŝalta. Registras ĵetonojn kaj taksitan koston post ĉiu respondo kaj montras ilin sur la paĝo Uzo. Malŝalte ĉesigas novajn enskribojn; ekzistanta historio restas.",
+              "show_chat_usage": "Defaŭlte ŝaltita. Montras ĵetonojn kaj koston sub la babila titolo. Malŝalte kaŝas nur tiun linion; registrado kaj la paĝo Uzo restas.",
+              "ha_usage_sensors": "Defaŭlte malŝalta. Necesa nur por viaj propraj paneloj aŭ aŭtomatigoj: aldonas sensilojn pri kosto, ĵetonoj kaj vicoj sur Usage-aparato kaj ĉe ĉiu agento. La paĝo Uzo funkcias sen ili. Malŝalti forigas la sensilojn."
+            }
+          },
+          "house": {
+            "name": "Respondoj de Home Assistant",
+            "description": "Kiel la asistanto legas vian agordon kaj registras siajn ŝanĝojn. La defaŭltoj taŭgas por plej multaj hejmoj.",
+            "data": {
+              "house_map": "Agorda katalogo",
+              "shorten_mcp_results": "Mallongigi longajn respondojn de Home Assistant",
+              "change_history": "Ŝanĝohistorio"
+            },
+            "data_description": {
+              "house_map": "Defaŭlte malŝalta. Loka indekso pri kiel aŭtomatigoj, entoj kaj areoj estas ligitaj, por ke unu serĉo respondu demandojn kiel „kio uzas la kuirejan lumon?“. Aldonas iomete al ĉiu mesaĝo, do ŝaltu ĝin nur se vi ofte demandas kiel aferoj estas kunligitaj. Vivaj statoj ankoraŭ venas el Home Assistant.",
+              "shorten_mcp_results": "Defaŭlte ŝalta. Tre longaj respondoj de Home Assistant (tutdomaj listoj, grandaj serĉoj) estas resumitaj antaŭ ol ili iras al la AI. Ŝparas ĵetonojn kaj tenas respondojn rapidaj. Malŝalte sendas la plenan tekston.",
+              "change_history": "Defaŭlte ŝalta. Registras ĉiun agordan ŝanĝon, kiun la asistanto faras, por ke vi vidu kio ŝanĝiĝis kaj petu ĝin restarigi pli fruan version. Malŝalte ĉesigas novajn enskribojn; la asistanto ankoraŭ povas fari ŝanĝojn."
             }
           },
           "prompt": {
@@ -143,6 +211,18 @@
     }
   },
   "config_subentries": {
+    "usage": {
+      "initiate_flow": {
+        "user": "Aldoni uzosensilojn"
+      },
+      "entry_type": "Uzo",
+      "step": {
+        "user": {
+          "title": "Uzo",
+          "description": "Sensiloj por ĵetonoj kaj kosto en ĉi tiu laborspaco."
+        }
+      }
+    },
     "mcp": {
       "initiate_flow": {
         "user": "Aldoni konekton",
@@ -220,7 +300,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "La sama pasvorto kiel ĉe via Cursor-runtime. Lasu malplena kiam vi uzas la aldonaĵon kun aŭtomata parigo.",
-            "cursor_api_key": "El via konto de Cursor (Integrations). Lasu malplena dum redaktado por teni la konservitan ŝlosilon.",
+            "cursor_api_key": "El via konto de Cursor (Integrations). Lasu malplena dum redaktado por teni la konservitan ŝlosilon. [Akiri API-ŝlosilon]({api_key_url})",
             "model": "Elektu el la listo aŭ tajpu modelnomon. Malplena uzas Composer.",
             "effort": "Kiom da pensotempo permesi. Composer defaŭlte uzas Rapida.",
             "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist."
@@ -234,8 +314,6 @@
             "api_key": "API-ŝlosilo",
             "model": "Modelo",
             "effort": "Penado",
-            "low_token": "Nur-babila reĝimo",
-            "check_house": "Ĉiam unue kontroli la domon",
             "assist": "Aldoni al Assist",
             "assist_stt": "Aldoni parolon-al-teksto",
             "stt_model": "Modelo de parolo-al-teksto",
@@ -246,11 +324,9 @@
           },
           "data_description": {
             "borrow": "Uzas la ŝlosilon jam konservitan de tiu integraĵo. La alia integraĵo restas kiel ĝi estas.",
-            "api_key": "Via ŝlosilo de la AI-provizanto, ne via ensaluto de Home Assistant.",
+            "api_key": "Via ŝlosilo de la AI-provizanto, ne via ensaluto de Home Assistant. [Akiri API-ŝlosilon]({api_key_url})",
             "model": "Elektu el la listo aŭ tajpu modelnomon. Malplena uzas la defaŭlton de la provizanto.",
-            "effort": "Rapida, Alta, aŭ Alta rapida kiam la modelo subtenas tion.",
-            "low_token": "Pli mallongaj respondoj sen domkontrolo — taŭga por malgrandaj nur-babilaj modeloj.",
-            "check_house": "Defaŭlte ŝalta. La asistanto konsultas Home Assistant antaŭ ol respondi pri via instalaĵo (ne por simplaj salutoj). Malŝaltu se via modelo jam faras tion memstare.",
+            "effort": "Pli da penado signifas pli da pensado: pli bonaj respondoj al malfacilaj demandoj, sed pli malrapide kaj pli da ĵetonoj. Ignorata se la modelo ne subtenas ĝin.",
             "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist.",
             "assist_stt": "Aldonas opcion de parolo-al-teksto en Home Assistant per la ŝlosilo de ĉi tiu asistanto. Malŝalte forigas tion, kion ĝi aldonis.",
             "stt_model": "Lasu malplena por la defaŭlto de la provizanto. Vi povas tajpi alian modelnomon se via ofertas unu.",
@@ -267,16 +343,12 @@
             "api_base": "Ollama-URL",
             "model": "Modelo",
             "effort": "Penado",
-            "low_token": "Nur-babila reĝimo",
-            "check_house": "Ĉiam unue kontroli la domon",
             "assist": "Aldoni al Assist"
           },
           "data_description": {
             "api_base": "Kutime {example_url}",
             "model": "Elektu el la listo aŭ tajpu modelon kiun vi instalis. Malplena uzas llama3.2.",
-            "effort": "Uzata kiam la modelo subtenas tion.",
-            "low_token": "Pli mallongaj respondoj sen domkontrolo — taŭga por malgrandaj nur-babilaj modeloj.",
-            "check_house": "Defaŭlte ŝalta. La asistanto konsultas Home Assistant antaŭ ol respondi pri via instalaĵo (ne por simplaj salutoj). Malŝaltu se via modelo jam faras tion memstare.",
+            "effort": "Pli da penado signifas pli da pensado: pli bonaj respondoj al malfacilaj demandoj, sed pli malrapide kaj pli da ĵetonoj. Ignorata se la modelo ne subtenas ĝin.",
             "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist."
           }
         },
@@ -289,18 +361,14 @@
             "model": "Deplojo",
             "azure_api_version": "API-versio",
             "effort": "Penado",
-            "low_token": "Nur-babila reĝimo",
-            "check_house": "Ĉiam unue kontroli la domon",
             "assist": "Aldoni al Assist"
           },
           "data_description": {
-            "api_key": "La ŝlosilo de Azure OpenAI. Lasu malplena dum redaktado por teni la konservitan ŝlosilon.",
+            "api_key": "La ŝlosilo de Azure OpenAI. Lasu malplena dum redaktado por teni la konservitan ŝlosilon. [Akiri API-ŝlosilon]({api_key_url})",
             "api_base": "{example_url}",
             "model": "La nomo de la deplojo.",
             "azure_api_version": "Lasu la defaŭlton krom se Azure-subteno donis al vi alian version.",
-            "effort": "Uzata kiam la deplojo subtenas tion.",
-            "low_token": "Pli mallongaj respondoj sen domkontrolo — taŭga por malgrandaj nur-babilaj modeloj.",
-            "check_house": "Defaŭlte ŝalta. La asistanto konsultas Home Assistant antaŭ ol respondi pri via instalaĵo (ne por simplaj salutoj). Malŝaltu se via modelo jam faras tion memstare.",
+            "effort": "Pli da penado signifas pli da pensado: pli bonaj respondoj al malfacilaj demandoj, sed pli malrapide kaj pli da ĵetonoj. Ignorata se la modelo ne subtenas ĝin.",
             "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist."
           }
         },
@@ -312,8 +380,6 @@
             "api_base": "Baza URL de la API",
             "model": "Modelo",
             "effort": "Penado",
-            "low_token": "Nur-babila reĝimo",
-            "check_house": "Ĉiam unue kontroli la domon",
             "assist": "Aldoni al Assist",
             "assist_stt": "Aldoni parolon-al-teksto",
             "stt_model": "Modelo de parolo-al-teksto",
@@ -326,9 +392,7 @@
             "api_key": "Lasu malplena dum redaktado por teni la konservitan ŝlosilon.",
             "api_base": "Servila adreso. Aldonu /v1 ĉe la fino se via servilo atendas tion.",
             "model": "Modelnomo ĉe tiu servilo.",
-            "effort": "Uzata kiam la servilo subtenas tion.",
-            "low_token": "Pli mallongaj respondoj sen domkontrolo — taŭga por malgrandaj nur-babilaj modeloj.",
-            "check_house": "Defaŭlte ŝalta. La asistanto konsultas Home Assistant antaŭ ol respondi pri via instalaĵo (ne por simplaj salutoj). Malŝaltu se via modelo jam faras tion memstare.",
+            "effort": "Pli da penado signifas pli da pensado: pli bonaj respondoj al malfacilaj demandoj, sed pli malrapide kaj pli da ĵetonoj. Ignorata se la modelo ne subtenas ĝin.",
             "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist.",
             "assist_stt": "Aldonas opcion de parolo-al-teksto en Home Assistant per la ŝlosilo de ĉi tiu asistanto. Malŝalte forigas tion, kion ĝi aldonis.",
             "stt_model": "Lasu malplena por la defaŭlto de la provizanto. Vi povas tajpi alian modelnomon se via ofertas unu.",
@@ -374,6 +438,14 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Propra MCP-URL"
+      }
+    },
+    "low_token": {
+      "options": {
+        "off": "Malŝaltita",
+        "light": "Light",
+        "medium": "Medium",
+        "extreme": "Extreme"
       }
     }
   }

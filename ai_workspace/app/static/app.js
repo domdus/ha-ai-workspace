@@ -182,7 +182,7 @@ form.addEventListener("submit", async (event) => {
     const response = await fetch(api(`api/sessions/${sessionId}/chat`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text }),
+      body: JSON.stringify({ message: text, full_tools: true }),
     });
     if (!response.ok || !response.body) {
       assistant.textContent = await response.text();

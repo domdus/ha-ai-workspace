@@ -8,33 +8,13 @@
           "stt_engine": "Spraak naar tekst",
           "tts_engine": "Tekst naar spraak",
           "speak_replies": "Antwoorden automatisch voorlezen",
-          "tts_natural": "Natuurlijke spraak voor tekst naar spraak",
-          "enable_sidebar": "AI Workspace in de zijbalk tonen",
-          "enable_overlay": "Zwevende AI-knop tonen",
-          "enable_dictate": "Dicteerknop tonen",
-          "allow_users": "Gewone gebruikers toestaan",
-          "house_map": "Configuratiecatalogus",
-          "shorten_mcp_results": "Lange Home Assistant-antwoorden inkorten",
-          "change_history": "Wijzigingsgeschiedenis",
-          "ui_theme": "HA-componenten gebruiken",
-          "cross_chat": "Tussen chats",
-          "keep_chats": "Chats bewaren"
+          "tts_natural": "Natuurlijke spraak voor tekst naar spraak"
         },
         "data_description": {
           "stt_engine": "Browserdictatie heeft een beveiligde site (https) nodig. Of kies onder Instellingen een Home Assistant-spraak-naar-tekst-engine. De browser moet de microfoon toestaan.",
           "tts_engine": "Piper, Google Translate of een stem van een van je AI-assistenten. Uit laat antwoorden alleen als tekst.",
           "speak_replies": "Als er een stem is gekozen, wordt elk antwoord voorgelezen zodra het binnenkomt. Uit laat de luidsprekerknop om zelf af te spelen.",
-          "tts_natural": "Standaard aan. Verwijdert opmaak zodat voorlezen natuurlijk klinkt. Uit leest het bericht letterlijk voor.",
-          "enable_sidebar": "Toont AI Workspace in de zijbalk. Uit: beheerders kunnen de volledige pagina nog openen via de menulink.",
-          "enable_overlay": "Zet de zwevende AI-knop aan of uit. Op Instellingen-pagina's staat hij hoger zodat hij de systeemknoppen niet bedekt.",
-          "enable_dictate": "Microfoon in het berichtveld.",
-          "allow_users": "Gebruikers zonder beheerdersrechten kunnen de zwevende chat openen met dezelfde Home Assistant-toegang als hun account. Uit: alleen beheerders. De volledige AI Workspace-pagina in de zijbalk blijft alleen voor beheerders.",
-          "house_map": "Optioneel. Helpt uitleggen hoe een item is aangesloten (wat het activeert, wat het beïnvloedt). Standaard uit. Voor live aan/uit of volledige lijsten: vraag de assistent om Home Assistant te raadplegen.",
-          "shorten_mcp_results": "Standaard aan. Zeer lange antwoorden van Home Assistant (lijsten van het hele huis, grote zoekopdrachten) worden samengevat voordat ze naar de AI gaan. Dat bespaart tokens en houdt antwoorden vlot. Uit stuurt de volledige tekst.",
-          "change_history": "Standaard aan. Houdt een overzicht bij van configuratiewijzigingen die de assistent heeft gedaan, zodat je ze in de Wijzigingsgeschiedenis kunt bekijken of ongedaan maken. Uit: geen nieuwe items; de assistent kan Home Assistant blijven gebruiken.",
-          "ui_theme": "Standaard uit. Als dit aan staat, worden alleen Home Assistant-interfacecomponenten gebruikt, wat beter kan werken met thema’s.",
-          "cross_chat": "Standaard uit. Als het aan staat, kan een vraag een andere chat gebruiken waarvan de titel woorden deelt. Je hoeft niet chat te zeggen. Alleen een kort fragment, en die chat wordt niet gewijzigd.",
-          "keep_chats": "Nieuwste niet-vastgezette chats per persoon. Vastgezette chats blijven altijd. Standaard 30."
+          "tts_natural": "Standaard aan. Verwijdert opmaak zodat voorlezen natuurlijk klinkt. Uit leest het bericht letterlijk voor."
         },
         "sections": {
           "mcp": {
@@ -48,6 +28,60 @@
               "mcp_kind": "Servers die deze Home Assistant kan bereiken. Kies Aangepast om een eigen adres in te voeren.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Ingebouwd: langlevend toegangstoken, of leeg laten om je huidige aanmelding te gebruiken. HA-MCP: meestal leeg. Vibecode: agentsleutel. Aangepast: alleen als die server om een sleutel vraagt."
+            }
+          },
+          "chat": {
+            "name": "Chat",
+            "description": "Waar de chat verschijnt en wie hem mag gebruiken.",
+            "data": {
+              "enable_sidebar": "AI Workspace in de zijbalk tonen",
+              "enable_overlay": "Zwevende AI-knop tonen",
+              "enable_dictate": "Dicteerknop tonen",
+              "allow_users": "Gewone gebruikers toestaan",
+              "ui_theme": "HA-componenten gebruiken",
+              "cross_chat": "Tussen chats",
+              "keep_chats": "Chats bewaren"
+            },
+            "data_description": {
+              "enable_sidebar": "Voegt AI Workspace toe aan de zijbalk van Home Assistant. Uit: beheerders kunnen /ai-workspace nog steeds direct openen.",
+              "enable_overlay": "Een ronde AI-knop in de hoek van elke Home Assistant-pagina, zodat je iets kunt vragen zonder de pagina te verlaten. Op Instellingen-pagina's staat hij hoger zodat hij geen andere knoppen bedekt.",
+              "enable_dictate": "Microfoonknop in het berichtveld. Verberg hem als je nooit dicteert.",
+              "allow_users": "Uit: alleen beheerders. Aan: gebruikers zonder beheerdersrechten krijgen de zwevende chat, met dezelfde Home Assistant-toegang als hun eigen account. De volledige AI Workspace-pagina blijft alleen voor beheerders. Zet dit alleen aan als je iedereen met een account vertrouwt.",
+              "ui_theme": "Standaard uit. Bouwt de chat op met de eigen interface-onderdelen van Home Assistant. Probeer het als de chat niet bij je thema past.",
+              "cross_chat": "Standaard uit. Als het aan staat, kan een vraag een kort fragment gebruiken uit een andere chat waarvan de titel woorden deelt, zonder dat je die chat noemt. Handig als je het al over dezelfde ruimte of automatisering hebt gehad. De andere chat wordt niet gewijzigd.",
+              "keep_chats": "Nieuwste niet-vastgezette chats die per persoon bewaard blijven. Oudere worden verwijderd zodat de lijst niet eindeloos groeit. Vastgezette chats blijven altijd. Standaard 30."
+            }
+          },
+          "cost": {
+            "name": "Kosten en tokens",
+            "description": "Wat elk bericht verstuurt en hoe uitgaven worden bijgehouden.",
+            "data": {
+              "low_token": "Tokenverbruik verminderen",
+              "check_house": "Altijd eerst het huis controleren",
+              "track_usage": "Gebruik en kosten bijhouden",
+              "show_chat_usage": "Kosten in de chatkop tonen",
+              "ha_usage_sensors": "Home Assistant-gebruikssensoren toevoegen"
+            },
+            "data_description": {
+              "low_token": "Stuurt minder mee met elk bericht om geld te besparen bij Cloud-, Ollama- en Azure-agents (Cursor valt hierbuiten). Uit geeft de betrouwbaarste antwoorden over je huis. Extreme is alleen chat en kan het huis niet bedienen.",
+              "check_house": "Standaard aan. De assistent kijkt in Home Assistant voordat hij vragen over je huis beantwoordt, zodat lijsten en statussen echt zijn, niet geraden. Begroetingen worden overgeslagen. Met “Tokenverbruik verminderen” op Light controleert hij altijd; op Medium en Extreme nooit. Zet het uit voor algemene vragen of voor een model dat al zelf controleert.",
+              "track_usage": "Standaard aan. Noteert na elk antwoord tokens en geschatte kosten en toont ze op de Gebruik-pagina. Uit: geen nieuwe records; bestaande geschiedenis blijft.",
+              "show_chat_usage": "Standaard aan. Toont tokens en kosten onder de chattitel. Uit verbergt alleen die regel; bijhouden en de Gebruik-pagina blijven.",
+              "ha_usage_sensors": "Standaard uit. Alleen nodig voor je eigen dashboards of automatiseringen: voegt sensoren voor kosten, tokens en beurten toe op een Usage-apparaat en bij elke agent. De Gebruik-pagina werkt ook zonder. Uitzetten verwijdert de sensoren."
+            }
+          },
+          "house": {
+            "name": "Antwoorden uit Home Assistant",
+            "description": "Hoe de assistent je installatie leest en zijn wijzigingen vastlegt. De standaardwaarden passen bij de meeste huizen.",
+            "data": {
+              "house_map": "Configuratiecatalogus",
+              "shorten_mcp_results": "Lange Home Assistant-antwoorden inkorten",
+              "change_history": "Wijzigingsgeschiedenis"
+            },
+            "data_description": {
+              "house_map": "Standaard uit. Een lokale index van hoe automatiseringen, entiteiten en ruimtes samenhangen, zodat één opzoeking vragen beantwoordt als “wat gebruikt de keukenlamp?”. Voegt iets toe aan elk bericht, dus zet het alleen aan als je vaak vraagt hoe dingen gekoppeld zijn. Live statussen komen nog steeds uit Home Assistant.",
+              "shorten_mcp_results": "Standaard aan. Zeer lange antwoorden van Home Assistant (lijsten van het hele huis, grote zoekopdrachten) worden samengevat voordat ze naar de AI gaan. Bespaart tokens en houdt antwoorden vlot. Uit stuurt de volledige tekst.",
+              "change_history": "Standaard aan. Houdt elke configuratiewijziging van de assistent bij, zodat je ziet wat er veranderd is en kunt vragen een eerdere versie terug te zetten. Uit: geen nieuwe items; de assistent kan nog steeds wijzigingen maken."
             }
           },
           "prompt": {
@@ -81,33 +115,13 @@
           "stt_engine": "Spraak naar tekst",
           "tts_engine": "Tekst naar spraak",
           "speak_replies": "Antwoorden automatisch voorlezen",
-          "tts_natural": "Natuurlijke spraak voor tekst naar spraak",
-          "enable_sidebar": "AI Workspace in de zijbalk tonen",
-          "enable_overlay": "Zwevende AI-knop tonen",
-          "enable_dictate": "Dicteerknop tonen",
-          "allow_users": "Gewone gebruikers toestaan",
-          "house_map": "Configuratiecatalogus",
-          "shorten_mcp_results": "Lange Home Assistant-antwoorden inkorten",
-          "change_history": "Wijzigingsgeschiedenis",
-          "ui_theme": "HA-componenten gebruiken",
-          "cross_chat": "Tussen chats",
-          "keep_chats": "Chats bewaren"
+          "tts_natural": "Natuurlijke spraak voor tekst naar spraak"
         },
         "data_description": {
           "stt_engine": "Browserdictatie heeft een beveiligde site (https) nodig. Of kies onder Instellingen een Home Assistant-spraak-naar-tekst-engine. De browser moet de microfoon toestaan.",
           "tts_engine": "Piper, Google Translate of een stem van een van je AI-assistenten. Uit laat antwoorden alleen als tekst.",
           "speak_replies": "Als er een stem is gekozen, wordt elk antwoord voorgelezen zodra het binnenkomt. Uit laat de luidsprekerknop om zelf af te spelen.",
-          "tts_natural": "Standaard aan. Verwijdert opmaak zodat voorlezen natuurlijk klinkt. Uit leest het bericht letterlijk voor.",
-          "enable_sidebar": "Toont AI Workspace in de zijbalk. Uit: beheerders kunnen de volledige pagina nog openen via de menulink.",
-          "enable_overlay": "Zet de zwevende AI-knop aan of uit. Op Instellingen-pagina's staat hij hoger zodat hij de systeemknoppen niet bedekt.",
-          "enable_dictate": "Microfoon in het berichtveld.",
-          "allow_users": "Gebruikers zonder beheerdersrechten kunnen de zwevende chat openen met dezelfde Home Assistant-toegang als hun account. Uit: alleen beheerders. De volledige AI Workspace-pagina in de zijbalk blijft alleen voor beheerders.",
-          "house_map": "Optioneel. Helpt uitleggen hoe een item is aangesloten (wat het activeert, wat het beïnvloedt). Standaard uit. Voor live aan/uit of volledige lijsten: vraag de assistent om Home Assistant te raadplegen.",
-          "shorten_mcp_results": "Standaard aan. Zeer lange antwoorden van Home Assistant (lijsten van het hele huis, grote zoekopdrachten) worden samengevat voordat ze naar de AI gaan. Dat bespaart tokens en houdt antwoorden vlot. Uit stuurt de volledige tekst.",
-          "change_history": "Standaard aan. Houdt een overzicht bij van configuratiewijzigingen die de assistent heeft gedaan, zodat je ze in de Wijzigingsgeschiedenis kunt bekijken of ongedaan maken. Uit: geen nieuwe items; de assistent kan Home Assistant blijven gebruiken.",
-          "ui_theme": "Standaard uit. Als dit aan staat, worden alleen Home Assistant-interfacecomponenten gebruikt, wat beter kan werken met thema’s.",
-          "cross_chat": "Standaard uit. Als het aan staat, kan een vraag een andere chat gebruiken waarvan de titel woorden deelt. Je hoeft niet chat te zeggen. Alleen een kort fragment, en die chat wordt niet gewijzigd.",
-          "keep_chats": "Nieuwste niet-vastgezette chats per persoon. Vastgezette chats blijven altijd. Standaard 30."
+          "tts_natural": "Standaard aan. Verwijdert opmaak zodat voorlezen natuurlijk klinkt. Uit leest het bericht letterlijk voor."
         },
         "sections": {
           "mcp": {
@@ -121,6 +135,60 @@
               "mcp_kind": "Servers die deze Home Assistant kan bereiken. Kies Aangepast om een eigen adres in te voeren.",
               "mcp_url": "{mcp_url_note}",
               "mcp_token": "Ingebouwd: langlevend toegangstoken, of leeg laten om je huidige aanmelding te gebruiken. HA-MCP: meestal leeg. Vibecode: agentsleutel. Aangepast: alleen als die server om een sleutel vraagt."
+            }
+          },
+          "chat": {
+            "name": "Chat",
+            "description": "Waar de chat verschijnt en wie hem mag gebruiken.",
+            "data": {
+              "enable_sidebar": "AI Workspace in de zijbalk tonen",
+              "enable_overlay": "Zwevende AI-knop tonen",
+              "enable_dictate": "Dicteerknop tonen",
+              "allow_users": "Gewone gebruikers toestaan",
+              "ui_theme": "HA-componenten gebruiken",
+              "cross_chat": "Tussen chats",
+              "keep_chats": "Chats bewaren"
+            },
+            "data_description": {
+              "enable_sidebar": "Voegt AI Workspace toe aan de zijbalk van Home Assistant. Uit: beheerders kunnen /ai-workspace nog steeds direct openen.",
+              "enable_overlay": "Een ronde AI-knop in de hoek van elke Home Assistant-pagina, zodat je iets kunt vragen zonder de pagina te verlaten. Op Instellingen-pagina's staat hij hoger zodat hij geen andere knoppen bedekt.",
+              "enable_dictate": "Microfoonknop in het berichtveld. Verberg hem als je nooit dicteert.",
+              "allow_users": "Uit: alleen beheerders. Aan: gebruikers zonder beheerdersrechten krijgen de zwevende chat, met dezelfde Home Assistant-toegang als hun eigen account. De volledige AI Workspace-pagina blijft alleen voor beheerders. Zet dit alleen aan als je iedereen met een account vertrouwt.",
+              "ui_theme": "Standaard uit. Bouwt de chat op met de eigen interface-onderdelen van Home Assistant. Probeer het als de chat niet bij je thema past.",
+              "cross_chat": "Standaard uit. Als het aan staat, kan een vraag een kort fragment gebruiken uit een andere chat waarvan de titel woorden deelt, zonder dat je die chat noemt. Handig als je het al over dezelfde ruimte of automatisering hebt gehad. De andere chat wordt niet gewijzigd.",
+              "keep_chats": "Nieuwste niet-vastgezette chats die per persoon bewaard blijven. Oudere worden verwijderd zodat de lijst niet eindeloos groeit. Vastgezette chats blijven altijd. Standaard 30."
+            }
+          },
+          "cost": {
+            "name": "Kosten en tokens",
+            "description": "Wat elk bericht verstuurt en hoe uitgaven worden bijgehouden.",
+            "data": {
+              "low_token": "Tokenverbruik verminderen",
+              "check_house": "Altijd eerst het huis controleren",
+              "track_usage": "Gebruik en kosten bijhouden",
+              "show_chat_usage": "Kosten in de chatkop tonen",
+              "ha_usage_sensors": "Home Assistant-gebruikssensoren toevoegen"
+            },
+            "data_description": {
+              "low_token": "Stuurt minder mee met elk bericht om geld te besparen bij Cloud-, Ollama- en Azure-agents (Cursor valt hierbuiten). Uit geeft de betrouwbaarste antwoorden over je huis. Extreme is alleen chat en kan het huis niet bedienen.",
+              "check_house": "Standaard aan. De assistent kijkt in Home Assistant voordat hij vragen over je huis beantwoordt, zodat lijsten en statussen echt zijn, niet geraden. Begroetingen worden overgeslagen. Met “Tokenverbruik verminderen” op Light controleert hij altijd; op Medium en Extreme nooit. Zet het uit voor algemene vragen of voor een model dat al zelf controleert.",
+              "track_usage": "Standaard aan. Noteert na elk antwoord tokens en geschatte kosten en toont ze op de Gebruik-pagina. Uit: geen nieuwe records; bestaande geschiedenis blijft.",
+              "show_chat_usage": "Standaard aan. Toont tokens en kosten onder de chattitel. Uit verbergt alleen die regel; bijhouden en de Gebruik-pagina blijven.",
+              "ha_usage_sensors": "Standaard uit. Alleen nodig voor je eigen dashboards of automatiseringen: voegt sensoren voor kosten, tokens en beurten toe op een Usage-apparaat en bij elke agent. De Gebruik-pagina werkt ook zonder. Uitzetten verwijdert de sensoren."
+            }
+          },
+          "house": {
+            "name": "Antwoorden uit Home Assistant",
+            "description": "Hoe de assistent je installatie leest en zijn wijzigingen vastlegt. De standaardwaarden passen bij de meeste huizen.",
+            "data": {
+              "house_map": "Configuratiecatalogus",
+              "shorten_mcp_results": "Lange Home Assistant-antwoorden inkorten",
+              "change_history": "Wijzigingsgeschiedenis"
+            },
+            "data_description": {
+              "house_map": "Standaard uit. Een lokale index van hoe automatiseringen, entiteiten en ruimtes samenhangen, zodat één opzoeking vragen beantwoordt als “wat gebruikt de keukenlamp?”. Voegt iets toe aan elk bericht, dus zet het alleen aan als je vaak vraagt hoe dingen gekoppeld zijn. Live statussen komen nog steeds uit Home Assistant.",
+              "shorten_mcp_results": "Standaard aan. Zeer lange antwoorden van Home Assistant (lijsten van het hele huis, grote zoekopdrachten) worden samengevat voordat ze naar de AI gaan. Bespaart tokens en houdt antwoorden vlot. Uit stuurt de volledige tekst.",
+              "change_history": "Standaard aan. Houdt elke configuratiewijziging van de assistent bij, zodat je ziet wat er veranderd is en kunt vragen een eerdere versie terug te zetten. Uit: geen nieuwe items; de assistent kan nog steeds wijzigingen maken."
             }
           },
           "prompt": {
@@ -143,6 +211,18 @@
     }
   },
   "config_subentries": {
+    "usage": {
+      "initiate_flow": {
+        "user": "Gebruikssensoren toevoegen"
+      },
+      "entry_type": "Gebruik",
+      "step": {
+        "user": {
+          "title": "Gebruik",
+          "description": "Sensoren voor tokens en kosten in deze werkruimte."
+        }
+      }
+    },
     "mcp": {
       "initiate_flow": {
         "user": "Verbinding toevoegen",
@@ -220,7 +300,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "Hetzelfde wachtwoord als op je Cursor-runtime. Leeg laten bij de add-on met automatische koppeling.",
-            "cursor_api_key": "Uit je Cursor-account (Integrations). Leeg laten bij bewerken om de opgeslagen sleutel te houden.",
+            "cursor_api_key": "Uit je Cursor-account (Integrations). Leeg laten bij bewerken om de opgeslagen sleutel te houden. [API-sleutel ophalen]({api_key_url})",
             "model": "Kies uit de lijst of typ een modelnaam. Leeg gebruikt Composer.",
             "effort": "Hoeveel denktijd is toegestaan. Composer gebruikt standaard Snel.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
@@ -234,8 +314,6 @@
             "api_key": "API-sleutel",
             "model": "Model",
             "effort": "Inzet",
-            "low_token": "Alleen-chatmodus",
-            "check_house": "Altijd eerst het huis controleren",
             "assist": "Toevoegen aan Assist",
             "assist_stt": "Spraak-naar-tekst toevoegen",
             "stt_model": "Spraak-naar-tekst-model",
@@ -246,11 +324,9 @@
           },
           "data_description": {
             "borrow": "Gebruikt de sleutel die die integratie al heeft opgeslagen. De andere integratie blijft ongewijzigd.",
-            "api_key": "Je sleutel bij de AI-provider, niet je Home Assistant-aanmelding.",
+            "api_key": "Je sleutel bij de AI-provider, niet je Home Assistant-aanmelding. [API-sleutel ophalen]({api_key_url})",
             "model": "Kies uit de lijst of typ een modelnaam. Leeg gebruikt de standaard van de provider.",
-            "effort": "Snel, Hoog of Hoog snel wanneer het model dat ondersteunt.",
-            "low_token": "Kortere antwoorden zonder huisbesturing — geschikt voor kleine alleen-chatmodellen.",
-            "check_house": "Standaard aan. De assistent raadpleegt Home Assistant voordat hij over je installatie antwoordt (niet bij eenvoudige groeten). Zet dit uit als je model dat al zelf doet.",
+            "effort": "Meer inzet betekent meer nadenken: betere antwoorden op moeilijke vragen, maar trager en meer tokens. Wordt genegeerd als het model het niet ondersteunt.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd.",
             "assist_stt": "Voegt in Home Assistant een spraak-naar-tekst-optie toe met de sleutel van deze assistent. Uit verwijdert wat hij heeft toegevoegd.",
             "stt_model": "Leeg laten voor de standaard van de provider. Je kunt een andere modelnaam typen.",
@@ -267,16 +343,12 @@
             "api_base": "Ollama-URL",
             "model": "Model",
             "effort": "Inzet",
-            "low_token": "Alleen-chatmodus",
-            "check_house": "Altijd eerst het huis controleren",
             "assist": "Toevoegen aan Assist"
           },
           "data_description": {
             "api_base": "Meestal {example_url}",
             "model": "Kies uit de lijst of typ een geïnstalleerd model. Leeg gebruikt llama3.2.",
-            "effort": "Gebruikt wanneer het model dat ondersteunt.",
-            "low_token": "Kortere antwoorden zonder huisbesturing — geschikt voor kleine alleen-chatmodellen.",
-            "check_house": "Standaard aan. De assistent raadpleegt Home Assistant voordat hij over je installatie antwoordt (niet bij eenvoudige groeten). Zet dit uit als je model dat al zelf doet.",
+            "effort": "Meer inzet betekent meer nadenken: betere antwoorden op moeilijke vragen, maar trager en meer tokens. Wordt genegeerd als het model het niet ondersteunt.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
           }
         },
@@ -289,18 +361,14 @@
             "model": "Implementatie",
             "azure_api_version": "API-versie",
             "effort": "Inzet",
-            "low_token": "Alleen-chatmodus",
-            "check_house": "Altijd eerst het huis controleren",
             "assist": "Toevoegen aan Assist"
           },
           "data_description": {
-            "api_key": "De Azure OpenAI-sleutel. Leeg laten bij bewerken om de opgeslagen sleutel te houden.",
+            "api_key": "De Azure OpenAI-sleutel. Leeg laten bij bewerken om de opgeslagen sleutel te houden. [API-sleutel ophalen]({api_key_url})",
             "api_base": "{example_url}",
             "model": "De naam van de implementatie.",
             "azure_api_version": "Laat de standaard staan, tenzij Azure-ondersteuning je een andere versie gaf.",
-            "effort": "Gebruikt wanneer de implementatie dat ondersteunt.",
-            "low_token": "Kortere antwoorden zonder huisbesturing — geschikt voor kleine alleen-chatmodellen.",
-            "check_house": "Standaard aan. De assistent raadpleegt Home Assistant voordat hij over je installatie antwoordt (niet bij eenvoudige groeten). Zet dit uit als je model dat al zelf doet.",
+            "effort": "Meer inzet betekent meer nadenken: betere antwoorden op moeilijke vragen, maar trager en meer tokens. Wordt genegeerd als het model het niet ondersteunt.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
           }
         },
@@ -312,8 +380,6 @@
             "api_base": "API-basis-URL",
             "model": "Model",
             "effort": "Inzet",
-            "low_token": "Alleen-chatmodus",
-            "check_house": "Altijd eerst het huis controleren",
             "assist": "Toevoegen aan Assist",
             "assist_stt": "Spraak-naar-tekst toevoegen",
             "stt_model": "Spraak-naar-tekst-model",
@@ -326,9 +392,7 @@
             "api_key": "Leeg laten bij bewerken om de opgeslagen sleutel te houden.",
             "api_base": "Serveradres. Voeg /v1 toe aan het einde als je server dat verwacht.",
             "model": "Modelnaam op die server.",
-            "effort": "Gebruikt wanneer de server dat ondersteunt.",
-            "low_token": "Kortere antwoorden zonder huisbesturing — geschikt voor kleine alleen-chatmodellen.",
-            "check_house": "Standaard aan. De assistent raadpleegt Home Assistant voordat hij over je installatie antwoordt (niet bij eenvoudige groeten). Zet dit uit als je model dat al zelf doet.",
+            "effort": "Meer inzet betekent meer nadenken: betere antwoorden op moeilijke vragen, maar trager en meer tokens. Wordt genegeerd als het model het niet ondersteunt.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd.",
             "assist_stt": "Voegt in Home Assistant een spraak-naar-tekst-optie toe met de sleutel van deze assistent. Uit verwijdert wat hij heeft toegevoegd.",
             "stt_model": "Leeg laten voor de standaard van de provider. Je kunt een andere modelnaam typen.",
@@ -374,6 +438,14 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Aangepaste MCP-URL"
+      }
+    },
+    "low_token": {
+      "options": {
+        "off": "Uit",
+        "light": "Light",
+        "medium": "Medium",
+        "extreme": "Extreme"
       }
     }
   }

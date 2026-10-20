@@ -31,6 +31,10 @@ _MISSING_KEY = (
 # The HA transcript is still pasted on every turn, including a quick follow-up.
 _IDLE_RESTORE = 120.0
 
+# Chats from non-admins and voice satellites get MCP tools only: no shell, files or web.
+# The SDK does not save tools with the agent, so they are passed again on every resume.
+_RESTRICTED_TOOLS = ("mcp",)
+
 
 class CursorRuntime:
     """One local Cursor bridge for the process. Agent handles stay open so follow-ups keep context."""
@@ -87,17 +91,14 @@ class CursorRuntime:
         if mcp_servers:
             kwargs["mcp_servers"] = mcp_servers
         if tools is not None:
-            kwargs["tools"] = tools
+            kwargs["tools"] = list(tools)
         try:
             return AgentOptions(**kwargs)
         except TypeError:
-            kwargs.pop("tools", None)
-            try:
-                return AgentOptions(**kwargs)
-            except TypeError:
-                if resolved:
-                    kwargs["model"] = resolved
-                return AgentOptions(**kwargs)
+            if not resolved:
+                raise
+            kwargs["model"] = resolved
+            return AgentOptions(**kwargs)
 
     async def open_agent(
         self,
@@ -107,13 +108,14 @@ class CursorRuntime:
         effort: str = "",
         api_key: str = "",
         config_key: str | None = None,
+        tools: list[str] | None = None,
     ) -> tuple[Any, bool]:
         from cursor_sdk import AgentNotFoundError
 
         resolved_model = (model or "").strip() or self.settings.model
         resolved_key = (api_key or "").strip() or self.settings.cursor_api_key
         key_tag = hashlib.sha256(resolved_key.encode()).hexdigest()[:16] if resolved_key else ""
-        fingerprint = config_key or _agent_fingerprint(mcp_servers, resolved_model, effort, key_tag)
+        fingerprint = config_key or _agent_fingerprint(mcp_servers, resolved_model, effort, key_tag, tools)
         cached = self._agents.get(session.id)
         previous = self._mcp_by_session.get(session.id)
         cold = self._cold(session)
@@ -129,7 +131,12 @@ class CursorRuntime:
             self.drop(session.id)
         client = await self.client()
         options = self._agent_options(
-            f"ha-{session.id[:8]}", mcp_servers, model=resolved_model, effort=effort, api_key=resolved_key
+            f"ha-{session.id[:8]}",
+            mcp_servers,
+            tools=tools,
+            model=resolved_model,
+            effort=effort,
+            api_key=resolved_key,
         )
         agent = None
         # A cold cloud thread often comes back empty. Start a new agent and let the HA transcript resume the chat.
@@ -223,6 +230,7 @@ class CursorProvider:
         api_key: str = "",
         handoff: str = "",
         question: str = "",
+        full_tools: bool = False,
     ) -> AsyncIterator[dict]:
         key = (api_key or "").strip() or self.settings.cursor_api_key
         if not key:
@@ -247,7 +255,8 @@ class CursorProvider:
             )
         used_model = (model or "").strip() or self.settings.model
         key_tag = hashlib.sha256(key.encode()).hexdigest()[:16] if key else ""
-        config_key = _agent_fingerprint(mcp_servers, used_model, effort, key_tag)
+        tools = None if full_tools else list(_RESTRICTED_TOOLS)
+        config_key = _agent_fingerprint(mcp_servers, used_model, effort, key_tag, tools)
         wrapped = self.runtime.wrap_mcp(mcp_servers, session.id)
         asked = (question or "").strip()
         attach_tools = bool(images) or wants_house_tools(asked or message)
@@ -264,6 +273,7 @@ class CursorProvider:
                 effort=effort,
                 api_key=key,
                 config_key=config_key,
+                tools=tools,
             )
         except Exception as exc:
             yield {"type": "error", "message": _public_error(exc, self.settings.cursor_api_key)}
@@ -331,6 +341,9 @@ class CursorProvider:
             return
         if final:
             yield {"type": "result", "text": str(final), "run_id": str(run_id), "status": str(status)}
+        usage_event = await _cursor_usage(agent, result, str(run_id), used_model)
+        if usage_event:
+            yield usage_event
 
     async def suggest_title(
         self,
@@ -346,13 +359,8 @@ class CursorProvider:
         used = (model or "").strip() or self.settings.model
         try:
             client = await self.runtime.client()
-            try:
-                options = self.runtime._agent_options("ha-title", {}, tools=[], model=used, api_key=key)
-                agent = await client.create_agent(options)
-            except Exception:
-                logger.debug("title agent without tools failed, retrying", exc_info=True)
-                options = self.runtime._agent_options("ha-title", {}, model=used, api_key=key)
-                agent = await client.create_agent(options)
+            options = self.runtime._agent_options("ha-title", {}, tools=[], model=used, api_key=key)
+            agent = await client.create_agent(options)
             run = await agent.send(title_prompt(user, assistant))
             result = await run.wait()
             if getattr(result, "status", "") == "error":
@@ -411,13 +419,16 @@ def _mcp_identity(servers: dict) -> dict[str, dict[str, str]]:
     return out
 
 
-def _agent_fingerprint(servers: dict, model: str, effort: str, key_tag: str) -> str:
+def _agent_fingerprint(
+    servers: dict, model: str, effort: str, key_tag: str, tools: list[str] | None = None
+) -> str:
     return json.dumps(
         {
             "mcp": _mcp_identity(servers),
             "model": _model_fingerprint(model, effort),
             "effort": effort,
             "key": key_tag,
+            "tools": None if tools is None else sorted(tools),
         },
         sort_keys=True,
         default=str,
@@ -498,6 +509,105 @@ def _nested_text(value: Any) -> str:
         if text:
             return text
     return _nested_text(str(value))
+
+
+def _int_usage(value: object) -> int:
+    try:
+        if value is None or value is False:
+            return 0
+        return max(0, int(float(value)))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _usage_from(blob: Any) -> dict[str, Any]:
+    data = blob if isinstance(blob, dict) else {}
+    if blob is not None and not data:
+        for name in (
+            "prompt_tokens",
+            "completion_tokens",
+            "input_tokens",
+            "output_tokens",
+            "total_tokens",
+            "cache_read_tokens",
+            "cache_write_tokens",
+            "cache_read_input_tokens",
+            "cache_creation_input_tokens",
+            "charged_cents",
+            "total_cents",
+            "cost",
+        ):
+            if hasattr(blob, name):
+                data[name] = getattr(blob, name)
+    prompt = _int_usage(
+        data.get("prompt_tokens") or data.get("input_tokens") or data.get("inputTokens")
+    )
+    completion = _int_usage(
+        data.get("completion_tokens") or data.get("output_tokens") or data.get("outputTokens")
+    )
+    cache_read = _int_usage(
+        data.get("cache_read_tokens") or data.get("cache_read_input_tokens")
+    )
+    cache_write = _int_usage(
+        data.get("cache_write_tokens") or data.get("cache_creation_input_tokens")
+    )
+    total = _int_usage(data.get("total_tokens")) or (prompt + completion)
+    cents = data.get("charged_cents")
+    if cents is None:
+        cents = data.get("total_cents")
+    charged = _int_usage(cents) if cents is not None else None
+    cost = data.get("cost")
+    try:
+        cost_usd = float(cost) if cost is not None else None
+    except (TypeError, ValueError):
+        cost_usd = None
+    if charged is not None:
+        cost_usd = charged / 100.0
+    return {
+        "prompt_tokens": prompt,
+        "completion_tokens": completion,
+        "cache_read_tokens": cache_read,
+        "cache_write_tokens": cache_write,
+        "total_tokens": total,
+        "charged_cents": charged,
+        "cost_usd": cost_usd,
+    }
+
+
+async def _cursor_usage(agent: Any, result: Any, run_id: str, model: str) -> dict[str, Any] | None:
+    import asyncio
+
+    billed = None
+    if run_id and hasattr(agent, "get_usage"):
+        try:
+            billed = await asyncio.wait_for(agent.get_usage(run_id=run_id), 4)
+        except Exception:
+            logger.debug("cursor get_usage skipped run=%s", run_id, exc_info=True)
+    tokens = _usage_from(getattr(result, "usage", None) if result is not None else None)
+    extra = _usage_from(billed)
+    prompt = extra["prompt_tokens"] or tokens["prompt_tokens"]
+    completion = extra["completion_tokens"] or tokens["completion_tokens"]
+    cache_read = extra["cache_read_tokens"] or tokens["cache_read_tokens"]
+    cache_write = extra["cache_write_tokens"] or tokens["cache_write_tokens"]
+    total = extra["total_tokens"] or tokens["total_tokens"] or (prompt + completion)
+    charged = extra["charged_cents"] if extra["charged_cents"] is not None else tokens["charged_cents"]
+    cost = extra["cost_usd"] if extra["cost_usd"] is not None else tokens["cost_usd"]
+    if not (prompt or completion or total or charged or cost):
+        return None
+    event = {
+        "type": "usage",
+        "model": _model_id(getattr(result, "model", None)) or model,
+        "prompt_tokens": prompt,
+        "completion_tokens": completion,
+        "cache_read_tokens": cache_read,
+        "cache_write_tokens": cache_write,
+        "total_tokens": total,
+        "cost_usd": cost,
+        "charged_cents": charged,
+        "cost_source": "cursor_sdk" if charged is not None else "",
+        "run_id": run_id,
+    }
+    return event
 
 
 def _request_id(result: Any) -> str:

@@ -17,7 +17,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PORT=8090
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates \
+    && apt-get install -y --no-install-recommends ca-certificates git openssh-client \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

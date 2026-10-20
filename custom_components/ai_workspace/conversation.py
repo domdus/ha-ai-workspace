@@ -17,12 +17,13 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .agents import Agent, entry_agents
-from .const import DOMAIN
+from .const import DOMAIN, provider_token_mode, token_mode_allows_extras
 from .chat_scope import handoff_note, merge_reply_text, other_chat_note
 from .http import _create_runtime_session, async_agent_events
 from .small_talk import wants_house_tools
 from .store import Store
 from .titles import accept_generated_title, needs_title_summary, title_from_prompt
+from .usage_record import finalize_usage, record_usage_turn
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -68,7 +69,7 @@ async def _is_admin(hass: HomeAssistant, user_id: str) -> bool:
         user = await hass.auth.async_get_user(user_id)
     except Exception:
         return False
-    return user is None or bool(user.is_admin)
+    return user is not None and bool(user.is_admin)
 
 
 def _agent_device_active(hass: HomeAssistant, entry_id: str, subentry_id: str | None) -> bool:
@@ -218,13 +219,13 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
             await self.hass.async_add_executor_job(store.set_provider, user_id, session.id, self._agent_id)
             session.provider = self._agent_id
 
-        low_token = bool(getattr(getattr(provider, "settings", None), "low_token", False))
-        extra = "" if low_token else str(user_input.extra_system_prompt or "").strip()
+        extras = token_mode_allows_extras(provider_token_mode(provider))
+        extra = "" if not extras else str(user_input.extra_system_prompt or "").strip()
         outbound = f"{extra}\n\n{text}" if extra else text
         cross = bool(getattr(data.get("settings"), "cross_chat", False))
         note = (
             ""
-            if low_token
+            if not extras
             else await self.hass.async_add_executor_job(
                 other_chat_note, store, user_id, session.id, text, cross
             )
@@ -250,10 +251,8 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
                 rows = await self.hass.async_add_executor_job(store.list_messages, session.id)
                 handoff = handoff_note(rows, session.title)
             suggest = (
-                None
-                if low_token
-                else getattr(provider, "suggest_title", None)
-                if count <= 1 and needs_title_summary(text)
+                getattr(provider, "suggest_title", None)
+                if extras and count <= 1 and needs_title_summary(text)
                 else None
             )
             parts: list[str] = []
@@ -305,6 +304,22 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
                         )
                     elif kind == "error":
                         error = str(event.get("message") or "The agent failed.")
+                    elif kind == "usage":
+                        billed = finalize_usage(
+                            event,
+                            model=str(event.get("model") or getattr(provider, "model", "") or ""),
+                            run_id=str(event.get("run_id") or ""),
+                        )
+                        if billed is not None:
+                            await record_usage_turn(
+                                self.hass,
+                                store=store,
+                                user_id=user_id,
+                                session_id=session.id,
+                                provider=provider,
+                                usage=billed,
+                                origin="assist",
+                            )
                 if started:
                     return
                 answer = (final or error or "").strip() or "The agent returned nothing."

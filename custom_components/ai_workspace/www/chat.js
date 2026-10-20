@@ -1,6 +1,7 @@
 const CACHE = new URL(import.meta.url).search;
 const { stringsFor } = await import(`./i18n.js${CACHE}`);
 const { takeSpeech, speechPlain } = await import(`./speech.js${CACHE}`);
+const { stripRemoteMedia, watchRenderedMedia } = await import(`./media_guard.js${CACHE}`);
 
 const API = "/api/ai_workspace";
 
@@ -46,14 +47,99 @@ function haCreate(...names) {
   return document.createElement(names[names.length - 1] || "div");
 }
 
-function fillHaMarkdown(el, body) {
-  const text = String(body || "");
+function setMarkdown(el, body) {
+  const text = stripRemoteMedia(String(body || ""));
   el.content = text;
+  watchRenderedMedia(el);
+  return text;
+}
+
+function fillHaMarkdown(el, body) {
+  const text = setMarkdown(el, body);
+  styleMarkdownTables(el);
   if (!text || haHas("ha-markdown")) return;
   el.textContent = text;
   customElements.whenDefined("ha-markdown").then(() => {
     if (el.isConnected) el.textContent = "";
+    styleMarkdownTables(el);
   });
+}
+
+function isPipeTableLine(line) {
+  return String(line || "").trim().startsWith("|");
+}
+
+function isPipeTableSep(line) {
+  return /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?\s*$/.test(String(line || ""));
+}
+
+function streamFenceOpen(text) {
+  const marks = String(text || "").match(/^```/gm);
+  return Boolean(marks && marks.length % 2);
+}
+
+/** Hold incomplete markdown tables so columns do not dance while a row is still arriving. */
+function stableStreamMarkdown(text, done) {
+  if (done || !text || streamFenceOpen(text)) return text;
+  const lines = text.split("\n");
+  if (!text.endsWith("\n") && lines.length) {
+    const last = lines[lines.length - 1];
+    if (isPipeTableLine(last) || isPipeTableSep(last)) lines.pop();
+  }
+  let end = lines.length - 1;
+  while (end >= 0 && !lines[end].trim()) end -= 1;
+  if (end < 0 || !(isPipeTableLine(lines[end]) || isPipeTableSep(lines[end]))) {
+    return lines.join("\n");
+  }
+  let start = end;
+  while (start >= 0 && (isPipeTableLine(lines[start]) || isPipeTableSep(lines[start]) || !lines[start].trim())) {
+    start -= 1;
+  }
+  start += 1;
+  const block = [];
+  for (let i = start; i <= end; i += 1) {
+    if (lines[i].trim()) block.push(lines[i]);
+  }
+  const sepAt = block.findIndex(isPipeTableSep);
+  if (sepAt < 1) lines.splice(start);
+  return lines.join("\n");
+}
+
+let markdownTableSheet;
+
+function markdownTableStyleSheet() {
+  if (markdownTableSheet !== undefined) return markdownTableSheet;
+  markdownTableSheet = null;
+  if (typeof CSSStyleSheet !== "function") return null;
+  try {
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync(
+      "table{table-layout:fixed;width:100%;max-width:100%}"
+      + "th,td{overflow-wrap:anywhere;word-break:break-word;vertical-align:top}",
+    );
+    markdownTableSheet = sheet;
+  } catch (_err) {
+    markdownTableSheet = null;
+  }
+  return markdownTableSheet;
+}
+
+function styleMarkdownTables(md) {
+  if (!md) return;
+  const apply = () => {
+    const sheet = markdownTableStyleSheet();
+    if (!sheet) return;
+    const roots = [];
+    if (md.shadowRoot) roots.push(md.shadowRoot);
+    const inner = md.querySelector?.("ha-markdown-element");
+    if (inner?.shadowRoot) roots.push(inner.shadowRoot);
+    for (const root of roots) {
+      if (!root.adoptedStyleSheets || root.adoptedStyleSheets.includes(sheet)) continue;
+      root.adoptedStyleSheets = [...root.adoptedStyleSheets, sheet];
+    }
+  };
+  apply();
+  if (!md.shadowRoot) requestAnimationFrame(apply);
 }
 
 async function loadHaPanel(componentName, urlPath) {
@@ -74,6 +160,7 @@ async function loadHaPanel(componentName, urlPath) {
 
 /** Config/automation chunk preload runs at most once per full HA page load. */
 let haComponentsLoaderTriggered = false;
+let haDatePickerLoaderTriggered = false;
 
 async function ensureHaComponents(names) {
   const missing = names.filter((name) => name && name.includes("-") && !haHas(name));
@@ -90,6 +177,16 @@ async function ensureHaComponents(names) {
         const panel = document.createElement("ha-panel-config");
         const load = panel.routerOptions?.routes?.automation?.load;
         if (typeof load === "function") await load.call(panel.routerOptions.routes.automation);
+      }
+    }
+    const wantDate = missing.some((name) => String(name).startsWith("ha-date-range"));
+    if (wantDate && !haDatePickerLoaderTriggered) {
+      haDatePickerLoaderTriggered = true;
+      if (!haHas("ha-date-range-nav") && !haHas("ha-date-range-picker")) {
+        await loadHaPanel("logbook", "logbook");
+      }
+      if (!haHas("ha-date-range-nav") && !haHas("ha-date-range-picker")) {
+        await loadHaPanel("history", "history");
       }
     }
   } catch (_err) {
@@ -116,6 +213,7 @@ const HA_COMPONENT_PRELOAD = [
   "ha-icon-button",
   "ha-dropdown",
   "ha-dropdown-item",
+  "ha-select",
 ];
 
 let uiTheme = "standard";
@@ -310,17 +408,17 @@ function pathForEntity(entityId, info) {
   const domain = String(entityId || "").split(".")[0];
   if (domain === "automation") {
     const id = configId(info);
-    if (id && !looksLikeEntityId(id)) return `/config/automation/edit/${id}`;
+    if (id && !looksLikeEntityId(id)) return `/config/automation/edit/${encodeURIComponent(id)}`;
   }
   if (domain === "script") {
     const id = configId(info) || String(entityId).replace(/^script\./, "");
-    if (id) return `/config/script/edit/${id}`;
+    if (id) return `/config/script/edit/${encodeURIComponent(id)}`;
   }
   if (domain === "scene") {
     const id = configId(info) || String(entityId).replace(/^scene\./, "");
-    if (id) return `/config/scene/edit/${id}`;
+    if (id) return `/config/scene/edit/${encodeURIComponent(id)}`;
   }
-  return `/config/entities/entity/${entityId}`;
+  return `/config/entities/entity/${encodeURIComponent(entityId)}`;
 }
 
 function entityIdFromHaPath(path) {
@@ -352,15 +450,15 @@ function rewriteHaPath(pathname) {
     if (looksLikeEntityId(raw) || info?.state || info?.entry) {
       if (domain === "automation" || kind === "automation") {
         const id = configId(info);
-        if (id && !looksLikeEntityId(id)) return `/config/automation/edit/${id}`;
+        if (id && !looksLikeEntityId(id)) return `/config/automation/edit/${encodeURIComponent(id)}`;
       }
       if (domain === "script" || kind === "script") {
         const id = configId(info) || entityId.replace(/^script\./, "");
-        if (id) return `/config/script/edit/${id}`;
+        if (id) return `/config/script/edit/${encodeURIComponent(id)}`;
       }
       if (domain === "scene" || kind === "scene") {
         const id = configId(info) || entityId.replace(/^scene\./, "");
-        if (id) return `/config/scene/edit/${id}`;
+        if (id) return `/config/scene/edit/${encodeURIComponent(id)}`;
       }
       if (looksLikeEntityId(raw) && domain !== kind) return pathForEntity(entityId, info);
     }
@@ -476,7 +574,7 @@ function haLinkCatalog() {
   for (const device of Object.values(hass.devices || {})) {
     const id = device?.id;
     if (!id) continue;
-    rememberUniqueName(nameToPath, device.name_by_user || device.name, `/config/devices/device/${id}`);
+    rememberUniqueName(nameToPath, device.name_by_user || device.name, `/config/devices/device/${encodeURIComponent(id)}`);
   }
   const names = [];
   for (const row of nameToPath.values()) {
@@ -534,30 +632,6 @@ function linkifyHaMentions(content, mentions = true) {
     text = text.replace(re, (_whole, lead, matched) => `${lead}${hold(`[${matched}](${paths.get(matched)})`)}`);
   }
   return text.replace(/\u0000HA(\d+)\u0000/g, (_m, index) => held[Number(index)] || "");
-}
-
-function safeImageUrl(raw) {
-  const value = String(raw || "").trim().replace(/^<|>$/g, "");
-  if (/^data:image\//i.test(value)) return true;
-  if (value.startsWith("/") && !value.startsWith("//")) return true;
-  try {
-    return new URL(value).origin === window.location.origin;
-  } catch (_err) {
-    return false;
-  }
-}
-
-function stripRemoteImages(text) {
-  return String(text || "")
-    .replace(/!\[([^\]]*)\]\(\s*(<[^>]*>|[^)\s]+)(?:\s+"[^"]*")?\s*\)/g, (whole, alt, url) => {
-      if (safeImageUrl(url)) return whole;
-      const target = url.replace(/^<|>$/g, "");
-      return `[${alt || target}](${target})`;
-    })
-    .replace(/<img\b[^>]*>/gi, (tag) => {
-      const src = /\bsrc\s*=\s*["']?([^"'\s>]+)/i.exec(tag)?.[1] || "";
-      return safeImageUrl(src) ? tag : "";
-    });
 }
 
 export async function mountAiWorkspace(root, options = {}) {
@@ -655,9 +729,14 @@ export async function mountAiWorkspace(root, options = {}) {
       <aside>
         <div class="nav-head">
           <div class="nav-toolbar">
-            <ha-icon-button class="history-open" label="${t("activity")}">
-              <ha-icon icon="mdi:history"></ha-icon>
-            </ha-icon-button>
+            <div class="nav-tools">
+              <ha-icon-button class="history-open" label="${t("activity")}">
+                <ha-icon icon="mdi:history"></ha-icon>
+              </ha-icon-button>
+              <ha-icon-button class="usage-open" label="${t("usage")}">
+                <ha-icon icon="mdi:chart-bar"></ha-icon>
+              </ha-icon-button>
+            </div>
             <ha-icon-button class="nav-toggle" label="${t("hide_chats")}">
               <ha-icon icon="mdi:dock-left"></ha-icon>
             </ha-icon-button>
@@ -666,7 +745,7 @@ export async function mountAiWorkspace(root, options = {}) {
           <ha-icon-button class="new-chat-icon" label="${t("new_chat")}">
             <ha-icon icon="mdi:plus"></ha-icon>
           </ha-icon-button>
-          <ha-button class="new-chat" size="s">
+          <ha-button class="new-chat" size="s" variant="brand" appearance="accent">
             <ha-svg-icon slot="start" path="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"></ha-svg-icon>
             ${t("new_chat")}
           </ha-button>
@@ -681,9 +760,13 @@ export async function mountAiWorkspace(root, options = {}) {
             </ha-icon-button>
             ${compact ? "" : `<ha-icon-button class="history-open header-history" label="${t("activity")}">
               <ha-icon icon="mdi:history"></ha-icon>
+            </ha-icon-button>
+            <ha-icon-button class="usage-open header-usage" label="${t("usage")}">
+              <ha-icon icon="mdi:chart-bar"></ha-icon>
             </ha-icon-button>`}
             <h1 class="title">${t("new_chat")}</h1>
           </div>
+          <p class="chat-usage" hidden></p>
           ${bannerMarkup}
         </header>
         ${workspaceLinkMarkup}
@@ -727,6 +810,21 @@ export async function mountAiWorkspace(root, options = {}) {
           </ha-icon-button>
         </div>
         <div class="history-list"></div>
+      </div>
+      <div class="usage" hidden aria-hidden="true">
+        <div class="usage-bar">
+          <span>${t("usage")}</span>
+          <div class="usage-bar-actions">
+            <ha-icon-button class="usage-close" label="${t("usage_back")}">
+              <ha-icon icon="mdi:close"></ha-icon>
+            </ha-icon-button>
+          </div>
+        </div>
+        <div class="usage-toolbar">
+          <div class="usage-range"></div>
+          <div class="usage-filters"></div>
+        </div>
+        <div class="usage-list"></div>
       </div>
     </div>
   `;
@@ -863,9 +961,19 @@ export async function mountAiWorkspace(root, options = {}) {
 
   setNarrow(options.narrow);
 
+  function workspaceRoute(pathname = location.pathname) {
+    const clean = String(pathname || "").replace(/\/$/, "") || "/";
+    if (clean === "/ai-workspace/usage") return { view: "usage", sessionId: "" };
+    const match = String(pathname || "").match(/^\/ai-workspace(?:\/conversations)?\/([0-9a-fA-F-]{8,})\/?$/);
+    return { view: "chat", sessionId: match ? match[1] : "" };
+  }
+
   function sessionIdFromPath(pathname = location.pathname) {
-    const match = pathname.match(/^\/ai-workspace(?:\/conversations)?\/([0-9a-fA-F-]{8,})\/?$/);
-    return match ? match[1] : "";
+    return workspaceRoute(pathname).sessionId;
+  }
+
+  function usagePath() {
+    return "/ai-workspace/usage";
   }
 
   function sessionPath(id) {
@@ -891,8 +999,15 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function applyRoute() {
     if (compact || !routed) return;
-    const id = sessionIdFromPath();
-    if (id === sessionId) return;
+    const route = workspaceRoute();
+    if (route.view === "usage") {
+      openUsagePage();
+      return;
+    }
+    const leavingUsage = wrap.classList.contains("page-usage");
+    closeUsagePage();
+    const id = route.sessionId;
+    if (id === sessionId && !leavingUsage) return;
     if (id) openSession(id, true);
     else {
       restoreQueued();
@@ -979,7 +1094,7 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   let keyboardRaf = 0;
-  let keyboardHeight = "";
+  let keyboardInset = 0;
   let keyboardOpen = false;
 
   function resetOuterScroll() {
@@ -993,9 +1108,10 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function clearKeyboardLock() {
     keyboardOpen = false;
-    keyboardHeight = "";
+    keyboardInset = 0;
     wrap.classList.remove("keyboard-open");
     wrap.style.height = "";
+    wrap.style.removeProperty("--ai-keyboard-inset");
   }
 
   function syncKeyboardInset() {
@@ -1008,31 +1124,29 @@ export async function mountAiWorkspace(root, options = {}) {
     keyboardRaf = 0;
     if (keepComposerFocus()) return;
     const vv = window.visualViewport;
-    const inset = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
-    const open = composerFocused() && inset > 80;
+    // Overlay keyboards shrink visualViewport.height. Ignore offsetTop so IME
+    // pan does not chase the composer (that loop is the rubber-band).
+    const next = vv ? Math.max(0, Math.round(window.innerHeight - vv.height)) : 0;
+    const open = composerFocused() && next > 80;
     if (!open) {
       if (keyboardOpen) clearKeyboardLock();
       return;
     }
-    const top = wrap.getBoundingClientRect().top;
-    const visibleBottom = (vv?.offsetTop || 0) + (vv?.height || window.innerHeight);
-    const nextH = `${Math.max(180, Math.round(visibleBottom - Math.max(0, top)))}px`;
-    if (nextH === keyboardHeight && keyboardOpen) return;
+    if (keyboardOpen && Math.abs(next - keyboardInset) < 8) return;
     const opened = !keyboardOpen;
     keyboardOpen = true;
-    keyboardHeight = nextH;
+    keyboardInset = next;
+    wrap.style.setProperty("--ai-keyboard-inset", `${next}px`);
     if (opened) {
       if (followRaf) {
         cancelAnimationFrame(followRaf);
         followRaf = 0;
       }
-      resetOuterScroll();
       wrap.classList.add("keyboard-open");
-    }
-    wrap.style.height = nextH;
-    if (opened && pinBottom && !holdFollow) {
-      chatEl.scrollTop = Math.max(0, chatEl.scrollHeight - chatEl.clientHeight);
-      lastScrollTop = chatEl.scrollTop;
+      if (pinBottom && !holdFollow) {
+        chatEl.scrollTop = Math.max(0, chatEl.scrollHeight - chatEl.clientHeight);
+        lastScrollTop = chatEl.scrollTop;
+      }
     }
   }
 
@@ -1121,8 +1235,21 @@ export async function mountAiWorkspace(root, options = {}) {
     if (/^no mcp servers configured\.?$/i.test(raw)) return "";
     if (/^mcp:\s/i.test(raw)) return "";
     if (/^running$/i.test(raw)) return t("working");
+    if (/^working\.{0,3}$/i.test(raw)) return t("working");
     if (/^thinking\.{0,3}$/i.test(raw)) return t("thinking");
     return raw;
+  }
+
+  function toolsBusy(root) {
+    return Boolean(root?.querySelector(".tools .busy"));
+  }
+
+  function pendingStatus(bubble, text) {
+    const pretty = prettyStatus(text);
+    if (pretty) return pretty;
+    if (!bubble?.classList.contains("streaming") || bubble.classList.contains("error")) return "";
+    if (bubble.classList.contains("has-text") && !toolsBusy(bubble)) return "";
+    return t("working");
   }
 
   function ensureActivitySlot(bubble) {
@@ -1146,7 +1273,7 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function setActivity(bubble, text) {
     if (!bubble) return;
-    const pretty = prettyStatus(text);
+    const pretty = pendingStatus(bubble, text);
     const el = ensureActivitySlot(bubble);
     let label = el.querySelector(".label");
     if (!label) {
@@ -1177,16 +1304,11 @@ export async function mountAiWorkspace(root, options = {}) {
   function setStatus(text) {
     const bubble = lastAssistantBubble();
     if (!bubble) return;
-    const busyChip = bubble.querySelector(".tools span.busy");
-    if (busyChip && /^running$/i.test(String(text || "").trim())) {
-      setActivity(bubble, "");
-      return;
-    }
     setActivity(bubble, text);
   }
 
   function rewriteAssistantLinks(content, mentions = true) {
-    let text = stripRemoteImages(content);
+    let text = stripRemoteMedia(content);
     const here = window.location.origin;
     if (!/^https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?$/i.test(here)) {
       text = text.replace(/https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?/gi, here);
@@ -1524,19 +1646,25 @@ export async function mountAiWorkspace(root, options = {}) {
     }
   }
 
+  function speechLive() {
+    return Boolean(
+      speakStarted ||
+        speakBusy ||
+        speakPending.length > 0 ||
+        speakInflight.length > 0 ||
+        (replyObjectUrl && replyAudio && !replyAudio.ended),
+    );
+  }
+
   function syncCopyChat() {
     let row = logEl.querySelector(".chat-actions");
     const hasChat = Boolean(logEl.querySelector(".bubble.has-text, .bubble .bubble-files, .bubble .bubble-images"));
     const busy = streaming || Boolean(logEl.querySelector(".bubble.streaming"));
-    const speechActive =
-      speakStarted ||
-      speakBusy ||
-      speakPending.length > 0 ||
-      speakInflight.length > 0 ||
-      Boolean(replyAudio && !replyAudio.ended);
-    const showSpeak = Boolean(voice.tts && (hasChat || busy || speechActive));
+    const live = speechLive();
+    const showSpeak = Boolean(voice.tts && (live || (Boolean(lastAssistantText()) && !busy)));
     const showCopy = hasChat && !busy;
-    if (!showCopy && !showSpeak) {
+    const showHistory = Boolean(turnHasHistory);
+    if (!showCopy && !showSpeak && !showHistory) {
       if (row) row.hidden = true;
       return;
     }
@@ -1584,7 +1712,7 @@ export async function mountAiWorkspace(root, options = {}) {
         });
         row.appendChild(speakBtn);
       }
-      speakBtn.hidden = false;
+      speakBtn.hidden = !showSpeak;
     } else if (speakBtn) {
       speakBtn.hidden = true;
     }
@@ -1788,6 +1916,7 @@ export async function mountAiWorkspace(root, options = {}) {
   let streamNode = null;
   let streamBuf = "";
   let streamFull = "";
+  let streamPainted = "";
   let streamDrainRaf = 0;
   let streamDrainLast = 0;
   let streamWaiters = [];
@@ -1863,6 +1992,7 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     streamBuf = "";
     streamFull = "";
+    streamPainted = "";
     streamNode = null;
     streamFinal = false;
     haltSpeech();
@@ -1876,14 +2006,20 @@ export async function mountAiWorkspace(root, options = {}) {
     resizeComposer();
   }
 
-  function writeStreamVisible() {
-    if (!streamNode) return;
-    streamNode.content = rewriteAssistantLinks(streamFull, streamFinal && !streamBuf);
-    streamNode.hidden = !streamFull;
+  function writeStreamVisible(force = false) {
+    if (!streamNode) return false;
+    const done = streamFinal && !streamBuf;
+    const visible = rewriteAssistantLinks(stableStreamMarkdown(streamFull, done), done);
+    if (visible === streamPainted) return false;
+    streamPainted = visible;
+    setMarkdown(streamNode, visible);
+    streamNode.hidden = !visible;
+    styleMarkdownTables(streamNode);
     const bubble = streamNode.closest(".bubble");
-    bubble?.classList.toggle("has-text", Boolean(streamFull));
-    if (streamFull && bubble && !bubble.querySelector(".tools span.busy")) setActivity(bubble, "");
+    bubble?.classList.toggle("has-text", Boolean(visible));
+    if (visible && bubble) setActivity(bubble, "");
     if (bubble) retargetHaLinks(bubble);
+    return true;
   }
 
   function takeStreamChunk(dt) {
@@ -1916,7 +2052,7 @@ export async function mountAiWorkspace(root, options = {}) {
     } else if (streamBuf) {
       streamFull += takeStreamChunk(dt);
     }
-    writeStreamVisible();
+    writeStreamVisible(!streamBuf);
     easeToBottom(dt);
     if (streamBuf) {
       streamDrainRaf = requestAnimationFrame(pumpStream);
@@ -1939,7 +2075,7 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     streamFull += streamBuf;
     streamBuf = "";
-    writeStreamVisible();
+    writeStreamVisible(true);
     finishStreamWaiters();
   }
 
@@ -1977,7 +2113,9 @@ export async function mountAiWorkspace(root, options = {}) {
       if (dist > 0) writeScrollTop(max);
       return false;
     }
-    writeScrollTop(chatEl.scrollTop + dist * (1 - Math.exp(-dt * 10)));
+    const eased = dist * (1 - Math.exp(-dt * 5.5));
+    const step = Math.min(dist, Math.max(eased, 48 * dt), 720 * dt);
+    writeScrollTop(chatEl.scrollTop + step);
     return true;
   }
 
@@ -2373,7 +2511,8 @@ export async function mountAiWorkspace(root, options = {}) {
       sessionAction(t("rename"), "rename"),
       sessionAction(t("delete"), "delete", "danger"),
     );
-    row.append(item, menu);
+    item.append(menu);
+    row.append(item);
     return row;
   }
 
@@ -2445,6 +2584,7 @@ export async function mountAiWorkspace(root, options = {}) {
       showEmpty();
       if (!fromUrl) goToSession("");
       selectSessionRow("");
+      refreshChatUsage();
       return;
     }
     if (fromUrl && id === sessionId) return;
@@ -2467,6 +2607,7 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!sessionsEl?.querySelector(".session-row")) await loadSessions();
     selectSessionRow(id);
     if (session.pending) watchPending(id);
+    refreshChatUsage();
   }
 
   function paintSession(session) {
@@ -2624,6 +2765,7 @@ export async function mountAiWorkspace(root, options = {}) {
   let recognition = null;
   let capture = null;
   let captureStarting = false;
+  let captureTicket = 0;
   let listening = false;
   let speechBase = "";
 
@@ -2859,6 +3001,7 @@ export async function mountAiWorkspace(root, options = {}) {
     } catch (_err) {
       /* already stopped */
     }
+    captureTicket += 1;
     const active = capture;
     capture = null;
     active?.stop().catch(() => {});
@@ -3028,10 +3171,16 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     if (capture || captureStarting) return;
     captureStarting = true;
+    const ticket = ++captureTicket;
     let stream = null;
     let ctx = null;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1 } });
+      if (ticket !== captureTicket) {
+        // Stopped or sent while the browser was still asking for the microphone.
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
       ctx = new AudioContext();
       const source = ctx.createMediaStreamSource(stream);
       const proc = ctx.createScriptProcessor(4096, 1, 1);
@@ -3146,6 +3295,7 @@ export async function mountAiWorkspace(root, options = {}) {
     speakHeld = "";
     speakRaw = "";
     speakStarted = false;
+    speakBusy = false;
     speakFromUser = false;
     speakFlush = false;
     speakPending.length = 0;
@@ -3243,7 +3393,7 @@ export async function mountAiWorkspace(root, options = {}) {
     try {
       const response = await apiFetch(`${API}/tts`, {
         method: "POST",
-        body: JSON.stringify({ text: plain, language: speechLanguage() }),
+        body: JSON.stringify({ text: plain, language: speechLanguage(), session_id: sessionId || "" }),
         signal: ac.signal,
       });
       if (gen !== speakGen || !response?.ok) return null;
@@ -3373,6 +3523,22 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!visible) closeHistory();
   }
 
+  function setUsageShown(visible) {
+    root.querySelectorAll(".usage-open").forEach((btn) => {
+      btn.hidden = !visible;
+      btn.classList.toggle("is-hidden", !visible);
+    });
+    if (!visible) {
+      if (wrap.classList.contains("page-usage")) leaveUsage();
+      closeUsageOverlay();
+      const line = root.querySelector(".chat-usage");
+      if (line) {
+        line.hidden = true;
+        line.textContent = "";
+      }
+    }
+  }
+
   async function remountForUiTheme(nextTheme) {
     if (uiRemountInFlight || nextTheme === activeUiTheme) return;
     uiRemountInFlight = true;
@@ -3392,16 +3558,23 @@ export async function mountAiWorkspace(root, options = {}) {
     }
   }
 
+  let usageTracking = true;
+  let showChatUsage = true;
+
   async function loadDictate() {
     // Stay hidden until /ui explicitly allows the mic (also covers the overlay drawer).
     let show = false;
     let historyOn = true;
+    let usageOn = true;
+    let headerUsageOn = true;
     try {
       const response = await apiFetch(`${API}/ui`);
       if (response?.ok) {
         const body = await response.json();
         show = body.dictate === true;
         historyOn = body.change_history !== false;
+        usageOn = body.track_usage !== false;
+        headerUsageOn = body.show_chat_usage !== false;
         const nextTheme = body.ui_theme === "ha_components" ? "ha_components" : "standard";
         uiTheme = nextTheme;
         uiThemeLoaded = true;
@@ -3421,7 +3594,16 @@ export async function mountAiWorkspace(root, options = {}) {
     } catch (_err) {
       show = false;
     }
+    usageTracking = usageOn;
+    showChatUsage = usageOn && headerUsageOn;
     setChangeHistoryShown(historyOn);
+    setUsageShown(usageOn);
+    if (!showChatUsage && chatUsageEl) {
+      chatUsageEl.hidden = true;
+      chatUsageEl.textContent = "";
+    } else if (showChatUsage) {
+      refreshChatUsage();
+    }
     setMicShown(show);
     syncCopyChat();
   }
@@ -3485,6 +3667,7 @@ export async function mountAiWorkspace(root, options = {}) {
     stickToBottom();
     streamFull = "";
     streamBuf = "";
+    streamPainted = "";
     const tools = document.createElement("div");
     tools.className = "tools";
     ensureActivitySlot(assistant);
@@ -3521,7 +3704,7 @@ export async function mountAiWorkspace(root, options = {}) {
       if (token !== streamToken) return;
       if (response?.status === 404) {
         const node = assistant.querySelector(".text");
-        node.content = await errorText(response);
+        setMarkdown(node, await errorText(response));
         node.hidden = !node.content;
         assistant.classList.add("error", "has-text");
         setActivity(assistant, "");
@@ -3529,7 +3712,7 @@ export async function mountAiWorkspace(root, options = {}) {
       }
       if (!response?.ok || !response.body) {
         const node = assistant.querySelector(".text");
-        node.content = await errorText(response);
+        setMarkdown(node, await errorText(response));
         node.hidden = !node.content;
         assistant.classList.add("error", "has-text");
         setActivity(assistant, "");
@@ -3549,7 +3732,7 @@ export async function mountAiWorkspace(root, options = {}) {
             else assistant.appendChild(tools);
           }
           addChip(tools, data, true);
-          if (assistant.querySelector(".tools span.busy")) setActivity(assistant, "");
+          setActivity(assistant, "");
         } else if (name === "status") {
           setStatus(data.text);
         } else if (name === "error") {
@@ -3559,7 +3742,7 @@ export async function mountAiWorkspace(root, options = {}) {
           assistant.classList.add("error");
           const textNode = assistant.querySelector(".text");
           if (!streamFull) {
-            textNode.content = data.message || t("error");
+            setMarkdown(textNode, data.message || t("error"));
             textNode.hidden = !textNode.content;
             assistant.classList.add("has-text");
           }
@@ -3584,9 +3767,9 @@ export async function mountAiWorkspace(root, options = {}) {
             }
           }
           settleTools(assistant);
-          setActivity(assistant, "");
           streaming = false;
           assistant.classList.remove("streaming");
+          setActivity(assistant, "");
           resizeComposer();
           bumpSession(chatId, titleEl.textContent);
           waitForStream().then(() => {
@@ -3598,8 +3781,10 @@ export async function mountAiWorkspace(root, options = {}) {
         } else if (name === "title" && data.title) {
           applySessionTitle(chatId, data.title);
           bumpSession(chatId, data.title);
+        } else if (name === "usage") {
+          applyTurnUsage(data);
         }
-        scrollChatToBottom();
+        if (name !== "text") scrollChatToBottom();
       });
       await waitForStream();
       streamNode = null;
@@ -3615,7 +3800,7 @@ export async function mountAiWorkspace(root, options = {}) {
         assistant.classList.add("error");
         const node = assistant.querySelector(".text");
         if (!streamFull) {
-          node.content = String(error?.message || error);
+          setMarkdown(node, String(error?.message || error));
           node.hidden = !node.content;
           assistant.classList.add("has-text");
         }
@@ -3745,7 +3930,11 @@ export async function mountAiWorkspace(root, options = {}) {
   }
   listen(window.visualViewport, "resize", syncKeyboardInset);
   listen(window.visualViewport, "scroll", () => {
-    if (wrap.classList.contains("keyboard-open")) syncKeyboardInset();
+    if (!composerFocused()) return;
+    const vv = window.visualViewport;
+    const next = vv ? Math.max(0, Math.round(window.innerHeight - vv.height)) : 0;
+    if (Math.abs(next - keyboardInset) < 24) return;
+    syncKeyboardInset();
   });
   function fromComposerField(event) {
     for (const node of event.composedPath?.() || [event.target]) {
@@ -3835,11 +4024,26 @@ export async function mountAiWorkspace(root, options = {}) {
     titleEl.textContent = t("new_chat");
     showEmpty();
     selectSessionRow("");
+    refreshChatUsage();
     if (keepComposerFocus()) messageEl.focus({ preventScroll: true });
   }
 
   const historyEl = root.querySelector(".history");
   const historyList = root.querySelector(".history-list");
+  const usageEl = root.querySelector(".usage");
+  const usageList = root.querySelector(".usage-list");
+  const usageRangeEl = root.querySelector(".usage-range");
+  const usageFiltersEl = root.querySelector(".usage-filters");
+  const chatUsageEl = root.querySelector(".chat-usage");
+  let usageRange = "month";
+  let usageAgent = "";
+  let usageModel = "";
+  let usageChat = "";
+  let usageSince = "";
+  let usageUntil = "";
+  let usageLoadGen = 0;
+  let usagePickerQuiet = false;
+  let usageSelectQuiet = false;
 
   function activityWhen(iso) {
     const date = new Date(iso);
@@ -4024,6 +4228,7 @@ export async function mountAiWorkspace(root, options = {}) {
 
   async function openHistory() {
     if (!historyEl) return;
+    if (!wrap.classList.contains("page-usage")) closeUsageOverlay();
     historyEl.hidden = false;
     historyEl.setAttribute("aria-hidden", "false");
     syncHistoryButtons(true);
@@ -4050,6 +4255,779 @@ export async function mountAiWorkspace(root, options = {}) {
     closeHistory();
   });
 
+  function money(usd) {
+    if (usd == null || Number.isNaN(Number(usd))) return t("usage_unknown_cost");
+    return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 4 }).format(Number(usd));
+  }
+
+  function tokenLabel(count) {
+    const n = Number(count) || 0;
+    if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+    if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k`;
+    return String(n);
+  }
+
+  function cachedTokens(summary) {
+    return Number(summary?.cache_read_tokens || 0) + Number(summary?.cache_write_tokens || 0);
+  }
+
+  function usageLine(summary) {
+    if (!summary) return "";
+    const bits = [`${tokenLabel(summary.total_tokens || 0)} ${t("usage_tokens")}`];
+    const cached = cachedTokens(summary);
+    if (cached) bits.push(`${tokenLabel(cached)} ${t("usage_cached")}`);
+    if (summary.cost_usd != null) bits.push(money(summary.cost_usd));
+    else if (summary.missing_cost) bits.push(t("usage_unknown_cost"));
+    if (summary.turns) bits.push(`${summary.turns} ${t("usage_turns")}`);
+    return bits.join(" · ");
+  }
+
+  function applyTurnUsage(data) {
+    if (!data || !usageTracking) return;
+    if (chatUsageEl && showChatUsage) {
+      const cost = data.cost_usd == null ? t("usage_unknown_cost") : money(data.cost_usd);
+      chatUsageEl.hidden = false;
+      chatUsageEl.textContent = `${t("usage_last")}: ${tokenLabel(data.total_tokens || 0)} · ${cost}`;
+    }
+    refreshChatUsage();
+    if (usageIsVisible()) loadUsage();
+  }
+
+  async function refreshChatUsage() {
+    if (!chatUsageEl || !usageTracking || !showChatUsage) {
+      if (chatUsageEl) {
+        chatUsageEl.hidden = true;
+        chatUsageEl.textContent = "";
+      }
+      return;
+    }
+    if (!sessionId) {
+      chatUsageEl.hidden = true;
+      chatUsageEl.textContent = "";
+      return;
+    }
+    try {
+      const resp = await apiFetch(`${API}/usage?session_id=${encodeURIComponent(sessionId)}`);
+      if (!resp?.ok) return;
+      const body = await resp.json();
+      const summary = body.session;
+      if (!summary || !summary.turns) {
+        chatUsageEl.hidden = true;
+        return;
+      }
+      chatUsageEl.hidden = false;
+      chatUsageEl.textContent = usageLine(summary);
+    } catch (_err) {
+      /* keep last */
+    }
+  }
+
+  function metricCard(label, summary, kind) {
+    const card = document.createElement("article");
+    card.className = "usage-card";
+    const title = document.createElement("p");
+    title.className = "usage-card-title";
+    title.textContent = label;
+    const cost = document.createElement("p");
+    cost.className = "usage-card-cost";
+    cost.textContent = summary?.missing_cost && !summary.cost_usd ? t("usage_unknown_cost") : money(summary?.cost_usd || 0);
+    const meta = document.createElement("p");
+    meta.className = "usage-card-meta";
+    if (kind === "tts") {
+      meta.textContent = `${tokenLabel(summary?.characters || 0)} ${t("usage_characters")} · ${summary?.turns || 0} ${t("usage_reads")}`;
+    } else {
+      const cached = cachedTokens(summary);
+      const bits = [`${tokenLabel(summary?.total_tokens || 0)} ${t("usage_tokens")}`];
+      if (cached) bits.push(`${tokenLabel(cached)} ${t("usage_cached")}`);
+      bits.push(`${summary?.turns || 0} ${t("usage_turns")}`);
+      meta.textContent = bits.join(" · ");
+    }
+    card.append(title, cost, meta);
+    return card;
+  }
+
+  function kpiCard(label, row) {
+    const card = document.createElement("article");
+    card.className = "usage-card usage-kpi";
+    const title = document.createElement("p");
+    title.className = "usage-card-title";
+    title.textContent = label;
+    const name = document.createElement("p");
+    name.className = "usage-kpi-model";
+    name.textContent = row?.model || "—";
+    const meta = document.createElement("p");
+    meta.className = "usage-card-meta";
+    const bits = [];
+    if (row) bits.push(usageLine(row));
+    if (row?.tokens_per_turn) bits.push(`${tokenLabel(row.tokens_per_turn)} ${t("usage_tokens_per_turn")}`);
+    if (row?.cost_per_turn != null) bits.push(`${money(row.cost_per_turn)} ${t("usage_cost_per_turn")}`);
+    meta.textContent = bits.join(" · ") || t("usage_empty");
+    card.append(title, name, meta);
+    return card;
+  }
+
+  function svgNode(name, attrs = {}) {
+    const node = document.createElementNS("http://www.w3.org/2000/svg", name);
+    for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value));
+    return node;
+  }
+
+  function usageChart(title, points, valueKey, formatTick) {
+    const card = document.createElement("article");
+    card.className = "usage-chart";
+    const heading = document.createElement("p");
+    heading.className = "usage-chart-title";
+    heading.textContent = title;
+    const svg = svgNode("svg", { viewBox: "0 0 640 180", role: "img", class: "usage-chart-svg" });
+    svg.setAttribute("aria-label", title);
+    const values = (Array.isArray(points) ? points : []).map((point) => Number(point[valueKey]) || 0);
+    const max = Math.max(...values, 0);
+    const padL = 6;
+    const padR = 6;
+    const padT = 10;
+    const padB = 28;
+    const width = 640;
+    const height = 180;
+    const innerW = width - padL - padR;
+    const innerH = height - padT - padB;
+    const count = Math.max(values.length, 1);
+    const gap = innerW / count;
+    const barW = Math.max(3, gap * 0.62);
+    const axis = svgNode("line", {
+      x1: padL,
+      x2: width - padR,
+      y1: height - padB,
+      y2: height - padB,
+      class: "usage-chart-axis",
+    });
+    svg.appendChild(axis);
+    values.forEach((value, index) => {
+      const barHeight = max > 0 ? (value / max) * innerH : 0;
+      const x = padL + index * gap + (gap - barW) / 2;
+      const y = height - padB - barHeight;
+      const rect = svgNode("rect", {
+        x,
+        y: value > 0 ? y : height - padB,
+        width: barW,
+        height: value > 0 ? Math.max(barHeight, 1) : 0,
+        rx: 2,
+        class: "usage-chart-bar",
+      });
+      const tip = svgNode("title");
+      const day = points[index]?.date || "";
+      tip.textContent = `${day}: ${formatTick(value)}`;
+      rect.appendChild(tip);
+      svg.appendChild(rect);
+    });
+    if (points.length) {
+      const first = svgNode("text", { x: padL, y: height - 8, class: "usage-chart-label" });
+      first.textContent = String(points[0].date || "").slice(5);
+      const last = svgNode("text", { x: width - padR, y: height - 8, class: "usage-chart-label", "text-anchor": "end" });
+      last.textContent = String(points[points.length - 1].date || "").slice(5);
+      svg.append(first, last);
+    }
+    card.append(heading, svg);
+    return card;
+  }
+
+  function modelTable(models) {
+    const wrapTable = document.createElement("div");
+    wrapTable.className = "usage-table-wrap";
+    const table = document.createElement("table");
+    table.className = "usage-table";
+    const head = document.createElement("thead");
+    const headRow = document.createElement("tr");
+    for (const label of [
+      t("usage_model"),
+      t("usage_turns"),
+      t("usage_tokens"),
+      t("usage_cost"),
+      t("usage_tokens_per_turn"),
+      t("usage_cost_per_turn"),
+      t("usage_per_1k"),
+    ]) {
+      const th = document.createElement("th");
+      th.textContent = label;
+      if (label !== t("usage_model")) th.className = "num";
+      headRow.appendChild(th);
+    }
+    head.appendChild(headRow);
+    const body = document.createElement("tbody");
+    for (const row of models) {
+      const tr = document.createElement("tr");
+      const cells = [
+        row.model || t("usage_model"),
+        String(row.turns || 0),
+        tokenLabel(row.total_tokens || 0),
+        row.cost_usd == null && row.missing_cost ? t("usage_unknown_cost") : money(row.cost_usd || 0),
+        tokenLabel(row.tokens_per_turn || 0),
+        row.cost_per_turn == null ? "—" : money(row.cost_per_turn),
+        row.cost_per_1k == null ? "—" : money(row.cost_per_1k),
+      ];
+      cells.forEach((value, index) => {
+        const td = document.createElement("td");
+        td.textContent = value;
+        if (index) td.className = "num";
+        if (index === 0 && row.agent && row.agent !== row.model) {
+          const sub = document.createElement("span");
+          sub.className = "usage-table-agent";
+          sub.textContent = ` · ${row.agent}`;
+          td.appendChild(sub);
+        }
+        tr.appendChild(td);
+      });
+      body.appendChild(tr);
+    }
+    table.append(head, body);
+    wrapTable.appendChild(table);
+    return wrapTable;
+  }
+
+  function renderUsageRange(current) {
+    if (!usageRangeEl) return;
+    const keep = [
+      ...usageRangeEl.querySelectorAll("ha-date-range-nav, ha-date-range-picker, .usage-native-dates"),
+    ];
+    usageRangeEl.replaceChildren();
+    for (const key of ["today", "month", "all"]) {
+      const btn = document.createElement(haHas("ha-button") ? "ha-button" : "button");
+      btn.className = "usage-range-btn";
+      if (btn.localName === "ha-button") {
+        btn.setAttribute("size", "s");
+        btn.setAttribute("variant", "brand");
+        btn.setAttribute("appearance", current === key ? "accent" : "plain");
+      } else {
+        btn.type = "button";
+      }
+      btn.setAttribute("aria-pressed", current === key ? "true" : "false");
+      btn.textContent = t(`usage_${key}`);
+      btn.addEventListener("click", () => {
+        if (usageRange === key && !usageSince && !usageUntil) return;
+        usageRange = key;
+        usageSince = "";
+        usageUntil = "";
+        loadUsage();
+      });
+      usageRangeEl.appendChild(btn);
+    }
+    for (const el of keep) usageRangeEl.appendChild(el);
+  }
+
+  function canUseHaSelect() {
+    if (!haHas("ha-select")) return false;
+    const el = document.createElement("ha-select");
+    return "options" in el;
+  }
+
+  function usageFilterSelectEl(className) {
+    return usageFiltersEl?.querySelector(`ha-select.${className}, select.${className}`);
+  }
+
+  function usageSelectValue(raw) {
+    const value = raw == null ? "" : String(raw);
+    return !value || value === "all" ? "" : value;
+  }
+
+  function usageDayText(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  function usageDayDate(text, end = false) {
+    const match = String(text || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+    const date = match
+      ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+      : new Date();
+    if (end) date.setHours(23, 59, 59, 999);
+    else date.setHours(0, 0, 0, 0);
+    return date;
+  }
+
+  function usageSameDay(left, right) {
+    return left.getFullYear() === right.getFullYear()
+      && left.getMonth() === right.getMonth()
+      && left.getDate() === right.getDate();
+  }
+
+  function usagePresetRange(key) {
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+    if (key === "today") {
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      return { start, end };
+    }
+    const start = new Date(end.getFullYear(), end.getMonth(), 1);
+    start.setHours(0, 0, 0, 0);
+    return { start, end };
+  }
+
+  function usageCurrentRange() {
+    if (usageSince || usageUntil) {
+      return {
+        start: usageDayDate(usageSince || usageUntil, false),
+        end: usageDayDate(usageUntil || usageSince, true),
+      };
+    }
+    return usagePresetRange(usageRange === "today" ? "today" : "month");
+  }
+
+  function applyUsagePickerRange(startDate, endDate) {
+    let start = startDate;
+    let end = endDate;
+    if (start > end) [start, end] = [end, start];
+    const today = usagePresetRange("today");
+    const month = usagePresetRange("month");
+    let nextRange = "custom";
+    let nextSince = "";
+    let nextUntil = "";
+    if (usageSameDay(start, today.start) && usageSameDay(end, today.end)) {
+      nextRange = "today";
+    } else if (usageSameDay(start, month.start) && usageSameDay(end, month.end)) {
+      nextRange = "month";
+    } else {
+      nextSince = usageDayText(start);
+      nextUntil = usageDayText(end);
+    }
+    if (usageRange === nextRange && usageSince === nextSince && usageUntil === nextUntil) return;
+    usageRange = nextRange;
+    usageSince = nextSince;
+    usageUntil = nextUntil;
+    loadUsage();
+  }
+
+  function fillUsageSelect(select, items, current) {
+    if (!select) return;
+    const options = [
+      { value: "all", label: t("usage_filter_all") },
+      ...items.map((item) => ({
+        value: String(item.id || item),
+        label: String(item.title || item),
+      })),
+    ];
+    if (current && !options.some((item) => item.value === current)) {
+      options.push({ value: current, label: current });
+    }
+    const value = current || "all";
+    usageSelectQuiet = true;
+    if (select.localName === "ha-select") {
+      select.options = options;
+      select.value = value;
+    } else {
+      select.replaceChildren();
+      for (const item of options) {
+        const opt = document.createElement("option");
+        opt.value = item.value === "all" ? "" : item.value;
+        opt.textContent = item.label;
+        select.appendChild(opt);
+      }
+      select.value = current || "";
+    }
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        usageSelectQuiet = false;
+      });
+    });
+  }
+
+  function createUsageSelect(className, label, onChange) {
+    if (canUseHaSelect()) {
+      const select = document.createElement("ha-select");
+      select.className = `${className} usage-filter`;
+      select.label = label;
+      select.addEventListener("selected", (event) => onChange(event.detail?.value));
+      return select;
+    }
+    const wrap = document.createElement("label");
+    wrap.className = "usage-filter";
+    const cap = document.createElement("span");
+    cap.textContent = label;
+    const select = document.createElement("select");
+    select.className = className;
+    select.addEventListener("change", () => onChange(select.value));
+    wrap.append(cap, select);
+    return wrap;
+  }
+
+  function createUsageDateFilter() {
+    const tag = haHas("ha-date-range-nav")
+      ? "ha-date-range-nav"
+      : haHas("ha-date-range-picker")
+        ? "ha-date-range-picker"
+        : "";
+    if (tag) {
+      const picker = document.createElement(tag);
+      picker.className = "usage-filter usage-filter-dates";
+      if ("extendedPresets" in picker) picker.extendedPresets = true;
+      const hass = hassObj();
+      if (hass && "hass" in picker) picker.hass = hass;
+      const { start, end } = usageCurrentRange();
+      usagePickerQuiet = true;
+      picker.startDate = start;
+      picker.endDate = end;
+      picker.addEventListener("value-changed", (event) => {
+        if (usagePickerQuiet) return;
+        const value = event.detail?.value || {};
+        const startDate = value.startDate instanceof Date ? value.startDate : picker.startDate;
+        const endDate = value.endDate instanceof Date ? value.endDate : picker.endDate;
+        if (!(startDate instanceof Date) || !(endDate instanceof Date)) return;
+        applyUsagePickerRange(startDate, endDate);
+      });
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          usagePickerQuiet = false;
+        });
+      });
+      return [picker];
+    }
+    const wrap = document.createElement("div");
+    wrap.className = "usage-native-dates";
+    const fromWrap = document.createElement("label");
+    fromWrap.className = "usage-filter";
+    const fromCap = document.createElement("span");
+    fromCap.textContent = t("usage_filter_from");
+    const fromInput = document.createElement("input");
+    fromInput.type = "date";
+    fromInput.className = "usage-filter-from";
+    fromInput.addEventListener("change", () => {
+      usageSince = fromInput.value;
+      usageRange = usageSince || usageUntil ? "custom" : "month";
+      loadUsage();
+    });
+    fromWrap.append(fromCap, fromInput);
+    const toWrap = document.createElement("label");
+    toWrap.className = "usage-filter";
+    const toCap = document.createElement("span");
+    toCap.textContent = t("usage_filter_to");
+    const toInput = document.createElement("input");
+    toInput.type = "date";
+    toInput.className = "usage-filter-to";
+    toInput.addEventListener("change", () => {
+      usageUntil = toInput.value;
+      usageRange = usageSince || usageUntil ? "custom" : "month";
+      loadUsage();
+    });
+    toWrap.append(toCap, toInput);
+    wrap.append(fromWrap, toWrap);
+    return [wrap];
+  }
+
+  function usageDateHost() {
+    return usageRangeEl || usageFiltersEl;
+  }
+
+  function usageFiltersNeedRebuild() {
+    const host = usageDateHost();
+    if (!usageFiltersEl?.childElementCount) return true;
+    const wantPicker = haHas("ha-date-range-nav") || haHas("ha-date-range-picker");
+    const hasPicker = Boolean(host?.querySelector("ha-date-range-nav, ha-date-range-picker"));
+    const wantSelect = canUseHaSelect();
+    const hasSelect = Boolean(usageFiltersEl.querySelector("ha-select"));
+    const hasChat = Boolean(usageFiltersEl.querySelector(".usage-filter-chat"));
+    return wantPicker !== hasPicker || wantSelect !== hasSelect || !hasChat;
+  }
+
+  function syncUsageDateFilter() {
+    const host = usageDateHost();
+    const picker = host?.querySelector("ha-date-range-nav, ha-date-range-picker");
+    if (picker) {
+      const { start, end } = usageCurrentRange();
+      if (picker.startDate?.getTime?.() === start.getTime() && picker.endDate?.getTime?.() === end.getTime()) {
+        return;
+      }
+      usagePickerQuiet = true;
+      picker.startDate = start;
+      picker.endDate = end;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          usagePickerQuiet = false;
+        });
+      });
+      return;
+    }
+    const fromInput = host?.querySelector(".usage-filter-from");
+    const toInput = host?.querySelector(".usage-filter-to");
+    if (fromInput) fromInput.value = usageSince;
+    if (toInput) toInput.value = usageUntil;
+  }
+
+  function renderUsageFilters(body) {
+    if (!usageFiltersEl) return;
+    const filters = body?.filters || {};
+    if (usageFiltersNeedRebuild()) {
+      usageFiltersEl.replaceChildren();
+      const host = usageDateHost();
+      host?.querySelectorAll("ha-date-range-nav, ha-date-range-picker, .usage-native-dates").forEach((el) => el.remove());
+      usageFiltersEl.append(
+        createUsageSelect("usage-filter-agent", t("usage_filter_agent"), (value) => {
+          if (usageSelectQuiet) return;
+          const next = usageSelectValue(value);
+          if (next === usageAgent) return;
+          usageAgent = next;
+          usageModel = "";
+          loadUsage();
+        }),
+        createUsageSelect("usage-filter-model", t("usage_filter_model"), (value) => {
+          if (usageSelectQuiet) return;
+          const next = usageSelectValue(value);
+          if (next === usageModel) return;
+          usageModel = next;
+          loadUsage();
+        }),
+        createUsageSelect("usage-filter-chat", t("usage_filter_chat"), (value) => {
+          if (usageSelectQuiet) return;
+          const next = usageSelectValue(value);
+          if (next === usageChat) return;
+          usageChat = next;
+          loadUsage();
+        }),
+      );
+      host?.append(...createUsageDateFilter());
+    }
+    const chats = Array.isArray(filters.chats) ? filters.chats : [];
+    if (usageChat && !chats.some((row) => String(row.id || row) === usageChat)) {
+      usageChat = "";
+      loadUsage();
+      return;
+    }
+    fillUsageSelect(usageFilterSelectEl("usage-filter-agent"), Array.isArray(filters.agents) ? filters.agents : [], usageAgent);
+    fillUsageSelect(usageFilterSelectEl("usage-filter-model"), Array.isArray(filters.models) ? filters.models : [], usageModel);
+    fillUsageSelect(usageFilterSelectEl("usage-filter-chat"), chats, usageChat);
+    syncUsageDateFilter();
+  }
+
+  async function loadUsage() {
+    if (!usageList) return;
+    const gen = ++usageLoadGen;
+    const stale = () => gen !== usageLoadGen;
+    await ensureHaComponents(["ha-select", "ha-date-range-nav", "ha-date-range-picker"]);
+    if (stale()) return;
+    renderUsageRange(usageRange);
+    const query = new URLSearchParams({ range: usageRange });
+    if (usageChat) query.set("session_id", usageChat);
+    if (usageAgent) query.set("agent_id", usageAgent);
+    if (usageModel) query.set("model", usageModel);
+    if (usageSince) query.set("since", usageSince);
+    if (usageUntil) query.set("until", usageUntil);
+    const resp = await apiFetch(`${API}/usage?${query}`);
+    if (stale()) return;
+    if (!resp || !resp.ok) {
+      renderUsageFilters();
+      if (stale()) return;
+      const note = document.createElement("p");
+      note.className = "usage-empty";
+      note.textContent = t("usage_empty");
+      usageList.replaceChildren(note);
+      return;
+    }
+    const body = await resp.json();
+    if (stale()) return;
+    renderUsageFilters(body);
+    if (stale()) return;
+    const frag = document.createDocumentFragment();
+    if (body.enabled === false) {
+      const note = document.createElement("p");
+      note.className = "usage-empty";
+      note.textContent = t("usage_disabled");
+      frag.appendChild(note);
+      if (stale()) return;
+      usageList.replaceChildren(frag);
+      return;
+    }
+    const grid = document.createElement("div");
+    grid.className = "usage-grid";
+    if (body.range === "custom" && body.totals?.selected) {
+      grid.append(metricCard(t("usage_selected"), body.totals.selected));
+    }
+    grid.append(
+      metricCard(t("usage_today"), body.totals?.today),
+      metricCard(t("usage_month"), body.totals?.month),
+      metricCard(t("usage_all"), body.totals?.all),
+    );
+    frag.appendChild(grid);
+    if (body.tts?.today?.turns || body.tts?.all?.turns) {
+      frag.appendChild(metricCard(t("usage_tts"), body.tts.today, "tts"));
+    }
+    const kpis = body.kpis || {};
+    if (kpis.most_spend || kpis.most_used || kpis.most_efficient || kpis.leanest) {
+      const heading = document.createElement("p");
+      heading.className = "usage-heading";
+      heading.textContent = t("usage_compare");
+      frag.appendChild(heading);
+      const kpiGrid = document.createElement("div");
+      kpiGrid.className = "usage-kpis";
+      if (kpis.most_spend) kpiGrid.appendChild(kpiCard(t("usage_kpi_spend"), kpis.most_spend));
+      if (kpis.most_used) kpiGrid.appendChild(kpiCard(t("usage_kpi_used"), kpis.most_used));
+      if (kpis.most_efficient) kpiGrid.appendChild(kpiCard(t("usage_kpi_efficient"), kpis.most_efficient));
+      if (kpis.leanest) kpiGrid.appendChild(kpiCard(t("usage_kpi_lean"), kpis.leanest));
+      frag.appendChild(kpiGrid);
+    }
+    const days = Array.isArray(body.days) ? body.days : [];
+    if (days.length) {
+      const chartsHead = document.createElement("p");
+      chartsHead.className = "usage-heading";
+      const from = body.filters?.since || "";
+      const to = body.filters?.until || "";
+      if (body.range === "custom" && from && to) chartsHead.textContent = t("usage_days_range", { from, to });
+      else if (body.range === "custom" && from) chartsHead.textContent = t("usage_days_from", { from });
+      else if (body.range === "custom" && to) chartsHead.textContent = t("usage_days_until", { to });
+      else chartsHead.textContent = t("usage_days");
+      frag.appendChild(chartsHead);
+      const charts = document.createElement("div");
+      charts.className = "usage-charts";
+      charts.append(
+        usageChart(t("usage_chart_cost"), days, "cost_usd", (value) => money(value)),
+        usageChart(t("usage_chart_tokens"), days, "total_tokens", (value) => tokenLabel(value)),
+      );
+      frag.appendChild(charts);
+    }
+    const models = Array.isArray(body.models) ? body.models : [];
+    if (models.length) {
+      const heading = document.createElement("p");
+      heading.className = "usage-heading";
+      heading.textContent = t("usage_models");
+      frag.appendChild(heading);
+      frag.appendChild(modelTable(models));
+    }
+    const agents = Array.isArray(body.agents) ? body.agents : [];
+    if (agents.length) {
+      const heading = document.createElement("p");
+      heading.className = "usage-heading";
+      heading.textContent = t("usage_agents");
+      frag.appendChild(heading);
+      for (const agent of agents) {
+        const row = document.createElement("article");
+        row.className = "usage-agent";
+        const name = document.createElement("p");
+        name.className = "usage-agent-name";
+        name.textContent = agent.title || agent.id || t("agent");
+        const today = document.createElement("p");
+        today.className = "usage-agent-today";
+        today.textContent = `${t("usage_today")}: ${usageLine(agent.today)}`;
+        const all = document.createElement("p");
+        all.className = "usage-agent-all";
+        all.textContent = `${t("usage_all")}: ${usageLine(agent.all)}`;
+        row.append(name, today, all);
+        frag.appendChild(row);
+      }
+    }
+    if (!body.totals?.all?.turns) {
+      const note = document.createElement("p");
+      note.className = "usage-empty";
+      note.textContent = t("usage_empty");
+      frag.appendChild(note);
+    }
+    const hint = document.createElement("p");
+    hint.className = "usage-hint";
+    hint.textContent = t("usage_ha_hint");
+    frag.appendChild(hint);
+    if (stale()) return;
+    usageList.replaceChildren(frag);
+  }
+
+  function syncUsageButtons(open) {
+    root.querySelectorAll(".usage-open").forEach((btn) => {
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+      if (open) btn.setAttribute("aria-current", "page");
+      else btn.removeAttribute("aria-current");
+    });
+  }
+
+  function usageIsOpen() {
+    return wrap.classList.contains("usage-open") || Boolean(usageEl && !usageEl.hidden && !wrap.classList.contains("page-usage"));
+  }
+
+  function usageIsVisible() {
+    return wrap.classList.contains("page-usage") || usageIsOpen();
+  }
+
+  function closeUsageOverlay() {
+    wrap.classList.remove("usage-open");
+    if (wrap.classList.contains("page-usage")) return;
+    syncUsageButtons(false);
+    if (!usageEl) return;
+    usageEl.setAttribute("aria-hidden", "true");
+    const hide = (event) => {
+      if (event && event.target !== usageEl) return;
+      if (event && event.propertyName && event.propertyName !== "transform") return;
+      if (!wrap.classList.contains("usage-open") && !wrap.classList.contains("page-usage")) usageEl.hidden = true;
+    };
+    if (usageEl.hidden) return;
+    usageEl.addEventListener("transitionend", hide, { once: true });
+    window.setTimeout(() => hide(), 320);
+  }
+
+  function openUsageOverlay() {
+    if (!usageEl) return;
+    closeHistory();
+    usageEl.hidden = false;
+    usageEl.setAttribute("aria-hidden", "false");
+    syncUsageButtons(true);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => wrap.classList.add("usage-open"));
+    });
+    loadUsage();
+  }
+
+  function openUsagePage() {
+    closeHistory();
+    closeNavIfOverlay();
+    const already = wrap.classList.contains("page-usage") && Boolean(usageEl) && !usageEl.hidden;
+    wrap.classList.add("page-usage");
+    wrap.classList.remove("usage-open");
+    if (usageEl) {
+      usageEl.hidden = false;
+      usageEl.setAttribute("aria-hidden", "false");
+    }
+    syncUsageButtons(true);
+    if (!already) loadUsage();
+  }
+
+  function closeUsagePage() {
+    if (!wrap.classList.contains("page-usage")) return;
+    wrap.classList.remove("page-usage");
+    syncUsageButtons(false);
+    if (!usageEl) return;
+    usageEl.hidden = true;
+    usageEl.setAttribute("aria-hidden", "true");
+  }
+
+  function leaveUsage() {
+    if (routed) goToSession(sessionId || "");
+    else closeUsageOverlay();
+  }
+
+  function goToUsage() {
+    if (wrap.classList.contains("page-usage") || (!routed && typeof navigate === "function" && location.pathname.replace(/\/$/, "") === usagePath())) {
+      return;
+    }
+    if (routed || typeof navigate === "function") {
+      const path = usagePath();
+      if (typeof navigate === "function") navigate(path);
+      else {
+        history.pushState(null, "", path);
+        window.dispatchEvent(new CustomEvent("location-changed"));
+      }
+      return;
+    }
+    if (usageIsOpen()) closeUsageOverlay();
+    else openUsageOverlay();
+  }
+
+  root.querySelectorAll(".usage-open").forEach((btn) => {
+    btn.setAttribute("aria-expanded", "false");
+    btn.addEventListener("click", (event) => {
+      event.preventDefault();
+      goToUsage();
+    });
+  });
+  root.querySelector(".usage-close")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    leaveUsage();
+  });
+
   root.querySelectorAll(".nav-toggle").forEach((btn) => {
     btn.addEventListener("click", (event) => {
       event.preventDefault();
@@ -4065,6 +5043,14 @@ export async function mountAiWorkspace(root, options = {}) {
     if (event.key !== "Escape") return;
     if (wrap.classList.contains("history-open")) {
       closeHistory();
+      return;
+    }
+    if (wrap.classList.contains("page-usage")) {
+      leaveUsage();
+      return;
+    }
+    if (wrap.classList.contains("usage-open")) {
+      closeUsageOverlay();
       return;
     }
     if (root.querySelector("ha-dialog[open]")) return;
@@ -4106,10 +5092,15 @@ export async function mountAiWorkspace(root, options = {}) {
 
   loadProviders();
   loadDictate();
+  const startRoute = compact || !routed ? { view: "chat", sessionId: "" } : workspaceRoute();
   const startId =
     options.restoreSessionId ||
-    (compact ? localStorage.getItem("ai_workspace_session") || "" : sessionIdFromPath());
-  if (startId) openSession(startId, true);
+    (compact ? localStorage.getItem("ai_workspace_session") || "" : startRoute.sessionId);
+  if (!compact && routed && startRoute.view === "usage") {
+    showEmpty();
+    loadSessions();
+    openUsagePage();
+  } else if (startId) openSession(startId, true);
   else {
     showEmpty();
     loadSessions();

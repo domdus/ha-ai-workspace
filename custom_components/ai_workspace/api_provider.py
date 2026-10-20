@@ -28,6 +28,17 @@ from .const import (
     workspace_system_prompt,
     DOMAIN,
     LOW_TOKEN_PROMPT,
+    LOW_TOKEN_MEDIUM_PROMPT,
+    TOKEN_MODE_EXTREME,
+    TOKEN_MODE_MEDIUM,
+    TOKEN_MODE_OFF,
+    settings_token_mode,
+    token_mode_allows_files,
+    token_mode_allows_tools,
+    token_mode_checks_house,
+    token_mode_clip_user,
+    token_mode_history_limit,
+    token_mode_reply_limit,
     EFFORT_FAST,
     EFFORT_HIGH,
     EFFORT_HIGH_FAST,
@@ -56,6 +67,7 @@ from .store import Session, Store
 from .titles import clean_title, title_prompt
 from .mcp_observe import note_mcp_result
 from .tool_result import shorten_tool_result
+from .usage_cost import TokenUsage, estimate_cost, parse_usage, usage_payload
 
 logger = logging.getLogger(__name__)
 
@@ -77,13 +89,13 @@ _BPS_NOTE = (
     " Call ha_get_skill_guide and pass its acknowledgment key as BestPracticeKey. Do not ask the user."
 )
 _HISTORY_MAX = 12
-_LOW_TOKEN_CHARS = 1200
-_LOW_TOKEN_REPLY = 256
 _PROPS_MAX = 16
 _WAIT = re.compile(r"try again in ([\d.]+)\s*(ms|s)", re.I)
 _ANTHROPIC_VERSION = "2023-06-01"
 _REASONING_EFFORT = {API_OPENAI, API_AZURE, API_GEMINI, API_XAI}
 _EFFORT_KEYS = ("reasoning_effort", "reasoning", "output_config")
+_CACHE_BODY_KEYS = ("cache_control", "prompt_cache_key", "prompt_cache_options", "prompt_cache_retention")
+_CACHE_MARK = {"type": "ephemeral"}
 _MCP_TTL = 600.0
 _MCP_CACHE_MAX = 32
 _MCP_CACHE = f"{DOMAIN}_mcp_cache"
@@ -141,6 +153,8 @@ def _retry_wait(resp, text: str) -> float | None:
         return min(value + 0.05, 5.0)
     if resp.status == 429:
         return 0.5
+    if resp.status == 503:
+        return 1.0
     return None
 
 
@@ -395,6 +409,82 @@ def _openai_tools(mcp_tools: list[dict]) -> list[dict]:
     return out
 
 
+def _mark_last_tool(tools: list[dict]) -> list[dict]:
+    if not tools:
+        return tools
+    out = [dict(item) for item in tools]
+    out[-1] = {**out[-1], "cache_control": dict(_CACHE_MARK)}
+    return out
+
+
+def _cached_text_block(text: str) -> dict[str, Any]:
+    return {"type": "text", "text": text, "cache_control": dict(_CACHE_MARK)}
+
+
+def _openai_output_limit_key(model: str) -> str:
+    """GPT-5 / o-series Chat Completions reject max_tokens."""
+    ident = str(model or "").rsplit("/", 1)[-1].lower().strip()
+    if ident.startswith(("gpt-5", "gpt-6", "o1", "o3", "o4", "codex")):
+        return "max_completion_tokens"
+    return "max_tokens"
+
+
+def _apply_openai_reply_limit(payload: dict[str, Any], model: str, limit: int | None) -> None:
+    """Cap visible length on classic Chat Completions. Skip GPT-5 / o-series:
+
+    Those models count hidden reasoning against max_completion_tokens, so a
+    256/1024 brevity cap finishes the turn with tools billed and no text.
+    """
+    if not limit:
+        return
+    key = _openai_output_limit_key(model)
+    if key == "max_completion_tokens":
+        return
+    payload[key] = limit
+
+
+def _rewrite_output_limit(body: dict, text: str) -> bool:
+    """Swap max_tokens / max_completion_tokens when the model names the other one."""
+    low = text.lower()
+    if "max_tokens" in body and "max_completion_tokens" in low:
+        body["max_completion_tokens"] = body.pop("max_tokens")
+        return True
+    if "max_completion_tokens" in body and (
+        "unknown" in low or "unsupported" in low or "unrecognized" in low or "not supported" in low
+    ) and "use 'max_completion_tokens'" not in low and "use max_completion_tokens" not in low:
+        body["max_tokens"] = body.pop("max_completion_tokens")
+        return True
+    return False
+
+
+def _strip_prompt_cache(body: dict) -> bool:
+    """Drop cache markers in place. True when something was removed."""
+    changed = False
+    for key in _CACHE_BODY_KEYS:
+        if key in body:
+            body.pop(key)
+            changed = True
+    tools = body.get("tools")
+    if isinstance(tools, list):
+        for tool in tools:
+            if isinstance(tool, dict) and tool.pop("cache_control", None) is not None:
+                changed = True
+    system = body.get("system")
+    if isinstance(system, list):
+        for block in system:
+            if isinstance(block, dict) and block.pop("cache_control", None) is not None:
+                changed = True
+    for message in body.get("messages") or []:
+        if not isinstance(message, dict):
+            continue
+        content = message.get("content")
+        if isinstance(content, list):
+            for part in content:
+                if isinstance(part, dict) and part.pop("cache_control", None) is not None:
+                    changed = True
+    return changed
+
+
 def _anthropic_tools(mcp_tools: list[dict]) -> list[dict]:
     out = []
     for tool in _slim_mcp_tools(mcp_tools):
@@ -424,7 +514,9 @@ def _failed_reply(row) -> bool:
     return not content or content in errors
 
 
-def _history_messages(rows) -> list[dict[str, str]]:
+def _history_messages(rows, limit: int = _HISTORY_MAX) -> list[dict[str, str]]:
+    if limit <= 0:
+        return []
     messages = []
     for row in rows:
         if row.role not in {"user", "assistant"} or _failed_reply(row):
@@ -435,8 +527,8 @@ def _history_messages(rows) -> list[dict[str, str]]:
         messages.append({"role": row.role, "content": content})
     if messages and messages[-1]["role"] == "user":
         messages = messages[:-1]
-    if len(messages) > _HISTORY_MAX:
-        messages = messages[-_HISTORY_MAX:]
+    if len(messages) > limit:
+        messages = messages[-limit:]
     return messages
 
 
@@ -482,6 +574,7 @@ class ApiProvider:
         self._stream = True
         self._effort = True
         self._force = True
+        self._prompt_cache = True
         reason = None
         needs_key = settings.api_provider not in {API_OLLAMA, API_COMPATIBLE}
         if needs_key and not settings.api_key:
@@ -565,16 +658,62 @@ class ApiProvider:
             return model
         return default_api_model(self.settings.api_provider)
 
+    def _token_mode(self) -> str:
+        return settings_token_mode(self.settings)
+
+    def _wants_prompt_cache(self) -> bool:
+        return (
+            bool(self._prompt_cache)
+            and bool(getattr(self.settings, "prompt_cache", True))
+            and self.settings.api_provider != API_OLLAMA
+        )
+
+    def _prompt_cache_key(self) -> str:
+        agent = str(getattr(self.settings, "agent_id", "") or self.settings.api_provider)
+        return f"ai-workspace:{agent}:{self.settings.api_provider}"
+
+    def _apply_prompt_cache(self, payload: dict[str, Any]) -> dict[str, Any]:
+        if not self._wants_prompt_cache():
+            return payload
+        provider = self.settings.api_provider
+        if provider == API_ANTHROPIC:
+            payload["cache_control"] = dict(_CACHE_MARK)
+            system = payload.get("system")
+            if isinstance(system, str) and system.strip():
+                payload["system"] = [_cached_text_block(system)]
+            if payload.get("tools"):
+                payload["tools"] = _mark_last_tool(payload["tools"])
+            return payload
+        payload["prompt_cache_key"] = self._prompt_cache_key()
+        if provider == API_OPENROUTER:
+            if payload.get("tools"):
+                payload["tools"] = _mark_last_tool(payload["tools"])
+            messages = payload.get("messages")
+            if isinstance(messages, list) and messages:
+                first = messages[0]
+                if isinstance(first, dict) and first.get("role") == "system" and isinstance(first.get("content"), str):
+                    messages[0] = {"role": "system", "content": [_cached_text_block(first["content"])]}
+        return payload
+
     def _system(self, origin: str = "", language: str = "", admin: bool = True) -> str:
-        if self.settings.low_token:
+        mode = self._token_mode()
+        if mode == TOKEN_MODE_EXTREME:
             return with_language_rule(LOW_TOKEN_PROMPT, language)
+        if mode == TOKEN_MODE_MEDIUM:
+            text = f"{LOW_TOKEN_MEDIUM_PROMPT}\n\n{ui_link_instructions(origin)}"
+            return with_language_rule(text, language)
         identity = _IDENTITY.format(label=self._label(), model=self._model())
         body = workspace_system_prompt(self.settings, admin=admin)
         text = f"{identity}\n\n{body}\n\n{ui_link_instructions(origin)}\n\n{BPS_KEY_INSTRUCTIONS}"
         return with_language_rule(text, language)
 
     def _public(self, exc: BaseException) -> str:
-        return redact(str(exc), [self.settings.api_key, self.settings.cursor_api_key, self.settings.mcp_token])
+        text = str(exc).strip()
+        if isinstance(exc, TimeoutError) and not text:
+            return "The provider did not answer in time. Try again, or pick a faster model."
+        if not text:
+            text = type(exc).__name__
+        return redact(text, [self.settings.api_key, self.settings.cursor_api_key, self.settings.mcp_token])
 
     def _servers(self, access_token: str, admin: bool) -> dict[str, dict[str, Any]]:
         if admin:
@@ -667,16 +806,21 @@ class ApiProvider:
             yield {"type": "error", "message": self.info.reason}
             return
         http = self._http()
+        mode = self._token_mode()
+        clip = token_mode_clip_user(mode)
+        if clip:
+            message = _clip(message, clip)
+        if not token_mode_allows_files(mode):
+            pictures = []
         use_tools = (wants_house_tools(message) if tools is None else bool(tools)) or bool(pictures)
         history = []
         bundle = McpBundle()
-        if self.settings.low_token:
-            message = _clip(message, _LOW_TOKEN_CHARS)
-            pictures = []
-        else:
-            history = await self.hass.async_add_executor_job(self.store.list_messages, session.id)
+        hist_limit = token_mode_history_limit(mode)
+        if hist_limit and self.hass is not None and self.store is not None:
+            rows = await self.hass.async_add_executor_job(self.store.list_messages, session.id)
+            history = _history_messages(rows, hist_limit)
         yield {"type": "status", "text": "Working"}
-        if use_tools and not self.settings.low_token:
+        if use_tools and token_mode_allows_tools(mode):
             bundle, skipped, first_error = await self._open_tools(http, str(access_token or ""), admin)
             if skipped and not bundle.names:
                 yield {"type": "error", "message": first_error}
@@ -684,17 +828,18 @@ class ApiProvider:
             if skipped:
                 yield {"type": "status", "text": f"Not reachable, continuing without: {', '.join(skipped)}"}
         logger.info(
-            "api chat provider=%s model=%s mcp=%s tools=%s low_token=%s",
+            "api chat provider=%s model=%s mcp=%s tools=%s token_mode=%s prompt_cache=%s",
             self.settings.api_provider,
             self._model(),
             ", ".join(bundle.names) or "none",
             len(bundle.tools),
-            int(self.settings.low_token),
+            mode,
+            int(self._wants_prompt_cache()),
         )
         if bundle.tools:
             logger.debug("MCP OpenAI tool names: %s", ", ".join(tool["name"] for tool in bundle.tools))
         loop = self._anthropic if self.settings.api_provider == API_ANTHROPIC else self._openai
-        force = bool(force_tools) and self.settings.check_house and not pictures and not self.settings.low_token
+        force = bool(force_tools) and token_mode_checks_house(mode, self.settings.check_house) and not pictures
         try:
             async for event in loop(
                 http, history, message, bundle, origin, pictures, language, admin, force, on_tool
@@ -705,7 +850,7 @@ class ApiProvider:
             yield {"type": "error", "message": self._public(exc)}
 
     async def suggest_title(self, user: str, assistant: str = "") -> str | None:
-        if not self.info.available or self.settings.low_token:
+        if not self.info.available or self._token_mode() != TOKEN_MODE_OFF:
             return None
         prompt = title_prompt(user, assistant)
         system = "You write short chat titles. Reply with the title only."
@@ -728,13 +873,15 @@ class ApiProvider:
                 blocks = data.get("content") or []
                 raw = "".join(str(b.get("text") or "") for b in blocks if b.get("type") == "text")
             else:
+                limit_key = _openai_output_limit_key(self._model())
+                title_limit = 256 if limit_key == "max_completion_tokens" else 32
                 data = await self._post(
                     http,
                     self._chat_url(),
                     self._auth_headers(),
                     {
                         "model": self._model(),
-                        "max_tokens": 32,
+                        limit_key: title_limit,
                         "messages": [
                             {"role": "system", "content": system},
                             {"role": "user", "content": prompt},
@@ -763,17 +910,19 @@ class ApiProvider:
         on_tool: Callable | None = None,
     ) -> AsyncIterator[dict]:
         messages: list[dict[str, Any]] = [{"role": "system", "content": self._system(origin, language, admin)}]
-        messages.extend(_history_messages(history))
+        messages.extend(history)
         messages.append({"role": "user", "content": openai_user_content(message, images)})
         tools = _openai_tools(mcp.tools)
         url = self._chat_url()
         headers = self._auth_headers()
         said: list[str] = []
+        usage = TokenUsage(model=self._model())
+        reply_limit = token_mode_reply_limit(self._token_mode())
         for round_no in range(_MAX_ROUNDS + 1):
             last = round_no == _MAX_ROUNDS
             payload: dict[str, Any] = {"model": self._model(), "messages": messages}
-            if self.settings.low_token:
-                payload["max_tokens"] = _LOW_TOKEN_REPLY
+            if reply_limit:
+                _apply_openai_reply_limit(payload, self._model(), reply_limit)
             else:
                 self._effort_body(payload)
             if tools:
@@ -785,9 +934,13 @@ class ApiProvider:
                         payload["tool_choice"] = "required"
                     if self.settings.api_provider == API_OPENAI:
                         payload["parallel_tool_calls"] = False
+            payload = self._apply_prompt_cache(payload)
             reply: dict[str, Any] = {}
             gap = bool(said)
             async for kind, value in self._openai_round(http, url, headers, payload):
+                if kind == "usage":
+                    usage = usage.add(value)
+                    continue
                 if kind == "message":
                     reply = value
                     continue
@@ -818,8 +971,18 @@ class ApiProvider:
                 continue
             break
         text = "".join(said).strip()
-        if not text and last:
-            yield {"type": "error", "message": "The model kept calling tools without finishing."}
+        billed = estimate_cost(usage, model=self._model())
+        if not billed.empty():
+            yield usage_payload(billed)
+        if not text:
+            yield {
+                "type": "error",
+                "message": (
+                    "The model kept calling tools without finishing."
+                    if last
+                    else "The model finished without a reply. Try sending again."
+                ),
+            }
             return
         yield {"type": "result", "text": text, "status": "finished"}
 
@@ -839,15 +1002,19 @@ class ApiProvider:
         content = str(reply.get("content") or "")
         if content:
             yield "text", content
+        piece = parse_usage(data, model=self._model())
+        if not piece.empty():
+            yield "usage", piece
         yield "message", reply
 
     async def _openai_stream(
         self, http: ClientSession, url: str, headers: dict, payload: dict
     ) -> AsyncIterator[tuple[str, Any]]:
-        body = {**payload, "stream": True}
+        body = {**payload, "stream": True, "stream_options": {"include_usage": True}}
         resp = await self._open(http, url, headers, body, stream=True)
         parts: list[str] = []
         calls: dict[int, dict[str, Any]] = {}
+        usage = TokenUsage(model=self._model())
         try:
             async for _event, raw in _sse(resp):
                 if raw == "[DONE]":
@@ -860,6 +1027,9 @@ class ApiProvider:
                     continue
                 if chunk.get("error"):
                     raise ApiError(resp.status, _friendly_api_error(resp.status, raw))
+                piece = parse_usage(chunk, model=self._model())
+                if not piece.empty():
+                    usage = usage.add(piece)
                 for choice in chunk.get("choices") or []:
                     delta = choice.get("delta") or {}
                     text = delta.get("content")
@@ -887,6 +1057,8 @@ class ApiProvider:
             for number, call in enumerate(ordered):
                 call["id"] = call["id"] or f"call_{number}"
             reply["tool_calls"] = ordered
+        if not usage.empty():
+            yield "usage", usage
         yield "message", reply
 
     async def _anthropic(
@@ -902,21 +1074,24 @@ class ApiProvider:
         force: bool = False,
         on_tool: Callable | None = None,
     ) -> AsyncIterator[dict]:
-        messages: list[dict[str, Any]] = list(_history_messages(history))
+        messages: list[dict[str, Any]] = list(history)
         messages.append({"role": "user", "content": anthropic_user_content(message, images)})
         tools = _anthropic_tools(mcp.tools)
         url = f"{self._base()}/messages"
         headers = self._anthropic_headers()
         said: list[str] = []
+        usage = TokenUsage(model=self._model())
+        mode = self._token_mode()
+        reply_limit = token_mode_reply_limit(mode) or 4096
         for round_no in range(_MAX_ROUNDS + 1):
             last = round_no == _MAX_ROUNDS
             payload: dict[str, Any] = {
                 "model": self._model(),
-                "max_tokens": _LOW_TOKEN_REPLY if self.settings.low_token else 4096,
+                "max_tokens": reply_limit,
                 "system": self._system(origin, language, admin),
                 "messages": messages,
             }
-            if not self.settings.low_token:
+            if token_mode_reply_limit(mode) is None:
                 self._effort_body(payload)
             if tools:
                 payload["tools"] = tools
@@ -924,9 +1099,13 @@ class ApiProvider:
                     payload["tool_choice"] = {"type": "none"}
                 elif round_no == 0 and force and self._force:
                     payload["tool_choice"] = {"type": "any"}
+            payload = self._apply_prompt_cache(payload)
             blocks: list[dict] = []
             gap = bool(said)
             async for kind, value in self._anthropic_round(http, url, headers, payload):
+                if kind == "usage":
+                    usage = usage.add(value)
+                    continue
                 if kind == "message":
                     blocks = value
                     continue
@@ -955,8 +1134,18 @@ class ApiProvider:
                 continue
             break
         text = "".join(said).strip()
-        if not text and last:
-            yield {"type": "error", "message": "The model kept calling tools without finishing."}
+        billed = estimate_cost(usage, model=self._model())
+        if not billed.empty():
+            yield usage_payload(billed)
+        if not text:
+            yield {
+                "type": "error",
+                "message": (
+                    "The model kept calling tools without finishing."
+                    if last
+                    else "The model finished without a reply. Try sending again."
+                ),
+            }
             return
         yield {"type": "result", "text": text, "status": "finished"}
 
@@ -975,6 +1164,9 @@ class ApiProvider:
         for block in blocks:
             if block.get("type") == "text" and block.get("text"):
                 yield "text", str(block["text"])
+        piece = parse_usage(data, model=self._model())
+        if not piece.empty():
+            yield "usage", piece
         yield "message", blocks
 
     async def _anthropic_stream(
@@ -983,6 +1175,7 @@ class ApiProvider:
         resp = await self._open(http, url, headers, {**payload, "stream": True}, stream=True)
         blocks: dict[int, dict[str, Any]] = {}
         partial: dict[int, list[str]] = {}
+        usage = TokenUsage(model=self._model())
         try:
             async for event, raw in _sse(resp):
                 try:
@@ -1019,6 +1212,11 @@ class ApiProvider:
                             block["input"] = json.loads(raw_input) if raw_input else {}
                         except json.JSONDecodeError:
                             block["input"] = {}
+                elif kind in {"message_start", "message_delta"}:
+                    blob = data.get("usage") or (data.get("message") or {}).get("usage")
+                    piece = parse_usage(blob, model=self._model())
+                    if not piece.empty():
+                        usage = usage.add(piece)
                 elif kind == "error":
                     err = data.get("error") or {}
                     raise ApiError(resp.status, str(err.get("message") or "The model provider failed."))
@@ -1026,6 +1224,8 @@ class ApiProvider:
                     break
         finally:
             resp.release()
+        if not usage.empty():
+            yield "usage", usage
         yield "message", [blocks[index] for index in sorted(blocks)]
 
     async def _open(
@@ -1039,9 +1239,10 @@ class ApiProvider:
         attempts: int = 4,
         stream: bool = False,
     ) -> ClientResponse:
-        """A successful response; retries rate limits and drops effort the model refuses."""
+        """A successful response; retries 429/503 and drops effort the model refuses."""
         body = dict(payload)
         last = ""
+        last_status = 0
         retries = max(1, attempts)
         attempt = 0
         while attempt < retries:
@@ -1059,11 +1260,13 @@ class ApiProvider:
             text = await resp.text()
             resp.release()
             last = text
+            last_status = resp.status
             low = text.lower()
-            if resp.status == 429:
+            if resp.status in {429, 503}:
                 wait = _retry_wait(resp, text)
                 if wait is not None and attempt < retries:
-                    logger.warning("api rate limited, retry in %.2fs", wait)
+                    why = "rate limited" if resp.status == 429 else "unavailable"
+                    logger.warning("api %s, retry in %.2fs", why, wait)
                     await asyncio.sleep(wait)
                     continue
             if resp.status == 400 and any(key in body for key in _EFFORT_KEYS) and (
@@ -1083,10 +1286,27 @@ class ApiProvider:
                 body.pop("tool_choice", None)
                 attempt -= 1
                 continue
+            if resp.status in {400, 422} and (
+                "cache_control" in low or "prompt_cache" in low or "caching" in low
+            ) and _strip_prompt_cache(body):
+                logger.info("%s refused prompt cache; sending without it", self._label())
+                self._prompt_cache = False
+                attempt -= 1
+                continue
+            if resp.status in {400, 422} and _rewrite_output_limit(body, text):
+                logger.info("%s refused the output-length field; retrying with the one it asked for", self._label())
+                attempt -= 1
+                continue
+            if stream and resp.status in {400, 422} and body.get("stream_options") and (
+                "stream_options" in low or "include_usage" in low or "stream" in low
+            ):
+                body.pop("stream_options", None)
+                attempt -= 1
+                continue
             if stream and resp.status in {400, 404, 415, 422} and "stream" in low:
                 raise _StreamUnsupported
             raise ApiError(resp.status, _friendly_api_error(resp.status, text))
-        raise ApiError(429, _friendly_api_error(429, last))
+        raise ApiError(last_status or 429, _friendly_api_error(last_status or 429, last))
 
     async def _post(
         self,

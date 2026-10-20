@@ -72,6 +72,22 @@ def test_rewrite_loopback_mcp_url(monkeypatch: pytest.MonkeyPatch) -> None:
     assert rewrite_loopback_url("http://ha-mcp:8086/mcp") == "http://ha-mcp:8086/mcp"
 
 
+def test_runtime_callback_rewrites_loopback(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.mcp_proxy import runtime_callback_base
+
+    monkeypatch.delenv("REWRITE_LOOPBACK_HOST", raising=False)
+    monkeypatch.setenv("HOST", "0.0.0.0")
+    assert runtime_callback_base("http://127.0.0.1:8123") == "http://homeassistant:8123"
+    monkeypatch.setenv("REWRITE_LOOPBACK_HOST", "host.docker.internal")
+    assert runtime_callback_base("http://127.0.0.1:8123") == "http://host.docker.internal:8123"
+    monkeypatch.delenv("REWRITE_LOOPBACK_HOST", raising=False)
+    monkeypatch.setenv("HOST", "127.0.0.1")
+    assert runtime_callback_base("http://homeassistant:8123") == "http://127.0.0.1:8123"
+    assert runtime_callback_base("http://127.0.0.1:8123") == "http://127.0.0.1:8123"
+    monkeypatch.setenv("HOST", "0.0.0.0")
+    assert runtime_callback_base("http://homeassistant:8123") == "http://homeassistant:8123"
+
+
 def test_loopback_request_keeps_reachable_file_server() -> None:
     file_servers = {"ha-mcp": {"type": "http", "url": "http://ha-mcp:8086/mcp"}}
     request = servers_from_chat_mcp(

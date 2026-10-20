@@ -7,6 +7,7 @@ import hashlib
 import hmac
 import json
 import logging
+import os
 import secrets
 import urllib.error
 import urllib.request
@@ -89,15 +90,36 @@ class McpProxy:
 def parse_tool_call(body: bytes) -> tuple[str, dict[str, Any]] | None:
     """Return the tool name and arguments when this MCP body is a tools/call."""
     raw = (body or b"").strip()
-    if not raw or not raw.startswith(b"{"):
+    if not raw:
         return None
-    try:
-        payload = json.loads(raw)
-    except json.JSONDecodeError:
+    payload: Any
+    if raw.startswith(b"{") or raw.startswith(b"["):
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError:
+            return None
+    else:
+        payload = None
+        for chunk in _json_messages(raw.decode("utf-8", "replace")):
+            try:
+                payload = json.loads(chunk)
+            except json.JSONDecodeError:
+                continue
+            break
+        if payload is None:
+            return None
+    messages = payload if isinstance(payload, list) else [payload]
+    for message in messages:
+        found = _tool_call_from_message(message)
+        if found is not None:
+            return found
+    return None
+
+
+def _tool_call_from_message(message: Any) -> tuple[str, dict[str, Any]] | None:
+    if not isinstance(message, dict) or message.get("method") != "tools/call":
         return None
-    if not isinstance(payload, dict) or payload.get("method") != "tools/call":
-        return None
-    params = payload.get("params") if isinstance(payload.get("params"), dict) else {}
+    params = message.get("params") if isinstance(message.get("params"), dict) else {}
     name = str(params.get("name") or "").strip()
     if not name:
         return None
@@ -269,13 +291,34 @@ def _is_builtin_mcp(url: str) -> bool:
     return path == "/api/mcp"
 
 
+def runtime_callback_base(hass_url: str, listen_host: str | None = None) -> str:
+    """Reach Core from this Runtime: loopback on host network, Docker DNS on a bridge."""
+    from urllib.parse import urlparse
+
+    from app.mcp_config import _LOOPBACK, rewrite_loopback_url
+
+    base = str(hass_url or "").rstrip("/")
+    listen = (listen_host if listen_host is not None else os.environ.get("HOST") or "0.0.0.0").strip() or "0.0.0.0"
+    on_loopback = listen.lower() in _LOOPBACK
+    name = (urlparse(base).hostname or "").lower()
+    if name in _LOOPBACK and not on_loopback:
+        target = (os.environ.get("REWRITE_LOOPBACK_HOST") or "homeassistant").strip()
+        return rewrite_loopback_url(base, target)
+    if name in {"homeassistant", "hass"} and on_loopback:
+        parsed = urlparse(base)
+        port = f":{parsed.port}" if parsed.port else ""
+        return f"{parsed.scheme or 'http'}://127.0.0.1{port}"
+    return rewrite_loopback_url(base)
+
+
 def _activity_target(request: Request) -> tuple[str, str]:
     settings = getattr(request.app.state, "settings", None)
     token = str(getattr(settings, "runtime_token", "") or "").strip()
     base = str(getattr(settings, "hass_url", "") or "").rstrip("/")
     if not base:
         base = _default_hass_url(_read_options()).rstrip("/")
-    return base, token
+    listen = str(getattr(settings, "host", "") or "")
+    return runtime_callback_base(base, listen), token
 
 
 def proxy_secret_path(data_dir: Path) -> Path:

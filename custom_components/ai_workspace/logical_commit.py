@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
+import logging
 import uuid
 from dataclasses import dataclass, field
 from typing import Any
@@ -12,6 +14,8 @@ from homeassistant.core import HomeAssistant
 from .const import DOMAIN
 
 _LOGICAL_KIND = "logical_commit"
+_ORPHAN_FLUSH_DELAY = 2.5
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -30,6 +34,11 @@ class LogicalCommit:
     session_id: str
     chat: str
     fragments: list[ActivityFragment] = field(default_factory=list)
+    events: list[tuple] = field(default_factory=list)
+    unsubs: list = field(default_factory=list)
+    dashboard_docs: dict[str, dict[str, Any]] = field(default_factory=dict)
+    orphan: bool = False
+    flush_unsub: Any = None
 
 
 def _bucket(hass: HomeAssistant) -> dict[tuple[str, str], LogicalCommit]:
@@ -41,6 +50,39 @@ def _bucket(hass: HomeAssistant) -> dict[tuple[str, str], LogicalCommit]:
     return pending
 
 
+def _key(user_id: str, session_id: str) -> tuple[str, str]:
+    return (str(user_id or "").strip(), str(session_id or "").strip())
+
+
+def turn_bucket(hass: HomeAssistant, user_id: str, session_id: str) -> LogicalCommit | None:
+    return _bucket(hass).get(_key(user_id, session_id))
+
+
+def _cancel_flush(row: LogicalCommit | None) -> None:
+    if row is None:
+        return
+    unsub = row.flush_unsub
+    row.flush_unsub = None
+    if unsub is None:
+        return
+    try:
+        unsub()
+    except Exception:
+        logger.debug("logical commit flush cancel failed", exc_info=True)
+
+
+def _release_turn(row: LogicalCommit | None) -> None:
+    if row is None:
+        return
+    _cancel_flush(row)
+    for unsub in row.unsubs:
+        try:
+            unsub()
+        except Exception:
+            logger.debug("logical commit listener unsubscribe failed", exc_info=True)
+    row.unsubs.clear()
+
+
 def begin_logical_commit(
     hass: HomeAssistant,
     user_id: str,
@@ -48,8 +90,11 @@ def begin_logical_commit(
     agent: str,
     session_id: str,
     chat: str = "",
+    *,
+    orphan: bool = False,
 ) -> str:
-    key = (str(user_id or "").strip(), str(session_id or "").strip())
+    key = _key(user_id, session_id)
+    _release_turn(_bucket(hass).pop(key, None))
     commit_id = uuid.uuid4().hex
     _bucket(hass)[key] = LogicalCommit(
         commit_id=commit_id,
@@ -58,14 +103,32 @@ def begin_logical_commit(
         agent=str(agent or "Agent").strip() or "Agent",
         session_id=key[1],
         chat=str(chat or "").strip()[:80],
+        orphan=orphan,
     )
     return commit_id
 
 
 def active_commit_id(hass: HomeAssistant, user_id: str, session_id: str) -> str:
-    key = (str(user_id or "").strip(), str(session_id or "").strip())
-    row = _bucket(hass).get(key)
+    row = turn_bucket(hass, user_id, session_id)
     return str(row.commit_id) if row else ""
+
+
+def _schedule_orphan_flush(hass: HomeAssistant, user_id: str, session_id: str) -> None:
+    row = turn_bucket(hass, user_id, session_id)
+    if row is None or not row.orphan:
+        return
+    _cancel_flush(row)
+    delay = getattr(hass, "async_call_later", None)
+    if not callable(delay):
+        return
+
+    async def _run(_now=None) -> None:
+        store = (hass.data.get(DOMAIN) or {}).get("store")
+        if store is None:
+            return
+        await flush_logical_commit(hass, store, user_id, session_id)
+
+    row.flush_unsub = delay(_ORPHAN_FLUSH_DELAY, _run)
 
 
 def queue_activity_fragment(
@@ -80,10 +143,21 @@ def queue_activity_fragment(
     tool: str,
     document: dict[str, Any] | None,
 ) -> bool:
-    key = (str(user_id or "").strip(), str(session_id or "").strip())
+    key = _key(user_id, session_id)
     bucket = _bucket(hass).get(key)
     if bucket is None:
-        return False
+        begin_logical_commit(
+            hass,
+            user_id,
+            user_name,
+            agent,
+            session_id,
+            chat,
+            orphan=True,
+        )
+        bucket = _bucket(hass).get(key)
+        if bucket is None:
+            return False
     if agent and bucket.agent in {"", "Agent"}:
         bucket.agent = str(agent).strip() or bucket.agent
     if chat and not bucket.chat:
@@ -95,6 +169,8 @@ def queue_activity_fragment(
             document=document if isinstance(document, dict) else None,
         )
     )
+    if bucket.orphan:
+        _schedule_orphan_flush(hass, user_id, session_id)
     return True
 
 
@@ -189,9 +265,21 @@ def restore_targets(document: str) -> list[tuple[str, str, str]]:
 
 
 async def flush_logical_commit(hass: HomeAssistant, store, user_id: str, session_id: str) -> None:
-    from .activity_ha import _write_change_file
+    from .activity_ha import _write_change_file, harvest_turn_changes, session_has_pending, unsub_turn
 
-    key = (str(user_id or "").strip(), str(session_id or "").strip())
+    key = _key(user_id, session_id)
+    bucket = _bucket(hass).get(key)
+    if bucket is None:
+        return
+    _cancel_flush(bucket)
+    if not bucket.fragments:
+        for _ in range(25):
+            if bucket.fragments or not session_has_pending(hass, session_id):
+                break
+            await asyncio.sleep(0.1)
+    if not bucket.fragments:
+        await harvest_turn_changes(hass, bucket)
+    unsub_turn(bucket)
     bucket = _bucket(hass).pop(key, None)
     if bucket is None or not bucket.fragments:
         return

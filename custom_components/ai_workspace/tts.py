@@ -1,7 +1,8 @@
-"""Text-to-speech from an OpenAI-style agent key, for Assist pipelines and the overlay."""
+"""Text-to-speech from an agent key, for Assist pipelines and the overlay."""
 
 from __future__ import annotations
 
+import json
 import logging
 from collections.abc import Mapping
 from typing import Any
@@ -18,15 +19,17 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .agents import Agent, entry_agents
 from .const import (
+    API_GEMINI,
     API_OPENROUTER,
-    DEFAULT_TTS_VOICE,
     DOMAIN,
     TTS_LANGUAGES,
-    TTS_VOICES,
     default_api_base,
     default_tts_model,
+    default_tts_voice,
+    gemini_generate_content_url,
+    tts_voices,
 )
-from .voice import match_speech_language, speech_text
+from .voice import gemini_inline_audio, gemini_speech_payload, match_speech_language, speech_text
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,7 +52,7 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """One TTS entity per OpenAI-style agent that has Text-to-speech on."""
+    """One TTS entity per agent that has Text-to-speech on."""
     from .assist_pipelines import async_prune_voice_entities, async_refresh_assist_pipelines
 
     keep: set[str] = set()
@@ -95,8 +98,11 @@ class AiWorkspaceTTSEntity(tts.TextToSpeechEntity):
         self._api_key = agent.api_key
         self._api_base = agent.api_base
         self._tts_model = agent.tts_model or default_tts_model(agent.provider)
-        self._tts_voice = agent.tts_voice or DEFAULT_TTS_VOICE
+        self._tts_voice = agent.tts_voice or default_tts_voice(agent.provider)
         self._tts_speed = float(agent.tts_speed or 1.0)
+        self.id = agent.id
+        self.title = agent.title
+        self.kind = agent.provider
         self._attr_unique_id = f"{agent.id}-tts"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"agent:{agent.id}")},
@@ -106,7 +112,9 @@ class AiWorkspaceTTSEntity(tts.TextToSpeechEntity):
             entry_type=dr.DeviceEntryType.SERVICE,
         )
         voice_cls = getattr(tts, "Voice", None)
-        self._voices = [voice_cls(voice, voice.capitalize()) for voice in TTS_VOICES] if voice_cls else []
+        self._voices = (
+            [voice_cls(voice, voice) for voice in tts_voices(agent.provider)] if voice_cls else []
+        )
 
     @property
     def default_options(self) -> Mapping[str, Any]:
@@ -128,10 +136,59 @@ class AiWorkspaceTTSEntity(tts.TextToSpeechEntity):
 
     def _headers(self) -> dict[str, str]:
         headers = {"Authorization": f"Bearer {self._api_key}"}
+        if self._provider == API_GEMINI:
+            headers["x-goog-api-key"] = self._api_key
         if self._provider == API_OPENROUTER:
             headers["HTTP-Referer"] = "https://github.com/domdus/ha-ai-workspace"
             headers["X-Title"] = "AI Workspace"
         return headers
+
+    async def _record_usage(self, *, text: str, model: str, usage=None) -> None:
+        try:
+            from .usage_record import record_tts_usage
+
+            provider = ((self.hass.data.get(DOMAIN) or {}).get("providers") or {}).get(self._agent_id) or self
+            await record_tts_usage(
+                self.hass,
+                text=text,
+                model=model,
+                provider=provider,
+                usage=usage,
+            )
+        except Exception:
+            _LOGGER.debug("tts usage not recorded", exc_info=True)
+
+    async def _synthesize_gemini(self, text: str, voice: str, language: str) -> bytes:
+        from .usage_cost import parse_usage
+
+        model = self._tts_model or default_tts_model(API_GEMINI)
+        url = gemini_generate_content_url(self._api_base, model)
+        payload = gemini_speech_payload(text, voice, language)
+        session = async_get_clientsession(self.hass)
+        try:
+            async with session.post(
+                url,
+                json=payload,
+                headers=self._headers(),
+                timeout=ClientTimeout(total=45, sock_connect=10),
+            ) as resp:
+                raw = await resp.read()
+                if resp.status >= 400:
+                    detail = raw.decode("utf-8", errors="replace")[:300]
+                    _LOGGER.warning("Text-to-speech HTTP %s: %s", resp.status, detail)
+                    raise HomeAssistantError(f"Text-to-speech HTTP {resp.status}")
+        except TimeoutError as err:
+            raise HomeAssistantError("Text-to-speech timed out.") from err
+        try:
+            data = json.loads(raw.decode("utf-8")) if raw else {}
+        except ValueError as err:
+            raise HomeAssistantError("Text-to-speech returned no audio.") from err
+        audio = gemini_inline_audio(data if isinstance(data, dict) else {})
+        if not audio:
+            raise HomeAssistantError("Text-to-speech returned no audio.")
+        piece = parse_usage(data, model=model) if isinstance(data, dict) else None
+        await self._record_usage(text=text, model=model, usage=piece)
+        return audio
 
     async def _synthesize(self, message: str, voice: str, fmt: str = "mp3") -> bytes:
         text = speech_text(message)
@@ -140,7 +197,7 @@ class AiWorkspaceTTSEntity(tts.TextToSpeechEntity):
         payload = {
             "model": self._tts_model or default_tts_model(self._provider),
             "input": text,
-            "voice": voice or self._tts_voice or DEFAULT_TTS_VOICE,
+            "voice": voice or self._tts_voice or default_tts_voice(self._provider),
             "response_format": fmt,
             "speed": max(0.25, min(4.0, self._tts_speed or 1.0)),
         }
@@ -161,17 +218,30 @@ class AiWorkspaceTTSEntity(tts.TextToSpeechEntity):
             raise HomeAssistantError("Text-to-speech timed out.") from err
         if not body:
             raise HomeAssistantError("Text-to-speech returned no audio.")
+        await self._record_usage(text=text, model=str(payload.get("model") or self._tts_model))
         return body
 
     def _voice_from(self, options: dict[str, Any]) -> str:
         key = getattr(tts, "ATTR_VOICE", "voice")
-        voice = str(options.get(key) or self._tts_voice or DEFAULT_TTS_VOICE).strip().casefold()
-        return voice or DEFAULT_TTS_VOICE
+        fallback = self._tts_voice or default_tts_voice(self._provider)
+        voice = str(options.get(key) or fallback).strip()
+        if self._provider == API_GEMINI:
+            names = {name.casefold(): name for name in tts_voices(API_GEMINI)}
+            return names.get(voice.casefold(), voice or fallback)
+        return voice.casefold() or fallback
 
     async def async_get_tts_audio(self, message: str, language: str, options: dict[str, Any]) -> tts.TtsAudioType:
-        del language
+        voice = self._voice_from(options)
         try:
-            audio = await self._synthesize(message, self._voice_from(options))
+            if self._provider == API_GEMINI:
+                spoken = speech_text(message)
+                if not spoken:
+                    raise HomeAssistantError("Text-to-speech returned no audio.")
+                audio = await self._synthesize_gemini(spoken, voice, language)
+                ext = "wav"
+            else:
+                audio = await self._synthesize(message, voice)
+                ext = "mp3"
         except HomeAssistantError:
             raise
         except Exception as err:
@@ -179,4 +249,4 @@ class AiWorkspaceTTSEntity(tts.TextToSpeechEntity):
             raise HomeAssistantError(str(err) or "Text-to-speech failed") from err
         if not audio:
             raise HomeAssistantError("Text-to-speech returned no audio.")
-        return "mp3", audio
+        return ext, audio

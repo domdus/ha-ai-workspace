@@ -31,6 +31,27 @@ def _load(name: str, file: str):
     return mod
 
 
+def test_queue_starts_orphan_commit_when_missing() -> None:
+    lc = _load("logical_commit", "logical_commit.py")
+    hass = types.SimpleNamespace(data={})
+    assert lc.queue_activity_fragment(
+        hass,
+        user_id="u",
+        user_name="Ada",
+        agent="Cursor",
+        session_id="s",
+        chat="Move cards",
+        summary="Updated dashboard Home",
+        tool="ha_config_set_dashboard",
+        document={"kind": "dashboard", "id": "lovelace"},
+    ) is True
+    row = lc.turn_bucket(hass, "u", "s")
+    assert row is not None
+    assert row.orphan is True
+    assert [item.summary for item in row.fragments] == ["Updated dashboard Home"]
+    assert lc.active_commit_id(hass, "u", "s")
+
+
 def test_merge_logical_summary_and_targets() -> None:
     lc = _load("logical_commit", "logical_commit.py")
     frags = [

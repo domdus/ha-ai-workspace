@@ -18,9 +18,10 @@ class UnavailableProvider:
         images: list | None = None,
         mcp: dict | None = None,
         model: str | None = None,
-    effort: str = "",
-    api_key: str = "",
-    handoff: str = "",
-) -> AsyncIterator[dict]:
+        effort: str = "",
+        api_key: str = "",
+        handoff: str = "",
+        **_kwargs,
+    ) -> AsyncIterator[dict]:
         del session, message, on_agent_id, images, mcp, model, effort, api_key, handoff
         yield {"type": "error", "message": self.info.reason or "This provider is not available."}

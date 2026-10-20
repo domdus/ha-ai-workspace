@@ -77,11 +77,38 @@ def test_no_force_leaves_the_choice_to_the_model() -> None:
 
 
 def test_check_house_defaults_on_and_can_be_turned_off() -> None:
+    from types import SimpleNamespace
+
+    from custom_components.ai_workspace.__init__ import _workspace_check_house
     from custom_components.ai_workspace.agents import agent_from_mapping
+    from custom_components.ai_workspace.const import SUBENTRY_AGENT
 
     assert agent_from_mapping("a", "OpenAI", {"api_provider": "openai"}).check_house is True
     assert agent_from_mapping("b", "OpenAI", {"api_provider": "openai", "check_house": False}).check_house is False
     assert _settings("openai").check_house is True
+
+    def _entry(*agents, options=None):
+        subs = {}
+        for index, raw in enumerate(agents):
+            subs[f"sub-{index}"] = SimpleNamespace(
+                subentry_type=SUBENTRY_AGENT,
+                subentry_id=f"sub-{index}",
+                unique_id=f"agent-{index}",
+                title=raw.get("title", "Agent"),
+                data=raw,
+            )
+        return SimpleNamespace(options=options or {}, subentries=subs)
+
+    assert _workspace_check_house(_entry(), {}) is True
+    assert _workspace_check_house(_entry({"api_provider": "openai", "check_house": False}), {"check_house": False}) is False
+    mixed = _entry({"api_provider": "openai", "check_house": False}, {"api_provider": "anthropic"})
+    assert _workspace_check_house(mixed, {}) is True
+    all_off = _entry(
+        {"api_provider": "openai", "check_house": False},
+        {"api_provider": "anthropic", "check_house": False},
+        {"api_provider": "cursor"},
+    )
+    assert _workspace_check_house(all_off, {}) is False
 
 
 def test_refused_force_is_dropped_and_remembered() -> None:

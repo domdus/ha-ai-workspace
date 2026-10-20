@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import hmac
+import ipaddress
 import json
 import logging
 from urllib.parse import urlparse
@@ -26,6 +27,9 @@ from .const import (
     ui_theme_of,
     with_language_rule,
     with_ui_context,
+    provider_token_mode,
+    token_mode_allows_extras,
+    token_mode_allows_files,
 )
 from .mcp_config import with_mcp_auth
 from .mcp_observe import last_mcp_result, note_mcp_result
@@ -42,6 +46,7 @@ from .redact import redact
 from .small_talk import wants_house_tools
 from .store import Session, Store
 from .titles import accept_generated_title, needs_title_summary, title_from_prompt
+from .usage_record import dashboard_payload, finalize_usage, record_usage_turn
 
 logger = logging.getLogger(__name__)
 
@@ -234,6 +239,11 @@ def _runtime_agent_overrides(
     return extra
 
 
+def _full_tools(user_id: str, admin: bool) -> bool:
+    """Shell and file tools only for a signed-in administrator, never for a voice satellite."""
+    return bool(admin) and bool(user_id) and user_id != "assist"
+
+
 async def _runtime_chat(
     hass: HomeAssistant,
     user_id: str,
@@ -272,6 +282,7 @@ async def _runtime_chat(
         "question": (question or message).strip(),
         "origin": origin,
         "history_in_ha": True,
+        "full_tools": _full_tools(user_id, admin),
     }
     if session.agent_id:
         payload["sync_agent_id"] = str(session.agent_id)
@@ -520,6 +531,8 @@ class UiView(HomeAssistantView):
                 "tts_heavy": overlay_tts_heavy(_hass(request), settings.tts_engine),
                 "tts_natural": bool(getattr(settings, "tts_natural", True)),
                 "change_history": bool(getattr(settings, "change_history", True)),
+                "track_usage": bool(getattr(settings, "track_usage", True)),
+                "show_chat_usage": bool(getattr(settings, "show_chat_usage", True)),
                 "ui_theme": ui_theme_of(getattr(settings, "ui_theme", "standard")),
             }
         )
@@ -583,7 +596,7 @@ class SessionsView(HomeAssistantView):
 
     async def post(self, request: web.Request) -> web.Response:
         hass: HomeAssistant = _hass(request)
-        body = await request.json()
+        body = await _json_body(request)
         data = _runtime(hass)
         providers = data.get("providers") or {}
         known_assist = assist_agent_ids(hass)
@@ -631,7 +644,7 @@ class SessionView(HomeAssistantView):
     async def patch(self, request: web.Request, session_id: str) -> web.Response:
         hass: HomeAssistant = _hass(request)
         store: Store = _runtime(hass)["store"]
-        body = await request.json()
+        body = await _json_body(request)
         title = str(body.get("title") or "").strip()
         pinned = body.get("pinned")
         session = await hass.async_add_executor_job(store.get_session, _user_id(request), session_id)
@@ -682,6 +695,16 @@ def _is_admin(request: web.Request) -> bool:
     return bool(getattr(request.get("hass_user"), "is_admin", False))
 
 
+async def _json_body(request: web.Request) -> dict[str, Any]:
+    try:
+        body = await request.json()
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        raise web.HTTPBadRequest(text="Invalid JSON.") from None
+    if not isinstance(body, dict):
+        raise web.HTTPBadRequest(text="Invalid JSON.")
+    return body
+
+
 class ChatView(HomeAssistantView):
     url = "/api/ai_workspace/sessions/{session_id}/chat"
     name = "api:ai_workspace:chat"
@@ -697,7 +720,7 @@ class ChatView(HomeAssistantView):
         session = await hass.async_add_executor_job(store.get_session, user_id, session_id)
         if session is None:
             raise web.HTTPNotFound(text="Chat not found.")
-        body = await request.json()
+        body = await _json_body(request)
         images = parse_client_images(body.get("images"))
         files = parse_client_files(body.get("files"))
         message = caption_for(str(body.get("message") or ""), len(images), len(files))
@@ -747,7 +770,8 @@ class ChatView(HomeAssistantView):
             await async_bind_runtime(hass, data)
             providers = data.get("providers") or {}
         provider = None if assist else (providers.get(session.provider) or _send_provider(data, session))
-        low_token = bool(getattr(getattr(provider, "settings", None), "low_token", False))
+        token_mode = provider_token_mode(provider)
+        extras = token_mode_allows_extras(token_mode)
         origin = _frontend_origin(request, body)
         page_note = format_ui_page(parse_ui_page(body.get("page")))
         events_json = json.dumps(image_events(images) + file_events(files), ensure_ascii=False)
@@ -756,17 +780,17 @@ class ChatView(HomeAssistantView):
         count = await hass.async_add_executor_job(lambda: len(store.list_messages(session.id)))
         suggest = (
             getattr(provider, "suggest_title", None)
-            if not low_token and count <= 1 and needs_title_summary(message)
+            if extras and count <= 1 and needs_title_summary(message)
             else None
         )
-        outbound = message if low_token else attach_files_to_message(message, files)
-        if page_note and not low_token:
+        outbound = attach_files_to_message(message, files) if token_mode_allows_files(token_mode) else message
+        if page_note and extras:
             outbound = f"{page_note}\n\n{outbound}"
         language = str(body.get("language") or "").strip()
         cross = bool(getattr(settings, "cross_chat", False))
         note = (
             ""
-            if low_token
+            if not extras
             else await hass.async_add_executor_job(other_chat_note, store, user_id, session.id, message, cross)
         )
         if note:
@@ -888,6 +912,12 @@ class ChatView(HomeAssistantView):
                     session.id,
                     session.title or "",
                 )
+                try:
+                    from .activity_ha import attach_turn_watch
+
+                    await attach_turn_watch(hass, user_id, session.id)
+                except Exception:
+                    logger.debug("change history turn watch skipped", exc_info=True)
             try:
                 try:
                     await response.prepare(request)
@@ -915,6 +945,23 @@ class ChatView(HomeAssistantView):
                             )
                         elif kind == "error":
                             error = str(event.get("message") or "The agent failed.")
+                        elif kind == "usage":
+                            billed = finalize_usage(
+                                event,
+                                model=str(event.get("model") or getattr(provider, "model", "") or ""),
+                                run_id=str(event.get("run_id") or ""),
+                            )
+                            if billed is None:
+                                continue
+                            event = await record_usage_turn(
+                                hass,
+                                store=store,
+                                user_id=user_id,
+                                session_id=session.id,
+                                provider=provider,
+                                usage=billed,
+                                origin="chat",
+                            )
                         elif kind == "title":
                             label = accept_generated_title(message, str(event.get("title") or ""))
                             applied = None
@@ -1010,16 +1057,22 @@ class SpeakView(HomeAssistantView):
         engine = str(settings.tts_engine or "")
         if not engine or engine == TTS_OFF:
             raise web.HTTPBadRequest(text="Text-to-speech is off.")
-        body = await request.json()
+        body = await _json_body(request)
         language = str(body.get("language") or "")
+        from .usage_record import tts_usage_scope
+
         try:
-            data, mime = await async_speak(
-                _hass(request),
-                engine,
-                str(body.get("text") or ""),
-                language,
-                natural=bool(getattr(settings, "tts_natural", True)),
-            )
+            with tts_usage_scope(
+                user_id=_user_id(request),
+                session_id=str(body.get("session_id") or ""),
+            ):
+                data, mime = await async_speak(
+                    _hass(request),
+                    engine,
+                    str(body.get("text") or ""),
+                    language,
+                    natural=bool(getattr(settings, "tts_natural", True)),
+                )
         except Exception as exc:
             raise web.HTTPBadGateway(text=str(exc)[:300]) from exc
         if not data:
@@ -1037,6 +1090,8 @@ class HouseMapMcpView(HomeAssistantView):
     async def post(self, request: web.Request) -> web.Response:
         hass = _hass(request)
         _user_id(request)
+        if not _is_admin(request):
+            raise web.HTTPForbidden(text="The config catalog is for administrators.")
         settings = _runtime(hass).get("settings")
         if not getattr(settings, "house_map", False):
             return web.json_response(
@@ -1143,8 +1198,15 @@ def _runtime_token_ok(request: web.Request) -> bool:
     provided = value.strip() if scheme.lower() == "bearer" else ""
     if expected:
         return bool(provided) and hmac.compare_digest(provided.encode(), expected.encode())
-    # Same as the Runtime chat API: an empty token means the local Runtime may call in.
-    return True
+    # Without a token only a Runtime on this host (bound to loopback) may call in.
+    return _loopback_remote(request)
+
+
+def _loopback_remote(request: web.Request) -> bool:
+    try:
+        return ipaddress.ip_address(str(request.remote or "").split("%", 1)[0]).is_loopback
+    except ValueError:
+        return False
 
 
 def _activity_dict(row, chat: str = "", *, ask_restore: bool = False) -> dict:
@@ -1324,9 +1386,41 @@ class ActivityCommitView(HomeAssistantView):
         return self.json({"ok": True})
 
 
+class UsageView(HomeAssistantView):
+    url = "/api/ai_workspace/usage"
+    name = "api:ai_workspace:usage"
+    requires_auth = True
+
+    async def get(self, request: web.Request) -> web.Response:
+        owner = "" if _is_admin(request) else _user_id(request)
+        hass = _hass(request)
+        store: Store = _runtime(hass)["store"]
+        session_id = str(request.query.get("session_id") or "").strip()
+        range_key = str(request.query.get("range") or "month").strip()
+        agent_id = str(request.query.get("agent_id") or "").strip()
+        model = str(request.query.get("model") or "").strip()
+        since = str(request.query.get("since") or "").strip()
+        until = str(request.query.get("until") or "").strip()
+        payload = await hass.async_add_executor_job(
+            lambda: dashboard_payload(
+                hass,
+                store,
+                session_id=session_id,
+                range_key=range_key,
+                agent_id=agent_id,
+                model=model,
+                since=since,
+                until=until,
+                user_id=owner,
+            )
+        )
+        return self.json(payload)
+
+
 def register_views(hass: HomeAssistant) -> None:
     hass.http.register_view(HealthView)
     hass.http.register_view(UiView)
+    hass.http.register_view(UsageView)
     hass.http.register_view(ProvidersView)
     hass.http.register_view(SpeechView)
     hass.http.register_view(SpeakView)

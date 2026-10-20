@@ -8,6 +8,33 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
+# Claude reports uncached input separately. Count cache read/write on those rows
+# so the Usage page matches the tokens Anthropic actually bills.
+_COUNTED_TOKENS = """
+CASE
+  WHEN prompt_tokens >= cache_read_tokens + cache_write_tokens
+    THEN CASE WHEN total_tokens > 0 THEN total_tokens ELSE prompt_tokens + completion_tokens END
+  ELSE prompt_tokens + cache_read_tokens + cache_write_tokens + completion_tokens
+END
+"""
+
+
+def _counted_tokens(
+    prompt_tokens: int = 0,
+    completion_tokens: int = 0,
+    cache_read_tokens: int = 0,
+    cache_write_tokens: int = 0,
+    total_tokens: int = 0,
+) -> int:
+    prompt = int(prompt_tokens or 0)
+    completion = int(completion_tokens or 0)
+    read = int(cache_read_tokens or 0)
+    write = int(cache_write_tokens or 0)
+    stored = int(total_tokens or 0)
+    if prompt >= read + write:
+        return stored or (prompt + completion)
+    return prompt + read + write + completion
+
 
 def _text(value: object) -> str:
     if value is None:
@@ -19,6 +46,45 @@ def _text(value: object) -> str:
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _usage_where(
+    *,
+    since: str | None = None,
+    until: str | None = None,
+    agent_id: str | None = None,
+    session_id: str | None = None,
+    origin: str | None = None,
+    model: str | None = None,
+    exclude_tts: bool = False,
+    user_id: str | None = None,
+) -> tuple[str, list[object]]:
+    clauses = ["1=1"]
+    params: list[object] = []
+    if user_id:
+        clauses.append("user_id = ?")
+        params.append(_text(user_id))
+    if since:
+        clauses.append("created_at >= ?")
+        params.append(since)
+    if until:
+        clauses.append("created_at < ?")
+        params.append(until)
+    if agent_id:
+        clauses.append("agent_id = ?")
+        params.append(_text(agent_id))
+    if session_id:
+        clauses.append("session_id = ?")
+        params.append(_text(session_id))
+    if origin:
+        clauses.append("origin = ?")
+        params.append(_text(origin))
+    elif exclude_tts:
+        clauses.append("origin != 'tts'")
+    if model:
+        clauses.append("CASE WHEN TRIM(model) = '' THEN agent_id ELSE model END = ?")
+        params.append(_text(model))
+    return " AND ".join(clauses), params
 
 
 @dataclass
@@ -116,6 +182,31 @@ class Store:
                 undone_at TEXT
             );
             CREATE INDEX IF NOT EXISTS activity_created ON activity(created_at);
+            CREATE TABLE IF NOT EXISTS usage_turns (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                created_at TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                session_id TEXT NOT NULL DEFAULT '',
+                agent_id TEXT NOT NULL DEFAULT '',
+                agent TEXT NOT NULL DEFAULT '',
+                provider TEXT NOT NULL DEFAULT '',
+                model TEXT NOT NULL DEFAULT '',
+                prompt_tokens INTEGER NOT NULL DEFAULT 0,
+                completion_tokens INTEGER NOT NULL DEFAULT 0,
+                cache_read_tokens INTEGER NOT NULL DEFAULT 0,
+                cache_write_tokens INTEGER NOT NULL DEFAULT 0,
+                reasoning_tokens INTEGER NOT NULL DEFAULT 0,
+                total_tokens INTEGER NOT NULL DEFAULT 0,
+                cost_usd REAL,
+                cost_source TEXT NOT NULL DEFAULT '',
+                charged_cents INTEGER,
+                run_id TEXT NOT NULL DEFAULT '',
+                origin TEXT NOT NULL DEFAULT '',
+                characters INTEGER NOT NULL DEFAULT 0
+            );
+            CREATE INDEX IF NOT EXISTS usage_turns_created ON usage_turns(created_at);
+            CREATE INDEX IF NOT EXISTS usage_turns_agent ON usage_turns(agent_id, created_at);
+            CREATE INDEX IF NOT EXISTS usage_turns_session ON usage_turns(session_id);
             """
         )
         cols = {row[1] for row in self._conn.execute("PRAGMA table_info(sessions)")}
@@ -126,6 +217,9 @@ class Store:
             self._conn.execute("ALTER TABLE activity ADD COLUMN session_id TEXT NOT NULL DEFAULT ''")
         if "chat" not in activity_cols:
             self._conn.execute("ALTER TABLE activity ADD COLUMN chat TEXT NOT NULL DEFAULT ''")
+        usage_cols = {row[1] for row in self._conn.execute("PRAGMA table_info(usage_turns)")}
+        if "characters" not in usage_cols:
+            self._conn.execute("ALTER TABLE usage_turns ADD COLUMN characters INTEGER NOT NULL DEFAULT 0")
         self._conn.commit()
 
     def close(self) -> None:
@@ -377,6 +471,7 @@ class Store:
         ]
 
     def delete_session(self, user_id: str, session_id: str) -> bool:
+        """Remove the chat and its messages. Usage turns stay: the provider already billed them."""
         if self.get_session(user_id, session_id) is None:
             return False
         with self._lock:
@@ -386,7 +481,7 @@ class Store:
         return True
 
     def prune_sessions(self, user_id: str, keep: int) -> list[str]:
-        """Drop oldest unpinned chats beyond keep. Pinned chats are never removed."""
+        """Drop oldest unpinned chats beyond keep. Pinned chats and usage turns stay."""
         user_id = _text(user_id)
         try:
             keep = int(keep)
@@ -576,6 +671,398 @@ class Store:
             )
             self._conn.commit()
         return self.get_activity(activity_id)
+
+    def add_usage(
+        self,
+        *,
+        user_id: str,
+        session_id: str = "",
+        agent_id: str = "",
+        agent: str = "",
+        provider: str = "",
+        model: str = "",
+        prompt_tokens: int = 0,
+        completion_tokens: int = 0,
+        cache_read_tokens: int = 0,
+        cache_write_tokens: int = 0,
+        reasoning_tokens: int = 0,
+        total_tokens: int = 0,
+        cost_usd: float | None = None,
+        cost_source: str = "",
+        charged_cents: int | None = None,
+        run_id: str = "",
+        origin: str = "",
+        characters: int = 0,
+        created_at: str | None = None,
+    ) -> int:
+        now = _text(created_at) or _now()
+        total = _counted_tokens(
+            prompt_tokens,
+            completion_tokens,
+            cache_read_tokens,
+            cache_write_tokens,
+            total_tokens,
+        )
+        with self._lock:
+            cursor = self._conn.execute(
+                """
+                INSERT INTO usage_turns (
+                    created_at, user_id, session_id, agent_id, agent, provider, model,
+                    prompt_tokens, completion_tokens, cache_read_tokens, cache_write_tokens,
+                    reasoning_tokens, total_tokens, cost_usd, cost_source, charged_cents,
+                    run_id, origin, characters
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    now,
+                    _text(user_id),
+                    _text(session_id),
+                    _text(agent_id),
+                    _text(agent),
+                    _text(provider),
+                    _text(model),
+                    int(prompt_tokens or 0),
+                    int(completion_tokens or 0),
+                    int(cache_read_tokens or 0),
+                    int(cache_write_tokens or 0),
+                    int(reasoning_tokens or 0),
+                    total,
+                    None if cost_usd is None else float(cost_usd),
+                    _text(cost_source),
+                    None if charged_cents is None else int(charged_cents),
+                    _text(run_id),
+                    _text(origin),
+                    int(characters or 0),
+                ),
+            )
+            self._conn.commit()
+            return int(cursor.lastrowid)
+
+    def summarize_usage(
+        self,
+        *,
+        since: str | None = None,
+        until: str | None = None,
+        agent_id: str | None = None,
+        session_id: str | None = None,
+        origin: str | None = None,
+        model: str | None = None,
+        user_id: str | None = None,
+    ) -> dict:
+        where, params = _usage_where(
+            since=since,
+            until=until,
+            agent_id=agent_id,
+            session_id=session_id,
+            origin=origin,
+            model=model,
+            user_id=user_id,
+        )
+        with self._lock:
+            row = self._conn.execute(
+                f"""
+                SELECT
+                    COUNT(*) AS turns,
+                    COALESCE(SUM(prompt_tokens), 0) AS prompt_tokens,
+                    COALESCE(SUM(completion_tokens), 0) AS completion_tokens,
+                    COALESCE(SUM(cache_read_tokens), 0) AS cache_read_tokens,
+                    COALESCE(SUM(cache_write_tokens), 0) AS cache_write_tokens,
+                    COALESCE(SUM({_COUNTED_TOKENS}), 0) AS total_tokens,
+                    COALESCE(SUM(characters), 0) AS characters,
+                    COALESCE(SUM(cost_usd), 0) AS cost_usd,
+                    SUM(CASE WHEN cost_usd IS NULL THEN 1 ELSE 0 END) AS missing_cost
+                FROM usage_turns
+                WHERE {where}
+                """,
+                params,
+            ).fetchone()
+        return {
+            "turns": int(row["turns"] or 0),
+            "prompt_tokens": int(row["prompt_tokens"] or 0),
+            "completion_tokens": int(row["completion_tokens"] or 0),
+            "cache_read_tokens": int(row["cache_read_tokens"] or 0),
+            "cache_write_tokens": int(row["cache_write_tokens"] or 0),
+            "total_tokens": int(row["total_tokens"] or 0),
+            "characters": int(row["characters"] or 0),
+            "cost_usd": round(float(row["cost_usd"] or 0), 6),
+            "missing_cost": bool(row["missing_cost"]),
+        }
+
+    def usage_by_agent(
+        self,
+        *,
+        since: str | None = None,
+        until: str | None = None,
+        agent_id: str | None = None,
+        session_id: str | None = None,
+        model: str | None = None,
+        user_id: str | None = None,
+    ) -> list[dict]:
+        where, params = _usage_where(
+            since=since,
+            until=until,
+            agent_id=agent_id,
+            session_id=session_id,
+            model=model,
+            user_id=user_id,
+        )
+        with self._lock:
+            rows = self._conn.execute(
+                f"""
+                SELECT
+                    agent_id,
+                    MAX(agent) AS agent,
+                    MAX(provider) AS provider,
+                    MAX(model) AS model,
+                    COUNT(*) AS turns,
+                    COALESCE(SUM(prompt_tokens), 0) AS prompt_tokens,
+                    COALESCE(SUM(completion_tokens), 0) AS completion_tokens,
+                    COALESCE(SUM(cache_read_tokens), 0) AS cache_read_tokens,
+                    COALESCE(SUM(cache_write_tokens), 0) AS cache_write_tokens,
+                    COALESCE(SUM({_COUNTED_TOKENS}), 0) AS total_tokens,
+                    COALESCE(SUM(cost_usd), 0) AS cost_usd,
+                    SUM(CASE WHEN cost_usd IS NULL THEN 1 ELSE 0 END) AS missing_cost
+                FROM usage_turns
+                WHERE {where}
+                GROUP BY agent_id
+                ORDER BY cost_usd DESC, total_tokens DESC
+                """,
+                params,
+            ).fetchall()
+        return [
+            {
+                "agent_id": _text(row["agent_id"]),
+                "agent": _text(row["agent"]),
+                "provider": _text(row["provider"]),
+                "model": _text(row["model"]),
+                "turns": int(row["turns"] or 0),
+                "prompt_tokens": int(row["prompt_tokens"] or 0),
+                "completion_tokens": int(row["completion_tokens"] or 0),
+                "cache_read_tokens": int(row["cache_read_tokens"] or 0),
+                "cache_write_tokens": int(row["cache_write_tokens"] or 0),
+                "total_tokens": int(row["total_tokens"] or 0),
+                "cost_usd": round(float(row["cost_usd"] or 0), 6),
+                "missing_cost": bool(row["missing_cost"]),
+            }
+            for row in rows
+        ]
+
+    def last_usage(
+        self, *, agent_id: str | None = None, session_id: str | None = None, user_id: str | None = None
+    ) -> dict | None:
+        where, params = _usage_where(agent_id=agent_id, session_id=session_id, user_id=user_id)
+        with self._lock:
+            row = self._conn.execute(
+                f"SELECT * FROM usage_turns WHERE {where} ORDER BY id DESC LIMIT 1",
+                params,
+            ).fetchone()
+        if not row:
+            return None
+        prompt = int(row["prompt_tokens"] or 0)
+        completion = int(row["completion_tokens"] or 0)
+        cache_read = int(row["cache_read_tokens"] or 0) if "cache_read_tokens" in row.keys() else 0
+        cache_write = int(row["cache_write_tokens"] or 0) if "cache_write_tokens" in row.keys() else 0
+        return {
+            "id": int(row["id"]),
+            "created_at": row["created_at"],
+            "agent_id": _text(row["agent_id"]),
+            "agent": _text(row["agent"]),
+            "provider": _text(row["provider"]),
+            "model": _text(row["model"]),
+            "prompt_tokens": prompt,
+            "completion_tokens": completion,
+            "cache_read_tokens": cache_read,
+            "cache_write_tokens": cache_write,
+            "total_tokens": _counted_tokens(
+                prompt, completion, cache_read, cache_write, int(row["total_tokens"] or 0)
+            ),
+            "characters": int(row["characters"] or 0) if "characters" in row.keys() else 0,
+            "cost_usd": None if row["cost_usd"] is None else round(float(row["cost_usd"]), 6),
+            "cost_source": _text(row["cost_source"]),
+            "session_id": _text(row["session_id"]),
+            "origin": _text(row["origin"]),
+        }
+
+    def usage_by_model(
+        self,
+        *,
+        since: str | None = None,
+        until: str | None = None,
+        agent_id: str | None = None,
+        session_id: str | None = None,
+        model: str | None = None,
+        user_id: str | None = None,
+    ) -> list[dict]:
+        where, params = _usage_where(
+            since=since,
+            until=until,
+            agent_id=agent_id,
+            session_id=session_id,
+            model=model,
+            exclude_tts=True,
+            user_id=user_id,
+        )
+        with self._lock:
+            rows = self._conn.execute(
+                f"""
+                SELECT
+                    CASE WHEN TRIM(model) = '' THEN agent_id ELSE model END AS model_key,
+                    MAX(model) AS model,
+                    MAX(agent) AS agent,
+                    MAX(agent_id) AS agent_id,
+                    MAX(provider) AS provider,
+                    COUNT(*) AS turns,
+                    COALESCE(SUM(prompt_tokens), 0) AS prompt_tokens,
+                    COALESCE(SUM(completion_tokens), 0) AS completion_tokens,
+                    COALESCE(SUM(cache_read_tokens), 0) AS cache_read_tokens,
+                    COALESCE(SUM(cache_write_tokens), 0) AS cache_write_tokens,
+                    COALESCE(SUM({_COUNTED_TOKENS}), 0) AS total_tokens,
+                    COALESCE(SUM(cost_usd), 0) AS cost_usd,
+                    SUM(CASE WHEN cost_usd IS NULL THEN 1 ELSE 0 END) AS missing_cost
+                FROM usage_turns
+                WHERE {where}
+                GROUP BY model_key
+                ORDER BY cost_usd DESC, total_tokens DESC
+                """,
+                params,
+            ).fetchall()
+        models = []
+        for row in rows:
+            turns = int(row["turns"] or 0)
+            tokens = int(row["total_tokens"] or 0)
+            missing = bool(row["missing_cost"])
+            cost = None if missing and not row["cost_usd"] else round(float(row["cost_usd"] or 0), 6)
+            models.append(
+                {
+                    "model": _text(row["model"]) or _text(row["agent"]) or _text(row["model_key"]) or "Unknown",
+                    "agent": _text(row["agent"]),
+                    "agent_id": _text(row["agent_id"]),
+                    "provider": _text(row["provider"]),
+                    "turns": turns,
+                    "prompt_tokens": int(row["prompt_tokens"] or 0),
+                    "completion_tokens": int(row["completion_tokens"] or 0),
+                    "cache_read_tokens": int(row["cache_read_tokens"] or 0),
+                    "cache_write_tokens": int(row["cache_write_tokens"] or 0),
+                    "total_tokens": tokens,
+                    "cost_usd": cost,
+                    "missing_cost": missing,
+                    "tokens_per_turn": round(tokens / turns, 1) if turns else 0.0,
+                    "cost_per_turn": None if cost is None or not turns else round(cost / turns, 6),
+                    "cost_per_1k": None if cost is None or not tokens else round(cost / tokens * 1000, 6),
+                }
+            )
+        return models
+
+    def usage_filter_choices(self, *, agent_id: str | None = None, user_id: str | None = None) -> dict:
+        model_where, model_params = _usage_where(agent_id=agent_id, user_id=user_id)
+        agent_where, agent_params = _usage_where(user_id=user_id)
+        with self._lock:
+            agents = self._conn.execute(
+                f"""
+                SELECT agent_id, MAX(agent) AS agent
+                FROM usage_turns
+                WHERE TRIM(COALESCE(agent_id, '')) != '' AND {agent_where}
+                GROUP BY agent_id
+                ORDER BY agent COLLATE NOCASE
+                """,
+                agent_params,
+            ).fetchall()
+            models = self._conn.execute(
+                f"""
+                SELECT DISTINCT CASE WHEN TRIM(model) = '' THEN agent_id ELSE model END AS model_key
+                FROM usage_turns
+                WHERE {model_where}
+                ORDER BY model_key COLLATE NOCASE
+                """,
+                model_params,
+            ).fetchall()
+        return {
+            "agents": [
+                {"id": _text(row["agent_id"]), "title": _text(row["agent"]) or _text(row["agent_id"])}
+                for row in agents
+            ],
+            "models": [_text(row["model_key"]) for row in models if _text(row["model_key"])],
+        }
+
+    def usage_chat_choices(
+        self,
+        *,
+        agent_id: str | None = None,
+        model: str | None = None,
+        user_id: str | None = None,
+        limit: int = 100,
+    ) -> list[dict]:
+        """Existing chats that still have a session row and at least one usage turn."""
+        clauses = ["1=1"]
+        params: list[object] = []
+        if user_id:
+            clauses.append("s.user_id = ?")
+            params.append(_text(user_id))
+        if agent_id:
+            clauses.append("u.agent_id = ?")
+            params.append(_text(agent_id))
+        if model:
+            clauses.append("CASE WHEN TRIM(u.model) = '' THEN u.agent_id ELSE u.model END = ?")
+            params.append(_text(model))
+        where = " AND ".join(clauses)
+        cap = max(1, min(int(limit or 100), 200))
+        with self._lock:
+            rows = self._conn.execute(
+                f"""
+                SELECT s.id AS id, MAX(s.title) AS title
+                FROM sessions s
+                INNER JOIN usage_turns u ON u.session_id = s.id
+                WHERE {where}
+                GROUP BY s.id
+                ORDER BY MAX(s.updated_at) DESC, s.id DESC
+                LIMIT {cap}
+                """,
+                params,
+            ).fetchall()
+        return [
+            {"id": _text(row["id"]), "title": _text(row["title"]) or _text(row["id"])}
+            for row in rows
+            if _text(row["id"])
+        ]
+
+    def usage_events(
+        self,
+        *,
+        since: str | None = None,
+        until: str | None = None,
+        agent_id: str | None = None,
+        session_id: str | None = None,
+        model: str | None = None,
+        user_id: str | None = None,
+    ) -> list[dict]:
+        where, params = _usage_where(
+            since=since,
+            until=until,
+            agent_id=agent_id,
+            session_id=session_id,
+            model=model,
+            exclude_tts=True,
+            user_id=user_id,
+        )
+        with self._lock:
+            rows = self._conn.execute(
+                f"""
+                SELECT created_at, {_COUNTED_TOKENS} AS total_tokens, cost_usd, origin
+                FROM usage_turns
+                WHERE {where}
+                ORDER BY created_at ASC
+                """,
+                params,
+            ).fetchall()
+        return [
+            {
+                "created_at": row["created_at"],
+                "total_tokens": int(row["total_tokens"] or 0),
+                "cost_usd": None if row["cost_usd"] is None else float(row["cost_usd"]),
+                "origin": _text(row["origin"]),
+            }
+            for row in rows
+        ]
 
 
 def _restore_target(document: str) -> tuple[str, str, str]:

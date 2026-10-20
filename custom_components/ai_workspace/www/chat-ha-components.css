@@ -99,6 +99,22 @@
   --markdown-list-indent: 1.15em;
 }
 
+.ui-theme-ha-components .log ha-markdown table,
+.ui-theme-ha-components .log ha-markdown-element table {
+  table-layout: fixed;
+  width: 100%;
+  max-width: 100%;
+}
+
+.ui-theme-ha-components .log ha-markdown th,
+.ui-theme-ha-components .log ha-markdown td,
+.ui-theme-ha-components .log ha-markdown-element th,
+.ui-theme-ha-components .log ha-markdown-element td {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  vertical-align: top;
+}
+
 .ui-theme-ha-components .log ha-markdown:not(:has(ha-markdown-element)) {
   min-height: 1lh;
   min-width: 0;

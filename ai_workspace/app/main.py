@@ -4,6 +4,7 @@ import asyncio
 import hmac
 import json
 import logging
+import re
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
@@ -32,6 +33,36 @@ def _configure_logging() -> None:
     )
     logging.getLogger("app").setLevel(logging.INFO)
     logging.getLogger("app.providers.cursor").setLevel(logging.INFO)
+    access = logging.getLogger("uvicorn.access")
+    if not any(isinstance(item, _HideProxySecret) for item in access.filters):
+        access.addFilter(_HideProxySecret())
+
+
+_PROXY_SECRET = re.compile(r"(/api/mcp-(?:proxy|fit)/)[^/?\s]+")
+
+
+class _HideProxySecret(logging.Filter):
+    """The MCP proxy secret is part of the URL; keep it out of the access log."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if isinstance(record.args, tuple):
+            record.args = tuple(
+                _PROXY_SECRET.sub(r"\1***", item) if isinstance(item, str) else item for item in record.args
+            )
+        return True
+
+
+_LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
+
+
+def _loopback_host(header: str) -> bool:
+    """Host header check for the open loopback mode, so a rebound DNS name cannot reach the API."""
+    host = str(header or "").strip().lower()
+    if host.startswith("["):
+        host = host[1:].split("]", 1)[0]
+    elif host.count(":") == 1:
+        host = host.split(":", 1)[0]
+    return host in _LOOPBACK_HOSTS
 
 
 class SessionCreate(BaseModel):
@@ -46,14 +77,14 @@ class SessionUpdate(BaseModel):
 
 
 class ChatImage(BaseModel):
-    name: str = "image.jpg"
-    mime: str = "image/jpeg"
-    data: str = ""
+    name: str = Field(default="image.jpg", max_length=255)
+    mime: str = Field(default="image/jpeg", max_length=100)
+    data: str = Field(default="", max_length=6_000_000)
 
 
 class ChatFile(BaseModel):
-    name: str = "file.txt"
-    mime: str = "text/plain"
+    name: str = Field(default="file.txt", max_length=255)
+    mime: str = Field(default="text/plain", max_length=100)
     text: str = Field(default="", max_length=300000)
 
 
@@ -67,9 +98,10 @@ class ChatMcp(BaseModel):
 class ChatRequest(BaseModel):
     message: str = Field(default="", max_length=320000)
     origin: str = ""
-    images: list[ChatImage] = Field(default_factory=list)
-    files: list[ChatFile] = Field(default_factory=list)
+    images: list[ChatImage] = Field(default_factory=list, max_length=4)
+    files: list[ChatFile] = Field(default_factory=list, max_length=4)
     mcp: ChatMcp | None = None
+    full_tools: bool = False
     model: str = ""
     effort: str = ""
     api_key: str = ""
@@ -107,15 +139,18 @@ def _token_ok(settings: Settings, header: str) -> bool:
 
 def create_app(settings: Settings | None = None, providers: dict | None = None) -> FastAPI:
     _configure_logging()
-    app = FastAPI(title="AI Workspace", lifespan=lifespan)
+    app = FastAPI(title="AI Workspace", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
     app.state.settings = settings or Settings.from_env()
     app.state.providers_override = providers
 
     @app.middleware("http")
     async def require_token(request: Request, call_next):
         path = request.url.path
+        current: Settings = request.app.state.settings
+        open_mode = not current.runtime_token and current.open_without_token()
+        if open_mode and not _loopback_host(request.headers.get("host", "")):
+            return JSONResponse({"detail": "Without RUNTIME_TOKEN the runtime only answers on 127.0.0.1."}, status_code=403)
         if path.startswith("/api/") and not path.startswith(_OPEN_PATHS):
-            current: Settings = request.app.state.settings
             if not _token_ok(current, request.headers.get("authorization", "")):
                 detail = (
                     "Runtime token is missing or wrong."
@@ -137,6 +172,9 @@ def create_app(settings: Settings | None = None, providers: dict | None = None) 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings: Settings = app.state.settings
+    from app.git_bootstrap import bootstrap_git
+
+    bootstrap_git(settings.workspace_dir)
     settings.ensure_dirs()
     store = Store(settings.data_dir / "ai-workspace.sqlite")
     app.state.store = store
@@ -367,6 +405,7 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
                     api_key=body.api_key.strip(),
                     handoff=body.handoff.strip(),
                     question=question,
+                    full_tools=body.full_tools,
                 ):
                     if event.get("type") == "text":
                         parts.append(str(event.get("delta") or ""))

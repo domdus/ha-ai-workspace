@@ -33,7 +33,7 @@ jobs:
         run: |
           docker run --rm --entrypoint "" -v "$PWD":/w -w /w -e PYTHONDONTWRITEBYTECODE=1 \
             ghcr.io/home-assistant/home-assistant:stable sh -c "
-              pip install -q pytest fastapi httpx uvicorn pyflakes &&
+              pip install -q pytest fastapi httpx uvicorn pyflakes voluptuous-serialize &&
               python -m pyflakes custom_components/ai_workspace ai_workspace/app &&
               python -m pytest -q -p no:cacheprovider
             "
@@ -43,3 +43,5 @@ jobs:
             node --input-type=module --check < "$f"
           done
           node tests/test_send_guard.mjs
+          node tests/test_media_guard.mjs
+          node tests/test_speech.mjs

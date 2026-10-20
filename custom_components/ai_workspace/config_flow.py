@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 
 import voluptuous as vol
 from homeassistant import config_entries
+from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers import config_validation as cv
@@ -20,6 +21,7 @@ from homeassistant.helpers.selector import (
 )
 
 from .agent_flow import AgentSubentryFlow
+from .agents import entry_agents
 from .const import (
     CONF_ALLOW_USERS,
     CONF_CROSS_CHAT,
@@ -29,6 +31,12 @@ from .const import (
     CONF_HOUSE_MAP,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
+    CONF_CHECK_HOUSE,
+    CONF_TRACK_USAGE,
+    CONF_SHOW_CHAT_USAGE,
+    CONF_HA_USAGE_SENSORS,
+    CONF_LOW_TOKEN,
+    CONF_PROMPT_CACHE,
     CONF_UI_THEME,
     CONF_KEEP_CHATS,
     CONF_MCP_KIND,
@@ -49,12 +57,17 @@ from .const import (
     MCP_CUSTOM,
     MCP_HA,
     MCP_KINDS,
+    MODE_CURSOR,
     STT_BROWSER,
     SUBENTRY_AGENT,
     SUBENTRY_MCP,
+    SUBENTRY_USAGE,
+    TOKEN_MODE_OFF,
+    TOKEN_MODES,
     TTS_OFF,
     UI_THEME_HA_COMPONENTS,
     mcp_kind_options,
+    token_mode_of,
     ui_theme_of,
 )
 from .mcp_config import server_slug
@@ -67,6 +80,9 @@ _LOGGER = logging.getLogger(__name__)
 SECTION_MCP = "mcp"
 SECTION_PROMPT = "prompt"
 SECTION_VOICE = "voice"
+SECTION_CHAT = "chat"
+SECTION_COST = "cost"
+SECTION_HOUSE = "house"
 _SHARED_KEYS = (
     CONF_SYSTEM_PROMPT,
     CONF_RUNTIME_URL,
@@ -78,6 +94,12 @@ _SHARED_KEYS = (
     CONF_HOUSE_MAP,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
+    CONF_CHECK_HOUSE,
+    CONF_TRACK_USAGE,
+    CONF_SHOW_CHAT_USAGE,
+    CONF_HA_USAGE_SENSORS,
+    CONF_LOW_TOKEN,
+    CONF_PROMPT_CACHE,
     CONF_UI_THEME,
     CONF_CROSS_CHAT,
     CONF_KEEP_CHATS,
@@ -86,11 +108,27 @@ _SHARED_KEYS = (
     CONF_TTS_ENGINE,
     CONF_TTS_NATURAL,
 )
+
+
+def _stored_shared(values: dict) -> dict:
+    """Keep YAML-only keys such as prompt_cache when they were already set."""
+    return {
+        key: values[key]
+        for key in _SHARED_KEYS
+        if key in values and values[key] is not None
+    }
+
+
 _URL_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.URL))
 _TOKEN_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
 _PROMPT_SELECTOR = TextSelector(TextSelectorConfig(multiline=True))
 _MCP_URL_NOTE = (
     "Leave empty to detect the server automatically. Change this only if you use a different connection than the built-in one."
+)
+_MCP_NONE_FOUND = (
+    "No MCP server found yet. Add Home Assistant's built-in **Model Context Protocol Server** integration "
+    "(Settings → Devices & services → Add integration) or install HA-MCP, then open this form again. "
+    "Or enter the address of another MCP server here."
 )
 
 
@@ -107,7 +145,9 @@ def _looks_detected_mcp(url: str) -> bool:
     return parsed.port in {8086, 9583, 9584} or host in {"ha-mcp"}
 
 
-def _mcp_url_note(url: str, auto: bool) -> str:
+def _mcp_url_note(url: str, auto: bool, none_found: bool = False) -> str:
+    if none_found:
+        return _MCP_NONE_FOUND
     if not auto:
         return _MCP_URL_NOTE
     path = (urlparse(url).path or "").lower()
@@ -118,33 +158,61 @@ def _mcp_url_note(url: str, auto: bool) -> str:
     return "We found a server automatically. Keep this unless you use a different one."
 
 
-def _form_placeholders(*, mcp_url: str = "", mcp_auto: bool = False) -> dict[str, str]:
+def _form_placeholders(*, mcp_url: str = "", mcp_auto: bool = False, none_found: bool = False) -> dict[str, str]:
     return {
         "mcp_url_mark": " · auto-detected" if mcp_auto else "",
-        "mcp_url_note": _mcp_url_note(mcp_url, mcp_auto),
+        "mcp_url_note": _mcp_url_note(mcp_url, mcp_auto, none_found),
     }
 
 
-def _ui_schema(defaults: dict | None = None) -> dict:
-    current = defaults or {}
-    return {
-        vol.Optional(CONF_ENABLE_SIDEBAR, default=current.get(CONF_ENABLE_SIDEBAR, True)): cv.boolean,
-        vol.Optional(CONF_ENABLE_OVERLAY, default=current.get(CONF_ENABLE_OVERLAY, True)): cv.boolean,
-        vol.Optional(CONF_ENABLE_DICTATE, default=current.get(CONF_ENABLE_DICTATE, True)): cv.boolean,
-        vol.Optional(CONF_ALLOW_USERS, default=current.get(CONF_ALLOW_USERS, False)): cv.boolean,
-        vol.Optional(CONF_HOUSE_MAP, default=current.get(CONF_HOUSE_MAP, False)): cv.boolean,
-        vol.Optional(CONF_SHORTEN_MCP_RESULTS, default=current.get(CONF_SHORTEN_MCP_RESULTS, True)): cv.boolean,
-        vol.Optional(CONF_CHANGE_HISTORY, default=current.get(CONF_CHANGE_HISTORY, True)): cv.boolean,
-        vol.Optional(CONF_CROSS_CHAT, default=current.get(CONF_CROSS_CHAT, False)): cv.boolean,
-        vol.Optional(
-            CONF_UI_THEME,
-            default=ui_theme_of(current.get(CONF_UI_THEME)) == UI_THEME_HA_COMPONENTS,
-        ): cv.boolean,
-        vol.Optional(
-            CONF_KEEP_CHATS,
-            default=int(current.get(CONF_KEEP_CHATS, DEFAULT_KEEP_CHATS) or DEFAULT_KEEP_CHATS),
-        ): NumberSelector(NumberSelectorConfig(min=1, max=500, mode="box", step=1)),
-    }
+def _chat_schema(current: dict) -> vol.Schema:
+    return vol.Schema(
+        {
+            vol.Optional(CONF_ENABLE_SIDEBAR, default=current.get(CONF_ENABLE_SIDEBAR, True)): cv.boolean,
+            vol.Optional(CONF_ENABLE_OVERLAY, default=current.get(CONF_ENABLE_OVERLAY, True)): cv.boolean,
+            vol.Optional(CONF_ENABLE_DICTATE, default=current.get(CONF_ENABLE_DICTATE, True)): cv.boolean,
+            vol.Optional(CONF_ALLOW_USERS, default=current.get(CONF_ALLOW_USERS, False)): cv.boolean,
+            vol.Optional(
+                CONF_UI_THEME,
+                default=ui_theme_of(current.get(CONF_UI_THEME)) == UI_THEME_HA_COMPONENTS,
+            ): cv.boolean,
+            vol.Optional(CONF_CROSS_CHAT, default=current.get(CONF_CROSS_CHAT, False)): cv.boolean,
+            vol.Optional(
+                CONF_KEEP_CHATS,
+                default=int(current.get(CONF_KEEP_CHATS, DEFAULT_KEEP_CHATS) or DEFAULT_KEEP_CHATS),
+            ): NumberSelector(NumberSelectorConfig(min=1, max=500, mode="box", step=1)),
+        }
+    )
+
+
+def _cost_schema(current: dict) -> vol.Schema:
+    return vol.Schema(
+        {
+            vol.Optional(
+                CONF_LOW_TOKEN, default=token_mode_of(current.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF))
+            ): SelectSelector(
+                SelectSelectorConfig(options=list(TOKEN_MODES), mode="dropdown", translation_key="low_token")
+            ),
+            vol.Optional(CONF_CHECK_HOUSE, default=bool(current.get(CONF_CHECK_HOUSE, True))): cv.boolean,
+            vol.Optional(CONF_TRACK_USAGE, default=current.get(CONF_TRACK_USAGE, True)): cv.boolean,
+            vol.Optional(CONF_SHOW_CHAT_USAGE, default=current.get(CONF_SHOW_CHAT_USAGE, True)): cv.boolean,
+            vol.Optional(
+                CONF_HA_USAGE_SENSORS, default=bool(current.get(CONF_HA_USAGE_SENSORS, False))
+            ): cv.boolean,
+        }
+    )
+
+
+def _house_schema(current: dict) -> vol.Schema:
+    return vol.Schema(
+        {
+            vol.Optional(CONF_HOUSE_MAP, default=current.get(CONF_HOUSE_MAP, False)): cv.boolean,
+            vol.Optional(
+                CONF_SHORTEN_MCP_RESULTS, default=current.get(CONF_SHORTEN_MCP_RESULTS, True)
+            ): cv.boolean,
+            vol.Optional(CONF_CHANGE_HISTORY, default=current.get(CONF_CHANGE_HISTORY, True)): cv.boolean,
+        }
+    )
 
 
 def _mcp_url_for_form(current: dict, hass: HomeAssistant | None = None) -> str:
@@ -174,6 +242,8 @@ def _normalize(user_input: dict, hass: HomeAssistant | None = None) -> dict:
         out[CONF_KEEP_CHATS] = max(1, min(keep, 500))
     if CONF_UI_THEME in out:
         out[CONF_UI_THEME] = ui_theme_of(out.get(CONF_UI_THEME))
+    if CONF_LOW_TOKEN in out:
+        out[CONF_LOW_TOKEN] = token_mode_of(out.get(CONF_LOW_TOKEN))
     return out
 
 
@@ -239,7 +309,7 @@ def _prompt_schema(current: dict) -> vol.Schema:
 
 def _flatten(user_input: dict) -> dict:
     out = dict(user_input)
-    for key in (SECTION_MCP, SECTION_PROMPT, SECTION_VOICE):
+    for key in (SECTION_MCP, SECTION_CHAT, SECTION_VOICE, SECTION_COST, SECTION_HOUSE, SECTION_PROMPT):
         nested = out.pop(key, None)
         if isinstance(nested, dict):
             out.update(nested)
@@ -265,7 +335,11 @@ class _SideBySide(Selector):
         return self._nested(value)
 
     def serialize(self) -> dict:
-        from probatio import to_field_list
+        try:
+            from probatio import to_field_list
+        except ImportError:
+            # Home Assistant before 2026.9 ships voluptuous-serialize instead.
+            from voluptuous_serialize import convert as to_field_list
 
         return {
             "type": "grid",
@@ -311,9 +385,11 @@ async def _shared_form(
     fields: dict = {}
     if include_mcp:
         fields[vol.Required(SECTION_MCP)] = section(_mcp_schema(defaults, hass, kinds or []), {"collapsed": False})
-    fields[vol.Required(SECTION_PROMPT)] = section(_prompt_schema(defaults), {"collapsed": True})
+    fields[vol.Required(SECTION_CHAT)] = section(_chat_schema(defaults), {"collapsed": False})
     fields[vol.Optional(SECTION_VOICE, default=voice)] = _SideBySide(_voice_schema(voice, stt, tts))
-    fields.update(_ui_schema(defaults))
+    fields[vol.Required(SECTION_COST)] = section(_cost_schema(defaults), {"collapsed": False})
+    fields[vol.Required(SECTION_HOUSE)] = section(_house_schema(defaults), {"collapsed": True})
+    fields[vol.Required(SECTION_PROMPT)] = section(_prompt_schema(defaults), {"collapsed": True})
     return vol.Schema(fields, extra=vol.ALLOW_EXTRA)
 
 
@@ -325,6 +401,15 @@ def _mcp_errors(flat: dict) -> dict:
     if kind == MCP_COOLVER and not str(flat.get(CONF_MCP_TOKEN) or "").strip():
         errors[CONF_MCP_TOKEN] = "required"
     return errors
+
+
+def _usage_subentry() -> dict:
+    return {
+        "subentry_type": SUBENTRY_USAGE,
+        "title": "Usage",
+        "unique_id": "usage",
+        "data": {},
+    }
 
 
 def _primary_connection(flat: dict) -> dict:
@@ -352,6 +437,9 @@ class AiWorkspaceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Ask for the first agent right after the integration is added."""
         from homeassistant.config_entries import SOURCE_USER, FlowType
 
+        if self.source == SOURCE_IMPORT:
+            return result
+
         created = result.get("result")
         flow_type = getattr(FlowType, "CONFIG_SUBENTRIES_FLOW", None)
         if created is None or flow_type is None:
@@ -367,6 +455,19 @@ class AiWorkspaceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         result["next_flow"] = (flow_type, started["flow_id"])
         return result
 
+    async def async_step_import(self, user_input=None):
+        await self.async_set_unique_id(DOMAIN)
+        self._abort_if_unique_id_configured()
+        from .yaml_config import entry_from_yaml
+
+        options, subentries = entry_from_yaml(user_input or {})
+        return self.async_create_entry(
+            title="AI Workspace",
+            data={},
+            options=options,
+            subentries=subentries,
+        )
+
     async def async_step_user(self, user_input=None):
         if self._async_current_entries():
             return self.async_abort(reason="single_instance_allowed")
@@ -378,17 +479,21 @@ class AiWorkspaceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if not errors:
                 flat = await _restore_auto_mcp(self.hass, flat)
                 await self.async_set_unique_id(DOMAIN)
+                subentries = [_primary_connection(flat)]
+                if bool(flat.get(CONF_HA_USAGE_SENSORS, False)):
+                    subentries.append(_usage_subentry())
                 return self.async_create_entry(
                     title="AI Workspace",
                     data={},
-                    options={key: flat.get(key) for key in _SHARED_KEYS},
-                    subentries=[_primary_connection(flat)],
+                    options=_stored_shared(flat),
+                    subentries=subentries,
                 )
             saved = flat
         defaults, mcp_auto, kinds = await _prepare_mcp_form(self.hass, saved)
         placeholders = _form_placeholders(
             mcp_url=str(defaults.get(CONF_MCP_URL) or ""),
             mcp_auto=mcp_auto,
+            none_found=list(kinds or []) == [MCP_CUSTOM],
         )
         return self.async_show_form(
             step_id="user",
@@ -417,10 +522,23 @@ class AiWorkspaceOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input=None):
         current = self._current()
+        if CONF_LOW_TOKEN not in current:
+            for agent in entry_agents(self.config_entry):
+                if agent.token_mode != TOKEN_MODE_OFF:
+                    current[CONF_LOW_TOKEN] = agent.token_mode
+                    break
+        if CONF_PROMPT_CACHE not in current:
+            agents = [agent for agent in entry_agents(self.config_entry) if agent.mode != MODE_CURSOR]
+            if agents and all(not agent.prompt_cache for agent in agents):
+                current[CONF_PROMPT_CACHE] = False
+        if CONF_CHECK_HOUSE not in current:
+            agents = [agent for agent in entry_agents(self.config_entry) if agent.mode != MODE_CURSOR]
+            if agents and all(not agent.check_house for agent in agents):
+                current[CONF_CHECK_HOUSE] = False
         if user_input is not None:
             flat = _normalize(_flatten(user_input), self.hass)
             merged = {**current, **flat}
-            return self.async_create_entry(title="", data={key: merged.get(key) for key in _SHARED_KEYS})
+            return self.async_create_entry(title="", data=_stored_shared(merged))
         return self.async_show_form(
             step_id="init",
             data_schema=await _shared_form(self.hass, current, None, include_mcp=False),

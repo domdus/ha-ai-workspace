@@ -26,6 +26,18 @@ def test_parse_tool_call_reads_only_tool_invocations() -> None:
         b'{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"ha_config_set_automation","arguments":"{\\"identifier\\":\\"a\\"}"}}'
     ) == ("ha_config_set_automation", {"identifier": "a"})
     assert parse_tool_call(b'{"jsonrpc":"2.0","id":1,"method":"tools/list"}') is None
+    assert parse_tool_call(
+        b'[{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"ha_config_set_dashboard","arguments":{"url_path":"home-weather","patch":[{"op":"add","path":"/views/-","value":{}}]}}}]'
+    ) == (
+        "ha_config_set_dashboard",
+        {"url_path": "home-weather", "patch": [{"op": "add", "path": "/views/-", "value": {}}]},
+    )
+    assert parse_tool_call(
+        b'data: {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"ha_config_set_dashboard","arguments":{"url_path":null,"python_transform":"config[\'views\'].append({})"}}}\n\n'
+    ) == (
+        "ha_config_set_dashboard",
+        {"url_path": None, "python_transform": "config['views'].append({})"},
+    )
     assert tool_response_ok(200, b'{"result":{"isError": false}}') is True
     assert tool_response_ok(200, b'{"result":{"isError": true}}') is False
     assert tool_response_ok(500, b"{}") is False
@@ -246,7 +258,7 @@ def test_proxy_returns_a_fitted_tool_result(tmp_path: Path) -> None:
             ),
             providers={},
         )
-        with TestClient(app) as client:
+        with TestClient(app, base_url="http://127.0.0.1") as client:
             registry = McpProxy()
             client.app.state.runtime = type("Runtime", (), {"proxy": registry})()
             wrapped = registry.wrap(

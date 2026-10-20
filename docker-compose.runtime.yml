@@ -14,6 +14,12 @@
 # Cursor agent → Runtime token. Generate one with `openssl rand -hex 32`.
 # CURSOR_MODEL is only the fallback when the integration Model field is empty.
 # A value in the integration is sent as JSON `model` on each chat, then to AgentOptions.model.
+# Optional files: WORKSPACE_DIR defaults to /data/workspace (this volume). To bind a host
+# project, set WORKSPACE_DIR=/workspace and add   - /path/on/host:/workspace
+# Seed AGENTS.md only if missing. Do not mount Home Assistant /config. See README Option C.
+# Optional git: GIT_REPO=git@github.com:org/repo.git  GIT_SSH_KEY=/run/secrets/git_ssh
+#   mount the private key  - /path/to/id_ed25519:/run/secrets/git_ssh:ro
+#   GIT_BRANCH, GIT_USER_NAME, GIT_USER_EMAIL, or GIT_TOKEN (HTTPS PAT) as needed.
 
 name: ai-workspace-runtime
 
@@ -31,6 +37,7 @@ services:
       DATA_DIR: /data
       HOST: "127.0.0.1"
       PORT: "8090"
+      HASS_URL: "http://127.0.0.1:8123"
     volumes:
       - ai-workspace-data:/data
     restart: unless-stopped

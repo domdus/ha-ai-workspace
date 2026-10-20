@@ -53,9 +53,13 @@ class Settings:
     house_map: bool = False
     shorten_mcp_results: bool = True
     change_history: bool = True
+    track_usage: bool = True
+    show_chat_usage: bool = True
+    ha_usage_sensors: bool = False
     ui_theme: str = "standard"
     cross_chat: bool = False
-    low_token: bool = False
+    token_mode: str = "off"
+    prompt_cache: bool = True
     check_house: bool = True
     keep_chats: int = 30
     mode: str = "cursor"

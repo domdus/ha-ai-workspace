@@ -124,6 +124,19 @@ EFFORTS = {
 }
 SUBENTRY_AGENT = "agent"
 SUBENTRY_MCP = "mcp"
+SUBENTRY_USAGE = "usage"
+
+
+def usage_device_ident(entry_id: str) -> str:
+    """Device identifiers for workspace-wide usage sensors (not an agent subentry)."""
+    return f"{entry_id}:usage"
+
+
+def is_usage_sensor_unique_id(unique_id: str | None) -> bool:
+    """True for workspace/agent usage sensors, not conversation/STT/TTS."""
+    return "_usage_" in str(unique_id or "")
+
+
 CONF_AGENT_ID = "agent_id"
 CONF_RUNTIME_TOKEN = "runtime_token"
 STT_BROWSER = "browser"
@@ -169,6 +182,9 @@ CONF_ALLOW_USERS = "allow_users"
 CONF_HOUSE_MAP = "house_map"
 CONF_SHORTEN_MCP_RESULTS = "shorten_mcp_results"
 CONF_CHANGE_HISTORY = "change_history"
+CONF_TRACK_USAGE = "track_usage"
+CONF_SHOW_CHAT_USAGE = "show_chat_usage"
+CONF_HA_USAGE_SENSORS = "ha_usage_sensors"
 CONF_CROSS_CHAT = "cross_chat"
 CONF_UI_THEME = "ui_theme"
 UI_THEME_STANDARD = "standard"
@@ -186,7 +202,14 @@ def ui_theme_of(value) -> str:
 
 
 CONF_LOW_TOKEN = "low_token"
+TOKEN_MODE_OFF = "off"
+TOKEN_MODE_LIGHT = "light"
+TOKEN_MODE_MEDIUM = "medium"
+TOKEN_MODE_EXTREME = "extreme"
+TOKEN_MODES = (TOKEN_MODE_OFF, TOKEN_MODE_LIGHT, TOKEN_MODE_MEDIUM, TOKEN_MODE_EXTREME)
+_TOKEN_MODE_ON = {"1", "true", "on", "yes", TOKEN_MODE_EXTREME}
 CONF_CHECK_HOUSE = "check_house"
+CONF_PROMPT_CACHE = "prompt_cache"
 CONF_KEEP_CHATS = "keep_chats"
 DEFAULT_KEEP_CHATS = 30
 CONF_EFFORT = "effort"
@@ -197,27 +220,31 @@ CONF_ASSIST_TTS = "assist_tts"
 CONF_TTS_MODEL = "tts_model"
 CONF_TTS_VOICE = "tts_voice"
 CONF_TTS_SPEED = "tts_speed"
-STT_PROVIDERS = frozenset({API_OPENAI, API_OPENROUTER, API_COMPATIBLE})
-TTS_PROVIDERS = STT_PROVIDERS
+STT_PROVIDERS = frozenset({API_OPENAI, API_OPENROUTER, API_COMPATIBLE, API_GEMINI})
+TTS_PROVIDERS = frozenset({API_OPENAI, API_OPENROUTER, API_COMPATIBLE, API_GEMINI})
 _STT_MODEL = {
     API_OPENAI: "gpt-4o-mini-transcribe",
     API_OPENROUTER: "openai/whisper-1",
     API_COMPATIBLE: "whisper-1",
+    API_GEMINI: "gemini-3.8-flash",
 }
 _STT_MODEL_CHOICES = {
     API_OPENAI: ["gpt-4o-mini-transcribe", "gpt-4o-transcribe", "whisper-1"],
     API_OPENROUTER: ["openai/whisper-1", "openai/gpt-4o-mini-transcribe", "openai/gpt-4o-transcribe"],
     API_COMPATIBLE: ["whisper-1", "gpt-4o-mini-transcribe", "gpt-4o-transcribe"],
+    API_GEMINI: ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.5-pro"],
 }
 _TTS_MODEL = {
     API_OPENAI: "gpt-4o-mini-tts",
     API_OPENROUTER: "openai/gpt-4o-mini-tts",
     API_COMPATIBLE: "gpt-4o-mini-tts",
+    API_GEMINI: "gemini-3.8-flash-tts",
 }
 _TTS_MODEL_CHOICES = {
     API_OPENAI: ["gpt-4o-mini-tts", "tts-1-hd", "tts-1"],
     API_OPENROUTER: ["openai/gpt-4o-mini-tts", "openai/tts-1-hd", "openai/tts-1"],
     API_COMPATIBLE: ["gpt-4o-mini-tts", "tts-1-hd", "tts-1"],
+    API_GEMINI: ["gemini-3.8-flash-tts", "gemini-3.8-flash-lite-tts", "gemini-2.5-flash-preview-tts"],
 }
 TTS_VOICES = [
     "coral",
@@ -235,6 +262,69 @@ TTS_VOICES = [
     "verse",
 ]
 DEFAULT_TTS_VOICE = "coral"
+DEFAULT_GEMINI_TTS_VOICE = "Kore"
+GEMINI_TTS_VOICES = [
+    "Kore",
+    "Puck",
+    "Charon",
+    "Zephyr",
+    "Fenrir",
+    "Leda",
+    "Orus",
+    "Aoede",
+    "Callirrhoe",
+    "Autonoe",
+    "Enceladus",
+    "Iapetus",
+    "Umbriel",
+    "Algieba",
+    "Despina",
+    "Erinome",
+    "Algenib",
+    "RasAlgethi",
+    "Laomedeia",
+    "Achernar",
+    "Alnilam",
+    "Schedar",
+    "Gacrux",
+    "Pulcherrima",
+    "Achird",
+    "Zubenelgenubi",
+    "Vindemiatrix",
+    "Sadachbia",
+    "Sadaltager",
+    "Sulafat",
+]
+_GEMINI_SPEECH_LANGUAGE = {
+    "ar": "ar-EG",
+    "cmn": "cmn-CN",
+    "cs": "cs-CZ",
+    "da": "da-DK",
+    "de": "de-DE",
+    "el": "el-GR",
+    "en": "en-US",
+    "es": "es-ES",
+    "fi": "fi-FI",
+    "fr": "fr-FR",
+    "hi": "hi-IN",
+    "hu": "hu-HU",
+    "id": "id-ID",
+    "it": "it-IT",
+    "ja": "ja-JP",
+    "ko": "ko-KR",
+    "nb": "nb-NO",
+    "nl": "nl-NL",
+    "pl": "pl-PL",
+    "pt": "pt-BR",
+    "ro": "ro-RO",
+    "ru": "ru-RU",
+    "sv": "sv-SE",
+    "th": "th-TH",
+    "tr": "tr-TR",
+    "uk": "uk-UA",
+    "vi": "vi-VN",
+    "zh": "cmn-CN",
+}
 DEFAULT_TTS_SPEED = 1.0
 TTS_SPEEDS = (1.0, 1.25, 1.5, 2.0, 3.0, 4.0)
 # ISO 639-1 tags for OpenAI /audio/speech. One voice speaks all of these.
@@ -314,7 +404,7 @@ def assist_enabled(raw: dict, *, new: bool = False) -> bool:
 
 
 def provider_supports_stt(kind: str) -> bool:
-    """True when this provider has an OpenAI-style /audio/transcriptions API."""
+    """True when this provider can register a Home Assistant STT engine."""
     return str(kind or "") in STT_PROVIDERS
 
 
@@ -332,19 +422,62 @@ def resolved_stt_model(raw: dict, provider: str = "") -> str:
     return stored or default_stt_model(kind)
 
 
-def assist_stt_enabled(raw: dict, provider: str = "") -> bool:
-    """OpenAI-style agents transcribe for Assist unless the row turned it off."""
+def assist_stt_enabled(raw: dict, provider: str = "", *, new: bool = False) -> bool:
+    """OpenAI-style agents transcribe unless turned off. Gemini is opt-in on existing rows."""
     kind = str(provider or raw.get(CONF_API_PROVIDER) or "")
     if not provider_supports_stt(kind):
         return False
     if CONF_ASSIST_STT not in raw:
+        if kind == API_GEMINI:
+            return bool(new)
         return True
     return bool(raw.get(CONF_ASSIST_STT))
 
 
 def provider_supports_tts(kind: str) -> bool:
-    """True when this provider has an OpenAI-style /audio/speech API."""
+    """True when this provider can register a Home Assistant TTS engine."""
     return str(kind or "") in TTS_PROVIDERS
+
+
+def provider_supports_tts_speed(kind: str) -> bool:
+    """Gemini has no OpenAI-style speed multiplier."""
+    return provider_supports_tts(kind) and str(kind or "") != API_GEMINI
+
+
+def tts_voices(kind: str) -> list[str]:
+    if str(kind or "") == API_GEMINI:
+        return list(GEMINI_TTS_VOICES)
+    return list(TTS_VOICES)
+
+
+def default_tts_voice(kind: str) -> str:
+    if str(kind or "") == API_GEMINI:
+        return DEFAULT_GEMINI_TTS_VOICE
+    return DEFAULT_TTS_VOICE
+
+
+def gemini_speech_language(language: str) -> str:
+    """Map Home Assistant's language tag to Gemini speechConfig.languageCode."""
+    raw = str(language or "").strip().replace("_", "-")
+    if not raw:
+        return "en-US"
+    if "-" in raw:
+        primary, region = raw.split("-", 1)
+        if region:
+            if primary.casefold() == "zh":
+                return "cmn-CN" if region.casefold() in {"cn", "hans", "cmn"} else "cmn-TW"
+            return f"{primary}-{region.upper() if len(region) == 2 else region}"
+    primary = raw.split("-", 1)[0].casefold()
+    return _GEMINI_SPEECH_LANGUAGE.get(primary, "en-US")
+
+
+def gemini_generate_content_url(api_base: str, model: str) -> str:
+    """Native generateContent URL from the OpenAI-compatible Gemini base."""
+    base = str(api_base or default_api_base(API_GEMINI) or "").strip().rstrip("/")
+    if base.endswith("/openai"):
+        base = base[: -len("/openai")]
+    name = str(model or default_tts_model(API_GEMINI)).strip() or default_tts_model(API_GEMINI)
+    return f"{base}/models/{name}:generateContent"
 
 
 def default_tts_model(kind: str) -> str:
@@ -361,9 +494,15 @@ def resolved_tts_model(raw: dict, provider: str = "") -> str:
     return stored or default_tts_model(kind)
 
 
-def resolved_tts_voice(raw: dict) -> str:
-    stored = str(raw.get(CONF_TTS_VOICE) or "").strip().casefold()
-    return stored or DEFAULT_TTS_VOICE
+def resolved_tts_voice(raw: dict, provider: str = "") -> str:
+    kind = str(provider or raw.get(CONF_API_PROVIDER) or "")
+    stored = str(raw.get(CONF_TTS_VOICE) or "").strip()
+    if kind == API_GEMINI:
+        voices = {name.casefold(): name for name in GEMINI_TTS_VOICES}
+        if stored:
+            return voices.get(stored.casefold(), stored)
+        return DEFAULT_GEMINI_TTS_VOICE
+    return stored.casefold() or DEFAULT_TTS_VOICE
 
 
 def tts_speed_choice(value: float) -> str:
@@ -380,12 +519,14 @@ def resolved_tts_speed(raw: dict) -> float:
     return max(0.25, min(4.0, value))
 
 
-def assist_tts_enabled(raw: dict, provider: str = "") -> bool:
-    """OpenAI-style agents speak for Assist unless the row turned it off."""
+def assist_tts_enabled(raw: dict, provider: str = "", *, new: bool = False) -> bool:
+    """OpenAI-style agents speak unless turned off. Gemini is opt-in on existing rows."""
     kind = str(provider or raw.get(CONF_API_PROVIDER) or "")
     if not provider_supports_tts(kind):
         return False
     if CONF_ASSIST_TTS not in raw:
+        if kind == API_GEMINI:
+            return bool(new)
         return True
     return bool(raw.get(CONF_ASSIST_TTS))
 
@@ -424,6 +565,24 @@ CONF_API_BASE = "api_base"
 CONF_SYSTEM_PROMPT = "system_prompt"
 MODE_CURSOR = "cursor"
 MODE_API = "api"
+API_KEY_URLS = {
+    API_OPENAI: "https://platform.openai.com/api-keys",
+    API_ANTHROPIC: "https://console.anthropic.com/settings/keys",
+    API_GEMINI: "https://aistudio.google.com/apikey",
+    API_DEEPSEEK: "https://platform.deepseek.com/api_keys",
+    API_QWEN: "https://modelstudio.console.alibabacloud.com/?tab=playground#/api-key",
+    API_XAI: "https://console.x.ai/",
+    API_OPENROUTER: "https://openrouter.ai/keys",
+    API_AZURE: "https://oai.azure.com/",
+    MODE_CURSOR: "https://cursor.com/dashboard/integrations",
+}
+
+
+def api_key_url(kind: str) -> str:
+    """Provider console that issues API keys. Empty when there is no public key page."""
+    return API_KEY_URLS.get(kind, "")
+
+
 ADDON_SLUG = "ai_workspace"
 ADDON_PORT = 8090
 MCP_HA = "ha"
@@ -510,6 +669,82 @@ LOW_TOKEN_PROMPT = (
     "You help with this Home Assistant. Answer in a few short sentences. "
     "You cannot check or change the house in this mode."
 )
+LOW_TOKEN_MEDIUM_PROMPT = (
+    "You help with this Home Assistant. Be brief. "
+    "Use the connected tools to inspect or change the house. "
+    "Do not invent entity ids or states."
+)
+
+
+def token_mode_of(value) -> str:
+    """Map saved agent config (bool or string) to off/light/medium/extreme."""
+    if value is True:
+        return TOKEN_MODE_EXTREME
+    if value is False or value is None:
+        return TOKEN_MODE_OFF
+    text = str(value).strip().lower()
+    if text in _TOKEN_MODE_ON:
+        return TOKEN_MODE_EXTREME
+    if text in TOKEN_MODES:
+        return text
+    return TOKEN_MODE_OFF
+
+
+def settings_token_mode(settings) -> str:
+    if settings is None:
+        return TOKEN_MODE_OFF
+    return token_mode_of(getattr(settings, "token_mode", None))
+
+
+def provider_token_mode(provider) -> str:
+    return settings_token_mode(getattr(provider, "settings", None) if provider is not None else None)
+
+
+def token_mode_allows_tools(mode: str) -> bool:
+    return mode != TOKEN_MODE_EXTREME
+
+
+def token_mode_history_limit(mode: str) -> int:
+    if mode == TOKEN_MODE_LIGHT:
+        return 12
+    if mode == TOKEN_MODE_MEDIUM:
+        return 4
+    if mode == TOKEN_MODE_OFF:
+        return 12
+    return 0
+
+
+def token_mode_allows_extras(mode: str) -> bool:
+    """Page note, Assist extra prompt, cross-chat, auto title, effort."""
+    return mode == TOKEN_MODE_OFF
+
+
+def token_mode_allows_files(mode: str) -> bool:
+    return mode in {TOKEN_MODE_OFF, TOKEN_MODE_LIGHT}
+
+
+def token_mode_checks_house(mode: str, check_house: bool) -> bool:
+    if mode == TOKEN_MODE_LIGHT:
+        return True
+    if mode == TOKEN_MODE_OFF:
+        return bool(check_house)
+    return False
+
+
+def token_mode_reply_limit(mode: str) -> int | None:
+    if mode == TOKEN_MODE_EXTREME:
+        return 256
+    if mode == TOKEN_MODE_MEDIUM:
+        return 1024
+    return None
+
+
+def token_mode_clip_user(mode: str) -> int | None:
+    if mode in {TOKEN_MODE_EXTREME, TOKEN_MODE_MEDIUM}:
+        return 1200
+    return None
+
+
 LANGUAGE_INSTRUCTION = (
     "Always answer in the same language the user wrote their latest message in."
 )

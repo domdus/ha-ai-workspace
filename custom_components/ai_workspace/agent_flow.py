@@ -33,7 +33,7 @@ from .const import (
     CONF_CHECK_HOUSE,
     CONF_CURSOR_API_KEY,
     CONF_EFFORT,
-    CONF_LOW_TOKEN,
+    CONF_PROMPT_CACHE,
     CONF_MODE,
     CONF_MODEL,
     CONF_RUNTIME_TOKEN,
@@ -44,12 +44,13 @@ from .const import (
     MODE_API,
     MODE_CURSOR,
     TTS_SPEEDS,
-    TTS_VOICES,
     assist_enabled,
     assist_stt_enabled,
     assist_tts_enabled,
     provider_supports_stt,
     provider_supports_tts,
+    provider_supports_tts_speed,
+    api_key_url,
     api_model_choices,
     default_api_base,
     default_api_model,
@@ -60,6 +61,7 @@ from .const import (
     tts_speed_choice,
     stt_model_choices,
     tts_model_choices,
+    tts_voices,
     submitted_model,
 )
 from .discovery import (
@@ -161,9 +163,9 @@ def _tts_model_field(provider: str, current: dict) -> dict:
     }
 
 
-def _tts_voice_field(current: dict) -> dict:
-    shown = resolved_tts_voice(current)
-    options = list(TTS_VOICES)
+def _tts_voice_field(provider: str, current: dict) -> dict:
+    shown = resolved_tts_voice(current, provider)
+    options = list(tts_voices(provider))
     if shown and shown not in options:
         options.insert(0, shown)
     return {
@@ -215,18 +217,16 @@ def _fields_schema(step: str, current: dict, borrows: list[dict[str, str]], *, n
         fields[vol.Optional(CONF_API_KEY, default="")] = _PASSWORD
         fields.update(_model_field(provider, current))
     fields.update(_effort_field(current))
-    if step != "cursor":
-        fields[vol.Optional(CONF_LOW_TOKEN, default=bool(current.get(CONF_LOW_TOKEN, False)))] = cv.boolean
-        fields[vol.Optional(CONF_CHECK_HOUSE, default=bool(current.get(CONF_CHECK_HOUSE, True)))] = cv.boolean
     fields[vol.Optional(CONF_ASSIST, default=assist_enabled(current, new=new))] = cv.boolean
     if provider_supports_stt(provider):
-        fields[vol.Optional(CONF_ASSIST_STT, default=assist_stt_enabled(current, provider))] = cv.boolean
+        fields[vol.Optional(CONF_ASSIST_STT, default=assist_stt_enabled(current, provider, new=new))] = cv.boolean
         fields.update(_stt_model_field(provider, current))
     if provider_supports_tts(provider):
-        fields[vol.Optional(CONF_ASSIST_TTS, default=assist_tts_enabled(current, provider))] = cv.boolean
+        fields[vol.Optional(CONF_ASSIST_TTS, default=assist_tts_enabled(current, provider, new=new))] = cv.boolean
         fields.update(_tts_model_field(provider, current))
-        fields.update(_tts_voice_field(current))
-        fields.update(_tts_speed_field(current))
+        fields.update(_tts_voice_field(provider, current))
+        if provider_supports_tts_speed(provider):
+            fields.update(_tts_speed_field(current))
     return vol.Schema(fields)
 
 
@@ -379,16 +379,24 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                     CONF_API_BASE: "" if provider == MODE_CURSOR else base,
                     CONF_MODEL: model,
                     CONF_EFFORT: "" if effort == EFFORT_DEFAULT else effort,
-                    CONF_LOW_TOKEN: False if provider == MODE_CURSOR else bool(user_input.get(CONF_LOW_TOKEN, False)),
-                    CONF_CHECK_HOUSE: provider != MODE_CURSOR and bool(user_input.get(CONF_CHECK_HOUSE, True)),
                     CONF_ASSIST: bool(user_input.get(CONF_ASSIST, assist_enabled(current, new=not self._editing))),
-                    CONF_ASSIST_STT: bool(user_input.get(CONF_ASSIST_STT, assist_stt_enabled(current, provider)))
+                    CONF_ASSIST_STT: bool(
+                        user_input.get(
+                            CONF_ASSIST_STT,
+                            assist_stt_enabled(current, provider, new=not self._editing),
+                        )
+                    )
                     if provider_supports_stt(provider)
                     else False,
                     CONF_STT_MODEL: str(user_input.get(CONF_STT_MODEL) or "").strip()
                     if provider_supports_stt(provider)
                     else "",
-                    CONF_ASSIST_TTS: bool(user_input.get(CONF_ASSIST_TTS, assist_tts_enabled(current, provider)))
+                    CONF_ASSIST_TTS: bool(
+                        user_input.get(
+                            CONF_ASSIST_TTS,
+                            assist_tts_enabled(current, provider, new=not self._editing),
+                        )
+                    )
                     if provider_supports_tts(provider)
                     else False,
                     CONF_TTS_MODEL: str(user_input.get(CONF_TTS_MODEL) or "").strip()
@@ -397,15 +405,21 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                     CONF_TTS_VOICE: str(user_input.get(CONF_TTS_VOICE) or "").strip()
                     if provider_supports_tts(provider)
                     else "",
-                    CONF_TTS_SPEED: tts_speed_choice(resolved_tts_speed(user_input if provider_supports_tts(provider) else {}))
-                    if provider_supports_tts(provider)
+                    CONF_TTS_SPEED: tts_speed_choice(
+                        resolved_tts_speed(user_input if provider_supports_tts_speed(provider) else {})
+                    )
+                    if provider_supports_tts_speed(provider)
                     else "",
                     CONF_AZURE_API_VERSION: version if provider == API_AZURE else "",
                 }
+                if provider != MODE_CURSOR and CONF_PROMPT_CACHE in current:
+                    data[CONF_PROMPT_CACHE] = bool(current.get(CONF_PROMPT_CACHE))
+                if provider != MODE_CURSOR and CONF_CHECK_HOUSE in current:
+                    data[CONF_CHECK_HOUSE] = bool(current.get(CONF_CHECK_HOUSE))
                 return self._finish(provider, data)
             self._current = merged
         example = "https://YOUR-RESOURCE.openai.azure.com" if step == "azure" else default_api_base(API_OLLAMA)
-        placeholders = {"example_url": example}
+        placeholders = {"example_url": example, "api_key_url": api_key_url(provider)}
         schema_current = dict(self._current)
         if step == "cursor":
             entry = self._get_entry()

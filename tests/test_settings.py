@@ -59,13 +59,36 @@ def test_shorten_mcp_results_defaults_on(tmp_path: Path, monkeypatch) -> None:
     assert Settings.from_env().change_history is False
 
 
+def test_ensure_dirs_seeds_workspace_once(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.delenv("WORKSPACE_DIR", raising=False)
+    monkeypatch.delenv("ADDON_OPTIONS", raising=False)
+    settings = Settings.from_env()
+    settings.ensure_dirs()
+    agents = settings.workspace_dir / "AGENTS.md"
+    rule = settings.workspace_dir / ".cursor" / "rules" / "home-assistant.mdc"
+    assert "Home Assistant" in agents.read_text(encoding="utf-8")
+    assert rule.is_file()
+    agents.write_text("keep me\n", encoding="utf-8")
+    rule.write_text("keep rule\n", encoding="utf-8")
+    settings.ensure_dirs()
+    assert agents.read_text(encoding="utf-8") == "keep me\n"
+    assert rule.read_text(encoding="utf-8") == "keep rule\n"
+
+
 def test_default_hass_url(monkeypatch) -> None:
     monkeypatch.delenv("HASS_URL", raising=False)
     monkeypatch.delenv("HOMEASSISTANT_URL", raising=False)
     monkeypatch.delenv("SUPERVISOR_TOKEN", raising=False)
+    monkeypatch.delenv("HOST", raising=False)
     assert _default_hass_url({}) == "http://homeassistant:8123"
-    monkeypatch.setenv("SUPERVISOR_TOKEN", "x")
+    monkeypatch.setenv("HOST", "0.0.0.0")
+    assert _default_hass_url({}) == "http://homeassistant:8123"
+    monkeypatch.setenv("HOST", "127.0.0.1")
     assert _default_hass_url({}) == "http://127.0.0.1:8123"
+    monkeypatch.delenv("HOST", raising=False)
+    monkeypatch.setenv("SUPERVISOR_TOKEN", "x")
+    assert _default_hass_url({}) == "http://homeassistant:8123"
     assert _default_hass_url({"hass_url": "http://ha.local:8123"}) == "http://ha.local:8123"
     monkeypatch.setenv("HASS_URL", "http://env:8123/")
     assert _default_hass_url({}) == "http://env:8123"

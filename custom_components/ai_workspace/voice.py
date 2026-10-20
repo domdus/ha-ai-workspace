@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import re
 import wave
 from io import BytesIO
@@ -15,6 +16,123 @@ _URL = re.compile(r"https?://\S+")
 _MARK = re.compile(r"[*_`#~]+")
 _ARROW = re.compile(r"[→➡➜➤▶►▸▹↦⇒]+")
 _RULE = re.compile(r"^\s*[-*_]{3,}\s*$", re.MULTILINE)
+_PCM_RATE = re.compile(r"rate=(\d+)", re.I)
+
+
+def pcm_wav(pcm: bytes, *, sample_rate: int = 24000, channels: int = 1, sample_width: int = 2) -> bytes:
+    """Wrap raw PCM in a WAV header so Home Assistant can play it."""
+    buf = BytesIO()
+    with wave.open(buf, "wb") as handle:
+        handle.setnchannels(max(1, int(channels)))
+        handle.setsampwidth(max(1, int(sample_width)))
+        handle.setframerate(max(1, int(sample_rate)))
+        handle.writeframes(pcm)
+    return buf.getvalue()
+
+
+def gemini_speech_payload(text: str, voice: str, language: str = "") -> dict:
+    from .const import DEFAULT_GEMINI_TTS_VOICE, gemini_speech_language
+
+    spoken = gemini_speech_language(language)
+    name = str(voice or DEFAULT_GEMINI_TTS_VOICE).strip() or DEFAULT_GEMINI_TTS_VOICE
+    config: dict = {
+        "responseModalities": ["AUDIO"],
+        "speechConfig": {
+            "voiceConfig": {
+                "prebuiltVoiceConfig": {"voiceName": name},
+            }
+        },
+    }
+    if spoken:
+        config["speechConfig"]["languageCode"] = spoken
+    return {
+        "contents": [{"role": "user", "parts": [{"text": str(text or "")}]}],
+        "generationConfig": config,
+    }
+
+
+def gemini_transcribe_payload(audio: bytes, mime: str, language: str = "") -> dict:
+    from .const import gemini_speech_language
+
+    spoken = gemini_speech_language(language) if str(language or "").strip() else ""
+    if spoken:
+        instruction = (
+            f"Transcribe this audio. The spoken language is {spoken}. "
+            "Reply with the transcript only. Do not add commentary, labels, or quotation marks."
+        )
+    else:
+        instruction = (
+            "Transcribe this audio. Reply with the transcript only. "
+            "Do not add commentary, labels, or quotation marks."
+        )
+    return {
+        "contents": [
+            {
+                "role": "user",
+                "parts": [
+                    {"text": instruction},
+                    {
+                        "inlineData": {
+                            "mimeType": str(mime or "audio/wav"),
+                            "data": base64.b64encode(bytes(audio or b"")).decode("ascii"),
+                        }
+                    },
+                ],
+            }
+        ]
+    }
+
+
+def gemini_response_text(payload: dict) -> str:
+    """Plain text from a Gemini generateContent reply, skipping thought parts."""
+    if not isinstance(payload, dict):
+        return ""
+    bits: list[str] = []
+    for cand in payload.get("candidates") or []:
+        content = cand.get("content") if isinstance(cand, dict) else None
+        if not isinstance(content, dict):
+            continue
+        for part in content.get("parts") or []:
+            if not isinstance(part, dict) or part.get("thought"):
+                continue
+            text = part.get("text")
+            if isinstance(text, str) and text.strip():
+                bits.append(text.strip())
+    return "\n".join(bits).strip()
+
+
+def gemini_inline_audio(payload: dict) -> bytes:
+    """Decode Gemini generateContent audio (WAV or raw PCM) to a WAV body."""
+    if not isinstance(payload, dict):
+        return b""
+    for cand in payload.get("candidates") or []:
+        content = cand.get("content") if isinstance(cand, dict) else None
+        if not isinstance(content, dict):
+            continue
+        for part in content.get("parts") or []:
+            if not isinstance(part, dict):
+                continue
+            inline = part.get("inlineData") or part.get("inline_data") or {}
+            if not isinstance(inline, dict):
+                continue
+            raw = inline.get("data")
+            if not raw:
+                continue
+            try:
+                audio = base64.b64decode(raw)
+            except (ValueError, TypeError):
+                continue
+            if not audio:
+                continue
+            mime = str(inline.get("mimeType") or inline.get("mime_type") or "")
+            if audio.startswith(b"RIFF") or "wav" in mime.casefold():
+                return audio
+            rate = 24000
+            found = _PCM_RATE.search(mime)
+            if found:
+                rate = int(found.group(1))
+            return pcm_wav(audio, sample_rate=rate)
+    return b""
 
 
 def match_speech_language(requested: str, supported: list[str] | tuple[str, ...] | None, default: str = "") -> str:
