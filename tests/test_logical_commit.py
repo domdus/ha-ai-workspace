@@ -70,3 +70,9 @@ def test_merge_logical_summary_and_targets() -> None:
     assert lc.documents_to_restore({"kind": "dashboard", "id": "lovelace"}) == [
         {"kind": "dashboard", "id": "lovelace"}
     ]
+    assert lc.document_is_restorable({"kind": "dashboard", "id": "lovelace"}) is False
+    assert lc.document_is_restorable(
+        {"kind": "dashboard", "id": "lovelace", "config": {"views": [{"title": "Home"}]}}
+    ) is True
+    assert lc.document_is_restorable('{"kind":"automation","id":"morning","item":{"alias":"Morning"}}') is True
+    assert lc.document_is_restorable("") is False

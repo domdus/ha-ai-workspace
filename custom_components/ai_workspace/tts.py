@@ -26,6 +26,7 @@ from .const import (
     default_api_base,
     default_tts_model,
     default_tts_voice,
+    gemini_generate_content_headers,
     gemini_generate_content_url,
     tts_voices,
 )
@@ -169,7 +170,7 @@ class AiWorkspaceTTSEntity(tts.TextToSpeechEntity):
             async with session.post(
                 url,
                 json=payload,
-                headers=self._headers(),
+                headers=gemini_generate_content_headers(self._api_key),
                 timeout=ClientTimeout(total=45, sock_connect=10),
             ) as resp:
                 raw = await resp.read()

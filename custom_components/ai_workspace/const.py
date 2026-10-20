@@ -11,6 +11,15 @@ VERSION = json.loads(
 )["version"]
 # Restore from the snapshot Change History took before the write.
 ACTIVITY_ROLLBACK = True
+
+
+def activity_restore_flags(*, snapshot: bool, undone: bool, admin: bool, ha_mcp: bool) -> tuple[bool, bool]:
+    """Native snapshot rollback, plus Ask to restore when HA-MCP can help or we have no snapshot."""
+    can_rollback = bool(ACTIVITY_ROLLBACK and snapshot and not undone)
+    ask_restore = bool(admin and not undone and (ha_mcp or not can_rollback))
+    return can_rollback, ask_restore
+
+
 OVERLAY_JS = f"{STATIC_URL}/overlay.js?v={VERSION}"
 PANEL_JS = f"{STATIC_URL}/panel.js?v={VERSION}"
 DEFAULT_MODEL = "composer-2.5"
@@ -478,6 +487,14 @@ def gemini_generate_content_url(api_base: str, model: str) -> str:
         base = base[: -len("/openai")]
     name = str(model or default_tts_model(API_GEMINI)).strip() or default_tts_model(API_GEMINI)
     return f"{base}/models/{name}:generateContent"
+
+
+def gemini_generate_content_headers(api_key: str) -> dict[str, str]:
+    """AI Studio keys on generateContent. A Bearer header is treated as OAuth and returns 401."""
+    key = str(api_key or "").strip()
+    if not key:
+        return {}
+    return {"x-goog-api-key": key}
 
 
 def default_tts_model(kind: str) -> str:

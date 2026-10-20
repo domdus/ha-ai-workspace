@@ -246,6 +246,14 @@ def test_gemini_tts_url_strips_openai_compat_suffix() -> None:
     assert const.gemini_speech_language("en") == "en-US"
 
 
+def test_gemini_generate_content_headers_are_api_key_only() -> None:
+    const = _load("const", "const.py")
+    headers = const.gemini_generate_content_headers(" AIza-studio-key ")
+    assert headers == {"x-goog-api-key": "AIza-studio-key"}
+    assert "Authorization" not in headers
+    assert const.gemini_generate_content_headers("") == {}
+
+
 def test_gemini_inline_audio_wraps_pcm_and_keeps_wav() -> None:
     import base64
     import wave

@@ -224,13 +224,25 @@ async function ensureHost() {
       .bar .new-chat ha-icon {
         color: var(--primary-color);
       }
+      .bar .nav-none {
+        display: block;
+        width: 0;
+        height: 0;
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+      }
       .bar .brand {
         display: flex;
         align-items: center;
         align-self: stretch;
+        justify-content: flex-start;
         gap: var(--ha-space-2);
         min-width: 0;
+        /* ha-top-app-bar title starts 24px in (8px when narrow). Pull back so the
+           icon + name share the same 12px gutter as the chat messages. */
         margin: 0;
+        margin-inline-start: calc(-1 * var(--ha-space-6, 24px));
         padding: 0;
         border: 0;
         background: transparent;
@@ -238,7 +250,11 @@ async function ensureHost() {
         font: inherit;
         font-weight: inherit;
         line-height: 1;
+        text-align: start;
         cursor: pointer;
+      }
+      .bar[narrow] .brand {
+        margin-inline-start: calc(-1 * var(--ha-space-2, 8px));
       }
       .bar .brand:focus {
         outline: none;
@@ -268,9 +284,6 @@ async function ensureHost() {
           right: var(--ha-space-3);
         }
         aside.drawer { width: 100%; border-left: 0; }
-        ha-top-app-bar-fixed.bar {
-          padding-inline: max(var(--ha-space-6, 24px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
-        }
       }
     </style>
     ${
@@ -286,7 +299,14 @@ async function ensureHost() {
   drawer.className = "drawer";
   const bar = document.createElement("ha-top-app-bar-fixed");
   bar.className = "bar";
+  const mqNarrow = window.matchMedia("(max-width: 870px)");
+  const syncBarNarrow = () => {
+    bar.narrow = mqNarrow.matches;
+  };
+  syncBarNarrow();
+  mqNarrow.addEventListener("change", syncBarNarrow);
   bar.innerHTML = `
+        <span class="nav-none" slot="navigationIcon"></span>
         <button type="button" class="brand" slot="title" aria-label="${ui.open_workspace}">
           <ha-icon icon="mdi:robot"></ha-icon>
           <span>${ui.title}</span>

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.2
+
+- Gemini text-to-speech and speech-to-text send the AI Studio key as `x-goog-api-key` only. A Bearer header on `generateContent` made Google return HTTP 401.
+- Change History **Rollback** uses our snapshot without HA-MCP. When HA-MCP is connected, **Ask to restore** stays on the same row so edit backups still work. A snapshot that already matches the live dashboard says so instead of looking like nothing happened.
+- Floating chat: left-align the header icon and title with the messages, and line up **Open full workspace** with the same gutter.
+- HACS installs from the GitHub tag archive again. The extra release zip is gone.
+
 ## 1.3.1
 
 - Change History **Rollback** restores the snapshot taken before the write. HA-MCP backups stay available; this does not depend on `ha_manage_backup`.

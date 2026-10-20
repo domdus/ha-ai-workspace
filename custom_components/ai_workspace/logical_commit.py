@@ -249,6 +249,41 @@ def documents_to_restore(document: dict[str, Any]) -> list[dict[str, Any]]:
     return [document]
 
 
+_RESTORABLE_YAML = {"automation", "script", "scene"}
+
+
+def document_is_restorable(document: dict[str, Any] | str | None) -> bool:
+    """True when a stored activity document has a before-image we can write back."""
+    parsed: dict[str, Any] | None
+    if isinstance(document, str):
+        if not document.strip():
+            return False
+        try:
+            loaded = json.loads(document)
+        except json.JSONDecodeError:
+            return False
+        parsed = loaded if isinstance(loaded, dict) else None
+    elif isinstance(document, dict):
+        parsed = document
+    else:
+        parsed = None
+    if parsed is None:
+        return False
+    for doc in documents_to_restore(parsed):
+        kind = str(doc.get("kind") or "")
+        if kind == "dashboard":
+            config = doc.get("config")
+            if isinstance(config, dict) and config:
+                return True
+        elif kind in _RESTORABLE_YAML and "item" in doc:
+            return True
+        elif kind == "helper" and isinstance(doc.get("item"), dict):
+            return True
+        elif kind == "entity" and str(doc.get("entity_id") or "").strip():
+            return True
+    return False
+
+
 def restore_targets(document: str) -> list[tuple[str, str, str]]:
     doc = parse_logical_document(document)
     if doc is None:

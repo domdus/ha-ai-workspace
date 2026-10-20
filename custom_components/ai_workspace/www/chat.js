@@ -4174,12 +4174,15 @@ export async function mountAiWorkspace(root, options = {}) {
         if (!resp || !resp.ok) {
           button.disabled = false;
           button.textContent = t("rollback_failed");
+          if (resp) {
+            const detail = (await resp.text()).trim();
+            if (detail) button.title = detail.slice(0, 300);
+          }
           return;
         }
         await loadHistory();
       });
       item.appendChild(button);
-      return item;
     }
     if (row.ask_restore) {
       const button = document.createElement("ha-button");
