@@ -682,6 +682,12 @@ Tool budget: simple card copy/move/remove conditional/reorder — target at most
 - Never invent entity_id or dashboard ids; resolve via search/entity tools before patching cards.
 - User messages may be German or other languages; MCP skill guides may be English — still load and follow them.
 """.strip()
+BPS_KEY_INSTRUCTIONS = (
+    "If a listed write tool has a BestPracticeKey field, load the matching skill guide from the "
+    "same MCP connection (HA-MCP: ha_get_skill_guide), copy the acknowledgment key from the top, "
+    "and pass it as BestPracticeKey. If that field or tool is not in the list, skip this. "
+    "Do not ask the user for a key. Do not call a tool that is not listed."
+)
 LOW_TOKEN_PROMPT = (
     "You help with this Home Assistant. Answer in a few short sentences. "
     "You cannot check or change the house in this mode."
@@ -826,7 +832,7 @@ def language_instruction(code: str = "") -> str:
 def workspace_system_prompt(settings, *, admin: bool = True) -> str:
     """Built-in or custom system prompt plus universal dashboard/MCP rules."""
     base = str(getattr(settings, "system_prompt", "") or "").strip() or DEFAULT_SYSTEM_PROMPT
-    text = f"{base}\n\n{LOVELACE_DASHBOARD_RULES}".strip()
+    text = f"{base}\n\n{LOVELACE_DASHBOARD_RULES}\n\n{BPS_KEY_INSTRUCTIONS}".strip()
     if admin and getattr(settings, "house_map", False):
         from .house_map import CATALOG_INSTRUCTIONS
 
@@ -878,10 +884,6 @@ MCP_BULK_LIST_INSTRUCTIONS = """Bulk lists (automations, scripts, scenes, entiti
 - Answer with one or two Home Assistant MCP calls: a domain-filtered listing that returns every matching item with live state (on/off) when the user asked for it. Use entity search/list tools with domain_filter (or the server equivalent), not one get-config call per item.
 - For automation, script, and scene edit links, use config id / unique_id from that listing (entity attributes such as id, or registry unique_id in the same batch). Never call ha_config_get_automation, ha_config_get_script, or ha_config_get_scene once per row only to learn the edit id. Load full config for a single named item only when the user asks what it triggers, conditions, or actions do.
 - A full automation list with links and on/off should take about 1–3 MCP calls total, not dozens."""
-BPS_KEY_INSTRUCTIONS = (
-    "If a write tool has BestPracticeKey, call ha_get_skill_guide, copy the acknowledgment key "
-    "from the top of the result, and pass it as BestPracticeKey. Do not ask the user for it."
-)
 
 
 def ui_link_instructions(origin: str = "") -> str:
@@ -897,6 +899,15 @@ def ui_link_instructions(origin: str = "") -> str:
 
 def with_ui_context(message: str, origin: str = "") -> str:
     return f"{ui_link_instructions(origin)}\n\n{message}"
+
+
+def standing_chat_prompt(settings, *, admin: bool = True, language: str = "", origin: str = "") -> str:
+    """Workspace rules plus UI/MCP instructions for one Cursor agent lifetime."""
+    body = with_language_rule(workspace_system_prompt(settings, admin=admin), language)
+    ui = ui_link_instructions(origin)
+    if body and ui:
+        return f"{body}\n\n{ui}"
+    return body or ui
 
 
 _ENTITY_ID = re.compile(r"^[a-z][a-z0-9_]*\.[a-zA-Z0-9_]+$")

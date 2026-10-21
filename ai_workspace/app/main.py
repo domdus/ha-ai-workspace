@@ -108,6 +108,7 @@ class ChatRequest(BaseModel):
     question: str = Field(default="", max_length=8000)
     handoff: str = Field(default="", max_length=120000)
     history_in_ha: bool = False
+    prompt: str = Field(default="", max_length=120000)
     sync_agent_id: str = ""
     shorten_mcp_results: bool | None = None
     change_history: bool | None = None
@@ -115,12 +116,14 @@ class ChatRequest(BaseModel):
 
 def _with_ui_context(message: str, origin: str = "") -> str:
     origin = str(origin or "").strip().rstrip("/")
-    if origin.startswith("http://") or origin.startswith("https://"):
-        return (
-            f"The browser origin is {origin}. Never write that origin, 127.0.0.1, or localhost "
-            f"in a reply unless the user asks for the address.\n\n{message}"
-        )
-    return message
+    if not (origin.startswith("http://") or origin.startswith("https://")):
+        return message
+    if f"The browser origin is {origin}" in (message or ""):
+        return message
+    return (
+        f"The browser origin is {origin}. Never write that origin, 127.0.0.1, or localhost "
+        f"in a reply unless the user asks for the address.\n\n{message}"
+    )
 
 
 router = APIRouter()
@@ -405,6 +408,7 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
                     api_key=body.api_key.strip(),
                     handoff=body.handoff.strip(),
                     question=question,
+                    prompt=body.prompt.strip(),
                     full_tools=body.full_tools,
                 ):
                     if event.get("type") == "text":

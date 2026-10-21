@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.4
+
+- Cursor and cloud agents share the same skill reminder: if a listed write tool has `BestPracticeKey`, load that MCP’s skill guide (`ha_get_skill_guide` on HA-MCP) and pass the key. If the field or tool is missing, skip it and do not ask the user. Cursor already had the tool; it was missing the extra sentence cloud chats get because their tool descriptions are shortened.
+- Cursor follow-ups no longer re-send that standing workspace prompt (skill reminder, Lovelace rules, link instructions). A new or cold agent still gets the full prompt with the transcript handoff. Home Assistant still includes the text on the wire so an older runtime keeps today’s behavior.
+- README: a ChatGPT or Claude.ai plan is not an API key. Cloud agents need that provider's API credits. Contributing lists the fork, branch, and pull request steps.
+
 ## 1.3.3
 
 - Gemini text-to-speech has the same **Speed** control as OpenAI. The Gemini API has no numeric rate, so 1×–4× is sent as `speech_metadata.style` (pace).

@@ -37,5 +37,6 @@ class ChatProvider(Protocol):
         api_key: str = "",
         handoff: str = "",
         question: str = "",
+        prompt: str = "",
         full_tools: bool = False,
     ) -> AsyncIterator[dict]: ...

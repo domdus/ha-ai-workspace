@@ -17,6 +17,7 @@ class FakeCursor:
         self.last_mcp = None
         self.last_model = None
         self.last_handoff = None
+        self.last_prompt = None
 
     async def send(self, session: Session, message: str, on_agent_id, images=None, mcp=None, model=None, **_kwargs):
         self.last_message = message
@@ -24,6 +25,7 @@ class FakeCursor:
         self.last_mcp = mcp
         self.last_model = model
         self.last_handoff = _kwargs.get("handoff", "")
+        self.last_prompt = _kwargs.get("prompt", "")
         on_agent_id("agent-local-1")
         yield {"type": "status", "text": "Thinking..."}
         yield {"type": "text", "delta": "Moisture is 18%."}
@@ -268,6 +270,21 @@ def test_chat_accepts_mcp_and_model_from_request(tmp_path: Path) -> None:
         assert streamed.status_code == 200
         assert provider.last_model == "composer-2.6"
         assert provider.last_mcp["servers"]["mcp"]["url"].endswith("/mcp_test")
+
+
+def test_chat_forwards_standing_prompt(tmp_path: Path) -> None:
+    provider = FakeCursor()
+    app = create_app(settings(tmp_path), {"cursor": provider})
+    with TestClient(app, base_url=LOCAL) as client:
+        created = client.post("/api/sessions", json={"provider": "cursor"})
+        session_id = created.json()["id"]
+        streamed = client.post(
+            f"/api/sessions/{session_id}/chat",
+            json={"message": "Follow up", "prompt": "House rules.\n\nUse MCP first."},
+        )
+        assert streamed.status_code == 200
+        assert provider.last_prompt == "House rules.\n\nUse MCP first."
+        assert provider.last_message == "Follow up"
 
 
 def test_ha_proxied_chat_does_not_store_messages_on_runtime(tmp_path: Path) -> None:

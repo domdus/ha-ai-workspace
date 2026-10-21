@@ -230,6 +230,7 @@ class CursorProvider:
         api_key: str = "",
         handoff: str = "",
         question: str = "",
+        prompt: str = "",
         full_tools: bool = False,
     ) -> AsyncIterator[dict]:
         key = (api_key or "").strip() or self.settings.cursor_api_key
@@ -281,7 +282,8 @@ class CursorProvider:
         agent_id = getattr(agent, "agent_id", None)
         if agent_id:
             on_agent_id(str(agent_id))
-        outbound = apply_handoff(message, handoff, created, question=asked or question)
+        outbound = apply_standing(message, prompt, created)
+        outbound = apply_handoff(outbound, handoff, created, question=asked or question)
         logger.info(
             "cursor outbound session=%s chars=%s handoff=%s tools=%s created=%s",
             session.id,
@@ -446,6 +448,31 @@ def _session_idle(updated_at: str) -> bool:
     if stamp.tzinfo is None:
         stamp = stamp.replace(tzinfo=timezone.utc)
     return (datetime.now(timezone.utc) - stamp).total_seconds() >= _IDLE_RESTORE
+
+
+def apply_standing(message: str, prompt: str, fresh: bool = True) -> str:
+    """Keep the workspace prompt on a new or cold agent; drop it on a warm follow-up.
+
+    Home Assistant still sends the standing prompt every turn so an older runtime
+    that ignores the ``prompt`` field keeps today's behavior. A warm in-memory
+    agent already has that text from the first message.
+    """
+    note = (prompt or "").strip()
+    body = message or ""
+    if not note:
+        return body
+    at = body.find(note)
+    if fresh:
+        if at >= 0:
+            return body
+        return f"{note}\n\n{body}" if body.strip() else note
+    if at < 0:
+        return body
+    head = body[:at].rstrip()
+    tail = body[at + len(note) :].lstrip("\n")
+    if head and tail:
+        return f"{head}\n\n{tail}"
+    return tail or head
 
 
 def apply_handoff(message: str, handoff: str, fresh: bool = True, question: str = "") -> str:

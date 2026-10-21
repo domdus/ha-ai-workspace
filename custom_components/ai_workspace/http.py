@@ -19,15 +19,13 @@ from .const import (
     ACTIVITY_ROLLBACK,
     activity_restore_flags,
     CLOUD_ONLY_MODELS,
-    workspace_system_prompt,
+    standing_chat_prompt,
     DOMAIN,
     MCP_COOLVER,
     format_ui_page,
     ha_mcp_is_connected,
     parse_ui_page,
     ui_theme_of,
-    with_language_rule,
-    with_ui_context,
     provider_token_mode,
     token_mode_allows_extras,
     token_mode_allows_files,
@@ -278,19 +276,20 @@ async def _runtime_chat(
         }
         return
     http: ClientSession = async_get_clientsession(hass)
+    settings = _runtime(hass).get("settings")
+    standing = standing_chat_prompt(settings, admin=admin, language=language, origin=origin)
+    user_text = attach_files_to_message(message, files or [])
     payload: dict[str, Any] = {
-        "message": with_ui_context(attach_files_to_message(message, files or []), origin),
+        "message": f"{standing}\n\n{user_text}" if standing else user_text,
         "question": (question or message).strip(),
         "origin": origin,
         "history_in_ha": True,
         "full_tools": _full_tools(user_id, admin),
     }
+    if standing:
+        payload["prompt"] = standing
     if session.agent_id:
         payload["sync_agent_id"] = str(session.agent_id)
-    settings = _runtime(hass).get("settings")
-    prompt = with_language_rule(workspace_system_prompt(settings, admin=admin), language)
-    if prompt:
-        payload["message"] = f"{prompt}\n\n{payload['message']}"
     if images:
         payload["images"] = [
             {"name": item["name"], "mime": item["mime"], "data": item["data"]} for item in images
