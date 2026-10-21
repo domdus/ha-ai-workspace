@@ -16,7 +16,7 @@
 # A value in the integration is sent as JSON `model` on each chat, then to AgentOptions.model.
 # Optional files: WORKSPACE_DIR defaults to /data/workspace (this volume). To bind a host
 # project, set WORKSPACE_DIR=/workspace and add   - /path/on/host:/workspace
-# Seed AGENTS.md only if missing. Do not mount Home Assistant /config. See README Option C.
+# Seed AGENTS.md only if missing. Do not mount Home Assistant /config. See README Option B.
 # Optional git: GIT_REPO=git@github.com:org/repo.git  GIT_SSH_KEY=/run/secrets/git_ssh
 #   mount the private key  - /path/to/id_ed25519:/run/secrets/git_ssh:ro
 #   GIT_BRANCH, GIT_USER_NAME, GIT_USER_EMAIL, or GIT_TOKEN (HTTPS PAT) as needed.
