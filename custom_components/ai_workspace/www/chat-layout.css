@@ -754,6 +754,11 @@ h1 {
   --mdc-icon-button-size: 32px;
 }
 
+.send.is-stop {
+  color: var(--error-color, var(--ha-color-on-error-quiet, #b3261e));
+  --ha-button-surface-color: var(--error-color, var(--ha-color-on-error-quiet, #b3261e));
+}
+
 .attach-row {
   display: flex;
   flex-wrap: wrap;

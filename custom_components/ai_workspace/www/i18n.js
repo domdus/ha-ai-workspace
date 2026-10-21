@@ -37,6 +37,7 @@ export const I18N = {
     speak_reply: "Play reply",
     pause_reply: "Pause",
     send: "Send",
+    stop_reply: "Stop",
     scroll_to_bottom: "Scroll to bottom",
     rename: "Rename",
     delete: "Delete",
@@ -147,6 +148,7 @@ export const I18N = {
     speak_reply: "Antwort abspielen",
     pause_reply: "Pause",
     send: "Senden",
+    stop_reply: "Stopp",
     scroll_to_bottom: "Nach unten scrollen",
     placeholder_next: "Nächste Nachricht",
     queued_hint: "Wird gesendet, sobald diese Antwort fertig ist",
@@ -252,6 +254,7 @@ export const I18N = {
     mic_needs_https:
       "La dictée nécessite une connexion sécurisée. Ouvrez Home Assistant en https:// (Nabu Casa ou un reverse proxy). Les navigateurs bloquent le micro sur les adresses LAN en http://.",
     send: "Envoyer",
+    stop_reply: "Arrêter",
     rename: "Renommer",
     delete: "Supprimer",
     rename_prompt: "Renommer le chat",
@@ -363,6 +366,7 @@ export const I18N = {
     mic_needs_https:
       "El dictado necesita una conexión segura. Abre Home Assistant por https:// (Nabu Casa o un proxy inverso). Los navegadores bloquean el micrófono en direcciones LAN http://.",
     send: "Enviar",
+    stop_reply: "Detener",
     rename: "Renombrar",
     delete: "Eliminar",
     rename_prompt: "Renombrar chat",
@@ -473,6 +477,7 @@ export const I18N = {
     mic_needs_https:
       "La dettatura richiede una connessione sicura. Apri Home Assistant su https:// (Nabu Casa o un reverse proxy). I browser bloccano il microfono sugli indirizzi LAN http://.",
     send: "Invia",
+    stop_reply: "Interrompi",
     rename: "Rinomina",
     delete: "Elimina",
     rename_prompt: "Rinomina chat",
@@ -583,6 +588,7 @@ export const I18N = {
     mic_needs_https:
       "Dicteren vereist een beveiligde verbinding. Open Home Assistant via https:// (Nabu Casa of een reverse proxy). Browsers blokkeren de microfoon op http://-LAN-adressen.",
     send: "Versturen",
+    stop_reply: "Stoppen",
     rename: "Hernoemen",
     delete: "Verwijderen",
     rename_prompt: "Chat hernoemen",
@@ -693,6 +699,7 @@ export const I18N = {
     mic_needs_https:
       "Dyktowanie wymaga bezpiecznego połączenia. Otwórz Home Assistant przez https:// (Nabu Casa lub reverse proxy). Przeglądarki blokują mikrofon na adresach LAN http://.",
     send: "Wyślij",
+    stop_reply: "Zatrzymaj",
     rename: "Zmień nazwę",
     delete: "Usuń",
     rename_prompt: "Zmień nazwę czatu",
@@ -803,6 +810,7 @@ export const I18N = {
     mic_needs_https:
       "Diktování vyžaduje zabezpečené připojení. Otevřete Home Assistant přes https:// (Nabu Casa nebo reverse proxy). Prohlížeče blokují mikrofon na LAN adresách http://.",
     send: "Odeslat",
+    stop_reply: "Zastavit",
     rename: "Přejmenovat",
     delete: "Smazat",
     rename_prompt: "Přejmenovat chat",
@@ -913,6 +921,7 @@ export const I18N = {
     mic_needs_https:
       "Diktering kräver en säker anslutning. Öppna Home Assistant över https:// (Nabu Casa eller en reverse proxy). Webbläsare blockerar mikrofonen på http://-LAN-adresser.",
     send: "Skicka",
+    stop_reply: "Stoppa",
     rename: "Byt namn",
     delete: "Ta bort",
     rename_prompt: "Byt namn på chatt",
@@ -1023,6 +1032,7 @@ export const I18N = {
     mic_needs_https:
       "Для диктовки нужно защищённое соединение. Откройте Home Assistant по https:// (Nabu Casa или обратный прокси). Браузеры блокируют микрофон на LAN-адресах http://.",
     send: "Отправить",
+    stop_reply: "Стоп",
     rename: "Переименовать",
     delete: "Удалить",
     rename_prompt: "Переименовать чат",
@@ -1133,6 +1143,7 @@ export const I18N = {
     mic_needs_https:
       "받아쓰기는 보안 연결이 필요합니다. Home Assistant를 https://로 여세요(Nabu Casa 또는 리버스 프록시). 브라우저는 http:// LAN 주소에서 마이크를 차단합니다.",
     send: "보내기",
+    stop_reply: "중지",
     rename: "이름 바꾸기",
     delete: "삭제",
     rename_prompt: "채팅 이름 바꾸기",
@@ -1243,6 +1254,7 @@ export const I18N = {
     mic_needs_https:
       "语音输入需要安全连接。请通过 https:// 打开 Home Assistant（Nabu Casa 或反向代理）。浏览器会在 http:// 局域网地址上拦截麦克风。",
     send: "发送",
+    stop_reply: "停止",
     rename: "重命名",
     delete: "删除",
     rename_prompt: "重命名对话",
@@ -1353,6 +1365,7 @@ export const I18N = {
     mic_needs_https:
       "語音輸入需要安全連線。請透過 https:// 開啟 Home Assistant（Nabu Casa 或反向代理）。瀏覽器會在 http:// 區網位址封鎖麥克風。",
     send: "傳送",
+    stop_reply: "停止",
     rename: "重新命名",
     delete: "刪除",
     rename_prompt: "重新命名對話",
@@ -1463,6 +1476,7 @@ export const I18N = {
     mic_needs_https:
       "Diktə üçün təhlükəsiz bağlantı lazımdır. Home Assistant-ı https:// ilə açın (Nabu Casa və ya reverse proxy). Brauzerlər http:// LAN ünvanlarında mikrofonu bloklayır.",
     send: "Göndər",
+    stop_reply: "Dayandır",
     rename: "Adını dəyiş",
     delete: "Sil",
     rename_prompt: "Çatın adını dəyiş",
@@ -1573,6 +1587,7 @@ export const I18N = {
     mic_needs_https:
       "Dikto bezonas sekuran konekton. Malfermu Home Assistant per https:// (Nabu Casa aŭ inversa prokurilo). Foliumiloj blokas la mikrofonon ĉe http://-LAN-adresoj.",
     send: "Sendi",
+    stop_reply: "Halti",
     rename: "Alinomi",
     delete: "Forigi",
     rename_prompt: "Alinomi babilejon",

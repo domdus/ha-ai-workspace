@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.5b1
+
+- Chat: while the agent is working, Send becomes Stop (standard template and ha-components). A queued prompt shows an X in those views and in the floating chat. Stop ends the current turn so you can send immediately; a message already in the queue is sent next.
+
 ## 1.3.4
 
 - Cursor and cloud agents share the same skill reminder: if a listed write tool has `BestPracticeKey`, load that MCP’s skill guide (`ha_get_skill_guide` on HA-MCP) and pass the key. If the field or tool is missing, skip it and do not ask the user. Cursor already had the tool; it was missing the extra sentence cloud chats get because their tool descriptions are shortened.

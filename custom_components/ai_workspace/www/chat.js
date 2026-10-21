@@ -686,9 +686,7 @@ export async function mountAiWorkspace(root, options = {}) {
       .replace(/"/g, "&quot;")
       .replace(/</g, "&lt;");
   const composerTag = "div";
-  const nextRemoveMarkup = haUi
-    ? `<ha-icon-button class="next-remove" label="${t("queued_remove")}"><ha-icon icon="mdi:close"></ha-icon></ha-icon-button>`
-    : `<button type="button" class="next-remove"></button>`;
+  const nextRemoveMarkup = `<ha-icon-button class="next-remove" type="button" label="${htmlAttr(t("queued_remove"))}"><ha-icon icon="mdi:close"></ha-icon></ha-icon-button>`;
   const fileInputMarkup =
     `<input class="file-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif,.yaml,.yml,.json,.txt,.md,.csv,.xml,.toml,.html,.css,.js,.ts,.py,.log,.cfg,.ini,.conf" multiple hidden>`;
   const attachBtnMarkup = `<ha-icon-button class="attach" type="button" label="${htmlAttr(t("attach"))}"><ha-icon icon="mdi:paperclip"></ha-icon></ha-icon-button>`;
@@ -1019,6 +1017,10 @@ export async function mountAiWorkspace(root, options = {}) {
     }
   }
   let streaming = false;
+  let liveStream = false;
+  let watchGen = 0;
+  let turnStopping = false;
+  let turnStopDone = null;
   let nextTurn = null;
   const MAX_ATTACH = 4;
   const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
@@ -1055,8 +1057,7 @@ export async function mountAiWorkspace(root, options = {}) {
       messageEl.style.overflowY = overflows ? "auto" : "hidden";
       messageEl.classList.toggle("message-overflows", overflows);
     }
-    const hasDraft = Boolean(String(messageEl.value || "").trim() || pending.length);
-    setComposerDisabled(".send", !hasDraft);
+    syncSendButton();
     setComposerDisabled(".attach", pending.length >= MAX_ATTACH);
     const prompt = streaming ? t("placeholder_next") : t("placeholder");
     if (messageEl.localName === "ha-input") {
@@ -1980,8 +1981,9 @@ export async function mountAiWorkspace(root, options = {}) {
     resizeComposer();
   }
 
-  function abandonStream() {
+  function haltStream({ keepQueue = false } = {}) {
     streamToken += 1;
+    watchGen += 1;
     if (streamAbort) {
       streamAbort.abort();
       streamAbort = null;
@@ -1990,6 +1992,8 @@ export async function mountAiWorkspace(root, options = {}) {
       cancelAnimationFrame(streamDrainRaf);
       streamDrainRaf = 0;
     }
+    streamFinal = true;
+    revealAllNow();
     streamBuf = "";
     streamFull = "";
     streamPainted = "";
@@ -2001,9 +2005,70 @@ export async function mountAiWorkspace(root, options = {}) {
     waiters.forEach((fn) => fn());
     streaming = false;
     liveStream = false;
-    nextTurn = null;
+    if (!keepQueue) nextTurn = null;
     renderNext();
+    const live = logEl.querySelector(".bubble.assistant.streaming");
+    if (live) {
+      live.classList.remove("streaming");
+      settleTools(live);
+      setActivity(live, "");
+      const text = String(live.querySelector(".text")?.content || live.querySelector(".text")?.textContent || "").trim();
+      const tools = live.querySelector(".tools");
+      if (!text && !tools?.children?.length) (live.closest(".message-container") || live).remove();
+    }
     resizeComposer();
+  }
+
+  function abandonStream() {
+    haltStream({ keepQueue: false });
+  }
+
+  async function stopTurn() {
+    if (turnStopDone) {
+      await turnStopDone;
+      return;
+    }
+    if (!streaming && !liveStream) return;
+    const chatId = sessionId;
+    turnStopping = true;
+    haltStream({ keepQueue: true });
+    const done = (async () => {
+      if (!chatId) return;
+      try {
+        await apiFetch(`${API}/sessions/${chatId}/stop`, { method: "POST" });
+      } catch (_err) {
+        /* lock is released when the job ends */
+      }
+    })();
+    turnStopDone = done;
+    try {
+      await done;
+    } finally {
+      turnStopping = false;
+      if (turnStopDone === done) turnStopDone = null;
+    }
+    syncCopyChat();
+    resizeComposer();
+    if (nextTurn) form.requestSubmit();
+  }
+
+  function hasDraft() {
+    return Boolean(String(messageEl?.value || "").trim() || pending.length);
+  }
+
+  function syncSendButton() {
+    const halt = streaming || liveStream || turnStopping;
+    const label = t(halt ? "stop_reply" : "send");
+    const icon = halt ? "mdi:stop" : haUi ? "mdi:send" : "mdi:arrow-up";
+    for (const btn of composerControls(".send")) {
+      btn.disabled = halt ? false : !hasDraft();
+      btn.classList.toggle("is-stop", halt);
+      btn.label = label;
+      btn.setAttribute("aria-label", label);
+      btn.setAttribute("label", label);
+      const glyph = btn.querySelector("ha-icon");
+      if (glyph) glyph.setAttribute("icon", icon);
+    }
   }
 
   function writeStreamVisible(force = false) {
@@ -2703,9 +2768,6 @@ export async function mountAiWorkspace(root, options = {}) {
     const message = String(error?.message || error || "");
     return name === "AbortError" || /failed to fetch|load failed|network|abort|cancel|disconnected|reset/i.test(message);
   }
-
-  let watchGen = 0;
-  let liveStream = false;
 
   async function watchPending(id) {
     if (!id || liveStream || !chatVisible()) return false;
@@ -3646,6 +3708,7 @@ export async function mountAiWorkspace(root, options = {}) {
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (turnStopDone) await turnStopDone;
     let text = messageEl.value.trim();
     let attachments = pending.slice();
     if (streaming) {
@@ -3687,7 +3750,7 @@ export async function mountAiWorkspace(root, options = {}) {
     watchGen += 1;
     clearKeyboardLock();
     resetOuterScroll();
-    setComposerDisabled(".send", true);
+    syncSendButton();
     pending = [];
     renderThumbs();
     messageEl.value = "";
@@ -4005,6 +4068,10 @@ export async function mountAiWorkspace(root, options = {}) {
     const send = event.target.closest?.(".send");
     if (send?.closest?.(".composer")) {
       event.preventDefault();
+      if (streaming || liveStream) {
+        stopTurn();
+        return;
+      }
       form.requestSubmit();
       return;
     }

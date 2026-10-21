@@ -691,6 +691,22 @@ def _release_lock(data: dict[str, Any], session_id: str, lock: asyncio.Lock) -> 
         locks.pop(session_id, None)
 
 
+def chat_job_name(session_id: str) -> str:
+    return f"ai_workspace_chat_{session_id}"
+
+
+async def cancel_chat_job(data: dict[str, Any], session_id: str) -> bool:
+    """Stop the in-flight turn so the next message can use the chat lock."""
+    name = chat_job_name(session_id)
+    jobs = [job for job in list(data.get("chat_jobs") or set()) if job.get_name() == name and not job.done()]
+    for job in jobs:
+        job.cancel()
+    if not jobs:
+        return False
+    await asyncio.gather(*jobs, return_exceptions=True)
+    return True
+
+
 def _is_admin(request: web.Request) -> bool:
     return bool(getattr(request.get("hass_user"), "is_admin", False))
 
@@ -973,6 +989,22 @@ class ChatView(HomeAssistantView):
                                 continue
                             event = {"type": "title", "title": applied}
                         await send(event)
+                except asyncio.CancelledError:
+                    answer = merge_reply_text("".join(parts), final)
+                    if answer or tools:
+                        try:
+                            await asyncio.shield(
+                                hass.async_add_executor_job(
+                                    store.add_message,
+                                    session.id,
+                                    "assistant",
+                                    answer,
+                                    json.dumps(list(tools), ensure_ascii=False),
+                                )
+                            )
+                        except Exception:
+                            logger.debug("stopped turn not stored", exc_info=True)
+                    raise
                 except Exception as exc:
                     logger.exception("chat failed session=%s", session.id)
                     error = redact(str(exc), [settings.cursor_api_key, settings.api_key, settings.mcp_token])
@@ -1012,10 +1044,26 @@ class ChatView(HomeAssistantView):
             return response
 
         jobs: set[asyncio.Task] = data.setdefault("chat_jobs", set())
-        task = asyncio.create_task(produce(), name=f"ai_workspace_chat_{session.id}")
+        task = asyncio.create_task(produce(), name=chat_job_name(session.id))
         jobs.add(task)
         task.add_done_callback(jobs.discard)
         return task
+
+
+class ChatStopView(HomeAssistantView):
+    url = "/api/ai_workspace/sessions/{session_id}/stop"
+    name = "api:ai_workspace:chat_stop"
+    requires_auth = True
+
+    async def post(self, request: web.Request, session_id: str) -> web.Response:
+        hass: HomeAssistant = _hass(request)
+        data = _runtime(hass)
+        store: Store = data["store"]
+        session = await hass.async_add_executor_job(store.get_session, _user_id(request), session_id)
+        if session is None:
+            raise web.HTTPNotFound(text="Chat not found.")
+        stopped = await cancel_chat_job(data, session.id)
+        return self.json({"ok": True, "stopped": stopped})
 
 
 class SpeechView(HomeAssistantView):
@@ -1439,6 +1487,7 @@ def register_views(hass: HomeAssistant) -> None:
     hass.http.register_view(SessionsView)
     hass.http.register_view(SessionView)
     hass.http.register_view(ChatView)
+    hass.http.register_view(ChatStopView)
     hass.http.register_view(HouseMapMcpView)
     hass.http.register_view(CatalogMcpView)
     hass.http.register_view(ActivityView)
