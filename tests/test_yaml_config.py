@@ -114,7 +114,7 @@ def test_agents_get_stable_ids_and_cursor_mode() -> None:
     assert spoken["data"][CONF_ASSIST_STT] is True
     assert spoken["data"][CONF_ASSIST_TTS] is True
     assert spoken["data"]["tts_voice"] == "Puck"
-    assert spoken["data"]["tts_speed"] == ""
+    assert spoken["data"]["tts_speed"] == "1"
 
 
 def test_entry_from_yaml_includes_default_connection() -> None:

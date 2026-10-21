@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.3
+
+- Gemini text-to-speech has the same **Speed** control as OpenAI. The Gemini API has no numeric rate, so 1×–4× is sent as `speech_metadata.style` (pace).
+- Floating chat: the header icon and title line up with the conversation title.
+- Change History **Rollback** copies the Lovelace config before the write. Home Assistant mutates the live dashboard dict on save, so a stored snapshot could silently become the after-image and look like a no-op. Failed rollbacks now show the server error instead of only a button tooltip.
+- Change History restores the same Lovelace board HA-MCP edits. A storage dashboard with url_path `lovelace` (sidebar Overview) was previously written to the hidden default board, so Rollback could say Restored while the view you were on did not change.
+- Cursor banner: if Home Assistant starts before the Docker runtime, the “start the runtime” notice clears once the runtime answers, instead of sticking while chat already works.
+
 ## 1.3.2
 
 - Gemini text-to-speech and speech-to-text send the AI Studio key as `x-goog-api-key` only. A Bearer header on `generateContent` made Google return HTTP 401.

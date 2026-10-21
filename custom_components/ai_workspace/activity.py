@@ -9,6 +9,7 @@ Any other write is only a line, and only if a config document actually changed.
 
 from __future__ import annotations
 
+import copy
 import json
 from dataclasses import dataclass
 
@@ -126,6 +127,23 @@ def dashboard_store_id(url_path: object) -> str:
     if raw in {"", "lovelace", "default"}:
         return "lovelace"
     return raw
+
+
+def dashboard_board_key(item_id: object, board_keys: object) -> object:
+    """Return the hass.data lovelace.dashboards key HA-MCP would edit.
+
+    A storage dashboard with url_path ``lovelace`` shadows the implicit default
+    board (key ``None``). Snapshot and restore must use that same board.
+    """
+    keys = set(board_keys) if board_keys is not None else set()
+    store_id = dashboard_store_id(item_id)
+    if store_id == "lovelace":
+        if "lovelace" in keys:
+            return "lovelace"
+        return None
+    if store_id in keys:
+        return store_id
+    return store_id
 
 
 def dashboard_id_from_args(args: dict) -> str:
@@ -326,6 +344,13 @@ def should_keep_activity(
     if events or indexed or changed:
         return True
     return bool(ok and str(summary or "").strip())
+
+
+def freeze_mapping(value: object) -> dict:
+    """Copy a live Home Assistant config dict so later saves cannot rewrite our snapshot."""
+    if not isinstance(value, dict):
+        return {}
+    return copy.deepcopy(value)
 
 
 def index_items(kind: str, items: object, label_keys: tuple[str, ...] = ("alias", "name", "title")) -> dict[str, tuple[str, str]]:

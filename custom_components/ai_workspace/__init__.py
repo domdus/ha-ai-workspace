@@ -63,7 +63,7 @@ from .const import (
     is_usage_sensor_unique_id,
     ui_theme_of,
 )
-from .discovery import async_bind_runtime
+from .discovery import async_bind_runtime, async_retry_runtime
 from .http import register_views
 from .mcp_config import mcp_servers_from_saved
 from .mcp_resolve import async_resolve_mcp_url, infer_mcp_kind
@@ -456,6 +456,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if agent.subentry_id not in disabled
     }
     await async_bind_runtime(hass, bucket, force=True)
+    hass.async_create_background_task(async_retry_runtime(hass, bucket), "ai_workspace_runtime")
     await _register_frontend(hass, settings)
     await async_setup_house_map(hass, store, settings.house_map)
     await _prune_all_chats(hass, store, settings.keep_chats)

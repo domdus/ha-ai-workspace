@@ -164,7 +164,7 @@ class AiWorkspaceTTSEntity(tts.TextToSpeechEntity):
 
         model = self._tts_model or default_tts_model(API_GEMINI)
         url = gemini_generate_content_url(self._api_base, model)
-        payload = gemini_speech_payload(text, voice, language)
+        payload = gemini_speech_payload(text, voice, language, self._tts_speed)
         session = async_get_clientsession(self.hass)
         try:
             async with session.post(

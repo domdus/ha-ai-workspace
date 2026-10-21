@@ -193,7 +193,7 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
         if getattr(provider, "kind", "") == "cursor" and not getattr(info, "available", False):
             from .discovery import async_bind_runtime
 
-            await async_bind_runtime(self.hass, data)
+            await async_bind_runtime(self.hass, data, force=True)
             provider = providers.get(self._agent_id)
             info = getattr(provider, "info", None)
         if provider is None or not getattr(info, "available", False):
