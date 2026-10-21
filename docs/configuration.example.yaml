@@ -66,6 +66,7 @@ ai_workspace:
       assist_tts: true
       tts_model: gemini-3.8-flash-tts
       tts_voice: Kore
+      tts_speed: 1
     - id: claude
       title: Claude
       provider: anthropic

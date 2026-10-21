@@ -69,6 +69,98 @@ def test_harvest_ignores_dashboards_without_a_before_snapshot() -> None:
     assert row.fragments == []
 
 
+def test_snapshot_board_copies_live_config() -> None:
+    live = {"views": [{"cards": []}]}
+
+    class Board:
+        config = {"title": "Home"}
+
+        async def async_load(self, force):
+            return live
+
+    doc = asyncio.run(activity_ha._snapshot_board(Board(), "lovelace", "Home", True))
+    live["views"][0]["cards"].append({"type": "gauge"})
+    assert doc["config"]["views"][0]["cards"] == []
+    assert doc["meta"]["title"] == "Home"
+
+
+def _with_dashboard_snapshot(docs, run):
+    original = activity_ha._snapshot_all_dashboards
+
+    async def snapshot(hass, force=False):
+        return docs
+
+    activity_ha._snapshot_all_dashboards = snapshot
+    try:
+        run()
+    finally:
+        activity_ha._snapshot_all_dashboards = original
+
+
+def test_harvest_stores_before_image_not_live() -> None:
+    before = {
+        "lovelace": {
+            "kind": "dashboard",
+            "id": "lovelace",
+            "label": "Overview",
+            "config": {"views": [{"cards": []}]},
+        }
+    }
+    after = {
+        "lovelace": {
+            "kind": "dashboard",
+            "id": "lovelace",
+            "label": "Overview",
+            "config": {"views": [{"cards": [{"type": "gauge"}]}]},
+        }
+    }
+    row = SimpleNamespace(fragments=[], events=[], dashboard_docs=before)
+
+    def run():
+        asyncio.run(activity_ha.harvest_turn_changes(SimpleNamespace(data={DOMAIN: {}}), row))
+
+    _with_dashboard_snapshot(after, run)
+    assert len(row.fragments) == 1
+    assert row.fragments[0].document["config"]["views"][0]["cards"] == []
+
+
+def test_harvest_replaces_after_image_fragment() -> None:
+    before = {"lovelace": {"kind": "dashboard", "id": "lovelace", "config": {"views": [{"cards": []}]}}}
+    after = {
+        "lovelace": {
+            "kind": "dashboard",
+            "id": "lovelace",
+            "config": {"views": [{"cards": [{"type": "gauge"}]}]},
+        }
+    }
+    frag = SimpleNamespace(document=dict(after["lovelace"]))
+    row = SimpleNamespace(fragments=[frag], events=[], dashboard_docs=before)
+
+    def run():
+        asyncio.run(activity_ha.harvest_turn_changes(SimpleNamespace(data={DOMAIN: {}}), row))
+
+    _with_dashboard_snapshot(after, run)
+    assert frag.document is before["lovelace"]
+
+
+def test_harvest_does_not_store_live_config_without_prior() -> None:
+    after = {
+        "lovelace": {
+            "kind": "dashboard",
+            "id": "lovelace",
+            "config": {"views": [{"cards": [{"type": "gauge"}]}]},
+        }
+    }
+    row = SimpleNamespace(fragments=[], events=[("dashboard", "lovelace")], dashboard_docs={})
+
+    def run():
+        asyncio.run(activity_ha.harvest_turn_changes(SimpleNamespace(data={DOMAIN: {}}), row))
+
+    _with_dashboard_snapshot(after, run)
+    assert len(row.fragments) == 1
+    assert row.fragments[0].document is None
+
+
 def _voice_grid():
     import voluptuous as vol
 

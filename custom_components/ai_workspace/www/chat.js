@@ -2177,6 +2177,8 @@ export async function mountAiWorkspace(root, options = {}) {
     );
   }
 
+  let providerRetry = 0;
+
   async function loadProviders() {
     const response = await apiFetch(`${API}/providers`);
     if (!response?.ok) return;
@@ -2206,7 +2208,14 @@ export async function mountAiWorkspace(root, options = {}) {
       clearMicHelp();
       bannerEl.hidden = false;
       bannerEl.textContent = chosen.reason || t("configure_provider");
+      if (providerRetry < 8) {
+        providerRetry += 1;
+        window.setTimeout(() => {
+          if (bannerEl && !bannerEl.hidden) loadProviders();
+        }, Math.min(2000 * providerRetry, 15000));
+      }
     } else if (bannerEl && !bannerEl.classList.contains("hold") && !bannerEl.classList.contains("mic-help")) {
+      providerRetry = 0;
       bannerEl.hidden = true;
       bannerEl.textContent = "";
     }
@@ -2316,6 +2325,33 @@ export async function mountAiWorkspace(root, options = {}) {
       dialog.addEventListener("closed", () => {
         dialog.remove();
         resolve(confirmed);
+      });
+      openDialog(dialog);
+    });
+  }
+
+  function askAlert(title, body) {
+    return new Promise((resolve) => {
+      const dialog = document.createElement("ha-dialog");
+      dialog.setAttribute("header-title", title);
+      dialog.setAttribute("width", "small");
+      dialog.setAttribute("type", "alert");
+      const copy = document.createElement("p");
+      copy.className = "dialog-copy";
+      copy.textContent = body;
+      const footer = document.createElement("ha-dialog-footer");
+      footer.slot = "footer";
+      const ok = document.createElement("ha-button");
+      ok.slot = "primaryAction";
+      ok.textContent = t("close");
+      footer.append(ok);
+      dialog.append(copy, footer);
+      ok.addEventListener("click", () => {
+        dialog.open = false;
+      });
+      dialog.addEventListener("closed", () => {
+        dialog.remove();
+        resolve();
       });
       openDialog(dialog);
     });
@@ -3776,6 +3812,7 @@ export async function mountAiWorkspace(root, options = {}) {
             if (token === streamToken && sessionId === chatId) {
               syncCopyChat();
               flushNext();
+              if (bannerEl && !bannerEl.hidden) loadProviders();
             }
           });
         } else if (name === "title" && data.title) {
@@ -4174,10 +4211,12 @@ export async function mountAiWorkspace(root, options = {}) {
         if (!resp || !resp.ok) {
           button.disabled = false;
           button.textContent = t("rollback_failed");
+          let detail = "";
           if (resp) {
-            const detail = (await resp.text()).trim();
+            detail = (await resp.text()).trim();
             if (detail) button.title = detail.slice(0, 300);
           }
+          await askAlert(t("rollback_failed"), detail || t("rollback_failed"));
           return;
         }
         await loadHistory();
@@ -5090,6 +5129,7 @@ export async function mountAiWorkspace(root, options = {}) {
   listen(document, "visibilitychange", () => {
     loadDictate();
     if (sessionId && chatVisible()) watchPending(sessionId);
+    if (bannerEl && !bannerEl.hidden) loadProviders();
   });
   listen(window, "pageshow", () => {
     if (sessionId && chatVisible()) watchPending(sessionId);

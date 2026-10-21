@@ -312,11 +312,11 @@ async def async_bind_runtime(hass: HomeAssistant, bucket: dict | None = None, *,
     if not data:
         return ""
     now = time.monotonic()
-    if not force and now - float(data.get("runtime_checked") or 0) < _PROBE_COOLDOWN:
-        return str(data.get("runtime_url") or "")
+    previous = str(data.get("runtime_url") or "")
+    if not force and previous and now - float(data.get("runtime_checked") or 0) < _PROBE_COOLDOWN:
+        return previous
     data["runtime_checked"] = now
     entry = data.get("entry")
-    previous = str(data.get("runtime_url") or "")
     url = await async_resolve_runtime_url(hass, _entry_value(entry, CONF_RUNTIME_URL))
     if not url:
         apply_runtime_to_providers(data, "")
@@ -361,3 +361,20 @@ async def _async_finish_pairing(hass: HomeAssistant, data: dict, slug: str, url:
         data["runtime_token"] = token
     ok = bool(token) and await async_token_accepted(hass, url, token)
     apply_runtime_to_providers(data, url, None if ok else BAD_TOKEN)
+
+
+async def async_retry_runtime(hass: HomeAssistant, bucket: dict) -> None:
+    """Keep probing after startup so a late Docker runtime still clears the Cursor banner."""
+    for delay in (2, 5, 10, 20):
+        if not _needs_cursor(bucket):
+            return
+        if str(bucket.get("runtime_url") or "") and all(
+            item.info.available
+            for item in (bucket.get("providers") or {}).values()
+            if getattr(item, "kind", "") == "cursor"
+        ):
+            return
+        await asyncio.sleep(delay)
+        if hass.data.get(DOMAIN) is not bucket:
+            return
+        await async_bind_runtime(hass, bucket, force=True)

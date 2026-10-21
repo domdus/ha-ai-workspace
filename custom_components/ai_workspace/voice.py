@@ -30,7 +30,32 @@ def pcm_wav(pcm: bytes, *, sample_rate: int = 24000, channels: int = 1, sample_w
     return buf.getvalue()
 
 
-def gemini_speech_payload(text: str, voice: str, language: str = "") -> dict:
+def gemini_speech_style(speed: float) -> str:
+    """Gemini TTS has no numeric speed field. Map 1×–4× onto speech_metadata.style."""
+    try:
+        value = float(speed)
+    except (TypeError, ValueError):
+        return ""
+    if abs(value - 1.0) < 0.05:
+        return ""
+    if value >= 3.5:
+        return "speaking extremely fast"
+    if value >= 2.5:
+        return "speaking very rapidly"
+    if value >= 1.75:
+        return "speaking rapidly"
+    if value >= 1.4:
+        return "speaking quickly"
+    if value > 1.05:
+        return "speaking slightly quickly"
+    if value <= 0.4:
+        return "speaking extremely slowly"
+    if value <= 0.7:
+        return "speaking slowly"
+    return "speaking slightly slowly"
+
+
+def gemini_speech_payload(text: str, voice: str, language: str = "", speed: float = 1.0) -> dict:
     from .const import DEFAULT_GEMINI_TTS_VOICE, gemini_speech_language
 
     spoken = gemini_speech_language(language)
@@ -45,8 +70,12 @@ def gemini_speech_payload(text: str, voice: str, language: str = "") -> dict:
     }
     if spoken:
         config["speechConfig"]["languageCode"] = spoken
+    part: dict = {"text": str(text or "")}
+    style = gemini_speech_style(speed)
+    if style:
+        part["speech_metadata"] = {"style": style}
     return {
-        "contents": [{"role": "user", "parts": [{"text": str(text or "")}]}],
+        "contents": [{"role": "user", "parts": [part]}],
         "generationConfig": config,
     }
 

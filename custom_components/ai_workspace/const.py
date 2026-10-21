@@ -449,8 +449,8 @@ def provider_supports_tts(kind: str) -> bool:
 
 
 def provider_supports_tts_speed(kind: str) -> bool:
-    """Gemini has no OpenAI-style speed multiplier."""
-    return provider_supports_tts(kind) and str(kind or "") != API_GEMINI
+    """True when the agent form can offer a speaking-speed control."""
+    return provider_supports_tts(kind)
 
 
 def tts_voices(kind: str) -> list[str]:
@@ -956,9 +956,9 @@ def format_ui_page(page: dict[str, object] | None) -> str:
     return "\n".join(lines)
 
 
-COMPOSE_RUNTIME_URL = "http://cursor-sdk:8090"
+COMPOSE_RUNTIME_URL = "http://ai-workspace:8090"
 COMPOSE_RUNTIME_URLS = (
-    "http://cursor-sdk:8090",
     "http://ai-workspace:8090",
+    "http://cursor-sdk:8090",
 )
 HOST_RUNTIME_URL = "http://127.0.0.1:8090"

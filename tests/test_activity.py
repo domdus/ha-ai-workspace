@@ -95,6 +95,13 @@ def test_dashboard_store_id_maps_default_and_view_urls():
     assert activity.dashboard_store_id("lovelace-home") == "lovelace-home"
 
 
+def test_named_lovelace_dashboard_shadows_default():
+    assert activity.dashboard_board_key("lovelace", [None, "lovelace", "map"]) == "lovelace"
+    assert activity.dashboard_board_key(None, [None, "map"]) is None
+    assert activity.dashboard_board_key("lovelace", [None]) is None
+    assert activity.dashboard_board_key("map", [None, "lovelace", "map"]) == "map"
+
+
 def test_dashboard_id_ignores_json_patch_paths():
     assert activity.dashboard_id_from_args({"url_path": "default", "patch": [{"op": "replace", "path": "/views/0/title", "value": "Home"}]}) == "lovelace"
     assert activity.dashboard_id_from_args({"path": "/views/0/sections/1"}) == ""
@@ -257,6 +264,15 @@ def test_ha_mcp_is_connected():
     assert const.ha_mcp_is_connected("ha", [{"kind": "ha_mcp"}]) is True
     assert const.ha_mcp_is_connected("custom", [{"kind": "ha"}]) is False
     assert const.ha_mcp_is_connected("", None) is False
+
+
+def test_freeze_mapping_keeps_a_copy():
+    live = {"views": [{"title": "Technik", "cards": [{"type": "gauge"}]}]}
+    frozen = activity.freeze_mapping(live)
+    live["views"][0]["cards"].append({"type": "gauge"})
+    assert frozen["views"][0]["cards"] == [{"type": "gauge"}]
+    assert activity.freeze_mapping(None) == {}
+    assert activity.freeze_mapping("lovelace") == {}
 
 
 def test_activity_restore_flags_keep_ha_mcp_and_native_paths():

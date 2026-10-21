@@ -268,8 +268,14 @@ def test_gemini_inline_audio_wraps_pcm_and_keeps_wav() -> None:
         assert handle.readframes(24) == pcm
     body = voice.gemini_speech_payload("Hallo", "Puck", "de")
     assert body["contents"][0]["parts"][0]["text"] == "Hallo"
+    assert "speech_metadata" not in body["contents"][0]["parts"][0]
     assert body["generationConfig"]["speechConfig"]["voiceConfig"]["prebuiltVoiceConfig"]["voiceName"] == "Puck"
     assert body["generationConfig"]["speechConfig"]["languageCode"] == "de-DE"
+    fast = voice.gemini_speech_payload("Hallo", "Puck", "de", speed=1.5)
+    assert fast["contents"][0]["parts"][0]["speech_metadata"] == {"style": "speaking quickly"}
+    assert voice.gemini_speech_style(1.0) == ""
+    assert voice.gemini_speech_style(2.0) == "speaking rapidly"
+    assert voice.gemini_speech_style(4.0) == "speaking extremely fast"
     encoded = base64.b64encode(pcm).decode("ascii")
     audio = voice.gemini_inline_audio(
         {

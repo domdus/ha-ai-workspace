@@ -23,10 +23,12 @@ from .activity import (
     changed_index_keys,
     classify,
     dashboard_args,
+    dashboard_board_key,
     dashboard_id_from_args,
     dashboard_store_id,
     describe_index,
     entity_ids_from_args,
+    freeze_mapping,
     index_items,
     looks_like_config_write,
     should_keep_activity,
@@ -208,13 +210,37 @@ async def attach_turn_watch(hass: HomeAssistant, user_id: str, session_id: str) 
 
 
 async def harvest_turn_changes(hass: HomeAssistant, row) -> None:
-    """Fill an empty logical commit from Lovelace events or dashboard diffs."""
+    """Fill an empty logical commit from Lovelace events or dashboard diffs.
+
+    Prepare/commit may snapshot the live Lovelace dict. Home Assistant mutates
+    that object on save, so a stored document can silently become the after-image.
+    When fragments already exist, swap in the turn-start copy if the fragment
+    matches the live dashboard and the turn-start copy does not.
+    """
     from .logical_commit import ActivityFragment
 
-    if row is None or getattr(row, "fragments", None):
+    if row is None:
         return
     before = dict(getattr(row, "dashboard_docs", None) or {})
     current = await _snapshot_all_dashboards(hass, force=True)
+    fragments = getattr(row, "fragments", None) or []
+    if fragments:
+        for frag in fragments:
+            doc = frag.document if isinstance(getattr(frag, "document", None), dict) else None
+            if not doc or doc.get("kind") != "dashboard":
+                continue
+            store_id = str(doc.get("id") or "")
+            prior = before.get(store_id)
+            live = current.get(store_id)
+            prior_cfg = prior.get("config") if isinstance(prior, dict) else None
+            live_cfg = live.get("config") if isinstance(live, dict) else None
+            if not isinstance(prior_cfg, dict) or not prior_cfg:
+                continue
+            matches_live = isinstance(live_cfg, dict) and _same_body(doc.get("config"), live_cfg)
+            if matches_live and not _same_body(doc.get("config"), prior_cfg):
+                frag.document = prior
+                logger.info("Change History replaced after-image snapshot for dashboard %s", store_id)
+        return
     changed: list[str] = []
     if before:
         for store_id, doc in current.items():
@@ -248,7 +274,7 @@ async def harvest_turn_changes(hass: HomeAssistant, row) -> None:
             ActivityFragment(
                 summary=f"{action} dashboard {label}",
                 tool="lovelace_updated",
-                document=prior if isinstance(prior, dict) else now,
+                document=prior if isinstance(prior, dict) else None,
             )
         )
 
@@ -310,10 +336,10 @@ async def prepare(
         watch = await collect_index(hass)
     else:
         if change.kind == "dashboard":
-            dashboard_docs = await _snapshot_all_dashboards(hass)
+            dashboard_docs = await _snapshot_all_dashboards(hass, force=True)
             watch = await collect_index(hass)
         if change.action != "create":
-            document = await snapshot(hass, change)
+            document = await snapshot(hass, change, force=change.kind == "dashboard")
             if document is None and change.kind == "dashboard":
                 document = _pick_dashboard_doc(dashboard_docs, change.item_id)
         if document is None and change.action == "update":
@@ -334,7 +360,7 @@ async def prepare(
             document = None
     want_dashboards = (change is not None and change.kind == "dashboard") or dashboard_args(args)
     if (want_dashboards or watch is not None) and not dashboard_docs:
-        dashboard_docs = await _snapshot_all_dashboards(hass)
+        dashboard_docs = await _snapshot_all_dashboards(hass, force=True)
     if document is None and dashboard_docs and (change is None or change.kind == "dashboard"):
         document = _pick_dashboard_doc(dashboard_docs, change.item_id if change else dashboard_id_from_args(args))
         if isinstance(document, dict):
@@ -1047,7 +1073,7 @@ def _snapshot_helper(hass: HomeAssistant, change: Change) -> dict[str, Any] | No
     if not isinstance(item, dict):
         return None
     label = str(item.get("name") or item.get("alias") or item_id)
-    return {"kind": "helper", "domain": domain, "id": item_id, "label": label, "item": dict(item)}
+    return {"kind": "helper", "domain": domain, "id": item_id, "label": label, "item": freeze_mapping(item)}
 
 
 async def _restore_helper(hass: HomeAssistant, document: dict[str, Any]) -> None:
@@ -1146,7 +1172,7 @@ def _dashboard_key(url_path: str) -> str | None:
 
 
 def _board_store_key(key: object) -> str:
-    if key in (None, "", "lovelace", "default"):
+    if key in (None, "", "default"):
         return "lovelace"
     return str(key)
 
@@ -1157,14 +1183,23 @@ def _dashboards(hass: HomeAssistant) -> dict:
     return boards if isinstance(boards, dict) else {}
 
 
+def _iter_dashboards(hass: HomeAssistant):
+    """Yield (dict_key, board), skipping the implicit default when named lovelace exists."""
+    boards = _dashboards(hass)
+    skip_default = None in boards and "lovelace" in boards
+    for key, board in boards.items():
+        if skip_default and key is None:
+            continue
+        yield key, board
+
+
 def _resolve_board(hass: HomeAssistant, item_id: str) -> tuple[str, Any]:
     boards = _dashboards(hass)
     store_id = dashboard_store_id(item_id)
-    if store_id == "lovelace":
-        board = boards.get(None)
-        if board is None:
-            board = boards.get("lovelace")
-        return "lovelace", board
+    key = dashboard_board_key(item_id, boards)
+    board = boards.get(key)
+    if board is not None:
+        return _board_store_key(key), board
     board = boards.get(store_id)
     if board is not None:
         return store_id, board
@@ -1184,25 +1219,27 @@ async def _load_board_config(board: Any, force: bool = False) -> dict[str, Any] 
 
 
 async def _snapshot_board(
-    board: Any, stored_key: str, label: str = "", force: bool = False
+    board: Any, stored_key: str, label: str = "", force: bool = False, url_path: object = ""
 ) -> dict[str, Any] | None:
-    config = await _load_board_config(board, force=force)
-    meta = dict(getattr(board, "config", None) or {})
+    config = freeze_mapping(await _load_board_config(board, force=force))
+    meta = freeze_mapping(getattr(board, "config", None) or {})
     title = str(meta.get("title") or label or stored_key or "Overview")
+    path = None if url_path in (None, "", "default") else str(url_path)
     return {
         "kind": "dashboard",
         "id": stored_key,
+        "url_path": path,
         "label": title,
-        "config": config if isinstance(config, dict) else {},
+        "config": config,
         "meta": meta,
     }
 
 
 async def _snapshot_all_dashboards(hass: HomeAssistant, force: bool = False) -> dict[str, dict[str, Any]]:
     found: dict[str, dict[str, Any]] = {}
-    for key, board in _dashboards(hass).items():
+    for key, board in _iter_dashboards(hass):
         stored = _board_store_key(key)
-        doc = await _snapshot_board(board, stored, force=force)
+        doc = await _snapshot_board(board, stored, force=force, url_path=key)
         if doc:
             found[stored] = doc
     return found
@@ -1212,12 +1249,13 @@ async def _snapshot_dashboard(hass: HomeAssistant, change: Change, force: bool =
     store_id, board = _resolve_board(hass, change.item_id)
     if board is None:
         return None
-    return await _snapshot_board(board, store_id, change.label, force=force)
+    key = dashboard_board_key(change.item_id, _dashboards(hass))
+    return await _snapshot_board(board, store_id, change.label, force=force, url_path=key)
 
 
 async def _dashboard_index(hass: HomeAssistant, force: bool = False) -> dict[str, tuple[str, str]]:
     found: dict[str, tuple[str, str]] = {}
-    for key, board in _dashboards(hass).items():
+    for key, board in _iter_dashboards(hass):
         stored = _board_store_key(key)
         meta = dict(getattr(board, "config", None) or {})
         label = str(meta.get("title") or stored)
@@ -1231,11 +1269,20 @@ async def _restore_dashboard(hass: HomeAssistant, document: dict[str, Any]) -> N
     config = document.get("config")
     if not isinstance(config, dict):
         raise ActivityError("The saved dashboard is incomplete.")
-    _store_id, board = _resolve_board(hass, str(document.get("id") or ""))
+    boards = _dashboards(hass)
+    if "url_path" in document:
+        board = boards.get(document.get("url_path"))
+        _store_id = _board_store_key(document.get("url_path"))
+    else:
+        _store_id, board = _resolve_board(hass, str(document.get("id") or ""))
     if board is None:
         board = await _recreate_dashboard(hass, str(document.get("id") or ""), document.get("meta") or {})
     current = await _load_board_config(board, force=True)
     if isinstance(current, dict) and _same_body(current, config):
+        logger.warning(
+            "Change History rollback skipped: snapshot already matches live dashboard %s",
+            document.get("id") or "",
+        )
         raise ActivityError(
             "The saved snapshot already matches the live dashboard. Ask to restore and pick an HA-MCP backup from before this change."
         )

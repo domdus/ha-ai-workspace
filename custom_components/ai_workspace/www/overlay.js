@@ -161,6 +161,7 @@ async function ensureHost() {
         color: inherit;
       }
       aside.drawer {
+        --ai-overlay-gutter: var(--ha-space-4, 16px);
         position: fixed;
         top: 0;
         right: 0;
@@ -239,10 +240,11 @@ async function ensureHost() {
         justify-content: flex-start;
         gap: var(--ha-space-2);
         min-width: 0;
-        /* ha-top-app-bar title starts 24px in (8px when narrow). Pull back so the
-           icon + name share the same 12px gutter as the chat messages. */
+        /* Cancel ha-top-app-bar title inset, then sit on the same gutter as the chat header. */
         margin: 0;
-        margin-inline-start: calc(-1 * var(--ha-space-6, 24px));
+        margin-inline-start: calc(
+          var(--ai-overlay-gutter) - var(--ha-space-3, 12px) - var(--ha-space-6, 24px)
+        );
         padding: 0;
         border: 0;
         background: transparent;
@@ -254,7 +256,9 @@ async function ensureHost() {
         cursor: pointer;
       }
       .bar[narrow] .brand {
-        margin-inline-start: calc(-1 * var(--ha-space-2, 8px));
+        margin-inline-start: calc(
+          var(--ai-overlay-gutter) - var(--ha-space-3, 12px) - var(--ha-space-2, 8px)
+        );
       }
       .bar .brand:focus {
         outline: none;
@@ -283,7 +287,11 @@ async function ensureHost() {
           --ai-fab-rest: var(--ha-space-3);
           right: var(--ha-space-3);
         }
-        aside.drawer { width: 100%; border-left: 0; }
+        aside.drawer {
+          width: 100%;
+          border-left: 0;
+          --ai-overlay-gutter: max(var(--ha-space-6, 24px), env(safe-area-inset-left, 0px));
+        }
       }
     </style>
     ${

@@ -573,7 +573,7 @@ class ProvidersView(HomeAssistantView):
             getattr(item, "kind", "") == "cursor" and not item.info.available
             for item in (data.get("providers") or {}).values()
         ):
-            await async_bind_runtime(hass, data)
+            await async_bind_runtime(hass, data, force=True)
         rows = []
         for item in data["providers"].values():
             row = item.info.as_dict()
@@ -768,7 +768,7 @@ class ChatView(HomeAssistantView):
         if not assist and any(
             getattr(item, "kind", "") == "cursor" and not item.info.available for item in providers.values()
         ):
-            await async_bind_runtime(hass, data)
+            await async_bind_runtime(hass, data, force=True)
             providers = data.get("providers") or {}
         provider = None if assist else (providers.get(session.provider) or _send_provider(data, session))
         token_mode = provider_token_mode(provider)
@@ -1285,6 +1285,7 @@ class ActivityRollbackView(HomeAssistantView):
         if not _is_admin(request) and row.user_id != _user_id(request):
             raise web.HTTPNotFound()
         if not ACTIVITY_ROLLBACK or not row.can_rollback:
+            logger.warning("Change History rollback refused: no restorable snapshot for %s", row_id)
             raise web.HTTPBadRequest(text="This change cannot be rolled back.")
         raw = await hass.async_add_executor_job(store.activity_document, row_id)
         try:
@@ -1292,10 +1293,12 @@ class ActivityRollbackView(HomeAssistantView):
         except json.JSONDecodeError:
             document = None
         if not isinstance(document, dict):
+            logger.warning("Change History rollback refused: missing document for %s", row_id)
             raise web.HTTPBadRequest(text="This change cannot be rolled back.")
         try:
             await rollback(hass, document)
         except ActivityError as exc:
+            logger.warning("Change History rollback failed: %s", exc)
             raise web.HTTPBadRequest(text=str(exc)) from exc
         updated = await hass.async_add_executor_job(store.mark_activity_undone, row_id)
         shown = updated or row

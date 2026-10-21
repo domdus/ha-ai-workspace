@@ -87,7 +87,7 @@ def test_text_to_speech_defaults_on_for_openai_style_agents() -> None:
     assert const.provider_supports_tts("gemini")
     assert not const.provider_supports_tts("cursor")
     assert not const.provider_supports_tts("anthropic")
-    assert not const.provider_supports_tts_speed("gemini")
+    assert const.provider_supports_tts_speed("gemini")
     assert const.provider_supports_tts_speed("openai")
     assert const.default_tts_model("openai") == "gpt-4o-mini-tts"
     assert const.default_tts_model("openrouter") == "openai/gpt-4o-mini-tts"
