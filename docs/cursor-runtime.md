@@ -1,6 +1,6 @@
 # Cursor runtime in Docker
 
-These are extras for [Option C](../README.md#option-c-home-assistant-container-docker) (Home Assistant Container). The basic setup with `network_mode: host` needs none of this. The Home Assistant OS app handles network and token for you.
+These are extras for [Option B](../README.md#option-b-home-assistant-container-docker) (Home Assistant Container). The basic setup with `network_mode: host` needs none of this. The Home Assistant OS app handles network and token for you.
 
 ## Bridge network
 
