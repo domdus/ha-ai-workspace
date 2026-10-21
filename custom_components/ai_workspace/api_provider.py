@@ -24,7 +24,6 @@ from .const import (
     API_SHORT_LABELS,
     API_XAI,
     DEFAULT_AZURE_API_VERSION,
-    BPS_KEY_INSTRUCTIONS,
     workspace_system_prompt,
     DOMAIN,
     LOW_TOKEN_PROMPT,
@@ -704,7 +703,7 @@ class ApiProvider:
             return with_language_rule(text, language)
         identity = _IDENTITY.format(label=self._label(), model=self._model())
         body = workspace_system_prompt(self.settings, admin=admin)
-        text = f"{identity}\n\n{body}\n\n{ui_link_instructions(origin)}\n\n{BPS_KEY_INSTRUCTIONS}"
+        text = f"{identity}\n\n{body}\n\n{ui_link_instructions(origin)}"
         return with_language_rule(text, language)
 
     def _public(self, exc: BaseException) -> str:

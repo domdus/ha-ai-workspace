@@ -3,6 +3,7 @@ from pathlib import Path
 from custom_components.ai_workspace.agents import agent_from_mapping
 from custom_components.ai_workspace.api_provider import ApiProvider, _history_messages, _slim_mcp_tools
 from custom_components.ai_workspace.const import (
+    BPS_KEY_INSTRUCTIONS,
     HA_LINK_INSTRUCTIONS,
     LOW_TOKEN_MEDIUM_PROMPT,
     LOW_TOKEN_PROMPT,
@@ -73,7 +74,7 @@ def test_light_prompt_keeps_house_instructions() -> None:
     text = provider._system("", "en")
     assert LOW_TOKEN_PROMPT not in text
     assert "ha_get_skill_guide" in text
-    assert "Do not ask the user for it." in text
+    assert text.count(BPS_KEY_INSTRUCTIONS) == 1
 
 
 def test_normal_prompt_keeps_link_rules() -> None:
@@ -82,7 +83,7 @@ def test_normal_prompt_keeps_link_rules() -> None:
     assert "Markdown" in text
     assert LOW_TOKEN_PROMPT not in text
     assert "ha_get_skill_guide" in text
-    assert "Do not ask the user for it." in text
+    assert text.count(BPS_KEY_INSTRUCTIONS) == 1
 
 
 def test_extreme_prompt_does_not_mention_the_skill_key() -> None:

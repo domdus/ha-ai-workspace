@@ -6,6 +6,7 @@ from types import ModuleType, SimpleNamespace
 from app.providers.cursor import (
     CursorRuntime,
     apply_handoff,
+    apply_standing,
     _mcp_identity,
     _run_error_text,
     _sdk_model,
@@ -323,6 +324,23 @@ def test_send_restricts_tools_unless_full_tools(tmp_path: Path, monkeypatch) -> 
     asyncio.run(run())
     asyncio.run(run(full_tools=True))
     assert seen == [["mcp"], None]
+
+
+def test_apply_standing_only_on_new_or_cold_agent() -> None:
+    prompt = "House rules.\n\nIf a listed write tool has a BestPracticeKey field, load the guide."
+    user = "Turn off the kitchen."
+    message = f"{prompt}\n\n{user}"
+    assert apply_standing(message, prompt, True) == message
+    assert apply_standing(message, prompt, False) == user
+    assert apply_standing(user, prompt, True) == f"{prompt}\n\n{user}"
+    assert apply_standing(user, prompt, False) == user
+    wrapped = f"The browser origin is http://ha.example.\n\n{message}"
+    assert apply_standing(wrapped, prompt, False) == (
+        "The browser origin is http://ha.example.\n\n" + user
+    )
+    assert apply_standing(user, "", True) == user
+    combined = apply_handoff(apply_standing(message, prompt, True), "This is the same chat.", True, question=user)
+    assert combined.index("House rules.") < combined.index("This is the same chat.") < combined.index(user)
 
 
 def test_apply_handoff_goes_with_every_follow_up() -> None:

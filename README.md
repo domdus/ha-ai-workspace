@@ -52,7 +52,7 @@ The **Usage** page shows tokens and estimated cost per agent, model, and day, so
 ## Requirements
 
 - Home Assistant **2025.12** or newer
-- A **provider API key** (cloud AI), a local **Ollama** server, or a **Cursor API key** (Cursor SDK Runtime)
+- A **provider API key** from that provider's API console (⚠️ not a ChatGPT or Claude.ai plan; usually paid API credits), a local **Ollama** server, or a **Cursor API key** (Cursor SDK Runtime)
 
 You also need an MCP server:
 
@@ -70,6 +70,8 @@ You also need an MCP server:
 This is the fastest path. Add an agent for **OpenAI**, **Claude**, **Gemini**, **DeepSeek**, **Qwen**, **Grok**, **OpenRouter**, **Azure OpenAI**, **local Ollama**, or **OpenAI-compatible** (LM Studio and others). The model must support tool calls, or it cannot use MCP. If that provider is already set up in Home Assistant, the agent form can copy its key.
 
 You chat in **AI Workspace**. It calls the provider's API. **MCP** is how that model reaches Home Assistant.
+
+⚠️ A ChatGPT or Claude.ai subscription does not include this. OpenAI and Claude need API credits on [platform.openai.com](https://platform.openai.com) and [console.anthropic.com](https://console.anthropic.com). Gemini has a free API tier with limits. OpenRouter is its own credit balance (it then pays the model behind it). Ollama stays on your hardware and does not bill a cloud API.
 
 ![AI Workspace, MCP, Home Assistant, AI Cloud API](https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/cloud-architecture.jpg)
 
@@ -224,4 +226,12 @@ The [docs](docs/README.md) go further once you are up and running:
 
 - **[GitHub Discussions](https://github.com/domdus/ha-ai-workspace/discussions):** ask questions and share ideas
 - **[Issue Tracker](https://github.com/domdus/ha-ai-workspace/issues):** report bugs, request features, or suggest tool behavior improvements
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/new-feature`)
+3. Commit your changes (`git commit -m 'Add new feature'`)
+4. Push to the branch (`git push origin feature/new-feature`)
+5. Open a Pull Request
 
