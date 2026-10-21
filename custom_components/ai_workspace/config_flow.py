@@ -31,6 +31,7 @@ from .const import (
     CONF_HOUSE_MAP,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
+    CONF_CHANGE_HISTORY_TTL_DAYS,
     CONF_CHECK_HOUSE,
     CONF_TRACK_USAGE,
     CONF_SHOW_CHAT_USAGE,
@@ -49,7 +50,11 @@ from .const import (
     CONF_SYSTEM_PROMPT,
     CONF_TTS_ENGINE,
     CONF_TTS_NATURAL,
+    CHANGE_HISTORY_TTL_MAX_DAYS,
+    CHANGE_HISTORY_TTL_MIN_DAYS,
+    DEFAULT_CHANGE_HISTORY_TTL_DAYS,
     DEFAULT_KEEP_CHATS,
+    change_history_ttl_days,
     DEFAULT_SYSTEM_PROMPT,
     DOMAIN,
     MCP_CONNECTION_TITLES,
@@ -94,6 +99,7 @@ _SHARED_KEYS = (
     CONF_HOUSE_MAP,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
+    CONF_CHANGE_HISTORY_TTL_DAYS,
     CONF_CHECK_HOUSE,
     CONF_TRACK_USAGE,
     CONF_SHOW_CHAT_USAGE,
@@ -211,6 +217,20 @@ def _house_schema(current: dict) -> vol.Schema:
                 CONF_SHORTEN_MCP_RESULTS, default=current.get(CONF_SHORTEN_MCP_RESULTS, True)
             ): cv.boolean,
             vol.Optional(CONF_CHANGE_HISTORY, default=current.get(CONF_CHANGE_HISTORY, True)): cv.boolean,
+            vol.Optional(
+                CONF_CHANGE_HISTORY_TTL_DAYS,
+                default=change_history_ttl_days(
+                    current.get(CONF_CHANGE_HISTORY_TTL_DAYS, DEFAULT_CHANGE_HISTORY_TTL_DAYS)
+                ),
+            ): NumberSelector(
+                NumberSelectorConfig(
+                    min=CHANGE_HISTORY_TTL_MIN_DAYS,
+                    max=CHANGE_HISTORY_TTL_MAX_DAYS,
+                    mode="box",
+                    step=1,
+                    unit_of_measurement="d",
+                )
+            ),
         }
     )
 
@@ -240,6 +260,8 @@ def _normalize(user_input: dict, hass: HomeAssistant | None = None) -> dict:
         except (TypeError, ValueError):
             keep = DEFAULT_KEEP_CHATS
         out[CONF_KEEP_CHATS] = max(1, min(keep, 500))
+    if CONF_CHANGE_HISTORY_TTL_DAYS in out:
+        out[CONF_CHANGE_HISTORY_TTL_DAYS] = change_history_ttl_days(out[CONF_CHANGE_HISTORY_TTL_DAYS])
     if CONF_UI_THEME in out:
         out[CONF_UI_THEME] = ui_theme_of(out.get(CONF_UI_THEME))
     if CONF_LOW_TOKEN in out:

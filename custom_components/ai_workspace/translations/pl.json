@@ -76,12 +76,14 @@
             "data": {
               "house_map": "Katalog konfiguracji",
               "shorten_mcp_results": "Skracaj długie odpowiedzi Home Assistant",
-              "change_history": "Historia zmian"
+              "change_history": "Historia zmian",
+              "change_history_ttl_days": "Rollback przez"
             },
             "data_description": {
               "house_map": "Domyślnie wyłączone. Lokalny indeks powiązań między automatyzacjami, encjami i obszarami, żeby jedno wyszukanie odpowiadało na pytania typu „co używa światła w kuchni?”. Dodaje trochę do każdej wiadomości, więc włącz tylko, jeśli często pytasz, jak rzeczy są połączone. Stany na żywo nadal pochodzą z Home Assistant.",
               "shorten_mcp_results": "Domyślnie włączone. Bardzo długie odpowiedzi z Home Assistant (listy całego domu, duże wyszukiwania) są streszczane, zanim trafią do AI. Oszczędza tokeny i utrzymuje szybkie odpowiedzi. Wyłączone wysyła pełny tekst.",
-              "change_history": "Domyślnie włączone. Zapisuje każdą zmianę konfiguracji wykonaną przez asystenta, żebyś widział, co się zmieniło, i mógł poprosić o przywrócenie wcześniejszej wersji. Wyłączone: bez nowych wpisów; asystent nadal może wprowadzać zmiany."
+              "change_history": "Domyślnie włączone. Zapisuje każdą zmianę konfiguracji wykonaną przez asystenta, żebyś widział, co się zmieniło, i mógł poprosić o przywrócenie wcześniejszej wersji. Wyłączone: bez nowych wpisów; asystent nadal może wprowadzać zmiany.",
+              "change_history_ttl_days": "Dni, przez które Rollback i Poproś o przywrócenie pozostają dostępne. Potem wpis zostaje w dzienniku; przywrócenie starego zrzutu może nadpisać późniejszą pracę. Domyślnie 7. 1 to około dzień."
             }
           },
           "prompt": {
@@ -183,12 +185,14 @@
             "data": {
               "house_map": "Katalog konfiguracji",
               "shorten_mcp_results": "Skracaj długie odpowiedzi Home Assistant",
-              "change_history": "Historia zmian"
+              "change_history": "Historia zmian",
+              "change_history_ttl_days": "Rollback przez"
             },
             "data_description": {
               "house_map": "Domyślnie wyłączone. Lokalny indeks powiązań między automatyzacjami, encjami i obszarami, żeby jedno wyszukanie odpowiadało na pytania typu „co używa światła w kuchni?”. Dodaje trochę do każdej wiadomości, więc włącz tylko, jeśli często pytasz, jak rzeczy są połączone. Stany na żywo nadal pochodzą z Home Assistant.",
               "shorten_mcp_results": "Domyślnie włączone. Bardzo długie odpowiedzi z Home Assistant (listy całego domu, duże wyszukiwania) są streszczane, zanim trafią do AI. Oszczędza tokeny i utrzymuje szybkie odpowiedzi. Wyłączone wysyła pełny tekst.",
-              "change_history": "Domyślnie włączone. Zapisuje każdą zmianę konfiguracji wykonaną przez asystenta, żebyś widział, co się zmieniło, i mógł poprosić o przywrócenie wcześniejszej wersji. Wyłączone: bez nowych wpisów; asystent nadal może wprowadzać zmiany."
+              "change_history": "Domyślnie włączone. Zapisuje każdą zmianę konfiguracji wykonaną przez asystenta, żebyś widział, co się zmieniło, i mógł poprosić o przywrócenie wcześniejszej wersji. Wyłączone: bez nowych wpisów; asystent nadal może wprowadzać zmiany.",
+              "change_history_ttl_days": "Dni, przez które Rollback i Poproś o przywrócenie pozostają dostępne. Potem wpis zostaje w dzienniku; przywrócenie starego zrzutu może nadpisać późniejszą pracę. Domyślnie 7. 1 to około dzień."
             }
           },
           "prompt": {

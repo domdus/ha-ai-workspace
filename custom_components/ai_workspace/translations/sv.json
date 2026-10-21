@@ -76,12 +76,14 @@
             "data": {
               "house_map": "Konfigurationskatalog",
               "shorten_mcp_results": "Korta långa Home Assistant-svar",
-              "change_history": "Ändringshistorik"
+              "change_history": "Ändringshistorik",
+              "change_history_ttl_days": "Rollback i"
             },
             "data_description": {
               "house_map": "Av som standard. Ett lokalt register över hur automationer, entiteter och områden hänger ihop, så att en enda sökning besvarar frågor som ”vad använder köksbelysningen?”. Lägger till lite i varje meddelande, så slå bara på det om du ofta frågar hur saker är kopplade. Aktuella tillstånd kommer fortfarande från Home Assistant.",
               "shorten_mcp_results": "På som standard. Mycket långa svar från Home Assistant (listor för hela hemmet, stora sökningar) sammanfattas innan de går till AI:n. Sparar token och håller svaren snabba. Av skickar hela texten.",
-              "change_history": "På som standard. Sparar varje konfigurationsändring som assistenten gör, så att du ser vad som ändrats och kan be den återställa en tidigare version. Av stoppar nya poster; assistenten kan fortfarande göra ändringar."
+              "change_history": "På som standard. Sparar varje konfigurationsändring som assistenten gör, så att du ser vad som ändrats och kan be den återställa en tidigare version. Av stoppar nya poster; assistenten kan fortfarande göra ändringar.",
+              "change_history_ttl_days": "Dagar som Rollback och Be om återställning förblir tillgängliga. Därefter stannar raden i loggen; att återställa en gammal ögonblicksbild kan skriva över senare arbete. Standard 7. 1 är ungefär en dag."
             }
           },
           "prompt": {
@@ -183,12 +185,14 @@
             "data": {
               "house_map": "Konfigurationskatalog",
               "shorten_mcp_results": "Korta långa Home Assistant-svar",
-              "change_history": "Ändringshistorik"
+              "change_history": "Ändringshistorik",
+              "change_history_ttl_days": "Rollback i"
             },
             "data_description": {
               "house_map": "Av som standard. Ett lokalt register över hur automationer, entiteter och områden hänger ihop, så att en enda sökning besvarar frågor som ”vad använder köksbelysningen?”. Lägger till lite i varje meddelande, så slå bara på det om du ofta frågar hur saker är kopplade. Aktuella tillstånd kommer fortfarande från Home Assistant.",
               "shorten_mcp_results": "På som standard. Mycket långa svar från Home Assistant (listor för hela hemmet, stora sökningar) sammanfattas innan de går till AI:n. Sparar token och håller svaren snabba. Av skickar hela texten.",
-              "change_history": "På som standard. Sparar varje konfigurationsändring som assistenten gör, så att du ser vad som ändrats och kan be den återställa en tidigare version. Av stoppar nya poster; assistenten kan fortfarande göra ändringar."
+              "change_history": "På som standard. Sparar varje konfigurationsändring som assistenten gör, så att du ser vad som ändrats och kan be den återställa en tidigare version. Av stoppar nya poster; assistenten kan fortfarande göra ändringar.",
+              "change_history_ttl_days": "Dagar som Rollback och Be om återställning förblir tillgängliga. Därefter stannar raden i loggen; att återställa en gammal ögonblicksbild kan skriva över senare arbete. Standard 7. 1 är ungefär en dag."
             }
           },
           "prompt": {

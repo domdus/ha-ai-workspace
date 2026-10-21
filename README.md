@@ -21,7 +21,7 @@ What it can do depends on that MCP server. In the chat you get:
 - Answers that appear as they are written
 - Pictures and text files you drop in
 - Names that link straight into Home Assistant (devices, automations, dashboards)
-- Chats you can pin, and a **Change History** of every write, with **Rollback** to the snapshot from before the change
+- Chats you can pin, and a **Change History** of every write, with **Rollback** to the snapshot from before the change. Automations, scripts, and scenes also land as YAML under `config/ai_workspace/changes/` if Home Assistant will not start ([how to restore by hand](docs/mcp.md#if-home-assistant-will-not-start))
 - Tokens and estimated cost per agent, model, and chat (optional sensors for your own dashboards)
 - More than one agent and more than one MCP connection
 - An optional floating button on other pages
@@ -225,7 +225,7 @@ The [docs](docs/README.md) go further once you are up and running:
 - [Cost and tokens](docs/cost.md) — Usage page, where prices come from, token modes, and prompt cache
 - [Cursor runtime in Docker](docs/cursor-runtime.md) — bridge network, files on disk, and git
 - [Privacy](docs/privacy.md) — what leaves the house, who can chat, Assist satellites
-- [MCP and Change History](docs/mcp.md) — connections, large tool results, and the change log
+- [MCP and Change History](docs/mcp.md) — connections, large tool results, the change log, and restoring YAML by hand if Home Assistant will not start
 - [Troubleshooting](docs/troubleshooting.md) — common errors and how to remove AI Workspace
 
 ## Community

@@ -76,12 +76,14 @@
             "data": {
               "house_map": "Catalogo di configurazione",
               "shorten_mcp_results": "Accorcia le risposte lunghe di Home Assistant",
-              "change_history": "Cronologia delle modifiche"
+              "change_history": "Cronologia delle modifiche",
+              "change_history_ttl_days": "Rollback per"
             },
             "data_description": {
               "house_map": "Disattivo per impostazione predefinita. Un indice locale di come automazioni, entità e aree sono collegate, così una sola ricerca risponde a domande come «cosa usa la luce della cucina?». Aggiunge un po' a ogni messaggio, quindi attivalo solo se chiedi spesso come sono collegate le cose. Gli stati in tempo reale arrivano sempre da Home Assistant.",
               "shorten_mcp_results": "Attivo per impostazione predefinita. Le risposte molto lunghe di Home Assistant (elenchi di tutta la casa, ricerche ampie) vengono riassunte prima di andare all'IA. Risparmia token e mantiene le risposte rapide. Disattivo invia il testo completo.",
-              "change_history": "Attivo per impostazione predefinita. Registra ogni modifica di configurazione fatta dall'assistente, così puoi vedere cosa è cambiato e chiedergli di ripristinare una versione precedente. Disattivo: niente nuove voci; l'assistente può comunque fare modifiche."
+              "change_history": "Attivo per impostazione predefinita. Registra ogni modifica di configurazione fatta dall'assistente, così puoi vedere cosa è cambiato e chiedergli di ripristinare una versione precedente. Disattivo: niente nuove voci; l'assistente può comunque fare modifiche.",
+              "change_history_ttl_days": "Giorni in cui Rollback e Chiedi ripristino restano disponibili. Poi la riga resta nel registro; ripristinare uno snapshot vecchio può sovrascrivere lavoro successivo. Predefinito 7. 1 è circa un giorno."
             }
           },
           "prompt": {
@@ -183,12 +185,14 @@
             "data": {
               "house_map": "Catalogo di configurazione",
               "shorten_mcp_results": "Accorcia le risposte lunghe di Home Assistant",
-              "change_history": "Cronologia delle modifiche"
+              "change_history": "Cronologia delle modifiche",
+              "change_history_ttl_days": "Rollback per"
             },
             "data_description": {
               "house_map": "Disattivo per impostazione predefinita. Un indice locale di come automazioni, entità e aree sono collegate, così una sola ricerca risponde a domande come «cosa usa la luce della cucina?». Aggiunge un po' a ogni messaggio, quindi attivalo solo se chiedi spesso come sono collegate le cose. Gli stati in tempo reale arrivano sempre da Home Assistant.",
               "shorten_mcp_results": "Attivo per impostazione predefinita. Le risposte molto lunghe di Home Assistant (elenchi di tutta la casa, ricerche ampie) vengono riassunte prima di andare all'IA. Risparmia token e mantiene le risposte rapide. Disattivo invia il testo completo.",
-              "change_history": "Attivo per impostazione predefinita. Registra ogni modifica di configurazione fatta dall'assistente, così puoi vedere cosa è cambiato e chiedergli di ripristinare una versione precedente. Disattivo: niente nuove voci; l'assistente può comunque fare modifiche."
+              "change_history": "Attivo per impostazione predefinita. Registra ogni modifica di configurazione fatta dall'assistente, così puoi vedere cosa è cambiato e chiedergli di ripristinare una versione precedente. Disattivo: niente nuove voci; l'assistente può comunque fare modifiche.",
+              "change_history_ttl_days": "Giorni in cui Rollback e Chiedi ripristino restano disponibili. Poi la riga resta nel registro; ripristinare uno snapshot vecchio può sovrascrivere lavoro successivo. Predefinito 7. 1 è circa un giorno."
             }
           },
           "prompt": {

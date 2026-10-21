@@ -76,12 +76,14 @@
             "data": {
               "house_map": "配置目录",
               "shorten_mcp_results": "缩短过长的 Home Assistant 回复",
-              "change_history": "更改历史"
+              "change_history": "更改历史",
+              "change_history_ttl_days": "可回滚期限"
             },
             "data_description": {
               "house_map": "默认关闭。一个关于自动化、实体和区域如何关联的本地索引，一次查询就能回答“哪些东西用到了厨房灯？”这类问题。每条消息会稍微增加一点内容，所以只有经常询问东西如何关联时才开启。实时状态仍来自 Home Assistant。",
               "shorten_mcp_results": "默认开启。来自 Home Assistant 的超长回复（全屋列表、大型搜索）会在送给 AI 之前先摘要。节省 token，让回复保持快速。关闭则发送全文。",
-              "change_history": "默认开启。记录助手所做的每一项配置更改，方便你查看改了什么，并让它恢复到之前的版本。关闭后不再新增记录；助手仍可进行更改。"
+              "change_history": "默认开启。记录助手所做的每一项配置更改，方便你查看改了什么，并让它恢复到之前的版本。关闭后不再新增记录；助手仍可进行更改。",
+              "change_history_ttl_days": "Rollback 和“请对话恢复”保持可用的天数。到期后记录仍在日志中；恢复旧快照可能覆盖之后的改动。默认 7。1 大约是一天。"
             }
           },
           "prompt": {
@@ -183,12 +185,14 @@
             "data": {
               "house_map": "配置目录",
               "shorten_mcp_results": "缩短过长的 Home Assistant 回复",
-              "change_history": "更改历史"
+              "change_history": "更改历史",
+              "change_history_ttl_days": "可回滚期限"
             },
             "data_description": {
               "house_map": "默认关闭。一个关于自动化、实体和区域如何关联的本地索引，一次查询就能回答“哪些东西用到了厨房灯？”这类问题。每条消息会稍微增加一点内容，所以只有经常询问东西如何关联时才开启。实时状态仍来自 Home Assistant。",
               "shorten_mcp_results": "默认开启。来自 Home Assistant 的超长回复（全屋列表、大型搜索）会在送给 AI 之前先摘要。节省 token，让回复保持快速。关闭则发送全文。",
-              "change_history": "默认开启。记录助手所做的每一项配置更改，方便你查看改了什么，并让它恢复到之前的版本。关闭后不再新增记录；助手仍可进行更改。"
+              "change_history": "默认开启。记录助手所做的每一项配置更改，方便你查看改了什么，并让它恢复到之前的版本。关闭后不再新增记录；助手仍可进行更改。",
+              "change_history_ttl_days": "Rollback 和“请对话恢复”保持可用的天数。到期后记录仍在日志中；恢复旧快照可能覆盖之后的改动。默认 7。1 大约是一天。"
             }
           },
           "prompt": {

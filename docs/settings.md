@@ -67,7 +67,8 @@ Collapsed by default. The defaults suit most homes.
 | --- | --- | --- |
 | **Config catalog** | Off by default. A local index of how automations, entities, and areas are connected. | [Why this is off by default](#config-catalog). |
 | **Shorten long Home Assistant answers** | On by default. Very long lists are summarized before they go to the model. | [Saves tokens](mcp.md#shorten-long-home-assistant-answers) and keeps replies quick. |
-| **Change History** | On by default. Records every configuration change the assistant made. | [See what changed](mcp.md#change-history) and ask the assistant to restore it. |
+| **Change History** | On by default. Records every configuration change the assistant made. | [See what changed](mcp.md#change-history). Automations, scripts, and scenes also get a YAML copy for [when Home Assistant will not start](mcp.md#if-home-assistant-will-not-start). |
+| **Rollback for** | Days Rollback and Ask to restore stay available (default 7, 1–90). | After that the row stays in the log. Restoring an old snapshot can overwrite later work. |
 
 ### System prompt
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.5b2
+
+- Chat: typing a follow-up while the agent is working turns Stop back into Send so that prompt can queue. Clearing or sending it (empty input) shows Stop again.
+- Usage: the chat header and Usage cards say **1 Turn**, not **1 Turns**. Column headers stay plural.
+- Change History: **Rollback for** (default 7 days) hides Rollback and Ask to restore on older rows. The log stays. Configure or `change_history_ttl_days` (1–90). Docs cover restoring an automation, script, or scene from `config/ai_workspace/changes/` if Home Assistant will not start.
+
 ## 1.3.5b1
 
 - Chat: while the agent is working, Send becomes Stop (standard template and ha-components). A queued prompt shows an X in those views and in the floating chat. Stop ends the current turn so you can send immediately; a message already in the queue is sent next.

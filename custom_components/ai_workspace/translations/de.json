@@ -76,12 +76,14 @@
             "data": {
               "house_map": "Konfigurationskatalog",
               "shorten_mcp_results": "Lange Home-Assistant-Antworten kürzen",
-              "change_history": "Änderungsverlauf"
+              "change_history": "Änderungsverlauf",
+              "change_history_ttl_days": "Rollback gültig"
             },
             "data_description": {
               "house_map": "Standardmäßig aus. Ein lokaler Index, wie Automationen, Entitäten und Bereiche zusammenhängen, damit eine Abfrage Fragen wie „Was nutzt das Küchenlicht?“ beantwortet. Fügt jeder Nachricht etwas hinzu, also nur einschalten, wenn du oft fragst, wie Dinge verknüpft sind. Live-Zustände kommen weiter aus Home Assistant.",
               "shorten_mcp_results": "Standardmäßig an. Sehr lange Antworten von Home Assistant (Listen des ganzen Hauses, große Suchen) werden zusammengefasst, bevor sie an die KI gehen. Spart Tokens und hält Antworten flott. Aus sendet den vollen Text.",
-              "change_history": "Standardmäßig an. Protokolliert jede Konfigurationsänderung des Assistenten, damit du siehst, was sich geändert hat, und eine frühere Version wiederherstellen lassen kannst. Aus stoppt neue Einträge; der Assistent kann weiterhin Änderungen machen."
+              "change_history": "Standardmäßig an. Protokolliert jede Konfigurationsänderung des Assistenten, damit du siehst, was sich geändert hat, und eine frühere Version wiederherstellen lassen kannst. Aus stoppt neue Einträge; der Assistent kann weiterhin Änderungen machen.",
+              "change_history_ttl_days": "Tage, die Rollback und „Wiederherstellen lassen“ verfügbar bleiben. Danach bleibt der Eintrag im Protokoll; ein altes Abbild kann spätere Änderungen überschreiben. Standard 7. 1 ist etwa ein Tag."
             }
           },
           "prompt": {
@@ -183,12 +185,14 @@
             "data": {
               "house_map": "Konfigurationskatalog",
               "shorten_mcp_results": "Lange Home-Assistant-Antworten kürzen",
-              "change_history": "Änderungsverlauf"
+              "change_history": "Änderungsverlauf",
+              "change_history_ttl_days": "Rollback gültig"
             },
             "data_description": {
               "house_map": "Standardmäßig aus. Ein lokaler Index, wie Automationen, Entitäten und Bereiche zusammenhängen, damit eine Abfrage Fragen wie „Was nutzt das Küchenlicht?“ beantwortet. Fügt jeder Nachricht etwas hinzu, also nur einschalten, wenn du oft fragst, wie Dinge verknüpft sind. Live-Zustände kommen weiter aus Home Assistant.",
               "shorten_mcp_results": "Standardmäßig an. Sehr lange Antworten von Home Assistant (Listen des ganzen Hauses, große Suchen) werden zusammengefasst, bevor sie an die KI gehen. Spart Tokens und hält Antworten flott. Aus sendet den vollen Text.",
-              "change_history": "Standardmäßig an. Protokolliert jede Konfigurationsänderung des Assistenten, damit du siehst, was sich geändert hat, und eine frühere Version wiederherstellen lassen kannst. Aus stoppt neue Einträge; der Assistent kann weiterhin Änderungen machen."
+              "change_history": "Standardmäßig an. Protokolliert jede Konfigurationsänderung des Assistenten, damit du siehst, was sich geändert hat, und eine frühere Version wiederherstellen lassen kannst. Aus stoppt neue Einträge; der Assistent kann weiterhin Änderungen machen.",
+              "change_history_ttl_days": "Tage, die Rollback und „Wiederherstellen lassen“ verfügbar bleiben. Danach bleibt der Eintrag im Protokoll; ein altes Abbild kann spätere Änderungen überschreiben. Standard 7. 1 ist etwa ein Tag."
             }
           },
           "prompt": {

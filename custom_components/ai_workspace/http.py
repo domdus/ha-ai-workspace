@@ -17,7 +17,9 @@ from .assist_agents import assist_agent_ids, async_assist_events, list_assist_ag
 from .discovery import async_bind_runtime
 from .const import (
     ACTIVITY_ROLLBACK,
+    activity_restore_expired,
     activity_restore_flags,
+    change_history_ttl_days,
     CLOUD_ONLY_MODELS,
     standing_chat_prompt,
     DOMAIN,
@@ -1257,13 +1259,24 @@ def _loopback_remote(request: web.Request) -> bool:
         return False
 
 
-def _activity_dict(row, chat: str = "", *, admin: bool = False, ha_mcp: bool = False) -> dict:
+def _activity_ttl_days(settings) -> int:
+    return change_history_ttl_days(getattr(settings, "change_history_ttl_days", None) if settings else None)
+
+
+def _activity_expired(row, settings) -> bool:
+    return activity_restore_expired(getattr(row, "created_at", "") or "", days=_activity_ttl_days(settings))
+
+
+def _activity_dict(
+    row, chat: str = "", *, admin: bool = False, ha_mcp: bool = False, expired: bool = False
+) -> dict:
     undone = bool(row.undone_at)
     can_rollback, ask = activity_restore_flags(
         snapshot=bool(row.can_rollback),
         undone=undone,
         admin=admin,
         ha_mcp=ha_mcp,
+        expired=expired,
     )
     return {
         "id": row.id,
@@ -1306,7 +1319,13 @@ class ActivityView(HomeAssistantView):
         )
         return self.json(
             [
-                _activity_dict(row, titles.get(row.session_id) or "", admin=admin, ha_mcp=ha_mcp)
+                _activity_dict(
+                    row,
+                    titles.get(row.session_id) or "",
+                    admin=admin,
+                    ha_mcp=ha_mcp,
+                    expired=_activity_expired(row, settings),
+                )
                 for row in rows
             ]
         )
@@ -1331,7 +1350,8 @@ class ActivityRollbackView(HomeAssistantView):
             raise web.HTTPNotFound()
         if not _is_admin(request) and row.user_id != _user_id(request):
             raise web.HTTPNotFound()
-        if not ACTIVITY_ROLLBACK or not row.can_rollback:
+        settings = _runtime(hass).get("settings")
+        if not ACTIVITY_ROLLBACK or not row.can_rollback or _activity_expired(row, settings):
             logger.warning("Change History rollback refused: no restorable snapshot for %s", row_id)
             raise web.HTTPBadRequest(text="This change cannot be rolled back.")
         raw = await hass.async_add_executor_job(store.activity_document, row_id)

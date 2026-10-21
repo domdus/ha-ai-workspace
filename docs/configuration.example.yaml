@@ -13,6 +13,7 @@ ai_workspace:
   house_map: false
   shorten_mcp_results: true
   change_history: true
+  change_history_ttl_days: 7 # 1–90; Rollback and Ask to restore expire after this many days
   track_usage: true
   show_chat_usage: true
   ha_usage_sensors: false

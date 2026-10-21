@@ -25,6 +25,7 @@ from .const import (
     CONF_HOUSE_MAP,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
+    CONF_CHANGE_HISTORY_TTL_DAYS,
     CONF_CHECK_HOUSE,
     CONF_LOW_TOKEN,
     CONF_PROMPT_CACHE,
@@ -39,7 +40,9 @@ from .const import (
     CONF_STT_ENGINE,
     CONF_SYSTEM_PROMPT,
     CONF_TTS_ENGINE,
+    DEFAULT_CHANGE_HISTORY_TTL_DAYS,
     DEFAULT_KEEP_CHATS,
+    change_history_ttl_days,
     DOMAIN,
     MCP_COOLVER,
     MCP_CUSTOM,
@@ -174,6 +177,9 @@ async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
         house_map=house_map,
         shorten_mcp_results=bool(data.get(CONF_SHORTEN_MCP_RESULTS, True)),
         change_history=bool(data.get(CONF_CHANGE_HISTORY, True)),
+        change_history_ttl_days=change_history_ttl_days(
+            data.get(CONF_CHANGE_HISTORY_TTL_DAYS, DEFAULT_CHANGE_HISTORY_TTL_DAYS)
+        ),
         track_usage=bool(data.get(CONF_TRACK_USAGE, True)),
         show_chat_usage=bool(data.get(CONF_SHOW_CHAT_USAGE, True)),
         ha_usage_sensors=bool(data.get(CONF_HA_USAGE_SENSORS, False)),

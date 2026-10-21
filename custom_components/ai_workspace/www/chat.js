@@ -2056,8 +2056,12 @@ export async function mountAiWorkspace(root, options = {}) {
     return Boolean(String(messageEl?.value || "").trim() || pending.length);
   }
 
+  function canStopTurn() {
+    return (streaming || liveStream || turnStopping) && !hasDraft();
+  }
+
   function syncSendButton() {
-    const halt = streaming || liveStream || turnStopping;
+    const halt = canStopTurn();
     const label = t(halt ? "stop_reply" : "send");
     const icon = halt ? "mdi:stop" : haUi ? "mdi:send" : "mdi:arrow-up";
     for (const btn of composerControls(".send")) {
@@ -4068,7 +4072,7 @@ export async function mountAiWorkspace(root, options = {}) {
     const send = event.target.closest?.(".send");
     if (send?.closest?.(".composer")) {
       event.preventDefault();
-      if (streaming || liveStream) {
+      if (canStopTurn()) {
         stopTurn();
         return;
       }
@@ -4378,6 +4382,10 @@ export async function mountAiWorkspace(root, options = {}) {
     return String(n);
   }
 
+  function turnWord(count) {
+    return Number(count) === 1 ? t("usage_turn") : t("usage_turns");
+  }
+
   function cachedTokens(summary) {
     return Number(summary?.cache_read_tokens || 0) + Number(summary?.cache_write_tokens || 0);
   }
@@ -4389,7 +4397,7 @@ export async function mountAiWorkspace(root, options = {}) {
     if (cached) bits.push(`${tokenLabel(cached)} ${t("usage_cached")}`);
     if (summary.cost_usd != null) bits.push(money(summary.cost_usd));
     else if (summary.missing_cost) bits.push(t("usage_unknown_cost"));
-    if (summary.turns) bits.push(`${summary.turns} ${t("usage_turns")}`);
+    if (summary.turns) bits.push(`${summary.turns} ${turnWord(summary.turns)}`);
     return bits.join(" · ");
   }
 
@@ -4450,7 +4458,7 @@ export async function mountAiWorkspace(root, options = {}) {
       const cached = cachedTokens(summary);
       const bits = [`${tokenLabel(summary?.total_tokens || 0)} ${t("usage_tokens")}`];
       if (cached) bits.push(`${tokenLabel(cached)} ${t("usage_cached")}`);
-      bits.push(`${summary?.turns || 0} ${t("usage_turns")}`);
+      bits.push(`${summary?.turns || 0} ${turnWord(summary?.turns || 0)}`);
       meta.textContent = bits.join(" · ");
     }
     card.append(title, cost, meta);
