@@ -76,12 +76,14 @@
             "data": {
               "house_map": "設定目錄",
               "shorten_mcp_results": "縮短過長的 Home Assistant 回覆",
-              "change_history": "變更歷史"
+              "change_history": "變更歷史",
+              "change_history_ttl_days": "可回滾期限"
             },
             "data_description": {
               "house_map": "預設關閉。一個關於自動化、實體與分區如何關聯的本機索引，一次查詢就能回答「哪些東西用到廚房燈？」這類問題。每則訊息會稍微增加一點內容，所以只有經常詢問東西如何關聯時才開啟。即時狀態仍來自 Home Assistant。",
               "shorten_mcp_results": "預設開啟。來自 Home Assistant 的超長回覆（全屋清單、大型搜尋）會在送給 AI 之前先摘要。節省 token，讓回覆保持快速。關閉則傳送全文。",
-              "change_history": "預設開啟。記錄助手所做的每一項設定變更，方便你查看改了什麼，並請它還原到先前的版本。關閉後不再新增紀錄；助手仍可進行變更。"
+              "change_history": "預設開啟。記錄助手所做的每一項設定變更，方便你查看改了什麼，並請它還原到先前的版本。關閉後不再新增紀錄；助手仍可進行變更。",
+              "change_history_ttl_days": "Rollback 與「請對話還原」保持可用的天數。到期後紀錄仍在日誌中；還原舊快照可能覆蓋之後的變更。預設 7。1 大約是一天。"
             }
           },
           "prompt": {
@@ -183,12 +185,14 @@
             "data": {
               "house_map": "設定目錄",
               "shorten_mcp_results": "縮短過長的 Home Assistant 回覆",
-              "change_history": "變更歷史"
+              "change_history": "變更歷史",
+              "change_history_ttl_days": "可回滾期限"
             },
             "data_description": {
               "house_map": "預設關閉。一個關於自動化、實體與分區如何關聯的本機索引，一次查詢就能回答「哪些東西用到廚房燈？」這類問題。每則訊息會稍微增加一點內容，所以只有經常詢問東西如何關聯時才開啟。即時狀態仍來自 Home Assistant。",
               "shorten_mcp_results": "預設開啟。來自 Home Assistant 的超長回覆（全屋清單、大型搜尋）會在送給 AI 之前先摘要。節省 token，讓回覆保持快速。關閉則傳送全文。",
-              "change_history": "預設開啟。記錄助手所做的每一項設定變更，方便你查看改了什麼，並請它還原到先前的版本。關閉後不再新增紀錄；助手仍可進行變更。"
+              "change_history": "預設開啟。記錄助手所做的每一項設定變更，方便你查看改了什麼，並請它還原到先前的版本。關閉後不再新增紀錄；助手仍可進行變更。",
+              "change_history_ttl_days": "Rollback 與「請對話還原」保持可用的天數。到期後紀錄仍在日誌中；還原舊快照可能覆蓋之後的變更。預設 7。1 大約是一天。"
             }
           },
           "prompt": {

@@ -76,12 +76,14 @@
             "data": {
               "house_map": "Agorda katalogo",
               "shorten_mcp_results": "Mallongigi longajn respondojn de Home Assistant",
-              "change_history": "Ŝanĝohistorio"
+              "change_history": "Ŝanĝohistorio",
+              "change_history_ttl_days": "Restaŭro dum"
             },
             "data_description": {
               "house_map": "Defaŭlte malŝalta. Loka indekso pri kiel aŭtomatigoj, entoj kaj areoj estas ligitaj, por ke unu serĉo respondu demandojn kiel „kio uzas la kuirejan lumon?“. Aldonas iomete al ĉiu mesaĝo, do ŝaltu ĝin nur se vi ofte demandas kiel aferoj estas kunligitaj. Vivaj statoj ankoraŭ venas el Home Assistant.",
               "shorten_mcp_results": "Defaŭlte ŝalta. Tre longaj respondoj de Home Assistant (tutdomaj listoj, grandaj serĉoj) estas resumitaj antaŭ ol ili iras al la AI. Ŝparas ĵetonojn kaj tenas respondojn rapidaj. Malŝalte sendas la plenan tekston.",
-              "change_history": "Defaŭlte ŝalta. Registras ĉiun agordan ŝanĝon, kiun la asistanto faras, por ke vi vidu kio ŝanĝiĝis kaj petu ĝin restarigi pli fruan version. Malŝalte ĉesigas novajn enskribojn; la asistanto ankoraŭ povas fari ŝanĝojn."
+              "change_history": "Defaŭlte ŝalta. Registras ĉiun agordan ŝanĝon, kiun la asistanto faras, por ke vi vidu kio ŝanĝiĝis kaj petu ĝin restarigi pli fruan version. Malŝalte ĉesigas novajn enskribojn; la asistanto ankoraŭ povas fari ŝanĝojn.",
+              "change_history_ttl_days": "Tagoj dum kiuj Restaŭro kaj Peti restarigon restas haveblaj. Poste la linio restas en la protokolo; restarigi malnovan kopion povas anstataŭigi postan laboron. Defaŭlte 7. 1 estas ĉirkaŭ unu tago."
             }
           },
           "prompt": {
@@ -183,12 +185,14 @@
             "data": {
               "house_map": "Agorda katalogo",
               "shorten_mcp_results": "Mallongigi longajn respondojn de Home Assistant",
-              "change_history": "Ŝanĝohistorio"
+              "change_history": "Ŝanĝohistorio",
+              "change_history_ttl_days": "Restaŭro dum"
             },
             "data_description": {
               "house_map": "Defaŭlte malŝalta. Loka indekso pri kiel aŭtomatigoj, entoj kaj areoj estas ligitaj, por ke unu serĉo respondu demandojn kiel „kio uzas la kuirejan lumon?“. Aldonas iomete al ĉiu mesaĝo, do ŝaltu ĝin nur se vi ofte demandas kiel aferoj estas kunligitaj. Vivaj statoj ankoraŭ venas el Home Assistant.",
               "shorten_mcp_results": "Defaŭlte ŝalta. Tre longaj respondoj de Home Assistant (tutdomaj listoj, grandaj serĉoj) estas resumitaj antaŭ ol ili iras al la AI. Ŝparas ĵetonojn kaj tenas respondojn rapidaj. Malŝalte sendas la plenan tekston.",
-              "change_history": "Defaŭlte ŝalta. Registras ĉiun agordan ŝanĝon, kiun la asistanto faras, por ke vi vidu kio ŝanĝiĝis kaj petu ĝin restarigi pli fruan version. Malŝalte ĉesigas novajn enskribojn; la asistanto ankoraŭ povas fari ŝanĝojn."
+              "change_history": "Defaŭlte ŝalta. Registras ĉiun agordan ŝanĝon, kiun la asistanto faras, por ke vi vidu kio ŝanĝiĝis kaj petu ĝin restarigi pli fruan version. Malŝalte ĉesigas novajn enskribojn; la asistanto ankoraŭ povas fari ŝanĝojn.",
+              "change_history_ttl_days": "Tagoj dum kiuj Restaŭro kaj Peti restarigon restas haveblaj. Poste la linio restas en la protokolo; restarigi malnovan kopion povas anstataŭigi postan laboron. Defaŭlte 7. 1 estas ĉirkaŭ unu tago."
             }
           },
           "prompt": {

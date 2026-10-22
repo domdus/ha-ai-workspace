@@ -42,6 +42,7 @@ def test_schema_accepts_full_example() -> None:
             "low_token": "light",
             "ui_theme": "ha_components",
             "keep_chats": 12,
+            "change_history_ttl_days": 1,
             "connections": [
                 {"kind": "ha_mcp", "name": "HA-MCP", "url": "", "primary": True},
                 {"kind": "custom", "name": "github", "url": "https://api.githubcopilot.com/mcp/", "token": "pat"},

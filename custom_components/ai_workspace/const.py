@@ -11,12 +11,47 @@ VERSION = json.loads(
 )["version"]
 # Restore from the snapshot Change History took before the write.
 ACTIVITY_ROLLBACK = True
+DEFAULT_CHANGE_HISTORY_TTL_DAYS = 7
+CHANGE_HISTORY_TTL_MIN_DAYS = 1
+CHANGE_HISTORY_TTL_MAX_DAYS = 90
 
 
-def activity_restore_flags(*, snapshot: bool, undone: bool, admin: bool, ha_mcp: bool) -> tuple[bool, bool]:
+def change_history_ttl_days(value) -> int:
+    try:
+        days = int(value if value is not None else DEFAULT_CHANGE_HISTORY_TTL_DAYS)
+    except (TypeError, ValueError):
+        days = DEFAULT_CHANGE_HISTORY_TTL_DAYS
+    return max(CHANGE_HISTORY_TTL_MIN_DAYS, min(days, CHANGE_HISTORY_TTL_MAX_DAYS))
+
+
+def activity_restore_expired(created_at: str, *, days: int, now=None) -> bool:
+    """True when Rollback for this row has passed the configured TTL."""
+    from datetime import datetime, timedelta, timezone
+
+    days = change_history_ttl_days(days)
+    try:
+        when = datetime.fromisoformat(str(created_at or "").replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=timezone.utc)
+    stamp = now or datetime.now(timezone.utc)
+    if stamp.tzinfo is None:
+        stamp = stamp.replace(tzinfo=timezone.utc)
+    return stamp - when >= timedelta(days=days)
+
+
+def activity_restore_flags(
+    *,
+    snapshot: bool,
+    undone: bool,
+    admin: bool,
+    ha_mcp: bool,
+    expired: bool = False,
+) -> tuple[bool, bool]:
     """Native snapshot rollback, plus Ask to restore when HA-MCP can help or we have no snapshot."""
-    can_rollback = bool(ACTIVITY_ROLLBACK and snapshot and not undone)
-    ask_restore = bool(admin and not undone and (ha_mcp or not can_rollback))
+    can_rollback = bool(ACTIVITY_ROLLBACK and snapshot and not undone and not expired)
+    ask_restore = bool(admin and not undone and not expired and (ha_mcp or not can_rollback))
     return can_rollback, ask_restore
 
 
@@ -191,6 +226,7 @@ CONF_ALLOW_USERS = "allow_users"
 CONF_HOUSE_MAP = "house_map"
 CONF_SHORTEN_MCP_RESULTS = "shorten_mcp_results"
 CONF_CHANGE_HISTORY = "change_history"
+CONF_CHANGE_HISTORY_TTL_DAYS = "change_history_ttl_days"
 CONF_TRACK_USAGE = "track_usage"
 CONF_SHOW_CHAT_USAGE = "show_chat_usage"
 CONF_HA_USAGE_SENSORS = "ha_usage_sensors"

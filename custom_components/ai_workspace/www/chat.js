@@ -686,9 +686,7 @@ export async function mountAiWorkspace(root, options = {}) {
       .replace(/"/g, "&quot;")
       .replace(/</g, "&lt;");
   const composerTag = "div";
-  const nextRemoveMarkup = haUi
-    ? `<ha-icon-button class="next-remove" label="${t("queued_remove")}"><ha-icon icon="mdi:close"></ha-icon></ha-icon-button>`
-    : `<button type="button" class="next-remove"></button>`;
+  const nextRemoveMarkup = `<ha-icon-button class="next-remove" type="button" label="${htmlAttr(t("queued_remove"))}"><ha-icon icon="mdi:close"></ha-icon></ha-icon-button>`;
   const fileInputMarkup =
     `<input class="file-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif,.yaml,.yml,.json,.txt,.md,.csv,.xml,.toml,.html,.css,.js,.ts,.py,.log,.cfg,.ini,.conf" multiple hidden>`;
   const attachBtnMarkup = `<ha-icon-button class="attach" type="button" label="${htmlAttr(t("attach"))}"><ha-icon icon="mdi:paperclip"></ha-icon></ha-icon-button>`;
@@ -813,12 +811,7 @@ export async function mountAiWorkspace(root, options = {}) {
       </div>
       <div class="usage" hidden aria-hidden="true">
         <div class="usage-bar">
-          <span>${t("usage")}</span>
-          <div class="usage-bar-actions">
-            <ha-icon-button class="usage-close" label="${t("usage_back")}">
-              <ha-icon icon="mdi:close"></ha-icon>
-            </ha-icon-button>
-          </div>
+          <h1>${t("usage")}</h1>
         </div>
         <div class="usage-toolbar">
           <div class="usage-range"></div>
@@ -912,18 +905,22 @@ export async function mountAiWorkspace(root, options = {}) {
   function syncToggleLabels() {
     const collapsed = wrap.classList.contains("nav-collapsed");
     const open = wrap.classList.contains("nav-open");
-    const label = wrap.classList.contains("narrow")
+    const overlay = wrap.classList.contains("narrow");
+    const label = overlay
       ? (open ? t("hide_chats") : t("show_chats"))
       : (collapsed ? t("show_chats") : t("hide_chats"));
     root.querySelectorAll(".nav-toggle").forEach((btn) => {
-      btn.label = label;
+      btn.label = overlay && !btn.classList.contains("chat-nav-toggle") ? t("close") : label;
     });
+    const rail = root.querySelector(".nav-toolbar .nav-toggle ha-icon");
+    if (rail) rail.setAttribute("icon", overlay ? "mdi:close" : "mdi:dock-left");
   }
 
   function setNavOpen(open) {
     wrap.classList.toggle("nav-open", Boolean(open));
     if (scrim) scrim.hidden = !open;
     syncToggleLabels();
+    options.onNavOpen?.(Boolean(open));
   }
 
   function closeNavIfOverlay() {
@@ -1019,6 +1016,10 @@ export async function mountAiWorkspace(root, options = {}) {
     }
   }
   let streaming = false;
+  let liveStream = false;
+  let watchGen = 0;
+  let turnStopping = false;
+  let turnStopDone = null;
   let nextTurn = null;
   const MAX_ATTACH = 4;
   const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
@@ -1055,8 +1056,7 @@ export async function mountAiWorkspace(root, options = {}) {
       messageEl.style.overflowY = overflows ? "auto" : "hidden";
       messageEl.classList.toggle("message-overflows", overflows);
     }
-    const hasDraft = Boolean(String(messageEl.value || "").trim() || pending.length);
-    setComposerDisabled(".send", !hasDraft);
+    syncSendButton();
     setComposerDisabled(".attach", pending.length >= MAX_ATTACH);
     const prompt = streaming ? t("placeholder_next") : t("placeholder");
     if (messageEl.localName === "ha-input") {
@@ -1096,6 +1096,7 @@ export async function mountAiWorkspace(root, options = {}) {
   let keyboardRaf = 0;
   let keyboardInset = 0;
   let keyboardOpen = false;
+  let keyboardWroteAt = 0;
 
   function resetOuterScroll() {
     const start =
@@ -1109,9 +1110,18 @@ export async function mountAiWorkspace(root, options = {}) {
   function clearKeyboardLock() {
     keyboardOpen = false;
     keyboardInset = 0;
+    keyboardWroteAt = 0;
     wrap.classList.remove("keyboard-open");
     wrap.style.height = "";
+    form.style.removeProperty("--ai-keyboard-inset");
     wrap.style.removeProperty("--ai-keyboard-inset");
+  }
+
+  function keyboardGap() {
+    const vv = window.visualViewport;
+    // Overlay keyboards shrink visualViewport.height. Ignore offsetTop so IME
+    // pan does not chase the composer (that loop is the rubber-band).
+    return vv ? Math.max(0, Math.round(window.innerHeight - vv.height)) : 0;
   }
 
   function syncKeyboardInset() {
@@ -1123,30 +1133,27 @@ export async function mountAiWorkspace(root, options = {}) {
   function applyKeyboardInset() {
     keyboardRaf = 0;
     if (keepComposerFocus()) return;
-    const vv = window.visualViewport;
-    // Overlay keyboards shrink visualViewport.height. Ignore offsetTop so IME
-    // pan does not chase the composer (that loop is the rubber-band).
-    const next = vv ? Math.max(0, Math.round(window.innerHeight - vv.height)) : 0;
+    const next = keyboardGap();
     const open = composerFocused() && next > 80;
     if (!open) {
       if (keyboardOpen) clearKeyboardLock();
       return;
     }
-    if (keyboardOpen && Math.abs(next - keyboardInset) < 8) return;
     const opened = !keyboardOpen;
+    const delta = Math.abs(next - keyboardInset);
+    if (!opened && delta < 8) return;
+    const now = performance.now();
+    if (!opened && delta < 48 && now - keyboardWroteAt < 120) return;
     keyboardOpen = true;
     keyboardInset = next;
-    wrap.style.setProperty("--ai-keyboard-inset", `${next}px`);
+    keyboardWroteAt = now;
+    form.style.setProperty("--ai-keyboard-inset", `${next}px`);
     if (opened) {
       if (followRaf) {
         cancelAnimationFrame(followRaf);
         followRaf = 0;
       }
       wrap.classList.add("keyboard-open");
-      if (pinBottom && !holdFollow) {
-        chatEl.scrollTop = Math.max(0, chatEl.scrollHeight - chatEl.clientHeight);
-        lastScrollTop = chatEl.scrollTop;
-      }
     }
   }
 
@@ -1980,8 +1987,9 @@ export async function mountAiWorkspace(root, options = {}) {
     resizeComposer();
   }
 
-  function abandonStream() {
+  function haltStream({ keepQueue = false } = {}) {
     streamToken += 1;
+    watchGen += 1;
     if (streamAbort) {
       streamAbort.abort();
       streamAbort = null;
@@ -1990,6 +1998,8 @@ export async function mountAiWorkspace(root, options = {}) {
       cancelAnimationFrame(streamDrainRaf);
       streamDrainRaf = 0;
     }
+    streamFinal = true;
+    revealAllNow();
     streamBuf = "";
     streamFull = "";
     streamPainted = "";
@@ -2001,9 +2011,74 @@ export async function mountAiWorkspace(root, options = {}) {
     waiters.forEach((fn) => fn());
     streaming = false;
     liveStream = false;
-    nextTurn = null;
+    if (!keepQueue) nextTurn = null;
     renderNext();
+    const live = logEl.querySelector(".bubble.assistant.streaming");
+    if (live) {
+      live.classList.remove("streaming");
+      settleTools(live);
+      setActivity(live, "");
+      const text = String(live.querySelector(".text")?.content || live.querySelector(".text")?.textContent || "").trim();
+      const tools = live.querySelector(".tools");
+      if (!text && !tools?.children?.length) (live.closest(".message-container") || live).remove();
+    }
     resizeComposer();
+  }
+
+  function abandonStream() {
+    haltStream({ keepQueue: false });
+  }
+
+  async function stopTurn() {
+    if (turnStopDone) {
+      await turnStopDone;
+      return;
+    }
+    if (!streaming && !liveStream) return;
+    const chatId = sessionId;
+    turnStopping = true;
+    haltStream({ keepQueue: true });
+    const done = (async () => {
+      if (!chatId) return;
+      try {
+        await apiFetch(`${API}/sessions/${chatId}/stop`, { method: "POST" });
+      } catch (_err) {
+        /* lock is released when the job ends */
+      }
+    })();
+    turnStopDone = done;
+    try {
+      await done;
+    } finally {
+      turnStopping = false;
+      if (turnStopDone === done) turnStopDone = null;
+    }
+    syncCopyChat();
+    resizeComposer();
+    if (nextTurn) form.requestSubmit();
+  }
+
+  function hasDraft() {
+    return Boolean(String(messageEl?.value || "").trim() || pending.length);
+  }
+
+  function canStopTurn() {
+    return (streaming || liveStream || turnStopping) && !hasDraft();
+  }
+
+  function syncSendButton() {
+    const halt = canStopTurn();
+    const label = t(halt ? "stop_reply" : "send");
+    const icon = halt ? "mdi:stop" : haUi ? "mdi:send" : "mdi:arrow-up";
+    for (const btn of composerControls(".send")) {
+      btn.disabled = halt ? false : !hasDraft();
+      btn.classList.toggle("is-stop", halt);
+      btn.label = label;
+      btn.setAttribute("aria-label", label);
+      btn.setAttribute("label", label);
+      const glyph = btn.querySelector("ha-icon");
+      if (glyph) glyph.setAttribute("icon", icon);
+    }
   }
 
   function writeStreamVisible(force = false) {
@@ -2703,9 +2778,6 @@ export async function mountAiWorkspace(root, options = {}) {
     const message = String(error?.message || error || "");
     return name === "AbortError" || /failed to fetch|load failed|network|abort|cancel|disconnected|reset/i.test(message);
   }
-
-  let watchGen = 0;
-  let liveStream = false;
 
   async function watchPending(id) {
     if (!id || liveStream || !chatVisible()) return false;
@@ -3646,6 +3718,7 @@ export async function mountAiWorkspace(root, options = {}) {
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (turnStopDone) await turnStopDone;
     let text = messageEl.value.trim();
     let attachments = pending.slice();
     if (streaming) {
@@ -3687,7 +3760,7 @@ export async function mountAiWorkspace(root, options = {}) {
     watchGen += 1;
     clearKeyboardLock();
     resetOuterScroll();
-    setComposerDisabled(".send", true);
+    syncSendButton();
     pending = [];
     renderThumbs();
     messageEl.value = "";
@@ -3967,11 +4040,7 @@ export async function mountAiWorkspace(root, options = {}) {
   }
   listen(window.visualViewport, "resize", syncKeyboardInset);
   listen(window.visualViewport, "scroll", () => {
-    if (!composerFocused()) return;
-    const vv = window.visualViewport;
-    const next = vv ? Math.max(0, Math.round(window.innerHeight - vv.height)) : 0;
-    if (Math.abs(next - keyboardInset) < 24) return;
-    syncKeyboardInset();
+    if (composerFocused()) syncKeyboardInset();
   });
   function fromComposerField(event) {
     for (const node of event.composedPath?.() || [event.target]) {
@@ -4005,6 +4074,10 @@ export async function mountAiWorkspace(root, options = {}) {
     const send = event.target.closest?.(".send");
     if (send?.closest?.(".composer")) {
       event.preventDefault();
+      if (canStopTurn()) {
+        stopTurn();
+        return;
+      }
       form.requestSubmit();
       return;
     }
@@ -4311,6 +4384,10 @@ export async function mountAiWorkspace(root, options = {}) {
     return String(n);
   }
 
+  function turnWord(count) {
+    return Number(count) === 1 ? t("usage_turn") : t("usage_turns");
+  }
+
   function cachedTokens(summary) {
     return Number(summary?.cache_read_tokens || 0) + Number(summary?.cache_write_tokens || 0);
   }
@@ -4322,7 +4399,7 @@ export async function mountAiWorkspace(root, options = {}) {
     if (cached) bits.push(`${tokenLabel(cached)} ${t("usage_cached")}`);
     if (summary.cost_usd != null) bits.push(money(summary.cost_usd));
     else if (summary.missing_cost) bits.push(t("usage_unknown_cost"));
-    if (summary.turns) bits.push(`${summary.turns} ${t("usage_turns")}`);
+    if (summary.turns) bits.push(`${summary.turns} ${turnWord(summary.turns)}`);
     return bits.join(" · ");
   }
 
@@ -4383,7 +4460,7 @@ export async function mountAiWorkspace(root, options = {}) {
       const cached = cachedTokens(summary);
       const bits = [`${tokenLabel(summary?.total_tokens || 0)} ${t("usage_tokens")}`];
       if (cached) bits.push(`${tokenLabel(cached)} ${t("usage_cached")}`);
-      bits.push(`${summary?.turns || 0} ${t("usage_turns")}`);
+      bits.push(`${summary?.turns || 0} ${turnWord(summary?.turns || 0)}`);
       meta.textContent = bits.join(" · ");
     }
     card.append(title, cost, meta);
@@ -5067,11 +5144,6 @@ export async function mountAiWorkspace(root, options = {}) {
       goToUsage();
     });
   });
-  root.querySelector(".usage-close")?.addEventListener("click", (event) => {
-    event.preventDefault();
-    leaveUsage();
-  });
-
   root.querySelectorAll(".nav-toggle").forEach((btn) => {
     btn.addEventListener("click", (event) => {
       event.preventDefault();

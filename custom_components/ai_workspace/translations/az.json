@@ -76,12 +76,14 @@
             "data": {
               "house_map": "Konfiqurasiya kataloqu",
               "shorten_mcp_results": "Uzun Home Assistant cavablarını qısalt",
-              "change_history": "Dəyişiklik tarixçəsi"
+              "change_history": "Dəyişiklik tarixçəsi",
+              "change_history_ttl_days": "Rollback müddəti"
             },
             "data_description": {
               "house_map": "Defolt olaraq sönülüdür. Avtomatlaşdırmaların, obyektlərin və ərazilərin necə bağlı olduğuna dair yerli indeks: bir axtarış “mətbəx işığını nə istifadə edir?” kimi suallara cavab verir. Hər mesaja bir az əlavə edir, ona görə yalnız tez-tez şeylərin necə bağlandığını soruşursunuzsa açın. Canlı vəziyyətlər yenə Home Assistant-dan gəlir.",
               "shorten_mcp_results": "Defolt olaraq açıqdır. Home Assistant-dan çox uzun cavablar (bütün ev siyahıları, böyük axtarışlar) AI-yə getməzdən əvvəl xülasə edilir. Tokenlərə qənaət edir və cavabları sürətli saxlayır. Sönülü tam mətni göndərir.",
-              "change_history": "Defolt olaraq açıqdır. Köməkçinin etdiyi hər konfiqurasiya dəyişikliyini qeyd edir ki, nəyin dəyişdiyini görə və ondan əvvəlki versiyanı bərpa etməsini istəyə biləsiniz. Sönülü yeni qeydləri dayandırır; köməkçi yenə dəyişiklik edə bilər."
+              "change_history": "Defolt olaraq açıqdır. Köməkçinin etdiyi hər konfiqurasiya dəyişikliyini qeyd edir ki, nəyin dəyişdiyini görə və ondan əvvəlki versiyanı bərpa etməsini istəyə biləsiniz. Sönülü yeni qeydləri dayandırır; köməkçi yenə dəyişiklik edə bilər.",
+              "change_history_ttl_days": "Rollback və Bərpa istənin əlçatan qaldığı günlər. Sonra sətir jurnaldа qalır; köhnə anlıq görüntünü bərpa etmək sonrakı işi üstələyə bilər. Defolt 7. 1 təxminən bir gündür."
             }
           },
           "prompt": {
@@ -183,12 +185,14 @@
             "data": {
               "house_map": "Konfiqurasiya kataloqu",
               "shorten_mcp_results": "Uzun Home Assistant cavablarını qısalt",
-              "change_history": "Dəyişiklik tarixçəsi"
+              "change_history": "Dəyişiklik tarixçəsi",
+              "change_history_ttl_days": "Rollback müddəti"
             },
             "data_description": {
               "house_map": "Defolt olaraq sönülüdür. Avtomatlaşdırmaların, obyektlərin və ərazilərin necə bağlı olduğuna dair yerli indeks: bir axtarış “mətbəx işığını nə istifadə edir?” kimi suallara cavab verir. Hər mesaja bir az əlavə edir, ona görə yalnız tez-tez şeylərin necə bağlandığını soruşursunuzsa açın. Canlı vəziyyətlər yenə Home Assistant-dan gəlir.",
               "shorten_mcp_results": "Defolt olaraq açıqdır. Home Assistant-dan çox uzun cavablar (bütün ev siyahıları, böyük axtarışlar) AI-yə getməzdən əvvəl xülasə edilir. Tokenlərə qənaət edir və cavabları sürətli saxlayır. Sönülü tam mətni göndərir.",
-              "change_history": "Defolt olaraq açıqdır. Köməkçinin etdiyi hər konfiqurasiya dəyişikliyini qeyd edir ki, nəyin dəyişdiyini görə və ondan əvvəlki versiyanı bərpa etməsini istəyə biləsiniz. Sönülü yeni qeydləri dayandırır; köməkçi yenə dəyişiklik edə bilər."
+              "change_history": "Defolt olaraq açıqdır. Köməkçinin etdiyi hər konfiqurasiya dəyişikliyini qeyd edir ki, nəyin dəyişdiyini görə və ondan əvvəlki versiyanı bərpa etməsini istəyə biləsiniz. Sönülü yeni qeydləri dayandırır; köməkçi yenə dəyişiklik edə bilər.",
+              "change_history_ttl_days": "Rollback və Bərpa istənin əlçatan qaldığı günlər. Sonra sətir jurnaldа qalır; köhnə anlıq görüntünü bərpa etmək sonrakı işi üstələyə bilər. Defolt 7. 1 təxminən bir gündür."
             }
           },
           "prompt": {

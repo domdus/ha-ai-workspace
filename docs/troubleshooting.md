@@ -7,6 +7,7 @@
 - **OpenAI rejects the tool name.** Names over 64 characters are shortened. Two MCP connections that share a tool get a short prefix. Disable a connection’s device to drop its tools. Turning off **All LLM APIs** is not the same as disabling that device; the built-in MCP tools are omitted only while **MCP Server** is unloaded.
 - **OpenAI TTS error about exhausted credit.** The OpenAI account is out of credit. That is separate from MCP tool names.
 - **The microphone is greyed out.** Open Home Assistant over https:// (Nabu Casa or a reverse proxy) or on localhost.
+- **Home Assistant will not start after the assistant changed an automation, script, or scene.** Stop Home Assistant and merge the matching file from `config/ai_workspace/changes/` into `automations.yaml`, `scripts.yaml`, or `scenes.yaml` (same id). Steps: [If Home Assistant will not start](mcp.md#if-home-assistant-will-not-start).
 
 ## More detail in the logs
 

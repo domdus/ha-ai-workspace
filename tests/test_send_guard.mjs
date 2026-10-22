@@ -54,6 +54,24 @@ ok(
   "Active sessionId wins over URL",
 );
 
+function sendButtonMode({ streaming, hasDraft }) {
+  if (streaming && !hasDraft) return { action: "stop", enabled: true };
+  return { action: "send", enabled: Boolean(hasDraft) };
+}
+
+function afterStop({ queued }) {
+  return queued ? "flush" : "idle";
+}
+
+ok(sendButtonMode({ streaming: true, hasDraft: false }).action === "stop", "Send is Stop while the agent is working");
+ok(sendButtonMode({ streaming: true, hasDraft: false }).enabled === true, "Stop stays clickable with an empty composer");
+ok(sendButtonMode({ streaming: true, hasDraft: true }).action === "send", "A typed follow-up turns Stop back into Send");
+ok(sendButtonMode({ streaming: true, hasDraft: true }).enabled === true, "Send stays clickable so the follow-up can queue");
+ok(sendButtonMode({ streaming: false, hasDraft: false }).enabled === false, "Send stays off without a draft");
+ok(sendButtonMode({ streaming: false, hasDraft: true }).action === "send", "Send returns after stop");
+ok(afterStop({ queued: true }) === "flush", "A queued prompt is sent after stop");
+ok(afterStop({ queued: false }) === "idle", "With an empty queue, stop leaves the composer free");
+
 if (failed) {
   process.exit(1);
 }

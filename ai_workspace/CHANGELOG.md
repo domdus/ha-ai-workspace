@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.3.5
+
+Everything from 1.3.5b1 to 1.3.5b4:
+
+- Chat: while the agent is working, Send becomes **Stop**. Stop ends the current turn so you can send right away. Typing a follow-up turns Stop back into Send so that prompt can queue; a queued prompt shows an X.
+- Change History: **Rollback for** (default 7 days) hides Rollback and Ask to restore on older rows; the log stays. Configure or `change_history_ttl_days` (1–90). Docs cover restoring an automation, script, or scene from `config/ai_workspace/changes/` if Home Assistant will not start.
+- Android: the prompt stays at the bottom of the chat column and slides with the keyboard instead of resizing the message list on every viewport tick.
+- Chat list: desktop titles use the full row with the ⋮ menu on hover. Mobile uses the chats icon in the header and a close X in the overlay list. An empty banner no longer adds header height.
+- Usage: centered page title without a close X, filters stay on one row longer, and **1 Turn** instead of **1 Turns**.
+
+## 1.3.5b4
+
+- Mobile: the header uses the chats icon again. In the overlay list, dock-left becomes a close X. Desktop still docks the rail. An empty banner no longer adds header height.
+- Usage: the page title is a centered heading. There is no close X; leave with the chat list or Escape. The date range wraps before the Agent / Model / Chat filters, so those three stay on one row longer.
+
+## 1.3.5b3
+
+- Desktop chat list: titles use the full row. The ⋮ menu sits on top of the text on hover instead of reserving a blank column. Touch keeps the button in the layout.
+- Android: the prompt stays at the bottom of the chat column and slides with the keyboard (`transform`) instead of resizing the message list on every viewport tick.
+- Mobile chat list uses the same **dock-left** icon as desktop. That app-bar control hides while the chat list is open. An empty banner no longer adds header height.
+
+## 1.3.5b2
+
+- Chat: typing a follow-up while the agent is working turns Stop back into Send so that prompt can queue. Clearing or sending it (empty input) shows Stop again.
+- Usage: the chat header and Usage cards say **1 Turn**, not **1 Turns**. Column headers stay plural.
+- Change History: **Rollback for** (default 7 days) hides Rollback and Ask to restore on older rows. The log stays. Configure or `change_history_ttl_days` (1–90). Docs cover restoring an automation, script, or scene from `config/ai_workspace/changes/` if Home Assistant will not start.
+
+## 1.3.5b1
+
+- Chat: while the agent is working, Send becomes Stop (standard template and ha-components). A queued prompt shows an X in those views and in the floating chat. Stop ends the current turn so you can send immediately; a message already in the queue is sent next.
+
 ## 1.3.4
 
 - Cursor and cloud agents share the same skill reminder: if a listed write tool has `BestPracticeKey`, load that MCP’s skill guide (`ha_get_skill_guide` on HA-MCP) and pass the key. If the field or tool is missing, skip it and do not ask the user. Cursor already had the tool; it was missing the extra sentence cloud chats get because their tool descriptions are shortened.

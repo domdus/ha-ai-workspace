@@ -17,7 +17,9 @@ from .assist_agents import assist_agent_ids, async_assist_events, list_assist_ag
 from .discovery import async_bind_runtime
 from .const import (
     ACTIVITY_ROLLBACK,
+    activity_restore_expired,
     activity_restore_flags,
+    change_history_ttl_days,
     CLOUD_ONLY_MODELS,
     standing_chat_prompt,
     DOMAIN,
@@ -691,6 +693,22 @@ def _release_lock(data: dict[str, Any], session_id: str, lock: asyncio.Lock) -> 
         locks.pop(session_id, None)
 
 
+def chat_job_name(session_id: str) -> str:
+    return f"ai_workspace_chat_{session_id}"
+
+
+async def cancel_chat_job(data: dict[str, Any], session_id: str) -> bool:
+    """Stop the in-flight turn so the next message can use the chat lock."""
+    name = chat_job_name(session_id)
+    jobs = [job for job in list(data.get("chat_jobs") or set()) if job.get_name() == name and not job.done()]
+    for job in jobs:
+        job.cancel()
+    if not jobs:
+        return False
+    await asyncio.gather(*jobs, return_exceptions=True)
+    return True
+
+
 def _is_admin(request: web.Request) -> bool:
     return bool(getattr(request.get("hass_user"), "is_admin", False))
 
@@ -973,6 +991,22 @@ class ChatView(HomeAssistantView):
                                 continue
                             event = {"type": "title", "title": applied}
                         await send(event)
+                except asyncio.CancelledError:
+                    answer = merge_reply_text("".join(parts), final)
+                    if answer or tools:
+                        try:
+                            await asyncio.shield(
+                                hass.async_add_executor_job(
+                                    store.add_message,
+                                    session.id,
+                                    "assistant",
+                                    answer,
+                                    json.dumps(list(tools), ensure_ascii=False),
+                                )
+                            )
+                        except Exception:
+                            logger.debug("stopped turn not stored", exc_info=True)
+                    raise
                 except Exception as exc:
                     logger.exception("chat failed session=%s", session.id)
                     error = redact(str(exc), [settings.cursor_api_key, settings.api_key, settings.mcp_token])
@@ -1012,10 +1046,26 @@ class ChatView(HomeAssistantView):
             return response
 
         jobs: set[asyncio.Task] = data.setdefault("chat_jobs", set())
-        task = asyncio.create_task(produce(), name=f"ai_workspace_chat_{session.id}")
+        task = asyncio.create_task(produce(), name=chat_job_name(session.id))
         jobs.add(task)
         task.add_done_callback(jobs.discard)
         return task
+
+
+class ChatStopView(HomeAssistantView):
+    url = "/api/ai_workspace/sessions/{session_id}/stop"
+    name = "api:ai_workspace:chat_stop"
+    requires_auth = True
+
+    async def post(self, request: web.Request, session_id: str) -> web.Response:
+        hass: HomeAssistant = _hass(request)
+        data = _runtime(hass)
+        store: Store = data["store"]
+        session = await hass.async_add_executor_job(store.get_session, _user_id(request), session_id)
+        if session is None:
+            raise web.HTTPNotFound(text="Chat not found.")
+        stopped = await cancel_chat_job(data, session.id)
+        return self.json({"ok": True, "stopped": stopped})
 
 
 class SpeechView(HomeAssistantView):
@@ -1209,13 +1259,24 @@ def _loopback_remote(request: web.Request) -> bool:
         return False
 
 
-def _activity_dict(row, chat: str = "", *, admin: bool = False, ha_mcp: bool = False) -> dict:
+def _activity_ttl_days(settings) -> int:
+    return change_history_ttl_days(getattr(settings, "change_history_ttl_days", None) if settings else None)
+
+
+def _activity_expired(row, settings) -> bool:
+    return activity_restore_expired(getattr(row, "created_at", "") or "", days=_activity_ttl_days(settings))
+
+
+def _activity_dict(
+    row, chat: str = "", *, admin: bool = False, ha_mcp: bool = False, expired: bool = False
+) -> dict:
     undone = bool(row.undone_at)
     can_rollback, ask = activity_restore_flags(
         snapshot=bool(row.can_rollback),
         undone=undone,
         admin=admin,
         ha_mcp=ha_mcp,
+        expired=expired,
     )
     return {
         "id": row.id,
@@ -1258,7 +1319,13 @@ class ActivityView(HomeAssistantView):
         )
         return self.json(
             [
-                _activity_dict(row, titles.get(row.session_id) or "", admin=admin, ha_mcp=ha_mcp)
+                _activity_dict(
+                    row,
+                    titles.get(row.session_id) or "",
+                    admin=admin,
+                    ha_mcp=ha_mcp,
+                    expired=_activity_expired(row, settings),
+                )
                 for row in rows
             ]
         )
@@ -1283,7 +1350,8 @@ class ActivityRollbackView(HomeAssistantView):
             raise web.HTTPNotFound()
         if not _is_admin(request) and row.user_id != _user_id(request):
             raise web.HTTPNotFound()
-        if not ACTIVITY_ROLLBACK or not row.can_rollback:
+        settings = _runtime(hass).get("settings")
+        if not ACTIVITY_ROLLBACK or not row.can_rollback or _activity_expired(row, settings):
             logger.warning("Change History rollback refused: no restorable snapshot for %s", row_id)
             raise web.HTTPBadRequest(text="This change cannot be rolled back.")
         raw = await hass.async_add_executor_job(store.activity_document, row_id)
@@ -1439,6 +1507,7 @@ def register_views(hass: HomeAssistant) -> None:
     hass.http.register_view(SessionsView)
     hass.http.register_view(SessionView)
     hass.http.register_view(ChatView)
+    hass.http.register_view(ChatStopView)
     hass.http.register_view(HouseMapMcpView)
     hass.http.register_view(CatalogMcpView)
     hass.http.register_view(ActivityView)

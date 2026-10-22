@@ -76,12 +76,14 @@
             "data": {
               "house_map": "Katalog konfigurace",
               "shorten_mcp_results": "Zkrátit dlouhé odpovědi Home Assistant",
-              "change_history": "Historie změn"
+              "change_history": "Historie změn",
+              "change_history_ttl_days": "Rollback po"
             },
             "data_description": {
               "house_map": "Ve výchozím stavu vypnuto. Místní index propojení automatizací, entit a oblastí, takže jedno vyhledání odpoví na otázky jako „co používá světlo v kuchyni?“. Ke každé zprávě trochu přidá, proto ho zapněte, jen pokud se často ptáte, jak jsou věci propojené. Živé stavy dál přicházejí z Home Assistant.",
               "shorten_mcp_results": "Ve výchozím stavu zapnuto. Velmi dlouhé odpovědi z Home Assistant (seznamy celého domu, velká hledání) se před odesláním do AI shrnou. Šetří tokeny a drží odpovědi rychlé. Vypnuto pošle celý text.",
-              "change_history": "Ve výchozím stavu zapnuto. Zaznamenává každou změnu konfigurace, kterou asistent udělá, takže vidíte, co se změnilo, a můžete ho požádat o obnovení dřívější verze. Vypnuto: bez nových záznamů; asistent může dál provádět změny."
+              "change_history": "Ve výchozím stavu zapnuto. Zaznamenává každou změnu konfigurace, kterou asistent udělá, takže vidíte, co se změnilo, a můžete ho požádat o obnovení dřívější verze. Vypnuto: bez nových záznamů; asistent může dál provádět změny.",
+              "change_history_ttl_days": "Dny, po které zůstane Rollback a Požádat o obnovení dostupné. Poté záznam v protokolu zůstane; obnovení starého snímku může přepsat pozdější práci. Výchozí 7. 1 je asi den."
             }
           },
           "prompt": {
@@ -183,12 +185,14 @@
             "data": {
               "house_map": "Katalog konfigurace",
               "shorten_mcp_results": "Zkrátit dlouhé odpovědi Home Assistant",
-              "change_history": "Historie změn"
+              "change_history": "Historie změn",
+              "change_history_ttl_days": "Rollback po"
             },
             "data_description": {
               "house_map": "Ve výchozím stavu vypnuto. Místní index propojení automatizací, entit a oblastí, takže jedno vyhledání odpoví na otázky jako „co používá světlo v kuchyni?“. Ke každé zprávě trochu přidá, proto ho zapněte, jen pokud se často ptáte, jak jsou věci propojené. Živé stavy dál přicházejí z Home Assistant.",
               "shorten_mcp_results": "Ve výchozím stavu zapnuto. Velmi dlouhé odpovědi z Home Assistant (seznamy celého domu, velká hledání) se před odesláním do AI shrnou. Šetří tokeny a drží odpovědi rychlé. Vypnuto pošle celý text.",
-              "change_history": "Ve výchozím stavu zapnuto. Zaznamenává každou změnu konfigurace, kterou asistent udělá, takže vidíte, co se změnilo, a můžete ho požádat o obnovení dřívější verze. Vypnuto: bez nových záznamů; asistent může dál provádět změny."
+              "change_history": "Ve výchozím stavu zapnuto. Zaznamenává každou změnu konfigurace, kterou asistent udělá, takže vidíte, co se změnilo, a můžete ho požádat o obnovení dřívější verze. Vypnuto: bez nových záznamů; asistent může dál provádět změny.",
+              "change_history_ttl_days": "Dny, po které zůstane Rollback a Požádat o obnovení dostupné. Poté záznam v protokolu zůstane; obnovení starého snímku může přepsat pozdější práci. Výchozí 7. 1 je asi den."
             }
           },
           "prompt": {

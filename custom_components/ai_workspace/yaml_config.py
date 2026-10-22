@@ -26,6 +26,7 @@ from .const import (
     CONF_ASSIST_TTS,
     CONF_AZURE_API_VERSION,
     CONF_CHANGE_HISTORY,
+    CONF_CHANGE_HISTORY_TTL_DAYS,
     CONF_CHECK_HOUSE,
     CONF_CROSS_CHAT,
     CONF_CURSOR_API_KEY,
@@ -56,8 +57,12 @@ from .const import (
     CONF_TTS_SPEED,
     CONF_TTS_VOICE,
     CONF_UI_THEME,
+    CHANGE_HISTORY_TTL_MAX_DAYS,
+    CHANGE_HISTORY_TTL_MIN_DAYS,
     DEFAULT_AZURE_API_VERSION,
+    DEFAULT_CHANGE_HISTORY_TTL_DAYS,
     DEFAULT_KEEP_CHATS,
+    change_history_ttl_days,
     DOMAIN,
     EFFORT_DEFAULT,
     EFFORTS,
@@ -104,6 +109,7 @@ YAML_SHARED_KEYS = (
     CONF_HOUSE_MAP,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
+    CONF_CHANGE_HISTORY_TTL_DAYS,
     CONF_CHECK_HOUSE,
     CONF_TRACK_USAGE,
     CONF_SHOW_CHAT_USAGE,
@@ -129,6 +135,7 @@ YAML_OPTION_DEFAULTS = {
     CONF_HOUSE_MAP: False,
     CONF_SHORTEN_MCP_RESULTS: True,
     CONF_CHANGE_HISTORY: True,
+    CONF_CHANGE_HISTORY_TTL_DAYS: DEFAULT_CHANGE_HISTORY_TTL_DAYS,
     CONF_CHECK_HOUSE: True,
     CONF_TRACK_USAGE: True,
     CONF_SHOW_CHAT_USAGE: True,
@@ -160,6 +167,8 @@ def _normalize_option(key: str, value: Any) -> Any:
         return ui_theme_of(value)
     if key == CONF_KEEP_CHATS:
         return _keep_chats(value)
+    if key == CONF_CHANGE_HISTORY_TTL_DAYS:
+        return change_history_ttl_days(value)
     if key in {
         CONF_ENABLE_OVERLAY,
         CONF_ENABLE_SIDEBAR,
@@ -239,6 +248,10 @@ YAML_SCHEMA = vol.Schema(
         vol.Optional(CONF_HOUSE_MAP): cv.boolean,
         vol.Optional(CONF_SHORTEN_MCP_RESULTS): cv.boolean,
         vol.Optional(CONF_CHANGE_HISTORY): cv.boolean,
+        vol.Optional(CONF_CHANGE_HISTORY_TTL_DAYS): vol.All(
+            vol.Coerce(int),
+            vol.Range(min=CHANGE_HISTORY_TTL_MIN_DAYS, max=CHANGE_HISTORY_TTL_MAX_DAYS),
+        ),
         vol.Optional(CONF_CHECK_HOUSE): cv.boolean,
         vol.Optional(CONF_TRACK_USAGE): cv.boolean,
         vol.Optional(CONF_SHOW_CHAT_USAGE): cv.boolean,

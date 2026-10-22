@@ -53,6 +53,7 @@ class Settings:
     house_map: bool = False
     shorten_mcp_results: bool = True
     change_history: bool = True
+    change_history_ttl_days: int = 7
     track_usage: bool = True
     show_chat_usage: bool = True
     ha_usage_sensors: bool = False

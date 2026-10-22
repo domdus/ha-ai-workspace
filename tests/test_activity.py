@@ -282,3 +282,20 @@ def test_activity_restore_flags_keep_ha_mcp_and_native_paths():
     assert const.activity_restore_flags(snapshot=False, undone=False, admin=True, ha_mcp=False) == (False, True)
     assert const.activity_restore_flags(snapshot=True, undone=True, admin=True, ha_mcp=True) == (False, False)
     assert const.activity_restore_flags(snapshot=False, undone=False, admin=False, ha_mcp=True) == (False, False)
+    assert const.activity_restore_flags(snapshot=True, undone=False, admin=True, ha_mcp=True, expired=True) == (False, False)
+
+
+def test_activity_restore_expires_after_ttl_days():
+    from datetime import datetime, timedelta, timezone
+
+    const = _load("ai_workspace_const", "const.py")
+    now = datetime(2026, 10, 21, 22, 0, tzinfo=timezone.utc)
+    fresh = (now - timedelta(days=6, hours=23)).isoformat()
+    stale = (now - timedelta(days=7)).isoformat()
+    assert const.change_history_ttl_days(None) == 7
+    assert const.change_history_ttl_days(1) == 1
+    assert const.change_history_ttl_days(0) == 1
+    assert const.change_history_ttl_days(99) == 90
+    assert const.activity_restore_expired(fresh, days=7, now=now) is False
+    assert const.activity_restore_expired(stale, days=7, now=now) is True
+    assert const.activity_restore_expired(stale, days=1, now=now) is True

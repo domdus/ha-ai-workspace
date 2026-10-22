@@ -76,12 +76,14 @@
             "data": {
               "house_map": "Config catalog",
               "shorten_mcp_results": "Shorten long Home Assistant answers",
-              "change_history": "Change History"
+              "change_history": "Change History",
+              "change_history_ttl_days": "Rollback for"
             },
             "data_description": {
               "house_map": "Off by default. A local index of how automations, entities, and areas are connected, so one lookup answers questions like “what uses the kitchen light?”. Adds a little to every message, so turn it on only if you often ask how things are wired. Live states still come from Home Assistant.",
               "shorten_mcp_results": "On by default. Very long answers from Home Assistant (whole-home lists, big searches) are summarized before they go to the AI. Saves tokens and keeps replies quick. Off sends the full text.",
-              "change_history": "On by default. Keeps a record of every configuration change the assistant makes, so you can see what changed and ask it to restore an earlier version. Off stops new entries; the assistant can still make changes."
+              "change_history": "On by default. Keeps a record of every configuration change the assistant makes, so you can see what changed and ask it to restore an earlier version. Off stops new entries; the assistant can still make changes.",
+              "change_history_ttl_days": "Days Rollback and Ask to restore stay available. After that the row stays in the log; restoring an old snapshot can overwrite later work. Default 7. Use 1 for about a day."
             }
           },
           "prompt": {
@@ -183,12 +185,14 @@
             "data": {
               "house_map": "Config catalog",
               "shorten_mcp_results": "Shorten long Home Assistant answers",
-              "change_history": "Change History"
+              "change_history": "Change History",
+              "change_history_ttl_days": "Rollback for"
             },
             "data_description": {
               "house_map": "Off by default. A local index of how automations, entities, and areas are connected, so one lookup answers questions like “what uses the kitchen light?”. Adds a little to every message, so turn it on only if you often ask how things are wired. Live states still come from Home Assistant.",
               "shorten_mcp_results": "On by default. Very long answers from Home Assistant (whole-home lists, big searches) are summarized before they go to the AI. Saves tokens and keeps replies quick. Off sends the full text.",
-              "change_history": "On by default. Keeps a record of every configuration change the assistant makes, so you can see what changed and ask it to restore an earlier version. Off stops new entries; the assistant can still make changes."
+              "change_history": "On by default. Keeps a record of every configuration change the assistant makes, so you can see what changed and ask it to restore an earlier version. Off stops new entries; the assistant can still make changes.",
+              "change_history_ttl_days": "Days Rollback and Ask to restore stay available. After that the row stays in the log; restoring an old snapshot can overwrite later work. Default 7. Use 1 for about a day."
             }
           },
           "prompt": {

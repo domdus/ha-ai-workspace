@@ -385,7 +385,7 @@ ha-button.new-chat {
   margin: 0;
   padding: 0;
   border: 0;
-  border-radius: var(--ha-border-radius-sm);
+  border-radius: 50%;
   background: transparent;
   color: var(--sidebar-icon-color, var(--sidebar-text-color));
   cursor: pointer;
@@ -402,18 +402,46 @@ ha-button.new-chat {
   pointer-events: none;
 }
 
-.session-row .session-more:hover,
-.session-row .session-more:focus-visible {
-  background: var(
-    --ha-color-fill-neutral-quiet-hover,
-    color-mix(in srgb, var(--primary-text-color) 8%, transparent)
-  );
-}
-
 .session-row:hover .session-more,
 .session-row.selected .session-more,
 .session-row .session-more[aria-expanded="true"] {
   opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .session-row ha-dropdown.session-menu {
+    position: absolute;
+    inset-inline-end: 2px;
+    top: 6px;
+    z-index: 1;
+  }
+
+  .session-row.selected .session-more {
+    opacity: 0;
+  }
+
+  .session-row:hover .item-text,
+  .session-row:has(.session-more[aria-expanded="true"]) .item-text,
+  .session-row:has(.session-more:focus-visible) .item-text {
+    mask-image: linear-gradient(to left, transparent 0, transparent 28px, #000 48px);
+  }
+
+  :dir(rtl) .session-row:hover .item-text,
+  :dir(rtl) .session-row:has(.session-more[aria-expanded="true"]) .item-text,
+  :dir(rtl) .session-row:has(.session-more:focus-visible) .item-text {
+    mask-image: linear-gradient(to right, transparent 0, transparent 28px, #000 48px);
+  }
+
+  .session-row:hover .session-more,
+  .session-row .session-more[aria-expanded="true"],
+  .session-row .session-more:focus-visible {
+    opacity: 1;
+    background: color-mix(
+      in srgb,
+      var(--primary-text-color) 8%,
+      var(--sidebar-background-color, var(--card-background-color))
+    );
+  }
 }
 
 @media (hover: none) {
@@ -456,7 +484,7 @@ ha-button.new-chat {
   overflow-anchor: none;
   overscroll-behavior: contain;
   scroll-behavior: auto;
-  scroll-padding-bottom: calc(8rem + var(--ha-space-6) + var(--ai-keyboard-inset, 0px));
+  scroll-padding-bottom: calc(8rem + var(--ha-space-6));
 }
 
 .chat.welcome {
@@ -506,6 +534,12 @@ h1 {
   margin: var(--ha-space-2) 0 0;
   color: var(--error-color);
   display: block;
+}
+
+.banner[hidden],
+.banner:empty {
+  display: none !important;
+  margin: 0;
 }
 
 .stage {
@@ -816,7 +850,7 @@ h1 {
 
 .composer {
   position: sticky;
-  bottom: var(--ai-keyboard-inset, 0px);
+  bottom: 0;
   z-index: 3;
   display: flex;
   flex-direction: column;
@@ -825,8 +859,12 @@ h1 {
   width: min(calc(var(--ai-chat-width) + 2 * var(--ai-inline-pad)), 100%);
   margin-inline: auto;
   margin-top: auto;
-  margin-bottom: var(--ai-keyboard-inset, 0px);
   background: var(--primary-background-color);
+  transform: translateY(calc(-1 * var(--ai-keyboard-inset, 0px)));
+}
+
+.wrap.keyboard-open .composer {
+  will-change: transform;
 }
 
 .chat:not(.welcome) .composer::before {
@@ -1044,6 +1082,11 @@ h1 {
   padding: 0;
   --ha-icon-button-size: 32px;
   --mdc-icon-button-size: 32px;
+}
+
+.send.is-stop {
+  color: var(--error-color, var(--ha-color-on-error-quiet, #b3261e));
+  --ha-button-surface-color: var(--error-color, var(--ha-color-on-error-quiet, #b3261e));
 }
 
 .attach-row {
@@ -1510,12 +1553,27 @@ textarea:focus {
 .usage-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   flex: none;
   height: var(--header-height, 56px);
-  padding: 0 var(--ha-space-2) 0 var(--ha-space-4);
   border-bottom: 1px solid var(--divider-color);
   font-weight: var(--ha-font-weight-heading);
+}
+
+.history-bar {
+  justify-content: space-between;
+  padding: 0 var(--ha-space-2) 0 var(--ha-space-4);
+}
+
+.usage-bar {
+  justify-content: center;
+  padding: 0 var(--ha-space-4);
+}
+
+.usage-bar h1 {
+  margin: 0;
+  font-size: var(--ha-font-size-l);
+  font-weight: var(--ha-font-weight-heading);
+  text-align: center;
 }
 
 .history-list,
@@ -1583,12 +1641,6 @@ textarea:focus {
   color: var(--primary-color);
 }
 
-.usage-bar-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--ha-space-2);
-}
-
 .usage-toolbar {
   flex: none;
   display: flex;
@@ -1604,6 +1656,8 @@ textarea:focus {
   align-items: center;
   flex-wrap: wrap;
   gap: 4px;
+  flex: 1 1 20rem;
+  min-width: 0;
 }
 
 .usage-range-btn[aria-pressed="true"] {
@@ -1616,7 +1670,7 @@ textarea:focus {
   align-items: center;
   gap: var(--ha-space-2);
   min-width: 0;
-  flex: 1;
+  flex: 1 1 26rem;
 }
 
 .usage-filter {
@@ -1640,9 +1694,11 @@ textarea:focus {
   max-width: 180px;
 }
 
-ha-select.usage-filter {
-  min-width: 140px;
-  max-width: 220px;
+ha-select.usage-filter,
+.usage-filter {
+  flex: 1 1 8rem;
+  min-width: 8rem;
+  max-width: 16rem;
 }
 
 .usage-native-dates {
@@ -1654,7 +1710,8 @@ ha-select.usage-filter {
 
 ha-date-range-nav.usage-filter-dates,
 ha-date-range-picker.usage-filter-dates {
-  min-width: 0;
+  flex: 1 1 14rem;
+  min-width: 12rem;
   max-width: 100%;
 }
 
@@ -1702,7 +1759,7 @@ ha-date-range-picker.usage-filter-dates {
 .wrap.page-usage .usage-filter select,
 .wrap.page-usage .usage-filter input,
 .wrap.page-usage ha-select.usage-filter {
-  max-width: 220px;
+  max-width: 16rem;
 }
 
 .wrap.page-usage .usage-list {

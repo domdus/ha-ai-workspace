@@ -76,12 +76,14 @@
             "data": {
               "house_map": "Catalogue de configuration",
               "shorten_mcp_results": "Raccourcir les longues réponses de Home Assistant",
-              "change_history": "Historique des modifications"
+              "change_history": "Historique des modifications",
+              "change_history_ttl_days": "Rollback pendant"
             },
             "data_description": {
               "house_map": "Désactivé par défaut. Un index local des liens entre automatisations, entités et pièces, pour qu’une seule recherche réponde à des questions comme « qu’est-ce qui utilise la lumière de la cuisine ? ». Ajoute un peu à chaque message : activez-le seulement si vous demandez souvent comment les choses sont reliées. Les états en direct viennent toujours de Home Assistant.",
               "shorten_mcp_results": "Activé par défaut. Les très longues réponses de Home Assistant (listes de toute la maison, grandes recherches) sont résumées avant d’être envoyées à l’IA. Économise des jetons et garde des réponses rapides. Désactivé envoie le texte complet.",
-              "change_history": "Activé par défaut. Garde une trace de chaque modification de configuration faite par l’assistant, pour voir ce qui a changé et lui demander de restaurer une version précédente. Désactivé : plus de nouvelles entrées ; l’assistant peut toujours faire des modifications."
+              "change_history": "Activé par défaut. Garde une trace de chaque modification de configuration faite par l’assistant, pour voir ce qui a changé et lui demander de restaurer une version précédente. Désactivé : plus de nouvelles entrées ; l’assistant peut toujours faire des modifications.",
+              "change_history_ttl_days": "Jours pendant lesquels Rollback et Demander la restauration restent disponibles. Ensuite la ligne reste dans le journal ; restaurer une ancienne copie peut écraser un travail plus récent. Par défaut 7. 1 correspond à environ un jour."
             }
           },
           "prompt": {
@@ -183,12 +185,14 @@
             "data": {
               "house_map": "Catalogue de configuration",
               "shorten_mcp_results": "Raccourcir les longues réponses de Home Assistant",
-              "change_history": "Historique des modifications"
+              "change_history": "Historique des modifications",
+              "change_history_ttl_days": "Rollback pendant"
             },
             "data_description": {
               "house_map": "Désactivé par défaut. Un index local des liens entre automatisations, entités et pièces, pour qu’une seule recherche réponde à des questions comme « qu’est-ce qui utilise la lumière de la cuisine ? ». Ajoute un peu à chaque message : activez-le seulement si vous demandez souvent comment les choses sont reliées. Les états en direct viennent toujours de Home Assistant.",
               "shorten_mcp_results": "Activé par défaut. Les très longues réponses de Home Assistant (listes de toute la maison, grandes recherches) sont résumées avant d’être envoyées à l’IA. Économise des jetons et garde des réponses rapides. Désactivé envoie le texte complet.",
-              "change_history": "Activé par défaut. Garde une trace de chaque modification de configuration faite par l’assistant, pour voir ce qui a changé et lui demander de restaurer une version précédente. Désactivé : plus de nouvelles entrées ; l’assistant peut toujours faire des modifications."
+              "change_history": "Activé par défaut. Garde une trace de chaque modification de configuration faite par l’assistant, pour voir ce qui a changé et lui demander de restaurer une version précédente. Désactivé : plus de nouvelles entrées ; l’assistant peut toujours faire des modifications.",
+              "change_history_ttl_days": "Jours pendant lesquels Rollback et Demander la restauration restent disponibles. Ensuite la ligne reste dans le journal ; restaurer une ancienne copie peut écraser un travail plus récent. Par défaut 7. 1 correspond à environ un jour."
             }
           },
           "prompt": {

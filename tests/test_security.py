@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from custom_components.ai_workspace import activity_ha
 from custom_components.ai_workspace.const import DOMAIN
 from custom_components.ai_workspace.conversation import _is_admin
-from custom_components.ai_workspace.http import _full_tools, _runtime_token_ok
+from custom_components.ai_workspace.http import _full_tools, _runtime_token_ok, cancel_chat_job
 
 
 def _callback(token: str, remote: str, header: str = ""):
@@ -246,6 +246,27 @@ def test_full_tools_only_for_signed_in_admin() -> None:
     assert not _full_tools("user-1", False)
     assert not _full_tools("assist", True)
     assert not _full_tools("", True)
+
+
+def test_cancel_chat_job_cancels_named_task_only() -> None:
+    async def hang() -> None:
+        await asyncio.sleep(30)
+
+    async def run() -> None:
+        job = asyncio.create_task(hang(), name="ai_workspace_chat_abc")
+        other = asyncio.create_task(hang(), name="ai_workspace_chat_other")
+        stray = asyncio.create_task(hang(), name="unrelated")
+        data = {"chat_jobs": {job, other, stray}}
+        assert await cancel_chat_job(data, "abc") is True
+        assert job.cancelled()
+        assert not other.done()
+        assert not stray.done()
+        assert await cancel_chat_job(data, "missing") is False
+        other.cancel()
+        stray.cancel()
+        await asyncio.gather(job, other, stray, return_exceptions=True)
+
+    asyncio.run(run())
 
 
 def test_unknown_assist_user_is_not_admin() -> None:

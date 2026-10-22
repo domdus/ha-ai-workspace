@@ -6,7 +6,7 @@ Your messages, attachments, the system prompt, the page you are on, and every MC
 
 ## What stays local
 
-Chat history is stored in `config/ai_workspace/ai-workspace.sqlite`. Change History keeps a log of the last 30 recorded configuration writes there. Usage rows (tokens and estimated cost, not message text) live in the same database.
+Chat history is stored in `config/ai_workspace/ai-workspace.sqlite`. Change History keeps a log of the last 30 recorded configuration writes there. Rollback and Ask to restore expire after 7 days by default (`change_history_ttl_days`); the log rows stay. Automations, scripts, and scenes also get a YAML copy in `config/ai_workspace/changes/` for [when Home Assistant will not start](mcp.md#if-home-assistant-will-not-start). Usage rows (tokens and estimated cost, not message text) live in the same database.
 
 Change History keeps a before-image of each recorded write and can restore it with **Rollback**, with or without HA-MCP. **Ask to restore** still appears when HA-MCP is connected (or when that snapshot is missing), so the chat can use HA-MCP backups or dashboard tools.
 
