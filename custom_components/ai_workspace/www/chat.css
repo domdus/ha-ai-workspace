@@ -1360,10 +1360,6 @@ textarea:focus {
   display: inline-flex;
 }
 
-.wrap.narrow.nav-open .chat-nav-toggle {
-  display: none;
-}
-
 .wrap.has-app-bar .chat-nav-toggle,
 .wrap.has-app-bar .header-history,
 .wrap.has-app-bar .header-usage {
@@ -1557,12 +1553,27 @@ textarea:focus {
 .usage-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   flex: none;
   height: var(--header-height, 56px);
-  padding: 0 var(--ha-space-2) 0 var(--ha-space-4);
   border-bottom: 1px solid var(--divider-color);
   font-weight: var(--ha-font-weight-heading);
+}
+
+.history-bar {
+  justify-content: space-between;
+  padding: 0 var(--ha-space-2) 0 var(--ha-space-4);
+}
+
+.usage-bar {
+  justify-content: center;
+  padding: 0 var(--ha-space-4);
+}
+
+.usage-bar h1 {
+  margin: 0;
+  font-size: var(--ha-font-size-l);
+  font-weight: var(--ha-font-weight-heading);
+  text-align: center;
 }
 
 .history-list,
@@ -1630,12 +1641,6 @@ textarea:focus {
   color: var(--primary-color);
 }
 
-.usage-bar-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--ha-space-2);
-}
-
 .usage-toolbar {
   flex: none;
   display: flex;
@@ -1651,6 +1656,8 @@ textarea:focus {
   align-items: center;
   flex-wrap: wrap;
   gap: 4px;
+  flex: 1 1 20rem;
+  min-width: 0;
 }
 
 .usage-range-btn[aria-pressed="true"] {
@@ -1663,7 +1670,7 @@ textarea:focus {
   align-items: center;
   gap: var(--ha-space-2);
   min-width: 0;
-  flex: 1;
+  flex: 1 1 26rem;
 }
 
 .usage-filter {
@@ -1687,9 +1694,11 @@ textarea:focus {
   max-width: 180px;
 }
 
-ha-select.usage-filter {
-  min-width: 140px;
-  max-width: 220px;
+ha-select.usage-filter,
+.usage-filter {
+  flex: 1 1 8rem;
+  min-width: 8rem;
+  max-width: 16rem;
 }
 
 .usage-native-dates {
@@ -1701,7 +1710,8 @@ ha-select.usage-filter {
 
 ha-date-range-nav.usage-filter-dates,
 ha-date-range-picker.usage-filter-dates {
-  min-width: 0;
+  flex: 1 1 14rem;
+  min-width: 12rem;
   max-width: 100%;
 }
 
@@ -1749,7 +1759,7 @@ ha-date-range-picker.usage-filter-dates {
 .wrap.page-usage .usage-filter select,
 .wrap.page-usage .usage-filter input,
 .wrap.page-usage ha-select.usage-filter {
-  max-width: 220px;
+  max-width: 16rem;
 }
 
 .wrap.page-usage .usage-list {

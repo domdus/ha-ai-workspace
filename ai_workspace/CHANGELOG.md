@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.5b4
+
+- Mobile: the header uses the chats icon again. In the overlay list, dock-left becomes a close X. Desktop still docks the rail. An empty banner no longer adds header height.
+- Usage: the page title is a centered heading. There is no close X; leave with the chat list or Escape. The date range wraps before the Agent / Model / Chat filters, so those three stay on one row longer.
+
 ## 1.3.5b3
 
 - Desktop chat list: titles use the full row. The ⋮ menu sits on top of the text on hover instead of reserving a blank column. Touch keeps the button in the layout.

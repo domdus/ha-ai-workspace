@@ -754,7 +754,7 @@ export async function mountAiWorkspace(root, options = {}) {
         <header>
           <div class="header-row">
             <ha-icon-button class="nav-toggle chat-nav-toggle" label="${t("show_chats")}">
-              <ha-icon icon="mdi:dock-left"></ha-icon>
+              <ha-icon icon="mdi:forum-outline"></ha-icon>
             </ha-icon-button>
             ${compact ? "" : `<ha-icon-button class="history-open header-history" label="${t("activity")}">
               <ha-icon icon="mdi:history"></ha-icon>
@@ -811,12 +811,7 @@ export async function mountAiWorkspace(root, options = {}) {
       </div>
       <div class="usage" hidden aria-hidden="true">
         <div class="usage-bar">
-          <span>${t("usage")}</span>
-          <div class="usage-bar-actions">
-            <ha-icon-button class="usage-close" label="${t("usage_back")}">
-              <ha-icon icon="mdi:close"></ha-icon>
-            </ha-icon-button>
-          </div>
+          <h1>${t("usage")}</h1>
         </div>
         <div class="usage-toolbar">
           <div class="usage-range"></div>
@@ -910,12 +905,15 @@ export async function mountAiWorkspace(root, options = {}) {
   function syncToggleLabels() {
     const collapsed = wrap.classList.contains("nav-collapsed");
     const open = wrap.classList.contains("nav-open");
-    const label = wrap.classList.contains("narrow")
+    const overlay = wrap.classList.contains("narrow");
+    const label = overlay
       ? (open ? t("hide_chats") : t("show_chats"))
       : (collapsed ? t("show_chats") : t("hide_chats"));
     root.querySelectorAll(".nav-toggle").forEach((btn) => {
-      btn.label = label;
+      btn.label = overlay && !btn.classList.contains("chat-nav-toggle") ? t("close") : label;
     });
+    const rail = root.querySelector(".nav-toolbar .nav-toggle ha-icon");
+    if (rail) rail.setAttribute("icon", overlay ? "mdi:close" : "mdi:dock-left");
   }
 
   function setNavOpen(open) {
@@ -5146,11 +5144,6 @@ export async function mountAiWorkspace(root, options = {}) {
       goToUsage();
     });
   });
-  root.querySelector(".usage-close")?.addEventListener("click", (event) => {
-    event.preventDefault();
-    leaveUsage();
-  });
-
   root.querySelectorAll(".nav-toggle").forEach((btn) => {
     btn.addEventListener("click", (event) => {
       event.preventDefault();
