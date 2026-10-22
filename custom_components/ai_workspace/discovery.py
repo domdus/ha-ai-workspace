@@ -5,6 +5,7 @@ import logging
 import os
 import secrets
 import time
+from dataclasses import replace
 
 from aiohttp import ClientError, ClientTimeout
 from homeassistant.core import HomeAssistant
@@ -21,7 +22,6 @@ from .const import (
     DOMAIN,
     HOST_RUNTIME_URL,
 )
-from .models import ProviderInfo
 
 MISSING_RUNTIME = "Start the Cursor SDK Runtime and set its URL on the Cursor agent."
 BAD_TOKEN = (
@@ -299,7 +299,7 @@ def apply_runtime_to_providers(bucket: dict, runtime_url: str, reason: str | Non
         available = reason is None
         if bool(info.available) == available and info.reason == reason:
             continue
-        item.info = ProviderInfo(info.id, info.label, available, reason)
+        item.info = replace(info, available=available, reason=reason)
 
 
 def _needs_cursor(bucket: dict) -> bool:

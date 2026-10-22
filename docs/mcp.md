@@ -1,5 +1,7 @@
 # MCP and Change History
 
+![Change History](history.png)
+
 What the agent can do depends on the MCP server you connect. AI Workspace can use more than one connection at a time. Disable a connection’s device to drop its tools without deleting it.
 
 See [How it is organized](settings.md#how-it-is-organized) for connections vs agents.

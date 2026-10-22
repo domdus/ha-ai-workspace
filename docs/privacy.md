@@ -12,6 +12,15 @@ Change History keeps a before-image of each recorded write and can restore it wi
 
 API keys live in Home Assistant’s config entries, like any other integration.
 
+## Internet access
+
+Each agent has **Allow internet**, off by default.
+
+- **Off:** a cloud agent (OpenAI, Claude, Gemini, Ollama, …) only gets the MCP tools for your house. A Cursor agent loses web search, page fetch, and the shell, so `curl` or a script cannot reach the web either. Cursor's model itself still runs on Cursor's servers.
+- **On:** a cloud agent gets two extra tools, `web_search` and `web_fetch`. Fetch only reaches public addresses: names that point into your local network (router, NAS, Home Assistant, Docker containers) are refused, and every redirect is checked again. A Cursor agent gets Cursor's own web search, page fetch, and shell back.
+
+Normal users and voice satellites never get these tools, whatever the switch says. Search uses DuckDuckGo; your query goes there.
+
 ## Who can use it
 
 Only admins by default. The sidebar panel is always admin-only.
@@ -24,7 +33,7 @@ Only admins by default. The sidebar panel is always admin-only.
 
 Assist from a satellite has no signed-in person, so it uses the tools the admin configured. The built-in MCP Server needs a login, so set a long-lived access token in that connection’s **MCP token** when satellites should reach it. HA-MCP and Vibecode bring their own credentials.
 
-Anyone near a satellite can talk to it, so a Cursor agent answering a satellite gets MCP tools only, the same as for normal users. Shell and file tools are for signed-in admins.
+Anyone near a satellite can talk to it, so a Cursor agent answering a satellite gets MCP tools only, the same as for normal users. File tools are for signed-in admins; shell and web tools also need **Allow internet** on the agent.
 
 ## Runtime
 

@@ -17,11 +17,11 @@ ai_workspace:
   track_usage: true
   show_chat_usage: true
   ha_usage_sensors: false
-  low_token: "off" # off | light | medium | extreme
-  check_house: true
   # prompt_cache: false  # YAML only; omit to keep the default (on)
   ui_theme: standard # standard | ha_components
   cross_chat: false
+  default_agent: "" # agent title or id; empty = last used in the browser
+  model_switcher: false
   keep_chats: 30
   stt_engine: browser
   tts_engine: off
@@ -49,6 +49,9 @@ ai_workspace:
       api_key: !secret openai_api_key
       model: gpt-5
       effort: default # default | fast | high | high_fast
+      low_token: "off" # off | light | medium | extreme (per agent; a workspace-level key still works as the default)
+      check_house: true # look at Home Assistant before answering; no effect on extreme
+      allow_internet: false # web search and page fetch in admin chats (Cursor: also shell)
       assist: true
       assist_stt: true
       stt_model: gpt-4o-mini-transcribe

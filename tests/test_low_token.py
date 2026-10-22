@@ -93,8 +93,9 @@ def test_extreme_prompt_does_not_mention_the_skill_key() -> None:
 
 
 def test_house_check_and_limits_per_mode() -> None:
-    assert token_mode_checks_house(TOKEN_MODE_LIGHT, False) is True
-    assert token_mode_checks_house(TOKEN_MODE_MEDIUM, True) is False
+    assert token_mode_checks_house(TOKEN_MODE_LIGHT, False) is False
+    assert token_mode_checks_house(TOKEN_MODE_LIGHT, True) is True
+    assert token_mode_checks_house(TOKEN_MODE_MEDIUM, True) is True
     assert token_mode_checks_house(TOKEN_MODE_EXTREME, True) is False
     assert token_mode_checks_house(TOKEN_MODE_OFF, True) is True
     assert token_mode_checks_house(TOKEN_MODE_OFF, False) is False

@@ -204,8 +204,33 @@ def default_api_model(kind: str) -> str:
     return _API_DEFAULT_MODEL.get(kind, DEFAULT_API_MODEL)
 
 
-def api_model_choices(kind: str) -> list[str]:
+def _load_catalog() -> dict[str, list[str]]:
+    """Chat model ids from model_catalog.json (scripts/sync_model_prices.py). Read at import, off the event loop."""
+    try:
+        raw = json.loads(Path(__file__).with_name("model_catalog.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return {str(k): [str(n) for n in v if str(n).strip()] for k, v in raw.items() if isinstance(v, list)}
+
+
+_CATALOG = _load_catalog()
+
+
+def model_catalog(kind: str) -> list[str]:
+    return list(_CATALOG.get(kind, ()))
+
+
+def api_model_picks(kind: str) -> list[str]:
     return list(_API_MODEL_CHOICES.get(kind, ()))
+
+
+def api_model_choices(kind: str) -> list[str]:
+    """Picks first, then every other id the provider is known to offer."""
+    out: list[str] = []
+    for name in (*_API_MODEL_CHOICES.get(kind, ()), *model_catalog(kind)):
+        if name not in out:
+            out.append(name)
+    return out
 
 
 def default_api_base(kind: str) -> str:
@@ -231,6 +256,8 @@ CONF_TRACK_USAGE = "track_usage"
 CONF_SHOW_CHAT_USAGE = "show_chat_usage"
 CONF_HA_USAGE_SENSORS = "ha_usage_sensors"
 CONF_CROSS_CHAT = "cross_chat"
+CONF_DEFAULT_AGENT = "default_agent"
+CONF_MODEL_SWITCHER = "model_switcher"
 CONF_UI_THEME = "ui_theme"
 UI_THEME_STANDARD = "standard"
 UI_THEME_HA_COMPONENTS = "ha_components"
@@ -258,6 +285,8 @@ CONF_PROMPT_CACHE = "prompt_cache"
 CONF_KEEP_CHATS = "keep_chats"
 DEFAULT_KEEP_CHATS = 30
 CONF_EFFORT = "effort"
+# Per agent, off by default: web tools for cloud agents; web search, fetch and shell for Cursor.
+CONF_ALLOW_INTERNET = "allow_internet"
 CONF_ASSIST = "assist"
 CONF_ASSIST_STT = "assist_stt"
 CONF_STT_MODEL = "stt_model"
@@ -756,7 +785,17 @@ def settings_token_mode(settings) -> str:
 
 
 def provider_token_mode(provider) -> str:
-    return settings_token_mode(getattr(provider, "settings", None) if provider is not None else None)
+    """Cloud agents keep it on their settings, Cursor agents on the agent itself."""
+    if provider is None:
+        return TOKEN_MODE_OFF
+    if hasattr(provider, "token_mode"):
+        return token_mode_of(provider.token_mode)
+    return settings_token_mode(getattr(provider, "settings", None))
+
+
+def token_mode_fresh_agent(mode: str) -> bool:
+    """Medium and Extreme start a new Cursor agent each turn, so its thread cannot grow."""
+    return mode in {TOKEN_MODE_MEDIUM, TOKEN_MODE_EXTREME}
 
 
 def token_mode_allows_tools(mode: str) -> bool:
@@ -783,11 +822,8 @@ def token_mode_allows_files(mode: str) -> bool:
 
 
 def token_mode_checks_house(mode: str, check_house: bool) -> bool:
-    if mode == TOKEN_MODE_LIGHT:
-        return True
-    if mode == TOKEN_MODE_OFF:
-        return bool(check_house)
-    return False
+    """The agent's own switch. Extreme has no tools, so there is nothing to check with."""
+    return bool(check_house) and mode != TOKEN_MODE_EXTREME
 
 
 def token_mode_reply_limit(mode: str) -> int | None:
@@ -937,8 +973,21 @@ def with_ui_context(message: str, origin: str = "") -> str:
     return f"{ui_link_instructions(origin)}\n\n{message}"
 
 
-def standing_chat_prompt(settings, *, admin: bool = True, language: str = "", origin: str = "") -> str:
-    """Workspace rules plus UI/MCP instructions for one Cursor agent lifetime."""
+# Cursor cannot be forced to call a tool first, so it is asked to.
+CHECK_HOUSE_NOTE = (
+    "Before you answer, look at Home Assistant with the tools. "
+    "Do not answer about devices, states, or lists from memory."
+)
+
+
+def standing_chat_prompt(
+    settings, *, admin: bool = True, language: str = "", origin: str = "", mode: str = TOKEN_MODE_OFF
+) -> str:
+    """Workspace rules plus UI/MCP instructions for one Cursor agent lifetime. Same levels as cloud agents."""
+    if mode == TOKEN_MODE_EXTREME:
+        return with_language_rule(LOW_TOKEN_PROMPT, language)
+    if mode == TOKEN_MODE_MEDIUM:
+        return with_language_rule(f"{LOW_TOKEN_MEDIUM_PROMPT}\n\n{ui_link_instructions(origin)}", language)
     body = with_language_rule(workspace_system_prompt(settings, admin=admin), language)
     ui = ui_link_instructions(origin)
     if body and ui:

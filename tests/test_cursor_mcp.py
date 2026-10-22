@@ -117,6 +117,7 @@ def test_sdk_model_pins_composer_25_standard(monkeypatch) -> None:
     assert model.params[0].id == "fast"
     assert model.params[0].value == "true"
     assert _sdk_model("composer-2.6") == "composer-2.6"
+    assert _sdk_model("composer-2").id == "composer-2"
 
 
 def test_run_error_text_unpacks_nested_error() -> None:
@@ -326,6 +327,39 @@ def test_send_restricts_tools_unless_full_tools(tmp_path: Path, monkeypatch) -> 
     assert seen == [["mcp"], None]
 
 
+def test_admin_chat_without_internet_loses_web_and_shell(tmp_path: Path, monkeypatch) -> None:
+    from app.providers.cursor import CursorProvider
+
+    _install_fake_sdk(monkeypatch)
+    settings = _settings(tmp_path)
+    runtime = CursorRuntime(settings)
+    provider = CursorProvider(settings, runtime)
+    seen: list = []
+
+    async def fake_open(session, servers, **kwargs):
+        seen.append((kwargs.get("tools"), kwargs.get("blocked")))
+        raise RuntimeError("stop")
+
+    monkeypatch.setattr(runtime, "open_agent", fake_open)
+    monkeypatch.setattr(runtime, "wrap_mcp", lambda servers, actor="": servers)
+    session = Session("s1", "u1", "cursor", "Chat", None, "t", "t")
+
+    async def run(**kwargs):
+        return [event async for event in provider.send(session, "Hi", lambda _id: None, **kwargs)]
+
+    asyncio.run(run(full_tools=True))
+    asyncio.run(run(full_tools=True, allow_internet=True))
+    asyncio.run(run(allow_internet=True))
+    assert seen == [
+        (None, ["webSearch", "webFetch", "shell"]),
+        (None, None),
+        (["mcp"], None),
+    ]
+    options = runtime._agent_options("ha-x", {}, blocked=["webSearch", "webFetch", "shell"])
+    assert options.disallowed_tools == ["webSearch", "webFetch", "shell"]
+    assert not hasattr(runtime._agent_options("ha-y", {}), "disallowed_tools")
+
+
 def test_apply_standing_only_on_new_or_cold_agent() -> None:
     prompt = "House rules.\n\nIf a listed write tool has a BestPracticeKey field, load the guide."
     user = "Turn off the kitchen."
@@ -353,3 +387,42 @@ def test_apply_handoff_goes_with_every_follow_up() -> None:
     message = "System prompt about the house.\n\nWhat did we talk about?"
     placed = apply_handoff(message, note, True, question="What did we talk about?")
     assert placed.index("System prompt") < placed.index("User: Status?") < placed.index("What did we talk about?")
+
+
+def test_fresh_turn_never_resumes_and_extreme_has_no_tools(tmp_path: Path, monkeypatch) -> None:
+    from app.providers.cursor import CursorProvider
+
+    _install_fake_sdk(monkeypatch)
+    resumed: list[str] = []
+
+    class FakeClient:
+        async def create_agent(self, options):
+            return SimpleNamespace(agent_id="new")
+
+        async def resume_agent(self, agent_id, options):
+            resumed.append(agent_id)
+            return SimpleNamespace(agent_id=agent_id)
+
+    runtime = CursorRuntime(_settings(tmp_path))
+    runtime._client = FakeClient()
+    session = Session("s1", "u1", "cursor", "Chat", "old-agent", "t", "t")
+    monkeypatch.setattr(runtime, "_cold", lambda _session: False)
+    agent, created = asyncio.run(runtime.open_agent(session, {}, fresh=True))
+    assert created and agent.agent_id == "new" and resumed == []
+
+    provider = CursorProvider(_settings(tmp_path), runtime)
+    seen: list = []
+
+    async def fake_open(session, servers, **kwargs):
+        seen.append((servers, kwargs.get("tools"), kwargs.get("blocked"), kwargs.get("fresh")))
+        raise RuntimeError("stop")
+
+    monkeypatch.setattr(runtime, "open_agent", fake_open)
+    monkeypatch.setattr(runtime, "wrap_mcp", lambda servers, actor="": servers)
+    mcp = {"servers": {"ha": {"type": "http", "url": "http://ha:8123/api/mcp"}}}
+
+    async def run(**kwargs):
+        return [event async for event in provider.send(session, "Turn off the kitchen", lambda _id: None, mcp=mcp, **kwargs)]
+
+    asyncio.run(run(full_tools=True, no_tools=True, fresh=True))
+    assert seen[-1] == ({}, [], ["webSearch", "webFetch", "shell"], True)

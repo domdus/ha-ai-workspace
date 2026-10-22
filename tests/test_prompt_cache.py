@@ -28,7 +28,7 @@ def _settings(provider: str, **overrides) -> Settings:
 def test_prompt_cache_not_on_configure_form() -> None:
     fields = [getattr(key, "schema", key) for key in _cost_schema({}).schema]
     assert CONF_PROMPT_CACHE not in fields
-    assert CONF_CHECK_HOUSE in fields
+    assert CONF_CHECK_HOUSE not in fields
 
 
 def test_stored_shared_keeps_existing_prompt_cache_off() -> None:

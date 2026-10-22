@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import hmac
 import json
 import logging
 import re
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
@@ -102,6 +104,11 @@ class ChatRequest(BaseModel):
     files: list[ChatFile] = Field(default_factory=list, max_length=4)
     mcp: ChatMcp | None = None
     full_tools: bool = False
+    allow_internet: bool = False
+    # Reduce token usage on the agent: fresh agent each turn (Medium, Extreme), chat only (Extreme), auto titles (Off).
+    fresh: bool = False
+    no_tools: bool = False
+    titles: bool = True
     model: str = ""
     effort: str = ""
     api_key: str = ""
@@ -258,6 +265,39 @@ def providers(request: Request) -> list[dict]:
     return [item.info.as_dict() for item in request.app.state.providers.values()]
 
 
+_MODEL_TTL = 3600
+_models_cache: dict[str, tuple[float, list[dict]]] = {}
+
+
+@router.get("/api/models")
+async def models(request: Request) -> list[dict]:
+    """Models the Cursor account can use (SDK ListModels), cached for an hour per key."""
+    settings: Settings = request.app.state.settings
+    key = (request.headers.get("x-cursor-api-key") or "").strip() or settings.cursor_api_key
+    if not key:
+        raise HTTPException(status_code=400, detail="Set a Cursor API key first.")
+    tag = hashlib.sha256(key.encode()).hexdigest()[:16]
+    hit = _models_cache.get(tag)
+    if hit and hit[0] > time.monotonic():
+        return hit[1]
+
+    def fetch() -> list[dict]:
+        from cursor_sdk import Cursor
+
+        return [{"id": item.id, "name": item.display_name} for item in Cursor.models.list(api_key=key) if item.id]
+
+    try:
+        rows = await asyncio.to_thread(fetch)
+    except Exception as exc:
+        logger.warning("cursor model list failed: %s", redact(str(exc), [key]))
+        raise HTTPException(status_code=502, detail="Cursor did not return its model list.") from None
+    now = time.monotonic()
+    for old in [key for key, (expires, _rows) in _models_cache.items() if expires <= now]:
+        _models_cache.pop(old, None)
+    _models_cache[tag] = (now + _MODEL_TTL, rows)
+    return rows
+
+
 @router.get("/api/sessions")
 def list_sessions(request: Request) -> list[dict]:
     store: Store = request.app.state.store
@@ -355,6 +395,7 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
         not ha_owned
         and len(store.list_messages(session.id)) <= 1
         and callable(suggest)
+        and body.titles
         and needs_title_summary(question)
     )
     sync_id = body.sync_agent_id.strip()
@@ -410,6 +451,9 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
                     question=question,
                     prompt=body.prompt.strip(),
                     full_tools=body.full_tools,
+                    allow_internet=body.allow_internet,
+                    fresh=body.fresh,
+                    no_tools=body.no_tools,
                 ):
                     if event.get("type") == "text":
                         parts.append(str(event.get("delta") or ""))

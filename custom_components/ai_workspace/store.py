@@ -97,6 +97,7 @@ class Session:
     created_at: str
     updated_at: str
     pinned: bool = False
+    model: str = ""
 
 
 ACTIVITY_CAP = 30
@@ -212,6 +213,8 @@ class Store:
         cols = {row[1] for row in self._conn.execute("PRAGMA table_info(sessions)")}
         if "pinned" not in cols:
             self._conn.execute("ALTER TABLE sessions ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0")
+        if "model" not in cols:
+            self._conn.execute("ALTER TABLE sessions ADD COLUMN model TEXT NOT NULL DEFAULT ''")
         activity_cols = {row[1] for row in self._conn.execute("PRAGMA table_info(activity)")}
         if "session_id" not in activity_cols:
             self._conn.execute("ALTER TABLE activity ADD COLUMN session_id TEXT NOT NULL DEFAULT ''")
@@ -311,6 +314,19 @@ class Store:
                 (_text(provider) or "api", _now(), session_id, user_id),
             )
             self._conn.commit()
+
+    def set_choice(self, user_id: str, session_id: str, provider: str, model: str = "") -> Session | None:
+        """Agent and model picked for this chat. Does not move the chat up the list."""
+        session = self.get_session(user_id, session_id)
+        if session is None:
+            return None
+        with self._lock:
+            self._conn.execute(
+                "UPDATE sessions SET provider = ?, model = ? WHERE id = ? AND user_id = ?",
+                (_text(provider) or session.provider, _text(model), _text(session_id), _text(user_id)),
+            )
+            self._conn.commit()
+        return self.get_session(user_id, session_id)
 
     def set_agent_id(self, session_id: str, agent_id: str) -> None:
         session_id = _text(session_id)
@@ -1132,4 +1148,5 @@ def _session(row: sqlite3.Row) -> Session:
         created_at=row["created_at"],
         updated_at=row["updated_at"],
         pinned=bool(row["pinned"]) if "pinned" in row.keys() else False,
+        model=str(row["model"] or "") if "model" in row.keys() else "",
     )

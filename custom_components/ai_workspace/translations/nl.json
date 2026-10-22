@@ -34,6 +34,8 @@
             "name": "Chat",
             "description": "Waar de chat verschijnt en wie hem mag gebruiken.",
             "data": {
+              "default_agent": "Standaardagent",
+              "model_switcher": "Modelkeuze tonen",
               "enable_sidebar": "AI Workspace in de zijbalk tonen",
               "enable_overlay": "Zwevende AI-knop tonen",
               "enable_dictate": "Dicteerknop tonen",
@@ -43,6 +45,8 @@
               "keep_chats": "Chats bewaren"
             },
             "data_description": {
+              "default_agent": "Agent waarmee een nieuwe chat begint. Elke chat onthoudt de agent (en het model) die het laatst is gebruikt. Laatst gebruikt: de agent die je het laatst in deze browser koos.",
+              "model_switcher": "Standaard uit. Voegt naast de agentkeuze een modelkeuze toe, zodat een chat een ander model van dezelfde agent kan gebruiken. Het model van de agent blijft de standaard.",
               "enable_sidebar": "Voegt AI Workspace toe aan de zijbalk van Home Assistant. Uit: beheerders kunnen /ai-workspace nog steeds direct openen.",
               "enable_overlay": "Een ronde AI-knop in de hoek van elke Home Assistant-pagina, zodat je iets kunt vragen zonder de pagina te verlaten. Op Instellingen-pagina's staat hij hoger zodat hij geen andere knoppen bedekt.",
               "enable_dictate": "Microfoonknop in het berichtveld. Verberg hem als je nooit dicteert.",
@@ -56,15 +60,11 @@
             "name": "Kosten en tokens",
             "description": "Wat elk bericht verstuurt en hoe uitgaven worden bijgehouden.",
             "data": {
-              "low_token": "Tokenverbruik verminderen",
-              "check_house": "Altijd eerst het huis controleren",
               "track_usage": "Gebruik en kosten bijhouden",
               "show_chat_usage": "Kosten in de chatkop tonen",
               "ha_usage_sensors": "Home Assistant-gebruikssensoren toevoegen"
             },
             "data_description": {
-              "low_token": "Stuurt minder mee met elk bericht om geld te besparen bij Cloud-, Ollama- en Azure-agents (Cursor valt hierbuiten). Uit geeft de betrouwbaarste antwoorden over je huis. Extreme is alleen chat en kan het huis niet bedienen.",
-              "check_house": "Standaard aan. De assistent kijkt in Home Assistant voordat hij vragen over je huis beantwoordt, zodat lijsten en statussen echt zijn, niet geraden. Begroetingen worden overgeslagen. Met “Tokenverbruik verminderen” op Light controleert hij altijd; op Medium en Extreme nooit. Zet het uit voor algemene vragen of voor een model dat al zelf controleert.",
               "track_usage": "Standaard aan. Noteert na elk antwoord tokens en geschatte kosten en toont ze op de Gebruik-pagina. Uit: geen nieuwe records; bestaande geschiedenis blijft.",
               "show_chat_usage": "Standaard aan. Toont tokens en kosten onder de chattitel. Uit verbergt alleen die regel; bijhouden en de Gebruik-pagina blijven.",
               "ha_usage_sensors": "Standaard uit. Alleen nodig voor je eigen dashboards of automatiseringen: voegt sensoren voor kosten, tokens en beurten toe op een Usage-apparaat en bij elke agent. De Gebruik-pagina werkt ook zonder. Uitzetten verwijdert de sensoren."
@@ -143,6 +143,8 @@
             "name": "Chat",
             "description": "Waar de chat verschijnt en wie hem mag gebruiken.",
             "data": {
+              "default_agent": "Standaardagent",
+              "model_switcher": "Modelkeuze tonen",
               "enable_sidebar": "AI Workspace in de zijbalk tonen",
               "enable_overlay": "Zwevende AI-knop tonen",
               "enable_dictate": "Dicteerknop tonen",
@@ -152,6 +154,8 @@
               "keep_chats": "Chats bewaren"
             },
             "data_description": {
+              "default_agent": "Agent waarmee een nieuwe chat begint. Elke chat onthoudt de agent (en het model) die het laatst is gebruikt. Laatst gebruikt: de agent die je het laatst in deze browser koos.",
+              "model_switcher": "Standaard uit. Voegt naast de agentkeuze een modelkeuze toe, zodat een chat een ander model van dezelfde agent kan gebruiken. Het model van de agent blijft de standaard.",
               "enable_sidebar": "Voegt AI Workspace toe aan de zijbalk van Home Assistant. Uit: beheerders kunnen /ai-workspace nog steeds direct openen.",
               "enable_overlay": "Een ronde AI-knop in de hoek van elke Home Assistant-pagina, zodat je iets kunt vragen zonder de pagina te verlaten. Op Instellingen-pagina's staat hij hoger zodat hij geen andere knoppen bedekt.",
               "enable_dictate": "Microfoonknop in het berichtveld. Verberg hem als je nooit dicteert.",
@@ -165,15 +169,11 @@
             "name": "Kosten en tokens",
             "description": "Wat elk bericht verstuurt en hoe uitgaven worden bijgehouden.",
             "data": {
-              "low_token": "Tokenverbruik verminderen",
-              "check_house": "Altijd eerst het huis controleren",
               "track_usage": "Gebruik en kosten bijhouden",
               "show_chat_usage": "Kosten in de chatkop tonen",
               "ha_usage_sensors": "Home Assistant-gebruikssensoren toevoegen"
             },
             "data_description": {
-              "low_token": "Stuurt minder mee met elk bericht om geld te besparen bij Cloud-, Ollama- en Azure-agents (Cursor valt hierbuiten). Uit geeft de betrouwbaarste antwoorden over je huis. Extreme is alleen chat en kan het huis niet bedienen.",
-              "check_house": "Standaard aan. De assistent kijkt in Home Assistant voordat hij vragen over je huis beantwoordt, zodat lijsten en statussen echt zijn, niet geraden. Begroetingen worden overgeslagen. Met “Tokenverbruik verminderen” op Light controleert hij altijd; op Medium en Extreme nooit. Zet het uit voor algemene vragen of voor een model dat al zelf controleert.",
               "track_usage": "Standaard aan. Noteert na elk antwoord tokens en geschatte kosten en toont ze op de Gebruik-pagina. Uit: geen nieuwe records; bestaande geschiedenis blijft.",
               "show_chat_usage": "Standaard aan. Toont tokens en kosten onder de chattitel. Uit verbergt alleen die regel; bijhouden en de Gebruik-pagina blijven.",
               "ha_usage_sensors": "Standaard uit. Alleen nodig voor je eigen dashboards of automatiseringen: voegt sensoren voor kosten, tokens en beurten toe op een Usage-apparaat en bij elke agent. De Gebruik-pagina werkt ook zonder. Uitzetten verwijdert de sensoren."
@@ -299,6 +299,9 @@
             "cursor_api_key": "Cursor-API-sleutel",
             "model": "Model",
             "effort": "Inzet",
+            "low_token": "Tokenverbruik verminderen",
+            "check_house": "Eerst in Home Assistant kijken",
+            "allow_internet": "Internet toestaan",
             "assist": "Toevoegen aan Assist"
           },
           "data_description": {
@@ -307,6 +310,9 @@
             "cursor_api_key": "Uit je Cursor-account (Integrations). Leeg laten bij bewerken om de opgeslagen sleutel te houden. [API-sleutel ophalen]({api_key_url})",
             "model": "Kies uit de lijst of typ een modelnaam. Leeg gebruikt Composer.",
             "effort": "Hoeveel denktijd is toegestaan. Composer gebruikt standaard Snel.",
+            "low_token": "Stuurt per bericht minder om geld te besparen. Uit geeft de betrouwbaarste antwoorden over je huis. Licht bewaart minder chatgeschiedenis. Gemiddeld kort ook lange berichten en antwoorden in en begint elke beurt met alleen de laatste berichten. Extreem is alleen chat: geen hulpmiddelen, dus het kan het huis niet controleren of bedienen.",
+            "check_house": "Standaard aan. Voordat de agent een vraag over je huis beantwoordt, kijkt hij in Home Assistant, zodat lijsten en statussen echt zijn en niet geraden. Begroetingen worden overgeslagen. Geen effect bij Extreem, dat geen hulpmiddelen heeft. Zet het uit voor algemene vragen of voor een model dat zelf al kijkt.",
+            "allow_internet": "Standaard uit. Aan laat deze agent in beheerderschats Cursors webzoekfunctie, pagina ophalen en shell gebruiken. Uit verwijdert alle drie, zodat ook curl of scripts het web niet bereiken. Chats van gewone gebruikers en spraaksatellieten krijgen ze nooit.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
           }
         },
@@ -318,6 +324,9 @@
             "api_key": "API-sleutel",
             "model": "Model",
             "effort": "Inzet",
+            "low_token": "Tokenverbruik verminderen",
+            "check_house": "Eerst in Home Assistant kijken",
+            "allow_internet": "Internet toestaan",
             "assist": "Toevoegen aan Assist",
             "assist_stt": "Spraak-naar-tekst toevoegen",
             "stt_model": "Spraak-naar-tekst-model",
@@ -331,6 +340,9 @@
             "api_key": "Je sleutel bij de AI-provider, niet je Home Assistant-aanmelding. [API-sleutel ophalen]({api_key_url})",
             "model": "Kies uit de lijst of typ een modelnaam. Leeg gebruikt de standaard van de provider.",
             "effort": "Meer inzet betekent meer nadenken: betere antwoorden op moeilijke vragen, maar trager en meer tokens. Wordt genegeerd als het model het niet ondersteunt.",
+            "low_token": "Stuurt per bericht minder om geld te besparen. Uit geeft de betrouwbaarste antwoorden over je huis. Licht bewaart minder chatgeschiedenis. Gemiddeld kort ook lange berichten en antwoorden in en begint elke beurt met alleen de laatste berichten. Extreem is alleen chat: geen hulpmiddelen, dus het kan het huis niet controleren of bedienen.",
+            "check_house": "Standaard aan. Voordat de agent een vraag over je huis beantwoordt, kijkt hij in Home Assistant, zodat lijsten en statussen echt zijn en niet geraden. Begroetingen worden overgeslagen. Geen effect bij Extreem, dat geen hulpmiddelen heeft. Zet het uit voor algemene vragen of voor een model dat zelf al kijkt.",
+            "allow_internet": "Standaard uit. Aan voegt in beheerderschats hulpmiddelen toe om het web te doorzoeken en pagina's op te halen. Adressen op je lokale netwerk blijven geblokkeerd. Chats van gewone gebruikers en spraaksatellieten krijgen ze nooit.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd.",
             "assist_stt": "Voegt in Home Assistant een spraak-naar-tekst-optie toe met de sleutel van deze assistent. Uit verwijdert wat hij heeft toegevoegd.",
             "stt_model": "Leeg laten voor de standaard van de provider. Je kunt een andere modelnaam typen.",
@@ -347,12 +359,18 @@
             "api_base": "Ollama-URL",
             "model": "Model",
             "effort": "Inzet",
+            "low_token": "Tokenverbruik verminderen",
+            "check_house": "Eerst in Home Assistant kijken",
+            "allow_internet": "Internet toestaan",
             "assist": "Toevoegen aan Assist"
           },
           "data_description": {
             "api_base": "Meestal {example_url}",
             "model": "Kies uit de lijst of typ een geïnstalleerd model. Leeg gebruikt llama3.2.",
             "effort": "Meer inzet betekent meer nadenken: betere antwoorden op moeilijke vragen, maar trager en meer tokens. Wordt genegeerd als het model het niet ondersteunt.",
+            "low_token": "Stuurt per bericht minder om geld te besparen. Uit geeft de betrouwbaarste antwoorden over je huis. Licht bewaart minder chatgeschiedenis. Gemiddeld kort ook lange berichten en antwoorden in en begint elke beurt met alleen de laatste berichten. Extreem is alleen chat: geen hulpmiddelen, dus het kan het huis niet controleren of bedienen.",
+            "check_house": "Standaard aan. Voordat de agent een vraag over je huis beantwoordt, kijkt hij in Home Assistant, zodat lijsten en statussen echt zijn en niet geraden. Begroetingen worden overgeslagen. Geen effect bij Extreem, dat geen hulpmiddelen heeft. Zet het uit voor algemene vragen of voor een model dat zelf al kijkt.",
+            "allow_internet": "Standaard uit. Aan voegt in beheerderschats hulpmiddelen toe om het web te doorzoeken en pagina's op te halen. Adressen op je lokale netwerk blijven geblokkeerd. Chats van gewone gebruikers en spraaksatellieten krijgen ze nooit.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
           }
         },
@@ -365,6 +383,9 @@
             "model": "Implementatie",
             "azure_api_version": "API-versie",
             "effort": "Inzet",
+            "low_token": "Tokenverbruik verminderen",
+            "check_house": "Eerst in Home Assistant kijken",
+            "allow_internet": "Internet toestaan",
             "assist": "Toevoegen aan Assist"
           },
           "data_description": {
@@ -373,6 +394,9 @@
             "model": "De naam van de implementatie.",
             "azure_api_version": "Laat de standaard staan, tenzij Azure-ondersteuning je een andere versie gaf.",
             "effort": "Meer inzet betekent meer nadenken: betere antwoorden op moeilijke vragen, maar trager en meer tokens. Wordt genegeerd als het model het niet ondersteunt.",
+            "low_token": "Stuurt per bericht minder om geld te besparen. Uit geeft de betrouwbaarste antwoorden over je huis. Licht bewaart minder chatgeschiedenis. Gemiddeld kort ook lange berichten en antwoorden in en begint elke beurt met alleen de laatste berichten. Extreem is alleen chat: geen hulpmiddelen, dus het kan het huis niet controleren of bedienen.",
+            "check_house": "Standaard aan. Voordat de agent een vraag over je huis beantwoordt, kijkt hij in Home Assistant, zodat lijsten en statussen echt zijn en niet geraden. Begroetingen worden overgeslagen. Geen effect bij Extreem, dat geen hulpmiddelen heeft. Zet het uit voor algemene vragen of voor een model dat zelf al kijkt.",
+            "allow_internet": "Standaard uit. Aan voegt in beheerderschats hulpmiddelen toe om het web te doorzoeken en pagina's op te halen. Adressen op je lokale netwerk blijven geblokkeerd. Chats van gewone gebruikers en spraaksatellieten krijgen ze nooit.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
           }
         },
@@ -384,6 +408,9 @@
             "api_base": "API-basis-URL",
             "model": "Model",
             "effort": "Inzet",
+            "low_token": "Tokenverbruik verminderen",
+            "check_house": "Eerst in Home Assistant kijken",
+            "allow_internet": "Internet toestaan",
             "assist": "Toevoegen aan Assist",
             "assist_stt": "Spraak-naar-tekst toevoegen",
             "stt_model": "Spraak-naar-tekst-model",
@@ -397,6 +424,9 @@
             "api_base": "Serveradres. Voeg /v1 toe aan het einde als je server dat verwacht.",
             "model": "Modelnaam op die server.",
             "effort": "Meer inzet betekent meer nadenken: betere antwoorden op moeilijke vragen, maar trager en meer tokens. Wordt genegeerd als het model het niet ondersteunt.",
+            "low_token": "Stuurt per bericht minder om geld te besparen. Uit geeft de betrouwbaarste antwoorden over je huis. Licht bewaart minder chatgeschiedenis. Gemiddeld kort ook lange berichten en antwoorden in en begint elke beurt met alleen de laatste berichten. Extreem is alleen chat: geen hulpmiddelen, dus het kan het huis niet controleren of bedienen.",
+            "check_house": "Standaard aan. Voordat de agent een vraag over je huis beantwoordt, kijkt hij in Home Assistant, zodat lijsten en statussen echt zijn en niet geraden. Begroetingen worden overgeslagen. Geen effect bij Extreem, dat geen hulpmiddelen heeft. Zet het uit voor algemene vragen of voor een model dat zelf al kijkt.",
+            "allow_internet": "Standaard uit. Aan voegt in beheerderschats hulpmiddelen toe om het web te doorzoeken en pagina's op te halen. Adressen op je lokale netwerk blijven geblokkeerd. Chats van gewone gebruikers en spraaksatellieten krijgen ze nooit.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd.",
             "assist_stt": "Voegt in Home Assistant een spraak-naar-tekst-optie toe met de sleutel van deze assistent. Uit verwijdert wat hij heeft toegevoegd.",
             "stt_model": "Leeg laten voor de standaard van de provider. Je kunt een andere modelnaam typen.",

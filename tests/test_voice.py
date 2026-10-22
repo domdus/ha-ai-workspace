@@ -331,3 +331,9 @@ def test_gemini_transcribe_payload_and_response_text() -> None:
     )
     assert text == "Licht an."
     assert voice.gemini_response_text({}) == ""
+
+
+def test_speech_text_keeps_list_numbers_and_ends_items() -> None:
+    voice = _load("voice", "voice.py")
+    spoken = voice.speech_text("Steps:\n1. Turn off the lights.\n2. Close the blinds\n3. Lock the door")
+    assert spoken == "Steps:\n1. Turn off the lights.\n2. Close the blinds.\n3. Lock the door."

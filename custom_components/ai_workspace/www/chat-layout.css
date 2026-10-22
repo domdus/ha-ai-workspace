@@ -754,6 +754,17 @@ h1 {
   pointer-events: none;
 }
 
+.agent-picker:not([hidden]) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+}
+
+.agent-picker ha-dropdown[hidden] {
+  display: none !important;
+}
+
 .agent-trigger-label {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -902,7 +913,8 @@ textarea.message {
   margin-left: 0;
 }
 
-.ui-theme-ha-components ha-dropdown.agent-menu {
+.ui-theme-ha-components ha-dropdown.agent-menu,
+.ui-theme-ha-components ha-dropdown.model-menu {
   overflow: visible;
 }
 

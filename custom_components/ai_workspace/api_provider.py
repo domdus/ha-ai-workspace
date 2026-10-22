@@ -98,7 +98,7 @@ _CACHE_MARK = {"type": "ephemeral"}
 _MCP_TTL = 600.0
 _MCP_CACHE_MAX = 32
 _MCP_CACHE = f"{DOMAIN}_mcp_cache"
-_LOCAL_TOOLS = {"catalog", "house-map"}
+_LOCAL_TOOLS = {"catalog", "house-map", "web"}
 _ERRORS = (McpError, ClientError, TimeoutError, OSError, json.JSONDecodeError, RuntimeError)
 
 
@@ -590,6 +590,9 @@ class ApiProvider:
             label=label,
             available=reason is None,
             reason=reason,
+            title=settings.agent_title or self._label(),
+            model=self._model(),
+            provider=settings.api_provider,
         )
 
     def _label(self) -> str:
@@ -768,6 +771,11 @@ class ApiProvider:
 
             local = HouseMapClient(self.hass, self.store)
             bundle.add("catalog", local, await local.list_tools())
+        if admin and self.settings.allow_internet:
+            from .web_tools import WebClient
+
+            web = WebClient()
+            bundle.add("web", web, await web.list_tools())
         bundle.finish()
         return bundle, skipped, first_error
 

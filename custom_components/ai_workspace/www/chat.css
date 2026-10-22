@@ -989,6 +989,17 @@ h1 {
   pointer-events: none;
 }
 
+.agent-picker:not([hidden]) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+}
+
+.agent-picker ha-dropdown[hidden] {
+  display: none !important;
+}
+
 .agent-trigger {
   display: inline-flex;
   align-items: center;
