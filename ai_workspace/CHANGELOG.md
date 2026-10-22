@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.5
+
+Everything from 1.3.5b1 to 1.3.5b4:
+
+- Chat: while the agent is working, Send becomes **Stop**. Stop ends the current turn so you can send right away. Typing a follow-up turns Stop back into Send so that prompt can queue; a queued prompt shows an X.
+- Change History: **Rollback for** (default 7 days) hides Rollback and Ask to restore on older rows; the log stays. Configure or `change_history_ttl_days` (1–90). Docs cover restoring an automation, script, or scene from `config/ai_workspace/changes/` if Home Assistant will not start.
+- Android: the prompt stays at the bottom of the chat column and slides with the keyboard instead of resizing the message list on every viewport tick.
+- Chat list: desktop titles use the full row with the ⋮ menu on hover. Mobile uses the chats icon in the header and a close X in the overlay list. An empty banner no longer adds header height.
+- Usage: centered page title without a close X, filters stay on one row longer, and **1 Turn** instead of **1 Turns**.
+
 ## 1.3.5b4
 
 - Mobile: the header uses the chats icon again. In the overlay list, dock-left becomes a close X. Desktop still docks the rail. An empty banner no longer adds header height.
