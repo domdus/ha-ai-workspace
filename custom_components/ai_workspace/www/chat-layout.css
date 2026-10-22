@@ -396,6 +396,7 @@ ha-button.new-chat {
   margin: 0;
   padding: 0;
   border: 0;
+  border-radius: 50%;
   background: transparent;
   color: var(--sidebar-icon-color, var(--sidebar-text-color));
   cursor: pointer;
@@ -416,6 +417,42 @@ ha-button.new-chat {
 .session-row.selected .session-more,
 .session-row .session-more[aria-expanded="true"] {
   opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .session-row ha-dropdown.session-menu {
+    position: absolute;
+    inset-inline-end: 2px;
+    top: 6px;
+    z-index: 1;
+  }
+
+  .session-row.selected .session-more {
+    opacity: 0;
+  }
+
+  .session-row:hover .item-text,
+  .session-row:has(.session-more[aria-expanded="true"]) .item-text,
+  .session-row:has(.session-more:focus-visible) .item-text {
+    mask-image: linear-gradient(to left, transparent 0, transparent 28px, #000 48px);
+  }
+
+  :dir(rtl) .session-row:hover .item-text,
+  :dir(rtl) .session-row:has(.session-more[aria-expanded="true"]) .item-text,
+  :dir(rtl) .session-row:has(.session-more:focus-visible) .item-text {
+    mask-image: linear-gradient(to right, transparent 0, transparent 28px, #000 48px);
+  }
+
+  .session-row:hover .session-more,
+  .session-row .session-more[aria-expanded="true"],
+  .session-row .session-more:focus-visible {
+    opacity: 1;
+    background: color-mix(
+      in srgb,
+      var(--primary-text-color) 8%,
+      var(--sidebar-background-color, var(--card-background-color))
+    );
+  }
 }
 
 @media (hover: none) {
@@ -440,7 +477,7 @@ ha-button.new-chat {
   overflow-anchor: none;
   overscroll-behavior: contain;
   scroll-behavior: auto;
-  scroll-padding-bottom: calc(8rem + var(--ha-space-6) + var(--ai-keyboard-inset, 0px));
+  scroll-padding-bottom: calc(8rem + var(--ha-space-6));
 }
 
 .chat.welcome {
@@ -491,6 +528,12 @@ h1 {
   margin: var(--ha-space-2) 0 0;
   color: var(--error-color);
   display: block;
+}
+
+.banner[hidden],
+.banner:empty {
+  display: none !important;
+  margin: 0;
 }
 
 .stage {
@@ -626,7 +669,7 @@ h1 {
 
 .composer {
   position: sticky;
-  bottom: var(--ai-keyboard-inset, 0px);
+  bottom: 0;
   z-index: 3;
   display: flex;
   flex-direction: column;
@@ -635,8 +678,12 @@ h1 {
   width: min(calc(var(--ai-chat-width) + 2 * var(--ai-inline-pad)), 100%);
   margin-inline: auto;
   margin-top: auto;
-  margin-bottom: var(--ai-keyboard-inset, 0px);
   background: var(--primary-background-color);
+  transform: translateY(calc(-1 * var(--ai-keyboard-inset, 0px)));
+}
+
+.wrap.keyboard-open .composer {
+  will-change: transform;
 }
 
 .scroll-bottom {
@@ -914,6 +961,10 @@ textarea.message {
 .wrap.narrow .header-history,
 .wrap.narrow .header-usage {
   display: inline-flex;
+}
+
+.wrap.narrow.nav-open .chat-nav-toggle {
+  display: none;
 }
 
 .wrap.has-app-bar .chat-nav-toggle,

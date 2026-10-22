@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.5b3
+
+- Desktop chat list: titles use the full row. The ⋮ menu sits on top of the text on hover instead of reserving a blank column. Touch keeps the button in the layout.
+- Android: the prompt stays at the bottom of the chat column and slides with the keyboard (`transform`) instead of resizing the message list on every viewport tick.
+- Mobile chat list uses the same **dock-left** icon as desktop. That app-bar control hides while the chat list is open. An empty banner no longer adds header height.
+
 ## 1.3.5b2
 
 - Chat: typing a follow-up while the agent is working turns Stop back into Send so that prompt can queue. Clearing or sending it (empty input) shows Stop again.

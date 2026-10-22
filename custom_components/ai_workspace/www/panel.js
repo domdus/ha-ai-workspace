@@ -20,6 +20,7 @@ class HaAiWorkspacePanel extends HTMLElement {
     this._mounted = false;
     this._mounting = false;
     this._narrow = false;
+    this._navOpen = false;
     this._mq = window.matchMedia("(max-width: 870px)");
     this.attachShadow({ mode: "open" });
     this.shadowRoot.innerHTML = `
@@ -115,7 +116,7 @@ class HaAiWorkspacePanel extends HTMLElement {
       menu.narrow = this._narrow;
       if (this._hass) menu.hass = this._hass;
     }
-    if (chats) chats.hidden = !overlay;
+    if (chats) chats.hidden = !overlay || this._navOpen;
   }
 
   async _mount() {
@@ -179,7 +180,7 @@ class HaAiWorkspacePanel extends HTMLElement {
       <ha-menu-button slot="navigationIcon"></ha-menu-button>
       <h1 class="page-title" slot="title">${ui.title}</h1>
       <ha-icon-button class="chats-menu" slot="actionItems" label="${ui.chats}" hidden>
-        <ha-icon icon="mdi:forum-outline"></ha-icon>
+        <ha-icon icon="mdi:dock-left"></ha-icon>
       </ha-icon-button>
     `;
     const content = document.createElement("div");
@@ -195,6 +196,10 @@ class HaAiWorkspacePanel extends HTMLElement {
         narrow: this._overlayNav(),
         chrome: "panel",
         getToken: () => this._hass?.auth?.data?.access_token || "",
+        onNavOpen: (open) => {
+          this._navOpen = Boolean(open);
+          this._syncChrome();
+        },
         onRemount: (api) => {
           this._ui = api;
         },

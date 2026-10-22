@@ -754,7 +754,7 @@ export async function mountAiWorkspace(root, options = {}) {
         <header>
           <div class="header-row">
             <ha-icon-button class="nav-toggle chat-nav-toggle" label="${t("show_chats")}">
-              <ha-icon icon="mdi:forum-outline"></ha-icon>
+              <ha-icon icon="mdi:dock-left"></ha-icon>
             </ha-icon-button>
             ${compact ? "" : `<ha-icon-button class="history-open header-history" label="${t("activity")}">
               <ha-icon icon="mdi:history"></ha-icon>
@@ -922,6 +922,7 @@ export async function mountAiWorkspace(root, options = {}) {
     wrap.classList.toggle("nav-open", Boolean(open));
     if (scrim) scrim.hidden = !open;
     syncToggleLabels();
+    options.onNavOpen?.(Boolean(open));
   }
 
   function closeNavIfOverlay() {
@@ -1097,6 +1098,7 @@ export async function mountAiWorkspace(root, options = {}) {
   let keyboardRaf = 0;
   let keyboardInset = 0;
   let keyboardOpen = false;
+  let keyboardWroteAt = 0;
 
   function resetOuterScroll() {
     const start =
@@ -1110,9 +1112,18 @@ export async function mountAiWorkspace(root, options = {}) {
   function clearKeyboardLock() {
     keyboardOpen = false;
     keyboardInset = 0;
+    keyboardWroteAt = 0;
     wrap.classList.remove("keyboard-open");
     wrap.style.height = "";
+    form.style.removeProperty("--ai-keyboard-inset");
     wrap.style.removeProperty("--ai-keyboard-inset");
+  }
+
+  function keyboardGap() {
+    const vv = window.visualViewport;
+    // Overlay keyboards shrink visualViewport.height. Ignore offsetTop so IME
+    // pan does not chase the composer (that loop is the rubber-band).
+    return vv ? Math.max(0, Math.round(window.innerHeight - vv.height)) : 0;
   }
 
   function syncKeyboardInset() {
@@ -1124,30 +1135,27 @@ export async function mountAiWorkspace(root, options = {}) {
   function applyKeyboardInset() {
     keyboardRaf = 0;
     if (keepComposerFocus()) return;
-    const vv = window.visualViewport;
-    // Overlay keyboards shrink visualViewport.height. Ignore offsetTop so IME
-    // pan does not chase the composer (that loop is the rubber-band).
-    const next = vv ? Math.max(0, Math.round(window.innerHeight - vv.height)) : 0;
+    const next = keyboardGap();
     const open = composerFocused() && next > 80;
     if (!open) {
       if (keyboardOpen) clearKeyboardLock();
       return;
     }
-    if (keyboardOpen && Math.abs(next - keyboardInset) < 8) return;
     const opened = !keyboardOpen;
+    const delta = Math.abs(next - keyboardInset);
+    if (!opened && delta < 8) return;
+    const now = performance.now();
+    if (!opened && delta < 48 && now - keyboardWroteAt < 120) return;
     keyboardOpen = true;
     keyboardInset = next;
-    wrap.style.setProperty("--ai-keyboard-inset", `${next}px`);
+    keyboardWroteAt = now;
+    form.style.setProperty("--ai-keyboard-inset", `${next}px`);
     if (opened) {
       if (followRaf) {
         cancelAnimationFrame(followRaf);
         followRaf = 0;
       }
       wrap.classList.add("keyboard-open");
-      if (pinBottom && !holdFollow) {
-        chatEl.scrollTop = Math.max(0, chatEl.scrollHeight - chatEl.clientHeight);
-        lastScrollTop = chatEl.scrollTop;
-      }
     }
   }
 
@@ -4034,11 +4042,7 @@ export async function mountAiWorkspace(root, options = {}) {
   }
   listen(window.visualViewport, "resize", syncKeyboardInset);
   listen(window.visualViewport, "scroll", () => {
-    if (!composerFocused()) return;
-    const vv = window.visualViewport;
-    const next = vv ? Math.max(0, Math.round(window.innerHeight - vv.height)) : 0;
-    if (Math.abs(next - keyboardInset) < 24) return;
-    syncKeyboardInset();
+    if (composerFocused()) syncKeyboardInset();
   });
   function fromComposerField(event) {
     for (const node of event.composedPath?.() || [event.target]) {
