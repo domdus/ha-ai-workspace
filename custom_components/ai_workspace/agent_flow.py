@@ -18,6 +18,7 @@ from .const import (
     API_PROVIDERS,
     API_SHORT_LABELS,
     CONF_AGENT_ID,
+    CONF_ALLOW_INTERNET,
     CONF_API_BASE,
     CONF_API_KEY,
     CONF_API_PROVIDER,
@@ -33,6 +34,7 @@ from .const import (
     CONF_CHECK_HOUSE,
     CONF_CURSOR_API_KEY,
     CONF_EFFORT,
+    CONF_LOW_TOKEN,
     CONF_PROMPT_CACHE,
     CONF_MODE,
     CONF_MODEL,
@@ -43,6 +45,8 @@ from .const import (
     EFFORTS,
     MODE_API,
     MODE_CURSOR,
+    TOKEN_MODE_OFF,
+    TOKEN_MODES,
     TTS_SPEEDS,
     assist_enabled,
     assist_stt_enabled,
@@ -63,6 +67,7 @@ from .const import (
     tts_model_choices,
     tts_voices,
     submitted_model,
+    token_mode_of,
 )
 from .discovery import (
     async_detect_runtime_url,
@@ -109,10 +114,11 @@ def _effort_field(current: dict) -> dict:
     }
 
 
-def _model_field(provider: str, current: dict, *, required: bool = False) -> dict:
+def _model_field(provider: str, current: dict, *, required: bool = False, choices: list[str] | None = None) -> dict:
     stored = str(current.get(CONF_MODEL) or "").strip()
     fallback = default_api_model(provider)
-    choices = api_model_choices(provider)
+    if choices is None:
+        choices = api_model_choices(provider)
     if choices:
         options = list(choices)
         if stored and stored not in options:
@@ -187,17 +193,24 @@ def _tts_speed_field(current: dict) -> dict:
     }
 
 
-def _fields_schema(step: str, current: dict, borrows: list[dict[str, str]], *, new: bool = False) -> vol.Schema:
+def _fields_schema(
+    step: str,
+    current: dict,
+    borrows: list[dict[str, str]],
+    *,
+    new: bool = False,
+    models: list[str] | None = None,
+) -> vol.Schema:
     provider = str(current.get(CONF_API_PROVIDER) or MODE_CURSOR)
     fields: dict = {}
     if step == "cursor":
         fields[vol.Optional(CONF_RUNTIME_URL, default=str(current.get(CONF_RUNTIME_URL) or ""))] = _URL
         fields[vol.Optional(CONF_RUNTIME_TOKEN, default="")] = _PASSWORD
         fields[vol.Optional(CONF_CURSOR_API_KEY, default="")] = _PASSWORD
-        fields.update(_model_field(MODE_CURSOR, current))
+        fields.update(_model_field(MODE_CURSOR, current, choices=models))
     elif step == "ollama":
         fields[vol.Required(CONF_API_BASE, default=str(current.get(CONF_API_BASE) or default_api_base(API_OLLAMA)))] = str
-        fields.update(_model_field(API_OLLAMA, current))
+        fields.update(_model_field(API_OLLAMA, current, choices=models))
     elif step == "azure":
         fields[vol.Optional(CONF_API_KEY, default="")] = _PASSWORD
         fields[vol.Required(CONF_API_BASE, default=str(current.get(CONF_API_BASE) or ""))] = str
@@ -206,7 +219,7 @@ def _fields_schema(step: str, current: dict, borrows: list[dict[str, str]], *, n
     elif step == "compatible":
         fields[vol.Optional(CONF_API_KEY, default="")] = _PASSWORD
         fields[vol.Required(CONF_API_BASE, default=str(current.get(CONF_API_BASE) or ""))] = str
-        fields.update(_model_field(API_COMPATIBLE, current))
+        fields.update(_model_field(API_COMPATIBLE, current, choices=models))
     else:
         if borrows:
             options = [{"value": "", "label": "Enter it here"}]
@@ -215,8 +228,13 @@ def _fields_schema(step: str, current: dict, borrows: list[dict[str, str]], *, n
                 SelectSelectorConfig(options=options, mode="dropdown")
             )
         fields[vol.Optional(CONF_API_KEY, default="")] = _PASSWORD
-        fields.update(_model_field(provider, current))
+        fields.update(_model_field(provider, current, choices=models))
     fields.update(_effort_field(current))
+    fields[vol.Optional(CONF_LOW_TOKEN, default=token_mode_of(current.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF)))] = SelectSelector(
+        SelectSelectorConfig(options=list(TOKEN_MODES), mode="dropdown", translation_key="low_token")
+    )
+    fields[vol.Optional(CONF_CHECK_HOUSE, default=bool(current.get(CONF_CHECK_HOUSE, True)))] = cv.boolean
+    fields[vol.Optional(CONF_ALLOW_INTERNET, default=bool(current.get(CONF_ALLOW_INTERNET, False)))] = cv.boolean
     fields[vol.Optional(CONF_ASSIST, default=assist_enabled(current, new=new))] = cv.boolean
     if provider_supports_stt(provider):
         fields[vol.Optional(CONF_ASSIST_STT, default=assist_stt_enabled(current, provider, new=new))] = cv.boolean
@@ -313,6 +331,22 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
         options[CONF_RUNTIME_TOKEN] = token
         self.hass.config_entries.async_update_entry(entry, options=options)
 
+    async def _model_choices(self, provider: str, current: dict) -> list[str] | None:
+        """The provider's own model list with the key on this agent; None keeps the bundled list."""
+        from .model_list import async_cursor_models, async_provider_models, merge_models
+
+        if provider == API_AZURE:
+            return None
+        if provider == MODE_CURSOR:
+            live = await async_cursor_models(self.hass, str(current.get(CONF_CURSOR_API_KEY) or ""))
+        else:
+            live = await async_provider_models(
+                self.hass, provider, str(current.get(CONF_API_KEY) or ""), str(current.get(CONF_API_BASE) or "")
+            )
+        if not live:
+            return None
+        return merge_models(provider, str(current.get(CONF_MODEL) or ""), live)
+
     async def _key_errors(self, provider: str, key: str, base: str, version: str) -> dict[str, str]:
         from .api_provider import async_check_api_key
 
@@ -379,6 +413,9 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                     CONF_API_BASE: "" if provider == MODE_CURSOR else base,
                     CONF_MODEL: model,
                     CONF_EFFORT: "" if effort == EFFORT_DEFAULT else effort,
+                    CONF_LOW_TOKEN: token_mode_of(merged.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF)),
+                    CONF_CHECK_HOUSE: bool(merged.get(CONF_CHECK_HOUSE, True)),
+                    CONF_ALLOW_INTERNET: bool(merged.get(CONF_ALLOW_INTERNET, False)),
                     CONF_ASSIST: bool(user_input.get(CONF_ASSIST, assist_enabled(current, new=not self._editing))),
                     CONF_ASSIST_STT: bool(
                         user_input.get(
@@ -414,8 +451,6 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                 }
                 if provider != MODE_CURSOR and CONF_PROMPT_CACHE in current:
                     data[CONF_PROMPT_CACHE] = bool(current.get(CONF_PROMPT_CACHE))
-                if provider != MODE_CURSOR and CONF_CHECK_HOUSE in current:
-                    data[CONF_CHECK_HOUSE] = bool(current.get(CONF_CHECK_HOUSE))
                 return self._finish(provider, data)
             self._current = merged
         example = "https://YOUR-RESOURCE.openai.azure.com" if step == "azure" else default_api_base(API_OLLAMA)
@@ -435,7 +470,13 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             placeholders.update(runtime_form_placeholders(live=live, auto=auto))
         return self.async_show_form(
             step_id=f"provider_{step}",
-            data_schema=_fields_schema(step, schema_current, borrows, new=not self._editing),
+            data_schema=_fields_schema(
+                step,
+                schema_current,
+                borrows,
+                new=not self._editing,
+                models=await self._model_choices(provider, schema_current),
+            ),
             errors=errors,
             description_placeholders=placeholders,
         )

@@ -13,6 +13,9 @@ class ProviderInfo:
     label: str
     available: bool
     reason: str | None = None
+    title: str = ""
+    model: str = ""
+    provider: str = ""
 
     def as_dict(self) -> dict:
         return {
@@ -20,6 +23,9 @@ class ProviderInfo:
             "label": self.label,
             "available": self.available,
             "reason": self.reason,
+            "title": self.title or self.label,
+            "model": self.model,
+            "provider": self.provider,
         }
 
 
@@ -59,6 +65,8 @@ class Settings:
     ha_usage_sensors: bool = False
     ui_theme: str = "standard"
     cross_chat: bool = False
+    default_agent: str = ""
+    model_switcher: bool = False
     token_mode: str = "off"
     prompt_cache: bool = True
     check_house: bool = True
@@ -78,6 +86,7 @@ class Settings:
     tts_natural: bool = True
     agent_id: str = ""
     agent_title: str = ""
+    allow_internet: bool = False
 
     def ensure_dirs(self) -> None:
         self.data_dir.mkdir(parents=True, exist_ok=True)

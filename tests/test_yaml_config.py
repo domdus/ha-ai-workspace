@@ -12,7 +12,7 @@ from custom_components.ai_workspace.const import (
     CONF_LOW_TOKEN,
     CONF_TRACK_USAGE,
     MODE_CURSOR,
-    TOKEN_MODE_EXTREME,
+    TOKEN_MODE_MEDIUM,
 )
 from custom_components.ai_workspace.yaml_config import (
     YAML_SCHEMA,
@@ -66,7 +66,7 @@ def test_schema_accepts_full_example() -> None:
 
 def test_partial_options_do_not_fill_defaults() -> None:
     patch = options_from_yaml({"ha_usage_sensors": True, "low_token": "extreme"})
-    assert patch == {CONF_HA_USAGE_SENSORS: True, CONF_LOW_TOKEN: TOKEN_MODE_EXTREME}
+    assert patch == {CONF_HA_USAGE_SENSORS: True}
     filled = options_from_yaml({"ha_usage_sensors": True}, fill_defaults=True)
     assert filled[CONF_HA_USAGE_SENSORS] is True
     assert filled[CONF_TRACK_USAGE] is True
@@ -125,14 +125,23 @@ def test_entry_from_yaml_includes_default_connection() -> None:
     assert kinds.count("agent") == 1
     assert kinds.count("usage") == 1
     assert options[CONF_HA_USAGE_SENSORS] is True
-    assert options[CONF_CHECK_HOUSE] is True
+    assert CONF_CHECK_HOUSE not in options
     assert agents_from_yaml({}) == []
-    off, _subs = entry_from_yaml(
+
+
+def test_yaml_tuning_is_per_agent_with_workspace_keys_as_default() -> None:
+    _options, subs = entry_from_yaml(
         {
+            "low_token": "medium",
+            "check_house": False,
             "agents": [
-                {"provider": "openai", "api_key": "sk", "check_house": False},
-                {"provider": "anthropic", "api_key": "x", "check_house": False},
-            ]
+                {"provider": "openai", "api_key": "sk"},
+                {"provider": "anthropic", "api_key": "x", "low_token": "off", "check_house": True},
+                {"provider": "cursor"},
+            ],
         }
     )
-    assert off[CONF_CHECK_HOUSE] is False
+    agents = [row["data"] for row in subs if row["subentry_type"] == "agent"]
+    assert (agents[0][CONF_LOW_TOKEN], agents[0][CONF_CHECK_HOUSE]) == (TOKEN_MODE_MEDIUM, False)
+    assert (agents[1][CONF_LOW_TOKEN], agents[1][CONF_CHECK_HOUSE]) == ("off", True)
+    assert (agents[2][CONF_LOW_TOKEN], agents[2][CONF_CHECK_HOUSE]) == ("off", True)

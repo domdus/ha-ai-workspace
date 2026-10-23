@@ -34,6 +34,8 @@
             "name": "Chat",
             "description": "Wo der Chat erscheint und wer ihn nutzen darf.",
             "data": {
+              "default_agent": "Standard-Agent",
+              "model_switcher": "Modellauswahl anzeigen",
               "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
               "enable_overlay": "Schwebende KI-Schaltfläche anzeigen",
               "enable_dictate": "Diktier-Schaltfläche anzeigen",
@@ -43,6 +45,8 @@
               "keep_chats": "Chats behalten"
             },
             "data_description": {
+              "default_agent": "Mit diesem Agenten startet ein neuer Chat. Jeder Chat merkt sich den Agenten (und das Modell), den er zuletzt genutzt hat. Zuletzt verwendet: der Agent, den du in diesem Browser zuletzt gewählt hast.",
+              "model_switcher": "Standardmäßig aus. Zeigt neben der Agentenauswahl eine Modellauswahl, damit ein Chat ein anderes Modell desselben Agenten nutzen kann. Das Modell des Agenten bleibt der Standard.",
               "enable_sidebar": "Zeigt AI Workspace in der Seitenleiste. Wenn aus, können Administratoren /ai-workspace weiterhin direkt öffnen.",
               "enable_overlay": "Ein runder KI-Button in der Ecke jeder Home-Assistant-Seite, damit du fragen kannst, ohne die Seite zu verlassen. Auf Einstellungsseiten sitzt er höher, damit er keine anderen Buttons verdeckt.",
               "enable_dictate": "Mikrofon-Button im Nachrichtenfeld. Ausblenden, wenn du nie diktierst.",
@@ -56,15 +60,11 @@
             "name": "Kosten und Tokens",
             "description": "Was jede Nachricht sendet und wie Ausgaben erfasst werden.",
             "data": {
-              "low_token": "Tokenverbrauch reduzieren",
-              "check_house": "Immer zuerst das Haus prüfen",
               "track_usage": "Nutzung und Kosten aufzeichnen",
               "show_chat_usage": "Kosten in der Chat-Kopfzeile anzeigen",
               "ha_usage_sensors": "Home-Assistant-Nutzungssensoren hinzufügen"
             },
             "data_description": {
-              "low_token": "Sendet mit jeder Nachricht weniger, um bei Cloud-, Ollama- und Azure-Agenten Geld zu sparen (Cursor ist nicht betroffen). Aus liefert die verlässlichsten Antworten über dein Zuhause. Extreme ist nur Chat und kann das Haus nicht steuern.",
-              "check_house": "Standardmäßig an. Der Assistent schaut in Home Assistant nach, bevor er Fragen zu deinem Zuhause beantwortet. Listen und Zustände sind dann echt, nicht geraten. Begrüßungen werden übersprungen. Mit Tokenverbrauch reduzieren auf Light prüft er immer, bei Medium und Extreme nie. Ausschalten für allgemeine Fragen oder ein Modell, das das schon von selbst tut.",
               "track_usage": "Standardmäßig an. Speichert nach jeder Antwort Tokens und geschätzte Kosten und zeigt sie auf der Seite Nutzung. Aus stoppt neue Einträge; der Verlauf bleibt.",
               "show_chat_usage": "Standard an. Zeigt Token und Kosten unter dem Chattitel. Aus blendet nur diese Zeile; Aufzeichnung und die Nutzungsseite bleiben.",
               "ha_usage_sensors": "Standardmäßig aus. Nur für eigene Dashboards oder Automationen nötig: legt Kosten-, Token- und Durchgangs-Sensoren auf einem Nutzungs-Gerät und an jedem Agenten an. Die Seite Nutzung funktioniert ohne sie. Ausschalten entfernt die Sensoren."
@@ -143,6 +143,8 @@
             "name": "Chat",
             "description": "Wo der Chat erscheint und wer ihn nutzen darf.",
             "data": {
+              "default_agent": "Standard-Agent",
+              "model_switcher": "Modellauswahl anzeigen",
               "enable_sidebar": "AI Workspace in der Seitenleiste anzeigen",
               "enable_overlay": "Schwebende KI-Schaltfläche anzeigen",
               "enable_dictate": "Diktier-Schaltfläche anzeigen",
@@ -152,6 +154,8 @@
               "keep_chats": "Chats behalten"
             },
             "data_description": {
+              "default_agent": "Mit diesem Agenten startet ein neuer Chat. Jeder Chat merkt sich den Agenten (und das Modell), den er zuletzt genutzt hat. Zuletzt verwendet: der Agent, den du in diesem Browser zuletzt gewählt hast.",
+              "model_switcher": "Standardmäßig aus. Zeigt neben der Agentenauswahl eine Modellauswahl, damit ein Chat ein anderes Modell desselben Agenten nutzen kann. Das Modell des Agenten bleibt der Standard.",
               "enable_sidebar": "Zeigt AI Workspace in der Seitenleiste. Wenn aus, können Administratoren /ai-workspace weiterhin direkt öffnen.",
               "enable_overlay": "Ein runder KI-Button in der Ecke jeder Home-Assistant-Seite, damit du fragen kannst, ohne die Seite zu verlassen. Auf Einstellungsseiten sitzt er höher, damit er keine anderen Buttons verdeckt.",
               "enable_dictate": "Mikrofon-Button im Nachrichtenfeld. Ausblenden, wenn du nie diktierst.",
@@ -165,15 +169,11 @@
             "name": "Kosten und Tokens",
             "description": "Was jede Nachricht sendet und wie Ausgaben erfasst werden.",
             "data": {
-              "low_token": "Tokenverbrauch reduzieren",
-              "check_house": "Immer zuerst das Haus prüfen",
               "track_usage": "Nutzung und Kosten aufzeichnen",
               "show_chat_usage": "Kosten in der Chat-Kopfzeile anzeigen",
               "ha_usage_sensors": "Home-Assistant-Nutzungssensoren hinzufügen"
             },
             "data_description": {
-              "low_token": "Sendet mit jeder Nachricht weniger, um bei Cloud-, Ollama- und Azure-Agenten Geld zu sparen (Cursor ist nicht betroffen). Aus liefert die verlässlichsten Antworten über dein Zuhause. Extreme ist nur Chat und kann das Haus nicht steuern.",
-              "check_house": "Standardmäßig an. Der Assistent schaut in Home Assistant nach, bevor er Fragen zu deinem Zuhause beantwortet. Listen und Zustände sind dann echt, nicht geraten. Begrüßungen werden übersprungen. Mit Tokenverbrauch reduzieren auf Light prüft er immer, bei Medium und Extreme nie. Ausschalten für allgemeine Fragen oder ein Modell, das das schon von selbst tut.",
               "track_usage": "Standardmäßig an. Speichert nach jeder Antwort Tokens und geschätzte Kosten und zeigt sie auf der Seite Nutzung. Aus stoppt neue Einträge; der Verlauf bleibt.",
               "show_chat_usage": "Standard an. Zeigt Token und Kosten unter dem Chattitel. Aus blendet nur diese Zeile; Aufzeichnung und die Nutzungsseite bleiben.",
               "ha_usage_sensors": "Standardmäßig aus. Nur für eigene Dashboards oder Automationen nötig: legt Kosten-, Token- und Durchgangs-Sensoren auf einem Nutzungs-Gerät und an jedem Agenten an. Die Seite Nutzung funktioniert ohne sie. Ausschalten entfernt die Sensoren."
@@ -299,6 +299,9 @@
             "cursor_api_key": "Cursor-API-Schlüssel",
             "model": "Modell",
             "effort": "Aufwand",
+            "low_token": "Tokenverbrauch reduzieren",
+            "check_house": "Zuerst in Home Assistant nachsehen",
+            "allow_internet": "Internetzugriff erlauben",
             "assist": "Zu Assist hinzufügen"
           },
           "data_description": {
@@ -307,6 +310,9 @@
             "cursor_api_key": "Aus deinem Cursor-Konto (Integrations). Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten. [API-Schlüssel holen]({api_key_url})",
             "model": "Aus der Liste wählen oder Modellnamen eingeben. Leer nutzt Composer.",
             "effort": "Wie viel Denkzeit erlaubt ist. Composer nutzt standardmäßig Schnell.",
+            "low_token": "Sendet mit jeder Nachricht weniger, um Geld zu sparen. Aus liefert die zuverlässigsten Antworten zu deinem Zuhause. Leicht behält weniger Chatverlauf. Mittel kürzt zusätzlich lange Nachrichten und Antworten und startet jede Runde nur mit den letzten Nachrichten. Extrem ist nur Chat: keine Werkzeuge, daher kann es das Haus weder prüfen noch steuern.",
+            "check_house": "Standardmäßig an. Bevor der Agent eine Frage zu deinem Zuhause beantwortet, sieht er in Home Assistant nach, damit Listen und Zustände echt sind und nicht geraten. Begrüßungen werden übersprungen. Wirkt nicht bei Extrem, das keine Werkzeuge hat. Schalte es für allgemeine Fragen aus oder für ein Modell, das ohnehin selbst nachsieht.",
+            "allow_internet": "Standardmäßig aus. An erlaubt diesem Agenten in Admin-Chats Cursors Websuche, Seitenabruf und Shell. Aus entfernt alle drei, damit auch curl oder Skripte nicht ins Internet kommen. Chats normaler Benutzer und Sprachsatelliten bekommen sie nie.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat."
           }
         },
@@ -318,6 +324,9 @@
             "api_key": "API-Schlüssel",
             "model": "Modell",
             "effort": "Aufwand",
+            "low_token": "Tokenverbrauch reduzieren",
+            "check_house": "Zuerst in Home Assistant nachsehen",
+            "allow_internet": "Internetzugriff erlauben",
             "assist": "Zu Assist hinzufügen",
             "assist_stt": "Sprache-zu-Text anlegen",
             "stt_model": "Sprache-zu-Text-Modell",
@@ -331,6 +340,9 @@
             "api_key": "Schlüssel vom KI-Anbieter, nicht dein Home-Assistant-Login. [API-Schlüssel holen]({api_key_url})",
             "model": "Wähle eines oder gib eine ID ein. Leer lässt den Standard des Anbieters.",
             "effort": "Mehr Aufwand heißt mehr Nachdenken: bessere Antworten auf schwere Fragen, aber langsamer und mehr Tokens. Wird ignoriert, wenn das Modell es nicht unterstützt.",
+            "low_token": "Sendet mit jeder Nachricht weniger, um Geld zu sparen. Aus liefert die zuverlässigsten Antworten zu deinem Zuhause. Leicht behält weniger Chatverlauf. Mittel kürzt zusätzlich lange Nachrichten und Antworten und startet jede Runde nur mit den letzten Nachrichten. Extrem ist nur Chat: keine Werkzeuge, daher kann es das Haus weder prüfen noch steuern.",
+            "check_house": "Standardmäßig an. Bevor der Agent eine Frage zu deinem Zuhause beantwortet, sieht er in Home Assistant nach, damit Listen und Zustände echt sind und nicht geraten. Begrüßungen werden übersprungen. Wirkt nicht bei Extrem, das keine Werkzeuge hat. Schalte es für allgemeine Fragen aus oder für ein Modell, das ohnehin selbst nachsieht.",
+            "allow_internet": "Standardmäßig aus. An fügt in Admin-Chats Werkzeuge für Websuche und Seitenabruf hinzu. Adressen im lokalen Netzwerk bleiben gesperrt. Chats normaler Benutzer und Sprachsatelliten bekommen sie nie.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat.",
             "assist_stt": "Fügt in Home Assistant eine Sprache-zu-Text-Option mit dem Schlüssel dieses Assistenten hinzu. Aus entfernt, was er angelegt hat.",
             "stt_model": "Leer für den Standard des Anbieters. Optional einen anderen Modellnamen eingeben.",
@@ -347,12 +359,18 @@
             "api_base": "Ollama-URL",
             "model": "Modell",
             "effort": "Aufwand",
+            "low_token": "Tokenverbrauch reduzieren",
+            "check_house": "Zuerst in Home Assistant nachsehen",
+            "allow_internet": "Internetzugriff erlauben",
             "assist": "Zu Assist hinzufügen"
           },
           "data_description": {
             "api_base": "Meist {example_url}",
             "model": "Wähle eines oder gib einen gezogenen Modellnamen ein. Leer nutzt llama3.2.",
             "effort": "Mehr Aufwand heißt mehr Nachdenken: bessere Antworten auf schwere Fragen, aber langsamer und mehr Tokens. Wird ignoriert, wenn das Modell es nicht unterstützt.",
+            "low_token": "Sendet mit jeder Nachricht weniger, um Geld zu sparen. Aus liefert die zuverlässigsten Antworten zu deinem Zuhause. Leicht behält weniger Chatverlauf. Mittel kürzt zusätzlich lange Nachrichten und Antworten und startet jede Runde nur mit den letzten Nachrichten. Extrem ist nur Chat: keine Werkzeuge, daher kann es das Haus weder prüfen noch steuern.",
+            "check_house": "Standardmäßig an. Bevor der Agent eine Frage zu deinem Zuhause beantwortet, sieht er in Home Assistant nach, damit Listen und Zustände echt sind und nicht geraten. Begrüßungen werden übersprungen. Wirkt nicht bei Extrem, das keine Werkzeuge hat. Schalte es für allgemeine Fragen aus oder für ein Modell, das ohnehin selbst nachsieht.",
+            "allow_internet": "Standardmäßig aus. An fügt in Admin-Chats Werkzeuge für Websuche und Seitenabruf hinzu. Adressen im lokalen Netzwerk bleiben gesperrt. Chats normaler Benutzer und Sprachsatelliten bekommen sie nie.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat."
           }
         },
@@ -365,6 +383,9 @@
             "model": "Bereitstellung",
             "azure_api_version": "API-Version",
             "effort": "Aufwand",
+            "low_token": "Tokenverbrauch reduzieren",
+            "check_house": "Zuerst in Home Assistant nachsehen",
+            "allow_internet": "Internetzugriff erlauben",
             "assist": "Zu Assist hinzufügen"
           },
           "data_description": {
@@ -373,6 +394,9 @@
             "model": "Der Name der Bereitstellung.",
             "azure_api_version": "Standard lassen, außer Azure nennt dir eine andere Version.",
             "effort": "Mehr Aufwand heißt mehr Nachdenken: bessere Antworten auf schwere Fragen, aber langsamer und mehr Tokens. Wird ignoriert, wenn das Modell es nicht unterstützt.",
+            "low_token": "Sendet mit jeder Nachricht weniger, um Geld zu sparen. Aus liefert die zuverlässigsten Antworten zu deinem Zuhause. Leicht behält weniger Chatverlauf. Mittel kürzt zusätzlich lange Nachrichten und Antworten und startet jede Runde nur mit den letzten Nachrichten. Extrem ist nur Chat: keine Werkzeuge, daher kann es das Haus weder prüfen noch steuern.",
+            "check_house": "Standardmäßig an. Bevor der Agent eine Frage zu deinem Zuhause beantwortet, sieht er in Home Assistant nach, damit Listen und Zustände echt sind und nicht geraten. Begrüßungen werden übersprungen. Wirkt nicht bei Extrem, das keine Werkzeuge hat. Schalte es für allgemeine Fragen aus oder für ein Modell, das ohnehin selbst nachsieht.",
+            "allow_internet": "Standardmäßig aus. An fügt in Admin-Chats Werkzeuge für Websuche und Seitenabruf hinzu. Adressen im lokalen Netzwerk bleiben gesperrt. Chats normaler Benutzer und Sprachsatelliten bekommen sie nie.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat."
           }
         },
@@ -384,6 +408,9 @@
             "api_base": "API-Basis-URL",
             "model": "Modell",
             "effort": "Aufwand",
+            "low_token": "Tokenverbrauch reduzieren",
+            "check_house": "Zuerst in Home Assistant nachsehen",
+            "allow_internet": "Internetzugriff erlauben",
             "assist": "Zu Assist hinzufügen",
             "assist_stt": "Sprache-zu-Text anlegen",
             "stt_model": "Sprache-zu-Text-Modell",
@@ -397,6 +424,9 @@
             "api_base": "Serveradresse. /v1 anhängen, wenn dein Server das erwartet.",
             "model": "Modellname auf diesem Server.",
             "effort": "Mehr Aufwand heißt mehr Nachdenken: bessere Antworten auf schwere Fragen, aber langsamer und mehr Tokens. Wird ignoriert, wenn das Modell es nicht unterstützt.",
+            "low_token": "Sendet mit jeder Nachricht weniger, um Geld zu sparen. Aus liefert die zuverlässigsten Antworten zu deinem Zuhause. Leicht behält weniger Chatverlauf. Mittel kürzt zusätzlich lange Nachrichten und Antworten und startet jede Runde nur mit den letzten Nachrichten. Extrem ist nur Chat: keine Werkzeuge, daher kann es das Haus weder prüfen noch steuern.",
+            "check_house": "Standardmäßig an. Bevor der Agent eine Frage zu deinem Zuhause beantwortet, sieht er in Home Assistant nach, damit Listen und Zustände echt sind und nicht geraten. Begrüßungen werden übersprungen. Wirkt nicht bei Extrem, das keine Werkzeuge hat. Schalte es für allgemeine Fragen aus oder für ein Modell, das ohnehin selbst nachsieht.",
+            "allow_internet": "Standardmäßig aus. An fügt in Admin-Chats Werkzeuge für Websuche und Seitenabruf hinzu. Adressen im lokalen Netzwerk bleiben gesperrt. Chats normaler Benutzer und Sprachsatelliten bekommen sie nie.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat.",
             "assist_stt": "Fügt in Home Assistant eine Sprache-zu-Text-Option mit dem Schlüssel dieses Assistenten hinzu. Aus entfernt, was er angelegt hat.",
             "stt_model": "Leer für den Standard des Anbieters. Optional einen anderen Modellnamen eingeben.",

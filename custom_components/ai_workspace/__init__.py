@@ -18,6 +18,8 @@ from .agents import CursorAgent, entry_agents
 from .assist_pipelines import async_remove_assist_pipeline
 from .const import (
     CONF_CROSS_CHAT,
+    CONF_DEFAULT_AGENT,
+    CONF_MODEL_SWITCHER,
     CONF_ENABLE_DICTATE,
     CONF_ENABLE_OVERLAY,
     CONF_ENABLE_SIDEBAR,
@@ -49,6 +51,7 @@ from .const import (
     MCP_HA,
     MCP_HA_MCP,
     MODE_API,
+    CONF_MODE,
     MODE_CURSOR,
     OVERLAY_JS,
     PANEL_ELEMENT,
@@ -59,6 +62,9 @@ from .const import (
     SUBENTRY_AGENT,
     SUBENTRY_MCP,
     SUBENTRY_USAGE,
+    TOKEN_MODE_EXTREME,
+    TOKEN_MODE_LIGHT,
+    TOKEN_MODE_MEDIUM,
     TOKEN_MODE_OFF,
     TTS_OFF,
     token_mode_of,
@@ -183,11 +189,11 @@ async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
         track_usage=bool(data.get(CONF_TRACK_USAGE, True)),
         show_chat_usage=bool(data.get(CONF_SHOW_CHAT_USAGE, True)),
         ha_usage_sensors=bool(data.get(CONF_HA_USAGE_SENSORS, False)),
-        token_mode=_workspace_token_mode(entry, data),
         prompt_cache=_workspace_prompt_cache(entry, data),
-        check_house=_workspace_check_house(entry, data),
         ui_theme=ui_theme_of(data.get(CONF_UI_THEME)),
         cross_chat=bool(data.get(CONF_CROSS_CHAT, False)),
+        default_agent=str(data.get(CONF_DEFAULT_AGENT) or "").strip(),
+        model_switcher=bool(data.get(CONF_MODEL_SWITCHER, False)),
         keep_chats=_keep_chats(data),
         mode=MODE_API,
         system_prompt=str(data.get(CONF_SYSTEM_PROMPT) or "").strip(),
@@ -211,12 +217,13 @@ def _one_provider(hass: HomeAssistant, settings: Settings, agent, store):
         api_base=agent.api_base,
         model=agent.model,
         effort=agent.effort,
-        token_mode=settings.token_mode,
+        token_mode=agent.token_mode,
         prompt_cache=settings.prompt_cache,
-        check_house=settings.check_house,
+        check_house=agent.check_house,
         azure_api_version=agent.azure_api_version,
         agent_id=agent.id,
         agent_title=agent.title,
+        allow_internet=agent.allow_internet,
     )
     return ApiProvider(hass, agent_settings, store)
 
@@ -230,22 +237,39 @@ def _workspace_prompt_cache(entry: ConfigEntry, data: dict) -> bool:
     return True
 
 
-def _workspace_check_house(entry: ConfigEntry, data: dict) -> bool:
-    if CONF_CHECK_HOUSE in data or CONF_CHECK_HOUSE in (entry.options or {}):
-        return bool(data.get(CONF_CHECK_HOUSE, True))
-    agents = [agent for agent in entry_agents(entry) if agent.mode != MODE_CURSOR]
-    if agents and all(not agent.check_house for agent in agents):
-        return False
-    return True
+def _move_tuning_to_agents(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reduce token usage and Check the house used to be workspace-wide. Copy them onto each agent once.
 
-
-def _workspace_token_mode(entry: ConfigEntry, data: dict) -> str:
-    if CONF_LOW_TOKEN in data or CONF_LOW_TOKEN in (entry.options or {}):
-        return token_mode_of(data.get(CONF_LOW_TOKEN))
-    for agent in entry_agents(entry):
-        if agent.token_mode != TOKEN_MODE_OFF:
-            return agent.token_mode
-    return TOKEN_MODE_OFF
+    Cursor agents keep the defaults: the old workspace setting never applied to them.
+    """
+    old = {**entry.data, **entry.options}
+    if CONF_LOW_TOKEN not in old and CONF_CHECK_HOUSE not in old:
+        return
+    cloud = [agent for agent in entry_agents(entry) if agent.mode != MODE_CURSOR]
+    # Same fallbacks the old workspace setting used when only one of the two keys was saved.
+    if CONF_LOW_TOKEN in old:
+        mode = token_mode_of(old.get(CONF_LOW_TOKEN))
+    else:
+        mode = next((agent.token_mode for agent in cloud if agent.token_mode != TOKEN_MODE_OFF), TOKEN_MODE_OFF)
+    if CONF_CHECK_HOUSE in old:
+        check = bool(old.get(CONF_CHECK_HOUSE))
+    else:
+        check = not (cloud and all(not agent.check_house for agent in cloud))
+    # Light used to force the check on and Medium/Extreme force it off; keep what each agent did.
+    check = {TOKEN_MODE_LIGHT: True, TOKEN_MODE_MEDIUM: False, TOKEN_MODE_EXTREME: False}.get(mode, check)
+    for sub in list(entry.subentries.values()):
+        if sub.subentry_type != SUBENTRY_AGENT or str(sub.data.get(CONF_MODE) or "") == MODE_CURSOR:
+            continue
+        data = {**sub.data, CONF_LOW_TOKEN: mode, CONF_CHECK_HOUSE: check}
+        if data != dict(sub.data):
+            hass.config_entries.async_update_subentry(entry, sub, data=data)
+    moved = {CONF_LOW_TOKEN, CONF_CHECK_HOUSE}
+    hass.config_entries.async_update_entry(
+        entry,
+        data={key: value for key, value in entry.data.items() if key not in moved},
+        options={key: value for key, value in entry.options.items() if key not in moved},
+    )
+    _LOGGER.info("Moved Reduce token usage (%s) and Check the house (%s) onto each agent", mode, check)
 
 
 def _ensure_usage_subentry(hass: HomeAssistant, entry: ConfigEntry) -> str | None:
@@ -439,6 +463,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     yaml_conf = hass.data.get(YAML_STORAGE)
     if yaml_conf:
         await async_apply_yaml(hass, entry, yaml_conf)
+    _move_tuning_to_agents(hass, entry)
     settings = await _build_settings(hass, entry)
     await hass.async_add_executor_job(settings.ensure_dirs)
     store = await hass.async_add_executor_job(Store, settings.data_dir / "ai-workspace.sqlite")

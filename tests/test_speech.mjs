@@ -53,4 +53,13 @@ eq(
 const lightList = takeSpeech(list, false, true);
 eq(lightList.pieces.length, 1, "google-style flush still speaks a list without sentence punctuation");
 
+const steps = speechPlain("Here are the steps:\n1. Turn off the kitchen lights.\n2. Close the blinds\n3. Lock the door");
+eq(steps, "Here are the steps:\n1. Turn off the kitchen lights.\n2. Close the blinds.\n3. Lock the door.", "numbered items keep 1. and end with a period");
+for (const heavy of [false, true]) {
+  const spoken = takeSpeech(steps, heavy, true).pieces;
+  if (spoken.some((piece) => /^\d+\.$/.test(piece.trim()))) {
+    throw new Error(`a list number was spoken on its own: ${JSON.stringify(spoken)}`);
+  }
+}
+eq(takeSpeech("The kitchen is off. 2.", false, false).pieces.includes("2."), false, "hold a list number until its item arrives");
 console.log("ok");

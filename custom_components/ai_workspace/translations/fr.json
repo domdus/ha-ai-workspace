@@ -34,6 +34,8 @@
             "name": "Chat",
             "description": "Où le chat apparaît et qui peut l'utiliser.",
             "data": {
+              "default_agent": "Agent par défaut",
+              "model_switcher": "Afficher le sélecteur de modèle",
               "enable_sidebar": "Afficher AI Workspace dans la barre latérale",
               "enable_overlay": "Afficher le bouton IA flottant",
               "enable_dictate": "Afficher le bouton de dictée",
@@ -43,6 +45,8 @@
               "keep_chats": "Discussions à conserver"
             },
             "data_description": {
+              "default_agent": "Agent utilisé par une nouvelle discussion. Chaque discussion retient l'agent (et le modèle) utilisé en dernier. Dernier utilisé : l'agent choisi le plus récemment dans ce navigateur.",
+              "model_switcher": "Désactivé par défaut. Ajoute un sélecteur de modèle à côté du sélecteur d'agent, pour qu'une discussion utilise un autre modèle du même agent. Le modèle de l'agent reste celui par défaut.",
               "enable_sidebar": "Ajoute AI Workspace à la barre latérale de Home Assistant. Désactivé : les administrateurs peuvent toujours ouvrir /ai-workspace directement.",
               "enable_overlay": "Un bouton IA rond dans le coin de chaque page Home Assistant, pour poser une question sans quitter la page. Sur les pages Paramètres, il est placé plus haut pour ne pas cacher d’autres boutons.",
               "enable_dictate": "Bouton micro dans le champ de message. Masquez-le si vous ne dictez jamais.",
@@ -56,15 +60,11 @@
             "name": "Coûts et jetons",
             "description": "Ce que chaque message envoie et comment les dépenses sont suivies.",
             "data": {
-              "low_token": "Réduire la consommation de jetons",
-              "check_house": "Toujours vérifier la maison d'abord",
               "track_usage": "Suivre l’utilisation et les coûts",
               "show_chat_usage": "Afficher le coût dans l’en-tête du chat",
               "ha_usage_sensors": "Ajouter des capteurs d’utilisation Home Assistant"
             },
             "data_description": {
-              "low_token": "Envoie moins à chaque message pour économiser de l’argent avec les agents Cloud, Ollama et Azure (Cursor n’est pas concerné). Désactivé donne les réponses les plus fiables sur votre maison. Extreme sert uniquement à discuter et ne peut pas piloter la maison.",
-              "check_house": "Activé par défaut. L’assistant consulte Home Assistant avant de répondre aux questions sur votre maison, pour que listes et états soient réels, pas devinés. Les salutations sont ignorées. Avec « Réduire la consommation de jetons » sur Light, il vérifie toujours ; sur Medium et Extreme, jamais. Désactivez pour des questions générales ou un modèle qui vérifie déjà tout seul.",
               "track_usage": "Activé par défaut. Enregistre les jetons et le coût estimé après chaque réponse et les affiche sur la page Utilisation. Désactivé : plus de nouveaux enregistrements ; l’historique existant reste.",
               "show_chat_usage": "Activé par défaut. Affiche jetons et coût sous le titre du chat. Désactivé : seule cette ligne disparaît ; le suivi et la page Utilisation restent.",
               "ha_usage_sensors": "Désactivé par défaut. Utile seulement pour vos propres tableaux de bord ou automatisations : ajoute des capteurs de coût, de jetons et de tours sur un appareil Usage et sur chaque agent. La page Utilisation fonctionne sans eux. Désactiver supprime les capteurs."
@@ -143,6 +143,8 @@
             "name": "Chat",
             "description": "Où le chat apparaît et qui peut l'utiliser.",
             "data": {
+              "default_agent": "Agent par défaut",
+              "model_switcher": "Afficher le sélecteur de modèle",
               "enable_sidebar": "Afficher AI Workspace dans la barre latérale",
               "enable_overlay": "Afficher le bouton IA flottant",
               "enable_dictate": "Afficher le bouton de dictée",
@@ -152,6 +154,8 @@
               "keep_chats": "Discussions à conserver"
             },
             "data_description": {
+              "default_agent": "Agent utilisé par une nouvelle discussion. Chaque discussion retient l'agent (et le modèle) utilisé en dernier. Dernier utilisé : l'agent choisi le plus récemment dans ce navigateur.",
+              "model_switcher": "Désactivé par défaut. Ajoute un sélecteur de modèle à côté du sélecteur d'agent, pour qu'une discussion utilise un autre modèle du même agent. Le modèle de l'agent reste celui par défaut.",
               "enable_sidebar": "Ajoute AI Workspace à la barre latérale de Home Assistant. Désactivé : les administrateurs peuvent toujours ouvrir /ai-workspace directement.",
               "enable_overlay": "Un bouton IA rond dans le coin de chaque page Home Assistant, pour poser une question sans quitter la page. Sur les pages Paramètres, il est placé plus haut pour ne pas cacher d’autres boutons.",
               "enable_dictate": "Bouton micro dans le champ de message. Masquez-le si vous ne dictez jamais.",
@@ -165,15 +169,11 @@
             "name": "Coûts et jetons",
             "description": "Ce que chaque message envoie et comment les dépenses sont suivies.",
             "data": {
-              "low_token": "Réduire la consommation de jetons",
-              "check_house": "Toujours vérifier la maison d'abord",
               "track_usage": "Suivre l’utilisation et les coûts",
               "show_chat_usage": "Afficher le coût dans l’en-tête du chat",
               "ha_usage_sensors": "Ajouter des capteurs d’utilisation Home Assistant"
             },
             "data_description": {
-              "low_token": "Envoie moins à chaque message pour économiser de l’argent avec les agents Cloud, Ollama et Azure (Cursor n’est pas concerné). Désactivé donne les réponses les plus fiables sur votre maison. Extreme sert uniquement à discuter et ne peut pas piloter la maison.",
-              "check_house": "Activé par défaut. L’assistant consulte Home Assistant avant de répondre aux questions sur votre maison, pour que listes et états soient réels, pas devinés. Les salutations sont ignorées. Avec « Réduire la consommation de jetons » sur Light, il vérifie toujours ; sur Medium et Extreme, jamais. Désactivez pour des questions générales ou un modèle qui vérifie déjà tout seul.",
               "track_usage": "Activé par défaut. Enregistre les jetons et le coût estimé après chaque réponse et les affiche sur la page Utilisation. Désactivé : plus de nouveaux enregistrements ; l’historique existant reste.",
               "show_chat_usage": "Activé par défaut. Affiche jetons et coût sous le titre du chat. Désactivé : seule cette ligne disparaît ; le suivi et la page Utilisation restent.",
               "ha_usage_sensors": "Désactivé par défaut. Utile seulement pour vos propres tableaux de bord ou automatisations : ajoute des capteurs de coût, de jetons et de tours sur un appareil Usage et sur chaque agent. La page Utilisation fonctionne sans eux. Désactiver supprime les capteurs."
@@ -299,6 +299,9 @@
             "cursor_api_key": "Clé API Cursor",
             "model": "Modèle",
             "effort": "Effort",
+            "low_token": "Réduire la consommation de jetons",
+            "check_house": "Consulter d'abord Home Assistant",
+            "allow_internet": "Autoriser Internet",
             "assist": "Ajouter à Assist"
           },
           "data_description": {
@@ -307,6 +310,9 @@
             "cursor_api_key": "Depuis votre compte Cursor (Integrations). Laissez vide à la modification pour garder la clé enregistrée. [Obtenir une clé API]({api_key_url})",
             "model": "Choisissez dans la liste ou saisissez un nom de modèle. Vide utilise Composer.",
             "effort": "Combien de temps de réflexion autoriser. Composer utilise Rapide par défaut.",
+            "low_token": "Envoie moins avec chaque message pour économiser. Désactivé donne les réponses les plus fiables sur votre maison. Léger garde moins d'historique. Moyen raccourcit aussi les longs messages et réponses et commence chaque tour avec seulement les derniers messages. Extrême est uniquement conversationnel : aucun outil, il ne peut ni vérifier ni piloter la maison.",
+            "check_house": "Activé par défaut. Avant de répondre à une question sur votre maison, l'agent consulte Home Assistant, pour que listes et états soient réels et non devinés. Les salutations sont ignorées. Sans effet en Extrême, qui n'a pas d'outils. Désactivez-le pour des questions générales ou un modèle qui vérifie déjà de lui-même.",
+            "allow_internet": "Désactivé par défaut. Activé, cet agent peut utiliser la recherche web, la récupération de pages et le shell de Cursor dans les discussions admin. Désactivé retire les trois, donc curl ou des scripts ne peuvent pas non plus accéder au web. Les discussions des utilisateurs normaux et des satellites vocaux ne les ont jamais.",
             "assist": "Affiche aussi cet assistant sous Home Assistant Assist (voix). Désactivé : chat AI Workspace uniquement, et retire ce qu'il a ajouté à Assist."
           }
         },
@@ -318,6 +324,9 @@
             "api_key": "Clé API",
             "model": "Modèle",
             "effort": "Effort",
+            "low_token": "Réduire la consommation de jetons",
+            "check_house": "Consulter d'abord Home Assistant",
+            "allow_internet": "Autoriser Internet",
             "assist": "Ajouter à Assist",
             "assist_stt": "Ajouter parole vers texte",
             "stt_model": "Modèle parole vers texte",
@@ -331,6 +340,9 @@
             "api_key": "Votre clé chez le fournisseur d'IA, pas votre identifiant Home Assistant. [Obtenir une clé API]({api_key_url})",
             "model": "Choisissez dans la liste ou saisissez un nom de modèle. Vide utilise le défaut du fournisseur.",
             "effort": "Plus d’effort signifie plus de réflexion : de meilleures réponses aux questions difficiles, mais plus lent et plus de jetons. Ignoré si le modèle ne le prend pas en charge.",
+            "low_token": "Envoie moins avec chaque message pour économiser. Désactivé donne les réponses les plus fiables sur votre maison. Léger garde moins d'historique. Moyen raccourcit aussi les longs messages et réponses et commence chaque tour avec seulement les derniers messages. Extrême est uniquement conversationnel : aucun outil, il ne peut ni vérifier ni piloter la maison.",
+            "check_house": "Activé par défaut. Avant de répondre à une question sur votre maison, l'agent consulte Home Assistant, pour que listes et états soient réels et non devinés. Les salutations sont ignorées. Sans effet en Extrême, qui n'a pas d'outils. Désactivez-le pour des questions générales ou un modèle qui vérifie déjà de lui-même.",
+            "allow_internet": "Désactivé par défaut. Activé ajoute des outils de recherche web et de récupération de pages dans les discussions admin. Les adresses du réseau local restent bloquées. Les discussions des utilisateurs normaux et des satellites vocaux ne les ont jamais.",
             "assist": "Affiche aussi cet assistant sous Home Assistant Assist (voix). Désactivé : chat AI Workspace uniquement, et retire ce qu'il a ajouté à Assist.",
             "assist_stt": "Ajoute une option parole vers texte dans Home Assistant avec la clé de cet assistant. Désactivé retire ce qu'il a ajouté.",
             "stt_model": "Laissez vide pour le défaut du fournisseur. Vous pouvez saisir un autre nom de modèle.",
@@ -347,12 +359,18 @@
             "api_base": "URL Ollama",
             "model": "Modèle",
             "effort": "Effort",
+            "low_token": "Réduire la consommation de jetons",
+            "check_house": "Consulter d'abord Home Assistant",
+            "allow_internet": "Autoriser Internet",
             "assist": "Ajouter à Assist"
           },
           "data_description": {
             "api_base": "En général {example_url}",
             "model": "Choisissez dans la liste ou saisissez un modèle installé. Vide utilise llama3.2.",
             "effort": "Plus d’effort signifie plus de réflexion : de meilleures réponses aux questions difficiles, mais plus lent et plus de jetons. Ignoré si le modèle ne le prend pas en charge.",
+            "low_token": "Envoie moins avec chaque message pour économiser. Désactivé donne les réponses les plus fiables sur votre maison. Léger garde moins d'historique. Moyen raccourcit aussi les longs messages et réponses et commence chaque tour avec seulement les derniers messages. Extrême est uniquement conversationnel : aucun outil, il ne peut ni vérifier ni piloter la maison.",
+            "check_house": "Activé par défaut. Avant de répondre à une question sur votre maison, l'agent consulte Home Assistant, pour que listes et états soient réels et non devinés. Les salutations sont ignorées. Sans effet en Extrême, qui n'a pas d'outils. Désactivez-le pour des questions générales ou un modèle qui vérifie déjà de lui-même.",
+            "allow_internet": "Désactivé par défaut. Activé ajoute des outils de recherche web et de récupération de pages dans les discussions admin. Les adresses du réseau local restent bloquées. Les discussions des utilisateurs normaux et des satellites vocaux ne les ont jamais.",
             "assist": "Affiche aussi cet assistant sous Home Assistant Assist (voix). Désactivé : chat AI Workspace uniquement, et retire ce qu'il a ajouté à Assist."
           }
         },
@@ -365,6 +383,9 @@
             "model": "Déploiement",
             "azure_api_version": "Version de l'API",
             "effort": "Effort",
+            "low_token": "Réduire la consommation de jetons",
+            "check_house": "Consulter d'abord Home Assistant",
+            "allow_internet": "Autoriser Internet",
             "assist": "Ajouter à Assist"
           },
           "data_description": {
@@ -373,6 +394,9 @@
             "model": "Le nom du déploiement.",
             "azure_api_version": "Gardez la valeur par défaut sauf si le support Azure vous a donné une autre version.",
             "effort": "Plus d’effort signifie plus de réflexion : de meilleures réponses aux questions difficiles, mais plus lent et plus de jetons. Ignoré si le modèle ne le prend pas en charge.",
+            "low_token": "Envoie moins avec chaque message pour économiser. Désactivé donne les réponses les plus fiables sur votre maison. Léger garde moins d'historique. Moyen raccourcit aussi les longs messages et réponses et commence chaque tour avec seulement les derniers messages. Extrême est uniquement conversationnel : aucun outil, il ne peut ni vérifier ni piloter la maison.",
+            "check_house": "Activé par défaut. Avant de répondre à une question sur votre maison, l'agent consulte Home Assistant, pour que listes et états soient réels et non devinés. Les salutations sont ignorées. Sans effet en Extrême, qui n'a pas d'outils. Désactivez-le pour des questions générales ou un modèle qui vérifie déjà de lui-même.",
+            "allow_internet": "Désactivé par défaut. Activé ajoute des outils de recherche web et de récupération de pages dans les discussions admin. Les adresses du réseau local restent bloquées. Les discussions des utilisateurs normaux et des satellites vocaux ne les ont jamais.",
             "assist": "Affiche aussi cet assistant sous Home Assistant Assist (voix). Désactivé : chat AI Workspace uniquement, et retire ce qu'il a ajouté à Assist."
           }
         },
@@ -384,6 +408,9 @@
             "api_base": "URL de base de l'API",
             "model": "Modèle",
             "effort": "Effort",
+            "low_token": "Réduire la consommation de jetons",
+            "check_house": "Consulter d'abord Home Assistant",
+            "allow_internet": "Autoriser Internet",
             "assist": "Ajouter à Assist",
             "assist_stt": "Ajouter parole vers texte",
             "stt_model": "Modèle parole vers texte",
@@ -397,6 +424,9 @@
             "api_base": "Adresse du serveur. Ajoutez /v1 à la fin si votre serveur l'attend.",
             "model": "Nom du modèle sur ce serveur.",
             "effort": "Plus d’effort signifie plus de réflexion : de meilleures réponses aux questions difficiles, mais plus lent et plus de jetons. Ignoré si le modèle ne le prend pas en charge.",
+            "low_token": "Envoie moins avec chaque message pour économiser. Désactivé donne les réponses les plus fiables sur votre maison. Léger garde moins d'historique. Moyen raccourcit aussi les longs messages et réponses et commence chaque tour avec seulement les derniers messages. Extrême est uniquement conversationnel : aucun outil, il ne peut ni vérifier ni piloter la maison.",
+            "check_house": "Activé par défaut. Avant de répondre à une question sur votre maison, l'agent consulte Home Assistant, pour que listes et états soient réels et non devinés. Les salutations sont ignorées. Sans effet en Extrême, qui n'a pas d'outils. Désactivez-le pour des questions générales ou un modèle qui vérifie déjà de lui-même.",
+            "allow_internet": "Désactivé par défaut. Activé ajoute des outils de recherche web et de récupération de pages dans les discussions admin. Les adresses du réseau local restent bloquées. Les discussions des utilisateurs normaux et des satellites vocaux ne les ont jamais.",
             "assist": "Affiche aussi cet assistant sous Home Assistant Assist (voix). Désactivé : chat AI Workspace uniquement, et retire ce qu'il a ajouté à Assist.",
             "assist_stt": "Ajoute une option parole vers texte dans Home Assistant avec la clé de cet assistant. Désactivé retire ce qu'il a ajouté.",
             "stt_model": "Laissez vide pour le défaut du fournisseur. Vous pouvez saisir un autre nom de modèle.",

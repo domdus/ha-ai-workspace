@@ -25,6 +25,8 @@ from .agents import entry_agents
 from .const import (
     CONF_ALLOW_USERS,
     CONF_CROSS_CHAT,
+    CONF_DEFAULT_AGENT,
+    CONF_MODEL_SWITCHER,
     CONF_ENABLE_DICTATE,
     CONF_ENABLE_OVERLAY,
     CONF_ENABLE_SIDEBAR,
@@ -32,11 +34,9 @@ from .const import (
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
     CONF_CHANGE_HISTORY_TTL_DAYS,
-    CONF_CHECK_HOUSE,
     CONF_TRACK_USAGE,
     CONF_SHOW_CHAT_USAGE,
     CONF_HA_USAGE_SENSORS,
-    CONF_LOW_TOKEN,
     CONF_PROMPT_CACHE,
     CONF_UI_THEME,
     CONF_KEEP_CHATS,
@@ -67,12 +67,9 @@ from .const import (
     SUBENTRY_AGENT,
     SUBENTRY_MCP,
     SUBENTRY_USAGE,
-    TOKEN_MODE_OFF,
-    TOKEN_MODES,
     TTS_OFF,
     UI_THEME_HA_COMPONENTS,
     mcp_kind_options,
-    token_mode_of,
     ui_theme_of,
 )
 from .mcp_config import server_slug
@@ -100,14 +97,14 @@ _SHARED_KEYS = (
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
     CONF_CHANGE_HISTORY_TTL_DAYS,
-    CONF_CHECK_HOUSE,
     CONF_TRACK_USAGE,
     CONF_SHOW_CHAT_USAGE,
     CONF_HA_USAGE_SENSORS,
-    CONF_LOW_TOKEN,
     CONF_PROMPT_CACHE,
     CONF_UI_THEME,
     CONF_CROSS_CHAT,
+    CONF_DEFAULT_AGENT,
+    CONF_MODEL_SWITCHER,
     CONF_KEEP_CHATS,
     CONF_SPEAK_REPLIES,
     CONF_STT_ENGINE,
@@ -171,9 +168,27 @@ def _form_placeholders(*, mcp_url: str = "", mcp_auto: bool = False, none_found:
     }
 
 
-def _chat_schema(current: dict) -> vol.Schema:
+def _default_agent_field(current: dict, agents: list) -> dict:
+    """Agent new chats start with. Empty keeps the agent last picked in this browser."""
+    if not agents:
+        return {}
+    options = [{"value": "", "label": "Last used"}]
+    options.extend({"value": agent.id, "label": agent.title} for agent in agents)
+    saved = str(current.get(CONF_DEFAULT_AGENT) or "")
+    if saved not in {item["value"] for item in options}:
+        saved = ""
+    return {
+        vol.Optional(CONF_DEFAULT_AGENT, default=saved): SelectSelector(
+            SelectSelectorConfig(options=options, mode="dropdown")
+        )
+    }
+
+
+def _chat_schema(current: dict, agents: list | None = None) -> vol.Schema:
     return vol.Schema(
         {
+            **_default_agent_field(current, agents or []),
+            vol.Optional(CONF_MODEL_SWITCHER, default=bool(current.get(CONF_MODEL_SWITCHER, False))): cv.boolean,
             vol.Optional(CONF_ENABLE_SIDEBAR, default=current.get(CONF_ENABLE_SIDEBAR, True)): cv.boolean,
             vol.Optional(CONF_ENABLE_OVERLAY, default=current.get(CONF_ENABLE_OVERLAY, True)): cv.boolean,
             vol.Optional(CONF_ENABLE_DICTATE, default=current.get(CONF_ENABLE_DICTATE, True)): cv.boolean,
@@ -194,12 +209,6 @@ def _chat_schema(current: dict) -> vol.Schema:
 def _cost_schema(current: dict) -> vol.Schema:
     return vol.Schema(
         {
-            vol.Optional(
-                CONF_LOW_TOKEN, default=token_mode_of(current.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF))
-            ): SelectSelector(
-                SelectSelectorConfig(options=list(TOKEN_MODES), mode="dropdown", translation_key="low_token")
-            ),
-            vol.Optional(CONF_CHECK_HOUSE, default=bool(current.get(CONF_CHECK_HOUSE, True))): cv.boolean,
             vol.Optional(CONF_TRACK_USAGE, default=current.get(CONF_TRACK_USAGE, True)): cv.boolean,
             vol.Optional(CONF_SHOW_CHAT_USAGE, default=current.get(CONF_SHOW_CHAT_USAGE, True)): cv.boolean,
             vol.Optional(
@@ -264,8 +273,6 @@ def _normalize(user_input: dict, hass: HomeAssistant | None = None) -> dict:
         out[CONF_CHANGE_HISTORY_TTL_DAYS] = change_history_ttl_days(out[CONF_CHANGE_HISTORY_TTL_DAYS])
     if CONF_UI_THEME in out:
         out[CONF_UI_THEME] = ui_theme_of(out.get(CONF_UI_THEME))
-    if CONF_LOW_TOKEN in out:
-        out[CONF_LOW_TOKEN] = token_mode_of(out.get(CONF_LOW_TOKEN))
     return out
 
 
@@ -391,6 +398,7 @@ async def _shared_form(
     kinds: list[str] | None,
     *,
     include_mcp: bool,
+    agents: list | None = None,
 ) -> vol.Schema:
     stt = await async_speech_engines(hass, "stt")
     tts = await async_speech_engines(hass, "tts")
@@ -407,7 +415,7 @@ async def _shared_form(
     fields: dict = {}
     if include_mcp:
         fields[vol.Required(SECTION_MCP)] = section(_mcp_schema(defaults, hass, kinds or []), {"collapsed": False})
-    fields[vol.Required(SECTION_CHAT)] = section(_chat_schema(defaults), {"collapsed": False})
+    fields[vol.Required(SECTION_CHAT)] = section(_chat_schema(defaults, agents), {"collapsed": False})
     fields[vol.Optional(SECTION_VOICE, default=voice)] = _SideBySide(_voice_schema(voice, stt, tts))
     fields[vol.Required(SECTION_COST)] = section(_cost_schema(defaults), {"collapsed": False})
     fields[vol.Required(SECTION_HOUSE)] = section(_house_schema(defaults), {"collapsed": True})
@@ -544,24 +552,17 @@ class AiWorkspaceOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input=None):
         current = self._current()
-        if CONF_LOW_TOKEN not in current:
-            for agent in entry_agents(self.config_entry):
-                if agent.token_mode != TOKEN_MODE_OFF:
-                    current[CONF_LOW_TOKEN] = agent.token_mode
-                    break
         if CONF_PROMPT_CACHE not in current:
             agents = [agent for agent in entry_agents(self.config_entry) if agent.mode != MODE_CURSOR]
             if agents and all(not agent.prompt_cache for agent in agents):
                 current[CONF_PROMPT_CACHE] = False
-        if CONF_CHECK_HOUSE not in current:
-            agents = [agent for agent in entry_agents(self.config_entry) if agent.mode != MODE_CURSOR]
-            if agents and all(not agent.check_house for agent in agents):
-                current[CONF_CHECK_HOUSE] = False
         if user_input is not None:
             flat = _normalize(_flatten(user_input), self.hass)
             merged = {**current, **flat}
             return self.async_create_entry(title="", data=_stored_shared(merged))
         return self.async_show_form(
             step_id="init",
-            data_schema=await _shared_form(self.hass, current, None, include_mcp=False),
+            data_schema=await _shared_form(
+                self.hass, current, None, include_mcp=False, agents=entry_agents(self.config_entry)
+            ),
         )

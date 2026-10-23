@@ -34,6 +34,8 @@
             "name": "Chat",
             "description": "Where the chat appears and who can use it.",
             "data": {
+              "default_agent": "Default agent",
+              "model_switcher": "Show model switcher",
               "enable_sidebar": "Show AI Workspace in the sidebar",
               "enable_overlay": "Show floating AI button",
               "enable_dictate": "Show dictate button",
@@ -43,6 +45,8 @@
               "keep_chats": "Chats to keep"
             },
             "data_description": {
+              "default_agent": "Agent a new chat starts with. Each chat remembers the agent (and model) it last used. Last used: the agent you picked most recently in this browser.",
+              "model_switcher": "Off by default. Adds a model picker next to the agent picker, so one chat can use another model of the same agent. The agent's own model stays the default.",
               "enable_sidebar": "Adds AI Workspace to the Home Assistant sidebar. When off, administrators can still open /ai-workspace directly.",
               "enable_overlay": "A round AI button in the corner of every Home Assistant page, so you can ask without leaving the page. On Settings pages it sits higher so it does not cover other buttons.",
               "enable_dictate": "Microphone button in the message box. Hide it if you never dictate.",
@@ -56,15 +60,11 @@
             "name": "Cost and tokens",
             "description": "What each message sends and how spending is tracked.",
             "data": {
-              "low_token": "Reduce token usage",
-              "check_house": "Always check the house first",
               "track_usage": "Track usage and costs",
               "show_chat_usage": "Show cost in chat header",
               "ha_usage_sensors": "Add Home Assistant usage sensors"
             },
             "data_description": {
-              "low_token": "Sends less with each message to save money on Cloud, Ollama, and Azure agents (Cursor is not affected). Off gives the most reliable answers about your home. Extreme is chat only and cannot control the house.",
-              "check_house": "On by default. Cloud, Ollama, and Azure agents look at Home Assistant before answering questions about your home, so lists and states are real, not guessed. Greetings are skipped. Cursor is not affected. With Reduce token usage on Light it always checks; on Medium and Extreme it never does. Turn it off for general questions or for a model that already checks on its own.",
               "track_usage": "On by default. Records tokens and estimated cost after each reply and shows them on the Usage page. Off stops new records; existing history stays.",
               "show_chat_usage": "On by default. Shows tokens and cost under the chat title. Off hides only that line; tracking and the Usage page stay.",
               "ha_usage_sensors": "Off by default. Only needed for your own dashboards or automations: adds cost, token, and turn sensors on a Usage device and on each agent. The Usage page works without them. Turning this off removes the sensors."
@@ -143,6 +143,8 @@
             "name": "Chat",
             "description": "Where the chat appears and who can use it.",
             "data": {
+              "default_agent": "Default agent",
+              "model_switcher": "Show model switcher",
               "enable_sidebar": "Show AI Workspace in the sidebar",
               "enable_overlay": "Show floating AI button",
               "enable_dictate": "Show dictate button",
@@ -152,6 +154,8 @@
               "keep_chats": "Chats to keep"
             },
             "data_description": {
+              "default_agent": "Agent a new chat starts with. Each chat remembers the agent (and model) it last used. Last used: the agent you picked most recently in this browser.",
+              "model_switcher": "Off by default. Adds a model picker next to the agent picker, so one chat can use another model of the same agent. The agent's own model stays the default.",
               "enable_sidebar": "Adds AI Workspace to the Home Assistant sidebar. When off, administrators can still open /ai-workspace directly.",
               "enable_overlay": "A round AI button in the corner of every Home Assistant page, so you can ask without leaving the page. On Settings pages it sits higher so it does not cover other buttons.",
               "enable_dictate": "Microphone button in the message box. Hide it if you never dictate.",
@@ -165,15 +169,11 @@
             "name": "Cost and tokens",
             "description": "What each message sends and how spending is tracked.",
             "data": {
-              "low_token": "Reduce token usage",
-              "check_house": "Always check the house first",
               "track_usage": "Track usage and costs",
               "show_chat_usage": "Show cost in chat header",
               "ha_usage_sensors": "Add Home Assistant usage sensors"
             },
             "data_description": {
-              "low_token": "Sends less with each message to save money on Cloud, Ollama, and Azure agents (Cursor is not affected). Off gives the most reliable answers about your home. Extreme is chat only and cannot control the house.",
-              "check_house": "On by default. Cloud, Ollama, and Azure agents look at Home Assistant before answering questions about your home, so lists and states are real, not guessed. Greetings are skipped. Cursor is not affected. With Reduce token usage on Light it always checks; on Medium and Extreme it never does. Turn it off for general questions or for a model that already checks on its own.",
               "track_usage": "On by default. Records tokens and estimated cost after each reply and shows them on the Usage page. Off stops new records; existing history stays.",
               "show_chat_usage": "On by default. Shows tokens and cost under the chat title. Off hides only that line; tracking and the Usage page stay.",
               "ha_usage_sensors": "Off by default. Only needed for your own dashboards or automations: adds cost, token, and turn sensors on a Usage device and on each agent. The Usage page works without them. Turning this off removes the sensors."
@@ -299,6 +299,9 @@
             "cursor_api_key": "Cursor API key",
             "model": "Model",
             "effort": "Effort",
+            "low_token": "Reduce token usage",
+            "check_house": "Look at Home Assistant first",
+            "allow_internet": "Allow internet",
             "assist": "Add to Assist"
           },
           "data_description": {
@@ -307,6 +310,9 @@
             "cursor_api_key": "From your Cursor account (Integrations). Leave blank when editing to keep the saved key. [Get an API key]({api_key_url})",
             "model": "Pick from the list or type a model name. Empty uses Composer.",
             "effort": "How much thinking time to allow. Composer defaults to Fast.",
+            "low_token": "Sends less with each message to save money. Off gives the most reliable answers about your home. Light keeps less chat history. Medium also shortens long messages and replies and starts every turn with only the last few messages. Extreme is chat only: no tools, so it cannot check or change the house.",
+            "check_house": "On by default. Before answering a question about your home, the agent looks at Home Assistant, so lists and states are real, not guessed. Greetings are skipped. Has no effect on Extreme, which has no tools. Turn it off for general questions or for a model that already checks on its own.",
+            "allow_internet": "Off by default. On lets this agent use Cursor's web search, page fetch and shell in admin chats. Off removes all three, so curl or scripts cannot reach the web either. Chats from normal users and voice satellites never get them.",
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           }
         },
@@ -318,6 +324,9 @@
             "api_key": "API key",
             "model": "Model",
             "effort": "Effort",
+            "low_token": "Reduce token usage",
+            "check_house": "Look at Home Assistant first",
+            "allow_internet": "Allow internet",
             "assist": "Add to Assist",
             "assist_stt": "Add Speech-to-text",
             "stt_model": "Speech-to-text model",
@@ -331,6 +340,9 @@
             "api_key": "Your key from the AI provider, not your Home Assistant login. [Get an API key]({api_key_url})",
             "model": "Pick from the list or type a model name. Empty uses the provider default.",
             "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "low_token": "Sends less with each message to save money. Off gives the most reliable answers about your home. Light keeps less chat history. Medium also shortens long messages and replies and starts every turn with only the last few messages. Extreme is chat only: no tools, so it cannot check or change the house.",
+            "check_house": "On by default. Before answering a question about your home, the agent looks at Home Assistant, so lists and states are real, not guessed. Greetings are skipped. Has no effect on Extreme, which has no tools. Turn it off for general questions or for a model that already checks on its own.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist.",
             "assist_stt": "Adds a Speech-to-text option in Home Assistant using this assistant's key. Off removes what it added.",
             "stt_model": "Leave empty for the provider default. You can type another model name if yours offers one.",
@@ -347,12 +359,18 @@
             "api_base": "Ollama URL",
             "model": "Model",
             "effort": "Effort",
+            "low_token": "Reduce token usage",
+            "check_house": "Look at Home Assistant first",
+            "allow_internet": "Allow internet",
             "assist": "Add to Assist"
           },
           "data_description": {
             "api_base": "Usually {example_url}",
             "model": "Pick from the list or type a model you installed. Empty uses llama3.2.",
             "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "low_token": "Sends less with each message to save money. Off gives the most reliable answers about your home. Light keeps less chat history. Medium also shortens long messages and replies and starts every turn with only the last few messages. Extreme is chat only: no tools, so it cannot check or change the house.",
+            "check_house": "On by default. Before answering a question about your home, the agent looks at Home Assistant, so lists and states are real, not guessed. Greetings are skipped. Has no effect on Extreme, which has no tools. Turn it off for general questions or for a model that already checks on its own.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           }
         },
@@ -365,6 +383,9 @@
             "model": "Deployment",
             "azure_api_version": "API version",
             "effort": "Effort",
+            "low_token": "Reduce token usage",
+            "check_house": "Look at Home Assistant first",
+            "allow_internet": "Allow internet",
             "assist": "Add to Assist"
           },
           "data_description": {
@@ -373,6 +394,9 @@
             "model": "The deployment name.",
             "azure_api_version": "Leave the default unless Azure support gave you another version.",
             "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "low_token": "Sends less with each message to save money. Off gives the most reliable answers about your home. Light keeps less chat history. Medium also shortens long messages and replies and starts every turn with only the last few messages. Extreme is chat only: no tools, so it cannot check or change the house.",
+            "check_house": "On by default. Before answering a question about your home, the agent looks at Home Assistant, so lists and states are real, not guessed. Greetings are skipped. Has no effect on Extreme, which has no tools. Turn it off for general questions or for a model that already checks on its own.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           }
         },
@@ -384,6 +408,9 @@
             "api_base": "API base URL",
             "model": "Model",
             "effort": "Effort",
+            "low_token": "Reduce token usage",
+            "check_house": "Look at Home Assistant first",
+            "allow_internet": "Allow internet",
             "assist": "Add to Assist",
             "assist_stt": "Add Speech-to-text",
             "stt_model": "Speech-to-text model",
@@ -397,6 +424,9 @@
             "api_base": "Server address. Add /v1 at the end if your server expects that.",
             "model": "Model name on that server.",
             "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "low_token": "Sends less with each message to save money. Off gives the most reliable answers about your home. Light keeps less chat history. Medium also shortens long messages and replies and starts every turn with only the last few messages. Extreme is chat only: no tools, so it cannot check or change the house.",
+            "check_house": "On by default. Before answering a question about your home, the agent looks at Home Assistant, so lists and states are real, not guessed. Greetings are skipped. Has no effect on Extreme, which has no tools. Turn it off for general questions or for a model that already checks on its own.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist.",
             "assist_stt": "Adds a Speech-to-text option in Home Assistant using this assistant's key. Off removes what it added.",
             "stt_model": "Leave empty for the provider default. You can type another model name if yours offers one.",

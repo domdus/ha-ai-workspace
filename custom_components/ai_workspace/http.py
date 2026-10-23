@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 import hmac
 import ipaddress
 import json
 import logging
+from dataclasses import replace
 from urllib.parse import urlparse
 from typing import Any, AsyncIterator
 
@@ -28,9 +30,17 @@ from .const import (
     ha_mcp_is_connected,
     parse_ui_page,
     ui_theme_of,
+    CHECK_HOUSE_NOTE,
+    TOKEN_MODE_OFF,
     provider_token_mode,
     token_mode_allows_extras,
     token_mode_allows_files,
+    token_mode_allows_tools,
+    token_mode_checks_house,
+    token_mode_clip_user,
+    token_mode_fresh_agent,
+    token_mode_history_limit,
+    token_mode_reply_limit,
 )
 from .mcp_config import with_mcp_auth
 from .mcp_observe import last_mcp_result, note_mcp_result
@@ -62,6 +72,7 @@ def _session_dict(session: Session) -> dict:
         "provider": session.provider,
         "title": session.title,
         "agent_id": session.agent_id,
+        "model": session.model,
         "created_at": session.created_at,
         "updated_at": session.updated_at,
         "pinned": bool(getattr(session, "pinned", False)),
@@ -263,7 +274,11 @@ async def _runtime_chat(
     question: str = "",
     admin: bool = True,
     agent: str = "",
+    allow_internet: bool = False,
+    token_mode: str = TOKEN_MODE_OFF,
+    check_house: bool = True,
 ) -> AsyncIterator[dict]:
+    """One Cursor turn. Reduce token usage and Check the house work as on cloud agents."""
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
         yield {"type": "error", "message": "Cursor Runtime is not configured."}
@@ -279,14 +294,26 @@ async def _runtime_chat(
         return
     http: ClientSession = async_get_clientsession(hass)
     settings = _runtime(hass).get("settings")
-    standing = standing_chat_prompt(settings, admin=admin, language=language, origin=origin)
+    standing = standing_chat_prompt(settings, admin=admin, language=language, origin=origin, mode=token_mode)
+    if not token_mode_allows_files(token_mode):
+        images, files = [], []
+    clip = token_mode_clip_user(token_mode)
+    if clip:
+        message = message[:clip]
     user_text = attach_files_to_message(message, files or [])
+    asked = (question or message).strip()
+    if token_mode_checks_house(token_mode, check_house) and not images and wants_house_tools(asked):
+        user_text = f"{user_text}\n\n{CHECK_HOUSE_NOTE}"
     payload: dict[str, Any] = {
         "message": f"{standing}\n\n{user_text}" if standing else user_text,
         "question": (question or message).strip(),
         "origin": origin,
         "history_in_ha": True,
         "full_tools": _full_tools(user_id, admin),
+        "allow_internet": bool(allow_internet),
+        "fresh": token_mode_fresh_agent(token_mode),
+        "no_tools": not token_mode_allows_tools(token_mode),
+        "titles": token_mode_allows_extras(token_mode),
     }
     if standing:
         payload["prompt"] = standing
@@ -304,7 +331,7 @@ async def _runtime_chat(
     payload.update(_runtime_agent_overrides(hass, access_token=token, admin=admin))
     if model:
         payload["model"] = model
-    if effort:
+    if effort and token_mode_reply_limit(token_mode) is None:
         payload["effort"] = effort
     if api_key:
         payload["api_key"] = api_key
@@ -391,6 +418,9 @@ async def async_agent_events(
             question=question,
             admin=admin,
             agent=_agent_label(provider),
+            allow_internet=bool(getattr(provider, "allow_internet", False)),
+            token_mode=provider_token_mode(provider),
+            check_house=bool(getattr(provider, "check_house", True)),
         ):
             yield event
         return
@@ -410,6 +440,75 @@ async def async_agent_events(
         **(await _activity_kwargs(hass, provider, user_id, session.id)),
     ):
         yield event
+
+
+def _with_model(provider: Any, model: str) -> Any:
+    """The same agent with another model for one chat (model switcher). The shared agent is not changed."""
+    model = str(model or "").strip()
+    if provider is None or not model:
+        return provider
+    if getattr(provider, "kind", "") == "cursor":
+        if model == str(getattr(provider, "model", "") or ""):
+            return provider
+        clone = copy.copy(provider)
+        clone.model = model
+        return clone
+    settings = getattr(provider, "settings", None)
+    if settings is None or model == str(getattr(settings, "model", "") or ""):
+        return provider
+    # One copy per model, kept on the agent, so what it learns about that model (no effort,
+    # no streaming, no forced tool) survives between turns and does not leak from the default.
+    clones = provider.__dict__.setdefault("_model_clones", {})
+    clone = clones.get(model)
+    if clone is None:
+        fresh = type(provider)(provider.hass, replace(settings, model=model), provider.store)
+        clone = clones[model] = fresh
+    return clone
+
+
+async def _offered_model(hass: HomeAssistant, data: dict[str, Any], agent_id: str, model: str) -> str:
+    """A per-chat model only counts when the switcher is on and offers it for that agent."""
+    model = str(model or "").strip()
+    if not model or not getattr(data.get("settings"), "model_switcher", False):
+        return ""
+    from .agents import entry_agents
+    from .model_list import async_agent_models
+
+    agent = next((item for item in entry_agents(data["entry"]) if item.id == agent_id), None)
+    if agent is None:
+        return ""
+    return model if model in await async_agent_models(hass, agent) else ""
+
+
+def _default_agent(hass: HomeAssistant, data: dict[str, Any]) -> str:
+    """Configured default agent id. YAML may name it by title."""
+    wanted = str(getattr(data.get("settings"), "default_agent", "") or "").strip()
+    if not wanted:
+        return ""
+    rows = [item.info for item in (data.get("providers") or {}).values()]
+    for info in rows:
+        if info.id == wanted:
+            return info.id
+    for info in rows:
+        if (info.title or info.label).casefold() == wanted.casefold():
+            return info.id
+    for row in list_assist_agents(hass):
+        if wanted in {row.get("id"), row.get("label")}:
+            return str(row.get("id") or "")
+    return ""
+
+
+def _known_agent(hass: HomeAssistant, data: dict[str, Any], agent: str) -> bool:
+    return bool(agent) and (agent in (data.get("providers") or {}) or agent in assist_agent_ids(hass))
+
+
+def handoff_rows(rows: list, mode: str) -> list:
+    """Medium and Extreme start a fresh Cursor agent each turn; hand over only as much as a cloud agent gets."""
+    if not token_mode_fresh_agent(mode):
+        return rows
+    limit = token_mode_history_limit(mode)
+    turns = [row for row in rows if str(getattr(row, "role", "") or "") in {"user", "assistant"}]
+    return turns[-(limit + 1) :] if limit else turns[-1:]
 
 
 def _send_provider(data: dict[str, Any], session: Session):
@@ -520,7 +619,8 @@ class UiView(HomeAssistantView):
 
     async def get(self, request: web.Request) -> web.Response:
         user = _signed_in(request)
-        settings = _runtime(_hass(request))["settings"]
+        runtime = _runtime(_hass(request))
+        settings = runtime["settings"]
         from .voice import overlay_tts_heavy
 
         return self.json(
@@ -536,6 +636,8 @@ class UiView(HomeAssistantView):
                 "track_usage": bool(getattr(settings, "track_usage", True)),
                 "show_chat_usage": bool(getattr(settings, "show_chat_usage", True)),
                 "ui_theme": ui_theme_of(getattr(settings, "ui_theme", "standard")),
+                "default_agent": _default_agent(_hass(request), runtime),
+                "model_switcher": bool(getattr(settings, "model_switcher", False)),
             }
         )
 
@@ -584,6 +686,31 @@ class ProvidersView(HomeAssistantView):
         return self.json(rows)
 
 
+class ModelsView(HomeAssistantView):
+    """Models the chat model switcher offers for one agent."""
+
+    url = "/api/ai_workspace/models"
+    name = "api:ai_workspace:models"
+    requires_auth = True
+
+    async def get(self, request: web.Request) -> web.Response:
+        _user_id(request)
+        hass = _hass(request)
+        data = _runtime(hass)
+        from .agents import entry_agents
+        from .model_list import async_agent_models
+
+        wanted = str(request.query.get("agent_id") or "").strip()
+        agent = next((item for item in entry_agents(data["entry"]) if item.id == wanted), None)
+        if agent is None:
+            return self.json({"agent_id": wanted, "default": "", "models": []})
+        models = await async_agent_models(hass, agent)
+        info = getattr((data.get("providers") or {}).get(agent.id), "info", None)
+        return self.json(
+            {"agent_id": agent.id, "default": getattr(info, "model", "") or (models[0] if models else ""), "models": models}
+        )
+
+
 class SessionsView(HomeAssistantView):
     url = "/api/ai_workspace/sessions"
     name = "api:ai_workspace:sessions"
@@ -602,7 +729,7 @@ class SessionsView(HomeAssistantView):
         data = _runtime(hass)
         providers = data.get("providers") or {}
         known_assist = assist_agent_ids(hass)
-        provider = str(body.get("provider") or body.get("agent") or "")
+        provider = str(body.get("provider") or body.get("agent") or "") or _default_agent(hass, data)
         if provider not in providers and provider not in known_assist:
             provider = next((item.info.id for item in providers.values() if item.info.available), "")
         if not provider:
@@ -619,6 +746,9 @@ class SessionsView(HomeAssistantView):
         session = await hass.async_add_executor_job(
             store.create_session, user_id, provider, session_id
         )
+        model = await _offered_model(hass, data, provider, str(body.get("model") or ""))
+        if model:
+            session = await hass.async_add_executor_job(store.set_choice, user_id, session.id, provider, model) or session
         await _prune_user_chats(hass, store, user_id, request)
         return self.json(_session_dict(session), status_code=201)
 
@@ -662,6 +792,17 @@ class SessionView(HomeAssistantView):
                 session = await hass.async_add_executor_job(store.get_session, user_id, session_id) or session
         if title:
             session = await hass.async_add_executor_job(store.rename_session, user_id, session_id, title)
+        agent = str(body.get("provider") or body.get("agent") or "").strip()
+        if agent or "model" in body:
+            data = _runtime(hass)
+            if agent and not _known_agent(hass, data, agent):
+                raise web.HTTPBadRequest(text="Unknown agent.")
+            agent = agent or session.provider
+            # A model belongs to its agent: switching agents falls back to that agent's own model.
+            model = await _offered_model(hass, data, agent, str(body.get("model") or "")) if "model" in body else ""
+            if agent == session.provider and "model" not in body:
+                model = session.model
+            session = await hass.async_add_executor_job(store.set_choice, user_id, session_id, agent, model) or session
         return self.json(_session_dict(session))
 
     async def delete(self, request: web.Request, session_id: str) -> web.Response:
@@ -778,9 +919,17 @@ class ChatView(HomeAssistantView):
         requested = str(body.get("agent") or body.get("provider") or session.provider)
         providers = data.get("providers") or {}
         known_assist = assist_agent_ids(hass)
+        model = session.model
         if requested and (requested in providers or requested in known_assist) and requested != session.provider:
             await hass.async_add_executor_job(store.set_provider, user_id, session.id, requested)
             session.provider = requested
+            model = ""
+        switcher = bool(getattr(settings, "model_switcher", False))
+        if switcher and "model" in body:
+            model = await _offered_model(hass, data, session.provider, str(body.get("model") or ""))
+        if model != session.model:
+            await hass.async_add_executor_job(store.set_choice, user_id, session.id, session.provider, model)
+            session.model = model
         assist = session.provider in known_assist
         if not assist and any(
             getattr(item, "kind", "") == "cursor" and not item.info.available for item in providers.values()
@@ -788,6 +937,8 @@ class ChatView(HomeAssistantView):
             await async_bind_runtime(hass, data, force=True)
             providers = data.get("providers") or {}
         provider = None if assist else (providers.get(session.provider) or _send_provider(data, session))
+        if switcher and provider is not None and provider is providers.get(session.provider):
+            provider = _with_model(provider, session.model)
         token_mode = provider_token_mode(provider)
         extras = token_mode_allows_extras(token_mode)
         origin = _frontend_origin(request, body)
@@ -816,7 +967,7 @@ class ChatView(HomeAssistantView):
         handoff = ""
         if assist or getattr(provider, "kind", "") == "cursor":
             rows = await hass.async_add_executor_job(store.list_messages, session.id)
-            handoff = handoff_note(rows, session.title)
+            handoff = handoff_note(handoff_rows(rows, token_mode), session.title)
             if getattr(provider, "kind", "") == "cursor":
                 logger.info(
                     "cursor handoff session=%s prior=%s chars=%s",
@@ -866,6 +1017,9 @@ class ChatView(HomeAssistantView):
                     question=message,
                     admin=admin,
                     agent=_agent_label(provider),
+                    allow_internet=bool(getattr(provider, "allow_internet", False)),
+                    token_mode=token_mode,
+                    check_house=bool(getattr(provider, "check_house", True)),
                 ):
                     yield event
                 return
@@ -1502,6 +1656,7 @@ def register_views(hass: HomeAssistant) -> None:
     hass.http.register_view(UiView)
     hass.http.register_view(UsageView)
     hass.http.register_view(ProvidersView)
+    hass.http.register_view(ModelsView)
     hass.http.register_view(SpeechView)
     hass.http.register_view(SpeakView)
     hass.http.register_view(SessionsView)

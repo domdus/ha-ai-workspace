@@ -5,18 +5,23 @@ LiteLLM keeps a community-maintained list of model prices:
 https://github.com/BerriAI/litellm (model_prices_and_context_window.json, MIT).
 We keep only the providers AI Workspace talks to and only the cost fields.
 
-Usage: python3 scripts/sync_model_prices.py [path-or-url]
+It also writes model_catalog.json: the chat model ids each provider offers, used
+as suggestions in the agent forms when the provider's own list cannot be fetched.
+
+Usage: python3 scripts/sync_model_prices.py [--catalog-only] [path-or-url]
 """
 
 from __future__ import annotations
 
 import json
+import re
 import sys
 import urllib.request
 from pathlib import Path
 
 SOURCE = "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json"
 OUT = Path(__file__).resolve().parents[1] / "custom_components" / "ai_workspace" / "model_prices.json"
+CATALOG = OUT.with_name("model_catalog.json")
 
 # First provider wins when two list the same model name.
 PROVIDERS = ("openai", "anthropic", "gemini", "xai", "deepseek", "dashscope", "mistral")
@@ -30,6 +35,27 @@ FIELDS = {
 # Speech priced per second is turned into per character (about 15 spoken characters per second).
 CHARS_PER_SECOND = 15
 CHARS_PER_TOKEN = 4
+
+
+# LiteLLM provider -> AI Workspace provider whose model dropdown lists it.
+CATALOG_PROVIDERS = {
+    "openai": "openai",
+    "anthropic": "anthropic",
+    "gemini": "gemini",
+    "xai": "xai",
+    "deepseek": "deepseek",
+    "dashscope": "qwen",
+    "openrouter": "openrouter",
+    "ollama": "ollama",
+}
+# Dated snapshots and non-chat variants make the dropdowns noisy; they can still be typed in.
+_SKIP = re.compile(
+    r"(-\d{4}-\d{2}-\d{2}|-\d{8}|-\d{2}-\d{4}|-\d{4}|-\d{3})$"
+    r"|audio|realtime|tts|transcribe|search|image|embed|moderation|computer-use|robotics"
+    r"|deep-research|experimental|-exp|preview-\d|gv2|customtools|vision-exp|lyria|-\d{4}-"
+)
+# Kept as-is on regenerate: the Cursor SDK lists its own models (scripts cannot reach it without a key).
+_KEEP = ("cursor",)
 
 
 def _load(where: str) -> dict:
@@ -86,6 +112,44 @@ def build(raw: dict) -> dict:
     return {"source": SOURCE, "models": dict(sorted(models.items())), "speech": dict(sorted(speech.items()))}
 
 
+def _natural(name: str) -> list:
+    return [int(part) if part.isdigit() else part for part in re.split(r"(\d+)", name)]
+
+
+def build_catalog(raw: dict, previous: dict | None = None) -> dict[str, list[str]]:
+    found: dict[str, set[str]] = {}
+    for key, row in raw.items():
+        if not isinstance(row, dict) or row.get("mode") not in CHAT_MODES:
+            continue
+        target = CATALOG_PROVIDERS.get(str(row.get("litellm_provider") or ""))
+        if not target:
+            continue
+        name = key.strip()
+        prefix = f"{row['litellm_provider']}/"
+        if name.startswith(prefix):
+            name = name[len(prefix):]
+        if target != "openrouter":
+            name = _name(name)
+        if not name or _SKIP.search(name.lower()):
+            continue
+        found.setdefault(target, set()).add(name)
+    out = {kind: sorted(names, key=_natural, reverse=True) for kind, names in sorted(found.items())}
+    for kind in _KEEP:
+        if previous and previous.get(kind):
+            out[kind] = previous[kind]
+    return dict(sorted(out.items()))
+
+
+def dump_catalog(data: dict[str, list[str]]) -> str:
+    lines = ["{"]
+    items = list(data.items())
+    for i, (kind, names) in enumerate(items):
+        comma = "," if i < len(items) - 1 else ""
+        lines.append(f"  {json.dumps(kind)}: {json.dumps(names)}{comma}")
+    lines.append("}")
+    return "\n".join(lines) + "\n"
+
+
 def dump(data: dict) -> str:
     lines = ["{", f'  "source": {json.dumps(data["source"])},']
     for section in ("models", "speech"):
@@ -100,7 +164,15 @@ def dump(data: dict) -> str:
 
 
 def main() -> int:
-    data = build(_load(sys.argv[1] if len(sys.argv) > 1 else SOURCE))
+    args = [arg for arg in sys.argv[1:] if not arg.startswith("--")]
+    raw = _load(args[0] if args else SOURCE)
+    previous = json.loads(CATALOG.read_text(encoding="utf-8")) if CATALOG.is_file() else None
+    catalog = build_catalog(raw, previous)
+    CATALOG.write_text(dump_catalog(catalog), encoding="utf-8")
+    print(f"Wrote {sum(len(v) for v in catalog.values())} model ids for {len(catalog)} providers to {CATALOG}")
+    if "--catalog-only" in sys.argv:
+        return 0
+    data = build(raw)
     if len(data["models"]) < 100:
         print(f"Only {len(data['models'])} models found; refusing to overwrite.", file=sys.stderr)
         return 1

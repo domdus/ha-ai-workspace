@@ -720,6 +720,9 @@ export async function mountAiWorkspace(root, options = {}) {
   const agentTriggerMarkup = haUi
     ? `<ha-button type="button" class="agent-trigger" slot="trigger" appearance="plain" size="s" aria-haspopup="menu" aria-expanded="false" aria-label="${t("agent")}"><span class="agent-trigger-label"></span><ha-icon slot="end" icon="mdi:chevron-down"></ha-icon></ha-button>`
     : `<button type="button" class="agent-trigger" slot="trigger" aria-haspopup="menu" aria-expanded="false" aria-label="${t("agent")}"><span class="agent-trigger-label"></span><ha-icon icon="mdi:chevron-down"></ha-icon></button>`;
+  const modelTriggerMarkup = haUi
+    ? `<ha-button type="button" class="agent-trigger model-trigger" slot="trigger" appearance="plain" size="s" aria-haspopup="menu" aria-expanded="false" aria-label="${t("model")}"><span class="agent-trigger-label model-trigger-label"></span><ha-icon slot="end" icon="mdi:chevron-down"></ha-icon></ha-button>`
+    : `<button type="button" class="agent-trigger model-trigger" slot="trigger" aria-haspopup="menu" aria-expanded="false" aria-label="${t("model")}"><span class="agent-trigger-label model-trigger-label"></span><ha-icon icon="mdi:chevron-down"></ha-icon></button>`;
   root.innerHTML = `
     ${themeCss}
     <div class="${wrapClass}">
@@ -783,6 +786,9 @@ export async function mountAiWorkspace(root, options = {}) {
                 <ha-dropdown class="agent-menu" placement="top-start">
                   ${agentTriggerMarkup}
                 </ha-dropdown>
+                <ha-dropdown class="model-menu" placement="top-start" hidden>
+                  ${modelTriggerMarkup}
+                </ha-dropdown>
               </div>
             </${composerTag}>` : `<${composerTag} class="composer-box">
               <div class="next-row" hidden>
@@ -795,6 +801,9 @@ export async function mountAiWorkspace(root, options = {}) {
             <div class="agent-picker" hidden>
               <ha-dropdown class="agent-menu" placement="top-start">
                 ${agentTriggerMarkup}
+              </ha-dropdown>
+              <ha-dropdown class="model-menu" placement="top-start" hidden>
+                ${modelTriggerMarkup}
               </ha-dropdown>
             </div>`}
           </form>
@@ -854,9 +863,12 @@ export async function mountAiWorkspace(root, options = {}) {
     }
   }
   const agentPicker = root.querySelector(".agent-picker");
-  const agentTrigger = root.querySelector(".agent-trigger");
-  const agentLabel = root.querySelector(".agent-trigger-label");
+  const agentTrigger = root.querySelector(".agent-menu .agent-trigger");
+  const agentLabel = root.querySelector(".agent-menu .agent-trigger-label");
   const agentMenu = root.querySelector(".agent-menu");
+  const modelMenu = root.querySelector(".model-menu");
+  const modelTrigger = root.querySelector(".model-trigger");
+  const modelLabel = root.querySelector(".model-trigger-label");
   const fileInput = form.querySelector(".file-input");
   const attachRow = root.querySelector(".attach-row");
   const nextRow = root.querySelector(".next-row");
@@ -1034,6 +1046,9 @@ export async function mountAiWorkspace(root, options = {}) {
   let jumping = false;
   let jumpTimer = 0;
   let lastScrollTop = 0;
+  // Last chat position we accepted, and when the user last typed in the prompt (see typingGuard).
+  let acceptedTop = 0;
+  let typingAt = 0;
   let followRaf = 0;
   let followLast = 0;
   let motionTimer = 0;
@@ -1847,6 +1862,21 @@ export async function mountAiWorkspace(root, options = {}) {
     });
   }
 
+  // Phones scroll the chat to reveal the caret on every key. The prompt is sticky inside the
+  // chat, so the caret never moves and the chat creeps toward the bottom key by key.
+  function typingGuard() {
+    return !keepComposerFocus() && composerFocused() && performance.now() - typingAt < 600 && !isUserScroll();
+  }
+
+  function restoreTypingScroll() {
+    scrollLock += 1;
+    chatEl.scrollTop = acceptedTop;
+    lastScrollTop = chatEl.scrollTop;
+    requestAnimationFrame(() => {
+      scrollLock = Math.max(0, scrollLock - 1);
+    });
+  }
+
   function markUserScroll() {
     userScrollAt = performance.now();
   }
@@ -1892,6 +1922,7 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function jumpToBottom() {
+    typingAt = 0;
     clipToBottom();
     jumping = true;
     syncScrollBottomBtn();
@@ -2226,12 +2257,106 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   let defaultProvider = "api";
-  let agentId = "";
+  // Agent and model of the open chat; "" means new chat: default agent, the agent's own model.
+  let chatAgent = "";
+  let chatModel = "";
+  let defaultAgentId = "";
+  let modelSwitcher = false;
+  let providerItems = [];
+  const modelLists = new Map();
   let voice = { dictate: true, stt: "browser", speak: false, tts: false, ttsHeavy: false, ttsNatural: true };
   let turnHasHistory = false;
 
+  function knownAgent(id) {
+    return Boolean(id) && providerItems.some((item) => item.id === id);
+  }
+
   function selectedAgent() {
-    return agentId || defaultProvider;
+    if (knownAgent(chatAgent)) return chatAgent;
+    if (!providerItems.length) return chatAgent || defaultProvider;
+    const last = localStorage.getItem("ai_workspace_agent") || "";
+    const pick = pickAgent(providerItems, knownAgent(defaultAgentId) ? defaultAgentId : last);
+    return pick?.id || defaultProvider;
+  }
+
+  function agentText(item) {
+    if (!item) return "";
+    if (item.kind === "assist") return item.label;
+    const title = item.title || item.label;
+    return modelSwitcher || !item.model ? title : `${title} / ${item.model}`;
+  }
+
+  function setChatChoice(agent, model) {
+    chatAgent = agent || "";
+    chatModel = model || "";
+    renderAgentPicker();
+  }
+
+  function saveChatChoice(body) {
+    if (!sessionId || freshChat) return;
+    apiFetch(`${API}/sessions/${sessionId}`, { method: "PATCH", body: JSON.stringify(body) });
+  }
+
+  function renderAgentPicker() {
+    if (!agentPicker || !agentMenu || !agentLabel) return;
+    const current = selectedAgent();
+    const item = providerItems.find((row) => row.id === current);
+    const ready = agentChoices(providerItems);
+    const models = modelSwitcher && item && item.kind !== "assist";
+    agentPicker.hidden = ready.length < 2 && !models;
+    agentMenu.hidden = ready.length < 2 && !models;
+    agentLabel.textContent = agentText(item);
+    agentMenu.querySelectorAll("ha-dropdown-item").forEach((node) => node.remove());
+    for (const row of providerItems) {
+      const option = document.createElement("ha-dropdown-item");
+      option.value = row.id;
+      option.disabled = !row.available;
+      option.selected = row.id === current;
+      if (!row.available) option.setAttribute("disabled", "");
+      if (row.id === current) option.setAttribute("selected", "");
+      option.textContent = agentText(row);
+      agentMenu.appendChild(option);
+    }
+    renderModelPicker();
+  }
+
+  function agentModels(id) {
+    let list = modelLists.get(id);
+    if (!list) {
+      list = apiFetch(`${API}/models?agent_id=${encodeURIComponent(id)}`)
+        .then((response) => (response?.ok ? response.json() : null))
+        .catch(() => null);
+      modelLists.set(id, list);
+      list.then((body) => {
+        if (!body?.models?.length) modelLists.delete(id);
+      });
+    }
+    return list;
+  }
+
+  async function renderModelPicker() {
+    if (!modelMenu || !modelLabel) return;
+    const id = selectedAgent();
+    const item = providerItems.find((row) => row.id === id);
+    const show = modelSwitcher && item && item.kind !== "assist";
+    modelMenu.hidden = !show;
+    if (!show) return;
+    modelLabel.textContent = chatModel || item.model || "";
+    const body = await agentModels(id);
+    if (id !== selectedAgent()) return;
+    const current = chatModel || body?.default || item.model || "";
+    const names = [...(body?.models || [])];
+    if (current && !names.includes(current)) names.unshift(current);
+    modelLabel.textContent = current;
+    modelMenu.querySelectorAll("ha-dropdown-item").forEach((node) => node.remove());
+    for (const name of names) {
+      const option = document.createElement("ha-dropdown-item");
+      option.value = name;
+      option.selected = name === current;
+      if (name === current) option.setAttribute("selected", "");
+      option.textContent = name;
+      modelMenu.appendChild(option);
+    }
   }
 
   function agentChoices(items) {
@@ -2259,24 +2384,9 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!response?.ok) return;
     const items = await response.json();
     const ready = agentChoices(items);
-    const previous = agentId || localStorage.getItem("ai_workspace_agent") || "";
-    const pick = pickAgent(items, previous);
-    agentId = pick?.id || "";
-    if (agentPicker && agentMenu && agentLabel) {
-      agentPicker.hidden = ready.length < 2;
-      agentLabel.textContent = pick?.label || "";
-      agentMenu.querySelectorAll("ha-dropdown-item").forEach((node) => node.remove());
-      for (const item of items) {
-        const option = document.createElement("ha-dropdown-item");
-        option.value = item.id;
-        option.disabled = !item.available;
-        option.selected = item.id === agentId;
-        if (!item.available) option.setAttribute("disabled", "");
-        if (item.id === agentId) option.setAttribute("selected", "");
-        option.textContent = item.label;
-        agentMenu.appendChild(option);
-      }
-    }
+    providerItems = items;
+    modelLists.clear();
+    renderAgentPicker();
     const chosen = items.find((item) => item.id === selectedAgent()) || ready[0] || items[0];
     if (chosen?.id) defaultProvider = chosen.id;
     if (chosen && !chosen.available) {
@@ -2648,7 +2758,7 @@ export async function mountAiWorkspace(root, options = {}) {
     const mark = streamToken;
     const created = await apiFetch(`${API}/sessions`, {
       method: "POST",
-      body: JSON.stringify({ provider: selectedAgent() }),
+      body: JSON.stringify({ provider: selectedAgent(), model: modelSwitcher ? chatModel : "" }),
     });
     if (!created?.ok) throw new Error(await errorText(created));
     const session = await created.json();
@@ -2658,6 +2768,7 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     sessionId = session.id;
     freshChat = false;
+    chatAgent = session.provider || chatAgent;
     bumpSession(session.id, session.title, session.pinned);
     goToSession(sessionId, true);
     if (compact) localStorage.setItem("ai_workspace_session", sessionId);
@@ -2691,6 +2802,7 @@ export async function mountAiWorkspace(root, options = {}) {
       routeGen += 1;
       sessionId = "";
       freshChat = true;
+      setChatChoice("", "");
       titleEl.textContent = t("new_chat");
       showEmpty();
       if (!fromUrl) goToSession("");
@@ -2714,6 +2826,7 @@ export async function mountAiWorkspace(root, options = {}) {
     if (compact) localStorage.setItem("ai_workspace_session", id);
     if (!fromUrl) goToSession(id);
     const session = await response.json();
+    setChatChoice(session.provider, session.model);
     paintSession(session);
     if (!sessionsEl?.querySelector(".session-row")) await loadSessions();
     selectSessionRow(id);
@@ -3192,16 +3305,24 @@ export async function mountAiWorkspace(root, options = {}) {
     const picked = event.detail?.item;
     const id = picked?.value;
     if (!id || picked.disabled) return;
-    agentId = id;
-    localStorage.setItem("ai_workspace_agent", agentId);
-    defaultProvider = agentId;
-    const label = picked.textContent.replace(/\s+/g, " ").trim();
-    if (agentLabel && label) agentLabel.textContent = label;
-    agentMenu.querySelectorAll("ha-dropdown-item").forEach((other) => {
-      const on = other.value === agentId;
-      other.selected = on;
-      other.toggleAttribute("selected", on);
-    });
+    localStorage.setItem("ai_workspace_agent", id);
+    defaultProvider = id;
+    setChatChoice(id, "");
+    saveChatChoice({ provider: id, model: "" });
+  });
+  modelMenu?.addEventListener("wa-select", (event) => {
+    const name = event.detail?.item?.value;
+    if (!name) return;
+    const item = providerItems.find((row) => row.id === selectedAgent());
+    chatModel = name === item?.model ? "" : name;
+    renderModelPicker();
+    saveChatChoice({ model: chatModel });
+  });
+  modelMenu?.addEventListener("wa-show", () => {
+    modelTrigger?.setAttribute("aria-expanded", "true");
+  });
+  modelMenu?.addEventListener("wa-hide", () => {
+    modelTrigger?.setAttribute("aria-expanded", "false");
   });
   agentMenu?.addEventListener("wa-show", () => {
     agentTrigger?.setAttribute("aria-expanded", "true");
@@ -3683,6 +3804,13 @@ export async function mountAiWorkspace(root, options = {}) {
         historyOn = body.change_history !== false;
         usageOn = body.track_usage !== false;
         headerUsageOn = body.show_chat_usage !== false;
+        const nextDefault = String(body.default_agent || "");
+        const nextSwitcher = body.model_switcher === true;
+        if (nextDefault !== defaultAgentId || nextSwitcher !== modelSwitcher) {
+          defaultAgentId = nextDefault;
+          modelSwitcher = nextSwitcher;
+          renderAgentPicker();
+        }
         const nextTheme = body.ui_theme === "ha_components" ? "ha_components" : "standard";
         uiTheme = nextTheme;
         uiThemeLoaded = true;
@@ -3718,6 +3846,7 @@ export async function mountAiWorkspace(root, options = {}) {
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    typingAt = 0;
     if (turnStopDone) await turnStopDone;
     let text = messageEl.value.trim();
     let attachments = pending.slice();
@@ -3804,6 +3933,7 @@ export async function mountAiWorkspace(root, options = {}) {
           images: images.map((img) => ({ name: img.name, mime: img.mime, data: img.data })),
           files: files.map((file) => ({ name: file.name, mime: file.mime, text: file.text })),
           agent: selectedAgent(),
+          model: modelSwitcher ? chatModel : undefined,
         });
       let response = await apiFetch(
         `${API}/sessions/${chatId}/chat`,
@@ -3965,6 +4095,11 @@ export async function mountAiWorkspace(root, options = {}) {
 
   chatEl.addEventListener("scroll", () => {
     const top = chatEl.scrollTop;
+    if (!scrollLock && typingGuard() && Math.abs(top - acceptedTop) > 0.5) {
+      restoreTypingScroll();
+      return;
+    }
+    acceptedTop = top;
     const movedUp = top < lastScrollTop - 1;
     const movedDown = top > lastScrollTop + 1;
     lastScrollTop = top;
@@ -4049,8 +4184,14 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     return false;
   }
+  for (const type of ["pointerdown", "focusin", "keydown", "beforeinput"]) {
+    form.addEventListener(type, (event) => {
+      if (fromComposerField(event)) typingAt = performance.now();
+    }, { capture: true });
+  }
   form.addEventListener("input", (event) => {
     if (!fromComposerField(event)) return;
+    typingAt = performance.now();
     if (!nearBottom()) releaseFollow();
     holdChatScroll(resizeComposer);
   });
@@ -4127,6 +4268,7 @@ export async function mountAiWorkspace(root, options = {}) {
     watchGen += 1;
     sessionId = "";
     freshChat = true;
+    setChatChoice("", "");
     renderThumbs();
     if (compact) localStorage.removeItem("ai_workspace_session");
     closeNavIfOverlay();

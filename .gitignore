@@ -1,3 +1,4 @@
+docs/trailer/
 .venv/
 __pycache__/
 .pytest_cache/

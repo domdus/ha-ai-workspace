@@ -34,6 +34,8 @@
             "name": "Czat",
             "description": "Gdzie pojawia się czat i kto może z niego korzystać.",
             "data": {
+              "default_agent": "Domyślny agent",
+              "model_switcher": "Pokaż wybór modelu",
               "enable_sidebar": "Pokaż AI Workspace na pasku bocznym",
               "enable_overlay": "Pokaż pływający przycisk AI",
               "enable_dictate": "Pokaż przycisk dyktowania",
@@ -43,6 +45,8 @@
               "keep_chats": "Czaty do zachowania"
             },
             "data_description": {
+              "default_agent": "Agent, od którego zaczyna się nowy czat. Każdy czat pamięta agenta (i model), którego użył ostatnio. Ostatnio używany: agent wybrany ostatnio w tej przeglądarce.",
+              "model_switcher": "Domyślnie wyłączone. Dodaje wybór modelu obok wyboru agenta, aby czat mógł użyć innego modelu tego samego agenta. Model agenta pozostaje domyślny.",
               "enable_sidebar": "Dodaje AI Workspace do paska bocznego Home Assistant. Wyłączone: administratorzy nadal mogą otworzyć /ai-workspace bezpośrednio.",
               "enable_overlay": "Okrągły przycisk AI w rogu każdej strony Home Assistant, żeby pytać bez opuszczania strony. Na stronach Ustawień jest wyżej, żeby nie zasłaniał innych przycisków.",
               "enable_dictate": "Przycisk mikrofonu w polu wiadomości. Ukryj go, jeśli nigdy nie dyktujesz.",
@@ -56,15 +60,11 @@
             "name": "Koszty i tokeny",
             "description": "Co wysyła każda wiadomość i jak śledzone są wydatki.",
             "data": {
-              "low_token": "Zmniejsz zużycie tokenów",
-              "check_house": "Zawsze najpierw sprawdzaj dom",
               "track_usage": "Śledź użycie i koszty",
               "show_chat_usage": "Pokaż koszt w nagłówku czatu",
               "ha_usage_sensors": "Dodaj czujniki użycia Home Assistant"
             },
             "data_description": {
-              "low_token": "Wysyła mniej z każdą wiadomością, żeby oszczędzać pieniądze przy agentach Cloud, Ollama i Azure (nie dotyczy Cursor). Wyłączone daje najbardziej wiarygodne odpowiedzi o twoim domu. Extreme to tylko czat i nie może sterować domem.",
-              "check_house": "Domyślnie włączone. Asystent sprawdza Home Assistant, zanim odpowie na pytania o twój dom, więc listy i stany są prawdziwe, a nie zgadywane. Powitania są pomijane. Przy „Zmniejsz zużycie tokenów” na Light sprawdza zawsze; na Medium i Extreme nigdy. Wyłącz dla ogólnych pytań lub dla modelu, który już sam sprawdza.",
               "track_usage": "Domyślnie włączone. Po każdej odpowiedzi zapisuje tokeny i szacowany koszt i pokazuje je na stronie Użycie. Wyłączone: bez nowych wpisów; dotychczasowa historia zostaje.",
               "show_chat_usage": "Domyślnie włączone. Pokazuje tokeny i koszt pod tytułem czatu. Wyłączenie ukrywa tylko tę linię; śledzenie i strona Użycie zostają.",
               "ha_usage_sensors": "Domyślnie wyłączone. Potrzebne tylko do własnych pulpitów lub automatyzacji: dodaje czujniki kosztów, tokenów i tur na urządzeniu Usage i przy każdym agencie. Strona Użycie działa bez nich. Wyłączenie usuwa czujniki."
@@ -143,6 +143,8 @@
             "name": "Czat",
             "description": "Gdzie pojawia się czat i kto może z niego korzystać.",
             "data": {
+              "default_agent": "Domyślny agent",
+              "model_switcher": "Pokaż wybór modelu",
               "enable_sidebar": "Pokaż AI Workspace na pasku bocznym",
               "enable_overlay": "Pokaż pływający przycisk AI",
               "enable_dictate": "Pokaż przycisk dyktowania",
@@ -152,6 +154,8 @@
               "keep_chats": "Czaty do zachowania"
             },
             "data_description": {
+              "default_agent": "Agent, od którego zaczyna się nowy czat. Każdy czat pamięta agenta (i model), którego użył ostatnio. Ostatnio używany: agent wybrany ostatnio w tej przeglądarce.",
+              "model_switcher": "Domyślnie wyłączone. Dodaje wybór modelu obok wyboru agenta, aby czat mógł użyć innego modelu tego samego agenta. Model agenta pozostaje domyślny.",
               "enable_sidebar": "Dodaje AI Workspace do paska bocznego Home Assistant. Wyłączone: administratorzy nadal mogą otworzyć /ai-workspace bezpośrednio.",
               "enable_overlay": "Okrągły przycisk AI w rogu każdej strony Home Assistant, żeby pytać bez opuszczania strony. Na stronach Ustawień jest wyżej, żeby nie zasłaniał innych przycisków.",
               "enable_dictate": "Przycisk mikrofonu w polu wiadomości. Ukryj go, jeśli nigdy nie dyktujesz.",
@@ -165,15 +169,11 @@
             "name": "Koszty i tokeny",
             "description": "Co wysyła każda wiadomość i jak śledzone są wydatki.",
             "data": {
-              "low_token": "Zmniejsz zużycie tokenów",
-              "check_house": "Zawsze najpierw sprawdzaj dom",
               "track_usage": "Śledź użycie i koszty",
               "show_chat_usage": "Pokaż koszt w nagłówku czatu",
               "ha_usage_sensors": "Dodaj czujniki użycia Home Assistant"
             },
             "data_description": {
-              "low_token": "Wysyła mniej z każdą wiadomością, żeby oszczędzać pieniądze przy agentach Cloud, Ollama i Azure (nie dotyczy Cursor). Wyłączone daje najbardziej wiarygodne odpowiedzi o twoim domu. Extreme to tylko czat i nie może sterować domem.",
-              "check_house": "Domyślnie włączone. Asystent sprawdza Home Assistant, zanim odpowie na pytania o twój dom, więc listy i stany są prawdziwe, a nie zgadywane. Powitania są pomijane. Przy „Zmniejsz zużycie tokenów” na Light sprawdza zawsze; na Medium i Extreme nigdy. Wyłącz dla ogólnych pytań lub dla modelu, który już sam sprawdza.",
               "track_usage": "Domyślnie włączone. Po każdej odpowiedzi zapisuje tokeny i szacowany koszt i pokazuje je na stronie Użycie. Wyłączone: bez nowych wpisów; dotychczasowa historia zostaje.",
               "show_chat_usage": "Domyślnie włączone. Pokazuje tokeny i koszt pod tytułem czatu. Wyłączenie ukrywa tylko tę linię; śledzenie i strona Użycie zostają.",
               "ha_usage_sensors": "Domyślnie wyłączone. Potrzebne tylko do własnych pulpitów lub automatyzacji: dodaje czujniki kosztów, tokenów i tur na urządzeniu Usage i przy każdym agencie. Strona Użycie działa bez nich. Wyłączenie usuwa czujniki."
@@ -299,6 +299,9 @@
             "cursor_api_key": "Klucz API Cursor",
             "model": "Model",
             "effort": "Wysiłek",
+            "low_token": "Zmniejsz zużycie tokenów",
+            "check_house": "Najpierw sprawdź Home Assistant",
+            "allow_internet": "Zezwól na internet",
             "assist": "Dodaj do Assist"
           },
           "data_description": {
@@ -307,6 +310,9 @@
             "cursor_api_key": "Z konta Cursor (Integrations). Przy edycji zostaw puste, aby zachować zapisany klucz. [Pobierz klucz API]({api_key_url})",
             "model": "Wybierz z listy lub wpisz nazwę modelu. Puste używa Composer.",
             "effort": "Ile czasu na myślenie zezwolić. Composer domyślnie używa Szybki.",
+            "low_token": "Wysyła mniej z każdą wiadomością, aby oszczędzać. Wyłączone daje najbardziej wiarygodne odpowiedzi o domu. Lekki zachowuje mniej historii. Średni dodatkowo skraca długie wiadomości i odpowiedzi i zaczyna każdą turę tylko od ostatnich wiadomości. Ekstremalny to tylko czat: bez narzędzi, więc nie może sprawdzać ani sterować domem.",
+            "check_house": "Domyślnie włączone. Zanim agent odpowie na pytanie o dom, sprawdza Home Assistant, aby listy i stany były prawdziwe, a nie zgadywane. Powitania są pomijane. Nie działa w trybie Ekstremalnym, który nie ma narzędzi. Wyłącz dla pytań ogólnych lub modelu, który sam już sprawdza.",
+            "allow_internet": "Domyślnie wyłączone. Włączone pozwala temu agentowi w czatach administratora używać wyszukiwania w sieci, pobierania stron i powłoki Cursora. Wyłączone usuwa wszystkie trzy, więc curl ani skrypty też nie dotrą do sieci. Czaty zwykłych użytkowników i satelit głosowych nigdy ich nie dostają.",
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist."
           }
         },
@@ -318,6 +324,9 @@
             "api_key": "Klucz API",
             "model": "Model",
             "effort": "Wysiłek",
+            "low_token": "Zmniejsz zużycie tokenów",
+            "check_house": "Najpierw sprawdź Home Assistant",
+            "allow_internet": "Zezwól na internet",
             "assist": "Dodaj do Assist",
             "assist_stt": "Dodaj mowę na tekst",
             "stt_model": "Model mowy na tekst",
@@ -331,6 +340,9 @@
             "api_key": "Klucz od dostawcy AI, nie login Home Assistant. [Pobierz klucz API]({api_key_url})",
             "model": "Wybierz z listy lub wpisz nazwę modelu. Puste używa domyślnego modelu dostawcy.",
             "effort": "Większy wysiłek to więcej myślenia: lepsze odpowiedzi na trudne pytania, ale wolniej i więcej tokenów. Ignorowane, gdy model tego nie obsługuje.",
+            "low_token": "Wysyła mniej z każdą wiadomością, aby oszczędzać. Wyłączone daje najbardziej wiarygodne odpowiedzi o domu. Lekki zachowuje mniej historii. Średni dodatkowo skraca długie wiadomości i odpowiedzi i zaczyna każdą turę tylko od ostatnich wiadomości. Ekstremalny to tylko czat: bez narzędzi, więc nie może sprawdzać ani sterować domem.",
+            "check_house": "Domyślnie włączone. Zanim agent odpowie na pytanie o dom, sprawdza Home Assistant, aby listy i stany były prawdziwe, a nie zgadywane. Powitania są pomijane. Nie działa w trybie Ekstremalnym, który nie ma narzędzi. Wyłącz dla pytań ogólnych lub modelu, który sam już sprawdza.",
+            "allow_internet": "Domyślnie wyłączone. Włączone dodaje w czatach administratora narzędzia wyszukiwania w sieci i pobierania stron. Adresy w sieci lokalnej pozostają zablokowane. Czaty zwykłych użytkowników i satelit głosowych nigdy ich nie dostają.",
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist.",
             "assist_stt": "Dodaje opcję mowy na tekst w Home Assistant z kluczem tego asystenta. Wyłączenie usuwa to, co dodał.",
             "stt_model": "Zostaw puste dla domyślnego modelu dostawcy. Możesz wpisać inną nazwę modelu.",
@@ -347,12 +359,18 @@
             "api_base": "URL Ollama",
             "model": "Model",
             "effort": "Wysiłek",
+            "low_token": "Zmniejsz zużycie tokenów",
+            "check_house": "Najpierw sprawdź Home Assistant",
+            "allow_internet": "Zezwól na internet",
             "assist": "Dodaj do Assist"
           },
           "data_description": {
             "api_base": "Zwykle {example_url}",
             "model": "Wybierz z listy lub wpisz zainstalowany model. Puste używa llama3.2.",
             "effort": "Większy wysiłek to więcej myślenia: lepsze odpowiedzi na trudne pytania, ale wolniej i więcej tokenów. Ignorowane, gdy model tego nie obsługuje.",
+            "low_token": "Wysyła mniej z każdą wiadomością, aby oszczędzać. Wyłączone daje najbardziej wiarygodne odpowiedzi o domu. Lekki zachowuje mniej historii. Średni dodatkowo skraca długie wiadomości i odpowiedzi i zaczyna każdą turę tylko od ostatnich wiadomości. Ekstremalny to tylko czat: bez narzędzi, więc nie może sprawdzać ani sterować domem.",
+            "check_house": "Domyślnie włączone. Zanim agent odpowie na pytanie o dom, sprawdza Home Assistant, aby listy i stany były prawdziwe, a nie zgadywane. Powitania są pomijane. Nie działa w trybie Ekstremalnym, który nie ma narzędzi. Wyłącz dla pytań ogólnych lub modelu, który sam już sprawdza.",
+            "allow_internet": "Domyślnie wyłączone. Włączone dodaje w czatach administratora narzędzia wyszukiwania w sieci i pobierania stron. Adresy w sieci lokalnej pozostają zablokowane. Czaty zwykłych użytkowników i satelit głosowych nigdy ich nie dostają.",
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist."
           }
         },
@@ -365,6 +383,9 @@
             "model": "Wdrożenie",
             "azure_api_version": "Wersja API",
             "effort": "Wysiłek",
+            "low_token": "Zmniejsz zużycie tokenów",
+            "check_house": "Najpierw sprawdź Home Assistant",
+            "allow_internet": "Zezwól na internet",
             "assist": "Dodaj do Assist"
           },
           "data_description": {
@@ -373,6 +394,9 @@
             "model": "Nazwa wdrożenia.",
             "azure_api_version": "Zostaw wartość domyślną, chyba że wsparcie Azure podało inną wersję.",
             "effort": "Większy wysiłek to więcej myślenia: lepsze odpowiedzi na trudne pytania, ale wolniej i więcej tokenów. Ignorowane, gdy model tego nie obsługuje.",
+            "low_token": "Wysyła mniej z każdą wiadomością, aby oszczędzać. Wyłączone daje najbardziej wiarygodne odpowiedzi o domu. Lekki zachowuje mniej historii. Średni dodatkowo skraca długie wiadomości i odpowiedzi i zaczyna każdą turę tylko od ostatnich wiadomości. Ekstremalny to tylko czat: bez narzędzi, więc nie może sprawdzać ani sterować domem.",
+            "check_house": "Domyślnie włączone. Zanim agent odpowie na pytanie o dom, sprawdza Home Assistant, aby listy i stany były prawdziwe, a nie zgadywane. Powitania są pomijane. Nie działa w trybie Ekstremalnym, który nie ma narzędzi. Wyłącz dla pytań ogólnych lub modelu, który sam już sprawdza.",
+            "allow_internet": "Domyślnie wyłączone. Włączone dodaje w czatach administratora narzędzia wyszukiwania w sieci i pobierania stron. Adresy w sieci lokalnej pozostają zablokowane. Czaty zwykłych użytkowników i satelit głosowych nigdy ich nie dostają.",
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist."
           }
         },
@@ -384,6 +408,9 @@
             "api_base": "Bazowy URL API",
             "model": "Model",
             "effort": "Wysiłek",
+            "low_token": "Zmniejsz zużycie tokenów",
+            "check_house": "Najpierw sprawdź Home Assistant",
+            "allow_internet": "Zezwól na internet",
             "assist": "Dodaj do Assist",
             "assist_stt": "Dodaj mowę na tekst",
             "stt_model": "Model mowy na tekst",
@@ -397,6 +424,9 @@
             "api_base": "Adres serwera. Dodaj /v1 na końcu, jeśli serwer tego oczekuje.",
             "model": "Nazwa modelu na tym serwerze.",
             "effort": "Większy wysiłek to więcej myślenia: lepsze odpowiedzi na trudne pytania, ale wolniej i więcej tokenów. Ignorowane, gdy model tego nie obsługuje.",
+            "low_token": "Wysyła mniej z każdą wiadomością, aby oszczędzać. Wyłączone daje najbardziej wiarygodne odpowiedzi o domu. Lekki zachowuje mniej historii. Średni dodatkowo skraca długie wiadomości i odpowiedzi i zaczyna każdą turę tylko od ostatnich wiadomości. Ekstremalny to tylko czat: bez narzędzi, więc nie może sprawdzać ani sterować domem.",
+            "check_house": "Domyślnie włączone. Zanim agent odpowie na pytanie o dom, sprawdza Home Assistant, aby listy i stany były prawdziwe, a nie zgadywane. Powitania są pomijane. Nie działa w trybie Ekstremalnym, który nie ma narzędzi. Wyłącz dla pytań ogólnych lub modelu, który sam już sprawdza.",
+            "allow_internet": "Domyślnie wyłączone. Włączone dodaje w czatach administratora narzędzia wyszukiwania w sieci i pobierania stron. Adresy w sieci lokalnej pozostają zablokowane. Czaty zwykłych użytkowników i satelit głosowych nigdy ich nie dostają.",
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist.",
             "assist_stt": "Dodaje opcję mowy na tekst w Home Assistant z kluczem tego asystenta. Wyłączenie usuwa to, co dodał.",
             "stt_model": "Zostaw puste dla domyślnego modelu dostawcy. Możesz wpisać inną nazwę modelu.",

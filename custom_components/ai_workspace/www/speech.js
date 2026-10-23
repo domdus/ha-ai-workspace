@@ -17,9 +17,12 @@ export function speechPlain(text, options = {}) {
     .replace(/^\s*[-*_]{3,}\s*$/gm, "")
     .replace(/^\s*>\s?/gm, "")
     .replace(/^[ \t]*[-*•]\s+/gm, "")
-    .replace(/^[ \t]*\d+\.\s+/gm, "")
+    // Keep "1." on numbered lists: some engines read it as "first", which a bare list loses.
+    .replace(/^[ \t]*(\d+\.)\s+/gm, "$1 ")
     .split("\n")
     .map((line) => line.replace(/\s+/g, " ").trim())
+    // A numbered item without end punctuation would run into the next number ("blinds 3.").
+    .map((line) => (/^\d+\.\s/.test(line) && !/[.!?:;,…]$/.test(line) ? `${line}.` : line))
     .filter(Boolean)
     .join("\n")
     .trim();
@@ -38,11 +41,23 @@ function speechIsCompleteSentence(text) {
   return /[.!?。！？]["»«”’')\]]*\s*$/u.test(String(text || "").trim());
 }
 
+const SENTENCE_END = /[.!?。！？]["»«”’')\]]*?(?=\s+(?:\p{Lu}|\p{Lt}|[„"«(])|\s*\n)/gu;
+// "1." or "12." on its own is a list number, not the end of a sentence.
+const LIST_NUMBER_END = /(?:^|\s)\d{1,3}\.$/;
+
+function firstSentence(text) {
+  SENTENCE_END.lastIndex = 0;
+  let match;
+  while ((match = SENTENCE_END.exec(text))) {
+    const piece = text.slice(0, match.index + match[0].length);
+    if (!LIST_NUMBER_END.test(piece)) return piece;
+  }
+  return "";
+}
+
 function pullSentence(text) {
   const para = /^[\s\S]*?\n\s*\n/.exec(text);
-  const sentence = /^[\s\S]*?[.!?。！？]["»«”’')\]]*?(?=\s+(?:\p{Lu}|\p{Lt}|[„"«(])|\s*\n)/u.exec(text);
-  let piece = "";
-  if (sentence) piece = sentence[0];
+  let piece = firstSentence(text);
   if (para && (!piece || para[0].length < piece.length)) piece = para[0];
   if (!piece) return null;
   return { piece, rest: text.slice(piece.length) };
@@ -52,8 +67,8 @@ function pullHeavyUnit(text) {
   const para = /^[\s\S]*?\n\s*\n/.exec(text);
   const introThenList = /^[^\n]+\n(?=[ \t]*(?:[-*•] |\d+\. ))/.exec(text);
   const listItem = /^(?:[ \t]*[-*•] |\d+\. ).+(?:\n|$)/.exec(text);
-  const sentence = /^[\s\S]*?[.!?。！？]["»«”’')\]]*?(?=\s+(?:\p{Lu}|\p{Lt}|[„"«(])|\s*\n)/u.exec(text);
-  const units = [para, introThenList, listItem, sentence].filter(Boolean);
+  const sentence = firstSentence(text);
+  const units = [para, introThenList, listItem, sentence ? [sentence] : null].filter(Boolean);
   if (!units.length) return null;
   units.sort((a, b) => a[0].length - b[0].length);
   const piece = units[0][0];
@@ -62,7 +77,7 @@ function pullHeavyUnit(text) {
 
 function trailingSentence(text) {
   const match = /^([\s\S]*?[.!?。！？]["»«”’')\]]*)\s*$/u.exec(text);
-  if (!match || !match[1].trim()) return null;
+  if (!match || !match[1].trim() || LIST_NUMBER_END.test(match[1].trim())) return null;
   return { piece: match[0], rest: "" };
 }
 

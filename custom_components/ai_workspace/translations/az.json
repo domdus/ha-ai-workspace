@@ -34,6 +34,8 @@
             "name": "Söhbət",
             "description": "Söhbətin harada göründüyü və kimin istifadə edə biləcəyi.",
             "data": {
+              "default_agent": "Standart agent",
+              "model_switcher": "Model seçicisini göstər",
               "enable_sidebar": "Yan paneldə AI Workspace göstər",
               "enable_overlay": "Üzən AI düyməsini göstər",
               "enable_dictate": "Diktə düyməsini göstər",
@@ -43,6 +45,8 @@
               "keep_chats": "Saxlanılacaq söhbətlər"
             },
             "data_description": {
+              "default_agent": "Yeni söhbətin başladığı agent. Hər söhbət sonuncu dəfə istifadə etdiyi agenti (və modeli) yadda saxlayır. Son istifadə olunan: bu brauzerdə ən son seçdiyiniz agent.",
+              "model_switcher": "Standart olaraq söndürülüb. Agent seçicisinin yanına model seçicisi əlavə edir ki, söhbət eyni agentin başqa modelindən istifadə edə bilsin. Agentin öz modeli standart qalır.",
               "enable_sidebar": "AI Workspace-i Home Assistant yan panelinə əlavə edir. Sönülü olanda idarəçilər /ai-workspace-i yenə birbaşa aça bilər.",
               "enable_overlay": "Hər Home Assistant səhifəsinin küncündə dairəvi AI düyməsi: səhifədən çıxmadan sual verə bilərsiniz. Ayarlar səhifələrində digər düymələri örtməmək üçün daha yuxarıda durur.",
               "enable_dictate": "Mesaj qutusunda mikrofon düyməsi. Heç vaxt diktə etmirsinizsə, gizlədin.",
@@ -56,15 +60,11 @@
             "name": "Xərc və tokenlər",
             "description": "Hər mesajın nə göndərdiyi və xərclərin necə izlənildiyi.",
             "data": {
-              "low_token": "Token istifadəsini azalt",
-              "check_house": "Həmişə əvvəlcə evi yoxla",
               "track_usage": "İstifadə və xərcləri izlə",
               "show_chat_usage": "Çat başlığında xərci göstər",
               "ha_usage_sensors": "Home Assistant istifadə sensorlarını əlavə et"
             },
             "data_description": {
-              "low_token": "Cloud, Ollama və Azure agentlərində pula qənaət etmək üçün hər mesajla daha az göndərir (Cursor-a təsir etmir). Söndür evinizlə bağlı ən etibarlı cavabları verir. Extreme yalnız söhbətdir və evi idarə edə bilməz.",
-              "check_house": "Defolt olaraq açıqdır. Köməkçi eviniz haqqında suallara cavab verməzdən əvvəl Home Assistant-a baxır, beləliklə siyahılar və vəziyyətlər təxmini deyil, realdır. Salamlaşmalar ötürülür. “Token istifadəsini azalt” Light olanda həmişə yoxlayır; Medium və Extreme-də heç vaxt. Ümumi suallar üçün və ya artıq özü yoxlayan model üçün söndürün.",
               "track_usage": "Defolt olaraq açıqdır. Hər cavabdan sonra token və təxmini xərci yazır və İstifadə səhifəsində göstərir. Sönülü yeni qeydləri dayandırır; mövcud tarixçə qalır.",
               "show_chat_usage": "Defolt olaraq açıqdır. Çat başlığının altında token və xərci göstərir. Sönülü yalnız bu sətri gizlədir; izləmə və İstifadə səhifəsi qalır.",
               "ha_usage_sensors": "Defolt olaraq sönülüdür. Yalnız öz panelləriniz və ya avtomatlaşdırmalarınız üçün lazımdır: Usage cihazında və hər agentdə xərc, token və tur sensorları əlavə edir. İstifadə səhifəsi onlarsız da işləyir. Söndürmək sensorları silir."
@@ -143,6 +143,8 @@
             "name": "Söhbət",
             "description": "Söhbətin harada göründüyü və kimin istifadə edə biləcəyi.",
             "data": {
+              "default_agent": "Standart agent",
+              "model_switcher": "Model seçicisini göstər",
               "enable_sidebar": "Yan paneldə AI Workspace göstər",
               "enable_overlay": "Üzən AI düyməsini göstər",
               "enable_dictate": "Diktə düyməsini göstər",
@@ -152,6 +154,8 @@
               "keep_chats": "Saxlanılacaq söhbətlər"
             },
             "data_description": {
+              "default_agent": "Yeni söhbətin başladığı agent. Hər söhbət sonuncu dəfə istifadə etdiyi agenti (və modeli) yadda saxlayır. Son istifadə olunan: bu brauzerdə ən son seçdiyiniz agent.",
+              "model_switcher": "Standart olaraq söndürülüb. Agent seçicisinin yanına model seçicisi əlavə edir ki, söhbət eyni agentin başqa modelindən istifadə edə bilsin. Agentin öz modeli standart qalır.",
               "enable_sidebar": "AI Workspace-i Home Assistant yan panelinə əlavə edir. Sönülü olanda idarəçilər /ai-workspace-i yenə birbaşa aça bilər.",
               "enable_overlay": "Hər Home Assistant səhifəsinin küncündə dairəvi AI düyməsi: səhifədən çıxmadan sual verə bilərsiniz. Ayarlar səhifələrində digər düymələri örtməmək üçün daha yuxarıda durur.",
               "enable_dictate": "Mesaj qutusunda mikrofon düyməsi. Heç vaxt diktə etmirsinizsə, gizlədin.",
@@ -165,15 +169,11 @@
             "name": "Xərc və tokenlər",
             "description": "Hər mesajın nə göndərdiyi və xərclərin necə izlənildiyi.",
             "data": {
-              "low_token": "Token istifadəsini azalt",
-              "check_house": "Həmişə əvvəlcə evi yoxla",
               "track_usage": "İstifadə və xərcləri izlə",
               "show_chat_usage": "Çat başlığında xərci göstər",
               "ha_usage_sensors": "Home Assistant istifadə sensorlarını əlavə et"
             },
             "data_description": {
-              "low_token": "Cloud, Ollama və Azure agentlərində pula qənaət etmək üçün hər mesajla daha az göndərir (Cursor-a təsir etmir). Söndür evinizlə bağlı ən etibarlı cavabları verir. Extreme yalnız söhbətdir və evi idarə edə bilməz.",
-              "check_house": "Defolt olaraq açıqdır. Köməkçi eviniz haqqında suallara cavab verməzdən əvvəl Home Assistant-a baxır, beləliklə siyahılar və vəziyyətlər təxmini deyil, realdır. Salamlaşmalar ötürülür. “Token istifadəsini azalt” Light olanda həmişə yoxlayır; Medium və Extreme-də heç vaxt. Ümumi suallar üçün və ya artıq özü yoxlayan model üçün söndürün.",
               "track_usage": "Defolt olaraq açıqdır. Hər cavabdan sonra token və təxmini xərci yazır və İstifadə səhifəsində göstərir. Sönülü yeni qeydləri dayandırır; mövcud tarixçə qalır.",
               "show_chat_usage": "Defolt olaraq açıqdır. Çat başlığının altında token və xərci göstərir. Sönülü yalnız bu sətri gizlədir; izləmə və İstifadə səhifəsi qalır.",
               "ha_usage_sensors": "Defolt olaraq sönülüdür. Yalnız öz panelləriniz və ya avtomatlaşdırmalarınız üçün lazımdır: Usage cihazında və hər agentdə xərc, token və tur sensorları əlavə edir. İstifadə səhifəsi onlarsız da işləyir. Söndürmək sensorları silir."
@@ -299,6 +299,9 @@
             "cursor_api_key": "Cursor API açarı",
             "model": "Model",
             "effort": "Səy",
+            "low_token": "Token istifadəsini azalt",
+            "check_house": "Əvvəlcə Home Assistant-a bax",
+            "allow_internet": "İnternetə icazə ver",
             "assist": "Assist-ə əlavə et"
           },
           "data_description": {
@@ -307,6 +310,9 @@
             "cursor_api_key": "Cursor hesabınızdan (Integrations). Redaktə edərkən saxlanmış açarı saxlamaq üçün boş buraxın. [API açarı al]({api_key_url})",
             "model": "Siyahıdan seçin və ya model adı yazın. Boş Composer istifadə edir.",
             "effort": "Nə qədər düşünmə vaxtına icazə verilsin. Composer defolt olaraq Sürətli istifadə edir.",
+            "low_token": "Pula qənaət etmək üçün hər mesajla daha az göndərir. Söndürülü ev haqqında ən etibarlı cavabları verir. Yüngül daha az söhbət tarixçəsi saxlayır. Orta həm də uzun mesaj və cavabları qısaldır və hər növbəni yalnız son mesajlarla başlayır. Ekstremal yalnız söhbətdir: alət yoxdur, buna görə evi yoxlaya və ya idarə edə bilmir.",
+            "check_house": "Standart olaraq açıqdır. Evlə bağlı suala cavab verməzdən əvvəl agent Home Assistant-a baxır ki, siyahılar və vəziyyətlər təxmini deyil, real olsun. Salamlaşmalar ötürülür. Aləti olmayan Ekstremal rejimdə təsiri yoxdur. Ümumi suallar və ya özü yoxlayan model üçün söndürün.",
+            "allow_internet": "Standart olaraq söndürülüb. Açıq olduqda bu agent admin söhbətlərində Cursor-un veb axtarışı, səhifə yükləmə və shell alətlərindən istifadə edə bilir. Söndürülü olduqda hər üçü silinir, beləliklə curl və ya skriptlər də internetə çıxa bilmir. Adi istifadəçilərin və səs peyklərinin söhbətləri onları heç vaxt almır.",
             "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir."
           }
         },
@@ -318,6 +324,9 @@
             "api_key": "API açarı",
             "model": "Model",
             "effort": "Səy",
+            "low_token": "Token istifadəsini azalt",
+            "check_house": "Əvvəlcə Home Assistant-a bax",
+            "allow_internet": "İnternetə icazə ver",
             "assist": "Assist-ə əlavə et",
             "assist_stt": "Nitqdən-mətnə əlavə et",
             "stt_model": "Nitqdən-mətnə modeli",
@@ -331,6 +340,9 @@
             "api_key": "AI provayderindən açarınız, Home Assistant girişiniz deyil. [API açarı al]({api_key_url})",
             "model": "Siyahıdan seçin və ya model adı yazın. Boş provayderin defoltunu istifadə edir.",
             "effort": "Daha çox səy daha çox düşünmək deməkdir: çətin suallara daha yaxşı cavablar, amma daha yavaş və daha çox token. Model dəstəkləmirsə, nəzərə alınmır.",
+            "low_token": "Pula qənaət etmək üçün hər mesajla daha az göndərir. Söndürülü ev haqqında ən etibarlı cavabları verir. Yüngül daha az söhbət tarixçəsi saxlayır. Orta həm də uzun mesaj və cavabları qısaldır və hər növbəni yalnız son mesajlarla başlayır. Ekstremal yalnız söhbətdir: alət yoxdur, buna görə evi yoxlaya və ya idarə edə bilmir.",
+            "check_house": "Standart olaraq açıqdır. Evlə bağlı suala cavab verməzdən əvvəl agent Home Assistant-a baxır ki, siyahılar və vəziyyətlər təxmini deyil, real olsun. Salamlaşmalar ötürülür. Aləti olmayan Ekstremal rejimdə təsiri yoxdur. Ümumi suallar və ya özü yoxlayan model üçün söndürün.",
+            "allow_internet": "Standart olaraq söndürülüb. Açıq olduqda admin söhbətlərinə veb axtarışı və səhifə yükləmə alətləri əlavə olunur. Yerli şəbəkədəki ünvanlar bloklanmış qalır. Adi istifadəçilərin və səs peyklərinin söhbətləri onları heç vaxt almır.",
             "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir.",
             "assist_stt": "Bu köməkçinin açarı ilə Home Assistant-da nitqdən-mətnə seçimi əlavə edir. Sönülü əlavə etdiyini silir.",
             "stt_model": "Provayder defoltu üçün boş buraxın. Təklif olunursa, başqa model adı yaza bilərsiniz.",
@@ -347,12 +359,18 @@
             "api_base": "Ollama URL",
             "model": "Model",
             "effort": "Səy",
+            "low_token": "Token istifadəsini azalt",
+            "check_house": "Əvvəlcə Home Assistant-a bax",
+            "allow_internet": "İnternetə icazə ver",
             "assist": "Assist-ə əlavə et"
           },
           "data_description": {
             "api_base": "Adətən {example_url}",
             "model": "Siyahıdan seçin və ya quraşdırdığınız modeli yazın. Boş llama3.2 istifadə edir.",
             "effort": "Daha çox səy daha çox düşünmək deməkdir: çətin suallara daha yaxşı cavablar, amma daha yavaş və daha çox token. Model dəstəkləmirsə, nəzərə alınmır.",
+            "low_token": "Pula qənaət etmək üçün hər mesajla daha az göndərir. Söndürülü ev haqqında ən etibarlı cavabları verir. Yüngül daha az söhbət tarixçəsi saxlayır. Orta həm də uzun mesaj və cavabları qısaldır və hər növbəni yalnız son mesajlarla başlayır. Ekstremal yalnız söhbətdir: alət yoxdur, buna görə evi yoxlaya və ya idarə edə bilmir.",
+            "check_house": "Standart olaraq açıqdır. Evlə bağlı suala cavab verməzdən əvvəl agent Home Assistant-a baxır ki, siyahılar və vəziyyətlər təxmini deyil, real olsun. Salamlaşmalar ötürülür. Aləti olmayan Ekstremal rejimdə təsiri yoxdur. Ümumi suallar və ya özü yoxlayan model üçün söndürün.",
+            "allow_internet": "Standart olaraq söndürülüb. Açıq olduqda admin söhbətlərinə veb axtarışı və səhifə yükləmə alətləri əlavə olunur. Yerli şəbəkədəki ünvanlar bloklanmış qalır. Adi istifadəçilərin və səs peyklərinin söhbətləri onları heç vaxt almır.",
             "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir."
           }
         },
@@ -365,6 +383,9 @@
             "model": "Yerləşdirmə",
             "azure_api_version": "API versiyası",
             "effort": "Səy",
+            "low_token": "Token istifadəsini azalt",
+            "check_house": "Əvvəlcə Home Assistant-a bax",
+            "allow_internet": "İnternetə icazə ver",
             "assist": "Assist-ə əlavə et"
           },
           "data_description": {
@@ -373,6 +394,9 @@
             "model": "Yerləşdirmə adı.",
             "azure_api_version": "Azure dəstəyi başqa versiya verməyibsə, defoltu saxlayın.",
             "effort": "Daha çox səy daha çox düşünmək deməkdir: çətin suallara daha yaxşı cavablar, amma daha yavaş və daha çox token. Model dəstəkləmirsə, nəzərə alınmır.",
+            "low_token": "Pula qənaət etmək üçün hər mesajla daha az göndərir. Söndürülü ev haqqında ən etibarlı cavabları verir. Yüngül daha az söhbət tarixçəsi saxlayır. Orta həm də uzun mesaj və cavabları qısaldır və hər növbəni yalnız son mesajlarla başlayır. Ekstremal yalnız söhbətdir: alət yoxdur, buna görə evi yoxlaya və ya idarə edə bilmir.",
+            "check_house": "Standart olaraq açıqdır. Evlə bağlı suala cavab verməzdən əvvəl agent Home Assistant-a baxır ki, siyahılar və vəziyyətlər təxmini deyil, real olsun. Salamlaşmalar ötürülür. Aləti olmayan Ekstremal rejimdə təsiri yoxdur. Ümumi suallar və ya özü yoxlayan model üçün söndürün.",
+            "allow_internet": "Standart olaraq söndürülüb. Açıq olduqda admin söhbətlərinə veb axtarışı və səhifə yükləmə alətləri əlavə olunur. Yerli şəbəkədəki ünvanlar bloklanmış qalır. Adi istifadəçilərin və səs peyklərinin söhbətləri onları heç vaxt almır.",
             "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir."
           }
         },
@@ -384,6 +408,9 @@
             "api_base": "API baza URL",
             "model": "Model",
             "effort": "Səy",
+            "low_token": "Token istifadəsini azalt",
+            "check_house": "Əvvəlcə Home Assistant-a bax",
+            "allow_internet": "İnternetə icazə ver",
             "assist": "Assist-ə əlavə et",
             "assist_stt": "Nitqdən-mətnə əlavə et",
             "stt_model": "Nitqdən-mətnə modeli",
@@ -397,6 +424,9 @@
             "api_base": "Server ünvanı. Serveriniz bunu gözləyirsə, sonuna /v1 əlavə edin.",
             "model": "Həmin serverdəki model adı.",
             "effort": "Daha çox səy daha çox düşünmək deməkdir: çətin suallara daha yaxşı cavablar, amma daha yavaş və daha çox token. Model dəstəkləmirsə, nəzərə alınmır.",
+            "low_token": "Pula qənaət etmək üçün hər mesajla daha az göndərir. Söndürülü ev haqqında ən etibarlı cavabları verir. Yüngül daha az söhbət tarixçəsi saxlayır. Orta həm də uzun mesaj və cavabları qısaldır və hər növbəni yalnız son mesajlarla başlayır. Ekstremal yalnız söhbətdir: alət yoxdur, buna görə evi yoxlaya və ya idarə edə bilmir.",
+            "check_house": "Standart olaraq açıqdır. Evlə bağlı suala cavab verməzdən əvvəl agent Home Assistant-a baxır ki, siyahılar və vəziyyətlər təxmini deyil, real olsun. Salamlaşmalar ötürülür. Aləti olmayan Ekstremal rejimdə təsiri yoxdur. Ümumi suallar və ya özü yoxlayan model üçün söndürün.",
+            "allow_internet": "Standart olaraq söndürülüb. Açıq olduqda admin söhbətlərinə veb axtarışı və səhifə yükləmə alətləri əlavə olunur. Yerli şəbəkədəki ünvanlar bloklanmış qalır. Adi istifadəçilərin və səs peyklərinin söhbətləri onları heç vaxt almır.",
             "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir.",
             "assist_stt": "Bu köməkçinin açarı ilə Home Assistant-da nitqdən-mətnə seçimi əlavə edir. Sönülü əlavə etdiyini silir.",
             "stt_model": "Provayder defoltu üçün boş buraxın. Təklif olunursa, başqa model adı yaza bilərsiniz.",

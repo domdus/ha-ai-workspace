@@ -34,6 +34,8 @@ _IDLE_RESTORE = 120.0
 # Chats from non-admins and voice satellites get MCP tools only: no shell, files or web.
 # The SDK does not save tools with the agent, so they are passed again on every resume.
 _RESTRICTED_TOOLS = ("mcp",)
+# Admin chats on an agent without Allow internet. Shell goes too: curl or python would reach the web anyway.
+_OFFLINE_TOOLS = ("webSearch", "webFetch", "shell")
 
 
 class CursorRuntime:
@@ -77,6 +79,7 @@ class CursorRuntime:
         model: str | None = None,
         effort: str = "",
         api_key: str = "",
+        blocked: list[str] | None = None,
     ) -> Any:
         from cursor_sdk import AgentOptions, LocalAgentOptions
 
@@ -92,6 +95,8 @@ class CursorRuntime:
             kwargs["mcp_servers"] = mcp_servers
         if tools is not None:
             kwargs["tools"] = list(tools)
+        if blocked:
+            kwargs["disallowed_tools"] = list(blocked)
         try:
             return AgentOptions(**kwargs)
         except TypeError:
@@ -109,16 +114,18 @@ class CursorRuntime:
         api_key: str = "",
         config_key: str | None = None,
         tools: list[str] | None = None,
+        blocked: list[str] | None = None,
+        fresh: bool = False,
     ) -> tuple[Any, bool]:
         from cursor_sdk import AgentNotFoundError
 
         resolved_model = (model or "").strip() or self.settings.model
         resolved_key = (api_key or "").strip() or self.settings.cursor_api_key
         key_tag = hashlib.sha256(resolved_key.encode()).hexdigest()[:16] if resolved_key else ""
-        fingerprint = config_key or _agent_fingerprint(mcp_servers, resolved_model, effort, key_tag, tools)
+        fingerprint = config_key or _agent_fingerprint(mcp_servers, resolved_model, effort, key_tag, tools, blocked)
         cached = self._agents.get(session.id)
         previous = self._mcp_by_session.get(session.id)
-        cold = self._cold(session)
+        cold = self._cold(session) or fresh
         if cached is not None and previous == fingerprint and not cold:
             self._touch(session.id)
             logger.info("reuse agent session=%s", session.id)
@@ -137,6 +144,7 @@ class CursorRuntime:
             model=resolved_model,
             effort=effort,
             api_key=resolved_key,
+            blocked=blocked,
         )
         agent = None
         # A cold cloud thread often comes back empty. Start a new agent and let the HA transcript resume the chat.
@@ -232,6 +240,9 @@ class CursorProvider:
         question: str = "",
         prompt: str = "",
         full_tools: bool = False,
+        allow_internet: bool = False,
+        fresh: bool = False,
+        no_tools: bool = False,
     ) -> AsyncIterator[dict]:
         key = (api_key or "").strip() or self.settings.cursor_api_key
         if not key:
@@ -244,7 +255,9 @@ class CursorProvider:
         except McpConfigError as exc:
             yield {"type": "error", "message": str(exc)}
             return
-        if not mcp_servers:
+        if no_tools:
+            mcp_servers = {}
+        elif not mcp_servers:
             logger.warning("no MCP servers in %s or chat request", self.settings.mcp_config_path)
         else:
             logger.info(
@@ -256,11 +269,12 @@ class CursorProvider:
             )
         used_model = (model or "").strip() or self.settings.model
         key_tag = hashlib.sha256(key.encode()).hexdigest()[:16] if key else ""
-        tools = None if full_tools else list(_RESTRICTED_TOOLS)
-        config_key = _agent_fingerprint(mcp_servers, used_model, effort, key_tag, tools)
+        tools = [] if no_tools else (None if full_tools else list(_RESTRICTED_TOOLS))
+        blocked = list(_OFFLINE_TOOLS) if full_tools and not allow_internet else None
+        config_key = _agent_fingerprint(mcp_servers, used_model, effort, key_tag, tools, blocked)
         wrapped = self.runtime.wrap_mcp(mcp_servers, session.id)
         asked = (question or "").strip()
-        attach_tools = bool(images) or wants_house_tools(asked or message)
+        attach_tools = not no_tools and (bool(images) or wants_house_tools(asked or message))
         if attach_tools and session.id not in self.runtime._with_tools:
             self.runtime.drop(session.id)
         run_servers = wrapped if attach_tools else {}
@@ -275,6 +289,8 @@ class CursorProvider:
                 api_key=key,
                 config_key=config_key,
                 tools=tools,
+                blocked=blocked,
+                fresh=fresh,
             )
         except Exception as exc:
             yield {"type": "error", "message": _public_error(exc, self.settings.cursor_api_key)}
@@ -396,7 +412,7 @@ def _sdk_model(ident: str, effort: str = "") -> Any:
     params = [{"id": "fast", "value": fast}]
     if effort in {"high", "high_fast"}:
         params.append({"id": "effort", "value": "high"})
-    model_id = "composer-2.5" if composer else name
+    model_id = name
     try:
         from cursor_sdk import ModelParameterValue, ModelSelection
 
@@ -422,7 +438,12 @@ def _mcp_identity(servers: dict) -> dict[str, dict[str, str]]:
 
 
 def _agent_fingerprint(
-    servers: dict, model: str, effort: str, key_tag: str, tools: list[str] | None = None
+    servers: dict,
+    model: str,
+    effort: str,
+    key_tag: str,
+    tools: list[str] | None = None,
+    blocked: list[str] | None = None,
 ) -> str:
     return json.dumps(
         {
@@ -431,6 +452,7 @@ def _agent_fingerprint(
             "effort": effort,
             "key": key_tag,
             "tools": None if tools is None else sorted(tools),
+            "blocked": sorted(blocked or []),
         },
         sort_keys=True,
         default=str,

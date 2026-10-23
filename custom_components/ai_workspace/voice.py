@@ -16,6 +16,8 @@ _URL = re.compile(r"https?://\S+")
 _MARK = re.compile(r"[*_`#~]+")
 _ARROW = re.compile(r"[→➡➜➤▶►▸▹↦⇒]+")
 _RULE = re.compile(r"^\s*[-*_]{3,}\s*$", re.MULTILINE)
+_NUMBERED = re.compile(r"^\d+\.\s")
+_END_MARKS = (".", "!", "?", ":", ";", ",", "…")
 _PCM_RATE = re.compile(r"rate=(\d+)", re.I)
 
 
@@ -225,6 +227,8 @@ def speech_text(text: str, *, natural: bool = True) -> str:
     out = _RULE.sub("", out)
     out = re.sub(r"^\s*>\s?", "", out, flags=re.MULTILINE)
     lines = [" ".join(line.split()) for line in out.splitlines()]
+    # Keep "1." (some engines say "first"); end the item so it does not run into the next number.
+    lines = [f"{line}." if _NUMBERED.match(line) and not line.endswith(_END_MARKS) else line for line in lines]
     return "\n".join(line for line in lines if line).strip()[:4000]
 
 

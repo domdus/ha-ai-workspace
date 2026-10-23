@@ -17,6 +17,7 @@ from .const import (
     API_PROVIDERS,
     API_SHORT_LABELS,
     CONF_AGENT_ID,
+    CONF_ALLOW_INTERNET,
     CONF_ALLOW_USERS,
     CONF_API_BASE,
     CONF_API_KEY,
@@ -29,6 +30,8 @@ from .const import (
     CONF_CHANGE_HISTORY_TTL_DAYS,
     CONF_CHECK_HOUSE,
     CONF_CROSS_CHAT,
+    CONF_DEFAULT_AGENT,
+    CONF_MODEL_SWITCHER,
     CONF_CURSOR_API_KEY,
     CONF_EFFORT,
     CONF_ENABLE_DICTATE,
@@ -110,14 +113,14 @@ YAML_SHARED_KEYS = (
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
     CONF_CHANGE_HISTORY_TTL_DAYS,
-    CONF_CHECK_HOUSE,
     CONF_TRACK_USAGE,
     CONF_SHOW_CHAT_USAGE,
     CONF_HA_USAGE_SENSORS,
-    CONF_LOW_TOKEN,
     CONF_PROMPT_CACHE,
     CONF_UI_THEME,
     CONF_CROSS_CHAT,
+    CONF_DEFAULT_AGENT,
+    CONF_MODEL_SWITCHER,
     CONF_KEEP_CHATS,
     CONF_SPEAK_REPLIES,
     CONF_STT_ENGINE,
@@ -136,14 +139,14 @@ YAML_OPTION_DEFAULTS = {
     CONF_SHORTEN_MCP_RESULTS: True,
     CONF_CHANGE_HISTORY: True,
     CONF_CHANGE_HISTORY_TTL_DAYS: DEFAULT_CHANGE_HISTORY_TTL_DAYS,
-    CONF_CHECK_HOUSE: True,
     CONF_TRACK_USAGE: True,
     CONF_SHOW_CHAT_USAGE: True,
     CONF_HA_USAGE_SENSORS: False,
-    CONF_LOW_TOKEN: TOKEN_MODE_OFF,
     CONF_PROMPT_CACHE: True,
     CONF_UI_THEME: "standard",
     CONF_CROSS_CHAT: False,
+    CONF_DEFAULT_AGENT: "",
+    CONF_MODEL_SWITCHER: False,
     CONF_KEEP_CHATS: DEFAULT_KEEP_CHATS,
     CONF_SPEAK_REPLIES: False,
     CONF_STT_ENGINE: STT_BROWSER,
@@ -161,8 +164,6 @@ def _keep_chats(value: Any) -> int:
 
 
 def _normalize_option(key: str, value: Any) -> Any:
-    if key == CONF_LOW_TOKEN:
-        return token_mode_of(value)
     if key == CONF_UI_THEME:
         return ui_theme_of(value)
     if key == CONF_KEEP_CHATS:
@@ -183,6 +184,7 @@ def _normalize_option(key: str, value: Any) -> Any:
         CONF_HA_USAGE_SENSORS,
         CONF_PROMPT_CACHE,
         CONF_CROSS_CHAT,
+        CONF_MODEL_SWITCHER,
         CONF_SPEAK_REPLIES,
         CONF_TTS_NATURAL,
     }:
@@ -225,7 +227,9 @@ AGENT_SCHEMA = vol.Schema(
         vol.Optional("effort", default=EFFORT_DEFAULT): vol.In(list(EFFORTS)),
         vol.Optional("cursor_api_key", default=""): cv.string,
         vol.Optional("azure_api_version", default=DEFAULT_AZURE_API_VERSION): cv.string,
-        vol.Optional("check_house", default=True): cv.boolean,
+        vol.Optional(CONF_CHECK_HOUSE): cv.boolean,
+        vol.Optional(CONF_LOW_TOKEN): vol.All(token_mode_of, vol.In(list(TOKEN_MODES))),
+        vol.Optional(CONF_ALLOW_INTERNET, default=False): cv.boolean,
         vol.Optional("assist"): cv.boolean,
         vol.Optional("assist_stt"): cv.boolean,
         vol.Optional("stt_model", default=""): cv.string,
@@ -260,6 +264,8 @@ YAML_SCHEMA = vol.Schema(
         vol.Optional(CONF_PROMPT_CACHE): cv.boolean,
         vol.Optional(CONF_UI_THEME): vol.Any(cv.boolean, vol.In(("standard", "ha_components"))),
         vol.Optional(CONF_CROSS_CHAT): cv.boolean,
+        vol.Optional(CONF_DEFAULT_AGENT): cv.string,
+        vol.Optional(CONF_MODEL_SWITCHER): cv.boolean,
         vol.Optional(CONF_KEEP_CHATS): vol.All(vol.Coerce(int), vol.Range(min=1, max=500)),
         vol.Optional(CONF_SPEAK_REPLIES): cv.boolean,
         vol.Optional(CONF_STT_ENGINE): cv.string,
@@ -362,6 +368,9 @@ def agent_payload(row: dict[str, Any], unique: str) -> dict[str, Any]:
         CONF_API_BASE: "" if cursor else str(row.get("api_base") or "").strip(),
         CONF_MODEL: str(row.get("model") or "").strip(),
         CONF_EFFORT: effort,
+        CONF_ALLOW_INTERNET: bool(row.get(CONF_ALLOW_INTERNET, False)),
+        CONF_LOW_TOKEN: token_mode_of(row.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF)),
+        CONF_CHECK_HOUSE: bool(row.get(CONF_CHECK_HOUSE, True)),
         CONF_ASSIST: assist_enabled(raw, new=True) if "assist" in row else assist_enabled({}, new=True),
         CONF_ASSIST_STT: assist_stt_enabled(raw, provider) if provider_supports_stt(provider) else False,
         CONF_STT_MODEL: str(row.get("stt_model") or "").strip() if provider_supports_stt(provider) else "",
@@ -376,12 +385,19 @@ def agent_payload(row: dict[str, Any], unique: str) -> dict[str, Any]:
     return {"subentry_type": SUBENTRY_AGENT, "title": title, "unique_id": unique, "data": data}
 
 
+def agent_tuning_defaults(conf: dict[str, Any]) -> dict[str, Any]:
+    """Workspace-level low_token / check_house in YAML: the default for each agent row (they are per agent now)."""
+    return {key: conf[key] for key in (CONF_LOW_TOKEN, CONF_CHECK_HOUSE) if key in conf}
+
+
 def agents_from_yaml(conf: dict[str, Any]) -> list[dict[str, Any]]:
     found: list[dict[str, Any]] = []
     used: set[str] = set()
+    defaults = agent_tuning_defaults(conf)
     for row in conf.get(YAML_AGENTS) or []:
         unique = agent_unique_id(row, used)
-        found.append(agent_payload(row, unique))
+        legacy = defaults if str(row.get("provider") or "") != MODE_CURSOR else {}
+        found.append(agent_payload({**legacy, **row}, unique))
     return found
 
 
@@ -391,10 +407,6 @@ def usage_subentry_dict() -> dict[str, Any]:
 
 def entry_from_yaml(conf: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     options = options_from_yaml(conf, fill_defaults=True)
-    if CONF_CHECK_HOUSE not in conf:
-        agents = [row for row in (conf.get(YAML_AGENTS) or []) if str(row.get("provider") or "") != MODE_CURSOR]
-        if agents and all(not bool(row.get("check_house", True)) for row in agents):
-            options[CONF_CHECK_HOUSE] = False
     subentries = connections_from_yaml(conf, fill_default=True) + agents_from_yaml(conf)
     if options.get(CONF_HA_USAGE_SENSORS):
         subentries.append(usage_subentry_dict())
@@ -462,6 +474,20 @@ async def async_apply_yaml(hass: HomeAssistant, entry: ConfigEntry, conf: dict[s
     if YAML_AGENTS in conf:
         if _sync_typed_subentries(hass, entry, subentry_type=SUBENTRY_AGENT, wanted=agents_from_yaml(conf)):
             changed = True
+    elif agent_tuning_defaults(conf):
+        # No agent list in YAML: the old workspace keys still set every cloud agent, as they did before.
+        tuning = agent_tuning_defaults(conf)
+        for sub in list(entry.subentries.values()):
+            if sub.subentry_type != SUBENTRY_AGENT or str(sub.data.get(CONF_MODE) or "") == MODE_CURSOR:
+                continue
+            data = {**sub.data}
+            if CONF_LOW_TOKEN in tuning:
+                data[CONF_LOW_TOKEN] = token_mode_of(tuning[CONF_LOW_TOKEN])
+            if CONF_CHECK_HOUSE in tuning:
+                data[CONF_CHECK_HOUSE] = bool(tuning[CONF_CHECK_HOUSE])
+            if data != dict(sub.data):
+                hass.config_entries.async_update_subentry(entry, sub, data=data)
+                changed = True
     if changed:
         _LOGGER.info("Applied AI Workspace YAML configuration")
     return changed

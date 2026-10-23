@@ -20,6 +20,7 @@ from .const import (
     CONF_API_BASE,
     CONF_API_KEY,
     CONF_AGENT_ID,
+    CONF_ALLOW_INTERNET,
     CONF_API_PROVIDER,
     CONF_AZURE_API_VERSION,
     CONF_CHECK_HOUSE,
@@ -77,6 +78,7 @@ class Agent:
     check_house: bool = True
     azure_api_version: str = DEFAULT_AZURE_API_VERSION
     cursor_api_key: str = ""
+    allow_internet: bool = False
     subentry_id: str = ""
 
     def label(self) -> str:
@@ -131,6 +133,7 @@ def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Age
         check_house=bool(raw.get(CONF_CHECK_HOUSE, True)),
         azure_api_version=_text(raw.get(CONF_AZURE_API_VERSION)) or DEFAULT_AZURE_API_VERSION,
         cursor_api_key=_text(raw.get(CONF_CURSOR_API_KEY)),
+        allow_internet=bool(raw.get(CONF_ALLOW_INTERNET, False)),
     )
 
 
@@ -223,7 +226,18 @@ class CursorAgent:
         self.model = agent.model
         self.effort = agent.effort
         self.api_key = agent.cursor_api_key
-        self.info = ProviderInfo(agent.id, agent.label(), available, reason)
+        self.allow_internet = agent.allow_internet
+        self.token_mode = agent.token_mode
+        self.check_house = agent.check_house
+        self.info = ProviderInfo(
+            agent.id,
+            agent.label(),
+            available,
+            reason,
+            title=agent.title,
+            model=agent.model or default_api_model(MODE_CURSOR),
+            provider=MODE_CURSOR,
+        )
 
 
 def borrow_by_id(hass: HomeAssistant, borrow_id: str) -> dict[str, str] | None:

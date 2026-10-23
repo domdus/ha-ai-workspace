@@ -34,6 +34,8 @@
             "name": "Chat",
             "description": "Dove appare la chat e chi può usarla.",
             "data": {
+              "default_agent": "Agente predefinito",
+              "model_switcher": "Mostra selettore modello",
               "enable_sidebar": "Mostra AI Workspace nella barra laterale",
               "enable_overlay": "Mostra il pulsante IA mobile",
               "enable_dictate": "Mostra il pulsante dettatura",
@@ -43,6 +45,8 @@
               "keep_chats": "Chat da conservare"
             },
             "data_description": {
+              "default_agent": "Agente con cui inizia una nuova chat. Ogni chat ricorda l'agente (e il modello) usato per ultimo. Ultimo usato: l'agente scelto più di recente in questo browser.",
+              "model_switcher": "Disattivato per impostazione predefinita. Aggiunge un selettore di modello accanto a quello dell'agente, così una chat può usare un altro modello dello stesso agente. Il modello dell'agente resta quello predefinito.",
               "enable_sidebar": "Aggiunge AI Workspace alla barra laterale di Home Assistant. Disattivo: gli amministratori possono comunque aprire /ai-workspace direttamente.",
               "enable_overlay": "Un pulsante IA rotondo nell'angolo di ogni pagina di Home Assistant, così puoi chiedere senza lasciare la pagina. Nelle pagine Impostazioni sta più in alto per non coprire altri pulsanti.",
               "enable_dictate": "Pulsante microfono nel campo del messaggio. Nascondilo se non detti mai.",
@@ -56,15 +60,11 @@
             "name": "Costi e token",
             "description": "Cosa invia ogni messaggio e come viene registrata la spesa.",
             "data": {
-              "low_token": "Riduci uso token",
-              "check_house": "Controlla sempre prima la casa",
               "track_usage": "Monitora uso e costi",
               "show_chat_usage": "Mostra il costo nell’intestazione della chat",
               "ha_usage_sensors": "Aggiungi sensori di uso Home Assistant"
             },
             "data_description": {
-              "low_token": "Invia meno a ogni messaggio per risparmiare con gli agenti Cloud, Ollama e Azure (Cursor non è interessato). Disattivato dà le risposte più affidabili sulla tua casa. Extreme è solo chat e non può controllare la casa.",
-              "check_house": "Attivo per impostazione predefinita. L'assistente consulta Home Assistant prima di rispondere a domande sulla tua casa, così elenchi e stati sono reali, non indovinati. I saluti vengono saltati. Con «Riduci uso token» su Light controlla sempre; su Medium ed Extreme mai. Disattivalo per domande generiche o per un modello che controlla già da solo.",
               "track_usage": "Attivo per impostazione predefinita. Registra token e costo stimato dopo ogni risposta e li mostra nella pagina Uso. Disattivo: niente nuovi record; la cronologia esistente resta.",
               "show_chat_usage": "Attivo di default. Mostra token e costo sotto il titolo della chat. Disattivo nasconde solo quella riga; il tracciamento e la pagina Uso restano.",
               "ha_usage_sensors": "Disattivo per impostazione predefinita. Serve solo per dashboard o automazioni tue: aggiunge sensori di costo, token e turni su un dispositivo Usage e su ogni agente. La pagina Uso funziona anche senza. Disattivandolo i sensori vengono rimossi."
@@ -143,6 +143,8 @@
             "name": "Chat",
             "description": "Dove appare la chat e chi può usarla.",
             "data": {
+              "default_agent": "Agente predefinito",
+              "model_switcher": "Mostra selettore modello",
               "enable_sidebar": "Mostra AI Workspace nella barra laterale",
               "enable_overlay": "Mostra il pulsante IA mobile",
               "enable_dictate": "Mostra il pulsante dettatura",
@@ -152,6 +154,8 @@
               "keep_chats": "Chat da conservare"
             },
             "data_description": {
+              "default_agent": "Agente con cui inizia una nuova chat. Ogni chat ricorda l'agente (e il modello) usato per ultimo. Ultimo usato: l'agente scelto più di recente in questo browser.",
+              "model_switcher": "Disattivato per impostazione predefinita. Aggiunge un selettore di modello accanto a quello dell'agente, così una chat può usare un altro modello dello stesso agente. Il modello dell'agente resta quello predefinito.",
               "enable_sidebar": "Aggiunge AI Workspace alla barra laterale di Home Assistant. Disattivo: gli amministratori possono comunque aprire /ai-workspace direttamente.",
               "enable_overlay": "Un pulsante IA rotondo nell'angolo di ogni pagina di Home Assistant, così puoi chiedere senza lasciare la pagina. Nelle pagine Impostazioni sta più in alto per non coprire altri pulsanti.",
               "enable_dictate": "Pulsante microfono nel campo del messaggio. Nascondilo se non detti mai.",
@@ -165,15 +169,11 @@
             "name": "Costi e token",
             "description": "Cosa invia ogni messaggio e come viene registrata la spesa.",
             "data": {
-              "low_token": "Riduci uso token",
-              "check_house": "Controlla sempre prima la casa",
               "track_usage": "Monitora uso e costi",
               "show_chat_usage": "Mostra il costo nell’intestazione della chat",
               "ha_usage_sensors": "Aggiungi sensori di uso Home Assistant"
             },
             "data_description": {
-              "low_token": "Invia meno a ogni messaggio per risparmiare con gli agenti Cloud, Ollama e Azure (Cursor non è interessato). Disattivato dà le risposte più affidabili sulla tua casa. Extreme è solo chat e non può controllare la casa.",
-              "check_house": "Attivo per impostazione predefinita. L'assistente consulta Home Assistant prima di rispondere a domande sulla tua casa, così elenchi e stati sono reali, non indovinati. I saluti vengono saltati. Con «Riduci uso token» su Light controlla sempre; su Medium ed Extreme mai. Disattivalo per domande generiche o per un modello che controlla già da solo.",
               "track_usage": "Attivo per impostazione predefinita. Registra token e costo stimato dopo ogni risposta e li mostra nella pagina Uso. Disattivo: niente nuovi record; la cronologia esistente resta.",
               "show_chat_usage": "Attivo di default. Mostra token e costo sotto il titolo della chat. Disattivo nasconde solo quella riga; il tracciamento e la pagina Uso restano.",
               "ha_usage_sensors": "Disattivo per impostazione predefinita. Serve solo per dashboard o automazioni tue: aggiunge sensori di costo, token e turni su un dispositivo Usage e su ogni agente. La pagina Uso funziona anche senza. Disattivandolo i sensori vengono rimossi."
@@ -299,6 +299,9 @@
             "cursor_api_key": "Chiave API Cursor",
             "model": "Modello",
             "effort": "Impegno",
+            "low_token": "Riduci uso token",
+            "check_house": "Controlla prima Home Assistant",
+            "allow_internet": "Consenti Internet",
             "assist": "Aggiungi ad Assist"
           },
           "data_description": {
@@ -307,6 +310,9 @@
             "cursor_api_key": "Dal tuo account Cursor (Integrations). Lascia vuoto in modifica per conservare la chiave salvata. [Ottieni una chiave API]({api_key_url})",
             "model": "Scegli dall'elenco o digita un nome di modello. Vuoto usa Composer.",
             "effort": "Quanto tempo di ragionamento consentire. Composer usa Veloce per impostazione predefinita.",
+            "low_token": "Invia meno con ogni messaggio per risparmiare. Disattivato dà le risposte più affidabili sulla tua casa. Leggero conserva meno cronologia. Medio accorcia anche messaggi e risposte lunghi e inizia ogni turno solo con gli ultimi messaggi. Estremo è solo chat: niente strumenti, quindi non può controllare né comandare la casa.",
+            "check_house": "Attivo per impostazione predefinita. Prima di rispondere a una domanda sulla casa, l'agente controlla Home Assistant, così elenchi e stati sono reali e non indovinati. I saluti vengono saltati. Nessun effetto su Estremo, che non ha strumenti. Disattivalo per domande generali o per un modello che controlla già da solo.",
+            "allow_internet": "Disattivato per impostazione predefinita. Attivo consente a questo agente di usare la ricerca web, il recupero di pagine e la shell di Cursor nelle chat admin. Disattivo li rimuove tutti e tre, quindi nemmeno curl o script raggiungono il web. Le chat degli utenti normali e dei satelliti vocali non li ricevono mai.",
             "assist": "Elenca anche questo assistente in Home Assistant Assist (voce). Disattivo: solo chat AI Workspace, e rimuove ciò che ha aggiunto ad Assist."
           }
         },
@@ -318,6 +324,9 @@
             "api_key": "Chiave API",
             "model": "Modello",
             "effort": "Impegno",
+            "low_token": "Riduci uso token",
+            "check_house": "Controlla prima Home Assistant",
+            "allow_internet": "Consenti Internet",
             "assist": "Aggiungi ad Assist",
             "assist_stt": "Aggiungi voce in testo",
             "stt_model": "Modello voce in testo",
@@ -331,6 +340,9 @@
             "api_key": "La chiave del fornitore IA, non l'accesso a Home Assistant. [Ottieni una chiave API]({api_key_url})",
             "model": "Scegli dall'elenco o digita un nome di modello. Vuoto usa il valore predefinito del fornitore.",
             "effort": "Più impegno significa più ragionamento: risposte migliori alle domande difficili, ma più lento e con più token. Ignorato se il modello non lo supporta.",
+            "low_token": "Invia meno con ogni messaggio per risparmiare. Disattivato dà le risposte più affidabili sulla tua casa. Leggero conserva meno cronologia. Medio accorcia anche messaggi e risposte lunghi e inizia ogni turno solo con gli ultimi messaggi. Estremo è solo chat: niente strumenti, quindi non può controllare né comandare la casa.",
+            "check_house": "Attivo per impostazione predefinita. Prima di rispondere a una domanda sulla casa, l'agente controlla Home Assistant, così elenchi e stati sono reali e non indovinati. I saluti vengono saltati. Nessun effetto su Estremo, che non ha strumenti. Disattivalo per domande generali o per un modello che controlla già da solo.",
+            "allow_internet": "Disattivato per impostazione predefinita. Attivo aggiunge strumenti di ricerca web e recupero pagine nelle chat admin. Gli indirizzi della rete locale restano bloccati. Le chat degli utenti normali e dei satelliti vocali non li ricevono mai.",
             "assist": "Elenca anche questo assistente in Home Assistant Assist (voce). Disattivo: solo chat AI Workspace, e rimuove ciò che ha aggiunto ad Assist.",
             "assist_stt": "Aggiunge un'opzione voce in testo in Home Assistant con la chiave di questo assistente. Disattivo rimuove ciò che ha aggiunto.",
             "stt_model": "Lascia vuoto per il valore predefinito del fornitore. Puoi digitare un altro nome di modello.",
@@ -347,12 +359,18 @@
             "api_base": "URL Ollama",
             "model": "Modello",
             "effort": "Impegno",
+            "low_token": "Riduci uso token",
+            "check_house": "Controlla prima Home Assistant",
+            "allow_internet": "Consenti Internet",
             "assist": "Aggiungi ad Assist"
           },
           "data_description": {
             "api_base": "Di solito {example_url}",
             "model": "Scegli dall'elenco o digita un modello installato. Vuoto usa llama3.2.",
             "effort": "Più impegno significa più ragionamento: risposte migliori alle domande difficili, ma più lento e con più token. Ignorato se il modello non lo supporta.",
+            "low_token": "Invia meno con ogni messaggio per risparmiare. Disattivato dà le risposte più affidabili sulla tua casa. Leggero conserva meno cronologia. Medio accorcia anche messaggi e risposte lunghi e inizia ogni turno solo con gli ultimi messaggi. Estremo è solo chat: niente strumenti, quindi non può controllare né comandare la casa.",
+            "check_house": "Attivo per impostazione predefinita. Prima di rispondere a una domanda sulla casa, l'agente controlla Home Assistant, così elenchi e stati sono reali e non indovinati. I saluti vengono saltati. Nessun effetto su Estremo, che non ha strumenti. Disattivalo per domande generali o per un modello che controlla già da solo.",
+            "allow_internet": "Disattivato per impostazione predefinita. Attivo aggiunge strumenti di ricerca web e recupero pagine nelle chat admin. Gli indirizzi della rete locale restano bloccati. Le chat degli utenti normali e dei satelliti vocali non li ricevono mai.",
             "assist": "Elenca anche questo assistente in Home Assistant Assist (voce). Disattivo: solo chat AI Workspace, e rimuove ciò che ha aggiunto ad Assist."
           }
         },
@@ -365,6 +383,9 @@
             "model": "Distribuzione",
             "azure_api_version": "Versione API",
             "effort": "Impegno",
+            "low_token": "Riduci uso token",
+            "check_house": "Controlla prima Home Assistant",
+            "allow_internet": "Consenti Internet",
             "assist": "Aggiungi ad Assist"
           },
           "data_description": {
@@ -373,6 +394,9 @@
             "model": "Il nome della distribuzione.",
             "azure_api_version": "Lascia il valore predefinito, a meno che il supporto Azure non ti abbia dato un'altra versione.",
             "effort": "Più impegno significa più ragionamento: risposte migliori alle domande difficili, ma più lento e con più token. Ignorato se il modello non lo supporta.",
+            "low_token": "Invia meno con ogni messaggio per risparmiare. Disattivato dà le risposte più affidabili sulla tua casa. Leggero conserva meno cronologia. Medio accorcia anche messaggi e risposte lunghi e inizia ogni turno solo con gli ultimi messaggi. Estremo è solo chat: niente strumenti, quindi non può controllare né comandare la casa.",
+            "check_house": "Attivo per impostazione predefinita. Prima di rispondere a una domanda sulla casa, l'agente controlla Home Assistant, così elenchi e stati sono reali e non indovinati. I saluti vengono saltati. Nessun effetto su Estremo, che non ha strumenti. Disattivalo per domande generali o per un modello che controlla già da solo.",
+            "allow_internet": "Disattivato per impostazione predefinita. Attivo aggiunge strumenti di ricerca web e recupero pagine nelle chat admin. Gli indirizzi della rete locale restano bloccati. Le chat degli utenti normali e dei satelliti vocali non li ricevono mai.",
             "assist": "Elenca anche questo assistente in Home Assistant Assist (voce). Disattivo: solo chat AI Workspace, e rimuove ciò che ha aggiunto ad Assist."
           }
         },
@@ -384,6 +408,9 @@
             "api_base": "URL di base API",
             "model": "Modello",
             "effort": "Impegno",
+            "low_token": "Riduci uso token",
+            "check_house": "Controlla prima Home Assistant",
+            "allow_internet": "Consenti Internet",
             "assist": "Aggiungi ad Assist",
             "assist_stt": "Aggiungi voce in testo",
             "stt_model": "Modello voce in testo",
@@ -397,6 +424,9 @@
             "api_base": "Indirizzo del server. Aggiungi /v1 alla fine se il server se lo aspetta.",
             "model": "Nome del modello su quel server.",
             "effort": "Più impegno significa più ragionamento: risposte migliori alle domande difficili, ma più lento e con più token. Ignorato se il modello non lo supporta.",
+            "low_token": "Invia meno con ogni messaggio per risparmiare. Disattivato dà le risposte più affidabili sulla tua casa. Leggero conserva meno cronologia. Medio accorcia anche messaggi e risposte lunghi e inizia ogni turno solo con gli ultimi messaggi. Estremo è solo chat: niente strumenti, quindi non può controllare né comandare la casa.",
+            "check_house": "Attivo per impostazione predefinita. Prima di rispondere a una domanda sulla casa, l'agente controlla Home Assistant, così elenchi e stati sono reali e non indovinati. I saluti vengono saltati. Nessun effetto su Estremo, che non ha strumenti. Disattivalo per domande generali o per un modello che controlla già da solo.",
+            "allow_internet": "Disattivato per impostazione predefinita. Attivo aggiunge strumenti di ricerca web e recupero pagine nelle chat admin. Gli indirizzi della rete locale restano bloccati. Le chat degli utenti normali e dei satelliti vocali non li ricevono mai.",
             "assist": "Elenca anche questo assistente in Home Assistant Assist (voce). Disattivo: solo chat AI Workspace, e rimuove ciò che ha aggiunto ad Assist.",
             "assist_stt": "Aggiunge un'opzione voce in testo in Home Assistant con la chiave di questo assistente. Disattivo rimuove ciò che ha aggiunto.",
             "stt_model": "Lascia vuoto per il valore predefinito del fornitore. Puoi digitare un altro nome di modello.",

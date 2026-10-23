@@ -8,33 +8,35 @@
 
 </div>
 
-Talk to an AI inside Home Assistant. Ask it to list your lights, write an automation, or fix a dashboard. It reaches the house through the MCP server you connect — that is what lets it see and change things, not a copy of your YAML on disk.
+Talk to an AI inside Home Assistant. Ask it to list your lights, write an automation, or fix a dashboard. Plug in the MCP server you like — that's how it actually sees the house.
 
-You stay in Home Assistant. No Claude Desktop, no Cursor app, no VS Code. AI Agents such as Cursor, OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or any OpenAI-compatible model all work in the same chat.
+You stay in Home Assistant. No Claude Desktop, no Cursor app, no VS Code. Cursor, OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or any OpenAI-compatible model — same chat.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai_workspace.gif" alt="AI Workspace chat demo" width="300">
+  <img src="docs/ai_workspace.gif" alt="AI Workspace chat demo" width="300">
 </p>
 
-What it can do depends on that MCP server. In the chat you get:
+What it can do depends on that MCP. Here's what you get:
 
-- Answers that appear as they are written
-- Pictures and text files you drop in
-- Names that link straight into Home Assistant (devices, automations, dashboards)
-- Chats you can pin, and a **Change History** of every write, with **Rollback** to the snapshot from before the change. Automations, scripts, and scenes also land as YAML under `config/ai_workspace/changes/` if Home Assistant will not start ([how to restore by hand](docs/mcp.md#if-home-assistant-will-not-start))
-- Tokens and estimated cost per agent, model, and chat (optional sensors for your own dashboards)
-- More than one agent and more than one MCP connection
-- An optional floating button on other pages
-- Optional talk and listen (HTTPS for the microphone)
-- The same agents in Assist, already wired for conversation, listening, and speaking
+- A polished agent chat — replies stream in as they come
+- Drop in a screenshot or a YAML file
+- Tap a name and you're in the device, the automation, the dashboard
+- Pin the chats you'll want later. Every write has a **Change History**, so you can **Rollback** if you don't like it. Automations, scripts, and scenes also land as YAML under `config/ai_workspace/changes/` if Home Assistant will not start ([restore by hand](docs/mcp.md#if-home-assistant-will-not-start))
+- See roughly what a chat cost — per agent, per model. Optional sensors if you want that on a dashboard
+- Switch agents mid-thread, and optionally the model too. Each chat remembers what it was using
+- Web search and page fetch per agent, if you allow it (off by default)
+- The MCP of your choice: [HA-MCP](https://github.com/homeassistant-ai/ha-mcp), the [built-in server](https://www.home-assistant.io/integrations/mcp_server/), or one you already run
+- Chat from any page — optional floating button
+- Talk and listen, if you want (HTTPS for the mic)
+- Same agents in Assist — conversation, listening, speaking already wired
 
-![AI Workspace in the Home Assistant sidebar](https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai-workspace.png)
+![AI Workspace in the Home Assistant sidebar](docs/ai-workspace.png)
 
-An optional button on the other pages opens the same chat.
+You're on the dashboard. Ask anyway.
 
   
 <p align="center">
-  <img src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai_workspace_floating.gif" alt="Floating button" width="820">
+  <img src="docs/ai_workspace_floating.gif" alt="Floating button" width="820">
 </p>
 
 Each agent can also show up in Home Assistant's Assist dialog. AI Workspace creates that pipeline for you, so you can talk to **Cursor AI** (or another agent) from the microphone as well.
@@ -43,11 +45,11 @@ OpenAI, OpenRouter, and OpenAI-compatible agents can listen and speak with the s
 
 Coral, Echo, and the other OpenAI-style voices speak **German, French, and many other languages**. They follow the language of the reply.
 
-![Cursor in Home Assistant Assist](https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai-workspace-assists.png)
+![Cursor in Home Assistant Assist](docs/ai-workspace-assists.png)
 
-The **Usage** page shows tokens and estimated cost per agent, model, and day, so you can see which model is worth it for your home. Prices come from the public price list of [LiteLLM](https://github.com/BerriAI/litellm). AI Workspace uses a small copy of that list, refreshed every week. More in [Cost and tokens](docs/cost.md).
+The **Usage** page is the honest bit: what you spent, which model, which day. So you know what's actually worth it. More in [Cost and tokens](docs/cost.md).
 
-![AI Workspace Usage page](https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai-workspace_usage.png)
+![AI Workspace Usage page](docs/ai-workspace_usage.png)
 
 ## Requirements
 
@@ -73,7 +75,7 @@ You type in **AI Workspace**. The reply comes from that provider. **MCP** is how
 
 ⚠️ A ChatGPT or Claude.ai subscription does not include this. OpenAI and Claude need API credits on [platform.openai.com](https://platform.openai.com) and [console.anthropic.com](https://console.anthropic.com). Gemini has a free API tier with limits. OpenRouter is its own credit balance (it then pays the model behind it). Ollama stays on your hardware and does not bill a cloud API.
 
-![AI Workspace, MCP, Home Assistant, AI Cloud API](https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/cloud-architecture.jpg)
+![AI Workspace, MCP, Home Assistant, AI Cloud API](docs/cloud-architecture.jpg)
 
 ### 1. Install AI Workspace from HACS
 
@@ -90,7 +92,9 @@ Until it is in the default HACS store, add it as a custom repository: **HACS →
 - **MCP type:** one from [Requirements](#requirements). Leave the MCP URL empty if it shows as detected.
 - Save. Home Assistant then asks for the first **agent**.
 - Pick the provider. Paste the key, use **Get an API key** under the field, or choose **Copy key from** when OpenRouter, OpenAI, Claude, Gemini, Ollama, or Azure is already set up. The key is checked before it is saved.
-- Add more agents later with **Add agent** on the AI Workspace entry. The chat shows an agent picker when more than one is set up.
+- **Model:** the list comes from the provider with your key, so new models show up without an update. You can still type any model id.
+- Each agent also has **Reduce token usage**, **Look at Home Assistant first** (on by default), and **Allow internet** (off by default). See [Agent settings](docs/settings.md#agent-settings).
+- Add more agents later with **Add agent** on the AI Workspace entry. The chat shows an agent picker when more than one is set up. **Configure** sets the **Default agent** for new chats and can add a **model switcher** next to the agent picker.
 
 You can also put the same settings in `configuration.yaml`. See [YAML configuration](docs/settings.md#yaml-configuration).
 
@@ -128,7 +132,7 @@ Install AI Workspace from HACS first ([step 1](#1-install-ai-workspace-from-hacs
 
 The Cursor SDK runs as an app on the same machine as Home Assistant.
 
-![Home Assistant OS with Cursor SDK and Cursor Cloud AI](https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/os-architecture.jpg)
+![Home Assistant OS with Cursor SDK and Cursor Cloud AI](docs/os-architecture.jpg)
 
 Add this repository to Apps and install **AI Workspace Runtime**:
 
@@ -142,7 +146,7 @@ Home Assistant 2026.2 renamed "Add-ons" to "Apps".
 
 If Home Assistant is a Docker container (no Supervisor), Cursor needs one extra container beside it. Same idea as the app: Home Assistant talks to that runtime, and the runtime talks to Cursor and to MCP.
 
-![Home Assistant container, Cursor SDK, Cursor Cloud AI](https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/docker-architecture.jpg)
+![Home Assistant container, Cursor SDK, Cursor Cloud AI](docs/docker-architecture.jpg)
 
 Paste your Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) into [docker-compose.runtime.yml](docker-compose.runtime.yml):
 
@@ -201,7 +205,8 @@ After the runtime is running: **Settings → Devices & services → Add integrat
 - **MCP type:** one from [Requirements](#requirements). Leave the MCP URL empty if it shows as detected.
 - Save. Home Assistant then asks for the first agent. Choose **Cursor**.
 - **Cursor Runtime URL:** leave empty unless the form does not show **Runtime found**. It is filled only when this Home Assistant can reach the Runtime (`http://127.0.0.1:8090` or the app). Do not paste a Docker hostname unless Home Assistant can reach that container.
-- **Model:** pick one from the list or type a model name, for example `composer-2.5`, `grok-4.7`, `gpt-5`, or `claude-sonnet-5-5`. Leave it empty to use `CURSOR_MODEL` from the runtime.
+- **Model:** the list shows what your Cursor account can use (Composer, Claude, GPT, Gemini, Grok, and more). Or type a model name, for example `composer-2.5`. Leave it empty to use `CURSOR_MODEL` from the runtime.
+- **Allow internet** is off by default: Cursor then has no web search, page fetch, or shell, so it cannot reach the internet from the runtime. Turn it on if you want Cursor to look things up. See [Internet access](docs/privacy.md#internet-access).
 - Paste the Cursor API key, unless the runtime already has one.
 - Open **AI Workspace** (`/ai-workspace`).
 
@@ -211,11 +216,11 @@ After the runtime is running: **Settings → Devices & services → Add integrat
 
 Same as Cloud AI, but the model runs in your house (**Ollama** or LM Studio). Nothing is sent to a cloud API. The model still has to be able to call tools.
 
-On a small machine, set **Reduce token usage** to **Extreme** in AI Workspace settings. The chat then stays short and does not send tools: it can answer questions, but it cannot check or change the house. **Medium** still sends tools, with a shorter prompt. See [Reduce token usage](docs/cost.md#reduce-token-usage).
+On a small machine, set **Reduce token usage** to **Extreme** on that agent. The chat then stays short and does not send tools: it can answer questions, but it cannot check or change the house. **Medium** still sends tools, with a shorter prompt. See [Reduce token usage](docs/cost.md#reduce-token-usage).
 
 Install as in [Cloud AI](#cloud-ai-quick-start). Pick **Ollama** and point the API Base URL at your Ollama server.
 
-![Home Assistant and Ollama](https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ollama-architecture.jpg)
+![Home Assistant and Ollama](docs/ollama-architecture.jpg)
 
 ## More in the docs
 

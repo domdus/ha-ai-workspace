@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.4.0
+
+- **Update the runtime (App or Docker image) together with this release.** An older runtime ignores Allow internet and the token levels on Cursor agents.
+- Agents: the **Model** list comes from the provider with your key, and Cursor's from your Cursor account through the runtime. When the provider does not answer, a bundled list of known models is shown. Any model id can still be typed.
+- Chat: every agent in the picker shows its model, not only Cursor. Each chat remembers its agent and model, so an old chat reopens with what it was using.
+- Configure: **Default agent** for new chats (**Last used** keeps the old behavior). **Show model switcher** (off by default) adds a model picker next to the agent picker, so one chat can use another model of the same agent.
+- Agents: **Allow internet**, off by default. Cloud agents get `web_search` and `web_fetch` in admin chats; fetch never reaches addresses on your local network. Cursor agents keep web search, page fetch, and shell only when it is on. **Existing Cursor agents lose web search, page fetch, and shell until you turn it on.**
+- **Reduce token usage** and **Look at Home Assistant first** (was *Always check the house first*) moved from Configure to each agent, Cursor included. Your current values are copied onto every cloud agent on update. Look at Home Assistant first is its own switch now; only Extreme, which has no tools, ignores it. On Medium and Extreme a Cursor agent starts fresh each turn with only the last messages handed over, and Extreme gives Cursor no tools.
+- Cursor: picking `composer-2` uses Composer 2 instead of switching to 2.5.
+- Text-to-speech keeps `1.` on numbered lists and ends each item with a period, so engines that say "first" can.
+- Mobile: typing in the prompt no longer scrolls the chat toward the bottom, key by key.
+- README and docs: new screenshots, a new chat GIF, and the settings above.
+
+## 1.4.0b1
+
+- **Update the runtime (App or Docker image) together with this release.** An older runtime ignores Allow internet and the token levels on Cursor agents.
+- Agents: the **Model** list comes from the provider with your key, and Cursor's from your Cursor account through the runtime. When the provider does not answer, a bundled list of known models is shown. Any model id can still be typed.
+- Chat: every agent in the picker shows its model, not only Cursor. Each chat remembers its agent and model, so an old chat reopens with what it was using.
+- Configure: **Default agent** for new chats (**Last used** keeps the old behavior). **Show model switcher** (off by default) adds a model picker next to the agent picker, so one chat can use another model of the same agent.
+- Agents: **Allow internet**, off by default. Cloud agents get `web_search` and `web_fetch` in admin chats; fetch never reaches addresses on your local network. Cursor agents keep web search, page fetch, and shell only when it is on. **Existing Cursor agents lose web search, page fetch, and shell until you turn it on.**
+- **Reduce token usage** and **Look at Home Assistant first** (was *Always check the house first*) moved from Configure to each agent, Cursor included. Your current values are copied onto every cloud agent on update. Look at Home Assistant first is its own switch now; only Extreme, which has no tools, ignores it. On Medium and Extreme a Cursor agent starts fresh each turn with only the last messages handed over, and Extreme gives Cursor no tools.
+- Cursor: picking `composer-2` uses Composer 2 instead of switching to 2.5.
+- Text-to-speech keeps `1.` on numbered lists and ends each item with a period, so engines that say "first" can.
+- Mobile: typing in the prompt no longer scrolls the chat toward the bottom, key by key.
+- README and docs: new screenshots and GIFs, and the settings above.
+
 ## 1.3.5
 
 Everything from 1.3.5b1 to 1.3.5b4:

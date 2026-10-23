@@ -1,5 +1,7 @@
 # Settings
 
+![AI Workspace settings](settings.png)
+
 **Settings → Devices & services → AI Workspace → Configure** for shared chat options. Add or edit **connections** and **agents** with the buttons on the AI Workspace integration page.
 
 ## How it is organized
@@ -32,6 +34,8 @@ Tappable links to automations, entities, helpers, and devices are always added. 
 
 | Option | What it does | Why it matters |
 | --- | --- | --- |
+| **Default agent** | Agent a new chat starts with. **Last used** keeps the agent you picked most recently in this browser. | Every chat remembers its own agent (and model), so an old chat reopens with the agent it was using. |
+| **Show model switcher** | Off by default. A model picker sits next to the agent picker. The agent picker then shows only the agent name. | Try another model of the same agent in one chat without editing the agent. The agent's own model stays the default for new chats. |
 | **Show AI Workspace in the sidebar** | Sidebar item. `/ai-workspace` still works when this is off. | Keep the sidebar tidy; admins can still open the full page. |
 | **Show floating AI button** | Bottom-right robot icon on other Home Assistant pages. It slides up when another corner button is already there. | Open the same chat without leaving the page you are on. |
 | **Show dictate button** | Microphone in the message box. On by default. | Hide it if you never dictate. |
@@ -53,8 +57,6 @@ Tappable links to automations, entities, helpers, and devices are always added. 
 
 | Option | What it does | Why it matters |
 | --- | --- | --- |
-| **Reduce token usage** | Off, Light, Medium, or Extreme for every Cloud, Ollama, and Azure agent. Not on Cursor. | [How much each message sends](cost.md#reduce-token-usage), and what you give up for a lower bill. |
-| **Always check the house first** | On by default. Not on Cursor. With **Light** it always checks; **Medium** and **Extreme** ignore this toggle. | [Why this is on](#always-check-the-house-first). One extra tool round on questions that do not need the house. |
 | **Track usage and costs** | On by default. Records tokens and estimated cost. Sidebar **Usage** opens `/ai-workspace/usage`. | [See what you spend](cost.md). Off stops new records; history stays. Deleting a chat does not remove its usage. |
 | **Show cost in chat header** | On by default. Tokens and cost under the chat title. | Cost at a glance. Off hides only that line. |
 | **Add Home Assistant usage sensors** | Off by default. Creates cost, token, and turn sensors. | [For your own dashboards and automations](cost.md#home-assistant-sensors). The Usage page does not need them. |
@@ -88,6 +90,10 @@ On each agent (**Add agent**, or the edit button on an agent row).
 | --- | --- | --- |
 | **Copy key from** | Uses a key already stored by OpenRouter, OpenAI, Claude, Gemini, Ollama, or Azure in Home Assistant. That other integration stays as it is. | You do not paste the same key twice. |
 | **API key** | Paste a key, or open **Get an API key** under the field for that provider’s console. Leave blank when editing to keep the saved key. | You do not have to hunt for the signup page. |
+| **Model** | Lists the models your key can use, fetched from the provider (Cursor through the runtime). Without a key yet, or when the provider does not answer, it lists the models AI Workspace knows for that provider. You can also type any model id. | Newer or dated model ids, for example `claude-haiku-4-5-20251001`, work even when they are not in the list. |
+| **Reduce token usage** | Off, Light, Medium, or Extreme. Every agent has its own, Cursor included. | [How much each message sends](cost.md#reduce-token-usage). Keep Ollama on Off and save on an expensive model. |
+| **Look at Home Assistant first** | On by default. Before answering a question about the house, the agent looks at Home Assistant. No effect on Extreme, which has no tools. | [Why this is on](#always-check-the-house-first). One extra tool round on questions that do not need the house. |
+| **Allow internet** | Off by default. Cloud agents: adds `web_search` and `web_fetch` (public addresses only, never your local network). Cursor: keeps Cursor's web search, page fetch, and shell; off removes all three. Admin chats only. | Look up docs, prices, or release notes from the chat. See [Internet access](privacy.md#internet-access). |
 | **Effort** | Default, Fast, High, or High fast, when the model supports it. If it does not, the request still goes through. | High thinks longer: better on hard questions, but slower and more tokens. Fast is cheaper and quicker. |
 | **Cursor runtime address / Runtime password** | Only on Cursor agents. Leave the address empty when the form shows **Runtime found**. | Pairs Home Assistant with the Cursor runtime. See [Runtime token](../README.md#runtime-token). |
 | **Add to Assist** | On adds a Voice assistants pipeline for this agent. Off removes it again and keeps the agent in AI Workspace only. | Use the same model from Home Assistant’s Assist dialog. |
@@ -97,11 +103,11 @@ On each agent (**Add agent**, or the edit button on an agent row).
 
 A model that is not told otherwise answers from what it guesses. For a house that means invented automations, wrong counts, or “the light is off” while it is on — said with confidence. Asking “use a tool” in the prompt is not enough on its own.
 
-With **Always check the house first**, the model must call a Home Assistant tool before it answers, so lists, counts, and states come from your instance. After that first call it decides freely.
+With **Look at Home Assistant first** on an agent, a cloud model must call a Home Assistant tool before it answers, so lists, counts, and states come from your instance. After that first call it decides freely. Cursor cannot be forced to call a tool, so a Cursor agent is told to look first on each house question.
 
-It is on by default because a wrong answer about the house costs more than one extra tool call. Greetings, thanks, and messages with images or files are never forced. Cursor agents are not affected.
+It is on by default because a wrong answer about the house costs more than one extra tool call. Greetings, thanks, and messages with images or files are never forced.
 
-Turn it off if you mostly ask general questions, or if your models already check the house on their own. **Medium** and **Extreme** token modes also skip this, because those modes are trying to spend less.
+Turn it off on an agent you mostly use for general questions, or for a model that already checks on its own. On **Extreme** it has no effect: that level sends no tools.
 
 ## Config catalog
 

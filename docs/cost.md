@@ -38,25 +38,29 @@ Cloud AI and Ollama send the system prompt and the **tool list of every enabled 
 A typical house-check turn on **Off** is often around **$0.40**. A long thread with many tool rounds can reach **$0.90+**. Most of that is the tool list and tool results as input, not your last sentence.
 
 - The last 12 messages of the chat are sent again so the model remembers the thread (each cut to a few thousand characters). Earlier tool results are not. That is not the main cost.
-- **[Always check the house first](settings.md#always-check-the-house-first):** a question that needs no house data, like a poem, still costs one tool call and one more request.
+- **[Look at Home Assistant first](settings.md#always-check-the-house-first):** a question that needs no house data, like a poem, still costs one tool call and one more request.
 - **To spend less:** pick a smaller model for everyday questions, set **Reduce token usage** (below), disable the device of an MCP connection you do not need, and start a new chat when the topic changes.
 
 ## Reduce token usage
 
-Shared AI Workspace setting (not per agent, and not on Cursor): **Off**, **Light**, **Medium**, or **Extreme**.
+Set on each agent, Cursor included: **Off**, **Light**, **Medium**, or **Extreme**. Older versions had one setting for all agents; updating copies it onto every cloud agent.
 
 The expensive part is the MCP tool list (and extra tool rounds), not the chat history. That is why Medium still costs a large share of Off, and Extreme is the only mode that usually saves most of a house-check turn.
 
-| Mode | Tools | History | Check house | Prompt | Typical save vs Off on a house-check turn |
-| --- | --- | --- | --- | --- | --- |
-| **Off** | All enabled MCP tools | Last 12 | Shared toggle (on by default) | Full | — |
-| **Light** | Yes | Last 12 | Always on | Full | About **5–20%**. Still pays for tools and a forced house check. Skips extras such as auto-title and effort. |
-| **Medium** | Yes | Last 4 | Off | Short, tools allowed | About **25–45%**. No forced extra round; tool schemas still dominate. |
-| **Extreme** | No | None | Off | Two sentences; cannot control the house | About **80–95%**. |
+| Mode | Tools | History | Prompt | Typical save vs Off on a house-check turn |
+| --- | --- | --- | --- | --- |
+| **Off** | All enabled MCP tools | Last 12 | Full | — |
+| **Light** | Yes | Last 12 | Full | About **5–20%**. Skips extras such as auto-title, page context, and effort. |
+| **Medium** | Yes | Last 4 | Short, tools allowed | About **25–45%**. Tool schemas still dominate. |
+| **Extreme** | No | None | Two sentences; cannot control the house | About **80–95%**. |
 
 Light still attaches files and images; Medium and Extreme do not. Medium and Extreme also shorten a very long message and cap how long the reply can be.
 
-**Light** is the “still accurate” house mode, not the cheapest. It can cost **more** than Medium because it always checks the house first. Use Extreme for a small local model or cheap Q&A; Medium when the agent should still call MCP; Off when you want the full product.
+**Look at Home Assistant first** is a separate switch on the agent and works on every level except Extreme (no tools). Leaving it on adds one tool round to house questions.
+
+**Cursor:** the same levels apply. Medium and Extreme start a new Cursor agent every turn and hand over only the last messages, so Cursor's own thread cannot grow. Extreme gives Cursor no tools at all. Cursor cannot cap the reply length, so the short prompts ask for short answers instead.
+
+Use Extreme for a small local model or cheap Q&A; Medium when the agent should still call MCP; Off when you want the full product.
 
 ## Prompt cache
 
