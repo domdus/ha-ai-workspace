@@ -634,6 +634,26 @@ function linkifyHaMentions(content, mentions = true) {
   return text.replace(/\u0000HA(\d+)\u0000/g, (_m, index) => held[Number(index)] || "");
 }
 
+// A closed sidebar would otherwise slide away on open when its sheet arrives after the first paint.
+function releaseMountHold(root) {
+  const hold = root.querySelector(".mount-hold");
+  const sheets = [...root.querySelectorAll("link[rel='stylesheet']")];
+  const loaded = sheets.map(
+    (link) =>
+      new Promise((done) => {
+        if (link.sheet) done();
+        link.addEventListener("load", done, { once: true });
+        link.addEventListener("error", done, { once: true });
+      })
+  );
+  // The new styles are computed on the frame after load, so the hold must outlast that frame.
+  const settled = Promise.all(loaded).then(
+    () => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)))
+  );
+  const limit = new Promise((done) => setTimeout(done, 1500));
+  void Promise.race([settled, limit]).then(() => hold?.remove());
+}
+
 export async function mountAiWorkspace(root, options = {}) {
   await prefetchUiTheme(options.getToken, { force: Boolean(options.forceUiTheme) });
   const haUi = haComponentsUi();
@@ -723,7 +743,9 @@ export async function mountAiWorkspace(root, options = {}) {
   const modelTriggerMarkup = haUi
     ? `<ha-button type="button" class="agent-trigger model-trigger" slot="trigger" appearance="plain" size="s" aria-haspopup="menu" aria-expanded="false" aria-label="${t("model")}"><span class="agent-trigger-label model-trigger-label"></span><ha-icon slot="end" icon="mdi:chevron-down"></ha-icon></ha-button>`
     : `<button type="button" class="agent-trigger model-trigger" slot="trigger" aria-haspopup="menu" aria-expanded="false" aria-label="${t("model")}"><span class="agent-trigger-label model-trigger-label"></span><ha-icon icon="mdi:chevron-down"></ha-icon></button>`;
+  // Inline, so it applies before the theme sheets that define the transitions.
   root.innerHTML = `
+    <style class="mount-hold">.wrap, .wrap * { transition: none !important; }</style>
     ${themeCss}
     <div class="${wrapClass}">
       <button type="button" class="nav-scrim" hidden aria-label="${t("close")}"></button>
@@ -731,6 +753,9 @@ export async function mountAiWorkspace(root, options = {}) {
         <div class="nav-head">
           <div class="nav-toolbar">
             <div class="nav-tools">
+              <ha-icon-button class="search-open" label="${t("search_chats")}" aria-pressed="false" hidden>
+                <ha-icon icon="mdi:magnify"></ha-icon>
+              </ha-icon-button>
               <ha-icon-button class="history-open" label="${t("activity")}">
                 <ha-icon icon="mdi:history"></ha-icon>
               </ha-icon-button>
@@ -746,10 +771,15 @@ export async function mountAiWorkspace(root, options = {}) {
           <ha-icon-button class="new-chat-icon" label="${t("new_chat")}">
             <ha-icon icon="mdi:plus"></ha-icon>
           </ha-icon-button>
-          <ha-button class="new-chat" size="s" variant="brand" appearance="accent">
-            <ha-svg-icon slot="start" path="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"></ha-svg-icon>
-            ${t("new_chat")}
-          </ha-button>
+          <div class="nav-action">
+            <div class="nav-search" hidden>
+              <input type="search" class="nav-search-input" placeholder="${t("search_chats")}" aria-label="${t("search_chats")}" autocomplete="off" enterkeyhint="search">
+            </div>
+            <ha-button class="new-chat" size="s" variant="brand" appearance="accent">
+              <ha-svg-icon slot="start" path="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"></ha-svg-icon>
+              ${t("new_chat")}
+            </ha-button>
+          </div>
         </div>
         <div class="sessions" role="list"></div>
       </aside>
@@ -832,10 +862,15 @@ export async function mountAiWorkspace(root, options = {}) {
   `;
 
   const wrap = root.querySelector(".wrap");
+  releaseMountHold(root);
   const scrim = root.querySelector(".nav-scrim");
   const chatEl = root.querySelector(".chat");
+  const stageEl = root.querySelector(".stage");
   const logEl = root.querySelector(".log");
   const sessionsEl = root.querySelector(".sessions");
+  const searchOpen = root.querySelector(".search-open");
+  const searchBox = root.querySelector(".nav-search");
+  const searchInput = root.querySelector(".nav-search-input");
   const titleEl = root.querySelector(".title");
   const bannerEl = root.querySelector(".banner");
   const form = root.querySelector(".composer");
@@ -1130,13 +1165,24 @@ export async function mountAiWorkspace(root, options = {}) {
     wrap.style.height = "";
     form.style.removeProperty("--ai-keyboard-inset");
     wrap.style.removeProperty("--ai-keyboard-inset");
+    syncWelcomeInset();
+  }
+
+  // Only in the welcome state: the stage holds the whole log, and a long chat must not restyle per keyboard frame.
+  function syncWelcomeInset() {
+    if (keyboardOpen && chatEl.classList.contains("welcome")) {
+      stageEl.style.setProperty("--ai-keyboard-inset", `${keyboardInset}px`);
+    } else {
+      stageEl.style.removeProperty("--ai-keyboard-inset");
+    }
   }
 
   function keyboardGap() {
     const vv = window.visualViewport;
     // Overlay keyboards shrink visualViewport.height. Ignore offsetTop so IME
     // pan does not chase the composer (that loop is the rubber-band).
-    return vv ? Math.max(0, Math.round(window.innerHeight - vv.height)) : 0;
+    // Measured from the chat's own bottom: the shell can reserve space below it (Android gesture bar).
+    return vv ? Math.max(0, Math.round(chatEl.getBoundingClientRect().bottom - vv.height)) : 0;
   }
 
   function syncKeyboardInset() {
@@ -1163,6 +1209,7 @@ export async function mountAiWorkspace(root, options = {}) {
     keyboardInset = next;
     keyboardWroteAt = now;
     form.style.setProperty("--ai-keyboard-inset", `${next}px`);
+    syncWelcomeInset();
     if (opened) {
       if (followRaf) {
         cancelAnimationFrame(followRaf);
@@ -1193,6 +1240,7 @@ export async function mountAiWorkspace(root, options = {}) {
     if (shouldAnimate) {
       const from = box.getBoundingClientRect();
       chatEl.classList.toggle("welcome", want);
+      syncWelcomeInset();
       const dy = from.top - box.getBoundingClientRect().top;
       if (Math.abs(dy) > 2) {
         if (motionTimer) clearTimeout(motionTimer);
@@ -1209,6 +1257,7 @@ export async function mountAiWorkspace(root, options = {}) {
       }
     }
     chatEl.classList.toggle("welcome", want);
+    syncWelcomeInset();
     clearMotion();
     syncScrollBottomBtn();
   }
@@ -2378,6 +2427,9 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   let providerRetry = 0;
+  let sessionsLoad = 0;
+  let searchTimer = 0;
+  const MIN_CHATS_FOR_SEARCH = 2;
 
   async function loadProviders() {
     const response = await apiFetch(`${API}/providers`);
@@ -2654,11 +2706,13 @@ export async function mountAiWorkspace(root, options = {}) {
       applySessionTitle(id, title);
     }
     row.dataset.pinned = stayPinned ? "1" : "0";
+    sessionsEl.querySelector(".sessions-empty")?.remove();
     const labels = [...sessionsEl.querySelectorAll(".chats-label")];
     const anchor = stayPinned ? labels[0] : labels[labels.length - 1];
     if (anchor) anchor.after(row);
     else sessionsEl.prepend(row);
     selectSessionRow(sessionId);
+    syncSearchIcon();
   }
 
   function sessionLabel(text) {
@@ -2740,9 +2794,13 @@ export async function mountAiWorkspace(root, options = {}) {
   async function loadSessions() {
     if (compact || !sessionsEl) return;
     closeSessionMenu();
-    const response = await apiFetch(`${API}/sessions`);
+    const query = searchInput?.value.trim() || "";
+    const mark = ++sessionsLoad;
+    const response = await apiFetch(`${API}/sessions${query ? `?q=${encodeURIComponent(query)}` : ""}`);
     if (!response?.ok) return;
     const sessions = await response.json();
+    // A slower answer for an older search must not replace a newer one.
+    if (mark !== sessionsLoad) return;
     const pinned = sessions.filter((session) => session.pinned);
     const rest = sessions.filter((session) => !session.pinned);
     sessionsEl.replaceChildren();
@@ -2750,9 +2808,78 @@ export async function mountAiWorkspace(root, options = {}) {
       sessionsEl.appendChild(sessionLabel(t("pinned")));
       for (const session of pinned) sessionsEl.appendChild(sessionRow(session));
     }
-    sessionsEl.appendChild(sessionLabel(t("chats")));
-    for (const session of rest) sessionsEl.appendChild(sessionRow(session));
+    if (rest.length || !query) {
+      sessionsEl.appendChild(sessionLabel(t("chats")));
+      for (const session of rest) sessionsEl.appendChild(sessionRow(session));
+    }
+    if (query && !sessions.length) {
+      const empty = document.createElement("p");
+      empty.className = "sessions-empty";
+      empty.textContent = t("no_chats_found");
+      sessionsEl.appendChild(empty);
+    }
+    selectSessionRow(sessionId);
+    syncSearchIcon();
   }
+
+  // Rows only count all chats while nothing filters them, and an active search keeps its way out.
+  function syncSearchIcon() {
+    if (!searchOpen || !searchBox || !searchInput) return;
+    if (!searchBox.hidden || searchInput.value.trim()) return;
+    searchOpen.hidden = sessionsEl.querySelectorAll(".session-row").length <= MIN_CHATS_FOR_SEARCH;
+  }
+
+  function setSearchOpen(open) {
+    if (!searchBox || !searchInput) return;
+    searchBox.hidden = !open;
+    searchOpen?.setAttribute("aria-pressed", open ? "true" : "false");
+    window.clearTimeout(searchTimer);
+    if (open) {
+      searchInput.focus({ preventScroll: true });
+      return;
+    }
+    const filtered = Boolean(searchInput.value.trim());
+    searchInput.value = "";
+    if (filtered) loadSessions();
+    else syncSearchIcon();
+  }
+
+  // The filter stays on: picking a result also takes focus from the box.
+  function hideSearch() {
+    searchBox.hidden = true;
+    searchOpen?.setAttribute("aria-pressed", searchInput.value.trim() ? "true" : "false");
+    syncSearchIcon();
+  }
+
+  // Keeps the box focused, so a click on the icon closes it instead of hiding and reopening it.
+  searchOpen?.addEventListener("mousedown", (event) => event.preventDefault());
+  searchOpen?.addEventListener("click", () => {
+    if (wrap.classList.contains("nav-collapsed")) {
+      toggleNav();
+      setSearchOpen(true);
+      return;
+    }
+    setSearchOpen(searchBox.hidden);
+  });
+  searchInput?.addEventListener("input", () => {
+    window.clearTimeout(searchTimer);
+    searchTimer = window.setTimeout(loadSessions, 200);
+  });
+  searchInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      window.clearTimeout(searchTimer);
+      loadSessions();
+      hideSearch();
+      return;
+    }
+    if (event.key !== "Escape") return;
+    event.stopPropagation();
+    setSearchOpen(false);
+  });
+  searchInput?.addEventListener("blur", () => {
+    // Switching tab or window is not leaving the search.
+    if (!searchBox.hidden && document.hasFocus()) hideSearch();
+  });
 
   async function createSession() {
     const mark = streamToken;
@@ -4261,6 +4388,7 @@ export async function mountAiWorkspace(root, options = {}) {
   });
 
   function startNewChat() {
+    setSearchOpen(false);
     restoreQueued();
     abandonStream();
     clearMicHelp();

@@ -45,7 +45,7 @@ from .const import (
 from .mcp_config import with_mcp_auth
 from .mcp_observe import last_mcp_result, note_mcp_result
 from .mcp_resolve import ha_hosts, hass_mcp_server_url
-from .chat_scope import handoff_note, merge_reply_text, other_chat_note
+from .chat_scope import handoff_note, merge_reply_text, other_chat_note, text_after_tools
 from .files import attach_files_to_message, file_events, parse_client_files
 from .images import caption_for, image_events, parse_client_images
 
@@ -720,7 +720,8 @@ class SessionsView(HomeAssistantView):
         hass: HomeAssistant = _hass(request)
         store: Store = _runtime(hass)["store"]
         user_id = _user_id(request)
-        sessions = await hass.async_add_executor_job(store.list_sessions, user_id)
+        query = str(request.query.get("q") or "").strip()[:200]
+        sessions = await hass.async_add_executor_job(store.list_sessions, user_id, query)
         return self.json([_session_dict(item) for item in sessions])
 
     async def post(self, request: web.Request) -> web.Response:
@@ -1090,6 +1091,7 @@ class ChatView(HomeAssistantView):
                     await attach_turn_watch(hass, user_id, session.id)
                 except Exception:
                     logger.debug("change history turn watch skipped", exc_info=True)
+            after_tool = False
             try:
                 try:
                     await response.prepare(request)
@@ -1099,7 +1101,12 @@ class ChatView(HomeAssistantView):
                     async for event in events():
                         kind = event.get("type")
                         if kind == "text":
-                            parts.append(str(event.get("delta") or ""))
+                            delta = str(event.get("delta") or "")
+                            if after_tool and delta:
+                                after_tool = False
+                                delta = text_after_tools(parts, delta)
+                                event = {**event, "delta": delta}
+                            parts.append(delta)
                         elif kind == "result":
                             final = str(event.get("text") or "")
                             continue
@@ -1107,6 +1114,7 @@ class ChatView(HomeAssistantView):
                             final = final or str(event.get("answer") or "")
                             continue
                         elif kind == "tool":
+                            after_tool = True
                             tools.append(
                                 {
                                     "name": event.get("name"),

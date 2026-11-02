@@ -117,6 +117,7 @@
 }
 
 .nav-toolbar .nav-toggle,
+.nav-toolbar .search-open,
 .nav-toolbar .history-open,
 .nav-toolbar .usage-open,
 .chat-nav-toggle,
@@ -187,6 +188,59 @@
 
 .wrap.nav-collapsed .new-chat-icon {
   display: inline-flex;
+}
+
+.nav-action {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+}
+
+.nav-search {
+  position: absolute;
+  inset: 0;
+}
+
+.nav-search:not([hidden]) ~ ha-button.new-chat {
+  visibility: hidden;
+}
+
+.nav-search[hidden],
+.wrap.nav-collapsed .nav-search {
+  display: none;
+}
+
+.nav-search-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 0 var(--ha-space-3);
+  border: 1px solid var(--divider-color);
+  border-radius: 999px;
+  outline: none;
+  background: transparent;
+  color: var(--sidebar-text-color, var(--primary-text-color));
+  font: inherit;
+  font-size: 16px;
+}
+
+.nav-search-input:focus {
+  border-color: var(--primary-color);
+}
+
+.search-open[hidden] {
+  display: none;
+}
+
+.search-open[aria-pressed="true"] {
+  color: var(--primary-color);
+}
+
+.sessions-empty {
+  margin: 0;
+  padding: var(--ha-space-3);
+  color: var(--secondary-text-color);
+  font-size: var(--ha-font-size-s, 0.85rem);
 }
 
 .nav-scrim {
@@ -551,6 +605,8 @@ h1 {
 
 .chat.welcome .stage {
   justify-content: center;
+  /* Centered in the space above the keyboard. */
+  transform: translateY(calc(var(--ai-keyboard-inset, 0px) / -2));
   padding-block: var(--ha-space-6) var(--ha-space-12);
   padding-inline: 0;
 }
@@ -942,6 +998,7 @@ h1 {
 .chat.welcome .composer {
   position: static;
   margin-top: 0;
+  transform: none;
   background: transparent;
 }
 
@@ -1346,7 +1403,7 @@ textarea:focus {
   display: block;
   width: max-content;
   max-width: 100%;
-  margin: var(--ha-space-2) var(--ai-message-inline-pad) 0;
+  margin: var(--ha-space-4) var(--ai-message-inline-pad) 0;
   padding-inline: 0;
   color: var(--primary-color);
   text-decoration: none;

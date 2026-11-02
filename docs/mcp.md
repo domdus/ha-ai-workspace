@@ -16,14 +16,16 @@ Cursor is different: the model runs in the Cursor runtime next to Home Assistant
 
 On by default, for cloud agents and Cursor.
 
-A whole-home entity list or a big search is a lot of JSON. Sending all of it to the model burns tokens and can make replies slower. With this on, large results are shortened **before the model reads them**:
+A whole-home entity list or a big search is a lot of JSON. Sending all of it to the model burns tokens and can make replies slower. With this on, large **entity listings** are condensed **before the model reads them**:
 
-- A huge entity list becomes ids grouped by area. The model can ask again for one area or one entity.
-- A still-long list keeps each entity’s state and drops bulky attributes.
-- One entity, one room, or one automation still arrives whole.
-- The model always receives valid JSON. Nothing is cut off in the middle of an object.
+- A huge listing becomes entity ids grouped by area. The model can ask again for one area or one entity.
+- A shorter listing keeps each entity’s state and drops bulky attributes.
 
-Turn it off if you want every attribute of a large list in one shot and you accept the extra tokens.
+Everything else reaches the model exactly as Home Assistant or the MCP server sent it: guides, dashboards, automations, scripts, and single entities. That matters because the model may write those values back, and HA-MCP puts the key it needs for dashboard writes in its guide.
+
+A result over 100,000 characters keeps its beginning and tells the model that it is incomplete and must not be written back.
+
+Turn this off if you want every attribute of a large listing in one shot and you accept the extra tokens.
 
 ## Change History
 

@@ -265,14 +265,29 @@ class Store:
             self._conn.commit()
         return session
 
-    def list_sessions(self, user_id: str) -> list[Session]:
+    def list_sessions(self, user_id: str, query: str = "") -> list[Session]:
+        """Newest first. With a query, every word must appear in the title or the first prompt."""
         user_id = _text(user_id)
+        words = str(query or "").casefold().split()
         with self._lock:
             rows = self._conn.execute(
-                "SELECT * FROM sessions WHERE user_id = ? ORDER BY pinned DESC, updated_at DESC",
+                """
+                SELECT s.*, (
+                    SELECT m.content FROM messages m
+                    WHERE m.session_id = s.id AND m.role = 'user'
+                    ORDER BY m.id LIMIT 1
+                ) AS first_prompt
+                FROM sessions s WHERE s.user_id = ? ORDER BY s.pinned DESC, s.updated_at DESC
+                """,
                 (user_id,),
             ).fetchall()
-        return [_session(row) for row in rows]
+        # In Python, not LIKE: SQLite only folds ASCII case, so "Küche" would miss "KÜCHE".
+        found = []
+        for row in rows:
+            text = f"{row['title'] or ''}\n{row['first_prompt'] or ''}".casefold()
+            if all(word in text for word in words):
+                found.append(_session(row))
+        return found
 
     def session_title(self, session_id: str) -> str:
         session_id = _text(session_id)

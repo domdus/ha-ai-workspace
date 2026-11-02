@@ -220,6 +220,15 @@ def attach_handoff(message: str, rows, needed: bool = True, title: str = "") -> 
     return f"{note}\n\n{message}"
 
 
+def text_after_tools(earlier: list[str], delta: str) -> str:
+    """First text after a tool call: Cursor's answer otherwise runs straight on from its opening sentence."""
+    said = "".join(earlier)
+    if not said.strip():
+        return delta
+    have = len(said) - len(said.rstrip("\n")) + len(delta) - len(delta.lstrip("\n"))
+    return "\n" * max(0, 2 - have) + delta
+
+
 def merge_reply_text(streamed: str, final: str | None) -> str:
     """Keep a spoken intro that arrived before tools when the result is only the later answer."""
     streamed = str(streamed or "").strip()
@@ -230,6 +239,9 @@ def merge_reply_text(streamed: str, final: str | None) -> str:
         return final
     if streamed == final or streamed in final:
         return final
+    # The chat puts a blank line between text from before and after tools.
+    if "".join(streamed.split()) == "".join(final.split()):
+        return streamed
     if final in streamed:
         return streamed
     overlap = 0

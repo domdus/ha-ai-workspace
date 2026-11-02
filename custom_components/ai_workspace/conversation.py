@@ -17,7 +17,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .agents import Agent, entry_agents
-from .const import DOMAIN, provider_token_mode, token_mode_allows_extras
+from .const import DOMAIN, VOICE_TURN_NOTE, provider_token_mode, token_mode_allows_extras
 from .chat_scope import handoff_note, merge_reply_text, other_chat_note
 from .http import _create_runtime_session, async_agent_events, handoff_rows
 from .small_talk import wants_house_tools
@@ -222,6 +222,8 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
         extras = token_mode_allows_extras(provider_token_mode(provider))
         extra = "" if not extras else str(user_input.extra_system_prompt or "").strip()
         outbound = f"{extra}\n\n{text}" if extra else text
+        if extras:
+            outbound = f"{VOICE_TURN_NOTE}\n\n{outbound}"
         cross = bool(getattr(data.get("settings"), "cross_chat", False))
         note = (
             ""

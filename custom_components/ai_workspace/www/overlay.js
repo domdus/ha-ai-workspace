@@ -9,6 +9,13 @@ function setDrawerOpen(drawer, open) {
   drawer.classList.toggle("open", open);
 }
 
+// On phones the open chat owns one history entry, so Back closes it instead of leaving the page.
+const OVERLAY_ENTRY = "aiWorkspaceOverlay";
+
+function onOverlayEntry() {
+  return Boolean(history.state?.[OVERLAY_ENTRY]);
+}
+
 function applyHostLayout(host) {
   if (!host) return;
   host.classList.remove("open");
@@ -107,7 +114,8 @@ async function ensureHost() {
   shadow.innerHTML = `
     <style>
       .fab {
-        --ai-fab-rest: var(--ha-space-4);
+        --ai-fab-safe: max(var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px));
+        --ai-fab-rest: calc(var(--ha-space-4) + var(--ai-fab-safe));
         position: fixed;
         right: var(--ha-space-4);
         bottom: var(--ai-fab-bottom, var(--ai-fab-rest));
@@ -284,7 +292,7 @@ async function ensureHost() {
       .hidden { display: none !important; }
       @media (max-width: 870px) {
         .fab {
-          --ai-fab-rest: var(--ha-space-3);
+          --ai-fab-rest: calc(var(--ha-space-3) + var(--ai-fab-safe));
           right: var(--ha-space-3);
         }
         aside.drawer {
@@ -335,17 +343,36 @@ async function ensureHost() {
   const close = drawer.querySelector(".close");
   const newChat = drawer.querySelector(".new-chat");
   const brand = drawer.querySelector(".brand");
+  const openDrawer = () => {
+    if (drawer.classList.contains("open")) return;
+    setDrawerOpen(drawer, true);
+    if (mqNarrow.matches && !onOverlayEntry()) {
+      history.pushState({ ...history.state, [OVERLAY_ENTRY]: true }, "", location.href);
+    }
+  };
+  const closeDrawer = () => {
+    setDrawerOpen(drawer, false);
+    if (onOverlayEntry()) history.back();
+  };
+  const syncBack = () => {
+    const open = drawer.classList.contains("open");
+    if (open && mqNarrow.matches && !onOverlayEntry()) setDrawerOpen(drawer, false);
+    // A link can close the chat and leave its entry behind; do not make Back stop on it.
+    else if (!open && onOverlayEntry()) history.back();
+  };
   const goToWorkspace = (path = "/ai-workspace") => {
+    // Take over the chat's entry, so Back from the new page returns to the page below the chat.
+    const replace = onOverlayEntry();
     setDrawerOpen(drawer, false);
     const hass = hassObj();
     if (typeof hass?.navigate === "function") {
-      hass.navigate(path);
+      hass.navigate(path, { replace });
       return;
     }
-    const state = history.state && typeof history.state === "object" ? history.state : { root: true };
-    history.pushState(state, "", path);
+    const { [OVERLAY_ENTRY]: _entry, ...kept } = history.state && typeof history.state === "object" ? history.state : { root: true };
+    history[replace ? "replaceState" : "pushState"](kept, "", path);
     const event = new Event("location-changed", { bubbles: true, composed: true });
-    event.detail = { replace: false };
+    event.detail = { replace };
     window.dispatchEvent(event);
   };
   let chatApi = null;
@@ -400,8 +427,9 @@ async function ensureHost() {
     walk(document, { top: 0, left: 0 });
     return boxes;
   };
+  // Parked below the screen is not in the way: HA keeps the editor's Save button there until something changes.
   const inCorner = (box) =>
-    window.innerWidth - box.right < 120 && window.innerHeight - box.bottom < 180;
+    box.top < window.innerHeight && window.innerWidth - box.right < 120 && window.innerHeight - box.bottom < 180;
   const placeFab = () => {
     if (fab.classList.contains("hidden")) return;
     const hit = cornerButtons().filter(inCorner);
@@ -451,19 +479,20 @@ async function ensureHost() {
     return mounting;
   };
   fab.addEventListener("click", async () => {
-    setDrawerOpen(drawer, true);
+    openDrawer();
     const api = await mountChat();
     api.resume?.();
   });
   newChat.addEventListener("click", async () => {
-    setDrawerOpen(drawer, true);
+    openDrawer();
     const api = await mountChat();
     api.startNewChat();
   });
-  close.addEventListener("click", () => setDrawerOpen(drawer, false));
+  close.addEventListener("click", closeDrawer);
   brand?.addEventListener("click", () => goToWorkspace());
   window.addEventListener("location-changed", sync);
   window.addEventListener("popstate", sync);
+  window.addEventListener("popstate", syncBack);
   window.addEventListener("resize", schedulePlace);
   // `narrow` / `show-tabs` is what lifts the add button above the phone tab bar.
   const layoutHint = new MutationObserver(schedulePlace);
@@ -472,6 +501,18 @@ async function ensureHost() {
     attributes: true,
     attributeFilter: ["narrow", "show-tabs", "is-wide"],
   });
+  // Editors show and hide their Save button without any layout hint; an edit or a click is the only signal.
+  let placeHint = 0;
+  for (const type of ["value-changed", "click"]) {
+    document.addEventListener(
+      type,
+      () => {
+        window.clearTimeout(placeHint);
+        placeHint = window.setTimeout(schedulePlace, 150);
+      },
+      true,
+    );
+  }
   sync();
   return host;
 }
