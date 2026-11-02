@@ -2,7 +2,14 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from custom_components.ai_workspace.agents import agent_from_mapping
-from custom_components.ai_workspace.api_provider import ApiProvider, _history_messages, _slim_mcp_tools
+from custom_components.ai_workspace.api_provider import (
+    ApiProvider,
+    _anthropic_tools,
+    _gemini_schema,
+    _history_messages,
+    _openai_tools,
+    _slim_mcp_tools,
+)
 from custom_components.ai_workspace.const import (
     BPS_KEY_INSTRUCTIONS,
     HA_LINK_INSTRUCTIONS,
@@ -136,16 +143,89 @@ def test_write_tool_keeps_the_skill_key_instruction() -> None:
     slimmed = _slim_mcp_tools(
         [{"name": "ha_config_set_automation", "description": long, "inputSchema": {"type": "object", "properties": props}}]
     )[0]
-    assert len(slimmed["description"]) <= 180
-    assert "ha_get_skill_guide" in slimmed["description"]
-    assert "BestPracticeKey" in slimmed["description"]
-    assert "Do not ask the user." in slimmed["description"]
-    assert "locally installed skills" not in slimmed["description"]
+    assert slimmed["description"].startswith(long.strip())
+    assert slimmed["description"].endswith("Do not ask the user.")
     key = slimmed["inputSchema"]["properties"]["BestPracticeKey"]
     assert "ha_get_skill_guide" in key["description"]
     assert "Do not ask the user." in key["description"]
     assert len(key["description"]) <= 180
-    assert len(slimmed["inputSchema"]["properties"]) == 17
+    assert len(slimmed["inputSchema"]["properties"]) == 21
+
+
+_RICH_SCHEMA = {
+    "type": "object",
+    "title": "Args",
+    "required": ["path", "field_30"],
+    "properties": {
+        "path": {"type": "string", "minLength": 1, "description": "d" * 400},
+        "patch": {
+            "anyOf": [
+                {"type": "array", "items": {"type": "object", "additionalProperties": True}},
+                {"type": "null"},
+            ],
+            "default": None,
+            "description": "p" * 400,
+        },
+        "mode": {"type": "string", "enum": [f"mode_{index}" for index in range(30)]},
+        "kind": {"const": "fixed"},
+        "deep": {
+            "type": "object",
+            "properties": {"a": {"type": "object", "properties": {"b": {"type": "object", "properties": {"c": {"type": "object", "properties": {"d": {"type": "integer", "minimum": 1}}}}}}}},
+        },
+        **{f"field_{index}": {"type": "integer", "maximum": 5} for index in range(40)},
+    },
+}
+
+
+def _without_text(schema):
+    """The schema with its wording removed, so only what decides a valid call is compared."""
+    if isinstance(schema, dict):
+        return {key: _without_text(value) for key, value in schema.items() if key not in {"description", "title"}}
+    if isinstance(schema, list):
+        return [_without_text(item) for item in schema]
+    return schema
+
+
+def _rich_tool(name: str = "ha_search") -> dict:
+    return {"name": name, "description": "t" * 400, "inputSchema": _RICH_SCHEMA}
+
+
+def test_trimming_never_changes_what_a_valid_call_looks_like() -> None:
+    for limit in (180, 100):
+        slimmed = _slim_mcp_tools([_rich_tool()], limit)[0]
+        assert _without_text(slimmed["inputSchema"]) == _without_text(_RICH_SCHEMA)
+        assert len(slimmed["description"]) <= limit
+        assert len(slimmed["inputSchema"]["properties"]["path"]["description"]) <= limit
+    for built in (
+        _openai_tools([_rich_tool()])[0]["function"]["parameters"],
+        _anthropic_tools([_rich_tool()])[0]["input_schema"],
+    ):
+        assert _without_text(built) == _without_text(_RICH_SCHEMA)
+
+
+def test_config_writes_keep_full_text_without_strict_mode() -> None:
+    tool = _slim_mcp_tools([_rich_tool("ha_mcp_ha_config_set_dashboard")], 100)[0]
+    assert tool["description"] == "t" * 400
+    assert tool["inputSchema"]["properties"]["path"]["description"] == "d" * 400
+    assert len(_slim_mcp_tools([_rich_tool("ha_config_set_label")], 100)[0]["description"]) == 100
+
+
+def test_tools_without_a_schema_still_declare_an_object() -> None:
+    for tool in ({"name": "ping"}, {"name": "ping", "inputSchema": {}}):
+        assert _slim_mcp_tools([tool])[0]["inputSchema"] == {"type": "object", "properties": {}}
+
+
+def test_gemini_gets_the_same_parameters_and_types_in_its_subset() -> None:
+    props = _openai_tools([_rich_tool()], gemini=True)[0]["function"]["parameters"]["properties"]
+    assert set(props) == set(_RICH_SCHEMA["properties"])
+    assert props["patch"]["type"] == "array"
+    assert "anyOf" not in props["patch"] and "default" not in props["patch"]
+    assert props["patch"]["description"]
+    assert "additionalProperties" not in props["patch"]["items"]
+    assert len(props["mode"]["enum"]) == 30
+    assert props["kind"] == {"enum": ["fixed"]}
+    union = {"anyOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}, {"type": "null"}]}
+    assert _gemini_schema(union) == {"anyOf": union["anyOf"][:2]}
 
 
 def test_agent_stores_token_mode() -> None:

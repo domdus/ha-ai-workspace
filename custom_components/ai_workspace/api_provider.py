@@ -77,6 +77,15 @@ _IDENTITY = (
 )
 _MAX_ROUNDS = 15
 _DESC_MAX = 180
+_DESC_MAX_MEDIUM = 100
+# Writes whose rules live in the description. Matched by name too, because the key only
+# appears while HA-MCP's strict mode is on.
+_FULL_DESC_TOOL = re.compile(r"ha_config_set_(automation|dashboard|helper|scene|script)$")
+# Labels only. Everything else in a schema decides what a valid call looks like.
+_SCHEMA_LABELS = frozenset({"title", "$schema", "$comment", "examples"})
+_SCHEMA_MAPS = frozenset({"properties", "patternProperties", "$defs", "definitions"})
+_SCHEMA_LISTS = frozenset({"anyOf", "oneOf", "allOf", "prefixItems"})
+_SCHEMA_NODES = frozenset({"items", "additionalProperties", "propertyNames", "contains", "not", "if", "then", "else"})
 # HA-MCP hides the acknowledgment key inside ha_get_skill_guide and puts the
 # "call that tool" sentence at the end of a long write-tool description. A
 # 180-character trim drops it, and the model then asks the user for BestPracticeKey.
@@ -88,7 +97,6 @@ _BPS_NOTE = (
     " Call ha_get_skill_guide and pass its acknowledgment key as BestPracticeKey. Do not ask the user."
 )
 _HISTORY_MAX = 12
-_PROPS_MAX = 16
 _WAIT = re.compile(r"try again in ([\d.]+)\s*(ms|s)", re.I)
 _ANTHROPIC_VERSION = "2023-06-01"
 _REASONING_EFFORT = {API_OPENAI, API_AZURE, API_GEMINI, API_XAI}
@@ -164,66 +172,78 @@ def _clip(text: str, limit: int) -> str:
     return raw[: limit - 1].rstrip() + "…"
 
 
-def _slim_schema(schema: Any, depth: int = 0) -> dict[str, Any]:
-    if not isinstance(schema, dict) or depth > 3:
-        return {"type": "object", "properties": {}}
+def _slim_schema(schema: Any, limit: int | None = _DESC_MAX) -> Any:
+    """Shorten descriptions only. Parameters, types, enums and required fields stay as they are."""
+    if not isinstance(schema, dict):
+        return schema
     out: dict[str, Any] = {}
-    if schema.get("type"):
-        out["type"] = schema["type"]
-    if schema.get("description"):
-        out["description"] = _clip(str(schema["description"]), _DESC_MAX)
-    if isinstance(schema.get("enum"), list):
-        out["enum"] = schema["enum"][:12]
+    for key, value in schema.items():
+        if key in _SCHEMA_LABELS:
+            continue
+        if key == "description" and isinstance(value, str):
+            out[key] = _clip(value, limit) if limit else value
+        elif key in _SCHEMA_MAPS and isinstance(value, dict):
+            out[key] = {name: _slim_schema(item, limit) for name, item in value.items()}
+        elif key in _SCHEMA_LISTS and isinstance(value, list):
+            out[key] = [_slim_schema(item, limit) for item in value]
+        elif key in _SCHEMA_NODES:
+            out[key] = _slim_schema(value, limit)
+        else:
+            out[key] = value
+    return out
+
+
+def _gemini_schema(schema: Any) -> Any:
+    """Gemini takes a subset of JSON Schema: same parameters and types, without the rest."""
+    if not isinstance(schema, dict):
+        return schema
+    out: dict[str, Any] = {}
+    for key, value in schema.items():
+        if key in {"default", "additionalProperties", "propertyNames"}:
+            continue
+        if key == "const":
+            out["enum"] = [value]
+        elif key in _SCHEMA_MAPS and isinstance(value, dict):
+            out[key] = {name: _gemini_schema(item) for name, item in value.items()}
+        elif key in _SCHEMA_LISTS and isinstance(value, list):
+            out[key] = [_gemini_schema(item) for item in value if not _is_null_schema(item)]
+        elif key in _SCHEMA_NODES:
+            out[key] = _gemini_schema(value)
+        else:
+            out[key] = value
+    union = out.get("anyOf")
+    if isinstance(union, list) and len(union) == 1 and isinstance(union[0], dict):
+        del out["anyOf"]
+        out = {**union[0], **out}
+    return out
+
+
+def _is_null_schema(schema: Any) -> bool:
+    return isinstance(schema, dict) and schema.get("type") == "null"
+
+
+def _full_description(name: str, schema: dict[str, Any]) -> bool:
     props = schema.get("properties")
-    if isinstance(props, dict) and props:
-        slim: dict[str, Any] = {}
-        kept = 0
-        for key, value in props.items():
-            name = str(key)
-            if name == "BestPracticeKey":
-                slim[name] = {"type": "string", "description": _BPS_PARAM}
-                continue
-            if kept >= _PROPS_MAX:
-                continue
-            kept += 1
-            slim[name] = _slim_schema(value, depth + 1) if isinstance(value, dict) else {"type": "string"}
-        out["properties"] = slim
-    required = schema.get("required")
-    if isinstance(required, list) and out.get("properties"):
-        allowed = out["properties"]
-        kept = [item for item in required if item in allowed]
-        if kept:
-            out["required"] = kept
-    items = schema.get("items")
-    if isinstance(items, dict):
-        out["items"] = _slim_schema(items, depth + 1)
-    return out or {"type": "object", "properties": {}}
+    return bool(_FULL_DESC_TOOL.search(name)) or (isinstance(props, dict) and "BestPracticeKey" in props)
 
 
-def _clip_bps_tool(text: str) -> str:
-    """Keep the skill-key instruction inside the description budget."""
-    note = _BPS_NOTE
-    room = _DESC_MAX - len(note)
-    raw = str(text or "").strip()
-    if len(raw) <= room:
-        return raw + note
-    return raw[: room - 1].rstrip() + "…" + note
-
-
-def _slim_mcp_tools(mcp_tools: list[dict]) -> list[dict]:
+def _slim_mcp_tools(mcp_tools: list[dict], limit: int = _DESC_MAX) -> list[dict]:
     out = []
     for tool in mcp_tools:
         name = str(tool.get("name") or "")
         if not name:
             continue
-        schema = tool.get("inputSchema") or tool.get("input_schema") or {"type": "object", "properties": {}}
-        slim = _slim_schema(schema)
-        description = str(tool.get("description") or name)
-        props = slim.get("properties") if isinstance(slim, dict) else None
-        if isinstance(props, dict) and "BestPracticeKey" in props:
-            description = _clip_bps_tool(description)
-        else:
-            description = _clip(description, _DESC_MAX)
+        schema = tool.get("inputSchema") or tool.get("input_schema")
+        schema = schema if isinstance(schema, dict) else {}
+        full = _full_description(name, schema)
+        slim = {"type": "object", "properties": {}, **_slim_schema(schema, None if full else limit)}
+        description = str(tool.get("description") or name).strip()
+        props = slim["properties"]
+        if isinstance(props, dict) and isinstance(props.get("BestPracticeKey"), dict):
+            props["BestPracticeKey"] = {**props["BestPracticeKey"], "description": _BPS_PARAM}
+            description += _BPS_NOTE
+        elif not full:
+            description = _clip(description, limit)
         out.append(
             {
                 "name": name,
@@ -381,16 +401,16 @@ def _tool_label(name: str) -> str:
     return raw
 
 
-def _openai_tools(mcp_tools: list[dict]) -> list[dict]:
+def _openai_tools(mcp_tools: list[dict], limit: int = _DESC_MAX, gemini: bool = False) -> list[dict]:
     out = []
-    for tool in _slim_mcp_tools(mcp_tools):
+    for tool in _slim_mcp_tools(mcp_tools, limit):
         out.append(
             {
                 "type": "function",
                 "function": {
                     "name": tool["name"],
                     "description": tool["description"],
-                    "parameters": tool["inputSchema"],
+                    "parameters": _gemini_schema(tool["inputSchema"]) if gemini else tool["inputSchema"],
                 },
             }
         )
@@ -484,9 +504,9 @@ def _strip_prompt_cache(body: dict) -> bool:
     return changed
 
 
-def _anthropic_tools(mcp_tools: list[dict]) -> list[dict]:
+def _anthropic_tools(mcp_tools: list[dict], limit: int = _DESC_MAX) -> list[dict]:
     out = []
-    for tool in _slim_mcp_tools(mcp_tools):
+    for tool in _slim_mcp_tools(mcp_tools, limit):
         out.append(
             {
                 "name": tool["name"],
@@ -662,6 +682,9 @@ class ApiProvider:
 
     def _token_mode(self) -> str:
         return settings_token_mode(self.settings)
+
+    def _tool_text_limit(self) -> int:
+        return _DESC_MAX_MEDIUM if self._token_mode() == TOKEN_MODE_MEDIUM else _DESC_MAX
 
     def _wants_prompt_cache(self) -> bool:
         return (
@@ -919,7 +942,7 @@ class ApiProvider:
         messages: list[dict[str, Any]] = [{"role": "system", "content": self._system(origin, language, admin)}]
         messages.extend(history)
         messages.append({"role": "user", "content": openai_user_content(message, images)})
-        tools = _openai_tools(mcp.tools)
+        tools = _openai_tools(mcp.tools, self._tool_text_limit(), self.settings.api_provider == API_GEMINI)
         url = self._chat_url()
         headers = self._auth_headers()
         said: list[str] = []
@@ -1083,7 +1106,7 @@ class ApiProvider:
     ) -> AsyncIterator[dict]:
         messages: list[dict[str, Any]] = list(history)
         messages.append({"role": "user", "content": anthropic_user_content(message, images)})
-        tools = _anthropic_tools(mcp.tools)
+        tools = _anthropic_tools(mcp.tools, self._tool_text_limit())
         url = f"{self._base()}/messages"
         headers = self._anthropic_headers()
         said: list[str] = []

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.2b1
+
+- Cloud agents: every tool now reaches the model with all its parameters, types, allowed values, and required fields, on every provider. Before, tools were cut to 16 parameters and many lost their types, so a model could send the wrong shape or not see a parameter at all. This should help dashboard patches that failed on GPT-5. Cursor agents already had the full definitions.
+- Cloud agents: the automation, dashboard, helper, scene, and script write tools keep their full descriptions at every token level. Other tools stay at 180 characters, and **Medium** shortens them to 100. Each request carries more tool text than before, about 38,000 tokens instead of 23,000 with HA-MCP on Off and Light, and 34,000 on Medium.
+- Gemini gets the same parameters and types in the simpler form it accepts.
+- Model prices updated from LiteLLM.
+
 ## 1.4.1
 
 Everything from 1.4.1b1 to 1.4.1b3, plus two floating chat fixes:
