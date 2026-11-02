@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.2b2
+
+- Dashboards: a change saved to the default dashboard while you are on another page, such as AI Workspace, now shows when you go back. Before, it stayed hidden until the app or browser page was restarted.
+
 ## 1.4.2b1
 
 - Cloud agents: every tool now reaches the model with all its parameters, types, allowed values, and required fields, on every provider. Before, tools were cut to 16 parameters and many lost their types, so a model could send the wrong shape or not see a parameter at all. This should help dashboard patches that failed on GPT-5. Cursor agents already had the full definitions.
