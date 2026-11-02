@@ -634,6 +634,26 @@ function linkifyHaMentions(content, mentions = true) {
   return text.replace(/\u0000HA(\d+)\u0000/g, (_m, index) => held[Number(index)] || "");
 }
 
+// A closed sidebar would otherwise slide away on open when its sheet arrives after the first paint.
+function releaseMountHold(root) {
+  const hold = root.querySelector(".mount-hold");
+  const sheets = [...root.querySelectorAll("link[rel='stylesheet']")];
+  const loaded = sheets.map(
+    (link) =>
+      new Promise((done) => {
+        if (link.sheet) done();
+        link.addEventListener("load", done, { once: true });
+        link.addEventListener("error", done, { once: true });
+      })
+  );
+  // The new styles are computed on the frame after load, so the hold must outlast that frame.
+  const settled = Promise.all(loaded).then(
+    () => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)))
+  );
+  const limit = new Promise((done) => setTimeout(done, 1500));
+  void Promise.race([settled, limit]).then(() => hold?.remove());
+}
+
 export async function mountAiWorkspace(root, options = {}) {
   await prefetchUiTheme(options.getToken, { force: Boolean(options.forceUiTheme) });
   const haUi = haComponentsUi();
@@ -723,7 +743,9 @@ export async function mountAiWorkspace(root, options = {}) {
   const modelTriggerMarkup = haUi
     ? `<ha-button type="button" class="agent-trigger model-trigger" slot="trigger" appearance="plain" size="s" aria-haspopup="menu" aria-expanded="false" aria-label="${t("model")}"><span class="agent-trigger-label model-trigger-label"></span><ha-icon slot="end" icon="mdi:chevron-down"></ha-icon></ha-button>`
     : `<button type="button" class="agent-trigger model-trigger" slot="trigger" aria-haspopup="menu" aria-expanded="false" aria-label="${t("model")}"><span class="agent-trigger-label model-trigger-label"></span><ha-icon icon="mdi:chevron-down"></ha-icon></button>`;
+  // Inline, so it applies before the theme sheets that define the transitions.
   root.innerHTML = `
+    <style class="mount-hold">.wrap, .wrap * { transition: none !important; }</style>
     ${themeCss}
     <div class="${wrapClass}">
       <button type="button" class="nav-scrim" hidden aria-label="${t("close")}"></button>
@@ -840,6 +862,7 @@ export async function mountAiWorkspace(root, options = {}) {
   `;
 
   const wrap = root.querySelector(".wrap");
+  releaseMountHold(root);
   const scrim = root.querySelector(".nav-scrim");
   const chatEl = root.querySelector(".chat");
   const stageEl = root.querySelector(".stage");

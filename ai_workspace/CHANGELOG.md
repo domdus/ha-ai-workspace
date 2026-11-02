@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.4.1
+
+Everything from 1.4.1b1 to 1.4.1b3, plus two floating chat fixes:
+
+- **Update the runtime (App or Docker image) together with this release.** The shortening fix and the new status sentence also live in the runtime, and Cursor agents use that copy.
+- **Shorten long Home Assistant answers** now only touches long entity listings. Dashboards, automations, guides and keys always reach the agent whole, so dashboard edits no longer fail on a missing best-practice key and a shortened config can no longer be written back. Answers over 100,000 characters are still cut, with a note telling the agent not to write them back.
+- Agents: when a request needs tools, cloud and Cursor agents open with one short sentence saying what they are checking, then work. This also applies with a custom system prompt. It is skipped on the Medium and Extreme token levels and for voice requests through Assist.
+- Agents: new rule against making placeholder, test, or helper automations, scripts, scenes, or entities to pass the BestPracticeKey or get around a tool error. If a write stays blocked, the agent stops and says so.
+- Chat: text before and after tool calls is separated by a blank line, also after reloading the chat.
+- Chat list: a **search** icon filters pinned and other chats by title or first prompt. It shows once you have more than 2 chats. The search box sits over **New Chat** and hides on Enter or when you click elsewhere; the filter stays on and the icon stays highlighted. Esc or the icon clears it.
+- Floating chat: **Open full workspace** has more room below the header.
+- Opening AI Workspace no longer shows the chat list sliding away on mobile.
+- Mobile: **Back** closes the floating chat.
+- Mobile: in a new chat the welcome text and prompt stay together above the keyboard instead of the prompt jumping to the top.
+- Mobile: in an ongoing chat the prompt sits directly on the keyboard, with no gap above it on phones with a gesture bar.
+- Floating button: stays above the gesture bar, no longer slips off the screen in the automation editor, and moves clear of the editor's Save button when it appears.
+
 ## 1.4.1b3
 
 - Agents: when a request needs tools, cloud and Cursor agents open with one short sentence saying what they are checking, then work. This also applies with a custom system prompt. It is skipped on the Medium and Extreme token levels and for voice requests through Assist.

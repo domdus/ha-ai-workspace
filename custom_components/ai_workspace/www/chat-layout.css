@@ -1004,7 +1004,7 @@ textarea.message {
   display: block;
   width: max-content;
   max-width: 100%;
-  margin: var(--ha-space-2) var(--ai-message-inline-pad) 0;
+  margin: var(--ha-space-4) var(--ai-message-inline-pad) 0;
   padding-inline: 0;
 }
 
