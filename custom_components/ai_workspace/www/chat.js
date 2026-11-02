@@ -731,6 +731,9 @@ export async function mountAiWorkspace(root, options = {}) {
         <div class="nav-head">
           <div class="nav-toolbar">
             <div class="nav-tools">
+              <ha-icon-button class="search-open" label="${t("search_chats")}" aria-pressed="false" hidden>
+                <ha-icon icon="mdi:magnify"></ha-icon>
+              </ha-icon-button>
               <ha-icon-button class="history-open" label="${t("activity")}">
                 <ha-icon icon="mdi:history"></ha-icon>
               </ha-icon-button>
@@ -746,10 +749,15 @@ export async function mountAiWorkspace(root, options = {}) {
           <ha-icon-button class="new-chat-icon" label="${t("new_chat")}">
             <ha-icon icon="mdi:plus"></ha-icon>
           </ha-icon-button>
-          <ha-button class="new-chat" size="s" variant="brand" appearance="accent">
-            <ha-svg-icon slot="start" path="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"></ha-svg-icon>
-            ${t("new_chat")}
-          </ha-button>
+          <div class="nav-action">
+            <div class="nav-search" hidden>
+              <input type="search" class="nav-search-input" placeholder="${t("search_chats")}" aria-label="${t("search_chats")}" autocomplete="off" enterkeyhint="search">
+            </div>
+            <ha-button class="new-chat" size="s" variant="brand" appearance="accent">
+              <ha-svg-icon slot="start" path="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"></ha-svg-icon>
+              ${t("new_chat")}
+            </ha-button>
+          </div>
         </div>
         <div class="sessions" role="list"></div>
       </aside>
@@ -836,6 +844,9 @@ export async function mountAiWorkspace(root, options = {}) {
   const chatEl = root.querySelector(".chat");
   const logEl = root.querySelector(".log");
   const sessionsEl = root.querySelector(".sessions");
+  const searchOpen = root.querySelector(".search-open");
+  const searchBox = root.querySelector(".nav-search");
+  const searchInput = root.querySelector(".nav-search-input");
   const titleEl = root.querySelector(".title");
   const bannerEl = root.querySelector(".banner");
   const form = root.querySelector(".composer");
@@ -2378,6 +2389,9 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   let providerRetry = 0;
+  let sessionsLoad = 0;
+  let searchTimer = 0;
+  const MIN_CHATS_FOR_SEARCH = 2;
 
   async function loadProviders() {
     const response = await apiFetch(`${API}/providers`);
@@ -2654,11 +2668,13 @@ export async function mountAiWorkspace(root, options = {}) {
       applySessionTitle(id, title);
     }
     row.dataset.pinned = stayPinned ? "1" : "0";
+    sessionsEl.querySelector(".sessions-empty")?.remove();
     const labels = [...sessionsEl.querySelectorAll(".chats-label")];
     const anchor = stayPinned ? labels[0] : labels[labels.length - 1];
     if (anchor) anchor.after(row);
     else sessionsEl.prepend(row);
     selectSessionRow(sessionId);
+    syncSearchIcon();
   }
 
   function sessionLabel(text) {
@@ -2740,9 +2756,13 @@ export async function mountAiWorkspace(root, options = {}) {
   async function loadSessions() {
     if (compact || !sessionsEl) return;
     closeSessionMenu();
-    const response = await apiFetch(`${API}/sessions`);
+    const query = searchInput?.value.trim() || "";
+    const mark = ++sessionsLoad;
+    const response = await apiFetch(`${API}/sessions${query ? `?q=${encodeURIComponent(query)}` : ""}`);
     if (!response?.ok) return;
     const sessions = await response.json();
+    // A slower answer for an older search must not replace a newer one.
+    if (mark !== sessionsLoad) return;
     const pinned = sessions.filter((session) => session.pinned);
     const rest = sessions.filter((session) => !session.pinned);
     sessionsEl.replaceChildren();
@@ -2750,9 +2770,78 @@ export async function mountAiWorkspace(root, options = {}) {
       sessionsEl.appendChild(sessionLabel(t("pinned")));
       for (const session of pinned) sessionsEl.appendChild(sessionRow(session));
     }
-    sessionsEl.appendChild(sessionLabel(t("chats")));
-    for (const session of rest) sessionsEl.appendChild(sessionRow(session));
+    if (rest.length || !query) {
+      sessionsEl.appendChild(sessionLabel(t("chats")));
+      for (const session of rest) sessionsEl.appendChild(sessionRow(session));
+    }
+    if (query && !sessions.length) {
+      const empty = document.createElement("p");
+      empty.className = "sessions-empty";
+      empty.textContent = t("no_chats_found");
+      sessionsEl.appendChild(empty);
+    }
+    selectSessionRow(sessionId);
+    syncSearchIcon();
   }
+
+  // Rows only count all chats while nothing filters them, and an active search keeps its way out.
+  function syncSearchIcon() {
+    if (!searchOpen || !searchBox || !searchInput) return;
+    if (!searchBox.hidden || searchInput.value.trim()) return;
+    searchOpen.hidden = sessionsEl.querySelectorAll(".session-row").length <= MIN_CHATS_FOR_SEARCH;
+  }
+
+  function setSearchOpen(open) {
+    if (!searchBox || !searchInput) return;
+    searchBox.hidden = !open;
+    searchOpen?.setAttribute("aria-pressed", open ? "true" : "false");
+    window.clearTimeout(searchTimer);
+    if (open) {
+      searchInput.focus({ preventScroll: true });
+      return;
+    }
+    const filtered = Boolean(searchInput.value.trim());
+    searchInput.value = "";
+    if (filtered) loadSessions();
+    else syncSearchIcon();
+  }
+
+  // The filter stays on: picking a result also takes focus from the box.
+  function hideSearch() {
+    searchBox.hidden = true;
+    searchOpen?.setAttribute("aria-pressed", searchInput.value.trim() ? "true" : "false");
+    syncSearchIcon();
+  }
+
+  // Keeps the box focused, so a click on the icon closes it instead of hiding and reopening it.
+  searchOpen?.addEventListener("mousedown", (event) => event.preventDefault());
+  searchOpen?.addEventListener("click", () => {
+    if (wrap.classList.contains("nav-collapsed")) {
+      toggleNav();
+      setSearchOpen(true);
+      return;
+    }
+    setSearchOpen(searchBox.hidden);
+  });
+  searchInput?.addEventListener("input", () => {
+    window.clearTimeout(searchTimer);
+    searchTimer = window.setTimeout(loadSessions, 200);
+  });
+  searchInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      window.clearTimeout(searchTimer);
+      loadSessions();
+      hideSearch();
+      return;
+    }
+    if (event.key !== "Escape") return;
+    event.stopPropagation();
+    setSearchOpen(false);
+  });
+  searchInput?.addEventListener("blur", () => {
+    // Switching tab or window is not leaving the search.
+    if (!searchBox.hidden && document.hasFocus()) hideSearch();
+  });
 
   async function createSession() {
     const mark = streamToken;
@@ -4261,6 +4350,7 @@ export async function mountAiWorkspace(root, options = {}) {
   });
 
   function startNewChat() {
+    setSearchOpen(false);
     restoreQueued();
     abandonStream();
     clearMicHelp();

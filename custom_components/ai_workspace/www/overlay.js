@@ -9,6 +9,13 @@ function setDrawerOpen(drawer, open) {
   drawer.classList.toggle("open", open);
 }
 
+// On phones the open chat owns one history entry, so Back closes it instead of leaving the page.
+const OVERLAY_ENTRY = "aiWorkspaceOverlay";
+
+function onOverlayEntry() {
+  return Boolean(history.state?.[OVERLAY_ENTRY]);
+}
+
 function applyHostLayout(host) {
   if (!host) return;
   host.classList.remove("open");
@@ -335,17 +342,36 @@ async function ensureHost() {
   const close = drawer.querySelector(".close");
   const newChat = drawer.querySelector(".new-chat");
   const brand = drawer.querySelector(".brand");
+  const openDrawer = () => {
+    if (drawer.classList.contains("open")) return;
+    setDrawerOpen(drawer, true);
+    if (mqNarrow.matches && !onOverlayEntry()) {
+      history.pushState({ ...history.state, [OVERLAY_ENTRY]: true }, "", location.href);
+    }
+  };
+  const closeDrawer = () => {
+    setDrawerOpen(drawer, false);
+    if (onOverlayEntry()) history.back();
+  };
+  const syncBack = () => {
+    const open = drawer.classList.contains("open");
+    if (open && mqNarrow.matches && !onOverlayEntry()) setDrawerOpen(drawer, false);
+    // A link can close the chat and leave its entry behind; do not make Back stop on it.
+    else if (!open && onOverlayEntry()) history.back();
+  };
   const goToWorkspace = (path = "/ai-workspace") => {
+    // Take over the chat's entry, so Back from the new page returns to the page below the chat.
+    const replace = onOverlayEntry();
     setDrawerOpen(drawer, false);
     const hass = hassObj();
     if (typeof hass?.navigate === "function") {
-      hass.navigate(path);
+      hass.navigate(path, { replace });
       return;
     }
-    const state = history.state && typeof history.state === "object" ? history.state : { root: true };
-    history.pushState(state, "", path);
+    const { [OVERLAY_ENTRY]: _entry, ...kept } = history.state && typeof history.state === "object" ? history.state : { root: true };
+    history[replace ? "replaceState" : "pushState"](kept, "", path);
     const event = new Event("location-changed", { bubbles: true, composed: true });
-    event.detail = { replace: false };
+    event.detail = { replace };
     window.dispatchEvent(event);
   };
   let chatApi = null;
@@ -451,19 +477,20 @@ async function ensureHost() {
     return mounting;
   };
   fab.addEventListener("click", async () => {
-    setDrawerOpen(drawer, true);
+    openDrawer();
     const api = await mountChat();
     api.resume?.();
   });
   newChat.addEventListener("click", async () => {
-    setDrawerOpen(drawer, true);
+    openDrawer();
     const api = await mountChat();
     api.startNewChat();
   });
-  close.addEventListener("click", () => setDrawerOpen(drawer, false));
+  close.addEventListener("click", closeDrawer);
   brand?.addEventListener("click", () => goToWorkspace());
   window.addEventListener("location-changed", sync);
   window.addEventListener("popstate", sync);
+  window.addEventListener("popstate", syncBack);
   window.addEventListener("resize", schedulePlace);
   // `narrow` / `show-tabs` is what lifts the add button above the phone tab bar.
   const layoutHint = new MutationObserver(schedulePlace);

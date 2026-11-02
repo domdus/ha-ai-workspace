@@ -275,3 +275,24 @@ def test_usage_tts_origin_and_characters(tmp_path: Path) -> None:
     assert last is not None
     assert last["origin"] == "tts"
     store.close()
+
+
+def test_search_matches_title_or_first_prompt_only(tmp_path: Path) -> None:
+    store = Store(tmp_path / "db.sqlite")
+    first = store.create_session("user-1", "cursor")
+    store.rename_session("user-1", first.id, "Küche Licht")
+    second = store.create_session("user-1", "cursor")
+    store.add_message(second.id, "user", "Why is the garage door open?", "[]")
+    store.add_message(second.id, "user", "And the cellar?", "[]")
+    store.add_message(second.id, "assistant", "The kitchen is fine.", "[]")
+    other = store.create_session("user-2", "cursor")
+    store.rename_session("user-2", other.id, "Küche")
+
+    ids = lambda query: {item.id for item in store.list_sessions("user-1", query)}
+    assert ids("") == {first.id, second.id}
+    assert ids("KÜCHE") == {first.id}
+    assert ids("garage") == {second.id}
+    assert ids("door garage") == {second.id}
+    assert ids("garage kitchen") == set()
+    assert ids("cellar") == set()
+    store.close()

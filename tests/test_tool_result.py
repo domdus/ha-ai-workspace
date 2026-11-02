@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from app.main import create_app
 from app.mcp_proxy import McpProxy, parse_tool_call, proxy_secret_path, tool_response_ok
 from app.settings import Settings
-from app.tool_result import AREA_MAP, OFF, PASS, TRUNCATED, UNCHANGED, shorten_mcp_response, shorten_tool_result
+from app.tool_result import AREA_MAP, LIMIT, OFF, PASS, TRUNCATED, UNCHANGED, shorten_mcp_response, shorten_tool_result
 
 
 def _component():
@@ -161,15 +161,69 @@ def test_short_entity_list_keeps_state_and_drops_attributes() -> None:
     assert "history" not in fit(raw)
 
 
-def test_long_json_list_omits_whole_items() -> None:
-    items = [{"id": f"automation-{index}", "alias": "water " * 40, "config": "z" * 2000} for index in range(80)]
-    text, kind = _component().shorten_tool_result(json.dumps(items))
+def test_skill_guide_arrives_whole_with_its_key() -> None:
+    """HA-MCP puts the BestPracticeKey in the first line; writes fail without it."""
+    guide = "Acknowledgment: dashboards-ack-7f3a\n" + "Best practice line.\n" * 1200
+    envelope = {
+        "content": [{"type": "text", "text": json.dumps({"file": "SKILL.md", "content": guide})}],
+        "structuredContent": {"file": "SKILL.md", "content": guide},
+        "isError": False,
+    }
+    text, kind = shorten_tool_result(envelope)
+    assert kind == UNCHANGED
+    assert json.loads(text) == envelope
+
+
+def test_dashboard_config_is_never_rewritten() -> None:
+    cards = [
+        {"type": "custom:gauge", "entity": f"sensor.tank_{i}", "name": f"Tank {i}", "state": "on", "tap_action": {"action": "more-info"}}
+        for i in range(120)
+    ]
+    long_markdown = "Template {{ states('sensor.tank_1') }} " * 300
+    config = {"views": [{"title": "Technik", "cards": cards + [{"type": "markdown", "content": long_markdown}]}]}
+    raw = json.dumps(config)
+    assert len(raw) > PASS
+    text, kind = shorten_tool_result(raw)
+    assert kind == UNCHANGED
+    assert text == raw
+
+
+def test_long_automation_list_keeps_every_field() -> None:
+    items = [{"id": f"automation-{index}", "alias": "water " * 40, "config": "z" * 2000} for index in range(30)]
+    raw = json.dumps(items)
+    text, kind = shorten_tool_result(raw)
+    assert kind == UNCHANGED
+    assert text == raw
+
+
+def test_entity_rows_with_config_are_not_a_listing() -> None:
+    items = [{"entity_id": f"light.n_{i}", "brightness": 40, "blob": "x" * 200} for i in range(100)]
+    raw = json.dumps(items)
+    assert shorten_tool_result(raw) == (raw, UNCHANGED)
+
+
+def test_listing_keeps_the_id_for_edit_links() -> None:
+    items = [
+        {"entity_id": f"automation.a_{i}", "state": "on", "attributes": {"id": f"a{i}", "blob": "x" * 200}}
+        for i in range(40)
+    ]
+    body = json.loads(shorten_tool_result(json.dumps(items))[0])
+    assert body[3] == {"entity_id": "automation.a_3", "state": "on", "id": "a3"}
+
+
+def test_huge_result_keeps_its_beginning_and_says_it_is_cut() -> None:
+    raw = "Key on the first line\n" + "line of text\n" * 20000
+    text, kind = shorten_tool_result(raw)
     assert kind == TRUNCATED
-    body = json.loads(text)
-    assert isinstance(body, list)
-    assert body[-1]["omitted"] > 0
-    assert all(item.get("config") != "z" * 2000 for item in body)
-    assert "z" * 50 not in text
+    assert text.startswith("Key on the first line")
+    assert "do not write it back" in text
+    assert len(text) < LIMIT + 200
+    guide = "Key on the first line\n" + "line of text\n" * 20000
+    envelope = {"content": [{"type": "text", "text": guide}], "structuredContent": {"content": guide}, "isError": False}
+    body = json.loads(shorten_tool_result(envelope)[0])
+    assert body["content"][0]["text"].startswith("Key on the first line")
+    assert "do not write it back" in body["content"][0]["text"]
+    assert "structuredContent" not in body and body["isError"] is False
 
 
 def test_mcp_envelope_text_stays_json() -> None:
@@ -194,7 +248,7 @@ def test_mcp_envelope_text_stays_json() -> None:
 
 def test_tools_call_is_compacted_and_other_methods_are_not() -> None:
     entities = [
-        {"entity_id": f"light.n_{index}", "friendly_name": f"Light {index} with a long name", "attributes": {"blob": "m" * 400}}
+        {"entity_id": f"light.n_{index}", "state": "on", "friendly_name": f"Light {index} with a long name", "attributes": {"blob": "m" * 400}}
         for index in range(500)
     ]
     result = {"content": [{"type": "text", "text": json.dumps(entities)}]}
@@ -211,6 +265,14 @@ def test_tools_call_is_compacted_and_other_methods_are_not() -> None:
     assert listed_kind == UNCHANGED
 
 
+def test_stream_with_nothing_to_shorten_stays_byte_identical() -> None:
+    guide = "Ack key\n" + "Grüße line.\n" * 1000
+    result = {"content": [{"type": "text", "text": json.dumps({"content": guide})}]}
+    body = f'event: message\ndata:{json.dumps({"jsonrpc": "2.0", "id": 1, "result": result})}\n\n'.encode()
+    call = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/call"}).encode()
+    assert shorten_mcp_response(call, body, "text/event-stream") == (body, UNCHANGED)
+
+
 def test_proxy_returns_a_fitted_tool_result(tmp_path: Path) -> None:
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
     import threading
@@ -218,6 +280,7 @@ def test_proxy_returns_a_fitted_tool_result(tmp_path: Path) -> None:
     entities = [
             {
                 "entity_id": f"light.n_{index}",
+                "state": "on",
                 "area_name": "Kitchen",
                 "friendly_name": f"Light {index} with a long name",
                 "attributes": {"blob": "m" * 400},

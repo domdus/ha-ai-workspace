@@ -720,7 +720,8 @@ class SessionsView(HomeAssistantView):
         hass: HomeAssistant = _hass(request)
         store: Store = _runtime(hass)["store"]
         user_id = _user_id(request)
-        sessions = await hass.async_add_executor_job(store.list_sessions, user_id)
+        query = str(request.query.get("q") or "").strip()[:200]
+        sessions = await hass.async_add_executor_job(store.list_sessions, user_id, query)
         return self.json([_session_dict(item) for item in sessions])
 
     async def post(self, request: web.Request) -> web.Response:

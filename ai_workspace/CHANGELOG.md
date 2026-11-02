@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.1b1
+
+- **Update the runtime (App or Docker image) together with this release.** The shortening fix below also lives in the runtime, and Cursor agents use that copy.
+- **Shorten long Home Assistant answers** now only touches long entity listings. Dashboards, automations, guides and keys always reach the agent whole, so dashboard edits no longer fail on a missing best-practice key and a shortened config can no longer be written back. Answers over 100,000 characters are still cut, with a note telling the agent not to write them back.
+- Chat list: a **search** icon filters pinned and other chats by title or first prompt. It shows once you have more than 2 chats. The search box sits over **New Chat** and hides on Enter or when you click elsewhere; the filter stays on and the icon stays highlighted. Esc or the icon clears it.
+- Mobile: **Back** closes the floating chat.
+
 ## 1.4.0
 
 - **Update the runtime (App or Docker image) together with this release.** An older runtime ignores Allow internet and the token levels on Cursor agents.
