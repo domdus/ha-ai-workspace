@@ -114,7 +114,8 @@ async function ensureHost() {
   shadow.innerHTML = `
     <style>
       .fab {
-        --ai-fab-rest: var(--ha-space-4);
+        --ai-fab-safe: max(var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px));
+        --ai-fab-rest: calc(var(--ha-space-4) + var(--ai-fab-safe));
         position: fixed;
         right: var(--ha-space-4);
         bottom: var(--ai-fab-bottom, var(--ai-fab-rest));
@@ -291,7 +292,7 @@ async function ensureHost() {
       .hidden { display: none !important; }
       @media (max-width: 870px) {
         .fab {
-          --ai-fab-rest: var(--ha-space-3);
+          --ai-fab-rest: calc(var(--ha-space-3) + var(--ai-fab-safe));
           right: var(--ha-space-3);
         }
         aside.drawer {
@@ -426,8 +427,9 @@ async function ensureHost() {
     walk(document, { top: 0, left: 0 });
     return boxes;
   };
+  // Parked below the screen is not in the way: HA keeps the editor's Save button there until something changes.
   const inCorner = (box) =>
-    window.innerWidth - box.right < 120 && window.innerHeight - box.bottom < 180;
+    box.top < window.innerHeight && window.innerWidth - box.right < 120 && window.innerHeight - box.bottom < 180;
   const placeFab = () => {
     if (fab.classList.contains("hidden")) return;
     const hit = cornerButtons().filter(inCorner);
@@ -499,6 +501,18 @@ async function ensureHost() {
     attributes: true,
     attributeFilter: ["narrow", "show-tabs", "is-wide"],
   });
+  // Editors show and hide their Save button without any layout hint; an edit or a click is the only signal.
+  let placeHint = 0;
+  for (const type of ["value-changed", "click"]) {
+    document.addEventListener(
+      type,
+      () => {
+        window.clearTimeout(placeHint);
+        placeHint = window.setTimeout(schedulePlace, 150);
+      },
+      true,
+    );
+  }
   sync();
   return host;
 }

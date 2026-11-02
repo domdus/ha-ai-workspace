@@ -842,6 +842,7 @@ export async function mountAiWorkspace(root, options = {}) {
   const wrap = root.querySelector(".wrap");
   const scrim = root.querySelector(".nav-scrim");
   const chatEl = root.querySelector(".chat");
+  const stageEl = root.querySelector(".stage");
   const logEl = root.querySelector(".log");
   const sessionsEl = root.querySelector(".sessions");
   const searchOpen = root.querySelector(".search-open");
@@ -1141,13 +1142,24 @@ export async function mountAiWorkspace(root, options = {}) {
     wrap.style.height = "";
     form.style.removeProperty("--ai-keyboard-inset");
     wrap.style.removeProperty("--ai-keyboard-inset");
+    syncWelcomeInset();
+  }
+
+  // Only in the welcome state: the stage holds the whole log, and a long chat must not restyle per keyboard frame.
+  function syncWelcomeInset() {
+    if (keyboardOpen && chatEl.classList.contains("welcome")) {
+      stageEl.style.setProperty("--ai-keyboard-inset", `${keyboardInset}px`);
+    } else {
+      stageEl.style.removeProperty("--ai-keyboard-inset");
+    }
   }
 
   function keyboardGap() {
     const vv = window.visualViewport;
     // Overlay keyboards shrink visualViewport.height. Ignore offsetTop so IME
     // pan does not chase the composer (that loop is the rubber-band).
-    return vv ? Math.max(0, Math.round(window.innerHeight - vv.height)) : 0;
+    // Measured from the chat's own bottom: the shell can reserve space below it (Android gesture bar).
+    return vv ? Math.max(0, Math.round(chatEl.getBoundingClientRect().bottom - vv.height)) : 0;
   }
 
   function syncKeyboardInset() {
@@ -1174,6 +1186,7 @@ export async function mountAiWorkspace(root, options = {}) {
     keyboardInset = next;
     keyboardWroteAt = now;
     form.style.setProperty("--ai-keyboard-inset", `${next}px`);
+    syncWelcomeInset();
     if (opened) {
       if (followRaf) {
         cancelAnimationFrame(followRaf);
@@ -1204,6 +1217,7 @@ export async function mountAiWorkspace(root, options = {}) {
     if (shouldAnimate) {
       const from = box.getBoundingClientRect();
       chatEl.classList.toggle("welcome", want);
+      syncWelcomeInset();
       const dy = from.top - box.getBoundingClientRect().top;
       if (Math.abs(dy) > 2) {
         if (motionTimer) clearTimeout(motionTimer);
@@ -1220,6 +1234,7 @@ export async function mountAiWorkspace(root, options = {}) {
       }
     }
     chatEl.classList.toggle("welcome", want);
+    syncWelcomeInset();
     clearMotion();
     syncScrollBottomBtn();
   }

@@ -1,4 +1,5 @@
 from pathlib import Path
+from types import SimpleNamespace
 
 from custom_components.ai_workspace.agents import agent_from_mapping
 from custom_components.ai_workspace.api_provider import ApiProvider, _history_messages, _slim_mcp_tools
@@ -154,3 +155,11 @@ def test_agent_stores_token_mode() -> None:
     assert on.token_mode == TOKEN_MODE_EXTREME
     assert light.token_mode == TOKEN_MODE_LIGHT
     assert off.token_mode == TOKEN_MODE_OFF
+
+
+def test_agents_are_told_not_to_invent_automations_for_the_key() -> None:
+    from custom_components.ai_workspace.const import workspace_system_prompt
+
+    text = workspace_system_prompt(SimpleNamespace(system_prompt="Custom house rules."))
+    assert "Custom house rules." in text
+    assert "Never make a placeholder, test, or helper" in text

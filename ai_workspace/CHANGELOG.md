@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.1b2
+
+- Agents: new rule against making placeholder, test, or helper automations, scripts, scenes, or entities to pass the BestPracticeKey or get around a tool error. If a write stays blocked, the agent stops and says so.
+- Mobile: in a new chat the welcome text and prompt stay together above the keyboard instead of the prompt jumping to the top.
+- Mobile: in an ongoing chat the prompt sits directly on the keyboard, with no gap above it on phones with a gesture bar.
+- Floating button: stays above the gesture bar, no longer slips off the screen in the automation editor, and moves clear of the editor's Save button when it appears.
+
 ## 1.4.1b1
 
 - **Update the runtime (App or Docker image) together with this release.** The shortening fix below also lives in the runtime, and Cursor agents use that copy.

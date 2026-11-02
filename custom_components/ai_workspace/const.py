@@ -751,7 +751,11 @@ BPS_KEY_INSTRUCTIONS = (
     "If a listed write tool has a BestPracticeKey field, load the matching skill guide from the "
     "same MCP connection (HA-MCP: ha_get_skill_guide), copy the acknowledgment key from the top, "
     "and pass it as BestPracticeKey. If that field or tool is not in the list, skip this. "
-    "Do not ask the user for a key. Do not call a tool that is not listed."
+    "Do not ask the user for a key. Do not call a tool that is not listed. "
+    "The key only counts for the write call that carries it. "
+    "Only create, change, or delete what the user asked for. Never make a placeholder, test, or helper "
+    "automation, script, scene, or entity to pass a key or get around a tool error. "
+    "If a write stays blocked, stop and tell the user."
 )
 LOW_TOKEN_PROMPT = (
     "You help with this Home Assistant. Answer in a few short sentences. "

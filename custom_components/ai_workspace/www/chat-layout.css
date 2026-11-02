@@ -602,6 +602,8 @@ h1 {
   min-height: 0;
   justify-content: center;
   justify-content: safe center;
+  /* Centered in the space above the keyboard. */
+  transform: translateY(calc(var(--ai-keyboard-inset, 0px) / -2));
   padding-block: var(--ha-space-6) var(--ha-space-8);
   padding-inline: 0;
 }
@@ -771,6 +773,7 @@ h1 {
 .chat.welcome .composer {
   position: static;
   margin-top: 0;
+  transform: none;
   background: transparent;
 }
 
