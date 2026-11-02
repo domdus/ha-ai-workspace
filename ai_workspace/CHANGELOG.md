@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.1b3
+
+- Agents: when a request needs tools, cloud and Cursor agents open with one short sentence saying what they are checking, then work. This also applies with a custom system prompt. It is skipped on the Medium and Extreme token levels and for voice requests through Assist.
+- Chat: text before and after tool calls is separated by a blank line, also after reloading the chat.
+
 ## 1.4.1b2
 
 - Agents: new rule against making placeholder, test, or helper automations, scripts, scenes, or entities to pass the BestPracticeKey or get around a tool error. If a write stays blocked, the agent stops and says so.

@@ -163,3 +163,11 @@ def test_agents_are_told_not_to_invent_automations_for_the_key() -> None:
     text = workspace_system_prompt(SimpleNamespace(system_prompt="Custom house rules."))
     assert "Custom house rules." in text
     assert "Never make a placeholder, test, or helper" in text
+
+
+def test_status_sentence_reaches_custom_prompts_but_not_saving_levels() -> None:
+    from custom_components.ai_workspace.const import STATUS_LINE_INSTRUCTIONS, standing_chat_prompt
+
+    assert STATUS_LINE_INSTRUCTIONS in standing_chat_prompt(SimpleNamespace(system_prompt="Custom."))
+    assert STATUS_LINE_INSTRUCTIONS not in standing_chat_prompt(SimpleNamespace(system_prompt=""), mode="medium")
+    assert STATUS_LINE_INSTRUCTIONS not in standing_chat_prompt(SimpleNamespace(system_prompt=""), mode="extreme")

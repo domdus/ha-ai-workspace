@@ -157,3 +157,17 @@ def test_merge_reply_keeps_intro_before_tools() -> None:
     assert scope.merge_reply_text(f"{intro}\n\n{later}", later) == f"{intro}\n\n{later}"
     assert scope.merge_reply_text(later, later) == later
     assert scope.merge_reply_text(later, "") == later
+
+
+def test_answer_after_tools_starts_a_new_paragraph() -> None:
+    scope = _scope()
+    assert scope.text_after_tools(["Checking the automations."], "Two are on.") == "\n\nTwo are on."
+    assert scope.text_after_tools([], "Two are on.") == "Two are on."
+    assert scope.text_after_tools(["Checking.\n"], "Two are on.") == "\nTwo are on."
+    assert scope.text_after_tools(["Checking.\n\n"], "Two are on.") == "Two are on."
+    assert scope.text_after_tools(["Checking."], "\n\n") == "\n\n"
+
+
+def test_merge_keeps_the_break_when_the_result_has_none() -> None:
+    scope = _scope()
+    assert scope.merge_reply_text("Checking.\n\nTwo are on.", "Checking.Two are on.") == "Checking.\n\nTwo are on."

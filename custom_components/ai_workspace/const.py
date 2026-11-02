@@ -725,7 +725,7 @@ Home Assistant is reached only through the connected MCP tools. Use those tools 
 
 Before you answer any question about this house (automations, entities, devices, states, counts), call a Home Assistant tool. Never answer those from memory.
 
-Be concise. Call tools without announcing them; the UI already shows that. If a tool fails, say so. Ask before doing something hard to undo, such as deleting automations, unlocking doors, or turning off many devices at once.
+Be concise. If a tool fails, say so. Ask before doing something hard to undo, such as deleting automations, unlocking doors, or turning off many devices at once.
 
 """
 LOVELACE_DASHBOARD_RULES = """
@@ -757,6 +757,12 @@ BPS_KEY_INSTRUCTIONS = (
     "automation, script, scene, or entity to pass a key or get around a tool error. "
     "If a write stays blocked, stop and tell the user."
 )
+STATUS_LINE_INSTRUCTIONS = (
+    "When a request needs tools, first write one short sentence saying what you are checking or doing, "
+    "then call the tools. After that, do not narrate each tool call; the UI already shows them."
+)
+# Sent with a voice turn: the status sentence would be read aloud before every answer.
+VOICE_TURN_NOTE = "This is a voice request. Skip the status sentence and answer directly."
 LOW_TOKEN_PROMPT = (
     "You help with this Home Assistant. Answer in a few short sentences. "
     "You cannot check or change the house in this mode."
@@ -908,7 +914,7 @@ def language_instruction(code: str = "") -> str:
 def workspace_system_prompt(settings, *, admin: bool = True) -> str:
     """Built-in or custom system prompt plus universal dashboard/MCP rules."""
     base = str(getattr(settings, "system_prompt", "") or "").strip() or DEFAULT_SYSTEM_PROMPT
-    text = f"{base}\n\n{LOVELACE_DASHBOARD_RULES}\n\n{BPS_KEY_INSTRUCTIONS}".strip()
+    text = f"{base}\n\n{LOVELACE_DASHBOARD_RULES}\n\n{BPS_KEY_INSTRUCTIONS}\n\n{STATUS_LINE_INSTRUCTIONS}".strip()
     if admin and getattr(settings, "house_map", False):
         from .house_map import CATALOG_INSTRUCTIONS
 
