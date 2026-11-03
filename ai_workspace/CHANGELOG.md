@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.4.2
+
+Everything from 1.4.2b1 to 1.4.2b3, plus readable errors:
+
+- **Update the runtime (App or Docker image) together with this release.** The automation block below also lives in the runtime, and Cursor agents use that copy.
+- Errors: every agent error now shows as one readable message instead of a response body or trace, for example the provider's "This model is currently experiencing high demand" instead of the JSON around it, and a provider timeout reads "The provider did not answer in time". This also applies to errors in chats saved before the update.
+- Cloud agents: every tool now reaches the model with all its parameters, types, allowed values, and required fields, on every provider. Before, tools were cut to 16 parameters and many lost their types, so a model could send the wrong shape or not see a parameter at all. Cursor agents already had the full definitions.
+- Cloud agents: the automation, dashboard, helper, scene, and script write tools keep their full descriptions at every token level. Other tools stay at 180 characters, and **Medium** shortens them to 100. Each request carries more tool text than before, about 38,000 tokens instead of 23,000 with HA-MCP on Off and Light, and 34,000 on Medium. Gemini gets the same parameters and types in the simpler form it accepts.
+- Cloud agents: one status sentence, then the answer. Text a model writes between later tool calls is no longer shown; the model still keeps it.
+- Agents: AI Workspace refuses to write an automation, script, or scene that looks like a placeholder, such as `DASHBOARD_WRITE_GUARD_ONLY`, or a guard, probe, or test item that only writes to the log. Nothing is written; the agent is told to carry on with your request or tell you what blocked it. Real automations with such words in their name still work.
+- Agents: new rules to only report errors and results a tool actually returned, not to call a change done before the write confirms it, to say so instead of guessing where something came from, and that a dashboard change never needs an automation.
+- Chat: names in replies link less eagerly. Only names of two or more words link, never inside quotes, and only on first mention.
+- Dashboards: a change saved to the default dashboard while you are on another page, such as AI Workspace, now shows when you go back, without restarting the app.
+- Model prices updated from LiteLLM.
+
 ## 1.4.2b3
 
 - **Update the runtime (App or Docker image) together with this release.** The automation block below also lives in the runtime, and Cursor agents use that copy.

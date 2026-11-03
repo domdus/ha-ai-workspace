@@ -122,10 +122,14 @@ class _StreamUnsupported(Exception):
 
 
 def _friendly_api_error(status: int, text: str) -> str:
+    """The provider's own message, not the response body around it."""
     try:
         data = json.loads(text)
     except json.JSONDecodeError:
         data = None
+    # Gemini wraps the error object in a list.
+    if isinstance(data, list) and data and isinstance(data[0], dict):
+        data = data[0]
     err = data.get("error") if isinstance(data, dict) else None
     message = ""
     code = ""
@@ -134,6 +138,8 @@ def _friendly_api_error(status: int, text: str) -> str:
         code = str(err.get("code") or err.get("type") or "")
     elif isinstance(err, str):
         message = err
+    elif isinstance(data, dict):
+        message = str(data.get("message") or data.get("detail") or "")
     low = f"{code} {message}".lower()
     if "rate_limit" in low or "rate limit" in low:
         return (
@@ -143,7 +149,10 @@ def _friendly_api_error(status: int, text: str) -> str:
         )
     if message:
         return message.split("Visit https://")[0].strip()
-    return (text or f"HTTP {status}")[:400]
+    raw = str(text or "").strip()
+    if not raw or data is not None or raw.startswith("<"):
+        return f"The model provider returned HTTP {status}."
+    return raw[:400]
 
 
 def _retry_wait(resp, text: str) -> float | None:
@@ -778,7 +787,7 @@ class ApiProvider:
 
     def _public(self, exc: BaseException) -> str:
         text = str(exc).strip()
-        if isinstance(exc, TimeoutError) and not text:
+        if isinstance(exc, TimeoutError):
             return "The provider did not answer in time. Try again, or pick a faster model."
         if not text:
             text = type(exc).__name__

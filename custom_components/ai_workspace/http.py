@@ -46,6 +46,7 @@ from .mcp_config import with_mcp_auth
 from .mcp_observe import last_mcp_result, note_mcp_result
 from .mcp_resolve import ha_hosts, hass_mcp_server_url
 from .chat_scope import handoff_note, merge_reply_text, other_chat_note, text_after_tools
+from .error_text import public_error
 from .files import attach_files_to_message, file_events, parse_client_files
 from .images import caption_for, image_events, parse_client_images
 
@@ -1124,7 +1125,8 @@ class ChatView(HomeAssistantView):
                                 }
                             )
                         elif kind == "error":
-                            error = str(event.get("message") or "The agent failed.")
+                            error = public_error(event.get("message"))
+                            event = {**event, "message": error}
                         elif kind == "usage":
                             billed = finalize_usage(
                                 event,
@@ -1171,7 +1173,7 @@ class ChatView(HomeAssistantView):
                     raise
                 except Exception as exc:
                     logger.exception("chat failed session=%s", session.id)
-                    error = redact(str(exc), [settings.cursor_api_key, settings.api_key, settings.mcp_token])
+                    error = public_error(redact(str(exc), [settings.cursor_api_key, settings.api_key, settings.mcp_token]))
                     await send({"type": "error", "message": error})
                 answer = merge_reply_text("".join(parts), final)
                 if error and not answer:
