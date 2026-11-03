@@ -67,6 +67,7 @@ from .titles import clean_title, title_prompt
 from .mcp_observe import note_mcp_result
 from .tool_result import shorten_tool_result
 from .usage_cost import TokenUsage, estimate_cost, parse_usage, usage_payload
+from .write_guard import block_message, placeholder_write
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +78,15 @@ _IDENTITY = (
 )
 _MAX_ROUNDS = 15
 _DESC_MAX = 180
+_DESC_MAX_MEDIUM = 100
+# Writes whose rules live in the description. Matched by name too, because the key only
+# appears while HA-MCP's strict mode is on.
+_FULL_DESC_TOOL = re.compile(r"ha_config_set_(automation|dashboard|helper|scene|script)$")
+# Labels only. Everything else in a schema decides what a valid call looks like.
+_SCHEMA_LABELS = frozenset({"title", "$schema", "$comment", "examples"})
+_SCHEMA_MAPS = frozenset({"properties", "patternProperties", "$defs", "definitions"})
+_SCHEMA_LISTS = frozenset({"anyOf", "oneOf", "allOf", "prefixItems"})
+_SCHEMA_NODES = frozenset({"items", "additionalProperties", "propertyNames", "contains", "not", "if", "then", "else"})
 # HA-MCP hides the acknowledgment key inside ha_get_skill_guide and puts the
 # "call that tool" sentence at the end of a long write-tool description. A
 # 180-character trim drops it, and the model then asks the user for BestPracticeKey.
@@ -88,7 +98,6 @@ _BPS_NOTE = (
     " Call ha_get_skill_guide and pass its acknowledgment key as BestPracticeKey. Do not ask the user."
 )
 _HISTORY_MAX = 12
-_PROPS_MAX = 16
 _WAIT = re.compile(r"try again in ([\d.]+)\s*(ms|s)", re.I)
 _ANTHROPIC_VERSION = "2023-06-01"
 _REASONING_EFFORT = {API_OPENAI, API_AZURE, API_GEMINI, API_XAI}
@@ -113,10 +122,14 @@ class _StreamUnsupported(Exception):
 
 
 def _friendly_api_error(status: int, text: str) -> str:
+    """The provider's own message, not the response body around it."""
     try:
         data = json.loads(text)
     except json.JSONDecodeError:
         data = None
+    # Gemini wraps the error object in a list.
+    if isinstance(data, list) and data and isinstance(data[0], dict):
+        data = data[0]
     err = data.get("error") if isinstance(data, dict) else None
     message = ""
     code = ""
@@ -125,6 +138,8 @@ def _friendly_api_error(status: int, text: str) -> str:
         code = str(err.get("code") or err.get("type") or "")
     elif isinstance(err, str):
         message = err
+    elif isinstance(data, dict):
+        message = str(data.get("message") or data.get("detail") or "")
     low = f"{code} {message}".lower()
     if "rate_limit" in low or "rate limit" in low:
         return (
@@ -134,7 +149,10 @@ def _friendly_api_error(status: int, text: str) -> str:
         )
     if message:
         return message.split("Visit https://")[0].strip()
-    return (text or f"HTTP {status}")[:400]
+    raw = str(text or "").strip()
+    if not raw or data is not None or raw.startswith("<"):
+        return f"The model provider returned HTTP {status}."
+    return raw[:400]
 
 
 def _retry_wait(resp, text: str) -> float | None:
@@ -164,66 +182,78 @@ def _clip(text: str, limit: int) -> str:
     return raw[: limit - 1].rstrip() + "…"
 
 
-def _slim_schema(schema: Any, depth: int = 0) -> dict[str, Any]:
-    if not isinstance(schema, dict) or depth > 3:
-        return {"type": "object", "properties": {}}
+def _slim_schema(schema: Any, limit: int | None = _DESC_MAX) -> Any:
+    """Shorten descriptions only. Parameters, types, enums and required fields stay as they are."""
+    if not isinstance(schema, dict):
+        return schema
     out: dict[str, Any] = {}
-    if schema.get("type"):
-        out["type"] = schema["type"]
-    if schema.get("description"):
-        out["description"] = _clip(str(schema["description"]), _DESC_MAX)
-    if isinstance(schema.get("enum"), list):
-        out["enum"] = schema["enum"][:12]
+    for key, value in schema.items():
+        if key in _SCHEMA_LABELS:
+            continue
+        if key == "description" and isinstance(value, str):
+            out[key] = _clip(value, limit) if limit else value
+        elif key in _SCHEMA_MAPS and isinstance(value, dict):
+            out[key] = {name: _slim_schema(item, limit) for name, item in value.items()}
+        elif key in _SCHEMA_LISTS and isinstance(value, list):
+            out[key] = [_slim_schema(item, limit) for item in value]
+        elif key in _SCHEMA_NODES:
+            out[key] = _slim_schema(value, limit)
+        else:
+            out[key] = value
+    return out
+
+
+def _gemini_schema(schema: Any) -> Any:
+    """Gemini takes a subset of JSON Schema: same parameters and types, without the rest."""
+    if not isinstance(schema, dict):
+        return schema
+    out: dict[str, Any] = {}
+    for key, value in schema.items():
+        if key in {"default", "additionalProperties", "propertyNames"}:
+            continue
+        if key == "const":
+            out["enum"] = [value]
+        elif key in _SCHEMA_MAPS and isinstance(value, dict):
+            out[key] = {name: _gemini_schema(item) for name, item in value.items()}
+        elif key in _SCHEMA_LISTS and isinstance(value, list):
+            out[key] = [_gemini_schema(item) for item in value if not _is_null_schema(item)]
+        elif key in _SCHEMA_NODES:
+            out[key] = _gemini_schema(value)
+        else:
+            out[key] = value
+    union = out.get("anyOf")
+    if isinstance(union, list) and len(union) == 1 and isinstance(union[0], dict):
+        del out["anyOf"]
+        out = {**union[0], **out}
+    return out
+
+
+def _is_null_schema(schema: Any) -> bool:
+    return isinstance(schema, dict) and schema.get("type") == "null"
+
+
+def _full_description(name: str, schema: dict[str, Any]) -> bool:
     props = schema.get("properties")
-    if isinstance(props, dict) and props:
-        slim: dict[str, Any] = {}
-        kept = 0
-        for key, value in props.items():
-            name = str(key)
-            if name == "BestPracticeKey":
-                slim[name] = {"type": "string", "description": _BPS_PARAM}
-                continue
-            if kept >= _PROPS_MAX:
-                continue
-            kept += 1
-            slim[name] = _slim_schema(value, depth + 1) if isinstance(value, dict) else {"type": "string"}
-        out["properties"] = slim
-    required = schema.get("required")
-    if isinstance(required, list) and out.get("properties"):
-        allowed = out["properties"]
-        kept = [item for item in required if item in allowed]
-        if kept:
-            out["required"] = kept
-    items = schema.get("items")
-    if isinstance(items, dict):
-        out["items"] = _slim_schema(items, depth + 1)
-    return out or {"type": "object", "properties": {}}
+    return bool(_FULL_DESC_TOOL.search(name)) or (isinstance(props, dict) and "BestPracticeKey" in props)
 
 
-def _clip_bps_tool(text: str) -> str:
-    """Keep the skill-key instruction inside the description budget."""
-    note = _BPS_NOTE
-    room = _DESC_MAX - len(note)
-    raw = str(text or "").strip()
-    if len(raw) <= room:
-        return raw + note
-    return raw[: room - 1].rstrip() + "…" + note
-
-
-def _slim_mcp_tools(mcp_tools: list[dict]) -> list[dict]:
+def _slim_mcp_tools(mcp_tools: list[dict], limit: int = _DESC_MAX) -> list[dict]:
     out = []
     for tool in mcp_tools:
         name = str(tool.get("name") or "")
         if not name:
             continue
-        schema = tool.get("inputSchema") or tool.get("input_schema") or {"type": "object", "properties": {}}
-        slim = _slim_schema(schema)
-        description = str(tool.get("description") or name)
-        props = slim.get("properties") if isinstance(slim, dict) else None
-        if isinstance(props, dict) and "BestPracticeKey" in props:
-            description = _clip_bps_tool(description)
-        else:
-            description = _clip(description, _DESC_MAX)
+        schema = tool.get("inputSchema") or tool.get("input_schema")
+        schema = schema if isinstance(schema, dict) else {}
+        full = _full_description(name, schema)
+        slim = {"type": "object", "properties": {}, **_slim_schema(schema, None if full else limit)}
+        description = str(tool.get("description") or name).strip()
+        props = slim["properties"]
+        if isinstance(props, dict) and isinstance(props.get("BestPracticeKey"), dict):
+            props["BestPracticeKey"] = {**props["BestPracticeKey"], "description": _BPS_PARAM}
+            description += _BPS_NOTE
+        elif not full:
+            description = _clip(description, limit)
         out.append(
             {
                 "name": name,
@@ -232,6 +262,49 @@ def _slim_mcp_tools(mcp_tools: list[dict]) -> list[dict]:
             }
         )
     return out
+
+
+# Long enough for a status sentence, short enough that an answer still streams soon.
+_HOLD_CHARS = 400
+
+
+class _ReplyText:
+    """Shows the first status sentence, then hides text that only leads into another tool call.
+
+    The model keeps that text in its own context; the user sees one status line and the answer.
+    """
+
+    def __init__(self, said: list[str]) -> None:
+        self._said = said
+        self._gap = bool(said)
+        self._hold = bool(said)
+        self._held: list[str] = []
+
+    def add(self, value: str) -> list[str]:
+        if not self._hold:
+            return self._show(value)
+        self._held.append(value)
+        if sum(len(part) for part in self._held) < _HOLD_CHARS:
+            return []
+        return self._release()
+
+    def finish(self, more_tools: bool) -> list[str]:
+        if more_tools:
+            self._held.clear()
+            return []
+        return self._release()
+
+    def _release(self) -> list[str]:
+        self._hold = False
+        value = "".join(self._held)
+        self._held.clear()
+        return self._show(value) if value else []
+
+    def _show(self, value: str) -> list[str]:
+        out = ["\n\n", value] if self._gap else [value]
+        self._gap = False
+        self._said.extend(out)
+        return out
 
 
 class McpBundle:
@@ -381,16 +454,16 @@ def _tool_label(name: str) -> str:
     return raw
 
 
-def _openai_tools(mcp_tools: list[dict]) -> list[dict]:
+def _openai_tools(mcp_tools: list[dict], limit: int = _DESC_MAX, gemini: bool = False) -> list[dict]:
     out = []
-    for tool in _slim_mcp_tools(mcp_tools):
+    for tool in _slim_mcp_tools(mcp_tools, limit):
         out.append(
             {
                 "type": "function",
                 "function": {
                     "name": tool["name"],
                     "description": tool["description"],
-                    "parameters": tool["inputSchema"],
+                    "parameters": _gemini_schema(tool["inputSchema"]) if gemini else tool["inputSchema"],
                 },
             }
         )
@@ -484,9 +557,9 @@ def _strip_prompt_cache(body: dict) -> bool:
     return changed
 
 
-def _anthropic_tools(mcp_tools: list[dict]) -> list[dict]:
+def _anthropic_tools(mcp_tools: list[dict], limit: int = _DESC_MAX) -> list[dict]:
     out = []
-    for tool in _slim_mcp_tools(mcp_tools):
+    for tool in _slim_mcp_tools(mcp_tools, limit):
         out.append(
             {
                 "name": tool["name"],
@@ -663,6 +736,9 @@ class ApiProvider:
     def _token_mode(self) -> str:
         return settings_token_mode(self.settings)
 
+    def _tool_text_limit(self) -> int:
+        return _DESC_MAX_MEDIUM if self._token_mode() == TOKEN_MODE_MEDIUM else _DESC_MAX
+
     def _wants_prompt_cache(self) -> bool:
         return (
             bool(self._prompt_cache)
@@ -711,7 +787,7 @@ class ApiProvider:
 
     def _public(self, exc: BaseException) -> str:
         text = str(exc).strip()
-        if isinstance(exc, TimeoutError) and not text:
+        if isinstance(exc, TimeoutError):
             return "The provider did not answer in time. Try again, or pick a faster model."
         if not text:
             text = type(exc).__name__
@@ -781,6 +857,10 @@ class ApiProvider:
 
     async def _invoke_tool(self, mcp, name: str, args: Any, on_tool: Callable | None):
         payload = args if isinstance(args, dict) else {}
+        blocked = placeholder_write(mcp.original_name(name), payload)
+        if blocked:
+            logger.warning("Refused %s: placeholder %r the user did not ask for", name, blocked)
+            return {"content": [{"type": "text", "text": block_message(blocked)}], "isError": True}
         if on_tool is None:
             return await mcp.call_tool(name, payload)
         original = mcp.original_name(name)
@@ -919,7 +999,7 @@ class ApiProvider:
         messages: list[dict[str, Any]] = [{"role": "system", "content": self._system(origin, language, admin)}]
         messages.extend(history)
         messages.append({"role": "user", "content": openai_user_content(message, images)})
-        tools = _openai_tools(mcp.tools)
+        tools = _openai_tools(mcp.tools, self._tool_text_limit(), self.settings.api_provider == API_GEMINI)
         url = self._chat_url()
         headers = self._auth_headers()
         said: list[str] = []
@@ -943,7 +1023,7 @@ class ApiProvider:
                         payload["parallel_tool_calls"] = False
             payload = self._apply_prompt_cache(payload)
             reply: dict[str, Any] = {}
-            gap = bool(said)
+            shown = _ReplyText(said)
             async for kind, value in self._openai_round(http, url, headers, payload):
                 if kind == "usage":
                     usage = usage.add(value)
@@ -951,13 +1031,11 @@ class ApiProvider:
                 if kind == "message":
                     reply = value
                     continue
-                if gap:
-                    said.append("\n\n")
-                    yield {"type": "text", "delta": "\n\n"}
-                    gap = False
-                said.append(value)
-                yield {"type": "text", "delta": value}
+                for delta in shown.add(value):
+                    yield {"type": "text", "delta": delta}
             calls = reply.get("tool_calls") or []
+            for delta in shown.finish(bool(calls) and not last):
+                yield {"type": "text", "delta": delta}
             if calls and not last:
                 messages.append({"role": "assistant", "content": reply.get("content") or None, "tool_calls": calls})
                 for call in calls:
@@ -1083,7 +1161,7 @@ class ApiProvider:
     ) -> AsyncIterator[dict]:
         messages: list[dict[str, Any]] = list(history)
         messages.append({"role": "user", "content": anthropic_user_content(message, images)})
-        tools = _anthropic_tools(mcp.tools)
+        tools = _anthropic_tools(mcp.tools, self._tool_text_limit())
         url = f"{self._base()}/messages"
         headers = self._anthropic_headers()
         said: list[str] = []
@@ -1108,7 +1186,7 @@ class ApiProvider:
                     payload["tool_choice"] = {"type": "any"}
             payload = self._apply_prompt_cache(payload)
             blocks: list[dict] = []
-            gap = bool(said)
+            shown = _ReplyText(said)
             async for kind, value in self._anthropic_round(http, url, headers, payload):
                 if kind == "usage":
                     usage = usage.add(value)
@@ -1116,13 +1194,11 @@ class ApiProvider:
                 if kind == "message":
                     blocks = value
                     continue
-                if gap:
-                    said.append("\n\n")
-                    yield {"type": "text", "delta": "\n\n"}
-                    gap = False
-                said.append(value)
-                yield {"type": "text", "delta": value}
+                for delta in shown.add(value):
+                    yield {"type": "text", "delta": delta}
             uses = [block for block in blocks if block.get("type") == "tool_use"]
+            for delta in shown.finish(bool(uses) and not last):
+                yield {"type": "text", "delta": delta}
             if uses and not last:
                 messages.append({"role": "assistant", "content": _clean_blocks(blocks)})
                 results = []

@@ -532,9 +532,12 @@ function escapeRe(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+// One-word names ("Home", "Wohnzimmer") are ordinary words in a reply, so only longer names link.
+const UNLINKED_NAMES = new Set(["home assistant"]);
+
 function rememberUniqueName(map, name, path) {
   const text = String(name || "").trim();
-  if (text.length < 3) return;
+  if (text.length < 3 || !/\s/.test(text) || UNLINKED_NAMES.has(text.toLowerCase())) return;
   const key = text.toLowerCase();
   const prev = map.get(key);
   if (prev && prev.path !== path) map.set(key, null);
@@ -611,6 +614,8 @@ function linkifyHaPaths(text) {
   );
 }
 
+const QUOTED = /„[^“”\n]{1,120}[“”]|“[^”\n]{1,120}”|"[^"\n]{1,120}"|«[^»\n]{1,120}»|»[^«\n]{1,120}«/g;
+
 function linkifyHaMentions(content, mentions = true) {
   let text = String(content || "");
   if (!text) return text;
@@ -625,13 +630,65 @@ function linkifyHaMentions(content, mentions = true) {
   text = text.replace(/\[[^\]]+\]\([^)\s]+\)/g, hold);
   text = linkifyHaPaths(text);
   text = text.replace(/\[[^\]]+\]\([^)\s]+\)/g, hold);
+  // A quoted name is a title the user or agent is talking about (a section, a card), not a link target.
+  text = text.replace(QUOTED, hold);
   const { names, ids, paths } = mentions ? haLinkCatalog() : {};
+  const linked = new Set();
   for (const re of [names, ids]) {
     if (!re) continue;
     re.lastIndex = 0;
-    text = text.replace(re, (_whole, lead, matched) => `${lead}${hold(`[${matched}](${paths.get(matched)})`)}`);
+    text = text.replace(re, (whole, lead, matched) => {
+      const path = paths.get(matched);
+      if (linked.has(path)) return whole;
+      linked.add(path);
+      return `${lead}${hold(`[${matched}](${path})`)}`;
+    });
   }
   return text.replace(/\u0000HA(\d+)\u0000/g, (_m, index) => held[Number(index)] || "");
+}
+
+function errorBodyMessage(data) {
+  if (Array.isArray(data)) {
+    for (const item of data) {
+      const found = errorBodyMessage(item);
+      if (found) return found;
+    }
+    return "";
+  }
+  if (!data || typeof data !== "object") return "";
+  const err = data.error;
+  if (err && typeof err === "object") return errorBodyMessage(err) || String(err.status || err.code || "");
+  if (typeof err === "string" && err.trim()) return err.trim();
+  for (const key of ["message", "detail", "error_description", "msg"]) {
+    const value = data[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (value && typeof value === "object") {
+      const found = errorBodyMessage(value);
+      if (found) return found;
+    }
+  }
+  return "";
+}
+
+// Same rules as error_text.py, for chats stored before the server cleaned errors and for request failures.
+function cleanErrorText(value) {
+  let text = String(value || "").trim();
+  if (!text) return text;
+  const start = text.search(/[[\u007b]/);
+  if (start >= 0) {
+    try {
+      const found = errorBodyMessage(JSON.parse(text.slice(start)));
+      text = found || text.slice(0, start).replace(/[\s:-]+$/, "") || text;
+    } catch (_err) {
+      /* not a JSON body */
+    }
+  }
+  if (text.startsWith("<")) text = text.replace(/<[^>]*>/g, " ");
+  if (text.length < 120 && /timeout on reading data from socket|read timed out/i.test(text)) {
+    return "The provider did not answer in time. Try again, or pick a faster model.";
+  }
+  text = text.replace(/\s+/g, " ").trim();
+  return text.length <= 400 ? text : `${text.slice(0, 399).trimEnd()}…`;
 }
 
 // A closed sidebar would otherwise slide away on open when its sheet arrives after the first paint.
@@ -1609,6 +1666,7 @@ export async function mountAiWorkspace(root, options = {}) {
     if (empty) empty.remove();
     setWelcome(false, opts.animate !== false);
     const isError = (events || []).some((event) => event && event.type === "error");
+    if (isError && role === "assistant") content = cleanErrorText(content);
     const assistWho = role === "user" ? "user" : "hass";
     let bubble;
     let mount;
@@ -4108,7 +4166,7 @@ export async function mountAiWorkspace(root, options = {}) {
           assistant.classList.add("error");
           const textNode = assistant.querySelector(".text");
           if (!streamFull) {
-            setMarkdown(textNode, data.message || t("error"));
+            setMarkdown(textNode, cleanErrorText(data.message) || t("error"));
             textNode.hidden = !textNode.content;
             assistant.classList.add("has-text");
           }
@@ -4167,7 +4225,7 @@ export async function mountAiWorkspace(root, options = {}) {
         assistant.classList.add("error");
         const node = assistant.querySelector(".text");
         if (!streamFull) {
-          setMarkdown(node, String(error?.message || error));
+          setMarkdown(node, cleanErrorText(error?.message || error) || t("error"));
           node.hidden = !node.content;
           assistant.classList.add("has-text");
         }

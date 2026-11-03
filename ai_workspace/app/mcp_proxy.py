@@ -16,10 +16,11 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import HTTPException, Request
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse, Response
 
 from app.settings import _default_hass_url, _read_options
 from app.tool_result import shorten_mcp_response
+from app.write_guard import block_message, placeholder_write
 
 logger = logging.getLogger(__name__)
 
@@ -116,6 +117,18 @@ def parse_tool_call(body: bytes) -> tuple[str, dict[str, Any]] | None:
     return None
 
 
+def tool_call_id(body: bytes) -> Any:
+    """The JSON-RPC id of the tools/call in this body, so a refusal answers that request."""
+    try:
+        payload = json.loads((body or b"").strip() or b"null")
+    except json.JSONDecodeError:
+        return None
+    for message in payload if isinstance(payload, list) else [payload]:
+        if isinstance(message, dict) and message.get("method") == "tools/call":
+            return message.get("id")
+    return None
+
+
 def _tool_call_from_message(message: Any) -> tuple[str, dict[str, Any]] | None:
     if not isinstance(message, dict) or message.get("method") != "tools/call":
         return None
@@ -204,6 +217,17 @@ async def proxy_mcp(request: Request, secret: str, digest: str, actor: str = "")
         logger.warning("mcp proxy refused /api/mcp without Bearer (avoids HA ban noise)")
         raise HTTPException(status_code=502, detail="Built-in MCP needs a Home Assistant login.")
     tool_call = parse_tool_call(body) if request.method.upper() == "POST" else None
+    if tool_call is not None:
+        blocked = placeholder_write(*tool_call)
+        if blocked:
+            logger.warning("refused %s: placeholder %r the user did not ask for", tool_call[0], blocked)
+            return JSONResponse(
+                {
+                    "jsonrpc": "2.0",
+                    "id": tool_call_id(body),
+                    "result": {"content": [{"type": "text", "text": block_message(blocked)}], "isError": True},
+                }
+            )
     activity_token = ""
     if tool_call is not None and _change_history_enabled(request):
         activity_token = await _activity_prepare(request, registry, actor, tool_call)

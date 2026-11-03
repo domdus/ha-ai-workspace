@@ -19,6 +19,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from .agents import Agent, entry_agents
 from .const import DOMAIN, VOICE_TURN_NOTE, provider_token_mode, token_mode_allows_extras
 from .chat_scope import handoff_note, merge_reply_text, other_chat_note
+from .error_text import public_error
 from .http import _create_runtime_session, async_agent_events, handoff_rows
 from .small_talk import wants_house_tools
 from .store import Store
@@ -305,7 +306,7 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
                             }
                         )
                     elif kind == "error":
-                        error = str(event.get("message") or "The agent failed.")
+                        error = public_error(event.get("message"))
                     elif kind == "usage":
                         billed = finalize_usage(
                             event,

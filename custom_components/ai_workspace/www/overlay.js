@@ -42,6 +42,48 @@ function hassObj() {
   return document.querySelector("home-assistant")?.hass;
 }
 
+// Home Assistant keeps the default dashboard alive while another page is open but stops listening
+// for its updates, also after coming back, so a save stays invisible until the app restarts.
+const missedDashboards = new Set();
+const REFRESH_TRIES = 10;
+
+function lovelacePanel() {
+  return document
+    .querySelector("home-assistant")
+    ?.shadowRoot?.querySelector("home-assistant-main")
+    ?.shadowRoot?.querySelector("ha-panel-lovelace");
+}
+
+function refreshMissedDashboard(tries = 0) {
+  if (!missedDashboards.size) return;
+  const panel = lovelacePanel();
+  const root = panel?.shadowRoot?.querySelector("hui-root");
+  if (!root || !missedDashboards.has(panel.urlPath)) {
+    // The panel attaches shortly after navigation.
+    if (tries < REFRESH_TRIES) window.setTimeout(() => refreshMissedDashboard(tries + 1), 200);
+    return;
+  }
+  missedDashboards.delete(panel.urlPath);
+  if (panel.lovelace?.editMode) return;
+  root.dispatchEvent(new CustomEvent("config-refresh", { bubbles: true, composed: true }));
+}
+
+function watchDashboards() {
+  hassObj()
+    ?.connection?.subscribeEvents((event) => {
+      const urlPath = event.data?.url_path ?? null;
+      const panel = lovelacePanel();
+      // Only a panel that never left the page is still listening for itself.
+      if (panel?.urlPath === urlPath && panel._unsubUpdates) return;
+      missedDashboards.add(urlPath);
+      refreshMissedDashboard();
+    }, "lovelace_updated")
+    .catch((err) => console.warn("AI Workspace: dashboard updates unavailable", err));
+  const refresh = () => refreshMissedDashboard();
+  window.addEventListener("location-changed", refresh);
+  window.addEventListener("popstate", refresh);
+}
+
 let usersAllowed = null;
 let accessFlight = null;
 let accessNextCheck = 0;
@@ -513,6 +555,7 @@ async function ensureHost() {
       true,
     );
   }
+  watchDashboards();
   sync();
   return host;
 }
