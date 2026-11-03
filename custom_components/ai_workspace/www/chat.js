@@ -2509,6 +2509,9 @@ export async function mountAiWorkspace(root, options = {}) {
           if (bannerEl && !bannerEl.hidden) loadProviders();
         }, Math.min(2000 * providerRetry, 15000));
       }
+    } else if (chosen?.notice && bannerEl && !bannerEl.classList.contains("mic-help")) {
+      providerRetry = 0;
+      setBanner(chosen.notice, { alertType: "warning" });
     } else if (bannerEl && !bannerEl.classList.contains("hold") && !bannerEl.classList.contains("mic-help")) {
       providerRetry = 0;
       bannerEl.hidden = true;

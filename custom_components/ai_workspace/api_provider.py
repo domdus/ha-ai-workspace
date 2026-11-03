@@ -12,6 +12,7 @@ from aiohttp import ClientError, ClientResponse, ClientSession, ClientTimeout
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
+from .bps_key import note_guide, prepare_write
 from .images import anthropic_user_content, openai_user_content
 from .const import (
     API_ANTHROPIC,
@@ -857,18 +858,25 @@ class ApiProvider:
 
     async def _invoke_tool(self, mcp, name: str, args: Any, on_tool: Callable | None):
         payload = args if isinstance(args, dict) else {}
-        blocked = placeholder_write(mcp.original_name(name), payload)
+        original = mcp.original_name(name)
+        blocked = placeholder_write(original, payload)
         if blocked:
             logger.warning("Refused %s: placeholder %r the user did not ask for", name, blocked)
             return {"content": [{"type": "text", "text": block_message(blocked)}], "isError": True}
+        prepared = prepare_write(original, payload)
+        if prepared is not payload:
+            logger.debug("Passed the guide key on to %s", name)
+            payload = prepared
         if on_tool is None:
-            return await mcp.call_tool(name, payload)
-        original = mcp.original_name(name)
+            result = await mcp.call_tool(name, payload)
+        else:
 
-        async def call(_tool_name: str, tool_args: dict) -> Any:
-            return await mcp.call_tool(name, tool_args)
+            async def call(_tool_name: str, tool_args: dict) -> Any:
+                return await mcp.call_tool(name, tool_args)
 
-        return await on_tool(original, payload, call)
+            result = await on_tool(original, payload, call)
+        note_guide(original, result if isinstance(result, str) else json.dumps(result, ensure_ascii=False, default=str))
+        return result
 
     async def send(
         self,

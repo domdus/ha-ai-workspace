@@ -748,9 +748,11 @@ Tool budget: simple card copy/move/remove conditional/reorder — target at most
 - User messages may be German or other languages; MCP skill guides may be English — still load and follow them.
 """.strip()
 BPS_KEY_INSTRUCTIONS = (
-    "If a listed write tool has a BestPracticeKey field, load the matching skill guide from the "
-    "same MCP connection (HA-MCP: ha_get_skill_guide), copy the acknowledgment key from the top, "
-    "and pass it as BestPracticeKey. If that field or tool is not in the list, skip this. "
+    "If a listed write tool has a BestPracticeKey field, read the matching skill guide from the "
+    "same MCP connection (HA-MCP: ha_get_skill_guide) once before the first write in this chat, and pass "
+    "the acknowledgment key from its top as BestPracticeKey. AI Workspace keeps that key current on your "
+    "later writes, so do not re-read the guide before each write. If a write still fails because of the key, "
+    "read the guide once more and retry once. If that field or tool is not in the list, skip this. "
     "Do not ask the user for a key. Do not call a tool that is not listed. "
     "The key only counts for the write call that carries it. "
     "Only create, change, or delete what the user asked for. Never make a placeholder, test, or helper "

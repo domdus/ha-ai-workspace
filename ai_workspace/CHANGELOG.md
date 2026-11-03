@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.3b1
+
+- **Update the runtime (App or Docker image) together with this release.** The key relay below also lives in the runtime, and Cursor agents use that copy.
+- Agents: writing with HA-MCP's strict best-practice mode is much less work. Once an agent has read the guide, AI Workspace passes its key on to the agent's later writes, also when the agent copied it wrong or the key rotated within the hour, and tells HA-MCP not to attach the 20–50k character guide to every write again (HA-MCP's own guide asks for this). Agents read the guide once per chat instead of before each write. The key only ever comes from a guide the agent read in the last hour, so HA-MCP's read check still holds.
+- Cursor agents: when the runtime is older than the integration, the chat shows a warning with both versions. An outdated runtime was the cause of guides arriving cut off ("[omitted … characters]"), which blocked writes and sent agents into long retry loops. The runtime now reports its version.
+
 ## 1.4.2
 
 Everything from 1.4.2b1 to 1.4.2b3, plus readable errors:

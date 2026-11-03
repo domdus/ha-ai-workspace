@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import re
 import secrets
 import time
 from dataclasses import replace
@@ -21,6 +22,7 @@ from .const import (
     CONF_CHANGE_HISTORY,
     DOMAIN,
     HOST_RUNTIME_URL,
+    VERSION,
 )
 
 MISSING_RUNTIME = "Start the Cursor SDK Runtime and set its URL on the Cursor agent."
@@ -29,6 +31,29 @@ BAD_TOKEN = (
     "and on AI Workspace (Configure)."
 )
 PAIRING = "Pairing with the AI Workspace Runtime app. Try again in a minute."
+OUTDATED_RUNTIME = (
+    "The AI Workspace Runtime is {have}, this integration is {want}. Update the Runtime "
+    "(App or Docker image) so Cursor agents get the same fixes."
+)
+_VERSION = re.compile(r"(\d+)\.(\d+)\.(\d+)(?:b(\d+))?")
+
+
+def _version_key(text: str) -> tuple[int, int, int, int] | None:
+    found = _VERSION.search(str(text or ""))
+    if not found:
+        return None
+    major, minor, patch, beta = found.groups()
+    # A final release sorts after its betas.
+    return int(major), int(minor), int(patch), int(beta) if beta else 1_000_000
+
+
+def runtime_notice(runtime_version: str, integration_version: str = VERSION) -> str | None:
+    """A note for Cursor agents when the Runtime is older than the integration."""
+    want = _version_key(integration_version)
+    have = _version_key(runtime_version)
+    if want is None or (have is not None and have >= want):
+        return None
+    return OUTDATED_RUNTIME.format(have=runtime_version or "older than 1.4.3", want=integration_version)
 
 _LOGGER = logging.getLogger(__name__)
 _HASS_URL_OPTION = "hass_url"
@@ -288,7 +313,9 @@ async def _async_pair_addon(hass: HomeAssistant, slug: str, base: str) -> str:
     return token
 
 
-def apply_runtime_to_providers(bucket: dict, runtime_url: str, reason: str | None = None) -> None:
+def apply_runtime_to_providers(
+    bucket: dict, runtime_url: str, reason: str | None = None, notice: str | None = None
+) -> None:
     bucket["runtime_url"] = runtime_url
     if not runtime_url and reason is None:
         reason = MISSING_RUNTIME
@@ -297,9 +324,9 @@ def apply_runtime_to_providers(bucket: dict, runtime_url: str, reason: str | Non
             continue
         info = item.info
         available = reason is None
-        if bool(info.available) == available and info.reason == reason:
+        if bool(info.available) == available and info.reason == reason and info.notice == notice:
             continue
-        item.info = replace(info, available=available, reason=reason)
+        item.info = replace(info, available=available, reason=reason, notice=notice)
 
 
 def _needs_cursor(bucket: dict) -> bool:
@@ -346,7 +373,12 @@ async def async_bind_runtime(hass: HomeAssistant, bucket: dict | None = None, *,
             else:
                 reason = BAD_TOKEN
     data["runtime_token"] = token
-    apply_runtime_to_providers(data, url, reason)
+    data["runtime_version"] = str(health.get("version") or "")
+    notice = runtime_notice(data["runtime_version"])
+    if notice and data.get("runtime_notice") != notice:
+        _LOGGER.warning(notice)
+    data["runtime_notice"] = notice
+    apply_runtime_to_providers(data, url, reason, notice)
     if url != previous:
         _LOGGER.info("AI Workspace Cursor Runtime at %s", url)
     return url
@@ -360,7 +392,7 @@ async def _async_finish_pairing(hass: HomeAssistant, data: dict, slug: str, url:
     if token:
         data["runtime_token"] = token
     ok = bool(token) and await async_token_accepted(hass, url, token)
-    apply_runtime_to_providers(data, url, None if ok else BAD_TOKEN)
+    apply_runtime_to_providers(data, url, None if ok else BAD_TOKEN, data.get("runtime_notice"))
 
 
 async def async_retry_runtime(hass: HomeAssistant, bucket: dict) -> None:

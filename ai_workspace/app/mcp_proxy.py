@@ -20,6 +20,7 @@ from fastapi.responses import JSONResponse, Response
 
 from app.settings import _default_hass_url, _read_options
 from app.tool_result import shorten_mcp_response
+from app.bps_key import note_guide, prepare_write
 from app.write_guard import block_message, placeholder_write
 
 logger = logging.getLogger(__name__)
@@ -115,6 +116,19 @@ def parse_tool_call(body: bytes) -> tuple[str, dict[str, Any]] | None:
         if found is not None:
             return found
     return None
+
+
+def with_tool_arguments(body: bytes, arguments: dict[str, Any]) -> bytes | None:
+    """The same tools/call body with new arguments, or None when it is not a single JSON call."""
+    try:
+        message = json.loads((body or b"").strip() or b"null")
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(message, dict) or message.get("method") != "tools/call":
+        return None
+    params = message.get("params") if isinstance(message.get("params"), dict) else {}
+    message["params"] = {**params, "arguments": arguments}
+    return json.dumps(message, ensure_ascii=False).encode()
 
 
 def tool_call_id(body: bytes) -> Any:
@@ -228,6 +242,13 @@ async def proxy_mcp(request: Request, secret: str, digest: str, actor: str = "")
                     "result": {"content": [{"type": "text", "text": block_message(blocked)}], "isError": True},
                 }
             )
+    if tool_call is not None:
+        prepared = prepare_write(*tool_call)
+        if prepared is not tool_call[1]:
+            rewritten = with_tool_arguments(body, prepared)
+            if rewritten is not None:
+                body, tool_call = rewritten, (tool_call[0], prepared)
+                logger.info("mcp proxy passed the guide key on to %s", tool_call[0])
     activity_token = ""
     if tool_call is not None and _change_history_enabled(request):
         activity_token = await _activity_prepare(request, registry, actor, tool_call)
@@ -264,6 +285,8 @@ async def proxy_mcp(request: Request, secret: str, digest: str, actor: str = "")
     content_type = response_headers.get("Content-Type") or response_headers.get("content-type") or ""
     if activity_token:
         await _activity_commit(request, activity_token, ok=tool_response_ok(status, raw))
+    if tool_call is not None:
+        note_guide(tool_call[0], raw.decode("utf-8", "replace"))
     kind = "unchanged"
     if request.method.upper() == "POST":
         raw, kind = shorten_mcp_response(body, raw, content_type, enabled=_shorten_enabled(request))

@@ -22,6 +22,7 @@ from app.redact import redact
 from app.settings import Settings
 from app.store import Session, Store
 from app.titles import accept_generated_title, needs_title_summary, title_from_prompt
+from app.version import RUNTIME_VERSION
 
 logger = logging.getLogger(__name__)
 STATIC = Path(__file__).resolve().parent / "static"
@@ -253,6 +254,7 @@ def health(request: Request) -> dict:
     cursor = request.app.state.providers["cursor"].info
     return {
         "ok": True,
+        "version": RUNTIME_VERSION,
         "auth_mode": settings.auth_mode,
         "model": settings.model,
         "cursor": cursor.available,

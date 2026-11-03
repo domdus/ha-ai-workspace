@@ -13,6 +13,8 @@ class ProviderInfo:
     label: str
     available: bool
     reason: str | None = None
+    # Usable, but something needs the user's attention (an outdated runtime).
+    notice: str | None = None
     title: str = ""
     model: str = ""
     provider: str = ""
@@ -23,6 +25,7 @@ class ProviderInfo:
             "label": self.label,
             "available": self.available,
             "reason": self.reason,
+            "notice": self.notice,
             "title": self.title or self.label,
             "model": self.model,
             "provider": self.provider,
