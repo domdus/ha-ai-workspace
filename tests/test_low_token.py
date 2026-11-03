@@ -7,6 +7,7 @@ from custom_components.ai_workspace.api_provider import (
     _anthropic_tools,
     _gemini_schema,
     _history_messages,
+    _ReplyText,
     _openai_tools,
     _slim_mcp_tools,
 )
@@ -251,3 +252,44 @@ def test_status_sentence_reaches_custom_prompts_but_not_saving_levels() -> None:
     assert STATUS_LINE_INSTRUCTIONS in standing_chat_prompt(SimpleNamespace(system_prompt="Custom."))
     assert STATUS_LINE_INSTRUCTIONS not in standing_chat_prompt(SimpleNamespace(system_prompt=""), mode="medium")
     assert STATUS_LINE_INSTRUCTIONS not in standing_chat_prompt(SimpleNamespace(system_prompt=""), mode="extreme")
+
+
+def _turn(rounds):
+    """Each round is (text chunks, ends with a tool call). Returns what the user sees."""
+    said: list[str] = []
+    shown: list[str] = []
+    for chunks, more in rounds:
+        text = _ReplyText(said)
+        for chunk in chunks:
+            shown.extend(text.add(chunk))
+        shown.extend(text.finish(more))
+    assert "".join(shown) == "".join(said)
+    return "".join(shown)
+
+
+def test_only_the_first_status_sentence_and_the_answer_are_shown() -> None:
+    seen = _turn(
+        [
+            (["Ich prüfe ", "das Dashboard."], True),
+            (["Ich liste die Dashboards."], True),
+            ([], True),
+            (["Ich lese die ", "Konfiguration."], True),
+            (["Erledigt: ", "dupliziert."], False),
+        ]
+    )
+    assert seen == "Ich prüfe das Dashboard.\n\nErledigt: dupliziert."
+
+
+def test_a_long_answer_streams_before_the_round_ends() -> None:
+    said: list[str] = ["Checking."]
+    text = _ReplyText(said)
+    assert text.add("a" * 100) == []
+    assert text.add("b" * 400) == ["\n\n", "a" * 100 + "b" * 400]
+    assert text.add("c") == ["c"]
+    assert text.finish(False) == []
+
+
+def test_without_a_status_sentence_the_first_text_streams_right_away() -> None:
+    assert _turn([([], True), (["Done."], False)]) == "Done."
+    said: list[str] = []
+    assert _ReplyText(said).add("Done") == ["Done"]

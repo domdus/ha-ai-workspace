@@ -67,6 +67,7 @@ from .titles import clean_title, title_prompt
 from .mcp_observe import note_mcp_result
 from .tool_result import shorten_tool_result
 from .usage_cost import TokenUsage, estimate_cost, parse_usage, usage_payload
+from .write_guard import block_message, placeholder_write
 
 logger = logging.getLogger(__name__)
 
@@ -252,6 +253,49 @@ def _slim_mcp_tools(mcp_tools: list[dict], limit: int = _DESC_MAX) -> list[dict]
             }
         )
     return out
+
+
+# Long enough for a status sentence, short enough that an answer still streams soon.
+_HOLD_CHARS = 400
+
+
+class _ReplyText:
+    """Shows the first status sentence, then hides text that only leads into another tool call.
+
+    The model keeps that text in its own context; the user sees one status line and the answer.
+    """
+
+    def __init__(self, said: list[str]) -> None:
+        self._said = said
+        self._gap = bool(said)
+        self._hold = bool(said)
+        self._held: list[str] = []
+
+    def add(self, value: str) -> list[str]:
+        if not self._hold:
+            return self._show(value)
+        self._held.append(value)
+        if sum(len(part) for part in self._held) < _HOLD_CHARS:
+            return []
+        return self._release()
+
+    def finish(self, more_tools: bool) -> list[str]:
+        if more_tools:
+            self._held.clear()
+            return []
+        return self._release()
+
+    def _release(self) -> list[str]:
+        self._hold = False
+        value = "".join(self._held)
+        self._held.clear()
+        return self._show(value) if value else []
+
+    def _show(self, value: str) -> list[str]:
+        out = ["\n\n", value] if self._gap else [value]
+        self._gap = False
+        self._said.extend(out)
+        return out
 
 
 class McpBundle:
@@ -804,6 +848,10 @@ class ApiProvider:
 
     async def _invoke_tool(self, mcp, name: str, args: Any, on_tool: Callable | None):
         payload = args if isinstance(args, dict) else {}
+        blocked = placeholder_write(mcp.original_name(name), payload)
+        if blocked:
+            logger.warning("Refused %s: placeholder %r the user did not ask for", name, blocked)
+            return {"content": [{"type": "text", "text": block_message(blocked)}], "isError": True}
         if on_tool is None:
             return await mcp.call_tool(name, payload)
         original = mcp.original_name(name)
@@ -966,7 +1014,7 @@ class ApiProvider:
                         payload["parallel_tool_calls"] = False
             payload = self._apply_prompt_cache(payload)
             reply: dict[str, Any] = {}
-            gap = bool(said)
+            shown = _ReplyText(said)
             async for kind, value in self._openai_round(http, url, headers, payload):
                 if kind == "usage":
                     usage = usage.add(value)
@@ -974,13 +1022,11 @@ class ApiProvider:
                 if kind == "message":
                     reply = value
                     continue
-                if gap:
-                    said.append("\n\n")
-                    yield {"type": "text", "delta": "\n\n"}
-                    gap = False
-                said.append(value)
-                yield {"type": "text", "delta": value}
+                for delta in shown.add(value):
+                    yield {"type": "text", "delta": delta}
             calls = reply.get("tool_calls") or []
+            for delta in shown.finish(bool(calls) and not last):
+                yield {"type": "text", "delta": delta}
             if calls and not last:
                 messages.append({"role": "assistant", "content": reply.get("content") or None, "tool_calls": calls})
                 for call in calls:
@@ -1131,7 +1177,7 @@ class ApiProvider:
                     payload["tool_choice"] = {"type": "any"}
             payload = self._apply_prompt_cache(payload)
             blocks: list[dict] = []
-            gap = bool(said)
+            shown = _ReplyText(said)
             async for kind, value in self._anthropic_round(http, url, headers, payload):
                 if kind == "usage":
                     usage = usage.add(value)
@@ -1139,13 +1185,11 @@ class ApiProvider:
                 if kind == "message":
                     blocks = value
                     continue
-                if gap:
-                    said.append("\n\n")
-                    yield {"type": "text", "delta": "\n\n"}
-                    gap = False
-                said.append(value)
-                yield {"type": "text", "delta": value}
+                for delta in shown.add(value):
+                    yield {"type": "text", "delta": delta}
             uses = [block for block in blocks if block.get("type") == "tool_use"]
+            for delta in shown.finish(bool(uses) and not last):
+                yield {"type": "text", "delta": delta}
             if uses and not last:
                 messages.append({"role": "assistant", "content": _clean_blocks(blocks)})
                 results = []

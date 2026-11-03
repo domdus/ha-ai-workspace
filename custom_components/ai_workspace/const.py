@@ -755,11 +755,16 @@ BPS_KEY_INSTRUCTIONS = (
     "The key only counts for the write call that carries it. "
     "Only create, change, or delete what the user asked for. Never make a placeholder, test, or helper "
     "automation, script, scene, or entity to pass a key or get around a tool error. "
-    "If a write stays blocked, stop and tell the user."
+    "A dashboard change is one dashboard write and never needs an automation. "
+    "If a write stays blocked, stop and tell the user. "
+    "If asked where something in Home Assistant came from and you do not know, say so instead of guessing. "
+    "Only report errors and results that a tool actually returned. "
+    "Never say a change is done before the write result confirms it."
 )
 STATUS_LINE_INSTRUCTIONS = (
     "When a request needs tools, first write one short sentence saying what you are checking or doing, "
-    "then call the tools. After that, do not narrate each tool call; the UI already shows them."
+    "then call the tools. Write that sentence only once per request. Between tool calls write nothing at all; "
+    "the UI already shows them. Your next text is the answer."
 )
 # Sent with a voice turn: the status sentence would be read aloud before every answer.
 VOICE_TURN_NOTE = "This is a voice request. Skip the status sentence and answer directly."

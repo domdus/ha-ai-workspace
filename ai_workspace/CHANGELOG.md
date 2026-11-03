@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.2b3
+
+- **Update the runtime (App or Docker image) together with this release.** The automation block below also lives in the runtime, and Cursor agents use that copy.
+- Agents: AI Workspace now refuses to write an automation, script, or scene that looks like a placeholder, such as one named `DASHBOARD_WRITE_GUARD_ONLY` or `__dash_write_bps_ack_only__`, or a guard, probe, or test item that only writes to the log. Nothing is written; the agent is told to carry on with your request or tell you what blocked it. Real automations with such words in their name still work.
+- Cloud agents: one status sentence, then the answer. Text a model writes between later tool calls is no longer shown; the model still keeps it. A long answer still streams as it arrives.
+- Agents: new rules to only report errors and results a tool actually returned, not to call a change done before the write confirms it, to say so instead of guessing where something came from, and that a dashboard change never needs an automation.
+- Chat: names in replies link less eagerly. Only names of two or more words link, never inside quotes, and only on first mention, so words like "Home" or a quoted section title stay plain. Entity ids and links the agent writes are unchanged.
+
 ## 1.4.2b2
 
 - Dashboards: a change saved to the default dashboard while you are on another page, such as AI Workspace, now shows when you go back. Before, it stayed hidden until the app or browser page was restarted.
