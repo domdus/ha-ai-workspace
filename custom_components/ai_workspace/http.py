@@ -39,7 +39,6 @@ from .const import (
     token_mode_checks_house,
     token_mode_clip_user,
     token_mode_fresh_agent,
-    token_mode_history_limit,
     token_mode_reply_limit,
 )
 from .mcp_config import with_mcp_auth
@@ -503,15 +502,6 @@ def _known_agent(hass: HomeAssistant, data: dict[str, Any], agent: str) -> bool:
     return bool(agent) and (agent in (data.get("providers") or {}) or agent in assist_agent_ids(hass))
 
 
-def handoff_rows(rows: list, mode: str) -> list:
-    """Medium and Extreme start a fresh Cursor agent each turn; hand over only as much as a cloud agent gets."""
-    if not token_mode_fresh_agent(mode):
-        return rows
-    limit = token_mode_history_limit(mode)
-    turns = [row for row in rows if str(getattr(row, "role", "") or "") in {"user", "assistant"}]
-    return turns[-(limit + 1) :] if limit else turns[-1:]
-
-
 def _send_provider(data: dict[str, Any], session: Session):
     providers = data.get("providers") or {}
     ready = next((item for item in providers.values() if item.info.available), None)
@@ -969,7 +959,13 @@ class ChatView(HomeAssistantView):
         handoff = ""
         if assist or getattr(provider, "kind", "") == "cursor":
             rows = await hass.async_add_executor_job(store.list_messages, session.id)
-            handoff = handoff_note(handoff_rows(rows, token_mode), session.title)
+            handoff = handoff_note(
+                rows,
+                session.title,
+                mode=token_mode,
+                model=str(getattr(session, "model", "") or getattr(provider, "model", "") or ""),
+                manual_window=int(getattr(settings, "context_window", 0) or 0),
+            )
             if getattr(provider, "kind", "") == "cursor":
                 logger.info(
                     "cursor handoff session=%s prior=%s chars=%s",
@@ -1122,6 +1118,7 @@ class ChatView(HomeAssistantView):
                                     "phase": event.get("phase"),
                                     "text": event.get("text"),
                                     **({"id": event["id"]} if event.get("id") else {}),
+                                    **({"note": event["note"]} if event.get("note") else {}),
                                 }
                             )
                         elif kind == "error":

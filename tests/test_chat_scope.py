@@ -1,14 +1,9 @@
-import importlib.util
-from pathlib import Path
 
 
 def _scope():
-    path = Path(__file__).resolve().parents[1] / "custom_components" / "ai_workspace" / "chat_scope.py"
-    spec = importlib.util.spec_from_file_location("ai_workspace_chat_scope", path)
-    mod = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(mod)
-    return mod
+    from custom_components.ai_workspace import chat_scope
+
+    return chat_scope
 
 
 def test_other_chats_stay_out_until_named() -> None:
@@ -37,7 +32,7 @@ def test_cross_chat_matches_title_without_a_cue() -> None:
     assert scope.matching_chats("give me status", chats, "current", cross=True) == []
 
 
-def test_handoff_includes_title_and_skips_tables() -> None:
+def test_handoff_includes_title_and_keeps_tables_and_line_breaks() -> None:
     scope = _scope()
 
     class Row:
@@ -62,7 +57,7 @@ def test_handoff_includes_title_and_skips_tables() -> None:
     assert 'titled "Handy nicht zu Hause"' in note
     assert "Handy-Tracker kaputt?" in note
     assert "setze ich A55-von-Alex" in note
-    assert "Galaxy-A55-5G" not in note
+    assert "| Galaxy-A55-5G | not_home |\n" in note
     assert "Ja mach mal." not in note
     assert "go ahead" in note
 

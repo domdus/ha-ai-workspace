@@ -17,6 +17,9 @@ from homeassistant.helpers import entity_registry as er
 from .agents import CursorAgent, entry_agents
 from .assist_pipelines import async_remove_assist_pipeline
 from .const import (
+    CONF_CONTEXT_WINDOW,
+    CONF_TOOLS_ON_DEMAND,
+    context_window_of,
     CONF_CROSS_CHAT,
     CONF_DEFAULT_AGENT,
     CONF_MODEL_SWITCHER,
@@ -190,6 +193,8 @@ async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
         show_chat_usage=bool(data.get(CONF_SHOW_CHAT_USAGE, True)),
         ha_usage_sensors=bool(data.get(CONF_HA_USAGE_SENSORS, False)),
         prompt_cache=_workspace_prompt_cache(entry, data),
+        context_window=context_window_of(data.get(CONF_CONTEXT_WINDOW)),
+        tools_on_demand=bool(data.get(CONF_TOOLS_ON_DEMAND, True)),
         ui_theme=ui_theme_of(data.get(CONF_UI_THEME)),
         cross_chat=bool(data.get(CONF_CROSS_CHAT, False)),
         default_agent=str(data.get(CONF_DEFAULT_AGENT) or "").strip(),

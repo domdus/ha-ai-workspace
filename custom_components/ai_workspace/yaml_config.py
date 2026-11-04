@@ -13,6 +13,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
 from .const import (
+    CONF_CONTEXT_WINDOW,
+    CONF_TOOLS_ON_DEMAND,
+    context_window_of,
     API_AZURE,
     API_PROVIDERS,
     API_SHORT_LABELS,
@@ -122,6 +125,8 @@ YAML_SHARED_KEYS = (
     CONF_DEFAULT_AGENT,
     CONF_MODEL_SWITCHER,
     CONF_KEEP_CHATS,
+    CONF_CONTEXT_WINDOW,
+    CONF_TOOLS_ON_DEMAND,
     CONF_SPEAK_REPLIES,
     CONF_STT_ENGINE,
     CONF_TTS_ENGINE,
@@ -148,6 +153,8 @@ YAML_OPTION_DEFAULTS = {
     CONF_DEFAULT_AGENT: "",
     CONF_MODEL_SWITCHER: False,
     CONF_KEEP_CHATS: DEFAULT_KEEP_CHATS,
+    CONF_CONTEXT_WINDOW: 0,
+    CONF_TOOLS_ON_DEMAND: True,
     CONF_SPEAK_REPLIES: False,
     CONF_STT_ENGINE: STT_BROWSER,
     CONF_TTS_ENGINE: TTS_OFF,
@@ -168,6 +175,8 @@ def _normalize_option(key: str, value: Any) -> Any:
         return ui_theme_of(value)
     if key == CONF_KEEP_CHATS:
         return _keep_chats(value)
+    if key == CONF_CONTEXT_WINDOW:
+        return context_window_of(value)
     if key == CONF_CHANGE_HISTORY_TTL_DAYS:
         return change_history_ttl_days(value)
     if key in {
@@ -183,6 +192,7 @@ def _normalize_option(key: str, value: Any) -> Any:
         CONF_SHOW_CHAT_USAGE,
         CONF_HA_USAGE_SENSORS,
         CONF_PROMPT_CACHE,
+        CONF_TOOLS_ON_DEMAND,
         CONF_CROSS_CHAT,
         CONF_MODEL_SWITCHER,
         CONF_SPEAK_REPLIES,
@@ -267,6 +277,8 @@ YAML_SCHEMA = vol.Schema(
         vol.Optional(CONF_DEFAULT_AGENT): cv.string,
         vol.Optional(CONF_MODEL_SWITCHER): cv.boolean,
         vol.Optional(CONF_KEEP_CHATS): vol.All(vol.Coerce(int), vol.Range(min=1, max=500)),
+        vol.Optional(CONF_TOOLS_ON_DEMAND): cv.boolean,
+        vol.Optional(CONF_CONTEXT_WINDOW): vol.All(vol.Coerce(int), vol.Range(min=0, max=10_000_000)),
         vol.Optional(CONF_SPEAK_REPLIES): cv.boolean,
         vol.Optional(CONF_STT_ENGINE): cv.string,
         vol.Optional(CONF_TTS_ENGINE): cv.string,

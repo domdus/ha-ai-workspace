@@ -116,13 +116,13 @@ def test_house_check_and_limits_per_mode() -> None:
     assert token_mode_reply_limit(TOKEN_MODE_LIGHT) is None
 
 
-def test_history_messages_honors_limit() -> None:
+def test_history_messages_follow_the_token_budget() -> None:
     rows = [_Row("user", f"u{i}") if i % 2 == 0 else _Row("assistant", f"a{i}") for i in range(10)]
     rows.append(_Row("user", "current"))
-    clipped = _history_messages(rows, 4)
-    assert len(clipped) == 4
-    assert clipped[-1]["content"] == "a9"
-    assert _history_messages(rows, 0) == []
+    short = _history_messages(rows, TOKEN_MODE_LIGHT, "gpt-5")
+    assert len(short) == 10
+    assert short[-1]["content"] == "a9"
+    assert _history_messages(rows, TOKEN_MODE_EXTREME, "gpt-5") == []
 
 
 def test_write_tool_keeps_the_skill_key_instruction() -> None:

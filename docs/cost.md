@@ -33,11 +33,14 @@ Turn the option off again to remove those sensors. Tracking can stay on.
 
 ## Why a house question costs more than it looks
 
-Cloud AI and Ollama send the system prompt and the **tool list of every enabled MCP connection** with each message. HA-MCP offers on the order of 80 tools. Even with shorter descriptions, that is several thousand tokens before you type anything. Each tool call adds its result and one more request, which sends the prompt and the tool list again. A greeting or thanks is sent without tools.
+Cloud AI and Ollama send the system prompt and a **tool list** with each request. Each tool call adds its result and one more request, which sends the prompt and the tool list again. A greeting or thanks is sent without tools.
+
+All of HA-MCP's tools come to about 38,000 tokens. Cloud agents therefore start with a smaller set: the search, state, and device control tools, the groups your message is about (for example the dashboard tools when you mention a card), and the groups this chat already used. The agent sees the names of the other tools and loads a group when it needs it. A typical request then carries 5,000–10,000 tokens of tools. Tools from MCP servers that do not group their tools are always sent. To send every tool again, set `tools_on_demand: false` in YAML.
 
 A typical house-check turn on **Off** is often around **$0.40**. A long thread with many tool rounds can reach **$0.90+**. Most of that is the tool list and tool results as input, not your last sentence.
 
-- The last 12 messages of the chat are sent again so the model remembers the thread (each cut to a few thousand characters). Earlier tool results are not. That is not the main cost.
+- Earlier messages are sent again so the model remembers the thread, up to a share of the model's context window (see the History column below). Long replies are no longer cut at 2,000 characters; only a message that would take more than about a third of the history keeps just its start and end. Each earlier reply carries a one-line note of the tools it used and what they returned, so the agent does not look everything up again.
+- When a chat outgrows that share, the oldest turns are left out six at a time and replaced by a short summary of what was asked. Because the history only moves in steps, the provider's prompt cache keeps working on long chats.
 - **[Look at Home Assistant first](settings.md#always-check-the-house-first):** a question that needs no house data, like a poem, still costs one tool call and one more request.
 - **To spend less:** pick a smaller model for everyday questions, set **Reduce token usage** (below), disable the device of an MCP connection you do not need, and start a new chat when the topic changes.
 
@@ -49,16 +52,18 @@ The expensive part is the MCP tool list (and extra tool rounds), not the chat hi
 
 | Mode | Tools | History | Prompt | Typical save vs Off on a house-check turn |
 | --- | --- | --- | --- | --- |
-| **Off** | All enabled MCP tools | Last 12 | Full | — |
-| **Light** | Yes | Last 12 | Full | About **5–20%**. Skips extras such as auto-title, page context, and effort. |
-| **Medium** | Yes | Last 4 | Short, tools allowed | About **25–45%**. Tool schemas still dominate. |
+| **Off** | Yes | 15% of the window, at most 24,000 tokens | Full | — |
+| **Light** | Yes | 8% of the window, at most 8,000 tokens | Full | About **5–20%**. Skips extras such as auto-title, page context, and effort. |
+| **Medium** | Yes | 3% of the window, at most 2,000 tokens | Short, tools allowed | About **25–45%**. |
 | **Extreme** | No | None | Two sentences; cannot control the house | About **80–95%**. |
+
+The context window comes from the model id (for example 400,000 tokens for GPT-5, 200,000 for Claude, 1,000,000 for Gemini, 32,000 for unknown Ollama models, otherwise 128,000). Set `context_window: <tokens>` in YAML if your model reads less, such as a small local model.
 
 Light still attaches files and images; Medium and Extreme do not. Medium and Extreme also shorten a very long message and cap how long the reply can be.
 
 **Look at Home Assistant first** is a separate switch on the agent and works on every level except Extreme (no tools). Leaving it on adds one tool round to house questions.
 
-**Cursor:** the same levels apply. Medium and Extreme start a new Cursor agent every turn and hand over only the last messages, so Cursor's own thread cannot grow. Extreme gives Cursor no tools at all. Cursor cannot cap the reply length, so the short prompts ask for short answers instead.
+**Cursor:** the same levels apply. A Cursor agent that is still running keeps its own thread. A new one gets the earlier turns with the same budget and summary as cloud agents, with line breaks kept, so YAML and code from earlier in the chat arrive intact. Medium and Extreme start a new Cursor agent every turn, so Cursor's own thread cannot grow. Cursor always gets every tool; it manages the tool list itself. Extreme gives Cursor no tools at all. Cursor cannot cap the reply length, so the short prompts ask for short answers instead.
 
 Use Extreme for a small local model or cheap Q&A; Medium when the agent should still call MCP; Off when you want the full product.
 

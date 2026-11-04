@@ -72,6 +72,8 @@ class Settings:
     model_switcher: bool = False
     token_mode: str = "off"
     prompt_cache: bool = True
+    context_window: int = 0
+    tools_on_demand: bool = True
     check_house: bool = True
     keep_chats: int = 30
     mode: str = "cursor"

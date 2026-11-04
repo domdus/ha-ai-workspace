@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.4.3b2
+
+- **Update the runtime (App or Docker image) together with this release.** It only carries the new version number, so the chat does not warn that the runtime is out of date.
+- Cloud agents: tools load on demand. Instead of all of HA-MCP's tools (about 38,000 tokens in every request), an agent starts with search, state, and device control, the tool groups your message is about, and the groups the chat already used. It sees the names of all other tools and loads a group when it needs it, which the chat does not show as a tool step. A typical request now carries 5,000–10,000 tokens of tools. Tools from MCP servers that do not group their tools are always sent. `tools_on_demand: false` in YAML sends every tool again.
+- Agents: chat history follows a token budget instead of a fixed message count: a share of the model's context window per token level (Off up to 24,000 tokens, Light 8,000, Medium 2,000). Replies are no longer cut at 2,000 characters. When a chat outgrows the budget, the oldest turns are left out six at a time behind a short summary, so the prompt cache keeps hitting on long chats. `context_window: <tokens>` in YAML overrides the window for small local models.
+- Agents: each reply now keeps a one-line note per tool call with what it returned, for example the automation ids from a search. The next turn sees those notes, so the agent no longer looks up the same things again. Replies saved before this update have no notes.
+- Cursor agents: a new Cursor agent gets the earlier turns from the same history builder as cloud agents. Line breaks and tables now stay, so YAML and code from earlier in the chat arrive intact instead of joined into one line.
+- Prompt: every rule is stated once (small talk, MCP only, links, guide reading), the rule to call tools silently is gone because it contradicted the one status sentence, and cloud agents no longer get the Cursor rules about workspace files. The system prompt is about 20% shorter. Small talk and "look at the house before answering" now also apply when you use your own system prompt.
+
 ## 1.4.3b1
 
 - **Update the runtime (App or Docker image) together with this release.** The key relay below also lives in the runtime, and Cursor agents use that copy.

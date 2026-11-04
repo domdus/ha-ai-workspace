@@ -38,10 +38,18 @@ def test_editable_system_prompt_omits_editor_link_rules() -> None:
 def test_small_talk_stays_plain() -> None:
     const = _const()
     text = const.ui_link_instructions("http://127.0.0.1:8123")
-    assert "small talk" in text
     assert "Do not link the words Home Assistant" in text
+    assert text.count("Do not link the words Home Assistant") == 1
     assert "Never write that origin" in text
     assert "This user's Home Assistant UI is" not in text
-    assert "Call tools silently" in text
-    assert "small talk" in const.DEFAULT_SYSTEM_PROMPT
-    assert "call a Home Assistant tool" in const.DEFAULT_SYSTEM_PROMPT
+    # It contradicted the one status sentence before tools.
+    assert "Call tools silently" not in text
+
+    class S:
+        system_prompt = "Custom prompt."
+        house_map = False
+
+    # Kept when the user replaces the built-in prompt.
+    full = const.workspace_system_prompt(S())
+    assert "small talk" in full
+    assert "call a Home Assistant tool" in full

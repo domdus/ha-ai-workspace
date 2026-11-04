@@ -20,7 +20,7 @@ from .agents import Agent, entry_agents
 from .const import DOMAIN, VOICE_TURN_NOTE, provider_token_mode, token_mode_allows_extras
 from .chat_scope import handoff_note, merge_reply_text, other_chat_note
 from .error_text import public_error
-from .http import _create_runtime_session, async_agent_events, handoff_rows
+from .http import _create_runtime_session, async_agent_events
 from .small_talk import wants_house_tools
 from .store import Store
 from .titles import accept_generated_title, needs_title_summary, title_from_prompt
@@ -252,7 +252,13 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
             handoff = ""
             if getattr(provider, "kind", "") == "cursor":
                 rows = await self.hass.async_add_executor_job(store.list_messages, session.id)
-                handoff = handoff_note(handoff_rows(rows, provider_token_mode(provider)), session.title)
+                handoff = handoff_note(
+                    rows,
+                    session.title,
+                    mode=provider_token_mode(provider),
+                    model=str(getattr(session, "model", "") or getattr(provider, "model", "") or ""),
+                    manual_window=int(getattr(data.get("settings"), "context_window", 0) or 0),
+                )
             suggest = (
                 getattr(provider, "suggest_title", None)
                 if extras and count <= 1 and needs_title_summary(text)
@@ -303,6 +309,7 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
                                 "phase": event.get("phase"),
                                 "text": event.get("text"),
                                 **({"id": event["id"]} if event.get("id") else {}),
+                                **({"note": event["note"]} if event.get("note") else {}),
                             }
                         )
                     elif kind == "error":

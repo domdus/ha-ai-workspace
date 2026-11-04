@@ -14,6 +14,8 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .bps_key import note_guide, prepare_write
 from .images import anthropic_user_content, openai_user_content
+from .context import as_messages, history_for, tool_call_note
+from .tool_loading import LOAD_TOOLS, pick_tools, used_tool_names
 from .const import (
     API_ANTHROPIC,
     API_AZURE,
@@ -98,7 +100,6 @@ _BPS_PARAM = (
 _BPS_NOTE = (
     " Call ha_get_skill_guide and pass its acknowledgment key as BestPracticeKey. Do not ask the user."
 )
-_HISTORY_MAX = 12
 _WAIT = re.compile(r"try again in ([\d.]+)\s*(ms|s)", re.I)
 _ANTHROPIC_VERSION = "2023-06-01"
 _REASONING_EFFORT = {API_OPENAI, API_AZURE, API_GEMINI, API_XAI}
@@ -235,6 +236,8 @@ def _is_null_schema(schema: Any) -> bool:
 
 def _full_description(name: str, schema: dict[str, Any]) -> bool:
     props = schema.get("properties")
+    if name == LOAD_TOOLS:
+        return True
     return bool(_FULL_DESC_TOOL.search(name)) or (isinstance(props, dict) and "BestPracticeKey" in props)
 
 
@@ -317,6 +320,7 @@ class McpBundle:
         self._groups: list[tuple[str, list[str]]] = []
         self._pending: list[tuple[str, list[dict]]] = []
         self.tools: list[dict] = []
+        self.picker = None
 
     def add(self, server: str, client: Any, tools: list[dict]) -> None:
         names = [str(tool.get("name") or "") for tool in tools if tool.get("name")]
@@ -587,22 +591,18 @@ def _failed_reply(row) -> bool:
     return not content or content in errors
 
 
-def _history_messages(rows, limit: int = _HISTORY_MAX) -> list[dict[str, str]]:
-    if limit <= 0:
-        return []
-    messages = []
-    for row in rows:
-        if row.role not in {"user", "assistant"} or _failed_reply(row):
-            continue
-        content = _clip(row.content or "", 2000)
-        if not content:
-            continue
-        messages.append({"role": row.role, "content": content})
-    if messages and messages[-1]["role"] == "user":
-        messages = messages[:-1]
-    if len(messages) > limit:
-        messages = messages[-limit:]
-    return messages
+def _history_messages(rows, mode: str, model: str = "", settings=None) -> list[dict[str, str]]:
+    """Earlier turns sized to the model's context window, see context.py."""
+    history = history_for(
+        rows,
+        mode=mode,
+        model=model,
+        provider=str(getattr(settings, "api_provider", "") or ""),
+        manual_window=int(getattr(settings, "context_window", 0) or 0),
+    )
+    if history.dropped:
+        logger.debug("history left out %s older turn(s) behind a digest", history.dropped)
+    return as_messages(history)
 
 
 async def _sse(resp: ClientResponse) -> AsyncIterator[tuple[str, str]]:
@@ -909,11 +909,11 @@ class ApiProvider:
             pictures = []
         use_tools = (wants_house_tools(message) if tools is None else bool(tools)) or bool(pictures)
         history = []
+        rows: list = []
         bundle = McpBundle()
-        hist_limit = token_mode_history_limit(mode)
-        if hist_limit and self.hass is not None and self.store is not None:
+        if token_mode_history_limit(mode) and self.hass is not None and self.store is not None:
             rows = await self.hass.async_add_executor_job(self.store.list_messages, session.id)
-            history = _history_messages(rows, hist_limit)
+            history = _history_messages(rows, mode, self._model(), self.settings)
         yield {"type": "status", "text": "Working"}
         if use_tools and token_mode_allows_tools(mode):
             bundle, skipped, first_error = await self._open_tools(http, str(access_token or ""), admin)
@@ -933,6 +933,13 @@ class ApiProvider:
         )
         if bundle.tools:
             logger.debug("MCP OpenAI tool names: %s", ", ".join(tool["name"] for tool in bundle.tools))
+        if bundle.tools and bool(getattr(self.settings, "tools_on_demand", True)):
+            recent = " ".join(str(item.get("content") or "") for item in history[-2:] if item.get("role") == "user")
+            bundle.picker = pick_tools(bundle.tools, f"{message}\n{recent}", used_tool_names(rows))
+            if bundle.picker is not None:
+                logger.info(
+                    "tools on demand: %s of %s sent at start", len(bundle.picker.visible()) - 1, len(bundle.tools)
+                )
         loop = self._anthropic if self.settings.api_provider == API_ANTHROPIC else self._openai
         force = bool(force_tools) and token_mode_checks_house(mode, self.settings.check_house) and not pictures
         try:
@@ -1007,7 +1014,13 @@ class ApiProvider:
         messages: list[dict[str, Any]] = [{"role": "system", "content": self._system(origin, language, admin)}]
         messages.extend(history)
         messages.append({"role": "user", "content": openai_user_content(message, images)})
-        tools = _openai_tools(mcp.tools, self._tool_text_limit(), self.settings.api_provider == API_GEMINI)
+        picker = getattr(mcp, "picker", None)
+
+        def tool_list() -> list[dict]:
+            shown_tools = picker.visible() if picker is not None else mcp.tools
+            return _openai_tools(shown_tools, self._tool_text_limit(), self.settings.api_provider == API_GEMINI)
+
+        tools = tool_list()
         url = self._chat_url()
         headers = self._auth_headers()
         said: list[str] = []
@@ -1049,17 +1062,29 @@ class ApiProvider:
                 for call in calls:
                     fn = call.get("function") or {}
                     name = str(fn.get("name") or "tool")
-                    label = _tool_label(mcp.original_name(name))
-                    yield {"type": "tool", "name": name, "phase": "start", "text": f"Calling {label}..."}
                     try:
                         args = json.loads(fn.get("arguments") or "{}")
                     except json.JSONDecodeError:
                         args = {}
+                    if picker is not None and name == LOAD_TOOLS:
+                        messages.append({"role": "tool", "tool_call_id": call.get("id"), "content": picker.load(args)})
+                        tools = tool_list()
+                        continue
+                    if picker is not None and picker.add(name):
+                        tools = tool_list()
+                    label = _tool_label(mcp.original_name(name))
+                    yield {"type": "tool", "name": name, "phase": "start", "text": f"Calling {label}..."}
                     try:
                         body = self._tool_body(await self._invoke_tool(mcp, name, args, on_tool), name)
                     except _ERRORS as exc:
                         body = self._public(exc)
-                    yield {"type": "tool", "name": name, "phase": "end", "text": f"Finished {label}"}
+                    yield {
+                        "type": "tool",
+                        "name": name,
+                        "phase": "end",
+                        "text": f"Finished {label}",
+                        "note": tool_call_note(mcp.original_name(name), args, body),
+                    }
                     messages.append({"role": "tool", "tool_call_id": call.get("id"), "content": body})
                 continue
             break
@@ -1169,7 +1194,12 @@ class ApiProvider:
     ) -> AsyncIterator[dict]:
         messages: list[dict[str, Any]] = list(history)
         messages.append({"role": "user", "content": anthropic_user_content(message, images)})
-        tools = _anthropic_tools(mcp.tools, self._tool_text_limit())
+        picker = getattr(mcp, "picker", None)
+
+        def tool_list() -> list[dict]:
+            return _anthropic_tools(picker.visible() if picker is not None else mcp.tools, self._tool_text_limit())
+
+        tools = tool_list()
         url = f"{self._base()}/messages"
         headers = self._anthropic_headers()
         said: list[str] = []
@@ -1212,14 +1242,28 @@ class ApiProvider:
                 results = []
                 for block in uses:
                     name = str(block.get("name") or "tool")
+                    args = block.get("input") if isinstance(block.get("input"), dict) else {}
+                    if picker is not None and name == LOAD_TOOLS:
+                        results.append(
+                            {"type": "tool_result", "tool_use_id": block.get("id"), "content": picker.load(args)}
+                        )
+                        tools = tool_list()
+                        continue
+                    if picker is not None and picker.add(name):
+                        tools = tool_list()
                     label = _tool_label(mcp.original_name(name))
                     yield {"type": "tool", "name": name, "phase": "start", "text": f"Calling {label}..."}
-                    args = block.get("input") if isinstance(block.get("input"), dict) else {}
                     try:
                         body = self._tool_body(await self._invoke_tool(mcp, name, args, on_tool), name)
                     except _ERRORS as exc:
                         body = self._public(exc)
-                    yield {"type": "tool", "name": name, "phase": "end", "text": f"Finished {label}"}
+                    yield {
+                        "type": "tool",
+                        "name": name,
+                        "phase": "end",
+                        "text": f"Finished {label}",
+                        "note": tool_call_note(mcp.original_name(name), args, body),
+                    }
                     results.append({"type": "tool_result", "tool_use_id": block.get("id"), "content": body})
                 messages.append({"role": "user", "content": results})
                 continue

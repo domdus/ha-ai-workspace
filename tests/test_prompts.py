@@ -40,7 +40,8 @@ def test_workspace_system_prompt_includes_lovelace_rules() -> None:
 
     text = const.workspace_system_prompt(S(), admin=True)
     assert "Lovelace / dashboards (strict)" in text
-    assert "grep, glob, read, shell" in text
+    # Cloud agents have no file tools; only Cursor gets the file rule.
+    assert "grep, glob" not in text
     assert "twelve MCP calls" in text.lower() or "twelve MCP" in text
     assert "BestPracticeKey" in text
     assert "ha_get_skill_guide" in text
@@ -52,3 +53,6 @@ def test_workspace_system_prompt_includes_lovelace_rules() -> None:
     assert "answer in German" in standing
     assert "The browser origin is http://ha.example" in standing
     assert standing.startswith(text)
+    assert "grep, glob, read, shell" in standing
+    for rule in ("small talk", "Do not link the words Home Assistant", "never invent entity ids"):
+        assert standing.lower().count(rule.lower()) == 1, rule

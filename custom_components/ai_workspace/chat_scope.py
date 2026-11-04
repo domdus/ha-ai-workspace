@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-import json
 import re
+
+from .const import TOKEN_MODE_OFF
+from .context import as_transcript, history_for
 
 _CUES = re.compile(
     r"\b(chats?|conversations?|unterhaltung|gespr(?:ä|ae)ch|früher|frueher|vorher)\b",
@@ -50,21 +52,7 @@ _STOP = frozenset(
     }
 )
 _PLACEHOLDERS = frozenset({"", "new chat", "neuer chat"})
-_HANDOFF_MAX = 40
-_HANDOFF_CLIP = 2000
 _HANDOFF_BUDGET = 100000
-_TABLE_LINE = re.compile(
-    r"""
-    ^\s*
-    (
-      \|.*\|
-      | \|?[\s:|-]*---[\s:|-]*
-      | [^\n|]+\s\|\s[^\n|]+(\s\|\s[^\n|]*)*
-    )
-    \s*$
-    """,
-    re.VERBOSE,
-)
 HANDOFF_LEAD = (
     "This is the same Home Assistant chat. AI Workspace already shows these turns; "
     "the transcript below is the source of truth. Continue from it. "
@@ -142,51 +130,23 @@ def other_chat_note(store, user_id: str, session_id: str, message: str, cross: b
     return excerpt_for(loaded)
 
 
-def _without_tables(text: str) -> str:
-    kept: list[str] = []
-    for line in str(text or "").splitlines():
-        if _TABLE_LINE.match(line):
-            continue
-        kept.append(line)
-    return "\n".join(kept)
+def handoff_note(
+    rows,
+    title: str = "",
+    *,
+    mode: str = TOKEN_MODE_OFF,
+    model: str = "",
+    manual_window: int = 0,
+) -> str:
+    """Prior turns from this HA chat, used only when Cursor may have lost the thread.
 
-
-def _failed_reply(row) -> bool:
-    if getattr(row, "role", "") != "assistant":
-        return False
-    try:
-        events = json.loads(getattr(row, "events", None) or "[]")
-    except json.JSONDecodeError:
-        return False
-    if not isinstance(events, list):
-        return False
-    errors = [str(item.get("message") or "") for item in events if isinstance(item, dict) and item.get("type") == "error"]
-    if not errors:
-        return False
-    content = str(getattr(row, "content", "") or "").strip()
-    return not content or content in errors
-
-
-def handoff_note(rows, title: str = "") -> str:
-    """Prior turns from this HA chat, used only when Cursor may have lost the thread."""
-    lines: list[str] = []
-    for row in rows or []:
-        role = str(getattr(row, "role", "") or "")
-        if role not in {"user", "assistant"} or _failed_reply(row):
-            continue
-        body = " ".join(_without_tables(str(getattr(row, "content", "") or "")).split())
-        if not body:
-            continue
-        label = "User" if role == "user" else "Assistant"
-        lines.append(f"{label}: {body[:_HANDOFF_CLIP]}")
-    if lines and lines[-1].startswith("User:"):
-        lines = lines[:-1]
-    if not lines:
+    Same budget and digest as cloud agents (context.py). Line breaks stay, so YAML and code survive.
+    """
+    history = history_for(rows, mode=mode, model=model, manual_window=manual_window)
+    if not history:
         return ""
-    if len(lines) > _HANDOFF_MAX:
-        lines = lines[-_HANDOFF_MAX:]
     name = " ".join(str(title or "").split())
-    turns = (len(lines) + 1) // 2
+    turns = (len(history.turns) + 1) // 2 + history.dropped // 2
     if name and name.casefold() not in _PLACEHOLDERS:
         lead = (
             f'This is the same Home Assistant chat titled "{name[:80]}". '
@@ -199,16 +159,15 @@ def handoff_note(rows, title: str = "") -> str:
         )
     else:
         lead = _HANDOFF_LEAD
-    return _fit_handoff(lead, lines)
+    return _fit_handoff(lead, as_transcript(history))
 
 
-def _fit_handoff(lead: str, lines: list[str]) -> str:
-    kept = list(lines)
-    note = f"{lead}\n\n" + "\n".join(kept)
-    while kept and len(note) > _HANDOFF_BUDGET:
-        kept.pop(0)
-        note = f"{lead}\n\n" + "\n".join(kept)
-    return note
+def _fit_handoff(lead: str, transcript: str) -> str:
+    note = f"{lead}\n\n{transcript}"
+    if len(note) <= _HANDOFF_BUDGET:
+        return note
+    room = max(0, _HANDOFF_BUDGET - len(lead) - 2)
+    return f"{lead}\n\n{transcript[-room:]}"
 
 
 def attach_handoff(message: str, rows, needed: bool = True, title: str = "") -> str:
