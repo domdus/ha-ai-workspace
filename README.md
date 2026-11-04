@@ -13,7 +13,7 @@ Talk to an AI inside Home Assistant. Ask it to list your lights, write an automa
 You stay in Home Assistant. No Claude Desktop, no Cursor app, no VS Code. Cursor, OpenAI, Claude, Gemini, DeepSeek, Qwen, Grok, or any OpenAI-compatible model — same chat.
 
 <p align="center">
-  <img src="docs/ai_workspace.gif" alt="AI Workspace chat demo" width="300">
+  <img src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai_workspace.gif" alt="AI Workspace chat demo" width="300">
 </p>
 
 What it can do depends on that MCP. Here's what you get:
@@ -36,7 +36,7 @@ You're on the dashboard. Ask anyway.
 
   
 <p align="center">
-  <img src="docs/ai_workspace_floating.gif" alt="Floating button" width="820">
+  <img src="https://raw.githubusercontent.com/domdus/ha-ai-workspace/main/docs/ai_workspace_floating.gif" alt="Floating button" width="820">
 </p>
 
 Each agent can also show up in Home Assistant's Assist dialog. AI Workspace creates that pipeline for you, so you can talk to **Cursor AI** (or another agent) from the microphone as well.
