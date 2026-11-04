@@ -1,3 +1,4 @@
+from aiohttp import web
 import asyncio
 import time
 from types import SimpleNamespace
@@ -5,11 +6,11 @@ from types import SimpleNamespace
 from custom_components.ai_workspace import activity_ha
 from custom_components.ai_workspace.const import DOMAIN
 from custom_components.ai_workspace.conversation import _is_admin
-from custom_components.ai_workspace.http import _full_tools, _runtime_token_ok, cancel_chat_job
+from custom_components.ai_workspace import callback_keys
+from custom_components.ai_workspace.http import _full_tools, _runtime_caller, cancel_chat_job
 
 
-def _callback(token: str, remote: str, header: str = ""):
-    hass = SimpleNamespace(data={DOMAIN: {"runtime_token": token}})
+def _callback(hass, remote: str, header: str = ""):
     return SimpleNamespace(
         app={"hass": hass},
         remote=remote,
@@ -17,18 +18,44 @@ def _callback(token: str, remote: str, header: str = ""):
     )
 
 
-def test_runtime_callbacks_without_token_only_from_loopback() -> None:
-    assert _runtime_token_ok(_callback("", "127.0.0.1"))
-    assert _runtime_token_ok(_callback("", "::1"))
-    assert not _runtime_token_ok(_callback("", "192.168.1.20"))
-    assert not _runtime_token_ok(_callback("", "172.30.32.1"))
-    assert not _runtime_token_ok(_callback("", ""))
+def _hass_with_token(token: str = ""):
+    return SimpleNamespace(data={DOMAIN: {"runtime_token": token}})
 
 
-def test_runtime_callbacks_with_token_need_the_token() -> None:
-    assert _runtime_token_ok(_callback("secret", "192.168.1.20", "Bearer secret"))
-    assert not _runtime_token_ok(_callback("secret", "127.0.0.1"))
-    assert not _runtime_token_ok(_callback("secret", "127.0.0.1", "Bearer wrong"))
+def _refused(request) -> bool:
+    try:
+        _runtime_caller(request)
+    except web.HTTPUnauthorized:
+        return True
+    return False
+
+
+def test_runtime_callbacks_refuse_loopback_without_a_key() -> None:
+    hass = _hass_with_token("")
+    assert _refused(_callback(hass, "127.0.0.1"))
+    assert _refused(_callback(hass, "::1"))
+    assert _refused(_callback(hass, "192.168.1.20"))
+
+
+def test_runtime_callbacks_refuse_the_shared_runtime_token() -> None:
+    hass = _hass_with_token("secret")
+    assert _refused(_callback(hass, "127.0.0.1", "Bearer secret"))
+
+
+def test_runtime_callbacks_take_the_user_from_the_issued_key() -> None:
+    hass = _hass_with_token("")
+    key = callback_keys.issue(hass, "user-a", "chat-1", "Cursor")
+    who = _runtime_caller(_callback(hass, "172.30.32.1", f"Bearer {key}"))
+    assert (who.user_id, who.session_id) == ("user-a", "chat-1")
+    assert _refused(_callback(hass, "127.0.0.1", f"Bearer {key}x"))
+    assert _refused(_callback(hass, "127.0.0.1", key))
+
+
+def test_callback_keys_expire() -> None:
+    hass = _hass_with_token("")
+    key = callback_keys.issue(hass, "u", "s", now=100.0)
+    assert callback_keys.caller(hass, f"Bearer {key}", now=100.0 + callback_keys.TTL_SECONDS - 1)
+    assert callback_keys.caller(hass, f"Bearer {key}", now=100.0 + callback_keys.TTL_SECONDS + 1) is None
 
 
 def test_pending_activity_is_capped() -> None:

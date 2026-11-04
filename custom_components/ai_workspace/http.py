@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import copy
-import hmac
-import ipaddress
 import json
 import logging
 from dataclasses import replace
@@ -44,6 +42,9 @@ from .const import (
 from .mcp_config import with_mcp_auth
 from .mcp_observe import last_mcp_result, note_mcp_result
 from .mcp_resolve import ha_hosts, hass_mcp_server_url
+from .callback_keys import Caller
+from .callback_keys import caller as callback_caller
+from .callback_keys import issue as issue_callback_key
 from .chat_scope import handoff_note, merge_reply_text, other_chat_note, text_after_tools
 from .error_text import public_error
 from .files import attach_files_to_message, file_events, parse_client_files
@@ -337,6 +338,8 @@ async def _runtime_chat(
         payload["api_key"] = api_key
     if handoff:
         payload["handoff"] = handoff
+    # The Runtime's Change History callbacks for this turn must carry this key.
+    payload["callback_key"] = issue_callback_key(hass, user_id, session.id, agent or "Cursor")
     sent = {**(headers or _runtime_headers_for(hass, user_id)), "Accept": "text/event-stream"}
     if agent:
         sent["X-Ai-Workspace-Agent"] = agent
@@ -1403,21 +1406,12 @@ async def _activity_kwargs(
     return {"on_tool": on_tool}
 
 
-def _runtime_token_ok(request: web.Request) -> bool:
-    expected = str((_runtime(_hass(request)).get("runtime_token") or "")).strip()
-    scheme, _, value = str(request.headers.get("Authorization") or "").partition(" ")
-    provided = value.strip() if scheme.lower() == "bearer" else ""
-    if expected:
-        return bool(provided) and hmac.compare_digest(provided.encode(), expected.encode())
-    # Without a token only a Runtime on this host (bound to loopback) may call in.
-    return _loopback_remote(request)
-
-
-def _loopback_remote(request: web.Request) -> bool:
-    try:
-        return ipaddress.ip_address(str(request.remote or "").split("%", 1)[0]).is_loopback
-    except ValueError:
-        return False
+def _runtime_caller(request: web.Request) -> Caller:
+    """The user and chat a Runtime callback belongs to. Only a key Home Assistant issued counts."""
+    found = callback_caller(_hass(request), request.headers.get("Authorization"))
+    if found is None:
+        raise web.HTTPUnauthorized()
+    return found
 
 
 def _activity_ttl_days(settings) -> int:
@@ -1524,7 +1518,7 @@ class ActivityRollbackView(HomeAssistantView):
             logger.warning("Change History rollback refused: missing document for %s", row_id)
             raise web.HTTPBadRequest(text="This change cannot be rolled back.")
         try:
-            await rollback(hass, document)
+            await rollback(hass, document, request.headers.get("Authorization", ""))
         except ActivityError as exc:
             logger.warning("Change History rollback failed: %s", exc)
             raise web.HTTPBadRequest(text=str(exc)) from exc
@@ -1547,8 +1541,7 @@ class McpProxyView(HomeAssistantView):
         return self.json(last_mcp_result(_hass(request)) or {})
 
     async def post(self, request: web.Request) -> web.Response:
-        if not _runtime_token_ok(request):
-            raise web.HTTPUnauthorized()
+        _runtime_caller(request)
         try:
             body = await request.json()
         except json.JSONDecodeError:
@@ -1575,8 +1568,7 @@ class ActivityPrepareView(HomeAssistantView):
     async def post(self, request: web.Request) -> web.Response:
         from .activity_ha import prepare
 
-        if not _runtime_token_ok(request):
-            raise web.HTTPUnauthorized()
+        who = _runtime_caller(request)
         hass = _hass(request)
         settings = _runtime(hass).get("settings")
         if not bool(getattr(settings, "change_history", True)):
@@ -1587,9 +1579,8 @@ class ActivityPrepareView(HomeAssistantView):
             raise web.HTTPBadRequest(text="Invalid JSON.") from None
         if not isinstance(body, dict):
             raise web.HTTPBadRequest(text="Invalid JSON.")
-        user_id = str(body.get("user_id") or "").strip()
-        if not user_id:
-            return self.json({"token": None})
+        # From the key, never from the body.
+        user_id = who.user_id
         user = await hass.auth.async_get_user(user_id)
         user_name = str(getattr(user, "name", "") or "") if user else ""
         arguments = body.get("arguments") if isinstance(body.get("arguments"), dict) else {}
@@ -1597,10 +1588,10 @@ class ActivityPrepareView(HomeAssistantView):
             hass,
             user_id,
             user_name or user_id,
-            str(body.get("agent") or "Cursor"),
+            who.agent,
             str(body.get("tool") or ""),
             arguments,
-            str(body.get("session_id") or ""),
+            who.session_id,
         )
         return self.json({"token": token})
 
@@ -1613,8 +1604,7 @@ class ActivityCommitView(HomeAssistantView):
     async def post(self, request: web.Request) -> web.Response:
         from .activity_ha import commit
 
-        if not _runtime_token_ok(request):
-            raise web.HTTPUnauthorized()
+        who = _runtime_caller(request)
         try:
             body = await request.json()
         except json.JSONDecodeError:
@@ -1623,7 +1613,7 @@ class ActivityCommitView(HomeAssistantView):
             raise web.HTTPBadRequest(text="Invalid JSON.")
         hass = _hass(request)
         store: Store = _runtime(hass)["store"]
-        await commit(hass, store, str(body.get("token") or ""), ok=bool(body.get("ok")))
+        await commit(hass, store, str(body.get("token") or ""), ok=bool(body.get("ok")), user_id=who.user_id)
         return self.json({"ok": True})
 
 

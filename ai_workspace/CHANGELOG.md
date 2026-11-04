@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.0b1
+
+Includes everything from 1.4.3b1 and 1.4.3b2 below. A minor release, because it adds features; nothing needs to be changed in your setup.
+
+- **Update the runtime (App or Docker image) together with this release.** Change History for Cursor agents needs the new runtime; with an older one, the chat warns that the runtime is out of date and Cursor changes are not recorded until you update. Cloud agents are not affected.
+- Security: the Runtime's calls back into Home Assistant (Change History snapshots and MCP result notes) now need a key Home Assistant issues for each Cursor chat turn. Before, without a Runtime token, any program on the Home Assistant host could call them, and they trusted the user id in the request. The user and chat now come from Home Assistant's own record of whom the key was issued to.
+- Change History: rollback of automations, scripts, and scenes now goes through Home Assistant's own config API, the same call the editors make. Home Assistant checks the item, writes its file, and reloads it; AI Workspace no longer rewrites `automations.yaml`, `scripts.yaml`, or `scenes.yaml` itself. Because that API is for administrators, only administrators can roll these back now. The snapshot file for manual recovery is still written.
+- Automations and scripts: when an agent saves the automation or script you have open in the editor, the editor shows the new version right away instead of after a page reload. If you have unsaved changes in the editor, they stay and the new version is not loaded over them.
+
 ## 1.4.3b2
 
 - **Update the runtime (App or Docker image) together with this release.** It only carries the new version number, so the chat does not warn that the runtime is out of date.

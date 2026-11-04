@@ -120,6 +120,8 @@ class ChatRequest(BaseModel):
     sync_agent_id: str = ""
     shorten_mcp_results: bool | None = None
     change_history: bool | None = None
+    # Home Assistant's key for this chat's Change History callbacks.
+    callback_key: str = Field(default="", max_length=200)
 
 
 def _with_ui_context(message: str, origin: str = "") -> str:
@@ -430,6 +432,7 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
             session.id,
             _user_id(request),
             request.headers.get("x-ai-workspace-agent") or "Cursor",
+            body.callback_key,
         )
 
     async def generate():

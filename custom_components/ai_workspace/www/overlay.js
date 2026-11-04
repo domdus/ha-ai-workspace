@@ -84,6 +84,70 @@ function watchDashboards() {
   window.addEventListener("popstate", refresh);
 }
 
+// The automation and script editors load their config once. When an agent saves the item that is
+// open, Home Assistant reloads it, but the editor keeps showing the old version until a page reload.
+const CONFIG_EDITORS = {
+  automation_reloaded: { tag: "ha-automation-editor", id: "automationId" },
+  script_reloaded: { tag: "ha-script-editor", id: "scriptId" },
+};
+const missedEditors = new Set();
+
+function findDeep(root, tag, depth = 0) {
+  if (!root || depth > 12) return null;
+  const direct = root.querySelector?.(tag);
+  if (direct) return direct;
+  for (const el of root.querySelectorAll?.("*") || []) {
+    if (!el.shadowRoot) continue;
+    const found = findDeep(el.shadowRoot, tag, depth + 1);
+    if (found) return found;
+  }
+  return null;
+}
+
+function openConfigEditor(kind) {
+  const main = document
+    .querySelector("home-assistant")
+    ?.shadowRoot?.querySelector("home-assistant-main")
+    ?.shadowRoot;
+  const panel = main?.querySelector("ha-panel-config");
+  return panel ? findDeep(panel.shadowRoot || panel, kind.tag) : null;
+}
+
+function refreshConfigEditor(eventType, tries = 0) {
+  const kind = CONFIG_EDITORS[eventType];
+  const editor = openConfigEditor(kind);
+  const id = editor?.[kind.id];
+  if (!editor || !id || typeof editor.loadConfig !== "function") {
+    // Opening the editor after the change loads the new version anyway, unless the page is cached.
+    if (tries < REFRESH_TRIES && missedEditors.has(eventType)) {
+      window.setTimeout(() => refreshConfigEditor(eventType, tries + 1), 200);
+    }
+    return;
+  }
+  missedEditors.delete(eventType);
+  // Never throw away changes the user has not saved (the flag's name differs between HA versions).
+  if (editor.isDirtyState || editor.dirty || editor._dirty) return;
+  editor.loadConfig(id);
+}
+
+function watchConfigEditors() {
+  const connection = hassObj()?.connection;
+  if (!connection) return;
+  for (const eventType of Object.keys(CONFIG_EDITORS)) {
+    connection
+      .subscribeEvents(() => {
+        missedEditors.add(eventType);
+        refreshConfigEditor(eventType);
+      }, eventType)
+      .catch((err) => console.warn(`AI Workspace: ${eventType} unavailable`, err));
+  }
+  const again = () => {
+    for (const eventType of missedEditors) refreshConfigEditor(eventType);
+  };
+  window.addEventListener("location-changed", again);
+  window.addEventListener("popstate", again);
+}
+
 let usersAllowed = null;
 let accessFlight = null;
 let accessNextCheck = 0;
@@ -556,6 +620,7 @@ async function ensureHost() {
     );
   }
   watchDashboards();
+  watchConfigEditors();
   sync();
   return host;
 }

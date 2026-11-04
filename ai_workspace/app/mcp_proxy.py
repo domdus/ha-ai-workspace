@@ -74,12 +74,17 @@ class McpProxy:
             wrapped[name] = forwarded
         return wrapped
 
-    def note_actor(self, session_id: str, user_id: str, agent: str) -> None:
+    def note_actor(self, session_id: str, user_id: str, agent: str, callback_key: str = "") -> None:
+        """callback_key is the key Home Assistant issued for this chat's callbacks."""
         session_id = str(session_id or "").strip()
         user_id = str(user_id or "").strip()
         if not session_id or not user_id:
             return
-        self.actors[session_id] = {"user_id": user_id, "agent": str(agent or "Cursor")[:120]}
+        self.actors[session_id] = {
+            "user_id": user_id,
+            "agent": str(agent or "Cursor")[:120],
+            "callback_key": str(callback_key or "").strip(),
+        }
         self.actors.move_to_end(session_id)
         while len(self.actors) > _MAX_UPSTREAMS:
             self.actors.popitem(last=False)
@@ -279,12 +284,12 @@ async def proxy_mcp(request: Request, secret: str, digest: str, actor: str = "")
         )
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         if activity_token:
-            await _activity_commit(request, activity_token, ok=False)
+            await _activity_commit(request, activity_token, ok=False, who=registry.actor(actor))
         logger.warning("mcp proxy failed: %s", exc)
         raise HTTPException(status_code=502, detail="The MCP server did not answer.") from exc
     content_type = response_headers.get("Content-Type") or response_headers.get("content-type") or ""
     if activity_token:
-        await _activity_commit(request, activity_token, ok=tool_response_ok(status, raw))
+        await _activity_commit(request, activity_token, ok=tool_response_ok(status, raw), who=registry.actor(actor))
     if tool_call is not None:
         note_guide(tool_call[0], raw.decode("utf-8", "replace"))
     kind = "unchanged"
@@ -358,9 +363,11 @@ def runtime_callback_base(hass_url: str, listen_host: str | None = None) -> str:
     return rewrite_loopback_url(base)
 
 
-def _activity_target(request: Request) -> tuple[str, str]:
+def _activity_target(request: Request, who: dict[str, str] | None = None) -> tuple[str, str]:
+    """Home Assistant URL and the bearer for callbacks: the chat's key, else the runtime token (older HA)."""
     settings = getattr(request.app.state, "settings", None)
-    token = str(getattr(settings, "runtime_token", "") or "").strip()
+    token = str((who or {}).get("callback_key") or "").strip()
+    token = token or str(getattr(settings, "runtime_token", "") or "").strip()
     base = str(getattr(settings, "hass_url", "") or "").rstrip("/")
     if not base:
         base = _default_hass_url(_read_options()).rstrip("/")
@@ -395,7 +402,7 @@ async def _note_mcp_result(
     request: Request, registry: McpProxy, actor: str, tool: str, kind: str
 ) -> None:
     who = registry.actor(actor) or {}
-    base, token = _activity_target(request)
+    base, token = _activity_target(request, who)
     if not base:
         return
     payload = json.dumps(
@@ -424,7 +431,7 @@ async def _activity_prepare(
     tool_call: tuple[str, dict[str, Any]],
 ) -> str:
     who = registry.actor(actor)
-    base, token = _activity_target(request)
+    base, token = _activity_target(request, who)
     if who is None or not base:
         return ""
     name, arguments = tool_call
@@ -461,8 +468,8 @@ async def _activity_prepare(
     return str(body.get("token") or "") if isinstance(body, dict) else ""
 
 
-async def _activity_commit(request: Request, token: str, *, ok: bool) -> None:
-    base, runtime_token = _activity_target(request)
+async def _activity_commit(request: Request, token: str, *, ok: bool, who: dict[str, str] | None = None) -> None:
+    base, runtime_token = _activity_target(request, who)
     if not base or not token:
         return
     payload = json.dumps({"token": token, "ok": ok}).encode()
