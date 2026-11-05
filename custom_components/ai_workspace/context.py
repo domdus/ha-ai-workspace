@@ -12,6 +12,7 @@ import json
 import math
 import re
 from dataclasses import dataclass
+from datetime import datetime, timezone, tzinfo
 from typing import Any
 
 from .const import (
@@ -68,6 +69,30 @@ class Turn:
     role: str
     text: str
     notes: str = ""
+    # When the user sent it, in the house's time zone. Assistant turns carry none.
+    sent: datetime | None = None
+
+
+def sent_at(raw: Any, zone: tzinfo | None) -> datetime | None:
+    """A stored UTC timestamp in the house's time zone, or None."""
+    if zone is None or not raw:
+        return None
+    try:
+        when = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=timezone.utc)
+    return when.astimezone(zone)
+
+
+def stamp(when: datetime) -> str:
+    """The mark in front of a user message: when it was sent, house time."""
+    return f"[{when:%a %d %b %Y, %H:%M}]"
+
+
+def stamped(text: str, when: datetime | None) -> str:
+    return f"{stamp(when)} {text}" if when is not None else text
 
 
 def context_window(model: str = "", provider: str = "", manual: int = 0) -> int:
@@ -122,8 +147,12 @@ def tool_notes(events: list) -> str:
     return text
 
 
-def chat_turns(rows) -> list[Turn]:
-    """User and assistant turns before the message being answered now."""
+def chat_turns(rows, zone: tzinfo | None = None) -> list[Turn]:
+    """User and assistant turns before the message being answered now.
+
+    With a zone, user turns keep the local time they were sent, so the agent knows that
+    a state mentioned days ago was true then and may differ now.
+    """
     turns: list[Turn] = []
     for row in rows or []:
         role = str(getattr(row, "role", "") or "")
@@ -136,7 +165,8 @@ def chat_turns(rows) -> list[Turn]:
         notes = tool_notes(events) if role == "assistant" else ""
         if not content and not notes:
             continue
-        turns.append(Turn(role, content, notes))
+        when = sent_at(getattr(row, "created_at", None), zone) if role == "user" else None
+        turns.append(Turn(role, content, notes, when))
     if turns and turns[-1].role == "user":
         turns = turns[:-1]
     return turns
@@ -155,7 +185,7 @@ def fit_text(text: str, limit: int) -> str:
 
 def _with_notes(turn: Turn) -> str:
     if not turn.notes:
-        return turn.text
+        return stamped(turn.text, turn.sent)
     note = f"[tools: {turn.notes}]"
     return f"{turn.text}\n\n{note}" if turn.text else note
 
@@ -179,7 +209,8 @@ def digest(dropped: list[Turn], budget_chars: int) -> str:
     used = len(DIGEST_LEAD)
     for turn in reversed(dropped):
         if turn.role == "user":
-            line = f"- User: {_line(turn.text, _DIGEST_USER)}"
+            day = f" ({turn.sent:%d %b %Y})" if turn.sent is not None else ""
+            line = f"- User{day}: {_line(turn.text, _DIGEST_USER)}"
         else:
             body = _line(turn.text, _DIGEST_ASSISTANT)
             if turn.notes:
@@ -225,9 +256,11 @@ def select_history(turns: list[Turn], budget: int) -> History:
     return History([(turn.role, text) for turn, text in kept], note, start)
 
 
-def history_for(rows, *, mode: str, model: str = "", provider: str = "", manual_window: int = 0) -> History:
+def history_for(
+    rows, *, mode: str, model: str = "", provider: str = "", manual_window: int = 0, zone: tzinfo | None = None
+) -> History:
     budget = history_budget(mode, context_window(model, provider, manual_window))
-    return select_history(chat_turns(rows), budget)
+    return select_history(chat_turns(rows, zone), budget)
 
 
 def as_messages(history: History) -> list[dict[str, str]]:

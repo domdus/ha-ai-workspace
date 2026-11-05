@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.0b5
+
+- **Update the runtime (App or Docker image) together with this release.** It only carries the new version number, so the chat does not warn that the runtime is out of date.
+- Agents know when things were said. Each earlier message in a chat now carries the local date and time it was sent, and the new message carries the current time. An agent no longer treats "it is raining" from five days ago as the weather now, and no longer calls a change since then its own mistake. Summaries of left-out turns keep the day.
+- Agents know the house's time zone. Home Assistant's history tools read a time without a UTC offset as UTC, so "history from 08:00" started at 09:00 in Central Europe and missed what happened in between. The prompt now names the time zone and offset, and cloud agents' tool calls get the offset added when the agent leaves it out.
+- Before an agent says what a saved automation, script, scene, or dashboard contains, it reads it again instead of relying on what the chat said earlier.
+- Cursor agents get the time zone rules when the runtime starts a new Cursor agent for a chat.
+
 ## 1.5.0b4
 
 - **Update the runtime (App or Docker image) together with this release.** The fix below is in the runtime.

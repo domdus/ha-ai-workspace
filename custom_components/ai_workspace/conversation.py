@@ -19,6 +19,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from .agents import Agent, entry_agents
 from .const import DOMAIN, VOICE_TURN_NOTE, provider_token_mode, token_mode_allows_extras
 from .chat_scope import handoff_note, merge_reply_text, other_chat_note
+from .local_time import house_zone
 from .error_text import public_error
 from .http import _create_runtime_session, async_agent_events
 from .small_talk import wants_house_tools
@@ -258,6 +259,7 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
                     mode=provider_token_mode(provider),
                     model=str(getattr(session, "model", "") or getattr(provider, "model", "") or ""),
                     manual_window=int(getattr(data.get("settings"), "context_window", 0) or 0),
+                    zone=house_zone(self.hass),
                 )
             suggest = (
                 getattr(provider, "suggest_title", None)

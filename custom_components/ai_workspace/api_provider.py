@@ -18,6 +18,7 @@ from .images import anthropic_user_content, openai_user_content
 from .context import as_messages, history_for, tool_call_note
 from .local_text import CHAT_ONLY, pick
 from .ollama_info import MIN_TOOL_WINDOW, OllamaModel, async_ollama_model
+from .local_time import house_zone, stamped_now, time_rule, with_local_offset
 from .tool_loading import LOAD_TOOLS, pick_tools, used_tool_names
 from .const import (
     API_ANTHROPIC,
@@ -54,6 +55,7 @@ from .const import (
     default_api_model,
     ui_link_instructions,
     with_language_rule,
+    with_time_rule,
 )
 from .coolver import CoolverClient
 from .mcp_client import McpError, McpHttpClient
@@ -600,7 +602,9 @@ def _failed_reply(row) -> bool:
     return not content or content in errors
 
 
-def _history_messages(rows, mode: str, model: str = "", settings=None, window: int = 0) -> list[dict[str, str]]:
+def _history_messages(
+    rows, mode: str, model: str = "", settings=None, window: int = 0, zone=None
+) -> list[dict[str, str]]:
     """Earlier turns sized to the model's context window, see context.py."""
     history = history_for(
         rows,
@@ -608,6 +612,7 @@ def _history_messages(rows, mode: str, model: str = "", settings=None, window: i
         model=model,
         provider=str(getattr(settings, "api_provider", "") or ""),
         manual_window=window or int(getattr(settings, "context_window", 0) or 0),
+        zone=zone,
     )
     if history.dropped:
         logger.debug("history left out %s older turn(s) behind a digest", history.dropped)
@@ -801,6 +806,9 @@ class ApiProvider:
         return payload
 
     def _system(self, origin: str = "", language: str = "", admin: bool = True) -> str:
+        return with_time_rule(self._system_text(origin, language, admin), time_rule(house_zone(self.hass)))
+
+    def _system_text(self, origin: str, language: str, admin: bool) -> str:
         mode = self._token_mode()
         if mode == TOKEN_MODE_EXTREME:
             return with_language_rule(LOW_TOKEN_PROMPT, language)
@@ -893,6 +901,10 @@ class ApiProvider:
         if prepared is not payload:
             logger.debug("Passed the guide key on to %s", name)
             payload = prepared
+        timed = with_local_offset(payload, house_zone(self.hass))
+        if timed is not payload:
+            logger.debug("Added the house's UTC offset to the times in %s", name)
+            payload = timed
         if on_tool is None:
             result = await mcp.call_tool(name, payload)
         else:
@@ -950,7 +962,7 @@ class ApiProvider:
         if self.hass is not None and self.store is not None and (token_mode_history_limit(mode) or note):
             rows = await self.hass.async_add_executor_job(self.store.list_messages, session.id)
         if token_mode_history_limit(mode) and rows:
-            history = _history_messages(rows, mode, self._model(), self.settings, window)
+            history = _history_messages(rows, mode, self._model(), self.settings, window, house_zone(self.hass))
         yield {"type": "status", "text": "Working"}
         if note and not _said_before(rows, note):
             # Once per chat, so the user knows why the agent cannot see the house.
@@ -984,9 +996,11 @@ class ApiProvider:
                 )
         loop = self._anthropic if self.settings.api_provider == API_ANTHROPIC else self._openai
         force = bool(force_tools) and token_mode_checks_house(mode, self.settings.check_house) and not pictures
+        # Stamped like the history turns, so this message reads the same when it is history next turn.
+        sent = stamped_now(message, house_zone(self.hass))
         try:
             async for event in loop(
-                http, history, message, bundle, origin, pictures, language, admin, force, on_tool
+                http, history, sent, bundle, origin, pictures, language, admin, force, on_tool
             ):
                 yield event
         except _ERRORS as exc:

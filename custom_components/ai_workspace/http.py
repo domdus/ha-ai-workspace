@@ -43,6 +43,7 @@ from .mcp_config import with_mcp_auth
 from .mcp_observe import last_mcp_result, note_mcp_result
 from .mcp_resolve import ha_hosts, hass_mcp_server_url
 from .callback_keys import Caller
+from .local_time import house_zone, stamped_now, time_rule
 from .callback_keys import caller as callback_caller
 from .callback_keys import issue as issue_callback_key
 from .chat_scope import handoff_note, merge_reply_text, other_chat_note, text_after_tools
@@ -295,13 +296,20 @@ async def _runtime_chat(
         return
     http: ClientSession = async_get_clientsession(hass)
     settings = _runtime(hass).get("settings")
-    standing = standing_chat_prompt(settings, admin=admin, language=language, origin=origin, mode=token_mode)
+    standing = standing_chat_prompt(
+        settings,
+        admin=admin,
+        language=language,
+        origin=origin,
+        mode=token_mode,
+        time_zone_rule=time_rule(house_zone(hass)),
+    )
     if not token_mode_allows_files(token_mode):
         images, files = [], []
     clip = token_mode_clip_user(token_mode)
     if clip:
         message = message[:clip]
-    user_text = attach_files_to_message(message, files or [])
+    user_text = stamped_now(attach_files_to_message(message, files or []), house_zone(hass))
     asked = (question or message).strip()
     if token_mode_checks_house(token_mode, check_house) and not images and wants_house_tools(asked):
         user_text = f"{user_text}\n\n{CHECK_HOUSE_NOTE}"
@@ -968,6 +976,7 @@ class ChatView(HomeAssistantView):
                 mode=token_mode,
                 model=str(getattr(session, "model", "") or getattr(provider, "model", "") or ""),
                 manual_window=int(getattr(settings, "context_window", 0) or 0),
+                zone=house_zone(hass),
             )
             if getattr(provider, "kind", "") == "cursor":
                 logger.info(

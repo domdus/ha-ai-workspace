@@ -137,12 +137,13 @@ def handoff_note(
     mode: str = TOKEN_MODE_OFF,
     model: str = "",
     manual_window: int = 0,
+    zone=None,
 ) -> str:
     """Prior turns from this HA chat, used only when Cursor may have lost the thread.
 
     Same budget and digest as cloud agents (context.py). Line breaks stay, so YAML and code survive.
     """
-    history = history_for(rows, mode=mode, model=model, manual_window=manual_window)
+    history = history_for(rows, mode=mode, model=model, manual_window=manual_window, zone=zone)
     if not history:
         return ""
     name = " ".join(str(title or "").split())

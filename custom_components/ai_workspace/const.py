@@ -745,7 +745,9 @@ HOUSE_RULES = (
     "Do not list what you can do until the user asks about the house.\n\n"
     "Home Assistant is reached only through the connected MCP tools. Before you answer any question about "
     "this house (automations, entities, devices, states, counts), call a Home Assistant tool. "
-    "Never answer those from memory, and never invent entity ids, dashboard ids, states, or history."
+    "Never answer those from memory, and never invent entity ids, dashboard ids, states, or history. "
+    "Before you say what a saved automation, script, scene, or dashboard contains, read it again with a tool: "
+    "earlier messages in this chat may describe an older version or a plan that was never saved."
 )
 LOVELACE_DASHBOARD_RULES = """
 Lovelace / dashboards (strict):
@@ -961,6 +963,11 @@ def with_language_rule(text: str, language: str = "") -> str:
     return f"{scoped}\n\n{rule}".strip()
 
 
+def with_time_rule(text: str, rule: str = "") -> str:
+    """The house's time zone goes last, after the language rule, so the rest stays a stable prefix."""
+    return f"{text}\n\n{rule}" if rule else text
+
+
 TONE_INSTRUCTIONS = (
     "List capabilities, URLs, or entity links only when the user asks about the house. "
     "Keep MCP, tool names, Docker, and loopback addresses out of the reply the user reads. "
@@ -1016,9 +1023,21 @@ CHECK_HOUSE_NOTE = (
 
 
 def standing_chat_prompt(
-    settings, *, admin: bool = True, language: str = "", origin: str = "", mode: str = TOKEN_MODE_OFF
+    settings,
+    *,
+    admin: bool = True,
+    language: str = "",
+    origin: str = "",
+    mode: str = TOKEN_MODE_OFF,
+    time_zone_rule: str = "",
 ) -> str:
     """Workspace rules plus UI/MCP instructions for one Cursor agent lifetime. Same levels as cloud agents."""
+    return with_time_rule(
+        _standing_text(settings, admin=admin, language=language, origin=origin, mode=mode), time_zone_rule
+    )
+
+
+def _standing_text(settings, *, admin: bool, language: str, origin: str, mode: str) -> str:
     if mode == TOKEN_MODE_EXTREME:
         return with_language_rule(LOW_TOKEN_PROMPT, language)
     if mode == TOKEN_MODE_MEDIUM:
