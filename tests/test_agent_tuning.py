@@ -47,7 +47,8 @@ def test_cursor_handoff_follows_the_token_level() -> None:
     medium = handoff_note(rows, mode=TOKEN_MODE_MEDIUM, model="claude-sonnet-4-5")
     assert len(full) > len(light) > len(medium) > 0
     assert "turn 39" in medium
-    assert handoff_note(rows, mode=TOKEN_MODE_EXTREME) == ""
+    # Chat only still hands over the last few messages.
+    assert "turn 39" in handoff_note(rows, mode=TOKEN_MODE_EXTREME)
 
 
 class _Entries:

@@ -277,7 +277,8 @@
         "no_runtime": "Ne povas atingi la Cursor-runtime. Startigu ĝin kaj kontrolu la adreson en ĉi tiu formularo.",
         "required": "Ĉi tiu kampo estas deviga.",
         "invalid_auth": "La provizanto malakceptis ĉi tiun API-ŝlosilon.",
-        "cannot_connect": "Ne povis atingi la provizanton. Kontrolu la URL-on kaj la reton."
+        "cannot_connect": "Ne povis atingi la provizanton. Kontrolu la URL-on kaj la reton.",
+        "model_not_installed": "Ĉi tiu modelo ne estas instalita en Ollama. Instalitaj: {installed}"
       },
       "step": {
         "provider": {
@@ -299,8 +300,6 @@
             "cursor_api_key": "API-ŝlosilo de Cursor",
             "model": "Modelo",
             "effort": "Penado",
-            "low_token": "Malaltigi ĵetonan uzon",
-            "check_house": "Unue rigardi en Home Assistant",
             "allow_internet": "Permesi interreton",
             "assist": "Aldoni al Assist"
           },
@@ -310,10 +309,19 @@
             "cursor_api_key": "El via konto de Cursor (Integrations). Lasu malplena dum redaktado por teni la konservitan ŝlosilon. [Akiri API-ŝlosilon]({api_key_url})",
             "model": "Elektu el la listo aŭ tajpu modelnomon. Malplena uzas Composer.",
             "effort": "Kiom da pensotempo permesi. Composer defaŭlte uzas Rapida.",
-            "low_token": "Sendas malpli kun ĉiu mesaĝo por ŝpari monon. Malŝaltita donas la plej fidindajn respondojn pri via hejmo. Malpeza konservas malpli da historio. Meza ankaŭ mallongigas longajn mesaĝojn kaj respondojn kaj komencas ĉiun vicon nur kun la lastaj mesaĝoj. Ekstrema estas nur babilo: sen iloj, do ĝi ne povas kontroli aŭ stiri la domon.",
-            "check_house": "Defaŭlte ŝaltita. Antaŭ ol respondi demandon pri via hejmo, la agento rigardas en Home Assistant, por ke listoj kaj statoj estu realaj, ne divenitaj. Salutoj estas preterlasataj. Ne efikas en Ekstrema, kiu ne havas ilojn. Malŝaltu ĝin por ĝeneralaj demandoj aŭ por modelo, kiu jam mem kontrolas.",
             "allow_internet": "Defaŭlte malŝaltita. Ŝaltita permesas al ĉi tiu agento uzi la retserĉon, paĝ-elŝuton kaj ŝelon de Cursor en administrantaj babiloj. Malŝaltita forigas ĉiujn tri, do ankaŭ curl aŭ skriptoj ne atingas la reton. Babiloj de ordinaraj uzantoj kaj voĉaj satelitoj neniam ricevas ilin.",
             "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Altnivele",
+              "data": {
+                "save_tokens": "Ŝpari ĵetonojn"
+              },
+              "data_description": {
+                "save_tokens": "Sendas malpli kun ĉiu mesaĝo: pli mallongan instrukcion, malpli da babilhistorio kaj pli mallongajn respondojn. Malpli kosta, sed respondoj pri via hejmo povas esti malpli detalaj."
+              }
+            }
           }
         },
         "provider_cloud": {
@@ -324,8 +332,6 @@
             "api_key": "API-ŝlosilo",
             "model": "Modelo",
             "effort": "Penado",
-            "low_token": "Malaltigi ĵetonan uzon",
-            "check_house": "Unue rigardi en Home Assistant",
             "allow_internet": "Permesi interreton",
             "assist": "Aldoni al Assist",
             "assist_stt": "Aldoni parolon-al-teksto",
@@ -340,8 +346,6 @@
             "api_key": "Via ŝlosilo de la AI-provizanto, ne via ensaluto de Home Assistant. [Akiri API-ŝlosilon]({api_key_url})",
             "model": "Elektu el la listo aŭ tajpu modelnomon. Malplena uzas la defaŭlton de la provizanto.",
             "effort": "Pli da penado signifas pli da pensado: pli bonaj respondoj al malfacilaj demandoj, sed pli malrapide kaj pli da ĵetonoj. Ignorata se la modelo ne subtenas ĝin.",
-            "low_token": "Sendas malpli kun ĉiu mesaĝo por ŝpari monon. Malŝaltita donas la plej fidindajn respondojn pri via hejmo. Malpeza konservas malpli da historio. Meza ankaŭ mallongigas longajn mesaĝojn kaj respondojn kaj komencas ĉiun vicon nur kun la lastaj mesaĝoj. Ekstrema estas nur babilo: sen iloj, do ĝi ne povas kontroli aŭ stiri la domon.",
-            "check_house": "Defaŭlte ŝaltita. Antaŭ ol respondi demandon pri via hejmo, la agento rigardas en Home Assistant, por ke listoj kaj statoj estu realaj, ne divenitaj. Salutoj estas preterlasataj. Ne efikas en Ekstrema, kiu ne havas ilojn. Malŝaltu ĝin por ĝeneralaj demandoj aŭ por modelo, kiu jam mem kontrolas.",
             "allow_internet": "Defaŭlte malŝaltita. Ŝaltita aldonas ilojn por retserĉo kaj paĝ-elŝuto en administrantaj babiloj. Adresoj en via loka reto restas blokitaj. Babiloj de ordinaraj uzantoj kaj voĉaj satelitoj neniam ricevas ilin.",
             "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist.",
             "assist_stt": "Aldonas opcion de parolo-al-teksto en Home Assistant per la ŝlosilo de ĉi tiu asistanto. Malŝalte forigas tion, kion ĝi aldonis.",
@@ -350,6 +354,17 @@
             "tts_model": "Lasu malplena por la defaŭlta voĉmodelo. Vi povas tajpi alian nomon se via provizanto listigas unu.",
             "tts_voice": "Coral estas la defaŭlto. Voĉoj funkcias por la lingvoj kiujn vi agordis ĉe Assist → Lingvo.",
             "tts_speed": "Kiel rapide ĉi tiu voĉo parolas. 1× estas normala. Aplikas al AI Workspace kaj Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Altnivele",
+              "data": {
+                "save_tokens": "Ŝpari ĵetonojn"
+              },
+              "data_description": {
+                "save_tokens": "Sendas malpli kun ĉiu mesaĝo: pli mallongan instrukcion, malpli da babilhistorio kaj pli mallongajn respondojn. Malpli kosta, sed respondoj pri via hejmo povas esti malpli detalaj."
+              }
+            }
           }
         },
         "provider_ollama": {
@@ -359,8 +374,6 @@
             "api_base": "Ollama-URL",
             "model": "Modelo",
             "effort": "Penado",
-            "low_token": "Malaltigi ĵetonan uzon",
-            "check_house": "Unue rigardi en Home Assistant",
             "allow_internet": "Permesi interreton",
             "assist": "Aldoni al Assist"
           },
@@ -368,10 +381,19 @@
             "api_base": "Kutime {example_url}",
             "model": "Elektu el la listo aŭ tajpu modelon kiun vi instalis. Malplena uzas llama3.2.",
             "effort": "Pli da penado signifas pli da pensado: pli bonaj respondoj al malfacilaj demandoj, sed pli malrapide kaj pli da ĵetonoj. Ignorata se la modelo ne subtenas ĝin.",
-            "low_token": "Sendas malpli kun ĉiu mesaĝo por ŝpari monon. Malŝaltita donas la plej fidindajn respondojn pri via hejmo. Malpeza konservas malpli da historio. Meza ankaŭ mallongigas longajn mesaĝojn kaj respondojn kaj komencas ĉiun vicon nur kun la lastaj mesaĝoj. Ekstrema estas nur babilo: sen iloj, do ĝi ne povas kontroli aŭ stiri la domon.",
-            "check_house": "Defaŭlte ŝaltita. Antaŭ ol respondi demandon pri via hejmo, la agento rigardas en Home Assistant, por ke listoj kaj statoj estu realaj, ne divenitaj. Salutoj estas preterlasataj. Ne efikas en Ekstrema, kiu ne havas ilojn. Malŝaltu ĝin por ĝeneralaj demandoj aŭ por modelo, kiu jam mem kontrolas.",
             "allow_internet": "Defaŭlte malŝaltita. Ŝaltita aldonas ilojn por retserĉo kaj paĝ-elŝuto en administrantaj babiloj. Adresoj en via loka reto restas blokitaj. Babiloj de ordinaraj uzantoj kaj voĉaj satelitoj neniam ricevas ilin.",
             "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Altnivele",
+              "data": {
+                "save_tokens": "Ŝpari ĵetonojn"
+              },
+              "data_description": {
+                "save_tokens": "Sendas malpli kun ĉiu mesaĝo: pli mallongan instrukcion, malpli da babilhistorio kaj pli mallongajn respondojn. Malpli kosta, sed respondoj pri via hejmo povas esti malpli detalaj."
+              }
+            }
           }
         },
         "provider_azure": {
@@ -383,8 +405,6 @@
             "model": "Deplojo",
             "azure_api_version": "API-versio",
             "effort": "Penado",
-            "low_token": "Malaltigi ĵetonan uzon",
-            "check_house": "Unue rigardi en Home Assistant",
             "allow_internet": "Permesi interreton",
             "assist": "Aldoni al Assist"
           },
@@ -394,10 +414,19 @@
             "model": "La nomo de la deplojo.",
             "azure_api_version": "Lasu la defaŭlton krom se Azure-subteno donis al vi alian version.",
             "effort": "Pli da penado signifas pli da pensado: pli bonaj respondoj al malfacilaj demandoj, sed pli malrapide kaj pli da ĵetonoj. Ignorata se la modelo ne subtenas ĝin.",
-            "low_token": "Sendas malpli kun ĉiu mesaĝo por ŝpari monon. Malŝaltita donas la plej fidindajn respondojn pri via hejmo. Malpeza konservas malpli da historio. Meza ankaŭ mallongigas longajn mesaĝojn kaj respondojn kaj komencas ĉiun vicon nur kun la lastaj mesaĝoj. Ekstrema estas nur babilo: sen iloj, do ĝi ne povas kontroli aŭ stiri la domon.",
-            "check_house": "Defaŭlte ŝaltita. Antaŭ ol respondi demandon pri via hejmo, la agento rigardas en Home Assistant, por ke listoj kaj statoj estu realaj, ne divenitaj. Salutoj estas preterlasataj. Ne efikas en Ekstrema, kiu ne havas ilojn. Malŝaltu ĝin por ĝeneralaj demandoj aŭ por modelo, kiu jam mem kontrolas.",
             "allow_internet": "Defaŭlte malŝaltita. Ŝaltita aldonas ilojn por retserĉo kaj paĝ-elŝuto en administrantaj babiloj. Adresoj en via loka reto restas blokitaj. Babiloj de ordinaraj uzantoj kaj voĉaj satelitoj neniam ricevas ilin.",
             "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Altnivele",
+              "data": {
+                "save_tokens": "Ŝpari ĵetonojn"
+              },
+              "data_description": {
+                "save_tokens": "Sendas malpli kun ĉiu mesaĝo: pli mallongan instrukcion, malpli da babilhistorio kaj pli mallongajn respondojn. Malpli kosta, sed respondoj pri via hejmo povas esti malpli detalaj."
+              }
+            }
           }
         },
         "provider_compatible": {
@@ -408,8 +437,6 @@
             "api_base": "Baza URL de la API",
             "model": "Modelo",
             "effort": "Penado",
-            "low_token": "Malaltigi ĵetonan uzon",
-            "check_house": "Unue rigardi en Home Assistant",
             "allow_internet": "Permesi interreton",
             "assist": "Aldoni al Assist",
             "assist_stt": "Aldoni parolon-al-teksto",
@@ -424,8 +451,6 @@
             "api_base": "Servila adreso. Aldonu /v1 ĉe la fino se via servilo atendas tion.",
             "model": "Modelnomo ĉe tiu servilo.",
             "effort": "Pli da penado signifas pli da pensado: pli bonaj respondoj al malfacilaj demandoj, sed pli malrapide kaj pli da ĵetonoj. Ignorata se la modelo ne subtenas ĝin.",
-            "low_token": "Sendas malpli kun ĉiu mesaĝo por ŝpari monon. Malŝaltita donas la plej fidindajn respondojn pri via hejmo. Malpeza konservas malpli da historio. Meza ankaŭ mallongigas longajn mesaĝojn kaj respondojn kaj komencas ĉiun vicon nur kun la lastaj mesaĝoj. Ekstrema estas nur babilo: sen iloj, do ĝi ne povas kontroli aŭ stiri la domon.",
-            "check_house": "Defaŭlte ŝaltita. Antaŭ ol respondi demandon pri via hejmo, la agento rigardas en Home Assistant, por ke listoj kaj statoj estu realaj, ne divenitaj. Salutoj estas preterlasataj. Ne efikas en Ekstrema, kiu ne havas ilojn. Malŝaltu ĝin por ĝeneralaj demandoj aŭ por modelo, kiu jam mem kontrolas.",
             "allow_internet": "Defaŭlte malŝaltita. Ŝaltita aldonas ilojn por retserĉo kaj paĝ-elŝuto en administrantaj babiloj. Adresoj en via loka reto restas blokitaj. Babiloj de ordinaraj uzantoj kaj voĉaj satelitoj neniam ricevas ilin.",
             "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist.",
             "assist_stt": "Aldonas opcion de parolo-al-teksto en Home Assistant per la ŝlosilo de ĉi tiu asistanto. Malŝalte forigas tion, kion ĝi aldonis.",
@@ -434,6 +459,17 @@
             "tts_model": "Lasu malplena por la defaŭlta voĉmodelo. Vi povas tajpi alian nomon se via provizanto listigas unu.",
             "tts_voice": "Coral estas la defaŭlto. Voĉoj funkcias por la lingvoj kiujn vi agordis ĉe Assist → Lingvo.",
             "tts_speed": "Kiel rapide ĉi tiu voĉo parolas. 1× estas normala. Aplikas al AI Workspace kaj Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Altnivele",
+              "data": {
+                "save_tokens": "Ŝpari ĵetonojn"
+              },
+              "data_description": {
+                "save_tokens": "Sendas malpli kun ĉiu mesaĝo: pli mallongan instrukcion, malpli da babilhistorio kaj pli mallongajn respondojn. Malpli kosta, sed respondoj pri via hejmo povas esti malpli detalaj."
+              }
+            }
           }
         }
       },
@@ -472,14 +508,6 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Propra MCP-URL"
-      }
-    },
-    "low_token": {
-      "options": {
-        "off": "Malŝaltita",
-        "light": "Light",
-        "medium": "Medium",
-        "extreme": "Extreme"
       }
     }
   }

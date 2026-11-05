@@ -38,7 +38,7 @@ def test_budget_shrinks_with_the_token_level_and_small_windows() -> None:
     big = 400_000
     assert ctx.history_budget(TOKEN_MODE_OFF, big) > ctx.history_budget(TOKEN_MODE_LIGHT, big)
     assert ctx.history_budget(TOKEN_MODE_LIGHT, big) > ctx.history_budget(TOKEN_MODE_MEDIUM, big) > 0
-    assert ctx.history_budget(TOKEN_MODE_EXTREME, big) == 0
+    assert ctx.history_budget(TOKEN_MODE_EXTREME, big) == ctx.history_budget(TOKEN_MODE_MEDIUM, big)
     assert ctx.history_budget(TOKEN_MODE_OFF, 32_000) < ctx.history_budget(TOKEN_MODE_OFF, big)
 
 

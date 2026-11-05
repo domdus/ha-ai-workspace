@@ -108,7 +108,7 @@ def test_house_check_and_limits_per_mode() -> None:
     assert token_mode_checks_house(TOKEN_MODE_EXTREME, True) is False
     assert token_mode_checks_house(TOKEN_MODE_OFF, True) is True
     assert token_mode_checks_house(TOKEN_MODE_OFF, False) is False
-    assert token_mode_history_limit(TOKEN_MODE_EXTREME) == 0
+    assert token_mode_history_limit(TOKEN_MODE_EXTREME) == 4
     assert token_mode_history_limit(TOKEN_MODE_MEDIUM) == 4
     assert token_mode_history_limit(TOKEN_MODE_LIGHT) == 12
     assert token_mode_reply_limit(TOKEN_MODE_EXTREME) == 256
@@ -122,7 +122,7 @@ def test_history_messages_follow_the_token_budget() -> None:
     short = _history_messages(rows, TOKEN_MODE_LIGHT, "gpt-5")
     assert len(short) == 10
     assert short[-1]["content"] == "a9"
-    assert _history_messages(rows, TOKEN_MODE_EXTREME, "gpt-5") == []
+    assert _history_messages(rows, TOKEN_MODE_EXTREME, "gpt-5")[-1]["content"] == "a9"
 
 
 def test_write_tool_keeps_the_skill_key_instruction() -> None:
@@ -234,7 +234,8 @@ def test_agent_stores_token_mode() -> None:
     light = agent_from_mapping("c", "Ollama", {"api_provider": "ollama", "low_token": "light"})
     off = agent_from_mapping("b", "Ollama", {"api_provider": "ollama"})
     assert on.token_mode == TOKEN_MODE_EXTREME
-    assert light.token_mode == TOKEN_MODE_LIGHT
+    # Light counts as Off since 1.5.
+    assert light.token_mode == TOKEN_MODE_OFF
     assert off.token_mode == TOKEN_MODE_OFF
 
 

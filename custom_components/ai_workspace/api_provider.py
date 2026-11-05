@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from contextvars import ContextVar
 import json
 import logging
 import re
@@ -15,6 +16,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .bps_key import note_guide, prepare_write
 from .images import anthropic_user_content, openai_user_content
 from .context import as_messages, history_for, tool_call_note
+from .ollama_info import MIN_TOOL_WINDOW, OllamaModel, async_ollama_model
 from .tool_loading import LOAD_TOOLS, pick_tools, used_tool_names
 from .const import (
     API_ANTHROPIC,
@@ -107,6 +109,12 @@ _EFFORT_KEYS = ("reasoning_effort", "reasoning", "output_config")
 _CACHE_BODY_KEYS = ("cache_control", "prompt_cache_key", "prompt_cache_options", "prompt_cache_retention")
 _CACHE_MARK = {"type": "ephemeral"}
 _MCP_TTL = 600.0
+_CLOUD_TIMEOUT = 120
+_LOCAL_TIMEOUT = 600
+# Windows below this get only the core tools at the start.
+SMALL_WINDOW = 32_000
+# Per chat turn: an Ollama model that cannot use tools runs this turn chat only.
+_MODE_OVERRIDE: ContextVar[str] = ContextVar("ai_workspace_mode_override", default="")
 _MCP_CACHE_MAX = 32
 _MCP_CACHE = f"{DOMAIN}_mcp_cache"
 _LOCAL_TOOLS = {"catalog", "house-map", "web"}
@@ -591,18 +599,52 @@ def _failed_reply(row) -> bool:
     return not content or content in errors
 
 
-def _history_messages(rows, mode: str, model: str = "", settings=None) -> list[dict[str, str]]:
+def _history_messages(rows, mode: str, model: str = "", settings=None, window: int = 0) -> list[dict[str, str]]:
     """Earlier turns sized to the model's context window, see context.py."""
     history = history_for(
         rows,
         mode=mode,
         model=model,
         provider=str(getattr(settings, "api_provider", "") or ""),
-        manual_window=int(getattr(settings, "context_window", 0) or 0),
+        manual_window=window or int(getattr(settings, "context_window", 0) or 0),
     )
     if history.dropped:
         logger.debug("history left out %s older turn(s) behind a digest", history.dropped)
     return as_messages(history)
+
+
+_CHAT_ONLY_NOTES = {
+    "en": (
+        "{model} cannot use tools, so I can only chat and cannot check or change your home. "
+        "Pick a model with tool support in Ollama, such as qwen2.5 or llama3.1, for that.",
+        "Ollama runs {model} with a {size}-token context window, too small for the Home Assistant tools, "
+        "so I can only chat. Set OLLAMA_CONTEXT_LENGTH to 16384 or more on the Ollama server and restart it.",
+    ),
+    "de": (
+        "{model} kann keine Werkzeuge nutzen. Ich kann deshalb nur chatten und dein Zuhause weder prüfen "
+        "noch steuern. Wähle dafür in Ollama ein Modell mit Werkzeug-Unterstützung, etwa qwen2.5 oder llama3.1.",
+        "Ollama betreibt {model} mit einem Kontextfenster von {size} Tokens. Das ist zu klein für die "
+        "Home-Assistant-Werkzeuge, deshalb kann ich nur chatten. Setze OLLAMA_CONTEXT_LENGTH auf dem "
+        "Ollama-Server auf 16384 oder mehr und starte ihn neu.",
+    ),
+}
+
+
+def chat_only_note(model: str, local: OllamaModel, language: str = "") -> str:
+    """Why an Ollama model answers without tools, or "" when it can use them."""
+    no_tools, small = _CHAT_ONLY_NOTES.get(str(language or "")[:2].lower(), _CHAT_ONLY_NOTES["en"])
+    if local.tools is False:
+        return no_tools.format(model=model)
+    if local.tools and local.running and local.running < MIN_TOOL_WINDOW:
+        return small.format(model=model, size=f"{local.running:,}".replace(",", "."))
+    return ""
+
+
+def _said_before(rows, note: str) -> bool:
+    return any(
+        str(getattr(row, "role", "")) == "assistant" and note in str(getattr(row, "content", "") or "")
+        for row in rows or []
+    )
 
 
 async def _sse(resp: ClientResponse) -> AsyncIterator[tuple[str, str]]:
@@ -735,7 +777,7 @@ class ApiProvider:
         return default_api_model(self.settings.api_provider)
 
     def _token_mode(self) -> str:
-        return settings_token_mode(self.settings)
+        return _MODE_OVERRIDE.get() or settings_token_mode(self.settings)
 
     def _tool_text_limit(self) -> int:
         return _DESC_MAX_MEDIUM if self._token_mode() == TOKEN_MODE_MEDIUM else _DESC_MAX
@@ -902,6 +944,16 @@ class ApiProvider:
             return
         http = self._http()
         mode = self._token_mode()
+        window = int(getattr(self.settings, "context_window", 0) or 0)
+        note = ""
+        if self.settings.api_provider == API_OLLAMA and self.hass is not None:
+            local = await async_ollama_model(self.hass, self._base(), self._model())
+            window = window or int(local.window or 0)
+            note = chat_only_note(self._model(), local, language) if mode != TOKEN_MODE_EXTREME else ""
+            if note:
+                # Chat only for this turn: tools would not work or would not fit.
+                mode = TOKEN_MODE_EXTREME
+                _MODE_OVERRIDE.set(mode)
         clip = token_mode_clip_user(mode)
         if clip:
             message = _clip(message, clip)
@@ -911,10 +963,14 @@ class ApiProvider:
         history = []
         rows: list = []
         bundle = McpBundle()
-        if token_mode_history_limit(mode) and self.hass is not None and self.store is not None:
+        if self.hass is not None and self.store is not None and (token_mode_history_limit(mode) or note):
             rows = await self.hass.async_add_executor_job(self.store.list_messages, session.id)
-            history = _history_messages(rows, mode, self._model(), self.settings)
+        if token_mode_history_limit(mode) and rows:
+            history = _history_messages(rows, mode, self._model(), self.settings, window)
         yield {"type": "status", "text": "Working"}
+        if note and not _said_before(rows, note):
+            # Once per chat, so the user knows why the agent cannot see the house.
+            yield {"type": "text", "delta": f"{note}\n\n"}
         if use_tools and token_mode_allows_tools(mode):
             bundle, skipped, first_error = await self._open_tools(http, str(access_token or ""), admin)
             if skipped and not bundle.names:
@@ -935,7 +991,9 @@ class ApiProvider:
             logger.debug("MCP OpenAI tool names: %s", ", ".join(tool["name"] for tool in bundle.tools))
         if bundle.tools and bool(getattr(self.settings, "tools_on_demand", True)):
             recent = " ".join(str(item.get("content") or "") for item in history[-2:] if item.get("role") == "user")
-            bundle.picker = pick_tools(bundle.tools, f"{message}\n{recent}", used_tool_names(rows))
+            bundle.picker = pick_tools(
+                bundle.tools, f"{message}\n{recent}", used_tool_names(rows), small=bool(window) and window < SMALL_WINDOW
+            )
             if bundle.picker is not None:
                 logger.info(
                     "tools on demand: %s of %s sent at start", len(bundle.picker.visible()) - 1, len(bundle.tools)
@@ -950,6 +1008,9 @@ class ApiProvider:
         except _ERRORS as exc:
             logger.warning("api provider failed: %s", self._public(exc))
             yield {"type": "error", "message": self._public(exc)}
+        finally:
+            if note:
+                _MODE_OVERRIDE.set("")
 
     async def suggest_title(self, user: str, assistant: str = "") -> str | None:
         if not self.info.available or self._token_mode() != TOKEN_MODE_OFF:
@@ -1375,6 +1436,9 @@ class ApiProvider:
         stream: bool = False,
     ) -> ClientResponse:
         """A successful response; retries 429/503 and drops effort the model refuses."""
+        if self.settings.api_provider == API_OLLAMA and timeout >= _CLOUD_TIMEOUT:
+            # A NAS or CPU reads a long prompt for minutes before the first word.
+            timeout = _LOCAL_TIMEOUT
         body = dict(payload)
         last = ""
         last_status = 0

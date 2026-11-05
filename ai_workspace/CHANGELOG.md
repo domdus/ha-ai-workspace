@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.5.0b2
+
+- **Update the runtime (App or Docker image) together with this release.** It only carries the new version number, so the chat does not warn that the runtime is out of date.
+- Agents: a simpler form. **Reduce token usage** and **Look at Home Assistant first** are gone; a folded **Advanced** section holds one box, **Save tokens** (what Medium was). Existing agents keep their behavior: Light now counts as Off, because on-demand tools and the history budget made Off cheaper than Light used to be. Medium shows as Save tokens. Extreme agents stay chat only while Save tokens stays on.
+- Agents: every agent with tools now looks at Home Assistant first on a question about your home. That choice was cleared once on update, so agents where it was off have it on again. `check_house: false` in YAML still turns it off for one agent.
+- Ollama: AI Workspace asks Ollama whether the model can use tools and how large its context window is. A model without tool support, or one Ollama runs with a window under 8,192 tokens, answers chat only, and the first answer in the chat says why and what to change (a model with tools, or `OLLAMA_CONTEXT_LENGTH` of 16384 or more). Models with a window under 32,000 tokens start with only the core tools. Local models get up to 10 minutes per answer instead of 2.
+- Ollama: the agent form refuses a model name Ollama does not have, such as `qwen2.5` when only `qwen2.5:1.5b` is installed, and lists the installed models.
+- Chat only now remembers the last few messages instead of none.
+- Chat: when the connection drops before a reply arrives, the reply now says so instead of a red "Thinking", and the "did not answer in time" error appears in your language.
+- Chat: while the chat list loads, placeholder rows show instead of an empty panel.
+
 ## 1.5.0b1
 
 Includes everything from 1.4.3b1 and 1.4.3b2 below. A minor release, because it adds features; nothing needs to be changed in your setup.

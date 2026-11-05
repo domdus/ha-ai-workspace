@@ -93,7 +93,7 @@ Until it is in the default HACS store, add it as a custom repository: **HACS →
 - Save. Home Assistant then asks for the first **agent**.
 - Pick the provider. Paste the key, use **Get an API key** under the field, or choose **Copy key from** when OpenRouter, OpenAI, Claude, Gemini, Ollama, or Azure is already set up. The key is checked before it is saved.
 - **Model:** the list comes from the provider with your key, so new models show up without an update. You can still type any model id.
-- Each agent also has **Reduce token usage**, **Look at Home Assistant first** (on by default), and **Allow internet** (off by default). See [Agent settings](docs/settings.md#agent-settings).
+- Each agent also has **Allow internet** (off by default) and, under **Advanced**, **Save tokens**. See [Agent settings](docs/settings.md#agent-settings).
 - Add more agents later with **Add agent** on the AI Workspace entry. The chat shows an agent picker when more than one is set up. **Configure** sets the **Default agent** for new chats and can add a **model switcher** next to the agent picker.
 
 You can also put the same settings in `configuration.yaml`. See [YAML configuration](docs/settings.md#yaml-configuration).
@@ -216,7 +216,7 @@ After the runtime is running: **Settings → Devices & services → Add integrat
 
 Same as Cloud AI, but the model runs in your house (**Ollama** or LM Studio). Nothing is sent to a cloud API. The model still has to be able to call tools.
 
-On a small machine, set **Reduce token usage** to **Extreme** on that agent. The chat then stays short and does not send tools: it can answer questions, but it cannot check or change the house. **Medium** still sends tools, with a shorter prompt. See [Reduce token usage](docs/cost.md#reduce-token-usage).
+Pick a model that can use tools (Ollama lists them with the *tools* tag), and give Ollama a context window of at least 16,384 tokens (`OLLAMA_CONTEXT_LENGTH`). AI Workspace asks Ollama about both. If the model cannot use tools, or its window is too small, the agent switches to chat only and says so once in the chat: it can answer questions, but it cannot check or change the house. A slow machine gets up to 10 minutes per answer. See [Save tokens](docs/cost.md#save-tokens).
 
 Install as in [Cloud AI](#cloud-ai-quick-start). Pick **Ollama** and point the API Base URL at your Ollama server.
 

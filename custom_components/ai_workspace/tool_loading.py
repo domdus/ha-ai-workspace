@@ -67,11 +67,12 @@ def wanted_tags(text: str) -> set[str]:
 class ToolPicker:
     """Which tools a cloud agent sees this turn. Loaded tools are appended, so earlier ones stay a stable prefix."""
 
-    def __init__(self, tools: list[dict], message: str = "", used: Iterable[str] = ()) -> None:
+    def __init__(self, tools: list[dict], message: str = "", used: Iterable[str] = (), small: bool = False) -> None:
+        """small: a model with a small context window starts with the core tools only."""
         self.all = list(tools)
         self._by_name = {str(tool.get("name") or ""): tool for tool in self.all}
         used_names = {str(name) for name in used}
-        tags = set(CORE_TAGS) | wanted_tags(message)
+        tags = set(CORE_TAGS) | (set() if small else wanted_tags(message))
         # A chat that already read a dashboard will likely write one next.
         for name in used_names:
             tags.update(tool_tags(self._by_name.get(name) or {}))
@@ -194,8 +195,8 @@ def used_tool_names(rows) -> set[str]:
     return names
 
 
-def pick_tools(tools: list[dict], message: str, used: Iterable[str] = ()) -> ToolPicker | None:
-    if len(tools) < MIN_TOOLS:
+def pick_tools(tools: list[dict], message: str, used: Iterable[str] = (), small: bool = False) -> ToolPicker | None:
+    if len(tools) < MIN_TOOLS and not small:
         return None
-    picker = ToolPicker(tools, message, used)
+    picker = ToolPicker(tools, message, used, small)
     return picker if picker.active else None

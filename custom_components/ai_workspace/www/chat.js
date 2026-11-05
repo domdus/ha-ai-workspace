@@ -725,6 +725,15 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     return text;
   };
+  // Server errors arrive in English; show the known ones in the user's language.
+  const KNOWN_ERRORS = {
+    "The provider did not answer in time. Try again, or pick a faster model.": "provider_timeout",
+  };
+  const shownError = (value) => {
+    const text = cleanErrorText(value);
+    const key = KNOWN_ERRORS[text];
+    return key ? t(key) : text;
+  };
   const getToken = options.getToken || (() => "");
   const navigate = options.navigate;
   const routed = Boolean(options.routed) && !compact;
@@ -838,7 +847,7 @@ export async function mountAiWorkspace(root, options = {}) {
             </ha-button>
           </div>
         </div>
-        <div class="sessions" role="list"></div>
+        <div class="sessions" role="list" aria-busy="true">${sessionSkeleton()}</div>
       </aside>
       <section class="chat welcome">
         <header>
@@ -1666,7 +1675,7 @@ export async function mountAiWorkspace(root, options = {}) {
     if (empty) empty.remove();
     setWelcome(false, opts.animate !== false);
     const isError = (events || []).some((event) => event && event.type === "error");
-    if (isError && role === "assistant") content = cleanErrorText(content);
+    if (isError && role === "assistant") content = shownError(content);
     const assistWho = role === "user" ? "user" : "hass";
     let bubble;
     let mount;
@@ -2776,6 +2785,13 @@ export async function mountAiWorkspace(root, options = {}) {
     syncSearchIcon();
   }
 
+  // Placeholder rows until the first list arrives; a busy system can take a few seconds.
+  function sessionSkeleton() {
+    const widths = [72, 58, 84, 64, 76, 52, 68];
+    const rows = widths.map((w) => `<div class="session-skeleton" style="--w:${w}%"></div>`).join("");
+    return `<div class="chats-label skeleton-label" aria-hidden="true"></div><div aria-hidden="true">${rows}</div>`;
+  }
+
   function sessionLabel(text) {
     const label = document.createElement("div");
     label.className = "chats-label";
@@ -2858,10 +2874,16 @@ export async function mountAiWorkspace(root, options = {}) {
     const query = searchInput?.value.trim() || "";
     const mark = ++sessionsLoad;
     const response = await apiFetch(`${API}/sessions${query ? `?q=${encodeURIComponent(query)}` : ""}`);
-    if (!response?.ok) return;
+    if (!response?.ok) {
+      // Do not leave the placeholder rows up when the list cannot load.
+      if (mark === sessionsLoad && sessionsEl.querySelector(".session-skeleton")) sessionsEl.replaceChildren();
+      sessionsEl.removeAttribute("aria-busy");
+      return;
+    }
     const sessions = await response.json();
     // A slower answer for an older search must not replace a newer one.
     if (mark !== sessionsLoad) return;
+    sessionsEl.removeAttribute("aria-busy");
     const pinned = sessions.filter((session) => session.pinned);
     const rest = sessions.filter((session) => !session.pinned);
     sessionsEl.replaceChildren();
@@ -4169,7 +4191,7 @@ export async function mountAiWorkspace(root, options = {}) {
           assistant.classList.add("error");
           const textNode = assistant.querySelector(".text");
           if (!streamFull) {
-            setMarkdown(textNode, cleanErrorText(data.message) || t("error"));
+            setMarkdown(textNode, shownError(data.message) || t("error"));
             textNode.hidden = !textNode.content;
             assistant.classList.add("has-text");
           }
@@ -4228,7 +4250,7 @@ export async function mountAiWorkspace(root, options = {}) {
         assistant.classList.add("error");
         const node = assistant.querySelector(".text");
         if (!streamFull) {
-          setMarkdown(node, cleanErrorText(error?.message || error) || t("error"));
+          setMarkdown(node, shownError(error?.message || error) || t("error"));
           node.hidden = !node.content;
           assistant.classList.add("has-text");
         }
@@ -4251,8 +4273,10 @@ export async function mountAiWorkspace(root, options = {}) {
             assistant.classList.add("error");
             const node = assistant.querySelector(".text");
             if (node && !node.content) {
-              node.content = t("thinking");
+              // The connection dropped and the reply did not show up; say so instead of "Thinking".
+              setMarkdown(node, t("reply_lost"));
               node.hidden = false;
+              assistant.classList.add("has-text");
             }
           }
         }

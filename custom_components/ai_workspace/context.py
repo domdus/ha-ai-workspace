@@ -50,7 +50,7 @@ _BUDGETS = {
     TOKEN_MODE_OFF: (0.15, 24_000),
     TOKEN_MODE_LIGHT: (0.08, 8_000),
     TOKEN_MODE_MEDIUM: (0.03, 2_000),
-    TOKEN_MODE_EXTREME: (0.0, 0),
+    TOKEN_MODE_EXTREME: (0.03, 2_000),
 }
 # Turns are left out in blocks of this size so the history start stays put between turns.
 BLOCK = 6

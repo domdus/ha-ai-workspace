@@ -41,37 +41,33 @@ A typical house-check turn on **Off** is often around **$0.40**. A long thread w
 
 - Earlier messages are sent again so the model remembers the thread, up to a share of the model's context window (see the History column below). Long replies are no longer cut at 2,000 characters; only a message that would take more than about a third of the history keeps just its start and end. Each earlier reply carries a one-line note of the tools it used and what they returned, so the agent does not look everything up again.
 - When a chat outgrows that share, the oldest turns are left out six at a time and replaced by a short summary of what was asked. Because the history only moves in steps, the provider's prompt cache keeps working on long chats.
-- **[Look at Home Assistant first](settings.md#always-check-the-house-first):** a question that needs no house data, like a poem, still costs one tool call and one more request.
-- **To spend less:** pick a smaller model for everyday questions, set **Reduce token usage** (below), disable the device of an MCP connection you do not need, and start a new chat when the topic changes.
+- **[Looking at Home Assistant first](settings.md#always-check-the-house-first):** a question about the house always starts with one tool call. Greetings and thanks do not.
+- **To spend less:** pick a smaller model for everyday questions, turn on **Save tokens** (below), disable the device of an MCP connection you do not need, and start a new chat when the topic changes.
 
-## Reduce token usage
+## Save tokens
 
-Set on each agent, Cursor included: **Off**, **Light**, **Medium**, or **Extreme**. Older versions had one setting for all agents; updating copies it onto every cloud agent.
+Every agent, Cursor included, has one box under **Advanced**: **Save tokens**. It is off by default, which gives the most reliable answers about your home.
 
-The expensive part is the MCP tool list (and extra tool rounds), not the chat history. That is why Medium still costs a large share of Off, and Extreme is the only mode that usually saves most of a house-check turn.
-
-| Mode | Tools | History | Prompt | Typical save vs Off on a house-check turn |
+| | Tools | History | Prompt | Replies |
 | --- | --- | --- | --- | --- |
-| **Off** | Yes | 15% of the window, at most 24,000 tokens | Full | — |
-| **Light** | Yes | 8% of the window, at most 8,000 tokens | Full | About **5–20%**. Skips extras such as auto-title, page context, and effort. |
-| **Medium** | Yes | 3% of the window, at most 2,000 tokens | Short, tools allowed | About **25–45%**. |
-| **Extreme** | No | None | Two sentences; cannot control the house | About **80–95%**. |
+| **Off** (default) | Loaded on demand | 15% of the context window, at most 24,000 tokens | Full | Full length |
+| **Save tokens** | Loaded on demand, shorter descriptions | 3% of the window, at most 2,000 tokens | Short | Capped; long messages are shortened |
 
-The context window comes from the model id (for example 400,000 tokens for GPT-5, 200,000 for Claude, 1,000,000 for Gemini, 32,000 for unknown Ollama models, otherwise 128,000). Set `context_window: <tokens>` in YAML if your model reads less, such as a small local model.
+With Save tokens, files and images are not attached, and extras such as auto titles and page context are skipped. A house-check turn usually costs about 25–45% less.
 
-Light still attaches files and images; Medium and Extreme do not. Medium and Extreme also shorten a very long message and cap how long the reply can be.
+The context window comes from the model id (for example 400,000 tokens for GPT-5, 200,000 for Claude, 1,000,000 for Gemini, otherwise 128,000). For Ollama, AI Workspace asks Ollama itself. Set `context_window: <tokens>` in YAML to override it.
 
-**Look at Home Assistant first** is a separate switch on the agent and works on every level except Extreme (no tools). Leaving it on adds one tool round to house questions.
+**Chat only.** An agent without tools can answer questions but cannot check or change your home. AI Workspace switches to chat only by itself when an Ollama model cannot use tools, or when Ollama runs it with a context window too small for them, and says so once in the chat. To force chat only, set `low_token: extreme` on the agent in YAML. Agents that used **Extreme** before 1.5 stay chat only while **Save tokens** stays on. Chat only remembers the last few messages.
 
-**Cursor:** the same levels apply. A Cursor agent that is still running keeps its own thread. A new one gets the earlier turns with the same budget and summary as cloud agents, with line breaks kept, so YAML and code from earlier in the chat arrive intact. Medium and Extreme start a new Cursor agent every turn, so Cursor's own thread cannot grow. Cursor always gets every tool; it manages the tool list itself. Extreme gives Cursor no tools at all. Cursor cannot cap the reply length, so the short prompts ask for short answers instead.
+**Cursor:** the same box applies. A Cursor agent that is still running keeps its own thread. A new one gets the earlier turns with the same budget and summary as cloud agents, with line breaks kept, so YAML and code from earlier in the chat arrive intact. With Save tokens, every turn starts a new Cursor agent, so Cursor's own thread cannot grow. Cursor always gets every tool; it manages the tool list itself. Cursor cannot cap the reply length, so the short prompt asks for short answers instead.
 
-Use Extreme for a small local model or cheap Q&A; Medium when the agent should still call MCP; Off when you want the full product.
+Before 1.5 there were four levels. **Light** now counts as Off: on-demand tools and the history budget made Off cheaper than Light used to be. **Medium** is Save tokens.
 
 ## Prompt cache
 
-Separate from **Reduce token usage**. Token modes change *what* is sent. Prompt cache discounts the *same* prefix when it repeats — the system prompt and the MCP tool list on every round of a turn. It is **on** by default and not shown on Configure. Set `prompt_cache: false` in YAML only if you need to compare uncached cost.
+Separate from **Save tokens**, which changes *what* is sent. Prompt cache discounts the *same* prefix when it repeats — the system prompt and the MCP tool list on every round of a turn. It is **on** by default and not shown on Configure. Set `prompt_cache: false` in YAML only if you need to compare uncached cost.
 
-After the first round of a house-check turn, later rounds *read* that prefix at about **10%** of the input price. The first write still costs a little more than uncached input (Claude’s 5-minute cache is about **1.25×**). Combined with Extreme you skip the tools; combined with Off you keep house control at a fraction of that ~$0.40 turn.
+After the first round of a house-check turn, later rounds *read* that prefix at about **10%** of the input price. The first write still costs a little more than uncached input (Claude’s 5-minute cache is about **1.25×**). With Off you keep house control at a fraction of that ~$0.40 turn.
 
 Claude reports uncached input, cache reads, and cache writes as separate counters. The Usage page adds those together so a house-check does not look like a few thousand tokens while the bill is hundreds of thousands. Dollars stay a list-price estimate: cache makes the *price per token* knowable, not a match to Anthropic’s invoice (5-minute vs 1-hour cache, contract rates, other keys).
 

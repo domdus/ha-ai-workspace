@@ -106,6 +106,12 @@ async def async_provider_models(hass: HomeAssistant, provider: str, api_key: str
     return await _cached(hass, _tag(provider, base, key), fetch)
 
 
+def forget_provider_models(hass: HomeAssistant, provider: str, api_key: str = "", api_base: str = "") -> None:
+    """Drop the cached list, for example right after a model was pulled in Ollama."""
+    base = (str(api_base or "").strip() or default_api_base(provider)).rstrip("/")
+    (hass.data.get(_CACHE) or {}).pop(_tag(provider, base, str(api_key or "").strip()), None)
+
+
 async def async_cursor_models(hass: HomeAssistant, api_key: str = "") -> list[str]:
     """The Cursor SDK's own list, through the Runtime (GET /api/models)."""
     data = hass.data.get(DOMAIN) or {}

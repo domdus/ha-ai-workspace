@@ -281,6 +281,9 @@ TOKEN_MODE_EXTREME = "extreme"
 TOKEN_MODES = (TOKEN_MODE_OFF, TOKEN_MODE_LIGHT, TOKEN_MODE_MEDIUM, TOKEN_MODE_EXTREME)
 _TOKEN_MODE_ON = {"1", "true", "on", "yes", TOKEN_MODE_EXTREME}
 CONF_CHECK_HOUSE = "check_house"
+# Agent form: Advanced section with one Save tokens box (stored as low_token medium/off).
+SECTION_ADVANCED = "advanced"
+CONF_SAVE_TOKENS = "save_tokens"
 CONF_PROMPT_CACHE = "prompt_cache"
 # Tokens the model can read; 0 means look it up from the model id.
 CONF_CONTEXT_WINDOW = "context_window"
@@ -835,7 +838,8 @@ def token_mode_history_limit(mode: str) -> int:
         return 4
     if mode == TOKEN_MODE_OFF:
         return 12
-    return 0
+    # Chat only still remembers the last few messages; a chat without memory is no chat.
+    return 4
 
 
 def token_mode_allows_extras(mode: str) -> bool:

@@ -253,6 +253,49 @@
   font-size: var(--ha-font-size-s, 0.85rem);
 }
 
+/* Placeholder rows while the chat list loads. */
+.skeleton-label::after,
+.session-skeleton::after {
+  content: "";
+  display: block;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--secondary-text-color);
+  opacity: 0.18;
+  animation: session-skeleton 1.4s ease-in-out infinite;
+}
+
+.skeleton-label::after {
+  width: 64px;
+}
+
+.session-skeleton {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  margin: 0 var(--ha-space-1);
+  padding: 0 var(--ha-space-3);
+}
+
+.session-skeleton::after {
+  width: var(--w, 70%);
+  height: 12px;
+  border-radius: 6px;
+}
+
+@keyframes session-skeleton {
+  50% {
+    opacity: 0.08;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-label::after,
+  .session-skeleton::after {
+    animation: none;
+  }
+}
+
 .nav-scrim {
   display: none;
 }

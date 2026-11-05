@@ -277,7 +277,8 @@
         "no_runtime": "Kan inte nå Cursor-runtimen. Starta den och kontrollera adressen i det här formuläret.",
         "required": "Det här fältet är obligatoriskt.",
         "invalid_auth": "Leverantören avvisade den här API-nyckeln.",
-        "cannot_connect": "Kunde inte nå leverantören. Kontrollera URL:en och nätverket."
+        "cannot_connect": "Kunde inte nå leverantören. Kontrollera URL:en och nätverket.",
+        "model_not_installed": "Den här modellen är inte installerad i Ollama. Installerade: {installed}"
       },
       "step": {
         "provider": {
@@ -299,8 +300,6 @@
             "cursor_api_key": "Cursor API-nyckel",
             "model": "Modell",
             "effort": "Ansträngning",
-            "low_token": "Minska tokenanvändning",
-            "check_house": "Titta i Home Assistant först",
             "allow_internet": "Tillåt internet",
             "assist": "Lägg till i Assist"
           },
@@ -310,10 +309,19 @@
             "cursor_api_key": "Från ditt Cursor-konto (Integrations). Lämna tomt vid redigering för att behålla den sparade nyckeln. [Hämta API-nyckel]({api_key_url})",
             "model": "Välj från listan eller skriv ett modellnamn. Tomt använder Composer.",
             "effort": "Hur mycket tänketid som ska tillåtas. Composer använder Snabb som standard.",
-            "low_token": "Skickar mindre med varje meddelande för att spara pengar. Av ger de mest tillförlitliga svaren om ditt hem. Lätt behåller mindre chatthistorik. Medel kortar också långa meddelanden och svar och börjar varje tur med bara de senaste meddelandena. Extrem är bara chatt: inga verktyg, så den kan inte kontrollera eller styra huset.",
-            "check_house": "På som standard. Innan agenten svarar på en fråga om ditt hem tittar den i Home Assistant, så att listor och tillstånd är verkliga och inte gissade. Hälsningar hoppas över. Ingen effekt på Extrem, som saknar verktyg. Stäng av för allmänna frågor eller för en modell som redan kontrollerar själv.",
             "allow_internet": "Av som standard. På låter agenten använda Cursors webbsökning, sidhämtning och skal i administratörschattar. Av tar bort alla tre, så att inte heller curl eller skript når webben. Chattar från vanliga användare och röstsatelliter får dem aldrig.",
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Avancerat",
+              "data": {
+                "save_tokens": "Spara tokens"
+              },
+              "data_description": {
+                "save_tokens": "Skickar mindre med varje meddelande: en kortare prompt, mindre chatthistorik och kortare svar. Billigare, men svar om ditt hem kan bli mindre grundliga."
+              }
+            }
           }
         },
         "provider_cloud": {
@@ -324,8 +332,6 @@
             "api_key": "API-nyckel",
             "model": "Modell",
             "effort": "Ansträngning",
-            "low_token": "Minska tokenanvändning",
-            "check_house": "Titta i Home Assistant först",
             "allow_internet": "Tillåt internet",
             "assist": "Lägg till i Assist",
             "assist_stt": "Lägg till tal till text",
@@ -340,8 +346,6 @@
             "api_key": "Din nyckel från AI-leverantören, inte din Home Assistant-inloggning. [Hämta API-nyckel]({api_key_url})",
             "model": "Välj från listan eller skriv ett modellnamn. Tomt använder leverantörens standard.",
             "effort": "Mer ansträngning betyder mer tänkande: bättre svar på svåra frågor, men långsammare och fler token. Ignoreras om modellen inte stöder det.",
-            "low_token": "Skickar mindre med varje meddelande för att spara pengar. Av ger de mest tillförlitliga svaren om ditt hem. Lätt behåller mindre chatthistorik. Medel kortar också långa meddelanden och svar och börjar varje tur med bara de senaste meddelandena. Extrem är bara chatt: inga verktyg, så den kan inte kontrollera eller styra huset.",
-            "check_house": "På som standard. Innan agenten svarar på en fråga om ditt hem tittar den i Home Assistant, så att listor och tillstånd är verkliga och inte gissade. Hälsningar hoppas över. Ingen effekt på Extrem, som saknar verktyg. Stäng av för allmänna frågor eller för en modell som redan kontrollerar själv.",
             "allow_internet": "Av som standard. På lägger till verktyg för webbsökning och sidhämtning i administratörschattar. Adresser i ditt lokala nätverk förblir blockerade. Chattar från vanliga användare och röstsatelliter får dem aldrig.",
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist.",
             "assist_stt": "Lägger till ett tal-till-text-alternativ i Home Assistant med den här assistentens nyckel. Av tar bort det den lade till.",
@@ -350,6 +354,17 @@
             "tts_model": "Lämna tomt för standardröstmodellen. Du kan skriva ett annat namn om din leverantör listar ett.",
             "tts_voice": "Coral är standard. Röster fungerar för de språk du ställer in under Assist → Språk.",
             "tts_speed": "Hur snabbt den här rösten talar. 1× är normalt. Gäller AI Workspace och Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Avancerat",
+              "data": {
+                "save_tokens": "Spara tokens"
+              },
+              "data_description": {
+                "save_tokens": "Skickar mindre med varje meddelande: en kortare prompt, mindre chatthistorik och kortare svar. Billigare, men svar om ditt hem kan bli mindre grundliga."
+              }
+            }
           }
         },
         "provider_ollama": {
@@ -359,8 +374,6 @@
             "api_base": "Ollama-URL",
             "model": "Modell",
             "effort": "Ansträngning",
-            "low_token": "Minska tokenanvändning",
-            "check_house": "Titta i Home Assistant först",
             "allow_internet": "Tillåt internet",
             "assist": "Lägg till i Assist"
           },
@@ -368,10 +381,19 @@
             "api_base": "Vanligtvis {example_url}",
             "model": "Välj från listan eller skriv en modell du har installerat. Tomt använder llama3.2.",
             "effort": "Mer ansträngning betyder mer tänkande: bättre svar på svåra frågor, men långsammare och fler token. Ignoreras om modellen inte stöder det.",
-            "low_token": "Skickar mindre med varje meddelande för att spara pengar. Av ger de mest tillförlitliga svaren om ditt hem. Lätt behåller mindre chatthistorik. Medel kortar också långa meddelanden och svar och börjar varje tur med bara de senaste meddelandena. Extrem är bara chatt: inga verktyg, så den kan inte kontrollera eller styra huset.",
-            "check_house": "På som standard. Innan agenten svarar på en fråga om ditt hem tittar den i Home Assistant, så att listor och tillstånd är verkliga och inte gissade. Hälsningar hoppas över. Ingen effekt på Extrem, som saknar verktyg. Stäng av för allmänna frågor eller för en modell som redan kontrollerar själv.",
             "allow_internet": "Av som standard. På lägger till verktyg för webbsökning och sidhämtning i administratörschattar. Adresser i ditt lokala nätverk förblir blockerade. Chattar från vanliga användare och röstsatelliter får dem aldrig.",
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Avancerat",
+              "data": {
+                "save_tokens": "Spara tokens"
+              },
+              "data_description": {
+                "save_tokens": "Skickar mindre med varje meddelande: en kortare prompt, mindre chatthistorik och kortare svar. Billigare, men svar om ditt hem kan bli mindre grundliga."
+              }
+            }
           }
         },
         "provider_azure": {
@@ -383,8 +405,6 @@
             "model": "Distribution",
             "azure_api_version": "API-version",
             "effort": "Ansträngning",
-            "low_token": "Minska tokenanvändning",
-            "check_house": "Titta i Home Assistant först",
             "allow_internet": "Tillåt internet",
             "assist": "Lägg till i Assist"
           },
@@ -394,10 +414,19 @@
             "model": "Distributionens namn.",
             "azure_api_version": "Behåll standardvärdet om inte Azure-supporten gett dig en annan version.",
             "effort": "Mer ansträngning betyder mer tänkande: bättre svar på svåra frågor, men långsammare och fler token. Ignoreras om modellen inte stöder det.",
-            "low_token": "Skickar mindre med varje meddelande för att spara pengar. Av ger de mest tillförlitliga svaren om ditt hem. Lätt behåller mindre chatthistorik. Medel kortar också långa meddelanden och svar och börjar varje tur med bara de senaste meddelandena. Extrem är bara chatt: inga verktyg, så den kan inte kontrollera eller styra huset.",
-            "check_house": "På som standard. Innan agenten svarar på en fråga om ditt hem tittar den i Home Assistant, så att listor och tillstånd är verkliga och inte gissade. Hälsningar hoppas över. Ingen effekt på Extrem, som saknar verktyg. Stäng av för allmänna frågor eller för en modell som redan kontrollerar själv.",
             "allow_internet": "Av som standard. På lägger till verktyg för webbsökning och sidhämtning i administratörschattar. Adresser i ditt lokala nätverk förblir blockerade. Chattar från vanliga användare och röstsatelliter får dem aldrig.",
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Avancerat",
+              "data": {
+                "save_tokens": "Spara tokens"
+              },
+              "data_description": {
+                "save_tokens": "Skickar mindre med varje meddelande: en kortare prompt, mindre chatthistorik och kortare svar. Billigare, men svar om ditt hem kan bli mindre grundliga."
+              }
+            }
           }
         },
         "provider_compatible": {
@@ -408,8 +437,6 @@
             "api_base": "API-bas-URL",
             "model": "Modell",
             "effort": "Ansträngning",
-            "low_token": "Minska tokenanvändning",
-            "check_house": "Titta i Home Assistant först",
             "allow_internet": "Tillåt internet",
             "assist": "Lägg till i Assist",
             "assist_stt": "Lägg till tal till text",
@@ -424,8 +451,6 @@
             "api_base": "Serveradress. Lägg till /v1 i slutet om din server förväntar sig det.",
             "model": "Modellnamn på den servern.",
             "effort": "Mer ansträngning betyder mer tänkande: bättre svar på svåra frågor, men långsammare och fler token. Ignoreras om modellen inte stöder det.",
-            "low_token": "Skickar mindre med varje meddelande för att spara pengar. Av ger de mest tillförlitliga svaren om ditt hem. Lätt behåller mindre chatthistorik. Medel kortar också långa meddelanden och svar och börjar varje tur med bara de senaste meddelandena. Extrem är bara chatt: inga verktyg, så den kan inte kontrollera eller styra huset.",
-            "check_house": "På som standard. Innan agenten svarar på en fråga om ditt hem tittar den i Home Assistant, så att listor och tillstånd är verkliga och inte gissade. Hälsningar hoppas över. Ingen effekt på Extrem, som saknar verktyg. Stäng av för allmänna frågor eller för en modell som redan kontrollerar själv.",
             "allow_internet": "Av som standard. På lägger till verktyg för webbsökning och sidhämtning i administratörschattar. Adresser i ditt lokala nätverk förblir blockerade. Chattar från vanliga användare och röstsatelliter får dem aldrig.",
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist.",
             "assist_stt": "Lägger till ett tal-till-text-alternativ i Home Assistant med den här assistentens nyckel. Av tar bort det den lade till.",
@@ -434,6 +459,17 @@
             "tts_model": "Lämna tomt för standardröstmodellen. Du kan skriva ett annat namn om din leverantör listar ett.",
             "tts_voice": "Coral är standard. Röster fungerar för de språk du ställer in under Assist → Språk.",
             "tts_speed": "Hur snabbt den här rösten talar. 1× är normalt. Gäller AI Workspace och Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Avancerat",
+              "data": {
+                "save_tokens": "Spara tokens"
+              },
+              "data_description": {
+                "save_tokens": "Skickar mindre med varje meddelande: en kortare prompt, mindre chatthistorik och kortare svar. Billigare, men svar om ditt hem kan bli mindre grundliga."
+              }
+            }
           }
         }
       },
@@ -472,14 +508,6 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Anpassad MCP-URL"
-      }
-    },
-    "low_token": {
-      "options": {
-        "off": "Av",
-        "light": "Light",
-        "medium": "Medium",
-        "extreme": "Extreme"
       }
     }
   }

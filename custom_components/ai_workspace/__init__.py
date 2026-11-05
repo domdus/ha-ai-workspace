@@ -277,6 +277,24 @@ def _move_tuning_to_agents(hass: HomeAssistant, entry: ConfigEntry) -> None:
     _LOGGER.info("Moved Reduce token usage (%s) and Check the house (%s) onto each agent", mode, check)
 
 
+_TUNING_SIMPLE = "agent_tuning_simple"
+
+
+def _simplify_agent_tuning(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """1.5: Look at Home Assistant first is always on and no longer on the agent form. Clear old choices once.
+
+    A YAML agent can still set check_house; YAML is applied again on every start.
+    """
+    if entry.data.get(_TUNING_SIMPLE):
+        return
+    for sub in list(entry.subentries.values()):
+        if sub.subentry_type != SUBENTRY_AGENT or CONF_CHECK_HOUSE not in sub.data:
+            continue
+        data = {key: value for key, value in sub.data.items() if key != CONF_CHECK_HOUSE}
+        hass.config_entries.async_update_subentry(entry, sub, data=data)
+    hass.config_entries.async_update_entry(entry, data={**entry.data, _TUNING_SIMPLE: True})
+
+
 def _ensure_usage_subentry(hass: HomeAssistant, entry: ConfigEntry) -> str | None:
     """Nest workspace sensors under a Usage subentry so HA does not use the leftover-devices heading."""
     for sub in entry.subentries.values():
@@ -469,6 +487,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if yaml_conf:
         await async_apply_yaml(hass, entry, yaml_conf)
     _move_tuning_to_agents(hass, entry)
+    _simplify_agent_tuning(hass, entry)
     settings = await _build_settings(hass, entry)
     await hass.async_add_executor_job(settings.ensure_dirs)
     store = await hass.async_add_executor_job(Store, settings.data_dir / "ai-workspace.sqlite")
