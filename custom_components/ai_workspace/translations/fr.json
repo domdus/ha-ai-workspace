@@ -378,7 +378,7 @@
             "assist": "Ajouter à Assist"
           },
           "data_description": {
-            "api_base": "En général {example_url}",
+            "api_base": "{ollama_note}",
             "model": "Choisissez dans la liste ou saisissez un modèle installé. Vide utilise llama3.2.",
             "effort": "Plus d’effort signifie plus de réflexion : de meilleures réponses aux questions difficiles, mais plus lent et plus de jetons. Ignoré si le modèle ne le prend pas en charge.",
             "allow_internet": "Désactivé par défaut. Activé ajoute des outils de recherche web et de récupération de pages dans les discussions admin. Les adresses du réseau local restent bloquées. Les discussions des utilisateurs normaux et des satellites vocaux ne les ont jamais.",

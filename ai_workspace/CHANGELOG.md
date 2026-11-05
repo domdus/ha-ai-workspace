@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0b3
+
+- **Update the runtime (App or Docker image) together with this release.** It only carries the new version number.
+- Ollama agent form: under the address, a note says whether Ollama answers there, with its version and how many models are installed, like the "Runtime found" note on the Cursor form.
+- The notes AI Workspace writes itself now appear in all 15 languages: the Ollama and Cursor address notes on the agent form, and the chat-only note in a reply. Before, they were English, or English and German.
+
 ## 1.5.0b2
 
 - **Update the runtime (App or Docker image) together with this release.** It only carries the new version number, so the chat does not warn that the runtime is out of date.

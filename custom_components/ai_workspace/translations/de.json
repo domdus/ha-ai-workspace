@@ -378,7 +378,7 @@
             "assist": "Zu Assist hinzufügen"
           },
           "data_description": {
-            "api_base": "Meist {example_url}",
+            "api_base": "{ollama_note}",
             "model": "Wähle eines oder gib einen gezogenen Modellnamen ein. Leer nutzt llama3.2.",
             "effort": "Mehr Aufwand heißt mehr Nachdenken: bessere Antworten auf schwere Fragen, aber langsamer und mehr Tokens. Wird ignoriert, wenn das Modell es nicht unterstützt.",
             "allow_internet": "Standardmäßig aus. An fügt in Admin-Chats Werkzeuge für Websuche und Seitenabruf hinzu. Adressen im lokalen Netzwerk bleiben gesperrt. Chats normaler Benutzer und Sprachsatelliten bekommen sie nie.",

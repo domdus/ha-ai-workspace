@@ -378,7 +378,7 @@
             "assist": "Añadir a Assist"
           },
           "data_description": {
-            "api_base": "Normalmente {example_url}",
+            "api_base": "{ollama_note}",
             "model": "Elige de la lista o escribe un modelo instalado. Vacío usa llama3.2.",
             "effort": "Más esfuerzo significa pensar más: mejores respuestas a preguntas difíciles, pero más lento y con más tokens. Se ignora si el modelo no lo admite.",
             "allow_internet": "Desactivado por defecto. Activado añade herramientas de búsqueda web y descarga de páginas en chats de administrador. Las direcciones de tu red local siguen bloqueadas. Los chats de usuarios normales y satélites de voz nunca las tienen.",

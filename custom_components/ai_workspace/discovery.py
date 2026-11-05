@@ -166,18 +166,13 @@ async def async_resolve_runtime_url(hass: HomeAssistant, configured: str) -> str
     return hassio_runtime_url(hass) or ""
 
 
-def runtime_form_placeholders(*, live: bool, auto: bool) -> dict[str, str]:
-    if live:
-        note = "✅ Runtime found."
-    elif auto:
-        note = "We found your Cursor runtime on this system."
-    else:
-        note = (
-            "Address of your Cursor runtime, as seen from Home Assistant. "
-            "Leave empty to auto-detect when the runtime is reachable."
-        )
+def runtime_form_placeholders(*, live: bool, auto: bool, language: str = "") -> dict[str, str]:
+    from .local_text import RUNTIME_FORM, pick
+
+    found, detected, hint, mark = pick(RUNTIME_FORM, language)
+    note = found if live else detected if auto else hint
     return {
-        "runtime_url_mark": " · auto-detected" if auto and live else "",
+        "runtime_url_mark": mark if auto and live else "",
         "runtime_url_note": note,
     }
 

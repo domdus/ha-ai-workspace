@@ -504,6 +504,13 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             "installed": getattr(self, "_installed", "") or "-",
         }
         schema_current = dict(self._current)
+        if step == "ollama":
+            from .ollama_info import async_ollama_server, ollama_form_note
+
+            url = str(schema_current.get(CONF_API_BASE) or default_api_base(API_OLLAMA))
+            placeholders["ollama_note"] = ollama_form_note(
+                await async_ollama_server(self.hass, url), example, self.hass.config.language
+            )
         if step == "cursor":
             entry = self._get_entry()
             saved = str({**entry.data, **entry.options}.get(CONF_RUNTIME_URL) or "")
@@ -515,7 +522,7 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             else:
                 shown, live, auto = await async_runtime_form_url(self.hass, saved)
             schema_current[CONF_RUNTIME_URL] = shown
-            placeholders.update(runtime_form_placeholders(live=live, auto=auto))
+            placeholders.update(runtime_form_placeholders(live=live, auto=auto, language=self.hass.config.language))
         return self.async_show_form(
             step_id=f"provider_{step}",
             data_schema=_fields_schema(

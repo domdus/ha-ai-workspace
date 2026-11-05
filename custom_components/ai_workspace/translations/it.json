@@ -378,7 +378,7 @@
             "assist": "Aggiungi ad Assist"
           },
           "data_description": {
-            "api_base": "Di solito {example_url}",
+            "api_base": "{ollama_note}",
             "model": "Scegli dall'elenco o digita un modello installato. Vuoto usa llama3.2.",
             "effort": "Più impegno significa più ragionamento: risposte migliori alle domande difficili, ma più lento e con più token. Ignorato se il modello non lo supporta.",
             "allow_internet": "Disattivato per impostazione predefinita. Attivo aggiunge strumenti di ricerca web e recupero pagine nelle chat admin. Gli indirizzi della rete locale restano bloccati. Le chat degli utenti normali e dei satelliti vocali non li ricevono mai.",

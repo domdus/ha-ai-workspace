@@ -378,7 +378,7 @@
             "assist": "Assist-ə əlavə et"
           },
           "data_description": {
-            "api_base": "Adətən {example_url}",
+            "api_base": "{ollama_note}",
             "model": "Siyahıdan seçin və ya quraşdırdığınız modeli yazın. Boş llama3.2 istifadə edir.",
             "effort": "Daha çox səy daha çox düşünmək deməkdir: çətin suallara daha yaxşı cavablar, amma daha yavaş və daha çox token. Model dəstəkləmirsə, nəzərə alınmır.",
             "allow_internet": "Standart olaraq söndürülüb. Açıq olduqda admin söhbətlərinə veb axtarışı və səhifə yükləmə alətləri əlavə olunur. Yerli şəbəkədəki ünvanlar bloklanmış qalır. Adi istifadəçilərin və səs peyklərinin söhbətləri onları heç vaxt almır.",

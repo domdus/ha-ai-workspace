@@ -378,7 +378,7 @@
             "assist": "Dodaj do Assist"
           },
           "data_description": {
-            "api_base": "Zwykle {example_url}",
+            "api_base": "{ollama_note}",
             "model": "Wybierz z listy lub wpisz zainstalowany model. Puste używa llama3.2.",
             "effort": "Większy wysiłek to więcej myślenia: lepsze odpowiedzi na trudne pytania, ale wolniej i więcej tokenów. Ignorowane, gdy model tego nie obsługuje.",
             "allow_internet": "Domyślnie wyłączone. Włączone dodaje w czatach administratora narzędzia wyszukiwania w sieci i pobierania stron. Adresy w sieci lokalnej pozostają zablokowane. Czaty zwykłych użytkowników i satelit głosowych nigdy ich nie dostają.",

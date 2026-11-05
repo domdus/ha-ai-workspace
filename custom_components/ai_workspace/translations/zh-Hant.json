@@ -378,7 +378,7 @@
             "assist": "新增至 Assist"
           },
           "data_description": {
-            "api_base": "通常為 {example_url}",
+            "api_base": "{ollama_note}",
             "model": "從清單中選擇或輸入已安裝的模型。留空則使用 llama3.2。",
             "effort": "推理強度越高，思考越多：難題回答更好，但更慢、消耗更多 token。模型不支援時忽略。",
             "allow_internet": "預設關閉。開啟後，會在管理員對話中加入網頁搜尋和網頁擷取工具。區域網路中的位址仍被封鎖。一般使用者的對話和語音衛星永遠不會取得這些工具。",

@@ -378,7 +378,7 @@
             "assist": "Add to Assist"
           },
           "data_description": {
-            "api_base": "Usually {example_url}",
+            "api_base": "{ollama_note}",
             "model": "Pick from the list or type a model you installed. Empty uses llama3.2.",
             "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
             "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",

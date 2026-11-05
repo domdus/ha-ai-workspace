@@ -16,6 +16,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import DOMAIN
+from .local_text import OLLAMA_FORM, pick
 
 _CACHE = f"{DOMAIN}_ollama_info"
 _SHOW_TTL = 600.0
@@ -109,3 +110,43 @@ async def async_ollama_model(hass: HomeAssistant, base: str, model: str) -> Olla
         loaded = (now + _PS_TTL, running)
         cache[ps_key] = loaded
     return OllamaModel(tools=shown[1], trained=shown[2], running=loaded[1])
+
+
+@dataclass(frozen=True)
+class OllamaServer:
+    found: bool
+    version: str = ""
+    models: int = 0
+
+
+async def async_ollama_server(hass: HomeAssistant, base: str) -> OllamaServer:
+    """Whether an Ollama server answers at this address, for the note on the agent form."""
+    root = native_root(base)
+    if not root:
+        return OllamaServer(False)
+    http = async_get_clientsession(hass)
+    try:
+        async with http.get(f"{root}/api/version", timeout=ClientTimeout(total=4)) as resp:
+            if resp.status >= 400:
+                return OllamaServer(False)
+            body = await resp.json(content_type=None)
+    except (ClientError, TimeoutError, ValueError):
+        return OllamaServer(False)
+    version = str(body.get("version") or "") if isinstance(body, dict) else ""
+    models = 0
+    try:
+        async with http.get(f"{root}/api/tags", timeout=ClientTimeout(total=4)) as resp:
+            if resp.status < 400:
+                tags = await resp.json(content_type=None)
+                rows = tags.get("models") if isinstance(tags, dict) else None
+                models = len(rows) if isinstance(rows, list) else 0
+    except (ClientError, TimeoutError, ValueError):
+        pass
+    return OllamaServer(True, version, models)
+
+
+def ollama_form_note(server: OllamaServer, example: str, language: str = "") -> str:
+    found, missing = pick(OLLAMA_FORM, language)
+    if server.found:
+        return found.format(version=server.version, models=server.models).replace("Ollama  ", "Ollama ")
+    return missing.format(example=example)

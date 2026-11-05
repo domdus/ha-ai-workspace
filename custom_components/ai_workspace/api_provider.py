@@ -16,6 +16,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .bps_key import note_guide, prepare_write
 from .images import anthropic_user_content, openai_user_content
 from .context import as_messages, history_for, tool_call_note
+from .local_text import CHAT_ONLY, pick
 from .ollama_info import MIN_TOOL_WINDOW, OllamaModel, async_ollama_model
 from .tool_loading import LOAD_TOOLS, pick_tools, used_tool_names
 from .const import (
@@ -613,26 +614,9 @@ def _history_messages(rows, mode: str, model: str = "", settings=None, window: i
     return as_messages(history)
 
 
-_CHAT_ONLY_NOTES = {
-    "en": (
-        "{model} cannot use tools, so I can only chat and cannot check or change your home. "
-        "Pick a model with tool support in Ollama, such as qwen2.5 or llama3.1, for that.",
-        "Ollama runs {model} with a {size}-token context window, too small for the Home Assistant tools, "
-        "so I can only chat. Set OLLAMA_CONTEXT_LENGTH to 16384 or more on the Ollama server and restart it.",
-    ),
-    "de": (
-        "{model} kann keine Werkzeuge nutzen. Ich kann deshalb nur chatten und dein Zuhause weder prüfen "
-        "noch steuern. Wähle dafür in Ollama ein Modell mit Werkzeug-Unterstützung, etwa qwen2.5 oder llama3.1.",
-        "Ollama betreibt {model} mit einem Kontextfenster von {size} Tokens. Das ist zu klein für die "
-        "Home-Assistant-Werkzeuge, deshalb kann ich nur chatten. Setze OLLAMA_CONTEXT_LENGTH auf dem "
-        "Ollama-Server auf 16384 oder mehr und starte ihn neu.",
-    ),
-}
-
-
 def chat_only_note(model: str, local: OllamaModel, language: str = "") -> str:
     """Why an Ollama model answers without tools, or "" when it can use them."""
-    no_tools, small = _CHAT_ONLY_NOTES.get(str(language or "")[:2].lower(), _CHAT_ONLY_NOTES["en"])
+    no_tools, small = pick(CHAT_ONLY, language)
     if local.tools is False:
         return no_tools.format(model=model)
     if local.tools and local.running and local.running < MIN_TOOL_WINDOW:

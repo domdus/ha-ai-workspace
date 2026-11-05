@@ -378,7 +378,7 @@
             "assist": "Toevoegen aan Assist"
           },
           "data_description": {
-            "api_base": "Meestal {example_url}",
+            "api_base": "{ollama_note}",
             "model": "Kies uit de lijst of typ een geïnstalleerd model. Leeg gebruikt llama3.2.",
             "effort": "Meer inzet betekent meer nadenken: betere antwoorden op moeilijke vragen, maar trager en meer tokens. Wordt genegeerd als het model het niet ondersteunt.",
             "allow_internet": "Standaard uit. Aan voegt in beheerderschats hulpmiddelen toe om het web te doorzoeken en pagina's op te halen. Adressen op je lokale netwerk blijven geblokkeerd. Chats van gewone gebruikers en spraaksatellieten krijgen ze nooit.",

@@ -378,7 +378,7 @@
             "assist": "Lägg till i Assist"
           },
           "data_description": {
-            "api_base": "Vanligtvis {example_url}",
+            "api_base": "{ollama_note}",
             "model": "Välj från listan eller skriv en modell du har installerat. Tomt använder llama3.2.",
             "effort": "Mer ansträngning betyder mer tänkande: bättre svar på svåra frågor, men långsammare och fler token. Ignoreras om modellen inte stöder det.",
             "allow_internet": "Av som standard. På lägger till verktyg för webbsökning och sidhämtning i administratörschattar. Adresser i ditt lokala nätverk förblir blockerade. Chattar från vanliga användare och röstsatelliter får dem aldrig.",

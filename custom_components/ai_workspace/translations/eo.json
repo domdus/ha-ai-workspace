@@ -378,7 +378,7 @@
             "assist": "Aldoni al Assist"
           },
           "data_description": {
-            "api_base": "Kutime {example_url}",
+            "api_base": "{ollama_note}",
             "model": "Elektu el la listo aŭ tajpu modelon kiun vi instalis. Malplena uzas llama3.2.",
             "effort": "Pli da penado signifas pli da pensado: pli bonaj respondoj al malfacilaj demandoj, sed pli malrapide kaj pli da ĵetonoj. Ignorata se la modelo ne subtenas ĝin.",
             "allow_internet": "Defaŭlte malŝaltita. Ŝaltita aldonas ilojn por retserĉo kaj paĝ-elŝuto en administrantaj babiloj. Adresoj en via loka reto restas blokitaj. Babiloj de ordinaraj uzantoj kaj voĉaj satelitoj neniam ricevas ilin.",
