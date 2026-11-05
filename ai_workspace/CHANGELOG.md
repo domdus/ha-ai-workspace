@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.0b6
+
+- **Update the runtime (App or Docker image) together with this release.** It only carries the new version number, so the chat does not warn that the runtime is out of date.
+- Chat: the status line under a reply has a small moving glyph in front of it: + while the agent works, a turning O while it thinks, four turning dots with "Reading" while a tool reads the house, stacking lines with "Building" while a tool changes it, and a turning dash while it waits. A tool's glyph stays at least 0.7 seconds, so quick tool calls do not flicker. With reduced motion turned on, the glyph stands still.
+- Chat: the status no longer disappears between steps. Once the reply had any text, the status stayed empty while the agent went back to its tools. Now "Working" comes back as soon as a tool starts or finishes, and 1.2 seconds after the text pauses.
+- Chat: status labels always start with a capital letter, also the ones that come from Cursor.
+
 ## 1.5.0b5
 
 - **Update the runtime (App or Docker image) together with this release.** It only carries the new version number, so the chat does not warn that the runtime is out of date.

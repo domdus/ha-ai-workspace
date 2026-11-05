@@ -1366,6 +1366,15 @@ export async function mountAiWorkspace(root, options = {}) {
     }
   }
 
+  // Status labels always start with a capital letter, also texts that come from Cursor or the runtime.
+  function capitalized(text) {
+    const value = String(text || "");
+    if (!value) return value;
+    const first = value.codePointAt(0);
+    const head = String.fromCodePoint(first);
+    return head.toLocaleUpperCase(hassLanguage()) + value.slice(head.length);
+  }
+
   function prettyStatus(text) {
     const raw = String(text || "").trim();
     if (!raw || /^done\.?$/i.test(raw)) return "";
@@ -1374,19 +1383,122 @@ export async function mountAiWorkspace(root, options = {}) {
     if (/^running$/i.test(raw)) return t("working");
     if (/^working\.{0,3}$/i.test(raw)) return t("working");
     if (/^thinking\.{0,3}$/i.test(raw)) return t("thinking");
-    return raw;
+    return capitalized(raw);
   }
 
   function toolsBusy(root) {
     return Boolean(root?.querySelector(".tools .busy"));
   }
 
+  // While text is appearing, the answer itself shows progress. Once it pauses for this long
+  // (the agent went back to tools or is thinking), "Working" comes back instead of nothing.
+  const TEXT_QUIET_MS = 1200;
+  let textPaintedAt = 0;
+  let quietTimer = 0;
+
+  function textIsMoving() {
+    // The typing pump paints every frame while text is left, so this stays fresh until it is all shown.
+    return performance.now() - textPaintedAt < TEXT_QUIET_MS;
+  }
+
+  function noteTextPainted(bubble) {
+    textPaintedAt = performance.now();
+    clearTimeout(quietTimer);
+    quietTimer = setTimeout(function recheck() {
+      if (!bubble.isConnected || !bubble.classList.contains("streaming")) return;
+      if (textIsMoving()) {
+        quietTimer = setTimeout(recheck, TEXT_QUIET_MS);
+        return;
+      }
+      // Only fill an empty slot; a status the agent sent stays as it is.
+      if (bubble.querySelector(".activity.idle")) setActivity(bubble, "");
+    }, TEXT_QUIET_MS + 50);
+  }
+
   function pendingStatus(bubble, text) {
     const pretty = prettyStatus(text);
     if (pretty) return pretty;
     if (!bubble?.classList.contains("streaming") || bubble.classList.contains("error")) return "";
-    if (bubble.classList.contains("has-text") && !toolsBusy(bubble)) return "";
+    if (bubble.classList.contains("has-text") && !toolsBusy(bubble) && textIsMoving()) return "";
     return t("working");
+  }
+
+  // A small plain glyph in front of the status, one per kind of moment:
+  // + working, O thinking (a turning coin), : : reading the house (four turning dots),
+  // = changing the house (lines stacking up), - waiting (a turning dash).
+  const ACTIVITY_GLYPHS = {
+    work: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg>',
+    think: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/></svg>',
+    read:
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><circle class="dot" cx="7" cy="7" r="2.5"/><circle class="dot" cx="17" cy="7" r="2.5"/><circle class="dot" cx="7" cy="17" r="2.5"/><circle class="dot" cx="17" cy="17" r="2.5"/></svg>',
+    write:
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><g class="lines"><path d="M5 -1.5h14M5 7.5h14M5 16.5h14M5 25.5h14"/></g></svg>',
+    wait: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg>',
+  };
+  const TOOL_GLYPHS = new Set(["read", "write"]);
+  const WRITE_TOOL =
+    /(?:^|[_\-.\s])(set|create|delete|remove|update|rename|call|bulk|add|install|uninstall|restart|reload|enable|disable|assign|move|toggle|turn|write|edit|str_replace|apply|restore)(?:[_\-.\s]|$)/i;
+  const WAIT_STATUS = /\b(wait|waiting|queued|queue)\b/i;
+
+  function toolGlyphKind(name) {
+    const text = String(name || "").trim();
+    if (!text) return "work";
+    return WRITE_TOOL.test(text) ? "write" : "read";
+  }
+
+  function activityGlyphKind(bubble) {
+    const busy = [...(bubble?.querySelectorAll(".tools .busy") || [])];
+    const last = busy[busy.length - 1];
+    if (last) {
+      return toolGlyphKind(last.dataset.tool && last.dataset.tool.toLowerCase() !== "mcp" ? last.dataset.tool : haChipLabel(last));
+    }
+    const label = String(bubble?.querySelector(".activity .label")?.textContent || "").trim();
+    if (label && label === t("thinking")) return "think";
+    if (WAIT_STATUS.test(label)) return "wait";
+    return "work";
+  }
+
+  function activityGlyph(kind = "work") {
+    const glyph = document.createElement("span");
+    glyph.className = "glyph";
+    glyph.dataset.kind = kind;
+    glyph.innerHTML = ACTIVITY_GLYPHS[kind];
+    return glyph;
+  }
+
+  // A tool icon stays at least this long, so quick tool calls in a row do not flicker.
+  const GLYPH_HOLD_MS = 700;
+
+  function syncActivityGlyph(bubble) {
+    const glyph = bubble?.querySelector(".activity .glyph");
+    if (!glyph) return;
+    const kind = activityGlyphKind(bubble);
+    if (glyph.dataset.kind === kind) {
+      syncToolLabel(bubble, kind);
+      return;
+    }
+    const shown = performance.now() - Number(glyph.dataset.since || 0);
+    if (!TOOL_GLYPHS.has(kind) && TOOL_GLYPHS.has(glyph.dataset.kind) && shown < GLYPH_HOLD_MS) {
+      clearTimeout(glyph._hold);
+      glyph._hold = setTimeout(() => syncActivityGlyph(bubble), GLYPH_HOLD_MS - shown + 20);
+      syncToolLabel(bubble, glyph.dataset.kind);
+      return;
+    }
+    clearTimeout(glyph._hold);
+    glyph.dataset.kind = kind;
+    glyph.dataset.since = String(performance.now());
+    glyph.innerHTML = ACTIVITY_GLYPHS[kind];
+    syncToolLabel(bubble, kind);
+  }
+
+  // While a tool runs, the label says what it does. Only our own words are swapped; a status
+  // the agent sent stays as it is.
+  function syncToolLabel(bubble, kind) {
+    const label = bubble?.querySelector(".activity .label");
+    if (!label) return;
+    const ours = [t("working"), t("reading"), t("building")];
+    if (!ours.includes(label.textContent)) return;
+    label.textContent = kind === "read" ? t("reading") : kind === "write" ? t("building") : t("working");
   }
 
   function ensureActivitySlot(bubble) {
@@ -1398,7 +1510,7 @@ export async function mountAiWorkspace(root, options = {}) {
       const label = document.createElement("span");
       label.className = "label";
       label.textContent = "\u00a0";
-      el.appendChild(label);
+      el.append(activityGlyph(), label);
       bubble.appendChild(el);
     }
     // Keep the status chip under tools and text so it never shifts the answer.
@@ -1416,7 +1528,9 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!label) {
       label = document.createElement("span");
       label.className = "label";
-      el.replaceChildren(label);
+      el.replaceChildren(activityGlyph(), label);
+    } else if (!el.querySelector(".glyph")) {
+      el.prepend(activityGlyph());
     }
     if (!pretty) {
       // Keep the line height while streaming so show/hide does not jump the scroll.
@@ -1429,6 +1543,7 @@ export async function mountAiWorkspace(root, options = {}) {
     el.className = "activity shine";
     el.removeAttribute("aria-hidden");
     label.textContent = pretty;
+    syncActivityGlyph(bubble);
   }
 
   function lastAssistantBubble() {
@@ -1607,6 +1722,7 @@ export async function mountAiWorkspace(root, options = {}) {
         if (callId) pending.dataset.callId = callId;
         settleChip(pending, label);
         syncToolsSummary(tools);
+        syncActivityGlyph(tools.closest?.(".bubble"));
         return;
       }
     }
@@ -1619,6 +1735,7 @@ export async function mountAiWorkspace(root, options = {}) {
     haChipLabel(chip, label);
     list.appendChild(chip);
     syncToolsSummary(tools);
+    syncActivityGlyph(tools.closest?.(".bubble"));
   }
 
   function settleTools(root) {
@@ -1627,6 +1744,7 @@ export async function mountAiWorkspace(root, options = {}) {
       settleChip(chip, t("finished_tool", { name: chipName(name) }));
     });
     root?.querySelectorAll(".tools").forEach(syncToolsSummary);
+    if (root?.classList?.contains("bubble")) syncActivityGlyph(root);
   }
 
   function isDefaultImageCaption(text) {
@@ -2239,7 +2357,10 @@ export async function mountAiWorkspace(root, options = {}) {
     styleMarkdownTables(streamNode);
     const bubble = streamNode.closest(".bubble");
     bubble?.classList.toggle("has-text", Boolean(visible));
-    if (visible && bubble) setActivity(bubble, "");
+    if (visible && bubble) {
+      noteTextPainted(bubble);
+      setActivity(bubble, "");
+    }
     if (bubble) retargetHaLinks(bubble);
     return true;
   }
@@ -4180,6 +4301,8 @@ export async function mountAiWorkspace(root, options = {}) {
             if (textNode) assistant.insertBefore(tools, textNode);
             else assistant.appendChild(tools);
           }
+          // A tool step ends the sentence before it, so the status comes back right away.
+          textPaintedAt = 0;
           addChip(tools, data, true);
           setActivity(assistant, "");
         } else if (name === "status") {

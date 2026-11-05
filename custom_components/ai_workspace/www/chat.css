@@ -791,6 +791,84 @@ h1 {
   pointer-events: none;
 }
 
+.activity.shine {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+}
+
+.activity .glyph {
+  display: none;
+}
+
+.activity.shine .glyph {
+  display: inline-flex;
+  flex: none;
+  width: 1.05em;
+  height: 1.05em;
+  color: var(--ha-color-fill-primary-loud-resting, var(--primary-color));
+}
+
+.activity.shine .glyph svg {
+  animation: glyph-turn 1s linear infinite;
+}
+
+.activity .glyph svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* O: a coin turning on its vertical axis. */
+.activity.shine .glyph[data-kind="think"] svg {
+  animation: glyph-coin 1s linear infinite;
+}
+
+/* : : four dots in a square, turning around the middle. */
+.activity.shine .glyph[data-kind="read"] .dot {
+  fill: currentColor;
+  stroke: none;
+}
+
+/* =: lines stack up endlessly, moving down through the glyph and fading in and out at its edges. */
+.activity.shine .glyph[data-kind="write"] svg {
+  animation: none;
+  -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
+  mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
+}
+
+.activity.shine .glyph[data-kind="write"] .lines {
+  animation: glyph-lines 0.6s linear infinite;
+}
+
+/* -: a dash turning, half a turn per beat. */
+.activity.shine .glyph[data-kind="wait"] svg {
+  animation: glyph-turn 1s linear infinite;
+}
+
+@keyframes glyph-turn {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes glyph-coin {
+  to { transform: rotateY(360deg); }
+}
+
+@keyframes glyph-lines {
+  from { transform: translateY(0); }
+  to { transform: translateY(9px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activity.shine .glyph,
+  .activity.shine .glyph svg,
+  .activity.shine .glyph .lines { animation: none; }
+}
+
 .tools {
   display: flex;
   flex-direction: column;
