@@ -185,9 +185,13 @@ def create_app(settings: Settings | None = None, providers: dict | None = None) 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings: Settings = app.state.settings
-    from app.git_bootstrap import bootstrap_git
+    from app.git_bootstrap import GitBootstrapError, bootstrap_git
 
-    bootstrap_git(settings.workspace_dir)
+    try:
+        bootstrap_git(settings.workspace_dir)
+    except GitBootstrapError as exc:
+        # A wrong token or an unreachable repo must not take the chat down with it.
+        logger.error("Could not set up GIT_REPO in the workspace: %s", exc)
     settings.ensure_dirs()
     store = Store(settings.data_dir / "ai-workspace.sqlite")
     app.state.store = store

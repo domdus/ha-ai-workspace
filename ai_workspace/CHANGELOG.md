@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0b4
+
+- **Update the runtime (App or Docker image) together with this release.** The fix below is in the runtime.
+- Cursor runtime with `GIT_REPO`: the agent can now push, not only pull. The runtime sets up `GIT_TOKEN` (or `GIT_SSH_KEY`) for push on every start, also for a repo cloned before this update. The token is not written into the repo's git settings. A fine-grained GitHub token needs Contents: Read and write, and the Cursor agent needs Allow internet to run git.
+- Cursor runtime: if cloning `GIT_REPO` fails, the runtime logs the error and still starts, instead of stopping.
+
 ## 1.5.0b3
 
 - **Update the runtime (App or Docker image) together with this release.** It only carries the new version number.

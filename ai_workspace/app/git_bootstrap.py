@@ -2,7 +2,11 @@
 
 Credentials stay on the container (GIT_SSH_KEY path or GIT_TOKEN). They are
 never read from the Home Assistant integration. A workspace that already has
-.git is left alone.
+.git is not cloned again.
+
+On every start the checkout is also set up so the agent's own git commands
+(pull, push) authenticate: the repository config points git at the token or key
+through the container's environment, without writing the secret into .git/config.
 """
 
 from __future__ import annotations
@@ -37,6 +41,7 @@ def bootstrap_git(workspace: Path) -> None:
     if (workspace / ".git").is_dir():
         logger.info("git workspace already has a checkout, skip clone")
         _configure_identity(git, workspace, os.environ.copy())
+        _configure_credentials(git, workspace, repo)
         return
     if not _may_clone(workspace):
         logger.info("git skip clone: workspace already has files")
@@ -52,6 +57,28 @@ def bootstrap_git(workspace: Path) -> None:
     logger.info("git clone %s -> %s", _redact_url(repo), dest)
     _run(cmd, env=env)
     _configure_identity(git, workspace, env)
+    _configure_credentials(git, workspace, repo)
+
+
+# Reads the token from the environment each time git asks, so .git/config never holds it.
+_TOKEN_HELPER = (
+    '!f() { test "$1" = get || exit 0; echo username=x-access-token; echo "password=$GIT_TOKEN"; }; f'
+)
+
+
+def _configure_credentials(git: str, workspace: Path, repo: str) -> None:
+    """Let `git pull` and `git push` in the agent's shell use the same token or key as the clone."""
+    env = os.environ.copy()
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    parsed = urlparse(repo)
+    if os.environ.get("GIT_TOKEN", "").strip() and parsed.scheme in {"http", "https"} and parsed.hostname:
+        origin = f"{parsed.scheme}://{parsed.hostname}" + (f":{parsed.port}" if parsed.port else "")
+        _run([git, "-C", str(workspace), "config", "--replace-all", f"credential.{origin}.helper", _TOKEN_HELPER], env=env)
+    key = _prepare_ssh_key()
+    if key is not None:
+        known = Path(tempfile.gettempdir()) / "ai-workspace-known-hosts"
+        command = f"ssh -i {key} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile={known}"
+        _run([git, "-C", str(workspace), "config", "core.sshCommand", command], env=env)
 
 
 def _may_clone(workspace: Path) -> bool:

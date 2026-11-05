@@ -64,6 +64,9 @@ A private repository with an SSH key:
 ```
 
 - `GIT_SSH_KEY` is the path to the key inside the container (or the key text itself).
-- For HTTPS instead of SSH, set `GIT_TOKEN` to a personal access token. It is not written into the repository's `.git/config`.
+- For HTTPS instead of SSH, set `GIT_TOKEN` to a personal access token. On GitHub, use a fine-grained token for that one repository with **Contents: Read and write** (or read-only if the agent should never push).
 - `GIT_USER_NAME` and `GIT_USER_EMAIL` are what the agent's commits are signed with.
-- The agent can only push if that key or token is allowed to. Use a read-only key if it should never push.
+- The agent's own `git pull` and `git push` use the same key or token. The checkout reads them from the container's environment when git asks, so neither is written into `.git/config`.
+- To commit and push, the agent needs its shell: turn on **Allow internet** on that Cursor agent.
+- The clone only happens into an empty folder. If the workspace already has files from earlier chats, point `WORKSPACE_DIR` at a new folder, for example `/data/my-repo`.
+- If the clone fails (wrong token, no network), the runtime logs the error and starts anyway.
