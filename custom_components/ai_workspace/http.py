@@ -43,6 +43,7 @@ from .mcp_config import with_mcp_auth
 from .mcp_observe import last_mcp_result, note_mcp_result
 from .mcp_resolve import ha_hosts, hass_mcp_server_url
 from .callback_keys import Caller
+from .live_turn import end_turn, live_turn, start_turn
 from .local_time import house_zone, stamped_now, time_rule
 from .callback_keys import caller as callback_caller
 from .callback_keys import issue as issue_callback_key
@@ -1060,9 +1061,12 @@ class ChatView(HomeAssistantView):
             },
         )
         client_gone = False
+        live = start_turn(hass, session.id)
 
         async def send(event: dict) -> None:
             nonlocal client_gone
+            # A reloaded page follows the reply from here, also after this connection is gone.
+            live.publish(event)
             if client_gone:
                 return
             try:
@@ -1200,6 +1204,7 @@ class ChatView(HomeAssistantView):
                 if error is None:
                     await send({"type": "done", "answer": answer})
             finally:
+                end_turn(hass, session.id, live)
                 if bool(getattr(settings, "change_history", True)):
                     await flush_logical_commit(hass, store, user_id, session.id)
                 _release_lock(data, session.id, lock)
@@ -1223,6 +1228,57 @@ class ChatView(HomeAssistantView):
         jobs.add(task)
         task.add_done_callback(jobs.discard)
         return task
+
+
+class ChatLiveView(HomeAssistantView):
+    """Follow a reply that is still running, for a page that was reloaded in the middle of it.
+
+    Sends every event so far, then a "caught_up" event, then the rest as it happens.
+    204 when nothing is running.
+    """
+
+    url = "/api/ai_workspace/sessions/{session_id}/live"
+    name = "api:ai_workspace:chat_live"
+    requires_auth = True
+    _PING_SECONDS = 15
+
+    async def get(self, request: web.Request, session_id: str) -> web.StreamResponse:
+        hass: HomeAssistant = _hass(request)
+        store: Store = _runtime(hass)["store"]
+        session = await hass.async_add_executor_job(store.get_session, _user_id(request), session_id)
+        if session is None:
+            raise web.HTTPNotFound(text="Chat not found.")
+        turn = live_turn(hass, session.id)
+        if turn is None:
+            return web.Response(status=204)
+        so_far, queue = turn.follow()
+        response = web.StreamResponse(
+            status=200,
+            headers={"Content-Type": "text/event-stream", "Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+        try:
+            await response.prepare(request)
+            for event in so_far:
+                await response.write(_sse(str(event.get("type")), event))
+            await response.write(_sse("caught_up", {"type": "caught_up"}))
+            while True:
+                try:
+                    event = await asyncio.wait_for(queue.get(), timeout=self._PING_SECONDS)
+                except TimeoutError:
+                    # Keeps proxies from closing a quiet connection during a long tool step.
+                    await response.write(b": ping\n\n")
+                    continue
+                if event is None:
+                    break
+                await response.write(_sse(str(event.get("type")), event))
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            # Usually the page went away again.
+            logger.debug("live follow ended session=%s", session.id, exc_info=True)
+        finally:
+            turn.unfollow(queue)
+        return response
 
 
 class ChatStopView(HomeAssistantView):
@@ -1669,6 +1725,7 @@ def register_views(hass: HomeAssistant) -> None:
     hass.http.register_view(SessionView)
     hass.http.register_view(ChatView)
     hass.http.register_view(ChatStopView)
+    hass.http.register_view(ChatLiveView)
     hass.http.register_view(HouseMapMcpView)
     hass.http.register_view(CatalogMcpView)
     hass.http.register_view(ActivityView)

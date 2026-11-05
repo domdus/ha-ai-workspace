@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0b7
+
+- **Update the runtime (App or Docker image) together with this release.** It only carries the new version number, so the chat does not warn that the runtime is out of date.
+- Chat: reloading the page while an agent is still answering picks the reply up again. The tool steps and text so far appear at once, and the rest follows live with its status, instead of a "Thinking" bubble until the whole answer is done. Home Assistant keeps the events of a running reply in memory until it ends, and the reloaded page follows them through a new endpoint (`/api/ai_workspace/sessions/{id}/live`). If that is not possible, the chat checks every 2 seconds as before, now for up to an hour instead of 8 minutes.
+- Chat: while a tool runs, its label also replaces "Thinking", so the glyph and the label always match.
+
 ## 1.5.0b6
 
 - **Update the runtime (App or Docker image) together with this release.** It only carries the new version number, so the chat does not warn that the runtime is out of date.

@@ -1496,9 +1496,10 @@ export async function mountAiWorkspace(root, options = {}) {
   function syncToolLabel(bubble, kind) {
     const label = bubble?.querySelector(".activity .label");
     if (!label) return;
-    const ours = [t("working"), t("reading"), t("building")];
+    const ours = [t("working"), t("thinking"), t("reading"), t("building")];
     if (!ours.includes(label.textContent)) return;
-    label.textContent = kind === "read" ? t("reading") : kind === "write" ? t("building") : t("working");
+    const words = { read: "reading", write: "building", think: "thinking" };
+    label.textContent = t(words[kind] || "working");
   }
 
   function ensureActivitySlot(bubble) {
@@ -3223,13 +3224,86 @@ export async function mountAiWorkspace(root, options = {}) {
     return name === "AbortError" || /failed to fetch|load failed|network|abort|cancel|disconnected|reset/i.test(message);
   }
 
+  // After a reload, follow the reply that is still running: tools, status and text so far,
+  // then the rest as it happens. False when nothing can be followed; the caller then polls.
+  async function followLive(id, gen) {
+    const abort = new AbortController();
+    let response;
+    try {
+      response = await apiFetch(`${API}/sessions/${id}/live`, { signal: abort.signal });
+    } catch (_error) {
+      return false;
+    }
+    if (!response?.ok || response.status === 204 || !response.body) return false;
+    const stale = () => gen !== watchGen || sessionId !== id || liveStream;
+    if (stale()) {
+      abort.abort();
+      return false;
+    }
+    ensureThinkingBubble();
+    const bubble = logEl.querySelector(".bubble.assistant.streaming");
+    const textNode = bubble?.querySelector(".text");
+    if (!bubble || !textNode) {
+      abort.abort();
+      return false;
+    }
+    // The stream starts from the beginning of the reply, so the bubble does too.
+    bubble.querySelector(".tools")?.remove();
+    const tools = document.createElement("div");
+    tools.className = "tools";
+    streamFull = "";
+    streamBuf = "";
+    streamPainted = "";
+    streamFinal = false;
+    streamNode = textNode;
+    setMarkdown(textNode, "");
+    textNode.hidden = true;
+    bubble.classList.remove("has-text");
+    let caughtUp = false;
+    try {
+      await readSSE(response, (name, data) => {
+        if (stale()) {
+          abort.abort();
+          return;
+        }
+        if (name === "caught_up") {
+          // What happened before the reload shows at once; only new text is typed out.
+          revealAllNow();
+          caughtUp = true;
+          scrollChatToBottom();
+          return;
+        }
+        if (name === "text") {
+          appendAssistantText(textNode, data.delta || "");
+          return;
+        }
+        if (name === "tool" && data.text) {
+          if (!tools.parentElement) bubble.insertBefore(tools, textNode);
+          textPaintedAt = 0;
+          addChip(tools, data, caughtUp);
+          setActivity(bubble, "");
+        } else if (name === "status") {
+          setActivity(bubble, data.text);
+        } else if (name === "done" || name === "error") {
+          settleTools(bubble);
+        }
+        if (caughtUp) scrollChatToBottom();
+      });
+    } catch (_error) {
+      // A dropped connection is fine: the caller looks at the chat again.
+    }
+    revealAllNow();
+    return true;
+  }
+
   async function watchPending(id) {
     if (!id || liveStream || !chatVisible()) return false;
     const gen = ++watchGen;
     // Only auto-speak when we were waiting on a background reply — not when polling
     // an already-finished chat (overlay resume, visibility, etc.).
     let sawPending = Boolean(logEl.querySelector(".bubble.assistant.streaming"));
-    for (let attempt = 0; attempt < 240; attempt += 1) {
+    // Polling every 2 seconds for up to an hour; following a live reply does not use up attempts.
+    for (let attempt = 0; attempt < 1800; attempt += 1) {
       if (gen !== watchGen || sessionId !== id || liveStream || !chatVisible()) return false;
       let session;
       try {
@@ -3245,6 +3319,13 @@ export async function mountAiWorkspace(root, options = {}) {
       if (session.pending) {
         sawPending = true;
         ensureThinkingBubble();
+        const followed = performance.now();
+        if (await followLive(id, gen)) {
+          // A follow that ends at once (dropped connection) must not turn into a tight loop.
+          if (performance.now() - followed < 2000) await new Promise((resolve) => window.setTimeout(resolve, 1000));
+          else attempt -= 1;
+          continue;
+        }
         await new Promise((resolve) => window.setTimeout(resolve, 2000));
         continue;
       }
