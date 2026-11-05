@@ -1474,32 +1474,18 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!glyph) return;
     const kind = activityGlyphKind(bubble);
     if (glyph.dataset.kind === kind) {
-      syncToolLabel(bubble, kind);
       return;
     }
     const shown = performance.now() - Number(glyph.dataset.since || 0);
     if (!TOOL_GLYPHS.has(kind) && TOOL_GLYPHS.has(glyph.dataset.kind) && shown < GLYPH_HOLD_MS) {
       clearTimeout(glyph._hold);
       glyph._hold = setTimeout(() => syncActivityGlyph(bubble), GLYPH_HOLD_MS - shown + 20);
-      syncToolLabel(bubble, glyph.dataset.kind);
       return;
     }
     clearTimeout(glyph._hold);
     glyph.dataset.kind = kind;
     glyph.dataset.since = String(performance.now());
     glyph.innerHTML = ACTIVITY_GLYPHS[kind];
-    syncToolLabel(bubble, kind);
-  }
-
-  // While a tool runs, the label says what it does. Only our own words are swapped; a status
-  // the agent sent stays as it is.
-  function syncToolLabel(bubble, kind) {
-    const label = bubble?.querySelector(".activity .label");
-    if (!label) return;
-    const ours = [t("working"), t("thinking"), t("reading"), t("building")];
-    if (!ours.includes(label.textContent)) return;
-    const words = { read: "reading", write: "building", think: "thinking" };
-    label.textContent = t(words[kind] || "working");
   }
 
   function ensureActivitySlot(bubble) {
@@ -1625,21 +1611,22 @@ export async function mountAiWorkspace(root, options = {}) {
     return String(name || "").replace(/\bmcp\b/gi, "MCP").replace(/\s*\.\.\.\s*$/, "");
   }
 
-  function chipLabel(text) {
+  function chipToolName(text, name) {
+    const fromEvent = chipName(name);
+    if (fromEvent) return fromEvent;
     const raw = String(text || "").trim();
     const calling = raw.match(/^Calling\s+(.+?)\s*$/i);
-    if (calling) return t("calling_tool", { name: chipName(calling[1]) });
+    if (calling) return chipName(calling[1]);
     const finished = raw.match(/^Finished\s+(.+?)\s*$/i);
-    if (finished) return t("finished_tool", { name: chipName(finished[1]) });
+    if (finished) return chipName(finished[1]);
     return chipName(raw);
   }
 
-  function settleChip(chip, text) {
+  function settleChip(chip) {
     if (!chip) return;
     chip.className = "done";
     chip.style.animation = "none";
     if (chip.active !== undefined) chip.active = false;
-    if (text) haChipLabel(chip, chipLabel(text));
   }
 
   function ensureToolsChrome(tools) {
@@ -1711,7 +1698,7 @@ export async function mountAiWorkspace(root, options = {}) {
     const kind = chipClass(event);
     const name = String(event.name || "");
     const callId = String(event.id || event.call_id || "");
-    const label = chipLabel(event.text);
+    const label = chipToolName(event.text, name);
     if (kind === "done") {
       const chips = [...list.children];
       const pending =
@@ -1721,7 +1708,8 @@ export async function mountAiWorkspace(root, options = {}) {
       if (pending) {
         if (name) pending.dataset.tool = name;
         if (callId) pending.dataset.callId = callId;
-        settleChip(pending, label);
+        if (label) haChipLabel(pending, label);
+        settleChip(pending);
         syncToolsSummary(tools);
         syncActivityGlyph(tools.closest?.(".bubble"));
         return;
@@ -1740,10 +1728,7 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function settleTools(root) {
-    root?.querySelectorAll(".tools .busy").forEach((chip) => {
-      const name = chip.dataset.tool || haChipLabel(chip);
-      settleChip(chip, t("finished_tool", { name: chipName(name) }));
-    });
+    root?.querySelectorAll(".tools .busy").forEach((chip) => settleChip(chip));
     root?.querySelectorAll(".tools").forEach(syncToolsSummary);
     if (root?.classList?.contains("bubble")) syncActivityGlyph(root);
   }

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0b8
+
+- **Update the runtime (App or Docker image) together with this release.** It only carries the new version number, so the chat does not warn that the runtime is out of date.
+- Chat: while tools run, the status glyph still shows read, write, or work, but the status text no longer jumps between Reading, Building, and Working on every tool step. Agent status sentences and the Working or Thinking fallback stay as they are.
+- Chat: each tool chip shows only the tool name again. Busy and done stay visible through shimmer and styling, not through Calling or Finished text on the chip.
+
 ## 1.5.0b7
 
 - **Update the runtime (App or Docker image) together with this release.** It only carries the new version number, so the chat does not warn that the runtime is out of date.
