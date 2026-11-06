@@ -367,10 +367,12 @@
             "advanced": {
               "name": "Zaawansowane",
               "data": {
-                "save_tokens": "Oszczędzaj tokeny"
+                "save_tokens": "Oszczędzaj tokeny",
+                "cache_1h": "Trzymaj pamięć podręczną przez godzinę"
               },
               "data_description": {
-                "save_tokens": "Wysyła mniej z każdą wiadomością: krótszy prompt, mniej historii czatu i krótsze odpowiedzi. Taniej, ale odpowiedzi o Twoim domu mogą być mniej dokładne."
+                "save_tokens": "Wysyła mniej z każdą wiadomością: krótszy prompt, mniej historii czatu i krótsze odpowiedzi. Taniej, ale odpowiedzi o Twoim domu mogą być mniej dokładne.",
+                "cache_1h": "Tylko Claude. Trzyma prompt systemowy i narzędzia w pamięci podręcznej przez godzinę zamiast 5 minut. Zapis do pamięci podręcznej kosztuje 2× cenę wejścia zamiast 1,25×, odczyt 0,1×. Taniej, gdy między wiadomościami często mija ponad 5 minut; nieco drożej, jeśli rzadko piszesz."
               }
             }
           }

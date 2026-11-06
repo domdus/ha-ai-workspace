@@ -12,7 +12,7 @@ Off on **Track usage and costs** stops new records. Existing history stays. Dele
 
 The cost math is a small version of what [LiteLLM](https://github.com/BerriAI/litellm) does. LiteLLM is an open-source project that keeps a community-maintained list of list prices for thousands of models: input, output, cache read, and cache write per token. AI Workspace keeps a copy with only the providers it supports. A weekly job refreshes it, so new models and price changes arrive with the next update of AI Workspace.
 
-For each reply, AI Workspace multiplies the tokens the provider reports by those prices. Cached input is priced at the cache rate, and reasoning tokens count as output. Cursor and local models are not in LiteLLM's list. Cursor uses the billed amount when your account reports it and an estimate otherwise. Local models count as $0.
+For each request to the model, AI Workspace multiplies the tokens the provider reports by those prices. Cached input is priced at the cache rate, and reasoning tokens count as output. A turn with tool calls is several requests, and each is priced on its own: some models charge more for a long request (Gemini Pro above 200,000 input tokens, GPT-5.4 above 272,000), and that higher rate is used only for the requests that are that long. Claude cache writes kept for an hour are priced at their own rate (about 2× input). If you stop a turn or it fails partway, the requests that already finished are still counted. Cursor and local models are not in LiteLLM's list. Cursor uses the billed amount when your account reports it and an estimate otherwise. Local models count as $0.
 
 The result is an estimate based on public list prices. Your provider's invoice is what counts: discounts, free tiers, taxes, and minimum charges are not included. Anthropic Console is a different pile of traffic: every API key and product in the organization, and it never drops a turn because you deleted a chat. AI Workspace is only its own turns. Deleting a chat used to remove those turns from the Usage page; that is fixed, but turns already deleted that way cannot be added back.
 
@@ -69,13 +69,15 @@ Separate from **Save tokens**, which changes *what* is sent. Prompt cache discou
 
 After the first round of a house-check turn, later rounds *read* that prefix at about **10%** of the input price. The first write still costs a little more than uncached input (Claude’s 5-minute cache is about **1.25×**). With Off you keep house control at a fraction of that ~$0.40 turn.
 
-Claude reports uncached input, cache reads, and cache writes as separate counters. The Usage page adds those together so a house-check does not look like a few thousand tokens while the bill is hundreds of thousands. Dollars stay a list-price estimate: cache makes the *price per token* knowable, not a match to Anthropic’s invoice (5-minute vs 1-hour cache, contract rates, other keys).
+Claude reports uncached input, cache reads, and cache writes as separate counters. The Usage page adds those together so a house-check does not look like a few thousand tokens while the bill is hundreds of thousands. Dollars stay a list-price estimate, not a match to Anthropic’s invoice (contract rates, other keys).
+
+**Keep the cache for an hour** (Claude agents, under **Advanced**, off by default). Claude forgets a cached prompt after 5 minutes. In a house chat the next message often comes later than that, so the system prompt and tool list are written to the cache again at 1.25× instead of read at 0.1×. With the box on, the system prompt and tools stay cached for an hour; a cache write then costs 2× input. That pays off when your messages are more than 5 minutes but less than an hour apart, which is typical for a house chat. If you use the agent only once in a while, leave it off. The chat history after the tools keeps the 5-minute cache. If Anthropic refuses the 1-hour cache, AI Workspace falls back to 5 minutes.
 
 Cursor and Ollama ignore this. Local Ollama is not billed per token here.
 
 | Provider | What happens |
 | --- | --- |
-| **Claude** (including Claude on OpenRouter) | Caching is explicit. AI Workspace marks the tool list and system prompt (about five minutes). |
+| **Claude** (including Claude on OpenRouter) | Caching is explicit. AI Workspace marks the tool list and system prompt (five minutes, or an hour with **Keep the cache for an hour** on a Claude agent). |
 | **OpenAI / Azure / GPT via OpenRouter** | Prefixes over about 1,024 tokens are often cached automatically. A stable cache key lets hits work across chats for the same agent. |
 | **Ollama** | Nothing. Ignored. |
 

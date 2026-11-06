@@ -367,10 +367,12 @@
             "advanced": {
               "name": "Altnivele",
               "data": {
-                "save_tokens": "Ŝpari ĵetonojn"
+                "save_tokens": "Ŝpari ĵetonojn",
+                "cache_1h": "Teni la kaŝmemoron unu horon"
               },
               "data_description": {
-                "save_tokens": "Sendas malpli kun ĉiu mesaĝo: pli mallongan instrukcion, malpli da babilhistorio kaj pli mallongajn respondojn. Malpli kosta, sed respondoj pri via hejmo povas esti malpli detalaj."
+                "save_tokens": "Sendas malpli kun ĉiu mesaĝo: pli mallongan instrukcion, malpli da babilhistorio kaj pli mallongajn respondojn. Malpli kosta, sed respondoj pri via hejmo povas esti malpli detalaj.",
+                "cache_1h": "Nur Claude. Tenas la sisteman inviton kaj la ilojn en la kaŝmemoro unu horon anstataŭ 5 minutojn. Skribi en la kaŝmemoron kostas 2× la enigan prezon anstataŭ 1,25×; legi kostas 0,1×. Pli malmultekosta kiam ofte pasas pli ol 5 minutoj inter viaj mesaĝoj, iom pli multekosta se vi malofte babilas."
               }
             }
           }

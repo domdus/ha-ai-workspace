@@ -78,6 +78,7 @@ class Settings:
     model_switcher: bool = False
     token_mode: str = "off"
     prompt_cache: bool = True
+    cache_1h: bool = False
     context_window: int = 0
     tools_on_demand: bool = True
     check_house: bool = True

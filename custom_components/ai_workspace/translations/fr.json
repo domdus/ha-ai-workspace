@@ -367,10 +367,12 @@
             "advanced": {
               "name": "Avancé",
               "data": {
-                "save_tokens": "Économiser des jetons"
+                "save_tokens": "Économiser des jetons",
+                "cache_1h": "Garder le cache une heure"
               },
               "data_description": {
-                "save_tokens": "Envoie moins à chaque message : une invite plus courte, moins d’historique et des réponses plus courtes. Moins cher, mais les réponses sur votre maison peuvent être moins complètes."
+                "save_tokens": "Envoie moins à chaque message : une invite plus courte, moins d’historique et des réponses plus courtes. Moins cher, mais les réponses sur votre maison peuvent être moins complètes.",
+                "cache_1h": "Claude uniquement. Garde le prompt système et les outils en cache pendant une heure au lieu de 5 minutes. L’écriture dans le cache coûte 2× le prix d’entrée au lieu de 1,25× ; la lecture coûte 0,1×. Moins cher quand plus de 5 minutes séparent souvent vos messages, un peu plus cher si vous discutez rarement."
               }
             }
           }

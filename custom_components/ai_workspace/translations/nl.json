@@ -367,10 +367,12 @@
             "advanced": {
               "name": "Geavanceerd",
               "data": {
-                "save_tokens": "Tokens besparen"
+                "save_tokens": "Tokens besparen",
+                "cache_1h": "Cache een uur bewaren"
               },
               "data_description": {
-                "save_tokens": "Stuurt minder mee met elk bericht: een kortere prompt, minder chatgeschiedenis en kortere antwoorden. Goedkoper, maar antwoorden over je huis kunnen minder grondig zijn."
+                "save_tokens": "Stuurt minder mee met elk bericht: een kortere prompt, minder chatgeschiedenis en kortere antwoorden. Goedkoper, maar antwoorden over je huis kunnen minder grondig zijn.",
+                "cache_1h": "Alleen Claude. Houdt de systeemprompt en tools een uur in de cache in plaats van 5 minuten. Schrijven in de cache kost 2× de invoerprijs in plaats van 1,25×; lezen kost 0,1×. Goedkoper als er vaak meer dan 5 minuten tussen je berichten zit, iets duurder als je weinig chat."
               }
             }
           }

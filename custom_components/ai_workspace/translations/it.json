@@ -367,10 +367,12 @@
             "advanced": {
               "name": "Avanzate",
               "data": {
-                "save_tokens": "Risparmia token"
+                "save_tokens": "Risparmia token",
+                "cache_1h": "Mantieni la cache per un’ora"
               },
               "data_description": {
-                "save_tokens": "Invia meno a ogni messaggio: un prompt più corto, meno cronologia e risposte più brevi. Costa meno, ma le risposte sulla tua casa possono essere meno accurate."
+                "save_tokens": "Invia meno a ogni messaggio: un prompt più corto, meno cronologia e risposte più brevi. Costa meno, ma le risposte sulla tua casa possono essere meno accurate.",
+                "cache_1h": "Solo Claude. Tiene in cache il prompt di sistema e gli strumenti per un’ora invece di 5 minuti. Scrivere nella cache costa 2× il prezzo di input invece di 1,25×; leggerla costa 0,1×. Più economico quando tra i tuoi messaggi passano spesso più di 5 minuti, un po’ più caro se chatti di rado."
               }
             }
           }

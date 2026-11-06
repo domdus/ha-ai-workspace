@@ -367,10 +367,12 @@
             "advanced": {
               "name": "Pokročilé",
               "data": {
-                "save_tokens": "Šetřit tokeny"
+                "save_tokens": "Šetřit tokeny",
+                "cache_1h": "Držet mezipaměť hodinu"
               },
               "data_description": {
-                "save_tokens": "S každou zprávou posílá méně: kratší prompt, méně historie chatu a kratší odpovědi. Levnější, ale odpovědi o vaší domácnosti mohou být méně důkladné."
+                "save_tokens": "S každou zprávou posílá méně: kratší prompt, méně historie chatu a kratší odpovědi. Levnější, ale odpovědi o vaší domácnosti mohou být méně důkladné.",
+                "cache_1h": "Jen Claude. Drží systémový prompt a nástroje v mezipaměti hodinu místo 5 minut. Zápis do mezipaměti stojí 2× cenu vstupu místo 1,25×, čtení 0,1×. Levnější, když mezi zprávami často uplyne víc než 5 minut; o něco dražší, když píšete zřídka."
               }
             }
           }

@@ -367,10 +367,12 @@
             "advanced": {
               "name": "Ətraflı",
               "data": {
-                "save_tokens": "Tokenlərə qənaət et"
+                "save_tokens": "Tokenlərə qənaət et",
+                "cache_1h": "Keşi bir saat saxla"
               },
               "data_description": {
-                "save_tokens": "Hər mesajla daha az göndərir: daha qısa prompt, daha az söhbət tarixçəsi və daha qısa cavablar. Daha ucuzdur, amma eviniz haqqında cavablar daha az ətraflı ola bilər."
+                "save_tokens": "Hər mesajla daha az göndərir: daha qısa prompt, daha az söhbət tarixçəsi və daha qısa cavablar. Daha ucuzdur, amma eviniz haqqında cavablar daha az ətraflı ola bilər.",
+                "cache_1h": "Yalnız Claude. Sistem promptunu və alətləri 5 dəqiqə əvəzinə bir saat keşdə saxlayır. Keşə yazmaq giriş qiymətinin 1,25 qatı əvəzinə 2 qatına, oxumaq 0,1 qatına başa gəlir. Mesajlarınız arasında tez-tez 5 dəqiqədən çox fasilə olarsa daha ucuzdur; nadir yazırsınızsa bir az bahadır."
               }
             }
           }

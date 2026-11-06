@@ -15,6 +15,7 @@ from .agents import borrow_by_id, borrowed_setups, entry_agents
 from .const import (
     CONF_SAVE_TOKENS,
     SECTION_ADVANCED,
+    API_ANTHROPIC,
     API_AZURE,
     API_COMPATIBLE,
     API_OLLAMA,
@@ -37,6 +38,7 @@ from .const import (
     CONF_CURSOR_API_KEY,
     CONF_EFFORT,
     CONF_LOW_TOKEN,
+    CONF_CACHE_1H,
     CONF_PROMPT_CACHE,
     CONF_MODE,
     CONF_MODEL,
@@ -245,10 +247,10 @@ def _fields_schema(
         if provider_supports_tts_speed(provider):
             fields.update(_tts_speed_field(current))
     # Rarely needed, so it stays folded away.
-    fields[vol.Required(SECTION_ADVANCED)] = section(
-        vol.Schema({vol.Optional(CONF_SAVE_TOKENS, default=saves_tokens(current)): cv.boolean}),
-        {"collapsed": True},
-    )
+    advanced = {vol.Optional(CONF_SAVE_TOKENS, default=saves_tokens(current)): cv.boolean}
+    if step == "cloud" and provider == API_ANTHROPIC:
+        advanced[vol.Optional(CONF_CACHE_1H, default=caches_an_hour(current))] = cv.boolean
+    fields[vol.Required(SECTION_ADVANCED)] = section(vol.Schema(advanced), {"collapsed": True})
     return vol.Schema(fields)
 
 
@@ -266,6 +268,14 @@ def saves_tokens(current: dict) -> bool:
     if isinstance(advanced, dict) and CONF_SAVE_TOKENS in advanced:
         return bool(advanced[CONF_SAVE_TOKENS])
     return token_mode_of(current.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF)) in {TOKEN_MODE_MEDIUM, TOKEN_MODE_EXTREME}
+
+
+def caches_an_hour(current: dict) -> bool:
+    """1-hour cache checkbox: from the form when it was shown again, else from the stored agent."""
+    advanced = current.get(SECTION_ADVANCED)
+    if isinstance(advanced, dict) and CONF_CACHE_1H in advanced:
+        return bool(advanced[CONF_CACHE_1H])
+    return bool(current.get(CONF_CACHE_1H, False))
 
 
 def stored_token_mode(current: dict, save: bool) -> str:
@@ -493,6 +503,8 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                     else "",
                     CONF_AZURE_API_VERSION: version if provider == API_AZURE else "",
                 }
+                if provider == API_ANTHROPIC:
+                    data[CONF_CACHE_1H] = caches_an_hour(merged)
                 if provider != MODE_CURSOR and CONF_PROMPT_CACHE in current:
                     data[CONF_PROMPT_CACHE] = bool(current.get(CONF_PROMPT_CACHE))
                 return self._finish(provider, data)

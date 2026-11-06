@@ -367,10 +367,12 @@
             "advanced": {
               "name": "Avancerat",
               "data": {
-                "save_tokens": "Spara tokens"
+                "save_tokens": "Spara tokens",
+                "cache_1h": "Behåll cachen i en timme"
               },
               "data_description": {
-                "save_tokens": "Skickar mindre med varje meddelande: en kortare prompt, mindre chatthistorik och kortare svar. Billigare, men svar om ditt hem kan bli mindre grundliga."
+                "save_tokens": "Skickar mindre med varje meddelande: en kortare prompt, mindre chatthistorik och kortare svar. Billigare, men svar om ditt hem kan bli mindre grundliga.",
+                "cache_1h": "Endast Claude. Håller systemprompten och verktygen i cachen i en timme i stället för 5 minuter. Att skriva till cachen kostar 2× inmatningspriset i stället för 1,25×; att läsa kostar 0,1×. Billigare när det ofta går mer än 5 minuter mellan dina meddelanden, lite dyrare om du sällan chattar."
               }
             }
           }

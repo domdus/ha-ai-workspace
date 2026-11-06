@@ -289,6 +289,8 @@ CONF_CHECK_HOUSE = "check_house"
 SECTION_ADVANCED = "advanced"
 CONF_SAVE_TOKENS = "save_tokens"
 CONF_PROMPT_CACHE = "prompt_cache"
+# Claude agents: keep the cached system prompt and tools for an hour instead of 5 minutes.
+CONF_CACHE_1H = "cache_1h"
 # Tokens the model can read; 0 means look it up from the model id.
 CONF_CONTEXT_WINDOW = "context_window"
 # Cloud agents start with a few tools and load the rest when they need them.

@@ -497,16 +497,16 @@ def _openai_tools(mcp_tools: list[dict], limit: int = _DESC_MAX, gemini: bool = 
     return out
 
 
-def _mark_last_tool(tools: list[dict]) -> list[dict]:
+def _mark_last_tool(tools: list[dict], mark: dict | None = None) -> list[dict]:
     if not tools:
         return tools
     out = [dict(item) for item in tools]
-    out[-1] = {**out[-1], "cache_control": dict(_CACHE_MARK)}
+    out[-1] = {**out[-1], "cache_control": dict(mark or _CACHE_MARK)}
     return out
 
 
-def _cached_text_block(text: str) -> dict[str, Any]:
-    return {"type": "text", "text": text, "cache_control": dict(_CACHE_MARK)}
+def _cached_text_block(text: str, mark: dict | None = None) -> dict[str, Any]:
+    return {"type": "text", "text": text, "cache_control": dict(mark or _CACHE_MARK)}
 
 
 def _openai_output_limit_key(model: str) -> str:
@@ -543,6 +543,44 @@ def _rewrite_output_limit(body: dict, text: str) -> bool:
         body["max_tokens"] = body.pop("max_completion_tokens")
         return True
     return False
+
+
+_CACHE_HOUR = {"type": "ephemeral", "ttl": "1h"}
+
+
+class _Spent:
+    """What a turn has used so far, so a stopped or failed turn still counts what it spent."""
+
+    def __init__(self) -> None:
+        self.usage: TokenUsage | None = None
+        self.reported = False
+
+    def take(self) -> TokenUsage | None:
+        if self.reported or self.usage is None or self.usage.empty():
+            return None
+        self.reported = True
+        return self.usage
+
+
+def _cache_marks(body: dict) -> list[dict]:
+    marks: list[dict] = []
+    for tool in body.get("tools") or []:
+        if isinstance(tool, dict) and isinstance(tool.get("cache_control"), dict):
+            marks.append(tool["cache_control"])
+    system = body.get("system")
+    for block in system if isinstance(system, list) else []:
+        if isinstance(block, dict) and isinstance(block.get("cache_control"), dict):
+            marks.append(block["cache_control"])
+    return marks
+
+
+def _strip_cache_ttl(body: dict) -> bool:
+    """Fall back from the 1-hour cache to the default 5 minutes. True when a ttl was removed."""
+    changed = False
+    for mark in _cache_marks(body):
+        if mark.pop("ttl", None) is not None:
+            changed = True
+    return changed
 
 
 def _strip_prompt_cache(body: dict) -> bool:
@@ -679,6 +717,8 @@ class ApiProvider:
         self._effort = True
         self._force = True
         self._prompt_cache = True
+        self._unbilled: dict[str, TokenUsage] = {}
+        self._cache_hour = bool(getattr(settings, "cache_1h", False)) and settings.api_provider == API_ANTHROPIC
         reason = None
         needs_key = settings.api_provider not in {API_OLLAMA, API_COMPATIBLE}
         if needs_key and not settings.api_key:
@@ -787,12 +827,16 @@ class ApiProvider:
             return payload
         provider = self.settings.api_provider
         if provider == API_ANTHROPIC:
+            # Tools and the system prompt are the same on every turn. With the 1-hour option
+            # they stay cached over a coffee break; the growing chat after them keeps the
+            # default 5 minutes (Anthropic wants the longer cache first, which this order is).
+            mark = dict(_CACHE_HOUR) if self._cache_hour else dict(_CACHE_MARK)
             payload["cache_control"] = dict(_CACHE_MARK)
             system = payload.get("system")
             if isinstance(system, str) and system.strip():
-                payload["system"] = [_cached_text_block(system)]
+                payload["system"] = [_cached_text_block(system, mark)]
             if payload.get("tools"):
-                payload["tools"] = _mark_last_tool(payload["tools"])
+                payload["tools"] = _mark_last_tool(payload["tools"], mark)
             return payload
         payload["prompt_cache_key"] = self._prompt_cache_key()
         if provider == API_OPENROUTER:
@@ -1012,17 +1056,32 @@ class ApiProvider:
         nudge = remember_nudge(self.settings, message, admin=admin)
         if nudge:
             sent = f"{sent}\n\n{nudge}"
+        spent = _Spent()
         try:
             async for event in loop(
-                http, history, sent, bundle, origin, pictures, language, admin, force, on_tool
+                http, history, sent, bundle, origin, pictures, language, admin, force, on_tool, spent=spent
             ):
                 yield event
         except _ERRORS as exc:
             logger.warning("api provider failed: %s", self._public(exc))
+            # The requests that finished before the failure were billed.
+            unbilled = spent.take()
+            if unbilled is not None:
+                yield usage_payload(unbilled)
             yield {"type": "error", "message": self._public(exc)}
         finally:
             if note:
                 _MODE_OVERRIDE.set("")
+            # Stopped, or failed outside the handled errors: keep it for the caller to record.
+            left = spent.take()
+            if left is not None:
+                self._unbilled[session.id] = left
+                while len(self._unbilled) > 50:
+                    self._unbilled.pop(next(iter(self._unbilled)))
+
+    def take_unbilled(self, session_id: str) -> TokenUsage | None:
+        """Usage of finished requests in a turn that was stopped before it reported them."""
+        return self._unbilled.pop(str(session_id or ""), None)
 
     async def suggest_title(self, user: str, assistant: str = "") -> str | None:
         if not self.info.available or self._token_mode() != TOKEN_MODE_OFF:
@@ -1083,6 +1142,7 @@ class ApiProvider:
         admin: bool,
         force: bool = False,
         on_tool: Callable | None = None,
+        spent: "_Spent | None" = None,
     ) -> AsyncIterator[dict]:
         messages: list[dict[str, Any]] = [{"role": "system", "content": self._system(origin, language, admin)}]
         messages.extend(history)
@@ -1120,7 +1180,10 @@ class ApiProvider:
             shown = _ReplyText(said)
             async for kind, value in self._openai_round(http, url, headers, payload):
                 if kind == "usage":
-                    usage = usage.add(value)
+                    # Priced per request: a long-context rate depends on this request's size.
+                    usage = usage.add(estimate_cost(value, model=self._model()))
+                    if spent is not None:
+                        spent.usage = usage
                     continue
                 if kind == "message":
                     reply = value
@@ -1163,6 +1226,8 @@ class ApiProvider:
             break
         text = "".join(said).strip()
         billed = estimate_cost(usage, model=self._model())
+        if spent is not None:
+            spent.reported = True
         if not billed.empty():
             yield usage_payload(billed)
         if not text:
@@ -1264,6 +1329,7 @@ class ApiProvider:
         admin: bool,
         force: bool = False,
         on_tool: Callable | None = None,
+        spent: "_Spent | None" = None,
     ) -> AsyncIterator[dict]:
         messages: list[dict[str, Any]] = list(history)
         messages.append({"role": "user", "content": anthropic_user_content(message, images)})
@@ -1300,7 +1366,10 @@ class ApiProvider:
             shown = _ReplyText(said)
             async for kind, value in self._anthropic_round(http, url, headers, payload):
                 if kind == "usage":
-                    usage = usage.add(value)
+                    # Priced per request: a long-context rate depends on this request's size.
+                    usage = usage.add(estimate_cost(value, model=self._model()))
+                    if spent is not None:
+                        spent.usage = usage
                     continue
                 if kind == "message":
                     blocks = value
@@ -1343,6 +1412,8 @@ class ApiProvider:
             break
         text = "".join(said).strip()
         billed = estimate_cost(usage, model=self._model())
+        if spent is not None:
+            spent.reported = True
         if not billed.empty():
             yield usage_payload(billed)
         if not text:
@@ -1424,7 +1495,7 @@ class ApiProvider:
                     blob = data.get("usage") or (data.get("message") or {}).get("usage")
                     piece = parse_usage(blob, model=self._model())
                     if not piece.empty():
-                        usage = usage.add(piece)
+                        usage = usage.update(piece)
                 elif kind == "error":
                     err = data.get("error") or {}
                     raise ApiError(resp.status, str(err.get("message") or "The model provider failed."))
@@ -1495,6 +1566,11 @@ class ApiProvider:
                 logger.info("%s refused a forced tool call; letting the model choose", self._label())
                 self._force = False
                 body.pop("tool_choice", None)
+                attempt -= 1
+                continue
+            if resp.status in {400, 422} and "ttl" in low and _strip_cache_ttl(body):
+                logger.info("%s refused the 1-hour cache; using the 5-minute cache", self._label())
+                self._cache_hour = False
                 attempt -= 1
                 continue
             if resp.status in {400, 422} and (

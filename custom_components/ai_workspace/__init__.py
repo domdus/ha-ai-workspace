@@ -238,6 +238,7 @@ def _one_provider(hass: HomeAssistant, settings: Settings, agent, store):
         effort=agent.effort,
         token_mode=agent.token_mode,
         prompt_cache=settings.prompt_cache,
+        cache_1h=agent.cache_1h,
         check_house=agent.check_house,
         azure_api_version=agent.azure_api_version,
         agent_id=agent.id,

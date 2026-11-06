@@ -367,10 +367,12 @@
             "advanced": {
               "name": "Advanced",
               "data": {
-                "save_tokens": "Save tokens"
+                "save_tokens": "Save tokens",
+                "cache_1h": "Keep the cache for an hour"
               },
               "data_description": {
-                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough.",
+                "cache_1h": "Claude only. Keeps the system prompt and tools cached for an hour instead of 5 minutes. Writing the cache costs 2× the input price instead of 1.25×; reading it costs 0.1×. Cheaper when there are breaks of more than 5 minutes between your messages, a little more expensive if you rarely chat."
               }
             }
           }

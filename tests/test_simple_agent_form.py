@@ -56,3 +56,20 @@ def test_chat_only_note_explains_why() -> None:
     assert chat_only_note("qwen2.5:7b", OllamaModel(tools=True, running=32768)) == ""
     # Unknown (Ollama did not answer): keep today's behavior.
     assert chat_only_note("x", OllamaModel()) == ""
+
+
+def test_one_hour_cache_box_is_only_on_claude_agents() -> None:
+    from custom_components.ai_workspace.agent_flow import _fields_schema, caches_an_hour
+    from custom_components.ai_workspace.agents import agent_from_mapping
+
+    def advanced_keys(provider):
+        schema = _fields_schema("cloud", {"api_provider": provider}, [], new=True)
+        section = next(value for key, value in schema.schema.items() if str(key) == "advanced")
+        return {str(key) for key in section.schema.schema}
+
+    assert advanced_keys("anthropic") == {"save_tokens", "cache_1h"}
+    assert advanced_keys("openai") == {"save_tokens"}
+    assert caches_an_hour({"cache_1h": True}) is True
+    assert caches_an_hour({"cache_1h": True, "advanced": {"cache_1h": False}}) is False
+    assert agent_from_mapping("a", "Claude", {"api_provider": "anthropic", "cache_1h": True}).cache_1h is True
+    assert agent_from_mapping("o", "OpenAI", {"api_provider": "openai", "cache_1h": True}).cache_1h is False

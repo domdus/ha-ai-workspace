@@ -59,6 +59,7 @@ from .redact import redact
 from .small_talk import wants_house_tools
 from .store import Session, Store
 from .titles import accept_generated_title, needs_title_summary, title_from_prompt
+from .usage_cost import estimate_cost
 from .usage_record import dashboard_payload, finalize_usage, record_usage_turn
 
 logger = logging.getLogger(__name__)
@@ -1176,6 +1177,10 @@ class ChatView(HomeAssistantView):
                             event = {"type": "title", "title": applied}
                         await send(event)
                 except asyncio.CancelledError:
+                    try:
+                        await asyncio.shield(_record_unbilled(hass, store, user_id, session.id, provider))
+                    except Exception:
+                        logger.debug("stopped turn usage not stored", exc_info=True)
                     answer = merge_reply_text("".join(parts), final)
                     if answer or tools:
                         try:
@@ -1193,6 +1198,7 @@ class ChatView(HomeAssistantView):
                     raise
                 except Exception as exc:
                     logger.exception("chat failed session=%s", session.id)
+                    await _record_unbilled(hass, store, user_id, session.id, provider)
                     error = public_error(redact(str(exc), [settings.cursor_api_key, settings.api_key, settings.mcp_token]))
                     await send({"type": "error", "message": error})
                 answer = merge_reply_text("".join(parts), final)
@@ -1522,6 +1528,20 @@ class NotesMcpView(HomeAssistantView):
         if req_id is None:
             return web.Response(status=202)
         return web.json_response({"jsonrpc": "2.0", "id": req_id, "result": result})
+
+
+async def _record_unbilled(hass: HomeAssistant, store: Store, user_id: str, session_id: str, provider: Any) -> None:
+    """A stopped or failed turn still used tokens. Record the requests that finished."""
+    take = getattr(provider, "take_unbilled", None)
+    usage = take(session_id) if callable(take) else None
+    if usage is None:
+        return
+    billed = estimate_cost(usage, model=usage.model or str(getattr(provider, "model", "") or ""))
+    if billed.empty():
+        return
+    await record_usage_turn(
+        hass, store=store, user_id=user_id, session_id=session_id, provider=provider, usage=billed, origin="chat"
+    )
 
 
 def _agent_label(provider: Any) -> str:

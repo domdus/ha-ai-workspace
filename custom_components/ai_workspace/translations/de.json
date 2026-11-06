@@ -367,10 +367,12 @@
             "advanced": {
               "name": "Erweitert",
               "data": {
-                "save_tokens": "Tokens sparen"
+                "save_tokens": "Tokens sparen",
+                "cache_1h": "Cache eine Stunde behalten"
               },
               "data_description": {
-                "save_tokens": "Sendet mit jeder Nachricht weniger: einen kürzeren Prompt, weniger Chatverlauf und kürzere Antworten. Günstiger, aber Antworten zu deinem Zuhause können weniger gründlich sein."
+                "save_tokens": "Sendet mit jeder Nachricht weniger: einen kürzeren Prompt, weniger Chatverlauf und kürzere Antworten. Günstiger, aber Antworten zu deinem Zuhause können weniger gründlich sein.",
+                "cache_1h": "Nur Claude. Hält Systemprompt und Werkzeuge eine Stunde statt 5 Minuten im Cache. Das Schreiben in den Cache kostet das 2-Fache statt das 1,25-Fache des Eingabepreises, das Lesen das 0,1-Fache. Günstiger, wenn zwischen deinen Nachrichten oft mehr als 5 Minuten liegen; etwas teurer, wenn du selten chattest."
               }
             }
           }

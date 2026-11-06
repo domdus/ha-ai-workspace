@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.0b14
+
+- The runtime has no changes in this release. A 1.5.0b13 runtime keeps working without an update notice; the 1.5.0b14 image only carries the new version number.
+- Claude agents: new **Keep the cache for an hour** box under **Advanced** (off by default). The system prompt and tools stay cached for an hour instead of 5 minutes, so a message after a short break reads the cache (0.1× input) instead of writing it again. A cache write then costs 2× input instead of 1.25×. If Anthropic refuses it, the agent falls back to the 5-minute cache.
+- Usage: each request of a turn is priced on its own. Models that charge more for long requests (for example Gemini Pro above 200,000 input tokens, GPT-5.4 above 272,000) get that rate only for the requests that are that long. Claude 1-hour cache writes are priced at their own rate.
+- Usage: a turn you stop, or one that fails partway, now still counts the requests that already finished. Before, the whole turn was missing from the Usage page.
+- Usage: Claude replies that stream no longer risk counting the input twice.
+- Model prices refreshed from LiteLLM, now including long-request and 1-hour cache prices.
+
 ## 1.5.0b13
 
 - **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.5.0b13`) together with this release.** It carries a shorter agent prompt. From now on the chat warns when the runtime is older than the last release that changed it, also within the same minor version (here: older than 1.5.0b13).
