@@ -166,3 +166,15 @@ def test_answer_after_tools_starts_a_new_paragraph() -> None:
 def test_merge_keeps_the_break_when_the_result_has_none() -> None:
     scope = _scope()
     assert scope.merge_reply_text("Checking.\n\nTwo are on.", "Checking.Two are on.") == "Checking.\n\nTwo are on."
+
+
+def test_text_after_a_thinking_pause_starts_a_new_paragraph() -> None:
+    from custom_components.ai_workspace.chat_scope import text_after_pause
+
+    said = ["Einen Moment, ich schaue nach, wo die Umstellung hängt."]
+    assert text_after_pause(said, "Die Umstellung war nicht fertig") == "\n\nDie Umstellung war nicht fertig"
+    # A word or sentence split around the pause stays as it is.
+    assert text_after_pause(["Ich stelle die Sprach"], "ausgabe um.") == "ausgabe um."
+    assert text_after_pause(said, " Danach") == " Danach"
+    assert text_after_pause([], "Hallo") == "Hallo"
+    assert text_after_pause(["Fertig.\n\n"], "Noch was") == "Noch was"

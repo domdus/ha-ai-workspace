@@ -3326,6 +3326,9 @@ export async function mountAiWorkspace(root, options = {}) {
           live.classList.remove("streaming");
           setActivity(live, "");
         }
+        // Nothing runs any more, so no tool chip can still be busy. Without this a reply
+        // followed after a dropped connection kept "Calling N tools" and its shimmer.
+        settleTools(logEl);
       }
       streaming = false;
       resizeComposer();
@@ -4462,6 +4465,7 @@ export async function mountAiWorkspace(root, options = {}) {
         if (!found) {
           streaming = false;
           assistant.classList.remove("streaming");
+          settleTools(assistant);
           setActivity(assistant, "");
           if (!streamFull) {
             assistant.classList.add("error");

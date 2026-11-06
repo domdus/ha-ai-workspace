@@ -46,7 +46,7 @@ from .live_turn import end_turn, live_turn, start_turn
 from .local_time import house_zone, stamped_now, time_rule
 from .callback_keys import caller as callback_caller
 from .callback_keys import issue as issue_callback_key
-from .chat_scope import handoff_note, merge_reply_text, other_chat_note, text_after_tools
+from .chat_scope import handoff_note, merge_reply_text, other_chat_note, text_after_pause, text_after_tools
 from .error_text import public_error
 from .files import attach_files_to_message, file_events, parse_client_files
 from .images import caption_for, image_events, parse_client_images
@@ -1113,6 +1113,7 @@ class ChatView(HomeAssistantView):
                 except Exception:
                     logger.debug("change history turn watch skipped", exc_info=True)
             after_tool = False
+            after_pause = False
             try:
                 try:
                     await response.prepare(request)
@@ -1125,9 +1126,16 @@ class ChatView(HomeAssistantView):
                             delta = str(event.get("delta") or "")
                             if after_tool and delta:
                                 after_tool = False
+                                after_pause = False
                                 delta = text_after_tools(parts, delta)
                                 event = {**event, "delta": delta}
+                            elif after_pause and delta:
+                                after_pause = False
+                                delta = text_after_pause(parts, delta)
+                                event = {**event, "delta": delta}
                             parts.append(delta)
+                        elif kind == "status":
+                            after_pause = True
                         elif kind == "result":
                             final = str(event.get("text") or "")
                             continue

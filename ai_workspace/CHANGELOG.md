@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0b15
+
+- The runtime has no changes in this release. A 1.5.0b13 runtime keeps working without an update notice; the 1.5.0b15 image only carries the new version number.
+- Chat: tool groups such as “Calling 14 tools” no longer stay in progress with the shimmer after the turn has finished, also when the phone reconnected to a turn that was already running.
+- Chat: text the agent writes after a thinking pause starts a new paragraph instead of being glued to the sentence before it (“…hängt.Die …”).
+
 ## 1.5.0b14
 
 - The runtime has no changes in this release. A 1.5.0b13 runtime keeps working without an update notice; the 1.5.0b14 image only carries the new version number.

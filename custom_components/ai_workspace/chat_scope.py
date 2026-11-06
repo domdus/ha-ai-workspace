@@ -189,6 +189,22 @@ def text_after_tools(earlier: list[str], delta: str) -> str:
     return "\n" * max(0, 2 - have) + delta
 
 
+_SENTENCE_END = (".", "!", "?", ":", "…", "。", "！", "？")
+
+
+def text_after_pause(earlier: list[str], delta: str) -> str:
+    """First text after a thinking step: a new message from the agent, not the rest of a word.
+
+    Cursor sends its status sentence and the answer as two messages. Without a break they run
+    together ("hängt.Die"). Only when the earlier text ended a sentence and the new one does
+    not start with a space, so a word split around the pause stays whole.
+    """
+    said = "".join(earlier).rstrip(" ")
+    if not said.strip() or not delta or delta[0].isspace() or not said.endswith(_SENTENCE_END):
+        return delta
+    return text_after_tools(earlier, delta)
+
+
 def merge_reply_text(streamed: str, final: str | None) -> str:
     """Keep a spoken intro that arrived before tools when the result is only the later answer."""
     streamed = str(streamed or "").strip()
