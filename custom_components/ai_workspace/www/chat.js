@@ -4838,6 +4838,14 @@ export async function mountAiWorkspace(root, options = {}) {
             detail = (await resp.text()).trim();
             if (detail) button.title = detail.slice(0, 300);
           }
+          if (row.agent_undo) {
+            // The snapshot could not be written back; the agent may still undo it with its tools.
+            const why = detail ? `${detail}\n\n` : "";
+            if (await askConfirm(t("rollback_failed"), `${why}${t("rollback_try_agent")}`, t("ask_restore"))) {
+              undoWithAgent(row);
+            }
+            return;
+          }
           await askAlert(t("rollback_failed"), detail || t("rollback_failed"));
           return;
         }
@@ -4858,14 +4866,18 @@ export async function mountAiWorkspace(root, options = {}) {
           t("ask_restore"),
         );
         if (!ok) return;
-        closeHistory();
-        messageEl.value = restorePrompt(row);
-        form.requestSubmit();
+        undoWithAgent(row);
       });
       item.appendChild(button);
       return item;
     }
     return item;
+  }
+
+  function undoWithAgent(row) {
+    closeHistory();
+    messageEl.value = restorePrompt(row);
+    form.requestSubmit();
   }
 
   function restorePrompt(row) {

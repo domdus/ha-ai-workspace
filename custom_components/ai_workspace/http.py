@@ -25,7 +25,6 @@ from .const import (
     DOMAIN,
     MCP_COOLVER,
     format_ui_page,
-    ha_mcp_is_connected,
     parse_ui_page,
     ui_theme_of,
     CHECK_HOUSE_NOTE,
@@ -314,8 +313,11 @@ async def _runtime_chat(
     asked = (question or message).strip()
     if token_mode_checks_house(token_mode, check_house) and not images and wants_house_tools(asked):
         user_text = f"{user_text}\n\n{CHECK_HOUSE_NOTE}"
-    from .notes import remember_nudge
+    from .notes import notes_update, remember_nudge
 
+    changed_notes = notes_update(hass, settings, session.id, fresh=token_mode_fresh_agent(token_mode))
+    if changed_notes:
+        user_text = f"{user_text}\n\n{changed_notes}"
     nudge = remember_nudge(settings, asked, admin=admin)
     if nudge:
         user_text = f"{user_text}\n\n{nudge}"
@@ -1569,14 +1571,13 @@ def _activity_expired(row, settings) -> bool:
 
 
 def _activity_dict(
-    row, chat: str = "", *, admin: bool = False, ha_mcp: bool = False, expired: bool = False
+    row, chat: str = "", *, admin: bool = False, expired: bool = False
 ) -> dict:
     undone = bool(row.undone_at)
     can_rollback, ask = activity_restore_flags(
         snapshot=bool(row.can_rollback),
         undone=undone,
         admin=admin,
-        ha_mcp=ha_mcp,
         expired=expired,
     )
     return {
@@ -1592,6 +1593,8 @@ def _activity_dict(
         "can_rollback": can_rollback,
         "undone_at": row.undone_at or "",
         "ask_restore": ask,
+        # Offered when Rollback fails, instead of a second button on every row.
+        "agent_undo": bool(admin and not undone and not expired),
         "logical_commit": bool(getattr(row, "logical_commit", False)),
         "change_count": int(getattr(row, "change_count", 0) or 0),
         "restore_kind": getattr(row, "restore_kind", "") or "",
@@ -1614,17 +1617,12 @@ class ActivityView(HomeAssistantView):
         rows = await hass.async_add_executor_job(lambda: store.list_activity(user_id, admin=admin))
         titles = await hass.async_add_executor_job(store.session_titles, [row.session_id for row in rows])
         settings = _runtime(hass).get("settings")
-        ha_mcp = ha_mcp_is_connected(
-            str(getattr(settings, "mcp_kind", "") or "") if settings else "",
-            list(getattr(settings, "mcp_rows", None) or []) if settings else None,
-        )
         return self.json(
             [
                 _activity_dict(
                     row,
                     titles.get(row.session_id) or "",
                     admin=admin,
-                    ha_mcp=ha_mcp,
                     expired=_activity_expired(row, settings),
                 )
                 for row in rows

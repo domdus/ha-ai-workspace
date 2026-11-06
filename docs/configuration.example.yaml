@@ -11,11 +11,11 @@ ai_workspace:
   enable_dictate: true
   allow_users: false
   house_map: false
-  notes: false  # off: chat neither reads nor writes Merknotizen; same as the Configure switch
-  # notes_text: "- Do not mass-toggle lights without asking"  # English bullets; stored separately
+  notes: false  # off: chat neither reads nor writes remembered notes; same as the Configure switch
+  # notes_text: "- Do not mass-toggle lights without asking"  # English bullets; set again only when you edit this value
   shorten_mcp_results: true
   change_history: true
-  change_history_ttl_days: 7 # 1–90; Rollback and Ask to restore expire after this many days
+  change_history_ttl_days: 7 # 1–90; Rollback and Undo with agent expire after this many days
   track_usage: true
   show_chat_usage: true
   ha_usage_sensors: false

@@ -46,12 +46,14 @@ def activity_restore_flags(
     snapshot: bool,
     undone: bool,
     admin: bool,
-    ha_mcp: bool,
     expired: bool = False,
 ) -> tuple[bool, bool]:
-    """Native snapshot rollback, plus Ask to restore when HA-MCP can help or we have no snapshot."""
+    """One way to undo a row: Rollback from the snapshot, or Undo with agent when there is none.
+
+    A change the agent created has no earlier version to put back, so only the agent can undo it.
+    """
     can_rollback = bool(ACTIVITY_ROLLBACK and snapshot and not undone and not expired)
-    ask_restore = bool(admin and not undone and not expired and (ha_mcp or not can_rollback))
+    ask_restore = bool(admin and not undone and not expired and not can_rollback)
     return can_rollback, ask_restore
 
 
@@ -747,7 +749,7 @@ HOUSE_RULES = (
     "Do not list what you can do until the user asks about the house.\n\n"
     "Home Assistant is reached only through the connected MCP tools. Before you answer any question about "
     "this house (automations, entities, devices, states, counts, weather), call a Home Assistant tool. "
-    "Never announce that look — not for weather, not for the house, not for any topic. Just call the tool. "
+    "Just call the tool; do not say that you are checking. "
     "Never answer those from memory, and never invent entity ids, dashboard ids, states, or history. "
     "Before you say what a saved automation, script, scene, or dashboard contains, read it again with a tool: "
     "earlier messages in this chat may describe an older version or a plan that was never saved."
@@ -1030,7 +1032,7 @@ def with_ui_context(message: str, origin: str = "") -> str:
 # Cursor cannot be forced to call a tool first, so it is asked to.
 CHECK_HOUSE_NOTE = (
     "If this message is about the house (devices, states, lists, weather), call a Home Assistant tool before you answer. "
-    "Do not write that you are looking at Home Assistant — not for weather, not for the house, not for any topic."
+    "Do not say that you are checking."
 )
 
 

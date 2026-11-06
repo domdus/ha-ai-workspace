@@ -356,13 +356,16 @@ def _flatten(user_input: dict) -> dict:
     return out
 
 
-async def _persist_notes(hass: HomeAssistant, flat: dict) -> dict:
-    """Notes text lives in storage so an agent write does not reload the integration."""
+async def _persist_notes(hass: HomeAssistant, flat: dict, shown: str | None = None) -> dict:
+    """Notes text lives in storage so an agent write does not reload the integration.
+
+    shown is the text the form opened with. An untouched field keeps what an agent wrote meanwhile.
+    """
     if CONF_NOTES_TEXT not in flat:
         return flat
-    from .notes import async_save_notes
+    from .notes import async_save_form_notes
 
-    await async_save_notes(hass, str(flat.pop(CONF_NOTES_TEXT) or ""))
+    await async_save_form_notes(hass, str(flat.pop(CONF_NOTES_TEXT) or ""), shown)
     return flat
 
 
@@ -418,6 +421,7 @@ async def _shared_form(
     *,
     include_mcp: bool,
     agents: list | None = None,
+    notes_text: str | None = None,
 ) -> vol.Schema:
     stt = await async_speech_engines(hass, "stt")
     tts = await async_speech_engines(hass, "tts")
@@ -438,9 +442,10 @@ async def _shared_form(
     fields[vol.Optional(SECTION_VOICE, default=voice)] = _SideBySide(_voice_schema(voice, stt, tts))
     fields[vol.Required(SECTION_COST)] = section(_cost_schema(defaults), {"collapsed": False})
     fields[vol.Required(SECTION_HOUSE)] = section(_house_schema(defaults), {"collapsed": True})
-    from .notes import async_load_notes
+    if notes_text is None:
+        from .notes import async_load_notes
 
-    notes_text = await async_load_notes(hass)
+        notes_text = await async_load_notes(hass)
     fields[vol.Required(SECTION_PROMPT)] = section(_prompt_schema(defaults, notes_text), {"collapsed": True})
     return vol.Schema(fields, extra=vol.ALLOW_EXTRA)
 
@@ -581,12 +586,20 @@ class AiWorkspaceOptionsFlow(config_entries.OptionsFlow):
                 current[CONF_PROMPT_CACHE] = False
         if user_input is not None:
             flat = _normalize(_flatten(user_input), self.hass)
-            flat = await _persist_notes(self.hass, flat)
+            flat = await _persist_notes(self.hass, flat, getattr(self, "_notes_shown", None))
             merged = {**current, **flat}
             return self.async_create_entry(title="", data=_stored_shared(merged))
+        from .notes import async_load_notes
+
+        self._notes_shown = await async_load_notes(self.hass)
         return self.async_show_form(
             step_id="init",
             data_schema=await _shared_form(
-                self.hass, current, None, include_mcp=False, agents=entry_agents(self.config_entry)
+                self.hass,
+                current,
+                None,
+                include_mcp=False,
+                agents=entry_agents(self.config_entry),
+                notes_text=self._notes_shown,
             ),
         )

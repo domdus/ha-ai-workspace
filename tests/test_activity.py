@@ -275,14 +275,13 @@ def test_freeze_mapping_keeps_a_copy():
     assert activity.freeze_mapping("lovelace") == {}
 
 
-def test_activity_restore_flags_keep_ha_mcp_and_native_paths():
+def test_activity_restore_flags_offer_one_way_per_row():
     const = _load("ai_workspace_const", "const.py")
-    assert const.activity_restore_flags(snapshot=True, undone=False, admin=True, ha_mcp=True) == (True, True)
-    assert const.activity_restore_flags(snapshot=True, undone=False, admin=True, ha_mcp=False) == (True, False)
-    assert const.activity_restore_flags(snapshot=False, undone=False, admin=True, ha_mcp=False) == (False, True)
-    assert const.activity_restore_flags(snapshot=True, undone=True, admin=True, ha_mcp=True) == (False, False)
-    assert const.activity_restore_flags(snapshot=False, undone=False, admin=False, ha_mcp=True) == (False, False)
-    assert const.activity_restore_flags(snapshot=True, undone=False, admin=True, ha_mcp=True, expired=True) == (False, False)
+    assert const.activity_restore_flags(snapshot=True, undone=False, admin=True) == (True, False)
+    assert const.activity_restore_flags(snapshot=False, undone=False, admin=True) == (False, True)
+    assert const.activity_restore_flags(snapshot=True, undone=True, admin=True) == (False, False)
+    assert const.activity_restore_flags(snapshot=False, undone=False, admin=False) == (False, False)
+    assert const.activity_restore_flags(snapshot=True, undone=False, admin=True, expired=True) == (False, False)
 
 
 def test_activity_restore_expires_after_ttl_days():

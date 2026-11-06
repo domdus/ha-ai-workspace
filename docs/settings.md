@@ -26,7 +26,7 @@ What you write here replaces the built-in prompt. Leave the field empty to keep 
 
 Tappable links to automations, entities, helpers, and devices are always added. You do not need to mention those in the prompt.
 
-**Remembered notes** (Merknotizen) are optional and sit on the same form. They do not replace the system prompt. A switch (off by default) decides whether the assistant may use them. When it is on, the assistant reads the notes in every chat and writes English bullets if you ask it to remember something (in any chat language) or complain about a habit it should stop. When it is off, chat neither reads nor writes them; you can still edit the text. The cap is 2000 characters. A new note that does not fit is refused until older lines are replaced. Live house states still come from tools, not from these notes. YAML `notes: false` is the same as the switch off.
+**Remembered notes** are optional and sit on the same form. They do not replace the system prompt. A switch (off by default) decides whether the assistant may use them. When it is on, the assistant reads the notes in every chat and writes English bullets if you ask it to remember something (in any chat language) or complain about a habit it should stop. When it is off, chat neither reads nor writes them; you can still edit the text. The cap is 2000 characters. A new note that does not fit is refused until older lines are replaced. Live house states still come from tools, not from these notes. To remove a note, the assistant names that one line; it cannot clear several lines with one word. Each change the assistant makes is in Change History, where you can undo it. YAML `notes: false` is the same as the switch off. YAML `notes_text` sets the notes when you change that value; notes the assistant adds later stay until you edit `notes_text` again.
 
 ## AI Workspace settings
 
@@ -72,7 +72,7 @@ Collapsed by default. The defaults suit most homes.
 | **Config catalog** | Off by default. A local index of how automations, entities, and areas are connected. | [Why this is off by default](#config-catalog). |
 | **Shorten long Home Assistant answers** | On by default. Very long lists are summarized before they go to the model. | [Saves tokens](mcp.md#shorten-long-home-assistant-answers) and keeps replies quick. |
 | **Change History** | On by default. Records every configuration change the assistant made. | [See what changed](mcp.md#change-history). Automations, scripts, and scenes also get a YAML copy for [when Home Assistant will not start](mcp.md#if-home-assistant-will-not-start). |
-| **Rollback for** | Days Rollback and Ask to restore stay available (default 7, 1–90). | After that the row stays in the log. Restoring an old snapshot can overwrite later work. |
+| **Rollback for** | Days Rollback and Undo with agent stay available (default 7, 1–90). | After that the row stays in the log. Restoring an old snapshot can overwrite later work. |
 
 ### System prompt
 

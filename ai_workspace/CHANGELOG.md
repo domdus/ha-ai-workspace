@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.5.0b13
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.5.0b13`) together with this release.** It carries a shorter agent prompt. From now on the chat warns when the runtime is older than the last release that changed it, also within the same minor version (here: older than 1.5.0b13).
+- Change History: each row has one way back. **Rollback** restores the saved copy from before the change. Rows without a copy, such as something the agent created, show **Undo with agent** instead (formerly Ask to restore), which asks the chat to undo it with its tools. If Rollback fails, the error offers Undo with agent.
+- Remembered notes: to remove a note, the assistant names that one line. A short word no longer removes every line that contains it.
+- Remembered notes: each change the assistant makes is in Change History and can be undone with Rollback.
+- Remembered notes: the “remember this” and “stop doing that” cues match whole words only. Device commands such as “Lass das Licht an”, “Hör auf zu saugen”, or “Arrête la musique” no longer push the agent to write a note. “Remember to …” and “Vergiss nicht …” now count.
+- Remembered notes: the assistant only stores what you said in the chat, never instructions from tool results, web pages, entity names, or files.
+- Remembered notes: YAML `notes_text` sets the notes only when you change that value. Notes the assistant added survive a restart.
+- Remembered notes: saving Configure without touching the notes field keeps a note the assistant wrote while the form was open. Two writes at the same moment no longer overwrite each other.
+- Remembered notes: a Cursor agent that is already running is told the new notes on its next message.
+- Prompts: the “do not say you are checking Home Assistant” rule is said once per prompt part instead of being repeated.
+
 ## 1.5.0b12
 
 - Chat: the write status glyph (`=`) no longer spins with the generic SVG rotation; only the lines move top to bottom for one second (fix for b11).

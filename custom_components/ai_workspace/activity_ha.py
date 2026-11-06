@@ -32,11 +32,13 @@ from .activity import (
     looks_like_config_write,
     should_keep_activity,
     summary,
+    tool_name,
     tool_succeeded,
     watches_config,
     yaml_kind_from_args,
 )
 from .const import DOMAIN
+from .notes import TOOL_NAME as NOTES_TOOL
 from .store import Store
 
 logger = logging.getLogger(__name__)
@@ -322,6 +324,8 @@ async def prepare(
     session_id: str = "",
 ) -> str | None:
     args = arguments if isinstance(arguments, dict) else {}
+    if tool_name(tool) == NOTES_TOOL:
+        return await _prepare_notes(hass, user_id, user_name, agent, tool, args, session_id)
     change = classify(tool, args)
     watch = None
     document = None
@@ -424,6 +428,44 @@ async def prepare(
     return token
 
 
+_NOTES_SUMMARY = {"add": "Added a remembered note", "remove": "Removed a remembered note", "replace": "Rewrote the remembered notes"}
+
+
+async def _snapshot_notes(hass: HomeAssistant) -> dict[str, Any]:
+    from .notes import async_load_notes
+
+    return {"kind": "notes", "id": "notes", "label": "Remembered notes", "text": await async_load_notes(hass)}
+
+
+async def _prepare_notes(
+    hass: HomeAssistant,
+    user_id: str,
+    user_name: str,
+    agent: str,
+    tool: str,
+    args: dict[str, Any],
+    session_id: str,
+) -> str:
+    """The notes as they were, so the agent's write can be undone like a config change."""
+    action = str(args.get("action") or "").strip().lower()
+    token = uuid.uuid4().hex
+    pending = _pending(hass)
+    _drop_old(pending)
+    pending[token] = Pending(
+        user_id=user_id,
+        user_name=user_name or user_id,
+        agent=agent or "Agent",
+        tool=str(tool or ""),
+        summary=_NOTES_SUMMARY.get(action, "Changed the remembered notes"),
+        document=await _snapshot_notes(hass),
+        watch=None,
+        session_id=str(session_id or ""),
+        chat=await _session_title(hass, session_id),
+        at=time.monotonic(),
+    )
+    return token
+
+
 def _same_body(left: object, right: object) -> bool:
     return json.dumps(left, sort_keys=True, default=str, ensure_ascii=False) == json.dumps(
         right, sort_keys=True, default=str, ensure_ascii=False
@@ -431,6 +473,8 @@ def _same_body(left: object, right: object) -> bool:
 
 
 def _saved_body(document: dict[str, Any]) -> object:
+    if document.get("kind") == "notes":
+        return str(document.get("text") or "")
     if "item" in document:
         return document.get("item")
     if document.get("kind") == "dashboard":
@@ -620,6 +664,9 @@ async def _activity_settle(hass: HomeAssistant, pending: Pending) -> None:
     document = pending.document if isinstance(pending.document, dict) else None
     if not (pending.dashboard_docs or pending.watch is not None or document or pending.tool):
         return
+    if document is not None and document.get("kind") == "notes":
+        # Saved before the tool returned; nothing in Home Assistant follows later.
+        return
     for delay in _SETTLE_DELAYS:
         if pending.events:
             return
@@ -665,7 +712,12 @@ async def commit(hass: HomeAssistant, store: Store, token: str, *, ok: bool, use
                 document = attached
             elif event_doc is None:
                 document = pending.document
-    if isinstance(document, dict):
+    if isinstance(document, dict) and document.get("kind") == "notes":
+        if not await _document_changed(hass, document):
+            logger.info("activity skipped %s: notes unchanged", pending.tool)
+            return
+        changed = True
+    elif isinstance(document, dict):
         changed = await _document_changed(hass, document)
         if not changed and pending.dashboard_docs:
             changed = await _dashboard_docs_changed(hass, pending.dashboard_docs)
@@ -731,6 +783,9 @@ async def rollback(hass: HomeAssistant, document: dict[str, Any], authorization:
     from .logical_commit import documents_to_restore
 
     docs = documents_to_restore(document)
+    # Several note writes in one turn: the first snapshot is how the notes were before the turn.
+    notes = [doc for doc in docs if doc.get("kind") == "notes"]
+    docs = [doc for doc in docs if doc.get("kind") != "notes"] + notes[:1]
     restored = 0
     last_error: ActivityError | None = None
     for doc in docs:
@@ -759,6 +814,12 @@ async def _rollback_one(hass: HomeAssistant, document: dict[str, Any], authoriza
     if kind == "dashboard":
         await _restore_dashboard(hass, document)
         return
+    if kind == "notes" and isinstance(document.get("text"), str):
+        from .notes import async_save_notes, notes_lock
+
+        async with notes_lock(hass):
+            await async_save_notes(hass, document["text"])
+        return
     raise ActivityError("This change has nothing to restore.")
 
 
@@ -772,6 +833,8 @@ async def snapshot(hass: HomeAssistant, change: Change, force: bool = False) -> 
         return _snapshot_entity(hass, change)
     if change.kind == "dashboard":
         return await _snapshot_dashboard(hass, change, force=force)
+    if change.kind == "notes":
+        return await _snapshot_notes(hass)
     return None
 
 

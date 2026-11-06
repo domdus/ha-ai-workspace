@@ -41,14 +41,30 @@ def test_add_and_duplicate() -> None:
 def test_remove_and_replace() -> None:
     notes = _notes()
     current = "- Keep evenings quiet\n- Ask before unlocking doors"
-    removed = notes.apply_notes_action(current, "remove", "unlocking")
+    removed = notes.apply_notes_action(current, "remove", "- Ask before unlocking doors")
     assert removed["ok"] is True
     assert removed["notes"] == "- Keep evenings quiet"
+    # A long enough part of one line is fine too.
+    assert notes.apply_notes_action(current, "remove", "before unlocking doors")["notes"] == "- Keep evenings quiet"
     missing = notes.apply_notes_action(current, "remove", "vacuum")
     assert missing["ok"] is False
     assert missing["error"] == "not_found"
     replaced = notes.apply_notes_action(current, "replace", "- Ask before guest mode")
     assert replaced["notes"] == "- Ask before guest mode"
+
+
+def test_remove_never_drops_more_than_one_line() -> None:
+    notes = _notes()
+    current = "- Mag kurze Antworten\n- Licht im Bad bleibt an"
+    # "an" is in both lines. It used to delete every note.
+    short = notes.apply_notes_action(current, "remove", "an")
+    assert short["ok"] is False and short["notes"] == current
+    twice = "- Ask before unlocking the front door\n- Ask before unlocking the back door"
+    unclear = notes.apply_notes_action(twice, "remove", "Ask before unlocking")
+    assert unclear["ok"] is False and unclear["error"] == "ambiguous"
+    assert "front door" in unclear["hint"] and "back door" in unclear["hint"]
+    exact = notes.apply_notes_action(twice, "remove", "Ask before unlocking the back door")
+    assert exact["notes"] == "- Ask before unlocking the front door"
 
 
 def test_full_add_is_refused() -> None:
@@ -117,7 +133,24 @@ def test_remember_cues_cover_chat_languages() -> None:
     )
     for phrase in phrases:
         assert notes.wants_notes_write(phrase), phrase
+    assert notes.wants_notes_write("remember to turn off the heater at 10")
+    assert notes.wants_notes_write("Vergiss nicht, dass Oma am Freitag kommt")
     assert not notes.wants_notes_write("Wie ist das Wetter morgen?")
+
+
+def test_device_commands_are_not_cues() -> None:
+    notes = _notes()
+    for command in (
+        "Lass das Licht im Flur an",
+        "Hör auf zu saugen",
+        "Arrête la musique dans le salon",
+        "sluta spela musik",
+        "Schalte die Kometmenge ein",
+        "Zeig mir, ob es nie wieder Regen gab",
+        "Przestań odkurzać",
+        "Перестань играть музыку",
+    ):
+        assert not notes.wants_notes_write(command), command
     settings = SimpleNamespace(notes=True)
     assert "workspace_notes" in notes.remember_nudge(settings, "Merke dir das", admin=True)
     assert notes.remember_nudge(settings, "Merke dir das", admin=False) == ""

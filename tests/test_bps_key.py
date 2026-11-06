@@ -156,3 +156,7 @@ def test_outdated_runtime_gets_a_notice() -> None:
     assert runtime_notice("1.5.0b7", "1.5.0b8") is None
     assert runtime_notice("1.5.0", "1.4.3") is None
     assert runtime_notice("1.4.2", "1.4.3b1") is None
+    # A release that changed the Runtime raises the floor, and older betas of the same minor are told.
+    assert runtime_notice("1.5.0b12", "1.5.0b13", "1.5.0b13") is not None
+    assert runtime_notice("1.5.0b13", "1.5.0b14", "1.5.0b13") is None
+    assert runtime_notice("1.5.0b14", "1.5.0b13", "1.5.0b13") is None

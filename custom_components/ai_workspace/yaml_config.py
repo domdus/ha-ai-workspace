@@ -508,12 +508,9 @@ async def async_apply_yaml(hass: HomeAssistant, entry: ConfigEntry, conf: dict[s
                 hass.config_entries.async_update_subentry(entry, sub, data=data)
                 changed = True
     if CONF_NOTES_TEXT in conf:
-        from .notes import async_load_notes, async_save_notes
+        from .notes import async_apply_yaml_notes
 
-        wanted = str(conf.get(CONF_NOTES_TEXT) or "")
-        current = await async_load_notes(hass)
-        if current != wanted:
-            await async_save_notes(hass, wanted)
+        if await async_apply_yaml_notes(hass, str(conf.get(CONF_NOTES_TEXT) or "")):
             changed = True
     if changed:
         _LOGGER.info("Applied AI Workspace YAML configuration")

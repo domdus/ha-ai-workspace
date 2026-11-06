@@ -48,21 +48,29 @@ def _version_key(text: str) -> tuple[int, int, int, int] | None:
     return int(major), int(minor), int(patch), int(beta) if beta else 1_000_000
 
 
-def runtime_notice(runtime_version: str, integration_version: str = VERSION) -> tuple[str, dict[str, str]] | None:
-    """Warn when the Runtime trail the integration by at least a minor release."""
+# The oldest Runtime this integration works with as intended. Raise it in a release that
+# changes the Runtime (ai_workspace/app), so older Runtimes get the update notice. A release
+# that only changes the integration leaves it, and no notice appears.
+MIN_RUNTIME = "1.5.0b13"
+
+
+def runtime_notice(
+    runtime_version: str, integration_version: str = VERSION, min_runtime: str = ""
+) -> tuple[str, dict[str, str]] | None:
+    """Warn when the Runtime is a minor release behind, or older than min_runtime."""
     want = _version_key(integration_version)
     if want is None:
         return None
     have = _version_key(runtime_version)
-    want_minor = (want[0], want[1])
+    floor = _version_key(min_runtime)
     if have is not None:
-        have_minor = (have[0], have[1])
-        if have_minor > want_minor or have >= want:
+        if (have[0], have[1]) > (want[0], want[1]) or have >= want:
             return None
-        if have_minor == want_minor:
+        if (have[0], have[1]) == (want[0], want[1]) and (floor is None or have >= floor):
             return None
     have_label = str(runtime_version or "").strip()
     return (OUTDATED_RUNTIME_KEY, {"have": have_label, "want": integration_version})
+
 
 _LOGGER = logging.getLogger(__name__)
 _HASS_URL_OPTION = "hass_url"
@@ -395,7 +403,7 @@ async def async_bind_runtime(hass: HomeAssistant, bucket: dict | None = None, *,
                 reason = BAD_TOKEN
     data["runtime_token"] = token
     data["runtime_version"] = str(health.get("version") or "")
-    notice = runtime_notice(data["runtime_version"])
+    notice = runtime_notice(data["runtime_version"], VERSION, MIN_RUNTIME)
     if notice and data.get("runtime_notice") != notice:
         _LOGGER.warning(
             OUTDATED_RUNTIME.format(
