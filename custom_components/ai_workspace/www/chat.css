@@ -839,10 +839,14 @@ h1 {
   stroke: none;
 }
 
-/* =: 1s lines run top→bottom (vertical mask only). */
+/* =: 1s lines run top→bottom (vertical mask only; no svg spin). */
 .activity.shine .glyph[data-kind="write"] {
   -webkit-mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent);
   mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent);
+}
+
+.activity.shine .glyph[data-kind="write"] svg {
+  animation: none;
 }
 
 .activity.shine .glyph[data-kind="write"] .lines {

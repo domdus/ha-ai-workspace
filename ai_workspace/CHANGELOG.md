@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.0b12
+
+- Chat: the write status glyph (`=`) no longer spins with the generic SVG rotation; only the lines move top to bottom for one second (fix for b11).
+
 ## 1.5.0b11
 
 - **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.5.0b11`) together with this release.** It carries the updated agent prompt (neutral status line before tools).
