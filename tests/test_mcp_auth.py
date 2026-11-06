@@ -21,10 +21,12 @@ mod = _load()
 def test_with_mcp_auth_adds_bearer_to_house_map() -> None:
     servers = {
         "catalog": {"type": "http", "url": "http://homeassistant:8123/api/ai_workspace/catalog/mcp"},
+        "notes": {"type": "http", "url": "http://homeassistant:8123/api/ai_workspace/notes/mcp"},
         "mcp": {"type": "http", "url": "http://homeassistant:8123/api/webhook/mcp_x"},
     }
     out = mod.with_mcp_auth(servers, access_token="ha-token")
     assert out["catalog"]["headers"]["Authorization"] == "Bearer ha-token"
+    assert out["notes"]["headers"]["Authorization"] == "Bearer ha-token"
     assert "headers" not in out["mcp"]
 
 
@@ -37,10 +39,12 @@ def test_with_mcp_auth_adds_bearer_to_builtin_mcp() -> None:
 def test_with_mcp_auth_drops_house_map_without_token() -> None:
     servers = {
         "catalog": {"type": "http", "url": "http://homeassistant:8123/api/ai_workspace/catalog/mcp"},
+        "notes": {"type": "http", "url": "http://homeassistant:8123/api/ai_workspace/notes/mcp"},
         "mcp": {"type": "http", "url": "http://homeassistant:8123/api/webhook/mcp_x"},
     }
     out = mod.with_mcp_auth(servers, access_token="")
     assert "catalog" not in out
+    assert "notes" not in out
     assert "mcp" in out
 
 

@@ -2625,9 +2625,14 @@ export async function mountAiWorkspace(root, options = {}) {
           if (bannerEl && !bannerEl.hidden) loadProviders();
         }, Math.min(2000 * providerRetry, 15000));
       }
-    } else if (chosen?.notice && bannerEl && !bannerEl.classList.contains("mic-help")) {
+    } else if ((chosen?.notice_key || chosen?.notice) && bannerEl && !bannerEl.classList.contains("mic-help")) {
       providerRetry = 0;
-      setBanner(chosen.notice, { alertType: "warning" });
+      const noticeParams = { ...(chosen.notice_params || {}) };
+      if (chosen.notice_key === "outdated_runtime" && !noticeParams.have) {
+        noticeParams.have = t("outdated_runtime_unknown");
+      }
+      const noticeText = chosen.notice_key ? t(chosen.notice_key, noticeParams) : chosen.notice;
+      setBanner(noticeText, { alertType: "warning" });
     } else if (bannerEl && !bannerEl.classList.contains("hold") && !bannerEl.classList.contains("mic-help")) {
       providerRetry = 0;
       bannerEl.hidden = true;

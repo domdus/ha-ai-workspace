@@ -89,10 +89,14 @@
           "prompt": {
             "name": "System-Prompt",
             "data": {
-              "system_prompt": "System-Prompt"
+              "system_prompt": "System-Prompt",
+              "notes": "Merknotizen verwenden",
+              "notes_text": "Merknotizen"
             },
             "data_description": {
-              "system_prompt": "Nur Ton und Gewohnheiten. Leer lassen für die Voreinstellung. Zugriff auf Home Assistant und Kurzlinks in Antworten bleibt immer aktiv."
+              "system_prompt": "Feste Anweisungen für den Assistenten — Räume, Regeln, Antwortstil, alles was er beachten soll. Leer lassen für die Voreinstellung. Zugriff auf Home Assistant und Kurzlinks in Antworten bleibt immer aktiv. Der Assistent schreibt hier nicht.",
+              "notes": "Standardmäßig aus. Nur wenn an, liest der Assistent die Einträge unten und darf sie im Chat ergänzen. Aus: weder lesen noch schreiben. Den Text kannst du trotzdem jederzeit bearbeiten.",
+              "notes_text": "Kurze englische Spiegelstriche, die der Assistent behalten soll. Er liest sie in jedem Chat und ergänzt sie, wenn du „merke dir“ sagst (beliebige Chat-Sprache) oder dich über etwas beschwerst, das er lassen soll. Du kannst sie jederzeit bearbeiten oder leeren. Höchstens 2000 Zeichen. Ist das Limit voll, muss der Assistent ältere Zeilen ersetzen — nichts wird still gelöscht."
             }
           }
         }
@@ -198,10 +202,14 @@
           "prompt": {
             "name": "System-Prompt",
             "data": {
-              "system_prompt": "System-Prompt"
+              "system_prompt": "System-Prompt",
+              "notes": "Merknotizen verwenden",
+              "notes_text": "Merknotizen"
             },
             "data_description": {
-              "system_prompt": "Nur Ton und Gewohnheiten. Leer lassen für die Voreinstellung. Zugriff auf Home Assistant und Kurzlinks in Antworten bleibt immer aktiv."
+              "system_prompt": "Feste Anweisungen für den Assistenten — Räume, Regeln, Antwortstil, alles was er beachten soll. Leer lassen für die Voreinstellung. Zugriff auf Home Assistant und Kurzlinks in Antworten bleibt immer aktiv. Der Assistent schreibt hier nicht.",
+              "notes": "Standardmäßig aus. Nur wenn an, liest der Assistent die Einträge unten und darf sie im Chat ergänzen. Aus: weder lesen noch schreiben. Den Text kannst du trotzdem jederzeit bearbeiten.",
+              "notes_text": "Kurze englische Spiegelstriche, die der Assistent behalten soll. Er liest sie in jedem Chat und ergänzt sie, wenn du „merke dir“ sagst (beliebige Chat-Sprache) oder dich über etwas beschwerst, das er lassen soll. Du kannst sie jederzeit bearbeiten oder leeren. Höchstens 2000 Zeichen. Ist das Limit voll, muss der Assistent ältere Zeilen ersetzen — nichts wird still gelöscht."
             }
           }
         }

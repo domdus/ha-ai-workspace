@@ -89,10 +89,14 @@
           "prompt": {
             "name": "Indicación del sistema",
             "data": {
-              "system_prompt": "Indicación del sistema"
+              "system_prompt": "Indicación del sistema",
+              "notes": "Usar notas recordadas",
+              "notes_text": "Notas recordadas"
             },
             "data_description": {
-              "system_prompt": "Solo tono y hábitos. Déjalo vacío para el valor predeterminado. El asistente siempre conserva el acceso a Home Assistant y a los enlaces rápidos en las respuestas."
+              "system_prompt": "Instrucciones permanentes para el asistente: habitaciones, reglas, cómo responder, lo que quieras que siga. Déjalo vacío para el valor predeterminado. El asistente siempre mantiene el acceso a Home Assistant y los enlaces rápidos en las respuestas. No escribe en este campo.",
+              "notes": "Desactivado por defecto. Si está activado, el asistente lee las notas de abajo en cada chat y puede añadirlas. Si está desactivado, el chat ni las lee ni las escribe. Puedes editar el texto en cualquier momento.",
+              "notes_text": "Viñetas cortas en inglés que el asistente debe conservar. Las lee en cada chat y las añade cuando dices «acuérdate» (en cualquier idioma del chat) o te quejas de algo que no debe hacer. Puedes editarlas o vaciarlas cuando quieras. Máximo 2000 caracteres. Si está lleno, el asistente debe sustituir líneas antiguas; nada se borra en silencio."
             }
           }
         }
@@ -198,10 +202,14 @@
           "prompt": {
             "name": "Indicación del sistema",
             "data": {
-              "system_prompt": "Indicación del sistema"
+              "system_prompt": "Indicación del sistema",
+              "notes": "Usar notas recordadas",
+              "notes_text": "Notas recordadas"
             },
             "data_description": {
-              "system_prompt": "Solo tono y hábitos. Déjalo vacío para el valor predeterminado. El asistente siempre conserva el acceso a Home Assistant y a los enlaces rápidos en las respuestas."
+              "system_prompt": "Instrucciones permanentes para el asistente: habitaciones, reglas, cómo responder, lo que quieras que siga. Déjalo vacío para el valor predeterminado. El asistente siempre mantiene el acceso a Home Assistant y los enlaces rápidos en las respuestas. No escribe en este campo.",
+              "notes": "Desactivado por defecto. Si está activado, el asistente lee las notas de abajo en cada chat y puede añadirlas. Si está desactivado, el chat ni las lee ni las escribe. Puedes editar el texto en cualquier momento.",
+              "notes_text": "Viñetas cortas en inglés que el asistente debe conservar. Las lee en cada chat y las añade cuando dices «acuérdate» (en cualquier idioma del chat) o te quejas de algo que no debe hacer. Puedes editarlas o vaciarlas cuando quieras. Máximo 2000 caracteres. Si está lleno, el asistente debe sustituir líneas antiguas; nada se borra en silencio."
             }
           }
         }

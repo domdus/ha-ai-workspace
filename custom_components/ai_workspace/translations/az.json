@@ -89,10 +89,14 @@
           "prompt": {
             "name": "Sistem promptu",
             "data": {
-              "system_prompt": "Sistem promptu"
+              "system_prompt": "Sistem promptu",
+              "notes": "Yadda saxlanan qeydlərdən istifadə et",
+              "notes_text": "Yadda saxlanan qeydlər"
             },
             "data_description": {
-              "system_prompt": "Yalnız ton və vərdişlər. Defolt üçün boş buraxın. Köməkçi həmişə Home Assistant-a və cavablardakı sürətli keçidlərə çıxışı saxlayır."
+              "system_prompt": "Köməkçi üçün daimi göstərişlər — otaqlar, qaydalar, necə cavab vermək, riayət etməli olduğu hər şey. Defolt üçün boş buraxın. Köməkçi həmişə Home Assistant-a və cavablardakı sürətli keçidlərə çıxışı saxlayır. Bu sahəyə yazmır.",
+              "notes": "Susmaya görə sönülüdür. Yanılı olanda köməkçi aşağıdakı qeydləri hər söhbətdə oxuyur və əlavə edə bilər. Sönülü: söhbət oxumur və yazmır. Mətni istənilən vaxt düzəldə bilərsən.",
+              "notes_text": "Köməkçinin saxlamalı olduğu qısa ingilis işarələri. Hər söhbətdə oxuyur və «yadda saxla» (istənilən söhbət dilində) deyəndə və ya etməməli olduğu bir şeydən şikayətlənəndə əlavə edir. İstənilən vaxt düzəldə və təmizləyə bilərsən. Ən çoxu 2000 simvol. Limit dolanda köməkçi köhnə sətirləri əvəz etməlidir — heç nə səssiz silinmir."
             }
           }
         }
@@ -198,10 +202,14 @@
           "prompt": {
             "name": "Sistem promptu",
             "data": {
-              "system_prompt": "Sistem promptu"
+              "system_prompt": "Sistem promptu",
+              "notes": "Yadda saxlanan qeydlərdən istifadə et",
+              "notes_text": "Yadda saxlanan qeydlər"
             },
             "data_description": {
-              "system_prompt": "Yalnız ton və vərdişlər. Defolt üçün boş buraxın. Köməkçi həmişə Home Assistant-a və cavablardakı sürətli keçidlərə çıxışı saxlayır."
+              "system_prompt": "Köməkçi üçün daimi göstərişlər — otaqlar, qaydalar, necə cavab vermək, riayət etməli olduğu hər şey. Defolt üçün boş buraxın. Köməkçi həmişə Home Assistant-a və cavablardakı sürətli keçidlərə çıxışı saxlayır. Bu sahəyə yazmır.",
+              "notes": "Susmaya görə sönülüdür. Yanılı olanda köməkçi aşağıdakı qeydləri hər söhbətdə oxuyur və əlavə edə bilər. Sönülü: söhbət oxumur və yazmır. Mətni istənilən vaxt düzəldə bilərsən.",
+              "notes_text": "Köməkçinin saxlamalı olduğu qısa ingilis işarələri. Hər söhbətdə oxuyur və «yadda saxla» (istənilən söhbət dilində) deyəndə və ya etməməli olduğu bir şeydən şikayətlənəndə əlavə edir. İstənilən vaxt düzəldə və təmizləyə bilərsən. Ən çoxu 2000 simvol. Limit dolanda köməkçi köhnə sətirləri əvəz etməlidir — heç nə səssiz silinmir."
             }
           }
         }

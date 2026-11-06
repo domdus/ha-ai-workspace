@@ -42,6 +42,8 @@ from .const import (
     CONF_ENABLE_SIDEBAR,
     CONF_HA_USAGE_SENSORS,
     CONF_HOUSE_MAP,
+    CONF_NOTES,
+    CONF_NOTES_TEXT,
     CONF_KEEP_CHATS,
     CONF_LOW_TOKEN,
     CONF_MCP_KIND,
@@ -113,6 +115,7 @@ YAML_SHARED_KEYS = (
     CONF_ENABLE_DICTATE,
     CONF_ALLOW_USERS,
     CONF_HOUSE_MAP,
+    CONF_NOTES,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
     CONF_CHANGE_HISTORY_TTL_DAYS,
@@ -141,6 +144,7 @@ YAML_OPTION_DEFAULTS = {
     CONF_ENABLE_DICTATE: True,
     CONF_ALLOW_USERS: False,
     CONF_HOUSE_MAP: False,
+    CONF_NOTES: False,
     CONF_SHORTEN_MCP_RESULTS: True,
     CONF_CHANGE_HISTORY: True,
     CONF_CHANGE_HISTORY_TTL_DAYS: DEFAULT_CHANGE_HISTORY_TTL_DAYS,
@@ -185,6 +189,7 @@ def _normalize_option(key: str, value: Any) -> Any:
         CONF_ENABLE_DICTATE,
         CONF_ALLOW_USERS,
         CONF_HOUSE_MAP,
+        CONF_NOTES,
         CONF_SHORTEN_MCP_RESULTS,
         CONF_CHANGE_HISTORY,
         CONF_CHECK_HOUSE,
@@ -260,6 +265,8 @@ YAML_SCHEMA = vol.Schema(
         vol.Optional(CONF_ENABLE_DICTATE): cv.boolean,
         vol.Optional(CONF_ALLOW_USERS): cv.boolean,
         vol.Optional(CONF_HOUSE_MAP): cv.boolean,
+        vol.Optional(CONF_NOTES): cv.boolean,
+        vol.Optional(CONF_NOTES_TEXT): cv.string,
         vol.Optional(CONF_SHORTEN_MCP_RESULTS): cv.boolean,
         vol.Optional(CONF_CHANGE_HISTORY): cv.boolean,
         vol.Optional(CONF_CHANGE_HISTORY_TTL_DAYS): vol.All(
@@ -500,6 +507,14 @@ async def async_apply_yaml(hass: HomeAssistant, entry: ConfigEntry, conf: dict[s
             if data != dict(sub.data):
                 hass.config_entries.async_update_subentry(entry, sub, data=data)
                 changed = True
+    if CONF_NOTES_TEXT in conf:
+        from .notes import async_load_notes, async_save_notes
+
+        wanted = str(conf.get(CONF_NOTES_TEXT) or "")
+        current = await async_load_notes(hass)
+        if current != wanted:
+            await async_save_notes(hass, wanted)
+            changed = True
     if changed:
         _LOGGER.info("Applied AI Workspace YAML configuration")
     return changed

@@ -15,6 +15,8 @@ class ProviderInfo:
     reason: str | None = None
     # Usable, but something needs the user's attention (an outdated runtime).
     notice: str | None = None
+    notice_key: str | None = None
+    notice_params: dict[str, str] | None = None
     title: str = ""
     model: str = ""
     provider: str = ""
@@ -26,6 +28,8 @@ class ProviderInfo:
             "available": self.available,
             "reason": self.reason,
             "notice": self.notice,
+            "notice_key": self.notice_key,
+            "notice_params": self.notice_params,
             "title": self.title or self.label,
             "model": self.model,
             "provider": self.provider,
@@ -60,6 +64,8 @@ class Settings:
     enable_dictate: bool = True
     allow_users: bool = False
     house_map: bool = False
+    notes: bool = False
+    notes_text: str = ""
     shorten_mcp_results: bool = True
     change_history: bool = True
     change_history_ttl_days: int = 7

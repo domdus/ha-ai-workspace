@@ -120,7 +120,7 @@ SMALL_WINDOW = 32_000
 _MODE_OVERRIDE: ContextVar[str] = ContextVar("ai_workspace_mode_override", default="")
 _MCP_CACHE_MAX = 32
 _MCP_CACHE = f"{DOMAIN}_mcp_cache"
-_LOCAL_TOOLS = {"catalog", "house-map", "web"}
+_LOCAL_TOOLS = {"catalog", "house-map", "web", "notes"}
 _ERRORS = (McpError, ClientError, TimeoutError, OSError, json.JSONDecodeError, RuntimeError)
 
 
@@ -813,7 +813,11 @@ class ApiProvider:
         if mode == TOKEN_MODE_EXTREME:
             return with_language_rule(LOW_TOKEN_PROMPT, language)
         if mode == TOKEN_MODE_MEDIUM:
-            text = f"{LOW_TOKEN_MEDIUM_PROMPT}\n\n{ui_link_instructions(origin)}"
+            from .notes import notes_prompt
+
+            extra = notes_prompt(self.settings, admin=admin, write=admin)
+            head = f"{LOW_TOKEN_MEDIUM_PROMPT}\n\n{extra}".strip() if extra else LOW_TOKEN_MEDIUM_PROMPT
+            text = f"{head}\n\n{ui_link_instructions(origin)}"
             return with_language_rule(text, language)
         identity = _IDENTITY.format(label=self._label(), model=self._model())
         body = workspace_system_prompt(self.settings, admin=admin)
@@ -882,6 +886,11 @@ class ApiProvider:
 
             local = HouseMapClient(self.hass, self.store)
             bundle.add("catalog", local, await local.list_tools())
+        if admin and self.settings.notes:
+            from .notes import NotesClient
+
+            notes = NotesClient(self.hass, admin=admin)
+            bundle.add("notes", notes, await notes.list_tools())
         if admin and self.settings.allow_internet:
             from .web_tools import WebClient
 
@@ -998,6 +1007,11 @@ class ApiProvider:
         force = bool(force_tools) and token_mode_checks_house(mode, self.settings.check_house) and not pictures
         # Stamped like the history turns, so this message reads the same when it is history next turn.
         sent = stamped_now(message, house_zone(self.hass))
+        from .notes import remember_nudge
+
+        nudge = remember_nudge(self.settings, message, admin=admin)
+        if nudge:
+            sent = f"{sent}\n\n{nudge}"
         try:
             async for event in loop(
                 http, history, sent, bundle, origin, pictures, language, admin, force, on_tool

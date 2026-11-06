@@ -314,6 +314,11 @@ async def _runtime_chat(
     asked = (question or message).strip()
     if token_mode_checks_house(token_mode, check_house) and not images and wants_house_tools(asked):
         user_text = f"{user_text}\n\n{CHECK_HOUSE_NOTE}"
+    from .notes import remember_nudge
+
+    nudge = remember_nudge(settings, asked, admin=admin)
+    if nudge:
+        user_text = f"{user_text}\n\n{nudge}"
     payload: dict[str, Any] = {
         "message": f"{standing}\n\n{user_text}" if standing else user_text,
         "question": (question or message).strip(),
@@ -1441,6 +1446,82 @@ class CatalogMcpView(HouseMapMcpView):
     name = "api:ai_workspace:catalog:mcp"
 
 
+class NotesMcpView(HomeAssistantView):
+    """Minimal MCP HTTP endpoint for remembered notes."""
+
+    url = "/api/ai_workspace/notes/mcp"
+    name = "api:ai_workspace:notes:mcp"
+    requires_auth = True
+
+    async def post(self, request: web.Request) -> web.Response:
+        hass = _hass(request)
+        _user_id(request)
+        if not _is_admin(request):
+            raise web.HTTPForbidden(text="Remembered notes are for administrators.")
+        settings = _runtime(hass).get("settings")
+        if not getattr(settings, "notes", False):
+            return web.json_response(
+                {"jsonrpc": "2.0", "id": None, "error": {"code": -32000, "message": "Remembered notes are off."}},
+                status=404,
+            )
+        try:
+            body = await request.json()
+        except json.JSONDecodeError:
+            return web.json_response(
+                {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Parse error"}},
+                status=400,
+            )
+        if not isinstance(body, dict):
+            return web.json_response(
+                {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid request"}},
+                status=400,
+            )
+        req_id = body.get("id")
+        method = str(body.get("method") or "")
+        params = body.get("params") if isinstance(body.get("params"), dict) else {}
+        from .notes import TOOL_NAME, NotesClient
+
+        client = NotesClient(hass, admin=True)
+
+        if method == "notifications/initialized" or method.startswith("notifications/"):
+            return web.Response(status=202)
+
+        if method == "initialize":
+            result = {
+                "protocolVersion": "2025-03-26",
+                "capabilities": {"tools": {}},
+                "serverInfo": {"name": "ai-workspace-notes", "version": "1"},
+            }
+        elif method == "tools/list":
+            result = {"tools": await client.list_tools()}
+        elif method == "tools/call":
+            name = str(params.get("name") or "")
+            arguments = params.get("arguments") if isinstance(params.get("arguments"), dict) else {}
+            try:
+                payload = await client.call_tool(name or TOOL_NAME, arguments)
+            except Exception as exc:
+                return web.json_response(
+                    {"jsonrpc": "2.0", "id": req_id, "error": {"code": -32000, "message": str(exc)[:300]}},
+                    status=200,
+                )
+            text = json.dumps(payload, ensure_ascii=False)
+            result = {"content": [{"type": "text", "text": text}], "structuredContent": payload}
+        elif method == "ping":
+            result = {}
+        else:
+            return web.json_response(
+                {
+                    "jsonrpc": "2.0",
+                    "id": req_id,
+                    "error": {"code": -32601, "message": f"Method not found: {method}"},
+                },
+                status=200,
+            )
+        if req_id is None:
+            return web.Response(status=202)
+        return web.json_response({"jsonrpc": "2.0", "id": req_id, "result": result})
+
+
 def _agent_label(provider: Any) -> str:
     info = getattr(provider, "info", None)
     return str(getattr(info, "label", "") or "Cursor")
@@ -1728,6 +1809,7 @@ def register_views(hass: HomeAssistant) -> None:
     hass.http.register_view(ChatLiveView)
     hass.http.register_view(HouseMapMcpView)
     hass.http.register_view(CatalogMcpView)
+    hass.http.register_view(NotesMcpView)
     hass.http.register_view(ActivityView)
     hass.http.register_view(ActivityRollbackView)
     hass.http.register_view(McpProxyView)

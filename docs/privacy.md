@@ -2,7 +2,7 @@
 
 ## What leaves the house
 
-Your messages, attachments, the system prompt, the page you are on, and every MCP tool result go to the AI provider you picked (or to Cursor through the runtime). Only Ollama or another local server keeps everything at home.
+Your messages, attachments, the system prompt, remembered notes (when the Configure switch is on; YAML `notes: false` turns them off), the page you are on, and every MCP tool result go to the AI provider you picked (or to Cursor through the runtime). Only Ollama or another local server keeps everything at home.
 
 ## What stays local
 

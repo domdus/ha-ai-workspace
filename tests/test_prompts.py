@@ -37,6 +37,8 @@ def test_workspace_system_prompt_includes_lovelace_rules() -> None:
     class S:
         system_prompt = ""
         house_map = False
+        notes = False
+        notes_text = ""
 
     text = const.workspace_system_prompt(S(), admin=True)
     assert "Lovelace / dashboards (strict)" in text

@@ -89,10 +89,14 @@
           "prompt": {
             "name": "System Prompt",
             "data": {
-              "system_prompt": "System Prompt"
+              "system_prompt": "System Prompt",
+              "notes": "Use remembered notes",
+              "notes_text": "Remembered notes"
             },
             "data_description": {
-              "system_prompt": "Tone and habits only. Leave empty for the default. The assistant always keeps access to Home Assistant and quick links in replies."
+              "system_prompt": "Standing instructions for the assistant — rooms, rules, how to answer, anything you want it to follow. Leave empty for the default. The assistant always keeps access to Home Assistant and quick links in replies. It does not write in this field.",
+              "notes": "Off by default. When on, the assistant reads the notes below in every chat and can add to them. When off, chat neither reads nor writes them. You can still edit the text anytime.",
+              "notes_text": "Short English bullets the assistant should keep. It reads them in every chat and adds to them when you say “remember this” (any chat language) or complain about something it should stop doing. You can edit or clear them anytime. Maximum 2000 characters. When full, the assistant must replace older lines — nothing is deleted silently."
             }
           }
         }
@@ -198,10 +202,14 @@
           "prompt": {
             "name": "System Prompt",
             "data": {
-              "system_prompt": "System Prompt"
+              "system_prompt": "System Prompt",
+              "notes": "Use remembered notes",
+              "notes_text": "Remembered notes"
             },
             "data_description": {
-              "system_prompt": "Tone and habits only. Leave empty for the default. The assistant always keeps access to Home Assistant and quick links in replies."
+              "system_prompt": "Standing instructions for the assistant — rooms, rules, how to answer, anything you want it to follow. Leave empty for the default. The assistant always keeps access to Home Assistant and quick links in replies. It does not write in this field.",
+              "notes": "Off by default. When on, the assistant reads the notes below in every chat and can add to them. When off, chat neither reads nor writes them. You can still edit the text anytime.",
+              "notes_text": "Short English bullets the assistant should keep. It reads them in every chat and adds to them when you say “remember this” (any chat language) or complain about something it should stop doing. You can edit or clear them anytime. Maximum 2000 characters. When full, the assistant must replace older lines — nothing is deleted silently."
             }
           }
         }

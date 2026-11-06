@@ -89,10 +89,14 @@
           "prompt": {
             "name": "Sistema prompto",
             "data": {
-              "system_prompt": "Sistema prompto"
+              "system_prompt": "Sistema prompto",
+              "notes": "Uzi memoritajn notojn",
+              "notes_text": "Memoritaj notoj"
             },
             "data_description": {
-              "system_prompt": "Nur tono kaj kutimoj. Lasu malplena por la defaŭlto. La asistanto ĉiam tenas aliron al Home Assistant kaj rapidajn ligilojn en respondoj."
+              "system_prompt": "Daŭraj instrukcioj por la asistanto — ĉambroj, reguloj, kiel respondi, ĉio kion ĝi sekvu. Lasu malplena por la defaŭlto. La asistanto ĉiam tenas aliron al Home Assistant kaj rapidajn ligilojn en respondoj. Ĝi ne skribas en ĉi tiu kampo.",
+              "notes": "Defaŭlte malŝaltita. Ŝaltite, la asistanto legas la notojn sube en ĉiu babilo kaj povas aldoni. Malŝaltite: la babilo nek legas nek skribas ilin. Vi ĉiam povas redakti la tekston.",
+              "notes_text": "Mallongaj anglaj punktoj, kiujn la asistanto tenu. Ĝi legas ilin en ĉiu babilo kaj aldonas, kiam vi diras «memoru» (en iu ajn babil-lingvo) aŭ plendas pri io, kion ĝi ĉesu. Vi povas redakti aŭ malplenigi ilin iam ajn. Maksimume 2000 signoj. Se plena, la asistanto devas anstataŭigi malnovajn liniojn — nenio estas sekrete forigita."
             }
           }
         }
@@ -198,10 +202,14 @@
           "prompt": {
             "name": "Sistema prompto",
             "data": {
-              "system_prompt": "Sistema prompto"
+              "system_prompt": "Sistema prompto",
+              "notes": "Uzi memoritajn notojn",
+              "notes_text": "Memoritaj notoj"
             },
             "data_description": {
-              "system_prompt": "Nur tono kaj kutimoj. Lasu malplena por la defaŭlto. La asistanto ĉiam tenas aliron al Home Assistant kaj rapidajn ligilojn en respondoj."
+              "system_prompt": "Daŭraj instrukcioj por la asistanto — ĉambroj, reguloj, kiel respondi, ĉio kion ĝi sekvu. Lasu malplena por la defaŭlto. La asistanto ĉiam tenas aliron al Home Assistant kaj rapidajn ligilojn en respondoj. Ĝi ne skribas en ĉi tiu kampo.",
+              "notes": "Defaŭlte malŝaltita. Ŝaltite, la asistanto legas la notojn sube en ĉiu babilo kaj povas aldoni. Malŝaltite: la babilo nek legas nek skribas ilin. Vi ĉiam povas redakti la tekston.",
+              "notes_text": "Mallongaj anglaj punktoj, kiujn la asistanto tenu. Ĝi legas ilin en ĉiu babilo kaj aldonas, kiam vi diras «memoru» (en iu ajn babil-lingvo) aŭ plendas pri io, kion ĝi ĉesu. Vi povas redakti aŭ malplenigi ilin iam ajn. Maksimume 2000 signoj. Se plena, la asistanto devas anstataŭigi malnovajn liniojn — nenio estas sekrete forigita."
             }
           }
         }

@@ -249,6 +249,8 @@ CONF_ENABLE_SIDEBAR = "enable_sidebar"
 CONF_ENABLE_DICTATE = "enable_dictate"
 CONF_ALLOW_USERS = "allow_users"
 CONF_HOUSE_MAP = "house_map"
+CONF_NOTES = "notes"
+CONF_NOTES_TEXT = "notes_text"
 CONF_SHORTEN_MCP_RESULTS = "shorten_mcp_results"
 CONF_CHANGE_HISTORY = "change_history"
 CONF_CHANGE_HISTORY_TTL_DAYS = "change_history_ttl_days"
@@ -744,7 +746,8 @@ HOUSE_RULES = (
     "A hello, thanks, or other small talk gets a short friendly reply. "
     "Do not list what you can do until the user asks about the house.\n\n"
     "Home Assistant is reached only through the connected MCP tools. Before you answer any question about "
-    "this house (automations, entities, devices, states, counts), call a Home Assistant tool. "
+    "this house (automations, entities, devices, states, counts, weather), call a Home Assistant tool. "
+    "Never announce that look — not for weather, not for the house, not for any topic. Just call the tool. "
     "Never answer those from memory, and never invent entity ids, dashboard ids, states, or history. "
     "Before you say what a saved automation, script, scene, or dashboard contains, read it again with a tool: "
     "earlier messages in this chat may describe an older version or a plan that was never saved."
@@ -778,8 +781,10 @@ WRITE_RULES = (
     "If asked where something in Home Assistant came from and you do not know, say so instead of guessing."
 )
 STATUS_LINE_INSTRUCTIONS = (
-    "When a request needs tools, first write one short sentence saying what you are checking or doing, "
-    "then call the tools. Write that sentence only once per request. Between tool calls write nothing at all; "
+    "A short status sentence is fine when you start real work (a change or a write). "
+    "Never announce that you are looking at Home Assistant or checking live state — "
+    "not for weather, not for the house, not for any topic. Just call the tools. "
+    "Write at most one status sentence per request. Between tool calls write nothing at all; "
     "the UI already shows them. Your next text is the answer."
 )
 # Sent with a voice turn: the status sentence would be read aloud before every answer.
@@ -941,6 +946,12 @@ def workspace_system_prompt(settings, *, admin: bool = True) -> str:
         from .house_map import CATALOG_INSTRUCTIONS
 
         parts.append(CATALOG_INSTRUCTIONS)
+    try:
+        from .notes import notes_prompt
+    except ImportError:
+        notes_prompt = None
+    if notes_prompt is not None:
+        parts.append(notes_prompt(settings, admin=admin, write=admin))
     return "\n\n".join(part.strip() for part in parts if part.strip())
 
 
@@ -1017,8 +1028,8 @@ def with_ui_context(message: str, origin: str = "") -> str:
 
 # Cursor cannot be forced to call a tool first, so it is asked to.
 CHECK_HOUSE_NOTE = (
-    "Before you answer, look at Home Assistant with the tools. "
-    "Do not answer about devices, states, or lists from memory."
+    "If this message is about the house (devices, states, lists, weather), call a Home Assistant tool before you answer. "
+    "Do not write that you are looking at Home Assistant — not for weather, not for the house, not for any topic."
 )
 
 
@@ -1041,7 +1052,14 @@ def _standing_text(settings, *, admin: bool, language: str, origin: str, mode: s
     if mode == TOKEN_MODE_EXTREME:
         return with_language_rule(LOW_TOKEN_PROMPT, language)
     if mode == TOKEN_MODE_MEDIUM:
-        text = f"{LOW_TOKEN_MEDIUM_PROMPT}\n\n{WORKSPACE_FILES_RULE}\n\n{ui_link_instructions(origin)}"
+        try:
+            from .notes import notes_prompt
+        except ImportError:
+            extra = ""
+        else:
+            extra = notes_prompt(settings, admin=admin, write=admin)
+        head = f"{LOW_TOKEN_MEDIUM_PROMPT}\n\n{extra}".strip() if extra else LOW_TOKEN_MEDIUM_PROMPT
+        text = f"{head}\n\n{WORKSPACE_FILES_RULE}\n\n{ui_link_instructions(origin)}"
         return with_language_rule(text, language)
     body = f"{workspace_system_prompt(settings, admin=admin)}\n\n{WORKSPACE_FILES_RULE}"
     return with_language_rule(f"{body}\n\n{ui_link_instructions(origin)}", language)

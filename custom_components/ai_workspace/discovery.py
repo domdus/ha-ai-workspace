@@ -35,6 +35,7 @@ OUTDATED_RUNTIME = (
     "The AI Workspace Runtime is {have}, this integration is {want}. Update the Runtime "
     "(App or Docker image) so Cursor agents get the same fixes."
 )
+OUTDATED_RUNTIME_KEY = "outdated_runtime"
 _VERSION = re.compile(r"(\d+)\.(\d+)\.(\d+)(?:b(\d+))?")
 
 
@@ -47,13 +48,21 @@ def _version_key(text: str) -> tuple[int, int, int, int] | None:
     return int(major), int(minor), int(patch), int(beta) if beta else 1_000_000
 
 
-def runtime_notice(runtime_version: str, integration_version: str = VERSION) -> str | None:
-    """A note for Cursor agents when the Runtime is older than the integration."""
+def runtime_notice(runtime_version: str, integration_version: str = VERSION) -> tuple[str, dict[str, str]] | None:
+    """Warn when the Runtime trail the integration by at least a minor release."""
     want = _version_key(integration_version)
-    have = _version_key(runtime_version)
-    if want is None or (have is not None and have >= want):
+    if want is None:
         return None
-    return OUTDATED_RUNTIME.format(have=runtime_version or "older than 1.4.3", want=integration_version)
+    have = _version_key(runtime_version)
+    want_minor = (want[0], want[1])
+    if have is not None:
+        have_minor = (have[0], have[1])
+        if have_minor > want_minor or have >= want:
+            return None
+        if have_minor == want_minor:
+            return None
+    have_label = str(runtime_version or "").strip()
+    return (OUTDATED_RUNTIME_KEY, {"have": have_label, "want": integration_version})
 
 _LOGGER = logging.getLogger(__name__)
 _HASS_URL_OPTION = "hass_url"
@@ -309,19 +318,36 @@ async def _async_pair_addon(hass: HomeAssistant, slug: str, base: str) -> str:
 
 
 def apply_runtime_to_providers(
-    bucket: dict, runtime_url: str, reason: str | None = None, notice: str | None = None
+    bucket: dict,
+    runtime_url: str,
+    reason: str | None = None,
+    notice: tuple[str, dict[str, str]] | None = None,
 ) -> None:
     bucket["runtime_url"] = runtime_url
     if not runtime_url and reason is None:
         reason = MISSING_RUNTIME
+    notice_key = notice[0] if notice else None
+    notice_params = notice[1] if notice else None
     for item in (bucket.get("providers") or {}).values():
         if getattr(item, "kind", "") != "cursor":
             continue
         info = item.info
         available = reason is None
-        if bool(info.available) == available and info.reason == reason and info.notice == notice:
+        if (
+            bool(info.available) == available
+            and info.reason == reason
+            and info.notice_key == notice_key
+            and info.notice_params == notice_params
+        ):
             continue
-        item.info = replace(info, available=available, reason=reason, notice=notice)
+        item.info = replace(
+            info,
+            available=available,
+            reason=reason,
+            notice=None,
+            notice_key=notice_key,
+            notice_params=notice_params,
+        )
 
 
 def _needs_cursor(bucket: dict) -> bool:
@@ -371,7 +397,12 @@ async def async_bind_runtime(hass: HomeAssistant, bucket: dict | None = None, *,
     data["runtime_version"] = str(health.get("version") or "")
     notice = runtime_notice(data["runtime_version"])
     if notice and data.get("runtime_notice") != notice:
-        _LOGGER.warning(notice)
+        _LOGGER.warning(
+            OUTDATED_RUNTIME.format(
+                have=notice[1].get("have") or "older than 1.4.3",
+                want=notice[1]["want"],
+            )
+        )
     data["runtime_notice"] = notice
     apply_runtime_to_providers(data, url, reason, notice)
     if url != previous:

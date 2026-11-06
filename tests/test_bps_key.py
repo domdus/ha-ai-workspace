@@ -148,9 +148,11 @@ def test_runtime_proxy_relays_the_key(tmp_path: Path) -> None:
 
 
 def test_outdated_runtime_gets_a_notice() -> None:
-    assert runtime_notice("1.4.2", "1.4.3b1") is not None
-    assert "older than 1.4.3" in runtime_notice("", "1.4.3b1")
+    assert runtime_notice("1.4.2", "1.5.0b1") is not None
+    assert runtime_notice("", "1.5.0b1") == ("outdated_runtime", {"have": "", "want": "1.5.0b1"})
     assert runtime_notice("1.4.3b1", "1.4.3b1") is None
     assert runtime_notice("1.4.3", "1.4.3b1") is None
-    assert runtime_notice("1.4.3b1", "1.4.3") is not None
+    assert runtime_notice("1.4.3b1", "1.4.3") is None
+    assert runtime_notice("1.5.0b7", "1.5.0b8") is None
     assert runtime_notice("1.5.0", "1.4.3") is None
+    assert runtime_notice("1.4.2", "1.4.3b1") is None

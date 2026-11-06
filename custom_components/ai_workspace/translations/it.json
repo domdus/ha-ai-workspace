@@ -89,10 +89,14 @@
           "prompt": {
             "name": "Prompt di sistema",
             "data": {
-              "system_prompt": "Prompt di sistema"
+              "system_prompt": "Prompt di sistema",
+              "notes": "Usa le note ricordate",
+              "notes_text": "Note ricordate"
             },
             "data_description": {
-              "system_prompt": "Solo tono e abitudini. Lascia vuoto per il valore predefinito. L'assistente mantiene sempre l'accesso a Home Assistant e ai collegamenti rapidi nelle risposte."
+              "system_prompt": "Istruzioni permanenti per l’assistente: stanze, regole, come rispondere, tutto ciò che deve seguire. Lascia vuoto per il valore predefinito. L’assistente mantiene sempre l’accesso a Home Assistant e i collegamenti rapidi nelle risposte. Non scrive in questo campo.",
+              "notes": "Disattivato per impostazione predefinita. Se attivo, l’assistente legge le note sotto in ogni chat e può aggiungerle. Se disattivo, la chat non le legge né le scrive. Puoi comunque modificare il testo in qualsiasi momento.",
+              "notes_text": "Brevi elenchi puntati in inglese che l’assistente deve tenere. Li legge in ogni chat e li aggiunge quando dici «ricordati» (in qualsiasi lingua della chat) o ti lamenti di qualcosa che deve smettere di fare. Puoi modificarli o svuotarli quando vuoi. Massimo 2000 caratteri. Se è pieno, l’assistente deve sostituire le righe vecchie: nulla viene cancellato in silenzio."
             }
           }
         }
@@ -198,10 +202,14 @@
           "prompt": {
             "name": "Prompt di sistema",
             "data": {
-              "system_prompt": "Prompt di sistema"
+              "system_prompt": "Prompt di sistema",
+              "notes": "Usa le note ricordate",
+              "notes_text": "Note ricordate"
             },
             "data_description": {
-              "system_prompt": "Solo tono e abitudini. Lascia vuoto per il valore predefinito. L'assistente mantiene sempre l'accesso a Home Assistant e ai collegamenti rapidi nelle risposte."
+              "system_prompt": "Istruzioni permanenti per l’assistente: stanze, regole, come rispondere, tutto ciò che deve seguire. Lascia vuoto per il valore predefinito. L’assistente mantiene sempre l’accesso a Home Assistant e i collegamenti rapidi nelle risposte. Non scrive in questo campo.",
+              "notes": "Disattivato per impostazione predefinita. Se attivo, l’assistente legge le note sotto in ogni chat e può aggiungerle. Se disattivo, la chat non le legge né le scrive. Puoi comunque modificare il testo in qualsiasi momento.",
+              "notes_text": "Brevi elenchi puntati in inglese che l’assistente deve tenere. Li legge in ogni chat e li aggiunge quando dici «ricordati» (in qualsiasi lingua della chat) o ti lamenti di qualcosa che deve smettere di fare. Puoi modificarli o svuotarli quando vuoi. Massimo 2000 caratteri. Se è pieno, l’assistente deve sostituire le righe vecchie: nulla viene cancellato in silenzio."
             }
           }
         }

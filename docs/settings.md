@@ -20,11 +20,13 @@ Turning off **All LLM APIs** or unloading **MCP Server** in Home Assistant hides
 
 ## System prompt
 
-This is the standing instruction for the assistant. Use it for how you name rooms, which automations to leave alone, how short answers should be, or any other house rule.
+This is the standing instruction for the assistant. Use it for how you name rooms, which automations to leave alone, how short answers should be, or any other house rule. The assistant does not write in this field.
 
 What you write here replaces the built-in prompt. Leave the field empty to keep the built-in text, which covers helping with this Home Assistant and asking before it changes the house. The same text is used for cloud APIs and the Cursor runtime.
 
 Tappable links to automations, entities, helpers, and devices are always added. You do not need to mention those in the prompt.
+
+**Remembered notes** (Merknotizen) are optional and sit on the same form. They do not replace the system prompt. A switch (off by default) decides whether the assistant may use them. When it is on, the assistant reads the notes in every chat and writes English bullets if you ask it to remember something (in any chat language) or complain about a habit it should stop. When it is off, chat neither reads nor writes them; you can still edit the text. The cap is 2000 characters. A new note that does not fit is refused until older lines are replaced. Live house states still come from tools, not from these notes. YAML `notes: false` is the same as the switch off.
 
 ## AI Workspace settings
 
@@ -76,6 +78,10 @@ Collapsed by default. The defaults suit most homes.
 
 Collapsed by default. See [System prompt](#system-prompt). Empty uses the built-in text.
 
+| Option | What it does | Why it matters |
+| --- | --- | --- |
+| **Remembered notes** | Off by default. Switch plus a text field. When the switch is on, the assistant reads the English bullets and can add to them when you say “remember this” or complain about a habit. When it is off, chat neither reads nor writes them. Maximum 2000 characters. | A small, visible, optional memory — not a hidden profile. Stored separately from the system prompt. When the field is full, the assistant must replace older lines. Nothing is deleted silently. YAML `notes: false` is the same as the switch off. |
+
 ## Connection settings
 
 | Option | What it does | Why it matters |
@@ -103,6 +109,8 @@ On each agent (**Add agent**, or the edit button on an agent row).
 A model that is not told otherwise answers from what it guesses. For a house that means invented automations, wrong counts, or “the light is off” while it is on — said with confidence. Asking “use a tool” in the prompt is not enough on its own.
 
 So every agent with tools looks at Home Assistant first: a cloud model must call a Home Assistant tool before it answers a question about the house, so lists, counts, and states come from your instance. After that first call it decides freely. Cursor cannot be forced to call a tool, so a Cursor agent is told to look first on each house question.
+
+The agent should not say that it is looking at Home Assistant — not for weather, not for the house, not for any topic. That check is silent; a status sentence is for real work (a change or a write), not for a look-up.
 
 A wrong answer about the house costs more than one extra tool call, so this is always on and not on the agent form. Greetings, thanks, and messages with images or files are never forced. To turn it off for one agent anyway, set `check_house: false` on that agent in YAML.
 

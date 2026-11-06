@@ -58,6 +58,9 @@ export const I18N = {
     agent: "Agent",
     model: "Model",
     configure_provider: "Add an agent under AI Workspace in Devices & services.",
+    outdated_runtime:
+      "The AI Workspace Runtime is {have}, this integration is {want}. Update the Runtime (App or Docker image) so Cursor agents get the same fixes.",
+    outdated_runtime_unknown: "older than 1.4.3",
     tool_one: "tool",
     tool_many: "tools",
     calling_n: "Calling {n} {noun}",
@@ -178,6 +181,9 @@ export const I18N = {
     building: "Baut",
     close: "Schließen",
     configure_provider: "Füge unter Geräte & Dienste bei AI Workspace einen Agenten hinzu.",
+    outdated_runtime:
+      "Die AI-Workspace-Runtime ist {have}, diese Integration ist {want}. Aktualisiere die Runtime (App oder Docker-Image), damit Cursor-Agenten dieselben Fixes bekommen.",
+    outdated_runtime_unknown: "älter als 1.4.3",
     tool_one: "Tool",
     tool_many: "Tools",
     calling_n: "Rufe {n} {noun} auf",
@@ -288,6 +294,9 @@ export const I18N = {
     building: "Construction",
     close: "Fermer",
     configure_provider: "Ajoutez un agent dans AI Workspace sous Appareils et services.",
+    outdated_runtime:
+      "La runtime AI Workspace est {have}, cette intégration est {want}. Mettez à jour la runtime (application ou image Docker) pour que les agents Cursor reçoivent les mêmes correctifs.",
+    outdated_runtime_unknown: "antérieure à 1.4.3",
     add_image: "Joindre un fichier",
     attach: "Joindre un fichier",
     attach_unsupported: "Ce type de fichier n’est pas pris en charge.",
@@ -408,6 +417,9 @@ export const I18N = {
     building: "Construyendo",
     close: "Cerrar",
     configure_provider: "Añade un agente en AI Workspace dentro de Dispositivos y servicios.",
+    outdated_runtime:
+      "El runtime de AI Workspace es {have} y esta integración es {want}. Actualiza el runtime (app o imagen Docker) para que los agentes Cursor reciban las mismas correcciones.",
+    outdated_runtime_unknown: "anterior a 1.4.3",
     attach: "Adjuntar archivo",
     attach_unsupported: "Ese tipo de archivo no es compatible.",
     attach_too_large: "El archivo es demasiado grande (máx. 256 KB).",
@@ -527,6 +539,9 @@ export const I18N = {
     building: "Sto costruendo",
     close: "Chiudi",
     configure_provider: "Aggiungi un agente in AI Workspace da Dispositivi e servizi.",
+    outdated_runtime:
+      "Il runtime di AI Workspace è {have}, questa integrazione è {want}. Aggiorna il runtime (app o immagine Docker) così gli agenti Cursor ricevono le stesse correzioni.",
+    outdated_runtime_unknown: "precedente alla 1.4.3",
     attach: "Allega file",
     attach_unsupported: "Questo tipo di file non è supportato.",
     attach_too_large: "File troppo grande (max 256 KB).",
@@ -646,6 +661,9 @@ export const I18N = {
     building: "Bouwen",
     close: "Sluiten",
     configure_provider: "Voeg een agent toe bij AI Workspace onder Apparaten en diensten.",
+    outdated_runtime:
+      "De AI Workspace-runtime is {have}, deze integratie is {want}. Werk de runtime bij (app of Docker-image) zodat Cursor-agents dezelfde fixes krijgen.",
+    outdated_runtime_unknown: "ouder dan 1.4.3",
     attach: "Bestand bijvoegen",
     attach_unsupported: "Dit bestandstype wordt niet ondersteund.",
     attach_too_large: "Bestand is te groot (max. 256 KB).",
@@ -765,6 +783,9 @@ export const I18N = {
     building: "Buduję",
     close: "Zamknij",
     configure_provider: "Dodaj agenta w AI Workspace w sekcji Urządzenia i usługi.",
+    outdated_runtime:
+      "Runtime AI Workspace to {have}, a ta integracja to {want}. Zaktualizuj runtime (aplikacja lub obraz Dockera), aby agenci Cursor dostali te same poprawki.",
+    outdated_runtime_unknown: "starszy niż 1.4.3",
     attach: "Dołącz plik",
     attach_unsupported: "Ten typ pliku nie jest obsługiwany.",
     attach_too_large: "Plik jest za duży (maks. 256 KB).",
@@ -884,6 +905,9 @@ export const I18N = {
     building: "Stavím",
     close: "Zavřít",
     configure_provider: "Přidejte agenta v AI Workspace v části Zařízení a služby.",
+    outdated_runtime:
+      "Runtime AI Workspace je {have}, tato integrace je {want}. Aktualizujte runtime (aplikace nebo Docker image), aby agenti Cursor dostali stejné opravy.",
+    outdated_runtime_unknown: "starší než 1.4.3",
     attach: "Přiložit soubor",
     attach_unsupported: "Tento typ souboru není podporován.",
     attach_too_large: "Soubor je příliš velký (max. 256 KB).",
@@ -1003,6 +1027,9 @@ export const I18N = {
     building: "Bygger",
     close: "Stäng",
     configure_provider: "Lägg till en agent under AI Workspace i Enheter och tjänster.",
+    outdated_runtime:
+      "AI Workspace-runtime är {have}, den här integrationen är {want}. Uppdatera runtime (app eller Docker-avbild) så Cursor-agenter får samma fixar.",
+    outdated_runtime_unknown: "äldre än 1.4.3",
     attach: "Bifoga fil",
     attach_unsupported: "Filtypen stöds inte.",
     attach_too_large: "Filen är för stor (max 256 KB).",
@@ -1122,6 +1149,9 @@ export const I18N = {
     building: "Строю",
     close: "Закрыть",
     configure_provider: "Добавьте агента в AI Workspace в разделе «Устройства и службы».",
+    outdated_runtime:
+      "Runtime AI Workspace — {have}, эта интеграция — {want}. Обновите runtime (приложение или Docker-образ), чтобы агенты Cursor получали те же исправления.",
+    outdated_runtime_unknown: "старше 1.4.3",
     attach: "Прикрепить файл",
     attach_unsupported: "Этот тип файла не поддерживается.",
     attach_too_large: "Файл слишком большой (макс. 256 КБ).",
@@ -1241,6 +1271,9 @@ export const I18N = {
     building: "만드는 중",
     close: "닫기",
     configure_provider: "기기 및 서비스의 AI Workspace에서 에이전트를 추가하세요.",
+    outdated_runtime:
+      "AI Workspace 런타임은 {have}, 이 통합은 {want}입니다. Cursor 에이전트가 같은 수정을 받도록 런타임(앱 또는 Docker 이미지)을 업데이트하세요.",
+    outdated_runtime_unknown: "1.4.3보다 이전",
     attach: "파일 첨부",
     attach_unsupported: "이 파일 형식은 지원되지 않습니다.",
     attach_too_large: "파일이 너무 큽니다 (최대 256 KB).",
@@ -1360,6 +1393,9 @@ export const I18N = {
     building: "构建中",
     close: "关闭",
     configure_provider: "请在“设备与服务”的 AI Workspace 中添加代理。",
+    outdated_runtime:
+      "AI Workspace 运行时为 {have}，此集成为 {want}。请更新运行时（应用或 Docker 镜像），以便 Cursor 智能体获得相同的修复。",
+    outdated_runtime_unknown: "早于 1.4.3",
     attach: "附加文件",
     attach_unsupported: "不支持该文件类型。",
     attach_too_large: "文件太大（最大 256 KB）。",
@@ -1479,6 +1515,9 @@ export const I18N = {
     building: "建置中",
     close: "關閉",
     configure_provider: "請在「裝置與服務」的 AI Workspace 中新增代理。",
+    outdated_runtime:
+      "AI Workspace 執行階段為 {have}，此整合為 {want}。請更新執行階段（App 或 Docker 映像），讓 Cursor 代理程式取得相同修正。",
+    outdated_runtime_unknown: "早於 1.4.3",
     attach: "附加檔案",
     attach_unsupported: "不支援此檔案類型。",
     attach_too_large: "檔案太大（最大 256 KB）。",
@@ -1598,6 +1637,9 @@ export const I18N = {
     building: "Qurur",
     close: "Bağla",
     configure_provider: "Cihazlar və xidmətlər bölməsində AI Workspace-ə agent əlavə edin.",
+    outdated_runtime:
+      "AI Workspace runtime {have}, bu inteqrasiya {want}-dir. Cursor agentləri eyni düzəlişləri alsın deyə runtime-u (tətbiq və ya Docker image) yeniləyin.",
+    outdated_runtime_unknown: "1.4.3-dən köhnə",
     attach: "Fayl əlavə et",
     attach_unsupported: "Bu fayl növü dəstəklənmir.",
     attach_too_large: "Fayl çox böyükdür (maks. 256 KB).",
@@ -1717,6 +1759,9 @@ export const I18N = {
     building: "Konstruas",
     close: "Fermi",
     configure_provider: "Aldonu agenton ĉe AI Workspace en Aparatoj kaj servoj.",
+    outdated_runtime:
+      "La AI Workspace-runtime estas {have}, ĉi tiu integrado estas {want}. Ĝisdatigu la runtime (app aŭ Docker-bildo) por ke Cursor-agentoj ricevu la samajn riparojn.",
+    outdated_runtime_unknown: "pli malnova ol 1.4.3",
     attach: "Aldoni dosieron",
     attach_unsupported: "Tiu dosiertipo ne estas subtenata.",
     attach_too_large: "Dosiero estas tro granda (maks. 256 KB).",

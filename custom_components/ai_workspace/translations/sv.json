@@ -89,10 +89,14 @@
           "prompt": {
             "name": "Systemprompt",
             "data": {
-              "system_prompt": "Systemprompt"
+              "system_prompt": "Systemprompt",
+              "notes": "Använd ihågkomna anteckningar",
+              "notes_text": "Ihågkomna anteckningar"
             },
             "data_description": {
-              "system_prompt": "Endast ton och vanor. Lämna tomt för standardvärdet. Assistenten har alltid åtkomst till Home Assistant och snabblänkar i svar."
+              "system_prompt": "Stående instruktioner för assistenten — rum, regler, hur den ska svara, vad den ska följa. Lämna tomt för standardvärdet. Assistenten har alltid åtkomst till Home Assistant och snabblänkar i svar. Den skriver inte i det här fältet.",
+              "notes": "Av som standard. När det är på läser assistenten anteckningarna nedan i varje chatt och kan lägga till. Av: chatten varken läser eller skriver dem. Du kan ändå redigera texten när som helst.",
+              "notes_text": "Korta engelska punkter som assistenten ska behålla. Den läser dem i varje chatt och lägger till när du säger «kom ihåg» (på vilket chattspråk som helst) eller klagar på något den ska sluta med. Du kan redigera eller tömma dem när som helst. Högst 2000 tecken. När det är fullt måste assistenten ersätta äldre rader — inget raderas tyst."
             }
           }
         }
@@ -198,10 +202,14 @@
           "prompt": {
             "name": "Systemprompt",
             "data": {
-              "system_prompt": "Systemprompt"
+              "system_prompt": "Systemprompt",
+              "notes": "Använd ihågkomna anteckningar",
+              "notes_text": "Ihågkomna anteckningar"
             },
             "data_description": {
-              "system_prompt": "Endast ton och vanor. Lämna tomt för standardvärdet. Assistenten har alltid åtkomst till Home Assistant och snabblänkar i svar."
+              "system_prompt": "Stående instruktioner för assistenten — rum, regler, hur den ska svara, vad den ska följa. Lämna tomt för standardvärdet. Assistenten har alltid åtkomst till Home Assistant och snabblänkar i svar. Den skriver inte i det här fältet.",
+              "notes": "Av som standard. När det är på läser assistenten anteckningarna nedan i varje chatt och kan lägga till. Av: chatten varken läser eller skriver dem. Du kan ändå redigera texten när som helst.",
+              "notes_text": "Korta engelska punkter som assistenten ska behålla. Den läser dem i varje chatt och lägger till när du säger «kom ihåg» (på vilket chattspråk som helst) eller klagar på något den ska sluta med. Du kan redigera eller tömma dem när som helst. Högst 2000 tecken. När det är fullt måste assistenten ersätta äldre rader — inget raderas tyst."
             }
           }
         }

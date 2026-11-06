@@ -89,10 +89,14 @@
           "prompt": {
             "name": "Invite système",
             "data": {
-              "system_prompt": "Invite système"
+              "system_prompt": "Invite système",
+              "notes": "Utiliser les notes mémorisées",
+              "notes_text": "Notes mémorisées"
             },
             "data_description": {
-              "system_prompt": "Ton et habitudes uniquement. Laissez vide pour la valeur par défaut. L'assistant garde toujours l'accès à Home Assistant et aux liens rapides dans les réponses."
+              "system_prompt": "Instructions permanentes pour l’assistant : pièces, règles, style de réponse, tout ce qu’il doit suivre. Laissez vide pour la valeur par défaut. L’assistant garde toujours l’accès à Home Assistant et aux liens rapides dans les réponses. Il n’écrit pas dans ce champ.",
+              "notes": "Désactivé par défaut. Activé, l’assistant lit les notes ci-dessous dans chaque discussion et peut les compléter. Désactivé : ni lecture ni écriture dans le chat. Vous pouvez toujours modifier le texte.",
+              "notes_text": "Puces courtes en anglais que l’assistant doit retenir. Il les lit dans chaque discussion et les complète quand vous dites « souviens-toi » (n’importe quelle langue du chat) ou vous plaignez d’une habitude à arrêter. Vous pouvez les modifier ou les vider à tout moment. Maximum 2000 caractères. Une fois plein, l’assistant doit remplacer d’anciennes lignes — rien n’est effacé en silence."
             }
           }
         }
@@ -198,10 +202,14 @@
           "prompt": {
             "name": "Invite système",
             "data": {
-              "system_prompt": "Invite système"
+              "system_prompt": "Invite système",
+              "notes": "Utiliser les notes mémorisées",
+              "notes_text": "Notes mémorisées"
             },
             "data_description": {
-              "system_prompt": "Ton et habitudes uniquement. Laissez vide pour la valeur par défaut. L'assistant garde toujours l'accès à Home Assistant et aux liens rapides dans les réponses."
+              "system_prompt": "Instructions permanentes pour l’assistant : pièces, règles, style de réponse, tout ce qu’il doit suivre. Laissez vide pour la valeur par défaut. L’assistant garde toujours l’accès à Home Assistant et aux liens rapides dans les réponses. Il n’écrit pas dans ce champ.",
+              "notes": "Désactivé par défaut. Activé, l’assistant lit les notes ci-dessous dans chaque discussion et peut les compléter. Désactivé : ni lecture ni écriture dans le chat. Vous pouvez toujours modifier le texte.",
+              "notes_text": "Puces courtes en anglais que l’assistant doit retenir. Il les lit dans chaque discussion et les complète quand vous dites « souviens-toi » (n’importe quelle langue du chat) ou vous plaignez d’une habitude à arrêter. Vous pouvez les modifier ou les vider à tout moment. Maximum 2000 caractères. Une fois plein, l’assistant doit remplacer d’anciennes lignes — rien n’est effacé en silence."
             }
           }
         }

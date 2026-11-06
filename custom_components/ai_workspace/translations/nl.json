@@ -89,10 +89,14 @@
           "prompt": {
             "name": "Systeemprompt",
             "data": {
-              "system_prompt": "Systeemprompt"
+              "system_prompt": "Systeemprompt",
+              "notes": "Onthouden notities gebruiken",
+              "notes_text": "Onthouden notities"
             },
             "data_description": {
-              "system_prompt": "Alleen toon en gewoonten. Leeg laten voor de standaard. De assistent houdt altijd toegang tot Home Assistant en snelle links in antwoorden."
+              "system_prompt": "Vaste instructies voor de assistent — ruimtes, regels, hoe te antwoorden, alles wat hij moet volgen. Leeg laten voor de standaard. De assistent houdt altijd toegang tot Home Assistant en snelle links in antwoorden. Hij schrijft niet in dit veld.",
+              "notes": "Standaard uit. Als het aan staat, leest de assistent de notities hieronder in elke chat en kan hij ze aanvullen. Uit: de chat leest noch schrijft ze. Je kunt de tekst altijd bewerken.",
+              "notes_text": "Korte Engelse opsommingen die de assistent moet onthouden. Hij leest ze in elke chat en vult ze aan als je «onthoud dit» zegt (in elke chattaal) of klaagt over iets dat hij moet laten. Je kunt ze altijd bewerken of wissen. Maximaal 2000 tekens. Als het vol is, moet de assistent oudere regels vervangen — er wordt niets stil verwijderd."
             }
           }
         }
@@ -198,10 +202,14 @@
           "prompt": {
             "name": "Systeemprompt",
             "data": {
-              "system_prompt": "Systeemprompt"
+              "system_prompt": "Systeemprompt",
+              "notes": "Onthouden notities gebruiken",
+              "notes_text": "Onthouden notities"
             },
             "data_description": {
-              "system_prompt": "Alleen toon en gewoonten. Leeg laten voor de standaard. De assistent houdt altijd toegang tot Home Assistant en snelle links in antwoorden."
+              "system_prompt": "Vaste instructies voor de assistent — ruimtes, regels, hoe te antwoorden, alles wat hij moet volgen. Leeg laten voor de standaard. De assistent houdt altijd toegang tot Home Assistant en snelle links in antwoorden. Hij schrijft niet in dit veld.",
+              "notes": "Standaard uit. Als het aan staat, leest de assistent de notities hieronder in elke chat en kan hij ze aanvullen. Uit: de chat leest noch schrijft ze. Je kunt de tekst altijd bewerken.",
+              "notes_text": "Korte Engelse opsommingen die de assistent moet onthouden. Hij leest ze in elke chat en vult ze aan als je «onthoud dit» zegt (in elke chattaal) of klaagt over iets dat hij moet laten. Je kunt ze altijd bewerken of wissen. Maximaal 2000 tekens. Als het vol is, moet de assistent oudere regels vervangen — er wordt niets stil verwijderd."
             }
           }
         }

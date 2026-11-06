@@ -28,6 +28,7 @@ from .const import (
     CONF_ENABLE_SIDEBAR,
     CONF_ALLOW_USERS,
     CONF_HOUSE_MAP,
+    CONF_NOTES,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
     CONF_CHANGE_HISTORY_TTL_DAYS,
@@ -143,6 +144,12 @@ def _keep_chats(data: dict) -> int:
     return max(1, min(keep, 500))
 
 
+async def _notes_text(hass: HomeAssistant) -> str:
+    from .notes import async_load_notes
+
+    return await async_load_notes(hass)
+
+
 async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
     data = _merged(entry)
     rows = mcp_rows(hass, entry)
@@ -157,11 +164,16 @@ async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
         extras,
     )
     house_map = bool(data.get(CONF_HOUSE_MAP, False))
+    notes = bool(data.get(CONF_NOTES, False))
     token = primary["token"] if primary else ""
     if house_map:
         from .house_map import mcp_server_config
 
         servers = {**servers, "catalog": mcp_server_config(hass)}
+    if notes:
+        from .notes import mcp_server_config as notes_mcp_server_config
+
+        servers = {**servers, "notes": notes_mcp_server_config(hass)}
     kind = primary["kind"] if primary else MCP_CUSTOM
     if kind not in {MCP_HA, MCP_HA_MCP, MCP_COOLVER}:
         kind = MCP_CUSTOM
@@ -184,6 +196,8 @@ async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
         enable_dictate=bool(data.get(CONF_ENABLE_DICTATE, True)),
         allow_users=bool(data.get(CONF_ALLOW_USERS, False)),
         house_map=house_map,
+        notes=notes,
+        notes_text=await _notes_text(hass),
         shorten_mcp_results=bool(data.get(CONF_SHORTEN_MCP_RESULTS, True)),
         change_history=bool(data.get(CONF_CHANGE_HISTORY, True)),
         change_history_ttl_days=change_history_ttl_days(

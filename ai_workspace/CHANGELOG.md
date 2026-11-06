@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0b9
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.5.0b9`) together with this release.** The chat banner now warns only when the runtime is at least one minor version behind (for example 1.4 vs 1.5), not for a beta on the same minor such as 1.5.0b8 vs 1.5.0b9. The warning is translated in the 15 chat languages.
+- Configure: optional **Remembered notes** (switch off by default, plus a text field). The assistant does not write in the system prompt. When the switch is on, it reads the English bullets and can add to them if you say “remember this” (any chat language) or complain about a habit. When it is off, chat neither reads nor writes them. Maximum 2000 characters; a new line that does not fit is refused. YAML `notes: false` is the same switch.
+- Chat: agents no longer announce that they are looking at Home Assistant. A status sentence is only for real work (a change or a write). House facts still come from tools.
+
 ## 1.5.0b8
 
 - **Update the runtime (App or Docker image) together with this release.** It only carries the new version number, so the chat does not warn that the runtime is out of date.

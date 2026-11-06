@@ -89,10 +89,14 @@
           "prompt": {
             "name": "Systémový prompt",
             "data": {
-              "system_prompt": "Systémový prompt"
+              "system_prompt": "Systémový prompt",
+              "notes": "Používat zapamatované poznámky",
+              "notes_text": "Zapamatované poznámky"
             },
             "data_description": {
-              "system_prompt": "Jen tón a zvyky. Nechte prázdné pro výchozí hodnotu. Asistent si vždy ponechá přístup k Home Assistant a rychlým odkazům v odpovědích."
+              "system_prompt": "Trvalé pokyny pro asistenta — místnosti, pravidla, jak odpovídat, cokoli má dodržovat. Nechte prázdné pro výchozí hodnotu. Asistent si vždy ponechá přístup k Home Assistant a rychlým odkazům v odpovědích. Do tohoto pole nepíše.",
+              "notes": "Ve výchozím stavu vypnuto. Když je zapnuto, asistent čte poznámky níže v každém chatu a může je doplňovat. Vypnuto: chat je nečte ani nezapisuje. Text můžeš kdykoli upravit.",
+              "notes_text": "Krátké anglické odrážky, které si má asistent nechat. Vidí je v každém chatu a doplní je, když řekneš «zapamatuj si» (v jakémkoli jazyce chatu) nebo si stěžuješ na něco, co má přestat dělat. Můžeš je kdykoli upravit nebo vymazat. Maximálně 2000 znaků. Když je limit plný, asistent musí nahradit starší řádky — nic se tiše nemaže."
             }
           }
         }
@@ -198,10 +202,14 @@
           "prompt": {
             "name": "Systémový prompt",
             "data": {
-              "system_prompt": "Systémový prompt"
+              "system_prompt": "Systémový prompt",
+              "notes": "Používat zapamatované poznámky",
+              "notes_text": "Zapamatované poznámky"
             },
             "data_description": {
-              "system_prompt": "Jen tón a zvyky. Nechte prázdné pro výchozí hodnotu. Asistent si vždy ponechá přístup k Home Assistant a rychlým odkazům v odpovědích."
+              "system_prompt": "Trvalé pokyny pro asistenta — místnosti, pravidla, jak odpovídat, cokoli má dodržovat. Nechte prázdné pro výchozí hodnotu. Asistent si vždy ponechá přístup k Home Assistant a rychlým odkazům v odpovědích. Do tohoto pole nepíše.",
+              "notes": "Ve výchozím stavu vypnuto. Když je zapnuto, asistent čte poznámky níže v každém chatu a může je doplňovat. Vypnuto: chat je nečte ani nezapisuje. Text můžeš kdykoli upravit.",
+              "notes_text": "Krátké anglické odrážky, které si má asistent nechat. Vidí je v každém chatu a doplní je, když řekneš «zapamatuj si» (v jakémkoli jazyce chatu) nebo si stěžuješ na něco, co má přestat dělat. Můžeš je kdykoli upravit nebo vymazat. Maximálně 2000 znaků. Když je limit plný, asistent musí nahradit starší řádky — nic se tiše nemaže."
             }
           }
         }

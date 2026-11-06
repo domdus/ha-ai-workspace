@@ -89,10 +89,14 @@
           "prompt": {
             "name": "Prompt systemowy",
             "data": {
-              "system_prompt": "Prompt systemowy"
+              "system_prompt": "Prompt systemowy",
+              "notes": "Używaj zapamiętanych notatek",
+              "notes_text": "Zapamiętane notatki"
             },
             "data_description": {
-              "system_prompt": "Tylko ton i nawyki. Zostaw puste dla wartości domyślnej. Asystent zawsze zachowuje dostęp do Home Assistant i szybkich linków w odpowiedziach."
+              "system_prompt": "Stałe instrukcje dla asystenta — pomieszczenia, zasady, sposób odpowiedzi, wszystko, czego ma się trzymać. Zostaw puste dla wartości domyślnej. Asystent zawsze zachowuje dostęp do Home Assistant i szybkich linków w odpowiedziach. Nie zapisuje w tym polu.",
+              "notes": "Domyślnie wyłączone. Gdy włączone, asystent czyta poniższe notatki w każdym czacie i może je uzupełniać. Wyłączone: czat ich nie czyta ani nie zapisuje. Tekst możesz edytować w każdej chwili.",
+              "notes_text": "Krótkie angielskie punkty, które asystent ma zachować. Czyta je w każdym czacie i uzupełnia, gdy mówisz «zapamiętaj» (w dowolnym języku czatu) albo narzekasz na coś, czego ma nie robić. Możesz je w każdej chwili edytować lub wyczyścić. Maks. 2000 znaków. Gdy limit jest pełny, asystent musi zastąpić starsze wiersze — nic nie znika po cichu."
             }
           }
         }
@@ -198,10 +202,14 @@
           "prompt": {
             "name": "Prompt systemowy",
             "data": {
-              "system_prompt": "Prompt systemowy"
+              "system_prompt": "Prompt systemowy",
+              "notes": "Używaj zapamiętanych notatek",
+              "notes_text": "Zapamiętane notatki"
             },
             "data_description": {
-              "system_prompt": "Tylko ton i nawyki. Zostaw puste dla wartości domyślnej. Asystent zawsze zachowuje dostęp do Home Assistant i szybkich linków w odpowiedziach."
+              "system_prompt": "Stałe instrukcje dla asystenta — pomieszczenia, zasady, sposób odpowiedzi, wszystko, czego ma się trzymać. Zostaw puste dla wartości domyślnej. Asystent zawsze zachowuje dostęp do Home Assistant i szybkich linków w odpowiedziach. Nie zapisuje w tym polu.",
+              "notes": "Domyślnie wyłączone. Gdy włączone, asystent czyta poniższe notatki w każdym czacie i może je uzupełniać. Wyłączone: czat ich nie czyta ani nie zapisuje. Tekst możesz edytować w każdej chwili.",
+              "notes_text": "Krótkie angielskie punkty, które asystent ma zachować. Czyta je w każdym czacie i uzupełnia, gdy mówisz «zapamiętaj» (w dowolnym języku czatu) albo narzekasz na coś, czego ma nie robić. Możesz je w każdej chwili edytować lub wyczyścić. Maks. 2000 znaków. Gdy limit jest pełny, asystent musi zastąpić starsze wiersze — nic nie znika po cichu."
             }
           }
         }
