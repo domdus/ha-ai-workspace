@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.0b11
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.5.0b11`) together with this release.** It carries the updated agent prompt (neutral status line before tools).
+- Chat: before the first tool call, the agent may write one short neutral status line in your language (for example “one moment”), without naming Home Assistant, weather, or tools. Still at most one line per turn; nothing between later tool calls. No “looking at Home Assistant” announcements.
+- Chat: the write status glyph (`=`) runs top to bottom for one second again (no sideways phase). Reduced motion still shows a static glyph.
+- Chat: more space between answer text and the status line when both are visible (similar to the gap above tool summaries).
+
 ## 1.5.0b10
 
 - **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.5.0b10`) together with this release.** It only carries the new version number. The chat banner still warns only on a minor mismatch (for example 1.4 vs 1.5).

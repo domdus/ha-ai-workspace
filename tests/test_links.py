@@ -53,8 +53,9 @@ def test_small_talk_stays_plain() -> None:
     full = const.workspace_system_prompt(S())
     assert "small talk" in full
     assert "call a Home Assistant tool" in full
-    assert "Never announce that you are looking at Home Assistant" in const.STATUS_LINE_INSTRUCTIONS
-    assert "not for any topic" in const.STATUS_LINE_INSTRUCTIONS
+    assert "Do not mention Home Assistant" in const.STATUS_LINE_INSTRUCTIONS
+    assert "weather" in const.STATUS_LINE_INSTRUCTIONS
+    assert "before the first tool call" in const.STATUS_LINE_INSTRUCTIONS
     assert "Do not write that you are looking at Home Assistant" in const.CHECK_HOUSE_NOTE
     assert "not for any topic" in const.CHECK_HOUSE_NOTE
     assert "weather" in const.CHECK_HOUSE_NOTE

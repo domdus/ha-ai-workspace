@@ -110,7 +110,7 @@ A model that is not told otherwise answers from what it guesses. For a house tha
 
 So every agent with tools looks at Home Assistant first: a cloud model must call a Home Assistant tool before it answers a question about the house, so lists, counts, and states come from your instance. After that first call it decides freely. Cursor cannot be forced to call a tool, so a Cursor agent is told to look first on each house question.
 
-The agent should not say that it is looking at Home Assistant — not for weather, not for the house, not for any topic. That check is silent; a status sentence is for real work (a change or a write), not for a look-up.
+The agent should not say that it is looking at Home Assistant — not for weather, not for the house, not for any topic. That check is silent. It may still write one short neutral line before the first tool call (for example “one moment” in your language), without naming HA, weather, or tools. A status sentence is also fine when it starts a change or a write. At most one such line per turn; nothing between later tool calls.
 
 A wrong answer about the house costs more than one extra tool call, so this is always on and not on the agent form. Greetings, thanks, and messages with images or files are never forced. To turn it off for one agent anyway, set `check_house: false` on that agent in YAML.
 

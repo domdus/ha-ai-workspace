@@ -781,9 +781,10 @@ WRITE_RULES = (
     "If asked where something in Home Assistant came from and you do not know, say so instead of guessing."
 )
 STATUS_LINE_INSTRUCTIONS = (
-    "A short status sentence is fine when you start real work (a change or a write). "
-    "Never announce that you are looking at Home Assistant or checking live state — "
-    "not for weather, not for the house, not for any topic. Just call the tools. "
+    "You may write one short neutral status sentence once before the first tool call when the "
+    "answer needs tools (for example a brief 'one moment' in the user's language). "
+    "Do not mention Home Assistant, live checks, weather, or specific tools in that sentence. "
+    "A status sentence is also fine when you start real work (a change or a write). "
     "Write at most one status sentence per request. Between tool calls write nothing at all; "
     "the UI already shows them. Your next text is the answer."
 )
