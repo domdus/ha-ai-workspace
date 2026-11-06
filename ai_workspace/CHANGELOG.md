@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.0b10
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.5.0b10`) together with this release.** It only carries the new version number. The chat banner still warns only on a minor mismatch (for example 1.4 vs 1.5).
+- Chat: the write status glyph (`=`) runs for 1 second top to bottom, then 1 second left to right, then repeats. Reduced motion still shows a static glyph.
+
 ## 1.5.0b9
 
 - **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.5.0b9`) together with this release.** The chat banner now warns only when the runtime is at least one minor version behind (for example 1.4 vs 1.5), not for a beta on the same minor such as 1.5.0b8 vs 1.5.0b9. The warning is translated in the 15 chat languages.

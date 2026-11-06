@@ -834,15 +834,20 @@ h1 {
   stroke: none;
 }
 
-/* =: lines stack up endlessly, moving down through the glyph and fading in and out at its edges. */
+/* =: 1s lines run top→bottom, then 1s the same bars run left→right. */
+.activity.shine .glyph[data-kind="write"] {
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent);
+  animation: glyph-write-mask 2s linear infinite;
+}
+
 .activity.shine .glyph[data-kind="write"] svg {
-  animation: none;
-  -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
-  mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
+  animation: glyph-write-turn 2s linear infinite;
+  transform-origin: center;
 }
 
 .activity.shine .glyph[data-kind="write"] .lines {
-  animation: glyph-lines 0.6s linear infinite;
+  animation: glyph-lines 1s linear infinite;
 }
 
 /* -: a dash turning, half a turn per beat. */
@@ -861,6 +866,22 @@ h1 {
 @keyframes glyph-lines {
   from { transform: translateY(0); }
   to { transform: translateY(9px); }
+}
+
+@keyframes glyph-write-turn {
+  0%, 50% { transform: rotate(0deg); }
+  50.01%, 100% { transform: rotate(-90deg); }
+}
+
+@keyframes glyph-write-mask {
+  0%, 50% {
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent);
+    mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent);
+  }
+  50.01%, 100% {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 30%, #000 70%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 30%, #000 70%, transparent);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
