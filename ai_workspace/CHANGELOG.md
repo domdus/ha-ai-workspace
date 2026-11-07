@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0b20
+
+- The runtime has no changes in this release. A 1.5.0b13 runtime keeps working without an update notice; the 1.5.0b20 image only carries the new version number.
+- Chat: the thinking status glyph is a turning `+`, like the work glyph, instead of `-`. The dash stays the wait glyph.
+- Configure: Cost and tokens starts collapsed, like House and Prompt.
+
 ## 1.5.0b19
 
 - The runtime has no changes in this release. A 1.5.0b13 runtime keeps working without an update notice; the 1.5.0b19 image only carries the new version number.

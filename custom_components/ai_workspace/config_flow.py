@@ -440,7 +440,7 @@ async def _shared_form(
         fields[vol.Required(SECTION_MCP)] = section(_mcp_schema(defaults, hass, kinds or []), {"collapsed": False})
     fields[vol.Required(SECTION_CHAT)] = section(_chat_schema(defaults, agents), {"collapsed": False})
     fields[vol.Optional(SECTION_VOICE, default=voice)] = _SideBySide(_voice_schema(voice, stt, tts))
-    fields[vol.Required(SECTION_COST)] = section(_cost_schema(defaults), {"collapsed": False})
+    fields[vol.Required(SECTION_COST)] = section(_cost_schema(defaults), {"collapsed": True})
     fields[vol.Required(SECTION_HOUSE)] = section(_house_schema(defaults), {"collapsed": True})
     if notes_text is None:
         from .notes import async_load_notes
