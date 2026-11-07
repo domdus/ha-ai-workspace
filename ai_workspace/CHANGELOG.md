@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0b21
+
+- The runtime has no changes in this release. A 1.5.0b13 runtime keeps working without an update notice; the 1.5.0b21 image only carries the new version number.
+- Chat: TTS stops when the floating chat is closed, when you leave AI Workspace, or when you open Usage. Minimizing the companion app still reads to the end.
+- Chat: a queued prompt chip uses the same corner radius as the composer box.
+
 ## 1.5.0b20
 
 - The runtime has no changes in this release. A 1.5.0b13 runtime keeps working without an update notice; the 1.5.0b20 image only carries the new version number.

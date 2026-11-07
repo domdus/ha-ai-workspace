@@ -449,27 +449,32 @@ async function ensureHost() {
   const close = drawer.querySelector(".close");
   const newChat = drawer.querySelector(".new-chat");
   const brand = drawer.querySelector(".brand");
+  const setOpen = (open) => {
+    const wasOpen = drawer.classList.contains("open");
+    setDrawerOpen(drawer, open);
+    if (wasOpen && !open) chatApi?.haltSpeech?.();
+  };
   const openDrawer = () => {
     if (drawer.classList.contains("open")) return;
-    setDrawerOpen(drawer, true);
+    setOpen(true);
     if (mqNarrow.matches && !onOverlayEntry()) {
       history.pushState({ ...history.state, [OVERLAY_ENTRY]: true }, "", location.href);
     }
   };
   const closeDrawer = () => {
-    setDrawerOpen(drawer, false);
+    setOpen(false);
     if (onOverlayEntry()) history.back();
   };
   const syncBack = () => {
     const open = drawer.classList.contains("open");
-    if (open && mqNarrow.matches && !onOverlayEntry()) setDrawerOpen(drawer, false);
+    if (open && mqNarrow.matches && !onOverlayEntry()) setOpen(false);
     // A link can close the chat and leave its entry behind; do not make Back stop on it.
     else if (!open && onOverlayEntry()) history.back();
   };
   const goToWorkspace = (path = "/ai-workspace") => {
     // Take over the chat's entry, so Back from the new page returns to the page below the chat.
     const replace = onOverlayEntry();
-    setDrawerOpen(drawer, false);
+    setOpen(false);
     const hass = hassObj();
     if (typeof hass?.navigate === "function") {
       hass.navigate(path, { replace });
@@ -563,7 +568,7 @@ async function ensureHost() {
       window.setTimeout(sync, 200);
     }
     fab.classList.toggle("hidden", hideFab());
-    if (hideFab()) setDrawerOpen(drawer, false);
+    if (hideFab()) setOpen(false);
     schedulePlace();
   };
   const mountChat = () => {

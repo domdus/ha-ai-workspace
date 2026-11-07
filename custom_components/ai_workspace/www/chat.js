@@ -1139,8 +1139,13 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function applyRoute() {
     if (compact || !routed) return;
+    if (!location.pathname.startsWith("/ai-workspace")) {
+      haltSpeech();
+      return;
+    }
     const route = workspaceRoute();
     if (route.view === "usage") {
+      haltSpeech();
       openUsagePage();
       return;
     }
@@ -1359,9 +1364,14 @@ export async function mountAiWorkspace(root, options = {}) {
     syncScrollBottomBtn();
   }
 
+  function overlayDrawer() {
+    if (!compact) return null;
+    return root.closest?.(".drawer") || root.getRootNode?.()?.querySelector?.(".drawer") || null;
+  }
+
   function overlayOpen() {
     if (!compact) return true;
-    return Boolean(root.parentElement?.classList.contains("open"));
+    return Boolean(overlayDrawer()?.classList.contains("open"));
   }
 
   function chatVisible() {
@@ -2059,8 +2069,8 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function closeOverlayChat() {
-    const node = root.getRootNode?.();
-    node?.querySelector?.(".drawer")?.classList.remove("open");
+    haltSpeech();
+    overlayDrawer()?.classList.remove("open");
   }
 
   function openHaPath(path) {
@@ -5888,6 +5898,16 @@ export async function mountAiWorkspace(root, options = {}) {
     listen(window, "location-changed", applyRoute);
     listen(window, "popstate", applyRoute);
   }
+  if (compact) {
+    const drawer = overlayDrawer();
+    if (drawer) {
+      const watchOpen = new MutationObserver(() => {
+        if (!drawer.classList.contains("open")) haltSpeech();
+      });
+      watchOpen.observe(drawer, { attributes: true, attributeFilter: ["class"] });
+      teardown.push(() => watchOpen.disconnect());
+    }
+  }
   listen(window, "location-changed", loadDictate);
   listen(window, "focus", loadDictate);
   listen(document, "visibilitychange", () => {
@@ -5936,5 +5956,5 @@ export async function mountAiWorkspace(root, options = {}) {
     root.replaceChildren();
   }
 
-  return { openSession, applyRoute, setNarrow, toggleNav, startNewChat, loadDictate, resume, destroy };
+  return { openSession, applyRoute, setNarrow, toggleNav, startNewChat, loadDictate, resume, destroy, haltSpeech };
 }

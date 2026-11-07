@@ -1227,7 +1227,8 @@ h1 {
   /* Box pad is space-4 left / space-1 right; pull the chip into that space-1 gutter. */
   margin: 0 0 0 calc(var(--ha-space-1) - var(--ha-space-4));
   padding: var(--ha-space-2) 0 var(--ha-space-2) var(--ha-space-3);
-  border-radius: var(--ha-border-radius-lg, 12px);
+  /* Nested in the 3xl composer: inner radius = outer − the space-1 inset. */
+  border-radius: calc(var(--ha-border-radius-3xl, 24px) - var(--ha-space-1, 4px));
   background: var(--ha-color-fill-neutral-quiet-resting, var(--chip-background-color));
   color: var(--primary-text-color);
 }
