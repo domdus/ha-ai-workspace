@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.0b29
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.5.0b29`) together with this release.** It carries the updated agent prompt. The chat warns when the runtime is older than 1.5.0b29.
+- Chat: the status sentence before tools is optional again. The agent may write one short sentence about what it is about to do, but a quick question can go straight to the tools. If it writes one, it is still a natural sentence, not a generic filler. Voice requests still skip it.
+
 ## 1.5.0b28
 
 - The runtime has no changes in this release. A 1.5.0b26 runtime keeps working without an update notice; the 1.5.0b28 image only carries the new version number.

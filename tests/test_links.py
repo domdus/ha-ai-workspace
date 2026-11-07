@@ -54,6 +54,8 @@ def test_small_talk_stays_plain() -> None:
     assert "small talk" in full
     assert "call a Home Assistant tool" in full
     assert "not a generic filler" in const.STATUS_LINE_INSTRUCTIONS
+    # Optional, not required: a quick question may go straight to the tools.
+    assert const.STATUS_LINE_INSTRUCTIONS.startswith("You may write")
     assert "before the first tool call" in const.STATUS_LINE_INSTRUCTIONS
     assert "Do not mention Home Assistant" not in const.STATUS_LINE_INSTRUCTIONS
     assert "I'll check that" not in const.STATUS_LINE_INSTRUCTIONS

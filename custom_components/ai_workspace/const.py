@@ -784,9 +784,9 @@ WRITE_RULES = (
     "If asked where something in Home Assistant came from and you do not know, say so instead of guessing."
 )
 STATUS_LINE_INSTRUCTIONS = (
-    "Write one status sentence once before the first tool call when the "
+    "You may write one short status sentence before the first tool call when the "
     "answer needs tools, or when you start real work (a change or a write). "
-    "Make it a natural complete sentence in the user's language that names "
+    "If you do, make it a natural sentence in the user's language about "
     "what you are about to do for this request, not a generic filler. "
     "Write at most one status sentence per request. Between tool calls write nothing at all; "
     "the UI already shows them. Your next text is the answer."
