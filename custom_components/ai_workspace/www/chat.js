@@ -1,7 +1,10 @@
 const CACHE = new URL(import.meta.url).search;
 const { stringsFor } = await import(`./i18n.js${CACHE}`);
-const { takeSpeech, speechPlain } = await import(`./speech.js${CACHE}`);
+const { takeSpeech, speechPlain, takePendingClip } = await import(`./speech.js${CACHE}`);
 const { stripRemoteMedia, watchRenderedMedia } = await import(`./media_guard.js${CACHE}`);
+const { MAX_ATTACH, MAX_QUEUE, filesToRead, takeInputFiles, pullQueuedDraft, keepQueueOnHalt } = await import(
+  `./send_guard.js${CACHE}`
+);
 
 const API = "/api/ai_workspace";
 const SESSION_CACHE_KEY = "ai_workspace_sessions";
@@ -1161,8 +1164,6 @@ export async function mountAiWorkspace(root, options = {}) {
   let turnStopDone = null;
   let nextTurns = [];
   let sendQueued = null;
-  const MAX_ATTACH = 4;
-  const MAX_QUEUE = 10;
   const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
   const MAX_FILE_BYTES = 256 * 1024;
   const IMAGE_EDGE = 1280;
@@ -2241,6 +2242,13 @@ export async function mountAiWorkspace(root, options = {}) {
     return [turn.text, names.join(", ")].filter(Boolean).join(" · ");
   }
 
+  function dropQueued(index) {
+    nextTurns.splice(index, 1);
+    renderNext();
+    resizeComposer();
+    if (keepComposerFocus()) messageEl.focus({ preventScroll: true });
+  }
+
   function renderNext() {
     if (!nextRow) return;
     if (!nextTurns.length) {
@@ -2248,36 +2256,41 @@ export async function mountAiWorkspace(root, options = {}) {
       nextRow.replaceChildren();
       return;
     }
+    if (haUi) {
+      const set = uiCreate("ha-chip-set", "div");
+      set.className = "next-chips";
+      nextTurns.forEach((turn, index) => {
+        const chip = uiCreate("ha-input-chip", "div");
+        chip.className = "next-chip";
+        const label = turnLabel(turn);
+        const hint = index === 0 ? t("queued_hint") : t("queued_later");
+        chip.title = hint;
+        chip.setAttribute("title", hint);
+        if (chip.localName === "ha-input-chip") {
+          haChipLabel(chip, label);
+          chip.removable = true;
+          chip.addEventListener("remove", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            dropQueued(index);
+          });
+        } else {
+          chip.append(queuedChipCopy(label, hint), queuedChipRemove(index));
+        }
+        set.append(chip);
+      });
+      nextRow.replaceChildren(set);
+      bindHaTree(nextRow);
+      nextRow.hidden = false;
+      return;
+    }
     nextRow.replaceChildren(
       ...nextTurns.map((turn, index) => {
         const chip = document.createElement("div");
         chip.className = "next-chip";
-        const copy = document.createElement("p");
-        copy.className = "next-copy";
-        const text = document.createElement("span");
-        text.className = "next-text";
-        text.textContent = turnLabel(turn);
-        const hint = document.createElement("span");
-        hint.className = "next-hint";
-        hint.textContent = index === 0 ? t("queued_hint") : t("queued_later");
-        copy.append(text, hint);
-        const remove = document.createElement("ha-icon-button");
-        remove.className = "next-remove";
-        remove.type = "button";
-        remove.label = t("queued_remove");
-        remove.setAttribute("label", t("queued_remove"));
-        const icon = document.createElement("ha-icon");
-        icon.setAttribute("icon", "mdi:close");
-        remove.append(icon);
-        remove.addEventListener("click", (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          nextTurns.splice(index, 1);
-          renderNext();
-          resizeComposer();
-          if (keepComposerFocus()) messageEl.focus({ preventScroll: true });
-        });
-        chip.append(copy, remove);
+        const label = turnLabel(turn);
+        const hint = index === 0 ? t("queued_hint") : t("queued_later");
+        chip.append(queuedChipCopy(label, hint), queuedChipRemove(index));
         bindHaTree(chip);
         return chip;
       }),
@@ -2285,11 +2298,42 @@ export async function mountAiWorkspace(root, options = {}) {
     nextRow.hidden = false;
   }
 
+  function queuedChipCopy(label, hint) {
+    const copy = document.createElement("p");
+    copy.className = "next-copy";
+    const text = document.createElement("span");
+    text.className = "next-text";
+    text.textContent = label;
+    const hintEl = document.createElement("span");
+    hintEl.className = "next-hint";
+    hintEl.textContent = hint;
+    copy.append(text, hintEl);
+    return copy;
+  }
+
+  function queuedChipRemove(index) {
+    const remove = document.createElement("ha-icon-button");
+    remove.className = "next-remove";
+    remove.type = "button";
+    remove.label = t("queued_remove");
+    remove.setAttribute("label", t("queued_remove"));
+    const icon = document.createElement("ha-icon");
+    icon.setAttribute("icon", "mdi:close");
+    remove.append(icon);
+    remove.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      dropQueued(index);
+    });
+    return remove;
+  }
+
   function queueTurn(text, attachments) {
     if (nextTurns.length >= MAX_QUEUE) return;
     nextTurns.push({ text, attachments: attachments.slice() });
     pending = [];
     messageEl.value = "";
+    // Microphone only — TTS of the current reply keeps going.
     stopSpeech();
     renderThumbs();
     renderNext();
@@ -2305,18 +2349,17 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function restoreQueued() {
-    if (!nextTurns.length) return;
-    if (!messageEl.value.trim() && !pending.length) {
-      const turn = nextTurns.shift();
-      messageEl.value = turn.text;
-      pending = turn.attachments.slice(0, MAX_ATTACH);
+    const pulled = pullQueuedDraft(nextTurns, { draftText: messageEl.value, pending });
+    if (pulled.pulled) {
+      messageEl.value = pulled.text;
+      pending = pulled.attachments;
     }
     renderThumbs();
     renderNext();
     resizeComposer();
   }
 
-  function haltStream({ keepQueue = false } = {}) {
+  function haltStream({ keepQueue = true } = {}) {
     streamToken += 1;
     watchGen += 1;
     if (streamAbort) {
@@ -2358,7 +2401,7 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function abandonStream() {
-    haltStream({ keepQueue: false });
+    haltStream({ keepQueue: keepQueueOnHalt("send") });
   }
 
   async function stopTurn() {
@@ -2369,7 +2412,7 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!streaming && !liveStream) return;
     const chatId = sessionId;
     turnStopping = true;
-    haltStream({ keepQueue: true });
+    haltStream({ keepQueue: keepQueueOnHalt("stop") });
     const done = (async () => {
       if (!chatId) return;
       try {
@@ -3611,8 +3654,8 @@ export async function mountAiWorkspace(root, options = {}) {
     return /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(file?.name || "");
   }
 
-  function freezeFiles(files) {
-    const list = [...files].filter(Boolean);
+  function freezeFiles(files, slots = MAX_ATTACH) {
+    const list = filesToRead(files, slots);
     if (!list.length) return Promise.resolve([]);
     return Promise.all(
       list.map(
@@ -3764,10 +3807,8 @@ export async function mountAiWorkspace(root, options = {}) {
 
   form.querySelectorAll(".file-input").forEach((input) => {
     input.addEventListener("change", async () => {
-      const files = [...input.files];
-      input.value = "";
-      if (!files.length) return;
-      await addFiles(await freezeFiles(files));
+      const frozen = await takeInputFiles(input, freezeFiles, MAX_ATTACH - pending.length);
+      if (frozen.length) await addFiles(frozen);
     });
   });
   ["dragenter", "dragover"].forEach((name) => {
@@ -3785,14 +3826,14 @@ export async function mountAiWorkspace(root, options = {}) {
     event.preventDefault();
     box.classList.remove("drop-target");
     const files = [...(event.dataTransfer?.files || [])];
-    if (files.length) await addFiles(await freezeFiles(files));
+    if (files.length) await addFiles(await freezeFiles(files, MAX_ATTACH - pending.length));
   });
   form.addEventListener("paste", async (event) => {
     if (!fromComposerField(event)) return;
     const files = imageFilesFromClipboard(event);
     if (!files.length) return;
     event.preventDefault();
-    await addFiles(await freezeFiles(files));
+    await addFiles(await freezeFiles(files, MAX_ATTACH - pending.length));
   });
 
   function speechLanguage() {
@@ -4161,27 +4202,6 @@ export async function mountAiWorkspace(root, options = {}) {
     kickSpeak();
   }
 
-  function pendingChars() {
-    return speakPending.reduce((sum, item) => sum + plainForTts(item).length, 0);
-  }
-
-  function takePendingClip() {
-    let clip = "";
-    while (speakPending.length) {
-      const next = speakPending[0];
-      const combined = clip ? `${clip}\n${next}` : next;
-      if (clip && plainForTts(combined).length > 560) break;
-      speakPending.shift();
-      clip = combined;
-      const size = plainForTts(clip).length;
-      if (size < 280) continue;
-      if (!speakFlush) break;
-      if (!speakPending.length) break;
-      if (plainForTts(`${clip}\n${speakPending[0]}`).length > 560) break;
-    }
-    return clip.trim();
-  }
-
   function fillSpeakAhead() {
     while (speakInflight.length < 2 && speakPending.length) {
       if (voice.ttsHeavy) {
@@ -4189,13 +4209,7 @@ export async function mountAiWorkspace(root, options = {}) {
           speakInflight.push(fetchSpeech(speakPending.shift(), speakGen));
           continue;
         }
-        // A short clip already queued (a finished paragraph) should prefetch so
-        // playback can continue as soon as the previous clip ends.
-        if (!speakFlush && pendingChars() < 280) {
-          speakInflight.push(fetchSpeech(speakPending.shift(), speakGen));
-          continue;
-        }
-        const text = takePendingClip();
+        const text = takePendingClip(speakPending, { flush: speakFlush, measure: plainForTts });
         if (!text) break;
         speakInflight.push(fetchSpeech(text, speakGen));
         continue;
@@ -6006,7 +6020,7 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function destroy() {
-    abandonStream();
+    haltStream({ keepQueue: keepQueueOnHalt("destroy") });
     stopSpeech();
     watchGen += 1;
     routeGen += 1;

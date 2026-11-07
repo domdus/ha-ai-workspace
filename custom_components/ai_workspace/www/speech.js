@@ -189,3 +189,25 @@ export function takeSpeech(held, started, flush, options = {}) {
   if (options && options.heavy) return takeHeavySpeech(held, started, flush, pause);
   return takeLightSpeech(held, started, flush, pause);
 }
+
+/**
+ * Bundle queued TTS clips. Mutates `pending` (shifts). Stops when pending is empty.
+ * Prefetch (flush=false) packs up to `target` chars; end-of-reply packs up to `max`.
+ */
+export function takePendingClip(pending, { flush = false, target = TARGET_CHARS, max = MAX_CHARS, measure } = {}) {
+  const sizeOf = typeof measure === "function" ? measure : (text) => String(text || "").length;
+  let clip = "";
+  while (pending.length) {
+    const next = pending[0];
+    const combined = clip ? `${clip}\n${next}` : next;
+    if (clip && sizeOf(combined) > max) break;
+    pending.shift();
+    clip = combined;
+    const size = sizeOf(clip);
+    if (size < target) continue;
+    if (!flush) break;
+    if (!pending.length) break;
+    if (sizeOf(`${clip}\n${pending[0]}`) > max) break;
+  }
+  return clip.trim();
+}

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.0b25
+
+- The runtime has no changes in this release. A 1.5.0b13 runtime keeps working without an update notice; the 1.5.0b25 image only carries the new version number.
+- Chat: several photos copy their bytes before the picker is cleared, and only as many files as still fit (up to four) are read.
+- Chat: stopping, sending the next turn, or switching chats keeps the queued stack. Closing the panel drops it. If the composer is empty, the first queued prompt moves into the field.
+- Chat: TTS still speaks the first paragraph at once. Later short paragraphs are bundled into the next clip. An empty speak queue stops the loop.
+- Chat: in HA Components, queued prompts are `ha-input-chip` with Home Assistant fill.
+
 ## 1.5.0b24
 
 - The runtime has no changes in this release. A 1.5.0b13 runtime keeps working without an update notice; the 1.5.0b24 image only carries the new version number.

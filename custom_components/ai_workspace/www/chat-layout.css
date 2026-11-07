@@ -935,14 +935,33 @@ h1 {
   display: none !important;
 }
 
+.next-chips {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--ha-space-1);
+  width: 100%;
+}
+
 .next-chip {
   display: flex;
   align-items: center;
   gap: var(--ha-space-2);
   padding: var(--ha-space-2) var(--ha-space-2) var(--ha-space-2) var(--ha-space-3);
-  border-radius: var(--ha-border-radius-xl, 16px);
-  background: color-mix(in srgb, var(--primary-text-color) 8%, transparent);
+  border-radius: var(--ha-border-radius-md, 8px);
+  background: var(--ha-color-fill-neutral-quiet-hover, var(--secondary-background-color));
   color: var(--primary-text-color);
+}
+
+.ui-theme-ha-components ha-input-chip.next-chip {
+  display: inline-flex;
+  width: 100%;
+  box-sizing: border-box;
+  gap: unset;
+  padding: unset;
+  border-radius: unset;
+  background: unset;
+  color: unset;
 }
 
 .next-copy {

@@ -1,7 +1,18 @@
 /**
- * Guards for chat send / session routing (mirrors chat.js invariants).
+ * Guards for chat send / session routing and the queue/attach helpers in send_guard.js.
  * Run: node tests/test_send_guard.mjs
  */
+import { readFileSync } from "node:fs";
+import {
+  MAX_ATTACH,
+  MAX_QUEUE,
+  filesToRead,
+  takeInputFiles,
+  pullQueuedDraft,
+  keepQueueOnHalt,
+} from "../custom_components/ai_workspace/www/send_guard.js";
+
+const chatSrc = readFileSync(new URL("../custom_components/ai_workspace/www/chat.js", import.meta.url), "utf8");
 
 function knownSessionId({ freshChat, sessionId, pathId, compactStored }) {
   if (freshChat) return "";
@@ -59,55 +70,67 @@ function sendButtonMode({ streaming, hasDraft }) {
   return { action: "send", enabled: Boolean(hasDraft) };
 }
 
-function afterStop({ queued }) {
-  return queued ? "flush" : "idle";
-}
-
 ok(sendButtonMode({ streaming: true, hasDraft: false }).action === "stop", "Send is Stop while the agent is working");
 ok(sendButtonMode({ streaming: true, hasDraft: false }).enabled === true, "Stop stays clickable with an empty composer");
 ok(sendButtonMode({ streaming: true, hasDraft: true }).action === "send", "A typed follow-up turns Stop back into Send");
 ok(sendButtonMode({ streaming: true, hasDraft: true }).enabled === true, "Send stays clickable so the follow-up can queue");
 ok(sendButtonMode({ streaming: false, hasDraft: false }).enabled === false, "Send stays off without a draft");
 ok(sendButtonMode({ streaming: false, hasDraft: true }).action === "send", "Send returns after stop");
-ok(afterStop({ queued: true }) === "flush", "A queued prompt is sent after stop");
-ok(afterStop({ queued: false }) === "idle", "With an empty queue, stop leaves the composer free");
 
-function flushQueued({ queued, draft, pending }) {
-  return { send: queued, composer: draft, pending };
+ok(keepQueueOnHalt("stop") === true, "Stop keeps the queued stack");
+ok(keepQueueOnHalt("send") === true, "Sending the next turn keeps remaining queued prompts");
+ok(keepQueueOnHalt("switch") === true, "Switching chats keeps the queued stack");
+ok(keepQueueOnHalt("destroy") === false, "Destroying the panel drops the queue");
+
+const stacked = [{ text: "first" }, { text: "second" }, { text: "third" }];
+const fromEmpty = pullQueuedDraft(stacked, { draftText: "", pending: [] });
+ok(fromEmpty.pulled && fromEmpty.text === "first", "Empty composer takes the first queued prompt");
+ok(stacked.length === 2 && stacked[0].text === "second", "The rest of the stack stays queued");
+
+const withDraft = [{ text: "kept" }, { text: "also" }];
+const skipped = pullQueuedDraft(withDraft, { draftText: "I am typing", pending: [] });
+ok(!skipped.pulled, "A typed draft is not replaced by the queue");
+ok(withDraft.length === 2, "Queue stays intact when the composer already has text");
+
+ok(MAX_ATTACH === 4 && MAX_QUEUE === 10, "Attach and queue caps");
+ok(filesToRead(["a", "b", "c", "d", "e"], 4).join(",") === "a,b,c,d", "Only four files are read");
+ok(filesToRead(["a", "b", "c"], 1).join(",") === "a", "Remaining slots cap the read");
+ok(filesToRead(["a", "b"], 0).length === 0, "No slots means no files are read");
+
+{
+  let clearedBeforeRead = false;
+  const input = { files: ["one", "two"], value: "x" };
+  const freeze = async (files, slots) => {
+    if (input.value === "") clearedBeforeRead = true;
+    return filesToRead(files, slots);
+  };
+  const frozen = await takeInputFiles(input, freeze, 4);
+  ok(!clearedBeforeRead, "Picker is still set while bytes are copied");
+  ok(input.value === "", "Picker is cleared after the copy");
+  ok(frozen.join(",") === "one,two", "Copied files are returned");
 }
 
-function queueWhileBusy({ queued, draft, sendQueued }) {
-  const list = Array.isArray(queued) ? queued.slice() : queued ? [queued] : [];
-  if (draft) list.push(draft);
-  return { queued: list, composer: "" };
+{
+  const input = { files: ["a", "b", "c", "d", "e"], value: "x" };
+  const freeze = async (files, slots) => filesToRead(files, slots);
+  const frozen = await takeInputFiles(input, freeze, 2);
+  ok(frozen.join(",") === "a,b", "Limit applies before reading");
 }
 
-ok(
-  flushQueued({ queued: "first", draft: "second", pending: [] }).composer === "second",
-  "Flushing the queue must leave a typed follow-up in the composer",
-);
-ok(
-  flushQueued({ queued: "first", draft: "second", pending: [] }).send === "first",
-  "Flushing the queue sends the queued prompt, not the draft",
-);
-ok(
-  JSON.stringify(queueWhileBusy({ queued: "first", draft: "second" }).queued) === JSON.stringify(["first", "second"]),
-  "A second send while one prompt is queued appends instead of replacing",
-);
-ok(
-  queueWhileBusy({ queued: "first", draft: "second" }).composer === "",
-  "Queuing a follow-up clears the composer so the next prompt can be typed",
-);
-ok(
-  JSON.stringify(queueWhileBusy({ queued: ["first", "second"], draft: "third" }).queued) ===
-    JSON.stringify(["first", "second", "third"]),
-  "Further sends stack on the queue",
-);
-ok(
-  JSON.stringify(queueWhileBusy({ queued: "first", draft: "second", sendQueued: true }).queued) ===
-    JSON.stringify(["first", "second"]),
-  "A send while the queue is flushing still stacks",
-);
+{
+  const input = { files: [], value: "x" };
+  const freeze = async () => {
+    throw new Error("should not read an empty picker");
+  };
+  const frozen = await takeInputFiles(input, freeze, 4);
+  ok(frozen.length === 0 && input.value === "", "Empty picker clears without reading");
+}
+
+ok(chatSrc.includes("takeInputFiles("), "chat.js copies picker files before clearing");
+ok(chatSrc.includes("keepQueueOnHalt("), "chat.js keeps the queue on send/stop");
+ok(chatSrc.includes("pullQueuedDraft("), "chat.js restores queued prompts via pullQueuedDraft");
+ok(chatSrc.includes("takePendingClip("), "chat.js bundles TTS clips from speech.js");
+ok(!/function takePendingClip\(/.test(chatSrc), "chat.js does not reimplement takePendingClip");
 
 if (failed) {
   process.exit(1);

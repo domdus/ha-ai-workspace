@@ -1,4 +1,4 @@
-import { takeSpeech, speechPlain } from "../custom_components/ai_workspace/www/speech.js";
+import { takeSpeech, speechPlain, takePendingClip } from "../custom_components/ai_workspace/www/speech.js";
 
 function eq(actual, expected, label) {
   const left = JSON.stringify(actual);
@@ -100,5 +100,32 @@ if (thirdPause.pieces.length !== 1 || !thirdPause.pieces[0].includes("Changelog"
 
 eq(takeSpeech("Hi!", false, false, { pause: true }).pieces, ["Hi!"], "pause speaks a short complete opener");
 eq(takeSpeech("Hi!", false, false).rest, "Hi!", "without a pause the short opener still waits");
+
+eq(takePendingClip([]), "", "empty pending yields no clip");
+{
+  const pending = ["Short one.", "Also short."];
+  eq(takePendingClip(pending), "Short one.\nAlso short.", "prefetch bundles short paragraphs");
+  eq(pending.length, 0, "bundling consumes pending");
+}
+{
+  const first = "A".repeat(280);
+  const second = "B".repeat(200);
+  const pending = [first, second, "tail"];
+  const clip = takePendingClip(pending);
+  eq(clip, first, "prefetch stops once the clip reaches 280");
+  eq(pending.join("|"), `${second}|tail`, "leftover stays queued");
+}
+{
+  const a = "A".repeat(200);
+  const b = "B".repeat(200);
+  const pending = [a, b];
+  const clip = takePendingClip(pending, { flush: true });
+  eq(clip, `${a}\n${b}`, "flush packs remaining shorts into one clip");
+  eq(pending.length, 0, "flush drains pending");
+}
+{
+  const pending = [];
+  eq(takePendingClip(pending, { flush: true }), "", "empty pending does not loop");
+}
 
 console.log("ok");
