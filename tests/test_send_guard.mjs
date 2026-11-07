@@ -148,6 +148,11 @@ ok(!/sessionStorage\.getItem\(SESSION_CACHE_KEY\)/.test(chatSrc), "The sidebar c
 ok(chatSrc.includes("pullQueuedDraft("), "chat.js restores queued prompts via pullQueuedDraft");
 ok(chatSrc.includes("takePendingClip("), "chat.js bundles TTS clips from speech.js");
 ok(!/function takePendingClip\(/.test(chatSrc), "chat.js does not reimplement takePendingClip");
+ok(chatSrc.includes("measure: spokenLength"), "TTS clip size is a character count, not the spoken string");
+ok(
+  !chatSrc.includes("splitSpeechClip(speakPending.shift(), MAX_CHARS, plainForTts)"),
+  "do not pass the spoken string as the TTS size (that split into letters)",
+);
 
 if (failed) {
   process.exit(1);

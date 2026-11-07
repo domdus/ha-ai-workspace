@@ -4267,14 +4267,14 @@ export async function mountAiWorkspace(root, options = {}) {
       let text = "";
       if (voice.ttsHeavy) {
         if (!speakInflight.length) {
-          const parts = splitSpeechClip(speakPending.shift(), MAX_CHARS, plainForTts);
+          const parts = splitSpeechClip(speakPending.shift(), MAX_CHARS, spokenLength);
           text = parts.shift() || "";
           if (parts.length) speakPending.unshift(...parts);
         } else {
-          text = takePendingClip(speakPending, { flush: speakFlush, measure: plainForTts });
+          text = takePendingClip(speakPending, { flush: speakFlush, measure: spokenLength });
         }
       } else {
-        const parts = splitSpeechClip(speakPending.shift(), MAX_CHARS, plainForTts);
+        const parts = splitSpeechClip(speakPending.shift(), MAX_CHARS, spokenLength);
         text = parts.shift() || "";
         if (parts.length) speakPending.unshift(...parts);
       }
@@ -4288,6 +4288,10 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function plainForTts(text) {
     return speechPlain(text, { natural: voice.ttsNatural !== false });
+  }
+
+  function spokenLength(text) {
+    return plainForTts(text).length;
   }
 
   async function fetchSpeech(text, gen) {

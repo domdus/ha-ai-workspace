@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.0b32
+
+- The runtime has no changes in this release. A 1.5.0b29 runtime keeps working without an update notice; the 1.5.0b32 image only carries the new version number.
+- Chat: TTS measures clip size as a character count. 1.5.0b31 passed the spoken string, which made `"Hello" <= 560` fail and every clip collapse to one letter.
+
 ## 1.5.0b31
 
 - The runtime has no changes in this release. A 1.5.0b29 runtime keeps working without an update notice; the 1.5.0b31 image only carries the new version number.

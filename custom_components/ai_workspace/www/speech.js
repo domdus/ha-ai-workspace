@@ -99,12 +99,23 @@ function lastClipBreak(prefix) {
 }
 
 /**
+ * Spoken length for clip packing. `measure` must return a number — or the
+ * spoken string, whose `.length` is used. Passing the plain text itself used
+ * to compare `"Hello" <= 560` (NaN), so every clip collapsed to one letter.
+ */
+function clipSize(value, measure, fallback) {
+  const raw = typeof measure === "function" ? measure(value) : fallback(value);
+  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+  return String(raw ?? "").length;
+}
+
+/**
  * Split leftover TTS text so no clip is larger than `max` spoken characters.
  * Flush used to dump the rest of a long reply as one request; engines then
  * timed out or dropped it, so reading stopped after the first paragraph.
  */
 export function splitSpeechClip(text, max = MAX_CHARS, measure) {
-  const sizeOf = typeof measure === "function" ? measure : (value) => speechPlain(value).length;
+  const sizeOf = (value) => clipSize(value, measure, (item) => speechPlain(item).length);
   let rest = String(text || "").trim();
   const pieces = [];
   while (rest) {
@@ -267,7 +278,7 @@ export function speechTail(spoken, full) {
  * Prefetch (flush=false) packs up to `target` chars; end-of-reply packs up to `max`.
  */
 export function takePendingClip(pending, { flush = false, target = TARGET_CHARS, max = MAX_CHARS, measure } = {}) {
-  const sizeOf = typeof measure === "function" ? measure : (text) => String(text || "").length;
+  const sizeOf = (value) => clipSize(value, measure, (item) => String(item || "").length);
   let clip = "";
   while (pending.length) {
     const next = pending[0];

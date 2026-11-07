@@ -170,6 +170,30 @@ if (!afterTools.pieces.length || !afterTools.pieces[0].includes("1.5.0b26")) {
 }
 
 {
+  const para =
+    "Lokal war beta noch auf 1.5.0b27. Der Pull ist ein Fast-forward auf 1.5.0b30.";
+  const parts = splitSpeechClip(para, MAX_CHARS, speechPlain);
+  eq(parts, [para], "measure returning the spoken string keeps a short paragraph whole");
+  if (parts.some((piece) => piece.length === 1)) {
+    throw new Error(`string measure must not split into letters: ${JSON.stringify(parts)}`);
+  }
+}
+
+{
+  const wall = "Hier die README der aktuellen Beta, zum Vorlesen. ".repeat(40);
+  const parts = splitSpeechClip(wall, MAX_CHARS, speechPlain);
+  if (parts.some((piece) => piece.length === 1)) {
+    throw new Error(`string measure split a long reply into letters: ${JSON.stringify(parts.slice(0, 12))}`);
+  }
+  if (parts.some((piece) => speechPlain(piece).length > MAX_CHARS)) {
+    throw new Error("string measure left an oversized clip");
+  }
+  if (parts.join("").replace(/\s+/g, "") !== wall.trim().replace(/\s+/g, "")) {
+    throw new Error("string measure dropped spoken text");
+  }
+}
+
+{
   const pending = ["A".repeat(MAX_CHARS + 40), "tail"];
   const clip = takePendingClip(pending);
   if (speechPlain(clip).length > MAX_CHARS) throw new Error("pending clip kept an oversized first item");
