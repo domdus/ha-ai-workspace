@@ -843,7 +843,7 @@ h1 {
   stroke-linejoin: round;
 }
 
-.activity.shine .glyph[data-kind="read"] .dot {
+.activity.shine .glyph .dot {
   fill: currentColor;
   stroke: none;
 }

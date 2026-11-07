@@ -1466,13 +1466,16 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   // A small plain glyph in front of the status, one per kind of moment:
-  // + working, + thinking, : : reading the house (four turning dots),
+  // : : working, : : thinking (four turning dots), + reading the house,
   // = changing the house (lines run down), - waiting (a turning dash).
+  const PLUS_GLYPH =
+    '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg>';
+  const DOTS_GLYPH =
+    '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><circle class="dot" cx="7" cy="7" r="2.5" fill="currentColor"/><circle class="dot" cx="17" cy="7" r="2.5" fill="currentColor"/><circle class="dot" cx="7" cy="17" r="2.5" fill="currentColor"/><circle class="dot" cx="17" cy="17" r="2.5" fill="currentColor"/></svg>';
   const ACTIVITY_GLYPHS = {
-    work: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg>',
-    think: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg>',
-    read:
-      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><circle class="dot" cx="7" cy="7" r="2.5" fill="currentColor"/><circle class="dot" cx="17" cy="7" r="2.5" fill="currentColor"/><circle class="dot" cx="7" cy="17" r="2.5" fill="currentColor"/><circle class="dot" cx="17" cy="17" r="2.5" fill="currentColor"/></svg>',
+    work: DOTS_GLYPH,
+    think: DOTS_GLYPH,
+    read: PLUS_GLYPH,
     write:
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true"><g class="lines"><path d="M5 -1.5h14M5 7.5h14M5 16.5h14M5 25.5h14"/></g></svg>',
     wait: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true"><path d="M5 12h14"/></svg>',

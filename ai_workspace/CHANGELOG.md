@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.0b23
+
+- The runtime has no changes in this release. A 1.5.0b13 runtime keeps working without an update notice; the 1.5.0b23 image only carries the new version number.
+- Chat: thinking and working use four turning dots (`: :`); reading the house uses a turning `+`.
+
 ## 1.5.0b22
 
 - The runtime has no changes in this release. A 1.5.0b13 runtime keeps working without an update notice; the 1.5.0b22 image only carries the new version number.
