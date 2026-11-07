@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0b31
+
+- The runtime has no changes in this release. A 1.5.0b29 runtime keeps working without an update notice; the 1.5.0b31 image only carries the new version number.
+- Chat: TTS splits leftover text into clips of at most 560 characters, so a long reply keeps reading after the first paragraph instead of timing out as one request. OpenAI and Piper both get this.
+- Chat: a failed clip is tried once; if playback never signals that it ended, the queue still continues. Piper speaks one clip at a time; AI voices may still prepare the next one.
+
 ## 1.5.0b30
 
 - The runtime has no changes in this release. A 1.5.0b29 runtime keeps working without an update notice; the 1.5.0b30 image only carries the new version number.

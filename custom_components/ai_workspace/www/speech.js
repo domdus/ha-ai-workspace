@@ -1,5 +1,5 @@
-const TARGET_CHARS = 280;
-const MAX_CHARS = 560;
+export const TARGET_CHARS = 280;
+export const MAX_CHARS = 560;
 
 const ARROW_CHARS = /[→➡➜➤▶►▸▹↦⇒]+/g;
 
@@ -85,6 +85,53 @@ function paragraphFollows(text) {
   return /^\s*\n\s*\n/.test(text);
 }
 
+function lastClipBreak(prefix) {
+  const para = prefix.lastIndexOf("\n\n");
+  if (para >= Math.min(40, prefix.length / 4)) return para + 2;
+  const sentence = /[.!?。！？]["»«”’')\]]*(?:\s+|$)/gu;
+  let last = -1;
+  let match;
+  while ((match = sentence.exec(prefix))) last = match.index + match[0].length;
+  if (last >= Math.min(40, prefix.length / 4)) return last;
+  const space = prefix.search(/\s+\S*$/);
+  if (space > 0) return space + 1;
+  return prefix.length;
+}
+
+/**
+ * Split leftover TTS text so no clip is larger than `max` spoken characters.
+ * Flush used to dump the rest of a long reply as one request; engines then
+ * timed out or dropped it, so reading stopped after the first paragraph.
+ */
+export function splitSpeechClip(text, max = MAX_CHARS, measure) {
+  const sizeOf = typeof measure === "function" ? measure : (value) => speechPlain(value).length;
+  let rest = String(text || "").trim();
+  const pieces = [];
+  while (rest) {
+    if (sizeOf(rest) <= max) {
+      pieces.push(rest);
+      break;
+    }
+    let lo = 1;
+    let hi = rest.length;
+    while (lo < hi) {
+      const mid = Math.ceil((lo + hi) / 2);
+      if (sizeOf(rest.slice(0, mid)) <= max) lo = mid;
+      else hi = mid - 1;
+    }
+    let cut = lastClipBreak(rest.slice(0, Math.max(1, lo)));
+    if (cut < 1) cut = Math.max(1, lo);
+    const piece = rest.slice(0, cut).trim();
+    rest = rest.slice(cut).trim();
+    if (piece) pieces.push(piece);
+    else {
+      pieces.push(rest.slice(0, Math.max(1, lo)));
+      rest = rest.slice(Math.max(1, lo)).trim();
+    }
+  }
+  return pieces;
+}
+
 function takeLightSpeech(held, started, flush, pause) {
   const pieces = [];
   let rest = String(held || "");
@@ -112,8 +159,8 @@ function takeLightSpeech(held, started, flush, pause) {
   }
   if (open && bundle) {
     if (flush) {
-      const spoken = `${bundle}${rest}`.trim();
-      if (spoken) pieces.push(spoken);
+      const leftover = `${bundle}${rest}`.trim();
+      if (leftover) pieces.push(...splitSpeechClip(leftover));
       rest = "";
     } else if (pause) {
       const tail = trailingSentence(bundle);
@@ -123,10 +170,10 @@ function takeLightSpeech(held, started, flush, pause) {
       } else rest = bundle + rest;
     } else rest = bundle + rest;
   } else if (flush && rest.trim()) {
-    pieces.push(rest.trim());
+    pieces.push(...splitSpeechClip(rest.trim()));
     rest = "";
   }
-  return { pieces: pieces.filter(Boolean), rest };
+  return { pieces: pieces.filter(Boolean).flatMap((piece) => splitSpeechClip(piece)), rest };
 }
 
 function takeHeavySpeech(held, started, flush, pause) {
@@ -174,14 +221,15 @@ function takeHeavySpeech(held, started, flush, pause) {
     }
   }
   if (flush) {
-    const spoken = `${bundle}${rest}`.trim();
-    if (spoken) pieces.push(spoken);
+    const leftover = `${bundle}${rest}`.trim();
+    bundle = "";
     rest = "";
+    if (leftover) pieces.push(...splitSpeechClip(leftover, MAX_CHARS, size));
   } else {
     if (pause && bundle.trim() && speechIsCompleteSentence(bundle)) emit();
     rest = bundle + rest;
   }
-  return { pieces: pieces.filter(Boolean), rest };
+  return { pieces: pieces.filter(Boolean).flatMap((piece) => splitSpeechClip(piece, MAX_CHARS, size)), rest };
 }
 
 export function takeSpeech(held, started, flush, options = {}) {
@@ -223,6 +271,14 @@ export function takePendingClip(pending, { flush = false, target = TARGET_CHARS,
   let clip = "";
   while (pending.length) {
     const next = pending[0];
+    if (!clip && sizeOf(next) > max) {
+      const parts = splitSpeechClip(next, max, sizeOf);
+      pending.shift();
+      if (!parts.length) continue;
+      clip = parts.shift();
+      if (parts.length) pending.unshift(...parts);
+      break;
+    }
     const combined = clip ? `${clip}\n${next}` : next;
     if (clip && sizeOf(combined) > max) break;
     pending.shift();

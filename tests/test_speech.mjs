@@ -1,4 +1,11 @@
-import { takeSpeech, speechPlain, takePendingClip, speechTail } from "../custom_components/ai_workspace/www/speech.js";
+import {
+  takeSpeech,
+  speechPlain,
+  takePendingClip,
+  speechTail,
+  splitSpeechClip,
+  MAX_CHARS,
+} from "../custom_components/ai_workspace/www/speech.js";
 
 function eq(actual, expected, label) {
   const left = JSON.stringify(actual);
@@ -134,6 +141,41 @@ const answer =
 const afterTools = takeSpeech(`\n\n${answer}`, true, false, { heavy: true, fresh: true });
 if (!afterTools.pieces.length || !afterTools.pieces[0].includes("1.5.0b26")) {
   throw new Error(`text after tools should speak immediately: ${JSON.stringify(afterTools)}`);
+}
+
+{
+  const wall = "wort ".repeat(900);
+  const flushed = takeSpeech(wall, false, true, { heavy: true });
+  if (!flushed.pieces.length) throw new Error("unpunctuated flush should still speak");
+  if (flushed.pieces.some((piece) => speechPlain(piece).length > MAX_CHARS)) {
+    throw new Error(`flush clip exceeded ${MAX_CHARS}: ${flushed.pieces.map((p) => speechPlain(p).length)}`);
+  }
+  if (!flushed.pieces.join(" ").includes("wort")) {
+    throw new Error("flush split dropped the leftover words");
+  }
+  const light = takeSpeech(wall, false, true);
+  if (light.pieces.some((piece) => speechPlain(piece).length > MAX_CHARS)) {
+    throw new Error(`light flush clip exceeded ${MAX_CHARS}`);
+  }
+}
+
+{
+  const huge = "A".repeat(MAX_CHARS + 80);
+  const parts = splitSpeechClip(huge);
+  if (parts.length < 2) throw new Error(`hard split should cut a ${huge.length}-char token`);
+  if (parts.some((piece) => speechPlain(piece).length > MAX_CHARS)) {
+    throw new Error("hard split left an oversized clip");
+  }
+  eq(parts.join(""), huge, "hard split keeps every character");
+}
+
+{
+  const pending = ["A".repeat(MAX_CHARS + 40), "tail"];
+  const clip = takePendingClip(pending);
+  if (speechPlain(clip).length > MAX_CHARS) throw new Error("pending clip kept an oversized first item");
+  if (!pending.length || !pending[pending.length - 1].includes("tail")) {
+    throw new Error(`oversized split should keep the tail queued: ${JSON.stringify(pending)}`);
+  }
 }
 
 eq(speechTail("", answer), answer, "nothing spoken yet yields the full answer");

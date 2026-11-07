@@ -1,6 +1,8 @@
 const CACHE = new URL(import.meta.url).search;
 const { stringsFor } = await import(`./i18n.js${CACHE}`);
-const { takeSpeech, speechPlain, takePendingClip, speechTail } = await import(`./speech.js${CACHE}`);
+const { takeSpeech, speechPlain, takePendingClip, speechTail, splitSpeechClip, MAX_CHARS } = await import(
+  `./speech.js${CACHE}`
+);
 const { stripRemoteMedia, watchRenderedMedia } = await import(`./media_guard.js${CACHE}`);
 const {
   MAX_ATTACH,
@@ -4258,18 +4260,28 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function fillSpeakAhead() {
-    while (speakInflight.length < 2 && speakPending.length) {
+    // Local engines (Piper) often drop a second overlapping request; AI voices need a
+    // prefetch so the next clip is ready when the current one ends.
+    const ahead = voice.ttsHeavy ? 2 : 1;
+    while (speakInflight.length < ahead && speakPending.length) {
+      let text = "";
       if (voice.ttsHeavy) {
         if (!speakInflight.length) {
-          speakInflight.push(fetchSpeech(speakPending.shift(), speakGen));
-          continue;
+          const parts = splitSpeechClip(speakPending.shift(), MAX_CHARS, plainForTts);
+          text = parts.shift() || "";
+          if (parts.length) speakPending.unshift(...parts);
+        } else {
+          text = takePendingClip(speakPending, { flush: speakFlush, measure: plainForTts });
         }
-        const text = takePendingClip(speakPending, { flush: speakFlush, measure: plainForTts });
-        if (!text) break;
-        speakInflight.push(fetchSpeech(text, speakGen));
+      } else {
+        const parts = splitSpeechClip(speakPending.shift(), MAX_CHARS, plainForTts);
+        text = parts.shift() || "";
+        if (parts.length) speakPending.unshift(...parts);
+      }
+      if (!text) {
+        if (!speakPending.length) break;
         continue;
       }
-      const text = speakPending.shift();
       speakInflight.push(fetchSpeech(text, speakGen));
     }
   }
@@ -4281,23 +4293,30 @@ export async function mountAiWorkspace(root, options = {}) {
   async function fetchSpeech(text, gen) {
     const plain = plainForTts(text);
     if (!plain) return null;
-    const ac = new AbortController();
-    const timer = window.setTimeout(() => ac.abort(), 20000);
-    try {
-      const response = await apiFetch(`${API}/tts`, {
-        method: "POST",
-        body: JSON.stringify({ text: plain, language: speechLanguage(), session_id: sessionId || "" }),
-        signal: ac.signal,
-      });
-      if (gen !== speakGen || !response?.ok) return null;
-      const blob = await response.blob();
-      if (gen !== speakGen || !blob || blob.size < 32) return null;
-      return blob;
-    } catch (_err) {
-      return null;
-    } finally {
-      window.clearTimeout(timer);
+    const wait = Math.min(60000, 20000 + plain.length * 50);
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      if (gen !== speakGen) return null;
+      const ac = new AbortController();
+      const timer = window.setTimeout(() => ac.abort(), wait);
+      try {
+        const response = await apiFetch(`${API}/tts`, {
+          method: "POST",
+          body: JSON.stringify({ text: plain, language: speechLanguage(), session_id: sessionId || "" }),
+          signal: ac.signal,
+        });
+        if (gen !== speakGen) return null;
+        if (!response?.ok) continue;
+        const blob = await response.blob();
+        if (gen !== speakGen) return null;
+        if (!blob || blob.size < 32) continue;
+        return blob;
+      } catch (_err) {
+        /* retry once — a long README used to abort every clip after the first paragraph */
+      } finally {
+        window.clearTimeout(timer);
+      }
     }
+    return null;
   }
 
   function playSpeechBlob(blob, gen) {
@@ -4313,13 +4332,29 @@ export async function mountAiWorkspace(root, options = {}) {
         replyAudio.setAttribute("playsinline", "");
       }
       bindReplyAudio();
+      let settled = false;
+      let watchdog = 0;
       const done = () => {
+        if (settled) return;
+        settled = true;
+        if (watchdog) window.clearTimeout(watchdog);
         replyAudio.removeEventListener("ended", done);
+        replyAudio.removeEventListener("error", done);
         if (speakRelease === done) speakRelease = null;
         resolve();
       };
+      const armWatchdog = () => {
+        if (settled) return;
+        if (watchdog) window.clearTimeout(watchdog);
+        const dur = Number(replyAudio.duration);
+        const ms = Number.isFinite(dur) && dur > 0 ? dur * 1000 + 2500 : 45000;
+        watchdog = window.setTimeout(done, ms);
+      };
       speakRelease = done;
       replyAudio.addEventListener("ended", done);
+      replyAudio.addEventListener("error", done);
+      replyAudio.addEventListener("loadedmetadata", armWatchdog, { once: true });
+      armWatchdog();
       replyAudio.pause();
       replyAudio.src = replyObjectUrl;
       replyAudio.play().catch(() => {
