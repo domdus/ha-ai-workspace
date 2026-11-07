@@ -4051,9 +4051,9 @@ export async function mountAiWorkspace(root, options = {}) {
     setSpeakUi("idle");
   }
 
-  function drainSpeech(flush) {
+  function drainSpeech(flush, pause = false) {
     if (flush) speakFlush = true;
-    const taken = takeSpeech(speakHeld, speakStarted, flush, { heavy: voice.ttsHeavy });
+    const taken = takeSpeech(speakHeld, speakStarted, flush, { heavy: voice.ttsHeavy, pause });
     speakHeld = taken.rest;
     for (const piece of taken.pieces) {
       speakStarted = true;
@@ -4112,7 +4112,12 @@ export async function mountAiWorkspace(root, options = {}) {
           speakInflight.push(fetchSpeech(speakPending.shift(), speakGen));
           continue;
         }
-        if (!speakFlush && pendingChars() < 280) break;
+        // A short clip already queued (a finished paragraph) should prefetch so
+        // playback can continue as soon as the previous clip ends.
+        if (!speakFlush && pendingChars() < 280) {
+          speakInflight.push(fetchSpeech(speakPending.shift(), speakGen));
+          continue;
+        }
         const text = takePendingClip();
         if (!text) break;
         speakInflight.push(fetchSpeech(text, speakGen));
@@ -4499,8 +4504,10 @@ export async function mountAiWorkspace(root, options = {}) {
           textPaintedAt = 0;
           addChip(tools, data, true);
           setActivity(assistant, "");
+          drainSpeech(false, true);
         } else if (name === "status") {
           setStatus(data.text);
+          drainSpeech(false, true);
         } else if (name === "error") {
           drainSpeech(true);
           streamFinal = true;

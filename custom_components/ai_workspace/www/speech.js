@@ -81,7 +81,11 @@ function trailingSentence(text) {
   return { piece: match[0], rest: "" };
 }
 
-function takeLightSpeech(held, started, flush) {
+function paragraphFollows(text) {
+  return /^\s*\n\s*\n/.test(text);
+}
+
+function takeLightSpeech(held, started, flush, pause) {
   const pieces = [];
   let rest = String(held || "");
   let bundle = "";
@@ -90,7 +94,7 @@ function takeLightSpeech(held, started, flush) {
     let next = pullSentence(rest);
     if (!next) {
       const tail = trailingSentence(rest);
-      if (!tail || (open && !flush && speechIsShort(bundle + tail.piece))) break;
+      if (!tail || (open && !flush && !pause && speechIsShort(bundle + tail.piece))) break;
       next = tail;
     }
     rest = next.rest;
@@ -111,6 +115,12 @@ function takeLightSpeech(held, started, flush) {
       const spoken = `${bundle}${rest}`.trim();
       if (spoken) pieces.push(spoken);
       rest = "";
+    } else if (pause) {
+      const tail = trailingSentence(bundle);
+      if (tail && tail.piece.trim()) {
+        pieces.push(tail.piece.trim());
+        rest = `${tail.rest}${rest}`;
+      } else rest = bundle + rest;
     } else rest = bundle + rest;
   } else if (flush && rest.trim()) {
     pieces.push(rest.trim());
@@ -119,7 +129,7 @@ function takeLightSpeech(held, started, flush) {
   return { pieces: pieces.filter(Boolean), rest };
 }
 
-function takeHeavySpeech(held, started, flush) {
+function takeHeavySpeech(held, started, flush, pause) {
   const pieces = [];
   let rest = String(held || "");
   let bundle = "";
@@ -132,6 +142,7 @@ function takeHeavySpeech(held, started, flush) {
   };
 
   const size = (text) => speechPlain(text).length;
+  const ready = () => Boolean(flush || pause);
 
   while (rest) {
     let next = pullHeavyUnit(rest);
@@ -139,8 +150,8 @@ function takeHeavySpeech(held, started, flush) {
       const tail = trailingSentence(rest);
       if (!tail) break;
       const nextSize = size(bundle + tail.piece);
-      if (!flush && first && speechIsShort(bundle + tail.piece)) break;
-      if (!flush && !first && nextSize < TARGET_CHARS) break;
+      if (!ready() && first && speechIsShort(bundle + tail.piece)) break;
+      if (!ready() && !first && nextSize < TARGET_CHARS) break;
       next = tail;
     }
     const candidate = `${bundle}${next.piece}`;
@@ -156,7 +167,8 @@ function takeHeavySpeech(held, started, flush) {
       first = false;
       continue;
     }
-    if (size(bundle) >= TARGET_CHARS) {
+    // A blank line means this paragraph is done — don't wait for 280 more characters.
+    if (size(bundle) >= TARGET_CHARS || (paragraphFollows(rest) && speechIsCompleteSentence(bundle))) {
       emit();
       first = false;
     }
@@ -165,11 +177,15 @@ function takeHeavySpeech(held, started, flush) {
     const spoken = `${bundle}${rest}`.trim();
     if (spoken) pieces.push(spoken);
     rest = "";
-  } else rest = bundle + rest;
+  } else {
+    if (pause && bundle.trim() && speechIsCompleteSentence(bundle)) emit();
+    rest = bundle + rest;
+  }
   return { pieces: pieces.filter(Boolean), rest };
 }
 
 export function takeSpeech(held, started, flush, options = {}) {
-  if (options && options.heavy) return takeHeavySpeech(held, started, flush);
-  return takeLightSpeech(held, started, flush);
+  const pause = Boolean(options && options.pause) && !flush;
+  if (options && options.heavy) return takeHeavySpeech(held, started, flush, pause);
+  return takeLightSpeech(held, started, flush, pause);
 }

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.0b19
+
+- The runtime has no changes in this release. A 1.5.0b13 runtime keeps working without an update notice; the 1.5.0b19 image only carries the new version number.
+- Chat: TTS speaks each finished paragraph as soon as it is there (a blank line, or a pause for tools or thinking), in order after the previous clip. A later short paragraph no longer waits until the whole reply is done.
+
 ## 1.5.0b18
 
 - The runtime has no changes in this release. A 1.5.0b13 runtime keeps working without an update notice; the 1.5.0b18 image only carries the new version number.

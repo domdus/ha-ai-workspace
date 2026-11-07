@@ -62,4 +62,43 @@ for (const heavy of [false, true]) {
   }
 }
 eq(takeSpeech("The kitchen is off. 2.", false, false).pieces.includes("2."), false, "hold a list number until its item arrives");
+
+const p1 = "Ich mache 1.5.0b18 fertig — zuerst schaue ich, wie die letzten Betas rausgekommen sind.";
+const p2 = "Ich schaue die Änderungen und den letzten Release-Ablauf an, dann kommt 1.5.0b18.";
+const p3 =
+  "Version, Changelog und Release kommen jetzt auf 1.5.0b18. Runtime bleibt b13, nur die Nummer zieht mit.";
+const firstStatus = takeSpeech(p1, false, false, { heavy: true });
+eq(firstStatus.pieces.length, 1, "first status paragraph speaks immediately");
+if (!firstStatus.pieces[0].includes("1.5.0b18")) {
+  throw new Error(`first status missing: ${JSON.stringify(firstStatus)}`);
+}
+
+const heldNext = takeSpeech(`\n\n${p2}`, true, false, { heavy: true });
+eq(heldNext.pieces.length, 0, "second short paragraph waits while text may still grow");
+if (!heldNext.rest.includes("Änderungen")) {
+  throw new Error(`second paragraph should stay held: ${JSON.stringify(heldNext)}`);
+}
+
+const afterPause = takeSpeech(heldNext.rest, true, false, { heavy: true, pause: true });
+eq(afterPause.pieces.length, 1, "thinking pause speaks the held paragraph");
+if (!afterPause.pieces[0].includes("Änderungen")) {
+  throw new Error(`pause should speak paragraph two: ${JSON.stringify(afterPause)}`);
+}
+
+const twoParas = takeSpeech(`${p2}\n\n${p3}`, true, false, { heavy: true });
+if (twoParas.pieces.length !== 1 || !twoParas.pieces[0].includes("Änderungen")) {
+  throw new Error(`blank line should speak the finished paragraph: ${JSON.stringify(twoParas)}`);
+}
+if (!twoParas.rest.includes("Changelog")) {
+  throw new Error(`later paragraph stays held until it is complete: ${JSON.stringify(twoParas)}`);
+}
+
+const thirdPause = takeSpeech(twoParas.rest, true, false, { heavy: true, pause: true });
+if (thirdPause.pieces.length !== 1 || !thirdPause.pieces[0].includes("Changelog")) {
+  throw new Error(`pause should speak paragraph three: ${JSON.stringify(thirdPause)}`);
+}
+
+eq(takeSpeech("Hi!", false, false, { pause: true }).pieces, ["Hi!"], "pause speaks a short complete opener");
+eq(takeSpeech("Hi!", false, false).rest, "Hi!", "without a pause the short opener still waits");
+
 console.log("ok");
