@@ -1,4 +1,6 @@
 import {
+  clipWatch,
+  CLIP_STALL_MS,
   takeSpeech,
   speechPlain,
   takePendingClip,
@@ -209,3 +211,21 @@ eq(speechTail(`${p1}\n\n${p2}\n\n${p4}`, answer).includes("ist raus"), true, "Cu
 eq(speechTail(`${p4}\n\n${answer}`, answer), "", "do not repeat an answer that was already streamed");
 
 console.log("ok");
+
+{
+  const base = { now: 100000, startedAt: 90000, lastProgress: 100000, started: true, paused: false, ended: false, currentTime: 5, duration: 30 };
+  const check = (patch, want, label) => {
+    const got = clipWatch({ ...base, ...patch });
+    if (got !== want) throw new Error(`clipWatch ${label}: ${got}`);
+  };
+  check({}, "wait", "playing");
+  check({ ended: true }, "done", "ended");
+  check({ currentTime: 29.9 }, "done", "reached the end without an ended event");
+  // A user pause keeps the clip, however long it lasts.
+  check({ paused: true, lastProgress: 0 }, "wait", "paused by the user");
+  check({ lastProgress: base.now - CLIP_STALL_MS - 1 }, "done", "stalled while playing");
+  // Unknown length (streamed audio): a long clip keeps playing as long as it makes progress.
+  check({ duration: Infinity, currentTime: 70 }, "wait", "long clip of unknown length");
+  check({ started: false, startedAt: base.now - 20000 }, "done", "never started");
+  check({ started: false, startedAt: base.now - 2000, paused: true }, "wait", "still loading");
+}

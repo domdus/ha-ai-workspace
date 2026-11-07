@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0b33
+
+- The runtime has no changes in this release. A 1.5.0b29 runtime keeps working without an update notice; the 1.5.0b33 image only carries the new version number.
+- Chat: pausing the read-aloud keeps it paused. Since 1.5.0b31 a timer dropped a paused last clip a few seconds after it would have ended, so the speaker button could not resume it.
+- Chat: a clip whose length the browser cannot read is no longer cut off after 45 seconds. The queue only moves on when a clip ends, never starts, or stops making progress while it plays.
+
 ## 1.5.0b32
 
 - The runtime has no changes in this release. A 1.5.0b29 runtime keeps working without an update notice; the 1.5.0b32 image only carries the new version number.

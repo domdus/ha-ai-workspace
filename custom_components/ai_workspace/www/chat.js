@@ -1,6 +1,6 @@
 const CACHE = new URL(import.meta.url).search;
 const { stringsFor } = await import(`./i18n.js${CACHE}`);
-const { takeSpeech, speechPlain, takePendingClip, speechTail, splitSpeechClip, MAX_CHARS } = await import(
+const { takeSpeech, speechPlain, takePendingClip, speechTail, splitSpeechClip, MAX_CHARS, clipWatch } = await import(
   `./speech.js${CACHE}`
 );
 const { stripRemoteMedia, watchRenderedMedia } = await import(`./media_guard.js${CACHE}`);
@@ -4338,27 +4338,48 @@ export async function mountAiWorkspace(root, options = {}) {
       bindReplyAudio();
       let settled = false;
       let watchdog = 0;
+      let started = false;
+      const startedAt = Date.now();
+      let lastProgress = startedAt;
+      let lastTime = 0;
+      const onPlaying = () => {
+        started = true;
+        lastProgress = Date.now();
+      };
       const done = () => {
         if (settled) return;
         settled = true;
-        if (watchdog) window.clearTimeout(watchdog);
+        if (watchdog) window.clearInterval(watchdog);
         replyAudio.removeEventListener("ended", done);
         replyAudio.removeEventListener("error", done);
+        replyAudio.removeEventListener("playing", onPlaying);
         if (speakRelease === done) speakRelease = null;
         resolve();
       };
-      const armWatchdog = () => {
+      // Moves on when a clip never reports `ended` or stalls, but never while the user paused it.
+      const check = () => {
         if (settled) return;
-        if (watchdog) window.clearTimeout(watchdog);
-        const dur = Number(replyAudio.duration);
-        const ms = Number.isFinite(dur) && dur > 0 ? dur * 1000 + 2500 : 45000;
-        watchdog = window.setTimeout(done, ms);
+        const now = Date.now();
+        const time = Number(replyAudio.currentTime) || 0;
+        if (replyAudio.paused || time !== lastTime) lastProgress = now;
+        lastTime = time;
+        const verdict = clipWatch({
+          now,
+          startedAt,
+          lastProgress,
+          started,
+          paused: replyAudio.paused,
+          ended: replyAudio.ended,
+          currentTime: time,
+          duration: Number(replyAudio.duration),
+        });
+        if (verdict === "done") done();
       };
       speakRelease = done;
       replyAudio.addEventListener("ended", done);
       replyAudio.addEventListener("error", done);
-      replyAudio.addEventListener("loadedmetadata", armWatchdog, { once: true });
-      armWatchdog();
+      replyAudio.addEventListener("playing", onPlaying);
+      watchdog = window.setInterval(check, 1000);
       replyAudio.pause();
       replyAudio.src = replyObjectUrl;
       replyAudio.play().catch(() => {

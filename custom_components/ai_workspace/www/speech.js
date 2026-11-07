@@ -302,3 +302,20 @@ export function takePendingClip(pending, { flush = false, target = TARGET_CHARS,
   }
   return clip.trim();
 }
+
+/**
+ * Watchdog for one TTS clip, checked about once a second.
+ * "done" when the clip ended (also without an `ended` event) or playback stalled;
+ * "wait" while it plays, loads, or is paused by the user (a pause is never a stall).
+ */
+export const CLIP_STALL_MS = 8000;
+export const CLIP_START_MS = 15000;
+
+export function clipWatch({ now, startedAt, lastProgress, started, paused, ended, currentTime, duration }) {
+  if (ended) return "done";
+  const known = Number.isFinite(duration) && duration > 0;
+  if (known && currentTime >= duration - 0.25) return "done";
+  if (!started) return now - startedAt > CLIP_START_MS ? "done" : "wait";
+  if (paused) return "wait";
+  return now - lastProgress > CLIP_STALL_MS ? "done" : "wait";
+}
