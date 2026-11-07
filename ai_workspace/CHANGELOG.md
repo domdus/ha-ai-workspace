@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.0b24
+
+- The runtime has no changes in this release. A 1.5.0b13 runtime keeps working without an update notice; the 1.5.0b24 image only carries the new version number.
+- Chat: queued prompts stack as chips (up to ten) and send in order when the reply finishes.
+- Chat: picking several photos at once copies the bytes immediately so the prompt does not go empty. Up to four attachments, including one after another.
+- Chat: each queued chip has its own fill on the composer so it no longer matches the box.
+
 ## 1.5.0b23
 
 - The runtime has no changes in this release. A 1.5.0b13 runtime keeps working without an update notice; the 1.5.0b23 image only carries the new version number.

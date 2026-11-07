@@ -77,8 +77,9 @@ function flushQueued({ queued, draft, pending }) {
 }
 
 function queueWhileBusy({ queued, draft, sendQueued }) {
-  if (queued || sendQueued) return { queued, composer: draft };
-  return { queued: draft, composer: "" };
+  const list = Array.isArray(queued) ? queued.slice() : queued ? [queued] : [];
+  if (draft) list.push(draft);
+  return { queued: list, composer: "" };
 }
 
 ok(
@@ -90,12 +91,22 @@ ok(
   "Flushing the queue sends the queued prompt, not the draft",
 );
 ok(
-  queueWhileBusy({ queued: "first", draft: "second" }).queued === "first",
-  "A second send while one prompt is queued must not swallow the first",
+  JSON.stringify(queueWhileBusy({ queued: "first", draft: "second" }).queued) === JSON.stringify(["first", "second"]),
+  "A second send while one prompt is queued appends instead of replacing",
 );
 ok(
-  queueWhileBusy({ queued: "first", draft: "second" }).composer === "second",
-  "A second send while one prompt is queued must keep the new text in the composer",
+  queueWhileBusy({ queued: "first", draft: "second" }).composer === "",
+  "Queuing a follow-up clears the composer so the next prompt can be typed",
+);
+ok(
+  JSON.stringify(queueWhileBusy({ queued: ["first", "second"], draft: "third" }).queued) ===
+    JSON.stringify(["first", "second", "third"]),
+  "Further sends stack on the queue",
+);
+ok(
+  JSON.stringify(queueWhileBusy({ queued: "first", draft: "second", sendQueued: true }).queued) ===
+    JSON.stringify(["first", "second"]),
+  "A send while the queue is flushing still stacks",
 );
 
 if (failed) {

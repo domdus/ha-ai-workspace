@@ -925,13 +925,24 @@ h1 {
 
 .next-row {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: var(--ha-space-2);
   margin: 0;
 }
 
 .next-row[hidden] {
   display: none !important;
+}
+
+.next-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--ha-space-2);
+  padding: var(--ha-space-2) var(--ha-space-2) var(--ha-space-2) var(--ha-space-3);
+  border-radius: var(--ha-border-radius-xl, 16px);
+  background: color-mix(in srgb, var(--primary-text-color) 8%, transparent);
+  color: var(--primary-text-color);
 }
 
 .next-copy {

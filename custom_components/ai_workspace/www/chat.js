@@ -802,9 +802,8 @@ export async function mountAiWorkspace(root, options = {}) {
       .replace(/"/g, "&quot;")
       .replace(/</g, "&lt;");
   const composerTag = "div";
-  const nextRemoveMarkup = `<ha-icon-button class="next-remove" type="button" label="${htmlAttr(t("queued_remove"))}"><ha-icon icon="mdi:close"></ha-icon></ha-icon-button>`;
   const fileInputMarkup =
-    `<input class="file-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif,.yaml,.yml,.json,.txt,.md,.csv,.xml,.toml,.html,.css,.js,.ts,.py,.log,.cfg,.ini,.conf" multiple hidden>`;
+    `<input class="file-input" type="file" accept="image/*,.yaml,.yml,.json,.txt,.md,.csv,.xml,.toml,.html,.css,.js,.ts,.py,.log,.cfg,.ini,.conf" multiple hidden>`;
   const attachBtnMarkup = `<ha-icon-button class="attach" type="button" label="${htmlAttr(t("attach"))}"><ha-icon icon="mdi:paperclip"></ha-icon></ha-icon-button>`;
   const micBtnMarkup = `<ha-icon-button class="mic" type="button" label="${htmlAttr(t("dictate"))}" hidden><ha-icon icon="mdi:microphone"></ha-icon></ha-icon-button>`;
   const messageMarkup = `<label class="sr" for="ai-message">${t("message")}</label><textarea id="ai-message" class="message" rows="1" enterkeyhint="enter" placeholder="${htmlAttr(t("placeholder"))}"></textarea>`;
@@ -902,10 +901,7 @@ export async function mountAiWorkspace(root, options = {}) {
           <form class="composer">
             ${scrollBottomMarkup}
             ${haUi ? `<${composerTag} class="composer-box">
-              <div class="next-row" hidden>
-                <p class="next-copy"></p>
-                ${nextRemoveMarkup}
-              </div>
+              <div class="next-row" hidden></div>
               <div class="attach-row" hidden></div>
               ${haComposerInputMarkup}
               <div class="agent-picker" hidden>
@@ -917,10 +913,7 @@ export async function mountAiWorkspace(root, options = {}) {
                 </ha-dropdown>
               </div>
             </${composerTag}>` : `<${composerTag} class="composer-box">
-              <div class="next-row" hidden>
-                <p class="next-copy"></p>
-                ${nextRemoveMarkup}
-              </div>
+              <div class="next-row" hidden></div>
               <div class="attach-row" hidden></div>
               ${standardComposerRowMarkup}
             </${composerTag}>
@@ -1001,11 +994,8 @@ export async function mountAiWorkspace(root, options = {}) {
   const modelMenu = root.querySelector(".model-menu");
   const modelTrigger = root.querySelector(".model-trigger");
   const modelLabel = root.querySelector(".model-trigger-label");
-  const fileInput = form.querySelector(".file-input");
   const attachRow = root.querySelector(".attach-row");
   const nextRow = root.querySelector(".next-row");
-  const nextCopy = root.querySelector(".next-copy");
-  const nextRemove = root.querySelector(".next-remove");
   const box = form.querySelector(".composer-box");
   const plusIcon = root.querySelector(".new-chat ha-svg-icon");
   if (plusIcon && !plusIcon.path) {
@@ -1169,9 +1159,10 @@ export async function mountAiWorkspace(root, options = {}) {
   let watchGen = 0;
   let turnStopping = false;
   let turnStopDone = null;
-  let nextTurn = null;
+  let nextTurns = [];
   let sendQueued = null;
   const MAX_ATTACH = 4;
+  const MAX_QUEUE = 10;
   const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
   const MAX_FILE_BYTES = 256 * 1024;
   const IMAGE_EDGE = 1280;
@@ -2245,32 +2236,58 @@ export async function mountAiWorkspace(root, options = {}) {
   let streamAbort = null;
   let streamFinal = false;
 
+  function turnLabel(turn) {
+    const names = (turn.attachments || []).map((item) => item.name).filter(Boolean);
+    return [turn.text, names.join(", ")].filter(Boolean).join(" · ");
+  }
+
   function renderNext() {
-    if (!nextRow || !nextCopy) return;
-    if (!nextTurn) {
+    if (!nextRow) return;
+    if (!nextTurns.length) {
       nextRow.hidden = true;
-      nextCopy.replaceChildren();
+      nextRow.replaceChildren();
       return;
     }
-    const names = nextTurn.attachments.map((item) => item.name).filter(Boolean);
-    const label = [nextTurn.text, names.join(", ")].filter(Boolean).join(" · ");
-    const text = document.createElement("span");
-    text.className = "next-text";
-    text.textContent = label;
-    const hint = document.createElement("span");
-    hint.className = "next-hint";
-    hint.textContent = t("queued_hint");
-    nextCopy.replaceChildren(text, hint);
-    if (nextRemove) {
-      nextRemove.label = t("queued_remove");
-      nextRemove.setAttribute("label", t("queued_remove"));
-    }
+    nextRow.replaceChildren(
+      ...nextTurns.map((turn, index) => {
+        const chip = document.createElement("div");
+        chip.className = "next-chip";
+        const copy = document.createElement("p");
+        copy.className = "next-copy";
+        const text = document.createElement("span");
+        text.className = "next-text";
+        text.textContent = turnLabel(turn);
+        const hint = document.createElement("span");
+        hint.className = "next-hint";
+        hint.textContent = index === 0 ? t("queued_hint") : t("queued_later");
+        copy.append(text, hint);
+        const remove = document.createElement("ha-icon-button");
+        remove.className = "next-remove";
+        remove.type = "button";
+        remove.label = t("queued_remove");
+        remove.setAttribute("label", t("queued_remove"));
+        const icon = document.createElement("ha-icon");
+        icon.setAttribute("icon", "mdi:close");
+        remove.append(icon);
+        remove.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          nextTurns.splice(index, 1);
+          renderNext();
+          resizeComposer();
+          if (keepComposerFocus()) messageEl.focus({ preventScroll: true });
+        });
+        chip.append(copy, remove);
+        bindHaTree(chip);
+        return chip;
+      }),
+    );
     nextRow.hidden = false;
   }
 
   function queueTurn(text, attachments) {
-    if (nextTurn || sendQueued) return;
-    nextTurn = { text, attachments: attachments.slice() };
+    if (nextTurns.length >= MAX_QUEUE) return;
+    nextTurns.push({ text, attachments: attachments.slice() });
     pending = [];
     messageEl.value = "";
     stopSpeech();
@@ -2281,19 +2298,19 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function flushNext() {
-    if (!nextTurn || streaming || sendQueued) return;
-    sendQueued = nextTurn;
-    nextTurn = null;
+    if (!nextTurns.length || streaming || sendQueued) return;
+    sendQueued = nextTurns.shift();
     renderNext();
     form.requestSubmit();
   }
 
   function restoreQueued() {
-    if (!nextTurn) return;
-    const turn = nextTurn;
-    nextTurn = null;
-    if (!messageEl.value.trim()) messageEl.value = turn.text;
-    pending = [...pending, ...turn.attachments].slice(0, MAX_ATTACH);
+    if (!nextTurns.length) return;
+    if (!messageEl.value.trim() && !pending.length) {
+      const turn = nextTurns.shift();
+      messageEl.value = turn.text;
+      pending = turn.attachments.slice(0, MAX_ATTACH);
+    }
     renderThumbs();
     renderNext();
     resizeComposer();
@@ -2324,7 +2341,7 @@ export async function mountAiWorkspace(root, options = {}) {
     streaming = false;
     liveStream = false;
     if (!keepQueue) {
-      nextTurn = null;
+      nextTurns.length = 0;
       sendQueued = null;
     }
     renderNext();
@@ -3542,8 +3559,12 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   async function loadBitmap(file) {
-    if (typeof createImageBitmap === "function") {
-      return createImageBitmap(file);
+    try {
+      if (typeof createImageBitmap === "function") {
+        return await createImageBitmap(file);
+      }
+    } catch (_err) {
+      /* WebView / HEIC: try an <img> decode next. */
     }
     const url = URL.createObjectURL(file);
     try {
@@ -3560,30 +3581,53 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   async function fileToImage(file) {
-    if (!file || !isImageFile(file)) return null;
-    const bitmap = await loadBitmap(file);
-    const scale = Math.min(1, IMAGE_EDGE / Math.max(bitmap.width || 1, bitmap.height || 1));
-    const width = Math.max(1, Math.round((bitmap.width || 1) * scale));
-    const height = Math.max(1, Math.round((bitmap.height || 1) * scale));
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-    ctx.drawImage(bitmap, 0, 0, width, height);
-    bitmap.close?.();
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
-    if (!blob || blob.size > MAX_IMAGE_BYTES) return null;
-    const data = await blobToBase64(blob);
-    if (!data) return null;
-    const base = String(file.name || "image").replace(/\.[^.]+$/, "") || "image";
-    return { kind: "image", name: `${base}.jpg`, mime: "image/jpeg", data, src: `data:image/jpeg;base64,${data}` };
+    if (!file) return null;
+    try {
+      const bitmap = await loadBitmap(file);
+      const scale = Math.min(1, IMAGE_EDGE / Math.max(bitmap.width || 1, bitmap.height || 1));
+      const width = Math.max(1, Math.round((bitmap.width || 1) * scale));
+      const height = Math.max(1, Math.round((bitmap.height || 1) * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+      ctx.drawImage(bitmap, 0, 0, width, height);
+      bitmap.close?.();
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
+      if (!blob || blob.size > MAX_IMAGE_BYTES) return null;
+      const data = await blobToBase64(blob);
+      if (!data) return null;
+      const base = String(file.name || "image").replace(/\.[^.]+$/, "") || "image";
+      return { kind: "image", name: `${base}.jpg`, mime: "image/jpeg", data, src: `data:image/jpeg;base64,${data}` };
+    } catch (_err) {
+      return null;
+    }
   }
 
   function isImageFile(file) {
     const type = String(file?.type || "").toLowerCase();
     if (type.startsWith("image/")) return true;
-    return /\.(jpe?g|png|webp|gif)$/i.test(file?.name || "");
+    return /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(file?.name || "");
+  }
+
+  function freezeFiles(files) {
+    const list = [...files].filter(Boolean);
+    if (!list.length) return Promise.resolve([]);
+    return Promise.all(
+      list.map(
+        (file) =>
+          new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const buf = reader.result;
+              resolve(new File([buf], file.name || "image", { type: file.type || "application/octet-stream" }));
+            };
+            reader.onerror = () => resolve(file);
+            reader.readAsArrayBuffer(file);
+          }),
+      ),
+    );
   }
 
   function isTextFile(file) {
@@ -3698,7 +3742,9 @@ export async function mountAiWorkspace(root, options = {}) {
           else if (item) pending.push(item);
           else notice = "attach_unsupported";
         } else {
-          notice = "attach_unsupported";
+          const image = await fileToImage(file);
+          if (image) pending.push(image);
+          else notice = "attach_unsupported";
         }
       } catch (_err) {
         notice = "attach_unsupported";
@@ -3718,8 +3764,10 @@ export async function mountAiWorkspace(root, options = {}) {
 
   form.querySelectorAll(".file-input").forEach((input) => {
     input.addEventListener("change", async () => {
-      await addFiles([...input.files]);
+      const files = [...input.files];
       input.value = "";
+      if (!files.length) return;
+      await addFiles(await freezeFiles(files));
     });
   });
   ["dragenter", "dragover"].forEach((name) => {
@@ -3737,14 +3785,14 @@ export async function mountAiWorkspace(root, options = {}) {
     event.preventDefault();
     box.classList.remove("drop-target");
     const files = [...(event.dataTransfer?.files || [])];
-    if (files.length) await addFiles(files);
+    if (files.length) await addFiles(await freezeFiles(files));
   });
   form.addEventListener("paste", async (event) => {
     if (!fromComposerField(event)) return;
     const files = imageFilesFromClipboard(event);
     if (!files.length) return;
     event.preventDefault();
-    await addFiles(files);
+    await addFiles(await freezeFiles(files));
   });
 
   function speechLanguage() {
@@ -4415,10 +4463,10 @@ export async function mountAiWorkspace(root, options = {}) {
         return;
       }
       if (!text && !attachments.length) {
-        if (!nextTurn) return;
-        text = nextTurn.text;
-        attachments = nextTurn.attachments.slice();
-        nextTurn = null;
+        if (!nextTurns.length) return;
+        const turn = nextTurns.shift();
+        text = turn.text;
+        attachments = turn.attachments.slice();
         renderNext();
         keepComposer = true;
       }
@@ -4645,7 +4693,7 @@ export async function mountAiWorkspace(root, options = {}) {
       window.setTimeout(() => {
         if (token === streamToken && sessionId === chatId) refreshTurnHistory(turnSince);
       }, 500);
-      if (followUp && sessionId === chatId && nextTurn) {
+      if (followUp && sessionId === chatId && nextTurns.length) {
         flushNext();
         return;
       }
@@ -4820,13 +4868,6 @@ export async function mountAiWorkspace(root, options = {}) {
   });
   scrollBtnWatch.observe(logEl);
   teardown.push(() => scrollBtnWatch.disconnect());
-  nextRemove?.addEventListener("click", (event) => {
-    event.preventDefault();
-    nextTurn = null;
-    renderNext();
-    resizeComposer();
-    if (keepComposerFocus()) messageEl.focus({ preventScroll: true });
-  });
 
   function startNewChat() {
     setSearchOpen(false);

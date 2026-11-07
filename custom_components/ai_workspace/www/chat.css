@@ -1237,19 +1237,34 @@ h1 {
 
 .next-row {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: var(--ha-space-2);
   /* Box pad is space-4 left / space-1 right; pull the chip into that space-1 gutter. */
   margin: 0 0 0 calc(var(--ha-space-1) - var(--ha-space-4));
-  padding: var(--ha-space-2) 0 var(--ha-space-2) var(--ha-space-3);
-  /* Nested in the 3xl composer: inner radius = outer − the space-1 inset. */
-  border-radius: calc(var(--ha-border-radius-3xl, 24px) - var(--ha-space-1, 4px));
-  background: var(--ha-color-fill-neutral-quiet-resting, var(--chip-background-color));
+  padding: 0;
+  background: transparent;
   color: var(--primary-text-color);
 }
 
 .next-row[hidden] {
   display: none !important;
+}
+
+.next-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--ha-space-2);
+  padding: var(--ha-space-2) 0 var(--ha-space-2) var(--ha-space-3);
+  /* Nested in the 3xl composer: inner radius = outer − the space-1 inset. */
+  border-radius: calc(var(--ha-border-radius-3xl, 24px) - var(--ha-space-1, 4px));
+  /* Form fill is already quiet-resting; mix onto that so the chip reads as its own surface. */
+  background: color-mix(
+    in srgb,
+    var(--primary-text-color) 12%,
+    var(--ha-color-form-background, var(--input-fill-color))
+  );
+  color: var(--primary-text-color);
 }
 
 .next-copy {
