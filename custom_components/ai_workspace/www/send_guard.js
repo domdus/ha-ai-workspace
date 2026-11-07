@@ -36,7 +36,22 @@ export function pullQueuedDraft(queue, { draftText = "", pending = [], maxAttach
   };
 }
 
-/** Destroying the panel drops the stack; stop, send, and chat switch keep it. */
+/**
+ * Only a new send keeps the stack (the queue runs on after it).
+ * Stop cancels everything, and the queue belongs to its chat: a chat switch
+ * or a new chat drops it, so prompts never go out in a chat they were not written for.
+ */
 export function keepQueueOnHalt(reason = "send") {
-  return reason !== "destroy";
+  return reason === "send";
+}
+
+/** How many of the picked files did not fit, given the free attachment slots. */
+export function filesLeftOut(count, slots) {
+  return Math.max(0, Number(count || 0) - Math.max(0, Number(slots || 0)));
+}
+
+/** Per-user key: a shared tablet must not show one user's chat titles to the next. */
+export function sessionCacheKey(base, userId) {
+  const id = String(userId || "").trim();
+  return id ? `${base}:${id}` : "";
 }

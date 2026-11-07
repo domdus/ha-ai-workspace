@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.0b28
+
+- The runtime has no changes in this release. A 1.5.0b26 runtime keeps working without an update notice; the 1.5.0b28 image only carries the new version number.
+- Chat: **Stop** stops everything, including the queue. Before, Stop sent the next queued prompt right away. The first queued prompt goes back into the input field if that is empty, so it is not lost.
+- Chat: queued prompts stay with their chat. Switching chats or starting a new chat no longer sends the remaining queued prompts in the other chat; the first one goes back into an empty input field.
+- Chat: a full queue (10 prompts) or more than 4 attachments now shows a short notice instead of doing nothing.
+- Sidebar: the cached chat list is kept per user, so on a shared device the next user no longer briefly sees the previous user's chat titles.
+
 ## 1.5.0b27
 
 - The runtime has no changes in this release. A 1.5.0b26 runtime keeps working without an update notice; the 1.5.0b27 image only carries the new version number.

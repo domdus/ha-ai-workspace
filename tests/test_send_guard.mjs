@@ -10,6 +10,8 @@ import {
   takeInputFiles,
   pullQueuedDraft,
   keepQueueOnHalt,
+  filesLeftOut,
+  sessionCacheKey,
 } from "../custom_components/ai_workspace/www/send_guard.js";
 
 const chatSrc = readFileSync(new URL("../custom_components/ai_workspace/www/chat.js", import.meta.url), "utf8");
@@ -77,10 +79,18 @@ ok(sendButtonMode({ streaming: true, hasDraft: true }).enabled === true, "Send s
 ok(sendButtonMode({ streaming: false, hasDraft: false }).enabled === false, "Send stays off without a draft");
 ok(sendButtonMode({ streaming: false, hasDraft: true }).action === "send", "Send returns after stop");
 
-ok(keepQueueOnHalt("stop") === true, "Stop keeps the queued stack");
+ok(keepQueueOnHalt("stop") === false, "Stop cancels the queued stack too");
 ok(keepQueueOnHalt("send") === true, "Sending the next turn keeps remaining queued prompts");
-ok(keepQueueOnHalt("switch") === true, "Switching chats keeps the queued stack");
+ok(keepQueueOnHalt("switch") === false, "Queued prompts never go out in another chat");
 ok(keepQueueOnHalt("destroy") === false, "Destroying the panel drops the queue");
+
+ok(filesLeftOut(5, 4) === 1, "A fifth photo is reported as left out");
+ok(filesLeftOut(2, 0) === 2, "No free slot leaves every file out");
+ok(filesLeftOut(2, 4) === 0, "Files that fit are not reported");
+
+ok(sessionCacheKey("k", "u1") === "k:u1", "The sidebar cache is per user");
+ok(sessionCacheKey("k", "u1") !== sessionCacheKey("k", "u2"), "Two users never share the cached chat list");
+ok(sessionCacheKey("k", "") === "", "Without a known user there is no cache");
 
 const stacked = [{ text: "first" }, { text: "second" }, { text: "third" }];
 const fromEmpty = pullQueuedDraft(stacked, { draftText: "", pending: [] });
@@ -127,7 +137,14 @@ ok(filesToRead(["a", "b"], 0).length === 0, "No slots means no files are read");
 }
 
 ok(chatSrc.includes("takeInputFiles("), "chat.js copies picker files before clearing");
-ok(chatSrc.includes("keepQueueOnHalt("), "chat.js keeps the queue on send/stop");
+ok(chatSrc.includes("keepQueueOnHalt("), "chat.js asks send_guard whether the queue survives");
+ok(chatSrc.includes('keepQueueOnHalt("switch")'), "Leaving a chat drops its queue");
+{
+  const stop = chatSrc.slice(chatSrc.indexOf("async function stopTurn"), chatSrc.indexOf("function hasDraft"));
+  ok(!stop.includes("flushNext"), "Stop does not send the next queued prompt");
+  ok(stop.includes("restoreQueued()"), "Stop puts the first queued prompt back into an empty composer");
+}
+ok(!/sessionStorage\.getItem\(SESSION_CACHE_KEY\)/.test(chatSrc), "The sidebar cache is not read from the shared key");
 ok(chatSrc.includes("pullQueuedDraft("), "chat.js restores queued prompts via pullQueuedDraft");
 ok(chatSrc.includes("takePendingClip("), "chat.js bundles TTS clips from speech.js");
 ok(!/function takePendingClip\(/.test(chatSrc), "chat.js does not reimplement takePendingClip");

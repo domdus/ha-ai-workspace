@@ -2,7 +2,16 @@ const CACHE = new URL(import.meta.url).search;
 const { stringsFor } = await import(`./i18n.js${CACHE}`);
 const { takeSpeech, speechPlain, takePendingClip, speechTail } = await import(`./speech.js${CACHE}`);
 const { stripRemoteMedia, watchRenderedMedia } = await import(`./media_guard.js${CACHE}`);
-const { MAX_ATTACH, MAX_QUEUE, filesToRead, takeInputFiles, pullQueuedDraft, keepQueueOnHalt } = await import(
+const {
+  MAX_ATTACH,
+  MAX_QUEUE,
+  filesToRead,
+  takeInputFiles,
+  pullQueuedDraft,
+  keepQueueOnHalt,
+  filesLeftOut,
+  sessionCacheKey,
+} = await import(
   `./send_guard.js${CACHE}`
 );
 
@@ -10,9 +19,15 @@ const API = "/api/ai_workspace";
 const SESSION_CACHE_KEY = "ai_workspace_sessions";
 const PAINT_TAIL = 24;
 
+function sessionCacheSlot() {
+  return sessionCacheKey(SESSION_CACHE_KEY, document.querySelector("home-assistant")?.hass?.user?.id);
+}
+
 function readSessionCache() {
+  const key = sessionCacheSlot();
+  if (!key) return [];
   try {
-    const rows = JSON.parse(sessionStorage.getItem(SESSION_CACHE_KEY) || "[]");
+    const rows = JSON.parse(sessionStorage.getItem(key) || "[]");
     return Array.isArray(rows) ? rows.filter((row) => row && row.id) : [];
   } catch (_err) {
     return [];
@@ -20,9 +35,13 @@ function readSessionCache() {
 }
 
 function writeSessionCache(sessions) {
+  const key = sessionCacheSlot();
+  if (!key) return;
   try {
+    // Drop the old shared key from 1.5.0b18-b27.
+    sessionStorage.removeItem(SESSION_CACHE_KEY);
     sessionStorage.setItem(
-      SESSION_CACHE_KEY,
+      key,
       JSON.stringify(
         (sessions || []).map((session) => ({
           id: session.id,
@@ -36,7 +55,6 @@ function writeSessionCache(sessions) {
   }
 }
 
-let cachedSessions = readSessionCache();
 
 export { takeSpeech };
 
@@ -745,6 +763,8 @@ function releaseMountHold(root) {
 }
 
 export async function mountAiWorkspace(root, options = {}) {
+  // Read at mount, not at import: the user is known by then, and it may have changed.
+  let cachedSessions = readSessionCache();
   await prefetchUiTheme(options.getToken, { force: Boolean(options.forceUiTheme) });
   const haUi = haComponentsUi();
   let activeUiTheme = haUi ? "ha_components" : "standard";
@@ -1150,7 +1170,7 @@ export async function mountAiWorkspace(root, options = {}) {
     if (id) openSession(id, true);
     else {
       restoreQueued();
-      abandonStream();
+      leaveChatStream();
       sessionId = "";
       freshChat = true;
       titleEl.textContent = t("new_chat");
@@ -2329,7 +2349,10 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function queueTurn(text, attachments) {
-    if (nextTurns.length >= MAX_QUEUE) return;
+    if (nextTurns.length >= MAX_QUEUE) {
+      showNotice(t("queue_full"));
+      return;
+    }
     nextTurns.push({ text, attachments: attachments.slice() });
     pending = [];
     messageEl.value = "";
@@ -2405,6 +2428,12 @@ export async function mountAiWorkspace(root, options = {}) {
     haltStream({ keepQueue: keepQueueOnHalt("send"), keepSpeech });
   }
 
+  // Leaving a chat: its queued prompts were written for it and must not go out in the next one.
+  // restoreQueued() has already moved the first one into an empty composer.
+  function leaveChatStream() {
+    haltStream({ keepQueue: keepQueueOnHalt("switch") });
+  }
+
   async function stopTurn() {
     if (turnStopDone) {
       await turnStopDone;
@@ -2413,6 +2442,9 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!streaming && !liveStream) return;
     const chatId = sessionId;
     turnStopping = true;
+    // Stop cancels the queue too. The first queued prompt goes back into an empty composer,
+    // so a typed prompt is not lost without a trace.
+    restoreQueued();
     haltStream({ keepQueue: keepQueueOnHalt("stop") });
     const done = (async () => {
       if (!chatId) return;
@@ -2431,7 +2463,6 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     syncCopyChat();
     resizeComposer();
-    flushNext();
   }
 
   function hasDraft() {
@@ -3282,7 +3313,7 @@ export async function mountAiWorkspace(root, options = {}) {
     const switching = id !== sessionId;
     if (switching) {
       restoreQueued();
-      abandonStream();
+      leaveChatStream();
     }
     watchGen += 1;
     if (!id) {
@@ -3807,8 +3838,11 @@ export async function mountAiWorkspace(root, options = {}) {
 
   form.querySelectorAll(".file-input").forEach((input) => {
     input.addEventListener("change", async () => {
-      const frozen = await takeInputFiles(input, freezeFiles, MAX_ATTACH - pending.length);
+      const slots = MAX_ATTACH - pending.length;
+      const picked = input.files?.length || 0;
+      const frozen = await takeInputFiles(input, freezeFiles, slots);
       if (frozen.length) await addFiles(frozen);
+      if (filesLeftOut(picked, slots)) showAttachNotice("attach_limit");
     });
   });
   ["dragenter", "dragover"].forEach((name) => {
@@ -3826,14 +3860,19 @@ export async function mountAiWorkspace(root, options = {}) {
     event.preventDefault();
     box.classList.remove("drop-target");
     const files = [...(event.dataTransfer?.files || [])];
-    if (files.length) await addFiles(await freezeFiles(files, MAX_ATTACH - pending.length));
+    if (!files.length) return;
+    const slots = MAX_ATTACH - pending.length;
+    await addFiles(await freezeFiles(files, slots));
+    if (filesLeftOut(files.length, slots)) showAttachNotice("attach_limit");
   });
   form.addEventListener("paste", async (event) => {
     if (!fromComposerField(event)) return;
     const files = imageFilesFromClipboard(event);
     if (!files.length) return;
     event.preventDefault();
-    await addFiles(await freezeFiles(files, MAX_ATTACH - pending.length));
+    const slots = MAX_ATTACH - pending.length;
+    await addFiles(await freezeFiles(files, slots));
+    if (filesLeftOut(files.length, slots)) showAttachNotice("attach_limit");
   });
 
   function speechLanguage() {
@@ -4897,7 +4936,7 @@ export async function mountAiWorkspace(root, options = {}) {
   function startNewChat() {
     setSearchOpen(false);
     restoreQueued();
-    abandonStream();
+    leaveChatStream();
     clearMicHelp();
     routeGen += 1;
     watchGen += 1;
