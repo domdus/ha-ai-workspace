@@ -592,10 +592,23 @@ header {
   position: sticky;
   top: 0;
   z-index: 2;
-  padding: var(--ha-space-3) var(--ai-inline-pad) var(--ha-space-2);
+  width: 100%;
+  padding: var(--ha-space-3) 0 var(--ha-space-2);
+  background: var(--primary-background-color);
+  transition: box-shadow var(--ha-animation-duration-normal, 200ms) ease;
+}
+
+header.scrolled {
+  box-shadow: var(--ha-box-shadow-s);
+}
+
+.header-row,
+header .chat-usage,
+header .banner {
   width: min(calc(var(--ai-chat-width) + 2 * var(--ai-inline-pad)), 100%);
   margin-inline: auto;
-  background: var(--primary-background-color);
+  padding-inline: var(--ai-inline-pad);
+  box-sizing: border-box;
 }
 
 .wrap.compact .chat.welcome header,
@@ -811,6 +824,7 @@ h1 {
   flex: none;
   width: 1.05em;
   height: 1.05em;
+  overflow: hidden;
   color: var(--ha-color-fill-primary-loud-resting, var(--primary-color));
 }
 
@@ -819,6 +833,7 @@ h1 {
 }
 
 .activity .glyph svg {
+  display: block;
   width: 100%;
   height: 100%;
   fill: none;
@@ -1777,7 +1792,7 @@ textarea:focus {
 }
 
 .chat-usage {
-  margin: var(--ha-space-1) 0 0;
+  margin-block: var(--ha-space-1) 0;
   font-size: var(--ha-font-size-s);
   color: var(--secondary-text-color);
 }
@@ -2100,7 +2115,8 @@ ha-date-range-picker.usage-filter-dates {
   .wrap.narrow aside,
   .nav-scrim,
   .history,
-  .usage {
+  .usage,
+  header {
     transition: none;
   }
 

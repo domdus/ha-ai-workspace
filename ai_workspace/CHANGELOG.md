@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0b22
+
+- The runtime has no changes in this release. A 1.5.0b13 runtime keeps working without an update notice; the 1.5.0b22 image only carries the new version number.
+- Chat: HA Components no longer draws status glyphs. Thinking and tools show the status text only. The standard UI still uses `+`, the dots, the lines, and `-`.
+- Chat: the header gets `--ha-box-shadow-s` only after you scroll down, like the Home Assistant top bar.
+
 ## 1.5.0b21
 
 - The runtime has no changes in this release. A 1.5.0b13 runtime keeps working without an update notice; the 1.5.0b21 image only carries the new version number.

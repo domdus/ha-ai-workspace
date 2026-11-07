@@ -586,10 +586,23 @@ header {
   position: sticky;
   top: 0;
   z-index: 2;
-  padding: var(--ha-space-3) var(--ai-inline-pad) var(--ha-space-2);
+  width: 100%;
+  padding: var(--ha-space-3) 0 var(--ha-space-2);
+  background: var(--primary-background-color);
+  transition: box-shadow var(--ha-animation-duration-normal, 200ms) ease;
+}
+
+header.scrolled {
+  box-shadow: var(--ha-box-shadow-s);
+}
+
+.header-row,
+header .chat-usage,
+header .banner {
   width: min(calc(var(--ai-chat-width) + 2 * var(--ai-inline-pad)), 100%);
   margin-inline: auto;
-  background: var(--primary-background-color);
+  padding-inline: var(--ai-inline-pad);
+  box-sizing: border-box;
 }
 
 .wrap.compact .chat.welcome header,
@@ -719,6 +732,44 @@ h1 {
 .activity.idle {
   visibility: hidden;
   pointer-events: none;
+}
+
+/* Status text only — Standard glyphs stay in chat.css. */
+.activity .glyph {
+  display: none !important;
+}
+
+.activity.shine .label {
+  display: inline-block;
+  color: var(--secondary-text-color);
+  background-image:
+    linear-gradient(
+      90deg,
+      transparent calc(50% - 1.1em),
+      var(--primary-text-color) 50%,
+      transparent calc(50% + 1.1em)
+    ),
+    linear-gradient(var(--secondary-text-color), var(--secondary-text-color));
+  background-size: 250% 100%, auto;
+  background-repeat: no-repeat;
+  background-position: 100% center, 0 0;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: text-shimmer 1.35s linear infinite;
+}
+
+@keyframes text-shimmer {
+  from { background-position: 100% center, 0 0; }
+  to { background-position: 0% center, 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activity.shine .label {
+    animation: none;
+    background-image: none;
+    color: var(--secondary-text-color);
+    -webkit-text-fill-color: var(--secondary-text-color);
+  }
 }
 
 .tools {
@@ -1315,7 +1366,7 @@ textarea.message {
 }
 
 .chat-usage {
-  margin: var(--ha-space-1) 0 0;
+  margin-block: var(--ha-space-1) 0;
   font-size: var(--ha-font-size-s);
   color: var(--secondary-text-color);
 }
@@ -1638,7 +1689,8 @@ ha-date-range-picker.usage-filter-dates {
   .wrap.narrow aside,
   .nav-scrim,
   .history,
-  .usage {
+  .usage,
+  header {
     transition: none;
   }
 }

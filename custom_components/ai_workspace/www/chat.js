@@ -961,6 +961,7 @@ export async function mountAiWorkspace(root, options = {}) {
   releaseMountHold(root);
   const scrim = root.querySelector(".nav-scrim");
   const chatEl = root.querySelector(".chat");
+  const headerEl = chatEl?.querySelector("header");
   const stageEl = root.querySelector(".stage");
   const logEl = root.querySelector(".log");
   const sessionsEl = root.querySelector(".sessions");
@@ -1468,13 +1469,13 @@ export async function mountAiWorkspace(root, options = {}) {
   // + working, + thinking, : : reading the house (four turning dots),
   // = changing the house (lines run down), - waiting (a turning dash).
   const ACTIVITY_GLYPHS = {
-    work: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg>',
-    think: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg>',
+    work: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg>',
+    think: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg>',
     read:
-      '<svg viewBox="0 0 24 24" aria-hidden="true"><circle class="dot" cx="7" cy="7" r="2.5"/><circle class="dot" cx="17" cy="7" r="2.5"/><circle class="dot" cx="7" cy="17" r="2.5"/><circle class="dot" cx="17" cy="17" r="2.5"/></svg>',
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><circle class="dot" cx="7" cy="7" r="2.5" fill="currentColor"/><circle class="dot" cx="17" cy="7" r="2.5" fill="currentColor"/><circle class="dot" cx="7" cy="17" r="2.5" fill="currentColor"/><circle class="dot" cx="17" cy="17" r="2.5" fill="currentColor"/></svg>',
     write:
-      '<svg viewBox="0 0 24 24" aria-hidden="true"><g class="lines"><path d="M5 -1.5h14M5 7.5h14M5 16.5h14M5 25.5h14"/></g></svg>',
-    wait: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg>',
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true"><g class="lines"><path d="M5 -1.5h14M5 7.5h14M5 16.5h14M5 25.5h14"/></g></svg>',
+    wait: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true"><path d="M5 12h14"/></svg>',
   };
   const TOOL_GLYPHS = new Set(["read", "write"]);
   const WRITE_TOOL =
@@ -1500,6 +1501,7 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function activityGlyph(kind = "work") {
+    if (haUi) return null;
     const glyph = document.createElement("span");
     glyph.className = "glyph";
     glyph.dataset.kind = kind;
@@ -1507,10 +1509,17 @@ export async function mountAiWorkspace(root, options = {}) {
     return glyph;
   }
 
+  function fillActivitySlot(el, label) {
+    const glyph = activityGlyph();
+    if (glyph) el.replaceChildren(glyph, label);
+    else el.replaceChildren(label);
+  }
+
   // A tool icon stays at least this long, so quick tool calls in a row do not flicker.
   const GLYPH_HOLD_MS = 700;
 
   function syncActivityGlyph(bubble) {
+    if (haUi) return;
     const glyph = bubble?.querySelector(".activity .glyph");
     if (!glyph) return;
     const kind = activityGlyphKind(bubble);
@@ -1538,7 +1547,7 @@ export async function mountAiWorkspace(root, options = {}) {
       const label = document.createElement("span");
       label.className = "label";
       label.textContent = "\u00a0";
-      el.append(activityGlyph(), label);
+      fillActivitySlot(el, label);
       bubble.appendChild(el);
     }
     // Keep the status chip under tools and text so it never shifts the answer.
@@ -1556,9 +1565,12 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!label) {
       label = document.createElement("span");
       label.className = "label";
-      el.replaceChildren(activityGlyph(), label);
-    } else if (!el.querySelector(".glyph")) {
-      el.prepend(activityGlyph());
+      fillActivitySlot(el, label);
+    } else if (!haUi && !el.querySelector(".glyph")) {
+      const glyph = activityGlyph();
+      if (glyph) el.prepend(glyph);
+    } else if (haUi) {
+      el.querySelector(".glyph")?.remove();
     }
     if (!pretty) {
       // Keep the line height while streaming so show/hide does not jump the scroll.
@@ -2101,6 +2113,10 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function nearBottom() {
     return distanceFromBottom() < 72;
+  }
+
+  function syncHeaderShadow() {
+    headerEl?.classList.toggle("scrolled", chatEl.scrollTop > 0);
   }
 
   function clipToBottom() {
@@ -4642,6 +4658,7 @@ export async function mountAiWorkspace(root, options = {}) {
 
   chatEl.addEventListener("scroll", () => {
     const top = chatEl.scrollTop;
+    syncHeaderShadow();
     if (!scrollLock && typingGuard() && Math.abs(top - acceptedTop) > 0.5) {
       restoreTypingScroll();
       return;
@@ -4668,6 +4685,7 @@ export async function mountAiWorkspace(root, options = {}) {
       followBottom();
     }
   }, { passive: true });
+  syncHeaderShadow();
 
   let lastTouchY = 0;
 
