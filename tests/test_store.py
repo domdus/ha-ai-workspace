@@ -296,3 +296,19 @@ def test_search_matches_title_or_first_prompt_only(tmp_path: Path) -> None:
     assert ids("garage kitchen") == set()
     assert ids("cellar") == set()
     store.close()
+
+
+def test_session_list_indexes_and_activity_flag(tmp_path: Path) -> None:
+    store = Store(tmp_path / "db.sqlite")
+    message_indexes = {row[1] for row in store._conn.execute("PRAGMA index_list(messages)")}
+    assert "messages_session" in message_indexes
+    session = store.create_session("user-1", "cursor")
+    other = store.create_session("user-1", "cursor")
+    assert store.has_session_activity(session.id) is False
+    store.add_activity("user-1", "Dom", "Cursor", "Changed light", "ha_config_set", session_id=session.id)
+    assert store.has_session_activity(session.id) is True
+    assert store.has_session_activity(other.id) is False
+    assert store.has_session_activity("") is False
+    listed = store.list_sessions("user-1")
+    assert {item.id for item in listed} == {session.id, other.id}
+    store.close()

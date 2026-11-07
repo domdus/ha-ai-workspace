@@ -476,7 +476,7 @@ ha-button.new-chat {
   align-self: center;
 }
 
-.session-row ha-dropdown.session-menu {
+.session-row .session-menu {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
@@ -517,7 +517,7 @@ ha-button.new-chat {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .session-row ha-dropdown.session-menu {
+  .session-row .session-menu {
     position: absolute;
     inset-inline-end: 2px;
     top: 6px;
@@ -874,9 +874,9 @@ h1 {
 
 .next-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--ha-space-2);
-  margin: var(--ha-space-2) var(--ha-space-2) 0 0;
+  margin: 0;
 }
 
 .next-row[hidden] {
@@ -908,8 +908,11 @@ h1 {
 
 .next-remove {
   flex: none;
-  --ha-icon-button-size: 32px;
-  --mdc-icon-button-size: 32px;
+  align-self: center;
+  width: 36px;
+  height: 36px;
+  --ha-icon-button-size: 36px;
+  --mdc-icon-button-size: 36px;
 }
 
 .send.is-stop {

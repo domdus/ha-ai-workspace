@@ -72,6 +72,32 @@ ok(sendButtonMode({ streaming: false, hasDraft: true }).action === "send", "Send
 ok(afterStop({ queued: true }) === "flush", "A queued prompt is sent after stop");
 ok(afterStop({ queued: false }) === "idle", "With an empty queue, stop leaves the composer free");
 
+function flushQueued({ queued, draft, pending }) {
+  return { send: queued, composer: draft, pending };
+}
+
+function queueWhileBusy({ queued, draft, sendQueued }) {
+  if (queued || sendQueued) return { queued, composer: draft };
+  return { queued: draft, composer: "" };
+}
+
+ok(
+  flushQueued({ queued: "first", draft: "second", pending: [] }).composer === "second",
+  "Flushing the queue must leave a typed follow-up in the composer",
+);
+ok(
+  flushQueued({ queued: "first", draft: "second", pending: [] }).send === "first",
+  "Flushing the queue sends the queued prompt, not the draft",
+);
+ok(
+  queueWhileBusy({ queued: "first", draft: "second" }).queued === "first",
+  "A second send while one prompt is queued must not swallow the first",
+);
+ok(
+  queueWhileBusy({ queued: "first", draft: "second" }).composer === "second",
+  "A second send while one prompt is queued must keep the new text in the composer",
+);
+
 if (failed) {
   process.exit(1);
 }

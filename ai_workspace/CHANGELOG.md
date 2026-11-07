@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.0b18
+
+- The runtime has no changes in this release. A 1.5.0b13 runtime keeps working without an update notice; the 1.5.0b18 image only carries the new version number.
+- Chat: the thinking status glyph is a turning `-`, like the wait glyph, instead of `¤`.
+- Chat: the sidebar list and the open chat load at the same time. A later visit shows the list from cache at once; the ⋯ menus are built only when opened; a long chat paints the last messages first.
+- Chat: listing chats no longer scans every first message.
+- Chat: a queued prompt chip has even spacing and a 36px close button in line with attach and send.
+- Chat: when a queued prompt is sent, text already typed in the composer stays. A second send while something is queued no longer replaces the queue.
+
 ## 1.5.0b17
 
 - The runtime has no changes in this release. A 1.5.0b13 runtime keeps working without an update notice; the 1.5.0b17 image only carries the new version number.

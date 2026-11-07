@@ -4,6 +4,36 @@ const { takeSpeech, speechPlain } = await import(`./speech.js${CACHE}`);
 const { stripRemoteMedia, watchRenderedMedia } = await import(`./media_guard.js${CACHE}`);
 
 const API = "/api/ai_workspace";
+const SESSION_CACHE_KEY = "ai_workspace_sessions";
+const PAINT_TAIL = 24;
+
+function readSessionCache() {
+  try {
+    const rows = JSON.parse(sessionStorage.getItem(SESSION_CACHE_KEY) || "[]");
+    return Array.isArray(rows) ? rows.filter((row) => row && row.id) : [];
+  } catch (_err) {
+    return [];
+  }
+}
+
+function writeSessionCache(sessions) {
+  try {
+    sessionStorage.setItem(
+      SESSION_CACHE_KEY,
+      JSON.stringify(
+        (sessions || []).map((session) => ({
+          id: session.id,
+          title: session.title || "",
+          pinned: Boolean(session.pinned),
+        })),
+      ),
+    );
+  } catch (_err) {
+    /* private mode */
+  }
+}
+
+let cachedSessions = readSessionCache();
 
 export { takeSpeech };
 
@@ -1134,6 +1164,7 @@ export async function mountAiWorkspace(root, options = {}) {
   let turnStopping = false;
   let turnStopDone = null;
   let nextTurn = null;
+  let sendQueued = null;
   const MAX_ATTACH = 4;
   const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
   const MAX_FILE_BYTES = 256 * 1024;
@@ -1424,12 +1455,11 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   // A small plain glyph in front of the status, one per kind of moment:
-  // + working, ¤ thinking, : : reading the house (four turning dots),
+  // + working, - thinking, : : reading the house (four turning dots),
   // = changing the house (lines run down), - waiting (a turning dash).
   const ACTIVITY_GLYPHS = {
     work: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg>',
-    think:
-      '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.8"/><path d="M7.6 7.6 4.2 4.2M16.4 7.6 19.8 4.2M7.6 16.4 4.2 19.8M16.4 16.4 19.8 19.8"/></svg>',
+    think: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg>',
     read:
       '<svg viewBox="0 0 24 24" aria-hidden="true"><circle class="dot" cx="7" cy="7" r="2.5"/><circle class="dot" cx="17" cy="7" r="2.5"/><circle class="dot" cx="7" cy="17" r="2.5"/><circle class="dot" cx="17" cy="17" r="2.5"/></svg>',
     write:
@@ -1840,10 +1870,13 @@ export async function mountAiWorkspace(root, options = {}) {
       bubble.appendChild(text);
       bubble.classList.add("has-text");
     }
-    logEl.appendChild(mount);
+    const parent = opts.parent || logEl;
+    parent.appendChild(mount);
     retargetHaLinks(bubble);
-    syncCopyChat();
-    if (opts.follow !== false) scrollChatToBottom(opts.smooth !== false);
+    if (!opts.parent) {
+      syncCopyChat();
+      if (opts.follow !== false) scrollChatToBottom(opts.smooth !== false);
+    }
     return bubble;
   }
 
@@ -2207,6 +2240,7 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function queueTurn(text, attachments) {
+    if (nextTurn || sendQueued) return;
     nextTurn = { text, attachments: attachments.slice() };
     pending = [];
     messageEl.value = "";
@@ -2218,13 +2252,10 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function flushNext() {
-    if (!nextTurn || streaming) return;
-    const turn = nextTurn;
+    if (!nextTurn || streaming || sendQueued) return;
+    sendQueued = nextTurn;
     nextTurn = null;
     renderNext();
-    messageEl.value = turn.text;
-    pending = turn.attachments.slice();
-    renderThumbs();
     form.requestSubmit();
   }
 
@@ -2263,7 +2294,10 @@ export async function mountAiWorkspace(root, options = {}) {
     waiters.forEach((fn) => fn());
     streaming = false;
     liveStream = false;
-    if (!keepQueue) nextTurn = null;
+    if (!keepQueue) {
+      nextTurn = null;
+      sendQueued = null;
+    }
     renderNext();
     const live = logEl.querySelector(".bubble.assistant.streaming");
     if (live) {
@@ -2307,7 +2341,7 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     syncCopyChat();
     resizeComposer();
-    if (nextTurn) form.requestSubmit();
+    flushNext();
   }
 
   function hasDraft() {
@@ -2650,6 +2684,33 @@ export async function mountAiWorkspace(root, options = {}) {
     });
   }
 
+  function bindSessionMenu(row, session, more) {
+    if (row.querySelector("ha-dropdown.session-menu")) return;
+    const menu = document.createElement("ha-dropdown");
+    menu.className = "session-menu";
+    menu.placement = "bottom-end";
+    more.slot = "trigger";
+    menu.addEventListener("click", (event) => event.stopPropagation());
+    menu.addEventListener("keydown", (event) => event.stopPropagation());
+    menu.addEventListener("wa-show", () => more.setAttribute("aria-expanded", "true"));
+    menu.addEventListener("wa-hide", () => more.setAttribute("aria-expanded", "false"));
+    menu.addEventListener("wa-select", (event) => {
+      const value = event.detail?.item?.value;
+      if (value === "pin") pinSession(session);
+      else if (value === "rename") renameSession(session);
+      else if (value === "delete") deleteSession(session);
+    });
+    menu.append(
+      more,
+      sessionAction(session.pinned ? t("unpin") : t("pin"), "pin"),
+      sessionAction(t("rename"), "rename"),
+      sessionAction(t("delete"), "delete", "danger"),
+    );
+    const host = row.querySelector(".session-menu");
+    if (host && host.localName !== "ha-dropdown") host.replaceWith(menu);
+    else more.replaceWith(menu);
+  }
+
   function sessionAction(label, value, variant) {
     const item = document.createElement("ha-dropdown-item");
     item.value = value;
@@ -2844,9 +2905,11 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function listedSession(session) {
     const row = sessionsEl?.querySelector(`.session-row[data-session-id="${session.id}"]`);
-    const title = row?.dataset.title;
-    if (!title || title === session.title) return session;
-    return { ...session, title };
+    if (!row) return session;
+    const title = row.dataset.title || session.title;
+    const pinned = row.dataset.pinned === "1";
+    if (title === session.title && pinned === Boolean(session.pinned)) return session;
+    return { ...session, title, pinned };
   }
 
   function applySessionTitle(id, title) {
@@ -2942,49 +3005,74 @@ export async function mountAiWorkspace(root, options = {}) {
       closeNavIfOverlay();
       openSession(session.id);
     });
-    const menu = document.createElement("ha-dropdown");
-    menu.className = "session-menu";
-    menu.placement = "bottom-end";
+    const host = document.createElement("div");
+    host.className = "session-menu";
     const more = document.createElement("ha-icon-button");
     more.className = "session-more";
-    more.slot = "trigger";
     more.label = t("chat_actions");
     more.setAttribute("aria-haspopup", "menu");
     more.setAttribute("aria-expanded", "false");
     const dots = document.createElement("ha-icon");
     dots.setAttribute("icon", "mdi:dots-vertical");
     more.appendChild(dots);
+    more.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const open = row.querySelector("ha-dropdown.session-menu");
+      if (open) {
+        open.open = !open.open;
+        return;
+      }
+      bindSessionMenu(row, listedSession(session), more);
+      const menu = row.querySelector("ha-dropdown.session-menu");
+      customElements.whenDefined("ha-dropdown").then(() => {
+        if (menu) menu.open = true;
+      });
+    });
     more.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
       event.stopPropagation();
       more.click();
     });
-    menu.addEventListener("click", (event) => event.stopPropagation());
-    menu.addEventListener("keydown", (event) => event.stopPropagation());
-    menu.addEventListener("wa-show", () => more.setAttribute("aria-expanded", "true"));
-    menu.addEventListener("wa-hide", () => more.setAttribute("aria-expanded", "false"));
-    menu.addEventListener("wa-select", (event) => {
-      const value = event.detail?.item?.value;
-      if (value === "pin") pinSession(session);
-      else if (value === "rename") renameSession(session);
-      else if (value === "delete") deleteSession(session);
-    });
-    menu.append(
-      more,
-      sessionAction(session.pinned ? t("unpin") : t("pin"), "pin"),
-      sessionAction(t("rename"), "rename"),
-      sessionAction(t("delete"), "delete", "danger"),
-    );
-    item.append(menu);
+    host.append(more);
+    item.append(host);
     row.append(item);
     return row;
+  }
+
+  function paintSessionList(sessions, query = "") {
+    if (!sessionsEl) return;
+    const pinned = sessions.filter((session) => session.pinned);
+    const rest = sessions.filter((session) => !session.pinned);
+    const frag = document.createDocumentFragment();
+    if (pinned.length) {
+      frag.appendChild(sessionLabel(t("pinned")));
+      for (const session of pinned) frag.appendChild(sessionRow(session));
+    }
+    if (rest.length || !query) {
+      frag.appendChild(sessionLabel(t("chats")));
+      for (const session of rest) frag.appendChild(sessionRow(session));
+    }
+    if (query && !sessions.length) {
+      const empty = document.createElement("p");
+      empty.className = "sessions-empty";
+      empty.textContent = t("no_chats_found");
+      frag.appendChild(empty);
+    }
+    sessionsEl.replaceChildren(frag);
+    sessionsEl.removeAttribute("aria-busy");
+    selectSessionRow(sessionId);
+    syncSearchIcon();
   }
 
   async function loadSessions() {
     if (compact || !sessionsEl) return;
     closeSessionMenu();
     const query = searchInput?.value.trim() || "";
+    if (!query && cachedSessions.length && sessionsEl.querySelector(".session-skeleton")) {
+      paintSessionList(cachedSessions);
+    }
     const mark = ++sessionsLoad;
     const response = await apiFetch(`${API}/sessions${query ? `?q=${encodeURIComponent(query)}` : ""}`);
     if (!response?.ok) {
@@ -2996,26 +3084,11 @@ export async function mountAiWorkspace(root, options = {}) {
     const sessions = await response.json();
     // A slower answer for an older search must not replace a newer one.
     if (mark !== sessionsLoad) return;
-    sessionsEl.removeAttribute("aria-busy");
-    const pinned = sessions.filter((session) => session.pinned);
-    const rest = sessions.filter((session) => !session.pinned);
-    sessionsEl.replaceChildren();
-    if (pinned.length) {
-      sessionsEl.appendChild(sessionLabel(t("pinned")));
-      for (const session of pinned) sessionsEl.appendChild(sessionRow(session));
+    if (!query) {
+      cachedSessions = sessions;
+      writeSessionCache(sessions);
     }
-    if (rest.length || !query) {
-      sessionsEl.appendChild(sessionLabel(t("chats")));
-      for (const session of rest) sessionsEl.appendChild(sessionRow(session));
-    }
-    if (query && !sessions.length) {
-      const empty = document.createElement("p");
-      empty.className = "sessions-empty";
-      empty.textContent = t("no_chats_found");
-      sessionsEl.appendChild(empty);
-    }
-    selectSessionRow(sessionId);
-    syncSearchIcon();
+    paintSessionList(sessions, query);
   }
 
   // Rows only count all chats while nothing filters them, and an active search keeps its way out.
@@ -3116,7 +3189,8 @@ export async function mountAiWorkspace(root, options = {}) {
       selectSessionRow(id);
       return;
     }
-    if (id !== sessionId) {
+    const switching = id !== sessionId;
+    if (switching) {
       restoreQueued();
       abandonStream();
     }
@@ -3135,6 +3209,14 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     if (fromUrl && id === sessionId) return;
     const gen = ++routeGen;
+    sessionId = id;
+    freshChat = false;
+    const listed = sessionsEl?.querySelector(`.session-row[data-session-id="${id}"]`);
+    if (listed?.dataset.title) titleEl.textContent = displayTitle(listed.dataset.title);
+    selectSessionRow(id);
+    if (switching) logEl.replaceChildren();
+    if (compact) localStorage.setItem("ai_workspace_session", id);
+    if (!fromUrl) goToSession(id);
     const response = await apiFetch(`${API}/sessions/${id}`);
     if (gen !== routeGen) return;
     if (!response?.ok) {
@@ -3144,42 +3226,67 @@ export async function mountAiWorkspace(root, options = {}) {
       goToSession("", true);
       return;
     }
-    sessionId = id;
-    freshChat = false;
-    if (compact) localStorage.setItem("ai_workspace_session", id);
-    if (!fromUrl) goToSession(id);
     const session = await response.json();
     setChatChoice(session.provider, session.model);
-    paintSession(session);
-    if (!sessionsEl?.querySelector(".session-row")) await loadSessions();
+    paintSession(session, gen);
     selectSessionRow(id);
     if (session.pending) watchPending(id);
     refreshChatUsage();
   }
 
-  function paintSession(session) {
+  function paintSession(session, gen = routeGen) {
     clearMicHelp();
     titleEl.textContent = displayTitle(session.title);
     logEl.replaceChildren();
     const messages = session.messages || [];
-    if (!messages.length) showEmpty();
-    else setWelcome(false, false);
-    for (const message of messages) {
-      addBubble(message.role, message.content, message.events, {
-        animate: false,
-        follow: false,
-        createdAt: message.created_at,
-      });
+    turnHasHistory = Boolean(session.has_activity);
+    if (!messages.length) {
+      showEmpty();
+      turnHasHistory = Boolean(session.has_activity);
+      syncCopyChat();
+      if (!("has_activity" in session)) refreshTurnHistory();
+      return;
     }
-    settleTools(logEl);
-    // Any Change History row for this chat — not only the last user turn.
-    refreshTurnHistory();
-    clipToBottom();
-    stickToBottom();
-    requestAnimationFrame(() => requestAnimationFrame(stickToBottom));
-    window.setTimeout(stickToBottom, 50);
-    window.setTimeout(stickToBottom, 250);
-    window.setTimeout(stickToBottom, 700);
+    setWelcome(false, false);
+    const paintRange = (from, to, parent) => {
+      for (let i = from; i < to; i += 1) {
+        const message = messages[i];
+        addBubble(message.role, message.content, message.events, {
+          animate: false,
+          follow: false,
+          createdAt: message.created_at,
+          parent,
+        });
+      }
+    };
+    const finish = () => {
+      if (gen !== routeGen) return;
+      settleTools(logEl);
+      syncCopyChat();
+      if (!("has_activity" in session)) refreshTurnHistory();
+      clipToBottom();
+      stickToBottom();
+      requestAnimationFrame(() => requestAnimationFrame(stickToBottom));
+      window.setTimeout(stickToBottom, 50);
+      window.setTimeout(stickToBottom, 250);
+      window.setTimeout(stickToBottom, 700);
+    };
+    const tailAt = Math.max(0, messages.length - PAINT_TAIL);
+    const frag = document.createDocumentFragment();
+    paintRange(tailAt, messages.length, frag);
+    logEl.appendChild(frag);
+    finish();
+    if (!tailAt) return;
+    requestAnimationFrame(() => {
+      if (gen !== routeGen) return;
+      const head = document.createDocumentFragment();
+      paintRange(0, tailAt, head);
+      const first = logEl.querySelector(".message-container, .bubble");
+      if (first) logEl.insertBefore(head, first);
+      else logEl.prepend(head);
+      settleTools(logEl);
+      stickToBottom();
+    });
   }
 
   function needsPaint(session) {
@@ -4254,23 +4361,33 @@ export async function mountAiWorkspace(root, options = {}) {
     event.preventDefault();
     typingAt = 0;
     if (turnStopDone) await turnStopDone;
-    let text = messageEl.value.trim();
-    let attachments = pending.slice();
-    if (streaming) {
-      if (!text && !attachments.length) return;
-      clipToBottom();
-      queueTurn(text, attachments);
-      stickToBottom();
-      return;
-    }
-    if (!text && !attachments.length) {
-      if (!nextTurn) return;
-      text = nextTurn.text;
-      attachments = nextTurn.attachments.slice();
-      nextTurn = null;
-      renderNext();
-      messageEl.value = text;
-      pending = attachments.slice();
+    let keepComposer = false;
+    let text;
+    let attachments;
+    if (sendQueued) {
+      const turn = sendQueued;
+      sendQueued = null;
+      text = turn.text;
+      attachments = turn.attachments.slice();
+      keepComposer = true;
+    } else {
+      text = messageEl.value.trim();
+      attachments = pending.slice();
+      if (streaming) {
+        if (!text && !attachments.length) return;
+        clipToBottom();
+        queueTurn(text, attachments);
+        stickToBottom();
+        return;
+      }
+      if (!text && !attachments.length) {
+        if (!nextTurn) return;
+        text = nextTurn.text;
+        attachments = nextTurn.attachments.slice();
+        nextTurn = null;
+        renderNext();
+        keepComposer = true;
+      }
     }
     const images = attachments.filter((item) => item.kind === "image");
     const files = attachments.filter((item) => item.kind === "file");
@@ -4295,11 +4412,13 @@ export async function mountAiWorkspace(root, options = {}) {
     watchGen += 1;
     clearKeyboardLock();
     resetOuterScroll();
-    syncSendButton();
-    pending = [];
-    renderThumbs();
-    messageEl.value = "";
+    if (!keepComposer) {
+      pending = [];
+      renderThumbs();
+      messageEl.value = "";
+    }
     resizeComposer();
+    syncSendButton();
     setWelcome(false);
     clipToBottom();
     addBubble("user", text, [
@@ -5779,15 +5898,15 @@ export async function mountAiWorkspace(root, options = {}) {
   const startId =
     options.restoreSessionId ||
     (compact ? localStorage.getItem("ai_workspace_session") || "" : startRoute.sessionId);
-  if (!compact && routed && startRoute.view === "usage") {
-    showEmpty();
-    loadSessions();
-    openUsagePage();
-  } else if (startId) openSession(startId, true);
-  else {
-    showEmpty();
+  if (!compact) {
+    if (cachedSessions.length) paintSessionList(cachedSessions);
     loadSessions();
   }
+  if (!compact && routed && startRoute.view === "usage") {
+    showEmpty();
+    openUsagePage();
+  } else if (startId) openSession(startId, true);
+  else showEmpty();
   resizeComposer();
   const linkWatch = new MutationObserver(() => retargetHaLinks(logEl));
   linkWatch.observe(logEl, { subtree: true, childList: true, attributes: true, attributeFilter: ["href", "target"] });

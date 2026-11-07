@@ -773,16 +773,29 @@ class SessionView(HomeAssistantView):
     async def get(self, request: web.Request, session_id: str) -> web.Response:
         hass: HomeAssistant = _hass(request)
         store: Store = _runtime(hass)["store"]
-        session = await hass.async_add_executor_job(store.get_session, _user_id(request), session_id)
-        if session is None:
+        user_id = _user_id(request)
+
+        def load():
+            session = store.get_session(user_id, session_id)
+            if session is None:
+                return None
+            return session, store.list_messages(session.id), store.has_session_activity(session.id)
+
+        payload = await hass.async_add_executor_job(load)
+        if payload is None:
             raise web.HTTPNotFound(text="Chat not found.")
-        messages = await hass.async_add_executor_job(store.list_messages, session.id)
+        session, messages, has_activity = payload
         pending = False
         lock = _runtime(hass).get("locks", {}).get(session.id)
         if lock is not None:
             pending = lock.locked()
         return self.json(
-            {**_session_dict(session), "pending": pending, "messages": [_message_dict(item) for item in messages]}
+            {
+                **_session_dict(session),
+                "pending": pending,
+                "has_activity": has_activity,
+                "messages": [_message_dict(item) for item in messages],
+            }
         )
 
     async def patch(self, request: web.Request, session_id: str) -> web.Response:
