@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.0b26
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.5.0b26`) together with this release.** It carries the updated agent prompt. The chat warns when the runtime is older than 1.5.0b26.
+- Chat: the first status sentence before tools is a complete sentence in your language that names what the agent is about to do, not a generic filler. Mentions of Home Assistant are allowed. The old “one moment” / “do not say you are checking” rules are gone.
+
 ## 1.5.0b25
 
 - The runtime has no changes in this release. A 1.5.0b13 runtime keeps working without an update notice; the 1.5.0b25 image only carries the new version number.

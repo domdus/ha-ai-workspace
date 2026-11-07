@@ -751,7 +751,6 @@ HOUSE_RULES = (
     "Do not list what you can do until the user asks about the house.\n\n"
     "Home Assistant is reached only through the connected MCP tools. Before you answer any question about "
     "this house (automations, entities, devices, states, counts, weather), call a Home Assistant tool. "
-    "Just call the tool; do not say that you are checking. "
     "Never answer those from memory, and never invent entity ids, dashboard ids, states, or history. "
     "Before you say what a saved automation, script, scene, or dashboard contains, read it again with a tool: "
     "earlier messages in this chat may describe an older version or a plan that was never saved."
@@ -785,10 +784,10 @@ WRITE_RULES = (
     "If asked where something in Home Assistant came from and you do not know, say so instead of guessing."
 )
 STATUS_LINE_INSTRUCTIONS = (
-    "You may write one short neutral status sentence once before the first tool call when the "
-    "answer needs tools (for example a brief 'one moment' in the user's language). "
-    "Do not mention Home Assistant, live checks, weather, or specific tools in that sentence. "
-    "A status sentence is also fine when you start real work (a change or a write). "
+    "Write one status sentence once before the first tool call when the "
+    "answer needs tools, or when you start real work (a change or a write). "
+    "Make it a natural complete sentence in the user's language that names "
+    "what you are about to do for this request, not a generic filler. "
     "Write at most one status sentence per request. Between tool calls write nothing at all; "
     "the UI already shows them. Your next text is the answer."
 )
@@ -1033,8 +1032,7 @@ def with_ui_context(message: str, origin: str = "") -> str:
 
 # Cursor cannot be forced to call a tool first, so it is asked to.
 CHECK_HOUSE_NOTE = (
-    "If this message is about the house (devices, states, lists, weather), call a Home Assistant tool before you answer. "
-    "Do not say that you are checking."
+    "If this message is about the house (devices, states, lists, weather), call a Home Assistant tool before you answer."
 )
 
 

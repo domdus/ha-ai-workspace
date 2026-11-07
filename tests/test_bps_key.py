@@ -160,3 +160,5 @@ def test_outdated_runtime_gets_a_notice() -> None:
     assert runtime_notice("1.5.0b12", "1.5.0b13", "1.5.0b13") is not None
     assert runtime_notice("1.5.0b13", "1.5.0b14", "1.5.0b13") is None
     assert runtime_notice("1.5.0b14", "1.5.0b13", "1.5.0b13") is None
+    assert runtime_notice("1.5.0b25", "1.5.0b26", "1.5.0b26") is not None
+    assert runtime_notice("1.5.0b26", "1.5.0b26", "1.5.0b26") is None
