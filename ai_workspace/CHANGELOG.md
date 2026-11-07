@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0b27
+
+- The runtime has no changes in this release. A 1.5.0b26 runtime keeps working without an update notice; the 1.5.0b27 image only carries the new version number.
+- Chat: TTS speaks the leftover answer after the last status paragraph and tools, instead of stopping there. Text after thinking or tools starts at once, not after 280 characters.
+- Chat: a prompt that leaves the queue on its own does not cut off the reading that is already playing.
+
 ## 1.5.0b26
 
 - **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.5.0b26`) together with this release.** It carries the updated agent prompt. The chat warns when the runtime is older than 1.5.0b26.

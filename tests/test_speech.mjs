@@ -1,4 +1,4 @@
-import { takeSpeech, speechPlain, takePendingClip } from "../custom_components/ai_workspace/www/speech.js";
+import { takeSpeech, speechPlain, takePendingClip, speechTail } from "../custom_components/ai_workspace/www/speech.js";
 
 function eq(actual, expected, label) {
   const left = JSON.stringify(actual);
@@ -127,5 +127,19 @@ eq(takePendingClip([]), "", "empty pending yields no clip");
   const pending = [];
   eq(takePendingClip(pending, { flush: true }), "", "empty pending does not loop");
 }
+
+const p4 = "Syntax ist in Ordnung. Als Nächstes Commit, Tag und Release.";
+const answer =
+  "**1.5.0b26** ist raus: [Release](https://example.com/v1.5.0b26)\n\nNach einem HACS-Update kommt der erste Satz vor den Tools.";
+const afterTools = takeSpeech(`\n\n${answer}`, true, false, { heavy: true, fresh: true });
+if (!afterTools.pieces.length || !afterTools.pieces[0].includes("1.5.0b26")) {
+  throw new Error(`text after tools should speak immediately: ${JSON.stringify(afterTools)}`);
+}
+
+eq(speechTail("", answer), answer, "nothing spoken yet yields the full answer");
+eq(speechTail(p4, `${p4}\n\n${answer}`).includes("HACS-Update"), true, "prefix match yields the later answer");
+eq(speechTail(`${p4}\n\n`, `${p4}\n\n${answer}`).includes("ist raus"), true, "trailing break still yields the later answer");
+eq(speechTail(`${p1}\n\n${p2}\n\n${p4}`, answer).includes("ist raus"), true, "Cursor result without intro still speaks the answer");
+eq(speechTail(`${p4}\n\n${answer}`, answer), "", "do not repeat an answer that was already streamed");
 
 console.log("ok");

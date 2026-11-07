@@ -1,6 +1,6 @@
 const CACHE = new URL(import.meta.url).search;
 const { stringsFor } = await import(`./i18n.js${CACHE}`);
-const { takeSpeech, speechPlain, takePendingClip } = await import(`./speech.js${CACHE}`);
+const { takeSpeech, speechPlain, takePendingClip, speechTail } = await import(`./speech.js${CACHE}`);
 const { stripRemoteMedia, watchRenderedMedia } = await import(`./media_guard.js${CACHE}`);
 const { MAX_ATTACH, MAX_QUEUE, filesToRead, takeInputFiles, pullQueuedDraft, keepQueueOnHalt } = await import(
   `./send_guard.js${CACHE}`
@@ -2359,7 +2359,7 @@ export async function mountAiWorkspace(root, options = {}) {
     resizeComposer();
   }
 
-  function haltStream({ keepQueue = true } = {}) {
+  function haltStream({ keepQueue = true, keepSpeech = false } = {}) {
     streamToken += 1;
     watchGen += 1;
     if (streamAbort) {
@@ -2377,7 +2377,8 @@ export async function mountAiWorkspace(root, options = {}) {
     streamPainted = "";
     streamNode = null;
     streamFinal = false;
-    haltSpeech();
+    if (keepSpeech) resetSpeechTurn();
+    else haltSpeech();
     const waiters = streamWaiters;
     streamWaiters = [];
     waiters.forEach((fn) => fn());
@@ -2400,8 +2401,8 @@ export async function mountAiWorkspace(root, options = {}) {
     resizeComposer();
   }
 
-  function abandonStream() {
-    haltStream({ keepQueue: keepQueueOnHalt("send") });
+  function abandonStream({ keepSpeech = false } = {}) {
+    haltStream({ keepQueue: keepQueueOnHalt("send"), keepSpeech });
   }
 
   async function stopTurn() {
@@ -3531,11 +3532,10 @@ export async function mountAiWorkspace(root, options = {}) {
       resizeComposer();
       syncCopyChat();
       bumpSession(id, session.title, session.pinned);
-      if (sawPending && voice.speak && voice.tts && !speakStarted) {
-        const leftover = lastAssistantText();
+      if (sawPending && voice.speak && voice.tts) {
+        const leftover = speechTail(speakRaw, lastAssistantText());
         if (leftover) {
-          speakHeld = leftover;
-          speakRaw = leftover;
+          feedSpeech(leftover);
           drainSpeech(true);
         }
       }
@@ -3971,6 +3971,7 @@ export async function mountAiWorkspace(root, options = {}) {
   let speakFromUser = false;
   let speakBusy = false;
   let speakFlush = false;
+  let speakFresh = false;
   let speakRelease = null;
   const speakPending = [];
   const speakInflight = [];
@@ -4158,6 +4159,7 @@ export async function mountAiWorkspace(root, options = {}) {
     speakBusy = false;
     speakFromUser = false;
     speakFlush = false;
+    speakFresh = false;
     speakPending.length = 0;
     speakInflight.length = 0;
     if (speakRelease) speakRelease();
@@ -4169,16 +4171,30 @@ export async function mountAiWorkspace(root, options = {}) {
     setSpeakUi("idle");
   }
 
+  function resetSpeechTurn() {
+    speakHeld = "";
+    speakRaw = "";
+    speakStarted = false;
+    speakFlush = false;
+    speakFresh = true;
+  }
+
   function drainSpeech(flush, pause = false) {
     if (flush) speakFlush = true;
-    const taken = takeSpeech(speakHeld, speakStarted, flush, { heavy: voice.ttsHeavy, pause });
+    const taken = takeSpeech(speakHeld, speakStarted, flush, {
+      heavy: voice.ttsHeavy,
+      pause,
+      fresh: speakFresh,
+    });
     speakHeld = taken.rest;
     for (const piece of taken.pieces) {
       speakStarted = true;
+      speakFresh = false;
       queueSpeech(piece);
     }
     if (taken.pieces.length) syncCopyChat();
     if (flush) fillSpeakAhead();
+    if (pause) speakFresh = true;
   }
 
   function feedSpeech(delta) {
@@ -4189,8 +4205,8 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function syncSpeechTo(full) {
-    if (!voice.speak || !full || !full.startsWith(speakRaw)) return;
-    const extra = full.slice(speakRaw.length);
+    if (!voice.speak || !full) return;
+    const extra = speechTail(speakRaw, full);
     if (extra) feedSpeech(extra);
   }
 
@@ -4493,12 +4509,15 @@ export async function mountAiWorkspace(root, options = {}) {
       const known = knownSessionId();
       if (known) await openSession(known, true);
     }
-    abandonStream();
+    abandonStream({ keepSpeech: keepComposer });
     const token = streamToken;
     const abort = new AbortController();
     streamAbort = abort;
     stopSpeech();
-    unlockOutput();
+    const speechPlaying = Boolean(
+      speakBusy || (replyAudio && !replyAudio.paused && !replyAudio.ended && replyObjectUrl),
+    );
+    if (!keepComposer || !speechPlaying) unlockOutput();
     if (keepComposerFocus()) messageEl.focus();
     else hideKeyboard();
     streaming = true;
@@ -4618,18 +4637,10 @@ export async function mountAiWorkspace(root, options = {}) {
           streamNode = streamNode || assistant.querySelector(".text");
           if (data.answer) {
             queueStreamAnswer(data.answer);
-            syncSpeechTo(data.answer);
           }
           startStreamPump();
+          if (voice.speak) syncSpeechTo(String(data.answer || lastAssistantText() || ""));
           drainSpeech(true);
-          if (voice.speak && !speakStarted) {
-            const leftover = String(data.answer || lastAssistantText() || "").trim();
-            if (leftover) {
-              speakHeld = leftover;
-              speakRaw = leftover;
-              drainSpeech(true);
-            }
-          }
           settleTools(assistant);
           streaming = false;
           assistant.classList.remove("streaming");

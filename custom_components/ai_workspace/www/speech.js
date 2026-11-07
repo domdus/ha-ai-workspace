@@ -186,8 +186,32 @@ function takeHeavySpeech(held, started, flush, pause) {
 
 export function takeSpeech(held, started, flush, options = {}) {
   const pause = Boolean(options && options.pause) && !flush;
-  if (options && options.heavy) return takeHeavySpeech(held, started, flush, pause);
-  return takeLightSpeech(held, started, flush, pause);
+  const began = Boolean(started) && !options.fresh;
+  if (options && options.heavy) return takeHeavySpeech(held, began, flush, pause);
+  return takeLightSpeech(held, began, flush, pause);
+}
+
+/**
+ * Text in `full` that TTS has not already been fed (`spoken`).
+ * Cursor often stores only the later answer, while the stream had the status intro.
+ */
+export function speechTail(spoken, full) {
+  const have = String(spoken || "");
+  const want = String(full || "");
+  if (!want) return "";
+  if (!have) return want;
+  if (want.startsWith(have)) return want.slice(have.length);
+  const haveTrim = have.trimEnd();
+  const wantTrim = want.trimEnd();
+  if (wantTrim.startsWith(haveTrim)) return wantTrim.slice(haveTrim.length);
+  const compact = (text) => text.replace(/\s+/g, "");
+  if (compact(have).includes(compact(wantTrim))) return "";
+  const last = (haveTrim.split(/\n\s*\n/).pop() || haveTrim).trim();
+  if (last) {
+    const at = want.lastIndexOf(last);
+    if (at >= 0) return want.slice(at + last.length);
+  }
+  return `\n\n${wantTrim}`;
 }
 
 /**
