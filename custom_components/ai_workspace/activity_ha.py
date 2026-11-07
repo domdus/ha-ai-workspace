@@ -559,8 +559,11 @@ def _summary_from_events(pending: Pending) -> str:
     for item in pending.events:
         if item[0] == "yaml":
             kind = str(item[1] or "automation")
-            doc = _pick_yaml_doc(pending.yaml_docs, kind, item[2] if len(item) > 2 else "")
-            label = str((doc or {}).get("label") or item[2] or kind)
+            item_id = item[2] if len(item) > 2 else ""
+            doc = _pick_yaml_doc(pending.yaml_docs, kind, item_id)
+            if doc is None and not item_id:
+                return f"Changed {'an' if kind[:1] in 'aeiou' else 'a'} {kind}"
+            label = str((doc or {}).get("label") or item_id or kind)
             return f"Updated {kind} {label}"
         if item[0] == "dashboard":
             store_id = dashboard_store_id(item[1])
@@ -600,6 +603,10 @@ async def _apply_events(hass: HomeAssistant, pending: Pending) -> tuple[dict[str
         before = _pick_yaml_doc(pending.yaml_docs, yaml_kind, yaml_id)
         if before is None and isinstance(pending.document, dict) and pending.document.get("kind") == yaml_kind:
             before = pending.document
+        if before is None and not yaml_id:
+            # A new automation, script, or scene: the reload event names nothing, so
+            # "Updated automation automation" would win over the index ("Created automation …").
+            return None, ""
         label = str((before or {}).get("label") or yaml_id or yaml_kind)
         text = summary(
             Change(kind=yaml_kind, action="update", item_id=str((before or {}).get("id") or yaml_id or ""), label=label, domain=yaml_kind),

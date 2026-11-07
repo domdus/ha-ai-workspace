@@ -58,3 +58,14 @@ def test_rollback_needs_the_users_sign_in() -> None:
 def test_no_yaml_writer_is_left() -> None:
     assert not hasattr(activity_ha, "_restore_yaml")
     assert not hasattr(activity_ha, "_write_yaml")
+
+
+def test_a_new_automation_is_not_summarized_as_updated_automation_automation() -> None:
+    # The reload event of a new automation carries no id and there is no before-image.
+    pending = SimpleNamespace(events=[("yaml", "automation", None)], yaml_docs={}, document=None, dashboard_docs={}, entity_docs={})
+    doc, text = asyncio.run(activity_ha._apply_events(SimpleNamespace(), pending))
+    # Left empty, so the before/after index ("Created automation Water the balcony") names it.
+    assert doc is None and text == ""
+    assert activity_ha._summary_from_events(pending) == "Changed an automation"
+    pending.events = [("yaml", "script", None)]
+    assert activity_ha._summary_from_events(pending) == "Changed a script"

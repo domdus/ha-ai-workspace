@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0b30
+
+- The runtime has no changes in this release. A 1.5.0b29 runtime keeps working without an update notice; the 1.5.0b30 image only carries the new version number.
+- Change History: a new automation, script, or scene is listed as “Created automation Water the balcony when dry” instead of “Updated automation automation”. When the name cannot be found, it says “Changed an automation”.
+- README: new chat and floating-button GIFs (turn on a light, ask why the vacuum skipped, build an automation, add a weather card to the view you are on) and new screenshots.
+
 ## 1.5.0b29
 
 - **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.5.0b29`) together with this release.** It carries the updated agent prompt. The chat warns when the runtime is older than 1.5.0b29.
