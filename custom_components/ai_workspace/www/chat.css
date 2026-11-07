@@ -828,12 +828,6 @@ h1 {
   stroke-linejoin: round;
 }
 
-/* ÷ thinking: counterclockwise; : : reading uses the generic clockwise turn. */
-.activity.shine .glyph[data-kind="think"] svg {
-  animation: glyph-turn-ccw 1s linear infinite;
-}
-
-.activity.shine .glyph[data-kind="think"] .dot,
 .activity.shine .glyph[data-kind="read"] .dot {
   fill: currentColor;
   stroke: none;
@@ -860,10 +854,6 @@ h1 {
 
 @keyframes glyph-turn {
   to { transform: rotate(360deg); }
-}
-
-@keyframes glyph-turn-ccw {
-  to { transform: rotate(-360deg); }
 }
 
 @keyframes glyph-lines {

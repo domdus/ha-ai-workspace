@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.0b17
+
+- The runtime has no changes in this release. A 1.5.0b13 runtime keeps working without an update notice; the 1.5.0b17 image only carries the new version number.
+- Chat: the thinking status glyph is a `¤` that turns with the clock, like `+` and `-`, instead of a counterclockwise `÷`.
+
 ## 1.5.0b16
 
 - The runtime has no changes in this release. A 1.5.0b13 runtime keeps working without an update notice; the 1.5.0b16 image only carries the new version number.

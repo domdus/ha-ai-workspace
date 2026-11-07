@@ -1424,12 +1424,12 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   // A small plain glyph in front of the status, one per kind of moment:
-  // + working, ÷ thinking, : : reading the house (four turning dots),
+  // + working, ¤ thinking, : : reading the house (four turning dots),
   // = changing the house (lines run down), - waiting (a turning dash).
   const ACTIVITY_GLYPHS = {
     work: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg>',
     think:
-      '<svg viewBox="0 0 24 24" aria-hidden="true"><circle class="dot" cx="12" cy="5.5" r="2.4"/><path d="M5 12h14"/><circle class="dot" cx="12" cy="18.5" r="2.4"/></svg>',
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.8"/><path d="M7.6 7.6 4.2 4.2M16.4 7.6 19.8 4.2M7.6 16.4 4.2 19.8M16.4 16.4 19.8 19.8"/></svg>',
     read:
       '<svg viewBox="0 0 24 24" aria-hidden="true"><circle class="dot" cx="7" cy="7" r="2.5"/><circle class="dot" cx="17" cy="7" r="2.5"/><circle class="dot" cx="7" cy="17" r="2.5"/><circle class="dot" cx="17" cy="17" r="2.5"/></svg>',
     write:
