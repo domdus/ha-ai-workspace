@@ -1,7 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.5.1b2
 
+- The runtime code has no changes in this release; only the App's settings page changed. A 1.5.0 runtime keeps working without an update notice.
 - App settings: a fresh install can be saved again. The empty default for the Home Assistant URL was rejected by the Supervisor ("expected a URL"); the field is now optional and the App uses http://homeassistant:8123 when it is empty.
 - App settings: Shorten MCP results and Change History are no longer preset in the App. Both stay available under "Show unused optional configuration options". The runtime keeps them on by default, the same as the Docker image, and the integration's own setting still wins.
 - App settings: every option has a name and description now, in English and German.
