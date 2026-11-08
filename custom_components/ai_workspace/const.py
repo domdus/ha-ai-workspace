@@ -317,7 +317,7 @@ CONF_TTS_MODEL = "tts_model"
 CONF_TTS_VOICE = "tts_voice"
 CONF_TTS_SPEED = "tts_speed"
 STT_PROVIDERS = frozenset({API_OPENAI, API_OPENROUTER, API_COMPATIBLE, API_GEMINI})
-TTS_PROVIDERS = frozenset({API_OPENAI, API_OPENROUTER, API_COMPATIBLE, API_GEMINI})
+TTS_PROVIDERS = frozenset({API_OPENAI, API_OPENROUTER, API_COMPATIBLE, API_GEMINI, API_XAI})
 _STT_MODEL = {
     API_OPENAI: "gpt-4o-mini-transcribe",
     API_OPENROUTER: "openai/whisper-1",
@@ -335,6 +335,8 @@ _TTS_MODEL = {
     API_OPENROUTER: "openai/gpt-4o-mini-tts",
     API_COMPATIBLE: "gpt-4o-mini-tts",
     API_GEMINI: "gemini-3.8-flash-tts",
+    # xAI /v1/tts takes no model field. The name only labels usage rows.
+    API_XAI: "grok-tts",
 }
 _TTS_MODEL_CHOICES = {
     API_OPENAI: ["gpt-4o-mini-tts", "tts-1-hd", "tts-1"],
@@ -359,6 +361,57 @@ TTS_VOICES = [
 ]
 DEFAULT_TTS_VOICE = "coral"
 DEFAULT_GEMINI_TTS_VOICE = "Kore"
+DEFAULT_XAI_TTS_VOICE = "eve"
+# Built-in voices from GET https://api.x.ai/v1/tts/voices. Every voice speaks every language.
+XAI_TTS_VOICES = [
+    "eve",
+    "ara",
+    "rex",
+    "sal",
+    "leo",
+    "luna",
+    "iris",
+    "carina",
+    "celeste",
+    "helios",
+    "ursa",
+    "rigel",
+    "cosmo",
+    "lux",
+    "atlas",
+    "castor",
+    "naksh",
+    "lumen",
+    "sirius",
+    "orion",
+    "altair",
+    "perseus",
+    "zenith",
+    "helix",
+    "kepler",
+    "zagan",
+]
+# xAI /v1/tts language codes. Anything else is sent as "auto".
+_XAI_SPEECH_LANGUAGE = {
+    "en": "en",
+    "ar": "ar-SA",
+    "bn": "bn",
+    "zh": "zh",
+    "fr": "fr",
+    "de": "de",
+    "hi": "hi",
+    "id": "id",
+    "it": "it",
+    "ja": "ja",
+    "ko": "ko",
+    "pt": "pt-BR",
+    "ru": "ru",
+    "es": "es-ES",
+    "tr": "tr",
+    "vi": "vi",
+}
+_XAI_REGIONAL = {"ar-eg", "ar-sa", "ar-ae", "pt-br", "pt-pt", "es-mx", "es-es"}
+XAI_TTS_SPEEDS = (1.0, 1.25, 1.5)
 GEMINI_TTS_VOICES = [
     "Kore",
     "Puck",
@@ -535,6 +588,29 @@ def provider_supports_tts(kind: str) -> bool:
     return str(kind or "") in TTS_PROVIDERS
 
 
+def provider_has_tts_model(kind: str) -> bool:
+    """False for xAI: its speech endpoint has no model to pick."""
+    return provider_supports_tts(kind) and str(kind or "") != API_XAI
+
+
+def tts_speeds(kind: str) -> tuple[float, ...]:
+    """Speed choices the provider accepts (xAI: 0.7 to 1.5)."""
+    if str(kind or "") == API_XAI:
+        return XAI_TTS_SPEEDS
+    return TTS_SPEEDS
+
+
+def xai_speech_language(language: str) -> str:
+    """Map Home Assistant's language tag to an xAI /v1/tts code, or auto."""
+    raw = str(language or "").strip().replace("_", "-").casefold()
+    if not raw:
+        return "auto"
+    if raw in _XAI_REGIONAL:
+        primary, region = raw.split("-", 1)
+        return f"{primary}-{region.upper()}"
+    return _XAI_SPEECH_LANGUAGE.get(raw.split("-", 1)[0], "auto")
+
+
 def provider_supports_tts_speed(kind: str) -> bool:
     """True when the agent form can offer a speaking-speed control."""
     return provider_supports_tts(kind)
@@ -543,12 +619,16 @@ def provider_supports_tts_speed(kind: str) -> bool:
 def tts_voices(kind: str) -> list[str]:
     if str(kind or "") == API_GEMINI:
         return list(GEMINI_TTS_VOICES)
+    if str(kind or "") == API_XAI:
+        return list(XAI_TTS_VOICES)
     return list(TTS_VOICES)
 
 
 def default_tts_voice(kind: str) -> str:
     if str(kind or "") == API_GEMINI:
         return DEFAULT_GEMINI_TTS_VOICE
+    if str(kind or "") == API_XAI:
+        return DEFAULT_XAI_TTS_VOICE
     return DEFAULT_TTS_VOICE
 
 
@@ -606,7 +686,7 @@ def resolved_tts_voice(raw: dict, provider: str = "") -> str:
         if stored:
             return voices.get(stored.casefold(), stored)
         return DEFAULT_GEMINI_TTS_VOICE
-    return stored.casefold() or DEFAULT_TTS_VOICE
+    return stored.casefold() or default_tts_voice(kind)
 
 
 def tts_speed_choice(value: float) -> str:
@@ -615,21 +695,23 @@ def tts_speed_choice(value: float) -> str:
     return str(value)
 
 
-def resolved_tts_speed(raw: dict) -> float:
+def resolved_tts_speed(raw: dict, provider: str = "") -> float:
     try:
         value = float(raw.get(CONF_TTS_SPEED, DEFAULT_TTS_SPEED) or DEFAULT_TTS_SPEED)
     except (TypeError, ValueError):
         value = DEFAULT_TTS_SPEED
+    if str(provider or raw.get(CONF_API_PROVIDER) or "") == API_XAI:
+        return max(0.7, min(1.5, value))
     return max(0.25, min(4.0, value))
 
 
 def assist_tts_enabled(raw: dict, provider: str = "", *, new: bool = False) -> bool:
-    """OpenAI-style agents speak unless turned off. Gemini is opt-in on existing rows."""
+    """OpenAI-style agents speak unless turned off. Gemini and xAI are opt-in on existing rows."""
     kind = str(provider or raw.get(CONF_API_PROVIDER) or "")
     if not provider_supports_tts(kind):
         return False
     if CONF_ASSIST_TTS not in raw:
-        if kind == API_GEMINI:
+        if kind in {API_GEMINI, API_XAI}:
             return bool(new)
         return True
     return bool(raw.get(CONF_ASSIST_TTS))

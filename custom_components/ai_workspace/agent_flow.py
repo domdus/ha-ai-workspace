@@ -52,13 +52,13 @@ from .const import (
     TOKEN_MODE_EXTREME,
     TOKEN_MODE_MEDIUM,
     TOKEN_MODE_OFF,
-    TTS_SPEEDS,
     assist_enabled,
     assist_stt_enabled,
     assist_tts_enabled,
     provider_supports_stt,
     provider_supports_tts,
     provider_supports_tts_speed,
+    provider_has_tts_model,
     api_key_url,
     api_model_choices,
     default_api_base,
@@ -70,6 +70,7 @@ from .const import (
     tts_speed_choice,
     stt_model_choices,
     tts_model_choices,
+    tts_speeds,
     tts_voices,
     submitted_model,
     token_mode_of,
@@ -186,9 +187,9 @@ def _tts_voice_field(provider: str, current: dict) -> dict:
     }
 
 
-def _tts_speed_field(current: dict) -> dict:
-    shown = tts_speed_choice(resolved_tts_speed(current))
-    options = [{"value": tts_speed_choice(item), "label": f"{tts_speed_choice(item)}×"} for item in TTS_SPEEDS]
+def _tts_speed_field(current: dict, provider: str = "") -> dict:
+    shown = tts_speed_choice(resolved_tts_speed(current, provider))
+    options = [{"value": tts_speed_choice(item), "label": f"{tts_speed_choice(item)}×"} for item in tts_speeds(provider)]
     if shown and shown not in {item["value"] for item in options}:
         options.insert(0, {"value": shown, "label": f"{shown}×"})
     return {
@@ -242,10 +243,11 @@ def _fields_schema(
         fields.update(_stt_model_field(provider, current))
     if provider_supports_tts(provider):
         fields[vol.Optional(CONF_ASSIST_TTS, default=assist_tts_enabled(current, provider, new=new))] = cv.boolean
-        fields.update(_tts_model_field(provider, current))
+        if provider_has_tts_model(provider):
+            fields.update(_tts_model_field(provider, current))
         fields.update(_tts_voice_field(provider, current))
         if provider_supports_tts_speed(provider):
-            fields.update(_tts_speed_field(current))
+            fields.update(_tts_speed_field(current, provider))
     # Rarely needed, so it stays folded away.
     advanced = {vol.Optional(CONF_SAVE_TOKENS, default=saves_tokens(current)): cv.boolean}
     if step == "cloud" and provider == API_ANTHROPIC:
@@ -491,13 +493,13 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                     if provider_supports_tts(provider)
                     else False,
                     CONF_TTS_MODEL: str(user_input.get(CONF_TTS_MODEL) or "").strip()
-                    if provider_supports_tts(provider)
+                    if provider_has_tts_model(provider)
                     else "",
                     CONF_TTS_VOICE: str(user_input.get(CONF_TTS_VOICE) or "").strip()
                     if provider_supports_tts(provider)
                     else "",
                     CONF_TTS_SPEED: tts_speed_choice(
-                        resolved_tts_speed(user_input if provider_supports_tts_speed(provider) else {})
+                        resolved_tts_speed(user_input if provider_supports_tts_speed(provider) else {}, provider)
                     )
                     if provider_supports_tts_speed(provider)
                     else "",

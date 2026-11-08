@@ -85,6 +85,8 @@ _SPEECH_PRICES: dict[str, dict[str, float]] = {
     "gpt-4o-mini-tts": {"character": 0.015 / 60 / 15},
     "tts-1": {"character": 15.0 / 1_000_000},
     "tts-1-hd": {"character": 30.0 / 1_000_000},
+    # xAI text-to-speech, beta list price.
+    "grok-tts": {"character": 4.20 / 1_000_000},
     **_SYNCED_SPEECH,
 }
 

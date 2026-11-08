@@ -169,6 +169,8 @@ def test_tts_uses_character_prices_not_chat_tokens():
     assert hd.cost_usd == round(2 * (30.0 / 1_000_000), 8)
     assert std.cost_usd == round(2 * (15.0 / 1_000_000), 8)
     assert hd.cost_usd > std.cost_usd
+    grok = mod.estimate_tts_cost("x" * 1000, "grok-tts")
+    assert grok.cost_usd == round(1000 * 4.20 / 1_000_000, 8)
     unknown = mod.estimate_tts_cost("hello", "piper-voice")
     assert unknown.characters == 5
     assert unknown.cost_usd is None

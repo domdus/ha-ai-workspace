@@ -103,7 +103,7 @@ On each agent (**Add agent**, or the edit button on an agent row).
 | **Effort** | Default, Fast, High, or High fast, when the model supports it. If it does not, the request still goes through. | High thinks longer: better on hard questions, but slower and more tokens. Fast is cheaper and quicker. |
 | **Cursor runtime address / Runtime password** | Only on Cursor agents. Leave the address empty when the form shows **Runtime found**. | Pairs Home Assistant with the Cursor runtime. See [Runtime token](../README.md#runtime-token). |
 | **Add to Assist** | On adds a Voice assistants pipeline for this agent. Off removes it again and keeps the agent in AI Workspace only. | Use the same model from Home Assistant’s Assist dialog. |
-| **Add Speech-to-text / Text-to-speech** | OpenAI, OpenRouter, OpenAI-compatible, and Gemini. OpenAI-style is on by default. Gemini uses native generateContent (not Whisper / `/audio/*`) and stays off on agents you already added. Uses this agent’s key. Off removes that engine. | Listen and speak with the same key. Cursor, Claude, Azure, and Ollama have no speech API of their own. |
+| **Add Speech-to-text / Text-to-speech** | OpenAI, OpenRouter, OpenAI-compatible, and Gemini. Grok (xAI) has Text-to-speech only (26 voices, 1× to 1.5×, no model to pick). OpenAI-style is on by default. Gemini uses native generateContent (not Whisper / `/audio/*`). Gemini and Grok stay off on agents you already added. Uses this agent’s key. Off removes that engine. | Listen and speak with the same key. Cursor, Claude, Azure, and Ollama have no speech API of their own. |
 
 ## Always check the house first
 

@@ -85,6 +85,17 @@ def test_text_to_speech_defaults_on_for_openai_style_agents() -> None:
     assert const.provider_supports_tts("openrouter")
     assert const.provider_supports_tts("compatible")
     assert const.provider_supports_tts("gemini")
+    assert const.provider_supports_tts("xai")
+    assert not const.provider_has_tts_model("xai")
+    assert const.provider_has_tts_model("openai")
+    assert const.default_tts_voice("xai") == "eve"
+    assert "ara" in const.tts_voices("xai")
+    assert const.tts_speeds("xai") == (1.0, 1.25, 1.5)
+    assert const.resolved_tts_speed({"tts_speed": "3"}, "xai") == 1.5
+    assert const.resolved_tts_speed({"tts_speed": "3"}, "openai") == 3.0
+    assert const.resolved_tts_voice({}, "xai") == "eve"
+    assert not const.assist_tts_enabled({}, "xai")
+    assert const.assist_tts_enabled({}, "xai", new=True)
     assert not const.provider_supports_tts("cursor")
     assert not const.provider_supports_tts("anthropic")
     assert const.provider_supports_tts_speed("gemini")

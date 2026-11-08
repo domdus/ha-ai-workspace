@@ -140,7 +140,7 @@ def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Age
         assist_tts=assist_tts_enabled(raw, provider),
         tts_model=resolved_tts_model(raw, provider),
         tts_voice=resolved_tts_voice(raw, provider),
-        tts_speed=resolved_tts_speed(raw),
+        tts_speed=resolved_tts_speed(raw, provider),
         token_mode=agent_token_mode(raw.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF)),
         prompt_cache=bool(raw.get(CONF_PROMPT_CACHE, True)),
         cache_1h=bool(raw.get(CONF_CACHE_1H, False)) and provider == API_ANTHROPIC,

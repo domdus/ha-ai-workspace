@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.0b34
+
+- The runtime has no changes in this release. A 1.5.0b29 runtime keeps working without an update notice; the 1.5.0b34 image only carries the new version number.
+- Grok (xAI) agents can add a Text-to-speech engine. It uses the agent's xAI key with xAI's `/v1/tts` (the key needs Voice enabled; a Cursor key cannot do this). 26 voices, default Eve, speed 1× to 1.5×, no model to pick. The Home Assistant language maps to xAI's codes, anything else is sent as auto.
+- Grok TTS is off on Grok agents you already added and on for new ones, like Gemini. Turn it on in the agent form.
+- Usage: Grok TTS is priced at $4.20 per million characters (xAI's beta price).
+
 ## 1.5.0b33
 
 - The runtime has no changes in this release. A 1.5.0b29 runtime keeps working without an update notice; the 1.5.0b33 image only carries the new version number.
