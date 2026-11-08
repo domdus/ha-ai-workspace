@@ -1,5 +1,44 @@
 # Changelog
 
+## 1.5.0
+
+Everything from 1.5.0b1 to 1.5.0b34 (including 1.4.3b1 and 1.4.3b2). A minor release, because it adds features; nothing needs to be changed in your setup.
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.5.0`) together with this release.** It carries the updated agent prompt, the Change History key, and the git push fix. The chat warns when the runtime is older than 1.5.0.
+
+**Chat**
+- Replies show what the agent is doing with a small moving glyph and one status line (thinking, reading the house, building, working). The agent may write one short sentence about what it is about to do before its tools; tool groups no longer stay in progress after a turn ends.
+- Reloading the page while an agent answers picks the reply up again, with the tool steps and text so far.
+- Queue: prompts sent while the agent answers stack as chips (up to ten) and go out in order. **Stop** stops everything, including the queue; queued prompts stay with their chat, and the first one goes back into an empty input field. A full queue or more than four attachments shows a notice.
+- Read-aloud starts with the first paragraph and keeps reading as the reply arrives, in clips of at most 560 characters, so long replies are read to the end. Pausing keeps it paused; it stops when the floating chat closes, you leave AI Workspace, or you open Usage.
+- The chat list and the open chat load together, the list comes from a per-user cache on later visits, and long chats paint their last messages first.
+- When the connection drops before a reply arrives, the reply says so in your language.
+
+**Agents**
+- Cloud agents load tools on demand instead of sending all of HA-MCP's tools (about 38,000 tokens) with every request. Chat history follows a token budget, and each reply keeps a one-line note per tool call so the next turn does not look things up again.
+- Agents know when things were said and the house's time zone, so history from "08:00" means local time, and they read a saved automation, script, scene, or dashboard again before describing it.
+- Writing with HA-MCP's strict best-practice mode needs the guide only once; AI Workspace passes the key on to later writes.
+- **Remembered notes** (Configure, off by default): the assistant reads your notes and adds to them when you say "remember …". It only stores what you said in the chat, each change is in Change History, and notes survive a restart.
+- A simpler agent form: **Advanced** holds **Save tokens**; every agent with tools looks at Home Assistant first.
+- Claude agents: **Keep the cache for an hour** under **Advanced** (off by default).
+- Ollama: the form checks the address and the model name, and a model without tools or with a small context window answers chat only.
+- Grok (xAI) agents can add a Text-to-speech engine with the agent's xAI key (the key needs Voice enabled). 26 voices, speed 1× to 1.5×. Off on Grok agents you already had, on for new ones.
+
+**Change History**
+- Rollback of automations, scripts, and scenes goes through Home Assistant's own config API. Each row has one way back: **Rollback** to the saved copy, or **Undo with agent** for things the agent created. New items are listed by name, for example "Created automation Water the balcony when dry".
+- An open automation or script editor shows the agent's new version right away; unsaved edits stay.
+
+**Usage**
+- Each request of a turn is priced on its own, so long-request rates only apply where they should. Stopped or failed turns still count what already finished. Model prices refreshed from LiteLLM, plus Grok TTS at $4.20 per million characters.
+
+**Runtime and security**
+- The runtime's calls back into Home Assistant need a key Home Assistant issues for each Cursor chat turn.
+- Cursor runtime with `GIT_REPO` can push as well as pull, and still starts when cloning fails.
+- The chat warns when the runtime is older than the integration expects.
+
+**README**
+- New GIFs and screenshots: several real tasks in one chat, the floating chat on any page, Change History, Usage, and settings.
+
 ## 1.5.0b34
 
 - The runtime has no changes in this release. A 1.5.0b29 runtime keeps working without an update notice; the 1.5.0b34 image only carries the new version number.
