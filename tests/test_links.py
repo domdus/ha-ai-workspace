@@ -38,10 +38,31 @@ def test_editable_system_prompt_omits_editor_link_rules() -> None:
 def test_small_talk_stays_plain() -> None:
     const = _const()
     text = const.ui_link_instructions("http://127.0.0.1:8123")
-    assert "small talk" in text
     assert "Do not link the words Home Assistant" in text
+    assert text.count("Do not link the words Home Assistant") == 1
     assert "Never write that origin" in text
     assert "This user's Home Assistant UI is" not in text
-    assert "Call tools silently" in text
-    assert "small talk" in const.DEFAULT_SYSTEM_PROMPT
-    assert "call a Home Assistant tool" in const.DEFAULT_SYSTEM_PROMPT
+    # It contradicted the one status sentence before tools.
+    assert "Call tools silently" not in text
+
+    class S:
+        system_prompt = "Custom prompt."
+        house_map = False
+
+    # Kept when the user replaces the built-in prompt.
+    full = const.workspace_system_prompt(S())
+    assert "small talk" in full
+    assert "call a Home Assistant tool" in full
+    assert "not a generic filler" in const.STATUS_LINE_INSTRUCTIONS
+    # Optional, not required: a quick question may go straight to the tools.
+    assert const.STATUS_LINE_INSTRUCTIONS.startswith("You may write")
+    assert "before the first tool call" in const.STATUS_LINE_INSTRUCTIONS
+    assert "Do not mention Home Assistant" not in const.STATUS_LINE_INSTRUCTIONS
+    assert "I'll check that" not in const.STATUS_LINE_INSTRUCTIONS
+    assert "one moment" not in const.STATUS_LINE_INSTRUCTIONS.lower()
+    assert "Do not say that you are checking" not in const.CHECK_HOUSE_NOTE
+    assert "weather" in const.CHECK_HOUSE_NOTE
+    assert "do not say that you are checking" not in const.HOUSE_RULES
+    assert "weather" in const.HOUSE_RULES
+    # Said once per prompt part, not repeated in every one.
+    assert "not for any topic" not in const.HOUSE_RULES + const.CHECK_HOUSE_NOTE + const.STATUS_LINE_INSTRUCTIONS

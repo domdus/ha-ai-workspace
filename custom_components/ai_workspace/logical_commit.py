@@ -281,6 +281,8 @@ def document_is_restorable(document: dict[str, Any] | str | None) -> bool:
             return True
         elif kind == "entity" and str(doc.get("entity_id") or "").strip():
             return True
+        elif kind == "notes" and isinstance(doc.get("text"), str):
+            return True
     return False
 
 

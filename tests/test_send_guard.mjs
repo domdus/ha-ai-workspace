@@ -1,7 +1,20 @@
 /**
- * Guards for chat send / session routing (mirrors chat.js invariants).
+ * Guards for chat send / session routing and the queue/attach helpers in send_guard.js.
  * Run: node tests/test_send_guard.mjs
  */
+import { readFileSync } from "node:fs";
+import {
+  MAX_ATTACH,
+  MAX_QUEUE,
+  filesToRead,
+  takeInputFiles,
+  pullQueuedDraft,
+  keepQueueOnHalt,
+  filesLeftOut,
+  sessionCacheKey,
+} from "../custom_components/ai_workspace/www/send_guard.js";
+
+const chatSrc = readFileSync(new URL("../custom_components/ai_workspace/www/chat.js", import.meta.url), "utf8");
 
 function knownSessionId({ freshChat, sessionId, pathId, compactStored }) {
   if (freshChat) return "";
@@ -59,18 +72,87 @@ function sendButtonMode({ streaming, hasDraft }) {
   return { action: "send", enabled: Boolean(hasDraft) };
 }
 
-function afterStop({ queued }) {
-  return queued ? "flush" : "idle";
-}
-
 ok(sendButtonMode({ streaming: true, hasDraft: false }).action === "stop", "Send is Stop while the agent is working");
 ok(sendButtonMode({ streaming: true, hasDraft: false }).enabled === true, "Stop stays clickable with an empty composer");
 ok(sendButtonMode({ streaming: true, hasDraft: true }).action === "send", "A typed follow-up turns Stop back into Send");
 ok(sendButtonMode({ streaming: true, hasDraft: true }).enabled === true, "Send stays clickable so the follow-up can queue");
 ok(sendButtonMode({ streaming: false, hasDraft: false }).enabled === false, "Send stays off without a draft");
 ok(sendButtonMode({ streaming: false, hasDraft: true }).action === "send", "Send returns after stop");
-ok(afterStop({ queued: true }) === "flush", "A queued prompt is sent after stop");
-ok(afterStop({ queued: false }) === "idle", "With an empty queue, stop leaves the composer free");
+
+ok(keepQueueOnHalt("stop") === false, "Stop cancels the queued stack too");
+ok(keepQueueOnHalt("send") === true, "Sending the next turn keeps remaining queued prompts");
+ok(keepQueueOnHalt("switch") === false, "Queued prompts never go out in another chat");
+ok(keepQueueOnHalt("destroy") === false, "Destroying the panel drops the queue");
+
+ok(filesLeftOut(5, 4) === 1, "A fifth photo is reported as left out");
+ok(filesLeftOut(2, 0) === 2, "No free slot leaves every file out");
+ok(filesLeftOut(2, 4) === 0, "Files that fit are not reported");
+
+ok(sessionCacheKey("k", "u1") === "k:u1", "The sidebar cache is per user");
+ok(sessionCacheKey("k", "u1") !== sessionCacheKey("k", "u2"), "Two users never share the cached chat list");
+ok(sessionCacheKey("k", "") === "", "Without a known user there is no cache");
+
+const stacked = [{ text: "first" }, { text: "second" }, { text: "third" }];
+const fromEmpty = pullQueuedDraft(stacked, { draftText: "", pending: [] });
+ok(fromEmpty.pulled && fromEmpty.text === "first", "Empty composer takes the first queued prompt");
+ok(stacked.length === 2 && stacked[0].text === "second", "The rest of the stack stays queued");
+
+const withDraft = [{ text: "kept" }, { text: "also" }];
+const skipped = pullQueuedDraft(withDraft, { draftText: "I am typing", pending: [] });
+ok(!skipped.pulled, "A typed draft is not replaced by the queue");
+ok(withDraft.length === 2, "Queue stays intact when the composer already has text");
+
+ok(MAX_ATTACH === 4 && MAX_QUEUE === 10, "Attach and queue caps");
+ok(filesToRead(["a", "b", "c", "d", "e"], 4).join(",") === "a,b,c,d", "Only four files are read");
+ok(filesToRead(["a", "b", "c"], 1).join(",") === "a", "Remaining slots cap the read");
+ok(filesToRead(["a", "b"], 0).length === 0, "No slots means no files are read");
+
+{
+  let clearedBeforeRead = false;
+  const input = { files: ["one", "two"], value: "x" };
+  const freeze = async (files, slots) => {
+    if (input.value === "") clearedBeforeRead = true;
+    return filesToRead(files, slots);
+  };
+  const frozen = await takeInputFiles(input, freeze, 4);
+  ok(!clearedBeforeRead, "Picker is still set while bytes are copied");
+  ok(input.value === "", "Picker is cleared after the copy");
+  ok(frozen.join(",") === "one,two", "Copied files are returned");
+}
+
+{
+  const input = { files: ["a", "b", "c", "d", "e"], value: "x" };
+  const freeze = async (files, slots) => filesToRead(files, slots);
+  const frozen = await takeInputFiles(input, freeze, 2);
+  ok(frozen.join(",") === "a,b", "Limit applies before reading");
+}
+
+{
+  const input = { files: [], value: "x" };
+  const freeze = async () => {
+    throw new Error("should not read an empty picker");
+  };
+  const frozen = await takeInputFiles(input, freeze, 4);
+  ok(frozen.length === 0 && input.value === "", "Empty picker clears without reading");
+}
+
+ok(chatSrc.includes("takeInputFiles("), "chat.js copies picker files before clearing");
+ok(chatSrc.includes("keepQueueOnHalt("), "chat.js asks send_guard whether the queue survives");
+ok(chatSrc.includes('keepQueueOnHalt("switch")'), "Leaving a chat drops its queue");
+{
+  const stop = chatSrc.slice(chatSrc.indexOf("async function stopTurn"), chatSrc.indexOf("function hasDraft"));
+  ok(!stop.includes("flushNext"), "Stop does not send the next queued prompt");
+  ok(stop.includes("restoreQueued()"), "Stop puts the first queued prompt back into an empty composer");
+}
+ok(!/sessionStorage\.getItem\(SESSION_CACHE_KEY\)/.test(chatSrc), "The sidebar cache is not read from the shared key");
+ok(chatSrc.includes("pullQueuedDraft("), "chat.js restores queued prompts via pullQueuedDraft");
+ok(chatSrc.includes("takePendingClip("), "chat.js bundles TTS clips from speech.js");
+ok(!/function takePendingClip\(/.test(chatSrc), "chat.js does not reimplement takePendingClip");
+ok(chatSrc.includes("measure: spokenLength"), "TTS clip size is a character count, not the spoken string");
+ok(
+  !chatSrc.includes("splitSpeechClip(speakPending.shift(), MAX_CHARS, plainForTts)"),
+  "do not pass the spoken string as the TTS size (that split into letters)",
+);
 
 if (failed) {
   process.exit(1);

@@ -82,6 +82,29 @@ def gemini_speech_payload(text: str, voice: str, language: str = "", speed: floa
     }
 
 
+XAI_TTS_MAX_CHARS = 60_000
+
+
+def xai_speech_payload(text: str, voice: str, language: str = "", speed: float = 1.0) -> dict:
+    """Body for xAI POST /v1/tts. MP3 24 kHz; speed only when not normal (0.7 to 1.5)."""
+    from .const import DEFAULT_XAI_TTS_VOICE, xai_speech_language
+
+    payload = {
+        "text": str(text or "")[:XAI_TTS_MAX_CHARS],
+        "voice_id": (str(voice or "").strip() or DEFAULT_XAI_TTS_VOICE).casefold(),
+        "language": xai_speech_language(language),
+        "output_format": {"codec": "mp3", "sample_rate": 24000, "bit_rate": 128000},
+    }
+    try:
+        rate = float(speed or 1.0)
+    except (TypeError, ValueError):
+        rate = 1.0
+    rate = max(0.7, min(1.5, rate))
+    if abs(rate - 1.0) > 0.01:
+        payload["speed"] = rate
+    return payload
+
+
 def gemini_transcribe_payload(audio: bytes, mime: str, language: str = "") -> dict:
     from .const import gemini_speech_language
 

@@ -243,6 +243,49 @@
   font-size: var(--ha-font-size-s, 0.85rem);
 }
 
+/* Placeholder rows while the chat list loads. */
+.skeleton-label::after,
+.session-skeleton::after {
+  content: "";
+  display: block;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--secondary-text-color);
+  opacity: 0.18;
+  animation: session-skeleton 1.4s ease-in-out infinite;
+}
+
+.skeleton-label::after {
+  width: 64px;
+}
+
+.session-skeleton {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  margin: 0 var(--ha-space-1);
+  padding: 0 var(--ha-space-3);
+}
+
+.session-skeleton::after {
+  width: var(--w, 70%);
+  height: 12px;
+  border-radius: 6px;
+}
+
+@keyframes session-skeleton {
+  50% {
+    opacity: 0.08;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-label::after,
+  .session-skeleton::after {
+    animation: none;
+  }
+}
+
 .nav-scrim {
   display: none;
 }
@@ -422,7 +465,7 @@ ha-button.new-chat {
   align-self: center;
 }
 
-.session-row ha-dropdown.session-menu {
+.session-row .session-menu {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
@@ -463,7 +506,7 @@ ha-button.new-chat {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .session-row ha-dropdown.session-menu {
+  .session-row .session-menu {
     position: absolute;
     inset-inline-end: 2px;
     top: 6px;
@@ -549,10 +592,23 @@ header {
   position: sticky;
   top: 0;
   z-index: 2;
-  padding: var(--ha-space-3) var(--ai-inline-pad) var(--ha-space-2);
+  width: 100%;
+  padding: var(--ha-space-3) 0 var(--ha-space-2);
+  background: var(--primary-background-color);
+  transition: box-shadow var(--ha-animation-duration-normal, 200ms) ease;
+}
+
+header.scrolled {
+  box-shadow: var(--ha-box-shadow-s);
+}
+
+.header-row,
+header .chat-usage,
+header .banner {
   width: min(calc(var(--ai-chat-width) + 2 * var(--ai-inline-pad)), 100%);
   margin-inline: auto;
-  background: var(--primary-background-color);
+  padding-inline: var(--ai-inline-pad);
+  box-sizing: border-box;
 }
 
 .wrap.compact .chat.welcome header,
@@ -743,9 +799,87 @@ h1 {
   color: var(--secondary-text-color);
 }
 
+/* Same breathing room as .tools → answer (margin-bottom on .tools). */
+.ui-theme-standard .bubble.assistant ha-markdown.text:not([hidden]) + .activity {
+  margin-top: var(--ha-space-4);
+}
+
 .activity.idle {
   visibility: hidden;
   pointer-events: none;
+}
+
+.activity.shine {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+}
+
+.activity .glyph {
+  display: none;
+}
+
+.activity.shine .glyph {
+  display: inline-flex;
+  flex: none;
+  width: 1.05em;
+  height: 1.05em;
+  overflow: hidden;
+  color: var(--ha-color-fill-primary-loud-resting, var(--primary-color));
+}
+
+.activity.shine .glyph svg {
+  animation: glyph-turn 1s linear infinite;
+}
+
+.activity .glyph svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.activity.shine .glyph .dot {
+  fill: currentColor;
+  stroke: none;
+}
+
+/* =: 1s lines run top→bottom (vertical mask only; no svg spin). */
+.activity.shine .glyph[data-kind="write"] {
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent);
+}
+
+.activity.shine .glyph[data-kind="write"] svg {
+  animation: none;
+}
+
+.activity.shine .glyph[data-kind="write"] .lines {
+  animation: glyph-lines 1s linear infinite;
+}
+
+/* -: a dash turning, half a turn per beat. */
+.activity.shine .glyph[data-kind="wait"] svg {
+  animation: glyph-turn 1s linear infinite;
+}
+
+@keyframes glyph-turn {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes glyph-lines {
+  from { transform: translateY(0); }
+  to { transform: translateY(9px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activity.shine .glyph,
+  .activity.shine .glyph svg,
+  .activity.shine .glyph .lines { animation: none; }
 }
 
 .tools {
@@ -1103,17 +1237,34 @@ h1 {
 
 .next-row {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: stretch;
   gap: var(--ha-space-2);
-  margin: var(--ha-space-2) var(--ha-space-2) 0 0;
-  padding: var(--ha-space-2) var(--ha-space-2) var(--ha-space-2) var(--ha-space-3);
-  border-radius: var(--ha-border-radius-lg, 12px);
-  background: var(--ha-color-fill-neutral-quiet-resting, var(--chip-background-color));
+  /* Box pad is space-4 left / space-1 right; pull the chip into that space-1 gutter. */
+  margin: 0 0 0 calc(var(--ha-space-1) - var(--ha-space-4));
+  padding: 0;
+  background: transparent;
   color: var(--primary-text-color);
 }
 
 .next-row[hidden] {
   display: none !important;
+}
+
+.next-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--ha-space-2);
+  padding: var(--ha-space-2) 0 var(--ha-space-2) var(--ha-space-3);
+  /* Nested in the 3xl composer: inner radius = outer − the space-1 inset. */
+  border-radius: calc(var(--ha-border-radius-3xl, 24px) - var(--ha-space-1, 4px));
+  /* Form fill is already quiet-resting; mix onto that so the chip reads as its own surface. */
+  background: color-mix(
+    in srgb,
+    var(--primary-text-color) 12%,
+    var(--ha-color-form-background, var(--input-fill-color))
+  );
+  color: var(--primary-text-color);
 }
 
 .next-copy {
@@ -1141,6 +1292,9 @@ h1 {
 
 .next-remove {
   flex: none;
+  align-self: center;
+  width: 36px;
+  height: 36px;
   border: 0;
   background: transparent;
   color: var(--secondary-text-color);
@@ -1148,8 +1302,8 @@ h1 {
   font-size: var(--ha-font-size-s);
   cursor: pointer;
   padding: 0;
-  --ha-icon-button-size: 32px;
-  --mdc-icon-button-size: 32px;
+  --ha-icon-button-size: 36px;
+  --mdc-icon-button-size: 36px;
 }
 
 .send.is-stop {
@@ -1653,7 +1807,7 @@ textarea:focus {
 }
 
 .chat-usage {
-  margin: var(--ha-space-1) 0 0;
+  margin-block: var(--ha-space-1) 0;
   font-size: var(--ha-font-size-s);
   color: var(--secondary-text-color);
 }
@@ -1976,7 +2130,8 @@ ha-date-range-picker.usage-filter-dates {
   .wrap.narrow aside,
   .nav-scrim,
   .history,
-  .usage {
+  .usage,
+  header {
     transition: none;
   }
 

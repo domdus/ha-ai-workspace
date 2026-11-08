@@ -223,6 +223,9 @@ class Store:
         usage_cols = {row[1] for row in self._conn.execute("PRAGMA table_info(usage_turns)")}
         if "characters" not in usage_cols:
             self._conn.execute("ALTER TABLE usage_turns ADD COLUMN characters INTEGER NOT NULL DEFAULT 0")
+        self._conn.execute("CREATE INDEX IF NOT EXISTS messages_session ON messages(session_id, id)")
+        self._conn.execute("CREATE INDEX IF NOT EXISTS sessions_user_updated ON sessions(user_id, pinned, updated_at)")
+        self._conn.execute("CREATE INDEX IF NOT EXISTS activity_session ON activity(session_id)")
         self._conn.commit()
 
     def close(self) -> None:
@@ -270,23 +273,35 @@ class Store:
         user_id = _text(user_id)
         words = str(query or "").casefold().split()
         with self._lock:
-            rows = self._conn.execute(
-                """
-                SELECT s.*, (
-                    SELECT m.content FROM messages m
-                    WHERE m.session_id = s.id AND m.role = 'user'
-                    ORDER BY m.id LIMIT 1
-                ) AS first_prompt
-                FROM sessions s WHERE s.user_id = ? ORDER BY s.pinned DESC, s.updated_at DESC
-                """,
-                (user_id,),
-            ).fetchall()
+            if words:
+                rows = self._conn.execute(
+                    """
+                    SELECT s.*, (
+                        SELECT m.content FROM messages m
+                        WHERE m.session_id = s.id AND m.role = 'user'
+                        ORDER BY m.id LIMIT 1
+                    ) AS first_prompt
+                    FROM sessions s WHERE s.user_id = ? ORDER BY s.pinned DESC, s.updated_at DESC
+                    """,
+                    (user_id,),
+                ).fetchall()
+            else:
+                # Listing the sidebar must not scan every first prompt.
+                rows = self._conn.execute(
+                    """
+                    SELECT * FROM sessions WHERE user_id = ?
+                    ORDER BY pinned DESC, updated_at DESC
+                    """,
+                    (user_id,),
+                ).fetchall()
         # In Python, not LIKE: SQLite only folds ASCII case, so "Küche" would miss "KÜCHE".
         found = []
         for row in rows:
-            text = f"{row['title'] or ''}\n{row['first_prompt'] or ''}".casefold()
-            if all(word in text for word in words):
-                found.append(_session(row))
+            if words:
+                text = f"{row['title'] or ''}\n{row['first_prompt'] or ''}".casefold()
+                if not all(word in text for word in words):
+                    continue
+            found.append(_session(row))
         return found
 
     def session_title(self, session_id: str) -> str:
@@ -500,6 +515,17 @@ class Store:
             )
             for row in rows
         ]
+
+    def has_session_activity(self, session_id: str) -> bool:
+        session_id = _text(session_id)
+        if not session_id:
+            return False
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT 1 FROM activity WHERE session_id = ? LIMIT 1",
+                (session_id,),
+            ).fetchone()
+        return row is not None
 
     def delete_session(self, user_id: str, session_id: str) -> bool:
         """Remove the chat and its messages. Usage turns stay: the provider already billed them."""

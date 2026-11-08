@@ -22,6 +22,7 @@ from app.redact import redact
 from app.settings import Settings
 from app.store import Session, Store
 from app.titles import accept_generated_title, needs_title_summary, title_from_prompt
+from app.version import RUNTIME_VERSION
 
 logger = logging.getLogger(__name__)
 STATIC = Path(__file__).resolve().parent / "static"
@@ -119,6 +120,8 @@ class ChatRequest(BaseModel):
     sync_agent_id: str = ""
     shorten_mcp_results: bool | None = None
     change_history: bool | None = None
+    # Home Assistant's key for this chat's Change History callbacks.
+    callback_key: str = Field(default="", max_length=200)
 
 
 def _with_ui_context(message: str, origin: str = "") -> str:
@@ -182,9 +185,13 @@ def create_app(settings: Settings | None = None, providers: dict | None = None) 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings: Settings = app.state.settings
-    from app.git_bootstrap import bootstrap_git
+    from app.git_bootstrap import GitBootstrapError, bootstrap_git
 
-    bootstrap_git(settings.workspace_dir)
+    try:
+        bootstrap_git(settings.workspace_dir)
+    except GitBootstrapError as exc:
+        # A wrong token or an unreachable repo must not take the chat down with it.
+        logger.error("Could not set up GIT_REPO in the workspace: %s", exc)
     settings.ensure_dirs()
     store = Store(settings.data_dir / "ai-workspace.sqlite")
     app.state.store = store
@@ -253,6 +260,7 @@ def health(request: Request) -> dict:
     cursor = request.app.state.providers["cursor"].info
     return {
         "ok": True,
+        "version": RUNTIME_VERSION,
         "auth_mode": settings.auth_mode,
         "model": settings.model,
         "cursor": cursor.available,
@@ -428,6 +436,7 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
             session.id,
             _user_id(request),
             request.headers.get("x-ai-workspace-agent") or "Cursor",
+            body.callback_key,
         )
 
     async def generate():

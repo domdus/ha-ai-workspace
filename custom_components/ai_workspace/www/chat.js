@@ -1,9 +1,62 @@
 const CACHE = new URL(import.meta.url).search;
 const { stringsFor } = await import(`./i18n.js${CACHE}`);
-const { takeSpeech, speechPlain } = await import(`./speech.js${CACHE}`);
+const { takeSpeech, speechPlain, takePendingClip, speechTail, splitSpeechClip, MAX_CHARS, clipWatch } = await import(
+  `./speech.js${CACHE}`
+);
 const { stripRemoteMedia, watchRenderedMedia } = await import(`./media_guard.js${CACHE}`);
+const {
+  MAX_ATTACH,
+  MAX_QUEUE,
+  filesToRead,
+  takeInputFiles,
+  pullQueuedDraft,
+  keepQueueOnHalt,
+  filesLeftOut,
+  sessionCacheKey,
+} = await import(
+  `./send_guard.js${CACHE}`
+);
 
 const API = "/api/ai_workspace";
+const SESSION_CACHE_KEY = "ai_workspace_sessions";
+const PAINT_TAIL = 24;
+
+function sessionCacheSlot() {
+  return sessionCacheKey(SESSION_CACHE_KEY, document.querySelector("home-assistant")?.hass?.user?.id);
+}
+
+function readSessionCache() {
+  const key = sessionCacheSlot();
+  if (!key) return [];
+  try {
+    const rows = JSON.parse(sessionStorage.getItem(key) || "[]");
+    return Array.isArray(rows) ? rows.filter((row) => row && row.id) : [];
+  } catch (_err) {
+    return [];
+  }
+}
+
+function writeSessionCache(sessions) {
+  const key = sessionCacheSlot();
+  if (!key) return;
+  try {
+    // Drop the old shared key from 1.5.0b18-b27.
+    sessionStorage.removeItem(SESSION_CACHE_KEY);
+    sessionStorage.setItem(
+      key,
+      JSON.stringify(
+        (sessions || []).map((session) => ({
+          id: session.id,
+          title: session.title || "",
+          pinned: Boolean(session.pinned),
+        })),
+      ),
+    );
+  } catch (_err) {
+    /* private mode */
+  }
+}
+
 
 export { takeSpeech };
 
@@ -712,6 +765,8 @@ function releaseMountHold(root) {
 }
 
 export async function mountAiWorkspace(root, options = {}) {
+  // Read at mount, not at import: the user is known by then, and it may have changed.
+  let cachedSessions = readSessionCache();
   await prefetchUiTheme(options.getToken, { force: Boolean(options.forceUiTheme) });
   const haUi = haComponentsUi();
   let activeUiTheme = haUi ? "ha_components" : "standard";
@@ -724,6 +779,15 @@ export async function mountAiWorkspace(root, options = {}) {
       text = text.replaceAll(`{${name}}`, value);
     }
     return text;
+  };
+  // Server errors arrive in English; show the known ones in the user's language.
+  const KNOWN_ERRORS = {
+    "The provider did not answer in time. Try again, or pick a faster model.": "provider_timeout",
+  };
+  const shownError = (value) => {
+    const text = cleanErrorText(value);
+    const key = KNOWN_ERRORS[text];
+    return key ? t(key) : text;
   };
   const getToken = options.getToken || (() => "");
   const navigate = options.navigate;
@@ -763,9 +827,8 @@ export async function mountAiWorkspace(root, options = {}) {
       .replace(/"/g, "&quot;")
       .replace(/</g, "&lt;");
   const composerTag = "div";
-  const nextRemoveMarkup = `<ha-icon-button class="next-remove" type="button" label="${htmlAttr(t("queued_remove"))}"><ha-icon icon="mdi:close"></ha-icon></ha-icon-button>`;
   const fileInputMarkup =
-    `<input class="file-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif,.yaml,.yml,.json,.txt,.md,.csv,.xml,.toml,.html,.css,.js,.ts,.py,.log,.cfg,.ini,.conf" multiple hidden>`;
+    `<input class="file-input" type="file" accept="image/*,.yaml,.yml,.json,.txt,.md,.csv,.xml,.toml,.html,.css,.js,.ts,.py,.log,.cfg,.ini,.conf" multiple hidden>`;
   const attachBtnMarkup = `<ha-icon-button class="attach" type="button" label="${htmlAttr(t("attach"))}"><ha-icon icon="mdi:paperclip"></ha-icon></ha-icon-button>`;
   const micBtnMarkup = `<ha-icon-button class="mic" type="button" label="${htmlAttr(t("dictate"))}" hidden><ha-icon icon="mdi:microphone"></ha-icon></ha-icon-button>`;
   const messageMarkup = `<label class="sr" for="ai-message">${t("message")}</label><textarea id="ai-message" class="message" rows="1" enterkeyhint="enter" placeholder="${htmlAttr(t("placeholder"))}"></textarea>`;
@@ -838,7 +901,7 @@ export async function mountAiWorkspace(root, options = {}) {
             </ha-button>
           </div>
         </div>
-        <div class="sessions" role="list"></div>
+        <div class="sessions" role="list" aria-busy="true">${sessionSkeleton()}</div>
       </aside>
       <section class="chat welcome">
         <header>
@@ -863,10 +926,7 @@ export async function mountAiWorkspace(root, options = {}) {
           <form class="composer">
             ${scrollBottomMarkup}
             ${haUi ? `<${composerTag} class="composer-box">
-              <div class="next-row" hidden>
-                <p class="next-copy"></p>
-                ${nextRemoveMarkup}
-              </div>
+              <div class="next-row" hidden></div>
               <div class="attach-row" hidden></div>
               ${haComposerInputMarkup}
               <div class="agent-picker" hidden>
@@ -878,10 +938,7 @@ export async function mountAiWorkspace(root, options = {}) {
                 </ha-dropdown>
               </div>
             </${composerTag}>` : `<${composerTag} class="composer-box">
-              <div class="next-row" hidden>
-                <p class="next-copy"></p>
-                ${nextRemoveMarkup}
-              </div>
+              <div class="next-row" hidden></div>
               <div class="attach-row" hidden></div>
               ${standardComposerRowMarkup}
             </${composerTag}>
@@ -922,6 +979,7 @@ export async function mountAiWorkspace(root, options = {}) {
   releaseMountHold(root);
   const scrim = root.querySelector(".nav-scrim");
   const chatEl = root.querySelector(".chat");
+  const headerEl = chatEl?.querySelector("header");
   const stageEl = root.querySelector(".stage");
   const logEl = root.querySelector(".log");
   const sessionsEl = root.querySelector(".sessions");
@@ -961,11 +1019,8 @@ export async function mountAiWorkspace(root, options = {}) {
   const modelMenu = root.querySelector(".model-menu");
   const modelTrigger = root.querySelector(".model-trigger");
   const modelLabel = root.querySelector(".model-trigger-label");
-  const fileInput = form.querySelector(".file-input");
   const attachRow = root.querySelector(".attach-row");
   const nextRow = root.querySelector(".next-row");
-  const nextCopy = root.querySelector(".next-copy");
-  const nextRemove = root.querySelector(".next-remove");
   const box = form.querySelector(".composer-box");
   const plusIcon = root.querySelector(".new-chat ha-svg-icon");
   if (plusIcon && !plusIcon.path) {
@@ -1100,8 +1155,13 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function applyRoute() {
     if (compact || !routed) return;
+    if (!location.pathname.startsWith("/ai-workspace")) {
+      haltSpeech();
+      return;
+    }
     const route = workspaceRoute();
     if (route.view === "usage") {
+      haltSpeech();
       openUsagePage();
       return;
     }
@@ -1112,7 +1172,7 @@ export async function mountAiWorkspace(root, options = {}) {
     if (id) openSession(id, true);
     else {
       restoreQueued();
-      abandonStream();
+      leaveChatStream();
       sessionId = "";
       freshChat = true;
       titleEl.textContent = t("new_chat");
@@ -1124,8 +1184,8 @@ export async function mountAiWorkspace(root, options = {}) {
   let watchGen = 0;
   let turnStopping = false;
   let turnStopDone = null;
-  let nextTurn = null;
-  const MAX_ATTACH = 4;
+  let nextTurns = [];
+  let sendQueued = null;
   const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
   const MAX_FILE_BYTES = 256 * 1024;
   const IMAGE_EDGE = 1280;
@@ -1319,9 +1379,14 @@ export async function mountAiWorkspace(root, options = {}) {
     syncScrollBottomBtn();
   }
 
+  function overlayDrawer() {
+    if (!compact) return null;
+    return root.closest?.(".drawer") || root.getRootNode?.()?.querySelector?.(".drawer") || null;
+  }
+
   function overlayOpen() {
     if (!compact) return true;
-    return Boolean(root.parentElement?.classList.contains("open"));
+    return Boolean(overlayDrawer()?.classList.contains("open"));
   }
 
   function chatVisible() {
@@ -1357,6 +1422,15 @@ export async function mountAiWorkspace(root, options = {}) {
     }
   }
 
+  // Status labels always start with a capital letter, also texts that come from Cursor or the runtime.
+  function capitalized(text) {
+    const value = String(text || "");
+    if (!value) return value;
+    const first = value.codePointAt(0);
+    const head = String.fromCodePoint(first);
+    return head.toLocaleUpperCase(hassLanguage()) + value.slice(head.length);
+  }
+
   function prettyStatus(text) {
     const raw = String(text || "").trim();
     if (!raw || /^done\.?$/i.test(raw)) return "";
@@ -1365,19 +1439,120 @@ export async function mountAiWorkspace(root, options = {}) {
     if (/^running$/i.test(raw)) return t("working");
     if (/^working\.{0,3}$/i.test(raw)) return t("working");
     if (/^thinking\.{0,3}$/i.test(raw)) return t("thinking");
-    return raw;
+    return capitalized(raw);
   }
 
   function toolsBusy(root) {
     return Boolean(root?.querySelector(".tools .busy"));
   }
 
+  // While text is appearing, the answer itself shows progress. Once it pauses for this long
+  // (the agent went back to tools or is thinking), "Working" comes back instead of nothing.
+  const TEXT_QUIET_MS = 1200;
+  let textPaintedAt = 0;
+  let quietTimer = 0;
+
+  function textIsMoving() {
+    // The typing pump paints every frame while text is left, so this stays fresh until it is all shown.
+    return performance.now() - textPaintedAt < TEXT_QUIET_MS;
+  }
+
+  function noteTextPainted(bubble) {
+    textPaintedAt = performance.now();
+    clearTimeout(quietTimer);
+    quietTimer = setTimeout(function recheck() {
+      if (!bubble.isConnected || !bubble.classList.contains("streaming")) return;
+      if (textIsMoving()) {
+        quietTimer = setTimeout(recheck, TEXT_QUIET_MS);
+        return;
+      }
+      // Only fill an empty slot; a status the agent sent stays as it is.
+      if (bubble.querySelector(".activity.idle")) setActivity(bubble, "");
+    }, TEXT_QUIET_MS + 50);
+  }
+
   function pendingStatus(bubble, text) {
     const pretty = prettyStatus(text);
     if (pretty) return pretty;
     if (!bubble?.classList.contains("streaming") || bubble.classList.contains("error")) return "";
-    if (bubble.classList.contains("has-text") && !toolsBusy(bubble)) return "";
+    if (bubble.classList.contains("has-text") && !toolsBusy(bubble) && textIsMoving()) return "";
     return t("working");
+  }
+
+  // A small plain glyph in front of the status, one per kind of moment:
+  // : : working, : : thinking (four turning dots), + reading the house,
+  // = changing the house (lines run down), - waiting (a turning dash).
+  const PLUS_GLYPH =
+    '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg>';
+  const DOTS_GLYPH =
+    '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><circle class="dot" cx="7" cy="7" r="2.5" fill="currentColor"/><circle class="dot" cx="17" cy="7" r="2.5" fill="currentColor"/><circle class="dot" cx="7" cy="17" r="2.5" fill="currentColor"/><circle class="dot" cx="17" cy="17" r="2.5" fill="currentColor"/></svg>';
+  const ACTIVITY_GLYPHS = {
+    work: DOTS_GLYPH,
+    think: DOTS_GLYPH,
+    read: PLUS_GLYPH,
+    write:
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true"><g class="lines"><path d="M5 -1.5h14M5 7.5h14M5 16.5h14M5 25.5h14"/></g></svg>',
+    wait: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true"><path d="M5 12h14"/></svg>',
+  };
+  const TOOL_GLYPHS = new Set(["read", "write"]);
+  const WRITE_TOOL =
+    /(?:^|[_\-.\s])(set|create|delete|remove|update|rename|call|bulk|add|install|uninstall|restart|reload|enable|disable|assign|move|toggle|turn|write|edit|str_replace|apply|restore)(?:[_\-.\s]|$)/i;
+  const WAIT_STATUS = /\b(wait|waiting|queued|queue)\b/i;
+
+  function toolGlyphKind(name) {
+    const text = String(name || "").trim();
+    if (!text) return "work";
+    return WRITE_TOOL.test(text) ? "write" : "read";
+  }
+
+  function activityGlyphKind(bubble) {
+    const busy = [...(bubble?.querySelectorAll(".tools .busy") || [])];
+    const last = busy[busy.length - 1];
+    if (last) {
+      return toolGlyphKind(last.dataset.tool && last.dataset.tool.toLowerCase() !== "mcp" ? last.dataset.tool : haChipLabel(last));
+    }
+    const label = String(bubble?.querySelector(".activity .label")?.textContent || "").trim();
+    if (label && label === t("thinking")) return "think";
+    if (WAIT_STATUS.test(label)) return "wait";
+    return "work";
+  }
+
+  function activityGlyph(kind = "work") {
+    if (haUi) return null;
+    const glyph = document.createElement("span");
+    glyph.className = "glyph";
+    glyph.dataset.kind = kind;
+    glyph.innerHTML = ACTIVITY_GLYPHS[kind];
+    return glyph;
+  }
+
+  function fillActivitySlot(el, label) {
+    const glyph = activityGlyph();
+    if (glyph) el.replaceChildren(glyph, label);
+    else el.replaceChildren(label);
+  }
+
+  // A tool icon stays at least this long, so quick tool calls in a row do not flicker.
+  const GLYPH_HOLD_MS = 700;
+
+  function syncActivityGlyph(bubble) {
+    if (haUi) return;
+    const glyph = bubble?.querySelector(".activity .glyph");
+    if (!glyph) return;
+    const kind = activityGlyphKind(bubble);
+    if (glyph.dataset.kind === kind) {
+      return;
+    }
+    const shown = performance.now() - Number(glyph.dataset.since || 0);
+    if (!TOOL_GLYPHS.has(kind) && TOOL_GLYPHS.has(glyph.dataset.kind) && shown < GLYPH_HOLD_MS) {
+      clearTimeout(glyph._hold);
+      glyph._hold = setTimeout(() => syncActivityGlyph(bubble), GLYPH_HOLD_MS - shown + 20);
+      return;
+    }
+    clearTimeout(glyph._hold);
+    glyph.dataset.kind = kind;
+    glyph.dataset.since = String(performance.now());
+    glyph.innerHTML = ACTIVITY_GLYPHS[kind];
   }
 
   function ensureActivitySlot(bubble) {
@@ -1389,7 +1564,7 @@ export async function mountAiWorkspace(root, options = {}) {
       const label = document.createElement("span");
       label.className = "label";
       label.textContent = "\u00a0";
-      el.appendChild(label);
+      fillActivitySlot(el, label);
       bubble.appendChild(el);
     }
     // Keep the status chip under tools and text so it never shifts the answer.
@@ -1407,7 +1582,12 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!label) {
       label = document.createElement("span");
       label.className = "label";
-      el.replaceChildren(label);
+      fillActivitySlot(el, label);
+    } else if (!haUi && !el.querySelector(".glyph")) {
+      const glyph = activityGlyph();
+      if (glyph) el.prepend(glyph);
+    } else if (haUi) {
+      el.querySelector(".glyph")?.remove();
     }
     if (!pretty) {
       // Keep the line height while streaming so show/hide does not jump the scroll.
@@ -1420,6 +1600,7 @@ export async function mountAiWorkspace(root, options = {}) {
     el.className = "activity shine";
     el.removeAttribute("aria-hidden");
     label.textContent = pretty;
+    syncActivityGlyph(bubble);
   }
 
   function lastAssistantBubble() {
@@ -1500,21 +1681,22 @@ export async function mountAiWorkspace(root, options = {}) {
     return String(name || "").replace(/\bmcp\b/gi, "MCP").replace(/\s*\.\.\.\s*$/, "");
   }
 
-  function chipLabel(text) {
+  function chipToolName(text, name) {
+    const fromEvent = chipName(name);
+    if (fromEvent) return fromEvent;
     const raw = String(text || "").trim();
     const calling = raw.match(/^Calling\s+(.+?)\s*$/i);
-    if (calling) return t("calling_tool", { name: chipName(calling[1]) });
+    if (calling) return chipName(calling[1]);
     const finished = raw.match(/^Finished\s+(.+?)\s*$/i);
-    if (finished) return t("finished_tool", { name: chipName(finished[1]) });
+    if (finished) return chipName(finished[1]);
     return chipName(raw);
   }
 
-  function settleChip(chip, text) {
+  function settleChip(chip) {
     if (!chip) return;
     chip.className = "done";
     chip.style.animation = "none";
     if (chip.active !== undefined) chip.active = false;
-    if (text) haChipLabel(chip, chipLabel(text));
   }
 
   function ensureToolsChrome(tools) {
@@ -1586,7 +1768,7 @@ export async function mountAiWorkspace(root, options = {}) {
     const kind = chipClass(event);
     const name = String(event.name || "");
     const callId = String(event.id || event.call_id || "");
-    const label = chipLabel(event.text);
+    const label = chipToolName(event.text, name);
     if (kind === "done") {
       const chips = [...list.children];
       const pending =
@@ -1596,8 +1778,10 @@ export async function mountAiWorkspace(root, options = {}) {
       if (pending) {
         if (name) pending.dataset.tool = name;
         if (callId) pending.dataset.callId = callId;
-        settleChip(pending, label);
+        if (label) haChipLabel(pending, label);
+        settleChip(pending);
         syncToolsSummary(tools);
+        syncActivityGlyph(tools.closest?.(".bubble"));
         return;
       }
     }
@@ -1610,14 +1794,13 @@ export async function mountAiWorkspace(root, options = {}) {
     haChipLabel(chip, label);
     list.appendChild(chip);
     syncToolsSummary(tools);
+    syncActivityGlyph(tools.closest?.(".bubble"));
   }
 
   function settleTools(root) {
-    root?.querySelectorAll(".tools .busy").forEach((chip) => {
-      const name = chip.dataset.tool || haChipLabel(chip);
-      settleChip(chip, t("finished_tool", { name: chipName(name) }));
-    });
+    root?.querySelectorAll(".tools .busy").forEach((chip) => settleChip(chip));
     root?.querySelectorAll(".tools").forEach(syncToolsSummary);
+    if (root?.classList?.contains("bubble")) syncActivityGlyph(root);
   }
 
   function isDefaultImageCaption(text) {
@@ -1666,7 +1849,7 @@ export async function mountAiWorkspace(root, options = {}) {
     if (empty) empty.remove();
     setWelcome(false, opts.animate !== false);
     const isError = (events || []).some((event) => event && event.type === "error");
-    if (isError && role === "assistant") content = cleanErrorText(content);
+    if (isError && role === "assistant") content = shownError(content);
     const assistWho = role === "user" ? "user" : "hass";
     let bubble;
     let mount;
@@ -1726,10 +1909,13 @@ export async function mountAiWorkspace(root, options = {}) {
       bubble.appendChild(text);
       bubble.classList.add("has-text");
     }
-    logEl.appendChild(mount);
+    const parent = opts.parent || logEl;
+    parent.appendChild(mount);
     retargetHaLinks(bubble);
-    syncCopyChat();
-    if (opts.follow !== false) scrollChatToBottom(opts.smooth !== false);
+    if (!opts.parent) {
+      syncCopyChat();
+      if (opts.follow !== false) scrollChatToBottom(opts.smooth !== false);
+    }
     return bubble;
   }
 
@@ -1912,8 +2098,8 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function closeOverlayChat() {
-    const node = root.getRootNode?.();
-    node?.querySelector?.(".drawer")?.classList.remove("open");
+    haltSpeech();
+    overlayDrawer()?.classList.remove("open");
   }
 
   function openHaPath(path) {
@@ -1944,6 +2130,10 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function nearBottom() {
     return distanceFromBottom() < 72;
+  }
+
+  function syncHeaderShadow() {
+    headerEl?.classList.toggle("scrolled", chatEl.scrollTop > 0);
   }
 
   function clipToBottom() {
@@ -2069,33 +2259,106 @@ export async function mountAiWorkspace(root, options = {}) {
   let streamAbort = null;
   let streamFinal = false;
 
+  function turnLabel(turn) {
+    const names = (turn.attachments || []).map((item) => item.name).filter(Boolean);
+    return [turn.text, names.join(", ")].filter(Boolean).join(" · ");
+  }
+
+  function dropQueued(index) {
+    nextTurns.splice(index, 1);
+    renderNext();
+    resizeComposer();
+    if (keepComposerFocus()) messageEl.focus({ preventScroll: true });
+  }
+
   function renderNext() {
-    if (!nextRow || !nextCopy) return;
-    if (!nextTurn) {
+    if (!nextRow) return;
+    if (!nextTurns.length) {
       nextRow.hidden = true;
-      nextCopy.replaceChildren();
+      nextRow.replaceChildren();
       return;
     }
-    const names = nextTurn.attachments.map((item) => item.name).filter(Boolean);
-    const label = [nextTurn.text, names.join(", ")].filter(Boolean).join(" · ");
-    const text = document.createElement("span");
-    text.className = "next-text";
-    text.textContent = label;
-    const hint = document.createElement("span");
-    hint.className = "next-hint";
-    hint.textContent = t("queued_hint");
-    nextCopy.replaceChildren(text, hint);
-    if (nextRemove) {
-      nextRemove.label = t("queued_remove");
-      nextRemove.setAttribute("label", t("queued_remove"));
+    if (haUi) {
+      const set = uiCreate("ha-chip-set", "div");
+      set.className = "next-chips";
+      nextTurns.forEach((turn, index) => {
+        const chip = uiCreate("ha-input-chip", "div");
+        chip.className = "next-chip";
+        const label = turnLabel(turn);
+        const hint = index === 0 ? t("queued_hint") : t("queued_later");
+        chip.title = hint;
+        chip.setAttribute("title", hint);
+        if (chip.localName === "ha-input-chip") {
+          haChipLabel(chip, label);
+          chip.removable = true;
+          chip.addEventListener("remove", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            dropQueued(index);
+          });
+        } else {
+          chip.append(queuedChipCopy(label, hint), queuedChipRemove(index));
+        }
+        set.append(chip);
+      });
+      nextRow.replaceChildren(set);
+      bindHaTree(nextRow);
+      nextRow.hidden = false;
+      return;
     }
+    nextRow.replaceChildren(
+      ...nextTurns.map((turn, index) => {
+        const chip = document.createElement("div");
+        chip.className = "next-chip";
+        const label = turnLabel(turn);
+        const hint = index === 0 ? t("queued_hint") : t("queued_later");
+        chip.append(queuedChipCopy(label, hint), queuedChipRemove(index));
+        bindHaTree(chip);
+        return chip;
+      }),
+    );
     nextRow.hidden = false;
   }
 
+  function queuedChipCopy(label, hint) {
+    const copy = document.createElement("p");
+    copy.className = "next-copy";
+    const text = document.createElement("span");
+    text.className = "next-text";
+    text.textContent = label;
+    const hintEl = document.createElement("span");
+    hintEl.className = "next-hint";
+    hintEl.textContent = hint;
+    copy.append(text, hintEl);
+    return copy;
+  }
+
+  function queuedChipRemove(index) {
+    const remove = document.createElement("ha-icon-button");
+    remove.className = "next-remove";
+    remove.type = "button";
+    remove.label = t("queued_remove");
+    remove.setAttribute("label", t("queued_remove"));
+    const icon = document.createElement("ha-icon");
+    icon.setAttribute("icon", "mdi:close");
+    remove.append(icon);
+    remove.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      dropQueued(index);
+    });
+    return remove;
+  }
+
   function queueTurn(text, attachments) {
-    nextTurn = { text, attachments: attachments.slice() };
+    if (nextTurns.length >= MAX_QUEUE) {
+      showNotice(t("queue_full"));
+      return;
+    }
+    nextTurns.push({ text, attachments: attachments.slice() });
     pending = [];
     messageEl.value = "";
+    // Microphone only — TTS of the current reply keeps going.
     stopSpeech();
     renderThumbs();
     renderNext();
@@ -2104,28 +2367,24 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function flushNext() {
-    if (!nextTurn || streaming) return;
-    const turn = nextTurn;
-    nextTurn = null;
+    if (!nextTurns.length || streaming || sendQueued) return;
+    sendQueued = nextTurns.shift();
     renderNext();
-    messageEl.value = turn.text;
-    pending = turn.attachments.slice();
-    renderThumbs();
     form.requestSubmit();
   }
 
   function restoreQueued() {
-    if (!nextTurn) return;
-    const turn = nextTurn;
-    nextTurn = null;
-    if (!messageEl.value.trim()) messageEl.value = turn.text;
-    pending = [...pending, ...turn.attachments].slice(0, MAX_ATTACH);
+    const pulled = pullQueuedDraft(nextTurns, { draftText: messageEl.value, pending });
+    if (pulled.pulled) {
+      messageEl.value = pulled.text;
+      pending = pulled.attachments;
+    }
     renderThumbs();
     renderNext();
     resizeComposer();
   }
 
-  function haltStream({ keepQueue = false } = {}) {
+  function haltStream({ keepQueue = true, keepSpeech = false } = {}) {
     streamToken += 1;
     watchGen += 1;
     if (streamAbort) {
@@ -2143,13 +2402,17 @@ export async function mountAiWorkspace(root, options = {}) {
     streamPainted = "";
     streamNode = null;
     streamFinal = false;
-    haltSpeech();
+    if (keepSpeech) resetSpeechTurn();
+    else haltSpeech();
     const waiters = streamWaiters;
     streamWaiters = [];
     waiters.forEach((fn) => fn());
     streaming = false;
     liveStream = false;
-    if (!keepQueue) nextTurn = null;
+    if (!keepQueue) {
+      nextTurns.length = 0;
+      sendQueued = null;
+    }
     renderNext();
     const live = logEl.querySelector(".bubble.assistant.streaming");
     if (live) {
@@ -2163,8 +2426,14 @@ export async function mountAiWorkspace(root, options = {}) {
     resizeComposer();
   }
 
-  function abandonStream() {
-    haltStream({ keepQueue: false });
+  function abandonStream({ keepSpeech = false } = {}) {
+    haltStream({ keepQueue: keepQueueOnHalt("send"), keepSpeech });
+  }
+
+  // Leaving a chat: its queued prompts were written for it and must not go out in the next one.
+  // restoreQueued() has already moved the first one into an empty composer.
+  function leaveChatStream() {
+    haltStream({ keepQueue: keepQueueOnHalt("switch") });
   }
 
   async function stopTurn() {
@@ -2175,7 +2444,10 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!streaming && !liveStream) return;
     const chatId = sessionId;
     turnStopping = true;
-    haltStream({ keepQueue: true });
+    // Stop cancels the queue too. The first queued prompt goes back into an empty composer,
+    // so a typed prompt is not lost without a trace.
+    restoreQueued();
+    haltStream({ keepQueue: keepQueueOnHalt("stop") });
     const done = (async () => {
       if (!chatId) return;
       try {
@@ -2193,7 +2465,6 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     syncCopyChat();
     resizeComposer();
-    if (nextTurn) form.requestSubmit();
   }
 
   function hasDraft() {
@@ -2230,7 +2501,10 @@ export async function mountAiWorkspace(root, options = {}) {
     styleMarkdownTables(streamNode);
     const bubble = streamNode.closest(".bubble");
     bubble?.classList.toggle("has-text", Boolean(visible));
-    if (visible && bubble) setActivity(bubble, "");
+    if (visible && bubble) {
+      noteTextPainted(bubble);
+      setActivity(bubble, "");
+    }
     if (bubble) retargetHaLinks(bubble);
     return true;
   }
@@ -2509,6 +2783,14 @@ export async function mountAiWorkspace(root, options = {}) {
           if (bannerEl && !bannerEl.hidden) loadProviders();
         }, Math.min(2000 * providerRetry, 15000));
       }
+    } else if ((chosen?.notice_key || chosen?.notice) && bannerEl && !bannerEl.classList.contains("mic-help")) {
+      providerRetry = 0;
+      const noticeParams = { ...(chosen.notice_params || {}) };
+      if (chosen.notice_key === "outdated_runtime" && !noticeParams.have) {
+        noticeParams.have = t("outdated_runtime_unknown");
+      }
+      const noticeText = chosen.notice_key ? t(chosen.notice_key, noticeParams) : chosen.notice;
+      setBanner(noticeText, { alertType: "warning" });
     } else if (bannerEl && !bannerEl.classList.contains("hold") && !bannerEl.classList.contains("mic-help")) {
       providerRetry = 0;
       bannerEl.hidden = true;
@@ -2523,6 +2805,33 @@ export async function mountAiWorkspace(root, options = {}) {
     root.querySelectorAll(".session-more[aria-expanded='true']").forEach((btn) => {
       btn.setAttribute("aria-expanded", "false");
     });
+  }
+
+  function bindSessionMenu(row, session, more) {
+    if (row.querySelector("ha-dropdown.session-menu")) return;
+    const menu = document.createElement("ha-dropdown");
+    menu.className = "session-menu";
+    menu.placement = "bottom-end";
+    more.slot = "trigger";
+    menu.addEventListener("click", (event) => event.stopPropagation());
+    menu.addEventListener("keydown", (event) => event.stopPropagation());
+    menu.addEventListener("wa-show", () => more.setAttribute("aria-expanded", "true"));
+    menu.addEventListener("wa-hide", () => more.setAttribute("aria-expanded", "false"));
+    menu.addEventListener("wa-select", (event) => {
+      const value = event.detail?.item?.value;
+      if (value === "pin") pinSession(session);
+      else if (value === "rename") renameSession(session);
+      else if (value === "delete") deleteSession(session);
+    });
+    menu.append(
+      more,
+      sessionAction(session.pinned ? t("unpin") : t("pin"), "pin"),
+      sessionAction(t("rename"), "rename"),
+      sessionAction(t("delete"), "delete", "danger"),
+    );
+    const host = row.querySelector(".session-menu");
+    if (host && host.localName !== "ha-dropdown") host.replaceWith(menu);
+    else more.replaceWith(menu);
   }
 
   function sessionAction(label, value, variant) {
@@ -2719,9 +3028,11 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function listedSession(session) {
     const row = sessionsEl?.querySelector(`.session-row[data-session-id="${session.id}"]`);
-    const title = row?.dataset.title;
-    if (!title || title === session.title) return session;
-    return { ...session, title };
+    if (!row) return session;
+    const title = row.dataset.title || session.title;
+    const pinned = row.dataset.pinned === "1";
+    if (title === session.title && pinned === Boolean(session.pinned)) return session;
+    return { ...session, title, pinned };
   }
 
   function applySessionTitle(id, title) {
@@ -2773,6 +3084,13 @@ export async function mountAiWorkspace(root, options = {}) {
     syncSearchIcon();
   }
 
+  // Placeholder rows until the first list arrives; a busy system can take a few seconds.
+  function sessionSkeleton() {
+    const widths = [72, 58, 84, 64, 76, 52, 68];
+    const rows = widths.map((w) => `<div class="session-skeleton" style="--w:${w}%"></div>`).join("");
+    return `<div class="chats-label skeleton-label" aria-hidden="true"></div><div aria-hidden="true">${rows}</div>`;
+  }
+
   function sessionLabel(text) {
     const label = document.createElement("div");
     label.className = "chats-label";
@@ -2810,74 +3128,90 @@ export async function mountAiWorkspace(root, options = {}) {
       closeNavIfOverlay();
       openSession(session.id);
     });
-    const menu = document.createElement("ha-dropdown");
-    menu.className = "session-menu";
-    menu.placement = "bottom-end";
+    const host = document.createElement("div");
+    host.className = "session-menu";
     const more = document.createElement("ha-icon-button");
     more.className = "session-more";
-    more.slot = "trigger";
     more.label = t("chat_actions");
     more.setAttribute("aria-haspopup", "menu");
     more.setAttribute("aria-expanded", "false");
     const dots = document.createElement("ha-icon");
     dots.setAttribute("icon", "mdi:dots-vertical");
     more.appendChild(dots);
+    more.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const open = row.querySelector("ha-dropdown.session-menu");
+      if (open) {
+        open.open = !open.open;
+        return;
+      }
+      bindSessionMenu(row, listedSession(session), more);
+      const menu = row.querySelector("ha-dropdown.session-menu");
+      customElements.whenDefined("ha-dropdown").then(() => {
+        if (menu) menu.open = true;
+      });
+    });
     more.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
       event.stopPropagation();
       more.click();
     });
-    menu.addEventListener("click", (event) => event.stopPropagation());
-    menu.addEventListener("keydown", (event) => event.stopPropagation());
-    menu.addEventListener("wa-show", () => more.setAttribute("aria-expanded", "true"));
-    menu.addEventListener("wa-hide", () => more.setAttribute("aria-expanded", "false"));
-    menu.addEventListener("wa-select", (event) => {
-      const value = event.detail?.item?.value;
-      if (value === "pin") pinSession(session);
-      else if (value === "rename") renameSession(session);
-      else if (value === "delete") deleteSession(session);
-    });
-    menu.append(
-      more,
-      sessionAction(session.pinned ? t("unpin") : t("pin"), "pin"),
-      sessionAction(t("rename"), "rename"),
-      sessionAction(t("delete"), "delete", "danger"),
-    );
-    item.append(menu);
+    host.append(more);
+    item.append(host);
     row.append(item);
     return row;
+  }
+
+  function paintSessionList(sessions, query = "") {
+    if (!sessionsEl) return;
+    const pinned = sessions.filter((session) => session.pinned);
+    const rest = sessions.filter((session) => !session.pinned);
+    const frag = document.createDocumentFragment();
+    if (pinned.length) {
+      frag.appendChild(sessionLabel(t("pinned")));
+      for (const session of pinned) frag.appendChild(sessionRow(session));
+    }
+    if (rest.length || !query) {
+      frag.appendChild(sessionLabel(t("chats")));
+      for (const session of rest) frag.appendChild(sessionRow(session));
+    }
+    if (query && !sessions.length) {
+      const empty = document.createElement("p");
+      empty.className = "sessions-empty";
+      empty.textContent = t("no_chats_found");
+      frag.appendChild(empty);
+    }
+    sessionsEl.replaceChildren(frag);
+    sessionsEl.removeAttribute("aria-busy");
+    selectSessionRow(sessionId);
+    syncSearchIcon();
   }
 
   async function loadSessions() {
     if (compact || !sessionsEl) return;
     closeSessionMenu();
     const query = searchInput?.value.trim() || "";
+    if (!query && cachedSessions.length && sessionsEl.querySelector(".session-skeleton")) {
+      paintSessionList(cachedSessions);
+    }
     const mark = ++sessionsLoad;
     const response = await apiFetch(`${API}/sessions${query ? `?q=${encodeURIComponent(query)}` : ""}`);
-    if (!response?.ok) return;
+    if (!response?.ok) {
+      // Do not leave the placeholder rows up when the list cannot load.
+      if (mark === sessionsLoad && sessionsEl.querySelector(".session-skeleton")) sessionsEl.replaceChildren();
+      sessionsEl.removeAttribute("aria-busy");
+      return;
+    }
     const sessions = await response.json();
     // A slower answer for an older search must not replace a newer one.
     if (mark !== sessionsLoad) return;
-    const pinned = sessions.filter((session) => session.pinned);
-    const rest = sessions.filter((session) => !session.pinned);
-    sessionsEl.replaceChildren();
-    if (pinned.length) {
-      sessionsEl.appendChild(sessionLabel(t("pinned")));
-      for (const session of pinned) sessionsEl.appendChild(sessionRow(session));
+    if (!query) {
+      cachedSessions = sessions;
+      writeSessionCache(sessions);
     }
-    if (rest.length || !query) {
-      sessionsEl.appendChild(sessionLabel(t("chats")));
-      for (const session of rest) sessionsEl.appendChild(sessionRow(session));
-    }
-    if (query && !sessions.length) {
-      const empty = document.createElement("p");
-      empty.className = "sessions-empty";
-      empty.textContent = t("no_chats_found");
-      sessionsEl.appendChild(empty);
-    }
-    selectSessionRow(sessionId);
-    syncSearchIcon();
+    paintSessionList(sessions, query);
   }
 
   // Rows only count all chats while nothing filters them, and an active search keeps its way out.
@@ -2978,9 +3312,10 @@ export async function mountAiWorkspace(root, options = {}) {
       selectSessionRow(id);
       return;
     }
-    if (id !== sessionId) {
+    const switching = id !== sessionId;
+    if (switching) {
       restoreQueued();
-      abandonStream();
+      leaveChatStream();
     }
     watchGen += 1;
     if (!id) {
@@ -2997,6 +3332,14 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     if (fromUrl && id === sessionId) return;
     const gen = ++routeGen;
+    sessionId = id;
+    freshChat = false;
+    const listed = sessionsEl?.querySelector(`.session-row[data-session-id="${id}"]`);
+    if (listed?.dataset.title) titleEl.textContent = displayTitle(listed.dataset.title);
+    selectSessionRow(id);
+    if (switching) logEl.replaceChildren();
+    if (compact) localStorage.setItem("ai_workspace_session", id);
+    if (!fromUrl) goToSession(id);
     const response = await apiFetch(`${API}/sessions/${id}`);
     if (gen !== routeGen) return;
     if (!response?.ok) {
@@ -3006,42 +3349,67 @@ export async function mountAiWorkspace(root, options = {}) {
       goToSession("", true);
       return;
     }
-    sessionId = id;
-    freshChat = false;
-    if (compact) localStorage.setItem("ai_workspace_session", id);
-    if (!fromUrl) goToSession(id);
     const session = await response.json();
     setChatChoice(session.provider, session.model);
-    paintSession(session);
-    if (!sessionsEl?.querySelector(".session-row")) await loadSessions();
+    paintSession(session, gen);
     selectSessionRow(id);
     if (session.pending) watchPending(id);
     refreshChatUsage();
   }
 
-  function paintSession(session) {
+  function paintSession(session, gen = routeGen) {
     clearMicHelp();
     titleEl.textContent = displayTitle(session.title);
     logEl.replaceChildren();
     const messages = session.messages || [];
-    if (!messages.length) showEmpty();
-    else setWelcome(false, false);
-    for (const message of messages) {
-      addBubble(message.role, message.content, message.events, {
-        animate: false,
-        follow: false,
-        createdAt: message.created_at,
-      });
+    turnHasHistory = Boolean(session.has_activity);
+    if (!messages.length) {
+      showEmpty();
+      turnHasHistory = Boolean(session.has_activity);
+      syncCopyChat();
+      if (!("has_activity" in session)) refreshTurnHistory();
+      return;
     }
-    settleTools(logEl);
-    // Any Change History row for this chat — not only the last user turn.
-    refreshTurnHistory();
-    clipToBottom();
-    stickToBottom();
-    requestAnimationFrame(() => requestAnimationFrame(stickToBottom));
-    window.setTimeout(stickToBottom, 50);
-    window.setTimeout(stickToBottom, 250);
-    window.setTimeout(stickToBottom, 700);
+    setWelcome(false, false);
+    const paintRange = (from, to, parent) => {
+      for (let i = from; i < to; i += 1) {
+        const message = messages[i];
+        addBubble(message.role, message.content, message.events, {
+          animate: false,
+          follow: false,
+          createdAt: message.created_at,
+          parent,
+        });
+      }
+    };
+    const finish = () => {
+      if (gen !== routeGen) return;
+      settleTools(logEl);
+      syncCopyChat();
+      if (!("has_activity" in session)) refreshTurnHistory();
+      clipToBottom();
+      stickToBottom();
+      requestAnimationFrame(() => requestAnimationFrame(stickToBottom));
+      window.setTimeout(stickToBottom, 50);
+      window.setTimeout(stickToBottom, 250);
+      window.setTimeout(stickToBottom, 700);
+    };
+    const tailAt = Math.max(0, messages.length - PAINT_TAIL);
+    const frag = document.createDocumentFragment();
+    paintRange(tailAt, messages.length, frag);
+    logEl.appendChild(frag);
+    finish();
+    if (!tailAt) return;
+    requestAnimationFrame(() => {
+      if (gen !== routeGen) return;
+      const head = document.createDocumentFragment();
+      paintRange(0, tailAt, head);
+      const first = logEl.querySelector(".message-container, .bubble");
+      if (first) logEl.insertBefore(head, first);
+      else logEl.prepend(head);
+      settleTools(logEl);
+      stickToBottom();
+    });
   }
 
   function needsPaint(session) {
@@ -3077,13 +3445,86 @@ export async function mountAiWorkspace(root, options = {}) {
     return name === "AbortError" || /failed to fetch|load failed|network|abort|cancel|disconnected|reset/i.test(message);
   }
 
+  // After a reload, follow the reply that is still running: tools, status and text so far,
+  // then the rest as it happens. False when nothing can be followed; the caller then polls.
+  async function followLive(id, gen) {
+    const abort = new AbortController();
+    let response;
+    try {
+      response = await apiFetch(`${API}/sessions/${id}/live`, { signal: abort.signal });
+    } catch (_error) {
+      return false;
+    }
+    if (!response?.ok || response.status === 204 || !response.body) return false;
+    const stale = () => gen !== watchGen || sessionId !== id || liveStream;
+    if (stale()) {
+      abort.abort();
+      return false;
+    }
+    ensureThinkingBubble();
+    const bubble = logEl.querySelector(".bubble.assistant.streaming");
+    const textNode = bubble?.querySelector(".text");
+    if (!bubble || !textNode) {
+      abort.abort();
+      return false;
+    }
+    // The stream starts from the beginning of the reply, so the bubble does too.
+    bubble.querySelector(".tools")?.remove();
+    const tools = document.createElement("div");
+    tools.className = "tools";
+    streamFull = "";
+    streamBuf = "";
+    streamPainted = "";
+    streamFinal = false;
+    streamNode = textNode;
+    setMarkdown(textNode, "");
+    textNode.hidden = true;
+    bubble.classList.remove("has-text");
+    let caughtUp = false;
+    try {
+      await readSSE(response, (name, data) => {
+        if (stale()) {
+          abort.abort();
+          return;
+        }
+        if (name === "caught_up") {
+          // What happened before the reload shows at once; only new text is typed out.
+          revealAllNow();
+          caughtUp = true;
+          scrollChatToBottom();
+          return;
+        }
+        if (name === "text") {
+          appendAssistantText(textNode, data.delta || "");
+          return;
+        }
+        if (name === "tool" && data.text) {
+          if (!tools.parentElement) bubble.insertBefore(tools, textNode);
+          textPaintedAt = 0;
+          addChip(tools, data, caughtUp);
+          setActivity(bubble, "");
+        } else if (name === "status") {
+          setActivity(bubble, data.text);
+        } else if (name === "done" || name === "error") {
+          settleTools(bubble);
+        }
+        if (caughtUp) scrollChatToBottom();
+      });
+    } catch (_error) {
+      // A dropped connection is fine: the caller looks at the chat again.
+    }
+    revealAllNow();
+    return true;
+  }
+
   async function watchPending(id) {
     if (!id || liveStream || !chatVisible()) return false;
     const gen = ++watchGen;
     // Only auto-speak when we were waiting on a background reply — not when polling
     // an already-finished chat (overlay resume, visibility, etc.).
     let sawPending = Boolean(logEl.querySelector(".bubble.assistant.streaming"));
-    for (let attempt = 0; attempt < 240; attempt += 1) {
+    // Polling every 2 seconds for up to an hour; following a live reply does not use up attempts.
+    for (let attempt = 0; attempt < 1800; attempt += 1) {
       if (gen !== watchGen || sessionId !== id || liveStream || !chatVisible()) return false;
       let session;
       try {
@@ -3099,6 +3540,13 @@ export async function mountAiWorkspace(root, options = {}) {
       if (session.pending) {
         sawPending = true;
         ensureThinkingBubble();
+        const followed = performance.now();
+        if (await followLive(id, gen)) {
+          // A follow that ends at once (dropped connection) must not turn into a tight loop.
+          if (performance.now() - followed < 2000) await new Promise((resolve) => window.setTimeout(resolve, 1000));
+          else attempt -= 1;
+          continue;
+        }
         await new Promise((resolve) => window.setTimeout(resolve, 2000));
         continue;
       }
@@ -3109,16 +3557,18 @@ export async function mountAiWorkspace(root, options = {}) {
           live.classList.remove("streaming");
           setActivity(live, "");
         }
+        // Nothing runs any more, so no tool chip can still be busy. Without this a reply
+        // followed after a dropped connection kept "Calling N tools" and its shimmer.
+        settleTools(logEl);
       }
       streaming = false;
       resizeComposer();
       syncCopyChat();
       bumpSession(id, session.title, session.pinned);
-      if (sawPending && voice.speak && voice.tts && !speakStarted) {
-        const leftover = lastAssistantText();
+      if (sawPending && voice.speak && voice.tts) {
+        const leftover = speechTail(speakRaw, lastAssistantText());
         if (leftover) {
-          speakHeld = leftover;
-          speakRaw = leftover;
+          feedSpeech(leftover);
           drainSpeech(true);
         }
       }
@@ -3185,8 +3635,12 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   async function loadBitmap(file) {
-    if (typeof createImageBitmap === "function") {
-      return createImageBitmap(file);
+    try {
+      if (typeof createImageBitmap === "function") {
+        return await createImageBitmap(file);
+      }
+    } catch (_err) {
+      /* WebView / HEIC: try an <img> decode next. */
     }
     const url = URL.createObjectURL(file);
     try {
@@ -3203,30 +3657,53 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   async function fileToImage(file) {
-    if (!file || !isImageFile(file)) return null;
-    const bitmap = await loadBitmap(file);
-    const scale = Math.min(1, IMAGE_EDGE / Math.max(bitmap.width || 1, bitmap.height || 1));
-    const width = Math.max(1, Math.round((bitmap.width || 1) * scale));
-    const height = Math.max(1, Math.round((bitmap.height || 1) * scale));
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-    ctx.drawImage(bitmap, 0, 0, width, height);
-    bitmap.close?.();
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
-    if (!blob || blob.size > MAX_IMAGE_BYTES) return null;
-    const data = await blobToBase64(blob);
-    if (!data) return null;
-    const base = String(file.name || "image").replace(/\.[^.]+$/, "") || "image";
-    return { kind: "image", name: `${base}.jpg`, mime: "image/jpeg", data, src: `data:image/jpeg;base64,${data}` };
+    if (!file) return null;
+    try {
+      const bitmap = await loadBitmap(file);
+      const scale = Math.min(1, IMAGE_EDGE / Math.max(bitmap.width || 1, bitmap.height || 1));
+      const width = Math.max(1, Math.round((bitmap.width || 1) * scale));
+      const height = Math.max(1, Math.round((bitmap.height || 1) * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+      ctx.drawImage(bitmap, 0, 0, width, height);
+      bitmap.close?.();
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
+      if (!blob || blob.size > MAX_IMAGE_BYTES) return null;
+      const data = await blobToBase64(blob);
+      if (!data) return null;
+      const base = String(file.name || "image").replace(/\.[^.]+$/, "") || "image";
+      return { kind: "image", name: `${base}.jpg`, mime: "image/jpeg", data, src: `data:image/jpeg;base64,${data}` };
+    } catch (_err) {
+      return null;
+    }
   }
 
   function isImageFile(file) {
     const type = String(file?.type || "").toLowerCase();
     if (type.startsWith("image/")) return true;
-    return /\.(jpe?g|png|webp|gif)$/i.test(file?.name || "");
+    return /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(file?.name || "");
+  }
+
+  function freezeFiles(files, slots = MAX_ATTACH) {
+    const list = filesToRead(files, slots);
+    if (!list.length) return Promise.resolve([]);
+    return Promise.all(
+      list.map(
+        (file) =>
+          new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const buf = reader.result;
+              resolve(new File([buf], file.name || "image", { type: file.type || "application/octet-stream" }));
+            };
+            reader.onerror = () => resolve(file);
+            reader.readAsArrayBuffer(file);
+          }),
+      ),
+    );
   }
 
   function isTextFile(file) {
@@ -3341,7 +3818,9 @@ export async function mountAiWorkspace(root, options = {}) {
           else if (item) pending.push(item);
           else notice = "attach_unsupported";
         } else {
-          notice = "attach_unsupported";
+          const image = await fileToImage(file);
+          if (image) pending.push(image);
+          else notice = "attach_unsupported";
         }
       } catch (_err) {
         notice = "attach_unsupported";
@@ -3361,8 +3840,11 @@ export async function mountAiWorkspace(root, options = {}) {
 
   form.querySelectorAll(".file-input").forEach((input) => {
     input.addEventListener("change", async () => {
-      await addFiles([...input.files]);
-      input.value = "";
+      const slots = MAX_ATTACH - pending.length;
+      const picked = input.files?.length || 0;
+      const frozen = await takeInputFiles(input, freezeFiles, slots);
+      if (frozen.length) await addFiles(frozen);
+      if (filesLeftOut(picked, slots)) showAttachNotice("attach_limit");
     });
   });
   ["dragenter", "dragover"].forEach((name) => {
@@ -3380,14 +3862,19 @@ export async function mountAiWorkspace(root, options = {}) {
     event.preventDefault();
     box.classList.remove("drop-target");
     const files = [...(event.dataTransfer?.files || [])];
-    if (files.length) await addFiles(files);
+    if (!files.length) return;
+    const slots = MAX_ATTACH - pending.length;
+    await addFiles(await freezeFiles(files, slots));
+    if (filesLeftOut(files.length, slots)) showAttachNotice("attach_limit");
   });
   form.addEventListener("paste", async (event) => {
     if (!fromComposerField(event)) return;
     const files = imageFilesFromClipboard(event);
     if (!files.length) return;
     event.preventDefault();
-    await addFiles(files);
+    const slots = MAX_ATTACH - pending.length;
+    await addFiles(await freezeFiles(files, slots));
+    if (filesLeftOut(files.length, slots)) showAttachNotice("attach_limit");
   });
 
   function speechLanguage() {
@@ -3525,6 +4012,7 @@ export async function mountAiWorkspace(root, options = {}) {
   let speakFromUser = false;
   let speakBusy = false;
   let speakFlush = false;
+  let speakFresh = false;
   let speakRelease = null;
   const speakPending = [];
   const speakInflight = [];
@@ -3712,6 +4200,7 @@ export async function mountAiWorkspace(root, options = {}) {
     speakBusy = false;
     speakFromUser = false;
     speakFlush = false;
+    speakFresh = false;
     speakPending.length = 0;
     speakInflight.length = 0;
     if (speakRelease) speakRelease();
@@ -3723,16 +4212,30 @@ export async function mountAiWorkspace(root, options = {}) {
     setSpeakUi("idle");
   }
 
-  function drainSpeech(flush) {
+  function resetSpeechTurn() {
+    speakHeld = "";
+    speakRaw = "";
+    speakStarted = false;
+    speakFlush = false;
+    speakFresh = true;
+  }
+
+  function drainSpeech(flush, pause = false) {
     if (flush) speakFlush = true;
-    const taken = takeSpeech(speakHeld, speakStarted, flush, { heavy: voice.ttsHeavy });
+    const taken = takeSpeech(speakHeld, speakStarted, flush, {
+      heavy: voice.ttsHeavy,
+      pause,
+      fresh: speakFresh,
+    });
     speakHeld = taken.rest;
     for (const piece of taken.pieces) {
       speakStarted = true;
+      speakFresh = false;
       queueSpeech(piece);
     }
     if (taken.pieces.length) syncCopyChat();
     if (flush) fillSpeakAhead();
+    if (pause) speakFresh = true;
   }
 
   function feedSpeech(delta) {
@@ -3743,8 +4246,8 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function syncSpeechTo(full) {
-    if (!voice.speak || !full || !full.startsWith(speakRaw)) return;
-    const extra = full.slice(speakRaw.length);
+    if (!voice.speak || !full) return;
+    const extra = speechTail(speakRaw, full);
     if (extra) feedSpeech(extra);
   }
 
@@ -3756,41 +4259,29 @@ export async function mountAiWorkspace(root, options = {}) {
     kickSpeak();
   }
 
-  function pendingChars() {
-    return speakPending.reduce((sum, item) => sum + plainForTts(item).length, 0);
-  }
-
-  function takePendingClip() {
-    let clip = "";
-    while (speakPending.length) {
-      const next = speakPending[0];
-      const combined = clip ? `${clip}\n${next}` : next;
-      if (clip && plainForTts(combined).length > 560) break;
-      speakPending.shift();
-      clip = combined;
-      const size = plainForTts(clip).length;
-      if (size < 280) continue;
-      if (!speakFlush) break;
-      if (!speakPending.length) break;
-      if (plainForTts(`${clip}\n${speakPending[0]}`).length > 560) break;
-    }
-    return clip.trim();
-  }
-
   function fillSpeakAhead() {
-    while (speakInflight.length < 2 && speakPending.length) {
+    // Local engines (Piper) often drop a second overlapping request; AI voices need a
+    // prefetch so the next clip is ready when the current one ends.
+    const ahead = voice.ttsHeavy ? 2 : 1;
+    while (speakInflight.length < ahead && speakPending.length) {
+      let text = "";
       if (voice.ttsHeavy) {
         if (!speakInflight.length) {
-          speakInflight.push(fetchSpeech(speakPending.shift(), speakGen));
-          continue;
+          const parts = splitSpeechClip(speakPending.shift(), MAX_CHARS, spokenLength);
+          text = parts.shift() || "";
+          if (parts.length) speakPending.unshift(...parts);
+        } else {
+          text = takePendingClip(speakPending, { flush: speakFlush, measure: spokenLength });
         }
-        if (!speakFlush && pendingChars() < 280) break;
-        const text = takePendingClip();
-        if (!text) break;
-        speakInflight.push(fetchSpeech(text, speakGen));
+      } else {
+        const parts = splitSpeechClip(speakPending.shift(), MAX_CHARS, spokenLength);
+        text = parts.shift() || "";
+        if (parts.length) speakPending.unshift(...parts);
+      }
+      if (!text) {
+        if (!speakPending.length) break;
         continue;
       }
-      const text = speakPending.shift();
       speakInflight.push(fetchSpeech(text, speakGen));
     }
   }
@@ -3799,26 +4290,37 @@ export async function mountAiWorkspace(root, options = {}) {
     return speechPlain(text, { natural: voice.ttsNatural !== false });
   }
 
+  function spokenLength(text) {
+    return plainForTts(text).length;
+  }
+
   async function fetchSpeech(text, gen) {
     const plain = plainForTts(text);
     if (!plain) return null;
-    const ac = new AbortController();
-    const timer = window.setTimeout(() => ac.abort(), 20000);
-    try {
-      const response = await apiFetch(`${API}/tts`, {
-        method: "POST",
-        body: JSON.stringify({ text: plain, language: speechLanguage(), session_id: sessionId || "" }),
-        signal: ac.signal,
-      });
-      if (gen !== speakGen || !response?.ok) return null;
-      const blob = await response.blob();
-      if (gen !== speakGen || !blob || blob.size < 32) return null;
-      return blob;
-    } catch (_err) {
-      return null;
-    } finally {
-      window.clearTimeout(timer);
+    const wait = Math.min(60000, 20000 + plain.length * 50);
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      if (gen !== speakGen) return null;
+      const ac = new AbortController();
+      const timer = window.setTimeout(() => ac.abort(), wait);
+      try {
+        const response = await apiFetch(`${API}/tts`, {
+          method: "POST",
+          body: JSON.stringify({ text: plain, language: speechLanguage(), session_id: sessionId || "" }),
+          signal: ac.signal,
+        });
+        if (gen !== speakGen) return null;
+        if (!response?.ok) continue;
+        const blob = await response.blob();
+        if (gen !== speakGen) return null;
+        if (!blob || blob.size < 32) continue;
+        return blob;
+      } catch (_err) {
+        /* retry once — a long README used to abort every clip after the first paragraph */
+      } finally {
+        window.clearTimeout(timer);
+      }
     }
+    return null;
   }
 
   function playSpeechBlob(blob, gen) {
@@ -3834,13 +4336,50 @@ export async function mountAiWorkspace(root, options = {}) {
         replyAudio.setAttribute("playsinline", "");
       }
       bindReplyAudio();
+      let settled = false;
+      let watchdog = 0;
+      let started = false;
+      const startedAt = Date.now();
+      let lastProgress = startedAt;
+      let lastTime = 0;
+      const onPlaying = () => {
+        started = true;
+        lastProgress = Date.now();
+      };
       const done = () => {
+        if (settled) return;
+        settled = true;
+        if (watchdog) window.clearInterval(watchdog);
         replyAudio.removeEventListener("ended", done);
+        replyAudio.removeEventListener("error", done);
+        replyAudio.removeEventListener("playing", onPlaying);
         if (speakRelease === done) speakRelease = null;
         resolve();
       };
+      // Moves on when a clip never reports `ended` or stalls, but never while the user paused it.
+      const check = () => {
+        if (settled) return;
+        const now = Date.now();
+        const time = Number(replyAudio.currentTime) || 0;
+        if (replyAudio.paused || time !== lastTime) lastProgress = now;
+        lastTime = time;
+        const verdict = clipWatch({
+          now,
+          startedAt,
+          lastProgress,
+          started,
+          paused: replyAudio.paused,
+          ended: replyAudio.ended,
+          currentTime: time,
+          duration: Number(replyAudio.duration),
+        });
+        if (verdict === "done") done();
+      };
       speakRelease = done;
       replyAudio.addEventListener("ended", done);
+      replyAudio.addEventListener("error", done);
+      replyAudio.addEventListener("playing", onPlaying);
+      watchdog = window.setInterval(check, 1000);
       replyAudio.pause();
       replyAudio.src = replyObjectUrl;
       replyAudio.play().catch(() => {
@@ -4033,23 +4572,33 @@ export async function mountAiWorkspace(root, options = {}) {
     event.preventDefault();
     typingAt = 0;
     if (turnStopDone) await turnStopDone;
-    let text = messageEl.value.trim();
-    let attachments = pending.slice();
-    if (streaming) {
-      if (!text && !attachments.length) return;
-      clipToBottom();
-      queueTurn(text, attachments);
-      stickToBottom();
-      return;
-    }
-    if (!text && !attachments.length) {
-      if (!nextTurn) return;
-      text = nextTurn.text;
-      attachments = nextTurn.attachments.slice();
-      nextTurn = null;
-      renderNext();
-      messageEl.value = text;
-      pending = attachments.slice();
+    let keepComposer = false;
+    let text;
+    let attachments;
+    if (sendQueued) {
+      const turn = sendQueued;
+      sendQueued = null;
+      text = turn.text;
+      attachments = turn.attachments.slice();
+      keepComposer = true;
+    } else {
+      text = messageEl.value.trim();
+      attachments = pending.slice();
+      if (streaming) {
+        if (!text && !attachments.length) return;
+        clipToBottom();
+        queueTurn(text, attachments);
+        stickToBottom();
+        return;
+      }
+      if (!text && !attachments.length) {
+        if (!nextTurns.length) return;
+        const turn = nextTurns.shift();
+        text = turn.text;
+        attachments = turn.attachments.slice();
+        renderNext();
+        keepComposer = true;
+      }
     }
     const images = attachments.filter((item) => item.kind === "image");
     const files = attachments.filter((item) => item.kind === "file");
@@ -4059,12 +4608,15 @@ export async function mountAiWorkspace(root, options = {}) {
       const known = knownSessionId();
       if (known) await openSession(known, true);
     }
-    abandonStream();
+    abandonStream({ keepSpeech: keepComposer });
     const token = streamToken;
     const abort = new AbortController();
     streamAbort = abort;
     stopSpeech();
-    unlockOutput();
+    const speechPlaying = Boolean(
+      speakBusy || (replyAudio && !replyAudio.paused && !replyAudio.ended && replyObjectUrl),
+    );
+    if (!keepComposer || !speechPlaying) unlockOutput();
     if (keepComposerFocus()) messageEl.focus();
     else hideKeyboard();
     streaming = true;
@@ -4074,11 +4626,13 @@ export async function mountAiWorkspace(root, options = {}) {
     watchGen += 1;
     clearKeyboardLock();
     resetOuterScroll();
-    syncSendButton();
-    pending = [];
-    renderThumbs();
-    messageEl.value = "";
+    if (!keepComposer) {
+      pending = [];
+      renderThumbs();
+      messageEl.value = "";
+    }
     resizeComposer();
+    syncSendButton();
     setWelcome(false);
     clipToBottom();
     addBubble("user", text, [
@@ -4155,10 +4709,14 @@ export async function mountAiWorkspace(root, options = {}) {
             if (textNode) assistant.insertBefore(tools, textNode);
             else assistant.appendChild(tools);
           }
+          // A tool step ends the sentence before it, so the status comes back right away.
+          textPaintedAt = 0;
           addChip(tools, data, true);
           setActivity(assistant, "");
+          drainSpeech(false, true);
         } else if (name === "status") {
           setStatus(data.text);
+          drainSpeech(false, true);
         } else if (name === "error") {
           drainSpeech(true);
           streamFinal = true;
@@ -4166,7 +4724,7 @@ export async function mountAiWorkspace(root, options = {}) {
           assistant.classList.add("error");
           const textNode = assistant.querySelector(".text");
           if (!streamFull) {
-            setMarkdown(textNode, cleanErrorText(data.message) || t("error"));
+            setMarkdown(textNode, shownError(data.message) || t("error"));
             textNode.hidden = !textNode.content;
             assistant.classList.add("has-text");
           }
@@ -4178,18 +4736,10 @@ export async function mountAiWorkspace(root, options = {}) {
           streamNode = streamNode || assistant.querySelector(".text");
           if (data.answer) {
             queueStreamAnswer(data.answer);
-            syncSpeechTo(data.answer);
           }
           startStreamPump();
+          if (voice.speak) syncSpeechTo(String(data.answer || lastAssistantText() || ""));
           drainSpeech(true);
-          if (voice.speak && !speakStarted) {
-            const leftover = String(data.answer || lastAssistantText() || "").trim();
-            if (leftover) {
-              speakHeld = leftover;
-              speakRaw = leftover;
-              drainSpeech(true);
-            }
-          }
           settleTools(assistant);
           streaming = false;
           assistant.classList.remove("streaming");
@@ -4225,7 +4775,7 @@ export async function mountAiWorkspace(root, options = {}) {
         assistant.classList.add("error");
         const node = assistant.querySelector(".text");
         if (!streamFull) {
-          setMarkdown(node, cleanErrorText(error?.message || error) || t("error"));
+          setMarkdown(node, shownError(error?.message || error) || t("error"));
           node.hidden = !node.content;
           assistant.classList.add("has-text");
         }
@@ -4243,13 +4793,16 @@ export async function mountAiWorkspace(root, options = {}) {
         if (!found) {
           streaming = false;
           assistant.classList.remove("streaming");
+          settleTools(assistant);
           setActivity(assistant, "");
           if (!streamFull) {
             assistant.classList.add("error");
             const node = assistant.querySelector(".text");
             if (node && !node.content) {
-              node.content = t("thinking");
+              // The connection dropped and the reply did not show up; say so instead of "Thinking".
+              setMarkdown(node, t("reply_lost"));
               node.hidden = false;
+              assistant.classList.add("has-text");
             }
           }
         }
@@ -4264,7 +4817,7 @@ export async function mountAiWorkspace(root, options = {}) {
       window.setTimeout(() => {
         if (token === streamToken && sessionId === chatId) refreshTurnHistory(turnSince);
       }, 500);
-      if (followUp && sessionId === chatId && nextTurn) {
+      if (followUp && sessionId === chatId && nextTurns.length) {
         flushNext();
         return;
       }
@@ -4280,6 +4833,7 @@ export async function mountAiWorkspace(root, options = {}) {
 
   chatEl.addEventListener("scroll", () => {
     const top = chatEl.scrollTop;
+    syncHeaderShadow();
     if (!scrollLock && typingGuard() && Math.abs(top - acceptedTop) > 0.5) {
       restoreTypingScroll();
       return;
@@ -4306,6 +4860,7 @@ export async function mountAiWorkspace(root, options = {}) {
       followBottom();
     }
   }, { passive: true });
+  syncHeaderShadow();
 
   let lastTouchY = 0;
 
@@ -4437,18 +4992,11 @@ export async function mountAiWorkspace(root, options = {}) {
   });
   scrollBtnWatch.observe(logEl);
   teardown.push(() => scrollBtnWatch.disconnect());
-  nextRemove?.addEventListener("click", (event) => {
-    event.preventDefault();
-    nextTurn = null;
-    renderNext();
-    resizeComposer();
-    if (keepComposerFocus()) messageEl.focus({ preventScroll: true });
-  });
 
   function startNewChat() {
     setSearchOpen(false);
     restoreQueued();
-    abandonStream();
+    leaveChatStream();
     clearMicHelp();
     routeGen += 1;
     watchGen += 1;
@@ -4617,6 +5165,14 @@ export async function mountAiWorkspace(root, options = {}) {
             detail = (await resp.text()).trim();
             if (detail) button.title = detail.slice(0, 300);
           }
+          if (row.agent_undo) {
+            // The snapshot could not be written back; the agent may still undo it with its tools.
+            const why = detail ? `${detail}\n\n` : "";
+            if (await askConfirm(t("rollback_failed"), `${why}${t("rollback_try_agent")}`, t("ask_restore"))) {
+              undoWithAgent(row);
+            }
+            return;
+          }
           await askAlert(t("rollback_failed"), detail || t("rollback_failed"));
           return;
         }
@@ -4637,14 +5193,18 @@ export async function mountAiWorkspace(root, options = {}) {
           t("ask_restore"),
         );
         if (!ok) return;
-        closeHistory();
-        messageEl.value = restorePrompt(row);
-        form.requestSubmit();
+        undoWithAgent(row);
       });
       item.appendChild(button);
       return item;
     }
     return item;
+  }
+
+  function undoWithAgent(row) {
+    closeHistory();
+    messageEl.value = restorePrompt(row);
+    form.requestSubmit();
   }
 
   function restorePrompt(row) {
@@ -5524,6 +6084,16 @@ export async function mountAiWorkspace(root, options = {}) {
     listen(window, "location-changed", applyRoute);
     listen(window, "popstate", applyRoute);
   }
+  if (compact) {
+    const drawer = overlayDrawer();
+    if (drawer) {
+      const watchOpen = new MutationObserver(() => {
+        if (!drawer.classList.contains("open")) haltSpeech();
+      });
+      watchOpen.observe(drawer, { attributes: true, attributeFilter: ["class"] });
+      teardown.push(() => watchOpen.disconnect());
+    }
+  }
   listen(window, "location-changed", loadDictate);
   listen(window, "focus", loadDictate);
   listen(document, "visibilitychange", () => {
@@ -5541,15 +6111,15 @@ export async function mountAiWorkspace(root, options = {}) {
   const startId =
     options.restoreSessionId ||
     (compact ? localStorage.getItem("ai_workspace_session") || "" : startRoute.sessionId);
-  if (!compact && routed && startRoute.view === "usage") {
-    showEmpty();
-    loadSessions();
-    openUsagePage();
-  } else if (startId) openSession(startId, true);
-  else {
-    showEmpty();
+  if (!compact) {
+    if (cachedSessions.length) paintSessionList(cachedSessions);
     loadSessions();
   }
+  if (!compact && routed && startRoute.view === "usage") {
+    showEmpty();
+    openUsagePage();
+  } else if (startId) openSession(startId, true);
+  else showEmpty();
   resizeComposer();
   const linkWatch = new MutationObserver(() => retargetHaLinks(logEl));
   linkWatch.observe(logEl, { subtree: true, childList: true, attributes: true, attributeFilter: ["href", "target"] });
@@ -5560,7 +6130,7 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function destroy() {
-    abandonStream();
+    haltStream({ keepQueue: keepQueueOnHalt("destroy") });
     stopSpeech();
     watchGen += 1;
     routeGen += 1;
@@ -5572,5 +6142,5 @@ export async function mountAiWorkspace(root, options = {}) {
     root.replaceChildren();
   }
 
-  return { openSession, applyRoute, setNarrow, toggleNav, startNewChat, loadDictate, resume, destroy };
+  return { openSession, applyRoute, setNarrow, toggleNav, startNewChat, loadDictate, resume, destroy, haltSpeech };
 }

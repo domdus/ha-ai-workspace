@@ -1,14 +1,9 @@
-import importlib.util
-from pathlib import Path
 
 
 def _scope():
-    path = Path(__file__).resolve().parents[1] / "custom_components" / "ai_workspace" / "chat_scope.py"
-    spec = importlib.util.spec_from_file_location("ai_workspace_chat_scope", path)
-    mod = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(mod)
-    return mod
+    from custom_components.ai_workspace import chat_scope
+
+    return chat_scope
 
 
 def test_other_chats_stay_out_until_named() -> None:
@@ -37,7 +32,7 @@ def test_cross_chat_matches_title_without_a_cue() -> None:
     assert scope.matching_chats("give me status", chats, "current", cross=True) == []
 
 
-def test_handoff_includes_title_and_skips_tables() -> None:
+def test_handoff_includes_title_and_keeps_tables_and_line_breaks() -> None:
     scope = _scope()
 
     class Row:
@@ -62,7 +57,7 @@ def test_handoff_includes_title_and_skips_tables() -> None:
     assert 'titled "Handy nicht zu Hause"' in note
     assert "Handy-Tracker kaputt?" in note
     assert "setze ich A55-von-Alex" in note
-    assert "Galaxy-A55-5G" not in note
+    assert "| Galaxy-A55-5G | not_home |\n" in note
     assert "Ja mach mal." not in note
     assert "go ahead" in note
 
@@ -171,3 +166,15 @@ def test_answer_after_tools_starts_a_new_paragraph() -> None:
 def test_merge_keeps_the_break_when_the_result_has_none() -> None:
     scope = _scope()
     assert scope.merge_reply_text("Checking.\n\nTwo are on.", "Checking.Two are on.") == "Checking.\n\nTwo are on."
+
+
+def test_text_after_a_thinking_pause_starts_a_new_paragraph() -> None:
+    from custom_components.ai_workspace.chat_scope import text_after_pause
+
+    said = ["Einen Moment, ich schaue nach, wo die Umstellung hängt."]
+    assert text_after_pause(said, "Die Umstellung war nicht fertig") == "\n\nDie Umstellung war nicht fertig"
+    # A word or sentence split around the pause stays as it is.
+    assert text_after_pause(["Ich stelle die Sprach"], "ausgabe um.") == "ausgabe um."
+    assert text_after_pause(said, " Danach") == " Danach"
+    assert text_after_pause([], "Hallo") == "Hallo"
+    assert text_after_pause(["Fertig.\n\n"], "Noch was") == "Noch was"

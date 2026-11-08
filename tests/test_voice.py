@@ -337,3 +337,22 @@ def test_speech_text_keeps_list_numbers_and_ends_items() -> None:
     voice = _load("voice", "voice.py")
     spoken = voice.speech_text("Steps:\n1. Turn off the lights.\n2. Close the blinds\n3. Lock the door")
     assert spoken == "Steps:\n1. Turn off the lights.\n2. Close the blinds.\n3. Lock the door."
+
+
+def test_xai_speech_payload_maps_language_voice_and_speed() -> None:
+    voice = _load("voice", "voice.py")
+    body = voice.xai_speech_payload("Hallo", "Ara", "de-DE")
+    assert body == {
+        "text": "Hallo",
+        "voice_id": "ara",
+        "language": "de",
+        "output_format": {"codec": "mp3", "sample_rate": 24000, "bit_rate": 128000},
+    }
+    assert voice.xai_speech_payload("Hi", "", "pt")["voice_id"] == "eve"
+    assert voice.xai_speech_payload("Hi", "eve", "pt")["language"] == "pt-BR"
+    assert voice.xai_speech_payload("Hi", "eve", "es_MX")["language"] == "es-MX"
+    assert voice.xai_speech_payload("Hi", "eve", "nl")["language"] == "auto"
+    assert voice.xai_speech_payload("Hi", "eve", "")["language"] == "auto"
+    assert voice.xai_speech_payload("Hi", "eve", "en", speed=4.0)["speed"] == 1.5
+    assert voice.xai_speech_payload("Hi", "eve", "en", speed=0.25)["speed"] == 0.7
+    assert len(voice.xai_speech_payload("x" * 70_000, "eve", "en")["text"]) == 60_000

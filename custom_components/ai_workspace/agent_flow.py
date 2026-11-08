@@ -6,12 +6,16 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant import config_entries
+from homeassistant.data_entry_flow import section
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig, TextSelector, TextSelectorConfig, TextSelectorType
 from homeassistant.util.ulid import ulid
 
 from .agents import borrow_by_id, borrowed_setups, entry_agents
 from .const import (
+    CONF_SAVE_TOKENS,
+    SECTION_ADVANCED,
+    API_ANTHROPIC,
     API_AZURE,
     API_COMPATIBLE,
     API_OLLAMA,
@@ -31,10 +35,10 @@ from .const import (
     CONF_TTS_VOICE,
     CONF_AZURE_API_VERSION,
     CONF_BORROW,
-    CONF_CHECK_HOUSE,
     CONF_CURSOR_API_KEY,
     CONF_EFFORT,
     CONF_LOW_TOKEN,
+    CONF_CACHE_1H,
     CONF_PROMPT_CACHE,
     CONF_MODE,
     CONF_MODEL,
@@ -45,15 +49,16 @@ from .const import (
     EFFORTS,
     MODE_API,
     MODE_CURSOR,
+    TOKEN_MODE_EXTREME,
+    TOKEN_MODE_MEDIUM,
     TOKEN_MODE_OFF,
-    TOKEN_MODES,
-    TTS_SPEEDS,
     assist_enabled,
     assist_stt_enabled,
     assist_tts_enabled,
     provider_supports_stt,
     provider_supports_tts,
     provider_supports_tts_speed,
+    provider_has_tts_model,
     api_key_url,
     api_model_choices,
     default_api_base,
@@ -65,6 +70,7 @@ from .const import (
     tts_speed_choice,
     stt_model_choices,
     tts_model_choices,
+    tts_speeds,
     tts_voices,
     submitted_model,
     token_mode_of,
@@ -181,9 +187,9 @@ def _tts_voice_field(provider: str, current: dict) -> dict:
     }
 
 
-def _tts_speed_field(current: dict) -> dict:
-    shown = tts_speed_choice(resolved_tts_speed(current))
-    options = [{"value": tts_speed_choice(item), "label": f"{tts_speed_choice(item)}×"} for item in TTS_SPEEDS]
+def _tts_speed_field(current: dict, provider: str = "") -> dict:
+    shown = tts_speed_choice(resolved_tts_speed(current, provider))
+    options = [{"value": tts_speed_choice(item), "label": f"{tts_speed_choice(item)}×"} for item in tts_speeds(provider)]
     if shown and shown not in {item["value"] for item in options}:
         options.insert(0, {"value": shown, "label": f"{shown}×"})
     return {
@@ -230,10 +236,6 @@ def _fields_schema(
         fields[vol.Optional(CONF_API_KEY, default="")] = _PASSWORD
         fields.update(_model_field(provider, current, choices=models))
     fields.update(_effort_field(current))
-    fields[vol.Optional(CONF_LOW_TOKEN, default=token_mode_of(current.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF)))] = SelectSelector(
-        SelectSelectorConfig(options=list(TOKEN_MODES), mode="dropdown", translation_key="low_token")
-    )
-    fields[vol.Optional(CONF_CHECK_HOUSE, default=bool(current.get(CONF_CHECK_HOUSE, True)))] = cv.boolean
     fields[vol.Optional(CONF_ALLOW_INTERNET, default=bool(current.get(CONF_ALLOW_INTERNET, False)))] = cv.boolean
     fields[vol.Optional(CONF_ASSIST, default=assist_enabled(current, new=new))] = cv.boolean
     if provider_supports_stt(provider):
@@ -241,11 +243,50 @@ def _fields_schema(
         fields.update(_stt_model_field(provider, current))
     if provider_supports_tts(provider):
         fields[vol.Optional(CONF_ASSIST_TTS, default=assist_tts_enabled(current, provider, new=new))] = cv.boolean
-        fields.update(_tts_model_field(provider, current))
+        if provider_has_tts_model(provider):
+            fields.update(_tts_model_field(provider, current))
         fields.update(_tts_voice_field(provider, current))
         if provider_supports_tts_speed(provider):
-            fields.update(_tts_speed_field(current))
+            fields.update(_tts_speed_field(current, provider))
+    # Rarely needed, so it stays folded away.
+    advanced = {vol.Optional(CONF_SAVE_TOKENS, default=saves_tokens(current)): cv.boolean}
+    if step == "cloud" and provider == API_ANTHROPIC:
+        advanced[vol.Optional(CONF_CACHE_1H, default=caches_an_hour(current))] = cv.boolean
+    fields[vol.Required(SECTION_ADVANCED)] = section(vol.Schema(advanced), {"collapsed": True})
     return vol.Schema(fields)
+
+
+def ollama_has_model(installed: list[str], model: str) -> bool:
+    def tagged(name: str) -> str:
+        name = str(name or "").strip()
+        return name if ":" in name else f"{name}:latest"
+
+    return tagged(model) in {tagged(name) for name in installed}
+
+
+def saves_tokens(current: dict) -> bool:
+    """Checkbox state: from the form when it was shown again, else from the stored level."""
+    advanced = current.get(SECTION_ADVANCED)
+    if isinstance(advanced, dict) and CONF_SAVE_TOKENS in advanced:
+        return bool(advanced[CONF_SAVE_TOKENS])
+    return token_mode_of(current.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF)) in {TOKEN_MODE_MEDIUM, TOKEN_MODE_EXTREME}
+
+
+def caches_an_hour(current: dict) -> bool:
+    """1-hour cache checkbox: from the form when it was shown again, else from the stored agent."""
+    advanced = current.get(SECTION_ADVANCED)
+    if isinstance(advanced, dict) and CONF_CACHE_1H in advanced:
+        return bool(advanced[CONF_CACHE_1H])
+    return bool(current.get(CONF_CACHE_1H, False))
+
+
+def stored_token_mode(current: dict, save: bool) -> str:
+    """Save tokens is Medium. A chat-only (Extreme) agent stays chat only while the box stays on."""
+    if not save:
+        return TOKEN_MODE_OFF
+    if token_mode_of(current.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF)) == TOKEN_MODE_EXTREME:
+        return TOKEN_MODE_EXTREME
+    return TOKEN_MODE_MEDIUM
 
 
 def _title(provider: str, used: set[str]) -> str:
@@ -347,6 +388,20 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             return None
         return merge_models(provider, str(current.get(CONF_MODEL) or ""), live)
 
+    async def _ollama_model_errors(self, base: str, model: str) -> dict[str, str]:
+        """Catch a model name Ollama does not have, such as a family name without its size tag."""
+        from .model_list import async_provider_models, forget_provider_models
+
+        installed = await async_provider_models(self.hass, API_OLLAMA, "", base)
+        if installed and not ollama_has_model(installed, model):
+            # The list is cached for an hour; the model may have been pulled just now.
+            forget_provider_models(self.hass, API_OLLAMA, "", base)
+            installed = await async_provider_models(self.hass, API_OLLAMA, "", base)
+        if not installed or ollama_has_model(installed, model):
+            return {}
+        self._installed = ", ".join(installed[:12])
+        return {CONF_MODEL: "model_not_installed"}
+
     async def _key_errors(self, provider: str, key: str, base: str, version: str) -> dict[str, str]:
         from .api_provider import async_check_api_key
 
@@ -398,6 +453,8 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                 errors[CONF_API_KEY] = "required"
             if not errors and provider != MODE_CURSOR:
                 errors = await self._key_errors(provider, key, base, version)
+            if not errors and provider == API_OLLAMA:
+                errors = await self._ollama_model_errors(base, model or default_api_model(API_OLLAMA))
             if not errors:
                 if provider == MODE_CURSOR:
                     await self._store_runtime(
@@ -413,8 +470,7 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                     CONF_API_BASE: "" if provider == MODE_CURSOR else base,
                     CONF_MODEL: model,
                     CONF_EFFORT: "" if effort == EFFORT_DEFAULT else effort,
-                    CONF_LOW_TOKEN: token_mode_of(merged.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF)),
-                    CONF_CHECK_HOUSE: bool(merged.get(CONF_CHECK_HOUSE, True)),
+                    CONF_LOW_TOKEN: stored_token_mode(current, saves_tokens(merged)),
                     CONF_ALLOW_INTERNET: bool(merged.get(CONF_ALLOW_INTERNET, False)),
                     CONF_ASSIST: bool(user_input.get(CONF_ASSIST, assist_enabled(current, new=not self._editing))),
                     CONF_ASSIST_STT: bool(
@@ -437,25 +493,38 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                     if provider_supports_tts(provider)
                     else False,
                     CONF_TTS_MODEL: str(user_input.get(CONF_TTS_MODEL) or "").strip()
-                    if provider_supports_tts(provider)
+                    if provider_has_tts_model(provider)
                     else "",
                     CONF_TTS_VOICE: str(user_input.get(CONF_TTS_VOICE) or "").strip()
                     if provider_supports_tts(provider)
                     else "",
                     CONF_TTS_SPEED: tts_speed_choice(
-                        resolved_tts_speed(user_input if provider_supports_tts_speed(provider) else {})
+                        resolved_tts_speed(user_input if provider_supports_tts_speed(provider) else {}, provider)
                     )
                     if provider_supports_tts_speed(provider)
                     else "",
                     CONF_AZURE_API_VERSION: version if provider == API_AZURE else "",
                 }
+                if provider == API_ANTHROPIC:
+                    data[CONF_CACHE_1H] = caches_an_hour(merged)
                 if provider != MODE_CURSOR and CONF_PROMPT_CACHE in current:
                     data[CONF_PROMPT_CACHE] = bool(current.get(CONF_PROMPT_CACHE))
                 return self._finish(provider, data)
             self._current = merged
         example = "https://YOUR-RESOURCE.openai.azure.com" if step == "azure" else default_api_base(API_OLLAMA)
-        placeholders = {"example_url": example, "api_key_url": api_key_url(provider)}
+        placeholders = {
+            "example_url": example,
+            "api_key_url": api_key_url(provider),
+            "installed": getattr(self, "_installed", "") or "-",
+        }
         schema_current = dict(self._current)
+        if step == "ollama":
+            from .ollama_info import async_ollama_server, ollama_form_note
+
+            url = str(schema_current.get(CONF_API_BASE) or default_api_base(API_OLLAMA))
+            placeholders["ollama_note"] = ollama_form_note(
+                await async_ollama_server(self.hass, url), example, self.hass.config.language
+            )
         if step == "cursor":
             entry = self._get_entry()
             saved = str({**entry.data, **entry.options}.get(CONF_RUNTIME_URL) or "")
@@ -467,7 +536,7 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             else:
                 shown, live, auto = await async_runtime_form_url(self.hass, saved)
             schema_current[CONF_RUNTIME_URL] = shown
-            placeholders.update(runtime_form_placeholders(live=live, auto=auto))
+            placeholders.update(runtime_form_placeholders(live=live, auto=auto, language=self.hass.config.language))
         return self.async_show_form(
             step_id=f"provider_{step}",
             data_schema=_fields_schema(

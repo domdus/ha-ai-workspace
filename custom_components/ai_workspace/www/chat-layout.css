@@ -253,6 +253,49 @@
   font-size: var(--ha-font-size-s, 0.85rem);
 }
 
+/* Placeholder rows while the chat list loads. */
+.skeleton-label::after,
+.session-skeleton::after {
+  content: "";
+  display: block;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--secondary-text-color);
+  opacity: 0.18;
+  animation: session-skeleton 1.4s ease-in-out infinite;
+}
+
+.skeleton-label::after {
+  width: 64px;
+}
+
+.session-skeleton {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  margin: 0 var(--ha-space-1);
+  padding: 0 var(--ha-space-3);
+}
+
+.session-skeleton::after {
+  width: var(--w, 70%);
+  height: 12px;
+  border-radius: 6px;
+}
+
+@keyframes session-skeleton {
+  50% {
+    opacity: 0.08;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-label::after,
+  .session-skeleton::after {
+    animation: none;
+  }
+}
+
 .nav-scrim {
   display: none;
 }
@@ -433,7 +476,7 @@ ha-button.new-chat {
   align-self: center;
 }
 
-.session-row ha-dropdown.session-menu {
+.session-row .session-menu {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
@@ -474,7 +517,7 @@ ha-button.new-chat {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .session-row ha-dropdown.session-menu {
+  .session-row .session-menu {
     position: absolute;
     inset-inline-end: 2px;
     top: 6px;
@@ -543,10 +586,23 @@ header {
   position: sticky;
   top: 0;
   z-index: 2;
-  padding: var(--ha-space-3) var(--ai-inline-pad) var(--ha-space-2);
+  width: 100%;
+  padding: var(--ha-space-3) 0 var(--ha-space-2);
+  background: var(--primary-background-color);
+  transition: box-shadow var(--ha-animation-duration-normal, 200ms) ease;
+}
+
+header.scrolled {
+  box-shadow: var(--ha-box-shadow-s);
+}
+
+.header-row,
+header .chat-usage,
+header .banner {
   width: min(calc(var(--ai-chat-width) + 2 * var(--ai-inline-pad)), 100%);
   margin-inline: auto;
-  background: var(--primary-background-color);
+  padding-inline: var(--ai-inline-pad);
+  box-sizing: border-box;
 }
 
 .wrap.compact .chat.welcome header,
@@ -676,6 +732,44 @@ h1 {
 .activity.idle {
   visibility: hidden;
   pointer-events: none;
+}
+
+/* Status text only — Standard glyphs stay in chat.css. */
+.activity .glyph {
+  display: none !important;
+}
+
+.activity.shine .label {
+  display: inline-block;
+  color: var(--secondary-text-color);
+  background-image:
+    linear-gradient(
+      90deg,
+      transparent calc(50% - 1.1em),
+      var(--primary-text-color) 50%,
+      transparent calc(50% + 1.1em)
+    ),
+    linear-gradient(var(--secondary-text-color), var(--secondary-text-color));
+  background-size: 250% 100%, auto;
+  background-repeat: no-repeat;
+  background-position: 100% center, 0 0;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: text-shimmer 1.35s linear infinite;
+}
+
+@keyframes text-shimmer {
+  from { background-position: 100% center, 0 0; }
+  to { background-position: 0% center, 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activity.shine .label {
+    animation: none;
+    background-image: none;
+    color: var(--secondary-text-color);
+    -webkit-text-fill-color: var(--secondary-text-color);
+  }
 }
 
 .tools {
@@ -831,13 +925,43 @@ h1 {
 
 .next-row {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: stretch;
   gap: var(--ha-space-2);
-  margin: var(--ha-space-2) var(--ha-space-2) 0 0;
+  margin: 0;
 }
 
 .next-row[hidden] {
   display: none !important;
+}
+
+.next-chips {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--ha-space-1);
+  width: 100%;
+}
+
+.next-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--ha-space-2);
+  padding: var(--ha-space-2) var(--ha-space-2) var(--ha-space-2) var(--ha-space-3);
+  border-radius: var(--ha-border-radius-md, 8px);
+  background: var(--ha-color-fill-neutral-quiet-hover, var(--secondary-background-color));
+  color: var(--primary-text-color);
+}
+
+.ui-theme-ha-components ha-input-chip.next-chip {
+  display: inline-flex;
+  width: 100%;
+  box-sizing: border-box;
+  gap: unset;
+  padding: unset;
+  border-radius: unset;
+  background: unset;
+  color: unset;
 }
 
 .next-copy {
@@ -865,8 +989,11 @@ h1 {
 
 .next-remove {
   flex: none;
-  --ha-icon-button-size: 32px;
-  --mdc-icon-button-size: 32px;
+  align-self: center;
+  width: 36px;
+  height: 36px;
+  --ha-icon-button-size: 36px;
+  --mdc-icon-button-size: 36px;
 }
 
 .send.is-stop {
@@ -1269,7 +1396,7 @@ textarea.message {
 }
 
 .chat-usage {
-  margin: var(--ha-space-1) 0 0;
+  margin-block: var(--ha-space-1) 0;
   font-size: var(--ha-font-size-s);
   color: var(--secondary-text-color);
 }
@@ -1592,7 +1719,8 @@ ha-date-range-picker.usage-filter-dates {
   .wrap.narrow aside,
   .nav-scrim,
   .history,
-  .usage {
+  .usage,
+  header {
     transition: none;
   }
 }

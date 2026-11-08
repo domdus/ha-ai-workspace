@@ -85,6 +85,8 @@ _SPEECH_PRICES: dict[str, dict[str, float]] = {
     "gpt-4o-mini-tts": {"character": 0.015 / 60 / 15},
     "tts-1": {"character": 15.0 / 1_000_000},
     "tts-1-hd": {"character": 30.0 / 1_000_000},
+    # xAI text-to-speech, beta list price.
+    "grok-tts": {"character": 4.20 / 1_000_000},
     **_SYNCED_SPEECH,
 }
 
@@ -95,6 +97,8 @@ class TokenUsage:
     completion_tokens: int = 0
     cache_read_tokens: int = 0
     cache_write_tokens: int = 0
+    # Part of cache_write_tokens that Anthropic keeps for an hour (priced higher).
+    cache_write_1h_tokens: int = 0
     reasoning_tokens: int = 0
     total_tokens: int = 0
     characters: int = 0
@@ -120,6 +124,7 @@ class TokenUsage:
             completion_tokens=completion,
             cache_read_tokens=cache_read,
             cache_write_tokens=cache_write,
+            cache_write_1h_tokens=self.cache_write_1h_tokens + other.cache_write_1h_tokens,
             reasoning_tokens=self.reasoning_tokens + other.reasoning_tokens,
             total_tokens=counted_tokens(
                 prompt,
@@ -134,6 +139,29 @@ class TokenUsage:
             cost_source=other.cost_source or self.cost_source,
             model=other.model or self.model,
             run_id=other.run_id or self.run_id,
+        )
+
+    def update(self, other: "TokenUsage") -> "TokenUsage":
+        """Merge a later report of the same request.
+
+        Anthropic streams usage twice per request: message_start with the input, then
+        message_delta with running totals that may repeat the input. Adding them would
+        count the input twice, so each count keeps the larger value.
+        """
+        prompt = max(self.prompt_tokens, other.prompt_tokens)
+        completion = max(self.completion_tokens, other.completion_tokens)
+        cache_read = max(self.cache_read_tokens, other.cache_read_tokens)
+        cache_write = max(self.cache_write_tokens, other.cache_write_tokens)
+        return replace(
+            self,
+            prompt_tokens=prompt,
+            completion_tokens=completion,
+            cache_read_tokens=cache_read,
+            cache_write_tokens=cache_write,
+            cache_write_1h_tokens=max(self.cache_write_1h_tokens, other.cache_write_1h_tokens),
+            reasoning_tokens=max(self.reasoning_tokens, other.reasoning_tokens),
+            total_tokens=counted_tokens(prompt, completion, cache_read, cache_write, 0),
+            model=other.model or self.model,
         )
 
     def empty(self) -> bool:
@@ -183,6 +211,8 @@ def _as_dict(value: object) -> dict[str, Any]:
         "cache_creation_input_tokens",
         "cache_read_tokens",
         "cache_write_tokens",
+        "cache_write_1h_tokens",
+        "cache_creation",
         "reasoning_tokens",
         "promptTokenCount",
         "candidatesTokenCount",
@@ -294,6 +324,11 @@ def parse_usage(blob: object, *, model: str = "", run_id: str = "") -> TokenUsag
         or details_in.get("cache_write")
         or details_in.get("cache_creation")
     )
+    created = _as_dict(data.get("cache_creation"))
+    cache_write_1h = min(
+        cache_write,
+        _int(data.get("cache_write_1h_tokens") or created.get("ephemeral_1h_input_tokens")),
+    )
     reasoning = _int(
         data.get("reasoning_tokens")
         or data.get("thoughtsTokenCount")
@@ -319,6 +354,10 @@ def parse_usage(blob: object, *, model: str = "", run_id: str = "") -> TokenUsag
         cost = charged / 100.0
     elif cost is not None:
         source = "provider"
+    elif data.get("cost_source") == "estimate" and _float(data.get("cost_usd")) is not None:
+        # Our own usage event, read back: keep the estimate made per request.
+        cost = _float(data.get("cost_usd"))
+        source = "estimate"
     used_model = str(data.get("model") or model or "").strip()
     used_run = str(data.get("run_id") or run_id or "").strip()
     return TokenUsage(
@@ -326,6 +365,7 @@ def parse_usage(blob: object, *, model: str = "", run_id: str = "") -> TokenUsag
         completion_tokens=completion,
         cache_read_tokens=cache_read,
         cache_write_tokens=cache_write,
+        cache_write_1h_tokens=cache_write_1h,
         reasoning_tokens=reasoning,
         total_tokens=total,
         cost_usd=cost,
@@ -367,11 +407,52 @@ def uncached_prompt_tokens(prompt_tokens: int, cache_read_tokens: int, cache_wri
     return max(0, prompt)
 
 
+# Input sizes above which some models charge more, highest first.
+_TIERS = (272, 200, 128, 100)
+
+
+def input_tokens(prompt_tokens: int, cache_read_tokens: int, cache_write_tokens: int) -> int:
+    """All input of one request, cached or not. Anthropic reports the uncached part only."""
+    prompt = int(prompt_tokens or 0)
+    cached = int(cache_read_tokens or 0) + int(cache_write_tokens or 0)
+    return prompt if prompt >= cached else prompt + cached
+
+
+def tier_rates(rates: dict[str, float], size: int) -> dict[str, float]:
+    """The rates for a request of this many input tokens.
+
+    The tier applies to input, cache, and output of that request, as the providers bill it.
+    A rate the tier does not list stays at the normal rate.
+    """
+    for tier in _TIERS:
+        if size > tier * 1000 and f"input_above_{tier}k" in rates:
+            out = dict(rates)
+            for kind in ("input", "output", "cache_read", "cache_write"):
+                value = rates.get(f"{kind}_above_{tier}k")
+                if value is not None:
+                    out[kind] = value
+            return out
+    return rates
+
+
 def estimate_cost(usage: TokenUsage, model: str = "") -> TokenUsage:
+    """List-price cost of one request.
+
+    Price each request on its own, then add them up: the long-context tier depends on the
+    size of a single request, not on the sum over a turn. A sum that is already priced
+    (cost_source "estimate") keeps its cost.
+    """
     if usage.charged_cents is not None:
         return replace(usage, cost_usd=usage.charged_cents / 100.0, cost_source="cursor_sdk")
-    if usage.cost_usd is not None and usage.cost_source == "provider":
-        return usage
+    if usage.cost_usd is not None and usage.cost_source in {"provider", "estimate"}:
+        tokens = counted_tokens(
+            usage.prompt_tokens,
+            usage.completion_tokens,
+            usage.cache_read_tokens,
+            usage.cache_write_tokens,
+            usage.total_tokens,
+        )
+        return replace(usage, total_tokens=tokens)
     name, rates = lookup_price(model or usage.model)
     out = replace(usage, model=usage.model or name)
     tokens = counted_tokens(
@@ -384,10 +465,13 @@ def estimate_cost(usage: TokenUsage, model: str = "") -> TokenUsage:
     out = replace(out, total_tokens=tokens)
     if not rates:
         return out
+    rates = tier_rates(rates, input_tokens(out.prompt_tokens, out.cache_read_tokens, out.cache_write_tokens))
     billed_prompt = uncached_prompt_tokens(out.prompt_tokens, out.cache_read_tokens, out.cache_write_tokens)
     cost = billed_prompt * rates.get("input", 0.0)
     cost += out.cache_read_tokens * rates.get("cache_read", rates.get("input", 0.0) * 0.1)
-    cost += out.cache_write_tokens * rates.get("cache_write", rates.get("input", 0.0) * 1.25)
+    hour = min(out.cache_write_1h_tokens, out.cache_write_tokens)
+    cost += (out.cache_write_tokens - hour) * rates.get("cache_write", rates.get("input", 0.0) * 1.25)
+    cost += hour * rates.get("cache_write_1h", rates.get("input", 0.0) * 2.0)
     output_tokens = out.completion_tokens
     # Some providers already fold reasoning into completion_tokens.
     if out.reasoning_tokens and out.reasoning_tokens > out.completion_tokens:
@@ -415,6 +499,7 @@ def usage_payload(usage: TokenUsage) -> dict[str, Any]:
         "completion_tokens": usage.completion_tokens,
         "cache_read_tokens": usage.cache_read_tokens,
         "cache_write_tokens": usage.cache_write_tokens,
+        "cache_write_1h_tokens": usage.cache_write_1h_tokens,
         "reasoning_tokens": usage.reasoning_tokens,
         "total_tokens": counted_tokens(
             usage.prompt_tokens,

@@ -83,16 +83,20 @@
               "house_map": "Disattivo per impostazione predefinita. Un indice locale di come automazioni, entità e aree sono collegate, così una sola ricerca risponde a domande come «cosa usa la luce della cucina?». Aggiunge un po' a ogni messaggio, quindi attivalo solo se chiedi spesso come sono collegate le cose. Gli stati in tempo reale arrivano sempre da Home Assistant.",
               "shorten_mcp_results": "Attivo per impostazione predefinita. Le risposte molto lunghe di Home Assistant (elenchi di tutta la casa, ricerche ampie) vengono riassunte prima di andare all'IA. Risparmia token e mantiene le risposte rapide. Disattivo invia il testo completo.",
               "change_history": "Attivo per impostazione predefinita. Registra ogni modifica di configurazione fatta dall'assistente, così puoi vedere cosa è cambiato e chiedergli di ripristinare una versione precedente. Disattivo: niente nuove voci; l'assistente può comunque fare modifiche.",
-              "change_history_ttl_days": "Giorni in cui Rollback e Chiedi ripristino restano disponibili. Poi la riga resta nel registro; ripristinare uno snapshot vecchio può sovrascrivere lavoro successivo. Predefinito 7. 1 è circa un giorno."
+              "change_history_ttl_days": "Giorni in cui Rollback e Annulla con l’agente restano disponibili. Poi la riga resta nel registro; ripristinare uno snapshot vecchio può sovrascrivere lavoro successivo. Predefinito 7. 1 è circa un giorno."
             }
           },
           "prompt": {
             "name": "Prompt di sistema",
             "data": {
-              "system_prompt": "Prompt di sistema"
+              "system_prompt": "Prompt di sistema",
+              "notes": "Usa le note ricordate",
+              "notes_text": "Note ricordate"
             },
             "data_description": {
-              "system_prompt": "Solo tono e abitudini. Lascia vuoto per il valore predefinito. L'assistente mantiene sempre l'accesso a Home Assistant e ai collegamenti rapidi nelle risposte."
+              "system_prompt": "Istruzioni permanenti per l’assistente: stanze, regole, come rispondere, tutto ciò che deve seguire. Lascia vuoto per il valore predefinito. L’assistente mantiene sempre l’accesso a Home Assistant e i collegamenti rapidi nelle risposte. Non scrive in questo campo.",
+              "notes": "Disattivato per impostazione predefinita. Se attivo, l’assistente legge le note sotto in ogni chat e può aggiungerle. Se disattivo, la chat non le legge né le scrive. Puoi comunque modificare il testo in qualsiasi momento.",
+              "notes_text": "Brevi elenchi puntati in inglese che l’assistente deve tenere. Li legge in ogni chat e li aggiunge quando dici «ricordati» (in qualsiasi lingua della chat) o ti lamenti di qualcosa che deve smettere di fare. Puoi modificarli o svuotarli quando vuoi. Massimo 2000 caratteri. Se è pieno, l’assistente deve sostituire le righe vecchie: nulla viene cancellato in silenzio."
             }
           }
         }
@@ -192,16 +196,20 @@
               "house_map": "Disattivo per impostazione predefinita. Un indice locale di come automazioni, entità e aree sono collegate, così una sola ricerca risponde a domande come «cosa usa la luce della cucina?». Aggiunge un po' a ogni messaggio, quindi attivalo solo se chiedi spesso come sono collegate le cose. Gli stati in tempo reale arrivano sempre da Home Assistant.",
               "shorten_mcp_results": "Attivo per impostazione predefinita. Le risposte molto lunghe di Home Assistant (elenchi di tutta la casa, ricerche ampie) vengono riassunte prima di andare all'IA. Risparmia token e mantiene le risposte rapide. Disattivo invia il testo completo.",
               "change_history": "Attivo per impostazione predefinita. Registra ogni modifica di configurazione fatta dall'assistente, così puoi vedere cosa è cambiato e chiedergli di ripristinare una versione precedente. Disattivo: niente nuove voci; l'assistente può comunque fare modifiche.",
-              "change_history_ttl_days": "Giorni in cui Rollback e Chiedi ripristino restano disponibili. Poi la riga resta nel registro; ripristinare uno snapshot vecchio può sovrascrivere lavoro successivo. Predefinito 7. 1 è circa un giorno."
+              "change_history_ttl_days": "Giorni in cui Rollback e Annulla con l’agente restano disponibili. Poi la riga resta nel registro; ripristinare uno snapshot vecchio può sovrascrivere lavoro successivo. Predefinito 7. 1 è circa un giorno."
             }
           },
           "prompt": {
             "name": "Prompt di sistema",
             "data": {
-              "system_prompt": "Prompt di sistema"
+              "system_prompt": "Prompt di sistema",
+              "notes": "Usa le note ricordate",
+              "notes_text": "Note ricordate"
             },
             "data_description": {
-              "system_prompt": "Solo tono e abitudini. Lascia vuoto per il valore predefinito. L'assistente mantiene sempre l'accesso a Home Assistant e ai collegamenti rapidi nelle risposte."
+              "system_prompt": "Istruzioni permanenti per l’assistente: stanze, regole, come rispondere, tutto ciò che deve seguire. Lascia vuoto per il valore predefinito. L’assistente mantiene sempre l’accesso a Home Assistant e i collegamenti rapidi nelle risposte. Non scrive in questo campo.",
+              "notes": "Disattivato per impostazione predefinita. Se attivo, l’assistente legge le note sotto in ogni chat e può aggiungerle. Se disattivo, la chat non le legge né le scrive. Puoi comunque modificare il testo in qualsiasi momento.",
+              "notes_text": "Brevi elenchi puntati in inglese che l’assistente deve tenere. Li legge in ogni chat e li aggiunge quando dici «ricordati» (in qualsiasi lingua della chat) o ti lamenti di qualcosa che deve smettere di fare. Puoi modificarli o svuotarli quando vuoi. Massimo 2000 caratteri. Se è pieno, l’assistente deve sostituire le righe vecchie: nulla viene cancellato in silenzio."
             }
           }
         }
@@ -277,7 +285,8 @@
         "no_runtime": "Impossibile raggiungere il runtime Cursor. Avvialo e controlla l'indirizzo in questo modulo.",
         "required": "Questo campo è obbligatorio.",
         "invalid_auth": "Il fornitore ha rifiutato questa chiave API.",
-        "cannot_connect": "Impossibile raggiungere il fornitore. Controlla l'URL e la rete."
+        "cannot_connect": "Impossibile raggiungere il fornitore. Controlla l'URL e la rete.",
+        "model_not_installed": "Questo modello non è installato in Ollama. Installati: {installed}"
       },
       "step": {
         "provider": {
@@ -299,8 +308,6 @@
             "cursor_api_key": "Chiave API Cursor",
             "model": "Modello",
             "effort": "Impegno",
-            "low_token": "Riduci uso token",
-            "check_house": "Controlla prima Home Assistant",
             "allow_internet": "Consenti Internet",
             "assist": "Aggiungi ad Assist"
           },
@@ -310,10 +317,19 @@
             "cursor_api_key": "Dal tuo account Cursor (Integrations). Lascia vuoto in modifica per conservare la chiave salvata. [Ottieni una chiave API]({api_key_url})",
             "model": "Scegli dall'elenco o digita un nome di modello. Vuoto usa Composer.",
             "effort": "Quanto tempo di ragionamento consentire. Composer usa Veloce per impostazione predefinita.",
-            "low_token": "Invia meno con ogni messaggio per risparmiare. Disattivato dà le risposte più affidabili sulla tua casa. Leggero conserva meno cronologia. Medio accorcia anche messaggi e risposte lunghi e inizia ogni turno solo con gli ultimi messaggi. Estremo è solo chat: niente strumenti, quindi non può controllare né comandare la casa.",
-            "check_house": "Attivo per impostazione predefinita. Prima di rispondere a una domanda sulla casa, l'agente controlla Home Assistant, così elenchi e stati sono reali e non indovinati. I saluti vengono saltati. Nessun effetto su Estremo, che non ha strumenti. Disattivalo per domande generali o per un modello che controlla già da solo.",
             "allow_internet": "Disattivato per impostazione predefinita. Attivo consente a questo agente di usare la ricerca web, il recupero di pagine e la shell di Cursor nelle chat admin. Disattivo li rimuove tutti e tre, quindi nemmeno curl o script raggiungono il web. Le chat degli utenti normali e dei satelliti vocali non li ricevono mai.",
             "assist": "Elenca anche questo assistente in Home Assistant Assist (voce). Disattivo: solo chat AI Workspace, e rimuove ciò che ha aggiunto ad Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Avanzate",
+              "data": {
+                "save_tokens": "Risparmia token"
+              },
+              "data_description": {
+                "save_tokens": "Invia meno a ogni messaggio: un prompt più corto, meno cronologia e risposte più brevi. Costa meno, ma le risposte sulla tua casa possono essere meno accurate."
+              }
+            }
           }
         },
         "provider_cloud": {
@@ -324,8 +340,6 @@
             "api_key": "Chiave API",
             "model": "Modello",
             "effort": "Impegno",
-            "low_token": "Riduci uso token",
-            "check_house": "Controlla prima Home Assistant",
             "allow_internet": "Consenti Internet",
             "assist": "Aggiungi ad Assist",
             "assist_stt": "Aggiungi voce in testo",
@@ -340,8 +354,6 @@
             "api_key": "La chiave del fornitore IA, non l'accesso a Home Assistant. [Ottieni una chiave API]({api_key_url})",
             "model": "Scegli dall'elenco o digita un nome di modello. Vuoto usa il valore predefinito del fornitore.",
             "effort": "Più impegno significa più ragionamento: risposte migliori alle domande difficili, ma più lento e con più token. Ignorato se il modello non lo supporta.",
-            "low_token": "Invia meno con ogni messaggio per risparmiare. Disattivato dà le risposte più affidabili sulla tua casa. Leggero conserva meno cronologia. Medio accorcia anche messaggi e risposte lunghi e inizia ogni turno solo con gli ultimi messaggi. Estremo è solo chat: niente strumenti, quindi non può controllare né comandare la casa.",
-            "check_house": "Attivo per impostazione predefinita. Prima di rispondere a una domanda sulla casa, l'agente controlla Home Assistant, così elenchi e stati sono reali e non indovinati. I saluti vengono saltati. Nessun effetto su Estremo, che non ha strumenti. Disattivalo per domande generali o per un modello che controlla già da solo.",
             "allow_internet": "Disattivato per impostazione predefinita. Attivo aggiunge strumenti di ricerca web e recupero pagine nelle chat admin. Gli indirizzi della rete locale restano bloccati. Le chat degli utenti normali e dei satelliti vocali non li ricevono mai.",
             "assist": "Elenca anche questo assistente in Home Assistant Assist (voce). Disattivo: solo chat AI Workspace, e rimuove ciò che ha aggiunto ad Assist.",
             "assist_stt": "Aggiunge un'opzione voce in testo in Home Assistant con la chiave di questo assistente. Disattivo rimuove ciò che ha aggiunto.",
@@ -350,6 +362,19 @@
             "tts_model": "Lascia vuoto per il modello vocale predefinito. Puoi digitare un altro nome se il fornitore ne elenca uno.",
             "tts_voice": "Coral è il valore predefinito. Le voci seguono le lingue impostate in Assist → Lingua.",
             "tts_speed": "Quanto velocemente parla questa voce. 1× è il normale. Vale per AI Workspace e Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Avanzate",
+              "data": {
+                "save_tokens": "Risparmia token",
+                "cache_1h": "Mantieni la cache per un’ora"
+              },
+              "data_description": {
+                "save_tokens": "Invia meno a ogni messaggio: un prompt più corto, meno cronologia e risposte più brevi. Costa meno, ma le risposte sulla tua casa possono essere meno accurate.",
+                "cache_1h": "Solo Claude. Tiene in cache il prompt di sistema e gli strumenti per un’ora invece di 5 minuti. Scrivere nella cache costa 2× il prezzo di input invece di 1,25×; leggerla costa 0,1×. Più economico quando tra i tuoi messaggi passano spesso più di 5 minuti, un po’ più caro se chatti di rado."
+              }
+            }
           }
         },
         "provider_ollama": {
@@ -359,19 +384,26 @@
             "api_base": "URL Ollama",
             "model": "Modello",
             "effort": "Impegno",
-            "low_token": "Riduci uso token",
-            "check_house": "Controlla prima Home Assistant",
             "allow_internet": "Consenti Internet",
             "assist": "Aggiungi ad Assist"
           },
           "data_description": {
-            "api_base": "Di solito {example_url}",
+            "api_base": "{ollama_note}",
             "model": "Scegli dall'elenco o digita un modello installato. Vuoto usa llama3.2.",
             "effort": "Più impegno significa più ragionamento: risposte migliori alle domande difficili, ma più lento e con più token. Ignorato se il modello non lo supporta.",
-            "low_token": "Invia meno con ogni messaggio per risparmiare. Disattivato dà le risposte più affidabili sulla tua casa. Leggero conserva meno cronologia. Medio accorcia anche messaggi e risposte lunghi e inizia ogni turno solo con gli ultimi messaggi. Estremo è solo chat: niente strumenti, quindi non può controllare né comandare la casa.",
-            "check_house": "Attivo per impostazione predefinita. Prima di rispondere a una domanda sulla casa, l'agente controlla Home Assistant, così elenchi e stati sono reali e non indovinati. I saluti vengono saltati. Nessun effetto su Estremo, che non ha strumenti. Disattivalo per domande generali o per un modello che controlla già da solo.",
             "allow_internet": "Disattivato per impostazione predefinita. Attivo aggiunge strumenti di ricerca web e recupero pagine nelle chat admin. Gli indirizzi della rete locale restano bloccati. Le chat degli utenti normali e dei satelliti vocali non li ricevono mai.",
             "assist": "Elenca anche questo assistente in Home Assistant Assist (voce). Disattivo: solo chat AI Workspace, e rimuove ciò che ha aggiunto ad Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Avanzate",
+              "data": {
+                "save_tokens": "Risparmia token"
+              },
+              "data_description": {
+                "save_tokens": "Invia meno a ogni messaggio: un prompt più corto, meno cronologia e risposte più brevi. Costa meno, ma le risposte sulla tua casa possono essere meno accurate."
+              }
+            }
           }
         },
         "provider_azure": {
@@ -383,8 +415,6 @@
             "model": "Distribuzione",
             "azure_api_version": "Versione API",
             "effort": "Impegno",
-            "low_token": "Riduci uso token",
-            "check_house": "Controlla prima Home Assistant",
             "allow_internet": "Consenti Internet",
             "assist": "Aggiungi ad Assist"
           },
@@ -394,10 +424,19 @@
             "model": "Il nome della distribuzione.",
             "azure_api_version": "Lascia il valore predefinito, a meno che il supporto Azure non ti abbia dato un'altra versione.",
             "effort": "Più impegno significa più ragionamento: risposte migliori alle domande difficili, ma più lento e con più token. Ignorato se il modello non lo supporta.",
-            "low_token": "Invia meno con ogni messaggio per risparmiare. Disattivato dà le risposte più affidabili sulla tua casa. Leggero conserva meno cronologia. Medio accorcia anche messaggi e risposte lunghi e inizia ogni turno solo con gli ultimi messaggi. Estremo è solo chat: niente strumenti, quindi non può controllare né comandare la casa.",
-            "check_house": "Attivo per impostazione predefinita. Prima di rispondere a una domanda sulla casa, l'agente controlla Home Assistant, così elenchi e stati sono reali e non indovinati. I saluti vengono saltati. Nessun effetto su Estremo, che non ha strumenti. Disattivalo per domande generali o per un modello che controlla già da solo.",
             "allow_internet": "Disattivato per impostazione predefinita. Attivo aggiunge strumenti di ricerca web e recupero pagine nelle chat admin. Gli indirizzi della rete locale restano bloccati. Le chat degli utenti normali e dei satelliti vocali non li ricevono mai.",
             "assist": "Elenca anche questo assistente in Home Assistant Assist (voce). Disattivo: solo chat AI Workspace, e rimuove ciò che ha aggiunto ad Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Avanzate",
+              "data": {
+                "save_tokens": "Risparmia token"
+              },
+              "data_description": {
+                "save_tokens": "Invia meno a ogni messaggio: un prompt più corto, meno cronologia e risposte più brevi. Costa meno, ma le risposte sulla tua casa possono essere meno accurate."
+              }
+            }
           }
         },
         "provider_compatible": {
@@ -408,8 +447,6 @@
             "api_base": "URL di base API",
             "model": "Modello",
             "effort": "Impegno",
-            "low_token": "Riduci uso token",
-            "check_house": "Controlla prima Home Assistant",
             "allow_internet": "Consenti Internet",
             "assist": "Aggiungi ad Assist",
             "assist_stt": "Aggiungi voce in testo",
@@ -424,8 +461,6 @@
             "api_base": "Indirizzo del server. Aggiungi /v1 alla fine se il server se lo aspetta.",
             "model": "Nome del modello su quel server.",
             "effort": "Più impegno significa più ragionamento: risposte migliori alle domande difficili, ma più lento e con più token. Ignorato se il modello non lo supporta.",
-            "low_token": "Invia meno con ogni messaggio per risparmiare. Disattivato dà le risposte più affidabili sulla tua casa. Leggero conserva meno cronologia. Medio accorcia anche messaggi e risposte lunghi e inizia ogni turno solo con gli ultimi messaggi. Estremo è solo chat: niente strumenti, quindi non può controllare né comandare la casa.",
-            "check_house": "Attivo per impostazione predefinita. Prima di rispondere a una domanda sulla casa, l'agente controlla Home Assistant, così elenchi e stati sono reali e non indovinati. I saluti vengono saltati. Nessun effetto su Estremo, che non ha strumenti. Disattivalo per domande generali o per un modello che controlla già da solo.",
             "allow_internet": "Disattivato per impostazione predefinita. Attivo aggiunge strumenti di ricerca web e recupero pagine nelle chat admin. Gli indirizzi della rete locale restano bloccati. Le chat degli utenti normali e dei satelliti vocali non li ricevono mai.",
             "assist": "Elenca anche questo assistente in Home Assistant Assist (voce). Disattivo: solo chat AI Workspace, e rimuove ciò che ha aggiunto ad Assist.",
             "assist_stt": "Aggiunge un'opzione voce in testo in Home Assistant con la chiave di questo assistente. Disattivo rimuove ciò che ha aggiunto.",
@@ -434,6 +469,17 @@
             "tts_model": "Lascia vuoto per il modello vocale predefinito. Puoi digitare un altro nome se il fornitore ne elenca uno.",
             "tts_voice": "Coral è il valore predefinito. Le voci seguono le lingue impostate in Assist → Lingua.",
             "tts_speed": "Quanto velocemente parla questa voce. 1× è il normale. Vale per AI Workspace e Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Avanzate",
+              "data": {
+                "save_tokens": "Risparmia token"
+              },
+              "data_description": {
+                "save_tokens": "Invia meno a ogni messaggio: un prompt più corto, meno cronologia e risposte più brevi. Costa meno, ma le risposte sulla tua casa possono essere meno accurate."
+              }
+            }
           }
         }
       },
@@ -472,14 +518,6 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "URL MCP personalizzato"
-      }
-    },
-    "low_token": {
-      "options": {
-        "off": "Disattivato",
-        "light": "Light",
-        "medium": "Medium",
-        "extreme": "Extreme"
       }
     }
   }

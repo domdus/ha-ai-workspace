@@ -83,16 +83,20 @@
               "house_map": "Désactivé par défaut. Un index local des liens entre automatisations, entités et pièces, pour qu’une seule recherche réponde à des questions comme « qu’est-ce qui utilise la lumière de la cuisine ? ». Ajoute un peu à chaque message : activez-le seulement si vous demandez souvent comment les choses sont reliées. Les états en direct viennent toujours de Home Assistant.",
               "shorten_mcp_results": "Activé par défaut. Les très longues réponses de Home Assistant (listes de toute la maison, grandes recherches) sont résumées avant d’être envoyées à l’IA. Économise des jetons et garde des réponses rapides. Désactivé envoie le texte complet.",
               "change_history": "Activé par défaut. Garde une trace de chaque modification de configuration faite par l’assistant, pour voir ce qui a changé et lui demander de restaurer une version précédente. Désactivé : plus de nouvelles entrées ; l’assistant peut toujours faire des modifications.",
-              "change_history_ttl_days": "Jours pendant lesquels Rollback et Demander la restauration restent disponibles. Ensuite la ligne reste dans le journal ; restaurer une ancienne copie peut écraser un travail plus récent. Par défaut 7. 1 correspond à environ un jour."
+              "change_history_ttl_days": "Jours pendant lesquels Rollback et Annuler via l’agent restent disponibles. Ensuite la ligne reste dans le journal ; restaurer une ancienne copie peut écraser un travail plus récent. Par défaut 7. 1 correspond à environ un jour."
             }
           },
           "prompt": {
             "name": "Invite système",
             "data": {
-              "system_prompt": "Invite système"
+              "system_prompt": "Invite système",
+              "notes": "Utiliser les notes mémorisées",
+              "notes_text": "Notes mémorisées"
             },
             "data_description": {
-              "system_prompt": "Ton et habitudes uniquement. Laissez vide pour la valeur par défaut. L'assistant garde toujours l'accès à Home Assistant et aux liens rapides dans les réponses."
+              "system_prompt": "Instructions permanentes pour l’assistant : pièces, règles, style de réponse, tout ce qu’il doit suivre. Laissez vide pour la valeur par défaut. L’assistant garde toujours l’accès à Home Assistant et aux liens rapides dans les réponses. Il n’écrit pas dans ce champ.",
+              "notes": "Désactivé par défaut. Activé, l’assistant lit les notes ci-dessous dans chaque discussion et peut les compléter. Désactivé : ni lecture ni écriture dans le chat. Vous pouvez toujours modifier le texte.",
+              "notes_text": "Puces courtes en anglais que l’assistant doit retenir. Il les lit dans chaque discussion et les complète quand vous dites « souviens-toi » (n’importe quelle langue du chat) ou vous plaignez d’une habitude à arrêter. Vous pouvez les modifier ou les vider à tout moment. Maximum 2000 caractères. Une fois plein, l’assistant doit remplacer d’anciennes lignes — rien n’est effacé en silence."
             }
           }
         }
@@ -192,16 +196,20 @@
               "house_map": "Désactivé par défaut. Un index local des liens entre automatisations, entités et pièces, pour qu’une seule recherche réponde à des questions comme « qu’est-ce qui utilise la lumière de la cuisine ? ». Ajoute un peu à chaque message : activez-le seulement si vous demandez souvent comment les choses sont reliées. Les états en direct viennent toujours de Home Assistant.",
               "shorten_mcp_results": "Activé par défaut. Les très longues réponses de Home Assistant (listes de toute la maison, grandes recherches) sont résumées avant d’être envoyées à l’IA. Économise des jetons et garde des réponses rapides. Désactivé envoie le texte complet.",
               "change_history": "Activé par défaut. Garde une trace de chaque modification de configuration faite par l’assistant, pour voir ce qui a changé et lui demander de restaurer une version précédente. Désactivé : plus de nouvelles entrées ; l’assistant peut toujours faire des modifications.",
-              "change_history_ttl_days": "Jours pendant lesquels Rollback et Demander la restauration restent disponibles. Ensuite la ligne reste dans le journal ; restaurer une ancienne copie peut écraser un travail plus récent. Par défaut 7. 1 correspond à environ un jour."
+              "change_history_ttl_days": "Jours pendant lesquels Rollback et Annuler via l’agent restent disponibles. Ensuite la ligne reste dans le journal ; restaurer une ancienne copie peut écraser un travail plus récent. Par défaut 7. 1 correspond à environ un jour."
             }
           },
           "prompt": {
             "name": "Invite système",
             "data": {
-              "system_prompt": "Invite système"
+              "system_prompt": "Invite système",
+              "notes": "Utiliser les notes mémorisées",
+              "notes_text": "Notes mémorisées"
             },
             "data_description": {
-              "system_prompt": "Ton et habitudes uniquement. Laissez vide pour la valeur par défaut. L'assistant garde toujours l'accès à Home Assistant et aux liens rapides dans les réponses."
+              "system_prompt": "Instructions permanentes pour l’assistant : pièces, règles, style de réponse, tout ce qu’il doit suivre. Laissez vide pour la valeur par défaut. L’assistant garde toujours l’accès à Home Assistant et aux liens rapides dans les réponses. Il n’écrit pas dans ce champ.",
+              "notes": "Désactivé par défaut. Activé, l’assistant lit les notes ci-dessous dans chaque discussion et peut les compléter. Désactivé : ni lecture ni écriture dans le chat. Vous pouvez toujours modifier le texte.",
+              "notes_text": "Puces courtes en anglais que l’assistant doit retenir. Il les lit dans chaque discussion et les complète quand vous dites « souviens-toi » (n’importe quelle langue du chat) ou vous plaignez d’une habitude à arrêter. Vous pouvez les modifier ou les vider à tout moment. Maximum 2000 caractères. Une fois plein, l’assistant doit remplacer d’anciennes lignes — rien n’est effacé en silence."
             }
           }
         }
@@ -277,7 +285,8 @@
         "no_runtime": "Impossible de joindre le runtime Cursor. Démarrez-le et vérifiez l'adresse sur ce formulaire.",
         "required": "Ce champ est obligatoire.",
         "invalid_auth": "Le fournisseur a refusé cette clé API.",
-        "cannot_connect": "Impossible de joindre le fournisseur. Vérifiez l'URL et le réseau."
+        "cannot_connect": "Impossible de joindre le fournisseur. Vérifiez l'URL et le réseau.",
+        "model_not_installed": "Ce modèle n’est pas installé dans Ollama. Installés : {installed}"
       },
       "step": {
         "provider": {
@@ -299,8 +308,6 @@
             "cursor_api_key": "Clé API Cursor",
             "model": "Modèle",
             "effort": "Effort",
-            "low_token": "Réduire la consommation de jetons",
-            "check_house": "Consulter d'abord Home Assistant",
             "allow_internet": "Autoriser Internet",
             "assist": "Ajouter à Assist"
           },
@@ -310,10 +317,19 @@
             "cursor_api_key": "Depuis votre compte Cursor (Integrations). Laissez vide à la modification pour garder la clé enregistrée. [Obtenir une clé API]({api_key_url})",
             "model": "Choisissez dans la liste ou saisissez un nom de modèle. Vide utilise Composer.",
             "effort": "Combien de temps de réflexion autoriser. Composer utilise Rapide par défaut.",
-            "low_token": "Envoie moins avec chaque message pour économiser. Désactivé donne les réponses les plus fiables sur votre maison. Léger garde moins d'historique. Moyen raccourcit aussi les longs messages et réponses et commence chaque tour avec seulement les derniers messages. Extrême est uniquement conversationnel : aucun outil, il ne peut ni vérifier ni piloter la maison.",
-            "check_house": "Activé par défaut. Avant de répondre à une question sur votre maison, l'agent consulte Home Assistant, pour que listes et états soient réels et non devinés. Les salutations sont ignorées. Sans effet en Extrême, qui n'a pas d'outils. Désactivez-le pour des questions générales ou un modèle qui vérifie déjà de lui-même.",
             "allow_internet": "Désactivé par défaut. Activé, cet agent peut utiliser la recherche web, la récupération de pages et le shell de Cursor dans les discussions admin. Désactivé retire les trois, donc curl ou des scripts ne peuvent pas non plus accéder au web. Les discussions des utilisateurs normaux et des satellites vocaux ne les ont jamais.",
             "assist": "Affiche aussi cet assistant sous Home Assistant Assist (voix). Désactivé : chat AI Workspace uniquement, et retire ce qu'il a ajouté à Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Avancé",
+              "data": {
+                "save_tokens": "Économiser des jetons"
+              },
+              "data_description": {
+                "save_tokens": "Envoie moins à chaque message : une invite plus courte, moins d’historique et des réponses plus courtes. Moins cher, mais les réponses sur votre maison peuvent être moins complètes."
+              }
+            }
           }
         },
         "provider_cloud": {
@@ -324,8 +340,6 @@
             "api_key": "Clé API",
             "model": "Modèle",
             "effort": "Effort",
-            "low_token": "Réduire la consommation de jetons",
-            "check_house": "Consulter d'abord Home Assistant",
             "allow_internet": "Autoriser Internet",
             "assist": "Ajouter à Assist",
             "assist_stt": "Ajouter parole vers texte",
@@ -340,8 +354,6 @@
             "api_key": "Votre clé chez le fournisseur d'IA, pas votre identifiant Home Assistant. [Obtenir une clé API]({api_key_url})",
             "model": "Choisissez dans la liste ou saisissez un nom de modèle. Vide utilise le défaut du fournisseur.",
             "effort": "Plus d’effort signifie plus de réflexion : de meilleures réponses aux questions difficiles, mais plus lent et plus de jetons. Ignoré si le modèle ne le prend pas en charge.",
-            "low_token": "Envoie moins avec chaque message pour économiser. Désactivé donne les réponses les plus fiables sur votre maison. Léger garde moins d'historique. Moyen raccourcit aussi les longs messages et réponses et commence chaque tour avec seulement les derniers messages. Extrême est uniquement conversationnel : aucun outil, il ne peut ni vérifier ni piloter la maison.",
-            "check_house": "Activé par défaut. Avant de répondre à une question sur votre maison, l'agent consulte Home Assistant, pour que listes et états soient réels et non devinés. Les salutations sont ignorées. Sans effet en Extrême, qui n'a pas d'outils. Désactivez-le pour des questions générales ou un modèle qui vérifie déjà de lui-même.",
             "allow_internet": "Désactivé par défaut. Activé ajoute des outils de recherche web et de récupération de pages dans les discussions admin. Les adresses du réseau local restent bloquées. Les discussions des utilisateurs normaux et des satellites vocaux ne les ont jamais.",
             "assist": "Affiche aussi cet assistant sous Home Assistant Assist (voix). Désactivé : chat AI Workspace uniquement, et retire ce qu'il a ajouté à Assist.",
             "assist_stt": "Ajoute une option parole vers texte dans Home Assistant avec la clé de cet assistant. Désactivé retire ce qu'il a ajouté.",
@@ -350,6 +362,19 @@
             "tts_model": "Laissez vide pour le modèle vocal par défaut. Vous pouvez saisir un autre nom si votre fournisseur en propose.",
             "tts_voice": "Coral est la voix par défaut. Les voix suivent les langues définies sous Assist → Langue.",
             "tts_speed": "Vitesse de cette voix. 1× est normal. S'applique à AI Workspace et Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Avancé",
+              "data": {
+                "save_tokens": "Économiser des jetons",
+                "cache_1h": "Garder le cache une heure"
+              },
+              "data_description": {
+                "save_tokens": "Envoie moins à chaque message : une invite plus courte, moins d’historique et des réponses plus courtes. Moins cher, mais les réponses sur votre maison peuvent être moins complètes.",
+                "cache_1h": "Claude uniquement. Garde le prompt système et les outils en cache pendant une heure au lieu de 5 minutes. L’écriture dans le cache coûte 2× le prix d’entrée au lieu de 1,25× ; la lecture coûte 0,1×. Moins cher quand plus de 5 minutes séparent souvent vos messages, un peu plus cher si vous discutez rarement."
+              }
+            }
           }
         },
         "provider_ollama": {
@@ -359,19 +384,26 @@
             "api_base": "URL Ollama",
             "model": "Modèle",
             "effort": "Effort",
-            "low_token": "Réduire la consommation de jetons",
-            "check_house": "Consulter d'abord Home Assistant",
             "allow_internet": "Autoriser Internet",
             "assist": "Ajouter à Assist"
           },
           "data_description": {
-            "api_base": "En général {example_url}",
+            "api_base": "{ollama_note}",
             "model": "Choisissez dans la liste ou saisissez un modèle installé. Vide utilise llama3.2.",
             "effort": "Plus d’effort signifie plus de réflexion : de meilleures réponses aux questions difficiles, mais plus lent et plus de jetons. Ignoré si le modèle ne le prend pas en charge.",
-            "low_token": "Envoie moins avec chaque message pour économiser. Désactivé donne les réponses les plus fiables sur votre maison. Léger garde moins d'historique. Moyen raccourcit aussi les longs messages et réponses et commence chaque tour avec seulement les derniers messages. Extrême est uniquement conversationnel : aucun outil, il ne peut ni vérifier ni piloter la maison.",
-            "check_house": "Activé par défaut. Avant de répondre à une question sur votre maison, l'agent consulte Home Assistant, pour que listes et états soient réels et non devinés. Les salutations sont ignorées. Sans effet en Extrême, qui n'a pas d'outils. Désactivez-le pour des questions générales ou un modèle qui vérifie déjà de lui-même.",
             "allow_internet": "Désactivé par défaut. Activé ajoute des outils de recherche web et de récupération de pages dans les discussions admin. Les adresses du réseau local restent bloquées. Les discussions des utilisateurs normaux et des satellites vocaux ne les ont jamais.",
             "assist": "Affiche aussi cet assistant sous Home Assistant Assist (voix). Désactivé : chat AI Workspace uniquement, et retire ce qu'il a ajouté à Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Avancé",
+              "data": {
+                "save_tokens": "Économiser des jetons"
+              },
+              "data_description": {
+                "save_tokens": "Envoie moins à chaque message : une invite plus courte, moins d’historique et des réponses plus courtes. Moins cher, mais les réponses sur votre maison peuvent être moins complètes."
+              }
+            }
           }
         },
         "provider_azure": {
@@ -383,8 +415,6 @@
             "model": "Déploiement",
             "azure_api_version": "Version de l'API",
             "effort": "Effort",
-            "low_token": "Réduire la consommation de jetons",
-            "check_house": "Consulter d'abord Home Assistant",
             "allow_internet": "Autoriser Internet",
             "assist": "Ajouter à Assist"
           },
@@ -394,10 +424,19 @@
             "model": "Le nom du déploiement.",
             "azure_api_version": "Gardez la valeur par défaut sauf si le support Azure vous a donné une autre version.",
             "effort": "Plus d’effort signifie plus de réflexion : de meilleures réponses aux questions difficiles, mais plus lent et plus de jetons. Ignoré si le modèle ne le prend pas en charge.",
-            "low_token": "Envoie moins avec chaque message pour économiser. Désactivé donne les réponses les plus fiables sur votre maison. Léger garde moins d'historique. Moyen raccourcit aussi les longs messages et réponses et commence chaque tour avec seulement les derniers messages. Extrême est uniquement conversationnel : aucun outil, il ne peut ni vérifier ni piloter la maison.",
-            "check_house": "Activé par défaut. Avant de répondre à une question sur votre maison, l'agent consulte Home Assistant, pour que listes et états soient réels et non devinés. Les salutations sont ignorées. Sans effet en Extrême, qui n'a pas d'outils. Désactivez-le pour des questions générales ou un modèle qui vérifie déjà de lui-même.",
             "allow_internet": "Désactivé par défaut. Activé ajoute des outils de recherche web et de récupération de pages dans les discussions admin. Les adresses du réseau local restent bloquées. Les discussions des utilisateurs normaux et des satellites vocaux ne les ont jamais.",
             "assist": "Affiche aussi cet assistant sous Home Assistant Assist (voix). Désactivé : chat AI Workspace uniquement, et retire ce qu'il a ajouté à Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Avancé",
+              "data": {
+                "save_tokens": "Économiser des jetons"
+              },
+              "data_description": {
+                "save_tokens": "Envoie moins à chaque message : une invite plus courte, moins d’historique et des réponses plus courtes. Moins cher, mais les réponses sur votre maison peuvent être moins complètes."
+              }
+            }
           }
         },
         "provider_compatible": {
@@ -408,8 +447,6 @@
             "api_base": "URL de base de l'API",
             "model": "Modèle",
             "effort": "Effort",
-            "low_token": "Réduire la consommation de jetons",
-            "check_house": "Consulter d'abord Home Assistant",
             "allow_internet": "Autoriser Internet",
             "assist": "Ajouter à Assist",
             "assist_stt": "Ajouter parole vers texte",
@@ -424,8 +461,6 @@
             "api_base": "Adresse du serveur. Ajoutez /v1 à la fin si votre serveur l'attend.",
             "model": "Nom du modèle sur ce serveur.",
             "effort": "Plus d’effort signifie plus de réflexion : de meilleures réponses aux questions difficiles, mais plus lent et plus de jetons. Ignoré si le modèle ne le prend pas en charge.",
-            "low_token": "Envoie moins avec chaque message pour économiser. Désactivé donne les réponses les plus fiables sur votre maison. Léger garde moins d'historique. Moyen raccourcit aussi les longs messages et réponses et commence chaque tour avec seulement les derniers messages. Extrême est uniquement conversationnel : aucun outil, il ne peut ni vérifier ni piloter la maison.",
-            "check_house": "Activé par défaut. Avant de répondre à une question sur votre maison, l'agent consulte Home Assistant, pour que listes et états soient réels et non devinés. Les salutations sont ignorées. Sans effet en Extrême, qui n'a pas d'outils. Désactivez-le pour des questions générales ou un modèle qui vérifie déjà de lui-même.",
             "allow_internet": "Désactivé par défaut. Activé ajoute des outils de recherche web et de récupération de pages dans les discussions admin. Les adresses du réseau local restent bloquées. Les discussions des utilisateurs normaux et des satellites vocaux ne les ont jamais.",
             "assist": "Affiche aussi cet assistant sous Home Assistant Assist (voix). Désactivé : chat AI Workspace uniquement, et retire ce qu'il a ajouté à Assist.",
             "assist_stt": "Ajoute une option parole vers texte dans Home Assistant avec la clé de cet assistant. Désactivé retire ce qu'il a ajouté.",
@@ -434,6 +469,17 @@
             "tts_model": "Laissez vide pour le modèle vocal par défaut. Vous pouvez saisir un autre nom si votre fournisseur en propose.",
             "tts_voice": "Coral est la voix par défaut. Les voix suivent les langues définies sous Assist → Langue.",
             "tts_speed": "Vitesse de cette voix. 1× est normal. S'applique à AI Workspace et Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Avancé",
+              "data": {
+                "save_tokens": "Économiser des jetons"
+              },
+              "data_description": {
+                "save_tokens": "Envoie moins à chaque message : une invite plus courte, moins d’historique et des réponses plus courtes. Moins cher, mais les réponses sur votre maison peuvent être moins complètes."
+              }
+            }
           }
         }
       },
@@ -472,14 +518,6 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "URL MCP personnalisée"
-      }
-    },
-    "low_token": {
-      "options": {
-        "off": "Désactivé",
-        "light": "Light",
-        "medium": "Medium",
-        "extreme": "Extreme"
       }
     }
   }

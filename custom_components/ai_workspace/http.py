@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import copy
-import hmac
-import ipaddress
 import json
 import logging
 from dataclasses import replace
@@ -27,7 +25,6 @@ from .const import (
     DOMAIN,
     MCP_COOLVER,
     format_ui_page,
-    ha_mcp_is_connected,
     parse_ui_page,
     ui_theme_of,
     CHECK_HOUSE_NOTE,
@@ -39,13 +36,17 @@ from .const import (
     token_mode_checks_house,
     token_mode_clip_user,
     token_mode_fresh_agent,
-    token_mode_history_limit,
     token_mode_reply_limit,
 )
 from .mcp_config import with_mcp_auth
 from .mcp_observe import last_mcp_result, note_mcp_result
 from .mcp_resolve import ha_hosts, hass_mcp_server_url
-from .chat_scope import handoff_note, merge_reply_text, other_chat_note, text_after_tools
+from .callback_keys import Caller
+from .live_turn import end_turn, live_turn, start_turn
+from .local_time import house_zone, stamped_now, time_rule
+from .callback_keys import caller as callback_caller
+from .callback_keys import issue as issue_callback_key
+from .chat_scope import handoff_note, merge_reply_text, other_chat_note, text_after_pause, text_after_tools
 from .error_text import public_error
 from .files import attach_files_to_message, file_events, parse_client_files
 from .images import caption_for, image_events, parse_client_images
@@ -58,6 +59,7 @@ from .redact import redact
 from .small_talk import wants_house_tools
 from .store import Session, Store
 from .titles import accept_generated_title, needs_title_summary, title_from_prompt
+from .usage_cost import estimate_cost
 from .usage_record import dashboard_payload, finalize_usage, record_usage_turn
 
 logger = logging.getLogger(__name__)
@@ -295,16 +297,31 @@ async def _runtime_chat(
         return
     http: ClientSession = async_get_clientsession(hass)
     settings = _runtime(hass).get("settings")
-    standing = standing_chat_prompt(settings, admin=admin, language=language, origin=origin, mode=token_mode)
+    standing = standing_chat_prompt(
+        settings,
+        admin=admin,
+        language=language,
+        origin=origin,
+        mode=token_mode,
+        time_zone_rule=time_rule(house_zone(hass)),
+    )
     if not token_mode_allows_files(token_mode):
         images, files = [], []
     clip = token_mode_clip_user(token_mode)
     if clip:
         message = message[:clip]
-    user_text = attach_files_to_message(message, files or [])
+    user_text = stamped_now(attach_files_to_message(message, files or []), house_zone(hass))
     asked = (question or message).strip()
     if token_mode_checks_house(token_mode, check_house) and not images and wants_house_tools(asked):
         user_text = f"{user_text}\n\n{CHECK_HOUSE_NOTE}"
+    from .notes import notes_update, remember_nudge
+
+    changed_notes = notes_update(hass, settings, session.id, fresh=token_mode_fresh_agent(token_mode))
+    if changed_notes:
+        user_text = f"{user_text}\n\n{changed_notes}"
+    nudge = remember_nudge(settings, asked, admin=admin)
+    if nudge:
+        user_text = f"{user_text}\n\n{nudge}"
     payload: dict[str, Any] = {
         "message": f"{standing}\n\n{user_text}" if standing else user_text,
         "question": (question or message).strip(),
@@ -338,6 +355,8 @@ async def _runtime_chat(
         payload["api_key"] = api_key
     if handoff:
         payload["handoff"] = handoff
+    # The Runtime's Change History callbacks for this turn must carry this key.
+    payload["callback_key"] = issue_callback_key(hass, user_id, session.id, agent or "Cursor")
     sent = {**(headers or _runtime_headers_for(hass, user_id)), "Accept": "text/event-stream"}
     if agent:
         sent["X-Ai-Workspace-Agent"] = agent
@@ -501,15 +520,6 @@ def _default_agent(hass: HomeAssistant, data: dict[str, Any]) -> str:
 
 def _known_agent(hass: HomeAssistant, data: dict[str, Any], agent: str) -> bool:
     return bool(agent) and (agent in (data.get("providers") or {}) or agent in assist_agent_ids(hass))
-
-
-def handoff_rows(rows: list, mode: str) -> list:
-    """Medium and Extreme start a fresh Cursor agent each turn; hand over only as much as a cloud agent gets."""
-    if not token_mode_fresh_agent(mode):
-        return rows
-    limit = token_mode_history_limit(mode)
-    turns = [row for row in rows if str(getattr(row, "role", "") or "") in {"user", "assistant"}]
-    return turns[-(limit + 1) :] if limit else turns[-1:]
 
 
 def _send_provider(data: dict[str, Any], session: Session):
@@ -763,16 +773,29 @@ class SessionView(HomeAssistantView):
     async def get(self, request: web.Request, session_id: str) -> web.Response:
         hass: HomeAssistant = _hass(request)
         store: Store = _runtime(hass)["store"]
-        session = await hass.async_add_executor_job(store.get_session, _user_id(request), session_id)
-        if session is None:
+        user_id = _user_id(request)
+
+        def load():
+            session = store.get_session(user_id, session_id)
+            if session is None:
+                return None
+            return session, store.list_messages(session.id), store.has_session_activity(session.id)
+
+        payload = await hass.async_add_executor_job(load)
+        if payload is None:
             raise web.HTTPNotFound(text="Chat not found.")
-        messages = await hass.async_add_executor_job(store.list_messages, session.id)
+        session, messages, has_activity = payload
         pending = False
         lock = _runtime(hass).get("locks", {}).get(session.id)
         if lock is not None:
             pending = lock.locked()
         return self.json(
-            {**_session_dict(session), "pending": pending, "messages": [_message_dict(item) for item in messages]}
+            {
+                **_session_dict(session),
+                "pending": pending,
+                "has_activity": has_activity,
+                "messages": [_message_dict(item) for item in messages],
+            }
         )
 
     async def patch(self, request: web.Request, session_id: str) -> web.Response:
@@ -969,7 +992,14 @@ class ChatView(HomeAssistantView):
         handoff = ""
         if assist or getattr(provider, "kind", "") == "cursor":
             rows = await hass.async_add_executor_job(store.list_messages, session.id)
-            handoff = handoff_note(handoff_rows(rows, token_mode), session.title)
+            handoff = handoff_note(
+                rows,
+                session.title,
+                mode=token_mode,
+                model=str(getattr(session, "model", "") or getattr(provider, "model", "") or ""),
+                manual_window=int(getattr(settings, "context_window", 0) or 0),
+                zone=house_zone(hass),
+            )
             if getattr(provider, "kind", "") == "cursor":
                 logger.info(
                     "cursor handoff session=%s prior=%s chars=%s",
@@ -1052,9 +1082,12 @@ class ChatView(HomeAssistantView):
             },
         )
         client_gone = False
+        live = start_turn(hass, session.id)
 
         async def send(event: dict) -> None:
             nonlocal client_gone
+            # A reloaded page follows the reply from here, also after this connection is gone.
+            live.publish(event)
             if client_gone:
                 return
             try:
@@ -1093,6 +1126,7 @@ class ChatView(HomeAssistantView):
                 except Exception:
                     logger.debug("change history turn watch skipped", exc_info=True)
             after_tool = False
+            after_pause = False
             try:
                 try:
                     await response.prepare(request)
@@ -1105,9 +1139,16 @@ class ChatView(HomeAssistantView):
                             delta = str(event.get("delta") or "")
                             if after_tool and delta:
                                 after_tool = False
+                                after_pause = False
                                 delta = text_after_tools(parts, delta)
                                 event = {**event, "delta": delta}
+                            elif after_pause and delta:
+                                after_pause = False
+                                delta = text_after_pause(parts, delta)
+                                event = {**event, "delta": delta}
                             parts.append(delta)
+                        elif kind == "status":
+                            after_pause = True
                         elif kind == "result":
                             final = str(event.get("text") or "")
                             continue
@@ -1122,6 +1163,7 @@ class ChatView(HomeAssistantView):
                                     "phase": event.get("phase"),
                                     "text": event.get("text"),
                                     **({"id": event["id"]} if event.get("id") else {}),
+                                    **({"note": event["note"]} if event.get("note") else {}),
                                 }
                             )
                         elif kind == "error":
@@ -1156,6 +1198,10 @@ class ChatView(HomeAssistantView):
                             event = {"type": "title", "title": applied}
                         await send(event)
                 except asyncio.CancelledError:
+                    try:
+                        await asyncio.shield(_record_unbilled(hass, store, user_id, session.id, provider))
+                    except Exception:
+                        logger.debug("stopped turn usage not stored", exc_info=True)
                     answer = merge_reply_text("".join(parts), final)
                     if answer or tools:
                         try:
@@ -1173,6 +1219,7 @@ class ChatView(HomeAssistantView):
                     raise
                 except Exception as exc:
                     logger.exception("chat failed session=%s", session.id)
+                    await _record_unbilled(hass, store, user_id, session.id, provider)
                     error = public_error(redact(str(exc), [settings.cursor_api_key, settings.api_key, settings.mcp_token]))
                     await send({"type": "error", "message": error})
                 answer = merge_reply_text("".join(parts), final)
@@ -1191,6 +1238,7 @@ class ChatView(HomeAssistantView):
                 if error is None:
                     await send({"type": "done", "answer": answer})
             finally:
+                end_turn(hass, session.id, live)
                 if bool(getattr(settings, "change_history", True)):
                     await flush_logical_commit(hass, store, user_id, session.id)
                 _release_lock(data, session.id, lock)
@@ -1214,6 +1262,57 @@ class ChatView(HomeAssistantView):
         jobs.add(task)
         task.add_done_callback(jobs.discard)
         return task
+
+
+class ChatLiveView(HomeAssistantView):
+    """Follow a reply that is still running, for a page that was reloaded in the middle of it.
+
+    Sends every event so far, then a "caught_up" event, then the rest as it happens.
+    204 when nothing is running.
+    """
+
+    url = "/api/ai_workspace/sessions/{session_id}/live"
+    name = "api:ai_workspace:chat_live"
+    requires_auth = True
+    _PING_SECONDS = 15
+
+    async def get(self, request: web.Request, session_id: str) -> web.StreamResponse:
+        hass: HomeAssistant = _hass(request)
+        store: Store = _runtime(hass)["store"]
+        session = await hass.async_add_executor_job(store.get_session, _user_id(request), session_id)
+        if session is None:
+            raise web.HTTPNotFound(text="Chat not found.")
+        turn = live_turn(hass, session.id)
+        if turn is None:
+            return web.Response(status=204)
+        so_far, queue = turn.follow()
+        response = web.StreamResponse(
+            status=200,
+            headers={"Content-Type": "text/event-stream", "Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+        try:
+            await response.prepare(request)
+            for event in so_far:
+                await response.write(_sse(str(event.get("type")), event))
+            await response.write(_sse("caught_up", {"type": "caught_up"}))
+            while True:
+                try:
+                    event = await asyncio.wait_for(queue.get(), timeout=self._PING_SECONDS)
+                except TimeoutError:
+                    # Keeps proxies from closing a quiet connection during a long tool step.
+                    await response.write(b": ping\n\n")
+                    continue
+                if event is None:
+                    break
+                await response.write(_sse(str(event.get("type")), event))
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            # Usually the page went away again.
+            logger.debug("live follow ended session=%s", session.id, exc_info=True)
+        finally:
+            turn.unfollow(queue)
+        return response
 
 
 class ChatStopView(HomeAssistantView):
@@ -1376,6 +1475,96 @@ class CatalogMcpView(HouseMapMcpView):
     name = "api:ai_workspace:catalog:mcp"
 
 
+class NotesMcpView(HomeAssistantView):
+    """Minimal MCP HTTP endpoint for remembered notes."""
+
+    url = "/api/ai_workspace/notes/mcp"
+    name = "api:ai_workspace:notes:mcp"
+    requires_auth = True
+
+    async def post(self, request: web.Request) -> web.Response:
+        hass = _hass(request)
+        _user_id(request)
+        if not _is_admin(request):
+            raise web.HTTPForbidden(text="Remembered notes are for administrators.")
+        settings = _runtime(hass).get("settings")
+        if not getattr(settings, "notes", False):
+            return web.json_response(
+                {"jsonrpc": "2.0", "id": None, "error": {"code": -32000, "message": "Remembered notes are off."}},
+                status=404,
+            )
+        try:
+            body = await request.json()
+        except json.JSONDecodeError:
+            return web.json_response(
+                {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Parse error"}},
+                status=400,
+            )
+        if not isinstance(body, dict):
+            return web.json_response(
+                {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid request"}},
+                status=400,
+            )
+        req_id = body.get("id")
+        method = str(body.get("method") or "")
+        params = body.get("params") if isinstance(body.get("params"), dict) else {}
+        from .notes import TOOL_NAME, NotesClient
+
+        client = NotesClient(hass, admin=True)
+
+        if method == "notifications/initialized" or method.startswith("notifications/"):
+            return web.Response(status=202)
+
+        if method == "initialize":
+            result = {
+                "protocolVersion": "2025-03-26",
+                "capabilities": {"tools": {}},
+                "serverInfo": {"name": "ai-workspace-notes", "version": "1"},
+            }
+        elif method == "tools/list":
+            result = {"tools": await client.list_tools()}
+        elif method == "tools/call":
+            name = str(params.get("name") or "")
+            arguments = params.get("arguments") if isinstance(params.get("arguments"), dict) else {}
+            try:
+                payload = await client.call_tool(name or TOOL_NAME, arguments)
+            except Exception as exc:
+                return web.json_response(
+                    {"jsonrpc": "2.0", "id": req_id, "error": {"code": -32000, "message": str(exc)[:300]}},
+                    status=200,
+                )
+            text = json.dumps(payload, ensure_ascii=False)
+            result = {"content": [{"type": "text", "text": text}], "structuredContent": payload}
+        elif method == "ping":
+            result = {}
+        else:
+            return web.json_response(
+                {
+                    "jsonrpc": "2.0",
+                    "id": req_id,
+                    "error": {"code": -32601, "message": f"Method not found: {method}"},
+                },
+                status=200,
+            )
+        if req_id is None:
+            return web.Response(status=202)
+        return web.json_response({"jsonrpc": "2.0", "id": req_id, "result": result})
+
+
+async def _record_unbilled(hass: HomeAssistant, store: Store, user_id: str, session_id: str, provider: Any) -> None:
+    """A stopped or failed turn still used tokens. Record the requests that finished."""
+    take = getattr(provider, "take_unbilled", None)
+    usage = take(session_id) if callable(take) else None
+    if usage is None:
+        return
+    billed = estimate_cost(usage, model=usage.model or str(getattr(provider, "model", "") or ""))
+    if billed.empty():
+        return
+    await record_usage_turn(
+        hass, store=store, user_id=user_id, session_id=session_id, provider=provider, usage=billed, origin="chat"
+    )
+
+
 def _agent_label(provider: Any) -> str:
     info = getattr(provider, "info", None)
     return str(getattr(info, "label", "") or "Cursor")
@@ -1406,21 +1595,12 @@ async def _activity_kwargs(
     return {"on_tool": on_tool}
 
 
-def _runtime_token_ok(request: web.Request) -> bool:
-    expected = str((_runtime(_hass(request)).get("runtime_token") or "")).strip()
-    scheme, _, value = str(request.headers.get("Authorization") or "").partition(" ")
-    provided = value.strip() if scheme.lower() == "bearer" else ""
-    if expected:
-        return bool(provided) and hmac.compare_digest(provided.encode(), expected.encode())
-    # Without a token only a Runtime on this host (bound to loopback) may call in.
-    return _loopback_remote(request)
-
-
-def _loopback_remote(request: web.Request) -> bool:
-    try:
-        return ipaddress.ip_address(str(request.remote or "").split("%", 1)[0]).is_loopback
-    except ValueError:
-        return False
+def _runtime_caller(request: web.Request) -> Caller:
+    """The user and chat a Runtime callback belongs to. Only a key Home Assistant issued counts."""
+    found = callback_caller(_hass(request), request.headers.get("Authorization"))
+    if found is None:
+        raise web.HTTPUnauthorized()
+    return found
 
 
 def _activity_ttl_days(settings) -> int:
@@ -1432,14 +1612,13 @@ def _activity_expired(row, settings) -> bool:
 
 
 def _activity_dict(
-    row, chat: str = "", *, admin: bool = False, ha_mcp: bool = False, expired: bool = False
+    row, chat: str = "", *, admin: bool = False, expired: bool = False
 ) -> dict:
     undone = bool(row.undone_at)
     can_rollback, ask = activity_restore_flags(
         snapshot=bool(row.can_rollback),
         undone=undone,
         admin=admin,
-        ha_mcp=ha_mcp,
         expired=expired,
     )
     return {
@@ -1455,6 +1634,8 @@ def _activity_dict(
         "can_rollback": can_rollback,
         "undone_at": row.undone_at or "",
         "ask_restore": ask,
+        # Offered when Rollback fails, instead of a second button on every row.
+        "agent_undo": bool(admin and not undone and not expired),
         "logical_commit": bool(getattr(row, "logical_commit", False)),
         "change_count": int(getattr(row, "change_count", 0) or 0),
         "restore_kind": getattr(row, "restore_kind", "") or "",
@@ -1477,17 +1658,12 @@ class ActivityView(HomeAssistantView):
         rows = await hass.async_add_executor_job(lambda: store.list_activity(user_id, admin=admin))
         titles = await hass.async_add_executor_job(store.session_titles, [row.session_id for row in rows])
         settings = _runtime(hass).get("settings")
-        ha_mcp = ha_mcp_is_connected(
-            str(getattr(settings, "mcp_kind", "") or "") if settings else "",
-            list(getattr(settings, "mcp_rows", None) or []) if settings else None,
-        )
         return self.json(
             [
                 _activity_dict(
                     row,
                     titles.get(row.session_id) or "",
                     admin=admin,
-                    ha_mcp=ha_mcp,
                     expired=_activity_expired(row, settings),
                 )
                 for row in rows
@@ -1527,7 +1703,7 @@ class ActivityRollbackView(HomeAssistantView):
             logger.warning("Change History rollback refused: missing document for %s", row_id)
             raise web.HTTPBadRequest(text="This change cannot be rolled back.")
         try:
-            await rollback(hass, document)
+            await rollback(hass, document, request.headers.get("Authorization", ""))
         except ActivityError as exc:
             logger.warning("Change History rollback failed: %s", exc)
             raise web.HTTPBadRequest(text=str(exc)) from exc
@@ -1550,8 +1726,7 @@ class McpProxyView(HomeAssistantView):
         return self.json(last_mcp_result(_hass(request)) or {})
 
     async def post(self, request: web.Request) -> web.Response:
-        if not _runtime_token_ok(request):
-            raise web.HTTPUnauthorized()
+        _runtime_caller(request)
         try:
             body = await request.json()
         except json.JSONDecodeError:
@@ -1578,8 +1753,7 @@ class ActivityPrepareView(HomeAssistantView):
     async def post(self, request: web.Request) -> web.Response:
         from .activity_ha import prepare
 
-        if not _runtime_token_ok(request):
-            raise web.HTTPUnauthorized()
+        who = _runtime_caller(request)
         hass = _hass(request)
         settings = _runtime(hass).get("settings")
         if not bool(getattr(settings, "change_history", True)):
@@ -1590,9 +1764,8 @@ class ActivityPrepareView(HomeAssistantView):
             raise web.HTTPBadRequest(text="Invalid JSON.") from None
         if not isinstance(body, dict):
             raise web.HTTPBadRequest(text="Invalid JSON.")
-        user_id = str(body.get("user_id") or "").strip()
-        if not user_id:
-            return self.json({"token": None})
+        # From the key, never from the body.
+        user_id = who.user_id
         user = await hass.auth.async_get_user(user_id)
         user_name = str(getattr(user, "name", "") or "") if user else ""
         arguments = body.get("arguments") if isinstance(body.get("arguments"), dict) else {}
@@ -1600,10 +1773,10 @@ class ActivityPrepareView(HomeAssistantView):
             hass,
             user_id,
             user_name or user_id,
-            str(body.get("agent") or "Cursor"),
+            who.agent,
             str(body.get("tool") or ""),
             arguments,
-            str(body.get("session_id") or ""),
+            who.session_id,
         )
         return self.json({"token": token})
 
@@ -1616,8 +1789,7 @@ class ActivityCommitView(HomeAssistantView):
     async def post(self, request: web.Request) -> web.Response:
         from .activity_ha import commit
 
-        if not _runtime_token_ok(request):
-            raise web.HTTPUnauthorized()
+        who = _runtime_caller(request)
         try:
             body = await request.json()
         except json.JSONDecodeError:
@@ -1626,7 +1798,7 @@ class ActivityCommitView(HomeAssistantView):
             raise web.HTTPBadRequest(text="Invalid JSON.")
         hass = _hass(request)
         store: Store = _runtime(hass)["store"]
-        await commit(hass, store, str(body.get("token") or ""), ok=bool(body.get("ok")))
+        await commit(hass, store, str(body.get("token") or ""), ok=bool(body.get("ok")), user_id=who.user_id)
         return self.json({"ok": True})
 
 
@@ -1673,8 +1845,10 @@ def register_views(hass: HomeAssistant) -> None:
     hass.http.register_view(SessionView)
     hass.http.register_view(ChatView)
     hass.http.register_view(ChatStopView)
+    hass.http.register_view(ChatLiveView)
     hass.http.register_view(HouseMapMcpView)
     hass.http.register_view(CatalogMcpView)
+    hass.http.register_view(NotesMcpView)
     hass.http.register_view(ActivityView)
     hass.http.register_view(ActivityRollbackView)
     hass.http.register_view(McpProxyView)

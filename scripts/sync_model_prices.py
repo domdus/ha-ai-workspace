@@ -31,7 +31,17 @@ FIELDS = {
     "output": "output_cost_per_token",
     "cache_read": "cache_read_input_token_cost",
     "cache_write": "cache_creation_input_token_cost",
+    # Anthropic: a cache entry kept for an hour costs more to write than the 5-minute one.
+    "cache_write_1h": "cache_creation_input_token_cost_above_1hr",
 }
+# Long prompts cost more on some models (Gemini Pro above 200k, GPT-5.4 above 272k).
+# The tier is picked by the size of one request's input.
+TIERS = (100, 128, 200, 272)
+for _tier in TIERS:
+    FIELDS[f"input_above_{_tier}k"] = f"input_cost_per_token_above_{_tier}k_tokens"
+    FIELDS[f"output_above_{_tier}k"] = f"output_cost_per_token_above_{_tier}k_tokens"
+    FIELDS[f"cache_read_above_{_tier}k"] = f"cache_read_input_token_cost_above_{_tier}k_tokens"
+    FIELDS[f"cache_write_above_{_tier}k"] = f"cache_creation_input_token_cost_above_{_tier}k_tokens"
 # Speech priced per second is turned into per character (about 15 spoken characters per second).
 CHARS_PER_SECOND = 15
 CHARS_PER_TOKEN = 4

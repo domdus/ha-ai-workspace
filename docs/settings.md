@@ -20,11 +20,13 @@ Turning off **All LLM APIs** or unloading **MCP Server** in Home Assistant hides
 
 ## System prompt
 
-This is the standing instruction for the assistant. Use it for how you name rooms, which automations to leave alone, how short answers should be, or any other house rule.
+This is the standing instruction for the assistant. Use it for how you name rooms, which automations to leave alone, how short answers should be, or any other house rule. The assistant does not write in this field.
 
 What you write here replaces the built-in prompt. Leave the field empty to keep the built-in text, which covers helping with this Home Assistant and asking before it changes the house. The same text is used for cloud APIs and the Cursor runtime.
 
 Tappable links to automations, entities, helpers, and devices are always added. You do not need to mention those in the prompt.
+
+**Remembered notes** are optional and sit on the same form. They do not replace the system prompt. A switch (off by default) decides whether the assistant may use them. When it is on, the assistant reads the notes in every chat and writes English bullets if you ask it to remember something (in any chat language) or complain about a habit it should stop. When it is off, chat neither reads nor writes them; you can still edit the text. The cap is 2000 characters. A new note that does not fit is refused until older lines are replaced. Live house states still come from tools, not from these notes. To remove a note, the assistant names that one line; it cannot clear several lines with one word. Each change the assistant makes is in Change History, where you can undo it. YAML `notes: false` is the same as the switch off. YAML `notes_text` sets the notes when you change that value; notes the assistant adds later stay until you edit `notes_text` again.
 
 ## AI Workspace settings
 
@@ -70,11 +72,15 @@ Collapsed by default. The defaults suit most homes.
 | **Config catalog** | Off by default. A local index of how automations, entities, and areas are connected. | [Why this is off by default](#config-catalog). |
 | **Shorten long Home Assistant answers** | On by default. Very long lists are summarized before they go to the model. | [Saves tokens](mcp.md#shorten-long-home-assistant-answers) and keeps replies quick. |
 | **Change History** | On by default. Records every configuration change the assistant made. | [See what changed](mcp.md#change-history). Automations, scripts, and scenes also get a YAML copy for [when Home Assistant will not start](mcp.md#if-home-assistant-will-not-start). |
-| **Rollback for** | Days Rollback and Ask to restore stay available (default 7, 1–90). | After that the row stays in the log. Restoring an old snapshot can overwrite later work. |
+| **Rollback for** | Days Rollback and Undo with agent stay available (default 7, 1–90). | After that the row stays in the log. Restoring an old snapshot can overwrite later work. |
 
 ### System prompt
 
 Collapsed by default. See [System prompt](#system-prompt). Empty uses the built-in text.
+
+| Option | What it does | Why it matters |
+| --- | --- | --- |
+| **Remembered notes** | Off by default. Switch plus a text field. When the switch is on, the assistant reads the English bullets and can add to them when you say “remember this” or complain about a habit. When it is off, chat neither reads nor writes them. Maximum 2000 characters. | A small, visible, optional memory — not a hidden profile. Stored separately from the system prompt. When the field is full, the assistant must replace older lines. Nothing is deleted silently. YAML `notes: false` is the same as the switch off. |
 
 ## Connection settings
 
@@ -91,23 +97,23 @@ On each agent (**Add agent**, or the edit button on an agent row).
 | **Copy key from** | Uses a key already stored by OpenRouter, OpenAI, Claude, Gemini, Ollama, or Azure in Home Assistant. That other integration stays as it is. | You do not paste the same key twice. |
 | **API key** | Paste a key, or open **Get an API key** under the field for that provider’s console. Leave blank when editing to keep the saved key. | You do not have to hunt for the signup page. |
 | **Model** | Lists the models your key can use, fetched from the provider (Cursor through the runtime). Without a key yet, or when the provider does not answer, it lists the models AI Workspace knows for that provider. You can also type any model id. | Newer or dated model ids, for example `claude-haiku-4-5-20251001`, work even when they are not in the list. |
-| **Reduce token usage** | Off, Light, Medium, or Extreme. Every agent has its own, Cursor included. | [How much each message sends](cost.md#reduce-token-usage). Keep Ollama on Off and save on an expensive model. |
-| **Look at Home Assistant first** | On by default. Before answering a question about the house, the agent looks at Home Assistant. No effect on Extreme, which has no tools. | [Why this is on](#always-check-the-house-first). One extra tool round on questions that do not need the house. |
+| **Save tokens** (under **Advanced**) | Off by default. Sends a shorter prompt, less history, and shorter replies. Every agent has its own, Cursor included. | [What it changes](cost.md#save-tokens). Turn it on for an expensive model you use for quick questions. |
+| **Keep the cache for an hour** (under **Advanced**, Claude agents only) | Off by default. Keeps the cached system prompt and tools for an hour instead of 5 minutes. | [When it pays off](cost.md#prompt-cache). Cheaper when your messages are minutes apart; a cache write costs 2× instead of 1.25× input. |
 | **Allow internet** | Off by default. Cloud agents: adds `web_search` and `web_fetch` (public addresses only, never your local network). Cursor: keeps Cursor's web search, page fetch, and shell; off removes all three. Admin chats only. | Look up docs, prices, or release notes from the chat. See [Internet access](privacy.md#internet-access). |
 | **Effort** | Default, Fast, High, or High fast, when the model supports it. If it does not, the request still goes through. | High thinks longer: better on hard questions, but slower and more tokens. Fast is cheaper and quicker. |
 | **Cursor runtime address / Runtime password** | Only on Cursor agents. Leave the address empty when the form shows **Runtime found**. | Pairs Home Assistant with the Cursor runtime. See [Runtime token](../README.md#runtime-token). |
 | **Add to Assist** | On adds a Voice assistants pipeline for this agent. Off removes it again and keeps the agent in AI Workspace only. | Use the same model from Home Assistant’s Assist dialog. |
-| **Add Speech-to-text / Text-to-speech** | OpenAI, OpenRouter, OpenAI-compatible, and Gemini. OpenAI-style is on by default. Gemini uses native generateContent (not Whisper / `/audio/*`) and stays off on agents you already added. Uses this agent’s key. Off removes that engine. | Listen and speak with the same key. Cursor, Claude, Azure, and Ollama have no speech API of their own. |
+| **Add Speech-to-text / Text-to-speech** | OpenAI, OpenRouter, OpenAI-compatible, and Gemini. Grok (xAI) has Text-to-speech only (26 voices, 1× to 1.5×, no model to pick). OpenAI-style is on by default. Gemini uses native generateContent (not Whisper / `/audio/*`). Gemini and Grok stay off on agents you already added. Uses this agent’s key. Off removes that engine. | Listen and speak with the same key. Cursor, Claude, Azure, and Ollama have no speech API of their own. |
 
 ## Always check the house first
 
 A model that is not told otherwise answers from what it guesses. For a house that means invented automations, wrong counts, or “the light is off” while it is on — said with confidence. Asking “use a tool” in the prompt is not enough on its own.
 
-With **Look at Home Assistant first** on an agent, a cloud model must call a Home Assistant tool before it answers, so lists, counts, and states come from your instance. After that first call it decides freely. Cursor cannot be forced to call a tool, so a Cursor agent is told to look first on each house question.
+So every agent with tools looks at Home Assistant first: a cloud model must call a Home Assistant tool before it answers a question about the house, so lists, counts, and states come from your instance. After that first call it decides freely. Cursor cannot be forced to call a tool, so a Cursor agent is told to look first on each house question.
 
-It is on by default because a wrong answer about the house costs more than one extra tool call. Greetings, thanks, and messages with images or files are never forced.
+It may write one status line before the first tool call, or when it starts a change — a natural complete sentence in your language that names what it is about to do, not a generic filler. At most one such line per turn; nothing between later tool calls.
 
-Turn it off on an agent you mostly use for general questions, or for a model that already checks on its own. On **Extreme** it has no effect: that level sends no tools.
+A wrong answer about the house costs more than one extra tool call, so this is always on and not on the agent form. Greetings, thanks, and messages with images or files are never forced. To turn it off for one agent anyway, set `check_house: false` on that agent in YAML.
 
 ## Config catalog
 
@@ -129,4 +135,4 @@ The integration is still configured in the UI. If you add an `ai_workspace:` blo
 - Put API keys in `secrets.yaml` and use `!secret`.
 - YAML changes need a restart. The UI still works after that; YAML wins again on the next start.
 
-Quote `low_token: "off"` (YAML `off` would be read as false). Full copy-paste example: [configuration.example.yaml](configuration.example.yaml).
+`low_token` takes `"off"`, `medium` (Save tokens), or `extreme` (chat only). Quote `"off"` (YAML `off` would be read as false). Full copy-paste example: [configuration.example.yaml](configuration.example.yaml).

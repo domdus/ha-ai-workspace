@@ -17,7 +17,7 @@ from custom_components.ai_workspace.const import (
     provider_token_mode,
     standing_chat_prompt,
 )
-from custom_components.ai_workspace.http import handoff_rows
+from custom_components.ai_workspace.chat_scope import handoff_note
 
 
 def _cursor(**raw):
@@ -39,14 +39,16 @@ def test_cursor_standing_prompt_follows_the_level() -> None:
     assert CHECK_HOUSE_NOTE not in full
 
 
-def test_fresh_cursor_turns_hand_over_only_the_allowed_history() -> None:
-    rows = [SimpleNamespace(role="user" if i % 2 else "assistant", n=i) for i in range(20)]
-    rows.insert(15, SimpleNamespace(role="tool", n=-1))
-    turns = [row for row in rows if row.role != "tool"]
-    assert handoff_rows(rows, TOKEN_MODE_OFF) == rows
-    assert handoff_rows(rows, TOKEN_MODE_LIGHT) == rows
-    assert handoff_rows(rows, TOKEN_MODE_MEDIUM) == turns[-5:]
-    assert handoff_rows(rows, TOKEN_MODE_EXTREME) == turns[-1:]
+def test_cursor_handoff_follows_the_token_level() -> None:
+    rows = [SimpleNamespace(role="user" if i % 2 == 0 else "assistant", content=f"turn {i} " + "x" * 3000, events="[]") for i in range(40)]
+    rows.append(SimpleNamespace(role="user", content="now", events="[]"))
+    full = handoff_note(rows, mode=TOKEN_MODE_OFF, model="claude-sonnet-4-5")
+    light = handoff_note(rows, mode=TOKEN_MODE_LIGHT, model="claude-sonnet-4-5")
+    medium = handoff_note(rows, mode=TOKEN_MODE_MEDIUM, model="claude-sonnet-4-5")
+    assert len(full) > len(light) > len(medium) > 0
+    assert "turn 39" in medium
+    # Chat only still hands over the last few messages.
+    assert "turn 39" in handoff_note(rows, mode=TOKEN_MODE_EXTREME)
 
 
 class _Entries:

@@ -83,16 +83,20 @@
               "house_map": "Standardmäßig aus. Ein lokaler Index, wie Automationen, Entitäten und Bereiche zusammenhängen, damit eine Abfrage Fragen wie „Was nutzt das Küchenlicht?“ beantwortet. Fügt jeder Nachricht etwas hinzu, also nur einschalten, wenn du oft fragst, wie Dinge verknüpft sind. Live-Zustände kommen weiter aus Home Assistant.",
               "shorten_mcp_results": "Standardmäßig an. Sehr lange Antworten von Home Assistant (Listen des ganzen Hauses, große Suchen) werden zusammengefasst, bevor sie an die KI gehen. Spart Tokens und hält Antworten flott. Aus sendet den vollen Text.",
               "change_history": "Standardmäßig an. Protokolliert jede Konfigurationsänderung des Assistenten, damit du siehst, was sich geändert hat, und eine frühere Version wiederherstellen lassen kannst. Aus stoppt neue Einträge; der Assistent kann weiterhin Änderungen machen.",
-              "change_history_ttl_days": "Tage, die Rollback und „Wiederherstellen lassen“ verfügbar bleiben. Danach bleibt der Eintrag im Protokoll; ein altes Abbild kann spätere Änderungen überschreiben. Standard 7. 1 ist etwa ein Tag."
+              "change_history_ttl_days": "Tage, die Rollback und „Vom Agenten rückgängig machen“ verfügbar bleiben. Danach bleibt der Eintrag im Protokoll; ein altes Abbild kann spätere Änderungen überschreiben. Standard 7. 1 ist etwa ein Tag."
             }
           },
           "prompt": {
             "name": "System-Prompt",
             "data": {
-              "system_prompt": "System-Prompt"
+              "system_prompt": "System-Prompt",
+              "notes": "Merknotizen verwenden",
+              "notes_text": "Merknotizen"
             },
             "data_description": {
-              "system_prompt": "Nur Ton und Gewohnheiten. Leer lassen für die Voreinstellung. Zugriff auf Home Assistant und Kurzlinks in Antworten bleibt immer aktiv."
+              "system_prompt": "Feste Anweisungen für den Assistenten — Räume, Regeln, Antwortstil, alles was er beachten soll. Leer lassen für die Voreinstellung. Zugriff auf Home Assistant und Kurzlinks in Antworten bleibt immer aktiv. Der Assistent schreibt hier nicht.",
+              "notes": "Standardmäßig aus. Nur wenn an, liest der Assistent die Einträge unten und darf sie im Chat ergänzen. Aus: weder lesen noch schreiben. Den Text kannst du trotzdem jederzeit bearbeiten.",
+              "notes_text": "Kurze englische Spiegelstriche, die der Assistent behalten soll. Er liest sie in jedem Chat und ergänzt sie, wenn du „merke dir“ sagst (beliebige Chat-Sprache) oder dich über etwas beschwerst, das er lassen soll. Du kannst sie jederzeit bearbeiten oder leeren. Höchstens 2000 Zeichen. Ist das Limit voll, muss der Assistent ältere Zeilen ersetzen — nichts wird still gelöscht."
             }
           }
         }
@@ -192,16 +196,20 @@
               "house_map": "Standardmäßig aus. Ein lokaler Index, wie Automationen, Entitäten und Bereiche zusammenhängen, damit eine Abfrage Fragen wie „Was nutzt das Küchenlicht?“ beantwortet. Fügt jeder Nachricht etwas hinzu, also nur einschalten, wenn du oft fragst, wie Dinge verknüpft sind. Live-Zustände kommen weiter aus Home Assistant.",
               "shorten_mcp_results": "Standardmäßig an. Sehr lange Antworten von Home Assistant (Listen des ganzen Hauses, große Suchen) werden zusammengefasst, bevor sie an die KI gehen. Spart Tokens und hält Antworten flott. Aus sendet den vollen Text.",
               "change_history": "Standardmäßig an. Protokolliert jede Konfigurationsänderung des Assistenten, damit du siehst, was sich geändert hat, und eine frühere Version wiederherstellen lassen kannst. Aus stoppt neue Einträge; der Assistent kann weiterhin Änderungen machen.",
-              "change_history_ttl_days": "Tage, die Rollback und „Wiederherstellen lassen“ verfügbar bleiben. Danach bleibt der Eintrag im Protokoll; ein altes Abbild kann spätere Änderungen überschreiben. Standard 7. 1 ist etwa ein Tag."
+              "change_history_ttl_days": "Tage, die Rollback und „Vom Agenten rückgängig machen“ verfügbar bleiben. Danach bleibt der Eintrag im Protokoll; ein altes Abbild kann spätere Änderungen überschreiben. Standard 7. 1 ist etwa ein Tag."
             }
           },
           "prompt": {
             "name": "System-Prompt",
             "data": {
-              "system_prompt": "System-Prompt"
+              "system_prompt": "System-Prompt",
+              "notes": "Merknotizen verwenden",
+              "notes_text": "Merknotizen"
             },
             "data_description": {
-              "system_prompt": "Nur Ton und Gewohnheiten. Leer lassen für die Voreinstellung. Zugriff auf Home Assistant und Kurzlinks in Antworten bleibt immer aktiv."
+              "system_prompt": "Feste Anweisungen für den Assistenten — Räume, Regeln, Antwortstil, alles was er beachten soll. Leer lassen für die Voreinstellung. Zugriff auf Home Assistant und Kurzlinks in Antworten bleibt immer aktiv. Der Assistent schreibt hier nicht.",
+              "notes": "Standardmäßig aus. Nur wenn an, liest der Assistent die Einträge unten und darf sie im Chat ergänzen. Aus: weder lesen noch schreiben. Den Text kannst du trotzdem jederzeit bearbeiten.",
+              "notes_text": "Kurze englische Spiegelstriche, die der Assistent behalten soll. Er liest sie in jedem Chat und ergänzt sie, wenn du „merke dir“ sagst (beliebige Chat-Sprache) oder dich über etwas beschwerst, das er lassen soll. Du kannst sie jederzeit bearbeiten oder leeren. Höchstens 2000 Zeichen. Ist das Limit voll, muss der Assistent ältere Zeilen ersetzen — nichts wird still gelöscht."
             }
           }
         }
@@ -277,7 +285,8 @@
         "no_runtime": "Cursor-Runtime nicht erreichbar. Starte sie und prüfe die Adresse in diesem Formular.",
         "required": "Dieses Feld ist erforderlich.",
         "invalid_auth": "Der Anbieter hat diesen API-Schlüssel abgelehnt.",
-        "cannot_connect": "Der Anbieter ist nicht erreichbar. Prüfe die URL und das Netzwerk."
+        "cannot_connect": "Der Anbieter ist nicht erreichbar. Prüfe die URL und das Netzwerk.",
+        "model_not_installed": "Dieses Modell ist in Ollama nicht installiert. Installiert: {installed}"
       },
       "step": {
         "provider": {
@@ -299,8 +308,6 @@
             "cursor_api_key": "Cursor-API-Schlüssel",
             "model": "Modell",
             "effort": "Aufwand",
-            "low_token": "Tokenverbrauch reduzieren",
-            "check_house": "Zuerst in Home Assistant nachsehen",
             "allow_internet": "Internetzugriff erlauben",
             "assist": "Zu Assist hinzufügen"
           },
@@ -310,10 +317,19 @@
             "cursor_api_key": "Aus deinem Cursor-Konto (Integrations). Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten. [API-Schlüssel holen]({api_key_url})",
             "model": "Aus der Liste wählen oder Modellnamen eingeben. Leer nutzt Composer.",
             "effort": "Wie viel Denkzeit erlaubt ist. Composer nutzt standardmäßig Schnell.",
-            "low_token": "Sendet mit jeder Nachricht weniger, um Geld zu sparen. Aus liefert die zuverlässigsten Antworten zu deinem Zuhause. Leicht behält weniger Chatverlauf. Mittel kürzt zusätzlich lange Nachrichten und Antworten und startet jede Runde nur mit den letzten Nachrichten. Extrem ist nur Chat: keine Werkzeuge, daher kann es das Haus weder prüfen noch steuern.",
-            "check_house": "Standardmäßig an. Bevor der Agent eine Frage zu deinem Zuhause beantwortet, sieht er in Home Assistant nach, damit Listen und Zustände echt sind und nicht geraten. Begrüßungen werden übersprungen. Wirkt nicht bei Extrem, das keine Werkzeuge hat. Schalte es für allgemeine Fragen aus oder für ein Modell, das ohnehin selbst nachsieht.",
             "allow_internet": "Standardmäßig aus. An erlaubt diesem Agenten in Admin-Chats Cursors Websuche, Seitenabruf und Shell. Aus entfernt alle drei, damit auch curl oder Skripte nicht ins Internet kommen. Chats normaler Benutzer und Sprachsatelliten bekommen sie nie.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Erweitert",
+              "data": {
+                "save_tokens": "Tokens sparen"
+              },
+              "data_description": {
+                "save_tokens": "Sendet mit jeder Nachricht weniger: einen kürzeren Prompt, weniger Chatverlauf und kürzere Antworten. Günstiger, aber Antworten zu deinem Zuhause können weniger gründlich sein."
+              }
+            }
           }
         },
         "provider_cloud": {
@@ -324,8 +340,6 @@
             "api_key": "API-Schlüssel",
             "model": "Modell",
             "effort": "Aufwand",
-            "low_token": "Tokenverbrauch reduzieren",
-            "check_house": "Zuerst in Home Assistant nachsehen",
             "allow_internet": "Internetzugriff erlauben",
             "assist": "Zu Assist hinzufügen",
             "assist_stt": "Sprache-zu-Text anlegen",
@@ -340,8 +354,6 @@
             "api_key": "Schlüssel vom KI-Anbieter, nicht dein Home-Assistant-Login. [API-Schlüssel holen]({api_key_url})",
             "model": "Wähle eines oder gib eine ID ein. Leer lässt den Standard des Anbieters.",
             "effort": "Mehr Aufwand heißt mehr Nachdenken: bessere Antworten auf schwere Fragen, aber langsamer und mehr Tokens. Wird ignoriert, wenn das Modell es nicht unterstützt.",
-            "low_token": "Sendet mit jeder Nachricht weniger, um Geld zu sparen. Aus liefert die zuverlässigsten Antworten zu deinem Zuhause. Leicht behält weniger Chatverlauf. Mittel kürzt zusätzlich lange Nachrichten und Antworten und startet jede Runde nur mit den letzten Nachrichten. Extrem ist nur Chat: keine Werkzeuge, daher kann es das Haus weder prüfen noch steuern.",
-            "check_house": "Standardmäßig an. Bevor der Agent eine Frage zu deinem Zuhause beantwortet, sieht er in Home Assistant nach, damit Listen und Zustände echt sind und nicht geraten. Begrüßungen werden übersprungen. Wirkt nicht bei Extrem, das keine Werkzeuge hat. Schalte es für allgemeine Fragen aus oder für ein Modell, das ohnehin selbst nachsieht.",
             "allow_internet": "Standardmäßig aus. An fügt in Admin-Chats Werkzeuge für Websuche und Seitenabruf hinzu. Adressen im lokalen Netzwerk bleiben gesperrt. Chats normaler Benutzer und Sprachsatelliten bekommen sie nie.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat.",
             "assist_stt": "Fügt in Home Assistant eine Sprache-zu-Text-Option mit dem Schlüssel dieses Assistenten hinzu. Aus entfernt, was er angelegt hat.",
@@ -350,6 +362,19 @@
             "tts_model": "Leer für das Standard-Sprachmodell. Optional einen anderen Namen eingeben.",
             "tts_voice": "Coral ist der Standard. Stimmen passen zu den Sprachen unter Assist → Sprache.",
             "tts_speed": "Wie schnell diese Stimme spricht. 1× ist normal. Gilt für AI Workspace und Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Erweitert",
+              "data": {
+                "save_tokens": "Tokens sparen",
+                "cache_1h": "Cache eine Stunde behalten"
+              },
+              "data_description": {
+                "save_tokens": "Sendet mit jeder Nachricht weniger: einen kürzeren Prompt, weniger Chatverlauf und kürzere Antworten. Günstiger, aber Antworten zu deinem Zuhause können weniger gründlich sein.",
+                "cache_1h": "Nur Claude. Hält Systemprompt und Werkzeuge eine Stunde statt 5 Minuten im Cache. Das Schreiben in den Cache kostet das 2-Fache statt das 1,25-Fache des Eingabepreises, das Lesen das 0,1-Fache. Günstiger, wenn zwischen deinen Nachrichten oft mehr als 5 Minuten liegen; etwas teurer, wenn du selten chattest."
+              }
+            }
           }
         },
         "provider_ollama": {
@@ -359,19 +384,26 @@
             "api_base": "Ollama-URL",
             "model": "Modell",
             "effort": "Aufwand",
-            "low_token": "Tokenverbrauch reduzieren",
-            "check_house": "Zuerst in Home Assistant nachsehen",
             "allow_internet": "Internetzugriff erlauben",
             "assist": "Zu Assist hinzufügen"
           },
           "data_description": {
-            "api_base": "Meist {example_url}",
+            "api_base": "{ollama_note}",
             "model": "Wähle eines oder gib einen gezogenen Modellnamen ein. Leer nutzt llama3.2.",
             "effort": "Mehr Aufwand heißt mehr Nachdenken: bessere Antworten auf schwere Fragen, aber langsamer und mehr Tokens. Wird ignoriert, wenn das Modell es nicht unterstützt.",
-            "low_token": "Sendet mit jeder Nachricht weniger, um Geld zu sparen. Aus liefert die zuverlässigsten Antworten zu deinem Zuhause. Leicht behält weniger Chatverlauf. Mittel kürzt zusätzlich lange Nachrichten und Antworten und startet jede Runde nur mit den letzten Nachrichten. Extrem ist nur Chat: keine Werkzeuge, daher kann es das Haus weder prüfen noch steuern.",
-            "check_house": "Standardmäßig an. Bevor der Agent eine Frage zu deinem Zuhause beantwortet, sieht er in Home Assistant nach, damit Listen und Zustände echt sind und nicht geraten. Begrüßungen werden übersprungen. Wirkt nicht bei Extrem, das keine Werkzeuge hat. Schalte es für allgemeine Fragen aus oder für ein Modell, das ohnehin selbst nachsieht.",
             "allow_internet": "Standardmäßig aus. An fügt in Admin-Chats Werkzeuge für Websuche und Seitenabruf hinzu. Adressen im lokalen Netzwerk bleiben gesperrt. Chats normaler Benutzer und Sprachsatelliten bekommen sie nie.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Erweitert",
+              "data": {
+                "save_tokens": "Tokens sparen"
+              },
+              "data_description": {
+                "save_tokens": "Sendet mit jeder Nachricht weniger: einen kürzeren Prompt, weniger Chatverlauf und kürzere Antworten. Günstiger, aber Antworten zu deinem Zuhause können weniger gründlich sein."
+              }
+            }
           }
         },
         "provider_azure": {
@@ -383,8 +415,6 @@
             "model": "Bereitstellung",
             "azure_api_version": "API-Version",
             "effort": "Aufwand",
-            "low_token": "Tokenverbrauch reduzieren",
-            "check_house": "Zuerst in Home Assistant nachsehen",
             "allow_internet": "Internetzugriff erlauben",
             "assist": "Zu Assist hinzufügen"
           },
@@ -394,10 +424,19 @@
             "model": "Der Name der Bereitstellung.",
             "azure_api_version": "Standard lassen, außer Azure nennt dir eine andere Version.",
             "effort": "Mehr Aufwand heißt mehr Nachdenken: bessere Antworten auf schwere Fragen, aber langsamer und mehr Tokens. Wird ignoriert, wenn das Modell es nicht unterstützt.",
-            "low_token": "Sendet mit jeder Nachricht weniger, um Geld zu sparen. Aus liefert die zuverlässigsten Antworten zu deinem Zuhause. Leicht behält weniger Chatverlauf. Mittel kürzt zusätzlich lange Nachrichten und Antworten und startet jede Runde nur mit den letzten Nachrichten. Extrem ist nur Chat: keine Werkzeuge, daher kann es das Haus weder prüfen noch steuern.",
-            "check_house": "Standardmäßig an. Bevor der Agent eine Frage zu deinem Zuhause beantwortet, sieht er in Home Assistant nach, damit Listen und Zustände echt sind und nicht geraten. Begrüßungen werden übersprungen. Wirkt nicht bei Extrem, das keine Werkzeuge hat. Schalte es für allgemeine Fragen aus oder für ein Modell, das ohnehin selbst nachsieht.",
             "allow_internet": "Standardmäßig aus. An fügt in Admin-Chats Werkzeuge für Websuche und Seitenabruf hinzu. Adressen im lokalen Netzwerk bleiben gesperrt. Chats normaler Benutzer und Sprachsatelliten bekommen sie nie.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Erweitert",
+              "data": {
+                "save_tokens": "Tokens sparen"
+              },
+              "data_description": {
+                "save_tokens": "Sendet mit jeder Nachricht weniger: einen kürzeren Prompt, weniger Chatverlauf und kürzere Antworten. Günstiger, aber Antworten zu deinem Zuhause können weniger gründlich sein."
+              }
+            }
           }
         },
         "provider_compatible": {
@@ -408,8 +447,6 @@
             "api_base": "API-Basis-URL",
             "model": "Modell",
             "effort": "Aufwand",
-            "low_token": "Tokenverbrauch reduzieren",
-            "check_house": "Zuerst in Home Assistant nachsehen",
             "allow_internet": "Internetzugriff erlauben",
             "assist": "Zu Assist hinzufügen",
             "assist_stt": "Sprache-zu-Text anlegen",
@@ -424,8 +461,6 @@
             "api_base": "Serveradresse. /v1 anhängen, wenn dein Server das erwartet.",
             "model": "Modellname auf diesem Server.",
             "effort": "Mehr Aufwand heißt mehr Nachdenken: bessere Antworten auf schwere Fragen, aber langsamer und mehr Tokens. Wird ignoriert, wenn das Modell es nicht unterstützt.",
-            "low_token": "Sendet mit jeder Nachricht weniger, um Geld zu sparen. Aus liefert die zuverlässigsten Antworten zu deinem Zuhause. Leicht behält weniger Chatverlauf. Mittel kürzt zusätzlich lange Nachrichten und Antworten und startet jede Runde nur mit den letzten Nachrichten. Extrem ist nur Chat: keine Werkzeuge, daher kann es das Haus weder prüfen noch steuern.",
-            "check_house": "Standardmäßig an. Bevor der Agent eine Frage zu deinem Zuhause beantwortet, sieht er in Home Assistant nach, damit Listen und Zustände echt sind und nicht geraten. Begrüßungen werden übersprungen. Wirkt nicht bei Extrem, das keine Werkzeuge hat. Schalte es für allgemeine Fragen aus oder für ein Modell, das ohnehin selbst nachsieht.",
             "allow_internet": "Standardmäßig aus. An fügt in Admin-Chats Werkzeuge für Websuche und Seitenabruf hinzu. Adressen im lokalen Netzwerk bleiben gesperrt. Chats normaler Benutzer und Sprachsatelliten bekommen sie nie.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat.",
             "assist_stt": "Fügt in Home Assistant eine Sprache-zu-Text-Option mit dem Schlüssel dieses Assistenten hinzu. Aus entfernt, was er angelegt hat.",
@@ -434,6 +469,17 @@
             "tts_model": "Leer für das Standard-Sprachmodell. Optional einen anderen Namen eingeben.",
             "tts_voice": "Coral ist der Standard. Stimmen passen zu den Sprachen unter Assist → Sprache.",
             "tts_speed": "Wie schnell diese Stimme spricht. 1× ist normal. Gilt für AI Workspace und Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Erweitert",
+              "data": {
+                "save_tokens": "Tokens sparen"
+              },
+              "data_description": {
+                "save_tokens": "Sendet mit jeder Nachricht weniger: einen kürzeren Prompt, weniger Chatverlauf und kürzere Antworten. Günstiger, aber Antworten zu deinem Zuhause können weniger gründlich sein."
+              }
+            }
           }
         }
       },
@@ -472,14 +518,6 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Benutzerdefinierte MCP-URL"
-      }
-    },
-    "low_token": {
-      "options": {
-        "off": "Aus (voll)",
-        "light": "Light (Tools und Verlauf, ca. 5–20 % weniger)",
-        "medium": "Medium (kurzer Prompt, ca. 25–45 % weniger)",
-        "extreme": "Extreme (nur Chat, ca. 80–95 % weniger)"
       }
     }
   }

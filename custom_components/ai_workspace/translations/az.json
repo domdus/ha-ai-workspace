@@ -83,16 +83,20 @@
               "house_map": "Defolt olaraq sönülüdür. Avtomatlaşdırmaların, obyektlərin və ərazilərin necə bağlı olduğuna dair yerli indeks: bir axtarış “mətbəx işığını nə istifadə edir?” kimi suallara cavab verir. Hər mesaja bir az əlavə edir, ona görə yalnız tez-tez şeylərin necə bağlandığını soruşursunuzsa açın. Canlı vəziyyətlər yenə Home Assistant-dan gəlir.",
               "shorten_mcp_results": "Defolt olaraq açıqdır. Home Assistant-dan çox uzun cavablar (bütün ev siyahıları, böyük axtarışlar) AI-yə getməzdən əvvəl xülasə edilir. Tokenlərə qənaət edir və cavabları sürətli saxlayır. Sönülü tam mətni göndərir.",
               "change_history": "Defolt olaraq açıqdır. Köməkçinin etdiyi hər konfiqurasiya dəyişikliyini qeyd edir ki, nəyin dəyişdiyini görə və ondan əvvəlki versiyanı bərpa etməsini istəyə biləsiniz. Sönülü yeni qeydləri dayandırır; köməkçi yenə dəyişiklik edə bilər.",
-              "change_history_ttl_days": "Rollback və Bərpa istənin əlçatan qaldığı günlər. Sonra sətir jurnaldа qalır; köhnə anlıq görüntünü bərpa etmək sonrakı işi üstələyə bilər. Defolt 7. 1 təxminən bir gündür."
+              "change_history_ttl_days": "Rollback və Agentlə geri qaytarın əlçatan qaldığı günlər. Sonra sətir jurnaldа qalır; köhnə anlıq görüntünü bərpa etmək sonrakı işi üstələyə bilər. Defolt 7. 1 təxminən bir gündür."
             }
           },
           "prompt": {
             "name": "Sistem promptu",
             "data": {
-              "system_prompt": "Sistem promptu"
+              "system_prompt": "Sistem promptu",
+              "notes": "Yadda saxlanan qeydlərdən istifadə et",
+              "notes_text": "Yadda saxlanan qeydlər"
             },
             "data_description": {
-              "system_prompt": "Yalnız ton və vərdişlər. Defolt üçün boş buraxın. Köməkçi həmişə Home Assistant-a və cavablardakı sürətli keçidlərə çıxışı saxlayır."
+              "system_prompt": "Köməkçi üçün daimi göstərişlər — otaqlar, qaydalar, necə cavab vermək, riayət etməli olduğu hər şey. Defolt üçün boş buraxın. Köməkçi həmişə Home Assistant-a və cavablardakı sürətli keçidlərə çıxışı saxlayır. Bu sahəyə yazmır.",
+              "notes": "Susmaya görə sönülüdür. Yanılı olanda köməkçi aşağıdakı qeydləri hər söhbətdə oxuyur və əlavə edə bilər. Sönülü: söhbət oxumur və yazmır. Mətni istənilən vaxt düzəldə bilərsən.",
+              "notes_text": "Köməkçinin saxlamalı olduğu qısa ingilis işarələri. Hər söhbətdə oxuyur və «yadda saxla» (istənilən söhbət dilində) deyəndə və ya etməməli olduğu bir şeydən şikayətlənəndə əlavə edir. İstənilən vaxt düzəldə və təmizləyə bilərsən. Ən çoxu 2000 simvol. Limit dolanda köməkçi köhnə sətirləri əvəz etməlidir — heç nə səssiz silinmir."
             }
           }
         }
@@ -192,16 +196,20 @@
               "house_map": "Defolt olaraq sönülüdür. Avtomatlaşdırmaların, obyektlərin və ərazilərin necə bağlı olduğuna dair yerli indeks: bir axtarış “mətbəx işığını nə istifadə edir?” kimi suallara cavab verir. Hər mesaja bir az əlavə edir, ona görə yalnız tez-tez şeylərin necə bağlandığını soruşursunuzsa açın. Canlı vəziyyətlər yenə Home Assistant-dan gəlir.",
               "shorten_mcp_results": "Defolt olaraq açıqdır. Home Assistant-dan çox uzun cavablar (bütün ev siyahıları, böyük axtarışlar) AI-yə getməzdən əvvəl xülasə edilir. Tokenlərə qənaət edir və cavabları sürətli saxlayır. Sönülü tam mətni göndərir.",
               "change_history": "Defolt olaraq açıqdır. Köməkçinin etdiyi hər konfiqurasiya dəyişikliyini qeyd edir ki, nəyin dəyişdiyini görə və ondan əvvəlki versiyanı bərpa etməsini istəyə biləsiniz. Sönülü yeni qeydləri dayandırır; köməkçi yenə dəyişiklik edə bilər.",
-              "change_history_ttl_days": "Rollback və Bərpa istənin əlçatan qaldığı günlər. Sonra sətir jurnaldа qalır; köhnə anlıq görüntünü bərpa etmək sonrakı işi üstələyə bilər. Defolt 7. 1 təxminən bir gündür."
+              "change_history_ttl_days": "Rollback və Agentlə geri qaytarın əlçatan qaldığı günlər. Sonra sətir jurnaldа qalır; köhnə anlıq görüntünü bərpa etmək sonrakı işi üstələyə bilər. Defolt 7. 1 təxminən bir gündür."
             }
           },
           "prompt": {
             "name": "Sistem promptu",
             "data": {
-              "system_prompt": "Sistem promptu"
+              "system_prompt": "Sistem promptu",
+              "notes": "Yadda saxlanan qeydlərdən istifadə et",
+              "notes_text": "Yadda saxlanan qeydlər"
             },
             "data_description": {
-              "system_prompt": "Yalnız ton və vərdişlər. Defolt üçün boş buraxın. Köməkçi həmişə Home Assistant-a və cavablardakı sürətli keçidlərə çıxışı saxlayır."
+              "system_prompt": "Köməkçi üçün daimi göstərişlər — otaqlar, qaydalar, necə cavab vermək, riayət etməli olduğu hər şey. Defolt üçün boş buraxın. Köməkçi həmişə Home Assistant-a və cavablardakı sürətli keçidlərə çıxışı saxlayır. Bu sahəyə yazmır.",
+              "notes": "Susmaya görə sönülüdür. Yanılı olanda köməkçi aşağıdakı qeydləri hər söhbətdə oxuyur və əlavə edə bilər. Sönülü: söhbət oxumur və yazmır. Mətni istənilən vaxt düzəldə bilərsən.",
+              "notes_text": "Köməkçinin saxlamalı olduğu qısa ingilis işarələri. Hər söhbətdə oxuyur və «yadda saxla» (istənilən söhbət dilində) deyəndə və ya etməməli olduğu bir şeydən şikayətlənəndə əlavə edir. İstənilən vaxt düzəldə və təmizləyə bilərsən. Ən çoxu 2000 simvol. Limit dolanda köməkçi köhnə sətirləri əvəz etməlidir — heç nə səssiz silinmir."
             }
           }
         }
@@ -277,7 +285,8 @@
         "no_runtime": "Cursor runtime-ə çatmaq mümkün deyil. Onu işə salın və bu formadakı ünvanı yoxlayın.",
         "required": "Bu sahə tələb olunur.",
         "invalid_auth": "Provayder bu API açarını rədd etdi.",
-        "cannot_connect": "Provayderə çatmaq mümkün olmadı. URL-i və şəbəkəni yoxlayın."
+        "cannot_connect": "Provayderə çatmaq mümkün olmadı. URL-i və şəbəkəni yoxlayın.",
+        "model_not_installed": "Bu model Ollama-da quraşdırılmayıb. Quraşdırılanlar: {installed}"
       },
       "step": {
         "provider": {
@@ -299,8 +308,6 @@
             "cursor_api_key": "Cursor API açarı",
             "model": "Model",
             "effort": "Səy",
-            "low_token": "Token istifadəsini azalt",
-            "check_house": "Əvvəlcə Home Assistant-a bax",
             "allow_internet": "İnternetə icazə ver",
             "assist": "Assist-ə əlavə et"
           },
@@ -310,10 +317,19 @@
             "cursor_api_key": "Cursor hesabınızdan (Integrations). Redaktə edərkən saxlanmış açarı saxlamaq üçün boş buraxın. [API açarı al]({api_key_url})",
             "model": "Siyahıdan seçin və ya model adı yazın. Boş Composer istifadə edir.",
             "effort": "Nə qədər düşünmə vaxtına icazə verilsin. Composer defolt olaraq Sürətli istifadə edir.",
-            "low_token": "Pula qənaət etmək üçün hər mesajla daha az göndərir. Söndürülü ev haqqında ən etibarlı cavabları verir. Yüngül daha az söhbət tarixçəsi saxlayır. Orta həm də uzun mesaj və cavabları qısaldır və hər növbəni yalnız son mesajlarla başlayır. Ekstremal yalnız söhbətdir: alət yoxdur, buna görə evi yoxlaya və ya idarə edə bilmir.",
-            "check_house": "Standart olaraq açıqdır. Evlə bağlı suala cavab verməzdən əvvəl agent Home Assistant-a baxır ki, siyahılar və vəziyyətlər təxmini deyil, real olsun. Salamlaşmalar ötürülür. Aləti olmayan Ekstremal rejimdə təsiri yoxdur. Ümumi suallar və ya özü yoxlayan model üçün söndürün.",
             "allow_internet": "Standart olaraq söndürülüb. Açıq olduqda bu agent admin söhbətlərində Cursor-un veb axtarışı, səhifə yükləmə və shell alətlərindən istifadə edə bilir. Söndürülü olduqda hər üçü silinir, beləliklə curl və ya skriptlər də internetə çıxa bilmir. Adi istifadəçilərin və səs peyklərinin söhbətləri onları heç vaxt almır.",
             "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Ətraflı",
+              "data": {
+                "save_tokens": "Tokenlərə qənaət et"
+              },
+              "data_description": {
+                "save_tokens": "Hər mesajla daha az göndərir: daha qısa prompt, daha az söhbət tarixçəsi və daha qısa cavablar. Daha ucuzdur, amma eviniz haqqında cavablar daha az ətraflı ola bilər."
+              }
+            }
           }
         },
         "provider_cloud": {
@@ -324,8 +340,6 @@
             "api_key": "API açarı",
             "model": "Model",
             "effort": "Səy",
-            "low_token": "Token istifadəsini azalt",
-            "check_house": "Əvvəlcə Home Assistant-a bax",
             "allow_internet": "İnternetə icazə ver",
             "assist": "Assist-ə əlavə et",
             "assist_stt": "Nitqdən-mətnə əlavə et",
@@ -340,8 +354,6 @@
             "api_key": "AI provayderindən açarınız, Home Assistant girişiniz deyil. [API açarı al]({api_key_url})",
             "model": "Siyahıdan seçin və ya model adı yazın. Boş provayderin defoltunu istifadə edir.",
             "effort": "Daha çox səy daha çox düşünmək deməkdir: çətin suallara daha yaxşı cavablar, amma daha yavaş və daha çox token. Model dəstəkləmirsə, nəzərə alınmır.",
-            "low_token": "Pula qənaət etmək üçün hər mesajla daha az göndərir. Söndürülü ev haqqında ən etibarlı cavabları verir. Yüngül daha az söhbət tarixçəsi saxlayır. Orta həm də uzun mesaj və cavabları qısaldır və hər növbəni yalnız son mesajlarla başlayır. Ekstremal yalnız söhbətdir: alət yoxdur, buna görə evi yoxlaya və ya idarə edə bilmir.",
-            "check_house": "Standart olaraq açıqdır. Evlə bağlı suala cavab verməzdən əvvəl agent Home Assistant-a baxır ki, siyahılar və vəziyyətlər təxmini deyil, real olsun. Salamlaşmalar ötürülür. Aləti olmayan Ekstremal rejimdə təsiri yoxdur. Ümumi suallar və ya özü yoxlayan model üçün söndürün.",
             "allow_internet": "Standart olaraq söndürülüb. Açıq olduqda admin söhbətlərinə veb axtarışı və səhifə yükləmə alətləri əlavə olunur. Yerli şəbəkədəki ünvanlar bloklanmış qalır. Adi istifadəçilərin və səs peyklərinin söhbətləri onları heç vaxt almır.",
             "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir.",
             "assist_stt": "Bu köməkçinin açarı ilə Home Assistant-da nitqdən-mətnə seçimi əlavə edir. Sönülü əlavə etdiyini silir.",
@@ -350,6 +362,19 @@
             "tts_model": "Defolt səs modeli üçün boş buraxın. Provayderiniz siyahıya salırsa, başqa ad yaza bilərsiniz.",
             "tts_voice": "Coral defoltdur. Səslər Assist → Dil altında təyin etdiyiniz dillər üçün işləyir.",
             "tts_speed": "Bu səsin danışma sürəti. 1× normaldır. AI Workspace və Assist üçün keçərlidir."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Ətraflı",
+              "data": {
+                "save_tokens": "Tokenlərə qənaət et",
+                "cache_1h": "Keşi bir saat saxla"
+              },
+              "data_description": {
+                "save_tokens": "Hər mesajla daha az göndərir: daha qısa prompt, daha az söhbət tarixçəsi və daha qısa cavablar. Daha ucuzdur, amma eviniz haqqında cavablar daha az ətraflı ola bilər.",
+                "cache_1h": "Yalnız Claude. Sistem promptunu və alətləri 5 dəqiqə əvəzinə bir saat keşdə saxlayır. Keşə yazmaq giriş qiymətinin 1,25 qatı əvəzinə 2 qatına, oxumaq 0,1 qatına başa gəlir. Mesajlarınız arasında tez-tez 5 dəqiqədən çox fasilə olarsa daha ucuzdur; nadir yazırsınızsa bir az bahadır."
+              }
+            }
           }
         },
         "provider_ollama": {
@@ -359,19 +384,26 @@
             "api_base": "Ollama URL",
             "model": "Model",
             "effort": "Səy",
-            "low_token": "Token istifadəsini azalt",
-            "check_house": "Əvvəlcə Home Assistant-a bax",
             "allow_internet": "İnternetə icazə ver",
             "assist": "Assist-ə əlavə et"
           },
           "data_description": {
-            "api_base": "Adətən {example_url}",
+            "api_base": "{ollama_note}",
             "model": "Siyahıdan seçin və ya quraşdırdığınız modeli yazın. Boş llama3.2 istifadə edir.",
             "effort": "Daha çox səy daha çox düşünmək deməkdir: çətin suallara daha yaxşı cavablar, amma daha yavaş və daha çox token. Model dəstəkləmirsə, nəzərə alınmır.",
-            "low_token": "Pula qənaət etmək üçün hər mesajla daha az göndərir. Söndürülü ev haqqında ən etibarlı cavabları verir. Yüngül daha az söhbət tarixçəsi saxlayır. Orta həm də uzun mesaj və cavabları qısaldır və hər növbəni yalnız son mesajlarla başlayır. Ekstremal yalnız söhbətdir: alət yoxdur, buna görə evi yoxlaya və ya idarə edə bilmir.",
-            "check_house": "Standart olaraq açıqdır. Evlə bağlı suala cavab verməzdən əvvəl agent Home Assistant-a baxır ki, siyahılar və vəziyyətlər təxmini deyil, real olsun. Salamlaşmalar ötürülür. Aləti olmayan Ekstremal rejimdə təsiri yoxdur. Ümumi suallar və ya özü yoxlayan model üçün söndürün.",
             "allow_internet": "Standart olaraq söndürülüb. Açıq olduqda admin söhbətlərinə veb axtarışı və səhifə yükləmə alətləri əlavə olunur. Yerli şəbəkədəki ünvanlar bloklanmış qalır. Adi istifadəçilərin və səs peyklərinin söhbətləri onları heç vaxt almır.",
             "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Ətraflı",
+              "data": {
+                "save_tokens": "Tokenlərə qənaət et"
+              },
+              "data_description": {
+                "save_tokens": "Hər mesajla daha az göndərir: daha qısa prompt, daha az söhbət tarixçəsi və daha qısa cavablar. Daha ucuzdur, amma eviniz haqqında cavablar daha az ətraflı ola bilər."
+              }
+            }
           }
         },
         "provider_azure": {
@@ -383,8 +415,6 @@
             "model": "Yerləşdirmə",
             "azure_api_version": "API versiyası",
             "effort": "Səy",
-            "low_token": "Token istifadəsini azalt",
-            "check_house": "Əvvəlcə Home Assistant-a bax",
             "allow_internet": "İnternetə icazə ver",
             "assist": "Assist-ə əlavə et"
           },
@@ -394,10 +424,19 @@
             "model": "Yerləşdirmə adı.",
             "azure_api_version": "Azure dəstəyi başqa versiya verməyibsə, defoltu saxlayın.",
             "effort": "Daha çox səy daha çox düşünmək deməkdir: çətin suallara daha yaxşı cavablar, amma daha yavaş və daha çox token. Model dəstəkləmirsə, nəzərə alınmır.",
-            "low_token": "Pula qənaət etmək üçün hər mesajla daha az göndərir. Söndürülü ev haqqında ən etibarlı cavabları verir. Yüngül daha az söhbət tarixçəsi saxlayır. Orta həm də uzun mesaj və cavabları qısaldır və hər növbəni yalnız son mesajlarla başlayır. Ekstremal yalnız söhbətdir: alət yoxdur, buna görə evi yoxlaya və ya idarə edə bilmir.",
-            "check_house": "Standart olaraq açıqdır. Evlə bağlı suala cavab verməzdən əvvəl agent Home Assistant-a baxır ki, siyahılar və vəziyyətlər təxmini deyil, real olsun. Salamlaşmalar ötürülür. Aləti olmayan Ekstremal rejimdə təsiri yoxdur. Ümumi suallar və ya özü yoxlayan model üçün söndürün.",
             "allow_internet": "Standart olaraq söndürülüb. Açıq olduqda admin söhbətlərinə veb axtarışı və səhifə yükləmə alətləri əlavə olunur. Yerli şəbəkədəki ünvanlar bloklanmış qalır. Adi istifadəçilərin və səs peyklərinin söhbətləri onları heç vaxt almır.",
             "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Ətraflı",
+              "data": {
+                "save_tokens": "Tokenlərə qənaət et"
+              },
+              "data_description": {
+                "save_tokens": "Hər mesajla daha az göndərir: daha qısa prompt, daha az söhbət tarixçəsi və daha qısa cavablar. Daha ucuzdur, amma eviniz haqqında cavablar daha az ətraflı ola bilər."
+              }
+            }
           }
         },
         "provider_compatible": {
@@ -408,8 +447,6 @@
             "api_base": "API baza URL",
             "model": "Model",
             "effort": "Səy",
-            "low_token": "Token istifadəsini azalt",
-            "check_house": "Əvvəlcə Home Assistant-a bax",
             "allow_internet": "İnternetə icazə ver",
             "assist": "Assist-ə əlavə et",
             "assist_stt": "Nitqdən-mətnə əlavə et",
@@ -424,8 +461,6 @@
             "api_base": "Server ünvanı. Serveriniz bunu gözləyirsə, sonuna /v1 əlavə edin.",
             "model": "Həmin serverdəki model adı.",
             "effort": "Daha çox səy daha çox düşünmək deməkdir: çətin suallara daha yaxşı cavablar, amma daha yavaş və daha çox token. Model dəstəkləmirsə, nəzərə alınmır.",
-            "low_token": "Pula qənaət etmək üçün hər mesajla daha az göndərir. Söndürülü ev haqqında ən etibarlı cavabları verir. Yüngül daha az söhbət tarixçəsi saxlayır. Orta həm də uzun mesaj və cavabları qısaldır və hər növbəni yalnız son mesajlarla başlayır. Ekstremal yalnız söhbətdir: alət yoxdur, buna görə evi yoxlaya və ya idarə edə bilmir.",
-            "check_house": "Standart olaraq açıqdır. Evlə bağlı suala cavab verməzdən əvvəl agent Home Assistant-a baxır ki, siyahılar və vəziyyətlər təxmini deyil, real olsun. Salamlaşmalar ötürülür. Aləti olmayan Ekstremal rejimdə təsiri yoxdur. Ümumi suallar və ya özü yoxlayan model üçün söndürün.",
             "allow_internet": "Standart olaraq söndürülüb. Açıq olduqda admin söhbətlərinə veb axtarışı və səhifə yükləmə alətləri əlavə olunur. Yerli şəbəkədəki ünvanlar bloklanmış qalır. Adi istifadəçilərin və səs peyklərinin söhbətləri onları heç vaxt almır.",
             "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir.",
             "assist_stt": "Bu köməkçinin açarı ilə Home Assistant-da nitqdən-mətnə seçimi əlavə edir. Sönülü əlavə etdiyini silir.",
@@ -434,6 +469,17 @@
             "tts_model": "Defolt səs modeli üçün boş buraxın. Provayderiniz siyahıya salırsa, başqa ad yaza bilərsiniz.",
             "tts_voice": "Coral defoltdur. Səslər Assist → Dil altında təyin etdiyiniz dillər üçün işləyir.",
             "tts_speed": "Bu səsin danışma sürəti. 1× normaldır. AI Workspace və Assist üçün keçərlidir."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Ətraflı",
+              "data": {
+                "save_tokens": "Tokenlərə qənaət et"
+              },
+              "data_description": {
+                "save_tokens": "Hər mesajla daha az göndərir: daha qısa prompt, daha az söhbət tarixçəsi və daha qısa cavablar. Daha ucuzdur, amma eviniz haqqında cavablar daha az ətraflı ola bilər."
+              }
+            }
           }
         }
       },
@@ -472,14 +518,6 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Fərdi MCP URL"
-      }
-    },
-    "low_token": {
-      "options": {
-        "off": "Söndür",
-        "light": "Light",
-        "medium": "Medium",
-        "extreme": "Extreme"
       }
     }
   }

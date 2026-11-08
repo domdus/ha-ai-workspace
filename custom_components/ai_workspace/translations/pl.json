@@ -83,16 +83,20 @@
               "house_map": "Domyślnie wyłączone. Lokalny indeks powiązań między automatyzacjami, encjami i obszarami, żeby jedno wyszukanie odpowiadało na pytania typu „co używa światła w kuchni?”. Dodaje trochę do każdej wiadomości, więc włącz tylko, jeśli często pytasz, jak rzeczy są połączone. Stany na żywo nadal pochodzą z Home Assistant.",
               "shorten_mcp_results": "Domyślnie włączone. Bardzo długie odpowiedzi z Home Assistant (listy całego domu, duże wyszukiwania) są streszczane, zanim trafią do AI. Oszczędza tokeny i utrzymuje szybkie odpowiedzi. Wyłączone wysyła pełny tekst.",
               "change_history": "Domyślnie włączone. Zapisuje każdą zmianę konfiguracji wykonaną przez asystenta, żebyś widział, co się zmieniło, i mógł poprosić o przywrócenie wcześniejszej wersji. Wyłączone: bez nowych wpisów; asystent nadal może wprowadzać zmiany.",
-              "change_history_ttl_days": "Dni, przez które Rollback i Poproś o przywrócenie pozostają dostępne. Potem wpis zostaje w dzienniku; przywrócenie starego zrzutu może nadpisać późniejszą pracę. Domyślnie 7. 1 to około dzień."
+              "change_history_ttl_days": "Dni, przez które Rollback i Cofnij przez agenta pozostają dostępne. Potem wpis zostaje w dzienniku; przywrócenie starego zrzutu może nadpisać późniejszą pracę. Domyślnie 7. 1 to około dzień."
             }
           },
           "prompt": {
             "name": "Prompt systemowy",
             "data": {
-              "system_prompt": "Prompt systemowy"
+              "system_prompt": "Prompt systemowy",
+              "notes": "Używaj zapamiętanych notatek",
+              "notes_text": "Zapamiętane notatki"
             },
             "data_description": {
-              "system_prompt": "Tylko ton i nawyki. Zostaw puste dla wartości domyślnej. Asystent zawsze zachowuje dostęp do Home Assistant i szybkich linków w odpowiedziach."
+              "system_prompt": "Stałe instrukcje dla asystenta — pomieszczenia, zasady, sposób odpowiedzi, wszystko, czego ma się trzymać. Zostaw puste dla wartości domyślnej. Asystent zawsze zachowuje dostęp do Home Assistant i szybkich linków w odpowiedziach. Nie zapisuje w tym polu.",
+              "notes": "Domyślnie wyłączone. Gdy włączone, asystent czyta poniższe notatki w każdym czacie i może je uzupełniać. Wyłączone: czat ich nie czyta ani nie zapisuje. Tekst możesz edytować w każdej chwili.",
+              "notes_text": "Krótkie angielskie punkty, które asystent ma zachować. Czyta je w każdym czacie i uzupełnia, gdy mówisz «zapamiętaj» (w dowolnym języku czatu) albo narzekasz na coś, czego ma nie robić. Możesz je w każdej chwili edytować lub wyczyścić. Maks. 2000 znaków. Gdy limit jest pełny, asystent musi zastąpić starsze wiersze — nic nie znika po cichu."
             }
           }
         }
@@ -192,16 +196,20 @@
               "house_map": "Domyślnie wyłączone. Lokalny indeks powiązań między automatyzacjami, encjami i obszarami, żeby jedno wyszukanie odpowiadało na pytania typu „co używa światła w kuchni?”. Dodaje trochę do każdej wiadomości, więc włącz tylko, jeśli często pytasz, jak rzeczy są połączone. Stany na żywo nadal pochodzą z Home Assistant.",
               "shorten_mcp_results": "Domyślnie włączone. Bardzo długie odpowiedzi z Home Assistant (listy całego domu, duże wyszukiwania) są streszczane, zanim trafią do AI. Oszczędza tokeny i utrzymuje szybkie odpowiedzi. Wyłączone wysyła pełny tekst.",
               "change_history": "Domyślnie włączone. Zapisuje każdą zmianę konfiguracji wykonaną przez asystenta, żebyś widział, co się zmieniło, i mógł poprosić o przywrócenie wcześniejszej wersji. Wyłączone: bez nowych wpisów; asystent nadal może wprowadzać zmiany.",
-              "change_history_ttl_days": "Dni, przez które Rollback i Poproś o przywrócenie pozostają dostępne. Potem wpis zostaje w dzienniku; przywrócenie starego zrzutu może nadpisać późniejszą pracę. Domyślnie 7. 1 to około dzień."
+              "change_history_ttl_days": "Dni, przez które Rollback i Cofnij przez agenta pozostają dostępne. Potem wpis zostaje w dzienniku; przywrócenie starego zrzutu może nadpisać późniejszą pracę. Domyślnie 7. 1 to około dzień."
             }
           },
           "prompt": {
             "name": "Prompt systemowy",
             "data": {
-              "system_prompt": "Prompt systemowy"
+              "system_prompt": "Prompt systemowy",
+              "notes": "Używaj zapamiętanych notatek",
+              "notes_text": "Zapamiętane notatki"
             },
             "data_description": {
-              "system_prompt": "Tylko ton i nawyki. Zostaw puste dla wartości domyślnej. Asystent zawsze zachowuje dostęp do Home Assistant i szybkich linków w odpowiedziach."
+              "system_prompt": "Stałe instrukcje dla asystenta — pomieszczenia, zasady, sposób odpowiedzi, wszystko, czego ma się trzymać. Zostaw puste dla wartości domyślnej. Asystent zawsze zachowuje dostęp do Home Assistant i szybkich linków w odpowiedziach. Nie zapisuje w tym polu.",
+              "notes": "Domyślnie wyłączone. Gdy włączone, asystent czyta poniższe notatki w każdym czacie i może je uzupełniać. Wyłączone: czat ich nie czyta ani nie zapisuje. Tekst możesz edytować w każdej chwili.",
+              "notes_text": "Krótkie angielskie punkty, które asystent ma zachować. Czyta je w każdym czacie i uzupełnia, gdy mówisz «zapamiętaj» (w dowolnym języku czatu) albo narzekasz na coś, czego ma nie robić. Możesz je w każdej chwili edytować lub wyczyścić. Maks. 2000 znaków. Gdy limit jest pełny, asystent musi zastąpić starsze wiersze — nic nie znika po cichu."
             }
           }
         }
@@ -277,7 +285,8 @@
         "no_runtime": "Nie można połączyć się ze środowiskiem Cursor. Uruchom je i sprawdź adres w tym formularzu.",
         "required": "To pole jest wymagane.",
         "invalid_auth": "Dostawca odrzucił ten klucz API.",
-        "cannot_connect": "Nie można połączyć się z dostawcą. Sprawdź adres URL i sieć."
+        "cannot_connect": "Nie można połączyć się z dostawcą. Sprawdź adres URL i sieć.",
+        "model_not_installed": "Ten model nie jest zainstalowany w Ollama. Zainstalowane: {installed}"
       },
       "step": {
         "provider": {
@@ -299,8 +308,6 @@
             "cursor_api_key": "Klucz API Cursor",
             "model": "Model",
             "effort": "Wysiłek",
-            "low_token": "Zmniejsz zużycie tokenów",
-            "check_house": "Najpierw sprawdź Home Assistant",
             "allow_internet": "Zezwól na internet",
             "assist": "Dodaj do Assist"
           },
@@ -310,10 +317,19 @@
             "cursor_api_key": "Z konta Cursor (Integrations). Przy edycji zostaw puste, aby zachować zapisany klucz. [Pobierz klucz API]({api_key_url})",
             "model": "Wybierz z listy lub wpisz nazwę modelu. Puste używa Composer.",
             "effort": "Ile czasu na myślenie zezwolić. Composer domyślnie używa Szybki.",
-            "low_token": "Wysyła mniej z każdą wiadomością, aby oszczędzać. Wyłączone daje najbardziej wiarygodne odpowiedzi o domu. Lekki zachowuje mniej historii. Średni dodatkowo skraca długie wiadomości i odpowiedzi i zaczyna każdą turę tylko od ostatnich wiadomości. Ekstremalny to tylko czat: bez narzędzi, więc nie może sprawdzać ani sterować domem.",
-            "check_house": "Domyślnie włączone. Zanim agent odpowie na pytanie o dom, sprawdza Home Assistant, aby listy i stany były prawdziwe, a nie zgadywane. Powitania są pomijane. Nie działa w trybie Ekstremalnym, który nie ma narzędzi. Wyłącz dla pytań ogólnych lub modelu, który sam już sprawdza.",
             "allow_internet": "Domyślnie wyłączone. Włączone pozwala temu agentowi w czatach administratora używać wyszukiwania w sieci, pobierania stron i powłoki Cursora. Wyłączone usuwa wszystkie trzy, więc curl ani skrypty też nie dotrą do sieci. Czaty zwykłych użytkowników i satelit głosowych nigdy ich nie dostają.",
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Zaawansowane",
+              "data": {
+                "save_tokens": "Oszczędzaj tokeny"
+              },
+              "data_description": {
+                "save_tokens": "Wysyła mniej z każdą wiadomością: krótszy prompt, mniej historii czatu i krótsze odpowiedzi. Taniej, ale odpowiedzi o Twoim domu mogą być mniej dokładne."
+              }
+            }
           }
         },
         "provider_cloud": {
@@ -324,8 +340,6 @@
             "api_key": "Klucz API",
             "model": "Model",
             "effort": "Wysiłek",
-            "low_token": "Zmniejsz zużycie tokenów",
-            "check_house": "Najpierw sprawdź Home Assistant",
             "allow_internet": "Zezwól na internet",
             "assist": "Dodaj do Assist",
             "assist_stt": "Dodaj mowę na tekst",
@@ -340,8 +354,6 @@
             "api_key": "Klucz od dostawcy AI, nie login Home Assistant. [Pobierz klucz API]({api_key_url})",
             "model": "Wybierz z listy lub wpisz nazwę modelu. Puste używa domyślnego modelu dostawcy.",
             "effort": "Większy wysiłek to więcej myślenia: lepsze odpowiedzi na trudne pytania, ale wolniej i więcej tokenów. Ignorowane, gdy model tego nie obsługuje.",
-            "low_token": "Wysyła mniej z każdą wiadomością, aby oszczędzać. Wyłączone daje najbardziej wiarygodne odpowiedzi o domu. Lekki zachowuje mniej historii. Średni dodatkowo skraca długie wiadomości i odpowiedzi i zaczyna każdą turę tylko od ostatnich wiadomości. Ekstremalny to tylko czat: bez narzędzi, więc nie może sprawdzać ani sterować domem.",
-            "check_house": "Domyślnie włączone. Zanim agent odpowie na pytanie o dom, sprawdza Home Assistant, aby listy i stany były prawdziwe, a nie zgadywane. Powitania są pomijane. Nie działa w trybie Ekstremalnym, który nie ma narzędzi. Wyłącz dla pytań ogólnych lub modelu, który sam już sprawdza.",
             "allow_internet": "Domyślnie wyłączone. Włączone dodaje w czatach administratora narzędzia wyszukiwania w sieci i pobierania stron. Adresy w sieci lokalnej pozostają zablokowane. Czaty zwykłych użytkowników i satelit głosowych nigdy ich nie dostają.",
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist.",
             "assist_stt": "Dodaje opcję mowy na tekst w Home Assistant z kluczem tego asystenta. Wyłączenie usuwa to, co dodał.",
@@ -350,6 +362,19 @@
             "tts_model": "Zostaw puste dla domyślnego modelu głosu. Możesz wpisać inną nazwę, jeśli dostawca taką podaje.",
             "tts_voice": "Coral jest domyślny. Głosy działają dla języków ustawionych w Assist → Język.",
             "tts_speed": "Jak szybko mówi ten głos. 1× to normalne tempo. Działa w AI Workspace i Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Zaawansowane",
+              "data": {
+                "save_tokens": "Oszczędzaj tokeny",
+                "cache_1h": "Trzymaj pamięć podręczną przez godzinę"
+              },
+              "data_description": {
+                "save_tokens": "Wysyła mniej z każdą wiadomością: krótszy prompt, mniej historii czatu i krótsze odpowiedzi. Taniej, ale odpowiedzi o Twoim domu mogą być mniej dokładne.",
+                "cache_1h": "Tylko Claude. Trzyma prompt systemowy i narzędzia w pamięci podręcznej przez godzinę zamiast 5 minut. Zapis do pamięci podręcznej kosztuje 2× cenę wejścia zamiast 1,25×, odczyt 0,1×. Taniej, gdy między wiadomościami często mija ponad 5 minut; nieco drożej, jeśli rzadko piszesz."
+              }
+            }
           }
         },
         "provider_ollama": {
@@ -359,19 +384,26 @@
             "api_base": "URL Ollama",
             "model": "Model",
             "effort": "Wysiłek",
-            "low_token": "Zmniejsz zużycie tokenów",
-            "check_house": "Najpierw sprawdź Home Assistant",
             "allow_internet": "Zezwól na internet",
             "assist": "Dodaj do Assist"
           },
           "data_description": {
-            "api_base": "Zwykle {example_url}",
+            "api_base": "{ollama_note}",
             "model": "Wybierz z listy lub wpisz zainstalowany model. Puste używa llama3.2.",
             "effort": "Większy wysiłek to więcej myślenia: lepsze odpowiedzi na trudne pytania, ale wolniej i więcej tokenów. Ignorowane, gdy model tego nie obsługuje.",
-            "low_token": "Wysyła mniej z każdą wiadomością, aby oszczędzać. Wyłączone daje najbardziej wiarygodne odpowiedzi o domu. Lekki zachowuje mniej historii. Średni dodatkowo skraca długie wiadomości i odpowiedzi i zaczyna każdą turę tylko od ostatnich wiadomości. Ekstremalny to tylko czat: bez narzędzi, więc nie może sprawdzać ani sterować domem.",
-            "check_house": "Domyślnie włączone. Zanim agent odpowie na pytanie o dom, sprawdza Home Assistant, aby listy i stany były prawdziwe, a nie zgadywane. Powitania są pomijane. Nie działa w trybie Ekstremalnym, który nie ma narzędzi. Wyłącz dla pytań ogólnych lub modelu, który sam już sprawdza.",
             "allow_internet": "Domyślnie wyłączone. Włączone dodaje w czatach administratora narzędzia wyszukiwania w sieci i pobierania stron. Adresy w sieci lokalnej pozostają zablokowane. Czaty zwykłych użytkowników i satelit głosowych nigdy ich nie dostają.",
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Zaawansowane",
+              "data": {
+                "save_tokens": "Oszczędzaj tokeny"
+              },
+              "data_description": {
+                "save_tokens": "Wysyła mniej z każdą wiadomością: krótszy prompt, mniej historii czatu i krótsze odpowiedzi. Taniej, ale odpowiedzi o Twoim domu mogą być mniej dokładne."
+              }
+            }
           }
         },
         "provider_azure": {
@@ -383,8 +415,6 @@
             "model": "Wdrożenie",
             "azure_api_version": "Wersja API",
             "effort": "Wysiłek",
-            "low_token": "Zmniejsz zużycie tokenów",
-            "check_house": "Najpierw sprawdź Home Assistant",
             "allow_internet": "Zezwól na internet",
             "assist": "Dodaj do Assist"
           },
@@ -394,10 +424,19 @@
             "model": "Nazwa wdrożenia.",
             "azure_api_version": "Zostaw wartość domyślną, chyba że wsparcie Azure podało inną wersję.",
             "effort": "Większy wysiłek to więcej myślenia: lepsze odpowiedzi na trudne pytania, ale wolniej i więcej tokenów. Ignorowane, gdy model tego nie obsługuje.",
-            "low_token": "Wysyła mniej z każdą wiadomością, aby oszczędzać. Wyłączone daje najbardziej wiarygodne odpowiedzi o domu. Lekki zachowuje mniej historii. Średni dodatkowo skraca długie wiadomości i odpowiedzi i zaczyna każdą turę tylko od ostatnich wiadomości. Ekstremalny to tylko czat: bez narzędzi, więc nie może sprawdzać ani sterować domem.",
-            "check_house": "Domyślnie włączone. Zanim agent odpowie na pytanie o dom, sprawdza Home Assistant, aby listy i stany były prawdziwe, a nie zgadywane. Powitania są pomijane. Nie działa w trybie Ekstremalnym, który nie ma narzędzi. Wyłącz dla pytań ogólnych lub modelu, który sam już sprawdza.",
             "allow_internet": "Domyślnie wyłączone. Włączone dodaje w czatach administratora narzędzia wyszukiwania w sieci i pobierania stron. Adresy w sieci lokalnej pozostają zablokowane. Czaty zwykłych użytkowników i satelit głosowych nigdy ich nie dostają.",
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Zaawansowane",
+              "data": {
+                "save_tokens": "Oszczędzaj tokeny"
+              },
+              "data_description": {
+                "save_tokens": "Wysyła mniej z każdą wiadomością: krótszy prompt, mniej historii czatu i krótsze odpowiedzi. Taniej, ale odpowiedzi o Twoim domu mogą być mniej dokładne."
+              }
+            }
           }
         },
         "provider_compatible": {
@@ -408,8 +447,6 @@
             "api_base": "Bazowy URL API",
             "model": "Model",
             "effort": "Wysiłek",
-            "low_token": "Zmniejsz zużycie tokenów",
-            "check_house": "Najpierw sprawdź Home Assistant",
             "allow_internet": "Zezwól na internet",
             "assist": "Dodaj do Assist",
             "assist_stt": "Dodaj mowę na tekst",
@@ -424,8 +461,6 @@
             "api_base": "Adres serwera. Dodaj /v1 na końcu, jeśli serwer tego oczekuje.",
             "model": "Nazwa modelu na tym serwerze.",
             "effort": "Większy wysiłek to więcej myślenia: lepsze odpowiedzi na trudne pytania, ale wolniej i więcej tokenów. Ignorowane, gdy model tego nie obsługuje.",
-            "low_token": "Wysyła mniej z każdą wiadomością, aby oszczędzać. Wyłączone daje najbardziej wiarygodne odpowiedzi o domu. Lekki zachowuje mniej historii. Średni dodatkowo skraca długie wiadomości i odpowiedzi i zaczyna każdą turę tylko od ostatnich wiadomości. Ekstremalny to tylko czat: bez narzędzi, więc nie może sprawdzać ani sterować domem.",
-            "check_house": "Domyślnie włączone. Zanim agent odpowie na pytanie o dom, sprawdza Home Assistant, aby listy i stany były prawdziwe, a nie zgadywane. Powitania są pomijane. Nie działa w trybie Ekstremalnym, który nie ma narzędzi. Wyłącz dla pytań ogólnych lub modelu, który sam już sprawdza.",
             "allow_internet": "Domyślnie wyłączone. Włączone dodaje w czatach administratora narzędzia wyszukiwania w sieci i pobierania stron. Adresy w sieci lokalnej pozostają zablokowane. Czaty zwykłych użytkowników i satelit głosowych nigdy ich nie dostają.",
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist.",
             "assist_stt": "Dodaje opcję mowy na tekst w Home Assistant z kluczem tego asystenta. Wyłączenie usuwa to, co dodał.",
@@ -434,6 +469,17 @@
             "tts_model": "Zostaw puste dla domyślnego modelu głosu. Możesz wpisać inną nazwę, jeśli dostawca taką podaje.",
             "tts_voice": "Coral jest domyślny. Głosy działają dla języków ustawionych w Assist → Język.",
             "tts_speed": "Jak szybko mówi ten głos. 1× to normalne tempo. Działa w AI Workspace i Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Zaawansowane",
+              "data": {
+                "save_tokens": "Oszczędzaj tokeny"
+              },
+              "data_description": {
+                "save_tokens": "Wysyła mniej z każdą wiadomością: krótszy prompt, mniej historii czatu i krótsze odpowiedzi. Taniej, ale odpowiedzi o Twoim domu mogą być mniej dokładne."
+              }
+            }
           }
         }
       },
@@ -472,14 +518,6 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Własny URL MCP"
-      }
-    },
-    "low_token": {
-      "options": {
-        "off": "Wyłączone",
-        "light": "Light",
-        "medium": "Medium",
-        "extreme": "Extreme"
       }
     }
   }

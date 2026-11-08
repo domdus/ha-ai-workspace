@@ -31,6 +31,8 @@ from .const import (
     CONF_ENABLE_OVERLAY,
     CONF_ENABLE_SIDEBAR,
     CONF_HOUSE_MAP,
+    CONF_NOTES,
+    CONF_NOTES_TEXT,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
     CONF_CHANGE_HISTORY_TTL_DAYS,
@@ -94,6 +96,7 @@ _SHARED_KEYS = (
     CONF_ENABLE_DICTATE,
     CONF_ALLOW_USERS,
     CONF_HOUSE_MAP,
+    CONF_NOTES,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
     CONF_CHANGE_HISTORY_TTL_DAYS,
@@ -331,9 +334,15 @@ async def _prepare_mcp_form(hass: HomeAssistant, current: dict) -> tuple[dict, b
     return data, mcp_auto, kinds
 
 
-def _prompt_schema(current: dict) -> vol.Schema:
+def _prompt_schema(current: dict, notes_text: str = "") -> vol.Schema:
     value = str(current.get(CONF_SYSTEM_PROMPT) or "").strip() or DEFAULT_SYSTEM_PROMPT
-    return vol.Schema({vol.Optional(CONF_SYSTEM_PROMPT, default=value): _PROMPT_SELECTOR})
+    return vol.Schema(
+        {
+            vol.Optional(CONF_SYSTEM_PROMPT, default=value): _PROMPT_SELECTOR,
+            vol.Optional(CONF_NOTES, default=bool(current.get(CONF_NOTES, False))): cv.boolean,
+            vol.Optional(CONF_NOTES_TEXT, default=notes_text): _PROMPT_SELECTOR,
+        }
+    )
 
 
 def _flatten(user_input: dict) -> dict:
@@ -345,6 +354,19 @@ def _flatten(user_input: dict) -> dict:
     if str(out.get(CONF_SYSTEM_PROMPT) or "").strip() == DEFAULT_SYSTEM_PROMPT.strip():
         out[CONF_SYSTEM_PROMPT] = ""
     return out
+
+
+async def _persist_notes(hass: HomeAssistant, flat: dict, shown: str | None = None) -> dict:
+    """Notes text lives in storage so an agent write does not reload the integration.
+
+    shown is the text the form opened with. An untouched field keeps what an agent wrote meanwhile.
+    """
+    if CONF_NOTES_TEXT not in flat:
+        return flat
+    from .notes import async_save_form_notes
+
+    await async_save_form_notes(hass, str(flat.pop(CONF_NOTES_TEXT) or ""), shown)
+    return flat
 
 
 class _SideBySide(Selector):
@@ -399,6 +421,7 @@ async def _shared_form(
     *,
     include_mcp: bool,
     agents: list | None = None,
+    notes_text: str | None = None,
 ) -> vol.Schema:
     stt = await async_speech_engines(hass, "stt")
     tts = await async_speech_engines(hass, "tts")
@@ -417,9 +440,13 @@ async def _shared_form(
         fields[vol.Required(SECTION_MCP)] = section(_mcp_schema(defaults, hass, kinds or []), {"collapsed": False})
     fields[vol.Required(SECTION_CHAT)] = section(_chat_schema(defaults, agents), {"collapsed": False})
     fields[vol.Optional(SECTION_VOICE, default=voice)] = _SideBySide(_voice_schema(voice, stt, tts))
-    fields[vol.Required(SECTION_COST)] = section(_cost_schema(defaults), {"collapsed": False})
+    fields[vol.Required(SECTION_COST)] = section(_cost_schema(defaults), {"collapsed": True})
     fields[vol.Required(SECTION_HOUSE)] = section(_house_schema(defaults), {"collapsed": True})
-    fields[vol.Required(SECTION_PROMPT)] = section(_prompt_schema(defaults), {"collapsed": True})
+    if notes_text is None:
+        from .notes import async_load_notes
+
+        notes_text = await async_load_notes(hass)
+    fields[vol.Required(SECTION_PROMPT)] = section(_prompt_schema(defaults, notes_text), {"collapsed": True})
     return vol.Schema(fields, extra=vol.ALLOW_EXTRA)
 
 
@@ -508,6 +535,7 @@ class AiWorkspaceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors = _mcp_errors(flat)
             if not errors:
                 flat = await _restore_auto_mcp(self.hass, flat)
+                flat = await _persist_notes(self.hass, flat)
                 await self.async_set_unique_id(DOMAIN)
                 subentries = [_primary_connection(flat)]
                 if bool(flat.get(CONF_HA_USAGE_SENSORS, False)):
@@ -558,11 +586,20 @@ class AiWorkspaceOptionsFlow(config_entries.OptionsFlow):
                 current[CONF_PROMPT_CACHE] = False
         if user_input is not None:
             flat = _normalize(_flatten(user_input), self.hass)
+            flat = await _persist_notes(self.hass, flat, getattr(self, "_notes_shown", None))
             merged = {**current, **flat}
             return self.async_create_entry(title="", data=_stored_shared(merged))
+        from .notes import async_load_notes
+
+        self._notes_shown = await async_load_notes(self.hass)
         return self.async_show_form(
             step_id="init",
             data_schema=await _shared_form(
-                self.hass, current, None, include_mcp=False, agents=entry_agents(self.config_entry)
+                self.hass,
+                current,
+                None,
+                include_mcp=False,
+                agents=entry_agents(self.config_entry),
+                notes_text=self._notes_shown,
             ),
         )

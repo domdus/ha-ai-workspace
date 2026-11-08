@@ -21,6 +21,7 @@ from .agents import Agent, entry_agents
 from .const import (
     API_GEMINI,
     API_OPENROUTER,
+    API_XAI,
     DOMAIN,
     TTS_LANGUAGES,
     default_api_base,
@@ -30,7 +31,13 @@ from .const import (
     gemini_generate_content_url,
     tts_voices,
 )
-from .voice import gemini_inline_audio, gemini_speech_payload, match_speech_language, speech_text
+from .voice import (
+    gemini_inline_audio,
+    gemini_speech_payload,
+    match_speech_language,
+    speech_text,
+    xai_speech_payload,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -191,6 +198,38 @@ class AiWorkspaceTTSEntity(tts.TextToSpeechEntity):
         await self._record_usage(text=text, model=model, usage=piece)
         return audio
 
+    async def _synthesize_xai(self, text: str, voice: str, language: str) -> bytes:
+        """xAI POST /v1/tts: raw MP3 back, billed per input character."""
+        payload = xai_speech_payload(text, voice, language, self._tts_speed)
+        session = async_get_clientsession(self.hass)
+        try:
+            async with session.post(
+                f"{self._base()}/tts",
+                json=payload,
+                headers={"Authorization": f"Bearer {self._api_key}"},
+                timeout=ClientTimeout(total=45, sock_connect=10),
+            ) as resp:
+                body = await resp.read()
+                kind = str(resp.headers.get("Content-Type") or "")
+                if resp.status >= 400:
+                    detail = body.decode("utf-8", errors="replace")[:300]
+                    _LOGGER.warning("Text-to-speech HTTP %s: %s", resp.status, detail)
+                    raise HomeAssistantError(f"Text-to-speech HTTP {resp.status}")
+        except TimeoutError as err:
+            raise HomeAssistantError("Text-to-speech timed out.") from err
+        if "json" in kind:
+            import base64
+
+            try:
+                data = json.loads(body.decode("utf-8"))
+                body = base64.b64decode(str(data.get("audio") or "")) if isinstance(data, dict) else b""
+            except ValueError as err:
+                raise HomeAssistantError("Text-to-speech returned no audio.") from err
+        if not body:
+            raise HomeAssistantError("Text-to-speech returned no audio.")
+        await self._record_usage(text=payload["text"], model=default_tts_model(API_XAI))
+        return body
+
     async def _synthesize(self, message: str, voice: str, fmt: str = "mp3") -> bytes:
         text = speech_text(message)
         if not text:
@@ -240,6 +279,12 @@ class AiWorkspaceTTSEntity(tts.TextToSpeechEntity):
                     raise HomeAssistantError("Text-to-speech returned no audio.")
                 audio = await self._synthesize_gemini(spoken, voice, language)
                 ext = "wav"
+            elif self._provider == API_XAI:
+                spoken = speech_text(message)
+                if not spoken:
+                    raise HomeAssistantError("Text-to-speech returned no audio.")
+                audio = await self._synthesize_xai(spoken, voice, language)
+                ext = "mp3"
             else:
                 audio = await self._synthesize(message, voice)
                 ext = "mp3"

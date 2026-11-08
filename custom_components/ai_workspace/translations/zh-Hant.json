@@ -83,16 +83,20 @@
               "house_map": "預設關閉。一個關於自動化、實體與分區如何關聯的本機索引，一次查詢就能回答「哪些東西用到廚房燈？」這類問題。每則訊息會稍微增加一點內容，所以只有經常詢問東西如何關聯時才開啟。即時狀態仍來自 Home Assistant。",
               "shorten_mcp_results": "預設開啟。來自 Home Assistant 的超長回覆（全屋清單、大型搜尋）會在送給 AI 之前先摘要。節省 token，讓回覆保持快速。關閉則傳送全文。",
               "change_history": "預設開啟。記錄助手所做的每一項設定變更，方便你查看改了什麼，並請它還原到先前的版本。關閉後不再新增紀錄；助手仍可進行變更。",
-              "change_history_ttl_days": "Rollback 與「請對話還原」保持可用的天數。到期後紀錄仍在日誌中；還原舊快照可能覆蓋之後的變更。預設 7。1 大約是一天。"
+              "change_history_ttl_days": "Rollback 與「讓助理復原」保持可用的天數。到期後紀錄仍在日誌中；還原舊快照可能覆蓋之後的變更。預設 7。1 大約是一天。"
             }
           },
           "prompt": {
             "name": "系統提示詞",
             "data": {
-              "system_prompt": "系統提示詞"
+              "system_prompt": "系統提示詞",
+              "notes": "使用記住的筆記",
+              "notes_text": "記住的筆記"
             },
             "data_description": {
-              "system_prompt": "僅語氣和習慣。留空則使用預設值。助手始終可以存取 Home Assistant，並在回覆中保留快速連結。"
+              "system_prompt": "給助手的固定說明——房間、規則、回答方式，以及你希望它遵守的一切。留空則使用預設值。助手始終可以存取 Home Assistant，並在回覆中保留快速連結。助手不會寫入此欄位。",
+              "notes": "預設關閉。開啟後，助手會在每次對話中讀取下方筆記並可補充。關閉後，聊天既不讀取也不寫入。你仍可隨時編輯文字。",
+              "notes_text": "助手應保留的簡短英文條目。每個對話都會讀取，並在你說「記住」（任何聊天語言）或抱怨它不該再做的事時補充。你可以隨時編輯或清空。最多 2000 個字元。寫滿後，助手必須替換舊行——不會悄悄刪除。"
             }
           }
         }
@@ -192,16 +196,20 @@
               "house_map": "預設關閉。一個關於自動化、實體與分區如何關聯的本機索引，一次查詢就能回答「哪些東西用到廚房燈？」這類問題。每則訊息會稍微增加一點內容，所以只有經常詢問東西如何關聯時才開啟。即時狀態仍來自 Home Assistant。",
               "shorten_mcp_results": "預設開啟。來自 Home Assistant 的超長回覆（全屋清單、大型搜尋）會在送給 AI 之前先摘要。節省 token，讓回覆保持快速。關閉則傳送全文。",
               "change_history": "預設開啟。記錄助手所做的每一項設定變更，方便你查看改了什麼，並請它還原到先前的版本。關閉後不再新增紀錄；助手仍可進行變更。",
-              "change_history_ttl_days": "Rollback 與「請對話還原」保持可用的天數。到期後紀錄仍在日誌中；還原舊快照可能覆蓋之後的變更。預設 7。1 大約是一天。"
+              "change_history_ttl_days": "Rollback 與「讓助理復原」保持可用的天數。到期後紀錄仍在日誌中；還原舊快照可能覆蓋之後的變更。預設 7。1 大約是一天。"
             }
           },
           "prompt": {
             "name": "系統提示詞",
             "data": {
-              "system_prompt": "系統提示詞"
+              "system_prompt": "系統提示詞",
+              "notes": "使用記住的筆記",
+              "notes_text": "記住的筆記"
             },
             "data_description": {
-              "system_prompt": "僅語氣和習慣。留空則使用預設值。助手始終可以存取 Home Assistant，並在回覆中保留快速連結。"
+              "system_prompt": "給助手的固定說明——房間、規則、回答方式，以及你希望它遵守的一切。留空則使用預設值。助手始終可以存取 Home Assistant，並在回覆中保留快速連結。助手不會寫入此欄位。",
+              "notes": "預設關閉。開啟後，助手會在每次對話中讀取下方筆記並可補充。關閉後，聊天既不讀取也不寫入。你仍可隨時編輯文字。",
+              "notes_text": "助手應保留的簡短英文條目。每個對話都會讀取，並在你說「記住」（任何聊天語言）或抱怨它不該再做的事時補充。你可以隨時編輯或清空。最多 2000 個字元。寫滿後，助手必須替換舊行——不會悄悄刪除。"
             }
           }
         }
@@ -277,7 +285,8 @@
         "no_runtime": "無法連線 Cursor runtime。請先啟動它，並檢查此表單上的位址。",
         "required": "此欄位為必填。",
         "invalid_auth": "供應商拒絕了此 API 金鑰。",
-        "cannot_connect": "無法連線供應商。請檢查 URL 和網路。"
+        "cannot_connect": "無法連線供應商。請檢查 URL 和網路。",
+        "model_not_installed": "此模型未在 Ollama 中安裝。已安裝：{installed}"
       },
       "step": {
         "provider": {
@@ -299,8 +308,6 @@
             "cursor_api_key": "Cursor API 金鑰",
             "model": "模型",
             "effort": "推理強度",
-            "low_token": "降低 Token 用量",
-            "check_house": "先查看 Home Assistant",
             "allow_internet": "允許存取網際網路",
             "assist": "新增至 Assist"
           },
@@ -310,10 +317,19 @@
             "cursor_api_key": "來自你的 Cursor 帳戶（Integrations）。編輯時留空可保留已儲存的金鑰。 [取得 API 金鑰]({api_key_url})",
             "model": "從清單中選擇或輸入模型名稱。留空則使用 Composer。",
             "effort": "允許多長的思考時間。Composer 預設使用快速。",
-            "low_token": "每則訊息傳送更少內容以節省費用。關閉時關於你家的回答最可靠。輕度保留較少的對話紀錄。中度還會縮短較長的訊息和回覆，並且每輪只帶上最近幾則訊息。極端僅能聊天：沒有工具，因此無法檢查或控制家居。",
-            "check_house": "預設開啟。在回答有關你家的問題之前，智慧體會先查看 Home Assistant，讓清單和狀態真實而不是猜測。問候語會被略過。在沒有工具的極端模式下無效。用於一般問題或模型本身會主動查看時可關閉。",
             "allow_internet": "預設關閉。開啟後，此智慧體可在管理員對話中使用 Cursor 的網頁搜尋、網頁擷取和 Shell。關閉會移除這三項，因此 curl 或指令碼也無法連上網路。一般使用者的對話和語音衛星永遠不會取得這些工具。",
             "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。"
+          },
+          "sections": {
+            "advanced": {
+              "name": "進階",
+              "data": {
+                "save_tokens": "節省權杖"
+              },
+              "data_description": {
+                "save_tokens": "每則訊息傳送更少內容：更短的提示詞、更少的聊天記錄和更短的回覆。更便宜，但關於你家的回答可能不夠詳盡。"
+              }
+            }
           }
         },
         "provider_cloud": {
@@ -324,8 +340,6 @@
             "api_key": "API 金鑰",
             "model": "模型",
             "effort": "推理強度",
-            "low_token": "降低 Token 用量",
-            "check_house": "先查看 Home Assistant",
             "allow_internet": "允許存取網際網路",
             "assist": "新增至 Assist",
             "assist_stt": "新增語音轉文字",
@@ -340,8 +354,6 @@
             "api_key": "來自 AI 供應商的金鑰，不是 Home Assistant 登入憑證。 [取得 API 金鑰]({api_key_url})",
             "model": "從清單中選擇或輸入模型名稱。留空則使用供應商預設值。",
             "effort": "推理強度越高，思考越多：難題回答更好，但更慢、消耗更多 token。模型不支援時忽略。",
-            "low_token": "每則訊息傳送更少內容以節省費用。關閉時關於你家的回答最可靠。輕度保留較少的對話紀錄。中度還會縮短較長的訊息和回覆，並且每輪只帶上最近幾則訊息。極端僅能聊天：沒有工具，因此無法檢查或控制家居。",
-            "check_house": "預設開啟。在回答有關你家的問題之前，智慧體會先查看 Home Assistant，讓清單和狀態真實而不是猜測。問候語會被略過。在沒有工具的極端模式下無效。用於一般問題或模型本身會主動查看時可關閉。",
             "allow_internet": "預設關閉。開啟後，會在管理員對話中加入網頁搜尋和網頁擷取工具。區域網路中的位址仍被封鎖。一般使用者的對話和語音衛星永遠不會取得這些工具。",
             "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。",
             "assist_stt": "使用此助手的金鑰在 Home Assistant 中新增語音轉文字選項。關閉則移除它新增的內容。",
@@ -350,6 +362,19 @@
             "tts_model": "留空則使用預設語音模型。若供應商列出其他名稱，可以輸入。",
             "tts_voice": "Coral 為預設聲音。聲音會依 Assist → 語言中設定的語言運作。",
             "tts_speed": "此聲音的語速。1× 為正常。適用於 AI Workspace 和 Assist。"
+          },
+          "sections": {
+            "advanced": {
+              "name": "進階",
+              "data": {
+                "save_tokens": "節省權杖",
+                "cache_1h": "快取保留一小時"
+              },
+              "data_description": {
+                "save_tokens": "每則訊息傳送更少內容：更短的提示詞、更少的聊天記錄和更短的回覆。更便宜，但關於你家的回答可能不夠詳盡。",
+                "cache_1h": "僅限 Claude。系統提示與工具在快取中保留一小時，而非 5 分鐘。寫入快取的費用是輸入價格的 2 倍（而非 1.25 倍），讀取為 0.1 倍。若你的訊息之間常隔 5 分鐘以上會更便宜；很少聊天時會稍貴一些。"
+              }
+            }
           }
         },
         "provider_ollama": {
@@ -359,19 +384,26 @@
             "api_base": "Ollama 網址",
             "model": "模型",
             "effort": "推理強度",
-            "low_token": "降低 Token 用量",
-            "check_house": "先查看 Home Assistant",
             "allow_internet": "允許存取網際網路",
             "assist": "新增至 Assist"
           },
           "data_description": {
-            "api_base": "通常為 {example_url}",
+            "api_base": "{ollama_note}",
             "model": "從清單中選擇或輸入已安裝的模型。留空則使用 llama3.2。",
             "effort": "推理強度越高，思考越多：難題回答更好，但更慢、消耗更多 token。模型不支援時忽略。",
-            "low_token": "每則訊息傳送更少內容以節省費用。關閉時關於你家的回答最可靠。輕度保留較少的對話紀錄。中度還會縮短較長的訊息和回覆，並且每輪只帶上最近幾則訊息。極端僅能聊天：沒有工具，因此無法檢查或控制家居。",
-            "check_house": "預設開啟。在回答有關你家的問題之前，智慧體會先查看 Home Assistant，讓清單和狀態真實而不是猜測。問候語會被略過。在沒有工具的極端模式下無效。用於一般問題或模型本身會主動查看時可關閉。",
             "allow_internet": "預設關閉。開啟後，會在管理員對話中加入網頁搜尋和網頁擷取工具。區域網路中的位址仍被封鎖。一般使用者的對話和語音衛星永遠不會取得這些工具。",
             "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。"
+          },
+          "sections": {
+            "advanced": {
+              "name": "進階",
+              "data": {
+                "save_tokens": "節省權杖"
+              },
+              "data_description": {
+                "save_tokens": "每則訊息傳送更少內容：更短的提示詞、更少的聊天記錄和更短的回覆。更便宜，但關於你家的回答可能不夠詳盡。"
+              }
+            }
           }
         },
         "provider_azure": {
@@ -383,8 +415,6 @@
             "model": "部署",
             "azure_api_version": "API 版本",
             "effort": "推理強度",
-            "low_token": "降低 Token 用量",
-            "check_house": "先查看 Home Assistant",
             "allow_internet": "允許存取網際網路",
             "assist": "新增至 Assist"
           },
@@ -394,10 +424,19 @@
             "model": "部署名稱。",
             "azure_api_version": "除非 Azure 支援提供了其他版本，否則請保留預設值。",
             "effort": "推理強度越高，思考越多：難題回答更好，但更慢、消耗更多 token。模型不支援時忽略。",
-            "low_token": "每則訊息傳送更少內容以節省費用。關閉時關於你家的回答最可靠。輕度保留較少的對話紀錄。中度還會縮短較長的訊息和回覆，並且每輪只帶上最近幾則訊息。極端僅能聊天：沒有工具，因此無法檢查或控制家居。",
-            "check_house": "預設開啟。在回答有關你家的問題之前，智慧體會先查看 Home Assistant，讓清單和狀態真實而不是猜測。問候語會被略過。在沒有工具的極端模式下無效。用於一般問題或模型本身會主動查看時可關閉。",
             "allow_internet": "預設關閉。開啟後，會在管理員對話中加入網頁搜尋和網頁擷取工具。區域網路中的位址仍被封鎖。一般使用者的對話和語音衛星永遠不會取得這些工具。",
             "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。"
+          },
+          "sections": {
+            "advanced": {
+              "name": "進階",
+              "data": {
+                "save_tokens": "節省權杖"
+              },
+              "data_description": {
+                "save_tokens": "每則訊息傳送更少內容：更短的提示詞、更少的聊天記錄和更短的回覆。更便宜，但關於你家的回答可能不夠詳盡。"
+              }
+            }
           }
         },
         "provider_compatible": {
@@ -408,8 +447,6 @@
             "api_base": "API 基礎網址",
             "model": "模型",
             "effort": "推理強度",
-            "low_token": "降低 Token 用量",
-            "check_house": "先查看 Home Assistant",
             "allow_internet": "允許存取網際網路",
             "assist": "新增至 Assist",
             "assist_stt": "新增語音轉文字",
@@ -424,8 +461,6 @@
             "api_base": "伺服器位址。若伺服器需要，請在結尾加上 /v1。",
             "model": "該伺服器上的模型名稱。",
             "effort": "推理強度越高，思考越多：難題回答更好，但更慢、消耗更多 token。模型不支援時忽略。",
-            "low_token": "每則訊息傳送更少內容以節省費用。關閉時關於你家的回答最可靠。輕度保留較少的對話紀錄。中度還會縮短較長的訊息和回覆，並且每輪只帶上最近幾則訊息。極端僅能聊天：沒有工具，因此無法檢查或控制家居。",
-            "check_house": "預設開啟。在回答有關你家的問題之前，智慧體會先查看 Home Assistant，讓清單和狀態真實而不是猜測。問候語會被略過。在沒有工具的極端模式下無效。用於一般問題或模型本身會主動查看時可關閉。",
             "allow_internet": "預設關閉。開啟後，會在管理員對話中加入網頁搜尋和網頁擷取工具。區域網路中的位址仍被封鎖。一般使用者的對話和語音衛星永遠不會取得這些工具。",
             "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。",
             "assist_stt": "使用此助手的金鑰在 Home Assistant 中新增語音轉文字選項。關閉則移除它新增的內容。",
@@ -434,6 +469,17 @@
             "tts_model": "留空則使用預設語音模型。若供應商列出其他名稱，可以輸入。",
             "tts_voice": "Coral 為預設聲音。聲音會依 Assist → 語言中設定的語言運作。",
             "tts_speed": "此聲音的語速。1× 為正常。適用於 AI Workspace 和 Assist。"
+          },
+          "sections": {
+            "advanced": {
+              "name": "進階",
+              "data": {
+                "save_tokens": "節省權杖"
+              },
+              "data_description": {
+                "save_tokens": "每則訊息傳送更少內容：更短的提示詞、更少的聊天記錄和更短的回覆。更便宜，但關於你家的回答可能不夠詳盡。"
+              }
+            }
           }
         }
       },
@@ -472,14 +518,6 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "自訂 MCP URL"
-      }
-    },
-    "low_token": {
-      "options": {
-        "off": "關閉",
-        "light": "Light",
-        "medium": "Medium",
-        "extreme": "Extreme"
       }
     }
   }

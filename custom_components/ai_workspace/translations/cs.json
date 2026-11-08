@@ -83,16 +83,20 @@
               "house_map": "Ve výchozím stavu vypnuto. Místní index propojení automatizací, entit a oblastí, takže jedno vyhledání odpoví na otázky jako „co používá světlo v kuchyni?“. Ke každé zprávě trochu přidá, proto ho zapněte, jen pokud se často ptáte, jak jsou věci propojené. Živé stavy dál přicházejí z Home Assistant.",
               "shorten_mcp_results": "Ve výchozím stavu zapnuto. Velmi dlouhé odpovědi z Home Assistant (seznamy celého domu, velká hledání) se před odesláním do AI shrnou. Šetří tokeny a drží odpovědi rychlé. Vypnuto pošle celý text.",
               "change_history": "Ve výchozím stavu zapnuto. Zaznamenává každou změnu konfigurace, kterou asistent udělá, takže vidíte, co se změnilo, a můžete ho požádat o obnovení dřívější verze. Vypnuto: bez nových záznamů; asistent může dál provádět změny.",
-              "change_history_ttl_days": "Dny, po které zůstane Rollback a Požádat o obnovení dostupné. Poté záznam v protokolu zůstane; obnovení starého snímku může přepsat pozdější práci. Výchozí 7. 1 je asi den."
+              "change_history_ttl_days": "Dny, po které zůstane Rollback a Vrátit pomocí agenta dostupné. Poté záznam v protokolu zůstane; obnovení starého snímku může přepsat pozdější práci. Výchozí 7. 1 je asi den."
             }
           },
           "prompt": {
             "name": "Systémový prompt",
             "data": {
-              "system_prompt": "Systémový prompt"
+              "system_prompt": "Systémový prompt",
+              "notes": "Používat zapamatované poznámky",
+              "notes_text": "Zapamatované poznámky"
             },
             "data_description": {
-              "system_prompt": "Jen tón a zvyky. Nechte prázdné pro výchozí hodnotu. Asistent si vždy ponechá přístup k Home Assistant a rychlým odkazům v odpovědích."
+              "system_prompt": "Trvalé pokyny pro asistenta — místnosti, pravidla, jak odpovídat, cokoli má dodržovat. Nechte prázdné pro výchozí hodnotu. Asistent si vždy ponechá přístup k Home Assistant a rychlým odkazům v odpovědích. Do tohoto pole nepíše.",
+              "notes": "Ve výchozím stavu vypnuto. Když je zapnuto, asistent čte poznámky níže v každém chatu a může je doplňovat. Vypnuto: chat je nečte ani nezapisuje. Text můžeš kdykoli upravit.",
+              "notes_text": "Krátké anglické odrážky, které si má asistent nechat. Vidí je v každém chatu a doplní je, když řekneš «zapamatuj si» (v jakémkoli jazyce chatu) nebo si stěžuješ na něco, co má přestat dělat. Můžeš je kdykoli upravit nebo vymazat. Maximálně 2000 znaků. Když je limit plný, asistent musí nahradit starší řádky — nic se tiše nemaže."
             }
           }
         }
@@ -192,16 +196,20 @@
               "house_map": "Ve výchozím stavu vypnuto. Místní index propojení automatizací, entit a oblastí, takže jedno vyhledání odpoví na otázky jako „co používá světlo v kuchyni?“. Ke každé zprávě trochu přidá, proto ho zapněte, jen pokud se často ptáte, jak jsou věci propojené. Živé stavy dál přicházejí z Home Assistant.",
               "shorten_mcp_results": "Ve výchozím stavu zapnuto. Velmi dlouhé odpovědi z Home Assistant (seznamy celého domu, velká hledání) se před odesláním do AI shrnou. Šetří tokeny a drží odpovědi rychlé. Vypnuto pošle celý text.",
               "change_history": "Ve výchozím stavu zapnuto. Zaznamenává každou změnu konfigurace, kterou asistent udělá, takže vidíte, co se změnilo, a můžete ho požádat o obnovení dřívější verze. Vypnuto: bez nových záznamů; asistent může dál provádět změny.",
-              "change_history_ttl_days": "Dny, po které zůstane Rollback a Požádat o obnovení dostupné. Poté záznam v protokolu zůstane; obnovení starého snímku může přepsat pozdější práci. Výchozí 7. 1 je asi den."
+              "change_history_ttl_days": "Dny, po které zůstane Rollback a Vrátit pomocí agenta dostupné. Poté záznam v protokolu zůstane; obnovení starého snímku může přepsat pozdější práci. Výchozí 7. 1 je asi den."
             }
           },
           "prompt": {
             "name": "Systémový prompt",
             "data": {
-              "system_prompt": "Systémový prompt"
+              "system_prompt": "Systémový prompt",
+              "notes": "Používat zapamatované poznámky",
+              "notes_text": "Zapamatované poznámky"
             },
             "data_description": {
-              "system_prompt": "Jen tón a zvyky. Nechte prázdné pro výchozí hodnotu. Asistent si vždy ponechá přístup k Home Assistant a rychlým odkazům v odpovědích."
+              "system_prompt": "Trvalé pokyny pro asistenta — místnosti, pravidla, jak odpovídat, cokoli má dodržovat. Nechte prázdné pro výchozí hodnotu. Asistent si vždy ponechá přístup k Home Assistant a rychlým odkazům v odpovědích. Do tohoto pole nepíše.",
+              "notes": "Ve výchozím stavu vypnuto. Když je zapnuto, asistent čte poznámky níže v každém chatu a může je doplňovat. Vypnuto: chat je nečte ani nezapisuje. Text můžeš kdykoli upravit.",
+              "notes_text": "Krátké anglické odrážky, které si má asistent nechat. Vidí je v každém chatu a doplní je, když řekneš «zapamatuj si» (v jakémkoli jazyce chatu) nebo si stěžuješ na něco, co má přestat dělat. Můžeš je kdykoli upravit nebo vymazat. Maximálně 2000 znaků. Když je limit plný, asistent musí nahradit starší řádky — nic se tiše nemaže."
             }
           }
         }
@@ -277,7 +285,8 @@
         "no_runtime": "Běhové prostředí Cursor není dostupné. Spusťte ho a zkontrolujte adresu v tomto formuláři.",
         "required": "Toto pole je povinné.",
         "invalid_auth": "Poskytovatel tento klíč API odmítl.",
-        "cannot_connect": "Poskytovatel není dostupný. Zkontrolujte URL a síť."
+        "cannot_connect": "Poskytovatel není dostupný. Zkontrolujte URL a síť.",
+        "model_not_installed": "Tento model není v Ollamě nainstalovaný. Nainstalované: {installed}"
       },
       "step": {
         "provider": {
@@ -299,8 +308,6 @@
             "cursor_api_key": "Klíč API Cursor",
             "model": "Model",
             "effort": "Úsilí",
-            "low_token": "Snížit spotřebu tokenů",
-            "check_house": "Nejdřív se podívat do Home Assistant",
             "allow_internet": "Povolit internet",
             "assist": "Přidat do Assist"
           },
@@ -310,10 +317,19 @@
             "cursor_api_key": "Z účtu Cursor (Integrations). Při úpravě nechte prázdné, aby se zachoval uložený klíč. [Získat API klíč]({api_key_url})",
             "model": "Vyberte ze seznamu nebo zadejte název modelu. Prázdné použije Composer.",
             "effort": "Kolik času na přemýšlení povolit. Composer ve výchozím stavu použije Rychlé.",
-            "low_token": "S každou zprávou posílá méně, aby šetřil peníze. Vypnuto dává nejspolehlivější odpovědi o domě. Lehký uchovává méně historie. Střední navíc zkracuje dlouhé zprávy a odpovědi a každé kolo začíná jen posledními zprávami. Extrémní je jen chat: bez nástrojů, takže dům nemůže kontrolovat ani ovládat.",
-            "check_house": "Ve výchozím stavu zapnuto. Než agent odpoví na otázku o domě, podívá se do Home Assistant, aby seznamy a stavy byly skutečné, ne odhadnuté. Pozdravy se přeskakují. Nemá vliv v režimu Extrémní, který nemá nástroje. Vypněte pro obecné otázky nebo pro model, který si to ověřuje sám.",
             "allow_internet": "Ve výchozím stavu vypnuto. Zapnuto umožní tomuto agentovi v chatech správce používat webové vyhledávání, stahování stránek a shell Cursoru. Vypnuto odebere všechny tři, takže ani curl či skripty se na web nedostanou. Chaty běžných uživatelů a hlasových satelitů je nikdy nedostanou.",
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Pokročilé",
+              "data": {
+                "save_tokens": "Šetřit tokeny"
+              },
+              "data_description": {
+                "save_tokens": "S každou zprávou posílá méně: kratší prompt, méně historie chatu a kratší odpovědi. Levnější, ale odpovědi o vaší domácnosti mohou být méně důkladné."
+              }
+            }
           }
         },
         "provider_cloud": {
@@ -324,8 +340,6 @@
             "api_key": "Klíč API",
             "model": "Model",
             "effort": "Úsilí",
-            "low_token": "Snížit spotřebu tokenů",
-            "check_house": "Nejdřív se podívat do Home Assistant",
             "allow_internet": "Povolit internet",
             "assist": "Přidat do Assist",
             "assist_stt": "Přidat převod řeči na text",
@@ -340,8 +354,6 @@
             "api_key": "Váš klíč u poskytovatele AI, ne přihlášení do Home Assistant. [Získat API klíč]({api_key_url})",
             "model": "Vyberte ze seznamu nebo zadejte název modelu. Prázdné použije výchozí hodnotu poskytovatele.",
             "effort": "Větší úsilí znamená víc přemýšlení: lepší odpovědi na těžké otázky, ale pomaleji a víc tokenů. Ignoruje se, pokud to model nepodporuje.",
-            "low_token": "S každou zprávou posílá méně, aby šetřil peníze. Vypnuto dává nejspolehlivější odpovědi o domě. Lehký uchovává méně historie. Střední navíc zkracuje dlouhé zprávy a odpovědi a každé kolo začíná jen posledními zprávami. Extrémní je jen chat: bez nástrojů, takže dům nemůže kontrolovat ani ovládat.",
-            "check_house": "Ve výchozím stavu zapnuto. Než agent odpoví na otázku o domě, podívá se do Home Assistant, aby seznamy a stavy byly skutečné, ne odhadnuté. Pozdravy se přeskakují. Nemá vliv v režimu Extrémní, který nemá nástroje. Vypněte pro obecné otázky nebo pro model, který si to ověřuje sám.",
             "allow_internet": "Ve výchozím stavu vypnuto. Zapnuto přidá v chatech správce nástroje pro vyhledávání na webu a stahování stránek. Adresy v místní síti zůstávají blokované. Chaty běžných uživatelů a hlasových satelitů je nikdy nedostanou.",
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist.",
             "assist_stt": "Přidá v Home Assistant možnost řeči na text s klíčem tohoto asistenta. Vypnuto odstraní to, co přidal.",
@@ -350,6 +362,19 @@
             "tts_model": "Nechte prázdné pro výchozí hlasový model. Můžete zadat jiný název, pokud ho poskytovatel uvádí.",
             "tts_voice": "Coral je výchozí. Hlasy fungují pro jazyky nastavené v Assist → Jazyk.",
             "tts_speed": "Jak rychle tento hlas mluví. 1× je běžné. Platí pro AI Workspace i Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Pokročilé",
+              "data": {
+                "save_tokens": "Šetřit tokeny",
+                "cache_1h": "Držet mezipaměť hodinu"
+              },
+              "data_description": {
+                "save_tokens": "S každou zprávou posílá méně: kratší prompt, méně historie chatu a kratší odpovědi. Levnější, ale odpovědi o vaší domácnosti mohou být méně důkladné.",
+                "cache_1h": "Jen Claude. Drží systémový prompt a nástroje v mezipaměti hodinu místo 5 minut. Zápis do mezipaměti stojí 2× cenu vstupu místo 1,25×, čtení 0,1×. Levnější, když mezi zprávami často uplyne víc než 5 minut; o něco dražší, když píšete zřídka."
+              }
+            }
           }
         },
         "provider_ollama": {
@@ -359,19 +384,26 @@
             "api_base": "URL Ollama",
             "model": "Model",
             "effort": "Úsilí",
-            "low_token": "Snížit spotřebu tokenů",
-            "check_house": "Nejdřív se podívat do Home Assistant",
             "allow_internet": "Povolit internet",
             "assist": "Přidat do Assist"
           },
           "data_description": {
-            "api_base": "Obvykle {example_url}",
+            "api_base": "{ollama_note}",
             "model": "Vyberte ze seznamu nebo zadejte nainstalovaný model. Prázdné použije llama3.2.",
             "effort": "Větší úsilí znamená víc přemýšlení: lepší odpovědi na těžké otázky, ale pomaleji a víc tokenů. Ignoruje se, pokud to model nepodporuje.",
-            "low_token": "S každou zprávou posílá méně, aby šetřil peníze. Vypnuto dává nejspolehlivější odpovědi o domě. Lehký uchovává méně historie. Střední navíc zkracuje dlouhé zprávy a odpovědi a každé kolo začíná jen posledními zprávami. Extrémní je jen chat: bez nástrojů, takže dům nemůže kontrolovat ani ovládat.",
-            "check_house": "Ve výchozím stavu zapnuto. Než agent odpoví na otázku o domě, podívá se do Home Assistant, aby seznamy a stavy byly skutečné, ne odhadnuté. Pozdravy se přeskakují. Nemá vliv v režimu Extrémní, který nemá nástroje. Vypněte pro obecné otázky nebo pro model, který si to ověřuje sám.",
             "allow_internet": "Ve výchozím stavu vypnuto. Zapnuto přidá v chatech správce nástroje pro vyhledávání na webu a stahování stránek. Adresy v místní síti zůstávají blokované. Chaty běžných uživatelů a hlasových satelitů je nikdy nedostanou.",
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Pokročilé",
+              "data": {
+                "save_tokens": "Šetřit tokeny"
+              },
+              "data_description": {
+                "save_tokens": "S každou zprávou posílá méně: kratší prompt, méně historie chatu a kratší odpovědi. Levnější, ale odpovědi o vaší domácnosti mohou být méně důkladné."
+              }
+            }
           }
         },
         "provider_azure": {
@@ -383,8 +415,6 @@
             "model": "Nasazení",
             "azure_api_version": "Verze API",
             "effort": "Úsilí",
-            "low_token": "Snížit spotřebu tokenů",
-            "check_house": "Nejdřív se podívat do Home Assistant",
             "allow_internet": "Povolit internet",
             "assist": "Přidat do Assist"
           },
@@ -394,10 +424,19 @@
             "model": "Název nasazení.",
             "azure_api_version": "Nechte výchozí hodnotu, pokud vám podpora Azure nedala jinou verzi.",
             "effort": "Větší úsilí znamená víc přemýšlení: lepší odpovědi na těžké otázky, ale pomaleji a víc tokenů. Ignoruje se, pokud to model nepodporuje.",
-            "low_token": "S každou zprávou posílá méně, aby šetřil peníze. Vypnuto dává nejspolehlivější odpovědi o domě. Lehký uchovává méně historie. Střední navíc zkracuje dlouhé zprávy a odpovědi a každé kolo začíná jen posledními zprávami. Extrémní je jen chat: bez nástrojů, takže dům nemůže kontrolovat ani ovládat.",
-            "check_house": "Ve výchozím stavu zapnuto. Než agent odpoví na otázku o domě, podívá se do Home Assistant, aby seznamy a stavy byly skutečné, ne odhadnuté. Pozdravy se přeskakují. Nemá vliv v režimu Extrémní, který nemá nástroje. Vypněte pro obecné otázky nebo pro model, který si to ověřuje sám.",
             "allow_internet": "Ve výchozím stavu vypnuto. Zapnuto přidá v chatech správce nástroje pro vyhledávání na webu a stahování stránek. Adresy v místní síti zůstávají blokované. Chaty běžných uživatelů a hlasových satelitů je nikdy nedostanou.",
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Pokročilé",
+              "data": {
+                "save_tokens": "Šetřit tokeny"
+              },
+              "data_description": {
+                "save_tokens": "S každou zprávou posílá méně: kratší prompt, méně historie chatu a kratší odpovědi. Levnější, ale odpovědi o vaší domácnosti mohou být méně důkladné."
+              }
+            }
           }
         },
         "provider_compatible": {
@@ -408,8 +447,6 @@
             "api_base": "Základní URL API",
             "model": "Model",
             "effort": "Úsilí",
-            "low_token": "Snížit spotřebu tokenů",
-            "check_house": "Nejdřív se podívat do Home Assistant",
             "allow_internet": "Povolit internet",
             "assist": "Přidat do Assist",
             "assist_stt": "Přidat převod řeči na text",
@@ -424,8 +461,6 @@
             "api_base": "Adresa serveru. Na konec přidejte /v1, pokud to server očekává.",
             "model": "Název modelu na tom serveru.",
             "effort": "Větší úsilí znamená víc přemýšlení: lepší odpovědi na těžké otázky, ale pomaleji a víc tokenů. Ignoruje se, pokud to model nepodporuje.",
-            "low_token": "S každou zprávou posílá méně, aby šetřil peníze. Vypnuto dává nejspolehlivější odpovědi o domě. Lehký uchovává méně historie. Střední navíc zkracuje dlouhé zprávy a odpovědi a každé kolo začíná jen posledními zprávami. Extrémní je jen chat: bez nástrojů, takže dům nemůže kontrolovat ani ovládat.",
-            "check_house": "Ve výchozím stavu zapnuto. Než agent odpoví na otázku o domě, podívá se do Home Assistant, aby seznamy a stavy byly skutečné, ne odhadnuté. Pozdravy se přeskakují. Nemá vliv v režimu Extrémní, který nemá nástroje. Vypněte pro obecné otázky nebo pro model, který si to ověřuje sám.",
             "allow_internet": "Ve výchozím stavu vypnuto. Zapnuto přidá v chatech správce nástroje pro vyhledávání na webu a stahování stránek. Adresy v místní síti zůstávají blokované. Chaty běžných uživatelů a hlasových satelitů je nikdy nedostanou.",
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist.",
             "assist_stt": "Přidá v Home Assistant možnost řeči na text s klíčem tohoto asistenta. Vypnuto odstraní to, co přidal.",
@@ -434,6 +469,17 @@
             "tts_model": "Nechte prázdné pro výchozí hlasový model. Můžete zadat jiný název, pokud ho poskytovatel uvádí.",
             "tts_voice": "Coral je výchozí. Hlasy fungují pro jazyky nastavené v Assist → Jazyk.",
             "tts_speed": "Jak rychle tento hlas mluví. 1× je běžné. Platí pro AI Workspace i Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Pokročilé",
+              "data": {
+                "save_tokens": "Šetřit tokeny"
+              },
+              "data_description": {
+                "save_tokens": "S každou zprávou posílá méně: kratší prompt, méně historie chatu a kratší odpovědi. Levnější, ale odpovědi o vaší domácnosti mohou být méně důkladné."
+              }
+            }
           }
         }
       },
@@ -472,14 +518,6 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Vlastní URL MCP"
-      }
-    },
-    "low_token": {
-      "options": {
-        "off": "Vypnuto",
-        "light": "Light",
-        "medium": "Medium",
-        "extreme": "Extreme"
       }
     }
   }

@@ -12,7 +12,6 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from homeassistant.config import AUTOMATION_CONFIG_PATH, SCENE_CONFIG_PATH, SCRIPT_CONFIG_PATH
-from homeassistant.const import SERVICE_RELOAD
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util.file import write_utf8_file_atomic
@@ -33,11 +32,13 @@ from .activity import (
     looks_like_config_write,
     should_keep_activity,
     summary,
+    tool_name,
     tool_succeeded,
     watches_config,
     yaml_kind_from_args,
 )
 from .const import DOMAIN
+from .notes import TOOL_NAME as NOTES_TOOL
 from .store import Store
 
 logger = logging.getLogger(__name__)
@@ -323,6 +324,8 @@ async def prepare(
     session_id: str = "",
 ) -> str | None:
     args = arguments if isinstance(arguments, dict) else {}
+    if tool_name(tool) == NOTES_TOOL:
+        return await _prepare_notes(hass, user_id, user_name, agent, tool, args, session_id)
     change = classify(tool, args)
     watch = None
     document = None
@@ -425,6 +428,44 @@ async def prepare(
     return token
 
 
+_NOTES_SUMMARY = {"add": "Added a remembered note", "remove": "Removed a remembered note", "replace": "Rewrote the remembered notes"}
+
+
+async def _snapshot_notes(hass: HomeAssistant) -> dict[str, Any]:
+    from .notes import async_load_notes
+
+    return {"kind": "notes", "id": "notes", "label": "Remembered notes", "text": await async_load_notes(hass)}
+
+
+async def _prepare_notes(
+    hass: HomeAssistant,
+    user_id: str,
+    user_name: str,
+    agent: str,
+    tool: str,
+    args: dict[str, Any],
+    session_id: str,
+) -> str:
+    """The notes as they were, so the agent's write can be undone like a config change."""
+    action = str(args.get("action") or "").strip().lower()
+    token = uuid.uuid4().hex
+    pending = _pending(hass)
+    _drop_old(pending)
+    pending[token] = Pending(
+        user_id=user_id,
+        user_name=user_name or user_id,
+        agent=agent or "Agent",
+        tool=str(tool or ""),
+        summary=_NOTES_SUMMARY.get(action, "Changed the remembered notes"),
+        document=await _snapshot_notes(hass),
+        watch=None,
+        session_id=str(session_id or ""),
+        chat=await _session_title(hass, session_id),
+        at=time.monotonic(),
+    )
+    return token
+
+
 def _same_body(left: object, right: object) -> bool:
     return json.dumps(left, sort_keys=True, default=str, ensure_ascii=False) == json.dumps(
         right, sort_keys=True, default=str, ensure_ascii=False
@@ -432,6 +473,8 @@ def _same_body(left: object, right: object) -> bool:
 
 
 def _saved_body(document: dict[str, Any]) -> object:
+    if document.get("kind") == "notes":
+        return str(document.get("text") or "")
     if "item" in document:
         return document.get("item")
     if document.get("kind") == "dashboard":
@@ -516,8 +559,11 @@ def _summary_from_events(pending: Pending) -> str:
     for item in pending.events:
         if item[0] == "yaml":
             kind = str(item[1] or "automation")
-            doc = _pick_yaml_doc(pending.yaml_docs, kind, item[2] if len(item) > 2 else "")
-            label = str((doc or {}).get("label") or item[2] or kind)
+            item_id = item[2] if len(item) > 2 else ""
+            doc = _pick_yaml_doc(pending.yaml_docs, kind, item_id)
+            if doc is None and not item_id:
+                return f"Changed {'an' if kind[:1] in 'aeiou' else 'a'} {kind}"
+            label = str((doc or {}).get("label") or item_id or kind)
             return f"Updated {kind} {label}"
         if item[0] == "dashboard":
             store_id = dashboard_store_id(item[1])
@@ -557,6 +603,10 @@ async def _apply_events(hass: HomeAssistant, pending: Pending) -> tuple[dict[str
         before = _pick_yaml_doc(pending.yaml_docs, yaml_kind, yaml_id)
         if before is None and isinstance(pending.document, dict) and pending.document.get("kind") == yaml_kind:
             before = pending.document
+        if before is None and not yaml_id:
+            # A new automation, script, or scene: the reload event names nothing, so
+            # "Updated automation automation" would win over the index ("Created automation …").
+            return None, ""
         label = str((before or {}).get("label") or yaml_id or yaml_kind)
         text = summary(
             Change(kind=yaml_kind, action="update", item_id=str((before or {}).get("id") or yaml_id or ""), label=label, domain=yaml_kind),
@@ -621,6 +671,9 @@ async def _activity_settle(hass: HomeAssistant, pending: Pending) -> None:
     document = pending.document if isinstance(pending.document, dict) else None
     if not (pending.dashboard_docs or pending.watch is not None or document or pending.tool):
         return
+    if document is not None and document.get("kind") == "notes":
+        # Saved before the tool returned; nothing in Home Assistant follows later.
+        return
     for delay in _SETTLE_DELAYS:
         if pending.events:
             return
@@ -635,10 +688,12 @@ async def _activity_settle(hass: HomeAssistant, pending: Pending) -> None:
         await asyncio.sleep(delay)
 
 
-async def commit(hass: HomeAssistant, store: Store, token: str, *, ok: bool) -> None:
+async def commit(hass: HomeAssistant, store: Store, token: str, *, ok: bool, user_id: str | None = None) -> None:
     key = str(token or "")
     pending = _pending(hass).get(key)
     if pending is None:
+        return
+    if user_id is not None and pending.user_id != user_id:
         return
     await _activity_settle(hass, pending)
     pending = _pending(hass).pop(key, None)
@@ -664,7 +719,12 @@ async def commit(hass: HomeAssistant, store: Store, token: str, *, ok: bool) -> 
                 document = attached
             elif event_doc is None:
                 document = pending.document
-    if isinstance(document, dict):
+    if isinstance(document, dict) and document.get("kind") == "notes":
+        if not await _document_changed(hass, document):
+            logger.info("activity skipped %s: notes unchanged", pending.tool)
+            return
+        changed = True
+    elif isinstance(document, dict):
         changed = await _document_changed(hass, document)
         if not changed and pending.dashboard_docs:
             changed = await _dashboard_docs_changed(hass, pending.dashboard_docs)
@@ -725,15 +785,19 @@ async def commit(hass: HomeAssistant, store: Store, token: str, *, ok: bool) -> 
         await hass.async_add_executor_job(_write_change_file, store, row, document)
 
 
-async def rollback(hass: HomeAssistant, document: dict[str, Any]) -> None:
+async def rollback(hass: HomeAssistant, document: dict[str, Any], authorization: str = "") -> None:
+    """authorization is the signed-in user's header; automations, scripts, and scenes go through HA's config API."""
     from .logical_commit import documents_to_restore
 
     docs = documents_to_restore(document)
+    # Several note writes in one turn: the first snapshot is how the notes were before the turn.
+    notes = [doc for doc in docs if doc.get("kind") == "notes"]
+    docs = [doc for doc in docs if doc.get("kind") != "notes"] + notes[:1]
     restored = 0
     last_error: ActivityError | None = None
     for doc in docs:
         try:
-            await _rollback_one(hass, doc)
+            await _rollback_one(hass, doc, authorization)
         except ActivityError as exc:
             last_error = exc
             continue
@@ -743,10 +807,10 @@ async def rollback(hass: HomeAssistant, document: dict[str, Any]) -> None:
     raise last_error or ActivityError("This change has nothing to restore.")
 
 
-async def _rollback_one(hass: HomeAssistant, document: dict[str, Any]) -> None:
+async def _rollback_one(hass: HomeAssistant, document: dict[str, Any], authorization: str = "") -> None:
     kind = str(document.get("kind") or "")
     if kind in _YAML:
-        await _restore_yaml(hass, kind, document)
+        await _restore_config_item(hass, kind, document, authorization)
         return
     if kind == "helper":
         await _restore_helper(hass, document)
@@ -756,6 +820,12 @@ async def _rollback_one(hass: HomeAssistant, document: dict[str, Any]) -> None:
         return
     if kind == "dashboard":
         await _restore_dashboard(hass, document)
+        return
+    if kind == "notes" and isinstance(document.get("text"), str):
+        from .notes import async_save_notes, notes_lock
+
+        async with notes_lock(hass):
+            await async_save_notes(hass, document["text"])
         return
     raise ActivityError("This change has nothing to restore.")
 
@@ -770,6 +840,8 @@ async def snapshot(hass: HomeAssistant, change: Change, force: bool = False) -> 
         return _snapshot_entity(hass, change)
     if change.kind == "dashboard":
         return await _snapshot_dashboard(hass, change, force=force)
+    if change.kind == "notes":
+        return await _snapshot_notes(hass)
     return None
 
 
@@ -814,10 +886,6 @@ def _read_yaml(path: str) -> Any:
     if not os.path.isfile(path):
         return None
     return load_yaml(path)
-
-
-def _write_yaml(path: str, data: Any) -> None:
-    write_utf8_file_atomic(path, dump(data))
 
 
 def _config_id(hass: HomeAssistant, kind: str, identifier: str) -> str:
@@ -1013,27 +1081,82 @@ async def _snapshot_yaml_docs(hass: HomeAssistant, kinds: tuple[str, ...]) -> di
     return found
 
 
-async def _restore_yaml(hass: HomeAssistant, kind: str, document: dict[str, Any]) -> None:
+async def _restore_config_item(
+    hass: HomeAssistant, kind: str, document: dict[str, Any], authorization: str
+) -> None:
+    """Save the earlier version through Home Assistant's own config API.
+
+    That is the same call the automation, script, and scene editors make: Home Assistant
+    validates the item, writes its own file, and reloads it. AI Workspace never writes
+    automations.yaml, scripts.yaml, or scenes.yaml itself.
+    """
     item_id = str(document.get("id") or "")
     item = document.get("item")
     if not item_id or not isinstance(item, dict):
         raise ActivityError("The saved document is incomplete.")
-    path = hass.config.path(_YAML[kind])
+    if not str(authorization or "").strip():
+        raise ActivityError("Sign in again, then roll back this change.")
+    body = {key: value for key, value in item.items() if key != "id"} if kind == "script" else dict(item)
+    if kind != "script":
+        body["id"] = item_id
+    status, message = await _post_config(hass, kind, item_id, body, authorization)
+    if status in (401, 403):
+        raise ActivityError("Only an administrator can roll back automations, scripts, and scenes.")
+    if status != 200:
+        detail = f": {message}" if message else ""
+        raise ActivityError(f"Home Assistant did not accept the saved {kind}{detail}")
 
-    def write() -> None:
-        current = _read_yaml(path)
-        if kind == "script":
-            data = dict(current) if isinstance(current, dict) else {}
-            data[item_id] = item
-        else:
-            rows = [row for row in (current or []) if not (isinstance(row, dict) and _yaml_item_id(row) == item_id)]
-            rows.append(item)
-            data = rows
-        _write_yaml(path, data)
 
-    await hass.async_add_executor_job(write)
-    payload = {"id": item_id} if kind == "automation" else {}
-    await hass.services.async_call(kind, SERVICE_RELOAD, payload, blocking=True)
+async def _post_config(
+    hass: HomeAssistant, kind: str, item_id: str, body: dict[str, Any], authorization: str
+) -> tuple[int, str]:
+    from urllib.parse import quote
+
+    from aiohttp import ClientError
+
+    from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
+    path = f"/api/config/{kind}/config/{quote(item_id, safe='')}"
+    headers = {"Authorization": authorization, "Content-Type": "application/json"}
+    last_error = "Home Assistant's config API could not be reached."
+    for base, verify in _own_api_bases(hass):
+        try:
+            session = async_get_clientsession(hass, verify_ssl=verify)
+            async with session.post(f"{base}{path}", json=body, headers=headers, timeout=30) as resp:
+                try:
+                    data = await resp.json(content_type=None)
+                except (ValueError, ClientError):
+                    data = None
+                message = str(data.get("message") or "") if isinstance(data, dict) else ""
+                return resp.status, message[:300]
+        except (ClientError, TimeoutError, OSError) as exc:
+            last_error = str(exc) or last_error
+            continue
+    raise ActivityError(last_error)
+
+
+def _own_api_bases(hass: HomeAssistant) -> list[tuple[str, bool]]:
+    """This Home Assistant's own API: loopback first, then its internal URL."""
+    api = getattr(hass.config, "api", None)
+    port = int(getattr(api, "port", None) or 8123)
+    tls = bool(getattr(api, "use_ssl", False))
+    bases: list[tuple[str, bool]] = []
+    try:
+        from homeassistant.helpers.network import NoURLAvailableError, get_url
+
+        internal = str(get_url(hass, allow_internal=True, allow_external=False, allow_ip=True)).rstrip("/")
+    except (ImportError, NoURLAvailableError):
+        internal = ""
+    if tls:
+        if internal:
+            bases.append((internal, True))
+        # The certificate cannot name 127.0.0.1; this is our own process.
+        bases.append((f"https://127.0.0.1:{port}", False))
+    else:
+        bases.append((f"http://127.0.0.1:{port}", True))
+        if internal:
+            bases.append((internal, True))
+    return bases
 
 
 def _collection(hass: HomeAssistant, prefix: str):

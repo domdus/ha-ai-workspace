@@ -83,16 +83,20 @@
               "house_map": "Standaard uit. Een lokale index van hoe automatiseringen, entiteiten en ruimtes samenhangen, zodat één opzoeking vragen beantwoordt als “wat gebruikt de keukenlamp?”. Voegt iets toe aan elk bericht, dus zet het alleen aan als je vaak vraagt hoe dingen gekoppeld zijn. Live statussen komen nog steeds uit Home Assistant.",
               "shorten_mcp_results": "Standaard aan. Zeer lange antwoorden van Home Assistant (lijsten van het hele huis, grote zoekopdrachten) worden samengevat voordat ze naar de AI gaan. Bespaart tokens en houdt antwoorden vlot. Uit stuurt de volledige tekst.",
               "change_history": "Standaard aan. Houdt elke configuratiewijziging van de assistent bij, zodat je ziet wat er veranderd is en kunt vragen een eerdere versie terug te zetten. Uit: geen nieuwe items; de assistent kan nog steeds wijzigingen maken.",
-              "change_history_ttl_days": "Dagen dat Rollback en Vraag herstel beschikbaar blijven. Daarna blijft de regel in het logboek; een oud momentopname terugzetten kan later werk overschrijven. Standaard 7. 1 is ongeveer een dag."
+              "change_history_ttl_days": "Dagen dat Rollback en Ongedaan maken via agent beschikbaar blijven. Daarna blijft de regel in het logboek; een oud momentopname terugzetten kan later werk overschrijven. Standaard 7. 1 is ongeveer een dag."
             }
           },
           "prompt": {
             "name": "Systeemprompt",
             "data": {
-              "system_prompt": "Systeemprompt"
+              "system_prompt": "Systeemprompt",
+              "notes": "Onthouden notities gebruiken",
+              "notes_text": "Onthouden notities"
             },
             "data_description": {
-              "system_prompt": "Alleen toon en gewoonten. Leeg laten voor de standaard. De assistent houdt altijd toegang tot Home Assistant en snelle links in antwoorden."
+              "system_prompt": "Vaste instructies voor de assistent — ruimtes, regels, hoe te antwoorden, alles wat hij moet volgen. Leeg laten voor de standaard. De assistent houdt altijd toegang tot Home Assistant en snelle links in antwoorden. Hij schrijft niet in dit veld.",
+              "notes": "Standaard uit. Als het aan staat, leest de assistent de notities hieronder in elke chat en kan hij ze aanvullen. Uit: de chat leest noch schrijft ze. Je kunt de tekst altijd bewerken.",
+              "notes_text": "Korte Engelse opsommingen die de assistent moet onthouden. Hij leest ze in elke chat en vult ze aan als je «onthoud dit» zegt (in elke chattaal) of klaagt over iets dat hij moet laten. Je kunt ze altijd bewerken of wissen. Maximaal 2000 tekens. Als het vol is, moet de assistent oudere regels vervangen — er wordt niets stil verwijderd."
             }
           }
         }
@@ -192,16 +196,20 @@
               "house_map": "Standaard uit. Een lokale index van hoe automatiseringen, entiteiten en ruimtes samenhangen, zodat één opzoeking vragen beantwoordt als “wat gebruikt de keukenlamp?”. Voegt iets toe aan elk bericht, dus zet het alleen aan als je vaak vraagt hoe dingen gekoppeld zijn. Live statussen komen nog steeds uit Home Assistant.",
               "shorten_mcp_results": "Standaard aan. Zeer lange antwoorden van Home Assistant (lijsten van het hele huis, grote zoekopdrachten) worden samengevat voordat ze naar de AI gaan. Bespaart tokens en houdt antwoorden vlot. Uit stuurt de volledige tekst.",
               "change_history": "Standaard aan. Houdt elke configuratiewijziging van de assistent bij, zodat je ziet wat er veranderd is en kunt vragen een eerdere versie terug te zetten. Uit: geen nieuwe items; de assistent kan nog steeds wijzigingen maken.",
-              "change_history_ttl_days": "Dagen dat Rollback en Vraag herstel beschikbaar blijven. Daarna blijft de regel in het logboek; een oud momentopname terugzetten kan later werk overschrijven. Standaard 7. 1 is ongeveer een dag."
+              "change_history_ttl_days": "Dagen dat Rollback en Ongedaan maken via agent beschikbaar blijven. Daarna blijft de regel in het logboek; een oud momentopname terugzetten kan later werk overschrijven. Standaard 7. 1 is ongeveer een dag."
             }
           },
           "prompt": {
             "name": "Systeemprompt",
             "data": {
-              "system_prompt": "Systeemprompt"
+              "system_prompt": "Systeemprompt",
+              "notes": "Onthouden notities gebruiken",
+              "notes_text": "Onthouden notities"
             },
             "data_description": {
-              "system_prompt": "Alleen toon en gewoonten. Leeg laten voor de standaard. De assistent houdt altijd toegang tot Home Assistant en snelle links in antwoorden."
+              "system_prompt": "Vaste instructies voor de assistent — ruimtes, regels, hoe te antwoorden, alles wat hij moet volgen. Leeg laten voor de standaard. De assistent houdt altijd toegang tot Home Assistant en snelle links in antwoorden. Hij schrijft niet in dit veld.",
+              "notes": "Standaard uit. Als het aan staat, leest de assistent de notities hieronder in elke chat en kan hij ze aanvullen. Uit: de chat leest noch schrijft ze. Je kunt de tekst altijd bewerken.",
+              "notes_text": "Korte Engelse opsommingen die de assistent moet onthouden. Hij leest ze in elke chat en vult ze aan als je «onthoud dit» zegt (in elke chattaal) of klaagt over iets dat hij moet laten. Je kunt ze altijd bewerken of wissen. Maximaal 2000 tekens. Als het vol is, moet de assistent oudere regels vervangen — er wordt niets stil verwijderd."
             }
           }
         }
@@ -277,7 +285,8 @@
         "no_runtime": "De Cursor-runtime is niet bereikbaar. Start hem en controleer het adres op dit formulier.",
         "required": "Dit veld is verplicht.",
         "invalid_auth": "De provider heeft deze API-sleutel geweigerd.",
-        "cannot_connect": "De provider is niet bereikbaar. Controleer de URL en het netwerk."
+        "cannot_connect": "De provider is niet bereikbaar. Controleer de URL en het netwerk.",
+        "model_not_installed": "Dit model is niet geïnstalleerd in Ollama. Geïnstalleerd: {installed}"
       },
       "step": {
         "provider": {
@@ -299,8 +308,6 @@
             "cursor_api_key": "Cursor-API-sleutel",
             "model": "Model",
             "effort": "Inzet",
-            "low_token": "Tokenverbruik verminderen",
-            "check_house": "Eerst in Home Assistant kijken",
             "allow_internet": "Internet toestaan",
             "assist": "Toevoegen aan Assist"
           },
@@ -310,10 +317,19 @@
             "cursor_api_key": "Uit je Cursor-account (Integrations). Leeg laten bij bewerken om de opgeslagen sleutel te houden. [API-sleutel ophalen]({api_key_url})",
             "model": "Kies uit de lijst of typ een modelnaam. Leeg gebruikt Composer.",
             "effort": "Hoeveel denktijd is toegestaan. Composer gebruikt standaard Snel.",
-            "low_token": "Stuurt per bericht minder om geld te besparen. Uit geeft de betrouwbaarste antwoorden over je huis. Licht bewaart minder chatgeschiedenis. Gemiddeld kort ook lange berichten en antwoorden in en begint elke beurt met alleen de laatste berichten. Extreem is alleen chat: geen hulpmiddelen, dus het kan het huis niet controleren of bedienen.",
-            "check_house": "Standaard aan. Voordat de agent een vraag over je huis beantwoordt, kijkt hij in Home Assistant, zodat lijsten en statussen echt zijn en niet geraden. Begroetingen worden overgeslagen. Geen effect bij Extreem, dat geen hulpmiddelen heeft. Zet het uit voor algemene vragen of voor een model dat zelf al kijkt.",
             "allow_internet": "Standaard uit. Aan laat deze agent in beheerderschats Cursors webzoekfunctie, pagina ophalen en shell gebruiken. Uit verwijdert alle drie, zodat ook curl of scripts het web niet bereiken. Chats van gewone gebruikers en spraaksatellieten krijgen ze nooit.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Geavanceerd",
+              "data": {
+                "save_tokens": "Tokens besparen"
+              },
+              "data_description": {
+                "save_tokens": "Stuurt minder mee met elk bericht: een kortere prompt, minder chatgeschiedenis en kortere antwoorden. Goedkoper, maar antwoorden over je huis kunnen minder grondig zijn."
+              }
+            }
           }
         },
         "provider_cloud": {
@@ -324,8 +340,6 @@
             "api_key": "API-sleutel",
             "model": "Model",
             "effort": "Inzet",
-            "low_token": "Tokenverbruik verminderen",
-            "check_house": "Eerst in Home Assistant kijken",
             "allow_internet": "Internet toestaan",
             "assist": "Toevoegen aan Assist",
             "assist_stt": "Spraak-naar-tekst toevoegen",
@@ -340,8 +354,6 @@
             "api_key": "Je sleutel bij de AI-provider, niet je Home Assistant-aanmelding. [API-sleutel ophalen]({api_key_url})",
             "model": "Kies uit de lijst of typ een modelnaam. Leeg gebruikt de standaard van de provider.",
             "effort": "Meer inzet betekent meer nadenken: betere antwoorden op moeilijke vragen, maar trager en meer tokens. Wordt genegeerd als het model het niet ondersteunt.",
-            "low_token": "Stuurt per bericht minder om geld te besparen. Uit geeft de betrouwbaarste antwoorden over je huis. Licht bewaart minder chatgeschiedenis. Gemiddeld kort ook lange berichten en antwoorden in en begint elke beurt met alleen de laatste berichten. Extreem is alleen chat: geen hulpmiddelen, dus het kan het huis niet controleren of bedienen.",
-            "check_house": "Standaard aan. Voordat de agent een vraag over je huis beantwoordt, kijkt hij in Home Assistant, zodat lijsten en statussen echt zijn en niet geraden. Begroetingen worden overgeslagen. Geen effect bij Extreem, dat geen hulpmiddelen heeft. Zet het uit voor algemene vragen of voor een model dat zelf al kijkt.",
             "allow_internet": "Standaard uit. Aan voegt in beheerderschats hulpmiddelen toe om het web te doorzoeken en pagina's op te halen. Adressen op je lokale netwerk blijven geblokkeerd. Chats van gewone gebruikers en spraaksatellieten krijgen ze nooit.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd.",
             "assist_stt": "Voegt in Home Assistant een spraak-naar-tekst-optie toe met de sleutel van deze assistent. Uit verwijdert wat hij heeft toegevoegd.",
@@ -350,6 +362,19 @@
             "tts_model": "Leeg laten voor het standaard spraakmodel. Je kunt een andere naam typen als je provider er een vermeldt.",
             "tts_voice": "Coral is de standaard. Stemmen volgen de talen onder Assist → Taal.",
             "tts_speed": "Hoe snel deze stem spreekt. 1× is normaal. Geldt voor AI Workspace en Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Geavanceerd",
+              "data": {
+                "save_tokens": "Tokens besparen",
+                "cache_1h": "Cache een uur bewaren"
+              },
+              "data_description": {
+                "save_tokens": "Stuurt minder mee met elk bericht: een kortere prompt, minder chatgeschiedenis en kortere antwoorden. Goedkoper, maar antwoorden over je huis kunnen minder grondig zijn.",
+                "cache_1h": "Alleen Claude. Houdt de systeemprompt en tools een uur in de cache in plaats van 5 minuten. Schrijven in de cache kost 2× de invoerprijs in plaats van 1,25×; lezen kost 0,1×. Goedkoper als er vaak meer dan 5 minuten tussen je berichten zit, iets duurder als je weinig chat."
+              }
+            }
           }
         },
         "provider_ollama": {
@@ -359,19 +384,26 @@
             "api_base": "Ollama-URL",
             "model": "Model",
             "effort": "Inzet",
-            "low_token": "Tokenverbruik verminderen",
-            "check_house": "Eerst in Home Assistant kijken",
             "allow_internet": "Internet toestaan",
             "assist": "Toevoegen aan Assist"
           },
           "data_description": {
-            "api_base": "Meestal {example_url}",
+            "api_base": "{ollama_note}",
             "model": "Kies uit de lijst of typ een geïnstalleerd model. Leeg gebruikt llama3.2.",
             "effort": "Meer inzet betekent meer nadenken: betere antwoorden op moeilijke vragen, maar trager en meer tokens. Wordt genegeerd als het model het niet ondersteunt.",
-            "low_token": "Stuurt per bericht minder om geld te besparen. Uit geeft de betrouwbaarste antwoorden over je huis. Licht bewaart minder chatgeschiedenis. Gemiddeld kort ook lange berichten en antwoorden in en begint elke beurt met alleen de laatste berichten. Extreem is alleen chat: geen hulpmiddelen, dus het kan het huis niet controleren of bedienen.",
-            "check_house": "Standaard aan. Voordat de agent een vraag over je huis beantwoordt, kijkt hij in Home Assistant, zodat lijsten en statussen echt zijn en niet geraden. Begroetingen worden overgeslagen. Geen effect bij Extreem, dat geen hulpmiddelen heeft. Zet het uit voor algemene vragen of voor een model dat zelf al kijkt.",
             "allow_internet": "Standaard uit. Aan voegt in beheerderschats hulpmiddelen toe om het web te doorzoeken en pagina's op te halen. Adressen op je lokale netwerk blijven geblokkeerd. Chats van gewone gebruikers en spraaksatellieten krijgen ze nooit.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Geavanceerd",
+              "data": {
+                "save_tokens": "Tokens besparen"
+              },
+              "data_description": {
+                "save_tokens": "Stuurt minder mee met elk bericht: een kortere prompt, minder chatgeschiedenis en kortere antwoorden. Goedkoper, maar antwoorden over je huis kunnen minder grondig zijn."
+              }
+            }
           }
         },
         "provider_azure": {
@@ -383,8 +415,6 @@
             "model": "Implementatie",
             "azure_api_version": "API-versie",
             "effort": "Inzet",
-            "low_token": "Tokenverbruik verminderen",
-            "check_house": "Eerst in Home Assistant kijken",
             "allow_internet": "Internet toestaan",
             "assist": "Toevoegen aan Assist"
           },
@@ -394,10 +424,19 @@
             "model": "De naam van de implementatie.",
             "azure_api_version": "Laat de standaard staan, tenzij Azure-ondersteuning je een andere versie gaf.",
             "effort": "Meer inzet betekent meer nadenken: betere antwoorden op moeilijke vragen, maar trager en meer tokens. Wordt genegeerd als het model het niet ondersteunt.",
-            "low_token": "Stuurt per bericht minder om geld te besparen. Uit geeft de betrouwbaarste antwoorden over je huis. Licht bewaart minder chatgeschiedenis. Gemiddeld kort ook lange berichten en antwoorden in en begint elke beurt met alleen de laatste berichten. Extreem is alleen chat: geen hulpmiddelen, dus het kan het huis niet controleren of bedienen.",
-            "check_house": "Standaard aan. Voordat de agent een vraag over je huis beantwoordt, kijkt hij in Home Assistant, zodat lijsten en statussen echt zijn en niet geraden. Begroetingen worden overgeslagen. Geen effect bij Extreem, dat geen hulpmiddelen heeft. Zet het uit voor algemene vragen of voor een model dat zelf al kijkt.",
             "allow_internet": "Standaard uit. Aan voegt in beheerderschats hulpmiddelen toe om het web te doorzoeken en pagina's op te halen. Adressen op je lokale netwerk blijven geblokkeerd. Chats van gewone gebruikers en spraaksatellieten krijgen ze nooit.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Geavanceerd",
+              "data": {
+                "save_tokens": "Tokens besparen"
+              },
+              "data_description": {
+                "save_tokens": "Stuurt minder mee met elk bericht: een kortere prompt, minder chatgeschiedenis en kortere antwoorden. Goedkoper, maar antwoorden over je huis kunnen minder grondig zijn."
+              }
+            }
           }
         },
         "provider_compatible": {
@@ -408,8 +447,6 @@
             "api_base": "API-basis-URL",
             "model": "Model",
             "effort": "Inzet",
-            "low_token": "Tokenverbruik verminderen",
-            "check_house": "Eerst in Home Assistant kijken",
             "allow_internet": "Internet toestaan",
             "assist": "Toevoegen aan Assist",
             "assist_stt": "Spraak-naar-tekst toevoegen",
@@ -424,8 +461,6 @@
             "api_base": "Serveradres. Voeg /v1 toe aan het einde als je server dat verwacht.",
             "model": "Modelnaam op die server.",
             "effort": "Meer inzet betekent meer nadenken: betere antwoorden op moeilijke vragen, maar trager en meer tokens. Wordt genegeerd als het model het niet ondersteunt.",
-            "low_token": "Stuurt per bericht minder om geld te besparen. Uit geeft de betrouwbaarste antwoorden over je huis. Licht bewaart minder chatgeschiedenis. Gemiddeld kort ook lange berichten en antwoorden in en begint elke beurt met alleen de laatste berichten. Extreem is alleen chat: geen hulpmiddelen, dus het kan het huis niet controleren of bedienen.",
-            "check_house": "Standaard aan. Voordat de agent een vraag over je huis beantwoordt, kijkt hij in Home Assistant, zodat lijsten en statussen echt zijn en niet geraden. Begroetingen worden overgeslagen. Geen effect bij Extreem, dat geen hulpmiddelen heeft. Zet het uit voor algemene vragen of voor een model dat zelf al kijkt.",
             "allow_internet": "Standaard uit. Aan voegt in beheerderschats hulpmiddelen toe om het web te doorzoeken en pagina's op te halen. Adressen op je lokale netwerk blijven geblokkeerd. Chats van gewone gebruikers en spraaksatellieten krijgen ze nooit.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd.",
             "assist_stt": "Voegt in Home Assistant een spraak-naar-tekst-optie toe met de sleutel van deze assistent. Uit verwijdert wat hij heeft toegevoegd.",
@@ -434,6 +469,17 @@
             "tts_model": "Leeg laten voor het standaard spraakmodel. Je kunt een andere naam typen als je provider er een vermeldt.",
             "tts_voice": "Coral is de standaard. Stemmen volgen de talen onder Assist → Taal.",
             "tts_speed": "Hoe snel deze stem spreekt. 1× is normaal. Geldt voor AI Workspace en Assist."
+          },
+          "sections": {
+            "advanced": {
+              "name": "Geavanceerd",
+              "data": {
+                "save_tokens": "Tokens besparen"
+              },
+              "data_description": {
+                "save_tokens": "Stuurt minder mee met elk bericht: een kortere prompt, minder chatgeschiedenis en kortere antwoorden. Goedkoper, maar antwoorden over je huis kunnen minder grondig zijn."
+              }
+            }
           }
         }
       },
@@ -472,14 +518,6 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Aangepaste MCP-URL"
-      }
-    },
-    "low_token": {
-      "options": {
-        "off": "Uit",
-        "light": "Light",
-        "medium": "Medium",
-        "extreme": "Extreme"
       }
     }
   }

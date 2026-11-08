@@ -13,6 +13,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
 from .const import (
+    CONF_CONTEXT_WINDOW,
+    CONF_TOOLS_ON_DEMAND,
+    context_window_of,
     API_AZURE,
     API_PROVIDERS,
     API_SHORT_LABELS,
@@ -39,6 +42,8 @@ from .const import (
     CONF_ENABLE_SIDEBAR,
     CONF_HA_USAGE_SENSORS,
     CONF_HOUSE_MAP,
+    CONF_NOTES,
+    CONF_NOTES_TEXT,
     CONF_KEEP_CHATS,
     CONF_LOW_TOKEN,
     CONF_MCP_KIND,
@@ -88,6 +93,7 @@ from .const import (
     provider_supports_stt,
     provider_supports_tts,
     provider_supports_tts_speed,
+    provider_has_tts_model,
     resolved_tts_speed,
     token_mode_of,
     tts_speed_choice,
@@ -110,6 +116,7 @@ YAML_SHARED_KEYS = (
     CONF_ENABLE_DICTATE,
     CONF_ALLOW_USERS,
     CONF_HOUSE_MAP,
+    CONF_NOTES,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
     CONF_CHANGE_HISTORY_TTL_DAYS,
@@ -122,6 +129,8 @@ YAML_SHARED_KEYS = (
     CONF_DEFAULT_AGENT,
     CONF_MODEL_SWITCHER,
     CONF_KEEP_CHATS,
+    CONF_CONTEXT_WINDOW,
+    CONF_TOOLS_ON_DEMAND,
     CONF_SPEAK_REPLIES,
     CONF_STT_ENGINE,
     CONF_TTS_ENGINE,
@@ -136,6 +145,7 @@ YAML_OPTION_DEFAULTS = {
     CONF_ENABLE_DICTATE: True,
     CONF_ALLOW_USERS: False,
     CONF_HOUSE_MAP: False,
+    CONF_NOTES: False,
     CONF_SHORTEN_MCP_RESULTS: True,
     CONF_CHANGE_HISTORY: True,
     CONF_CHANGE_HISTORY_TTL_DAYS: DEFAULT_CHANGE_HISTORY_TTL_DAYS,
@@ -148,6 +158,8 @@ YAML_OPTION_DEFAULTS = {
     CONF_DEFAULT_AGENT: "",
     CONF_MODEL_SWITCHER: False,
     CONF_KEEP_CHATS: DEFAULT_KEEP_CHATS,
+    CONF_CONTEXT_WINDOW: 0,
+    CONF_TOOLS_ON_DEMAND: True,
     CONF_SPEAK_REPLIES: False,
     CONF_STT_ENGINE: STT_BROWSER,
     CONF_TTS_ENGINE: TTS_OFF,
@@ -168,6 +180,8 @@ def _normalize_option(key: str, value: Any) -> Any:
         return ui_theme_of(value)
     if key == CONF_KEEP_CHATS:
         return _keep_chats(value)
+    if key == CONF_CONTEXT_WINDOW:
+        return context_window_of(value)
     if key == CONF_CHANGE_HISTORY_TTL_DAYS:
         return change_history_ttl_days(value)
     if key in {
@@ -176,6 +190,7 @@ def _normalize_option(key: str, value: Any) -> Any:
         CONF_ENABLE_DICTATE,
         CONF_ALLOW_USERS,
         CONF_HOUSE_MAP,
+        CONF_NOTES,
         CONF_SHORTEN_MCP_RESULTS,
         CONF_CHANGE_HISTORY,
         CONF_CHECK_HOUSE,
@@ -183,6 +198,7 @@ def _normalize_option(key: str, value: Any) -> Any:
         CONF_SHOW_CHAT_USAGE,
         CONF_HA_USAGE_SENSORS,
         CONF_PROMPT_CACHE,
+        CONF_TOOLS_ON_DEMAND,
         CONF_CROSS_CHAT,
         CONF_MODEL_SWITCHER,
         CONF_SPEAK_REPLIES,
@@ -250,6 +266,8 @@ YAML_SCHEMA = vol.Schema(
         vol.Optional(CONF_ENABLE_DICTATE): cv.boolean,
         vol.Optional(CONF_ALLOW_USERS): cv.boolean,
         vol.Optional(CONF_HOUSE_MAP): cv.boolean,
+        vol.Optional(CONF_NOTES): cv.boolean,
+        vol.Optional(CONF_NOTES_TEXT): cv.string,
         vol.Optional(CONF_SHORTEN_MCP_RESULTS): cv.boolean,
         vol.Optional(CONF_CHANGE_HISTORY): cv.boolean,
         vol.Optional(CONF_CHANGE_HISTORY_TTL_DAYS): vol.All(
@@ -267,6 +285,8 @@ YAML_SCHEMA = vol.Schema(
         vol.Optional(CONF_DEFAULT_AGENT): cv.string,
         vol.Optional(CONF_MODEL_SWITCHER): cv.boolean,
         vol.Optional(CONF_KEEP_CHATS): vol.All(vol.Coerce(int), vol.Range(min=1, max=500)),
+        vol.Optional(CONF_TOOLS_ON_DEMAND): cv.boolean,
+        vol.Optional(CONF_CONTEXT_WINDOW): vol.All(vol.Coerce(int), vol.Range(min=0, max=10_000_000)),
         vol.Optional(CONF_SPEAK_REPLIES): cv.boolean,
         vol.Optional(CONF_STT_ENGINE): cv.string,
         vol.Optional(CONF_TTS_ENGINE): cv.string,
@@ -375,9 +395,9 @@ def agent_payload(row: dict[str, Any], unique: str) -> dict[str, Any]:
         CONF_ASSIST_STT: assist_stt_enabled(raw, provider) if provider_supports_stt(provider) else False,
         CONF_STT_MODEL: str(row.get("stt_model") or "").strip() if provider_supports_stt(provider) else "",
         CONF_ASSIST_TTS: assist_tts_enabled(raw, provider) if provider_supports_tts(provider) else False,
-        CONF_TTS_MODEL: str(row.get("tts_model") or "").strip() if provider_supports_tts(provider) else "",
+        CONF_TTS_MODEL: str(row.get("tts_model") or "").strip() if provider_has_tts_model(provider) else "",
         CONF_TTS_VOICE: str(row.get("tts_voice") or "").strip() if provider_supports_tts(provider) else "",
-        CONF_TTS_SPEED: tts_speed_choice(resolved_tts_speed(raw)) if provider_supports_tts_speed(provider) else "",
+        CONF_TTS_SPEED: tts_speed_choice(resolved_tts_speed(raw, provider)) if provider_supports_tts_speed(provider) else "",
         CONF_AZURE_API_VERSION: str(row.get("azure_api_version") or DEFAULT_AZURE_API_VERSION)
         if provider == API_AZURE
         else "",
@@ -488,6 +508,11 @@ async def async_apply_yaml(hass: HomeAssistant, entry: ConfigEntry, conf: dict[s
             if data != dict(sub.data):
                 hass.config_entries.async_update_subentry(entry, sub, data=data)
                 changed = True
+    if CONF_NOTES_TEXT in conf:
+        from .notes import async_apply_yaml_notes
+
+        if await async_apply_yaml_notes(hass, str(conf.get(CONF_NOTES_TEXT) or "")):
+            changed = True
     if changed:
         _LOGGER.info("Applied AI Workspace YAML configuration")
     return changed

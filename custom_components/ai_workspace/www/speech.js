@@ -1,5 +1,5 @@
-const TARGET_CHARS = 280;
-const MAX_CHARS = 560;
+export const TARGET_CHARS = 280;
+export const MAX_CHARS = 560;
 
 const ARROW_CHARS = /[→➡➜➤▶►▸▹↦⇒]+/g;
 
@@ -81,7 +81,69 @@ function trailingSentence(text) {
   return { piece: match[0], rest: "" };
 }
 
-function takeLightSpeech(held, started, flush) {
+function paragraphFollows(text) {
+  return /^\s*\n\s*\n/.test(text);
+}
+
+function lastClipBreak(prefix) {
+  const para = prefix.lastIndexOf("\n\n");
+  if (para >= Math.min(40, prefix.length / 4)) return para + 2;
+  const sentence = /[.!?。！？]["»«”’')\]]*(?:\s+|$)/gu;
+  let last = -1;
+  let match;
+  while ((match = sentence.exec(prefix))) last = match.index + match[0].length;
+  if (last >= Math.min(40, prefix.length / 4)) return last;
+  const space = prefix.search(/\s+\S*$/);
+  if (space > 0) return space + 1;
+  return prefix.length;
+}
+
+/**
+ * Spoken length for clip packing. `measure` must return a number — or the
+ * spoken string, whose `.length` is used. Passing the plain text itself used
+ * to compare `"Hello" <= 560` (NaN), so every clip collapsed to one letter.
+ */
+function clipSize(value, measure, fallback) {
+  const raw = typeof measure === "function" ? measure(value) : fallback(value);
+  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+  return String(raw ?? "").length;
+}
+
+/**
+ * Split leftover TTS text so no clip is larger than `max` spoken characters.
+ * Flush used to dump the rest of a long reply as one request; engines then
+ * timed out or dropped it, so reading stopped after the first paragraph.
+ */
+export function splitSpeechClip(text, max = MAX_CHARS, measure) {
+  const sizeOf = (value) => clipSize(value, measure, (item) => speechPlain(item).length);
+  let rest = String(text || "").trim();
+  const pieces = [];
+  while (rest) {
+    if (sizeOf(rest) <= max) {
+      pieces.push(rest);
+      break;
+    }
+    let lo = 1;
+    let hi = rest.length;
+    while (lo < hi) {
+      const mid = Math.ceil((lo + hi) / 2);
+      if (sizeOf(rest.slice(0, mid)) <= max) lo = mid;
+      else hi = mid - 1;
+    }
+    let cut = lastClipBreak(rest.slice(0, Math.max(1, lo)));
+    if (cut < 1) cut = Math.max(1, lo);
+    const piece = rest.slice(0, cut).trim();
+    rest = rest.slice(cut).trim();
+    if (piece) pieces.push(piece);
+    else {
+      pieces.push(rest.slice(0, Math.max(1, lo)));
+      rest = rest.slice(Math.max(1, lo)).trim();
+    }
+  }
+  return pieces;
+}
+
+function takeLightSpeech(held, started, flush, pause) {
   const pieces = [];
   let rest = String(held || "");
   let bundle = "";
@@ -90,7 +152,7 @@ function takeLightSpeech(held, started, flush) {
     let next = pullSentence(rest);
     if (!next) {
       const tail = trailingSentence(rest);
-      if (!tail || (open && !flush && speechIsShort(bundle + tail.piece))) break;
+      if (!tail || (open && !flush && !pause && speechIsShort(bundle + tail.piece))) break;
       next = tail;
     }
     rest = next.rest;
@@ -108,18 +170,24 @@ function takeLightSpeech(held, started, flush) {
   }
   if (open && bundle) {
     if (flush) {
-      const spoken = `${bundle}${rest}`.trim();
-      if (spoken) pieces.push(spoken);
+      const leftover = `${bundle}${rest}`.trim();
+      if (leftover) pieces.push(...splitSpeechClip(leftover));
       rest = "";
+    } else if (pause) {
+      const tail = trailingSentence(bundle);
+      if (tail && tail.piece.trim()) {
+        pieces.push(tail.piece.trim());
+        rest = `${tail.rest}${rest}`;
+      } else rest = bundle + rest;
     } else rest = bundle + rest;
   } else if (flush && rest.trim()) {
-    pieces.push(rest.trim());
+    pieces.push(...splitSpeechClip(rest.trim()));
     rest = "";
   }
-  return { pieces: pieces.filter(Boolean), rest };
+  return { pieces: pieces.filter(Boolean).flatMap((piece) => splitSpeechClip(piece)), rest };
 }
 
-function takeHeavySpeech(held, started, flush) {
+function takeHeavySpeech(held, started, flush, pause) {
   const pieces = [];
   let rest = String(held || "");
   let bundle = "";
@@ -132,6 +200,7 @@ function takeHeavySpeech(held, started, flush) {
   };
 
   const size = (text) => speechPlain(text).length;
+  const ready = () => Boolean(flush || pause);
 
   while (rest) {
     let next = pullHeavyUnit(rest);
@@ -139,8 +208,8 @@ function takeHeavySpeech(held, started, flush) {
       const tail = trailingSentence(rest);
       if (!tail) break;
       const nextSize = size(bundle + tail.piece);
-      if (!flush && first && speechIsShort(bundle + tail.piece)) break;
-      if (!flush && !first && nextSize < TARGET_CHARS) break;
+      if (!ready() && first && speechIsShort(bundle + tail.piece)) break;
+      if (!ready() && !first && nextSize < TARGET_CHARS) break;
       next = tail;
     }
     const candidate = `${bundle}${next.piece}`;
@@ -156,20 +225,97 @@ function takeHeavySpeech(held, started, flush) {
       first = false;
       continue;
     }
-    if (size(bundle) >= TARGET_CHARS) {
+    // A blank line means this paragraph is done — don't wait for 280 more characters.
+    if (size(bundle) >= TARGET_CHARS || (paragraphFollows(rest) && speechIsCompleteSentence(bundle))) {
       emit();
       first = false;
     }
   }
   if (flush) {
-    const spoken = `${bundle}${rest}`.trim();
-    if (spoken) pieces.push(spoken);
+    const leftover = `${bundle}${rest}`.trim();
+    bundle = "";
     rest = "";
-  } else rest = bundle + rest;
-  return { pieces: pieces.filter(Boolean), rest };
+    if (leftover) pieces.push(...splitSpeechClip(leftover, MAX_CHARS, size));
+  } else {
+    if (pause && bundle.trim() && speechIsCompleteSentence(bundle)) emit();
+    rest = bundle + rest;
+  }
+  return { pieces: pieces.filter(Boolean).flatMap((piece) => splitSpeechClip(piece, MAX_CHARS, size)), rest };
 }
 
 export function takeSpeech(held, started, flush, options = {}) {
-  if (options && options.heavy) return takeHeavySpeech(held, started, flush);
-  return takeLightSpeech(held, started, flush);
+  const pause = Boolean(options && options.pause) && !flush;
+  const began = Boolean(started) && !options.fresh;
+  if (options && options.heavy) return takeHeavySpeech(held, began, flush, pause);
+  return takeLightSpeech(held, began, flush, pause);
+}
+
+/**
+ * Text in `full` that TTS has not already been fed (`spoken`).
+ * Cursor often stores only the later answer, while the stream had the status intro.
+ */
+export function speechTail(spoken, full) {
+  const have = String(spoken || "");
+  const want = String(full || "");
+  if (!want) return "";
+  if (!have) return want;
+  if (want.startsWith(have)) return want.slice(have.length);
+  const haveTrim = have.trimEnd();
+  const wantTrim = want.trimEnd();
+  if (wantTrim.startsWith(haveTrim)) return wantTrim.slice(haveTrim.length);
+  const compact = (text) => text.replace(/\s+/g, "");
+  if (compact(have).includes(compact(wantTrim))) return "";
+  const last = (haveTrim.split(/\n\s*\n/).pop() || haveTrim).trim();
+  if (last) {
+    const at = want.lastIndexOf(last);
+    if (at >= 0) return want.slice(at + last.length);
+  }
+  return `\n\n${wantTrim}`;
+}
+
+/**
+ * Bundle queued TTS clips. Mutates `pending` (shifts). Stops when pending is empty.
+ * Prefetch (flush=false) packs up to `target` chars; end-of-reply packs up to `max`.
+ */
+export function takePendingClip(pending, { flush = false, target = TARGET_CHARS, max = MAX_CHARS, measure } = {}) {
+  const sizeOf = (value) => clipSize(value, measure, (item) => String(item || "").length);
+  let clip = "";
+  while (pending.length) {
+    const next = pending[0];
+    if (!clip && sizeOf(next) > max) {
+      const parts = splitSpeechClip(next, max, sizeOf);
+      pending.shift();
+      if (!parts.length) continue;
+      clip = parts.shift();
+      if (parts.length) pending.unshift(...parts);
+      break;
+    }
+    const combined = clip ? `${clip}\n${next}` : next;
+    if (clip && sizeOf(combined) > max) break;
+    pending.shift();
+    clip = combined;
+    const size = sizeOf(clip);
+    if (size < target) continue;
+    if (!flush) break;
+    if (!pending.length) break;
+    if (sizeOf(`${clip}\n${pending[0]}`) > max) break;
+  }
+  return clip.trim();
+}
+
+/**
+ * Watchdog for one TTS clip, checked about once a second.
+ * "done" when the clip ended (also without an `ended` event) or playback stalled;
+ * "wait" while it plays, loads, or is paused by the user (a pause is never a stall).
+ */
+export const CLIP_STALL_MS = 8000;
+export const CLIP_START_MS = 15000;
+
+export function clipWatch({ now, startedAt, lastProgress, started, paused, ended, currentTime, duration }) {
+  if (ended) return "done";
+  const known = Number.isFinite(duration) && duration > 0;
+  if (known && currentTime >= duration - 0.25) return "done";
+  if (!started) return now - startedAt > CLIP_START_MS ? "done" : "wait";
+  if (paused) return "wait";
+  return now - lastProgress > CLIP_STALL_MS ? "done" : "wait";
 }

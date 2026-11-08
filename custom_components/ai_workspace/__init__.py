@@ -17,6 +17,9 @@ from homeassistant.helpers import entity_registry as er
 from .agents import CursorAgent, entry_agents
 from .assist_pipelines import async_remove_assist_pipeline
 from .const import (
+    CONF_CONTEXT_WINDOW,
+    CONF_TOOLS_ON_DEMAND,
+    context_window_of,
     CONF_CROSS_CHAT,
     CONF_DEFAULT_AGENT,
     CONF_MODEL_SWITCHER,
@@ -25,6 +28,7 @@ from .const import (
     CONF_ENABLE_SIDEBAR,
     CONF_ALLOW_USERS,
     CONF_HOUSE_MAP,
+    CONF_NOTES,
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
     CONF_CHANGE_HISTORY_TTL_DAYS,
@@ -140,6 +144,12 @@ def _keep_chats(data: dict) -> int:
     return max(1, min(keep, 500))
 
 
+async def _notes_text(hass: HomeAssistant) -> str:
+    from .notes import async_load_notes
+
+    return await async_load_notes(hass)
+
+
 async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
     data = _merged(entry)
     rows = mcp_rows(hass, entry)
@@ -154,11 +164,16 @@ async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
         extras,
     )
     house_map = bool(data.get(CONF_HOUSE_MAP, False))
+    notes = bool(data.get(CONF_NOTES, False))
     token = primary["token"] if primary else ""
     if house_map:
         from .house_map import mcp_server_config
 
         servers = {**servers, "catalog": mcp_server_config(hass)}
+    if notes:
+        from .notes import mcp_server_config as notes_mcp_server_config
+
+        servers = {**servers, "notes": notes_mcp_server_config(hass)}
     kind = primary["kind"] if primary else MCP_CUSTOM
     if kind not in {MCP_HA, MCP_HA_MCP, MCP_COOLVER}:
         kind = MCP_CUSTOM
@@ -181,6 +196,8 @@ async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
         enable_dictate=bool(data.get(CONF_ENABLE_DICTATE, True)),
         allow_users=bool(data.get(CONF_ALLOW_USERS, False)),
         house_map=house_map,
+        notes=notes,
+        notes_text=await _notes_text(hass),
         shorten_mcp_results=bool(data.get(CONF_SHORTEN_MCP_RESULTS, True)),
         change_history=bool(data.get(CONF_CHANGE_HISTORY, True)),
         change_history_ttl_days=change_history_ttl_days(
@@ -190,6 +207,8 @@ async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
         show_chat_usage=bool(data.get(CONF_SHOW_CHAT_USAGE, True)),
         ha_usage_sensors=bool(data.get(CONF_HA_USAGE_SENSORS, False)),
         prompt_cache=_workspace_prompt_cache(entry, data),
+        context_window=context_window_of(data.get(CONF_CONTEXT_WINDOW)),
+        tools_on_demand=bool(data.get(CONF_TOOLS_ON_DEMAND, True)),
         ui_theme=ui_theme_of(data.get(CONF_UI_THEME)),
         cross_chat=bool(data.get(CONF_CROSS_CHAT, False)),
         default_agent=str(data.get(CONF_DEFAULT_AGENT) or "").strip(),
@@ -219,6 +238,7 @@ def _one_provider(hass: HomeAssistant, settings: Settings, agent, store):
         effort=agent.effort,
         token_mode=agent.token_mode,
         prompt_cache=settings.prompt_cache,
+        cache_1h=agent.cache_1h,
         check_house=agent.check_house,
         azure_api_version=agent.azure_api_version,
         agent_id=agent.id,
@@ -270,6 +290,24 @@ def _move_tuning_to_agents(hass: HomeAssistant, entry: ConfigEntry) -> None:
         options={key: value for key, value in entry.options.items() if key not in moved},
     )
     _LOGGER.info("Moved Reduce token usage (%s) and Check the house (%s) onto each agent", mode, check)
+
+
+_TUNING_SIMPLE = "agent_tuning_simple"
+
+
+def _simplify_agent_tuning(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """1.5: Look at Home Assistant first is always on and no longer on the agent form. Clear old choices once.
+
+    A YAML agent can still set check_house; YAML is applied again on every start.
+    """
+    if entry.data.get(_TUNING_SIMPLE):
+        return
+    for sub in list(entry.subentries.values()):
+        if sub.subentry_type != SUBENTRY_AGENT or CONF_CHECK_HOUSE not in sub.data:
+            continue
+        data = {key: value for key, value in sub.data.items() if key != CONF_CHECK_HOUSE}
+        hass.config_entries.async_update_subentry(entry, sub, data=data)
+    hass.config_entries.async_update_entry(entry, data={**entry.data, _TUNING_SIMPLE: True})
 
 
 def _ensure_usage_subentry(hass: HomeAssistant, entry: ConfigEntry) -> str | None:
@@ -464,6 +502,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if yaml_conf:
         await async_apply_yaml(hass, entry, yaml_conf)
     _move_tuning_to_agents(hass, entry)
+    _simplify_agent_tuning(hass, entry)
     settings = await _build_settings(hass, entry)
     await hass.async_add_executor_job(settings.ensure_dirs)
     store = await hass.async_add_executor_job(Store, settings.data_dir / "ai-workspace.sqlite")

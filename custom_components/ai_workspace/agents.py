@@ -27,6 +27,8 @@ from .const import (
     CONF_CURSOR_API_KEY,
     CONF_EFFORT,
     CONF_LOW_TOKEN,
+    API_ANTHROPIC,
+    CONF_CACHE_1H,
     CONF_PROMPT_CACHE,
     CONF_MODE,
     CONF_MODEL,
@@ -46,6 +48,7 @@ from .const import (
     default_api_base,
     default_api_model,
     token_mode_of,
+    TOKEN_MODE_LIGHT,
     TOKEN_MODE_OFF,
 )
 
@@ -75,6 +78,7 @@ class Agent:
     tts_speed: float = 1.0
     token_mode: str = TOKEN_MODE_OFF
     prompt_cache: bool = True
+    cache_1h: bool = False
     check_house: bool = True
     azure_api_version: str = DEFAULT_AZURE_API_VERSION
     cursor_api_key: str = ""
@@ -95,6 +99,15 @@ class Agent:
 
 def _text(value: Any) -> str:
     return str(value or "").strip()
+
+
+def agent_token_mode(value: Any) -> str:
+    """Off, Medium (Save tokens), or Extreme (chat only, YAML or older setups). Light is now Off.
+
+    On-demand tools and the history budget made Off cheap enough that Light no longer pays off.
+    """
+    mode = token_mode_of(value)
+    return TOKEN_MODE_OFF if mode == TOKEN_MODE_LIGHT else mode
 
 
 def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Agent:
@@ -127,9 +140,10 @@ def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Age
         assist_tts=assist_tts_enabled(raw, provider),
         tts_model=resolved_tts_model(raw, provider),
         tts_voice=resolved_tts_voice(raw, provider),
-        tts_speed=resolved_tts_speed(raw),
-        token_mode=token_mode_of(raw.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF)),
+        tts_speed=resolved_tts_speed(raw, provider),
+        token_mode=agent_token_mode(raw.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF)),
         prompt_cache=bool(raw.get(CONF_PROMPT_CACHE, True)),
+        cache_1h=bool(raw.get(CONF_CACHE_1H, False)) and provider == API_ANTHROPIC,
         check_house=bool(raw.get(CONF_CHECK_HOUSE, True)),
         azure_api_version=_text(raw.get(CONF_AZURE_API_VERSION)) or DEFAULT_AZURE_API_VERSION,
         cursor_api_key=_text(raw.get(CONF_CURSOR_API_KEY)),

@@ -46,12 +46,14 @@ def activity_restore_flags(
     snapshot: bool,
     undone: bool,
     admin: bool,
-    ha_mcp: bool,
     expired: bool = False,
 ) -> tuple[bool, bool]:
-    """Native snapshot rollback, plus Ask to restore when HA-MCP can help or we have no snapshot."""
+    """One way to undo a row: Rollback from the snapshot, or Undo with agent when there is none.
+
+    A change the agent created has no earlier version to put back, so only the agent can undo it.
+    """
     can_rollback = bool(ACTIVITY_ROLLBACK and snapshot and not undone and not expired)
-    ask_restore = bool(admin and not undone and not expired and (ha_mcp or not can_rollback))
+    ask_restore = bool(admin and not undone and not expired and not can_rollback)
     return can_rollback, ask_restore
 
 
@@ -249,6 +251,8 @@ CONF_ENABLE_SIDEBAR = "enable_sidebar"
 CONF_ENABLE_DICTATE = "enable_dictate"
 CONF_ALLOW_USERS = "allow_users"
 CONF_HOUSE_MAP = "house_map"
+CONF_NOTES = "notes"
+CONF_NOTES_TEXT = "notes_text"
 CONF_SHORTEN_MCP_RESULTS = "shorten_mcp_results"
 CONF_CHANGE_HISTORY = "change_history"
 CONF_CHANGE_HISTORY_TTL_DAYS = "change_history_ttl_days"
@@ -281,7 +285,25 @@ TOKEN_MODE_EXTREME = "extreme"
 TOKEN_MODES = (TOKEN_MODE_OFF, TOKEN_MODE_LIGHT, TOKEN_MODE_MEDIUM, TOKEN_MODE_EXTREME)
 _TOKEN_MODE_ON = {"1", "true", "on", "yes", TOKEN_MODE_EXTREME}
 CONF_CHECK_HOUSE = "check_house"
+# Agent form: Advanced section with one Save tokens box (stored as low_token medium/off).
+SECTION_ADVANCED = "advanced"
+CONF_SAVE_TOKENS = "save_tokens"
 CONF_PROMPT_CACHE = "prompt_cache"
+# Claude agents: keep the cached system prompt and tools for an hour instead of 5 minutes.
+CONF_CACHE_1H = "cache_1h"
+# Tokens the model can read; 0 means look it up from the model id.
+CONF_CONTEXT_WINDOW = "context_window"
+# Cloud agents start with a few tools and load the rest when they need them.
+CONF_TOOLS_ON_DEMAND = "tools_on_demand"
+
+
+def context_window_of(value) -> int:
+    try:
+        size = int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+    return max(0, min(size, 10_000_000))
+
 CONF_KEEP_CHATS = "keep_chats"
 DEFAULT_KEEP_CHATS = 30
 CONF_EFFORT = "effort"
@@ -295,7 +317,7 @@ CONF_TTS_MODEL = "tts_model"
 CONF_TTS_VOICE = "tts_voice"
 CONF_TTS_SPEED = "tts_speed"
 STT_PROVIDERS = frozenset({API_OPENAI, API_OPENROUTER, API_COMPATIBLE, API_GEMINI})
-TTS_PROVIDERS = frozenset({API_OPENAI, API_OPENROUTER, API_COMPATIBLE, API_GEMINI})
+TTS_PROVIDERS = frozenset({API_OPENAI, API_OPENROUTER, API_COMPATIBLE, API_GEMINI, API_XAI})
 _STT_MODEL = {
     API_OPENAI: "gpt-4o-mini-transcribe",
     API_OPENROUTER: "openai/whisper-1",
@@ -313,6 +335,8 @@ _TTS_MODEL = {
     API_OPENROUTER: "openai/gpt-4o-mini-tts",
     API_COMPATIBLE: "gpt-4o-mini-tts",
     API_GEMINI: "gemini-3.8-flash-tts",
+    # xAI /v1/tts takes no model field. The name only labels usage rows.
+    API_XAI: "grok-tts",
 }
 _TTS_MODEL_CHOICES = {
     API_OPENAI: ["gpt-4o-mini-tts", "tts-1-hd", "tts-1"],
@@ -337,6 +361,57 @@ TTS_VOICES = [
 ]
 DEFAULT_TTS_VOICE = "coral"
 DEFAULT_GEMINI_TTS_VOICE = "Kore"
+DEFAULT_XAI_TTS_VOICE = "eve"
+# Built-in voices from GET https://api.x.ai/v1/tts/voices. Every voice speaks every language.
+XAI_TTS_VOICES = [
+    "eve",
+    "ara",
+    "rex",
+    "sal",
+    "leo",
+    "luna",
+    "iris",
+    "carina",
+    "celeste",
+    "helios",
+    "ursa",
+    "rigel",
+    "cosmo",
+    "lux",
+    "atlas",
+    "castor",
+    "naksh",
+    "lumen",
+    "sirius",
+    "orion",
+    "altair",
+    "perseus",
+    "zenith",
+    "helix",
+    "kepler",
+    "zagan",
+]
+# xAI /v1/tts language codes. Anything else is sent as "auto".
+_XAI_SPEECH_LANGUAGE = {
+    "en": "en",
+    "ar": "ar-SA",
+    "bn": "bn",
+    "zh": "zh",
+    "fr": "fr",
+    "de": "de",
+    "hi": "hi",
+    "id": "id",
+    "it": "it",
+    "ja": "ja",
+    "ko": "ko",
+    "pt": "pt-BR",
+    "ru": "ru",
+    "es": "es-ES",
+    "tr": "tr",
+    "vi": "vi",
+}
+_XAI_REGIONAL = {"ar-eg", "ar-sa", "ar-ae", "pt-br", "pt-pt", "es-mx", "es-es"}
+XAI_TTS_SPEEDS = (1.0, 1.25, 1.5)
 GEMINI_TTS_VOICES = [
     "Kore",
     "Puck",
@@ -513,6 +588,29 @@ def provider_supports_tts(kind: str) -> bool:
     return str(kind or "") in TTS_PROVIDERS
 
 
+def provider_has_tts_model(kind: str) -> bool:
+    """False for xAI: its speech endpoint has no model to pick."""
+    return provider_supports_tts(kind) and str(kind or "") != API_XAI
+
+
+def tts_speeds(kind: str) -> tuple[float, ...]:
+    """Speed choices the provider accepts (xAI: 0.7 to 1.5)."""
+    if str(kind or "") == API_XAI:
+        return XAI_TTS_SPEEDS
+    return TTS_SPEEDS
+
+
+def xai_speech_language(language: str) -> str:
+    """Map Home Assistant's language tag to an xAI /v1/tts code, or auto."""
+    raw = str(language or "").strip().replace("_", "-").casefold()
+    if not raw:
+        return "auto"
+    if raw in _XAI_REGIONAL:
+        primary, region = raw.split("-", 1)
+        return f"{primary}-{region.upper()}"
+    return _XAI_SPEECH_LANGUAGE.get(raw.split("-", 1)[0], "auto")
+
+
 def provider_supports_tts_speed(kind: str) -> bool:
     """True when the agent form can offer a speaking-speed control."""
     return provider_supports_tts(kind)
@@ -521,12 +619,16 @@ def provider_supports_tts_speed(kind: str) -> bool:
 def tts_voices(kind: str) -> list[str]:
     if str(kind or "") == API_GEMINI:
         return list(GEMINI_TTS_VOICES)
+    if str(kind or "") == API_XAI:
+        return list(XAI_TTS_VOICES)
     return list(TTS_VOICES)
 
 
 def default_tts_voice(kind: str) -> str:
     if str(kind or "") == API_GEMINI:
         return DEFAULT_GEMINI_TTS_VOICE
+    if str(kind or "") == API_XAI:
+        return DEFAULT_XAI_TTS_VOICE
     return DEFAULT_TTS_VOICE
 
 
@@ -584,7 +686,7 @@ def resolved_tts_voice(raw: dict, provider: str = "") -> str:
         if stored:
             return voices.get(stored.casefold(), stored)
         return DEFAULT_GEMINI_TTS_VOICE
-    return stored.casefold() or DEFAULT_TTS_VOICE
+    return stored.casefold() or default_tts_voice(kind)
 
 
 def tts_speed_choice(value: float) -> str:
@@ -593,21 +695,23 @@ def tts_speed_choice(value: float) -> str:
     return str(value)
 
 
-def resolved_tts_speed(raw: dict) -> float:
+def resolved_tts_speed(raw: dict, provider: str = "") -> float:
     try:
         value = float(raw.get(CONF_TTS_SPEED, DEFAULT_TTS_SPEED) or DEFAULT_TTS_SPEED)
     except (TypeError, ValueError):
         value = DEFAULT_TTS_SPEED
+    if str(provider or raw.get(CONF_API_PROVIDER) or "") == API_XAI:
+        return max(0.7, min(1.5, value))
     return max(0.25, min(4.0, value))
 
 
 def assist_tts_enabled(raw: dict, provider: str = "", *, new: bool = False) -> bool:
-    """OpenAI-style agents speak unless turned off. Gemini is opt-in on existing rows."""
+    """OpenAI-style agents speak unless turned off. Gemini and xAI are opt-in on existing rows."""
     kind = str(provider or raw.get(CONF_API_PROVIDER) or "")
     if not provider_supports_tts(kind):
         return False
     if CONF_ASSIST_TTS not in raw:
-        if kind == API_GEMINI:
+        if kind in {API_GEMINI, API_XAI}:
             return bool(new)
         return True
     return bool(raw.get(CONF_ASSIST_TTS))
@@ -719,51 +823,54 @@ COMPOSE_MCP_URL = "http://ha-mcp:8086/mcp"
 DEFAULT_COOLVER_URL = "http://127.0.0.1:8099"
 DEFAULT_SYSTEM_PROMPT = """You help with this Home Assistant installation: automations, entities, dashboards, and what ran or failed.
 
-A hello, thanks, or other small talk gets a short friendly reply. Do not list what you can do until the user asks about the house.
-
-Home Assistant is reached only through the connected MCP tools. Use those tools to inspect or change anything. Do not invent entity ids, states, or history. Prefer a specific tool over a full-installation overview when the question is narrow. A large entity listing may come back as an area map of ids. Use that map, then ask a tool for one area or one entity before you claim its state. If more than one connection is set up, use the tool from the connection that matches the question.
-
-Before you answer any question about this house (automations, entities, devices, states, counts), call a Home Assistant tool. Never answer those from memory.
+Prefer a specific tool over a full-installation overview when the question is narrow. A large entity listing may come back as an area map of ids. Use that map, then ask a tool for one area or one entity before you claim its state. If more than one connection is set up, use the tool from the connection that matches the question.
 
 Be concise. If a tool fails, say so. Ask before doing something hard to undo, such as deleting automations, unlocking doors, or turning off many devices at once.
-
 """
+# Kept outside DEFAULT_SYSTEM_PROMPT so a custom prompt does not drop them.
+HOUSE_RULES = (
+    "A hello, thanks, or other small talk gets a short friendly reply. "
+    "Do not list what you can do until the user asks about the house.\n\n"
+    "Home Assistant is reached only through the connected MCP tools. Before you answer any question about "
+    "this house (automations, entities, devices, states, counts, weather), call a Home Assistant tool. "
+    "Never answer those from memory, and never invent entity ids, dashboard ids, states, or history. "
+    "Before you say what a saved automation, script, scene, or dashboard contains, read it again with a tool: "
+    "earlier messages in this chat may describe an older version or a plan that was never saved."
+)
 LOVELACE_DASHBOARD_RULES = """
 Lovelace / dashboards (strict):
-- Dashboard and Lovelace configuration lives only in the running Home Assistant instance (storage dashboards and/or YAML on the HA host). The Cursor workspace or project folder does not contain it unless the user explicitly opened an HA config repository.
-- Forbidden for dashboard tasks: grep, glob, read, shell, or Task/explore subagents to find dashboards.yaml, .storage, ui-lovelace, or Lovelace JSON/YAML in the workspace.
-- Required: use Home Assistant MCP tools only (discover tools on the configured connection, then read/write dashboards through those tools — names vary by MCP server).
-
-Dashboard write workflow (every task):
-1. Once per task, if the MCP server exposes skill or reference guides, load its dashboard guide once (do not reload on every retry).
-2. Read with optimistic locking: use the connection's dashboard read tool with a scoped read (view/card filter) when a full pull is unnecessary.
-3. Write only with a valid config hash from that read, using patch/transform style tools when available — prefer minimal edits over replacing whole views.
-4. On hash mismatch: one read and one write retry — no filesystem fallback, no duplicate guide loads.
-5. On later writes in the same session, omit mandatory best-practice re-injection when the MCP tool allows it.
-6. Screenshots or visual verification only when the user asks or the change is large/ambiguous.
-
-Tool budget: simple card copy/move/remove conditional/reorder — target at most about twelve MCP calls total. If exceeded, stop exploratory loops; state what is missing (dashboard url_path, view id, card index) and ask the user or do one targeted read — do not spawn subagents or search the workspace.
-- Use one MCP connection for dashboard edits (the same Home Assistant this chat uses). Do not read from one connection and write to another.
-- Never invent entity_id or dashboard ids; resolve via search/entity tools before patching cards.
-- User messages may be German or other languages; MCP skill guides may be English — still load and follow them.
+- Dashboards live only in the running Home Assistant. Read and write them with the MCP tools of one connection. Do not read from one connection and write to another.
+- Read with the dashboard read tool, scoped to a view or card when a full pull is not needed. Write with the config hash from that read, as a small patch rather than a whole view.
+- On a hash mismatch: one fresh read and one retry.
+- Resolve entity ids with a search tool before you put them on a card.
+- Screenshots or visual checks only when the user asks or the change is large or unclear.
+- Tool budget: a simple card copy, move, removal, or reorder takes at most about twelve MCP calls. If you reach that, stop and say what is missing (dashboard url_path, view id, card index), or do one targeted read.
+- Skill guides may be in English while the user writes another language. Still follow them.
 """.strip()
 BPS_KEY_INSTRUCTIONS = (
-    "If a listed write tool has a BestPracticeKey field, load the matching skill guide from the "
-    "same MCP connection (HA-MCP: ha_get_skill_guide), copy the acknowledgment key from the top, "
-    "and pass it as BestPracticeKey. If that field or tool is not in the list, skip this. "
-    "Do not ask the user for a key. Do not call a tool that is not listed. "
-    "The key only counts for the write call that carries it. "
+    "If a write tool has a BestPracticeKey field, read the matching skill guide from the "
+    "same MCP connection (HA-MCP: ha_get_skill_guide) once before the first write in this chat, and pass "
+    "the acknowledgment key from its top as BestPracticeKey. AI Workspace keeps that key current on your "
+    "later writes and turns off the repeated guide text, so do not read the guide again before each write. "
+    "If a write still fails because of the key, read the guide once more and retry once. "
+    "If that field or tool does not exist, skip this. "
+    "Do not ask the user for a key. Do not call a tool that is not listed."
+)
+WRITE_RULES = (
     "Only create, change, or delete what the user asked for. Never make a placeholder, test, or helper "
     "automation, script, scene, or entity to pass a key or get around a tool error. "
     "A dashboard change is one dashboard write and never needs an automation. "
     "If a write stays blocked, stop and tell the user. "
-    "If asked where something in Home Assistant came from and you do not know, say so instead of guessing. "
     "Only report errors and results that a tool actually returned. "
-    "Never say a change is done before the write result confirms it."
+    "Never say a change is done before the write result confirms it. "
+    "If asked where something in Home Assistant came from and you do not know, say so instead of guessing."
 )
 STATUS_LINE_INSTRUCTIONS = (
-    "When a request needs tools, first write one short sentence saying what you are checking or doing, "
-    "then call the tools. Write that sentence only once per request. Between tool calls write nothing at all; "
+    "You may write one short status sentence before the first tool call when the "
+    "answer needs tools, or when you start real work (a change or a write). "
+    "If you do, make it a natural sentence in the user's language about "
+    "what you are about to do for this request, not a generic filler. "
+    "Write at most one status sentence per request. Between tool calls write nothing at all; "
     "the UI already shows them. Your next text is the answer."
 )
 # Sent with a voice turn: the status sentence would be read aloud before every answer.
@@ -824,7 +931,8 @@ def token_mode_history_limit(mode: str) -> int:
         return 4
     if mode == TOKEN_MODE_OFF:
         return 12
-    return 0
+    # Chat only still remembers the last few messages; a chat without memory is no chat.
+    return 4
 
 
 def token_mode_allows_extras(mode: str) -> bool:
@@ -917,14 +1025,20 @@ def language_instruction(code: str = "") -> str:
 
 
 def workspace_system_prompt(settings, *, admin: bool = True) -> str:
-    """Built-in or custom system prompt plus universal dashboard/MCP rules."""
+    """Built-in or custom system prompt plus the rules every agent gets."""
     base = str(getattr(settings, "system_prompt", "") or "").strip() or DEFAULT_SYSTEM_PROMPT
-    text = f"{base}\n\n{LOVELACE_DASHBOARD_RULES}\n\n{BPS_KEY_INSTRUCTIONS}\n\n{STATUS_LINE_INSTRUCTIONS}".strip()
+    parts = [base, HOUSE_RULES, LOVELACE_DASHBOARD_RULES, BPS_KEY_INSTRUCTIONS, WRITE_RULES, STATUS_LINE_INSTRUCTIONS]
     if admin and getattr(settings, "house_map", False):
         from .house_map import CATALOG_INSTRUCTIONS
 
-        text = f"{text}\n\n{CATALOG_INSTRUCTIONS}".strip()
-    return text
+        parts.append(CATALOG_INSTRUCTIONS)
+    try:
+        from .notes import notes_prompt
+    except ImportError:
+        notes_prompt = None
+    if notes_prompt is not None:
+        parts.append(notes_prompt(settings, admin=admin, write=admin))
+    return "\n\n".join(part.strip() for part in parts if part.strip())
 
 
 _CHAT_SCOPE = (
@@ -946,12 +1060,17 @@ def with_language_rule(text: str, language: str = "") -> str:
     return f"{scoped}\n\n{rule}".strip()
 
 
+def with_time_rule(text: str, rule: str = "") -> str:
+    """The house's time zone goes last, after the language rule, so the rest stays a stable prefix."""
+    return f"{text}\n\n{rule}" if rule else text
+
+
 TONE_INSTRUCTIONS = (
-    "A hello, thanks, or other small talk gets a short friendly reply. "
     "List capabilities, URLs, or entity links only when the user asks about the house. "
-    "Do not link the words Home Assistant. "
     "Keep MCP, tool names, Docker, and loopback addresses out of the reply the user reads. "
-    "Call tools silently: the UI already shows tool chips. Answer with the result. Only explain tools if the user asks."
+    "Earlier replies may end with a [tools: ...] line. AI Workspace adds it as a note of what those tools "
+    "returned. Use it to avoid repeating lookups, but check live state again before you change something, "
+    "and never write such a line yourself."
 )
 HA_LINK_INSTRUCTIONS = """Every automation, script, scene, device, helper, entity, or dashboard/view you mention must be a Markdown link. Do not list plain names or bare paths. Do not ask whether the user wants links. Use root-relative paths that start with /. Never use 127.0.0.1, localhost, or an MCP URL in those links — those are only how tools reach Home Assistant from Docker. Do not link the words Home Assistant.
 
@@ -962,11 +1081,16 @@ URL rules (wrong ids open a blank editor):
 - Devices: [Name](/config/devices/device/{device_id}) using the hex device_id (for example ce88feb75016ee2f89ed363b4995a1c8), never an entity_id.
 - Entities: [Name](/config/entities/entity/{entity_id}) using the full entity_id (light.kitchen).
 - Helpers (input_boolean, input_number, counter, timer, schedule, …): [Name](/config/entities/entity/{entity_id}) using the helper entity_id, not a generic /config/helpers list.
-- Dashboards and views: [Media](/lovelace/media) or [Overview](/lovelace/0). Never write a bare /lovelace/... path without a Markdown link.
-Take id, unique_id, and device_id from the MCP tool result. If edit ids are missing from a bulk list, resolve them with one batch entity-registry (or equivalent) call — never one full config get per row.
+- Dashboards and views: [Media](/lovelace/media) or [Overview](/lovelace/0).
+Take id, unique_id, and device_id from the MCP tool result.
 
-Never list plain names. Never put names in a markdown table unless every name cell is already a Markdown link. Example: | [Bewässerung](/config/automation/edit/balcony_irrigation) | on |"""
-MCP_FIRST_INSTRUCTIONS = """Home Assistant lives in the MCP tools (home-assistant / ha-mcp), not in this workspace. For automations, entities, devices, scripts, or house state, call those MCP tools first. Do not use grep, glob, read, or shell to hunt for automations.yaml or HA config — those files are not here."""
+Put names in a markdown table only when every name cell is already a Markdown link. Example: | [Bewässerung](/config/automation/edit/balcony_irrigation) | on |"""
+# Cursor agents also have file tools; cloud agents do not, so they never get this.
+WORKSPACE_FILES_RULE = (
+    "Home Assistant configuration is not in this workspace. Do not use grep, glob, read, shell, or "
+    "Task/explore subagents to look for automations.yaml, dashboards.yaml, .storage, ui-lovelace, or other "
+    "Home Assistant files, unless the user opened a Home Assistant config repository. Use the MCP tools."
+)
 MCP_BULK_LIST_INSTRUCTIONS = """Bulk lists (automations, scripts, scenes, entities, helpers):
 - Answer with one or two Home Assistant MCP calls: a domain-filtered listing that returns every matching item with live state (on/off) when the user asked for it. Use entity search/list tools with domain_filter (or the server equivalent), not one get-config call per item.
 - For automation, script, and scene edit links, use config id / unique_id from that listing (entity attributes such as id, or registry unique_id in the same batch). Never call ha_config_get_automation, ha_config_get_script, or ha_config_get_scene once per row only to learn the edit id. Load full config for a single named item only when the user asks what it triggers, conditions, or actions do.
@@ -974,11 +1098,11 @@ MCP_BULK_LIST_INSTRUCTIONS = """Bulk lists (automations, scripts, scenes, entiti
 
 
 def ui_link_instructions(origin: str = "") -> str:
-    text = f"{TONE_INSTRUCTIONS} {MCP_FIRST_INSTRUCTIONS} {MCP_BULK_LIST_INSTRUCTIONS} {HA_LINK_INSTRUCTIONS}"
+    text = f"{TONE_INSTRUCTIONS}\n\n{MCP_BULK_LIST_INSTRUCTIONS}\n\n{HA_LINK_INSTRUCTIONS}"
     origin = str(origin or "").strip().rstrip("/")
     if origin:
         text = (
-            f"{text} The browser origin is {origin}. Use it only to understand where the UI is. "
+            f"{text}\n\nThe browser origin is {origin}. Use it only to understand where the UI is. "
             "Never write that origin, 127.0.0.1, or localhost in a reply unless the user asks for the address."
         )
     return text
@@ -990,24 +1114,40 @@ def with_ui_context(message: str, origin: str = "") -> str:
 
 # Cursor cannot be forced to call a tool first, so it is asked to.
 CHECK_HOUSE_NOTE = (
-    "Before you answer, look at Home Assistant with the tools. "
-    "Do not answer about devices, states, or lists from memory."
+    "If this message is about the house (devices, states, lists, weather), call a Home Assistant tool before you answer."
 )
 
 
 def standing_chat_prompt(
-    settings, *, admin: bool = True, language: str = "", origin: str = "", mode: str = TOKEN_MODE_OFF
+    settings,
+    *,
+    admin: bool = True,
+    language: str = "",
+    origin: str = "",
+    mode: str = TOKEN_MODE_OFF,
+    time_zone_rule: str = "",
 ) -> str:
     """Workspace rules plus UI/MCP instructions for one Cursor agent lifetime. Same levels as cloud agents."""
+    return with_time_rule(
+        _standing_text(settings, admin=admin, language=language, origin=origin, mode=mode), time_zone_rule
+    )
+
+
+def _standing_text(settings, *, admin: bool, language: str, origin: str, mode: str) -> str:
     if mode == TOKEN_MODE_EXTREME:
         return with_language_rule(LOW_TOKEN_PROMPT, language)
     if mode == TOKEN_MODE_MEDIUM:
-        return with_language_rule(f"{LOW_TOKEN_MEDIUM_PROMPT}\n\n{ui_link_instructions(origin)}", language)
-    body = with_language_rule(workspace_system_prompt(settings, admin=admin), language)
-    ui = ui_link_instructions(origin)
-    if body and ui:
-        return f"{body}\n\n{ui}"
-    return body or ui
+        try:
+            from .notes import notes_prompt
+        except ImportError:
+            extra = ""
+        else:
+            extra = notes_prompt(settings, admin=admin, write=admin)
+        head = f"{LOW_TOKEN_MEDIUM_PROMPT}\n\n{extra}".strip() if extra else LOW_TOKEN_MEDIUM_PROMPT
+        text = f"{head}\n\n{WORKSPACE_FILES_RULE}\n\n{ui_link_instructions(origin)}"
+        return with_language_rule(text, language)
+    body = f"{workspace_system_prompt(settings, admin=admin)}\n\n{WORKSPACE_FILES_RULE}"
+    return with_language_rule(f"{body}\n\n{ui_link_instructions(origin)}", language)
 
 
 _ENTITY_ID = re.compile(r"^[a-z][a-z0-9_]*\.[a-zA-Z0-9_]+$")

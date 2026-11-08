@@ -31,9 +31,9 @@ Turn this off if you want every attribute of a large listing in one shot and you
 
 On by default, for cloud agents and Cursor.
 
-This is a **log** of configuration writes the agent actually made (the last 30). Open it from the sidebar. **Rollback** puts back the snapshot Change History took before that write — that works without HA-MCP. When HA-MCP is connected, **Ask to restore** stays available too, so the chat can use HA-MCP edit backups (domain `dashboard`, backup from before the change, not the newest file). If there is no snapshot, Ask to restore still asks the chat to undo with the tools it actually has.
+This is a **log** of configuration writes the agent actually made (the last 30). Open it from the sidebar. Each row has one way back. **Rollback** puts back the snapshot Change History took before that write — that works without HA-MCP and without the agent. A row with no snapshot, such as something the agent created, shows **Undo with agent** instead: it sends the change details to the chat, and the agent undoes it with the tools it actually has (for example deletes what it created, or uses an HA-MCP backup from before the change). If Rollback fails, the error offers Undo with agent too.
 
-**Rollback for** (default 7 days, Configure or `change_history_ttl_days`) hides Rollback and Ask to restore on older rows. The log stays. An old dashboard snapshot would otherwise overwrite later cards and entities. Use 1 for about a day.
+**Rollback for** (default 7 days, Configure or `change_history_ttl_days`) hides Rollback and Undo with agent on older rows. The log stays. An old dashboard snapshot would otherwise overwrite later cards and entities. Use 1 for about a day.
 
 ### If Home Assistant will not start
 

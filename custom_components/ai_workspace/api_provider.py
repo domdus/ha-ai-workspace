@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from contextvars import ContextVar
 import json
 import logging
 import re
@@ -12,7 +13,13 @@ from aiohttp import ClientError, ClientResponse, ClientSession, ClientTimeout
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
+from .bps_key import note_guide, prepare_write
 from .images import anthropic_user_content, openai_user_content
+from .context import as_messages, history_for, tool_call_note
+from .local_text import CHAT_ONLY, pick
+from .ollama_info import MIN_TOOL_WINDOW, OllamaModel, async_ollama_model
+from .local_time import house_zone, stamped_now, time_rule, with_local_offset
+from .tool_loading import LOAD_TOOLS, pick_tools, used_tool_names
 from .const import (
     API_ANTHROPIC,
     API_AZURE,
@@ -48,6 +55,7 @@ from .const import (
     default_api_model,
     ui_link_instructions,
     with_language_rule,
+    with_time_rule,
 )
 from .coolver import CoolverClient
 from .mcp_client import McpError, McpHttpClient
@@ -97,7 +105,6 @@ _BPS_PARAM = (
 _BPS_NOTE = (
     " Call ha_get_skill_guide and pass its acknowledgment key as BestPracticeKey. Do not ask the user."
 )
-_HISTORY_MAX = 12
 _WAIT = re.compile(r"try again in ([\d.]+)\s*(ms|s)", re.I)
 _ANTHROPIC_VERSION = "2023-06-01"
 _REASONING_EFFORT = {API_OPENAI, API_AZURE, API_GEMINI, API_XAI}
@@ -105,9 +112,15 @@ _EFFORT_KEYS = ("reasoning_effort", "reasoning", "output_config")
 _CACHE_BODY_KEYS = ("cache_control", "prompt_cache_key", "prompt_cache_options", "prompt_cache_retention")
 _CACHE_MARK = {"type": "ephemeral"}
 _MCP_TTL = 600.0
+_CLOUD_TIMEOUT = 120
+_LOCAL_TIMEOUT = 600
+# Windows below this get only the core tools at the start.
+SMALL_WINDOW = 32_000
+# Per chat turn: an Ollama model that cannot use tools runs this turn chat only.
+_MODE_OVERRIDE: ContextVar[str] = ContextVar("ai_workspace_mode_override", default="")
 _MCP_CACHE_MAX = 32
 _MCP_CACHE = f"{DOMAIN}_mcp_cache"
-_LOCAL_TOOLS = {"catalog", "house-map", "web"}
+_LOCAL_TOOLS = {"catalog", "house-map", "web", "notes"}
 _ERRORS = (McpError, ClientError, TimeoutError, OSError, json.JSONDecodeError, RuntimeError)
 
 
@@ -234,6 +247,8 @@ def _is_null_schema(schema: Any) -> bool:
 
 def _full_description(name: str, schema: dict[str, Any]) -> bool:
     props = schema.get("properties")
+    if name == LOAD_TOOLS:
+        return True
     return bool(_FULL_DESC_TOOL.search(name)) or (isinstance(props, dict) and "BestPracticeKey" in props)
 
 
@@ -316,6 +331,7 @@ class McpBundle:
         self._groups: list[tuple[str, list[str]]] = []
         self._pending: list[tuple[str, list[dict]]] = []
         self.tools: list[dict] = []
+        self.picker = None
 
     def add(self, server: str, client: Any, tools: list[dict]) -> None:
         names = [str(tool.get("name") or "") for tool in tools if tool.get("name")]
@@ -481,16 +497,16 @@ def _openai_tools(mcp_tools: list[dict], limit: int = _DESC_MAX, gemini: bool = 
     return out
 
 
-def _mark_last_tool(tools: list[dict]) -> list[dict]:
+def _mark_last_tool(tools: list[dict], mark: dict | None = None) -> list[dict]:
     if not tools:
         return tools
     out = [dict(item) for item in tools]
-    out[-1] = {**out[-1], "cache_control": dict(_CACHE_MARK)}
+    out[-1] = {**out[-1], "cache_control": dict(mark or _CACHE_MARK)}
     return out
 
 
-def _cached_text_block(text: str) -> dict[str, Any]:
-    return {"type": "text", "text": text, "cache_control": dict(_CACHE_MARK)}
+def _cached_text_block(text: str, mark: dict | None = None) -> dict[str, Any]:
+    return {"type": "text", "text": text, "cache_control": dict(mark or _CACHE_MARK)}
 
 
 def _openai_output_limit_key(model: str) -> str:
@@ -527,6 +543,44 @@ def _rewrite_output_limit(body: dict, text: str) -> bool:
         body["max_tokens"] = body.pop("max_completion_tokens")
         return True
     return False
+
+
+_CACHE_HOUR = {"type": "ephemeral", "ttl": "1h"}
+
+
+class _Spent:
+    """What a turn has used so far, so a stopped or failed turn still counts what it spent."""
+
+    def __init__(self) -> None:
+        self.usage: TokenUsage | None = None
+        self.reported = False
+
+    def take(self) -> TokenUsage | None:
+        if self.reported or self.usage is None or self.usage.empty():
+            return None
+        self.reported = True
+        return self.usage
+
+
+def _cache_marks(body: dict) -> list[dict]:
+    marks: list[dict] = []
+    for tool in body.get("tools") or []:
+        if isinstance(tool, dict) and isinstance(tool.get("cache_control"), dict):
+            marks.append(tool["cache_control"])
+    system = body.get("system")
+    for block in system if isinstance(system, list) else []:
+        if isinstance(block, dict) and isinstance(block.get("cache_control"), dict):
+            marks.append(block["cache_control"])
+    return marks
+
+
+def _strip_cache_ttl(body: dict) -> bool:
+    """Fall back from the 1-hour cache to the default 5 minutes. True when a ttl was removed."""
+    changed = False
+    for mark in _cache_marks(body):
+        if mark.pop("ttl", None) is not None:
+            changed = True
+    return changed
 
 
 def _strip_prompt_cache(body: dict) -> bool:
@@ -586,22 +640,38 @@ def _failed_reply(row) -> bool:
     return not content or content in errors
 
 
-def _history_messages(rows, limit: int = _HISTORY_MAX) -> list[dict[str, str]]:
-    if limit <= 0:
-        return []
-    messages = []
-    for row in rows:
-        if row.role not in {"user", "assistant"} or _failed_reply(row):
-            continue
-        content = _clip(row.content or "", 2000)
-        if not content:
-            continue
-        messages.append({"role": row.role, "content": content})
-    if messages and messages[-1]["role"] == "user":
-        messages = messages[:-1]
-    if len(messages) > limit:
-        messages = messages[-limit:]
-    return messages
+def _history_messages(
+    rows, mode: str, model: str = "", settings=None, window: int = 0, zone=None
+) -> list[dict[str, str]]:
+    """Earlier turns sized to the model's context window, see context.py."""
+    history = history_for(
+        rows,
+        mode=mode,
+        model=model,
+        provider=str(getattr(settings, "api_provider", "") or ""),
+        manual_window=window or int(getattr(settings, "context_window", 0) or 0),
+        zone=zone,
+    )
+    if history.dropped:
+        logger.debug("history left out %s older turn(s) behind a digest", history.dropped)
+    return as_messages(history)
+
+
+def chat_only_note(model: str, local: OllamaModel, language: str = "") -> str:
+    """Why an Ollama model answers without tools, or "" when it can use them."""
+    no_tools, small = pick(CHAT_ONLY, language)
+    if local.tools is False:
+        return no_tools.format(model=model)
+    if local.tools and local.running and local.running < MIN_TOOL_WINDOW:
+        return small.format(model=model, size=f"{local.running:,}".replace(",", "."))
+    return ""
+
+
+def _said_before(rows, note: str) -> bool:
+    return any(
+        str(getattr(row, "role", "")) == "assistant" and note in str(getattr(row, "content", "") or "")
+        for row in rows or []
+    )
 
 
 async def _sse(resp: ClientResponse) -> AsyncIterator[tuple[str, str]]:
@@ -647,6 +717,8 @@ class ApiProvider:
         self._effort = True
         self._force = True
         self._prompt_cache = True
+        self._unbilled: dict[str, TokenUsage] = {}
+        self._cache_hour = bool(getattr(settings, "cache_1h", False)) and settings.api_provider == API_ANTHROPIC
         reason = None
         needs_key = settings.api_provider not in {API_OLLAMA, API_COMPATIBLE}
         if needs_key and not settings.api_key:
@@ -734,7 +806,7 @@ class ApiProvider:
         return default_api_model(self.settings.api_provider)
 
     def _token_mode(self) -> str:
-        return settings_token_mode(self.settings)
+        return _MODE_OVERRIDE.get() or settings_token_mode(self.settings)
 
     def _tool_text_limit(self) -> int:
         return _DESC_MAX_MEDIUM if self._token_mode() == TOKEN_MODE_MEDIUM else _DESC_MAX
@@ -755,12 +827,16 @@ class ApiProvider:
             return payload
         provider = self.settings.api_provider
         if provider == API_ANTHROPIC:
+            # Tools and the system prompt are the same on every turn. With the 1-hour option
+            # they stay cached over a coffee break; the growing chat after them keeps the
+            # default 5 minutes (Anthropic wants the longer cache first, which this order is).
+            mark = dict(_CACHE_HOUR) if self._cache_hour else dict(_CACHE_MARK)
             payload["cache_control"] = dict(_CACHE_MARK)
             system = payload.get("system")
             if isinstance(system, str) and system.strip():
-                payload["system"] = [_cached_text_block(system)]
+                payload["system"] = [_cached_text_block(system, mark)]
             if payload.get("tools"):
-                payload["tools"] = _mark_last_tool(payload["tools"])
+                payload["tools"] = _mark_last_tool(payload["tools"], mark)
             return payload
         payload["prompt_cache_key"] = self._prompt_cache_key()
         if provider == API_OPENROUTER:
@@ -774,11 +850,18 @@ class ApiProvider:
         return payload
 
     def _system(self, origin: str = "", language: str = "", admin: bool = True) -> str:
+        return with_time_rule(self._system_text(origin, language, admin), time_rule(house_zone(self.hass)))
+
+    def _system_text(self, origin: str, language: str, admin: bool) -> str:
         mode = self._token_mode()
         if mode == TOKEN_MODE_EXTREME:
             return with_language_rule(LOW_TOKEN_PROMPT, language)
         if mode == TOKEN_MODE_MEDIUM:
-            text = f"{LOW_TOKEN_MEDIUM_PROMPT}\n\n{ui_link_instructions(origin)}"
+            from .notes import notes_prompt
+
+            extra = notes_prompt(self.settings, admin=admin, write=admin)
+            head = f"{LOW_TOKEN_MEDIUM_PROMPT}\n\n{extra}".strip() if extra else LOW_TOKEN_MEDIUM_PROMPT
+            text = f"{head}\n\n{ui_link_instructions(origin)}"
             return with_language_rule(text, language)
         identity = _IDENTITY.format(label=self._label(), model=self._model())
         body = workspace_system_prompt(self.settings, admin=admin)
@@ -847,6 +930,11 @@ class ApiProvider:
 
             local = HouseMapClient(self.hass, self.store)
             bundle.add("catalog", local, await local.list_tools())
+        if admin and self.settings.notes:
+            from .notes import NotesClient
+
+            notes = NotesClient(self.hass, admin=admin)
+            bundle.add("notes", notes, await notes.list_tools())
         if admin and self.settings.allow_internet:
             from .web_tools import WebClient
 
@@ -857,18 +945,29 @@ class ApiProvider:
 
     async def _invoke_tool(self, mcp, name: str, args: Any, on_tool: Callable | None):
         payload = args if isinstance(args, dict) else {}
-        blocked = placeholder_write(mcp.original_name(name), payload)
+        original = mcp.original_name(name)
+        blocked = placeholder_write(original, payload)
         if blocked:
             logger.warning("Refused %s: placeholder %r the user did not ask for", name, blocked)
             return {"content": [{"type": "text", "text": block_message(blocked)}], "isError": True}
+        prepared = prepare_write(original, payload)
+        if prepared is not payload:
+            logger.debug("Passed the guide key on to %s", name)
+            payload = prepared
+        timed = with_local_offset(payload, house_zone(self.hass))
+        if timed is not payload:
+            logger.debug("Added the house's UTC offset to the times in %s", name)
+            payload = timed
         if on_tool is None:
-            return await mcp.call_tool(name, payload)
-        original = mcp.original_name(name)
+            result = await mcp.call_tool(name, payload)
+        else:
 
-        async def call(_tool_name: str, tool_args: dict) -> Any:
-            return await mcp.call_tool(name, tool_args)
+            async def call(_tool_name: str, tool_args: dict) -> Any:
+                return await mcp.call_tool(name, tool_args)
 
-        return await on_tool(original, payload, call)
+            result = await on_tool(original, payload, call)
+        note_guide(original, result if isinstance(result, str) else json.dumps(result, ensure_ascii=False, default=str))
+        return result
 
     async def send(
         self,
@@ -894,6 +993,16 @@ class ApiProvider:
             return
         http = self._http()
         mode = self._token_mode()
+        window = int(getattr(self.settings, "context_window", 0) or 0)
+        note = ""
+        if self.settings.api_provider == API_OLLAMA and self.hass is not None:
+            local = await async_ollama_model(self.hass, self._base(), self._model())
+            window = window or int(local.window or 0)
+            note = chat_only_note(self._model(), local, language) if mode != TOKEN_MODE_EXTREME else ""
+            if note:
+                # Chat only for this turn: tools would not work or would not fit.
+                mode = TOKEN_MODE_EXTREME
+                _MODE_OVERRIDE.set(mode)
         clip = token_mode_clip_user(mode)
         if clip:
             message = _clip(message, clip)
@@ -901,12 +1010,16 @@ class ApiProvider:
             pictures = []
         use_tools = (wants_house_tools(message) if tools is None else bool(tools)) or bool(pictures)
         history = []
+        rows: list = []
         bundle = McpBundle()
-        hist_limit = token_mode_history_limit(mode)
-        if hist_limit and self.hass is not None and self.store is not None:
+        if self.hass is not None and self.store is not None and (token_mode_history_limit(mode) or note):
             rows = await self.hass.async_add_executor_job(self.store.list_messages, session.id)
-            history = _history_messages(rows, hist_limit)
+        if token_mode_history_limit(mode) and rows:
+            history = _history_messages(rows, mode, self._model(), self.settings, window, house_zone(self.hass))
         yield {"type": "status", "text": "Working"}
+        if note and not _said_before(rows, note):
+            # Once per chat, so the user knows why the agent cannot see the house.
+            yield {"type": "text", "delta": f"{note}\n\n"}
         if use_tools and token_mode_allows_tools(mode):
             bundle, skipped, first_error = await self._open_tools(http, str(access_token or ""), admin)
             if skipped and not bundle.names:
@@ -925,16 +1038,50 @@ class ApiProvider:
         )
         if bundle.tools:
             logger.debug("MCP OpenAI tool names: %s", ", ".join(tool["name"] for tool in bundle.tools))
+        if bundle.tools and bool(getattr(self.settings, "tools_on_demand", True)):
+            recent = " ".join(str(item.get("content") or "") for item in history[-2:] if item.get("role") == "user")
+            bundle.picker = pick_tools(
+                bundle.tools, f"{message}\n{recent}", used_tool_names(rows), small=bool(window) and window < SMALL_WINDOW
+            )
+            if bundle.picker is not None:
+                logger.info(
+                    "tools on demand: %s of %s sent at start", len(bundle.picker.visible()) - 1, len(bundle.tools)
+                )
         loop = self._anthropic if self.settings.api_provider == API_ANTHROPIC else self._openai
         force = bool(force_tools) and token_mode_checks_house(mode, self.settings.check_house) and not pictures
+        # Stamped like the history turns, so this message reads the same when it is history next turn.
+        sent = stamped_now(message, house_zone(self.hass))
+        from .notes import remember_nudge
+
+        nudge = remember_nudge(self.settings, message, admin=admin)
+        if nudge:
+            sent = f"{sent}\n\n{nudge}"
+        spent = _Spent()
         try:
             async for event in loop(
-                http, history, message, bundle, origin, pictures, language, admin, force, on_tool
+                http, history, sent, bundle, origin, pictures, language, admin, force, on_tool, spent=spent
             ):
                 yield event
         except _ERRORS as exc:
             logger.warning("api provider failed: %s", self._public(exc))
+            # The requests that finished before the failure were billed.
+            unbilled = spent.take()
+            if unbilled is not None:
+                yield usage_payload(unbilled)
             yield {"type": "error", "message": self._public(exc)}
+        finally:
+            if note:
+                _MODE_OVERRIDE.set("")
+            # Stopped, or failed outside the handled errors: keep it for the caller to record.
+            left = spent.take()
+            if left is not None:
+                self._unbilled[session.id] = left
+                while len(self._unbilled) > 50:
+                    self._unbilled.pop(next(iter(self._unbilled)))
+
+    def take_unbilled(self, session_id: str) -> TokenUsage | None:
+        """Usage of finished requests in a turn that was stopped before it reported them."""
+        return self._unbilled.pop(str(session_id or ""), None)
 
     async def suggest_title(self, user: str, assistant: str = "") -> str | None:
         if not self.info.available or self._token_mode() != TOKEN_MODE_OFF:
@@ -995,11 +1142,18 @@ class ApiProvider:
         admin: bool,
         force: bool = False,
         on_tool: Callable | None = None,
+        spent: "_Spent | None" = None,
     ) -> AsyncIterator[dict]:
         messages: list[dict[str, Any]] = [{"role": "system", "content": self._system(origin, language, admin)}]
         messages.extend(history)
         messages.append({"role": "user", "content": openai_user_content(message, images)})
-        tools = _openai_tools(mcp.tools, self._tool_text_limit(), self.settings.api_provider == API_GEMINI)
+        picker = getattr(mcp, "picker", None)
+
+        def tool_list() -> list[dict]:
+            shown_tools = picker.visible() if picker is not None else mcp.tools
+            return _openai_tools(shown_tools, self._tool_text_limit(), self.settings.api_provider == API_GEMINI)
+
+        tools = tool_list()
         url = self._chat_url()
         headers = self._auth_headers()
         said: list[str] = []
@@ -1026,7 +1180,10 @@ class ApiProvider:
             shown = _ReplyText(said)
             async for kind, value in self._openai_round(http, url, headers, payload):
                 if kind == "usage":
-                    usage = usage.add(value)
+                    # Priced per request: a long-context rate depends on this request's size.
+                    usage = usage.add(estimate_cost(value, model=self._model()))
+                    if spent is not None:
+                        spent.usage = usage
                     continue
                 if kind == "message":
                     reply = value
@@ -1041,22 +1198,36 @@ class ApiProvider:
                 for call in calls:
                     fn = call.get("function") or {}
                     name = str(fn.get("name") or "tool")
-                    label = _tool_label(mcp.original_name(name))
-                    yield {"type": "tool", "name": name, "phase": "start", "text": f"Calling {label}..."}
                     try:
                         args = json.loads(fn.get("arguments") or "{}")
                     except json.JSONDecodeError:
                         args = {}
+                    if picker is not None and name == LOAD_TOOLS:
+                        messages.append({"role": "tool", "tool_call_id": call.get("id"), "content": picker.load(args)})
+                        tools = tool_list()
+                        continue
+                    if picker is not None and picker.add(name):
+                        tools = tool_list()
+                    label = _tool_label(mcp.original_name(name))
+                    yield {"type": "tool", "name": name, "phase": "start", "text": f"Calling {label}..."}
                     try:
                         body = self._tool_body(await self._invoke_tool(mcp, name, args, on_tool), name)
                     except _ERRORS as exc:
                         body = self._public(exc)
-                    yield {"type": "tool", "name": name, "phase": "end", "text": f"Finished {label}"}
+                    yield {
+                        "type": "tool",
+                        "name": name,
+                        "phase": "end",
+                        "text": f"Finished {label}",
+                        "note": tool_call_note(mcp.original_name(name), args, body),
+                    }
                     messages.append({"role": "tool", "tool_call_id": call.get("id"), "content": body})
                 continue
             break
         text = "".join(said).strip()
         billed = estimate_cost(usage, model=self._model())
+        if spent is not None:
+            spent.reported = True
         if not billed.empty():
             yield usage_payload(billed)
         if not text:
@@ -1158,10 +1329,16 @@ class ApiProvider:
         admin: bool,
         force: bool = False,
         on_tool: Callable | None = None,
+        spent: "_Spent | None" = None,
     ) -> AsyncIterator[dict]:
         messages: list[dict[str, Any]] = list(history)
         messages.append({"role": "user", "content": anthropic_user_content(message, images)})
-        tools = _anthropic_tools(mcp.tools, self._tool_text_limit())
+        picker = getattr(mcp, "picker", None)
+
+        def tool_list() -> list[dict]:
+            return _anthropic_tools(picker.visible() if picker is not None else mcp.tools, self._tool_text_limit())
+
+        tools = tool_list()
         url = f"{self._base()}/messages"
         headers = self._anthropic_headers()
         said: list[str] = []
@@ -1189,7 +1366,10 @@ class ApiProvider:
             shown = _ReplyText(said)
             async for kind, value in self._anthropic_round(http, url, headers, payload):
                 if kind == "usage":
-                    usage = usage.add(value)
+                    # Priced per request: a long-context rate depends on this request's size.
+                    usage = usage.add(estimate_cost(value, model=self._model()))
+                    if spent is not None:
+                        spent.usage = usage
                     continue
                 if kind == "message":
                     blocks = value
@@ -1204,20 +1384,36 @@ class ApiProvider:
                 results = []
                 for block in uses:
                     name = str(block.get("name") or "tool")
+                    args = block.get("input") if isinstance(block.get("input"), dict) else {}
+                    if picker is not None and name == LOAD_TOOLS:
+                        results.append(
+                            {"type": "tool_result", "tool_use_id": block.get("id"), "content": picker.load(args)}
+                        )
+                        tools = tool_list()
+                        continue
+                    if picker is not None and picker.add(name):
+                        tools = tool_list()
                     label = _tool_label(mcp.original_name(name))
                     yield {"type": "tool", "name": name, "phase": "start", "text": f"Calling {label}..."}
-                    args = block.get("input") if isinstance(block.get("input"), dict) else {}
                     try:
                         body = self._tool_body(await self._invoke_tool(mcp, name, args, on_tool), name)
                     except _ERRORS as exc:
                         body = self._public(exc)
-                    yield {"type": "tool", "name": name, "phase": "end", "text": f"Finished {label}"}
+                    yield {
+                        "type": "tool",
+                        "name": name,
+                        "phase": "end",
+                        "text": f"Finished {label}",
+                        "note": tool_call_note(mcp.original_name(name), args, body),
+                    }
                     results.append({"type": "tool_result", "tool_use_id": block.get("id"), "content": body})
                 messages.append({"role": "user", "content": results})
                 continue
             break
         text = "".join(said).strip()
         billed = estimate_cost(usage, model=self._model())
+        if spent is not None:
+            spent.reported = True
         if not billed.empty():
             yield usage_payload(billed)
         if not text:
@@ -1299,7 +1495,7 @@ class ApiProvider:
                     blob = data.get("usage") or (data.get("message") or {}).get("usage")
                     piece = parse_usage(blob, model=self._model())
                     if not piece.empty():
-                        usage = usage.add(piece)
+                        usage = usage.update(piece)
                 elif kind == "error":
                     err = data.get("error") or {}
                     raise ApiError(resp.status, str(err.get("message") or "The model provider failed."))
@@ -1323,6 +1519,9 @@ class ApiProvider:
         stream: bool = False,
     ) -> ClientResponse:
         """A successful response; retries 429/503 and drops effort the model refuses."""
+        if self.settings.api_provider == API_OLLAMA and timeout >= _CLOUD_TIMEOUT:
+            # A NAS or CPU reads a long prompt for minutes before the first word.
+            timeout = _LOCAL_TIMEOUT
         body = dict(payload)
         last = ""
         last_status = 0
@@ -1367,6 +1566,11 @@ class ApiProvider:
                 logger.info("%s refused a forced tool call; letting the model choose", self._label())
                 self._force = False
                 body.pop("tool_choice", None)
+                attempt -= 1
+                continue
+            if resp.status in {400, 422} and "ttl" in low and _strip_cache_ttl(body):
+                logger.info("%s refused the 1-hour cache; using the 5-minute cache", self._label())
+                self._cache_hour = False
                 attempt -= 1
                 continue
             if resp.status in {400, 422} and (
