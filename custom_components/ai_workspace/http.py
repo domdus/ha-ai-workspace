@@ -40,7 +40,7 @@ from .const import (
 )
 from .mcp_config import with_mcp_auth
 from .mcp_observe import last_mcp_result, note_mcp_result
-from .mcp_resolve import ha_hosts, hass_mcp_server_url
+from .mcp_resolve import for_runtime, ha_hosts, hass_mcp_server_url
 from .callback_keys import Caller
 from .live_turn import end_turn, live_turn, start_turn
 from .local_time import house_zone, stamped_now, time_rule
@@ -242,6 +242,9 @@ def _runtime_agent_overrides(
     else:
         servers = {}
     servers = with_mcp_auth(servers, access_token=str(access_token or ""), ha_hosts=ha_hosts(hass))
+    from .discovery import _runtime_hass_url
+
+    servers = for_runtime(servers, hass, str(_runtime(hass).get("runtime_url") or ""), _runtime_hass_url(hass))
     if servers or not admin:
         extra["mcp"] = {"servers": servers, "exclusive": not admin}
     model = str(getattr(settings, "model", "") or "").strip()

@@ -175,15 +175,35 @@ def _sidecar_loopback_urls() -> list[str]:
     ]
 
 
-def _hassio_mcp_urls(hass: HomeAssistant) -> list[str]:
+def supervisor_apps(hass: HomeAssistant) -> dict[str, dict]:
+    """Installed Supervisor apps by slug, including ones installed after Core started.
+
+    Since Home Assistant 2026.11 the info cache only holds apps that were installed
+    when Core started (or that have entities). The app list is kept current, so a
+    later install is taken from there, without hostname and ports.
+    """
     try:
         from homeassistant.components.hassio import get_addons_info
     except ImportError:
-        return []
+        return {}
     try:
-        addons = get_addons_info(hass)
+        apps = {str(slug): info for slug, info in dict(get_addons_info(hass) or {}).items()}
     except Exception:
-        return []
+        apps = {}
+    try:
+        from homeassistant.components.hassio import get_addons_list
+
+        for item in get_addons_list(hass) or []:
+            slug = str((item or {}).get("slug") or "")
+            if slug and not apps.get(slug):
+                apps[slug] = item
+    except Exception:
+        pass
+    return apps
+
+
+def _hassio_mcp_urls(hass: HomeAssistant) -> list[str]:
+    addons = supervisor_apps(hass)
     if not addons:
         return []
     out = []
@@ -264,6 +284,36 @@ def _entry_mcp_urls(hass: HomeAssistant) -> list[str]:
 
 def _loopback_host(url: str) -> bool:
     return (urlparse(url).hostname or "").lower() in {"127.0.0.1", "localhost", "::1"}
+
+
+def for_runtime(servers: dict, hass: HomeAssistant | None, runtime_url: str, core_base: str) -> dict:
+    """Point this Home Assistant's loopback MCP URLs at an address the Runtime can reach.
+
+    Inside the Runtime App (or a Docker runtime on another host) 127.0.0.1 is the
+    runtime itself, so http://127.0.0.1:8123/api/mcp is refused there. A runtime on
+    loopback shares Core's network and keeps the URL as it is.
+    """
+    base = str(core_base or "").rstrip("/")
+    if not base or not runtime_url or _loopback_host(runtime_url) or _loopback_host(base):
+        return servers
+    port, _tls = _api_port(hass)
+    core = urlparse(base)
+    # HA-MCP from the ha_mcp_tools integration listens inside Core, on its own port.
+    components = getattr(getattr(hass, "config", None), "components", None) or ()
+    in_core = {_COMPONENT_PORT} if _COMPONENT_DOMAIN in components else set()
+    out: dict = {}
+    for name, cfg in (servers or {}).items():
+        raw = dict(cfg or {})
+        url = str(raw.get("url") or "")
+        parsed = urlparse(url)
+        if url and _loopback_host(url):
+            used = parsed.port or (443 if parsed.scheme == "https" else 80)
+            if used == port:
+                raw["url"] = urlunparse(parsed._replace(scheme=core.scheme, netloc=core.netloc))
+            elif used in in_core:
+                raw["url"] = urlunparse(parsed._replace(netloc=f"{core.hostname}:{used}"))
+        out[name] = raw
+    return out
 
 
 def _unique(urls: list[str]) -> list[str]:
@@ -420,3 +470,69 @@ async def async_resolve_mcp_url(
             return url
     _LOGGER.warning("AI Workspace MCP did not answer; leaving %s", fallback)
     return fallback
+
+
+def _public(url: str) -> str:
+    """Scheme, host and port only: HA-MCP keeps its secret in the path."""
+    parsed = urlparse(str(url or ""))
+    return urlunparse(parsed._replace(path="", params="", query="", fragment="")) or str(url or "")
+
+
+def ha_mcp_url_is_wrong(url: str) -> bool:
+    """An HA-MCP row on Home Assistant's own /api/mcp is the built-in server, not HA-MCP."""
+    return _builtin_mcp(url)
+
+
+async def async_better_ha_mcp_url(hass: HomeAssistant, url: str, token: str = "") -> tuple[str, bool]:
+    """(better URL or "", saved URL works) for an HA-MCP row."""
+    url = str(url or "").strip().rstrip("/")
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    if url and not ha_mcp_url_is_wrong(url) and await async_probe_mcp(hass, url, headers, timeout=3):
+        return "", True
+    found = await async_resolve_mcp_url(hass, MCP_HA_MCP, url, token)
+    found = str(found or "").rstrip("/")
+    if not found or found == url or _builtin_mcp(found):
+        return "", False
+    if not await async_probe_mcp(hass, found, headers, timeout=3):
+        return "", False
+    return found, False
+
+
+_HEAL_DELAYS = (0, 30, 120)
+
+
+async def async_heal_ha_mcp(hass: HomeAssistant, entry, subentry_type: str) -> None:
+    """After startup, move HA-MCP rows that point at the wrong server or nowhere to a working HA-MCP.
+
+    Runs after Home Assistant started, because HA-MCP inside Core (ha_mcp_tools)
+    may only start late. Custom rows are never touched, and nothing changes when no
+    working HA-MCP is found.
+    """
+    for delay in _HEAL_DELAYS:
+        if delay:
+            await asyncio.sleep(delay)
+        pending = False
+        for sub in list(getattr(entry, "subentries", {}).values()):
+            if sub.subentry_type != subentry_type:
+                continue
+            data = dict(sub.data)
+            url = str(data.get("url") or "").strip()
+            kind = str(data.get(CONF_MCP_KIND) or "").strip() or infer_mcp_kind(url)
+            if kind != MCP_HA_MCP:
+                continue
+            better, works = await async_better_ha_mcp_url(hass, url, str(data.get("token") or ""))
+            if not better:
+                pending = pending or not works
+                continue
+            _LOGGER.warning(
+                "AI Workspace: the HA-MCP connection %s pointed at %s; it now uses HA-MCP at %s",
+                sub.title,
+                _public(url) or "nothing",
+                _public(better),
+            )
+            data["url"] = better
+            hass.config_entries.async_update_subentry(entry, sub, data=data)
+            # The update reloads the entry, which starts a fresh check.
+            return
+        if not pending:
+            return

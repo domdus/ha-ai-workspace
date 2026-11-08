@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.1b4
+
+- The runtime has no changes in this release. A 1.5.0 runtime keeps working without an update notice.
+- HA-MCP: a connection of the kind HA-MCP that points at Home Assistant's built-in MCP server (/api/mcp) or at an address that does not answer moves to a working HA-MCP by itself. The check runs once Home Assistant has started, so HA-MCP inside Home Assistant (HA-MCP Server) is up by then; it tries again after 30 seconds and 2 minutes. The new address is saved to the connection and named in the log, without its secret path. Custom and built-in connections are never changed, and nothing changes when no working HA-MCP is found.
+- HA-MCP: an HA-MCP App installed after Home Assistant started is found too (same Home Assistant 2026.11 change as in 1.5.1b3).
+- Cursor: Home Assistant tools work from the Runtime App when their saved address is 127.0.0.1. Inside the App, 127.0.0.1 is the App itself, so every call was refused and the agent said the connection to Home Assistant was not usable. Addresses on Home Assistant's own port (built-in MCP, HA-MCP webhook) and HA-MCP running inside Home Assistant (port 9584) now go to http://homeassistant. A runtime on the same host network keeps 127.0.0.1.
+
 ## 1.5.1b3
 
 - The runtime has no changes in this release. A 1.5.0 runtime keeps working without an update notice.
