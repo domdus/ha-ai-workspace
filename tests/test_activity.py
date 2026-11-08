@@ -281,6 +281,7 @@ def test_activity_restore_flags_offer_one_way_per_row():
     assert const.activity_restore_flags(snapshot=False, undone=False, admin=True) == (False, True)
     assert const.activity_restore_flags(snapshot=True, undone=True, admin=True) == (False, False)
     assert const.activity_restore_flags(snapshot=False, undone=False, admin=False) == (False, False)
+    assert const.activity_restore_flags(snapshot=True, undone=False, admin=False) == (False, False)
     assert const.activity_restore_flags(snapshot=True, undone=False, admin=True, expired=True) == (False, False)
 
 

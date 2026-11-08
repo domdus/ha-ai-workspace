@@ -356,7 +356,7 @@ async def _runtime_chat(
     if handoff:
         payload["handoff"] = handoff
     # The Runtime's Change History callbacks for this turn must carry this key.
-    payload["callback_key"] = issue_callback_key(hass, user_id, session.id, agent or "Cursor")
+    payload["callback_key"] = issue_callback_key(hass, user_id, session.id, agent or "Cursor", access_token=token)
     sent = {**(headers or _runtime_headers_for(hass, user_id)), "Accept": "text/event-stream"}
     if agent:
         sent["X-Ai-Workspace-Agent"] = agent
@@ -457,7 +457,7 @@ async def async_agent_events(
         tools=tools,
         admin=admin,
         force_tools=force_tools,
-        **(await _activity_kwargs(hass, provider, user_id, session.id)),
+        **(await _activity_kwargs(hass, provider, user_id, session.id, access_token)),
     ):
         yield event
 
@@ -1069,7 +1069,7 @@ class ChatView(HomeAssistantView):
                 tools=bool(images) or bool(files) or wants_house_tools(message),
                 admin=admin,
                 force_tools=not images and not files and wants_house_tools(message),
-                **(await _activity_kwargs(hass, provider, user_id, session.id)),
+                **(await _activity_kwargs(hass, provider, user_id, session.id, access_token)),
             ):
                 yield event
 
@@ -1571,7 +1571,7 @@ def _agent_label(provider: Any) -> str:
 
 
 async def _activity_kwargs(
-    hass: HomeAssistant, provider: Any, user_id: str, session_id: str = ""
+    hass: HomeAssistant, provider: Any, user_id: str, session_id: str = "", access_token: str | None = None
 ) -> dict[str, Any]:
     from .api_provider import ApiProvider
 
@@ -1586,10 +1586,11 @@ async def _activity_kwargs(
     user_name = str(getattr(user, "name", "") or "") if user else ""
     store: Store = _runtime(hass)["store"]
     label = _agent_label(provider)
+    auth = f"Bearer {access_token}" if str(access_token or "").strip() else ""
 
     async def on_tool(tool: str, args: dict, call) -> Any:
         return await track_tool(
-            hass, store, user_id, user_name or user_id, label, tool, args, call, session_id
+            hass, store, user_id, user_name or user_id, label, tool, args, call, session_id, authorization=auth
         )
 
     return {"on_tool": on_tool}
@@ -1685,10 +1686,12 @@ class ActivityRollbackView(HomeAssistantView):
             row_id = int(activity_id)
         except (TypeError, ValueError):
             raise web.HTTPNotFound() from None
+        # Rollback writes Home Assistant configuration, so it is for administrators only,
+        # also for helpers, dashboards and entity settings that do not go through the config API.
+        if not _is_admin(request):
+            raise web.HTTPForbidden(text="Only an administrator can roll back changes.")
         row = await hass.async_add_executor_job(store.get_activity, row_id)
         if row is None:
-            raise web.HTTPNotFound()
-        if not _is_admin(request) and row.user_id != _user_id(request):
             raise web.HTTPNotFound()
         settings = _runtime(hass).get("settings")
         if not ACTIVITY_ROLLBACK or not row.can_rollback or _activity_expired(row, settings):
@@ -1777,6 +1780,7 @@ class ActivityPrepareView(HomeAssistantView):
             str(body.get("tool") or ""),
             arguments,
             who.session_id,
+            authorization=f"Bearer {who.access_token}" if who.access_token else "",
         )
         return self.json({"token": token})
 

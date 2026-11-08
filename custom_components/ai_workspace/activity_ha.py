@@ -290,11 +290,15 @@ async def track_tool(
     arguments: dict[str, Any],
     call,
     session_id: str = "",
+    *,
+    authorization: str = "",
 ):
     """Snapshot, run the tool, and keep a row only when the call succeeds."""
     token = None
     try:
-        token = await prepare(hass, user_id, user_name, agent, tool, arguments, session_id)
+        token = await prepare(
+            hass, user_id, user_name, agent, tool, arguments, session_id, authorization=authorization
+        )
     except Exception:
         logger.warning("activity prepare failed", exc_info=True)
     try:
@@ -322,7 +326,10 @@ async def prepare(
     tool: str,
     arguments: dict[str, Any] | None,
     session_id: str = "",
+    *,
+    authorization: str = "",
 ) -> str | None:
+    """Snapshot what a tool is about to change. authorization is the chatting user's own login."""
     args = arguments if isinstance(arguments, dict) else {}
     if tool_name(tool) == NOTES_TOOL:
         return await _prepare_notes(hass, user_id, user_name, agent, tool, args, session_id)
@@ -342,7 +349,7 @@ async def prepare(
             dashboard_docs = await _snapshot_all_dashboards(hass, force=True)
             watch = await collect_index(hass)
         if change.action != "create":
-            document = await snapshot(hass, change, force=change.kind == "dashboard")
+            document = await snapshot(hass, change, force=change.kind == "dashboard", authorization=authorization)
             if document is None and change.kind == "dashboard":
                 document = _pick_dashboard_doc(dashboard_docs, change.item_id)
         if document is None and change.action == "update":
@@ -813,13 +820,13 @@ async def _rollback_one(hass: HomeAssistant, document: dict[str, Any], authoriza
         await _restore_config_item(hass, kind, document, authorization)
         return
     if kind == "helper":
-        await _restore_helper(hass, document)
+        await _restore_helper(hass, document, authorization)
         return
     if kind == "entity":
         _restore_entity(hass, document)
         return
     if kind == "dashboard":
-        await _restore_dashboard(hass, document)
+        await _restore_dashboard(hass, document, authorization)
         return
     if kind == "notes" and isinstance(document.get("text"), str):
         from .notes import async_save_notes, notes_lock
@@ -830,12 +837,14 @@ async def _rollback_one(hass: HomeAssistant, document: dict[str, Any], authoriza
     raise ActivityError("This change has nothing to restore.")
 
 
-async def snapshot(hass: HomeAssistant, change: Change, force: bool = False) -> dict[str, Any] | None:
+async def snapshot(
+    hass: HomeAssistant, change: Change, force: bool = False, authorization: str = ""
+) -> dict[str, Any] | None:
     if change.kind in _YAML:
         file_doc = await hass.async_add_executor_job(_snapshot_yaml, hass, change)
         return file_doc or _snapshot_live(hass, change)
     if change.kind == "helper":
-        return _snapshot_helper(hass, change)
+        return await _snapshot_helper(hass, change, authorization)
     if change.kind == "entity":
         return _snapshot_entity(hass, change)
     if change.kind == "dashboard":
@@ -1159,19 +1168,69 @@ def _own_api_bases(hass: HomeAssistant) -> list[tuple[str, bool]]:
     return bases
 
 
-def _collection(hass: HomeAssistant, prefix: str):
-    handlers = hass.data.get("websocket_api") or {}
-    slot = handlers.get(f"{prefix}/list") if isinstance(handlers, dict) else None
-    handler = slot[0] if isinstance(slot, tuple) and slot else None
-    seen: set[int] = set()
-    while handler is not None and id(handler) not in seen:
-        seen.add(id(handler))
-        owner = getattr(handler, "__self__", None)
-        collection = getattr(owner, "storage_collection", None)
-        if collection is not None and hasattr(collection, "data"):
-            return collection
-        handler = getattr(handler, "__wrapped__", None)
-    return None
+class _WsError(Exception):
+    """Home Assistant answered a websocket command with an error."""
+
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message or code)
+        self.code = code
+
+
+async def _own_ws(hass: HomeAssistant, authorization: str, commands: list[dict[str, Any]]) -> list[Any]:
+    """Run commands on this Home Assistant's own websocket API, signed in as the given user.
+
+    The same commands the helper and dashboard editors send, so Home Assistant checks the
+    user's permissions, validates the item, stores it and reloads it.
+    """
+    from aiohttp import ClientError, WSMsgType
+
+    from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
+    scheme, _, token = str(authorization or "").partition(" ")
+    token = token.strip() if scheme.lower() == "bearer" else ""
+    if not token:
+        raise ActivityError("Sign in again, then roll back this change.")
+    last_error = "Home Assistant's websocket API could not be reached."
+    for base, verify in _own_api_bases(hass):
+        url = "ws" + base[len("http"):] + "/api/websocket"
+        try:
+            session = async_get_clientsession(hass, verify_ssl=verify)
+            async with session.ws_connect(url, timeout=30, heartbeat=25) as ws:
+                hello = await ws.receive_json(timeout=10)
+                if hello.get("type") != "auth_required":
+                    raise ActivityError("Home Assistant's websocket API did not ask for a login.")
+                await ws.send_json({"type": "auth", "access_token": token})
+                auth = await ws.receive_json(timeout=10)
+                if auth.get("type") != "auth_ok":
+                    raise ActivityError("Sign in again, then roll back this change.")
+                results: list[Any] = []
+                for number, command in enumerate(commands, start=1):
+                    await ws.send_json({**command, "id": number})
+                    while True:
+                        msg = await ws.receive(timeout=30)
+                        if msg.type != WSMsgType.TEXT:
+                            raise ActivityError("Home Assistant closed the websocket.")
+                        data = json.loads(msg.data)
+                        if data.get("id") == number and data.get("type") == "result":
+                            break
+                    if not data.get("success"):
+                        error = data.get("error") or {}
+                        raise _WsError(str(error.get("code") or ""), str(error.get("message") or "")[:300])
+                    results.append(data.get("result"))
+                return results
+        except (ClientError, TimeoutError, OSError) as exc:
+            last_error = str(exc) or last_error
+            continue
+    raise ActivityError(last_error)
+
+
+async def _ws_one(hass: HomeAssistant, authorization: str, command: dict[str, Any]) -> Any:
+    try:
+        return (await _own_ws(hass, authorization, [command]))[0]
+    except _WsError as exc:
+        if exc.code == "unauthorized":
+            raise ActivityError("Only an administrator can roll back this change.") from exc
+        raise ActivityError(str(exc)) from exc
 
 
 def _helper_ids(change: Change) -> tuple[str, str]:
@@ -1185,39 +1244,47 @@ def _helper_ids(change: Change) -> tuple[str, str]:
     return domain, item_id
 
 
-def _snapshot_helper(hass: HomeAssistant, change: Change) -> dict[str, Any] | None:
+async def _helper_items(hass: HomeAssistant, domain: str, authorization: str) -> list[dict[str, Any]]:
+    result = await _ws_one(hass, authorization, {"type": f"{domain}/list"})
+    return [item for item in (result or []) if isinstance(item, dict)]
+
+
+async def _snapshot_helper(hass: HomeAssistant, change: Change, authorization: str = "") -> dict[str, Any] | None:
+    """The helper's stored settings, read through its own websocket list command.
+
+    Without the user's login (or as a non-admin) there is no snapshot; the row then offers
+    Undo with agent instead of Rollback.
+    """
     domain, item_id = _helper_ids(change)
-    if not domain or not item_id:
+    if not domain or not item_id or not authorization:
         return None
-    collection = _collection(hass, domain)
-    if collection is None:
+    try:
+        items = await _helper_items(hass, domain, authorization)
+    except ActivityError as exc:
+        logger.debug("helper snapshot skipped for %s.%s: %s", domain, item_id, exc)
         return None
-    item = collection.data.get(item_id) if isinstance(collection.data, dict) else None
-    if not isinstance(item, dict):
+    item = next((row for row in items if str(row.get("id") or "") == item_id), None)
+    if item is None:
         return None
     label = str(item.get("name") or item.get("alias") or item_id)
     return {"kind": "helper", "domain": domain, "id": item_id, "label": label, "item": freeze_mapping(item)}
 
 
-async def _restore_helper(hass: HomeAssistant, document: dict[str, Any]) -> None:
+async def _restore_helper(hass: HomeAssistant, document: dict[str, Any], authorization: str) -> None:
+    """Put the helper back with the same {domain}/update or /create command its editor sends."""
     domain = str(document.get("domain") or "")
     item_id = str(document.get("id") or "")
     item = document.get("item")
     if not domain or not item_id or not isinstance(item, dict):
         raise ActivityError("The saved helper is incomplete.")
-    collection = _collection(hass, domain)
-    if collection is None:
-        raise ActivityError("That helper type is not available.")
     payload = {key: value for key, value in item.items() if key != "id"}
-    try:
-        if item_id in collection.data:
-            await collection.async_update_item(item_id, payload)
-        else:
-            created = await collection.async_create_item(payload)
-            if isinstance(created, dict) and created.get("id") not in {None, item_id}:
-                logger.info("helper restore created %s as %s", item_id, created.get("id"))
-    except Exception as exc:
-        raise ActivityError(str(exc)[:300]) from exc
+    items = await _helper_items(hass, domain, authorization)
+    if any(str(row.get("id") or "") == item_id for row in items):
+        await _ws_one(hass, authorization, {"type": f"{domain}/update", f"{domain}_id": item_id, **payload})
+        return
+    created = await _ws_one(hass, authorization, {"type": f"{domain}/create", **payload})
+    if isinstance(created, dict) and created.get("id") not in {None, item_id}:
+        logger.info("helper restore created %s as %s", item_id, created.get("id"))
 
 
 def _entry_dict(entry) -> dict[str, Any]:
@@ -1287,11 +1354,6 @@ def _restore_entity(hass: HomeAssistant, document: dict[str, Any]) -> None:
     if saved_id and saved_id != entity_id:
         fields["new_entity_id"] = saved_id
     registry.async_update_entity(entity_id, **fields)
-
-
-def _dashboard_key(url_path: str) -> str | None:
-    store_id = dashboard_store_id(url_path)
-    return None if store_id == "lovelace" else store_id
 
 
 def _board_store_key(key: object) -> str:
@@ -1388,19 +1450,24 @@ async def _dashboard_index(hass: HomeAssistant, force: bool = False) -> dict[str
     return found
 
 
-async def _restore_dashboard(hass: HomeAssistant, document: dict[str, Any]) -> None:
+async def _restore_dashboard(hass: HomeAssistant, document: dict[str, Any], authorization: str) -> None:
+    """Save the earlier dashboard with lovelace/config/save, the dashboard editor's own command."""
     config = document.get("config")
     if not isinstance(config, dict):
         raise ActivityError("The saved dashboard is incomplete.")
     boards = _dashboards(hass)
     if "url_path" in document:
+        store_id = _board_store_key(document.get("url_path"))
         board = boards.get(document.get("url_path"))
-        _store_id = _board_store_key(document.get("url_path"))
     else:
-        _store_id, board = _resolve_board(hass, str(document.get("id") or ""))
+        store_id, board = _resolve_board(hass, str(document.get("id") or ""))
+    url_path = None if store_id == "lovelace" else store_id
     if board is None:
-        board = await _recreate_dashboard(hass, str(document.get("id") or ""), document.get("meta") or {})
-    current = await _load_board_config(board, force=True)
+        await _recreate_dashboard(hass, str(document.get("id") or store_id), document.get("meta") or {}, authorization)
+    try:
+        current = await _ws_one(hass, authorization, {"type": "lovelace/config", "url_path": url_path, "force": True})
+    except ActivityError:
+        current = None
     if isinstance(current, dict) and _same_body(current, config):
         logger.warning(
             "Change History rollback skipped: snapshot already matches live dashboard %s",
@@ -1409,17 +1476,13 @@ async def _restore_dashboard(hass: HomeAssistant, document: dict[str, Any]) -> N
         raise ActivityError(
             "The saved snapshot already matches the live dashboard. Ask to restore and pick an HA-MCP backup from before this change."
         )
-    try:
-        await board.async_save(config)
-    except Exception as exc:
-        raise ActivityError(str(exc)[:300]) from exc
+    await _ws_one(hass, authorization, {"type": "lovelace/config/save", "url_path": url_path, "config": config})
 
 
-async def _recreate_dashboard(hass: HomeAssistant, url_path: str, meta: dict) -> Any:
-    collection = _collection(hass, "lovelace/dashboards")
-    if collection is None:
-        raise ActivityError("That dashboard is gone.")
-    payload = {
+async def _recreate_dashboard(hass: HomeAssistant, url_path: str, meta: dict, authorization: str) -> None:
+    """Add a deleted dashboard back with lovelace/dashboards/create, as the Dashboards page does."""
+    payload: dict[str, Any] = {
+        "type": "lovelace/dashboards/create",
         "url_path": url_path or "lovelace",
         "title": str(meta.get("title") or url_path or "Dashboard"),
         "icon": meta.get("icon") or "mdi:view-dashboard",
@@ -1428,14 +1491,7 @@ async def _recreate_dashboard(hass: HomeAssistant, url_path: str, meta: dict) ->
     }
     if url_path in {"lovelace", "map"}:
         payload["allow_single_word"] = True
-    try:
-        await collection.async_create_item(payload)
-    except Exception as exc:
-        raise ActivityError(str(exc)[:300]) from exc
-    board = _dashboards(hass).get(_dashboard_key(url_path))
-    if board is None:
-        raise ActivityError("That dashboard is gone.")
-    return board
+    await _ws_one(hass, authorization, payload)
 
 
 def _entity_index(hass: HomeAssistant) -> dict[str, tuple[str, str]]:

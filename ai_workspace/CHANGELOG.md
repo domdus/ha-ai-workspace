@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.1b1
+
+- The runtime has no changes in this release. A 1.5.0 runtime keeps working without an update notice; the 1.5.1b1 image only carries the new version number.
+- Change History: helpers and dashboards are rolled back through Home Assistant's own websocket commands, signed in as you, the same calls the helper and dashboard editors make. Home Assistant checks your permissions, validates the item, and stores it. Before, AI Workspace reached into Home Assistant's internal storage for these.
+- Change History: the snapshot of a helper before a change is read the same way, with the chatting user's own login. Without one there is no snapshot, and the row offers Undo with agent.
+- Change History: Rollback is for administrators only, for every kind of change. Before, a non-admin user could roll back helper, dashboard, and entity changes from their own chats.
+- Startup: the check whether Home Assistant runs in a container no longer touches the disk from the event loop.
+
 ## 1.5.0
 
 Everything from 1.5.0b1 to 1.5.0b34 (including 1.4.3b1 and 1.4.3b2). A minor release, because it adds features; nothing needs to be changed in your setup.

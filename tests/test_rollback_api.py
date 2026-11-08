@@ -69,3 +69,88 @@ def test_a_new_automation_is_not_summarized_as_updated_automation_automation() -
     assert activity_ha._summary_from_events(pending) == "Changed an automation"
     pending.events = [("yaml", "script", None)]
     assert activity_ha._summary_from_events(pending) == "Changed a script"
+
+
+def _ws_run(coro_fn, replies):
+    """Run with a fake websocket: replies maps command type to a result or an ActivityError."""
+    sent = []
+
+    async def fake_ws(hass, authorization, command):
+        sent.append((command, authorization))
+        reply = replies.get(command["type"])
+        if isinstance(reply, Exception):
+            raise reply
+        return reply
+
+    original = activity_ha._ws_one
+    activity_ha._ws_one = fake_ws
+    try:
+        result = asyncio.run(coro_fn())
+    finally:
+        activity_ha._ws_one = original
+    return sent, result
+
+
+def test_helper_rollback_updates_through_its_websocket_command() -> None:
+    doc = {"kind": "helper", "domain": "input_boolean", "id": "guest", "item": {"id": "guest", "name": "Guest"}}
+    sent, _ = _ws_run(
+        lambda: activity_ha._rollback_one(SimpleNamespace(), doc, "Bearer admin"),
+        {"input_boolean/list": [{"id": "guest", "name": "Guest mode"}], "input_boolean/update": {}},
+    )
+    assert sent[-1] == (
+        {"type": "input_boolean/update", "input_boolean_id": "guest", "name": "Guest"},
+        "Bearer admin",
+    )
+
+
+def test_deleted_helper_is_created_again() -> None:
+    doc = {"kind": "helper", "domain": "timer", "id": "tea", "item": {"id": "tea", "name": "Tea", "duration": "0:03:00"}}
+    sent, _ = _ws_run(
+        lambda: activity_ha._rollback_one(SimpleNamespace(), doc, "Bearer admin"),
+        {"timer/list": [], "timer/create": {"id": "tea"}},
+    )
+    assert sent[-1][0] == {"type": "timer/create", "name": "Tea", "duration": "0:03:00"}
+
+
+def test_helper_snapshot_needs_the_users_login() -> None:
+    change = activity_ha.Change(kind="helper", action="update", item_id="input_boolean.guest", label="", domain="input_boolean")
+    sent, doc = _ws_run(lambda: activity_ha._snapshot_helper(SimpleNamespace(), change, ""), {})
+    assert doc is None and sent == []
+    sent, doc = _ws_run(
+        lambda: activity_ha._snapshot_helper(SimpleNamespace(), change, "Bearer user"),
+        {"input_boolean/list": [{"id": "guest", "name": "Guest"}]},
+    )
+    assert doc["item"]["name"] == "Guest" and doc["label"] == "Guest"
+
+
+def test_dashboard_rollback_saves_through_lovelace_config_save() -> None:
+    hass = SimpleNamespace(data={"lovelace": SimpleNamespace(dashboards={"energy-view": object()})})
+    doc = {"kind": "dashboard", "id": "energy-view", "url_path": "energy-view", "config": {"views": [{"title": "Old"}]}}
+    sent, _ = _ws_run(
+        lambda: activity_ha._rollback_one(hass, doc, "Bearer admin"),
+        {"lovelace/config": {"views": [{"title": "New"}]}, "lovelace/config/save": None},
+    )
+    assert sent[-1][0] == {"type": "lovelace/config/save", "url_path": "energy-view", "config": {"views": [{"title": "Old"}]}}
+
+
+def test_deleted_dashboard_is_created_before_saving() -> None:
+    hass = SimpleNamespace(data={"lovelace": SimpleNamespace(dashboards={})})
+    doc = {"kind": "dashboard", "id": "garden", "url_path": "garden", "meta": {"title": "Garden"}, "config": {"views": []}}
+    sent, _ = _ws_run(
+        lambda: activity_ha._rollback_one(hass, doc, "Bearer admin"),
+        {
+            "lovelace/dashboards/create": {},
+            "lovelace/config": activity_ha.ActivityError("config_not_found"),
+            "lovelace/config/save": None,
+        },
+    )
+    assert [item[0]["type"] for item in sent] == [
+        "lovelace/dashboards/create",
+        "lovelace/config",
+        "lovelace/config/save",
+    ]
+    assert sent[0][0]["url_path"] == "garden" and sent[0][0]["title"] == "Garden"
+
+
+def test_no_internal_collection_lookup_is_left() -> None:
+    assert not hasattr(activity_ha, "_collection")

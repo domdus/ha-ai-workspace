@@ -134,8 +134,12 @@ def _on_hassio() -> bool:
     return bool(os.environ.get("SUPERVISOR_TOKEN"))
 
 
+# Checked once at import (an executor job), never from the event loop.
+_IN_CONTAINER = Path("/.dockerenv").exists()
+
+
 def _in_container() -> bool:
-    return Path("/.dockerenv").exists()
+    return _IN_CONTAINER
 
 
 def loopback_alternates(url: str) -> list[str]:
