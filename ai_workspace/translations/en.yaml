@@ -8,5 +8,14 @@ configuration:
   runtime_token:
     name: Runtime token
     description: Filled in by the AI Workspace integration. Leave it alone unless you pair the integration by hand.
+  hass_url:
+    name: Home Assistant URL
+    description: How the runtime reaches Home Assistant. Leave it empty; the App uses http://homeassistant:8123.
+  shorten_mcp_results:
+    name: Shorten MCP results
+    description: Fallback only. The integration's own setting wins when it sends one. Default on, the same as the Docker runtime.
+  change_history:
+    name: Change History
+    description: Fallback only. The integration's own setting wins when it sends one. Default on, the same as the Docker runtime.
 network:
   8090/TCP: Used by the HACS integration. Leave unpublished on the host.

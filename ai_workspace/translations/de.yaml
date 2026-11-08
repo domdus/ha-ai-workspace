@@ -1,0 +1,21 @@
+configuration:
+  cursor_api_key:
+    name: Cursor-API-Schlüssel
+    description: User-API-Schlüssel aus dem Cursor Dashboard → Integrations
+  model:
+    name: Modell
+    description: Standard-Modell von Cursor, zum Beispiel composer-2.5. Das HACS-Formular kann es überschreiben.
+  runtime_token:
+    name: Runtime-Token
+    description: Wird von der AI-Workspace-Integration eingetragen. Nur ändern, wenn du die Integration von Hand koppelst.
+  hass_url:
+    name: Home-Assistant-URL
+    description: Wie die Runtime Home Assistant erreicht. Leer lassen; die App nutzt http://homeassistant:8123.
+  shorten_mcp_results:
+    name: MCP-Ergebnisse kürzen
+    description: Nur Rückfallwert. Die Einstellung der Integration gilt, sobald sie eine sendet. Standard an, wie bei der Docker-Runtime.
+  change_history:
+    name: Änderungsverlauf
+    description: Nur Rückfallwert. Die Einstellung der Integration gilt, sobald sie eine sendet. Standard an, wie bei der Docker-Runtime.
+network:
+  8090/TCP: Wird von der HACS-Integration genutzt. Nicht auf dem Host veröffentlichen.

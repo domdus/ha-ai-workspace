@@ -23,9 +23,6 @@ options:
   cursor_api_key: ""
   model: composer-2.5
   runtime_token: ""
-  hass_url: ""
-  shorten_mcp_results: true
-  change_history: true
 schema:
   cursor_api_key: password
   model: str
