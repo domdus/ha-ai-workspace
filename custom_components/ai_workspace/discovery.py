@@ -51,7 +51,7 @@ def _version_key(text: str) -> tuple[int, int, int, int] | None:
 # The oldest Runtime this integration works with as intended. Raise it in a release that
 # changes the Runtime (ai_workspace/app), so older Runtimes get the update notice. A release
 # that only changes the integration leaves it, and no notice appears.
-MIN_RUNTIME = "1.5.0"
+MIN_RUNTIME = "1.5.1"
 
 
 def runtime_notice(
@@ -87,15 +87,10 @@ def _slug_matches(slug: str) -> bool:
 
 def _hassio_addon(hass: HomeAssistant) -> tuple[str, str] | None:
     """Slug and URL of the running Runtime app."""
-    try:
-        from homeassistant.components.hassio import get_addons_info
-    except ImportError:
-        return None
-    try:
-        addons = get_addons_info(hass)
-    except Exception:
-        return None
-    for slug, info in (addons or {}).items():
+    from .mcp_resolve import supervisor_apps
+
+    addons = supervisor_apps(hass)
+    for slug, info in addons.items():
         if not info or not _slug_matches(str(slug)):
             continue
         state = str(info.get("state") or "").lower()

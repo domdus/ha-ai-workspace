@@ -30,6 +30,9 @@ class Caller:
     session_id: str
     agent: str
     expires: float
+    # The chatting user's own login for this turn, so Change History reads helpers through
+    # Home Assistant's websocket API with that user's permissions. Never sent anywhere else.
+    access_token: str = ""
 
 
 def _digest(key: str) -> str:
@@ -40,13 +43,22 @@ def _keys(hass: HomeAssistant) -> OrderedDict[str, Caller]:
     return hass.data.setdefault(_STORE, OrderedDict())
 
 
-def issue(hass: HomeAssistant, user_id: str, session_id: str, agent: str = "Cursor", now: float | None = None) -> str:
+def issue(
+    hass: HomeAssistant,
+    user_id: str,
+    session_id: str,
+    agent: str = "Cursor",
+    now: float | None = None,
+    access_token: str = "",
+) -> str:
     """A new key for one Cursor turn of this user's chat."""
     stamp = time.monotonic() if now is None else now
     keys = _keys(hass)
     _prune(keys, stamp)
     key = secrets.token_urlsafe(32)
-    keys[_digest(key)] = Caller(str(user_id), str(session_id), str(agent or "Cursor")[:120], stamp + TTL_SECONDS)
+    keys[_digest(key)] = Caller(
+        str(user_id), str(session_id), str(agent or "Cursor")[:120], stamp + TTL_SECONDS, str(access_token or "")
+    )
     while len(keys) > _MAX_KEYS:
         keys.popitem(last=False)
     return key

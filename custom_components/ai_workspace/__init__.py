@@ -527,6 +527,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     }
     await async_bind_runtime(hass, bucket, force=True)
     hass.async_create_background_task(async_retry_runtime(hass, bucket), "ai_workspace_runtime")
+    _heal_ha_mcp_after_start(hass, entry)
     await _register_frontend(hass, settings)
     await async_setup_house_map(hass, store, settings.house_map)
     await _prune_all_chats(hass, store, settings.keep_chats)
@@ -539,6 +540,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         settings.speak_replies = False
     _LOGGER.info("AI Workspace agents: %s", ", ".join(bucket["providers"]) or "none yet")
     return True
+
+
+def _heal_ha_mcp_after_start(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Check HA-MCP rows once Home Assistant runs, so HA-MCP inside Core has started too."""
+    from homeassistant.helpers.start import async_at_started
+
+    from .mcp_resolve import async_heal_ha_mcp
+
+    async def _started(_hass: HomeAssistant) -> None:
+        entry.async_create_background_task(
+            hass, async_heal_ha_mcp(hass, entry, SUBENTRY_MCP), "ai_workspace_heal_ha_mcp"
+        )
+
+    entry.async_on_unload(async_at_started(hass, _started))
 
 
 async def _reload(hass: HomeAssistant, entry: ConfigEntry) -> None:

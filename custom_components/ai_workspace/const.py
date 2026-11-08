@@ -51,8 +51,9 @@ def activity_restore_flags(
     """One way to undo a row: Rollback from the snapshot, or Undo with agent when there is none.
 
     A change the agent created has no earlier version to put back, so only the agent can undo it.
+    Both are for administrators: a rollback writes Home Assistant configuration.
     """
-    can_rollback = bool(ACTIVITY_ROLLBACK and snapshot and not undone and not expired)
+    can_rollback = bool(ACTIVITY_ROLLBACK and admin and snapshot and not undone and not expired)
     ask_restore = bool(admin and not undone and not expired and not can_rollback)
     return can_rollback, ask_restore
 

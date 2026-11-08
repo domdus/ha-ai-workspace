@@ -1,5 +1,56 @@
 # Changelog
 
+## 1.5.1
+
+Everything from 1.5.1b1 to 1.5.1b4. A patch release with fixes; nothing needs to be changed in your setup.
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.5.1`) together with this release.** The runtime code is the same as 1.5.0, but the App's settings changed: a fresh install can be saved again. The chat warns when the runtime is older than 1.5.1.
+
+**Change History**
+- Helpers and dashboards are rolled back through Home Assistant's own websocket commands, signed in as you, the same calls the helper and dashboard editors make. Home Assistant checks your permissions, validates the item, and stores it. AI Workspace no longer reaches into Home Assistant's internal storage.
+- The snapshot of a helper before a change is read the same way, with the chatting user's own login.
+- Rollback is for administrators only, for every kind of change.
+
+**Runtime App and MCP**
+- The Runtime App is found when it was installed or started after Home Assistant. Since Home Assistant 2026.11 the add-on details are only loaded at startup, so a newly installed App stayed invisible until the next restart. The same applies to an HA-MCP App.
+- Home Assistant tools work from the Runtime App when their saved address is 127.0.0.1. Inside the App, 127.0.0.1 is the App itself, so every call was refused. Addresses on Home Assistant's own port (built-in MCP, HA-MCP webhook) and HA-MCP running inside Home Assistant (port 9584) now go to http://homeassistant.
+- An HA-MCP connection that points at Home Assistant's built-in MCP server (/api/mcp) or at an address that does not answer moves to a working HA-MCP by itself after Home Assistant has started. The new address is saved and named in the log, without its secret path. Custom and built-in connections are never changed.
+
+**App settings**
+- The empty default for the Home Assistant URL was rejected by the Supervisor ("expected a URL"); the field is now optional and the App uses http://homeassistant:8123 when it is empty.
+- Shorten MCP results and Change History are no longer preset in the App; the runtime keeps them on by default and the integration's own setting still wins.
+- Every option has a name and description, in English and German.
+
+**Other**
+- The check whether Home Assistant runs in a container no longer touches the disk from the event loop.
+
+## 1.5.1b4
+
+- The runtime has no changes in this release. A 1.5.0 runtime keeps working without an update notice.
+- HA-MCP: a connection of the kind HA-MCP that points at Home Assistant's built-in MCP server (/api/mcp) or at an address that does not answer moves to a working HA-MCP by itself. The check runs once Home Assistant has started, so HA-MCP inside Home Assistant (HA-MCP Server) is up by then; it tries again after 30 seconds and 2 minutes. The new address is saved to the connection and named in the log, without its secret path. Custom and built-in connections are never changed, and nothing changes when no working HA-MCP is found.
+- HA-MCP: an HA-MCP App installed after Home Assistant started is found too (same Home Assistant 2026.11 change as in 1.5.1b3).
+- Cursor: Home Assistant tools work from the Runtime App when their saved address is 127.0.0.1. Inside the App, 127.0.0.1 is the App itself, so every call was refused and the agent said the connection to Home Assistant was not usable. Addresses on Home Assistant's own port (built-in MCP, HA-MCP webhook) and HA-MCP running inside Home Assistant (port 9584) now go to http://homeassistant. A runtime on the same host network keeps 127.0.0.1.
+
+## 1.5.1b3
+
+- The runtime has no changes in this release. A 1.5.0 runtime keeps working without an update notice.
+- Cursor: the Runtime App is found when it was installed or started after Home Assistant. Since Home Assistant 2026.11 the add-on details are only loaded at startup, so a newly installed App stayed invisible until the next restart.
+
+## 1.5.1b2
+
+- The runtime code has no changes in this release; only the App's settings page changed. A 1.5.0 runtime keeps working without an update notice.
+- App settings: a fresh install can be saved again. The empty default for the Home Assistant URL was rejected by the Supervisor ("expected a URL"); the field is now optional and the App uses http://homeassistant:8123 when it is empty.
+- App settings: Shorten MCP results and Change History are no longer preset in the App. Both stay available under "Show unused optional configuration options". The runtime keeps them on by default, the same as the Docker image, and the integration's own setting still wins.
+- App settings: every option has a name and description now, in English and German.
+
+## 1.5.1b1
+
+- The runtime has no changes in this release. A 1.5.0 runtime keeps working without an update notice; the 1.5.1b1 image only carries the new version number.
+- Change History: helpers and dashboards are rolled back through Home Assistant's own websocket commands, signed in as you, the same calls the helper and dashboard editors make. Home Assistant checks your permissions, validates the item, and stores it. Before, AI Workspace reached into Home Assistant's internal storage for these.
+- Change History: the snapshot of a helper before a change is read the same way, with the chatting user's own login. Without one there is no snapshot, and the row offers Undo with agent.
+- Change History: Rollback is for administrators only, for every kind of change. Before, a non-admin user could roll back helper, dashboard, and entity changes from their own chats.
+- Startup: the check whether Home Assistant runs in a container no longer touches the disk from the event loop.
+
 ## 1.5.0
 
 Everything from 1.5.0b1 to 1.5.0b34 (including 1.4.3b1 and 1.4.3b2). A minor release, because it adds features; nothing needs to be changed in your setup.
