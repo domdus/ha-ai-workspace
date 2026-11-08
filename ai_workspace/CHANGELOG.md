@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.1b3
+
+- The runtime has no changes in this release. A 1.5.0 runtime keeps working without an update notice.
+- Cursor: the Runtime App is found when it was installed or started after Home Assistant. Since Home Assistant 2026.11 the add-on details are only loaded at startup, so a newly installed App stayed invisible until the next restart.
+
 ## 1.5.1b2
 
 - The runtime code has no changes in this release; only the App's settings page changed. A 1.5.0 runtime keeps working without an update notice.

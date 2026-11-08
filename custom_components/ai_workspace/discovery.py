@@ -92,10 +92,22 @@ def _hassio_addon(hass: HomeAssistant) -> tuple[str, str] | None:
     except ImportError:
         return None
     try:
-        addons = get_addons_info(hass)
+        addons = dict(get_addons_info(hass) or {})
     except Exception:
-        return None
-    for slug, info in (addons or {}).items():
+        addons = {}
+    # Since 2026.11 the info cache only holds apps that were installed when Core
+    # started (or that have entities). The list is kept current, so an App
+    # installed later is found there.
+    try:
+        from homeassistant.components.hassio import get_addons_list
+
+        for item in get_addons_list(hass) or []:
+            slug = str((item or {}).get("slug") or "")
+            if slug and not addons.get(slug):
+                addons[slug] = item
+    except Exception:
+        pass
+    for slug, info in addons.items():
         if not info or not _slug_matches(str(slug)):
             continue
         state = str(info.get("state") or "").lower()
