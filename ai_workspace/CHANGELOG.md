@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.5.2
+
+Everything from 1.5.2b1 to 1.5.2b3. Nothing needs to be changed in your setup.
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.5.2`) together with this release.** The runtime heals a stuck Cursor bridge and shortens long answers differently. The chat shows a hint when the runtime is older than 1.5.2.
+
+**Runtime**
+- When the Cursor bridge stops connecting to MCP servers, the runtime heals itself: a new agent that does not reach its MCP servers within 20 seconds gets a fresh bridge, and the message is sent once more ("Reconnecting tools..."). Before, every chat said the connection to Home Assistant was broken until the App was restarted. At most one restart a minute, and never while another chat is still running.
+- After a reinstall, pairing restarts the App only once.
+- The App's configuration no longer shows "Shorten MCP results" and "Change History". They were only fallbacks; the integration sends both settings with every chat. The integration removes the old values from the App's options by itself.
+
+**Long Home Assistant answers**
+- A JSON answer that is too long first shortens its longest texts, each marked as incomplete and named by its source (such as a notification or entity id), instead of cutting off the end of the whole answer. One huge notification no longer pushes repairs, updates and everything after it out of HA-MCP's system overview, and the agent gets valid JSON and can tell you which integration or device makes answers so large.
+- When an answer still has to be cut at the end, the note tells the agent not to repeat the same call, but to ask for less or use a more specific tool.
+
+**Agents and models**
+- Every agent has a model list you can fill yourself: paste names separated by commas, semicolons or new lines. It replaces the provider's list in the agent form and in the chat's model picker, and sits in a folded "Model list" section below the model field.
+- OpenAI-compatible and OpenRouter agents: saving checks the model with one tiny request and shows the gateway's own message when the key may not use that model. When the model was left at the default and the server lists its models, the form comes back with that list in the model dropdown.
+
+**Chat**
+- Hints that do not mean something is broken (such as an outdated runtime) moved from the banner to an orange icon at the start of the sidebar toolbar. The banner is for errors again.
+- A chat deleted on another device says so when you come back to it or send in it, keeps its messages on screen, puts an unsent message back in the prompt, and the next message starts a new chat.
+- The prompt stays one line while the text fits; longer prompts use the full width with the buttons below on the right. In HA Components it is HA's own multi-line field (up to 8 lines; Enter sends, Shift+Enter adds a line), and pasted images have their remove button again.
+- The chat search uses the prompt's font size, and collapsing the sidebar has its own icon.
+
+**Settings**
+- Emptying Memory notes in Configure → System prompt removes all notes. Before, the old notes came back on save.
+- The description of "Shorten long Home Assistant answers" says what it does, in every language.
+
 ## 1.5.2b3
 
 - Runtime App: the "Shorten MCP results" and "Change History" fields are gone from the App's configuration. They were only fallbacks: the integration sends both settings with every chat, so they never decided anything and only confused. Set both in AI Workspace → Configure. The Docker runtime ignores the matching environment variables for the same reason. The integration removes the old values from the App's options by itself.
