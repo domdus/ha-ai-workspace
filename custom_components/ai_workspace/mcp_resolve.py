@@ -235,6 +235,52 @@ def _hassio_mcp_urls(hass: HomeAssistant) -> list[str]:
 
 _COMPONENT_DOMAIN = "ha_mcp_tools"
 _COMPONENT_PORT = 9584
+# HA-MCP's webhook settings (options of its server entry).
+_AUTH_SECRET_URL = "none"
+_AUTH_HA_LOGIN = "ha_auth"
+_AUTH_LEGACY_OAUTH = "legacy"
+
+
+def _component_webhook_usable(blob: dict) -> bool:
+    """HA-MCP's webhook answers us only when it is on and needs no OAuth client of its own.
+
+    With the webhook off, Home Assistant still answers 200 with an empty body for the
+    unknown webhook id. "Sign in with Home Assistant" accepts the chatting admin's login,
+    which AI Workspace sends; the legacy OAuth mode needs a client id and secret it has not.
+    """
+    if not blob.get("enable_webhook", True):
+        return False
+    return str(blob.get("webhook_auth") or _AUTH_SECRET_URL) in {_AUTH_SECRET_URL, _AUTH_HA_LOGIN}
+
+
+def ha_mcp_setup_hint(hass: HomeAssistant | None) -> str:
+    """What to change in HA-MCP when its settings keep AI Workspace out, or ""."""
+    entries = getattr(getattr(hass, "config_entries", None), "async_entries", None)
+    if not callable(entries):
+        return ""
+    try:
+        items = entries(_COMPONENT_DOMAIN)
+    except TypeError:
+        return ""
+    for entry in items:
+        data = getattr(entry, "data", {}) or {}
+        if not data.get("webhook_id"):
+            continue
+        options = getattr(entry, "options", {}) or {}
+        mode = str(options.get("webhook_auth") or _AUTH_SECRET_URL)
+        if options.get("enable_webhook", True) and mode == _AUTH_LEGACY_OAUTH:
+            return (
+                "HA-MCP uses the legacy OAuth sign-in, which AI Workspace cannot use. In HA-MCP's "
+                "Configure, set the authentication mode to \u201cSecret webhook URL\u201d or "
+                "\u201cSign in with Home Assistant\u201d."
+            )
+        if mode == _AUTH_HA_LOGIN and options.get("enable_webhook", True):
+            return (
+                "HA-MCP is set to \u201cSign in with Home Assistant\u201d: it only lets in administrators, "
+                "so chats of other users and chats without a login cannot use it. \u201cSecret webhook URL\u201d "
+                "works for every chat."
+            )
+    return ""
 _DOCKER_HA_HOSTS = ("homeassistant", "home-assistant")
 
 
@@ -272,14 +318,35 @@ def _entry_mcp_urls(hass: HomeAssistant) -> list[str]:
             if isinstance(value, str) and value.startswith("http"):
                 locals_.append(value.strip())
         webhook_id = blob.get("webhook_id")
-        if webhook_id:
-            locals_.append(f"{api_base}/api/webhook/{webhook_id}")
+        webhook = ""
+        if webhook_id and (domain != _COMPONENT_DOMAIN or _component_webhook_usable(blob)):
+            webhook = f"{api_base}/api/webhook/{webhook_id}"
         secret = str(blob.get("secret_path") or "").strip()
+        direct = ""
         if domain == _COMPONENT_DOMAIN and secret.startswith("/"):
-            locals_.append(f"http://127.0.0.1:{_COMPONENT_PORT}{secret}")
+            port = int(blob.get("server_port") or _COMPONENT_PORT)
+            direct = f"http://127.0.0.1:{port}{secret}"
+        # The login-protected webhook only lets in admins with a login; the direct address
+        # works for every chat, so it goes first there.
+        login = str(blob.get("webhook_auth") or "") == _AUTH_HA_LOGIN
+        locals_.extend(url for url in ((direct, webhook) if login else (webhook, direct)) if url)
         for local in locals_:
             out.extend(_same_network_urls(local))
     return out
+
+
+def _component_ports(hass: HomeAssistant | None) -> set[int]:
+    ports = {_COMPONENT_PORT}
+    entries = getattr(getattr(hass, "config_entries", None), "async_entries", None)
+    try:
+        items = entries(_COMPONENT_DOMAIN) if callable(entries) else []
+    except TypeError:
+        items = []
+    for entry in items:
+        port = (getattr(entry, "options", {}) or {}).get("server_port")
+        if str(port or "").isdigit():
+            ports.add(int(port))
+    return ports
 
 
 def _loopback_host(url: str) -> bool:
@@ -300,7 +367,7 @@ def for_runtime(servers: dict, hass: HomeAssistant | None, runtime_url: str, cor
     core = urlparse(base)
     # HA-MCP from the ha_mcp_tools integration listens inside Core, on its own port.
     components = getattr(getattr(hass, "config", None), "components", None) or ()
-    in_core = {_COMPONENT_PORT} if _COMPONENT_DOMAIN in components else set()
+    in_core = _component_ports(hass) if _COMPONENT_DOMAIN in components else set()
     out: dict = {}
     for name, cfg in (servers or {}).items():
         raw = dict(cfg or {})
@@ -358,10 +425,12 @@ async def async_probe_mcp(
     except (ClientError, TimeoutError, OSError, ValueError):
         return False
     status = resp.status
+    # Home Assistant answers an unknown (or switched off) webhook with an empty 200.
+    empty = resp.content_length == 0
     resp.release()
     if status in {401, 403}:
         return True
-    return 200 <= status < 400
+    return 200 <= status < 400 and not empty
 
 
 def configured_mcp_kinds(hass: HomeAssistant) -> set[str]:

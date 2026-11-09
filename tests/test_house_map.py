@@ -151,6 +151,8 @@ def test_catalog_auth_paths() -> None:
     }
     out = mod.with_mcp_auth(servers, access_token="ha-token")
     assert out["catalog"]["headers"]["Authorization"] == "Bearer ha-token"
-    assert "headers" not in out["mcp"]
+    # HA-MCP's webhook on Home Assistant gets the login for its "Sign in with Home Assistant" mode.
+    assert out["mcp"]["headers"]["Authorization"] == "Bearer ha-token"
     dropped = mod.with_mcp_auth(servers, access_token="")
     assert "catalog" not in dropped
+    assert "headers" not in dropped["mcp"]

@@ -175,6 +175,13 @@ def _needs_ha_bearer(name: str, url: str, ha_hosts: frozenset[str] | set[str]) -
     )
 
 
+def _ha_webhook(url: str, ha_hosts: frozenset[str] | set[str]) -> bool:
+    """A webhook on this Home Assistant itself (HA-MCP's connect address)."""
+    parsed = urlparse(str(url or ""))
+    host = (parsed.hostname or "").lower()
+    return "/api/webhook/" in (parsed.path or "") and host in (frozenset(ha_hosts) | {"home-assistant"})
+
+
 def with_mcp_auth(
     servers: dict[str, dict[str, Any]] | None,
     *,
@@ -189,7 +196,17 @@ def with_mcp_auth(
         raw = dict(cfg or {})
         url = str(raw.get("url") or "")
         headers = dict(raw.get("headers") or {})
-        if "Authorization" in headers or not _needs_ha_bearer(name, url, hosts):
+        if "Authorization" in headers:
+            out[name] = raw
+            continue
+        if _ha_webhook(url, hosts):
+            # HA-MCP's webhook in "Sign in with Home Assistant" mode wants the user's login;
+            # the secret-URL mode ignores it. Without a login it still works in that mode.
+            if token:
+                raw["headers"] = {**headers, "Authorization": f"Bearer {token}"}
+            out[name] = raw
+            continue
+        if not _needs_ha_bearer(name, url, hosts):
             out[name] = raw
             continue
         if not token:

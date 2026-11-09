@@ -21,6 +21,7 @@ from .ollama_info import MIN_TOOL_WINDOW, OllamaModel, async_ollama_model
 from .local_time import house_zone, stamped_now, time_rule, with_local_offset
 from .tool_loading import LOAD_TOOLS, pick_tools, used_tool_names
 from .const import (
+    MCP_HA_MCP,
     API_ANTHROPIC,
     API_AZURE,
     API_COMPATIBLE,
@@ -58,7 +59,7 @@ from .const import (
     with_time_rule,
 )
 from .coolver import CoolverClient
-from .mcp_client import McpError, McpHttpClient
+from .mcp_client import McpError, McpHttpClient, ha_mcp_trouble
 from .mcp_config import (
     OPENAI_TOOL_NAME_MAX,
     is_local_hass_mcp_url,
@@ -66,7 +67,7 @@ from .mcp_config import (
     public_tool_names,
     with_mcp_auth,
 )
-from .mcp_resolve import ha_hosts, hass_mcp_server_url
+from .mcp_resolve import ha_hosts, ha_mcp_setup_hint, hass_mcp_server_url
 from .models import ProviderInfo, Settings
 from .redact import redact
 from .small_talk import wants_house_tools
@@ -967,14 +968,16 @@ class ApiProvider:
             if name in _LOCAL_TOOLS or not url:
                 continue
             label = "home-assistant" if name == "mcp" else name
+            kind = self._server_kind(name, admin)
             try:
-                server = await async_mcp_server(
-                    self.hass, http, self._server_kind(name, admin), url, dict(cfg.get("headers") or {})
-                )
+                server = await async_mcp_server(self.hass, http, kind, url, dict(cfg.get("headers") or {}))
             except _ERRORS as exc:
-                logger.warning("MCP connection %s skipped: %s", label, self._public(exc))
+                reason = self._public(exc)
+                if kind == MCP_HA_MCP:
+                    reason = f"{reason} {ha_mcp_trouble(exc, ha_mcp_setup_hint(self.hass))}".strip()
+                logger.warning("MCP connection %s skipped: %s", label, reason)
                 skipped.append(label)
-                first_error = first_error or self._public(exc)
+                first_error = first_error or reason
                 continue
             bundle.add(label, server, server.tools)
         if admin and self.settings.house_map:

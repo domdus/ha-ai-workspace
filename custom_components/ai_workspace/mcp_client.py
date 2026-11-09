@@ -33,6 +33,23 @@ def _parse_body(text: str, content_type: str) -> dict[str, Any]:
     return json.loads(raw)
 
 
+def ha_mcp_trouble(exc: BaseException, hint: str = "") -> str:
+    """Plain-language next step for a failed HA-MCP connection."""
+    status = getattr(exc, "status", None)
+    text = str(exc)
+    if status in {401, 403}:
+        return hint or (
+            "HA-MCP asks for a login. In HA-MCP's Configure, set the authentication mode to "
+            "\u201cSecret webhook URL\u201d, or use \u201cSign in with Home Assistant\u201d and chat as an administrator."
+        )
+    if "response was empty" in text:
+        return (
+            "The address answered without an MCP reply. When it is HA-MCP's webhook, turn on "
+            "\u201cRemote access via webhook\u201d in HA-MCP, or let AI Workspace use HA-MCP's direct address."
+        )
+    return hint
+
+
 class McpHttpClient:
     def __init__(self, http: ClientSession, url: str, headers: dict[str, str] | None = None) -> None:
         self._http = http
