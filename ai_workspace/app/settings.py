@@ -52,15 +52,6 @@ def _url_server(options: dict) -> dict:
     return {"home-assistant": entry}
 
 
-def _bool_opt(options: dict | None, key: str, env: str, default: bool = True) -> bool:
-    raw = os.environ.get(env)
-    if raw is None or not str(raw).strip():
-        raw = (options or {}).get(key, default)
-    if isinstance(raw, bool):
-        return raw
-    return str(raw).strip().lower() not in {"0", "false", "no", "off"}
-
-
 def _listen_host() -> str:
     return (os.environ.get("HOST") or "0.0.0.0").strip() or "0.0.0.0"
 
@@ -161,6 +152,4 @@ class Settings:
                 os.environ.get("RUNTIME_TOKEN", "").strip() or str(options.get("runtime_token") or "").strip()
             ),
             hass_url=_default_hass_url(options),
-            shorten_mcp_results=_bool_opt(options, "shorten_mcp_results", "SHORTEN_MCP_RESULTS", True),
-            change_history=_bool_opt(options, "change_history", "CHANGE_HISTORY", True),
         )

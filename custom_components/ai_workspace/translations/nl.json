@@ -81,7 +81,7 @@
             },
             "data_description": {
               "house_map": "Standaard uit. Een lokale index van hoe automatiseringen, entiteiten en ruimtes samenhangen, zodat één opzoeking vragen beantwoordt als “wat gebruikt de keukenlamp?”. Voegt iets toe aan elk bericht, dus zet het alleen aan als je vaak vraagt hoe dingen gekoppeld zijn. Live statussen komen nog steeds uit Home Assistant.",
-              "shorten_mcp_results": "Standaard aan. Zeer lange antwoorden van Home Assistant (lijsten van het hele huis, grote zoekopdrachten) worden samengevat voordat ze naar de AI gaan. Bespaart tokens en houdt antwoorden vlot. Uit stuurt de volledige tekst.",
+              "shorten_mcp_results": "Standaard aan. Zeer lange antwoorden van Home Assistant worden verkleind voordat ze naar de AI gaan: grote entiteitenlijsten worden compact, zeer lange teksten in een antwoord (zoals een enorme melding) worden ingekort, en wat daarna nog boven de 100.000 tekens ligt, wordt afgeknipt. Bespaart tokens en houdt antwoorden snel. Uit stuurt de volledige tekst.",
               "change_history": "Standaard aan. Houdt elke configuratiewijziging van de assistent bij, zodat je ziet wat er veranderd is en kunt vragen een eerdere versie terug te zetten. Uit: geen nieuwe items; de assistent kan nog steeds wijzigingen maken.",
               "change_history_ttl_days": "Dagen dat Rollback en Ongedaan maken via agent beschikbaar blijven. Daarna blijft de regel in het logboek; een oud momentopname terugzetten kan later werk overschrijven. Standaard 7. 1 is ongeveer een dag."
             }
@@ -194,7 +194,7 @@
             },
             "data_description": {
               "house_map": "Standaard uit. Een lokale index van hoe automatiseringen, entiteiten en ruimtes samenhangen, zodat één opzoeking vragen beantwoordt als “wat gebruikt de keukenlamp?”. Voegt iets toe aan elk bericht, dus zet het alleen aan als je vaak vraagt hoe dingen gekoppeld zijn. Live statussen komen nog steeds uit Home Assistant.",
-              "shorten_mcp_results": "Standaard aan. Zeer lange antwoorden van Home Assistant (lijsten van het hele huis, grote zoekopdrachten) worden samengevat voordat ze naar de AI gaan. Bespaart tokens en houdt antwoorden vlot. Uit stuurt de volledige tekst.",
+              "shorten_mcp_results": "Standaard aan. Zeer lange antwoorden van Home Assistant worden verkleind voordat ze naar de AI gaan: grote entiteitenlijsten worden compact, zeer lange teksten in een antwoord (zoals een enorme melding) worden ingekort, en wat daarna nog boven de 100.000 tekens ligt, wordt afgeknipt. Bespaart tokens en houdt antwoorden snel. Uit stuurt de volledige tekst.",
               "change_history": "Standaard aan. Houdt elke configuratiewijziging van de assistent bij, zodat je ziet wat er veranderd is en kunt vragen een eerdere versie terug te zetten. Uit: geen nieuwe items; de assistent kan nog steeds wijzigingen maken.",
               "change_history_ttl_days": "Dagen dat Rollback en Ongedaan maken via agent beschikbaar blijven. Daarna blijft de regel in het logboek; een oud momentopname terugzetten kan later werk overschrijven. Standaard 7. 1 is ongeveer een dag."
             }
@@ -286,7 +286,9 @@
         "required": "Dit veld is verplicht.",
         "invalid_auth": "De provider heeft deze API-sleutel geweigerd.",
         "cannot_connect": "De provider is niet bereikbaar. Controleer de URL en het netwerk.",
-        "model_not_installed": "Dit model is niet geïnstalleerd in Ollama. Geïnstalleerd: {installed}"
+        "model_not_installed": "Dit model is niet geïnstalleerd in Ollama. Geïnstalleerd: {installed}",
+        "pick_model": "De server toont nu zijn modellen. Kies er een uit de lijst.",
+        "model_rejected": "De server staat dit model niet toe voor deze sleutel: {server_message}"
       },
       "step": {
         "provider": {
@@ -321,6 +323,15 @@
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
           },
           "sections": {
+            "model_list": {
+              "name": "Modellenlijst",
+              "data": {
+                "models": "Modellen"
+              },
+              "data_description": {
+                "models": "Optioneel. Je eigen modelkeuze voor de keuzelijst hier en in de chat, in plaats van de volledige lijst van de provider. Namen gescheiden door komma's, puntkomma's of nieuwe regels, bijv. gpt-5.5, grok-4.7. Leeg toont de lijst van de provider."
+              }
+            },
             "advanced": {
               "name": "Geavanceerd",
               "data": {
@@ -364,6 +375,15 @@
             "tts_speed": "Hoe snel deze stem spreekt. 1× is normaal. Geldt voor AI Workspace en Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Modellenlijst",
+              "data": {
+                "models": "Modellen"
+              },
+              "data_description": {
+                "models": "Optioneel. Je eigen modelkeuze voor de keuzelijst hier en in de chat, in plaats van de volledige lijst van de provider. Namen gescheiden door komma's, puntkomma's of nieuwe regels, bijv. gpt-5.5, grok-4.7. Leeg toont de lijst van de provider."
+              }
+            },
             "advanced": {
               "name": "Geavanceerd",
               "data": {
@@ -395,6 +415,15 @@
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
           },
           "sections": {
+            "model_list": {
+              "name": "Modellenlijst",
+              "data": {
+                "models": "Modellen"
+              },
+              "data_description": {
+                "models": "Optioneel. Je eigen modelkeuze voor de keuzelijst hier en in de chat, in plaats van de volledige lijst van de provider. Namen gescheiden door komma's, puntkomma's of nieuwe regels, bijv. gpt-5.5, grok-4.7. Leeg toont de lijst van de provider."
+              }
+            },
             "advanced": {
               "name": "Geavanceerd",
               "data": {
@@ -428,6 +457,15 @@
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
           },
           "sections": {
+            "model_list": {
+              "name": "Modellenlijst",
+              "data": {
+                "models": "Modellen"
+              },
+              "data_description": {
+                "models": "Optioneel, voor servers die hun modellen niet zelf tonen. Vult de modelkeuze hier en in de chat. Plak namen gescheiden door komma's, puntkomma's of nieuwe regels, bijv. gpt-5.5, grok-4.7. Wat je plakt vervangt de lijst; maak hem leeg om weer de lijst van de server te gebruiken."
+              }
+            },
             "advanced": {
               "name": "Geavanceerd",
               "data": {
@@ -471,6 +509,15 @@
             "tts_speed": "Hoe snel deze stem spreekt. 1× is normaal. Geldt voor AI Workspace en Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Modellenlijst",
+              "data": {
+                "models": "Modellen"
+              },
+              "data_description": {
+                "models": "Optioneel, voor servers die hun modellen niet zelf tonen. Vult de modelkeuze hier en in de chat. Plak namen gescheiden door komma's, puntkomma's of nieuwe regels, bijv. gpt-5.5, grok-4.7. Wat je plakt vervangt de lijst; maak hem leeg om weer de lijst van de server te gebruiken."
+              }
+            },
             "advanced": {
               "name": "Geavanceerd",
               "data": {

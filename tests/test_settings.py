@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from app.settings import Settings, _bool_opt, _default_hass_url
+from app.settings import Settings, _default_hass_url
 
 
 def test_addon_options_write_mcp_json(tmp_path: Path, monkeypatch) -> None:
@@ -44,19 +44,16 @@ def test_runtime_token_from_addon_options(tmp_path: Path, monkeypatch) -> None:
     assert Settings.from_env().runtime_token == "env-tok"
 
 
-def test_shorten_mcp_results_defaults_on(tmp_path: Path, monkeypatch) -> None:
-    monkeypatch.delenv("SHORTEN_MCP_RESULTS", raising=False)
+def test_integration_settings_default_on_until_a_chat_sends_them(tmp_path: Path, monkeypatch) -> None:
+    # No App option or environment variable: the integration sends both with every chat.
     monkeypatch.setenv("DATA_DIR", str(tmp_path / "data"))
-    monkeypatch.delenv("ADDON_OPTIONS", raising=False)
-    assert Settings.from_env().shorten_mcp_results is True
+    options = tmp_path / "options.json"
+    options.write_text('{"shorten_mcp_results": false, "change_history": false}')
+    monkeypatch.setenv("ADDON_OPTIONS", str(options))
     monkeypatch.setenv("SHORTEN_MCP_RESULTS", "false")
-    assert Settings.from_env().shorten_mcp_results is False
-    assert _bool_opt({"shorten_mcp_results": False}, "shorten_mcp_results", "MISSING_ENV", True) is False
-    monkeypatch.delenv("CHANGE_HISTORY", raising=False)
-    monkeypatch.delenv("SHORTEN_MCP_RESULTS", raising=False)
-    assert Settings.from_env().change_history is True
-    monkeypatch.setenv("CHANGE_HISTORY", "false")
-    assert Settings.from_env().change_history is False
+    settings = Settings.from_env()
+    assert settings.shorten_mcp_results is True
+    assert settings.change_history is True
 
 
 def test_ensure_dirs_seeds_workspace_once(tmp_path: Path, monkeypatch) -> None:

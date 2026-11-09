@@ -81,7 +81,7 @@
             },
             "data_description": {
               "house_map": "Domyślnie wyłączone. Lokalny indeks powiązań między automatyzacjami, encjami i obszarami, żeby jedno wyszukanie odpowiadało na pytania typu „co używa światła w kuchni?”. Dodaje trochę do każdej wiadomości, więc włącz tylko, jeśli często pytasz, jak rzeczy są połączone. Stany na żywo nadal pochodzą z Home Assistant.",
-              "shorten_mcp_results": "Domyślnie włączone. Bardzo długie odpowiedzi z Home Assistant (listy całego domu, duże wyszukiwania) są streszczane, zanim trafią do AI. Oszczędza tokeny i utrzymuje szybkie odpowiedzi. Wyłączone wysyła pełny tekst.",
+              "shorten_mcp_results": "Domyślnie włączone. Bardzo długie odpowiedzi z Home Assistant są zmniejszane przed wysłaniem do AI: duże listy encji stają się zwięzłe, bardzo długie teksty w odpowiedzi (np. ogromne powiadomienie) są skracane, a to, co nadal przekracza 100 000 znaków, jest obcinane. Oszczędza tokeny i przyspiesza odpowiedzi. Wyłączone wysyła pełny tekst.",
               "change_history": "Domyślnie włączone. Zapisuje każdą zmianę konfiguracji wykonaną przez asystenta, żebyś widział, co się zmieniło, i mógł poprosić o przywrócenie wcześniejszej wersji. Wyłączone: bez nowych wpisów; asystent nadal może wprowadzać zmiany.",
               "change_history_ttl_days": "Dni, przez które Rollback i Cofnij przez agenta pozostają dostępne. Potem wpis zostaje w dzienniku; przywrócenie starego zrzutu może nadpisać późniejszą pracę. Domyślnie 7. 1 to około dzień."
             }
@@ -194,7 +194,7 @@
             },
             "data_description": {
               "house_map": "Domyślnie wyłączone. Lokalny indeks powiązań między automatyzacjami, encjami i obszarami, żeby jedno wyszukanie odpowiadało na pytania typu „co używa światła w kuchni?”. Dodaje trochę do każdej wiadomości, więc włącz tylko, jeśli często pytasz, jak rzeczy są połączone. Stany na żywo nadal pochodzą z Home Assistant.",
-              "shorten_mcp_results": "Domyślnie włączone. Bardzo długie odpowiedzi z Home Assistant (listy całego domu, duże wyszukiwania) są streszczane, zanim trafią do AI. Oszczędza tokeny i utrzymuje szybkie odpowiedzi. Wyłączone wysyła pełny tekst.",
+              "shorten_mcp_results": "Domyślnie włączone. Bardzo długie odpowiedzi z Home Assistant są zmniejszane przed wysłaniem do AI: duże listy encji stają się zwięzłe, bardzo długie teksty w odpowiedzi (np. ogromne powiadomienie) są skracane, a to, co nadal przekracza 100 000 znaków, jest obcinane. Oszczędza tokeny i przyspiesza odpowiedzi. Wyłączone wysyła pełny tekst.",
               "change_history": "Domyślnie włączone. Zapisuje każdą zmianę konfiguracji wykonaną przez asystenta, żebyś widział, co się zmieniło, i mógł poprosić o przywrócenie wcześniejszej wersji. Wyłączone: bez nowych wpisów; asystent nadal może wprowadzać zmiany.",
               "change_history_ttl_days": "Dni, przez które Rollback i Cofnij przez agenta pozostają dostępne. Potem wpis zostaje w dzienniku; przywrócenie starego zrzutu może nadpisać późniejszą pracę. Domyślnie 7. 1 to około dzień."
             }
@@ -286,7 +286,9 @@
         "required": "To pole jest wymagane.",
         "invalid_auth": "Dostawca odrzucił ten klucz API.",
         "cannot_connect": "Nie można połączyć się z dostawcą. Sprawdź adres URL i sieć.",
-        "model_not_installed": "Ten model nie jest zainstalowany w Ollama. Zainstalowane: {installed}"
+        "model_not_installed": "Ten model nie jest zainstalowany w Ollama. Zainstalowane: {installed}",
+        "pick_model": "Serwer podaje teraz swoje modele. Wybierz jeden z listy.",
+        "model_rejected": "Serwer nie zezwala na ten model dla tego klucza: {server_message}"
       },
       "step": {
         "provider": {
@@ -321,6 +323,15 @@
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Lista modeli",
+              "data": {
+                "models": "Modele"
+              },
+              "data_description": {
+                "models": "Opcjonalnie. Własny wybór modeli do listy tutaj i w czacie zamiast pełnej listy dostawcy. Nazwy oddzielone przecinkami, średnikami lub nowymi wierszami, np. gpt-5.5, grok-4.7. Puste pokazuje listę dostawcy."
+              }
+            },
             "advanced": {
               "name": "Zaawansowane",
               "data": {
@@ -364,6 +375,15 @@
             "tts_speed": "Jak szybko mówi ten głos. 1× to normalne tempo. Działa w AI Workspace i Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Lista modeli",
+              "data": {
+                "models": "Modele"
+              },
+              "data_description": {
+                "models": "Opcjonalnie. Własny wybór modeli do listy tutaj i w czacie zamiast pełnej listy dostawcy. Nazwy oddzielone przecinkami, średnikami lub nowymi wierszami, np. gpt-5.5, grok-4.7. Puste pokazuje listę dostawcy."
+              }
+            },
             "advanced": {
               "name": "Zaawansowane",
               "data": {
@@ -395,6 +415,15 @@
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Lista modeli",
+              "data": {
+                "models": "Modele"
+              },
+              "data_description": {
+                "models": "Opcjonalnie. Własny wybór modeli do listy tutaj i w czacie zamiast pełnej listy dostawcy. Nazwy oddzielone przecinkami, średnikami lub nowymi wierszami, np. gpt-5.5, grok-4.7. Puste pokazuje listę dostawcy."
+              }
+            },
             "advanced": {
               "name": "Zaawansowane",
               "data": {
@@ -428,6 +457,15 @@
             "assist": "Umieszcza też tego asystenta w Home Assistant Assist (głos). Wyłączone: tylko czat AI Workspace i usuwa to, co dodał do Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Lista modeli",
+              "data": {
+                "models": "Modele"
+              },
+              "data_description": {
+                "models": "Opcjonalnie, dla serwerów, które nie podają listy modeli. Wypełnia wybór modelu tutaj i w czacie. Wklej nazwy oddzielone przecinkami, średnikami lub nowymi wierszami, np. gpt-5.5, grok-4.7. Wklejona treść zastępuje listę; wyczyść ją, aby znów używać listy serwera."
+              }
+            },
             "advanced": {
               "name": "Zaawansowane",
               "data": {
@@ -471,6 +509,15 @@
             "tts_speed": "Jak szybko mówi ten głos. 1× to normalne tempo. Działa w AI Workspace i Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Lista modeli",
+              "data": {
+                "models": "Modele"
+              },
+              "data_description": {
+                "models": "Opcjonalnie, dla serwerów, które nie podają listy modeli. Wypełnia wybór modelu tutaj i w czacie. Wklej nazwy oddzielone przecinkami, średnikami lub nowymi wierszami, np. gpt-5.5, grok-4.7. Wklejona treść zastępuje listę; wyczyść ją, aby znów używać listy serwera."
+              }
+            },
             "advanced": {
               "name": "Zaawansowane",
               "data": {

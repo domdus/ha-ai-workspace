@@ -182,6 +182,45 @@
   display: none;
 }
 
+.header-notice {
+  display: none;
+}
+
+.notice-open {
+  --ha-icon-button-size: 40px;
+  color: var(--warning-color, #ff9800) !important;
+}
+
+.notice-open[hidden] {
+  display: none !important;
+}
+
+.wrap.narrow .header-notice:not([hidden]) {
+  display: inline-flex;
+}
+
+.wrap.has-app-bar .header-notice {
+  display: none !important;
+}
+
+.notice-pop {
+  position: absolute;
+  z-index: 20;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border-left: 4px solid var(--warning-color, #ff9800);
+  background: var(--card-background-color, #fff);
+  color: var(--primary-text-color);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.notice-pop[hidden] {
+  display: none;
+}
+
 .wrap.nav-collapsed .chats-label,
 .wrap.nav-collapsed .sessions,
 .wrap.nav-collapsed ha-button.new-chat,
@@ -231,7 +270,7 @@
   background: transparent;
   color: var(--sidebar-text-color, var(--primary-text-color));
   font: inherit;
-  font-size: 16px;
+  font-size: var(--ha-font-size-m, 14px);
 }
 
 .nav-search-input:focus {
@@ -1025,6 +1064,8 @@ h1 {
   width: 56px;
   height: 56px;
   overflow: hidden;
+  border-radius: var(--ha-border-radius-md, 8px);
+  background: var(--divider-color);
 }
 
 .thumb img {
@@ -1032,6 +1073,22 @@ h1 {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* Round remove button in the corner of a pasted or attached image. */
+.thumb .thumb-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: var(--primary-background-color);
+  background: color-mix(in srgb, var(--primary-text-color) 60%, transparent);
+  --ha-icon-button-size: 22px;
+  --mdc-icon-button-size: 22px;
+  --mdc-icon-size: 14px;
+  --ha-icon-button-padding-inline: 0;
 }
 
 .bubble-images img {
@@ -1112,9 +1169,6 @@ textarea.message {
   max-width: 100%;
 }
 
-.ui-theme-ha-components #message-input::part(wa-base) {
-  padding-right: var(--ha-space-1);
-}
 
 .send,
 .mic,
@@ -1235,6 +1289,14 @@ textarea.message {
   .wrap:not(.compact) .header-history,
   .wrap:not(.compact) .header-usage {
     display: inline-flex;
+  }
+
+  .wrap:not(.compact) .header-notice:not([hidden]) {
+    display: inline-flex;
+  }
+
+  .wrap.has-app-bar .header-notice {
+    display: none !important;
   }
 
   .wrap.has-app-bar .chat-nav-toggle {

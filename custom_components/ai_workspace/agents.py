@@ -11,6 +11,8 @@ from homeassistant.core import HomeAssistant
 from .models import ProviderInfo
 
 from .const import (
+    CONF_MODELS,
+    parse_model_list,
     API_AZURE,
     API_OLLAMA,
     API_OPENAI,
@@ -84,6 +86,8 @@ class Agent:
     cursor_api_key: str = ""
     allow_internet: bool = False
     subentry_id: str = ""
+    # Typed or pasted model ids; replaces the server's own list.
+    models: tuple[str, ...] = ()
 
     def label(self) -> str:
         name = self.title or API_SHORT_LABELS.get(self.provider, "Cursor" if self.mode == MODE_CURSOR else "Agent")
@@ -132,6 +136,7 @@ def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Age
         api_key=_text(raw.get(CONF_API_KEY)),
         api_base=_text(raw.get(CONF_API_BASE)),
         model=_text(raw.get(CONF_MODEL)),
+        models=tuple(parse_model_list(raw.get(CONF_MODELS))),
         effort=effort,
         enabled=True,
         assist=assist_enabled(raw),

@@ -144,8 +144,20 @@ def merge_models(kind: str, configured: str, live: list[str]) -> list[str]:
     return out
 
 
+def own_models(configured: str, models) -> list[str]:
+    """A typed or pasted list replaces the server's; the configured model stays first."""
+    out: list[str] = []
+    for name in (configured, *models):
+        name = str(name or "").strip()
+        if name and name not in out:
+            out.append(name)
+    return out
+
+
 async def async_agent_models(hass: HomeAssistant, agent) -> list[str]:
     """Everything the chat model switcher offers for one agent."""
+    if agent.models:
+        return own_models(agent.model, agent.models)
     if agent.mode == MODE_CURSOR:
         live = await async_cursor_models(hass, agent.cursor_api_key)
         return merge_models(MODE_CURSOR, agent.model or default_api_model(MODE_CURSOR), live)

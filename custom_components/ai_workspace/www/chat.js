@@ -232,6 +232,15 @@ async function ensureHaComponents(names) {
         if (typeof load === "function") await load.call(panel.routerOptions.routes.automation);
       }
     }
+    if (missing.includes("ha-textarea") && !haHas("ha-textarea") && haHas("ha-selector")) {
+      // HA ships ha-textarea in a lazy chunk; a multi-line text selector imports it.
+      const selector = document.createElement("ha-selector");
+      selector.hass = hassObj();
+      selector.selector = { text: { multiline: true } };
+      selector.hidden = true;
+      document.body.append(selector);
+      customElements.whenDefined("ha-textarea").then(() => selector.remove());
+    }
     const wantDate = missing.some((name) => String(name).startsWith("ha-date-range"));
     if (wantDate && !haDatePickerLoaderTriggered) {
       haDatePickerLoaderTriggered = true;
@@ -257,6 +266,7 @@ const HA_COMPONENT_PRELOAD = [
   "ha-assist-chip",
   "ha-chip-set",
   "ha-input",
+  "ha-textarea",
   "ha-input-chip",
   "ha-list-item-button",
   "ha-markdown",
@@ -849,13 +859,14 @@ export async function mountAiWorkspace(root, options = {}) {
               <div class="input">
                 ${fileInputMarkup}
                 <div class="composer-fallback">${standardComposerRowMarkup}</div>
-                <ha-input id="message-input" class="message" label="${htmlAttr(t("message"))}" placeholder="${htmlAttr(t("placeholder"))}">
-                  <div slot="end">
+                <div class="composer-field">
+                  <ha-textarea id="message-input" class="message" rows="1" resize="auto" label="${htmlAttr(t("message"))}" placeholder="${htmlAttr(t("placeholder"))}"></ha-textarea>
+                  <div class="composer-field-actions">
                     ${attachBtnMarkup}
                     ${micBtnMarkup}
                     ${sendMarkup}
                   </div>
-                </ha-input>
+                </div>
               </div>`;
   const agentTriggerMarkup = haUi
     ? `<ha-button type="button" class="agent-trigger" slot="trigger" appearance="plain" size="s" aria-haspopup="menu" aria-expanded="false" aria-label="${t("agent")}"><span class="agent-trigger-label"></span><ha-icon slot="end" icon="mdi:chevron-down"></ha-icon></ha-button>`
@@ -869,10 +880,14 @@ export async function mountAiWorkspace(root, options = {}) {
     ${themeCss}
     <div class="${wrapClass}">
       <button type="button" class="nav-scrim" hidden aria-label="${t("close")}"></button>
+      <div class="notice-pop" role="dialog" aria-label="${t("notice")}" hidden></div>
       <aside>
         <div class="nav-head">
           <div class="nav-toolbar">
             <div class="nav-tools">
+              <ha-icon-button class="notice-open" label="${t("notice")}" aria-expanded="false" hidden>
+                <ha-icon icon="mdi:alert-circle-outline"></ha-icon>
+              </ha-icon-button>
               <ha-icon-button class="search-open" label="${t("search_chats")}" aria-pressed="false" hidden>
                 <ha-icon icon="mdi:magnify"></ha-icon>
               </ha-icon-button>
@@ -884,7 +899,7 @@ export async function mountAiWorkspace(root, options = {}) {
               </ha-icon-button>
             </div>
             <ha-icon-button class="nav-toggle" label="${t("hide_chats")}">
-              <ha-icon icon="mdi:dock-left"></ha-icon>
+              <ha-icon icon="${collapsedStart ? "mdi:dock-left" : "mdi:chevron-double-left"}"></ha-icon>
             </ha-icon-button>
           </div>
           <div class="brand">${t("title")}</div>
@@ -909,7 +924,10 @@ export async function mountAiWorkspace(root, options = {}) {
             <ha-icon-button class="nav-toggle chat-nav-toggle" label="${t("show_chats")}">
               <ha-icon icon="mdi:forum-outline"></ha-icon>
             </ha-icon-button>
-            ${compact ? "" : `<ha-icon-button class="history-open header-history" label="${t("activity")}">
+            ${compact ? "" : `<ha-icon-button class="notice-open header-notice" label="${t("notice")}" aria-expanded="false" hidden>
+                <ha-icon icon="mdi:alert-circle-outline"></ha-icon>
+              </ha-icon-button>
+            <ha-icon-button class="history-open header-history" label="${t("activity")}">
               <ha-icon icon="mdi:history"></ha-icon>
             </ha-icon-button>
             <ha-icon-button class="usage-open header-usage" label="${t("usage")}">
@@ -993,7 +1011,7 @@ export async function mountAiWorkspace(root, options = {}) {
   let messageEl = root.querySelector("#ai-message") || root.querySelector("#message-input");
   function syncComposerField() {
     const haField = root.querySelector("#message-input");
-    if (haUi && haField?.localName === "ha-input" && haHas("ha-input")) messageEl = haField;
+    if (haUi && haField?.localName === "ha-textarea" && haHas("ha-textarea")) messageEl = haField;
     else messageEl = root.querySelector("#ai-message") || haField;
   }
   syncComposerField();
@@ -1038,7 +1056,7 @@ export async function mountAiWorkspace(root, options = {}) {
   }
   bindHaTree(root);
   if (haUi) {
-    customElements.whenDefined("ha-input").then(() => {
+    customElements.whenDefined("ha-textarea").then(() => {
       syncComposerField();
       bindHaTree(form);
       resizeComposer();
@@ -1072,7 +1090,7 @@ export async function mountAiWorkspace(root, options = {}) {
       btn.label = overlay && !btn.classList.contains("chat-nav-toggle") ? t("close") : label;
     });
     const rail = root.querySelector(".nav-toolbar .nav-toggle ha-icon");
-    if (rail) rail.setAttribute("icon", overlay ? "mdi:close" : "mdi:dock-left");
+    if (rail) rail.setAttribute("icon", overlay ? "mdi:close" : collapsed ? "mdi:dock-left" : "mdi:chevron-double-left");
   }
 
   function setNavOpen(open) {
@@ -1211,6 +1229,7 @@ export async function mountAiWorkspace(root, options = {}) {
     syncComposerField();
     if (!messageEl) return;
     const holdTop = chatEl.scrollTop;
+    syncFieldLines();
     if (messageEl.localName === "textarea") {
       const minH = 36;
       const maxH = 160;
@@ -1226,13 +1245,48 @@ export async function mountAiWorkspace(root, options = {}) {
     syncSendButton();
     setComposerDisabled(".attach", pending.length >= MAX_ATTACH);
     const prompt = streaming ? t("placeholder_next") : t("placeholder");
-    if (messageEl.localName === "ha-input") {
+    if (messageEl.localName === "ha-textarea") {
       if ("placeholder" in messageEl) messageEl.placeholder = prompt;
     } else {
       if ("placeholder" in messageEl) messageEl.placeholder = prompt;
       messageEl.setAttribute("placeholder", prompt);
     }
     chatEl.scrollTop = holdTop;
+  }
+
+  // The prompt is one row (text, then the buttons) while the text fits beside the buttons;
+  // once it needs more lines the text gets the full width and the buttons sit below it, on
+  // the right. Measured from the text itself, not the current layout, so the box does not
+  // flip back and forth at the edge.
+  let measureCanvas = null;
+  function syncFieldLines() {
+    const ha = messageEl.localName === "ha-textarea";
+    const field = messageEl.closest?.(ha ? ".composer-field" : ".composer-row");
+    const actions = field?.querySelector(ha ? ".composer-field-actions" : ".composer-actions");
+    const inner = ha
+      ? messageEl.shadowRoot?.querySelector("wa-textarea")?.shadowRoot?.querySelector("textarea")
+      : messageEl;
+    if (!field || !actions || !inner || !field.clientWidth) return;
+    // The inner textarea is current during the input event; ha-textarea's value catches up later.
+    const value = String(inner.value ?? messageEl.value ?? "");
+    let multi = value.includes("\n");
+    if (!multi && value) {
+      const style = getComputedStyle(inner);
+      measureCanvas ||= document.createElement("canvas");
+      const ctx = measureCanvas.getContext("2d");
+      ctx.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+      const textWidth = ctx.measureText(value).width;
+      const edges = (s, a, b) => parseFloat(s[a]) + parseFloat(s[b]);
+      const padX = edges(style, "paddingLeft", "paddingRight") + edges(style, "borderLeftWidth", "borderRightWidth");
+      // Everything around the text inside the field (padding, borders, ha-textarea's own margins).
+      const chrome = messageEl.getBoundingClientRect().width - (inner.getBoundingClientRect().width - padX);
+      const box = getComputedStyle(field);
+      const gap = parseFloat(box.columnGap) || 0;
+      const content = field.clientWidth - edges(box, "paddingLeft", "paddingRight");
+      const room = content - actions.getBoundingClientRect().width - gap - chrome;
+      multi = textWidth + 8 > room;
+    }
+    field.classList.toggle("multi", multi);
   }
 
   function holdChatScroll(fn) {
@@ -1658,6 +1712,58 @@ export async function mountAiWorkspace(root, options = {}) {
     bannerEl.textContent = msg;
     bannerEl.hidden = !msg;
   }
+
+  // Hints that do not mean something is broken (an outdated runtime) sit behind a
+  // toolbar icon instead of the error banner. The compact overlay has no toolbar.
+  const noticePop = root.querySelector(".notice-pop");
+  const noticeButtons = () => [...root.querySelectorAll(".notice-open")];
+  let hintText = "";
+
+  function closeHint() {
+    if (!noticePop || noticePop.hidden) return;
+    noticePop.hidden = true;
+    noticeButtons().forEach((btn) => btn.setAttribute("aria-expanded", "false"));
+  }
+
+  function setHint(text) {
+    hintText = String(text || "");
+    if (noticePop) noticePop.textContent = hintText;
+    noticeButtons().forEach((btn) => {
+      btn.hidden = !hintText;
+    });
+    if (!hintText) closeHint();
+  }
+
+  function openHint(btn) {
+    if (!noticePop || !hintText) return;
+    if (!noticePop.hidden) {
+      closeHint();
+      return;
+    }
+    const box = btn.getBoundingClientRect();
+    // Hidden elements have no offsetParent; the pop is positioned against .wrap.
+    const host = (noticePop.parentElement || root.host || document.body).getBoundingClientRect();
+    const width = Math.min(320, host.width - 16);
+    const left = Math.max(8, Math.min(box.left - host.left, host.width - width - 8));
+    noticePop.style.width = `${width}px`;
+    noticePop.style.left = `${left}px`;
+    noticePop.style.top = `${box.bottom - host.top + 4}px`;
+    noticePop.hidden = false;
+    btn.setAttribute("aria-expanded", "true");
+  }
+
+  noticeButtons().forEach((btn) => {
+    btn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openHint(btn);
+    });
+  });
+  root.addEventListener("click", (event) => {
+    if (noticePop && !noticePop.hidden && !event.composedPath().includes(noticePop)) closeHint();
+  });
+  root.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeHint();
+  });
 
   function showNotice(text) {
     if (!text) return;
@@ -2627,6 +2733,33 @@ export async function mountAiWorkspace(root, options = {}) {
     followBottom();
   }
 
+  // The open chat was deleted (another device or tab). Keep its messages on screen, say so,
+  // and make the next message start a new chat.
+  function chatGone(restore = null) {
+    if (!sessionId) return;
+    watchGen += 1;
+    sessionId = "";
+    freshChat = true;
+    goToSession("", true);
+    selectSessionRow("");
+    titleEl.textContent = t("new_chat");
+    logEl.querySelector(".chat-gone")?.remove();
+    const note = uiCreate("ha-alert", "p");
+    note.classList.add("chat-gone");
+    if (note.localName === "ha-alert") note.setAttribute("alert-type", "info");
+    const restored = Boolean(restore?.text || restore?.pending?.length);
+    note.textContent = t(restored ? "chat_deleted_resend" : "chat_deleted");
+    logEl.appendChild(note);
+    if (restored && !String(messageEl.value || "").trim() && !pending.length) {
+      messageEl.value = restore.text || "";
+      pending = restore.pending || [];
+      renderThumbs();
+    }
+    resizeComposer();
+    stickToBottom();
+    if (!compact) loadSessions();
+  }
+
   function showEmpty() {
     setWelcome(true);
     turnHasHistory = false;
@@ -2774,6 +2907,7 @@ export async function mountAiWorkspace(root, options = {}) {
     const chosen = items.find((item) => item.id === selectedAgent()) || ready[0] || items[0];
     if (chosen?.id) defaultProvider = chosen.id;
     if (chosen && !chosen.available) {
+      setHint("");
       clearMicHelp();
       bannerEl.hidden = false;
       bannerEl.textContent = chosen.reason || t("configure_provider");
@@ -2790,8 +2924,14 @@ export async function mountAiWorkspace(root, options = {}) {
         noticeParams.have = t("outdated_runtime_unknown");
       }
       const noticeText = chosen.notice_key ? t(chosen.notice_key, noticeParams) : chosen.notice;
-      setBanner(noticeText, { alertType: "warning" });
+      if (compact) {
+        setBanner(noticeText, { alertType: "warning" });
+      } else {
+        setHint(noticeText);
+        if (bannerEl.getAttribute("alert-type") === "warning" && !bannerEl.classList.contains("hold")) setBanner("");
+      }
     } else if (bannerEl && !bannerEl.classList.contains("hold") && !bannerEl.classList.contains("mic-help")) {
+      setHint("");
       providerRetry = 0;
       bannerEl.hidden = true;
       bannerEl.textContent = "";
@@ -3530,6 +3670,10 @@ export async function mountAiWorkspace(root, options = {}) {
       try {
         const pendingResponse = await apiFetch(`${API}/sessions/${id}`);
         if (gen !== watchGen || sessionId !== id || liveStream) return false;
+        if (pendingResponse?.status === 404) {
+          chatGone();
+          return false;
+        }
         if (!pendingResponse?.ok) return false;
         session = await pendingResponse.json();
       } catch (error) {
@@ -4626,6 +4770,7 @@ export async function mountAiWorkspace(root, options = {}) {
     watchGen += 1;
     clearKeyboardLock();
     resetOuterScroll();
+    const sentPending = pending.slice();
     if (!keepComposer) {
       pending = [];
       renderThumbs();
@@ -4635,7 +4780,7 @@ export async function mountAiWorkspace(root, options = {}) {
     syncSendButton();
     setWelcome(false);
     clipToBottom();
-    addBubble("user", text, [
+    const userBubble = addBubble("user", text, [
       ...images.map((img) => ({ type: "image", name: img.name, src: img.src })),
       ...files.map((file) => ({ type: "file", name: file.name })),
     ]);
@@ -4681,11 +4826,9 @@ export async function mountAiWorkspace(root, options = {}) {
       );
       if (token !== streamToken) return;
       if (response?.status === 404) {
-        const node = assistant.querySelector(".text");
-        setMarkdown(node, await errorText(response));
-        node.hidden = !node.content;
-        assistant.classList.add("error", "has-text");
-        setActivity(assistant, "");
+        // Deleted, most likely on another device. Hand the message back for a new chat.
+        for (const bubble of [userBubble, assistant]) (bubble?.closest(".message-container") || bubble)?.remove();
+        chatGone({ text, pending: sentPending });
         return;
       }
       if (!response?.ok || !response.body) {
@@ -4920,7 +5063,7 @@ export async function mountAiWorkspace(root, options = {}) {
   function fromComposerField(event) {
     for (const node of event.composedPath?.() || [event.target]) {
       if (node?.id === "ai-message" || node?.id === "message-input") return true;
-      if (node?.localName === "ha-input") return true;
+      if (node?.localName === "ha-textarea") return true;
     }
     return false;
   }
@@ -4935,14 +5078,15 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!nearBottom()) releaseFollow();
     holdChatScroll(resizeComposer);
   });
+  // Capture: ha-textarea stops key events from bubbling past itself.
   form.addEventListener("keydown", (event) => {
     if (!fromComposerField(event)) return;
-    if (event.key !== "Enter" || event.shiftKey) return;
+    if (event.key !== "Enter" || event.shiftKey || event.isComposing) return;
     // Phones insert a line break. The send button is the only way to submit.
     if (window.matchMedia("(pointer: coarse)").matches) return;
     event.preventDefault();
     form.requestSubmit();
-  });
+  }, { capture: true });
   form.addEventListener("click", (event) => {
     const attach = event.target.closest?.(".attach");
     if (attach?.closest?.(".composer")) {
@@ -6100,6 +6244,9 @@ export async function mountAiWorkspace(root, options = {}) {
     loadDictate();
     if (sessionId && chatVisible()) watchPending(sessionId);
     if (bannerEl && !bannerEl.hidden) loadProviders();
+  });
+  listen(window, "resize", () => {
+    if (messageEl) resizeComposer();
   });
   listen(window, "pageshow", () => {
     if (sessionId && chatVisible()) watchPending(sessionId);

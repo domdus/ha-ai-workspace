@@ -81,7 +81,7 @@
             },
             "data_description": {
               "house_map": "預設關閉。一個關於自動化、實體與分區如何關聯的本機索引，一次查詢就能回答「哪些東西用到廚房燈？」這類問題。每則訊息會稍微增加一點內容，所以只有經常詢問東西如何關聯時才開啟。即時狀態仍來自 Home Assistant。",
-              "shorten_mcp_results": "預設開啟。來自 Home Assistant 的超長回覆（全屋清單、大型搜尋）會在送給 AI 之前先摘要。節省 token，讓回覆保持快速。關閉則傳送全文。",
+              "shorten_mcp_results": "預設開啟。Home Assistant 的超長回覆在傳送給 AI 前會被縮小：大型實體清單會被壓縮，回覆中的超長文字（例如巨大的通知）會被縮短，仍超過 100,000 個字元的部分會被截斷。節省權杖並保持回覆迅速。關閉則傳送完整文字。",
               "change_history": "預設開啟。記錄助手所做的每一項設定變更，方便你查看改了什麼，並請它還原到先前的版本。關閉後不再新增紀錄；助手仍可進行變更。",
               "change_history_ttl_days": "Rollback 與「讓助理復原」保持可用的天數。到期後紀錄仍在日誌中；還原舊快照可能覆蓋之後的變更。預設 7。1 大約是一天。"
             }
@@ -194,7 +194,7 @@
             },
             "data_description": {
               "house_map": "預設關閉。一個關於自動化、實體與分區如何關聯的本機索引，一次查詢就能回答「哪些東西用到廚房燈？」這類問題。每則訊息會稍微增加一點內容，所以只有經常詢問東西如何關聯時才開啟。即時狀態仍來自 Home Assistant。",
-              "shorten_mcp_results": "預設開啟。來自 Home Assistant 的超長回覆（全屋清單、大型搜尋）會在送給 AI 之前先摘要。節省 token，讓回覆保持快速。關閉則傳送全文。",
+              "shorten_mcp_results": "預設開啟。Home Assistant 的超長回覆在傳送給 AI 前會被縮小：大型實體清單會被壓縮，回覆中的超長文字（例如巨大的通知）會被縮短，仍超過 100,000 個字元的部分會被截斷。節省權杖並保持回覆迅速。關閉則傳送完整文字。",
               "change_history": "預設開啟。記錄助手所做的每一項設定變更，方便你查看改了什麼，並請它還原到先前的版本。關閉後不再新增紀錄；助手仍可進行變更。",
               "change_history_ttl_days": "Rollback 與「讓助理復原」保持可用的天數。到期後紀錄仍在日誌中；還原舊快照可能覆蓋之後的變更。預設 7。1 大約是一天。"
             }
@@ -286,7 +286,9 @@
         "required": "此欄位為必填。",
         "invalid_auth": "供應商拒絕了此 API 金鑰。",
         "cannot_connect": "無法連線供應商。請檢查 URL 和網路。",
-        "model_not_installed": "此模型未在 Ollama 中安裝。已安裝：{installed}"
+        "model_not_installed": "此模型未在 Ollama 中安裝。已安裝：{installed}",
+        "pick_model": "伺服器現已列出其模型。請從清單中選擇一個。",
+        "model_rejected": "伺服器不允許此金鑰使用該模型：{server_message}"
       },
       "step": {
         "provider": {
@@ -321,6 +323,15 @@
             "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。"
           },
           "sections": {
+            "model_list": {
+              "name": "模型清單",
+              "data": {
+                "models": "模型"
+              },
+              "data_description": {
+                "models": "選填。為此處及聊天中的模型選擇指定你自己的模型，而非供應商的完整清單。以逗號、分號或換行分隔名稱，例如 gpt-5.5, grok-4.7。留空則顯示供應商的清單。"
+              }
+            },
             "advanced": {
               "name": "進階",
               "data": {
@@ -364,6 +375,15 @@
             "tts_speed": "此聲音的語速。1× 為正常。適用於 AI Workspace 和 Assist。"
           },
           "sections": {
+            "model_list": {
+              "name": "模型清單",
+              "data": {
+                "models": "模型"
+              },
+              "data_description": {
+                "models": "選填。為此處及聊天中的模型選擇指定你自己的模型，而非供應商的完整清單。以逗號、分號或換行分隔名稱，例如 gpt-5.5, grok-4.7。留空則顯示供應商的清單。"
+              }
+            },
             "advanced": {
               "name": "進階",
               "data": {
@@ -395,6 +415,15 @@
             "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。"
           },
           "sections": {
+            "model_list": {
+              "name": "模型清單",
+              "data": {
+                "models": "模型"
+              },
+              "data_description": {
+                "models": "選填。為此處及聊天中的模型選擇指定你自己的模型，而非供應商的完整清單。以逗號、分號或換行分隔名稱，例如 gpt-5.5, grok-4.7。留空則顯示供應商的清單。"
+              }
+            },
             "advanced": {
               "name": "進階",
               "data": {
@@ -428,6 +457,15 @@
             "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。"
           },
           "sections": {
+            "model_list": {
+              "name": "模型清單",
+              "data": {
+                "models": "模型"
+              },
+              "data_description": {
+                "models": "選填，適用於不提供模型清單的伺服器。用於填入此處及聊天中的模型選擇。貼上以逗號、分號或換行分隔的名稱，例如 gpt-5.5, grok-4.7。貼上的內容會取代清單；清空後重新使用伺服器的清單。"
+              }
+            },
             "advanced": {
               "name": "進階",
               "data": {
@@ -471,6 +509,15 @@
             "tts_speed": "此聲音的語速。1× 為正常。適用於 AI Workspace 和 Assist。"
           },
           "sections": {
+            "model_list": {
+              "name": "模型清單",
+              "data": {
+                "models": "模型"
+              },
+              "data_description": {
+                "models": "選填，適用於不提供模型清單的伺服器。用於填入此處及聊天中的模型選擇。貼上以逗號、分號或換行分隔的名稱，例如 gpt-5.5, grok-4.7。貼上的內容會取代清單；清空後重新使用伺服器的清單。"
+              }
+            },
             "advanced": {
               "name": "進階",
               "data": {

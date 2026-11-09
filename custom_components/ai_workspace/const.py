@@ -1,6 +1,7 @@
 import json
 import re
 from pathlib import Path
+from typing import Any
 
 DOMAIN = "ai_workspace"
 PANEL_URL = "ai-workspace"
@@ -247,6 +248,8 @@ CONF_MCP_TOKEN = "mcp_token"
 CONF_MCP_EXTRA = "mcp_extra"
 CONF_CURSOR_API_KEY = "cursor_api_key"
 CONF_MODEL = "model"
+# Model ids typed or pasted for servers that do not list their own (OpenAI-compatible, Azure).
+CONF_MODELS = "models"
 CONF_ENABLE_OVERLAY = "enable_overlay"
 CONF_ENABLE_SIDEBAR = "enable_sidebar"
 CONF_ENABLE_DICTATE = "enable_dictate"
@@ -1214,3 +1217,39 @@ COMPOSE_RUNTIME_URLS = (
     "http://cursor-sdk:8090",
 )
 HOST_RUNTIME_URL = "http://127.0.0.1:8090"
+
+
+_MODEL_LIST_HEADERS = {"id", "ids", "model", "models", "name", "model id", "model_id"}
+
+
+def parse_model_list(value: Any) -> list[str]:
+    """Model ids from a pasted list: commas, semicolons, tabs or lines, or JSON (a list or a /models answer)."""
+    if isinstance(value, (list, tuple)):
+        rows: list = list(value)
+    else:
+        text = str(value or "").strip()
+        if not text:
+            return []
+        rows = []
+        if text[0] in "[{":
+            try:
+                body = json.loads(text)
+            except ValueError:
+                body = None
+            if isinstance(body, dict):
+                body = body.get("data") or body.get("models") or body.get("model_ids") or []
+            if isinstance(body, list):
+                rows = body
+        if not rows:
+            rows = re.split(r"[,;\t\r\n]+", text)
+    out: list[str] = []
+    for row in rows:
+        if isinstance(row, dict):
+            row = row.get("id") or row.get("model") or row.get("name") or ""
+        name = str(row or "").strip().lstrip("-*• ").strip().strip("\"'`[]{}").strip()
+        if name.startswith("models/"):
+            name = name[len("models/") :]
+        if not name or name.lower() in _MODEL_LIST_HEADERS or name in out:
+            continue
+        out.append(name)
+    return out[:500]

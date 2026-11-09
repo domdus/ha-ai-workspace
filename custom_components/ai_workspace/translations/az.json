@@ -81,7 +81,7 @@
             },
             "data_description": {
               "house_map": "Defolt olaraq sönülüdür. Avtomatlaşdırmaların, obyektlərin və ərazilərin necə bağlı olduğuna dair yerli indeks: bir axtarış “mətbəx işığını nə istifadə edir?” kimi suallara cavab verir. Hər mesaja bir az əlavə edir, ona görə yalnız tez-tez şeylərin necə bağlandığını soruşursunuzsa açın. Canlı vəziyyətlər yenə Home Assistant-dan gəlir.",
-              "shorten_mcp_results": "Defolt olaraq açıqdır. Home Assistant-dan çox uzun cavablar (bütün ev siyahıları, böyük axtarışlar) AI-yə getməzdən əvvəl xülasə edilir. Tokenlərə qənaət edir və cavabları sürətli saxlayır. Sönülü tam mətni göndərir.",
+              "shorten_mcp_results": "Defolt olaraq açıqdır. Home Assistant-ın çox uzun cavabları AI-yə getməzdən əvvəl kiçildilir: böyük obyekt siyahıları yığcamlaşır, cavabdakı çox uzun mətnlər (məsələn, nəhəng bildiriş) qısaldılır, hələ də 100 000 simvoldan uzun olan hissə kəsilir. Tokenlərə qənaət edir və cavabları sürətli saxlayır. Söndürüldükdə tam mətn göndərilir.",
               "change_history": "Defolt olaraq açıqdır. Köməkçinin etdiyi hər konfiqurasiya dəyişikliyini qeyd edir ki, nəyin dəyişdiyini görə və ondan əvvəlki versiyanı bərpa etməsini istəyə biləsiniz. Sönülü yeni qeydləri dayandırır; köməkçi yenə dəyişiklik edə bilər.",
               "change_history_ttl_days": "Rollback və Agentlə geri qaytarın əlçatan qaldığı günlər. Sonra sətir jurnaldа qalır; köhnə anlıq görüntünü bərpa etmək sonrakı işi üstələyə bilər. Defolt 7. 1 təxminən bir gündür."
             }
@@ -194,7 +194,7 @@
             },
             "data_description": {
               "house_map": "Defolt olaraq sönülüdür. Avtomatlaşdırmaların, obyektlərin və ərazilərin necə bağlı olduğuna dair yerli indeks: bir axtarış “mətbəx işığını nə istifadə edir?” kimi suallara cavab verir. Hər mesaja bir az əlavə edir, ona görə yalnız tez-tez şeylərin necə bağlandığını soruşursunuzsa açın. Canlı vəziyyətlər yenə Home Assistant-dan gəlir.",
-              "shorten_mcp_results": "Defolt olaraq açıqdır. Home Assistant-dan çox uzun cavablar (bütün ev siyahıları, böyük axtarışlar) AI-yə getməzdən əvvəl xülasə edilir. Tokenlərə qənaət edir və cavabları sürətli saxlayır. Sönülü tam mətni göndərir.",
+              "shorten_mcp_results": "Defolt olaraq açıqdır. Home Assistant-ın çox uzun cavabları AI-yə getməzdən əvvəl kiçildilir: böyük obyekt siyahıları yığcamlaşır, cavabdakı çox uzun mətnlər (məsələn, nəhəng bildiriş) qısaldılır, hələ də 100 000 simvoldan uzun olan hissə kəsilir. Tokenlərə qənaət edir və cavabları sürətli saxlayır. Söndürüldükdə tam mətn göndərilir.",
               "change_history": "Defolt olaraq açıqdır. Köməkçinin etdiyi hər konfiqurasiya dəyişikliyini qeyd edir ki, nəyin dəyişdiyini görə və ondan əvvəlki versiyanı bərpa etməsini istəyə biləsiniz. Sönülü yeni qeydləri dayandırır; köməkçi yenə dəyişiklik edə bilər.",
               "change_history_ttl_days": "Rollback və Agentlə geri qaytarın əlçatan qaldığı günlər. Sonra sətir jurnaldа qalır; köhnə anlıq görüntünü bərpa etmək sonrakı işi üstələyə bilər. Defolt 7. 1 təxminən bir gündür."
             }
@@ -286,7 +286,9 @@
         "required": "Bu sahə tələb olunur.",
         "invalid_auth": "Provayder bu API açarını rədd etdi.",
         "cannot_connect": "Provayderə çatmaq mümkün olmadı. URL-i və şəbəkəni yoxlayın.",
-        "model_not_installed": "Bu model Ollama-da quraşdırılmayıb. Quraşdırılanlar: {installed}"
+        "model_not_installed": "Bu model Ollama-da quraşdırılmayıb. Quraşdırılanlar: {installed}",
+        "pick_model": "Server indi modellərini göstərir. Siyahıdan birini seçin.",
+        "model_rejected": "Server bu açar üçün bu modelə icazə vermir: {server_message}"
       },
       "step": {
         "provider": {
@@ -321,6 +323,15 @@
             "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir."
           },
           "sections": {
+            "model_list": {
+              "name": "Model siyahısı",
+              "data": {
+                "models": "Modellər"
+              },
+              "data_description": {
+                "models": "İstəyə bağlı. Provayderin tam siyahısı əvəzinə burada və söhbətdə seçim üçün öz model seçiminiz. Adlar vergül, nöqtəli vergül və ya yeni sətirlə ayrılır, məs. gpt-5.5, grok-4.7. Boş olduqda provayderin siyahısı göstərilir."
+              }
+            },
             "advanced": {
               "name": "Ətraflı",
               "data": {
@@ -364,6 +375,15 @@
             "tts_speed": "Bu səsin danışma sürəti. 1× normaldır. AI Workspace və Assist üçün keçərlidir."
           },
           "sections": {
+            "model_list": {
+              "name": "Model siyahısı",
+              "data": {
+                "models": "Modellər"
+              },
+              "data_description": {
+                "models": "İstəyə bağlı. Provayderin tam siyahısı əvəzinə burada və söhbətdə seçim üçün öz model seçiminiz. Adlar vergül, nöqtəli vergül və ya yeni sətirlə ayrılır, məs. gpt-5.5, grok-4.7. Boş olduqda provayderin siyahısı göstərilir."
+              }
+            },
             "advanced": {
               "name": "Ətraflı",
               "data": {
@@ -395,6 +415,15 @@
             "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir."
           },
           "sections": {
+            "model_list": {
+              "name": "Model siyahısı",
+              "data": {
+                "models": "Modellər"
+              },
+              "data_description": {
+                "models": "İstəyə bağlı. Provayderin tam siyahısı əvəzinə burada və söhbətdə seçim üçün öz model seçiminiz. Adlar vergül, nöqtəli vergül və ya yeni sətirlə ayrılır, məs. gpt-5.5, grok-4.7. Boş olduqda provayderin siyahısı göstərilir."
+              }
+            },
             "advanced": {
               "name": "Ətraflı",
               "data": {
@@ -428,6 +457,15 @@
             "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir."
           },
           "sections": {
+            "model_list": {
+              "name": "Model siyahısı",
+              "data": {
+                "models": "Modellər"
+              },
+              "data_description": {
+                "models": "İstəyə bağlı, modellərini siyahılamayan serverlər üçün. Buradakı və söhbətdəki model seçimini doldurur. Adları vergül, nöqtəli vergül və ya yeni sətirlə ayıraraq yapışdırın, məs. gpt-5.5, grok-4.7. Yapışdırdığınız siyahını əvəz edir; serverin öz siyahısına qayıtmaq üçün boşaldın."
+              }
+            },
             "advanced": {
               "name": "Ətraflı",
               "data": {
@@ -471,6 +509,15 @@
             "tts_speed": "Bu səsin danışma sürəti. 1× normaldır. AI Workspace və Assist üçün keçərlidir."
           },
           "sections": {
+            "model_list": {
+              "name": "Model siyahısı",
+              "data": {
+                "models": "Modellər"
+              },
+              "data_description": {
+                "models": "İstəyə bağlı, modellərini siyahılamayan serverlər üçün. Buradakı və söhbətdəki model seçimini doldurur. Adları vergül, nöqtəli vergül və ya yeni sətirlə ayıraraq yapışdırın, məs. gpt-5.5, grok-4.7. Yapışdırdığınız siyahını əvəz edir; serverin öz siyahısına qayıtmaq üçün boşaldın."
+              }
+            },
             "advanced": {
               "name": "Ətraflı",
               "data": {

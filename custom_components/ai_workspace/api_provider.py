@@ -463,6 +463,58 @@ async def async_check_api_key(
     return None
 
 
+# Gateways answer a model the key may not use with 400, 403 or 404 and say so in the body.
+_MODEL_WORDS = re.compile(r"model|deployment|not (?:allowed|permitted|enabled)|access", re.IGNORECASE)
+
+
+def _server_message(body: Any, raw: str) -> str:
+    error = body.get("error") if isinstance(body, dict) else None
+    if isinstance(error, dict):
+        text = error.get("message") or error.get("code") or ""
+    elif isinstance(error, str):
+        text = error
+    elif isinstance(body, dict):
+        text = body.get("message") or body.get("detail") or ""
+    else:
+        text = ""
+    text = str(text or raw or "").strip()
+    return re.sub(r"\s+", " ", text)[:300]
+
+
+async def async_check_model(
+    hass: HomeAssistant, provider: str, api_key: str, api_base: str, model: str
+) -> str | None:
+    """None when the server takes one tiny chat turn with this model, else the server's own words.
+
+    Only a rejection that names the model counts. Anything else (network, odd limits) is left to the
+    first real chat, so a server with unusual rules never blocks saving.
+    """
+    base = (str(api_base or "").strip() or default_api_base(provider)).rstrip("/")
+    model = str(model or "").strip()
+    if not base or not model:
+        return None
+    key = str(api_key or "").strip()
+    headers = {"Authorization": f"Bearer {key}"} if key else {}
+    payload = {"model": model, "messages": [{"role": "user", "content": "Hi"}], "max_tokens": 16}
+    try:
+        async with async_get_clientsession(hass).post(
+            f"{base}/chat/completions", json=payload, headers=headers, timeout=ClientTimeout(total=20)
+        ) as resp:
+            if resp.status < 400 or resp.status not in {400, 401, 403, 404, 422}:
+                return None
+            raw = await resp.text()
+    except (ClientError, TimeoutError, OSError):
+        return None
+    try:
+        body = json.loads(raw)
+    except ValueError:
+        body = None
+    message = _server_message(body, raw)
+    if not message or not _MODEL_WORDS.search(message):
+        return None
+    return message
+
+
 def _tool_label(name: str) -> str:
     raw = str(name or "tool").strip() or "tool"
     if raw.lower() == "mcp":

@@ -1,5 +1,59 @@
 # Changelog
 
+## 1.5.2
+
+Everything from 1.5.2b1 to 1.5.2b3. Nothing needs to be changed in your setup.
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.5.2`) together with this release.** The runtime heals a stuck Cursor bridge and shortens long answers differently. The chat shows a hint when the runtime is older than 1.5.2.
+
+**Runtime**
+- When the Cursor bridge stops connecting to MCP servers, the runtime heals itself: a new agent that does not reach its MCP servers within 20 seconds gets a fresh bridge, and the message is sent once more ("Reconnecting tools..."). Before, every chat said the connection to Home Assistant was broken until the App was restarted. At most one restart a minute, and never while another chat is still running.
+- After a reinstall, pairing restarts the App only once.
+- The App's configuration no longer shows "Shorten MCP results" and "Change History". They were only fallbacks; the integration sends both settings with every chat. The integration removes the old values from the App's options by itself.
+
+**Long Home Assistant answers**
+- A JSON answer that is too long first shortens its longest texts, each marked as incomplete and named by its source (such as a notification or entity id), instead of cutting off the end of the whole answer. One huge notification no longer pushes repairs, updates and everything after it out of HA-MCP's system overview, and the agent gets valid JSON and can tell you which integration or device makes answers so large.
+- When an answer still has to be cut at the end, the note tells the agent not to repeat the same call, but to ask for less or use a more specific tool.
+
+**Agents and models**
+- Every agent has a model list you can fill yourself: paste names separated by commas, semicolons or new lines. It replaces the provider's list in the agent form and in the chat's model picker, and sits in a folded "Model list" section below the model field.
+- OpenAI-compatible and OpenRouter agents: saving checks the model with one tiny request and shows the gateway's own message when the key may not use that model. When the model was left at the default and the server lists its models, the form comes back with that list in the model dropdown.
+
+**Chat**
+- Hints that do not mean something is broken (such as an outdated runtime) moved from the banner to an orange icon at the start of the sidebar toolbar. The banner is for errors again.
+- A chat deleted on another device says so when you come back to it or send in it, keeps its messages on screen, puts an unsent message back in the prompt, and the next message starts a new chat.
+- The prompt stays one line while the text fits; longer prompts use the full width with the buttons below on the right. In HA Components it is HA's own multi-line field (up to 8 lines; Enter sends, Shift+Enter adds a line), and pasted images have their remove button again.
+- The chat search uses the prompt's font size, and collapsing the sidebar has its own icon.
+
+**Settings**
+- Emptying Memory notes in Configure → System prompt removes all notes. Before, the old notes came back on save.
+- The description of "Shorten long Home Assistant answers" says what it does, in every language.
+
+## 1.5.2b3
+
+- Runtime App: the "Shorten MCP results" and "Change History" fields are gone from the App's configuration. They were only fallbacks: the integration sends both settings with every chat, so they never decided anything and only confused. Set both in AI Workspace → Configure. The Docker runtime ignores the matching environment variables for the same reason. The integration removes the old values from the App's options by itself.
+
+## 1.5.2b2
+
+- Shorten long Home Assistant answers: a JSON answer that is too long now first shortens its longest texts, each marked as incomplete, instead of cutting off the end of the whole answer. One huge notification (a vacuum integration's was 139,000 characters) no longer pushes repairs, updates and everything after it out of HA-MCP's system overview, and the agent gets valid JSON. On a real home the overview went from 306,000 to 36,000 characters with every section kept. The same applies to API agents.
+- A shortened value says where it came from (for example a notification's id and title, or an entity id), so the agent can tell you which integration or device makes answers so large.
+- When an answer still has to be cut at the end, the note tells the agent not to repeat the same call, but to ask for less or use a more specific tool. Before, agents called the same overview again and reported it as failed.
+- Configure: the description of "Shorten long Home Assistant answers" now says what it does: compact entity lists, shorten very long texts, cut at 100,000 characters.
+
+## 1.5.2b1
+
+- Runtime: when the Cursor bridge stops connecting to MCP servers, the runtime heals itself. A new agent with MCP servers connects to them as soon as its run starts; when nothing reaches the runtime's MCP proxy within 20 seconds, the run is cancelled, a fresh bridge starts, and the message is sent once more ("Reconnecting tools..."). Before, every chat answered that the connection to Home Assistant was broken until the App was restarted. A new agent that finishes sooner without reaching its MCP servers gets a fresh bridge for the next message. At most one restart a minute, and never while another chat is still running.
+- Runtime App: after a reinstall, pairing restarts the App once. A reload of the integration during pairing (for example when the HA-MCP check saves a new address) no longer pairs a second time.
+- Agents: every agent has a model list you can fill yourself. Paste names separated by commas, semicolons or new lines (or a JSON list, or a copied /models answer); it replaces the provider's list in the agent form and in the chat's model picker. It sits in a folded "Model list" section right below the model field.
+- OpenAI-compatible and OpenRouter agents: saving checks the model with one tiny request. When the gateway does not allow the model for the key, the form shows the gateway's own message. When the model was left at the default and the server lists its models, the form comes back with that list in the model dropdown.
+- Chat: hints that do not mean something is broken (such as an outdated Runtime) moved from the banner above the chat to an orange icon at the start of the sidebar toolbar; click it to read the hint. The banner is for errors again. The compact Assist overlay keeps the banner.
+- Chat (Standard): a longer prompt uses the full width of the box, with the buttons below it on the right, instead of wrapping early beside the buttons. Short prompts stay one line.
+- Chat: the chat search uses the same font size as the prompt, and collapsing the sidebar has its own icon.
+- Chat: a chat deleted on another device no longer answers "Chat not found." to every new message. Coming back to the open chat, or sending in it, now says it was deleted, keeps its messages on screen, puts an unsent message back in the prompt, and the next message starts a new chat.
+- HA Components: the prompt is a multi-line text field (HA's own) that grows up to 8 lines. It stays one line with the buttons beside the text; once the text needs more room, the buttons move below it on the right. Enter sends, Shift+Enter adds a line.
+- HA Components: pasted or attached images have a remove button again (it was cut off), and the previews have rounded corners.
+- Configure → System prompt: emptying Memory notes now removes all notes. Before, the emptied field brought the old notes back on save.
+
 ## 1.5.1
 
 Everything from 1.5.1b1 to 1.5.1b4. A patch release with fixes; nothing needs to be changed in your setup.

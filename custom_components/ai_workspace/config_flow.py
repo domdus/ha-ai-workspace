@@ -340,13 +340,19 @@ def _prompt_schema(current: dict, notes_text: str = "") -> vol.Schema:
         {
             vol.Optional(CONF_SYSTEM_PROMPT, default=value): _PROMPT_SELECTOR,
             vol.Optional(CONF_NOTES, default=bool(current.get(CONF_NOTES, False))): cv.boolean,
-            vol.Optional(CONF_NOTES_TEXT, default=notes_text): _PROMPT_SELECTOR,
+            # Prefilled, not a default: HA leaves an emptied field out, and a default would put
+            # the old notes back.
+            vol.Optional(CONF_NOTES_TEXT, description={"suggested_value": notes_text}): _PROMPT_SELECTOR,
         }
     )
 
 
 def _flatten(user_input: dict) -> dict:
     out = dict(user_input)
+    prompt = out.get(SECTION_PROMPT)
+    if isinstance(prompt, dict) and CONF_NOTES_TEXT not in prompt:
+        # The notes field was emptied.
+        out[CONF_NOTES_TEXT] = ""
     for key in (SECTION_MCP, SECTION_CHAT, SECTION_VOICE, SECTION_COST, SECTION_HOUSE, SECTION_PROMPT):
         nested = out.pop(key, None)
         if isinstance(nested, dict):

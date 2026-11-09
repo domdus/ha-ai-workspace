@@ -172,6 +172,45 @@
   display: none;
 }
 
+.header-notice {
+  display: none;
+}
+
+.notice-open {
+  --ha-icon-button-size: 40px;
+  color: var(--warning-color, #ff9800) !important;
+}
+
+.notice-open[hidden] {
+  display: none !important;
+}
+
+.wrap.narrow .header-notice:not([hidden]) {
+  display: inline-flex;
+}
+
+.wrap.has-app-bar .header-notice {
+  display: none !important;
+}
+
+.notice-pop {
+  position: absolute;
+  z-index: 20;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border-left: 4px solid var(--warning-color, #ff9800);
+  background: var(--card-background-color, #fff);
+  color: var(--primary-text-color);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.notice-pop[hidden] {
+  display: none;
+}
+
 .wrap.nav-collapsed .chats-label,
 .wrap.nav-collapsed .sessions,
 .wrap.nav-collapsed ha-button.new-chat,
@@ -221,7 +260,7 @@
   background: transparent;
   color: var(--sidebar-text-color, var(--primary-text-color));
   font: inherit;
-  font-size: 16px;
+  font-size: var(--ha-font-size-m, 14px);
 }
 
 .nav-search-input:focus {
@@ -1168,6 +1207,20 @@ h1 {
   flex: 0 0 auto;
 }
 
+/* Longer prompts: the text takes the full width, the buttons sit below it on the right. */
+.composer-row.multi {
+  flex-wrap: wrap;
+  row-gap: 0;
+}
+
+.composer-row.multi textarea.message {
+  flex-basis: 100%;
+}
+
+.composer-row.multi .composer-actions {
+  margin-left: auto;
+}
+
 .agent-picker {
   position: relative;
   align-self: flex-start;
@@ -1644,6 +1697,14 @@ textarea:focus {
   .wrap:not(.compact) .header-history,
   .wrap:not(.compact) .header-usage {
     display: inline-flex;
+  }
+
+  .wrap:not(.compact) .header-notice:not([hidden]) {
+    display: inline-flex;
+  }
+
+  .wrap.has-app-bar .header-notice {
+    display: none !important;
   }
 
   .wrap.has-app-bar .chat-nav-toggle {

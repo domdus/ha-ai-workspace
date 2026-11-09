@@ -3,8 +3,11 @@
 Only a live entity listing (items with entity_id and state) is condensed: to a
 state-only list, or to an area map of ids when that is still too long. Guides,
 dashboards, automations and any other result reach the model exactly as sent,
-because it may need every field, or write the value back. A result past LIMIT
-keeps its beginning and says plainly that it is incomplete.
+because it may need every field, or write the value back. A JSON result past
+LIMIT first shortens its longest texts (one huge notification must
+not push every other section out), each marked as incomplete. Only when that
+is not enough does the result keep its beginning and say plainly that it is
+incomplete.
 """
 
 from __future__ import annotations
@@ -27,8 +30,19 @@ _AREA_NOTE = (
 )
 _CUT_NOTE = (
     "\n[Result cut: showing {shown} of {total} characters. It is incomplete, so do not "
-    "write it back. Ask for a narrower result.]"
+    "write it back. The same call with the same arguments returns the same cut result, so "
+    "do not repeat it: ask for less (fewer fields, one domain or area, a limit) or use a "
+    "more specific tool.]"
 )
+_CLIP_NOTE = (
+    " …[{left:,} more characters left out of {where}{source}: this text is incomplete, do not "
+    "write it back. This value alone made the answer this large.]"
+)
+# Ids worth naming when a value is shortened, so the agent can tell the user what is so large.
+_SOURCE_KEYS = ("entity_id", "notification_id", "device_id", "platform", "integration", "domain", "title")
+# Longest single text kept when a JSON result is too big; halved until the result fits.
+_CLIP_START = 20000
+_CLIP_FLOOR = 300
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +102,7 @@ def _shorten_value(result: Any) -> Any:
             return result if len(result) <= LIMIT else _cut(result)
         fitted = _fit(parsed)
         if fitted == parsed:
-            return result if len(result) <= LIMIT else _cut(result)
+            return result if len(result) <= LIMIT else _cut_text(result)
         return _cap(fitted)
     if len(_dump(result)) <= PASS:
         return result
@@ -195,11 +209,67 @@ def _cap(value: Any) -> Any:
     if isinstance(value, dict) and _is_envelope(value):
         out = {key: item for key, item in value.items() if key != "structuredContent"}
         out["content"] = [
-            {**block, "text": _cut(block["text"])} if isinstance(block, dict) and isinstance(block.get("text"), str) else block
+            {**block, "text": _cut_text(block["text"])} if isinstance(block, dict) and isinstance(block.get("text"), str) else block
             for block in value["content"]
         ]
         return out
+    clipped = _clip_strings(value)
+    if clipped is not None:
+        return clipped
     return {"content": [{"type": "text", "text": _cut(_dump(value))}]}
+
+
+def _cut_text(text: str) -> str:
+    """A JSON text keeps all of its keys when shortening its longest strings is enough."""
+    if len(text) <= LIMIT:
+        return text
+    parsed = _try_json(text.strip())
+    if isinstance(parsed, (dict, list)):
+        clipped = _clip_strings(parsed)
+        if clipped is not None:
+            return _dump(clipped)
+    return _cut(text)
+
+
+def _clip_strings(value: Any) -> Any:
+    """Shorten the longest strings until the whole value fits under LIMIT; None if it never does."""
+    cap = _CLIP_START
+    while cap >= _CLIP_FLOOR:
+        clipped = _clip_at(value, cap)
+        if len(_dump(clipped)) <= LIMIT:
+            return clipped
+        cap //= 2
+    return None
+
+
+def _clip_at(value: Any, cap: int, where: str = "", source: dict | None = None) -> Any:
+    if isinstance(value, str):
+        if len(value) <= cap:
+            return value
+        return value[:cap] + _CLIP_NOTE.format(
+            left=len(value) - cap, where=where or "the answer", source=_source_text(source or {}, where)
+        )
+    if isinstance(value, list):
+        return [_clip_at(item, cap, f"{where}[{index}]", source) for index, item in enumerate(value)]
+    if isinstance(value, dict):
+        # The nearest ids win: an entity inside a listing names itself, not the listing.
+        found = {
+            key: value[key]
+            for key in _SOURCE_KEYS
+            if isinstance(value.get(key), str) and 0 < len(value[key]) <= 120
+        }
+        here = {**(source or {}), **found}
+        return {
+            key: _clip_at(item, cap, f"{where}.{key}" if where else str(key), here)
+            for key, item in value.items()
+        }
+    return value
+
+
+def _source_text(source: dict, where: str) -> str:
+    field = where.rsplit(".", 1)[-1]
+    named = [f"{key} {source[key]}" for key in _SOURCE_KEYS if key in source and key != field][:3]
+    return f" ({', '.join(named)})" if named else ""
 
 
 def _cut(text: str) -> str:

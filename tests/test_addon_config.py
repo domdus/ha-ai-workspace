@@ -21,11 +21,11 @@ def test_optional_url_has_no_empty_default():
             assert CONFIG["options"][key], f"{key} defaults to an empty URL"
 
 
-def test_fallback_toggles_are_not_defaulted():
-    # The runtime defaults both to True, the same as the Docker image; the App must not override that.
+def test_integration_settings_are_not_app_options():
+    # The integration sends both with every chat; App fields for them only confused people.
     for key in ("shorten_mcp_results", "change_history"):
         assert key not in CONFIG["options"]
-        assert CONFIG["schema"][key] == "bool?"
+        assert key not in CONFIG["schema"]
 
 
 @pytest.mark.parametrize("path", TRANSLATIONS, ids=lambda p: p.name)

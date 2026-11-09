@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import time
 import hmac
 import json
 import logging
@@ -46,6 +47,20 @@ class McpProxy:
         self.secret = _load_secret(secret_path)
         self.upstreams: OrderedDict[str, dict[str, Any]] = OrderedDict()
         self.actors: OrderedDict[str, dict[str, str]] = OrderedDict()
+        # When each chat's agent last reached the proxy; a new agent with MCP must connect.
+        self.seen: OrderedDict[str, float] = OrderedDict()
+
+    def note_hit(self, actor: str) -> None:
+        actor = str(actor or "").strip()
+        if not actor:
+            return
+        self.seen[actor] = time.monotonic()
+        self.seen.move_to_end(actor)
+        while len(self.seen) > _MAX_UPSTREAMS:
+            self.seen.popitem(last=False)
+
+    def hit_since(self, actor: str, since: float) -> bool:
+        return self.seen.get(str(actor or ""), float("-inf")) >= since
 
     def allows(self, secret: str, digest: str) -> bool:
         return hmac.compare_digest(secret, self.secret) and digest in self.upstreams
@@ -223,6 +238,7 @@ async def proxy_mcp(request: Request, secret: str, digest: str, actor: str = "")
     registry = getattr(runtime, "proxy", None) if runtime is not None else None
     if registry is None or not registry.allows(secret, digest):
         raise HTTPException(status_code=404, detail="MCP proxy route was not found.")
+    registry.note_hit(actor)
     upstream = registry.upstreams[digest]
     body = await request.body()
     headers = {str(key): str(value) for key, value in (upstream.get("headers") or {}).items()}

@@ -1,5 +1,5 @@
 name: AI Workspace Runtime
-version: "1.5.1"
+version: "1.5.2"
 slug: ai_workspace
 description: >-
   Runs the Cursor agent next to Home Assistant and talks to LAN MCP.
@@ -28,5 +28,3 @@ schema:
   model: str
   runtime_token: password?
   hass_url: url?
-  shorten_mcp_results: bool?
-  change_history: bool?

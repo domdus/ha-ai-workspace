@@ -13,6 +13,9 @@ from homeassistant.util.ulid import ulid
 
 from .agents import borrow_by_id, borrowed_setups, entry_agents
 from .const import (
+    API_OPENROUTER,
+    CONF_MODELS,
+    parse_model_list,
     CONF_SAVE_TOKENS,
     SECTION_ADVANCED,
     API_ANTHROPIC,
@@ -141,6 +144,41 @@ def _model_field(provider: str, current: dict, *, required: bool = False, choice
     return {vol.Optional(CONF_MODEL, default="", description={"suggested_value": suggested}): str}
 
 
+_MODEL_LIST = TextSelector(TextSelectorConfig(multiline=True))
+# Every agent can have its own model list, in a folded section below the model field.
+SECTION_MODEL_LIST = "model_list"
+# Gateways often limit which models a key may use; one tiny chat turn on save shows their reason.
+_TEST_MODEL = {API_COMPATIBLE, API_OPENROUTER}
+
+
+def submitted_models(user_input: dict | None) -> list[str]:
+    if not user_input:
+        return []
+    if CONF_MODELS in user_input:
+        return parse_model_list(user_input.get(CONF_MODELS))
+    folded = user_input.get(SECTION_MODEL_LIST)
+    return parse_model_list(folded.get(CONF_MODELS)) if isinstance(folded, dict) else []
+
+
+def _models_section(current: dict) -> dict:
+    stored = parse_model_list(current.get(CONF_MODELS))
+    inner = {vol.Optional(CONF_MODELS, description={"suggested_value": "\n".join(stored)}): _MODEL_LIST}
+    return {vol.Required(SECTION_MODEL_LIST): section(vol.Schema(inner), {"collapsed": True})}
+
+
+def model_with_list(model: str, models: list[str], stored_model: str, default_model: str) -> tuple[str, list[str]]:
+    """Fit the chosen model to a pasted list.
+
+    The form's untouched default is not a real choice, so the list's first entry wins. A model the
+    user typed themselves stays and is added to the list.
+    """
+    if not models or model in models:
+        return model, models
+    if not model or (model == default_model and model != stored_model):
+        return models[0], models
+    return model, [model, *models]
+
+
 def _stt_model_field(provider: str, current: dict) -> dict:
     stored = str(current.get(CONF_STT_MODEL) or "").strip()
     fallback = default_stt_model(provider)
@@ -220,7 +258,7 @@ def _fields_schema(
     elif step == "azure":
         fields[vol.Optional(CONF_API_KEY, default="")] = _PASSWORD
         fields[vol.Required(CONF_API_BASE, default=str(current.get(CONF_API_BASE) or ""))] = str
-        fields.update(_model_field(API_AZURE, current, required=True))
+        fields.update(_model_field(API_AZURE, current, required=True, choices=models))
         fields[vol.Optional(CONF_AZURE_API_VERSION, default=str(current.get(CONF_AZURE_API_VERSION) or DEFAULT_AZURE_API_VERSION))] = str
     elif step == "compatible":
         fields[vol.Optional(CONF_API_KEY, default="")] = _PASSWORD
@@ -235,6 +273,7 @@ def _fields_schema(
             )
         fields[vol.Optional(CONF_API_KEY, default="")] = _PASSWORD
         fields.update(_model_field(provider, current, choices=models))
+    fields.update(_models_section(current))
     fields.update(_effort_field(current))
     fields[vol.Optional(CONF_ALLOW_INTERNET, default=bool(current.get(CONF_ALLOW_INTERNET, False)))] = cv.boolean
     fields[vol.Optional(CONF_ASSIST, default=assist_enabled(current, new=new))] = cv.boolean
@@ -374,8 +413,11 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
 
     async def _model_choices(self, provider: str, current: dict) -> list[str] | None:
         """The provider's own model list with the key on this agent; None keeps the bundled list."""
-        from .model_list import async_cursor_models, async_provider_models, merge_models
+        from .model_list import async_cursor_models, async_provider_models, merge_models, own_models
 
+        own = parse_model_list(current.get(CONF_MODELS))
+        if own:
+            return own_models(str(current.get(CONF_MODEL) or ""), own)
         if provider == API_AZURE:
             return None
         if provider == MODE_CURSOR:
@@ -401,6 +443,26 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             return {}
         self._installed = ", ".join(installed[:12])
         return {CONF_MODEL: "model_not_installed"}
+
+    async def _gateway_model_errors(
+        self, provider: str, key: str, base: str, model: str, stored_model: str, own_list: list[str]
+    ) -> dict[str, str]:
+        """Before saving: offer the server's list, then let the server say whether this key may use the model."""
+        from .api_provider import async_check_model
+        from .model_list import async_provider_models
+
+        untouched = not model or (model == default_api_model(provider) and model != stored_model)
+        if untouched and not own_list:
+            live = await async_provider_models(self.hass, provider, key, base)
+            if live and (model or default_api_model(provider)) not in live:
+                # The form comes back with the server's list in the model dropdown.
+                self._suggested_model = live[0]
+                return {CONF_MODEL: "pick_model"}
+        problem = await async_check_model(self.hass, provider, key, base, model or default_api_model(provider))
+        if problem:
+            self._server_message = problem
+            return {CONF_MODEL: "model_rejected"}
+        return {}
 
     async def _key_errors(self, provider: str, key: str, base: str, version: str) -> dict[str, str]:
         from .api_provider import async_check_api_key
@@ -432,6 +494,10 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             model = submitted_model(user_input)
             if borrowed and borrowed.get("provider") == provider and not model:
                 model = str(borrowed.get("model") or "").strip()
+            stored_model = str(current.get(CONF_MODEL) or "")
+            own_list = submitted_models(user_input)
+            model, own_list = model_with_list(model, own_list, stored_model, default_api_model(provider))
+            merged[CONF_MODELS] = own_list
             if provider == MODE_CURSOR:
                 errors = await self._cursor_errors(
                     cursor_key, str(merged.get(CONF_RUNTIME_URL) or "")
@@ -455,6 +521,10 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                 errors = await self._key_errors(provider, key, base, version)
             if not errors and provider == API_OLLAMA:
                 errors = await self._ollama_model_errors(base, model or default_api_model(API_OLLAMA))
+            if not errors and provider in _TEST_MODEL:
+                errors = await self._gateway_model_errors(provider, key, base, model, stored_model, own_list)
+                if errors.get(CONF_MODEL) == "pick_model":
+                    merged[CONF_MODEL] = self._suggested_model
             if not errors:
                 if provider == MODE_CURSOR:
                     await self._store_runtime(
@@ -505,6 +575,7 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                     else "",
                     CONF_AZURE_API_VERSION: version if provider == API_AZURE else "",
                 }
+                data[CONF_MODELS] = own_list
                 if provider == API_ANTHROPIC:
                     data[CONF_CACHE_1H] = caches_an_hour(merged)
                 if provider != MODE_CURSOR and CONF_PROMPT_CACHE in current:
@@ -516,6 +587,7 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             "example_url": example,
             "api_key_url": api_key_url(provider),
             "installed": getattr(self, "_installed", "") or "-",
+            "server_message": getattr(self, "_server_message", "") or "-",
         }
         schema_current = dict(self._current)
         if step == "ollama":

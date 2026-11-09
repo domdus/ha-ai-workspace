@@ -81,7 +81,7 @@
             },
             "data_description": {
               "house_map": "默认关闭。一个关于自动化、实体和区域如何关联的本地索引，一次查询就能回答“哪些东西用到了厨房灯？”这类问题。每条消息会稍微增加一点内容，所以只有经常询问东西如何关联时才开启。实时状态仍来自 Home Assistant。",
-              "shorten_mcp_results": "默认开启。来自 Home Assistant 的超长回复（全屋列表、大型搜索）会在送给 AI 之前先摘要。节省 token，让回复保持快速。关闭则发送全文。",
+              "shorten_mcp_results": "默认开启。Home Assistant 的超长回复在发送给 AI 前会被缩小：大型实体列表会被压缩，回复中的超长文本（例如巨大的通知）会被缩短，仍超过 100,000 个字符的部分会被截断。节省令牌并保持回复迅速。关闭则发送完整文本。",
               "change_history": "默认开启。记录助手所做的每一项配置更改，方便你查看改了什么，并让它恢复到之前的版本。关闭后不再新增记录；助手仍可进行更改。",
               "change_history_ttl_days": "Rollback 和“让助手撤销”保持可用的天数。到期后记录仍在日志中；恢复旧快照可能覆盖之后的改动。默认 7。1 大约是一天。"
             }
@@ -194,7 +194,7 @@
             },
             "data_description": {
               "house_map": "默认关闭。一个关于自动化、实体和区域如何关联的本地索引，一次查询就能回答“哪些东西用到了厨房灯？”这类问题。每条消息会稍微增加一点内容，所以只有经常询问东西如何关联时才开启。实时状态仍来自 Home Assistant。",
-              "shorten_mcp_results": "默认开启。来自 Home Assistant 的超长回复（全屋列表、大型搜索）会在送给 AI 之前先摘要。节省 token，让回复保持快速。关闭则发送全文。",
+              "shorten_mcp_results": "默认开启。Home Assistant 的超长回复在发送给 AI 前会被缩小：大型实体列表会被压缩，回复中的超长文本（例如巨大的通知）会被缩短，仍超过 100,000 个字符的部分会被截断。节省令牌并保持回复迅速。关闭则发送完整文本。",
               "change_history": "默认开启。记录助手所做的每一项配置更改，方便你查看改了什么，并让它恢复到之前的版本。关闭后不再新增记录；助手仍可进行更改。",
               "change_history_ttl_days": "Rollback 和“让助手撤销”保持可用的天数。到期后记录仍在日志中；恢复旧快照可能覆盖之后的改动。默认 7。1 大约是一天。"
             }
@@ -286,7 +286,9 @@
         "required": "此字段为必填。",
         "invalid_auth": "提供商拒绝了此 API 密钥。",
         "cannot_connect": "无法连接提供商。请检查 URL 和网络。",
-        "model_not_installed": "此模型未在 Ollama 中安装。已安装：{installed}"
+        "model_not_installed": "此模型未在 Ollama 中安装。已安装：{installed}",
+        "pick_model": "服务器现已列出其模型。请从列表中选择一个。",
+        "model_rejected": "服务器不允许此密钥使用该模型：{server_message}"
       },
       "step": {
         "provider": {
@@ -321,6 +323,15 @@
             "assist": "同时在 Home Assistant Assist（语音）下列出此助手。关闭则仅留在 AI Workspace 聊天中，并移除它在 Assist 中添加的内容。"
           },
           "sections": {
+            "model_list": {
+              "name": "模型列表",
+              "data": {
+                "models": "模型"
+              },
+              "data_description": {
+                "models": "可选。为此处和聊天中的模型选择指定你自己的模型，而不是提供商的完整列表。以逗号、分号或换行分隔名称，例如 gpt-5.5, grok-4.7。留空则显示提供商的列表。"
+              }
+            },
             "advanced": {
               "name": "高级",
               "data": {
@@ -364,6 +375,15 @@
             "tts_speed": "此声音的语速。1× 为正常。适用于 AI Workspace 和 Assist。"
           },
           "sections": {
+            "model_list": {
+              "name": "模型列表",
+              "data": {
+                "models": "模型"
+              },
+              "data_description": {
+                "models": "可选。为此处和聊天中的模型选择指定你自己的模型，而不是提供商的完整列表。以逗号、分号或换行分隔名称，例如 gpt-5.5, grok-4.7。留空则显示提供商的列表。"
+              }
+            },
             "advanced": {
               "name": "高级",
               "data": {
@@ -395,6 +415,15 @@
             "assist": "同时在 Home Assistant Assist（语音）下列出此助手。关闭则仅留在 AI Workspace 聊天中，并移除它在 Assist 中添加的内容。"
           },
           "sections": {
+            "model_list": {
+              "name": "模型列表",
+              "data": {
+                "models": "模型"
+              },
+              "data_description": {
+                "models": "可选。为此处和聊天中的模型选择指定你自己的模型，而不是提供商的完整列表。以逗号、分号或换行分隔名称，例如 gpt-5.5, grok-4.7。留空则显示提供商的列表。"
+              }
+            },
             "advanced": {
               "name": "高级",
               "data": {
@@ -428,6 +457,15 @@
             "assist": "同时在 Home Assistant Assist（语音）下列出此助手。关闭则仅留在 AI Workspace 聊天中，并移除它在 Assist 中添加的内容。"
           },
           "sections": {
+            "model_list": {
+              "name": "模型列表",
+              "data": {
+                "models": "模型"
+              },
+              "data_description": {
+                "models": "可选，适用于不提供模型列表的服务器。用于填充此处和聊天中的模型选择。粘贴以逗号、分号或换行分隔的名称，例如 gpt-5.5, grok-4.7。粘贴的内容会替换列表；清空后重新使用服务器的列表。"
+              }
+            },
             "advanced": {
               "name": "高级",
               "data": {
@@ -471,6 +509,15 @@
             "tts_speed": "此声音的语速。1× 为正常。适用于 AI Workspace 和 Assist。"
           },
           "sections": {
+            "model_list": {
+              "name": "模型列表",
+              "data": {
+                "models": "模型"
+              },
+              "data_description": {
+                "models": "可选，适用于不提供模型列表的服务器。用于填充此处和聊天中的模型选择。粘贴以逗号、分号或换行分隔的名称，例如 gpt-5.5, grok-4.7。粘贴的内容会替换列表；清空后重新使用服务器的列表。"
+              }
+            },
             "advanced": {
               "name": "高级",
               "data": {
