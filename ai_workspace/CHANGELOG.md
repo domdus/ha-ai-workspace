@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.2b2
+
+- Shorten long Home Assistant answers: a JSON answer that is too long now first shortens its longest texts, each marked as incomplete, instead of cutting off the end of the whole answer. One huge notification (a vacuum integration's was 139,000 characters) no longer pushes repairs, updates and everything after it out of HA-MCP's system overview, and the agent gets valid JSON. On a real home the overview went from 306,000 to 36,000 characters with every section kept. The same applies to API agents.
+- A shortened value says where it came from (for example a notification's id and title, or an entity id), so the agent can tell you which integration or device makes answers so large.
+- When an answer still has to be cut at the end, the note tells the agent not to repeat the same call, but to ask for less or use a more specific tool. Before, agents called the same overview again and reported it as failed.
+- Configure: the description of "Shorten long Home Assistant answers" now says what it does: compact entity lists, shorten very long texts, cut at 100,000 characters.
+
 ## 1.5.2b1
 
 - Runtime: when the Cursor bridge stops connecting to MCP servers, the runtime heals itself. A new agent with MCP servers connects to them as soon as its run starts; when nothing reaches the runtime's MCP proxy within 20 seconds, the run is cancelled, a fresh bridge starts, and the message is sent once more ("Reconnecting tools..."). Before, every chat answered that the connection to Home Assistant was broken until the App was restarted. A new agent that finishes sooner without reaching its MCP servers gets a fresh bridge for the next message. At most one restart a minute, and never while another chat is still running.

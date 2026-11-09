@@ -217,7 +217,7 @@ def test_huge_result_keeps_its_beginning_and_says_it_is_cut() -> None:
     assert kind == TRUNCATED
     assert text.startswith("Key on the first line")
     assert "do not write it back" in text
-    assert len(text) < LIMIT + 200
+    assert len(text) < LIMIT + 400  # the beginning plus the note
     guide = "Key on the first line\n" + "line of text\n" * 20000
     envelope = {"content": [{"type": "text", "text": guide}], "structuredContent": {"content": guide}, "isError": False}
     body = json.loads(shorten_tool_result(envelope)[0])
