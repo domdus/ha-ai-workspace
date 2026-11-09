@@ -46,3 +46,17 @@ def test_missing_list_helper_keeps_working(monkeypatch) -> None:
     monkeypatch.setattr(hassio, "get_addons_info", boom, raising=False)
     monkeypatch.setattr(hassio, "get_addons_list", boom, raising=False)
     assert discovery._hassio_addon(SimpleNamespace()) is None
+
+
+def test_old_app_options_are_removed_when_the_integration_writes_options(monkeypatch) -> None:
+    monkeypatch.setattr(discovery, "_runtime_hass_url", lambda hass: "http://homeassistant:8123")
+    opts = {
+        "cursor_api_key": "k",
+        "hass_url": "http://homeassistant:8123",
+        "shorten_mcp_results": True,
+        "change_history": False,
+    }
+    assert discovery._sync_runtime_options(SimpleNamespace(), opts) is True
+    assert opts == {"cursor_api_key": "k", "hass_url": "http://homeassistant:8123"}
+    # Nothing left to change: no write.
+    assert discovery._sync_runtime_options(SimpleNamespace(), opts) is False

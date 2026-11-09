@@ -23,7 +23,9 @@ A whole-home entity list or a big search is a lot of JSON. Sending all of it to 
 
 Everything else reaches the model exactly as Home Assistant or the MCP server sent it: guides, dashboards, automations, scripts, and single entities. That matters because the model may write those values back, and HA-MCP puts the key it needs for dashboard writes in its guide.
 
-A result over 100,000 characters keeps its beginning and tells the model that it is incomplete and must not be written back.
+A result over 100,000 characters first has its longest texts shortened, for example one huge notification inside HA-MCP's system overview. Every other part stays, the JSON stays valid, and each shortened text says where it came from (such as the notification or entity id), so the agent can tell you which integration or device makes answers that large. Only when that is not enough is the result cut at the end, with a note that it is incomplete, must not be written back, and should be asked for in smaller parts.
+
+The setting lives in AI Workspace → Configure. The integration sends it to the Cursor runtime with every chat, so the Runtime App and the Docker image have no setting of their own for it.
 
 Turn this off if you want every attribute of a large listing in one shot and you accept the extra tokens.
 

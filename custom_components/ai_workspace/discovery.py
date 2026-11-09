@@ -18,8 +18,6 @@ from .const import (
     COMPOSE_RUNTIME_URLS,
     CONF_RUNTIME_TOKEN,
     CONF_RUNTIME_URL,
-    CONF_SHORTEN_MCP_RESULTS,
-    CONF_CHANGE_HISTORY,
     DOMAIN,
     HOST_RUNTIME_URL,
     VERSION,
@@ -51,7 +49,7 @@ def _version_key(text: str) -> tuple[int, int, int, int] | None:
 # The oldest Runtime this integration works with as intended. Raise it in a release that
 # changes the Runtime (ai_workspace/app), so older Runtimes get the update notice. A release
 # that only changes the integration leaves it, and no notice appears.
-MIN_RUNTIME = "1.5.2b2"
+MIN_RUNTIME = "1.5.2b3"
 
 
 def runtime_notice(
@@ -74,8 +72,9 @@ def runtime_notice(
 
 _LOGGER = logging.getLogger(__name__)
 _HASS_URL_OPTION = "hass_url"
-_SHORTEN_OPTION = "shorten_mcp_results"
-_HISTORY_OPTION = "change_history"
+# Old App options. The integration sends both settings with every chat, so the App no longer
+# has fields for them; leftovers are removed so the Supervisor accepts the options.
+_RETIRED_OPTIONS = ("shorten_mcp_results", "change_history")
 _PROBE_COOLDOWN = 30.0
 _PAIR_WAIT = 90.0
 _PAIRING = "ai_workspace_pairing"
@@ -219,36 +218,16 @@ async def _async_addon_token(hass: HomeAssistant, slug: str) -> str:
     return str((info.options or {}).get(CONF_RUNTIME_TOKEN) or "").strip()
 
 
-def _shorten_mcp_results(hass: HomeAssistant) -> bool:
-    settings = (hass.data.get(DOMAIN) or {}).get("settings")
-    if settings is None:
-        return True
-    return bool(getattr(settings, CONF_SHORTEN_MCP_RESULTS, True))
-
-
-def _change_history(hass: HomeAssistant) -> bool:
-    settings = (hass.data.get(DOMAIN) or {}).get("settings")
-    if settings is None:
-        return True
-    return bool(getattr(settings, CONF_CHANGE_HISTORY, True))
-
-
 def _sync_runtime_options(hass: HomeAssistant, opts: dict) -> bool:
     wanted_url = _runtime_hass_url(hass)
-    wanted_shorten = _shorten_mcp_results(hass)
-    wanted_history = _change_history(hass)
     changed = False
     if str(opts.get(_HASS_URL_OPTION) or "").rstrip("/") != wanted_url:
         opts[_HASS_URL_OPTION] = wanted_url
         changed = True
-    current = opts.get(_SHORTEN_OPTION)
-    if current is None or bool(current) != wanted_shorten:
-        opts[_SHORTEN_OPTION] = wanted_shorten
-        changed = True
-    current_history = opts.get(_HISTORY_OPTION)
-    if current_history is None or bool(current_history) != wanted_history:
-        opts[_HISTORY_OPTION] = wanted_history
-        changed = True
+    for key in _RETIRED_OPTIONS:
+        if key in opts:
+            del opts[key]
+            changed = True
     return changed
 
 

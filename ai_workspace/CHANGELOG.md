@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.2b3
+
+- Runtime App: the "Shorten MCP results" and "Change History" fields are gone from the App's configuration. They were only fallbacks: the integration sends both settings with every chat, so they never decided anything and only confused. Set both in AI Workspace → Configure. The Docker runtime ignores the matching environment variables for the same reason. The integration removes the old values from the App's options by itself.
+
 ## 1.5.2b2
 
 - Shorten long Home Assistant answers: a JSON answer that is too long now first shortens its longest texts, each marked as incomplete, instead of cutting off the end of the whole answer. One huge notification (a vacuum integration's was 139,000 characters) no longer pushes repairs, updates and everything after it out of HA-MCP's system overview, and the agent gets valid JSON. On a real home the overview went from 306,000 to 36,000 characters with every section kept. The same applies to API agents.
