@@ -63,6 +63,7 @@ from .usage_cost import estimate_cost
 from .usage_record import dashboard_payload, finalize_usage, record_usage_turn
 
 logger = logging.getLogger(__name__)
+CHAT_GONE = "Chat not found. It may have been deleted, for example on another device."
 
 
 def _sse(event: str, payload: dict) -> bytes:
@@ -786,7 +787,7 @@ class SessionView(HomeAssistantView):
 
         payload = await hass.async_add_executor_job(load)
         if payload is None:
-            raise web.HTTPNotFound(text="Chat not found.")
+            raise web.HTTPNotFound(text=CHAT_GONE)
         session, messages, has_activity = payload
         pending = False
         lock = _runtime(hass).get("locks", {}).get(session.id)
@@ -809,7 +810,7 @@ class SessionView(HomeAssistantView):
         pinned = body.get("pinned")
         session = await hass.async_add_executor_job(store.get_session, _user_id(request), session_id)
         if session is None:
-            raise web.HTTPNotFound(text="Chat not found.")
+            raise web.HTTPNotFound(text=CHAT_GONE)
         user_id = _user_id(request)
         if pinned is not None:
             session = await hass.async_add_executor_job(
@@ -839,7 +840,7 @@ class SessionView(HomeAssistantView):
         store: Store = data["store"]
         deleted = await hass.async_add_executor_job(store.delete_session, _user_id(request), session_id)
         if not deleted:
-            raise web.HTTPNotFound(text="Chat not found.")
+            raise web.HTTPNotFound(text=CHAT_GONE)
         base = str((data.get("runtime_url") or "")).rstrip("/")
         if base:
             try:
@@ -906,7 +907,7 @@ class ChatView(HomeAssistantView):
         admin = _is_admin(request)
         session = await hass.async_add_executor_job(store.get_session, user_id, session_id)
         if session is None:
-            raise web.HTTPNotFound(text="Chat not found.")
+            raise web.HTTPNotFound(text=CHAT_GONE)
         body = await _json_body(request)
         images = parse_client_images(body.get("images"))
         files = parse_client_files(body.get("files"))
@@ -1284,7 +1285,7 @@ class ChatLiveView(HomeAssistantView):
         store: Store = _runtime(hass)["store"]
         session = await hass.async_add_executor_job(store.get_session, _user_id(request), session_id)
         if session is None:
-            raise web.HTTPNotFound(text="Chat not found.")
+            raise web.HTTPNotFound(text=CHAT_GONE)
         turn = live_turn(hass, session.id)
         if turn is None:
             return web.Response(status=204)
@@ -1329,7 +1330,7 @@ class ChatStopView(HomeAssistantView):
         store: Store = data["store"]
         session = await hass.async_add_executor_job(store.get_session, _user_id(request), session_id)
         if session is None:
-            raise web.HTTPNotFound(text="Chat not found.")
+            raise web.HTTPNotFound(text=CHAT_GONE)
         stopped = await cancel_chat_job(data, session.id)
         return self.json({"ok": True, "stopped": stopped})
 

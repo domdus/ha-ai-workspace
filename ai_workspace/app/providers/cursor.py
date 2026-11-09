@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 import logging
@@ -31,6 +32,13 @@ _MISSING_KEY = (
 # The HA transcript is still pasted on every turn, including a quick follow-up.
 _IDLE_RESTORE = 120.0
 
+# A new agent with MCP servers connects to them right after its run starts. When nothing
+# reaches the proxy in this time, the bridge is stuck (agents then only see mcp_auth):
+# start a fresh bridge and send the turn once more.
+_MCP_CONNECT_GRACE = 20.0
+# At most one bridge restart per this many seconds.
+_BRIDGE_RESTART_COOLDOWN = 60.0
+
 # Chats from non-admins and voice satellites get MCP tools only: no shell, files or web.
 # The SDK does not save tools with the agent, so they are passed again on every resume.
 _RESTRICTED_TOOLS = ("mcp",)
@@ -50,6 +58,9 @@ class CursorRuntime:
         self._with_tools: set[str] = set()
         self._start_lock = None
         self.proxy = McpProxy(proxy_secret_path(settings.data_dir))
+        self._active_runs = 0
+        self._restart_pending = False
+        self._restarted_at = float("-inf")
 
     def _lock(self):
         import asyncio
@@ -60,6 +71,8 @@ class CursorRuntime:
 
     async def client(self) -> Any:
         async with self._lock():
+            if self._restart_pending and self._active_runs == 0 and self._client is not None:
+                await self._close_bridge()
             if self._client is None:
                 from cursor_sdk import AsyncClient
 
@@ -204,6 +217,31 @@ class CursorRuntime:
         self.drop(session.id)
         session.agent_id = None
 
+    def run_started(self) -> None:
+        self._active_runs += 1
+
+    def run_ended(self) -> None:
+        self._active_runs = max(0, self._active_runs - 1)
+
+    def request_bridge_restart(self, reason: str) -> bool:
+        """Ask for a fresh bridge before the next agent opens; False while in cooldown."""
+        now = time.monotonic()
+        if now - self._restarted_at < _BRIDGE_RESTART_COOLDOWN:
+            logger.warning("cursor bridge looks stuck (%s); restarted recently, not again yet", reason)
+            return False
+        self._restarted_at = now
+        self._restart_pending = True
+        logger.warning("cursor bridge looks stuck (%s); starting a fresh bridge", reason)
+        return True
+
+    async def _close_bridge(self) -> None:
+        self._restart_pending = False
+        try:
+            await self.aclose()
+        except Exception:
+            logger.warning("closing the stuck cursor bridge failed", exc_info=True)
+            self._client = None
+
     async def aclose(self) -> None:
         client = self._client
         self._client = None
@@ -243,6 +281,7 @@ class CursorProvider:
         allow_internet: bool = False,
         fresh: bool = False,
         no_tools: bool = False,
+        _retry: bool = True,
     ) -> AsyncIterator[dict]:
         key = (api_key or "").strip() or self.settings.cursor_api_key
         if not key:
@@ -310,6 +349,8 @@ class CursorProvider:
         )
         if created and not (handoff or "").strip():
             logger.info("cursor new agent without HA transcript session=%s", session.id)
+        watch = bool(run_servers) and created
+        started = time.monotonic()
         try:
             run = await _start_run(agent, outbound, images, run_servers)
         except Exception as exc:
@@ -318,24 +359,71 @@ class CursorProvider:
         run_id = getattr(run, "id", "")
         logger.info("run started session=%s agent=%s run=%s model=%s", session.id, agent_id, run_id, used_model)
         stream_error: str | None = None
+        stalled = {"flag": False}
+        watchdog = (
+            asyncio.create_task(_watch_mcp_connect(self.runtime, session.id, run, started, stalled))
+            if watch
+            else None
+        )
+        self.runtime.run_started()
         try:
             async for event in _iter_messages(run):
+                if stalled["flag"]:
+                    break
                 if event.get("type") == "error" and not stream_error:
                     stream_error = str(event.get("message") or "")
                 yield event
-            result = await run.wait()
-            logger.info(
-                "cursor run finished session=%s run=%s status=%s duration=%s created=%s",
-                session.id,
-                run_id,
-                getattr(result, "status", None),
-                getattr(result, "duration_ms", None),
-                created,
-            )
+            result = None if stalled["flag"] else await run.wait()
+            if result is not None:
+                logger.info(
+                    "cursor run finished session=%s run=%s status=%s duration=%s created=%s",
+                    session.id,
+                    run_id,
+                    getattr(result, "status", None),
+                    getattr(result, "duration_ms", None),
+                    created,
+                )
         except Exception as exc:
+            if not stalled["flag"]:
+                self.runtime.forget(session)
+                yield {"type": "error", "message": _public_error(exc, self.settings.cursor_api_key)}
+                return
+            result = None
+        finally:
+            self.runtime.run_ended()
+            if watchdog is not None:
+                watchdog.cancel()
+        if stalled["flag"]:
             self.runtime.forget(session)
-            yield {"type": "error", "message": _public_error(exc, self.settings.cursor_api_key)}
+            on_agent_id("")
+            if _retry and self.runtime.request_bridge_restart(f"no MCP connection within {_MCP_CONNECT_GRACE:.0f}s"):
+                yield {"type": "status", "text": "Reconnecting tools..."}
+                async for event in self.send(
+                    session,
+                    message,
+                    on_agent_id,
+                    images=images,
+                    mcp=mcp,
+                    model=model,
+                    effort=effort,
+                    api_key=api_key,
+                    handoff=handoff,
+                    question=question,
+                    prompt=prompt,
+                    full_tools=full_tools,
+                    allow_internet=allow_internet,
+                    fresh=True,
+                    no_tools=no_tools,
+                    _retry=False,
+                ):
+                    yield event
+                return
+            yield {"type": "error", "message": _TOOLS_DID_NOT_CONNECT}
             return
+        if watch and not self.runtime.proxy.hit_since(session.id, started):
+            # Ended before the grace time without one MCP request: fresh bridge for the next turn.
+            self.runtime.forget(session)
+            self.runtime.request_bridge_restart("a new agent finished without reaching its MCP servers")
         status = str(getattr(result, "status", "") or "")
         final = getattr(result, "result", None) or ""
         if status == "error":
@@ -689,6 +777,28 @@ def _run_error_text(result: Any, run_id: str, model: str, stream_error: str | No
         bits.append(f"request_id={request}")
     bits.append("Retry the message.")
     return " ".join(bits)
+
+
+_TOOLS_DID_NOT_CONNECT = (
+    "The agent could not connect to its Home Assistant tools. The runtime starts a fresh "
+    "connection for the next message; please send it again."
+)
+
+
+async def _watch_mcp_connect(runtime: Any, session_id: str, run: Any, started: float, stalled: dict) -> None:
+    """Cancel a new agent's run when none of its MCP servers was reached in the grace time."""
+    try:
+        await asyncio.sleep(_MCP_CONNECT_GRACE)
+    except asyncio.CancelledError:
+        return
+    if runtime.proxy.hit_since(session_id, started):
+        return
+    stalled["flag"] = True
+    logger.warning("no MCP request from the new agent in %.0fs session=%s; cancelling the run", _MCP_CONNECT_GRACE, session_id)
+    try:
+        await run.cancel()
+    except Exception:
+        logger.debug("cancelling the stalled run failed", exc_info=True)
 
 
 async def _iter_messages(run: Any) -> AsyncIterator[dict]:

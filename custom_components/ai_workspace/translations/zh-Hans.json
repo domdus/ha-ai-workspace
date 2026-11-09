@@ -286,7 +286,9 @@
         "required": "此字段为必填。",
         "invalid_auth": "提供商拒绝了此 API 密钥。",
         "cannot_connect": "无法连接提供商。请检查 URL 和网络。",
-        "model_not_installed": "此模型未在 Ollama 中安装。已安装：{installed}"
+        "model_not_installed": "此模型未在 Ollama 中安装。已安装：{installed}",
+        "pick_model": "服务器现已列出其模型。请从列表中选择一个。",
+        "model_rejected": "服务器不允许此密钥使用该模型：{server_message}"
       },
       "step": {
         "provider": {
@@ -321,6 +323,15 @@
             "assist": "同时在 Home Assistant Assist（语音）下列出此助手。关闭则仅留在 AI Workspace 聊天中，并移除它在 Assist 中添加的内容。"
           },
           "sections": {
+            "model_list": {
+              "name": "模型列表",
+              "data": {
+                "models": "模型"
+              },
+              "data_description": {
+                "models": "可选。为此处和聊天中的模型选择指定你自己的模型，而不是提供商的完整列表。以逗号、分号或换行分隔名称，例如 gpt-5.5, grok-4.7。留空则显示提供商的列表。"
+              }
+            },
             "advanced": {
               "name": "高级",
               "data": {
@@ -364,6 +375,15 @@
             "tts_speed": "此声音的语速。1× 为正常。适用于 AI Workspace 和 Assist。"
           },
           "sections": {
+            "model_list": {
+              "name": "模型列表",
+              "data": {
+                "models": "模型"
+              },
+              "data_description": {
+                "models": "可选。为此处和聊天中的模型选择指定你自己的模型，而不是提供商的完整列表。以逗号、分号或换行分隔名称，例如 gpt-5.5, grok-4.7。留空则显示提供商的列表。"
+              }
+            },
             "advanced": {
               "name": "高级",
               "data": {
@@ -395,6 +415,15 @@
             "assist": "同时在 Home Assistant Assist（语音）下列出此助手。关闭则仅留在 AI Workspace 聊天中，并移除它在 Assist 中添加的内容。"
           },
           "sections": {
+            "model_list": {
+              "name": "模型列表",
+              "data": {
+                "models": "模型"
+              },
+              "data_description": {
+                "models": "可选。为此处和聊天中的模型选择指定你自己的模型，而不是提供商的完整列表。以逗号、分号或换行分隔名称，例如 gpt-5.5, grok-4.7。留空则显示提供商的列表。"
+              }
+            },
             "advanced": {
               "name": "高级",
               "data": {
@@ -428,6 +457,15 @@
             "assist": "同时在 Home Assistant Assist（语音）下列出此助手。关闭则仅留在 AI Workspace 聊天中，并移除它在 Assist 中添加的内容。"
           },
           "sections": {
+            "model_list": {
+              "name": "模型列表",
+              "data": {
+                "models": "模型"
+              },
+              "data_description": {
+                "models": "可选，适用于不提供模型列表的服务器。用于填充此处和聊天中的模型选择。粘贴以逗号、分号或换行分隔的名称，例如 gpt-5.5, grok-4.7。粘贴的内容会替换列表；清空后重新使用服务器的列表。"
+              }
+            },
             "advanced": {
               "name": "高级",
               "data": {
@@ -471,6 +509,15 @@
             "tts_speed": "此声音的语速。1× 为正常。适用于 AI Workspace 和 Assist。"
           },
           "sections": {
+            "model_list": {
+              "name": "模型列表",
+              "data": {
+                "models": "模型"
+              },
+              "data_description": {
+                "models": "可选，适用于不提供模型列表的服务器。用于填充此处和聊天中的模型选择。粘贴以逗号、分号或换行分隔的名称，例如 gpt-5.5, grok-4.7。粘贴的内容会替换列表；清空后重新使用服务器的列表。"
+              }
+            },
             "advanced": {
               "name": "高级",
               "data": {

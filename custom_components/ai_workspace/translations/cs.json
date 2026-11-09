@@ -286,7 +286,9 @@
         "required": "Toto pole je povinné.",
         "invalid_auth": "Poskytovatel tento klíč API odmítl.",
         "cannot_connect": "Poskytovatel není dostupný. Zkontrolujte URL a síť.",
-        "model_not_installed": "Tento model není v Ollamě nainstalovaný. Nainstalované: {installed}"
+        "model_not_installed": "Tento model není v Ollamě nainstalovaný. Nainstalované: {installed}",
+        "pick_model": "Server nyní vypisuje své modely. Vyberte jeden ze seznamu.",
+        "model_rejected": "Server nepovoluje tento model pro tento klíč: {server_message}"
       },
       "step": {
         "provider": {
@@ -321,6 +323,15 @@
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Seznam modelů",
+              "data": {
+                "models": "Modely"
+              },
+              "data_description": {
+                "models": "Volitelné. Vlastní výběr modelů pro nabídku zde i v chatu místo úplného seznamu poskytovatele. Názvy oddělené čárkami, středníky nebo novými řádky, např. gpt-5.5, grok-4.7. Prázdné zobrazí seznam poskytovatele."
+              }
+            },
             "advanced": {
               "name": "Pokročilé",
               "data": {
@@ -364,6 +375,15 @@
             "tts_speed": "Jak rychle tento hlas mluví. 1× je běžné. Platí pro AI Workspace i Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Seznam modelů",
+              "data": {
+                "models": "Modely"
+              },
+              "data_description": {
+                "models": "Volitelné. Vlastní výběr modelů pro nabídku zde i v chatu místo úplného seznamu poskytovatele. Názvy oddělené čárkami, středníky nebo novými řádky, např. gpt-5.5, grok-4.7. Prázdné zobrazí seznam poskytovatele."
+              }
+            },
             "advanced": {
               "name": "Pokročilé",
               "data": {
@@ -395,6 +415,15 @@
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Seznam modelů",
+              "data": {
+                "models": "Modely"
+              },
+              "data_description": {
+                "models": "Volitelné. Vlastní výběr modelů pro nabídku zde i v chatu místo úplného seznamu poskytovatele. Názvy oddělené čárkami, středníky nebo novými řádky, např. gpt-5.5, grok-4.7. Prázdné zobrazí seznam poskytovatele."
+              }
+            },
             "advanced": {
               "name": "Pokročilé",
               "data": {
@@ -428,6 +457,15 @@
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Seznam modelů",
+              "data": {
+                "models": "Modely"
+              },
+              "data_description": {
+                "models": "Volitelné, pro servery, které své modely nevypisují. Naplní výběr modelu zde i v chatu. Vložte názvy oddělené čárkami, středníky nebo novými řádky, např. gpt-5.5, grok-4.7. Vložený obsah seznam nahradí; vyprázdněte ho, abyste znovu použili seznam serveru."
+              }
+            },
             "advanced": {
               "name": "Pokročilé",
               "data": {
@@ -471,6 +509,15 @@
             "tts_speed": "Jak rychle tento hlas mluví. 1× je běžné. Platí pro AI Workspace i Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Seznam modelů",
+              "data": {
+                "models": "Modely"
+              },
+              "data_description": {
+                "models": "Volitelné, pro servery, které své modely nevypisují. Naplní výběr modelu zde i v chatu. Vložte názvy oddělené čárkami, středníky nebo novými řádky, např. gpt-5.5, grok-4.7. Vložený obsah seznam nahradí; vyprázdněte ho, abyste znovu použili seznam serveru."
+              }
+            },
             "advanced": {
               "name": "Pokročilé",
               "data": {

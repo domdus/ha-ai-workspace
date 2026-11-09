@@ -286,7 +286,9 @@
         "required": "이 필드는 필수입니다.",
         "invalid_auth": "제공자가 이 API 키를 거부했습니다.",
         "cannot_connect": "제공자에 연결할 수 없습니다. URL과 네트워크를 확인하세요.",
-        "model_not_installed": "이 모델은 Ollama에 설치되어 있지 않습니다. 설치된 모델: {installed}"
+        "model_not_installed": "이 모델은 Ollama에 설치되어 있지 않습니다. 설치된 모델: {installed}",
+        "pick_model": "이제 서버가 모델 목록을 제공합니다. 목록에서 하나를 고르세요.",
+        "model_rejected": "서버가 이 키에 이 모델을 허용하지 않습니다: {server_message}"
       },
       "step": {
         "provider": {
@@ -321,6 +323,15 @@
             "assist": "이 어시스턴트를 Home Assistant Assist(음성)에도 표시합니다. 끄면 AI Workspace 채팅에만 두고 Assist에 추가한 항목을 제거합니다."
           },
           "sections": {
+            "model_list": {
+              "name": "모델 목록",
+              "data": {
+                "models": "모델"
+              },
+              "data_description": {
+                "models": "선택 사항. 제공업체의 전체 목록 대신 여기와 채팅의 모델 선택에 쓸 나만의 모델 목록입니다. 쉼표, 세미콜론 또는 줄바꿈으로 구분한 이름(예: gpt-5.5, grok-4.7). 비워 두면 제공업체 목록을 표시합니다."
+              }
+            },
             "advanced": {
               "name": "고급",
               "data": {
@@ -364,6 +375,15 @@
             "tts_speed": "이 음성이 말하는 속도입니다. 1×가 보통입니다. AI Workspace와 Assist에 적용됩니다."
           },
           "sections": {
+            "model_list": {
+              "name": "모델 목록",
+              "data": {
+                "models": "모델"
+              },
+              "data_description": {
+                "models": "선택 사항. 제공업체의 전체 목록 대신 여기와 채팅의 모델 선택에 쓸 나만의 모델 목록입니다. 쉼표, 세미콜론 또는 줄바꿈으로 구분한 이름(예: gpt-5.5, grok-4.7). 비워 두면 제공업체 목록을 표시합니다."
+              }
+            },
             "advanced": {
               "name": "고급",
               "data": {
@@ -395,6 +415,15 @@
             "assist": "이 어시스턴트를 Home Assistant Assist(음성)에도 표시합니다. 끄면 AI Workspace 채팅에만 두고 Assist에 추가한 항목을 제거합니다."
           },
           "sections": {
+            "model_list": {
+              "name": "모델 목록",
+              "data": {
+                "models": "모델"
+              },
+              "data_description": {
+                "models": "선택 사항. 제공업체의 전체 목록 대신 여기와 채팅의 모델 선택에 쓸 나만의 모델 목록입니다. 쉼표, 세미콜론 또는 줄바꿈으로 구분한 이름(예: gpt-5.5, grok-4.7). 비워 두면 제공업체 목록을 표시합니다."
+              }
+            },
             "advanced": {
               "name": "고급",
               "data": {
@@ -428,6 +457,15 @@
             "assist": "이 어시스턴트를 Home Assistant Assist(음성)에도 표시합니다. 끄면 AI Workspace 채팅에만 두고 Assist에 추가한 항목을 제거합니다."
           },
           "sections": {
+            "model_list": {
+              "name": "모델 목록",
+              "data": {
+                "models": "모델"
+              },
+              "data_description": {
+                "models": "선택 사항이며, 모델 목록을 제공하지 않는 서버용입니다. 여기와 채팅의 모델 선택을 채웁니다. 쉼표, 세미콜론 또는 줄바꿈으로 구분한 이름을 붙여 넣으세요(예: gpt-5.5, grok-4.7). 붙여 넣은 내용이 목록을 대체하며, 비우면 서버의 목록을 다시 사용합니다."
+              }
+            },
             "advanced": {
               "name": "고급",
               "data": {
@@ -471,6 +509,15 @@
             "tts_speed": "이 음성이 말하는 속도입니다. 1×가 보통입니다. AI Workspace와 Assist에 적용됩니다."
           },
           "sections": {
+            "model_list": {
+              "name": "모델 목록",
+              "data": {
+                "models": "모델"
+              },
+              "data_description": {
+                "models": "선택 사항이며, 모델 목록을 제공하지 않는 서버용입니다. 여기와 채팅의 모델 선택을 채웁니다. 쉼표, 세미콜론 또는 줄바꿈으로 구분한 이름을 붙여 넣으세요(예: gpt-5.5, grok-4.7). 붙여 넣은 내용이 목록을 대체하며, 비우면 서버의 목록을 다시 사용합니다."
+              }
+            },
             "advanced": {
               "name": "고급",
               "data": {

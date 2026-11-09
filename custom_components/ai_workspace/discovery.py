@@ -51,7 +51,7 @@ def _version_key(text: str) -> tuple[int, int, int, int] | None:
 # The oldest Runtime this integration works with as intended. Raise it in a release that
 # changes the Runtime (ai_workspace/app), so older Runtimes get the update notice. A release
 # that only changes the integration leaves it, and no notice appears.
-MIN_RUNTIME = "1.5.1"
+MIN_RUNTIME = "1.5.2b1"
 
 
 def runtime_notice(
@@ -78,6 +78,7 @@ _SHORTEN_OPTION = "shorten_mcp_results"
 _HISTORY_OPTION = "change_history"
 _PROBE_COOLDOWN = 30.0
 _PAIR_WAIT = 90.0
+_PAIRING = "ai_workspace_pairing"
 
 
 def _slug_matches(slug: str) -> bool:
@@ -389,8 +390,11 @@ async def async_bind_runtime(hass: HomeAssistant, bucket: dict | None = None, *,
         if not accepted:
             if own_addon:
                 reason = PAIRING
-                if not data.get("pairing") and _needs_cursor(data):
-                    data["pairing"] = True
+                # The flag lives outside the entry's bucket: a reload during pairing (for
+                # example the HA-MCP check saving a new address) must not pair again and
+                # restart the App a second time.
+                if not hass.data.get(_PAIRING) and _needs_cursor(data):
+                    hass.data[_PAIRING] = True
                     hass.async_create_background_task(
                         _async_finish_pairing(hass, data, addon[0], url), "ai_workspace_pair_runtime"
                     )
@@ -417,7 +421,7 @@ async def _async_finish_pairing(hass: HomeAssistant, data: dict, slug: str, url:
     try:
         token = await _async_pair_addon(hass, slug, url)
     finally:
-        data["pairing"] = False
+        hass.data[_PAIRING] = False
     if token:
         data["runtime_token"] = token
     ok = bool(token) and await async_token_accepted(hass, url, token)

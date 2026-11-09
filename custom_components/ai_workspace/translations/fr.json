@@ -286,7 +286,9 @@
         "required": "Ce champ est obligatoire.",
         "invalid_auth": "Le fournisseur a refusé cette clé API.",
         "cannot_connect": "Impossible de joindre le fournisseur. Vérifiez l'URL et le réseau.",
-        "model_not_installed": "Ce modèle n’est pas installé dans Ollama. Installés : {installed}"
+        "model_not_installed": "Ce modèle n’est pas installé dans Ollama. Installés : {installed}",
+        "pick_model": "Le serveur liste maintenant ses modèles. Choisissez-en un dans la liste.",
+        "model_rejected": "Le serveur n'autorise pas ce modèle pour cette clé : {server_message}"
       },
       "step": {
         "provider": {
@@ -321,6 +323,15 @@
             "assist": "Affiche aussi cet assistant sous Home Assistant Assist (voix). Désactivé : chat AI Workspace uniquement, et retire ce qu'il a ajouté à Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Liste des modèles",
+              "data": {
+                "models": "Modèles"
+              },
+              "data_description": {
+                "models": "Facultatif. Votre propre sélection de modèles pour le choix ici et dans le chat, au lieu de la liste complète du fournisseur. Noms séparés par des virgules, des points-virgules ou des retours à la ligne, p. ex. gpt-5.5, grok-4.7. Vide affiche la liste du fournisseur."
+              }
+            },
             "advanced": {
               "name": "Avancé",
               "data": {
@@ -364,6 +375,15 @@
             "tts_speed": "Vitesse de cette voix. 1× est normal. S'applique à AI Workspace et Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Liste des modèles",
+              "data": {
+                "models": "Modèles"
+              },
+              "data_description": {
+                "models": "Facultatif. Votre propre sélection de modèles pour le choix ici et dans le chat, au lieu de la liste complète du fournisseur. Noms séparés par des virgules, des points-virgules ou des retours à la ligne, p. ex. gpt-5.5, grok-4.7. Vide affiche la liste du fournisseur."
+              }
+            },
             "advanced": {
               "name": "Avancé",
               "data": {
@@ -395,6 +415,15 @@
             "assist": "Affiche aussi cet assistant sous Home Assistant Assist (voix). Désactivé : chat AI Workspace uniquement, et retire ce qu'il a ajouté à Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Liste des modèles",
+              "data": {
+                "models": "Modèles"
+              },
+              "data_description": {
+                "models": "Facultatif. Votre propre sélection de modèles pour le choix ici et dans le chat, au lieu de la liste complète du fournisseur. Noms séparés par des virgules, des points-virgules ou des retours à la ligne, p. ex. gpt-5.5, grok-4.7. Vide affiche la liste du fournisseur."
+              }
+            },
             "advanced": {
               "name": "Avancé",
               "data": {
@@ -428,6 +457,15 @@
             "assist": "Affiche aussi cet assistant sous Home Assistant Assist (voix). Désactivé : chat AI Workspace uniquement, et retire ce qu'il a ajouté à Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Liste des modèles",
+              "data": {
+                "models": "Modèles"
+              },
+              "data_description": {
+                "models": "Facultatif, pour les serveurs qui ne listent pas leurs modèles. Remplit le choix du modèle ici et dans le chat. Collez des noms séparés par des virgules, des points-virgules ou des retours à la ligne, p. ex. gpt-5.5, grok-4.7. Ce que vous collez remplace la liste ; videz-la pour utiliser à nouveau la liste du serveur."
+              }
+            },
             "advanced": {
               "name": "Avancé",
               "data": {
@@ -471,6 +509,15 @@
             "tts_speed": "Vitesse de cette voix. 1× est normal. S'applique à AI Workspace et Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Liste des modèles",
+              "data": {
+                "models": "Modèles"
+              },
+              "data_description": {
+                "models": "Facultatif, pour les serveurs qui ne listent pas leurs modèles. Remplit le choix du modèle ici et dans le chat. Collez des noms séparés par des virgules, des points-virgules ou des retours à la ligne, p. ex. gpt-5.5, grok-4.7. Ce que vous collez remplace la liste ; videz-la pour utiliser à nouveau la liste du serveur."
+              }
+            },
             "advanced": {
               "name": "Avancé",
               "data": {

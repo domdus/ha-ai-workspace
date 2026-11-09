@@ -159,3 +159,18 @@ def test_device_commands_are_not_cues() -> None:
     empty = notes.notes_prompt(default, admin=True, write=True)
     assert "workspace_notes" in empty
     assert "Remembered notes (English" not in empty
+
+
+def test_emptied_notes_field_clears_the_notes() -> None:
+    """HA leaves an emptied text field out of the form; that must not bring the old notes back."""
+    import pytest
+
+    flow = pytest.importorskip("custom_components.ai_workspace.config_flow")
+    old = "- Never invent Denglish verbs."
+    schema = flow._prompt_schema({}, old)
+    submitted = schema({"notes": True})
+    assert "notes_text" not in submitted
+    flat = flow._flatten({"prompt": submitted})
+    assert flat["notes_text"] == ""
+    # A form without the prompt section leaves the notes alone.
+    assert "notes_text" not in flow._flatten({"chat": {}})

@@ -286,7 +286,9 @@
         "required": "Ĉi tiu kampo estas deviga.",
         "invalid_auth": "La provizanto malakceptis ĉi tiun API-ŝlosilon.",
         "cannot_connect": "Ne povis atingi la provizanton. Kontrolu la URL-on kaj la reton.",
-        "model_not_installed": "Ĉi tiu modelo ne estas instalita en Ollama. Instalitaj: {installed}"
+        "model_not_installed": "Ĉi tiu modelo ne estas instalita en Ollama. Instalitaj: {installed}",
+        "pick_model": "La servilo nun listigas siajn modelojn. Elektu unu el la listo.",
+        "model_rejected": "La servilo ne permesas ĉi tiun modelon por ĉi tiu ŝlosilo: {server_message}"
       },
       "step": {
         "provider": {
@@ -321,6 +323,15 @@
             "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Modellisto",
+              "data": {
+                "models": "Modeloj"
+              },
+              "data_description": {
+                "models": "Nedeviga. Via propra elekto de modeloj por la elektilo ĉi tie kaj en la babilo, anstataŭ la plena listo de la provizanto. Nomoj apartigitaj per komoj, punktokomoj aŭ novaj linioj, ekz. gpt-5.5, grok-4.7. Malplena montras la liston de la provizanto."
+              }
+            },
             "advanced": {
               "name": "Altnivele",
               "data": {
@@ -364,6 +375,15 @@
             "tts_speed": "Kiel rapide ĉi tiu voĉo parolas. 1× estas normala. Aplikas al AI Workspace kaj Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Modellisto",
+              "data": {
+                "models": "Modeloj"
+              },
+              "data_description": {
+                "models": "Nedeviga. Via propra elekto de modeloj por la elektilo ĉi tie kaj en la babilo, anstataŭ la plena listo de la provizanto. Nomoj apartigitaj per komoj, punktokomoj aŭ novaj linioj, ekz. gpt-5.5, grok-4.7. Malplena montras la liston de la provizanto."
+              }
+            },
             "advanced": {
               "name": "Altnivele",
               "data": {
@@ -395,6 +415,15 @@
             "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Modellisto",
+              "data": {
+                "models": "Modeloj"
+              },
+              "data_description": {
+                "models": "Nedeviga. Via propra elekto de modeloj por la elektilo ĉi tie kaj en la babilo, anstataŭ la plena listo de la provizanto. Nomoj apartigitaj per komoj, punktokomoj aŭ novaj linioj, ekz. gpt-5.5, grok-4.7. Malplena montras la liston de la provizanto."
+              }
+            },
             "advanced": {
               "name": "Altnivele",
               "data": {
@@ -428,6 +457,15 @@
             "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Modellisto",
+              "data": {
+                "models": "Modeloj"
+              },
+              "data_description": {
+                "models": "Nedeviga, por serviloj, kiuj ne listigas siajn modelojn. Plenigas la elekton de modelo ĉi tie kaj en la babilo. Algluu nomojn apartigitajn per komoj, punktokomoj aŭ novaj linioj, ekz. gpt-5.5, grok-4.7. Algluitaĵo anstataŭigas la liston; malplenigu ĝin por denove uzi la liston de la servilo."
+              }
+            },
             "advanced": {
               "name": "Altnivele",
               "data": {
@@ -471,6 +509,15 @@
             "tts_speed": "Kiel rapide ĉi tiu voĉo parolas. 1× estas normala. Aplikas al AI Workspace kaj Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Modellisto",
+              "data": {
+                "models": "Modeloj"
+              },
+              "data_description": {
+                "models": "Nedeviga, por serviloj, kiuj ne listigas siajn modelojn. Plenigas la elekton de modelo ĉi tie kaj en la babilo. Algluu nomojn apartigitajn per komoj, punktokomoj aŭ novaj linioj, ekz. gpt-5.5, grok-4.7. Algluitaĵo anstataŭigas la liston; malplenigu ĝin por denove uzi la liston de la servilo."
+              }
+            },
             "advanced": {
               "name": "Altnivele",
               "data": {

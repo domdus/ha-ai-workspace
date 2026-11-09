@@ -286,7 +286,9 @@
         "required": "This field is required.",
         "invalid_auth": "The provider rejected this API key.",
         "cannot_connect": "Could not reach the provider. Check the URL and the network.",
-        "model_not_installed": "This model is not installed in Ollama. Installed: {installed}"
+        "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
+        "pick_model": "The server lists its models now. Pick one from the model list.",
+        "model_rejected": "The server does not allow this model for this key: {server_message}"
       },
       "step": {
         "provider": {
@@ -321,6 +323,15 @@
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Model list",
+              "data": {
+                "models": "Models"
+              },
+              "data_description": {
+                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
+              }
+            },
             "advanced": {
               "name": "Advanced",
               "data": {
@@ -364,6 +375,15 @@
             "tts_speed": "How fast this voice speaks. 1× is normal. Applies to AI Workspace and Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Model list",
+              "data": {
+                "models": "Models"
+              },
+              "data_description": {
+                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
+              }
+            },
             "advanced": {
               "name": "Advanced",
               "data": {
@@ -395,6 +415,15 @@
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Model list",
+              "data": {
+                "models": "Models"
+              },
+              "data_description": {
+                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
+              }
+            },
             "advanced": {
               "name": "Advanced",
               "data": {
@@ -428,6 +457,15 @@
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Model list",
+              "data": {
+                "models": "Models"
+              },
+              "data_description": {
+                "models": "Optional, for servers that do not list their models. Fills the model picker here and in the chat. Paste names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. What you paste replaces the list; empty it to use the server's own list again."
+              }
+            },
             "advanced": {
               "name": "Advanced",
               "data": {
@@ -471,6 +509,15 @@
             "tts_speed": "How fast this voice speaks. 1× is normal. Applies to AI Workspace and Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Model list",
+              "data": {
+                "models": "Models"
+              },
+              "data_description": {
+                "models": "Optional, for servers that do not list their models. Fills the model picker here and in the chat. Paste names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. What you paste replaces the list; empty it to use the server's own list again."
+              }
+            },
             "advanced": {
               "name": "Advanced",
               "data": {

@@ -286,7 +286,9 @@
         "required": "Este campo es obligatorio.",
         "invalid_auth": "El proveedor rechazó esta clave de API.",
         "cannot_connect": "No se pudo contactar con el proveedor. Revisa la URL y la red.",
-        "model_not_installed": "Este modelo no está instalado en Ollama. Instalados: {installed}"
+        "model_not_installed": "Este modelo no está instalado en Ollama. Instalados: {installed}",
+        "pick_model": "El servidor ya muestra sus modelos. Elige uno de la lista.",
+        "model_rejected": "El servidor no permite este modelo con esta clave: {server_message}"
       },
       "step": {
         "provider": {
@@ -321,6 +323,15 @@
             "assist": "También lista este asistente en Home Assistant Assist (voz). Desactivado: solo el chat de AI Workspace, y quita lo que añadió a Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Lista de modelos",
+              "data": {
+                "models": "Modelos"
+              },
+              "data_description": {
+                "models": "Opcional. Tu propia selección de modelos para el selector aquí y en el chat, en lugar de la lista completa del proveedor. Nombres separados por comas, punto y coma o saltos de línea, p. ej. gpt-5.5, grok-4.7. Vacío muestra la lista del proveedor."
+              }
+            },
             "advanced": {
               "name": "Avanzado",
               "data": {
@@ -364,6 +375,15 @@
             "tts_speed": "Qué tan rápido habla esta voz. 1× es lo normal. Vale para AI Workspace y Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Lista de modelos",
+              "data": {
+                "models": "Modelos"
+              },
+              "data_description": {
+                "models": "Opcional. Tu propia selección de modelos para el selector aquí y en el chat, en lugar de la lista completa del proveedor. Nombres separados por comas, punto y coma o saltos de línea, p. ej. gpt-5.5, grok-4.7. Vacío muestra la lista del proveedor."
+              }
+            },
             "advanced": {
               "name": "Avanzado",
               "data": {
@@ -395,6 +415,15 @@
             "assist": "También lista este asistente en Home Assistant Assist (voz). Desactivado: solo el chat de AI Workspace, y quita lo que añadió a Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Lista de modelos",
+              "data": {
+                "models": "Modelos"
+              },
+              "data_description": {
+                "models": "Opcional. Tu propia selección de modelos para el selector aquí y en el chat, en lugar de la lista completa del proveedor. Nombres separados por comas, punto y coma o saltos de línea, p. ej. gpt-5.5, grok-4.7. Vacío muestra la lista del proveedor."
+              }
+            },
             "advanced": {
               "name": "Avanzado",
               "data": {
@@ -428,6 +457,15 @@
             "assist": "También lista este asistente en Home Assistant Assist (voz). Desactivado: solo el chat de AI Workspace, y quita lo que añadió a Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Lista de modelos",
+              "data": {
+                "models": "Modelos"
+              },
+              "data_description": {
+                "models": "Opcional, para servidores que no listan sus modelos. Rellena el selector de modelo aquí y en el chat. Pega nombres separados por comas, punto y coma o saltos de línea, p. ej. gpt-5.5, grok-4.7. Lo que pegues reemplaza la lista; vacíala para volver a usar la lista del servidor."
+              }
+            },
             "advanced": {
               "name": "Avanzado",
               "data": {
@@ -471,6 +509,15 @@
             "tts_speed": "Qué tan rápido habla esta voz. 1× es lo normal. Vale para AI Workspace y Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Lista de modelos",
+              "data": {
+                "models": "Modelos"
+              },
+              "data_description": {
+                "models": "Opcional, para servidores que no listan sus modelos. Rellena el selector de modelo aquí y en el chat. Pega nombres separados por comas, punto y coma o saltos de línea, p. ej. gpt-5.5, grok-4.7. Lo que pegues reemplaza la lista; vacíala para volver a usar la lista del servidor."
+              }
+            },
             "advanced": {
               "name": "Avanzado",
               "data": {

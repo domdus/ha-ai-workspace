@@ -286,7 +286,9 @@
         "required": "Det här fältet är obligatoriskt.",
         "invalid_auth": "Leverantören avvisade den här API-nyckeln.",
         "cannot_connect": "Kunde inte nå leverantören. Kontrollera URL:en och nätverket.",
-        "model_not_installed": "Den här modellen är inte installerad i Ollama. Installerade: {installed}"
+        "model_not_installed": "Den här modellen är inte installerad i Ollama. Installerade: {installed}",
+        "pick_model": "Servern listar nu sina modeller. Välj en i listan.",
+        "model_rejected": "Servern tillåter inte den här modellen för den här nyckeln: {server_message}"
       },
       "step": {
         "provider": {
@@ -321,6 +323,15 @@
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Modellista",
+              "data": {
+                "models": "Modeller"
+              },
+              "data_description": {
+                "models": "Valfritt. Ditt eget urval av modeller för valet här och i chatten i stället för leverantörens hela lista. Namn åtskilda med komma, semikolon eller radbrytningar, t.ex. gpt-5.5, grok-4.7. Tomt visar leverantörens lista."
+              }
+            },
             "advanced": {
               "name": "Avancerat",
               "data": {
@@ -364,6 +375,15 @@
             "tts_speed": "Hur snabbt den här rösten talar. 1× är normalt. Gäller AI Workspace och Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Modellista",
+              "data": {
+                "models": "Modeller"
+              },
+              "data_description": {
+                "models": "Valfritt. Ditt eget urval av modeller för valet här och i chatten i stället för leverantörens hela lista. Namn åtskilda med komma, semikolon eller radbrytningar, t.ex. gpt-5.5, grok-4.7. Tomt visar leverantörens lista."
+              }
+            },
             "advanced": {
               "name": "Avancerat",
               "data": {
@@ -395,6 +415,15 @@
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Modellista",
+              "data": {
+                "models": "Modeller"
+              },
+              "data_description": {
+                "models": "Valfritt. Ditt eget urval av modeller för valet här och i chatten i stället för leverantörens hela lista. Namn åtskilda med komma, semikolon eller radbrytningar, t.ex. gpt-5.5, grok-4.7. Tomt visar leverantörens lista."
+              }
+            },
             "advanced": {
               "name": "Avancerat",
               "data": {
@@ -428,6 +457,15 @@
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Modellista",
+              "data": {
+                "models": "Modeller"
+              },
+              "data_description": {
+                "models": "Valfritt, för servrar som inte listar sina modeller. Fyller modellvalet här och i chatten. Klistra in namn åtskilda med komma, semikolon eller radbrytningar, t.ex. gpt-5.5, grok-4.7. Det du klistrar in ersätter listan; töm den för att använda serverns lista igen."
+              }
+            },
             "advanced": {
               "name": "Avancerat",
               "data": {
@@ -471,6 +509,15 @@
             "tts_speed": "Hur snabbt den här rösten talar. 1× är normalt. Gäller AI Workspace och Assist."
           },
           "sections": {
+            "model_list": {
+              "name": "Modellista",
+              "data": {
+                "models": "Modeller"
+              },
+              "data_description": {
+                "models": "Valfritt, för servrar som inte listar sina modeller. Fyller modellvalet här och i chatten. Klistra in namn åtskilda med komma, semikolon eller radbrytningar, t.ex. gpt-5.5, grok-4.7. Det du klistrar in ersätter listan; töm den för att använda serverns lista igen."
+              }
+            },
             "advanced": {
               "name": "Avancerat",
               "data": {
