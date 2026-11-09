@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.5.3
+
+Fixes HA-MCP connections that were found automatically but did not work ([#2](https://github.com/domdus/ha-ai-workspace/issues/2)). Nothing needs to be changed in your setup; the runtime from 1.5.2 keeps working.
+
+**HA-MCP inside Home Assistant**
+- Finding HA-MCP follows its own settings. With "Remote access via webhook" turned off, AI Workspace uses HA-MCP's direct address instead of the webhook. Before, it picked the webhook anyway, and every chat failed with "MCP response was empty".
+- An empty answer no longer counts as a working MCP server. Home Assistant gives one for a webhook that is not switched on, so a saved connection that points there now moves to HA-MCP's direct address after Home Assistant starts.
+- "Sign in with Home Assistant" works: AI Workspace prefers the direct address and signs in on the webhook as the chatting user. HA-MCP's legacy OAuth mode is never picked, because AI Workspace has no client id and secret for it.
+- HA-MCP's own server port is used when it was changed from 9584.
+- When HA-MCP still fails, the log line "MCP connection … skipped" says what to change in HA-MCP, for example "turn on Remote access via webhook" for an empty answer, or which authentication mode to pick for HTTP 401.
+
 ## 1.5.2
 
 Everything from 1.5.2b1 to 1.5.2b3. Nothing needs to be changed in your setup.

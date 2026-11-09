@@ -12,6 +12,19 @@ Cloud agents (OpenAI, Claude, and the others) call MCP from inside Home Assistan
 
 Cursor is different: the model runs in the Cursor runtime next to Home Assistant, and tools go through that runtime. You do not point Cursor at your MCP URL yourself; AI Workspace does that when you chat.
 
+## HA-MCP inside Home Assistant
+
+When the HA-MCP integration runs inside Home Assistant, AI Workspace finds it by itself and follows its settings (HA-MCP Server → Configure):
+
+| HA-MCP setting | Address AI Workspace uses |
+| --- | --- |
+| Remote access via webhook **on**, authentication **Secret webhook URL** | The webhook, then HA-MCP's direct address |
+| Remote access via webhook **off** (local only) | HA-MCP's direct address (port 9584 by default) |
+| Authentication **Sign in with Home Assistant** | The direct address first. On the webhook, AI Workspace signs in as the chatting user, and HA-MCP only lets in administrators. |
+| Authentication **OAuth (legacy)** | Only the direct address. AI Workspace cannot use the legacy client id and secret. |
+
+A saved HA-MCP connection that no longer answers moves to a working address after Home Assistant starts. If HA-MCP still fails, the log line "MCP connection … skipped" says what to change in HA-MCP.
+
 ## Shorten long Home Assistant answers
 
 On by default, for cloud agents and Cursor.

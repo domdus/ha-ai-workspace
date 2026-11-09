@@ -27,7 +27,7 @@ def test_with_mcp_auth_adds_bearer_to_house_map() -> None:
     out = mod.with_mcp_auth(servers, access_token="ha-token")
     assert out["catalog"]["headers"]["Authorization"] == "Bearer ha-token"
     assert out["notes"]["headers"]["Authorization"] == "Bearer ha-token"
-    assert "headers" not in out["mcp"]
+    assert out["mcp"]["headers"]["Authorization"] == "Bearer ha-token"
 
 
 def test_with_mcp_auth_adds_bearer_to_builtin_mcp() -> None:
