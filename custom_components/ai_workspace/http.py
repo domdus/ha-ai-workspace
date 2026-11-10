@@ -179,7 +179,21 @@ async def _create_runtime_session(
     return str((body or {}).get("id") or "") or None
 
 
-async def _ensure_runtime_session(hass: HomeAssistant, user_id: str, session: Session) -> bool:
+def _runtime_unreachable(hass: HomeAssistant) -> str:
+    """Why a chat could not reach the Runtime: pairing or token problems say so themselves."""
+    for item in (_runtime(hass).get("providers") or {}).values():
+        info = getattr(item, "info", None)
+        if getattr(item, "kind", "") == "cursor" and info is not None and not info.available and info.reason:
+            return str(info.reason)
+    return (
+        "Home Assistant could not sync this chat to the Cursor Runtime. "
+        "Check the Runtime URL and token on the Cursor agent, then try again."
+    )
+
+
+async def _ensure_runtime_session(
+    hass: HomeAssistant, user_id: str, session: Session, *, rebind: bool = True
+) -> bool:
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
         return False
@@ -202,6 +216,13 @@ async def _ensure_runtime_session(hass: HomeAssistant, user_id: str, session: Se
         if created:
             return True
     logger.warning("runtime session sync failed session=%s", session.id)
+    if rebind:
+        # The Runtime may have moved, for example to the beta App or a new Docker host:
+        # look for it again instead of failing every chat against the old address.
+        url = (await async_bind_runtime(hass, _runtime(hass), force=True) or "").rstrip("/")
+        if url and url != base:
+            logger.info("Cursor Runtime moved from %s to %s; syncing the chat there", base, url)
+            return await _ensure_runtime_session(hass, user_id, session, rebind=False)
     return False
 
 
@@ -291,14 +312,10 @@ async def _runtime_chat(
         yield {"type": "error", "message": "Cursor Runtime is not configured."}
         return
     if not await _ensure_runtime_session(hass, user_id, session):
-        yield {
-            "type": "error",
-            "message": (
-                "Home Assistant could not sync this chat to the Cursor Runtime. "
-                "Check the Runtime URL and token on the Cursor agent, then try again."
-            ),
-        }
+        yield {"type": "error", "message": _runtime_unreachable(hass)}
         return
+    # Syncing may have found the Runtime at a new address.
+    base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     http: ClientSession = async_get_clientsession(hass)
     settings = _runtime(hass).get("settings")
     standing = standing_chat_prompt(

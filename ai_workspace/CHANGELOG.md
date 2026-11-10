@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.4b2
+
+- When the Cursor Runtime moves, for example from the App to the beta App or to another Docker host, the next chat finds it again. Before, AI Workspace kept the old address as long as the Cursor agent looked available, and every chat failed with "could not sync this chat to the Cursor Runtime" until the integration was reloaded.
+- When the new Runtime App still has to be paired, the chat says so ("Pairing with the AI Workspace Runtime app. Try again in a minute.") instead of asking you to check URL and token.
+
 ## 1.5.4b1
 
 - **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.5.4b1`) together with this release.** The fix is in the runtime. The chat shows a hint when the runtime is older.
