@@ -1,5 +1,43 @@
 # Changelog
 
+## 1.5.4
+
+Everything from 1.5.4b1 to 1.5.4b3. Nothing needs to be changed in your setup.
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.5.4`) together with this release.** The main fix is in the runtime. The chat shows a hint when the runtime is older than 1.5.4.
+
+**Runtime**
+- Cursor chats no longer lose all their tools after a while until the App is restarted. An MCP server that keeps its event stream open (such as a Cursor Worker) held one of the runtime's few proxy threads for every new agent, forever. After about six agents (roughly 20 minutes of chatting) no MCP call got through anymore, for every server.
+  - The proxy no longer opens a server's standing event stream (GET). It answers "not offered" (405), which MCP clients expect; requests and answers go over POST as before.
+  - An answer sent as an event stream ends as soon as the JSON-RPC response is in, even when the server keeps the stream open. Nothing waits longer than five minutes in total.
+  - Calls to MCP servers have their own pool of 32 threads, so a slow server cannot block the others or the runtime.
+
+**Chat**
+- When the Cursor Runtime moves, for example from the App to the beta App or to another Docker host, the next chat finds it again. Before, every chat failed with "could not sync this chat to the Cursor Runtime" until the integration was reloaded. When the new App still has to be paired, the chat says so.
+- When a chat cannot reach the Runtime, the reason is shown in the header until a message gets through again, instead of as a red answer in the chat. The message is dimmed with a short "Not sent" note and goes back into the prompt; it is not saved, so sending again does not repeat it.
+- Errors about one answer (for example a model or tool error) stay in the chat, next to the answer they belong to.
+
+## 1.5.4b3
+
+- When a Cursor chat cannot reach the Runtime (not found, refused token, still pairing, not answering), the reason is shown in the header instead of as a red answer in the chat. It stays there until a message gets through again.
+- The message itself is dimmed with a short "Not sent" note and goes back into the prompt, so you can send it again with one tap. Because it never reached the agent, it is not saved in the chat, and sending again does not repeat it.
+- Errors about one answer (for example a model or tool error) stay in the chat, next to the answer they belong to.
+
+## 1.5.4b2
+
+- When the Cursor Runtime moves, for example from the App to the beta App or to another Docker host, the next chat finds it again. Before, AI Workspace kept the old address as long as the Cursor agent looked available, and every chat failed with "could not sync this chat to the Cursor Runtime" until the integration was reloaded.
+- When the new Runtime App still has to be paired, the chat says so ("Pairing with the AI Workspace Runtime app. Try again in a minute.") instead of asking you to check URL and token.
+
+## 1.5.4b1
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.5.4b1`) together with this release.** The fix is in the runtime. The chat shows a hint when the runtime is older.
+
+**Runtime**
+- Cursor chats no longer lose all their tools after a while until the App is restarted. The cause was an MCP server that keeps its event stream open (such as a Cursor Worker): the runtime's MCP proxy held one of its few threads open for every new agent, forever. After about six agents (roughly 20 minutes of chatting, because a pause of two minutes opens a new agent) no MCP call got through anymore, for every server. The 1.5.2 watchdog did not catch this because the requests did reach the runtime.
+  - The proxy no longer opens the standing event stream (GET) of a server. It answers "not offered" (405), which MCP clients expect, and all requests and answers go over POST as before.
+  - An answer sent as an event stream ends as soon as the JSON-RPC response is in, even when the server keeps the stream open. Nothing waits longer than five minutes in total.
+  - Calls to MCP servers have their own pool of 32 threads, so a slow server cannot block the others or the runtime.
+
 ## 1.5.3
 
 Fixes HA-MCP connections that were found automatically but did not work ([#2](https://github.com/domdus/ha-ai-workspace/issues/2)). Nothing needs to be changed in your setup; the runtime from 1.5.2 keeps working.

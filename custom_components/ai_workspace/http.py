@@ -128,6 +128,10 @@ def _runtime_headers(request: web.Request) -> dict[str, str]:
     return _runtime_headers_for(_hass(request), uid, request.headers.get("Accept", "application/json"))
 
 
+# Runtime answers that mean the chat never reached the agent.
+_RUNTIME_DOWN = frozenset({401, 403, 404, 502, 503, 504})
+
+
 def _runtime_error(status: int, text: str) -> str:
     try:
         detail = json.loads(text).get("detail")
@@ -179,7 +183,21 @@ async def _create_runtime_session(
     return str((body or {}).get("id") or "") or None
 
 
-async def _ensure_runtime_session(hass: HomeAssistant, user_id: str, session: Session) -> bool:
+def _runtime_unreachable(hass: HomeAssistant) -> str:
+    """Why a chat could not reach the Runtime: pairing or token problems say so themselves."""
+    for item in (_runtime(hass).get("providers") or {}).values():
+        info = getattr(item, "info", None)
+        if getattr(item, "kind", "") == "cursor" and info is not None and not info.available and info.reason:
+            return str(info.reason)
+    return (
+        "Home Assistant could not sync this chat to the Cursor Runtime. "
+        "Check the Runtime URL and token on the Cursor agent, then try again."
+    )
+
+
+async def _ensure_runtime_session(
+    hass: HomeAssistant, user_id: str, session: Session, *, rebind: bool = True
+) -> bool:
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
         return False
@@ -202,6 +220,13 @@ async def _ensure_runtime_session(hass: HomeAssistant, user_id: str, session: Se
         if created:
             return True
     logger.warning("runtime session sync failed session=%s", session.id)
+    if rebind:
+        # The Runtime may have moved, for example to the beta App or a new Docker host:
+        # look for it again instead of failing every chat against the old address.
+        url = (await async_bind_runtime(hass, _runtime(hass), force=True) or "").rstrip("/")
+        if url and url != base:
+            logger.info("Cursor Runtime moved from %s to %s; syncing the chat there", base, url)
+            return await _ensure_runtime_session(hass, user_id, session, rebind=False)
     return False
 
 
@@ -288,17 +313,13 @@ async def _runtime_chat(
     """One Cursor turn. Reduce token usage and Check the house work as on cloud agents."""
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
-        yield {"type": "error", "message": "Cursor Runtime is not configured."}
+        yield {"type": "error", "message": "Cursor Runtime is not configured.", "connection": True}
         return
     if not await _ensure_runtime_session(hass, user_id, session):
-        yield {
-            "type": "error",
-            "message": (
-                "Home Assistant could not sync this chat to the Cursor Runtime. "
-                "Check the Runtime URL and token on the Cursor agent, then try again."
-            ),
-        }
+        yield {"type": "error", "message": _runtime_unreachable(hass), "connection": True}
         return
+    # Syncing may have found the Runtime at a new address.
+    base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     http: ClientSession = async_get_clientsession(hass)
     settings = _runtime(hass).get("settings")
     standing = standing_chat_prompt(
@@ -374,7 +395,11 @@ async def _runtime_chat(
                 timeout=ClientTimeout(total=None, sock_read=600),
             )
         except Exception as exc:
-            yield {"type": "error", "message": f"AI Workspace runtime is unreachable at {base}: {exc}"}
+            yield {
+                "type": "error",
+                "message": f"AI Workspace runtime is unreachable at {base}: {exc}",
+                "connection": True,
+            }
             return
         if resp.status != 404 or attempt:
             break
@@ -382,17 +407,18 @@ async def _runtime_chat(
         resp = None
         logger.info("runtime chat 404, resyncing session=%s", session.id)
         if not await _ensure_runtime_session(hass, user_id, session):
-            yield {
-                "type": "error",
-                "message": _runtime_error(404, ""),
-            }
+            yield {"type": "error", "message": _runtime_error(404, ""), "connection": True}
             return
     if resp is None:
-        yield {"type": "error", "message": _runtime_error(404, "")}
+        yield {"type": "error", "message": _runtime_error(404, ""), "connection": True}
         return
     try:
         if resp.status >= 400:
-            yield {"type": "error", "message": _runtime_error(resp.status, await resp.text())}
+            yield {
+                "type": "error",
+                "message": _runtime_error(resp.status, await resp.text()),
+                "connection": resp.status in _RUNTIME_DOWN,
+            }
             return
         async for name, payload in _iter_sse(resp):
             event = dict(payload)
@@ -973,7 +999,7 @@ class ChatView(HomeAssistantView):
         origin = _frontend_origin(request, body)
         page_note = format_ui_page(parse_ui_page(body.get("page")))
         events_json = json.dumps(image_events(images) + file_events(files), ensure_ascii=False)
-        await hass.async_add_executor_job(store.add_message, session.id, "user", message, events_json)
+        sent = await hass.async_add_executor_job(store.add_message, session.id, "user", message, events_json)
         await hass.async_add_executor_job(store.rename_if_default, session.id, title_from_prompt(message))
         count = await hass.async_add_executor_job(lambda: len(store.list_messages(session.id)))
         suggest = (
@@ -1111,6 +1137,8 @@ class ChatView(HomeAssistantView):
             parts: list[str] = []
             tools: list[dict] = []
             error: str | None = None
+            # The Runtime was not reached: the message was never sent, so it is not kept.
+            unsent = False
             final: str | None = None
             from .logical_commit import begin_logical_commit, flush_logical_commit
 
@@ -1172,6 +1200,7 @@ class ChatView(HomeAssistantView):
                             )
                         elif kind == "error":
                             error = public_error(event.get("message"))
+                            unsent = bool(event.get("connection")) and not parts and not tools
                             event = {**event, "message": error}
                         elif kind == "usage":
                             billed = finalize_usage(
@@ -1232,13 +1261,16 @@ class ChatView(HomeAssistantView):
                 stored_events = list(tools)
                 if error:
                     stored_events.append({"type": "error", "message": error})
-                await hass.async_add_executor_job(
-                    store.add_message,
-                    session.id,
-                    "assistant",
-                    answer,
-                    json.dumps(stored_events, ensure_ascii=False),
-                )
+                if unsent:
+                    await hass.async_add_executor_job(store.delete_message, sent.id)
+                else:
+                    await hass.async_add_executor_job(
+                        store.add_message,
+                        session.id,
+                        "assistant",
+                        answer,
+                        json.dumps(stored_events, ensure_ascii=False),
+                    )
                 if error is None:
                     await send({"type": "done", "answer": answer})
             finally:

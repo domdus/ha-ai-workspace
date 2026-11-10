@@ -1775,6 +1775,43 @@ export async function mountAiWorkspace(root, options = {}) {
     }, 6000);
   }
 
+  // Errors about the connection to the Runtime, not about one answer: they stay in the
+  // header until a turn gets through, and the message itself only gets a short note.
+  function showConnectionError(text) {
+    if (!bannerEl || !text) return;
+    clearMicHelp();
+    if (noticeTimer) clearTimeout(noticeTimer);
+    setBanner(text, { alertType: "error" });
+    bannerEl.classList.add("hold", "connection");
+  }
+
+  function clearConnectionError() {
+    if (!bannerEl?.classList.contains("connection")) return;
+    bannerEl.classList.remove("hold", "connection");
+    setBanner("");
+  }
+
+  function markNotSent(userBubble, restore) {
+    const anchor = userBubble?.closest(".message-container") || userBubble;
+    if (!anchor?.parentElement) return;
+    const restored = Boolean(restore?.text || restore?.pending?.length) && !String(messageEl.value || "").trim() && !pending.length;
+    if (restored) {
+      messageEl.value = restore.text || "";
+      pending = restore.pending || [];
+      renderThumbs();
+    }
+    const note = document.createElement("p");
+    note.className = "not-sent";
+    note.textContent = t(restored ? "not_sent_restored" : "not_sent");
+    anchor.classList.add("unsent");
+    anchor.after(note);
+  }
+
+  // An unsent message is not in the chat's history; the next send replaces it.
+  function dropUnsent() {
+    logEl.querySelectorAll(".unsent, .not-sent").forEach((node) => node.remove());
+  }
+
   function chipClass(event) {
     const phase = event?.phase || "";
     const text = String(event?.text || "");
@@ -4780,6 +4817,7 @@ export async function mountAiWorkspace(root, options = {}) {
     syncSendButton();
     setWelcome(false);
     clipToBottom();
+    dropUnsent();
     const userBubble = addBubble("user", text, [
       ...images.map((img) => ({ type: "image", name: img.name, src: img.src })),
       ...files.map((file) => ({ type: "file", name: file.name })),
@@ -4860,6 +4898,16 @@ export async function mountAiWorkspace(root, options = {}) {
         } else if (name === "status") {
           setStatus(data.text);
           drainSpeech(false, true);
+        } else if (name === "error" && data.connection && !streamFull) {
+          // Nothing was sent: the header says why, the prompt gets the message back.
+          drainSpeech(true);
+          streamFinal = true;
+          sawDone = true;
+          streaming = false;
+          showConnectionError(shownError(data.message) || t("error"));
+          (assistant.closest(".message-container") || assistant).remove();
+          markNotSent(userBubble, { text, pending: sentPending });
+          resizeComposer();
         } else if (name === "error") {
           drainSpeech(true);
           streamFinal = true;
@@ -4876,6 +4924,7 @@ export async function mountAiWorkspace(root, options = {}) {
         } else if (name === "done") {
           sawDone = true;
           streamFinal = true;
+          clearConnectionError();
           streamNode = streamNode || assistant.querySelector(".text");
           if (data.answer) {
             queueStreamAnswer(data.answer);
