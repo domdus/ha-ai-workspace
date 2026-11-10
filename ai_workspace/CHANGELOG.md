@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.5.4b1
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.5.4b1`) together with this release.** The fix is in the runtime. The chat shows a hint when the runtime is older.
+
+**Runtime**
+- Cursor chats no longer lose all their tools after a while until the App is restarted. The cause was an MCP server that keeps its event stream open (such as a Cursor Worker): the runtime's MCP proxy held one of its few threads open for every new agent, forever. After about six agents (roughly 20 minutes of chatting, because a pause of two minutes opens a new agent) no MCP call got through anymore, for every server. The 1.5.2 watchdog did not catch this because the requests did reach the runtime.
+  - The proxy no longer opens the standing event stream (GET) of a server. It answers "not offered" (405), which MCP clients expect, and all requests and answers go over POST as before.
+  - An answer sent as an event stream ends as soon as the JSON-RPC response is in, even when the server keeps the stream open. Nothing waits longer than five minutes in total.
+  - Calls to MCP servers have their own pool of 32 threads, so a slow server cannot block the others or the runtime.
+
 ## 1.5.3
 
 Fixes HA-MCP connections that were found automatically but did not work ([#2](https://github.com/domdus/ha-ai-workspace/issues/2)). Nothing needs to be changed in your setup; the runtime from 1.5.2 keeps working.

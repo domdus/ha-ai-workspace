@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 import hashlib
 import time
 import hmac
@@ -13,6 +14,7 @@ import secrets
 import urllib.error
 import urllib.request
 from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -40,6 +42,15 @@ _DROP = {"content-length", "transfer-encoding", "connection", "keep-alive"}
 
 
 _MAX_UPSTREAMS = 64
+
+# Upstream MCP calls get their own threads. The runtime's shared pool has only
+# cpu+4 workers (6 on a 2-core Home Assistant), and a few slow servers used to
+# fill it, so every later MCP call queued until the App restarted.
+_FORWARD_POOL = ThreadPoolExecutor(max_workers=32, thread_name_prefix="mcp-forward")
+# An answer streamed as server-sent events ends with the JSON-RPC response. Some
+# servers keep the stream open after it (pings), so stop there, and never wait
+# longer than this in total.
+_ANSWER_DEADLINE = 300.0
 
 
 class McpProxy:
@@ -239,6 +250,11 @@ async def proxy_mcp(request: Request, secret: str, digest: str, actor: str = "")
     if registry is None or not registry.allows(secret, digest):
         raise HTTPException(status_code=404, detail="MCP proxy route was not found.")
     registry.note_hit(actor)
+    if request.method.upper() == "GET":
+        # GET opens the server's standing event stream, which stays open for the
+        # life of the MCP session. The proxy does not offer it (405 is the MCP
+        # answer for "no server stream"); requests and answers go over POST.
+        return Response(status_code=405, headers={"Allow": "POST, DELETE"})
     upstream = registry.upstreams[digest]
     body = await request.body()
     headers = {str(key): str(value) for key, value in (upstream.get("headers") or {}).items()}
@@ -291,12 +307,10 @@ async def proxy_mcp(request: Request, secret: str, digest: str, actor: str = "")
             else:
                 logger.info("activity prepare returned no token for %s", name)
     try:
-        status, response_headers, raw = await asyncio.to_thread(
-            _forward,
-            target,
-            headers,
-            body,
-            request.method,
+        loop = asyncio.get_running_loop()
+        status, response_headers, raw = await loop.run_in_executor(
+            _FORWARD_POOL,
+            functools.partial(_forward, target, headers, body, request.method, label=digest[:8]),
         )
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         if activity_token:
@@ -506,12 +520,73 @@ async def _activity_commit(request: Request, token: str, *, ok: bool, who: dict[
 
 
 def _forward(
-    url: str, headers: dict[str, str], body: bytes, method: str, timeout: int = 120
+    url: str,
+    headers: dict[str, str],
+    body: bytes,
+    method: str,
+    timeout: int = 120,
+    *,
+    deadline: float = _ANSWER_DEADLINE,
+    label: str = "",
 ) -> tuple[int, dict[str, str], bytes]:
     data = body if method.upper() not in {"GET", "HEAD"} else None
     req = urllib.request.Request(url, data=data, headers=headers, method=method.upper())
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
+            content_type = str(resp.headers.get("Content-Type") or "").lower()
+            if "text/event-stream" in content_type:
+                raw = _read_answer_events(resp, _request_ids(body), time.monotonic() + deadline, label)
+                return resp.status, dict(resp.headers), raw
             return resp.status, dict(resp.headers), resp.read()
     except urllib.error.HTTPError as exc:
         return exc.code, dict(exc.headers), exc.read()
+
+
+def _request_ids(body: bytes) -> set[str]:
+    """Ids of the JSON-RPC requests in this body (notifications have none)."""
+    try:
+        payload = json.loads(body or b"null")
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return set()
+    messages = payload if isinstance(payload, list) else [payload]
+    return {
+        json.dumps(message["id"])
+        for message in messages
+        if isinstance(message, dict) and message.get("method") and message.get("id") is not None
+    }
+
+
+def _answered(data: bytes, pending: set[str]) -> None:
+    try:
+        payload = json.loads(data)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return
+    for message in payload if isinstance(payload, list) else [payload]:
+        if isinstance(message, dict) and ("result" in message or "error" in message):
+            pending.discard(json.dumps(message.get("id")))
+
+
+def _read_answer_events(resp: Any, ids: set[str], deadline: float, label: str = "") -> bytes:
+    """Read an event stream until every request in it has its answer, the stream ends, or the deadline."""
+    out = bytearray()
+    pending = set(ids)
+    event: list[bytes] = []
+    while True:
+        if time.monotonic() >= deadline:
+            logger.warning("mcp proxy stopped waiting for MCP server %s: no answer in %.0fs", label or "?", _ANSWER_DEADLINE)
+            break
+        line = resp.readline()
+        if not line:
+            break
+        out += line
+        text = line.strip()
+        if text.startswith(b"data:"):
+            event.append(text[5:].strip())
+        elif not text and event:
+            _answered(b"\n".join(event), pending)
+            event = []
+            if ids and not pending:
+                break
+    if event and ids and pending:
+        _answered(b"\n".join(event), pending)
+    return bytes(out)
