@@ -1,17 +1,30 @@
 """The Runtime App is found even when Core started before it was installed."""
 
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
 hassio = pytest.importorskip("homeassistant.components.hassio")
 
-from custom_components.ai_workspace import discovery  # noqa: E402
+from custom_components.ai_workspace import const, discovery  # noqa: E402
 
 
 def _patch(monkeypatch, info, listing):
     monkeypatch.setattr(hassio, "get_addons_info", lambda hass: info, raising=False)
     monkeypatch.setattr(hassio, "get_addons_list", lambda hass: listing, raising=False)
+
+
+def test_compose_runtime_probe_urls() -> None:
+    assert "http://ai-workspace:8090" in const.COMPOSE_RUNTIME_URLS
+    assert "http://ai-workspace-runtime:8090" in const.COMPOSE_RUNTIME_URLS
+    assert not any("cursor-sdk" in url for url in const.COMPOSE_RUNTIME_URLS)
+
+
+def test_compose_file_names_runtime_service() -> None:
+    text = (Path(__file__).resolve().parents[1] / "docker-compose.runtime.yml").read_text()
+    assert "  ai-workspace-runtime:\n    container_name: ai-workspace-runtime" in text
+    assert "cursor-sdk" not in text
 
 
 def test_app_from_the_info_cache(monkeypatch) -> None:

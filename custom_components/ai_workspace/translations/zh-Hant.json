@@ -103,7 +103,7 @@
       }
     },
     "error": {
-      "no_runtime": "無法連線 Cursor runtime。請先啟動它，並檢查此表單上的位址。",
+      "no_runtime": "無法連線 AI Workspace Runtime。請先啟動它，並檢查此表單上的位址。",
       "required": "此欄位為必填。",
       "invalid_auth": "供應商拒絕了此 API 金鑰。",
       "cannot_connect": "無法連線供應商。請檢查 URL 和網路。"
@@ -216,7 +216,7 @@
       }
     },
     "error": {
-      "no_runtime": "無法連線 Cursor runtime。請先啟動它，並檢查此表單上的位址。",
+      "no_runtime": "無法連線 AI Workspace Runtime。請先啟動它，並檢查此表單上的位址。",
       "required": "此欄位為必填。",
       "invalid_auth": "供應商拒絕了此 API 金鑰。",
       "cannot_connect": "無法連線供應商。請檢查 URL 和網路。"
@@ -277,261 +277,304 @@
     },
     "agent": {
       "initiate_flow": {
-        "user": "新增智慧體",
-        "reconfigure": "編輯智慧體"
+        "user": "Add agent",
+        "reconfigure": "Edit agent"
       },
-      "entry_type": "智慧體",
+      "entry_type": "Agent",
       "error": {
-        "no_runtime": "無法連線 Cursor runtime。請先啟動它，並檢查此表單上的位址。",
-        "required": "此欄位為必填。",
-        "invalid_auth": "供應商拒絕了此 API 金鑰。",
-        "cannot_connect": "無法連線供應商。請檢查 URL 和網路。",
-        "model_not_installed": "此模型未在 Ollama 中安裝。已安裝：{installed}",
-        "pick_model": "伺服器現已列出其模型。請從清單中選擇一個。",
-        "model_rejected": "伺服器不允許此金鑰使用該模型：{server_message}"
+        "no_runtime": "Cannot reach the AI Workspace Runtime. Start it and check the address on this form.",
+        "required": "This field is required.",
+        "invalid_auth": "The provider rejected this API key.",
+        "cannot_connect": "Could not reach the provider. Check the URL and the network.",
+        "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
+        "pick_model": "The server lists its models now. Pick one from the model list.",
+        "model_rejected": "The server does not allow this model for this key: {server_message}",
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
       },
       "step": {
         "provider": {
-          "title": "供應商",
-          "description": "選擇供應商。下一畫面只會詢問該供應商所需的內容。",
+          "title": "Provider",
+          "description": "Choose the provider. The next screen asks only for what that provider needs.",
           "data": {
-            "api_provider": "供應商"
+            "api_provider": "Provider"
           },
           "data_description": {
-            "api_provider": "Cursor，或雲端或本機模型。"
+            "api_provider": "Cursor, Claude SDK, or a cloud or local model."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
-          "description": "Cursor 位址、API 金鑰、模型和回覆速度。",
+          "description": "Cursor address, API key, model, and response speed.",
           "data": {
-            "runtime_url": "Cursor runtime 位址{runtime_url_mark}",
-            "runtime_token": "Runtime 密碼",
-            "cursor_api_key": "Cursor API 金鑰",
-            "model": "模型",
-            "effort": "推理強度",
-            "allow_internet": "允許存取網際網路",
-            "assist": "新增至 Assist"
+            "runtime_url": "Runtime address{runtime_url_mark}",
+            "runtime_token": "Runtime password",
+            "cursor_api_key": "Cursor API key",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "與 Cursor runtime 上相同的密碼。使用含自動配對的附加元件時請留空。",
-            "cursor_api_key": "來自你的 Cursor 帳戶（Integrations）。編輯時留空可保留已儲存的金鑰。 [取得 API 金鑰]({api_key_url})",
-            "model": "從清單中選擇或輸入模型名稱。留空則使用 Composer。",
-            "effort": "允許多長的思考時間。Composer 預設使用快速。",
-            "allow_internet": "預設關閉。開啟後，此智慧體可在管理員對話中使用 Cursor 的網頁搜尋、網頁擷取和 Shell。關閉會移除這三項，因此 curl 或指令碼也無法連上網路。一般使用者的對話和語音衛星永遠不會取得這些工具。",
-            "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。"
+            "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
+            "cursor_api_key": "From your Cursor account (Integrations). Leave blank when editing to keep the saved key. [Get an API key]({api_key_url})",
+            "model": "Pick from the list or type a model name. Empty uses Composer.",
+            "effort": "How much thinking time to allow. Composer defaults to Fast.",
+            "allow_internet": "Off by default. On lets this agent use Cursor's web search, page fetch and shell in admin chats. Off removes all three, so curl or scripts cannot reach the web either. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           },
           "sections": {
             "model_list": {
-              "name": "模型清單",
+              "name": "Model list",
               "data": {
-                "models": "模型"
+                "models": "Models"
               },
               "data_description": {
-                "models": "選填。為此處及聊天中的模型選擇指定你自己的模型，而非供應商的完整清單。以逗號、分號或換行分隔名稱，例如 gpt-5.5, grok-4.7。留空則顯示供應商的清單。"
+                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
               }
             },
             "advanced": {
-              "name": "進階",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "節省權杖"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "每則訊息傳送更少內容：更短的提示詞、更少的聊天記錄和更短的回覆。更便宜，但關於你家的回答可能不夠詳盡。"
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
               }
             }
           }
         },
         "provider_cloud": {
-          "title": "雲端智慧體",
-          "description": "此智慧體保存自己的金鑰。可從已設定的整合複製，或貼上新金鑰。編輯時將金鑰留空可保留已儲存的金鑰。",
+          "title": "Cloud agent",
+          "description": "This agent keeps its own key. Copy one from an integration that is already set up, or paste a new one. Leave the key blank when editing to keep the saved key.",
           "data": {
-            "borrow": "從此複製金鑰",
-            "api_key": "API 金鑰",
-            "model": "模型",
-            "effort": "推理強度",
-            "allow_internet": "允許存取網際網路",
-            "assist": "新增至 Assist",
-            "assist_stt": "新增語音轉文字",
-            "stt_model": "語音轉文字模型",
-            "assist_tts": "新增文字轉語音",
-            "tts_model": "文字轉語音模型",
-            "tts_voice": "聲音",
-            "tts_speed": "語速"
+            "borrow": "Copy key from",
+            "api_key": "API key",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist",
+            "assist_stt": "Add Speech-to-text",
+            "stt_model": "Speech-to-text model",
+            "assist_tts": "Add Text-to-speech",
+            "tts_model": "Text-to-speech model",
+            "tts_voice": "Voice",
+            "tts_speed": "Speed"
           },
           "data_description": {
-            "borrow": "使用該整合已儲存的金鑰。另一個整合保持不變。",
-            "api_key": "來自 AI 供應商的金鑰，不是 Home Assistant 登入憑證。 [取得 API 金鑰]({api_key_url})",
-            "model": "從清單中選擇或輸入模型名稱。留空則使用供應商預設值。",
-            "effort": "推理強度越高，思考越多：難題回答更好，但更慢、消耗更多 token。模型不支援時忽略。",
-            "allow_internet": "預設關閉。開啟後，會在管理員對話中加入網頁搜尋和網頁擷取工具。區域網路中的位址仍被封鎖。一般使用者的對話和語音衛星永遠不會取得這些工具。",
-            "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。",
-            "assist_stt": "使用此助手的金鑰在 Home Assistant 中新增語音轉文字選項。關閉則移除它新增的內容。",
-            "stt_model": "留空則使用供應商預設值。若有其他模型名稱，可以輸入。",
-            "assist_tts": "使用此助手的金鑰在 Home Assistant 中新增文字轉語音選項。關閉則移除它新增的內容。",
-            "tts_model": "留空則使用預設語音模型。若供應商列出其他名稱，可以輸入。",
-            "tts_voice": "Coral 為預設聲音。聲音會依 Assist → 語言中設定的語言運作。",
-            "tts_speed": "此聲音的語速。1× 為正常。適用於 AI Workspace 和 Assist。"
+            "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
+            "api_key": "Your key from the AI provider, not your Home Assistant login. [Get an API key]({api_key_url})",
+            "model": "Pick from the list or type a model name. Empty uses the provider default.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist.",
+            "assist_stt": "Adds a Speech-to-text option in Home Assistant using this assistant's key. Off removes what it added.",
+            "stt_model": "Leave empty for the provider default. You can type another model name if yours offers one.",
+            "assist_tts": "Adds a Text-to-speech option in Home Assistant using this assistant's key. Off removes what it added.",
+            "tts_model": "Leave empty for the default voice model. You can type another name if your provider lists one.",
+            "tts_voice": "Coral is the OpenAI default. Kore is the Gemini default. Voices work for the languages you set under Assist → Language.",
+            "tts_speed": "How fast this voice speaks. 1× is normal. Applies to AI Workspace and Assist."
           },
           "sections": {
             "model_list": {
-              "name": "模型清單",
+              "name": "Model list",
               "data": {
-                "models": "模型"
+                "models": "Models"
               },
               "data_description": {
-                "models": "選填。為此處及聊天中的模型選擇指定你自己的模型，而非供應商的完整清單。以逗號、分號或換行分隔名稱，例如 gpt-5.5, grok-4.7。留空則顯示供應商的清單。"
+                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
               }
             },
             "advanced": {
-              "name": "進階",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "節省權杖",
-                "cache_1h": "快取保留一小時"
+                "save_tokens": "Save tokens",
+                "cache_1h": "Keep the cache for an hour"
               },
               "data_description": {
-                "save_tokens": "每則訊息傳送更少內容：更短的提示詞、更少的聊天記錄和更短的回覆。更便宜，但關於你家的回答可能不夠詳盡。",
-                "cache_1h": "僅限 Claude。系統提示與工具在快取中保留一小時，而非 5 分鐘。寫入快取的費用是輸入價格的 2 倍（而非 1.25 倍），讀取為 0.1 倍。若你的訊息之間常隔 5 分鐘以上會更便宜；很少聊天時會稍貴一些。"
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough.",
+                "cache_1h": "Claude only. Keeps the system prompt and tools cached for an hour instead of 5 minutes. Writing the cache costs 2× the input price instead of 1.25×; reading it costs 0.1×. Cheaper when there are breaks of more than 5 minutes between your messages, a little more expensive if you rarely chat."
               }
             }
           }
         },
         "provider_ollama": {
           "title": "Ollama",
-          "description": "指向 Ollama 伺服器。",
+          "description": "Point this at the Ollama server.",
           "data": {
-            "api_base": "Ollama 網址",
-            "model": "模型",
-            "effort": "推理強度",
-            "allow_internet": "允許存取網際網路",
-            "assist": "新增至 Assist"
+            "api_base": "Ollama URL",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
           },
           "data_description": {
             "api_base": "{ollama_note}",
-            "model": "從清單中選擇或輸入已安裝的模型。留空則使用 llama3.2。",
-            "effort": "推理強度越高，思考越多：難題回答更好，但更慢、消耗更多 token。模型不支援時忽略。",
-            "allow_internet": "預設關閉。開啟後，會在管理員對話中加入網頁搜尋和網頁擷取工具。區域網路中的位址仍被封鎖。一般使用者的對話和語音衛星永遠不會取得這些工具。",
-            "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。"
+            "model": "Pick from the list or type a model you installed. Empty uses llama3.2.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           },
           "sections": {
             "model_list": {
-              "name": "模型清單",
+              "name": "Model list",
               "data": {
-                "models": "模型"
+                "models": "Models"
               },
               "data_description": {
-                "models": "選填。為此處及聊天中的模型選擇指定你自己的模型，而非供應商的完整清單。以逗號、分號或換行分隔名稱，例如 gpt-5.5, grok-4.7。留空則顯示供應商的清單。"
+                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
               }
             },
             "advanced": {
-              "name": "進階",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "節省權杖"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "每則訊息傳送更少內容：更短的提示詞、更少的聊天記錄和更短的回覆。更便宜，但關於你家的回答可能不夠詳盡。"
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
               }
             }
           }
         },
         "provider_azure": {
           "title": "Azure OpenAI",
-          "description": "Azure 端點、部署和金鑰。",
+          "description": "Azure endpoint, deployment, and key.",
           "data": {
-            "api_key": "Azure API 金鑰",
-            "api_base": "端點",
-            "model": "部署",
-            "azure_api_version": "API 版本",
-            "effort": "推理強度",
-            "allow_internet": "允許存取網際網路",
-            "assist": "新增至 Assist"
+            "api_key": "Azure API key",
+            "api_base": "Endpoint",
+            "model": "Deployment",
+            "azure_api_version": "API version",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
           },
           "data_description": {
-            "api_key": "Azure OpenAI 金鑰。編輯時留空可保留已儲存的金鑰。 [取得 API 金鑰]({api_key_url})",
+            "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key. [Get an API key]({api_key_url})",
             "api_base": "{example_url}",
-            "model": "部署名稱。",
-            "azure_api_version": "除非 Azure 支援提供了其他版本，否則請保留預設值。",
-            "effort": "推理強度越高，思考越多：難題回答更好，但更慢、消耗更多 token。模型不支援時忽略。",
-            "allow_internet": "預設關閉。開啟後，會在管理員對話中加入網頁搜尋和網頁擷取工具。區域網路中的位址仍被封鎖。一般使用者的對話和語音衛星永遠不會取得這些工具。",
-            "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。"
+            "model": "The deployment name.",
+            "azure_api_version": "Leave the default unless Azure support gave you another version.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           },
           "sections": {
             "model_list": {
-              "name": "模型清單",
+              "name": "Model list",
               "data": {
-                "models": "模型"
+                "models": "Models"
               },
               "data_description": {
-                "models": "選填，適用於不提供模型清單的伺服器。用於填入此處及聊天中的模型選擇。貼上以逗號、分號或換行分隔的名稱，例如 gpt-5.5, grok-4.7。貼上的內容會取代清單；清空後重新使用伺服器的清單。"
+                "models": "Optional, for servers that do not list their models. Fills the model picker here and in the chat. Paste names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. What you paste replaces the list; empty it to use the server's own list again."
               }
             },
             "advanced": {
-              "name": "進階",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "節省權杖"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "每則訊息傳送更少內容：更短的提示詞、更少的聊天記錄和更短的回覆。更便宜，但關於你家的回答可能不夠詳盡。"
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
               }
             }
           }
         },
         "provider_compatible": {
-          "title": "OpenAI 相容",
-          "description": "你自己的伺服器，運作方式類似 OpenAI 聊天 API。",
+          "title": "OpenAI-compatible",
+          "description": "Your own server that works like OpenAI's chat API.",
           "data": {
-            "api_key": "API 金鑰",
-            "api_base": "API 基礎網址",
-            "model": "模型",
-            "effort": "推理強度",
-            "allow_internet": "允許存取網際網路",
-            "assist": "新增至 Assist",
-            "assist_stt": "新增語音轉文字",
-            "stt_model": "語音轉文字模型",
-            "assist_tts": "新增文字轉語音",
-            "tts_model": "文字轉語音模型",
-            "tts_voice": "聲音",
-            "tts_speed": "語速"
+            "api_key": "API key",
+            "api_base": "API base URL",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist",
+            "assist_stt": "Add Speech-to-text",
+            "stt_model": "Speech-to-text model",
+            "assist_tts": "Add Text-to-speech",
+            "tts_model": "Text-to-speech model",
+            "tts_voice": "Voice",
+            "tts_speed": "Speed"
           },
           "data_description": {
-            "api_key": "編輯時留空可保留已儲存的金鑰。",
-            "api_base": "伺服器位址。若伺服器需要，請在結尾加上 /v1。",
-            "model": "該伺服器上的模型名稱。",
-            "effort": "推理強度越高，思考越多：難題回答更好，但更慢、消耗更多 token。模型不支援時忽略。",
-            "allow_internet": "預設關閉。開啟後，會在管理員對話中加入網頁搜尋和網頁擷取工具。區域網路中的位址仍被封鎖。一般使用者的對話和語音衛星永遠不會取得這些工具。",
-            "assist": "同時在 Home Assistant Assist（語音）下列出此助手。關閉則僅留在 AI Workspace 聊天中，並移除它在 Assist 中新增的內容。",
-            "assist_stt": "使用此助手的金鑰在 Home Assistant 中新增語音轉文字選項。關閉則移除它新增的內容。",
-            "stt_model": "留空則使用供應商預設值。若有其他模型名稱，可以輸入。",
-            "assist_tts": "使用此助手的金鑰在 Home Assistant 中新增文字轉語音選項。關閉則移除它新增的內容。",
-            "tts_model": "留空則使用預設語音模型。若供應商列出其他名稱，可以輸入。",
-            "tts_voice": "Coral 為預設聲音。聲音會依 Assist → 語言中設定的語言運作。",
-            "tts_speed": "此聲音的語速。1× 為正常。適用於 AI Workspace 和 Assist。"
+            "api_key": "Leave blank when editing to keep the saved key.",
+            "api_base": "Server address. Add /v1 at the end if your server expects that.",
+            "model": "Model name on that server.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist.",
+            "assist_stt": "Adds a Speech-to-text option in Home Assistant using this assistant's key. Off removes what it added.",
+            "stt_model": "Leave empty for the provider default. You can type another model name if yours offers one.",
+            "assist_tts": "Adds a Text-to-speech option in Home Assistant using this assistant's key. Off removes what it added.",
+            "tts_model": "Leave empty for the default voice model. You can type another name if your provider lists one.",
+            "tts_voice": "Coral is the OpenAI default. Kore is the Gemini default. Voices work for the languages you set under Assist → Language.",
+            "tts_speed": "How fast this voice speaks. 1× is normal. Applies to AI Workspace and Assist."
           },
           "sections": {
             "model_list": {
-              "name": "模型清單",
+              "name": "Model list",
               "data": {
-                "models": "模型"
+                "models": "Models"
               },
               "data_description": {
-                "models": "選填，適用於不提供模型清單的伺服器。用於填入此處及聊天中的模型選擇。貼上以逗號、分號或換行分隔的名稱，例如 gpt-5.5, grok-4.7。貼上的內容會取代清單；清空後重新使用伺服器的清單。"
+                "models": "Optional, for servers that do not list their models. Fills the model picker here and in the chat. Paste names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. What you paste replaces the list; empty it to use the server's own list again."
               }
             },
             "advanced": {
-              "name": "進階",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "節省權杖"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "每則訊息傳送更少內容：更短的提示詞、更少的聊天記錄和更短的回覆。更便宜，但關於你家的回答可能不夠詳盡。"
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
+              }
+            }
+          }
+        },
+        "provider_claude": {
+          "title": "Claude SDK",
+          "description": "Same runtime sidecar as Cursor. OpenRouter key, Claude Plan token, or Anthropic API key.",
+          "data": {
+            "runtime_url": "Runtime address{runtime_url_mark}",
+            "runtime_token": "Runtime password",
+            "claude_api_key": "OpenRouter key, Claude Plan token, or Anthropic API key",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
+          },
+          "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
+            "claude_api_key": "OpenRouter (`sk-or-…`), Claude Plan (`claude setup-token`), or Anthropic API key. Leave blank when editing to keep the saved credential. [Keys and tokens]({api_key_url})",
+            "model": "Anthropic id (e.g. claude-sonnet-5-5) or OpenRouter slug (e.g. anthropic/claude-sonnet-4.5).",
+            "effort": "Reserved for future Claude SDK options.",
+            "allow_internet": "Off by default. On allows WebSearch and WebFetch in admin chats with full tools.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only."
+          },
+          "sections": {
+            "model_list": {
+              "name": "Model list",
+              "data": {
+                "models": "Models"
+              },
+              "data_description": {
+                "models": "Optional custom list for the model picker in this form and in chat."
+              }
+            },
+            "advanced": {
+              "name": "Advanced",
+              "data": {
+                "save_tokens": "Save tokens"
+              },
+              "data_description": {
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies."
               }
             }
           }
         }
       },
       "abort": {
-        "reconfigure_successful": "智慧體已更新。"
+        "reconfigure_successful": "Agent updated."
       }
     }
   },

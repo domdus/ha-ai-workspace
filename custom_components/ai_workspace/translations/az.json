@@ -103,7 +103,7 @@
       }
     },
     "error": {
-      "no_runtime": "Cursor runtime-ə çatmaq mümkün deyil. Onu işə salın və bu formadakı ünvanı yoxlayın.",
+      "no_runtime": "AI Workspace Runtime-a çatmaq mümkün deyil. Onu işə salın və bu formadakı ünvanı yoxlayın.",
       "required": "Bu sahə tələb olunur.",
       "invalid_auth": "Provayder bu API açarını rədd etdi.",
       "cannot_connect": "Provayderə çatmaq mümkün olmadı. URL-i və şəbəkəni yoxlayın."
@@ -216,7 +216,7 @@
       }
     },
     "error": {
-      "no_runtime": "Cursor runtime-ə çatmaq mümkün deyil. Onu işə salın və bu formadakı ünvanı yoxlayın.",
+      "no_runtime": "AI Workspace Runtime-a çatmaq mümkün deyil. Onu işə salın və bu formadakı ünvanı yoxlayın.",
       "required": "Bu sahə tələb olunur.",
       "invalid_auth": "Provayder bu API açarını rədd etdi.",
       "cannot_connect": "Provayderə çatmaq mümkün olmadı. URL-i və şəbəkəni yoxlayın."
@@ -277,261 +277,304 @@
     },
     "agent": {
       "initiate_flow": {
-        "user": "Agent əlavə et",
-        "reconfigure": "Agenti redaktə et"
+        "user": "Add agent",
+        "reconfigure": "Edit agent"
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Cursor runtime-ə çatmaq mümkün deyil. Onu işə salın və bu formadakı ünvanı yoxlayın.",
-        "required": "Bu sahə tələb olunur.",
-        "invalid_auth": "Provayder bu API açarını rədd etdi.",
-        "cannot_connect": "Provayderə çatmaq mümkün olmadı. URL-i və şəbəkəni yoxlayın.",
-        "model_not_installed": "Bu model Ollama-da quraşdırılmayıb. Quraşdırılanlar: {installed}",
-        "pick_model": "Server indi modellərini göstərir. Siyahıdan birini seçin.",
-        "model_rejected": "Server bu açar üçün bu modelə icazə vermir: {server_message}"
+        "no_runtime": "Cannot reach the AI Workspace Runtime. Start it and check the address on this form.",
+        "required": "This field is required.",
+        "invalid_auth": "The provider rejected this API key.",
+        "cannot_connect": "Could not reach the provider. Check the URL and the network.",
+        "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
+        "pick_model": "The server lists its models now. Pick one from the model list.",
+        "model_rejected": "The server does not allow this model for this key: {server_message}",
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
       },
       "step": {
         "provider": {
-          "title": "Provayder",
-          "description": "Provayderi seçin. Növbəti ekran yalnız o provayderin ehtiyac duyduğunu soruşur.",
+          "title": "Provider",
+          "description": "Choose the provider. The next screen asks only for what that provider needs.",
           "data": {
-            "api_provider": "Provayder"
+            "api_provider": "Provider"
           },
           "data_description": {
-            "api_provider": "Cursor, və ya bulud və ya yerli model."
+            "api_provider": "Cursor, Claude SDK, or a cloud or local model."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
-          "description": "Cursor ünvanı, API açarı, model və cavab sürəti.",
+          "description": "Cursor address, API key, model, and response speed.",
           "data": {
-            "runtime_url": "Cursor runtime ünvanı{runtime_url_mark}",
-            "runtime_token": "Runtime parolu",
-            "cursor_api_key": "Cursor API açarı",
+            "runtime_url": "Runtime address{runtime_url_mark}",
+            "runtime_token": "Runtime password",
+            "cursor_api_key": "Cursor API key",
             "model": "Model",
-            "effort": "Səy",
-            "allow_internet": "İnternetə icazə ver",
-            "assist": "Assist-ə əlavə et"
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Cursor runtime-dəki eyni parol. Avtomatik cütləşmə ilə əlavə modul istifadə edərkən boş buraxın.",
-            "cursor_api_key": "Cursor hesabınızdan (Integrations). Redaktə edərkən saxlanmış açarı saxlamaq üçün boş buraxın. [API açarı al]({api_key_url})",
-            "model": "Siyahıdan seçin və ya model adı yazın. Boş Composer istifadə edir.",
-            "effort": "Nə qədər düşünmə vaxtına icazə verilsin. Composer defolt olaraq Sürətli istifadə edir.",
-            "allow_internet": "Standart olaraq söndürülüb. Açıq olduqda bu agent admin söhbətlərində Cursor-un veb axtarışı, səhifə yükləmə və shell alətlərindən istifadə edə bilir. Söndürülü olduqda hər üçü silinir, beləliklə curl və ya skriptlər də internetə çıxa bilmir. Adi istifadəçilərin və səs peyklərinin söhbətləri onları heç vaxt almır.",
-            "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir."
+            "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
+            "cursor_api_key": "From your Cursor account (Integrations). Leave blank when editing to keep the saved key. [Get an API key]({api_key_url})",
+            "model": "Pick from the list or type a model name. Empty uses Composer.",
+            "effort": "How much thinking time to allow. Composer defaults to Fast.",
+            "allow_internet": "Off by default. On lets this agent use Cursor's web search, page fetch and shell in admin chats. Off removes all three, so curl or scripts cannot reach the web either. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           },
           "sections": {
             "model_list": {
-              "name": "Model siyahısı",
+              "name": "Model list",
               "data": {
-                "models": "Modellər"
+                "models": "Models"
               },
               "data_description": {
-                "models": "İstəyə bağlı. Provayderin tam siyahısı əvəzinə burada və söhbətdə seçim üçün öz model seçiminiz. Adlar vergül, nöqtəli vergül və ya yeni sətirlə ayrılır, məs. gpt-5.5, grok-4.7. Boş olduqda provayderin siyahısı göstərilir."
+                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
               }
             },
             "advanced": {
-              "name": "Ətraflı",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "Tokenlərə qənaət et"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "Hər mesajla daha az göndərir: daha qısa prompt, daha az söhbət tarixçəsi və daha qısa cavablar. Daha ucuzdur, amma eviniz haqqında cavablar daha az ətraflı ola bilər."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
               }
             }
           }
         },
         "provider_cloud": {
-          "title": "Bulud agenti",
-          "description": "Bu agent öz açarını saxlayır. Artıq qurulmuş inteqrasiyadan birini kopyalayın və ya yenisini yapışdırın. Redaktə edərkən saxlanmış açarı saxlamaq üçün açarı boş buraxın.",
+          "title": "Cloud agent",
+          "description": "This agent keeps its own key. Copy one from an integration that is already set up, or paste a new one. Leave the key blank when editing to keep the saved key.",
           "data": {
-            "borrow": "Açarı buradan kopyala",
-            "api_key": "API açarı",
+            "borrow": "Copy key from",
+            "api_key": "API key",
             "model": "Model",
-            "effort": "Səy",
-            "allow_internet": "İnternetə icazə ver",
-            "assist": "Assist-ə əlavə et",
-            "assist_stt": "Nitqdən-mətnə əlavə et",
-            "stt_model": "Nitqdən-mətnə modeli",
-            "assist_tts": "Mətndən-nitqə əlavə et",
-            "tts_model": "Mətndən-nitqə modeli",
-            "tts_voice": "Səs",
-            "tts_speed": "Sürət"
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist",
+            "assist_stt": "Add Speech-to-text",
+            "stt_model": "Speech-to-text model",
+            "assist_tts": "Add Text-to-speech",
+            "tts_model": "Text-to-speech model",
+            "tts_voice": "Voice",
+            "tts_speed": "Speed"
           },
           "data_description": {
-            "borrow": "Həmin inteqrasiyanın artıq saxladığı açardan istifadə edir. Digər inteqrasiya dəyişməz qalır.",
-            "api_key": "AI provayderindən açarınız, Home Assistant girişiniz deyil. [API açarı al]({api_key_url})",
-            "model": "Siyahıdan seçin və ya model adı yazın. Boş provayderin defoltunu istifadə edir.",
-            "effort": "Daha çox səy daha çox düşünmək deməkdir: çətin suallara daha yaxşı cavablar, amma daha yavaş və daha çox token. Model dəstəkləmirsə, nəzərə alınmır.",
-            "allow_internet": "Standart olaraq söndürülüb. Açıq olduqda admin söhbətlərinə veb axtarışı və səhifə yükləmə alətləri əlavə olunur. Yerli şəbəkədəki ünvanlar bloklanmış qalır. Adi istifadəçilərin və səs peyklərinin söhbətləri onları heç vaxt almır.",
-            "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir.",
-            "assist_stt": "Bu köməkçinin açarı ilə Home Assistant-da nitqdən-mətnə seçimi əlavə edir. Sönülü əlavə etdiyini silir.",
-            "stt_model": "Provayder defoltu üçün boş buraxın. Təklif olunursa, başqa model adı yaza bilərsiniz.",
-            "assist_tts": "Bu köməkçinin açarı ilə Home Assistant-da mətndən-nitqə seçimi əlavə edir. Sönülü əlavə etdiyini silir.",
-            "tts_model": "Defolt səs modeli üçün boş buraxın. Provayderiniz siyahıya salırsa, başqa ad yaza bilərsiniz.",
-            "tts_voice": "Coral defoltdur. Səslər Assist → Dil altında təyin etdiyiniz dillər üçün işləyir.",
-            "tts_speed": "Bu səsin danışma sürəti. 1× normaldır. AI Workspace və Assist üçün keçərlidir."
+            "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
+            "api_key": "Your key from the AI provider, not your Home Assistant login. [Get an API key]({api_key_url})",
+            "model": "Pick from the list or type a model name. Empty uses the provider default.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist.",
+            "assist_stt": "Adds a Speech-to-text option in Home Assistant using this assistant's key. Off removes what it added.",
+            "stt_model": "Leave empty for the provider default. You can type another model name if yours offers one.",
+            "assist_tts": "Adds a Text-to-speech option in Home Assistant using this assistant's key. Off removes what it added.",
+            "tts_model": "Leave empty for the default voice model. You can type another name if your provider lists one.",
+            "tts_voice": "Coral is the OpenAI default. Kore is the Gemini default. Voices work for the languages you set under Assist → Language.",
+            "tts_speed": "How fast this voice speaks. 1× is normal. Applies to AI Workspace and Assist."
           },
           "sections": {
             "model_list": {
-              "name": "Model siyahısı",
+              "name": "Model list",
               "data": {
-                "models": "Modellər"
+                "models": "Models"
               },
               "data_description": {
-                "models": "İstəyə bağlı. Provayderin tam siyahısı əvəzinə burada və söhbətdə seçim üçün öz model seçiminiz. Adlar vergül, nöqtəli vergül və ya yeni sətirlə ayrılır, məs. gpt-5.5, grok-4.7. Boş olduqda provayderin siyahısı göstərilir."
+                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
               }
             },
             "advanced": {
-              "name": "Ətraflı",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "Tokenlərə qənaət et",
-                "cache_1h": "Keşi bir saat saxla"
+                "save_tokens": "Save tokens",
+                "cache_1h": "Keep the cache for an hour"
               },
               "data_description": {
-                "save_tokens": "Hər mesajla daha az göndərir: daha qısa prompt, daha az söhbət tarixçəsi və daha qısa cavablar. Daha ucuzdur, amma eviniz haqqında cavablar daha az ətraflı ola bilər.",
-                "cache_1h": "Yalnız Claude. Sistem promptunu və alətləri 5 dəqiqə əvəzinə bir saat keşdə saxlayır. Keşə yazmaq giriş qiymətinin 1,25 qatı əvəzinə 2 qatına, oxumaq 0,1 qatına başa gəlir. Mesajlarınız arasında tez-tez 5 dəqiqədən çox fasilə olarsa daha ucuzdur; nadir yazırsınızsa bir az bahadır."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough.",
+                "cache_1h": "Claude only. Keeps the system prompt and tools cached for an hour instead of 5 minutes. Writing the cache costs 2× the input price instead of 1.25×; reading it costs 0.1×. Cheaper when there are breaks of more than 5 minutes between your messages, a little more expensive if you rarely chat."
               }
             }
           }
         },
         "provider_ollama": {
           "title": "Ollama",
-          "description": "Bunu Ollama serverinə yönəldin.",
+          "description": "Point this at the Ollama server.",
           "data": {
             "api_base": "Ollama URL",
             "model": "Model",
-            "effort": "Səy",
-            "allow_internet": "İnternetə icazə ver",
-            "assist": "Assist-ə əlavə et"
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
           },
           "data_description": {
             "api_base": "{ollama_note}",
-            "model": "Siyahıdan seçin və ya quraşdırdığınız modeli yazın. Boş llama3.2 istifadə edir.",
-            "effort": "Daha çox səy daha çox düşünmək deməkdir: çətin suallara daha yaxşı cavablar, amma daha yavaş və daha çox token. Model dəstəkləmirsə, nəzərə alınmır.",
-            "allow_internet": "Standart olaraq söndürülüb. Açıq olduqda admin söhbətlərinə veb axtarışı və səhifə yükləmə alətləri əlavə olunur. Yerli şəbəkədəki ünvanlar bloklanmış qalır. Adi istifadəçilərin və səs peyklərinin söhbətləri onları heç vaxt almır.",
-            "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir."
+            "model": "Pick from the list or type a model you installed. Empty uses llama3.2.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           },
           "sections": {
             "model_list": {
-              "name": "Model siyahısı",
+              "name": "Model list",
               "data": {
-                "models": "Modellər"
+                "models": "Models"
               },
               "data_description": {
-                "models": "İstəyə bağlı. Provayderin tam siyahısı əvəzinə burada və söhbətdə seçim üçün öz model seçiminiz. Adlar vergül, nöqtəli vergül və ya yeni sətirlə ayrılır, məs. gpt-5.5, grok-4.7. Boş olduqda provayderin siyahısı göstərilir."
+                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
               }
             },
             "advanced": {
-              "name": "Ətraflı",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "Tokenlərə qənaət et"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "Hər mesajla daha az göndərir: daha qısa prompt, daha az söhbət tarixçəsi və daha qısa cavablar. Daha ucuzdur, amma eviniz haqqında cavablar daha az ətraflı ola bilər."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
               }
             }
           }
         },
         "provider_azure": {
           "title": "Azure OpenAI",
-          "description": "Azure son nöqtəsi, yerləşdirmə və açar.",
+          "description": "Azure endpoint, deployment, and key.",
           "data": {
-            "api_key": "Azure API açarı",
-            "api_base": "Son nöqtə",
-            "model": "Yerləşdirmə",
-            "azure_api_version": "API versiyası",
-            "effort": "Səy",
-            "allow_internet": "İnternetə icazə ver",
-            "assist": "Assist-ə əlavə et"
+            "api_key": "Azure API key",
+            "api_base": "Endpoint",
+            "model": "Deployment",
+            "azure_api_version": "API version",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
           },
           "data_description": {
-            "api_key": "Azure OpenAI açarı. Redaktə edərkən saxlanmış açarı saxlamaq üçün boş buraxın. [API açarı al]({api_key_url})",
+            "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key. [Get an API key]({api_key_url})",
             "api_base": "{example_url}",
-            "model": "Yerləşdirmə adı.",
-            "azure_api_version": "Azure dəstəyi başqa versiya verməyibsə, defoltu saxlayın.",
-            "effort": "Daha çox səy daha çox düşünmək deməkdir: çətin suallara daha yaxşı cavablar, amma daha yavaş və daha çox token. Model dəstəkləmirsə, nəzərə alınmır.",
-            "allow_internet": "Standart olaraq söndürülüb. Açıq olduqda admin söhbətlərinə veb axtarışı və səhifə yükləmə alətləri əlavə olunur. Yerli şəbəkədəki ünvanlar bloklanmış qalır. Adi istifadəçilərin və səs peyklərinin söhbətləri onları heç vaxt almır.",
-            "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir."
+            "model": "The deployment name.",
+            "azure_api_version": "Leave the default unless Azure support gave you another version.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           },
           "sections": {
             "model_list": {
-              "name": "Model siyahısı",
+              "name": "Model list",
               "data": {
-                "models": "Modellər"
+                "models": "Models"
               },
               "data_description": {
-                "models": "İstəyə bağlı, modellərini siyahılamayan serverlər üçün. Buradakı və söhbətdəki model seçimini doldurur. Adları vergül, nöqtəli vergül və ya yeni sətirlə ayıraraq yapışdırın, məs. gpt-5.5, grok-4.7. Yapışdırdığınız siyahını əvəz edir; serverin öz siyahısına qayıtmaq üçün boşaldın."
+                "models": "Optional, for servers that do not list their models. Fills the model picker here and in the chat. Paste names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. What you paste replaces the list; empty it to use the server's own list again."
               }
             },
             "advanced": {
-              "name": "Ətraflı",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "Tokenlərə qənaət et"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "Hər mesajla daha az göndərir: daha qısa prompt, daha az söhbət tarixçəsi və daha qısa cavablar. Daha ucuzdur, amma eviniz haqqında cavablar daha az ətraflı ola bilər."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
               }
             }
           }
         },
         "provider_compatible": {
-          "title": "OpenAI-uyğun",
-          "description": "OpenAI söhbət API-si kimi işləyən öz serveriniz.",
+          "title": "OpenAI-compatible",
+          "description": "Your own server that works like OpenAI's chat API.",
           "data": {
-            "api_key": "API açarı",
-            "api_base": "API baza URL",
+            "api_key": "API key",
+            "api_base": "API base URL",
             "model": "Model",
-            "effort": "Səy",
-            "allow_internet": "İnternetə icazə ver",
-            "assist": "Assist-ə əlavə et",
-            "assist_stt": "Nitqdən-mətnə əlavə et",
-            "stt_model": "Nitqdən-mətnə modeli",
-            "assist_tts": "Mətndən-nitqə əlavə et",
-            "tts_model": "Mətndən-nitqə modeli",
-            "tts_voice": "Səs",
-            "tts_speed": "Sürət"
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist",
+            "assist_stt": "Add Speech-to-text",
+            "stt_model": "Speech-to-text model",
+            "assist_tts": "Add Text-to-speech",
+            "tts_model": "Text-to-speech model",
+            "tts_voice": "Voice",
+            "tts_speed": "Speed"
           },
           "data_description": {
-            "api_key": "Redaktə edərkən saxlanmış açarı saxlamaq üçün boş buraxın.",
-            "api_base": "Server ünvanı. Serveriniz bunu gözləyirsə, sonuna /v1 əlavə edin.",
-            "model": "Həmin serverdəki model adı.",
-            "effort": "Daha çox səy daha çox düşünmək deməkdir: çətin suallara daha yaxşı cavablar, amma daha yavaş və daha çox token. Model dəstəkləmirsə, nəzərə alınmır.",
-            "allow_internet": "Standart olaraq söndürülüb. Açıq olduqda admin söhbətlərinə veb axtarışı və səhifə yükləmə alətləri əlavə olunur. Yerli şəbəkədəki ünvanlar bloklanmış qalır. Adi istifadəçilərin və səs peyklərinin söhbətləri onları heç vaxt almır.",
-            "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir.",
-            "assist_stt": "Bu köməkçinin açarı ilə Home Assistant-da nitqdən-mətnə seçimi əlavə edir. Sönülü əlavə etdiyini silir.",
-            "stt_model": "Provayder defoltu üçün boş buraxın. Təklif olunursa, başqa model adı yaza bilərsiniz.",
-            "assist_tts": "Bu köməkçinin açarı ilə Home Assistant-da mətndən-nitqə seçimi əlavə edir. Sönülü əlavə etdiyini silir.",
-            "tts_model": "Defolt səs modeli üçün boş buraxın. Provayderiniz siyahıya salırsa, başqa ad yaza bilərsiniz.",
-            "tts_voice": "Coral defoltdur. Səslər Assist → Dil altında təyin etdiyiniz dillər üçün işləyir.",
-            "tts_speed": "Bu səsin danışma sürəti. 1× normaldır. AI Workspace və Assist üçün keçərlidir."
+            "api_key": "Leave blank when editing to keep the saved key.",
+            "api_base": "Server address. Add /v1 at the end if your server expects that.",
+            "model": "Model name on that server.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist.",
+            "assist_stt": "Adds a Speech-to-text option in Home Assistant using this assistant's key. Off removes what it added.",
+            "stt_model": "Leave empty for the provider default. You can type another model name if yours offers one.",
+            "assist_tts": "Adds a Text-to-speech option in Home Assistant using this assistant's key. Off removes what it added.",
+            "tts_model": "Leave empty for the default voice model. You can type another name if your provider lists one.",
+            "tts_voice": "Coral is the OpenAI default. Kore is the Gemini default. Voices work for the languages you set under Assist → Language.",
+            "tts_speed": "How fast this voice speaks. 1× is normal. Applies to AI Workspace and Assist."
           },
           "sections": {
             "model_list": {
-              "name": "Model siyahısı",
+              "name": "Model list",
               "data": {
-                "models": "Modellər"
+                "models": "Models"
               },
               "data_description": {
-                "models": "İstəyə bağlı, modellərini siyahılamayan serverlər üçün. Buradakı və söhbətdəki model seçimini doldurur. Adları vergül, nöqtəli vergül və ya yeni sətirlə ayıraraq yapışdırın, məs. gpt-5.5, grok-4.7. Yapışdırdığınız siyahını əvəz edir; serverin öz siyahısına qayıtmaq üçün boşaldın."
+                "models": "Optional, for servers that do not list their models. Fills the model picker here and in the chat. Paste names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. What you paste replaces the list; empty it to use the server's own list again."
               }
             },
             "advanced": {
-              "name": "Ətraflı",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "Tokenlərə qənaət et"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "Hər mesajla daha az göndərir: daha qısa prompt, daha az söhbət tarixçəsi və daha qısa cavablar. Daha ucuzdur, amma eviniz haqqında cavablar daha az ətraflı ola bilər."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
+              }
+            }
+          }
+        },
+        "provider_claude": {
+          "title": "Claude SDK",
+          "description": "Same runtime sidecar as Cursor. OpenRouter key, Claude Plan token, or Anthropic API key.",
+          "data": {
+            "runtime_url": "Runtime address{runtime_url_mark}",
+            "runtime_token": "Runtime password",
+            "claude_api_key": "OpenRouter key, Claude Plan token, or Anthropic API key",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
+          },
+          "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
+            "claude_api_key": "OpenRouter (`sk-or-…`), Claude Plan (`claude setup-token`), or Anthropic API key. Leave blank when editing to keep the saved credential. [Keys and tokens]({api_key_url})",
+            "model": "Anthropic id (e.g. claude-sonnet-5-5) or OpenRouter slug (e.g. anthropic/claude-sonnet-4.5).",
+            "effort": "Reserved for future Claude SDK options.",
+            "allow_internet": "Off by default. On allows WebSearch and WebFetch in admin chats with full tools.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only."
+          },
+          "sections": {
+            "model_list": {
+              "name": "Model list",
+              "data": {
+                "models": "Models"
+              },
+              "data_description": {
+                "models": "Optional custom list for the model picker in this form and in chat."
+              }
+            },
+            "advanced": {
+              "name": "Advanced",
+              "data": {
+                "save_tokens": "Save tokens"
+              },
+              "data_description": {
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies."
               }
             }
           }
         }
       },
       "abort": {
-        "reconfigure_successful": "Agent yeniləndi."
+        "reconfigure_successful": "Agent updated."
       }
     }
   },

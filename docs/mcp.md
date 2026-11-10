@@ -10,7 +10,7 @@ See [How it is organized](settings.md#how-it-is-organized) for connections vs ag
 
 Cloud agents (OpenAI, Claude, and the others) call MCP from inside Home Assistant.
 
-Cursor is different: the model runs in the Cursor runtime next to Home Assistant, and tools go through that runtime. You do not point Cursor at your MCP URL yourself; AI Workspace does that when you chat.
+Cursor is different: the model runs in the AI Workspace Runtime next to Home Assistant, and tools go through that runtime. You do not point Cursor at your MCP URL yourself; AI Workspace does that when you chat.
 
 ## HA-MCP inside Home Assistant
 
@@ -38,7 +38,7 @@ Everything else reaches the model exactly as Home Assistant or the MCP server se
 
 A result over 100,000 characters first has its longest texts shortened, for example one huge notification inside HA-MCP's system overview. Every other part stays, the JSON stays valid, and each shortened text says where it came from (such as the notification or entity id), so the agent can tell you which integration or device makes answers that large. Only when that is not enough is the result cut at the end, with a note that it is incomplete, must not be written back, and should be asked for in smaller parts.
 
-The setting lives in AI Workspace → Configure. The integration sends it to the Cursor runtime with every chat, so the Runtime App and the Docker image have no setting of their own for it.
+The setting lives in AI Workspace → Configure. The integration sends it to the AI Workspace Runtime with every chat, so the Runtime App and the Docker image have no setting of their own for it.
 
 Turn this off if you want every attribute of a large listing in one shot and you accept the extra tokens.
 

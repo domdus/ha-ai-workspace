@@ -103,7 +103,7 @@
       }
     },
     "error": {
-      "no_runtime": "Kan inte nå Cursor-runtimen. Starta den och kontrollera adressen i det här formuläret.",
+      "no_runtime": "Kan inte nå AI Workspace Runtime. Starta den och kontrollera adressen i det här formuläret.",
       "required": "Det här fältet är obligatoriskt.",
       "invalid_auth": "Leverantören avvisade den här API-nyckeln.",
       "cannot_connect": "Kunde inte nå leverantören. Kontrollera URL:en och nätverket."
@@ -216,7 +216,7 @@
       }
     },
     "error": {
-      "no_runtime": "Kan inte nå Cursor-runtimen. Starta den och kontrollera adressen i det här formuläret.",
+      "no_runtime": "Kan inte nå AI Workspace Runtime. Starta den och kontrollera adressen i det här formuläret.",
       "required": "Det här fältet är obligatoriskt.",
       "invalid_auth": "Leverantören avvisade den här API-nyckeln.",
       "cannot_connect": "Kunde inte nå leverantören. Kontrollera URL:en och nätverket."
@@ -277,261 +277,304 @@
     },
     "agent": {
       "initiate_flow": {
-        "user": "Lägg till agent",
-        "reconfigure": "Redigera agent"
+        "user": "Add agent",
+        "reconfigure": "Edit agent"
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Kan inte nå Cursor-runtimen. Starta den och kontrollera adressen i det här formuläret.",
-        "required": "Det här fältet är obligatoriskt.",
-        "invalid_auth": "Leverantören avvisade den här API-nyckeln.",
-        "cannot_connect": "Kunde inte nå leverantören. Kontrollera URL:en och nätverket.",
-        "model_not_installed": "Den här modellen är inte installerad i Ollama. Installerade: {installed}",
-        "pick_model": "Servern listar nu sina modeller. Välj en i listan.",
-        "model_rejected": "Servern tillåter inte den här modellen för den här nyckeln: {server_message}"
+        "no_runtime": "Cannot reach the AI Workspace Runtime. Start it and check the address on this form.",
+        "required": "This field is required.",
+        "invalid_auth": "The provider rejected this API key.",
+        "cannot_connect": "Could not reach the provider. Check the URL and the network.",
+        "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
+        "pick_model": "The server lists its models now. Pick one from the model list.",
+        "model_rejected": "The server does not allow this model for this key: {server_message}",
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
       },
       "step": {
         "provider": {
-          "title": "Leverantör",
-          "description": "Välj leverantör. Nästa skärm frågar bara efter det som den leverantören behöver.",
+          "title": "Provider",
+          "description": "Choose the provider. The next screen asks only for what that provider needs.",
           "data": {
-            "api_provider": "Leverantör"
+            "api_provider": "Provider"
           },
           "data_description": {
-            "api_provider": "Cursor, eller en molnmodell eller lokal modell."
+            "api_provider": "Cursor, Claude SDK, or a cloud or local model."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
-          "description": "Cursor-adress, API-nyckel, modell och svarshastighet.",
+          "description": "Cursor address, API key, model, and response speed.",
           "data": {
-            "runtime_url": "Cursor-runtime-adress{runtime_url_mark}",
-            "runtime_token": "Runtime-lösenord",
-            "cursor_api_key": "Cursor API-nyckel",
-            "model": "Modell",
-            "effort": "Ansträngning",
-            "allow_internet": "Tillåt internet",
-            "assist": "Lägg till i Assist"
+            "runtime_url": "Runtime address{runtime_url_mark}",
+            "runtime_token": "Runtime password",
+            "cursor_api_key": "Cursor API key",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Samma lösenord som på din Cursor-runtime. Lämna tomt när du använder tillägget med automatisk parkoppling.",
-            "cursor_api_key": "Från ditt Cursor-konto (Integrations). Lämna tomt vid redigering för att behålla den sparade nyckeln. [Hämta API-nyckel]({api_key_url})",
-            "model": "Välj från listan eller skriv ett modellnamn. Tomt använder Composer.",
-            "effort": "Hur mycket tänketid som ska tillåtas. Composer använder Snabb som standard.",
-            "allow_internet": "Av som standard. På låter agenten använda Cursors webbsökning, sidhämtning och skal i administratörschattar. Av tar bort alla tre, så att inte heller curl eller skript når webben. Chattar från vanliga användare och röstsatelliter får dem aldrig.",
-            "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist."
+            "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
+            "cursor_api_key": "From your Cursor account (Integrations). Leave blank when editing to keep the saved key. [Get an API key]({api_key_url})",
+            "model": "Pick from the list or type a model name. Empty uses Composer.",
+            "effort": "How much thinking time to allow. Composer defaults to Fast.",
+            "allow_internet": "Off by default. On lets this agent use Cursor's web search, page fetch and shell in admin chats. Off removes all three, so curl or scripts cannot reach the web either. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           },
           "sections": {
             "model_list": {
-              "name": "Modellista",
+              "name": "Model list",
               "data": {
-                "models": "Modeller"
+                "models": "Models"
               },
               "data_description": {
-                "models": "Valfritt. Ditt eget urval av modeller för valet här och i chatten i stället för leverantörens hela lista. Namn åtskilda med komma, semikolon eller radbrytningar, t.ex. gpt-5.5, grok-4.7. Tomt visar leverantörens lista."
+                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
               }
             },
             "advanced": {
-              "name": "Avancerat",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "Spara tokens"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "Skickar mindre med varje meddelande: en kortare prompt, mindre chatthistorik och kortare svar. Billigare, men svar om ditt hem kan bli mindre grundliga."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
               }
             }
           }
         },
         "provider_cloud": {
-          "title": "Molnagent",
-          "description": "Den här agenten behåller sin egen nyckel. Kopiera en från en integration som redan är konfigurerad, eller klistra in en ny. Lämna nyckeln tom vid redigering för att behålla den sparade nyckeln.",
+          "title": "Cloud agent",
+          "description": "This agent keeps its own key. Copy one from an integration that is already set up, or paste a new one. Leave the key blank when editing to keep the saved key.",
           "data": {
-            "borrow": "Kopiera nyckel från",
-            "api_key": "API-nyckel",
-            "model": "Modell",
-            "effort": "Ansträngning",
-            "allow_internet": "Tillåt internet",
-            "assist": "Lägg till i Assist",
-            "assist_stt": "Lägg till tal till text",
-            "stt_model": "Tal-till-text-modell",
-            "assist_tts": "Lägg till text till tal",
-            "tts_model": "Text-till-tal-modell",
-            "tts_voice": "Röst",
-            "tts_speed": "Hastighet"
+            "borrow": "Copy key from",
+            "api_key": "API key",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist",
+            "assist_stt": "Add Speech-to-text",
+            "stt_model": "Speech-to-text model",
+            "assist_tts": "Add Text-to-speech",
+            "tts_model": "Text-to-speech model",
+            "tts_voice": "Voice",
+            "tts_speed": "Speed"
           },
           "data_description": {
-            "borrow": "Använder nyckeln som redan sparats av den integrationen. Den andra integrationen lämnas oförändrad.",
-            "api_key": "Din nyckel från AI-leverantören, inte din Home Assistant-inloggning. [Hämta API-nyckel]({api_key_url})",
-            "model": "Välj från listan eller skriv ett modellnamn. Tomt använder leverantörens standard.",
-            "effort": "Mer ansträngning betyder mer tänkande: bättre svar på svåra frågor, men långsammare och fler token. Ignoreras om modellen inte stöder det.",
-            "allow_internet": "Av som standard. På lägger till verktyg för webbsökning och sidhämtning i administratörschattar. Adresser i ditt lokala nätverk förblir blockerade. Chattar från vanliga användare och röstsatelliter får dem aldrig.",
-            "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist.",
-            "assist_stt": "Lägger till ett tal-till-text-alternativ i Home Assistant med den här assistentens nyckel. Av tar bort det den lade till.",
-            "stt_model": "Lämna tomt för leverantörens standard. Du kan skriva ett annat modellnamn om din leverantör har ett.",
-            "assist_tts": "Lägger till ett text-till-tal-alternativ i Home Assistant med den här assistentens nyckel. Av tar bort det den lade till.",
-            "tts_model": "Lämna tomt för standardröstmodellen. Du kan skriva ett annat namn om din leverantör listar ett.",
-            "tts_voice": "Coral är standard. Röster fungerar för de språk du ställer in under Assist → Språk.",
-            "tts_speed": "Hur snabbt den här rösten talar. 1× är normalt. Gäller AI Workspace och Assist."
+            "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
+            "api_key": "Your key from the AI provider, not your Home Assistant login. [Get an API key]({api_key_url})",
+            "model": "Pick from the list or type a model name. Empty uses the provider default.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist.",
+            "assist_stt": "Adds a Speech-to-text option in Home Assistant using this assistant's key. Off removes what it added.",
+            "stt_model": "Leave empty for the provider default. You can type another model name if yours offers one.",
+            "assist_tts": "Adds a Text-to-speech option in Home Assistant using this assistant's key. Off removes what it added.",
+            "tts_model": "Leave empty for the default voice model. You can type another name if your provider lists one.",
+            "tts_voice": "Coral is the OpenAI default. Kore is the Gemini default. Voices work for the languages you set under Assist → Language.",
+            "tts_speed": "How fast this voice speaks. 1× is normal. Applies to AI Workspace and Assist."
           },
           "sections": {
             "model_list": {
-              "name": "Modellista",
+              "name": "Model list",
               "data": {
-                "models": "Modeller"
+                "models": "Models"
               },
               "data_description": {
-                "models": "Valfritt. Ditt eget urval av modeller för valet här och i chatten i stället för leverantörens hela lista. Namn åtskilda med komma, semikolon eller radbrytningar, t.ex. gpt-5.5, grok-4.7. Tomt visar leverantörens lista."
+                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
               }
             },
             "advanced": {
-              "name": "Avancerat",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "Spara tokens",
-                "cache_1h": "Behåll cachen i en timme"
+                "save_tokens": "Save tokens",
+                "cache_1h": "Keep the cache for an hour"
               },
               "data_description": {
-                "save_tokens": "Skickar mindre med varje meddelande: en kortare prompt, mindre chatthistorik och kortare svar. Billigare, men svar om ditt hem kan bli mindre grundliga.",
-                "cache_1h": "Endast Claude. Håller systemprompten och verktygen i cachen i en timme i stället för 5 minuter. Att skriva till cachen kostar 2× inmatningspriset i stället för 1,25×; att läsa kostar 0,1×. Billigare när det ofta går mer än 5 minuter mellan dina meddelanden, lite dyrare om du sällan chattar."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough.",
+                "cache_1h": "Claude only. Keeps the system prompt and tools cached for an hour instead of 5 minutes. Writing the cache costs 2× the input price instead of 1.25×; reading it costs 0.1×. Cheaper when there are breaks of more than 5 minutes between your messages, a little more expensive if you rarely chat."
               }
             }
           }
         },
         "provider_ollama": {
           "title": "Ollama",
-          "description": "Peka det här mot Ollama-servern.",
+          "description": "Point this at the Ollama server.",
           "data": {
-            "api_base": "Ollama-URL",
-            "model": "Modell",
-            "effort": "Ansträngning",
-            "allow_internet": "Tillåt internet",
-            "assist": "Lägg till i Assist"
+            "api_base": "Ollama URL",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
           },
           "data_description": {
             "api_base": "{ollama_note}",
-            "model": "Välj från listan eller skriv en modell du har installerat. Tomt använder llama3.2.",
-            "effort": "Mer ansträngning betyder mer tänkande: bättre svar på svåra frågor, men långsammare och fler token. Ignoreras om modellen inte stöder det.",
-            "allow_internet": "Av som standard. På lägger till verktyg för webbsökning och sidhämtning i administratörschattar. Adresser i ditt lokala nätverk förblir blockerade. Chattar från vanliga användare och röstsatelliter får dem aldrig.",
-            "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist."
+            "model": "Pick from the list or type a model you installed. Empty uses llama3.2.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           },
           "sections": {
             "model_list": {
-              "name": "Modellista",
+              "name": "Model list",
               "data": {
-                "models": "Modeller"
+                "models": "Models"
               },
               "data_description": {
-                "models": "Valfritt. Ditt eget urval av modeller för valet här och i chatten i stället för leverantörens hela lista. Namn åtskilda med komma, semikolon eller radbrytningar, t.ex. gpt-5.5, grok-4.7. Tomt visar leverantörens lista."
+                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
               }
             },
             "advanced": {
-              "name": "Avancerat",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "Spara tokens"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "Skickar mindre med varje meddelande: en kortare prompt, mindre chatthistorik och kortare svar. Billigare, men svar om ditt hem kan bli mindre grundliga."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
               }
             }
           }
         },
         "provider_azure": {
           "title": "Azure OpenAI",
-          "description": "Azure-slutpunkt, distribution och nyckel.",
+          "description": "Azure endpoint, deployment, and key.",
           "data": {
-            "api_key": "Azure API-nyckel",
-            "api_base": "Slutpunkt",
-            "model": "Distribution",
-            "azure_api_version": "API-version",
-            "effort": "Ansträngning",
-            "allow_internet": "Tillåt internet",
-            "assist": "Lägg till i Assist"
+            "api_key": "Azure API key",
+            "api_base": "Endpoint",
+            "model": "Deployment",
+            "azure_api_version": "API version",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
           },
           "data_description": {
-            "api_key": "Azure OpenAI-nyckeln. Lämna tomt vid redigering för att behålla den sparade nyckeln. [Hämta API-nyckel]({api_key_url})",
+            "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key. [Get an API key]({api_key_url})",
             "api_base": "{example_url}",
-            "model": "Distributionens namn.",
-            "azure_api_version": "Behåll standardvärdet om inte Azure-supporten gett dig en annan version.",
-            "effort": "Mer ansträngning betyder mer tänkande: bättre svar på svåra frågor, men långsammare och fler token. Ignoreras om modellen inte stöder det.",
-            "allow_internet": "Av som standard. På lägger till verktyg för webbsökning och sidhämtning i administratörschattar. Adresser i ditt lokala nätverk förblir blockerade. Chattar från vanliga användare och röstsatelliter får dem aldrig.",
-            "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist."
+            "model": "The deployment name.",
+            "azure_api_version": "Leave the default unless Azure support gave you another version.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           },
           "sections": {
             "model_list": {
-              "name": "Modellista",
+              "name": "Model list",
               "data": {
-                "models": "Modeller"
+                "models": "Models"
               },
               "data_description": {
-                "models": "Valfritt, för servrar som inte listar sina modeller. Fyller modellvalet här och i chatten. Klistra in namn åtskilda med komma, semikolon eller radbrytningar, t.ex. gpt-5.5, grok-4.7. Det du klistrar in ersätter listan; töm den för att använda serverns lista igen."
+                "models": "Optional, for servers that do not list their models. Fills the model picker here and in the chat. Paste names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. What you paste replaces the list; empty it to use the server's own list again."
               }
             },
             "advanced": {
-              "name": "Avancerat",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "Spara tokens"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "Skickar mindre med varje meddelande: en kortare prompt, mindre chatthistorik och kortare svar. Billigare, men svar om ditt hem kan bli mindre grundliga."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
               }
             }
           }
         },
         "provider_compatible": {
-          "title": "OpenAI-kompatibel",
-          "description": "Din egen server som fungerar som OpenAIs chatt-API.",
+          "title": "OpenAI-compatible",
+          "description": "Your own server that works like OpenAI's chat API.",
           "data": {
-            "api_key": "API-nyckel",
-            "api_base": "API-bas-URL",
-            "model": "Modell",
-            "effort": "Ansträngning",
-            "allow_internet": "Tillåt internet",
-            "assist": "Lägg till i Assist",
-            "assist_stt": "Lägg till tal till text",
-            "stt_model": "Tal-till-text-modell",
-            "assist_tts": "Lägg till text till tal",
-            "tts_model": "Text-till-tal-modell",
-            "tts_voice": "Röst",
-            "tts_speed": "Hastighet"
+            "api_key": "API key",
+            "api_base": "API base URL",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist",
+            "assist_stt": "Add Speech-to-text",
+            "stt_model": "Speech-to-text model",
+            "assist_tts": "Add Text-to-speech",
+            "tts_model": "Text-to-speech model",
+            "tts_voice": "Voice",
+            "tts_speed": "Speed"
           },
           "data_description": {
-            "api_key": "Lämna tomt vid redigering för att behålla den sparade nyckeln.",
-            "api_base": "Serveradress. Lägg till /v1 i slutet om din server förväntar sig det.",
-            "model": "Modellnamn på den servern.",
-            "effort": "Mer ansträngning betyder mer tänkande: bättre svar på svåra frågor, men långsammare och fler token. Ignoreras om modellen inte stöder det.",
-            "allow_internet": "Av som standard. På lägger till verktyg för webbsökning och sidhämtning i administratörschattar. Adresser i ditt lokala nätverk förblir blockerade. Chattar från vanliga användare och röstsatelliter får dem aldrig.",
-            "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist.",
-            "assist_stt": "Lägger till ett tal-till-text-alternativ i Home Assistant med den här assistentens nyckel. Av tar bort det den lade till.",
-            "stt_model": "Lämna tomt för leverantörens standard. Du kan skriva ett annat modellnamn om din leverantör har ett.",
-            "assist_tts": "Lägger till ett text-till-tal-alternativ i Home Assistant med den här assistentens nyckel. Av tar bort det den lade till.",
-            "tts_model": "Lämna tomt för standardröstmodellen. Du kan skriva ett annat namn om din leverantör listar ett.",
-            "tts_voice": "Coral är standard. Röster fungerar för de språk du ställer in under Assist → Språk.",
-            "tts_speed": "Hur snabbt den här rösten talar. 1× är normalt. Gäller AI Workspace och Assist."
+            "api_key": "Leave blank when editing to keep the saved key.",
+            "api_base": "Server address. Add /v1 at the end if your server expects that.",
+            "model": "Model name on that server.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist.",
+            "assist_stt": "Adds a Speech-to-text option in Home Assistant using this assistant's key. Off removes what it added.",
+            "stt_model": "Leave empty for the provider default. You can type another model name if yours offers one.",
+            "assist_tts": "Adds a Text-to-speech option in Home Assistant using this assistant's key. Off removes what it added.",
+            "tts_model": "Leave empty for the default voice model. You can type another name if your provider lists one.",
+            "tts_voice": "Coral is the OpenAI default. Kore is the Gemini default. Voices work for the languages you set under Assist → Language.",
+            "tts_speed": "How fast this voice speaks. 1× is normal. Applies to AI Workspace and Assist."
           },
           "sections": {
             "model_list": {
-              "name": "Modellista",
+              "name": "Model list",
               "data": {
-                "models": "Modeller"
+                "models": "Models"
               },
               "data_description": {
-                "models": "Valfritt, för servrar som inte listar sina modeller. Fyller modellvalet här och i chatten. Klistra in namn åtskilda med komma, semikolon eller radbrytningar, t.ex. gpt-5.5, grok-4.7. Det du klistrar in ersätter listan; töm den för att använda serverns lista igen."
+                "models": "Optional, for servers that do not list their models. Fills the model picker here and in the chat. Paste names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. What you paste replaces the list; empty it to use the server's own list again."
               }
             },
             "advanced": {
-              "name": "Avancerat",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "Spara tokens"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "Skickar mindre med varje meddelande: en kortare prompt, mindre chatthistorik och kortare svar. Billigare, men svar om ditt hem kan bli mindre grundliga."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
+              }
+            }
+          }
+        },
+        "provider_claude": {
+          "title": "Claude SDK",
+          "description": "Same runtime sidecar as Cursor. OpenRouter key, Claude Plan token, or Anthropic API key.",
+          "data": {
+            "runtime_url": "Runtime address{runtime_url_mark}",
+            "runtime_token": "Runtime password",
+            "claude_api_key": "OpenRouter key, Claude Plan token, or Anthropic API key",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
+          },
+          "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
+            "claude_api_key": "OpenRouter (`sk-or-…`), Claude Plan (`claude setup-token`), or Anthropic API key. Leave blank when editing to keep the saved credential. [Keys and tokens]({api_key_url})",
+            "model": "Anthropic id (e.g. claude-sonnet-5-5) or OpenRouter slug (e.g. anthropic/claude-sonnet-4.5).",
+            "effort": "Reserved for future Claude SDK options.",
+            "allow_internet": "Off by default. On allows WebSearch and WebFetch in admin chats with full tools.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only."
+          },
+          "sections": {
+            "model_list": {
+              "name": "Model list",
+              "data": {
+                "models": "Models"
+              },
+              "data_description": {
+                "models": "Optional custom list for the model picker in this form and in chat."
+              }
+            },
+            "advanced": {
+              "name": "Advanced",
+              "data": {
+                "save_tokens": "Save tokens"
+              },
+              "data_description": {
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies."
               }
             }
           }
         }
       },
       "abort": {
-        "reconfigure_successful": "Agenten har uppdaterats."
+        "reconfigure_successful": "Agent updated."
       }
     }
   },

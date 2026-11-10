@@ -4,9 +4,9 @@ ARG VERSION=dev
 
 LABEL \
   org.opencontainers.image.source="https://github.com/domdus/ha-ai-workspace" \
-  org.opencontainers.image.description="Cursor SDK sidecar for Home Assistant AI Workspace" \
-  io.hass.name="Cursor SDK" \
-  io.hass.description="Cursor SDK sidecar for Home Assistant AI Workspace" \
+  org.opencontainers.image.description="Cursor and Claude Agent SDK sidecar for Home Assistant AI Workspace" \
+  io.hass.name="AI Workspace Runtime" \
+  io.hass.description="Cursor and Claude Agent SDK sidecar for Home Assistant AI Workspace" \
   io.hass.version="${VERSION}" \
   io.hass.type="addon" \
   io.hass.arch="amd64|aarch64"

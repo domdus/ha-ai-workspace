@@ -6,6 +6,7 @@ from custom_components.ai_workspace.const import (
     API_KEY_URLS,
     API_OLLAMA,
     API_PROVIDERS,
+    MODE_CLAUDE,
     MODE_CURSOR,
     api_key_url,
 )
@@ -15,6 +16,7 @@ BASE = ROOT / "custom_components" / "ai_workspace"
 _NO_KEY_PAGE = {API_OLLAMA, API_COMPATIBLE}
 _LINK_FIELDS = (
     ("provider_cursor", "cursor_api_key"),
+    ("provider_claude", "claude_api_key"),
     ("provider_cloud", "api_key"),
     ("provider_azure", "api_key"),
 )
@@ -28,7 +30,7 @@ def test_cloud_providers_have_key_pages():
         else:
             assert url.startswith("https://"), kind
     assert api_key_url(MODE_CURSOR).startswith("https://")
-    assert set(API_KEY_URLS) == (set(API_PROVIDERS) | {MODE_CURSOR}) - _NO_KEY_PAGE
+    assert set(API_KEY_URLS) == (set(API_PROVIDERS) | {MODE_CURSOR, MODE_CLAUDE}) - _NO_KEY_PAGE
 
 
 def test_agent_form_strings_include_key_link():

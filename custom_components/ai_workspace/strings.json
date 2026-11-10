@@ -103,7 +103,7 @@
       }
     },
     "error": {
-      "no_runtime": "Cannot reach the Cursor runtime. Start it and check the address on this form.",
+      "no_runtime": "Cannot reach the AI Workspace Runtime. Start it and check the address on this form.",
       "required": "This field is required.",
       "invalid_auth": "The provider rejected this API key.",
       "cannot_connect": "Could not reach the provider. Check the URL and the network."
@@ -216,7 +216,7 @@
       }
     },
     "error": {
-      "no_runtime": "Cannot reach the Cursor runtime. Start it and check the address on this form.",
+      "no_runtime": "Cannot reach the AI Workspace Runtime. Start it and check the address on this form.",
       "required": "This field is required.",
       "invalid_auth": "The provider rejected this API key.",
       "cannot_connect": "Could not reach the provider. Check the URL and the network."
@@ -282,7 +282,8 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Cannot reach the Cursor runtime. Start it and check the address on this form.",
+        "no_runtime": "Cannot reach the AI Workspace Runtime. Start it and check the address on this form.",
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents.",
         "required": "This field is required.",
         "invalid_auth": "The provider rejected this API key.",
         "cannot_connect": "Could not reach the provider. Check the URL and the network.",
@@ -298,14 +299,14 @@
             "api_provider": "Provider"
           },
           "data_description": {
-            "api_provider": "Cursor, or a cloud or local model."
+            "api_provider": "Cursor, Claude SDK, or a cloud or local model."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
           "description": "Cursor address, API key, model, and response speed.",
           "data": {
-            "runtime_url": "Cursor runtime address{runtime_url_mark}",
+            "runtime_url": "Runtime address{runtime_url_mark}",
             "runtime_token": "Runtime password",
             "cursor_api_key": "Cursor API key",
             "model": "Model",
@@ -315,7 +316,7 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Same password as on your Cursor runtime. Leave empty when using the add-on with automatic pairing.",
+            "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
             "cursor_api_key": "From your Cursor account (Integrations). Leave blank when editing to keep the saved key. [Get an API key]({api_key_url})",
             "model": "Pick from the list or type a model name. Empty uses Composer.",
             "effort": "How much thinking time to allow. Composer defaults to Fast.",
@@ -339,6 +340,48 @@
               },
               "data_description": {
                 "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
+              }
+            }
+          }
+        },
+        "provider_claude": {
+          "title": "Claude SDK",
+          "description": "Same runtime sidecar as Cursor. OpenRouter key, Claude Plan token, or Anthropic API key.",
+          "data": {
+            "runtime_url": "Runtime address{runtime_url_mark}",
+            "runtime_token": "Runtime password",
+            "claude_api_key": "OpenRouter key, Claude Plan token, or Anthropic API key",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
+          },
+          "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
+            "claude_api_key": "OpenRouter (`sk-or-…`), Claude Plan (`claude setup-token`), or Anthropic API key. Leave blank when editing to keep the saved credential. [Keys and tokens]({api_key_url})",
+            "model": "Anthropic id (e.g. claude-sonnet-5-5) or OpenRouter slug (e.g. anthropic/claude-sonnet-4.5).",
+            "effort": "Reserved for future Claude SDK options.",
+            "allow_internet": "Off by default. On allows WebSearch and WebFetch in admin chats with full tools.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only."
+          },
+          "sections": {
+            "model_list": {
+              "name": "Model list",
+              "data": {
+                "models": "Models"
+              },
+              "data_description": {
+                "models": "Optional custom list for the model picker in this form and in chat."
+              }
+            },
+            "advanced": {
+              "name": "Advanced",
+              "data": {
+                "save_tokens": "Save tokens"
+              },
+              "data_description": {
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies."
               }
             }
           }

@@ -43,6 +43,12 @@ from .mcp_observe import last_mcp_result, note_mcp_result
 from .mcp_resolve import for_runtime, ha_hosts, hass_mcp_server_url
 from .callback_keys import Caller
 from .live_turn import end_turn, live_turn, start_turn
+
+_RUNTIME_PROVIDER_KINDS = frozenset({"cursor", "claude"})
+
+
+def _is_runtime_provider(provider: Any) -> bool:
+    return getattr(provider, "kind", "") in _RUNTIME_PROVIDER_KINDS
 from .local_time import house_zone, stamped_now, time_rule
 from .callback_keys import caller as callback_caller
 from .callback_keys import issue as issue_callback_key
@@ -136,14 +142,14 @@ def _runtime_error(status: int, text: str) -> str:
     if isinstance(detail, str) and detail.strip():
         return detail.strip()[:400]
     if status == 401:
-        return "The Cursor SDK Runtime refused the token. Set the same Runtime token on both sides."
+        return "The AI Workspace Runtime refused the token. Set the same Runtime token on both sides."
     if status == 404:
         return (
-            "This chat exists in Home Assistant but the Cursor Runtime did not have a matching session "
+            "This chat exists in Home Assistant but the AI Workspace Runtime did not have a matching session "
             "(often after a container rebuild). The integration retried once; if this persists, check the "
             "Runtime URL and token on the Cursor agent."
         )
-    return f"The Cursor SDK Runtime answered HTTP {status}."
+    return f"The AI Workspace Runtime answered HTTP {status}."
 
 
 async def _create_runtime_session(
@@ -151,12 +157,13 @@ async def _create_runtime_session(
     user_id: str,
     session_id: str | None = None,
     agent_id: str | None = None,
+    provider: str = "cursor",
 ) -> str | None:
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
         return None
     http: ClientSession = async_get_clientsession(hass)
-    payload: dict[str, str] = {"provider": "cursor"}
+    payload: dict[str, str] = {"provider": provider if provider in _RUNTIME_PROVIDER_KINDS else "cursor"}
     if session_id:
         payload["id"] = session_id
     if agent_id:
@@ -179,7 +186,9 @@ async def _create_runtime_session(
     return str((body or {}).get("id") or "") or None
 
 
-async def _ensure_runtime_session(hass: HomeAssistant, user_id: str, session: Session) -> bool:
+async def _ensure_runtime_session(
+    hass: HomeAssistant, user_id: str, session: Session, runtime_provider: str = "cursor"
+) -> bool:
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
         return False
@@ -198,7 +207,9 @@ async def _ensure_runtime_session(hass: HomeAssistant, user_id: str, session: Se
     except Exception:
         logger.debug("runtime session lookup skipped", exc_info=True)
     for _ in range(2):
-        created = await _create_runtime_session(hass, user_id, session.id, agent_id)
+        created = await _create_runtime_session(
+            hass, user_id, session.id, agent_id, provider=runtime_provider
+        )
         if created:
             return True
     logger.warning("runtime session sync failed session=%s", session.id)
@@ -284,17 +295,19 @@ async def _runtime_chat(
     allow_internet: bool = False,
     token_mode: str = TOKEN_MODE_OFF,
     check_house: bool = True,
+    runtime_provider: str = "cursor",
 ) -> AsyncIterator[dict]:
-    """One Cursor turn. Reduce token usage and Check the house work as on cloud agents."""
+    """One SDK runtime turn (Cursor or Claude). Reduce token usage and Check the house work as on cloud agents."""
+    runtime_kind = runtime_provider if runtime_provider in _RUNTIME_PROVIDER_KINDS else "cursor"
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
-        yield {"type": "error", "message": "Cursor Runtime is not configured."}
+        yield {"type": "error", "message": "AI Workspace Runtime is not configured."}
         return
-    if not await _ensure_runtime_session(hass, user_id, session):
+    if not await _ensure_runtime_session(hass, user_id, session, runtime_provider=runtime_kind):
         yield {
             "type": "error",
             "message": (
-                "Home Assistant could not sync this chat to the Cursor Runtime. "
+                "Home Assistant could not sync this chat to the AI Workspace Runtime. "
                 "Check the Runtime URL and token on the Cursor agent, then try again."
             ),
         }
@@ -381,7 +394,7 @@ async def _runtime_chat(
         resp.release()
         resp = None
         logger.info("runtime chat 404, resyncing session=%s", session.id)
-        if not await _ensure_runtime_session(hass, user_id, session):
+        if not await _ensure_runtime_session(hass, user_id, session, runtime_provider=runtime_kind):
             yield {
                 "type": "error",
                 "message": _runtime_error(404, ""),
@@ -426,7 +439,7 @@ async def async_agent_events(
             hass.async_add_executor_job(store.set_agent_id, session.id, agent_id)
         session.agent_id = agent_id
 
-    if getattr(provider, "kind", "") == "cursor":
+    if _is_runtime_provider(provider):
         async for event in _runtime_chat(
             hass,
             user_id,
@@ -445,6 +458,7 @@ async def async_agent_events(
             allow_internet=bool(getattr(provider, "allow_internet", False)),
             token_mode=provider_token_mode(provider),
             check_house=bool(getattr(provider, "check_house", True)),
+            runtime_provider=str(getattr(provider, "kind", "") or "cursor"),
         ):
             yield event
         return
@@ -471,7 +485,7 @@ def _with_model(provider: Any, model: str) -> Any:
     model = str(model or "").strip()
     if provider is None or not model:
         return provider
-    if getattr(provider, "kind", "") == "cursor":
+    if _is_runtime_provider(provider):
         if model == str(getattr(provider, "model", "") or ""):
             return provider
         clone = copy.copy(provider)
@@ -672,6 +686,7 @@ class HealthView(HomeAssistantView):
                 "ok": True,
                 "runtime": bool(data.get("runtime_url")),
                 "cursor": any(getattr(item, "kind", "") == "cursor" and item.info.available for item in providers),
+                "claude": any(getattr(item, "kind", "") == "claude" and item.info.available for item in providers),
                 "overlay": settings.enable_overlay,
                 "dictate": settings.enable_dictate,
             }
@@ -688,7 +703,7 @@ class ProvidersView(HomeAssistantView):
         hass = _hass(request)
         data = _runtime(hass)
         if any(
-            getattr(item, "kind", "") == "cursor" and not item.info.available
+            getattr(item, "kind", "") in _RUNTIME_PROVIDER_KINDS and not item.info.available
             for item in (data.get("providers") or {}).values()
         ):
             await async_bind_runtime(hass, data, force=True)
@@ -757,8 +772,10 @@ class SessionsView(HomeAssistantView):
         user_id = _user_id(request)
         session_id = None
         chosen = providers.get(provider)
-        if getattr(chosen, "kind", "") == "cursor":
-            session_id = await _create_runtime_session(hass, user_id)
+        if _is_runtime_provider(chosen):
+            session_id = await _create_runtime_session(
+                hass, user_id, provider=str(getattr(chosen, "kind", "") or "cursor")
+            )
         session = await hass.async_add_executor_job(
             store.create_session, user_id, provider, session_id
         )
@@ -961,7 +978,8 @@ class ChatView(HomeAssistantView):
             session.model = model
         assist = session.provider in known_assist
         if not assist and any(
-            getattr(item, "kind", "") == "cursor" and not item.info.available for item in providers.values()
+            getattr(item, "kind", "") in _RUNTIME_PROVIDER_KINDS and not item.info.available
+            for item in providers.values()
         ):
             await async_bind_runtime(hass, data, force=True)
             providers = data.get("providers") or {}
@@ -994,7 +1012,7 @@ class ChatView(HomeAssistantView):
         if note:
             outbound = f"{outbound}\n\n{note}"
         handoff = ""
-        if assist or getattr(provider, "kind", "") == "cursor":
+        if assist or _is_runtime_provider(provider):
             rows = await hass.async_add_executor_job(store.list_messages, session.id)
             handoff = handoff_note(
                 rows,
@@ -1004,15 +1022,16 @@ class ChatView(HomeAssistantView):
                 manual_window=int(getattr(settings, "context_window", 0) or 0),
                 zone=house_zone(hass),
             )
-            if getattr(provider, "kind", "") == "cursor":
+            if _is_runtime_provider(provider):
                 logger.info(
-                    "cursor handoff session=%s prior=%s chars=%s",
+                    "runtime handoff session=%s prior=%s chars=%s kind=%s",
                     session.id,
                     max(0, len(rows) - 1),
                     len(handoff),
+                    getattr(provider, "kind", ""),
                 )
                 if len(rows) > 1 and not handoff:
-                    logger.warning("cursor handoff empty despite stored turns session=%s", session.id)
+                    logger.warning("runtime handoff empty despite stored turns session=%s", session.id)
         access_token = _bearer(request)
         runtime_headers = _runtime_headers(request)
 
@@ -1034,7 +1053,7 @@ class ChatView(HomeAssistantView):
                 ):
                     yield event
                 return
-            if getattr(provider, "kind", "") == "cursor":
+            if _is_runtime_provider(provider):
                 async for event in _runtime_chat(
                     hass,
                     user_id,
@@ -1056,6 +1075,7 @@ class ChatView(HomeAssistantView):
                     allow_internet=bool(getattr(provider, "allow_internet", False)),
                     token_mode=token_mode,
                     check_house=bool(getattr(provider, "check_house", True)),
+                    runtime_provider=str(getattr(provider, "kind", "") or "cursor"),
                 ):
                     yield event
                 return

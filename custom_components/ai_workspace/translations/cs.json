@@ -103,7 +103,7 @@
       }
     },
     "error": {
-      "no_runtime": "Běhové prostředí Cursor není dostupné. Spusťte ho a zkontrolujte adresu v tomto formuláři.",
+      "no_runtime": "AI Workspace Runtime není dostupný. Spusťte ho a zkontrolujte adresu v tomto formuláři.",
       "required": "Toto pole je povinné.",
       "invalid_auth": "Poskytovatel tento klíč API odmítl.",
       "cannot_connect": "Poskytovatel není dostupný. Zkontrolujte URL a síť."
@@ -216,7 +216,7 @@
       }
     },
     "error": {
-      "no_runtime": "Běhové prostředí Cursor není dostupné. Spusťte ho a zkontrolujte adresu v tomto formuláři.",
+      "no_runtime": "AI Workspace Runtime není dostupný. Spusťte ho a zkontrolujte adresu v tomto formuláři.",
       "required": "Toto pole je povinné.",
       "invalid_auth": "Poskytovatel tento klíč API odmítl.",
       "cannot_connect": "Poskytovatel není dostupný. Zkontrolujte URL a síť."
@@ -277,261 +277,304 @@
     },
     "agent": {
       "initiate_flow": {
-        "user": "Přidat agenta",
-        "reconfigure": "Upravit agenta"
+        "user": "Add agent",
+        "reconfigure": "Edit agent"
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Běhové prostředí Cursor není dostupné. Spusťte ho a zkontrolujte adresu v tomto formuláři.",
-        "required": "Toto pole je povinné.",
-        "invalid_auth": "Poskytovatel tento klíč API odmítl.",
-        "cannot_connect": "Poskytovatel není dostupný. Zkontrolujte URL a síť.",
-        "model_not_installed": "Tento model není v Ollamě nainstalovaný. Nainstalované: {installed}",
-        "pick_model": "Server nyní vypisuje své modely. Vyberte jeden ze seznamu.",
-        "model_rejected": "Server nepovoluje tento model pro tento klíč: {server_message}"
+        "no_runtime": "Cannot reach the AI Workspace Runtime. Start it and check the address on this form.",
+        "required": "This field is required.",
+        "invalid_auth": "The provider rejected this API key.",
+        "cannot_connect": "Could not reach the provider. Check the URL and the network.",
+        "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
+        "pick_model": "The server lists its models now. Pick one from the model list.",
+        "model_rejected": "The server does not allow this model for this key: {server_message}",
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
       },
       "step": {
         "provider": {
-          "title": "Poskytovatel",
-          "description": "Zvolte poskytovatele. Další obrazovka se zeptá jen na to, co tento poskytovatel potřebuje.",
+          "title": "Provider",
+          "description": "Choose the provider. The next screen asks only for what that provider needs.",
           "data": {
-            "api_provider": "Poskytovatel"
+            "api_provider": "Provider"
           },
           "data_description": {
-            "api_provider": "Cursor, nebo cloudový či místní model."
+            "api_provider": "Cursor, Claude SDK, or a cloud or local model."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
-          "description": "Adresa Cursor, klíč API, model a rychlost odpovědi.",
+          "description": "Cursor address, API key, model, and response speed.",
           "data": {
-            "runtime_url": "Adresa běhového prostředí Cursor{runtime_url_mark}",
-            "runtime_token": "Heslo runtime",
-            "cursor_api_key": "Klíč API Cursor",
+            "runtime_url": "Runtime address{runtime_url_mark}",
+            "runtime_token": "Runtime password",
+            "cursor_api_key": "Cursor API key",
             "model": "Model",
-            "effort": "Úsilí",
-            "allow_internet": "Povolit internet",
-            "assist": "Přidat do Assist"
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Stejné heslo jako u vašeho běhového prostředí Cursor. Nechte prázdné u doplňku s automatickým spárováním.",
-            "cursor_api_key": "Z účtu Cursor (Integrations). Při úpravě nechte prázdné, aby se zachoval uložený klíč. [Získat API klíč]({api_key_url})",
-            "model": "Vyberte ze seznamu nebo zadejte název modelu. Prázdné použije Composer.",
-            "effort": "Kolik času na přemýšlení povolit. Composer ve výchozím stavu použije Rychlé.",
-            "allow_internet": "Ve výchozím stavu vypnuto. Zapnuto umožní tomuto agentovi v chatech správce používat webové vyhledávání, stahování stránek a shell Cursoru. Vypnuto odebere všechny tři, takže ani curl či skripty se na web nedostanou. Chaty běžných uživatelů a hlasových satelitů je nikdy nedostanou.",
-            "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist."
+            "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
+            "cursor_api_key": "From your Cursor account (Integrations). Leave blank when editing to keep the saved key. [Get an API key]({api_key_url})",
+            "model": "Pick from the list or type a model name. Empty uses Composer.",
+            "effort": "How much thinking time to allow. Composer defaults to Fast.",
+            "allow_internet": "Off by default. On lets this agent use Cursor's web search, page fetch and shell in admin chats. Off removes all three, so curl or scripts cannot reach the web either. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           },
           "sections": {
             "model_list": {
-              "name": "Seznam modelů",
+              "name": "Model list",
               "data": {
-                "models": "Modely"
+                "models": "Models"
               },
               "data_description": {
-                "models": "Volitelné. Vlastní výběr modelů pro nabídku zde i v chatu místo úplného seznamu poskytovatele. Názvy oddělené čárkami, středníky nebo novými řádky, např. gpt-5.5, grok-4.7. Prázdné zobrazí seznam poskytovatele."
+                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
               }
             },
             "advanced": {
-              "name": "Pokročilé",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "Šetřit tokeny"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "S každou zprávou posílá méně: kratší prompt, méně historie chatu a kratší odpovědi. Levnější, ale odpovědi o vaší domácnosti mohou být méně důkladné."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
               }
             }
           }
         },
         "provider_cloud": {
-          "title": "Cloudový agent",
-          "description": "Tento agent si drží vlastní klíč. Zkopírujte ho z už nastavené integrace, nebo vložte nový. Při úpravě nechte klíč prázdný, aby se zachoval uložený.",
+          "title": "Cloud agent",
+          "description": "This agent keeps its own key. Copy one from an integration that is already set up, or paste a new one. Leave the key blank when editing to keep the saved key.",
           "data": {
-            "borrow": "Kopírovat klíč z",
-            "api_key": "Klíč API",
+            "borrow": "Copy key from",
+            "api_key": "API key",
             "model": "Model",
-            "effort": "Úsilí",
-            "allow_internet": "Povolit internet",
-            "assist": "Přidat do Assist",
-            "assist_stt": "Přidat převod řeči na text",
-            "stt_model": "Model řeči na text",
-            "assist_tts": "Přidat převod textu na řeč",
-            "tts_model": "Model textu na řeč",
-            "tts_voice": "Hlas",
-            "tts_speed": "Rychlost"
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist",
+            "assist_stt": "Add Speech-to-text",
+            "stt_model": "Speech-to-text model",
+            "assist_tts": "Add Text-to-speech",
+            "tts_model": "Text-to-speech model",
+            "tts_voice": "Voice",
+            "tts_speed": "Speed"
           },
           "data_description": {
-            "borrow": "Použije klíč, který už tato integrace uložila. Druhá integrace se nemění.",
-            "api_key": "Váš klíč u poskytovatele AI, ne přihlášení do Home Assistant. [Získat API klíč]({api_key_url})",
-            "model": "Vyberte ze seznamu nebo zadejte název modelu. Prázdné použije výchozí hodnotu poskytovatele.",
-            "effort": "Větší úsilí znamená víc přemýšlení: lepší odpovědi na těžké otázky, ale pomaleji a víc tokenů. Ignoruje se, pokud to model nepodporuje.",
-            "allow_internet": "Ve výchozím stavu vypnuto. Zapnuto přidá v chatech správce nástroje pro vyhledávání na webu a stahování stránek. Adresy v místní síti zůstávají blokované. Chaty běžných uživatelů a hlasových satelitů je nikdy nedostanou.",
-            "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist.",
-            "assist_stt": "Přidá v Home Assistant možnost řeči na text s klíčem tohoto asistenta. Vypnuto odstraní to, co přidal.",
-            "stt_model": "Nechte prázdné pro výchozí model poskytovatele. Můžete zadat jiný název modelu.",
-            "assist_tts": "Přidá v Home Assistant možnost textu na řeč s klíčem tohoto asistenta. Vypnuto odstraní to, co přidal.",
-            "tts_model": "Nechte prázdné pro výchozí hlasový model. Můžete zadat jiný název, pokud ho poskytovatel uvádí.",
-            "tts_voice": "Coral je výchozí. Hlasy fungují pro jazyky nastavené v Assist → Jazyk.",
-            "tts_speed": "Jak rychle tento hlas mluví. 1× je běžné. Platí pro AI Workspace i Assist."
+            "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
+            "api_key": "Your key from the AI provider, not your Home Assistant login. [Get an API key]({api_key_url})",
+            "model": "Pick from the list or type a model name. Empty uses the provider default.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist.",
+            "assist_stt": "Adds a Speech-to-text option in Home Assistant using this assistant's key. Off removes what it added.",
+            "stt_model": "Leave empty for the provider default. You can type another model name if yours offers one.",
+            "assist_tts": "Adds a Text-to-speech option in Home Assistant using this assistant's key. Off removes what it added.",
+            "tts_model": "Leave empty for the default voice model. You can type another name if your provider lists one.",
+            "tts_voice": "Coral is the OpenAI default. Kore is the Gemini default. Voices work for the languages you set under Assist → Language.",
+            "tts_speed": "How fast this voice speaks. 1× is normal. Applies to AI Workspace and Assist."
           },
           "sections": {
             "model_list": {
-              "name": "Seznam modelů",
+              "name": "Model list",
               "data": {
-                "models": "Modely"
+                "models": "Models"
               },
               "data_description": {
-                "models": "Volitelné. Vlastní výběr modelů pro nabídku zde i v chatu místo úplného seznamu poskytovatele. Názvy oddělené čárkami, středníky nebo novými řádky, např. gpt-5.5, grok-4.7. Prázdné zobrazí seznam poskytovatele."
+                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
               }
             },
             "advanced": {
-              "name": "Pokročilé",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "Šetřit tokeny",
-                "cache_1h": "Držet mezipaměť hodinu"
+                "save_tokens": "Save tokens",
+                "cache_1h": "Keep the cache for an hour"
               },
               "data_description": {
-                "save_tokens": "S každou zprávou posílá méně: kratší prompt, méně historie chatu a kratší odpovědi. Levnější, ale odpovědi o vaší domácnosti mohou být méně důkladné.",
-                "cache_1h": "Jen Claude. Drží systémový prompt a nástroje v mezipaměti hodinu místo 5 minut. Zápis do mezipaměti stojí 2× cenu vstupu místo 1,25×, čtení 0,1×. Levnější, když mezi zprávami často uplyne víc než 5 minut; o něco dražší, když píšete zřídka."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough.",
+                "cache_1h": "Claude only. Keeps the system prompt and tools cached for an hour instead of 5 minutes. Writing the cache costs 2× the input price instead of 1.25×; reading it costs 0.1×. Cheaper when there are breaks of more than 5 minutes between your messages, a little more expensive if you rarely chat."
               }
             }
           }
         },
         "provider_ollama": {
           "title": "Ollama",
-          "description": "Zadejte adresu serveru Ollama.",
+          "description": "Point this at the Ollama server.",
           "data": {
-            "api_base": "URL Ollama",
+            "api_base": "Ollama URL",
             "model": "Model",
-            "effort": "Úsilí",
-            "allow_internet": "Povolit internet",
-            "assist": "Přidat do Assist"
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
           },
           "data_description": {
             "api_base": "{ollama_note}",
-            "model": "Vyberte ze seznamu nebo zadejte nainstalovaný model. Prázdné použije llama3.2.",
-            "effort": "Větší úsilí znamená víc přemýšlení: lepší odpovědi na těžké otázky, ale pomaleji a víc tokenů. Ignoruje se, pokud to model nepodporuje.",
-            "allow_internet": "Ve výchozím stavu vypnuto. Zapnuto přidá v chatech správce nástroje pro vyhledávání na webu a stahování stránek. Adresy v místní síti zůstávají blokované. Chaty běžných uživatelů a hlasových satelitů je nikdy nedostanou.",
-            "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist."
+            "model": "Pick from the list or type a model you installed. Empty uses llama3.2.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           },
           "sections": {
             "model_list": {
-              "name": "Seznam modelů",
+              "name": "Model list",
               "data": {
-                "models": "Modely"
+                "models": "Models"
               },
               "data_description": {
-                "models": "Volitelné. Vlastní výběr modelů pro nabídku zde i v chatu místo úplného seznamu poskytovatele. Názvy oddělené čárkami, středníky nebo novými řádky, např. gpt-5.5, grok-4.7. Prázdné zobrazí seznam poskytovatele."
+                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
               }
             },
             "advanced": {
-              "name": "Pokročilé",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "Šetřit tokeny"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "S každou zprávou posílá méně: kratší prompt, méně historie chatu a kratší odpovědi. Levnější, ale odpovědi o vaší domácnosti mohou být méně důkladné."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
               }
             }
           }
         },
         "provider_azure": {
           "title": "Azure OpenAI",
-          "description": "Koncový bod Azure, nasazení a klíč.",
+          "description": "Azure endpoint, deployment, and key.",
           "data": {
-            "api_key": "Klíč API Azure",
-            "api_base": "Koncový bod",
-            "model": "Nasazení",
-            "azure_api_version": "Verze API",
-            "effort": "Úsilí",
-            "allow_internet": "Povolit internet",
-            "assist": "Přidat do Assist"
+            "api_key": "Azure API key",
+            "api_base": "Endpoint",
+            "model": "Deployment",
+            "azure_api_version": "API version",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
           },
           "data_description": {
-            "api_key": "Klíč Azure OpenAI. Při úpravě nechte prázdné, aby se zachoval uložený klíč. [Získat API klíč]({api_key_url})",
+            "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key. [Get an API key]({api_key_url})",
             "api_base": "{example_url}",
-            "model": "Název nasazení.",
-            "azure_api_version": "Nechte výchozí hodnotu, pokud vám podpora Azure nedala jinou verzi.",
-            "effort": "Větší úsilí znamená víc přemýšlení: lepší odpovědi na těžké otázky, ale pomaleji a víc tokenů. Ignoruje se, pokud to model nepodporuje.",
-            "allow_internet": "Ve výchozím stavu vypnuto. Zapnuto přidá v chatech správce nástroje pro vyhledávání na webu a stahování stránek. Adresy v místní síti zůstávají blokované. Chaty běžných uživatelů a hlasových satelitů je nikdy nedostanou.",
-            "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist."
+            "model": "The deployment name.",
+            "azure_api_version": "Leave the default unless Azure support gave you another version.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           },
           "sections": {
             "model_list": {
-              "name": "Seznam modelů",
+              "name": "Model list",
               "data": {
-                "models": "Modely"
+                "models": "Models"
               },
               "data_description": {
-                "models": "Volitelné, pro servery, které své modely nevypisují. Naplní výběr modelu zde i v chatu. Vložte názvy oddělené čárkami, středníky nebo novými řádky, např. gpt-5.5, grok-4.7. Vložený obsah seznam nahradí; vyprázdněte ho, abyste znovu použili seznam serveru."
+                "models": "Optional, for servers that do not list their models. Fills the model picker here and in the chat. Paste names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. What you paste replaces the list; empty it to use the server's own list again."
               }
             },
             "advanced": {
-              "name": "Pokročilé",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "Šetřit tokeny"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "S každou zprávou posílá méně: kratší prompt, méně historie chatu a kratší odpovědi. Levnější, ale odpovědi o vaší domácnosti mohou být méně důkladné."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
               }
             }
           }
         },
         "provider_compatible": {
-          "title": "Kompatibilní s OpenAI",
-          "description": "Vlastní server, který funguje jako chatovací API OpenAI.",
+          "title": "OpenAI-compatible",
+          "description": "Your own server that works like OpenAI's chat API.",
           "data": {
-            "api_key": "Klíč API",
-            "api_base": "Základní URL API",
+            "api_key": "API key",
+            "api_base": "API base URL",
             "model": "Model",
-            "effort": "Úsilí",
-            "allow_internet": "Povolit internet",
-            "assist": "Přidat do Assist",
-            "assist_stt": "Přidat převod řeči na text",
-            "stt_model": "Model řeči na text",
-            "assist_tts": "Přidat převod textu na řeč",
-            "tts_model": "Model textu na řeč",
-            "tts_voice": "Hlas",
-            "tts_speed": "Rychlost"
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist",
+            "assist_stt": "Add Speech-to-text",
+            "stt_model": "Speech-to-text model",
+            "assist_tts": "Add Text-to-speech",
+            "tts_model": "Text-to-speech model",
+            "tts_voice": "Voice",
+            "tts_speed": "Speed"
           },
           "data_description": {
-            "api_key": "Při úpravě nechte prázdné, aby se zachoval uložený klíč.",
-            "api_base": "Adresa serveru. Na konec přidejte /v1, pokud to server očekává.",
-            "model": "Název modelu na tom serveru.",
-            "effort": "Větší úsilí znamená víc přemýšlení: lepší odpovědi na těžké otázky, ale pomaleji a víc tokenů. Ignoruje se, pokud to model nepodporuje.",
-            "allow_internet": "Ve výchozím stavu vypnuto. Zapnuto přidá v chatech správce nástroje pro vyhledávání na webu a stahování stránek. Adresy v místní síti zůstávají blokované. Chaty běžných uživatelů a hlasových satelitů je nikdy nedostanou.",
-            "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist.",
-            "assist_stt": "Přidá v Home Assistant možnost řeči na text s klíčem tohoto asistenta. Vypnuto odstraní to, co přidal.",
-            "stt_model": "Nechte prázdné pro výchozí model poskytovatele. Můžete zadat jiný název modelu.",
-            "assist_tts": "Přidá v Home Assistant možnost textu na řeč s klíčem tohoto asistenta. Vypnuto odstraní to, co přidal.",
-            "tts_model": "Nechte prázdné pro výchozí hlasový model. Můžete zadat jiný název, pokud ho poskytovatel uvádí.",
-            "tts_voice": "Coral je výchozí. Hlasy fungují pro jazyky nastavené v Assist → Jazyk.",
-            "tts_speed": "Jak rychle tento hlas mluví. 1× je běžné. Platí pro AI Workspace i Assist."
+            "api_key": "Leave blank when editing to keep the saved key.",
+            "api_base": "Server address. Add /v1 at the end if your server expects that.",
+            "model": "Model name on that server.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist.",
+            "assist_stt": "Adds a Speech-to-text option in Home Assistant using this assistant's key. Off removes what it added.",
+            "stt_model": "Leave empty for the provider default. You can type another model name if yours offers one.",
+            "assist_tts": "Adds a Text-to-speech option in Home Assistant using this assistant's key. Off removes what it added.",
+            "tts_model": "Leave empty for the default voice model. You can type another name if your provider lists one.",
+            "tts_voice": "Coral is the OpenAI default. Kore is the Gemini default. Voices work for the languages you set under Assist → Language.",
+            "tts_speed": "How fast this voice speaks. 1× is normal. Applies to AI Workspace and Assist."
           },
           "sections": {
             "model_list": {
-              "name": "Seznam modelů",
+              "name": "Model list",
               "data": {
-                "models": "Modely"
+                "models": "Models"
               },
               "data_description": {
-                "models": "Volitelné, pro servery, které své modely nevypisují. Naplní výběr modelu zde i v chatu. Vložte názvy oddělené čárkami, středníky nebo novými řádky, např. gpt-5.5, grok-4.7. Vložený obsah seznam nahradí; vyprázdněte ho, abyste znovu použili seznam serveru."
+                "models": "Optional, for servers that do not list their models. Fills the model picker here and in the chat. Paste names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. What you paste replaces the list; empty it to use the server's own list again."
               }
             },
             "advanced": {
-              "name": "Pokročilé",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "Šetřit tokeny"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "S každou zprávou posílá méně: kratší prompt, méně historie chatu a kratší odpovědi. Levnější, ale odpovědi o vaší domácnosti mohou být méně důkladné."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
+              }
+            }
+          }
+        },
+        "provider_claude": {
+          "title": "Claude SDK",
+          "description": "Same runtime sidecar as Cursor. OpenRouter key, Claude Plan token, or Anthropic API key.",
+          "data": {
+            "runtime_url": "Runtime address{runtime_url_mark}",
+            "runtime_token": "Runtime password",
+            "claude_api_key": "OpenRouter key, Claude Plan token, or Anthropic API key",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
+          },
+          "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
+            "claude_api_key": "OpenRouter (`sk-or-…`), Claude Plan (`claude setup-token`), or Anthropic API key. Leave blank when editing to keep the saved credential. [Keys and tokens]({api_key_url})",
+            "model": "Anthropic id (e.g. claude-sonnet-5-5) or OpenRouter slug (e.g. anthropic/claude-sonnet-4.5).",
+            "effort": "Reserved for future Claude SDK options.",
+            "allow_internet": "Off by default. On allows WebSearch and WebFetch in admin chats with full tools.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only."
+          },
+          "sections": {
+            "model_list": {
+              "name": "Model list",
+              "data": {
+                "models": "Models"
+              },
+              "data_description": {
+                "models": "Optional custom list for the model picker in this form and in chat."
+              }
+            },
+            "advanced": {
+              "name": "Advanced",
+              "data": {
+                "save_tokens": "Save tokens"
+              },
+              "data_description": {
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies."
               }
             }
           }
         }
       },
       "abort": {
-        "reconfigure_successful": "Agent aktualizován."
+        "reconfigure_successful": "Agent updated."
       }
     }
   },

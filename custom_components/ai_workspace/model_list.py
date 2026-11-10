@@ -16,6 +16,7 @@ from .const import (
     API_ANTHROPIC,
     API_AZURE,
     DOMAIN,
+    MODE_CLAUDE,
     MODE_CURSOR,
     api_model_choices,
     api_model_picks,
@@ -161,6 +162,8 @@ async def async_agent_models(hass: HomeAssistant, agent) -> list[str]:
     if agent.mode == MODE_CURSOR:
         live = await async_cursor_models(hass, agent.cursor_api_key)
         return merge_models(MODE_CURSOR, agent.model or default_api_model(MODE_CURSOR), live)
+    if agent.mode == MODE_CLAUDE:
+        return merge_models(MODE_CLAUDE, agent.model or default_api_model(MODE_CLAUDE), api_model_choices(MODE_CLAUDE))
     if agent.provider == API_AZURE:
         return [agent.model] if agent.model else []
     live = await async_provider_models(hass, agent.provider, agent.api_key, agent.api_base)

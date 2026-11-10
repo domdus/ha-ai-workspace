@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.6.0b1
+
+**Claude Agent SDK on the same runtime as Cursor.** Add a **Claude SDK** agent in Home Assistant (distinct from cloud **Claude (Anthropic)**). OpenRouter, Claude Plan OAuth (`CLAUDE_CODE_OAUTH_TOKEN`), or Anthropic API on the runtime; optional per-agent credential. See [docs/claude-runtime.md](../docs/claude-runtime.md).
+
+**Runtime**
+- `claude-agent-sdk` provider with MCP proxy, resume via session id, and `GET /api/health` → `"claude"`.
+- Add-on / env: `OPENROUTER_API_KEY`, `CLAUDE_CODE_OAUTH_TOKEN`, `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `CLAUDE_MODEL`.
+- Docker Compose service and container name: `ai-workspace-runtime` (not `cursor-sdk` as a hostname).
+
+**Integration**
+- Agent kind **Claude SDK**, runtime chat routing, and form validation against `health.claude`.
+
+**Update the runtime (App or Docker image) to 1.6.0b1 with this integration.** Cursor on runtime 1.5.2+ still works; Claude SDK agents need 1.6.0+.
+
 ## 1.5.3
 
 Fixes HA-MCP connections that were found automatically but did not work ([#2](https://github.com/domdus/ha-ai-workspace/issues/2)). Nothing needs to be changed in your setup; the runtime from 1.5.2 keeps working.

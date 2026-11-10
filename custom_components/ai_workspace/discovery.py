@@ -23,12 +23,16 @@ from .const import (
     VERSION,
 )
 
-MISSING_RUNTIME = "Start the Cursor SDK Runtime and set its URL on the Cursor agent."
+MISSING_RUNTIME = "Start the AI Workspace Runtime and set its URL on the Cursor agent."
 BAD_TOKEN = (
-    "The Cursor SDK Runtime refused the token. Set the same Runtime token on the Runtime "
+    "The AI Workspace Runtime refused the token. Set the same Runtime token on the Runtime "
     "and on AI Workspace (Configure)."
 )
 PAIRING = "Pairing with the AI Workspace Runtime app. Try again in a minute."
+CLAUDE_RUNTIME_OLD = (
+    "Update the AI Workspace Runtime to 1.6.0 or newer to use Claude SDK agents in the sidecar."
+)
+_RUNTIME_KINDS = frozenset({"cursor", "claude"})
 OUTDATED_RUNTIME = (
     "The AI Workspace Runtime is {have}, this integration is {want}. Update the Runtime "
     "(App or Docker image) so Cursor agents get the same fixes."
@@ -305,6 +309,8 @@ def apply_runtime_to_providers(
     runtime_url: str,
     reason: str | None = None,
     notice: tuple[str, dict[str, str]] | None = None,
+    *,
+    claude_reason: str | None = None,
 ) -> None:
     bucket["runtime_url"] = runtime_url
     if not runtime_url and reason is None:
@@ -312,13 +318,19 @@ def apply_runtime_to_providers(
     notice_key = notice[0] if notice else None
     notice_params = notice[1] if notice else None
     for item in (bucket.get("providers") or {}).values():
-        if getattr(item, "kind", "") != "cursor":
+        kind = getattr(item, "kind", "")
+        if kind not in _RUNTIME_KINDS:
             continue
         info = item.info
-        available = reason is None
+        if kind == "claude" and claude_reason:
+            available = False
+            item_reason = claude_reason
+        else:
+            available = reason is None
+            item_reason = reason
         if (
             bool(info.available) == available
-            and info.reason == reason
+            and info.reason == item_reason
             and info.notice_key == notice_key
             and info.notice_params == notice_params
         ):
@@ -326,15 +338,15 @@ def apply_runtime_to_providers(
         item.info = replace(
             info,
             available=available,
-            reason=reason,
+            reason=item_reason,
             notice=None,
             notice_key=notice_key,
             notice_params=notice_params,
         )
 
 
-def _needs_cursor(bucket: dict) -> bool:
-    return any(getattr(item, "kind", "") == "cursor" for item in (bucket.get("providers") or {}).values())
+def _needs_runtime(bucket: dict) -> bool:
+    return any(getattr(item, "kind", "") in _RUNTIME_KINDS for item in (bucket.get("providers") or {}).values())
 
 
 async def async_bind_runtime(hass: HomeAssistant, bucket: dict | None = None, *, force: bool = False) -> str:
@@ -372,7 +384,7 @@ async def async_bind_runtime(hass: HomeAssistant, bucket: dict | None = None, *,
                 # The flag lives outside the entry's bucket: a reload during pairing (for
                 # example the HA-MCP check saving a new address) must not pair again and
                 # restart the App a second time.
-                if not hass.data.get(_PAIRING) and _needs_cursor(data):
+                if not hass.data.get(_PAIRING) and _needs_runtime(data):
                     hass.data[_PAIRING] = True
                     hass.async_create_background_task(
                         _async_finish_pairing(hass, data, addon[0], url), "ai_workspace_pair_runtime"
@@ -381,6 +393,12 @@ async def async_bind_runtime(hass: HomeAssistant, bucket: dict | None = None, *,
                 reason = BAD_TOKEN
     data["runtime_token"] = token
     data["runtime_version"] = str(health.get("version") or "")
+    claude_reason = (
+        CLAUDE_RUNTIME_OLD
+        if "claude" not in health
+        and any(getattr(item, "kind", "") == "claude" for item in (data.get("providers") or {}).values())
+        else None
+    )
     notice = runtime_notice(data["runtime_version"], VERSION, MIN_RUNTIME)
     if notice and data.get("runtime_notice") != notice:
         _LOGGER.warning(
@@ -390,9 +408,9 @@ async def async_bind_runtime(hass: HomeAssistant, bucket: dict | None = None, *,
             )
         )
     data["runtime_notice"] = notice
-    apply_runtime_to_providers(data, url, reason, notice)
+    apply_runtime_to_providers(data, url, reason, notice, claude_reason=claude_reason)
     if url != previous:
-        _LOGGER.info("AI Workspace Cursor Runtime at %s", url)
+        _LOGGER.info("AI Workspace Runtime at %s", url)
     return url
 
 
@@ -410,12 +428,12 @@ async def _async_finish_pairing(hass: HomeAssistant, data: dict, slug: str, url:
 async def async_retry_runtime(hass: HomeAssistant, bucket: dict) -> None:
     """Keep probing after startup so a late Docker runtime still clears the Cursor banner."""
     for delay in (2, 5, 10, 20):
-        if not _needs_cursor(bucket):
+        if not _needs_runtime(bucket):
             return
         if str(bucket.get("runtime_url") or "") and all(
             item.info.available
             for item in (bucket.get("providers") or {}).values()
-            if getattr(item, "kind", "") == "cursor"
+            if getattr(item, "kind", "") in _RUNTIME_KINDS
         ):
             return
         await asyncio.sleep(delay)

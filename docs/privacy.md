@@ -37,6 +37,6 @@ Anyone near a satellite can talk to it, so a Cursor agent answering a satellite 
 
 ## Runtime
 
-Keep port 8090 and your MCP servers off the internet. The Cursor runtime only accepts HTTP MCP servers from the integration, and it rejects every request without the runtime token unless it listens on loopback. Without a token it also only answers requests addressed to `127.0.0.1` or `localhost`, so a web page cannot reach it through a DNS trick. Home Assistant accepts the runtime’s callbacks (Change History, MCP notes) without a token only from the same machine.
+Keep port 8090 and your MCP servers off the internet. The AI Workspace Runtime only accepts HTTP MCP servers from the integration, and it rejects every request without the runtime token unless it listens on loopback. Without a token it also only answers requests addressed to `127.0.0.1` or `localhost`, so a web page cannot reach it through a DNS trick. Home Assistant accepts the runtime’s callbacks (Change History, MCP notes) without a token only from the same machine.
 
 Chat replies never load images or other media from other sites. A remote image could send chat text to that site, so it is shown as a link instead.

@@ -103,7 +103,7 @@
       }
     },
     "error": {
-      "no_runtime": "Cursor 런타임에 연결할 수 없습니다. 런타임을 시작한 뒤 이 양식의 주소를 확인하세요.",
+      "no_runtime": "AI Workspace Runtime에 연결할 수 없습니다. 런타임을 시작한 뒤 이 양식의 주소를 확인하세요.",
       "required": "이 필드는 필수입니다.",
       "invalid_auth": "제공자가 이 API 키를 거부했습니다.",
       "cannot_connect": "제공자에 연결할 수 없습니다. URL과 네트워크를 확인하세요."
@@ -216,7 +216,7 @@
       }
     },
     "error": {
-      "no_runtime": "Cursor 런타임에 연결할 수 없습니다. 런타임을 시작한 뒤 이 양식의 주소를 확인하세요.",
+      "no_runtime": "AI Workspace Runtime에 연결할 수 없습니다. 런타임을 시작한 뒤 이 양식의 주소를 확인하세요.",
       "required": "이 필드는 필수입니다.",
       "invalid_auth": "제공자가 이 API 키를 거부했습니다.",
       "cannot_connect": "제공자에 연결할 수 없습니다. URL과 네트워크를 확인하세요."
@@ -277,261 +277,304 @@
     },
     "agent": {
       "initiate_flow": {
-        "user": "에이전트 추가",
-        "reconfigure": "에이전트 수정"
+        "user": "Add agent",
+        "reconfigure": "Edit agent"
       },
-      "entry_type": "에이전트",
+      "entry_type": "Agent",
       "error": {
-        "no_runtime": "Cursor 런타임에 연결할 수 없습니다. 런타임을 시작한 뒤 이 양식의 주소를 확인하세요.",
-        "required": "이 필드는 필수입니다.",
-        "invalid_auth": "제공자가 이 API 키를 거부했습니다.",
-        "cannot_connect": "제공자에 연결할 수 없습니다. URL과 네트워크를 확인하세요.",
-        "model_not_installed": "이 모델은 Ollama에 설치되어 있지 않습니다. 설치된 모델: {installed}",
-        "pick_model": "이제 서버가 모델 목록을 제공합니다. 목록에서 하나를 고르세요.",
-        "model_rejected": "서버가 이 키에 이 모델을 허용하지 않습니다: {server_message}"
+        "no_runtime": "Cannot reach the AI Workspace Runtime. Start it and check the address on this form.",
+        "required": "This field is required.",
+        "invalid_auth": "The provider rejected this API key.",
+        "cannot_connect": "Could not reach the provider. Check the URL and the network.",
+        "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
+        "pick_model": "The server lists its models now. Pick one from the model list.",
+        "model_rejected": "The server does not allow this model for this key: {server_message}",
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
       },
       "step": {
         "provider": {
-          "title": "제공자",
-          "description": "제공자를 선택하세요. 다음 화면에서는 그 제공자에 필요한 항목만 묻습니다.",
+          "title": "Provider",
+          "description": "Choose the provider. The next screen asks only for what that provider needs.",
           "data": {
-            "api_provider": "제공자"
+            "api_provider": "Provider"
           },
           "data_description": {
-            "api_provider": "Cursor, 또는 클라우드나 로컬 모델입니다."
+            "api_provider": "Cursor, Claude SDK, or a cloud or local model."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
-          "description": "Cursor 주소, API 키, 모델, 응답 속도입니다.",
+          "description": "Cursor address, API key, model, and response speed.",
           "data": {
-            "runtime_url": "Cursor 런타임 주소{runtime_url_mark}",
-            "runtime_token": "런타임 비밀번호",
-            "cursor_api_key": "Cursor API 키",
-            "model": "모델",
-            "effort": "노력",
-            "allow_internet": "인터넷 허용",
-            "assist": "Assist에 추가"
+            "runtime_url": "Runtime address{runtime_url_mark}",
+            "runtime_token": "Runtime password",
+            "cursor_api_key": "Cursor API key",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Cursor 런타임과 같은 비밀번호입니다. 자동 페어링 애드온을 쓰면 비워 두세요.",
-            "cursor_api_key": "Cursor 계정(Integrations)에서 가져옵니다. 수정 시 비워 두면 저장된 키를 유지합니다. [API 키 받기]({api_key_url})",
-            "model": "목록에서 고르거나 모델 이름을 입력하세요. 비우면 Composer를 사용합니다.",
-            "effort": "생각할 시간을 얼마나 줄지 정합니다. Composer 기본값은 빠름입니다.",
-            "allow_internet": "기본값은 꺼짐입니다. 켜면 이 에이전트가 관리자 채팅에서 Cursor의 웹 검색, 페이지 가져오기, 셸을 사용할 수 있습니다. 끄면 세 가지가 모두 제거되어 curl이나 스크립트로도 웹에 접근할 수 없습니다. 일반 사용자 채팅과 음성 위성은 이를 받지 않습니다.",
-            "assist": "이 어시스턴트를 Home Assistant Assist(음성)에도 표시합니다. 끄면 AI Workspace 채팅에만 두고 Assist에 추가한 항목을 제거합니다."
+            "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
+            "cursor_api_key": "From your Cursor account (Integrations). Leave blank when editing to keep the saved key. [Get an API key]({api_key_url})",
+            "model": "Pick from the list or type a model name. Empty uses Composer.",
+            "effort": "How much thinking time to allow. Composer defaults to Fast.",
+            "allow_internet": "Off by default. On lets this agent use Cursor's web search, page fetch and shell in admin chats. Off removes all three, so curl or scripts cannot reach the web either. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           },
           "sections": {
             "model_list": {
-              "name": "모델 목록",
+              "name": "Model list",
               "data": {
-                "models": "모델"
+                "models": "Models"
               },
               "data_description": {
-                "models": "선택 사항. 제공업체의 전체 목록 대신 여기와 채팅의 모델 선택에 쓸 나만의 모델 목록입니다. 쉼표, 세미콜론 또는 줄바꿈으로 구분한 이름(예: gpt-5.5, grok-4.7). 비워 두면 제공업체 목록을 표시합니다."
+                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
               }
             },
             "advanced": {
-              "name": "고급",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "토큰 절약"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "메시지마다 더 적게 보냅니다: 더 짧은 프롬프트, 더 적은 대화 기록, 더 짧은 답변. 비용은 줄지만 집에 대한 답변이 덜 자세할 수 있습니다."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
               }
             }
           }
         },
         "provider_cloud": {
-          "title": "클라우드 에이전트",
-          "description": "이 에이전트는 자체 키를 보관합니다. 이미 설정된 통합구성요소에서 복사하거나 새 키를 붙여 넣으세요. 수정 시 키를 비워 두면 저장된 키를 유지합니다.",
+          "title": "Cloud agent",
+          "description": "This agent keeps its own key. Copy one from an integration that is already set up, or paste a new one. Leave the key blank when editing to keep the saved key.",
           "data": {
-            "borrow": "키 복사 위치",
-            "api_key": "API 키",
-            "model": "모델",
-            "effort": "노력",
-            "allow_internet": "인터넷 허용",
-            "assist": "Assist에 추가",
-            "assist_stt": "음성-텍스트 추가",
-            "stt_model": "음성-텍스트 모델",
-            "assist_tts": "텍스트-음성 추가",
-            "tts_model": "텍스트-음성 모델",
-            "tts_voice": "음성",
-            "tts_speed": "속도"
+            "borrow": "Copy key from",
+            "api_key": "API key",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist",
+            "assist_stt": "Add Speech-to-text",
+            "stt_model": "Speech-to-text model",
+            "assist_tts": "Add Text-to-speech",
+            "tts_model": "Text-to-speech model",
+            "tts_voice": "Voice",
+            "tts_speed": "Speed"
           },
           "data_description": {
-            "borrow": "해당 통합구성요소에 이미 저장된 키를 사용합니다. 다른 통합구성요소는 그대로 둡니다.",
-            "api_key": "AI 제공자의 키이며 Home Assistant 로그인이 아닙니다. [API 키 받기]({api_key_url})",
-            "model": "목록에서 고르거나 모델 이름을 입력하세요. 비우면 제공자 기본값을 사용합니다.",
-            "effort": "노력이 클수록 더 많이 생각합니다. 어려운 질문에 더 나은 답을 주지만 느리고 토큰을 더 씁니다. 모델이 지원하지 않으면 무시됩니다.",
-            "allow_internet": "기본값은 꺼짐입니다. 켜면 관리자 채팅에 웹 검색과 페이지 가져오기 도구가 추가됩니다. 로컬 네트워크 주소는 계속 차단됩니다. 일반 사용자 채팅과 음성 위성은 이를 받지 않습니다.",
-            "assist": "이 어시스턴트를 Home Assistant Assist(음성)에도 표시합니다. 끄면 AI Workspace 채팅에만 두고 Assist에 추가한 항목을 제거합니다.",
-            "assist_stt": "이 어시스턴트의 키로 Home Assistant에 음성-텍스트 옵션을 추가합니다. 끄면 추가한 항목을 제거합니다.",
-            "stt_model": "제공자 기본값을 쓰려면 비워 두세요. 다른 모델 이름이 있으면 입력할 수 있습니다.",
-            "assist_tts": "이 어시스턴트의 키로 Home Assistant에 텍스트-음성 옵션을 추가합니다. 끄면 추가한 항목을 제거합니다.",
-            "tts_model": "기본 음성 모델을 쓰려면 비워 두세요. 제공자가 다른 이름을 안내하면 입력할 수 있습니다.",
-            "tts_voice": "Coral이 기본값입니다. 음성은 Assist → 언어에서 설정한 언어에 맞춰 동작합니다.",
-            "tts_speed": "이 음성이 말하는 속도입니다. 1×가 보통입니다. AI Workspace와 Assist에 적용됩니다."
+            "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
+            "api_key": "Your key from the AI provider, not your Home Assistant login. [Get an API key]({api_key_url})",
+            "model": "Pick from the list or type a model name. Empty uses the provider default.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist.",
+            "assist_stt": "Adds a Speech-to-text option in Home Assistant using this assistant's key. Off removes what it added.",
+            "stt_model": "Leave empty for the provider default. You can type another model name if yours offers one.",
+            "assist_tts": "Adds a Text-to-speech option in Home Assistant using this assistant's key. Off removes what it added.",
+            "tts_model": "Leave empty for the default voice model. You can type another name if your provider lists one.",
+            "tts_voice": "Coral is the OpenAI default. Kore is the Gemini default. Voices work for the languages you set under Assist → Language.",
+            "tts_speed": "How fast this voice speaks. 1× is normal. Applies to AI Workspace and Assist."
           },
           "sections": {
             "model_list": {
-              "name": "모델 목록",
+              "name": "Model list",
               "data": {
-                "models": "모델"
+                "models": "Models"
               },
               "data_description": {
-                "models": "선택 사항. 제공업체의 전체 목록 대신 여기와 채팅의 모델 선택에 쓸 나만의 모델 목록입니다. 쉼표, 세미콜론 또는 줄바꿈으로 구분한 이름(예: gpt-5.5, grok-4.7). 비워 두면 제공업체 목록을 표시합니다."
+                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
               }
             },
             "advanced": {
-              "name": "고급",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "토큰 절약",
-                "cache_1h": "캐시를 1시간 유지"
+                "save_tokens": "Save tokens",
+                "cache_1h": "Keep the cache for an hour"
               },
               "data_description": {
-                "save_tokens": "메시지마다 더 적게 보냅니다: 더 짧은 프롬프트, 더 적은 대화 기록, 더 짧은 답변. 비용은 줄지만 집에 대한 답변이 덜 자세할 수 있습니다.",
-                "cache_1h": "Claude 전용. 시스템 프롬프트와 도구를 5분 대신 1시간 동안 캐시에 둡니다. 캐시 쓰기는 입력 가격의 1.25배 대신 2배, 읽기는 0.1배입니다. 메시지 사이에 5분 넘게 쉬는 일이 많으면 더 저렴하고, 채팅을 드물게 하면 조금 더 비쌉니다."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough.",
+                "cache_1h": "Claude only. Keeps the system prompt and tools cached for an hour instead of 5 minutes. Writing the cache costs 2× the input price instead of 1.25×; reading it costs 0.1×. Cheaper when there are breaks of more than 5 minutes between your messages, a little more expensive if you rarely chat."
               }
             }
           }
         },
         "provider_ollama": {
           "title": "Ollama",
-          "description": "Ollama 서버 주소를 지정하세요.",
+          "description": "Point this at the Ollama server.",
           "data": {
             "api_base": "Ollama URL",
-            "model": "모델",
-            "effort": "노력",
-            "allow_internet": "인터넷 허용",
-            "assist": "Assist에 추가"
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
           },
           "data_description": {
             "api_base": "{ollama_note}",
-            "model": "목록에서 고르거나 설치한 모델을 입력하세요. 비우면 llama3.2를 사용합니다.",
-            "effort": "노력이 클수록 더 많이 생각합니다. 어려운 질문에 더 나은 답을 주지만 느리고 토큰을 더 씁니다. 모델이 지원하지 않으면 무시됩니다.",
-            "allow_internet": "기본값은 꺼짐입니다. 켜면 관리자 채팅에 웹 검색과 페이지 가져오기 도구가 추가됩니다. 로컬 네트워크 주소는 계속 차단됩니다. 일반 사용자 채팅과 음성 위성은 이를 받지 않습니다.",
-            "assist": "이 어시스턴트를 Home Assistant Assist(음성)에도 표시합니다. 끄면 AI Workspace 채팅에만 두고 Assist에 추가한 항목을 제거합니다."
+            "model": "Pick from the list or type a model you installed. Empty uses llama3.2.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           },
           "sections": {
             "model_list": {
-              "name": "모델 목록",
+              "name": "Model list",
               "data": {
-                "models": "모델"
+                "models": "Models"
               },
               "data_description": {
-                "models": "선택 사항. 제공업체의 전체 목록 대신 여기와 채팅의 모델 선택에 쓸 나만의 모델 목록입니다. 쉼표, 세미콜론 또는 줄바꿈으로 구분한 이름(예: gpt-5.5, grok-4.7). 비워 두면 제공업체 목록을 표시합니다."
+                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
               }
             },
             "advanced": {
-              "name": "고급",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "토큰 절약"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "메시지마다 더 적게 보냅니다: 더 짧은 프롬프트, 더 적은 대화 기록, 더 짧은 답변. 비용은 줄지만 집에 대한 답변이 덜 자세할 수 있습니다."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
               }
             }
           }
         },
         "provider_azure": {
           "title": "Azure OpenAI",
-          "description": "Azure 엔드포인트, 배포, 키입니다.",
+          "description": "Azure endpoint, deployment, and key.",
           "data": {
-            "api_key": "Azure API 키",
-            "api_base": "엔드포인트",
-            "model": "배포",
-            "azure_api_version": "API 버전",
-            "effort": "노력",
-            "allow_internet": "인터넷 허용",
-            "assist": "Assist에 추가"
+            "api_key": "Azure API key",
+            "api_base": "Endpoint",
+            "model": "Deployment",
+            "azure_api_version": "API version",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
           },
           "data_description": {
-            "api_key": "Azure OpenAI 키입니다. 수정 시 비워 두면 저장된 키를 유지합니다. [API 키 받기]({api_key_url})",
+            "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key. [Get an API key]({api_key_url})",
             "api_base": "{example_url}",
-            "model": "배포 이름입니다.",
-            "azure_api_version": "Azure 지원에서 다른 버전을 안내하지 않았다면 기본값을 유지하세요.",
-            "effort": "노력이 클수록 더 많이 생각합니다. 어려운 질문에 더 나은 답을 주지만 느리고 토큰을 더 씁니다. 모델이 지원하지 않으면 무시됩니다.",
-            "allow_internet": "기본값은 꺼짐입니다. 켜면 관리자 채팅에 웹 검색과 페이지 가져오기 도구가 추가됩니다. 로컬 네트워크 주소는 계속 차단됩니다. 일반 사용자 채팅과 음성 위성은 이를 받지 않습니다.",
-            "assist": "이 어시스턴트를 Home Assistant Assist(음성)에도 표시합니다. 끄면 AI Workspace 채팅에만 두고 Assist에 추가한 항목을 제거합니다."
+            "model": "The deployment name.",
+            "azure_api_version": "Leave the default unless Azure support gave you another version.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           },
           "sections": {
             "model_list": {
-              "name": "모델 목록",
+              "name": "Model list",
               "data": {
-                "models": "모델"
+                "models": "Models"
               },
               "data_description": {
-                "models": "선택 사항이며, 모델 목록을 제공하지 않는 서버용입니다. 여기와 채팅의 모델 선택을 채웁니다. 쉼표, 세미콜론 또는 줄바꿈으로 구분한 이름을 붙여 넣으세요(예: gpt-5.5, grok-4.7). 붙여 넣은 내용이 목록을 대체하며, 비우면 서버의 목록을 다시 사용합니다."
+                "models": "Optional, for servers that do not list their models. Fills the model picker here and in the chat. Paste names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. What you paste replaces the list; empty it to use the server's own list again."
               }
             },
             "advanced": {
-              "name": "고급",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "토큰 절약"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "메시지마다 더 적게 보냅니다: 더 짧은 프롬프트, 더 적은 대화 기록, 더 짧은 답변. 비용은 줄지만 집에 대한 답변이 덜 자세할 수 있습니다."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
               }
             }
           }
         },
         "provider_compatible": {
-          "title": "OpenAI 호환",
-          "description": "OpenAI 채팅 API처럼 동작하는 자체 서버입니다.",
+          "title": "OpenAI-compatible",
+          "description": "Your own server that works like OpenAI's chat API.",
           "data": {
-            "api_key": "API 키",
-            "api_base": "API 기본 URL",
-            "model": "모델",
-            "effort": "노력",
-            "allow_internet": "인터넷 허용",
-            "assist": "Assist에 추가",
-            "assist_stt": "음성-텍스트 추가",
-            "stt_model": "음성-텍스트 모델",
-            "assist_tts": "텍스트-음성 추가",
-            "tts_model": "텍스트-음성 모델",
-            "tts_voice": "음성",
-            "tts_speed": "속도"
+            "api_key": "API key",
+            "api_base": "API base URL",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist",
+            "assist_stt": "Add Speech-to-text",
+            "stt_model": "Speech-to-text model",
+            "assist_tts": "Add Text-to-speech",
+            "tts_model": "Text-to-speech model",
+            "tts_voice": "Voice",
+            "tts_speed": "Speed"
           },
           "data_description": {
-            "api_key": "수정 시 비워 두면 저장된 키를 유지합니다.",
-            "api_base": "서버 주소입니다. 서버가 요구하면 끝에 /v1을 붙이세요.",
-            "model": "해당 서버의 모델 이름입니다.",
-            "effort": "노력이 클수록 더 많이 생각합니다. 어려운 질문에 더 나은 답을 주지만 느리고 토큰을 더 씁니다. 모델이 지원하지 않으면 무시됩니다.",
-            "allow_internet": "기본값은 꺼짐입니다. 켜면 관리자 채팅에 웹 검색과 페이지 가져오기 도구가 추가됩니다. 로컬 네트워크 주소는 계속 차단됩니다. 일반 사용자 채팅과 음성 위성은 이를 받지 않습니다.",
-            "assist": "이 어시스턴트를 Home Assistant Assist(음성)에도 표시합니다. 끄면 AI Workspace 채팅에만 두고 Assist에 추가한 항목을 제거합니다.",
-            "assist_stt": "이 어시스턴트의 키로 Home Assistant에 음성-텍스트 옵션을 추가합니다. 끄면 추가한 항목을 제거합니다.",
-            "stt_model": "제공자 기본값을 쓰려면 비워 두세요. 다른 모델 이름이 있으면 입력할 수 있습니다.",
-            "assist_tts": "이 어시스턴트의 키로 Home Assistant에 텍스트-음성 옵션을 추가합니다. 끄면 추가한 항목을 제거합니다.",
-            "tts_model": "기본 음성 모델을 쓰려면 비워 두세요. 제공자가 다른 이름을 안내하면 입력할 수 있습니다.",
-            "tts_voice": "Coral이 기본값입니다. 음성은 Assist → 언어에서 설정한 언어에 맞춰 동작합니다.",
-            "tts_speed": "이 음성이 말하는 속도입니다. 1×가 보통입니다. AI Workspace와 Assist에 적용됩니다."
+            "api_key": "Leave blank when editing to keep the saved key.",
+            "api_base": "Server address. Add /v1 at the end if your server expects that.",
+            "model": "Model name on that server.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist.",
+            "assist_stt": "Adds a Speech-to-text option in Home Assistant using this assistant's key. Off removes what it added.",
+            "stt_model": "Leave empty for the provider default. You can type another model name if yours offers one.",
+            "assist_tts": "Adds a Text-to-speech option in Home Assistant using this assistant's key. Off removes what it added.",
+            "tts_model": "Leave empty for the default voice model. You can type another name if your provider lists one.",
+            "tts_voice": "Coral is the OpenAI default. Kore is the Gemini default. Voices work for the languages you set under Assist → Language.",
+            "tts_speed": "How fast this voice speaks. 1× is normal. Applies to AI Workspace and Assist."
           },
           "sections": {
             "model_list": {
-              "name": "모델 목록",
+              "name": "Model list",
               "data": {
-                "models": "모델"
+                "models": "Models"
               },
               "data_description": {
-                "models": "선택 사항이며, 모델 목록을 제공하지 않는 서버용입니다. 여기와 채팅의 모델 선택을 채웁니다. 쉼표, 세미콜론 또는 줄바꿈으로 구분한 이름을 붙여 넣으세요(예: gpt-5.5, grok-4.7). 붙여 넣은 내용이 목록을 대체하며, 비우면 서버의 목록을 다시 사용합니다."
+                "models": "Optional, for servers that do not list their models. Fills the model picker here and in the chat. Paste names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. What you paste replaces the list; empty it to use the server's own list again."
               }
             },
             "advanced": {
-              "name": "고급",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "토큰 절약"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "메시지마다 더 적게 보냅니다: 더 짧은 프롬프트, 더 적은 대화 기록, 더 짧은 답변. 비용은 줄지만 집에 대한 답변이 덜 자세할 수 있습니다."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
+              }
+            }
+          }
+        },
+        "provider_claude": {
+          "title": "Claude SDK",
+          "description": "Same runtime sidecar as Cursor. OpenRouter key, Claude Plan token, or Anthropic API key.",
+          "data": {
+            "runtime_url": "Runtime address{runtime_url_mark}",
+            "runtime_token": "Runtime password",
+            "claude_api_key": "OpenRouter key, Claude Plan token, or Anthropic API key",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
+          },
+          "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
+            "claude_api_key": "OpenRouter (`sk-or-…`), Claude Plan (`claude setup-token`), or Anthropic API key. Leave blank when editing to keep the saved credential. [Keys and tokens]({api_key_url})",
+            "model": "Anthropic id (e.g. claude-sonnet-5-5) or OpenRouter slug (e.g. anthropic/claude-sonnet-4.5).",
+            "effort": "Reserved for future Claude SDK options.",
+            "allow_internet": "Off by default. On allows WebSearch and WebFetch in admin chats with full tools.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only."
+          },
+          "sections": {
+            "model_list": {
+              "name": "Model list",
+              "data": {
+                "models": "Models"
+              },
+              "data_description": {
+                "models": "Optional custom list for the model picker in this form and in chat."
+              }
+            },
+            "advanced": {
+              "name": "Advanced",
+              "data": {
+                "save_tokens": "Save tokens"
+              },
+              "data_description": {
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies."
               }
             }
           }
         }
       },
       "abort": {
-        "reconfigure_successful": "에이전트가 업데이트되었습니다."
+        "reconfigure_successful": "Agent updated."
       }
     }
   },

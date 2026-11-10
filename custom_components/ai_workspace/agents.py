@@ -26,6 +26,7 @@ from .const import (
     CONF_API_PROVIDER,
     CONF_AZURE_API_VERSION,
     CONF_CHECK_HOUSE,
+    CONF_CLAUDE_API_KEY,
     CONF_CURSOR_API_KEY,
     CONF_EFFORT,
     CONF_LOW_TOKEN,
@@ -38,6 +39,7 @@ from .const import (
     EFFORT_DEFAULT,
     EFFORTS,
     MODE_API,
+    MODE_CLAUDE,
     MODE_CURSOR,
     SUBENTRY_AGENT,
     assist_enabled,
@@ -84,13 +86,19 @@ class Agent:
     check_house: bool = True
     azure_api_version: str = DEFAULT_AZURE_API_VERSION
     cursor_api_key: str = ""
+    claude_api_key: str = ""
     allow_internet: bool = False
     subentry_id: str = ""
     # Typed or pasted model ids; replaces the server's own list.
     models: tuple[str, ...] = ()
 
     def label(self) -> str:
-        name = self.title or API_SHORT_LABELS.get(self.provider, "Cursor" if self.mode == MODE_CURSOR else "Agent")
+        name = self.title or API_SHORT_LABELS.get(
+            self.provider,
+            "Cursor"
+            if self.mode == MODE_CURSOR
+            else ("Claude SDK" if self.mode == MODE_CLAUDE else "Agent"),
+        )
         model = (self.model or "").strip()
         effort = EFFORTS.get(self.effort or "", "")
         bits = [name]
@@ -120,6 +128,9 @@ def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Age
     if provider == MODE_CURSOR or mode == MODE_CURSOR:
         mode = MODE_CURSOR
         provider = MODE_CURSOR
+    elif provider == MODE_CLAUDE or mode == MODE_CLAUDE:
+        mode = MODE_CLAUDE
+        provider = MODE_CLAUDE
     elif provider not in API_PROVIDERS:
         provider = API_OPENAI
         mode = MODE_API
@@ -152,6 +163,7 @@ def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Age
         check_house=bool(raw.get(CONF_CHECK_HOUSE, True)),
         azure_api_version=_text(raw.get(CONF_AZURE_API_VERSION)) or DEFAULT_AZURE_API_VERSION,
         cursor_api_key=_text(raw.get(CONF_CURSOR_API_KEY)),
+        claude_api_key=_text(raw.get(CONF_CLAUDE_API_KEY)),
         allow_internet=bool(raw.get(CONF_ALLOW_INTERNET, False)),
     )
 
@@ -256,6 +268,29 @@ class CursorAgent:
             title=agent.title,
             model=agent.model or default_api_model(MODE_CURSOR),
             provider=MODE_CURSOR,
+        )
+
+
+class ClaudeAgent:
+    """Claude SDK chats use the same runtime sidecar as Cursor."""
+
+    kind = "claude"
+
+    def __init__(self, agent: Agent, available: bool, reason: str | None) -> None:
+        self.model = agent.model
+        self.effort = agent.effort
+        self.api_key = agent.claude_api_key
+        self.allow_internet = agent.allow_internet
+        self.token_mode = agent.token_mode
+        self.check_house = agent.check_house
+        self.info = ProviderInfo(
+            agent.id,
+            agent.label(),
+            available,
+            reason,
+            title=agent.title,
+            model=agent.model or default_api_model(MODE_CLAUDE),
+            provider=MODE_CLAUDE,
         )
 
 

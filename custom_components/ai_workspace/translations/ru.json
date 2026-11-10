@@ -103,7 +103,7 @@
       }
     },
     "error": {
-      "no_runtime": "Не удаётся связаться с runtime Cursor. Запустите его и проверьте адрес в этой форме.",
+      "no_runtime": "Не удаётся связаться с AI Workspace Runtime. Запустите его и проверьте адрес в этой форме.",
       "required": "Это поле обязательно.",
       "invalid_auth": "Поставщик отклонил этот ключ API.",
       "cannot_connect": "Не удалось связаться с поставщиком. Проверьте URL и сеть."
@@ -216,7 +216,7 @@
       }
     },
     "error": {
-      "no_runtime": "Не удаётся связаться с runtime Cursor. Запустите его и проверьте адрес в этой форме.",
+      "no_runtime": "Не удаётся связаться с AI Workspace Runtime. Запустите его и проверьте адрес в этой форме.",
       "required": "Это поле обязательно.",
       "invalid_auth": "Поставщик отклонил этот ключ API.",
       "cannot_connect": "Не удалось связаться с поставщиком. Проверьте URL и сеть."
@@ -277,261 +277,304 @@
     },
     "agent": {
       "initiate_flow": {
-        "user": "Добавить агента",
-        "reconfigure": "Изменить агента"
+        "user": "Add agent",
+        "reconfigure": "Edit agent"
       },
-      "entry_type": "Агент",
+      "entry_type": "Agent",
       "error": {
-        "no_runtime": "Не удаётся связаться с runtime Cursor. Запустите его и проверьте адрес в этой форме.",
-        "required": "Это поле обязательно.",
-        "invalid_auth": "Поставщик отклонил этот ключ API.",
-        "cannot_connect": "Не удалось связаться с поставщиком. Проверьте URL и сеть.",
-        "model_not_installed": "Эта модель не установлена в Ollama. Установлены: {installed}",
-        "pick_model": "Сервер теперь показывает свои модели. Выберите одну из списка.",
-        "model_rejected": "Сервер не разрешает эту модель для этого ключа: {server_message}"
+        "no_runtime": "Cannot reach the AI Workspace Runtime. Start it and check the address on this form.",
+        "required": "This field is required.",
+        "invalid_auth": "The provider rejected this API key.",
+        "cannot_connect": "Could not reach the provider. Check the URL and the network.",
+        "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
+        "pick_model": "The server lists its models now. Pick one from the model list.",
+        "model_rejected": "The server does not allow this model for this key: {server_message}",
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
       },
       "step": {
         "provider": {
-          "title": "Поставщик",
-          "description": "Выберите поставщика. На следующем экране спросят только то, что ему нужно.",
+          "title": "Provider",
+          "description": "Choose the provider. The next screen asks only for what that provider needs.",
           "data": {
-            "api_provider": "Поставщик"
+            "api_provider": "Provider"
           },
           "data_description": {
-            "api_provider": "Cursor или облачная либо локальная модель."
+            "api_provider": "Cursor, Claude SDK, or a cloud or local model."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
-          "description": "Адрес Cursor, ключ API, модель и скорость ответа.",
+          "description": "Cursor address, API key, model, and response speed.",
           "data": {
-            "runtime_url": "Адрес runtime Cursor{runtime_url_mark}",
-            "runtime_token": "Пароль runtime",
-            "cursor_api_key": "Ключ API Cursor",
-            "model": "Модель",
-            "effort": "Усилие",
-            "allow_internet": "Разрешить интернет",
-            "assist": "Добавить в Assist"
+            "runtime_url": "Runtime address{runtime_url_mark}",
+            "runtime_token": "Runtime password",
+            "cursor_api_key": "Cursor API key",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Тот же пароль, что и на вашем runtime Cursor. Оставьте пустым при использовании надстройки с автоматическим сопряжением.",
-            "cursor_api_key": "Из учётной записи Cursor (Integrations). При редактировании оставьте пустым, чтобы сохранить сохранённый ключ. [Получить API-ключ]({api_key_url})",
-            "model": "Выберите из списка или введите имя модели. Пусто использует Composer.",
-            "effort": "Сколько времени на размышление разрешить. Composer по умолчанию использует Быстро.",
-            "allow_internet": "По умолчанию выключено. Включено позволяет этому агенту в чатах администратора использовать веб-поиск, загрузку страниц и оболочку Cursor. Выключено убирает все три, так что curl или скрипты тоже не выйдут в интернет. Чаты обычных пользователей и голосовых спутников их никогда не получают.",
-            "assist": "Также показывает этого помощника в Home Assistant Assist (голос). Выкл: только чат AI Workspace; удаляет то, что он добавил в Assist."
+            "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
+            "cursor_api_key": "From your Cursor account (Integrations). Leave blank when editing to keep the saved key. [Get an API key]({api_key_url})",
+            "model": "Pick from the list or type a model name. Empty uses Composer.",
+            "effort": "How much thinking time to allow. Composer defaults to Fast.",
+            "allow_internet": "Off by default. On lets this agent use Cursor's web search, page fetch and shell in admin chats. Off removes all three, so curl or scripts cannot reach the web either. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           },
           "sections": {
             "model_list": {
-              "name": "Список моделей",
+              "name": "Model list",
               "data": {
-                "models": "Модели"
+                "models": "Models"
               },
               "data_description": {
-                "models": "Необязательно. Ваш собственный набор моделей для выбора здесь и в чате вместо полного списка провайдера. Названия через запятую, точку с запятой или с новой строки, например gpt-5.5, grok-4.7. Пусто — показывается список провайдера."
+                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
               }
             },
             "advanced": {
-              "name": "Дополнительно",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "Экономить токены"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "С каждым сообщением отправляется меньше: короче промпт, меньше истории чата и короче ответы. Дешевле, но ответы о вашем доме могут быть менее подробными."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
               }
             }
           }
         },
         "provider_cloud": {
-          "title": "Облачный агент",
-          "description": "Этот агент хранит свой ключ. Скопируйте его из уже настроенной интеграции или вставьте новый. При редактировании оставьте ключ пустым, чтобы сохранить сохранённый.",
+          "title": "Cloud agent",
+          "description": "This agent keeps its own key. Copy one from an integration that is already set up, or paste a new one. Leave the key blank when editing to keep the saved key.",
           "data": {
-            "borrow": "Копировать ключ из",
-            "api_key": "Ключ API",
-            "model": "Модель",
-            "effort": "Усилие",
-            "allow_internet": "Разрешить интернет",
-            "assist": "Добавить в Assist",
-            "assist_stt": "Добавить речь в текст",
-            "stt_model": "Модель речи в текст",
-            "assist_tts": "Добавить текст в речь",
-            "tts_model": "Модель текста в речь",
-            "tts_voice": "Голос",
-            "tts_speed": "Скорость"
+            "borrow": "Copy key from",
+            "api_key": "API key",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist",
+            "assist_stt": "Add Speech-to-text",
+            "stt_model": "Speech-to-text model",
+            "assist_tts": "Add Text-to-speech",
+            "tts_model": "Text-to-speech model",
+            "tts_voice": "Voice",
+            "tts_speed": "Speed"
           },
           "data_description": {
-            "borrow": "Использует ключ, уже сохранённый этой интеграцией. Другая интеграция не меняется.",
-            "api_key": "Ваш ключ у поставщика ИИ, не вход в Home Assistant. [Получить API-ключ]({api_key_url})",
-            "model": "Выберите из списка или введите имя модели. Пусто использует значение поставщика по умолчанию.",
-            "effort": "Больше усилий — больше размышлений: лучше ответы на сложные вопросы, но медленнее и больше токенов. Игнорируется, если модель это не поддерживает.",
-            "allow_internet": "По умолчанию выключено. Включено добавляет в чатах администратора инструменты веб-поиска и загрузки страниц. Адреса локальной сети остаются заблокированы. Чаты обычных пользователей и голосовых спутников их никогда не получают.",
-            "assist": "Также показывает этого помощника в Home Assistant Assist (голос). Выкл: только чат AI Workspace; удаляет то, что он добавил в Assist.",
-            "assist_stt": "Добавляет в Home Assistant вариант «речь в текст» с ключом этого помощника. Выкл удаляет то, что он добавил.",
-            "stt_model": "Оставьте пустым для значения поставщика по умолчанию. Можно ввести другое имя модели, если оно есть.",
-            "assist_tts": "Добавляет в Home Assistant вариант «текст в речь» с ключом этого помощника. Выкл удаляет то, что он добавил.",
-            "tts_model": "Оставьте пустым для голосовой модели по умолчанию. Можно ввести другое имя, если поставщик его предлагает.",
-            "tts_voice": "Coral — голос по умолчанию. Голоса работают для языков, заданных в Assist → Язык.",
-            "tts_speed": "Как быстро говорит этот голос. 1× — обычная скорость. Действует для AI Workspace и Assist."
+            "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
+            "api_key": "Your key from the AI provider, not your Home Assistant login. [Get an API key]({api_key_url})",
+            "model": "Pick from the list or type a model name. Empty uses the provider default.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist.",
+            "assist_stt": "Adds a Speech-to-text option in Home Assistant using this assistant's key. Off removes what it added.",
+            "stt_model": "Leave empty for the provider default. You can type another model name if yours offers one.",
+            "assist_tts": "Adds a Text-to-speech option in Home Assistant using this assistant's key. Off removes what it added.",
+            "tts_model": "Leave empty for the default voice model. You can type another name if your provider lists one.",
+            "tts_voice": "Coral is the OpenAI default. Kore is the Gemini default. Voices work for the languages you set under Assist → Language.",
+            "tts_speed": "How fast this voice speaks. 1× is normal. Applies to AI Workspace and Assist."
           },
           "sections": {
             "model_list": {
-              "name": "Список моделей",
+              "name": "Model list",
               "data": {
-                "models": "Модели"
+                "models": "Models"
               },
               "data_description": {
-                "models": "Необязательно. Ваш собственный набор моделей для выбора здесь и в чате вместо полного списка провайдера. Названия через запятую, точку с запятой или с новой строки, например gpt-5.5, grok-4.7. Пусто — показывается список провайдера."
+                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
               }
             },
             "advanced": {
-              "name": "Дополнительно",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "Экономить токены",
-                "cache_1h": "Хранить кэш час"
+                "save_tokens": "Save tokens",
+                "cache_1h": "Keep the cache for an hour"
               },
               "data_description": {
-                "save_tokens": "С каждым сообщением отправляется меньше: короче промпт, меньше истории чата и короче ответы. Дешевле, но ответы о вашем доме могут быть менее подробными.",
-                "cache_1h": "Только Claude. Хранит системный промпт и инструменты в кэше час вместо 5 минут. Запись в кэш стоит 2× цены ввода вместо 1,25×, чтение — 0,1×. Дешевле, если между сообщениями часто проходит больше 5 минут; немного дороже, если вы пишете редко."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough.",
+                "cache_1h": "Claude only. Keeps the system prompt and tools cached for an hour instead of 5 minutes. Writing the cache costs 2× the input price instead of 1.25×; reading it costs 0.1×. Cheaper when there are breaks of more than 5 minutes between your messages, a little more expensive if you rarely chat."
               }
             }
           }
         },
         "provider_ollama": {
           "title": "Ollama",
-          "description": "Укажите адрес сервера Ollama.",
+          "description": "Point this at the Ollama server.",
           "data": {
-            "api_base": "URL Ollama",
-            "model": "Модель",
-            "effort": "Усилие",
-            "allow_internet": "Разрешить интернет",
-            "assist": "Добавить в Assist"
+            "api_base": "Ollama URL",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
           },
           "data_description": {
             "api_base": "{ollama_note}",
-            "model": "Выберите из списка или введите установленную модель. Пусто использует llama3.2.",
-            "effort": "Больше усилий — больше размышлений: лучше ответы на сложные вопросы, но медленнее и больше токенов. Игнорируется, если модель это не поддерживает.",
-            "allow_internet": "По умолчанию выключено. Включено добавляет в чатах администратора инструменты веб-поиска и загрузки страниц. Адреса локальной сети остаются заблокированы. Чаты обычных пользователей и голосовых спутников их никогда не получают.",
-            "assist": "Также показывает этого помощника в Home Assistant Assist (голос). Выкл: только чат AI Workspace; удаляет то, что он добавил в Assist."
+            "model": "Pick from the list or type a model you installed. Empty uses llama3.2.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           },
           "sections": {
             "model_list": {
-              "name": "Список моделей",
+              "name": "Model list",
               "data": {
-                "models": "Модели"
+                "models": "Models"
               },
               "data_description": {
-                "models": "Необязательно. Ваш собственный набор моделей для выбора здесь и в чате вместо полного списка провайдера. Названия через запятую, точку с запятой или с новой строки, например gpt-5.5, grok-4.7. Пусто — показывается список провайдера."
+                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
               }
             },
             "advanced": {
-              "name": "Дополнительно",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "Экономить токены"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "С каждым сообщением отправляется меньше: короче промпт, меньше истории чата и короче ответы. Дешевле, но ответы о вашем доме могут быть менее подробными."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
               }
             }
           }
         },
         "provider_azure": {
           "title": "Azure OpenAI",
-          "description": "Конечная точка Azure, развёртывание и ключ.",
+          "description": "Azure endpoint, deployment, and key.",
           "data": {
-            "api_key": "Ключ API Azure",
-            "api_base": "Конечная точка",
-            "model": "Развёртывание",
-            "azure_api_version": "Версия API",
-            "effort": "Усилие",
-            "allow_internet": "Разрешить интернет",
-            "assist": "Добавить в Assist"
+            "api_key": "Azure API key",
+            "api_base": "Endpoint",
+            "model": "Deployment",
+            "azure_api_version": "API version",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
           },
           "data_description": {
-            "api_key": "Ключ Azure OpenAI. При редактировании оставьте пустым, чтобы сохранить сохранённый ключ. [Получить API-ключ]({api_key_url})",
+            "api_key": "The Azure OpenAI key. Leave blank when editing to keep the saved key. [Get an API key]({api_key_url})",
             "api_base": "{example_url}",
-            "model": "Имя развёртывания.",
-            "azure_api_version": "Оставьте значение по умолчанию, если поддержка Azure не указала другую версию.",
-            "effort": "Больше усилий — больше размышлений: лучше ответы на сложные вопросы, но медленнее и больше токенов. Игнорируется, если модель это не поддерживает.",
-            "allow_internet": "По умолчанию выключено. Включено добавляет в чатах администратора инструменты веб-поиска и загрузки страниц. Адреса локальной сети остаются заблокированы. Чаты обычных пользователей и голосовых спутников их никогда не получают.",
-            "assist": "Также показывает этого помощника в Home Assistant Assist (голос). Выкл: только чат AI Workspace; удаляет то, что он добавил в Assist."
+            "model": "The deployment name.",
+            "azure_api_version": "Leave the default unless Azure support gave you another version.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           },
           "sections": {
             "model_list": {
-              "name": "Список моделей",
+              "name": "Model list",
               "data": {
-                "models": "Модели"
+                "models": "Models"
               },
               "data_description": {
-                "models": "Необязательно, для серверов, которые не отдают список моделей. Заполняет выбор модели здесь и в чате. Вставьте названия через запятую, точку с запятой или с новой строки, например gpt-5.5, grok-4.7. Вставленное заменяет список; очистите его, чтобы снова использовать список сервера."
+                "models": "Optional, for servers that do not list their models. Fills the model picker here and in the chat. Paste names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. What you paste replaces the list; empty it to use the server's own list again."
               }
             },
             "advanced": {
-              "name": "Дополнительно",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "Экономить токены"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "С каждым сообщением отправляется меньше: короче промпт, меньше истории чата и короче ответы. Дешевле, но ответы о вашем доме могут быть менее подробными."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
               }
             }
           }
         },
         "provider_compatible": {
-          "title": "Совместимый с OpenAI",
-          "description": "Свой сервер, который работает как API чата OpenAI.",
+          "title": "OpenAI-compatible",
+          "description": "Your own server that works like OpenAI's chat API.",
           "data": {
-            "api_key": "Ключ API",
-            "api_base": "Базовый URL API",
-            "model": "Модель",
-            "effort": "Усилие",
-            "allow_internet": "Разрешить интернет",
-            "assist": "Добавить в Assist",
-            "assist_stt": "Добавить речь в текст",
-            "stt_model": "Модель речи в текст",
-            "assist_tts": "Добавить текст в речь",
-            "tts_model": "Модель текста в речь",
-            "tts_voice": "Голос",
-            "tts_speed": "Скорость"
+            "api_key": "API key",
+            "api_base": "API base URL",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist",
+            "assist_stt": "Add Speech-to-text",
+            "stt_model": "Speech-to-text model",
+            "assist_tts": "Add Text-to-speech",
+            "tts_model": "Text-to-speech model",
+            "tts_voice": "Voice",
+            "tts_speed": "Speed"
           },
           "data_description": {
-            "api_key": "При редактировании оставьте пустым, чтобы сохранить сохранённый ключ.",
-            "api_base": "Адрес сервера. Добавьте /v1 в конце, если сервер этого ожидает.",
-            "model": "Имя модели на этом сервере.",
-            "effort": "Больше усилий — больше размышлений: лучше ответы на сложные вопросы, но медленнее и больше токенов. Игнорируется, если модель это не поддерживает.",
-            "allow_internet": "По умолчанию выключено. Включено добавляет в чатах администратора инструменты веб-поиска и загрузки страниц. Адреса локальной сети остаются заблокированы. Чаты обычных пользователей и голосовых спутников их никогда не получают.",
-            "assist": "Также показывает этого помощника в Home Assistant Assist (голос). Выкл: только чат AI Workspace; удаляет то, что он добавил в Assist.",
-            "assist_stt": "Добавляет в Home Assistant вариант «речь в текст» с ключом этого помощника. Выкл удаляет то, что он добавил.",
-            "stt_model": "Оставьте пустым для значения поставщика по умолчанию. Можно ввести другое имя модели, если оно есть.",
-            "assist_tts": "Добавляет в Home Assistant вариант «текст в речь» с ключом этого помощника. Выкл удаляет то, что он добавил.",
-            "tts_model": "Оставьте пустым для голосовой модели по умолчанию. Можно ввести другое имя, если поставщик его предлагает.",
-            "tts_voice": "Coral — голос по умолчанию. Голоса работают для языков, заданных в Assist → Язык.",
-            "tts_speed": "Как быстро говорит этот голос. 1× — обычная скорость. Действует для AI Workspace и Assist."
+            "api_key": "Leave blank when editing to keep the saved key.",
+            "api_base": "Server address. Add /v1 at the end if your server expects that.",
+            "model": "Model name on that server.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist.",
+            "assist_stt": "Adds a Speech-to-text option in Home Assistant using this assistant's key. Off removes what it added.",
+            "stt_model": "Leave empty for the provider default. You can type another model name if yours offers one.",
+            "assist_tts": "Adds a Text-to-speech option in Home Assistant using this assistant's key. Off removes what it added.",
+            "tts_model": "Leave empty for the default voice model. You can type another name if your provider lists one.",
+            "tts_voice": "Coral is the OpenAI default. Kore is the Gemini default. Voices work for the languages you set under Assist → Language.",
+            "tts_speed": "How fast this voice speaks. 1× is normal. Applies to AI Workspace and Assist."
           },
           "sections": {
             "model_list": {
-              "name": "Список моделей",
+              "name": "Model list",
               "data": {
-                "models": "Модели"
+                "models": "Models"
               },
               "data_description": {
-                "models": "Необязательно, для серверов, которые не отдают список моделей. Заполняет выбор модели здесь и в чате. Вставьте названия через запятую, точку с запятой или с новой строки, например gpt-5.5, grok-4.7. Вставленное заменяет список; очистите его, чтобы снова использовать список сервера."
+                "models": "Optional, for servers that do not list their models. Fills the model picker here and in the chat. Paste names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. What you paste replaces the list; empty it to use the server's own list again."
               }
             },
             "advanced": {
-              "name": "Дополнительно",
+              "name": "Advanced",
               "data": {
-                "save_tokens": "Экономить токены"
+                "save_tokens": "Save tokens"
               },
               "data_description": {
-                "save_tokens": "С каждым сообщением отправляется меньше: короче промпт, меньше истории чата и короче ответы. Дешевле, но ответы о вашем доме могут быть менее подробными."
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
+              }
+            }
+          }
+        },
+        "provider_claude": {
+          "title": "Claude SDK",
+          "description": "Same runtime sidecar as Cursor. OpenRouter key, Claude Plan token, or Anthropic API key.",
+          "data": {
+            "runtime_url": "Runtime address{runtime_url_mark}",
+            "runtime_token": "Runtime password",
+            "claude_api_key": "OpenRouter key, Claude Plan token, or Anthropic API key",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
+          },
+          "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
+            "claude_api_key": "OpenRouter (`sk-or-…`), Claude Plan (`claude setup-token`), or Anthropic API key. Leave blank when editing to keep the saved credential. [Keys and tokens]({api_key_url})",
+            "model": "Anthropic id (e.g. claude-sonnet-5-5) or OpenRouter slug (e.g. anthropic/claude-sonnet-4.5).",
+            "effort": "Reserved for future Claude SDK options.",
+            "allow_internet": "Off by default. On allows WebSearch and WebFetch in admin chats with full tools.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only."
+          },
+          "sections": {
+            "model_list": {
+              "name": "Model list",
+              "data": {
+                "models": "Models"
+              },
+              "data_description": {
+                "models": "Optional custom list for the model picker in this form and in chat."
+              }
+            },
+            "advanced": {
+              "name": "Advanced",
+              "data": {
+                "save_tokens": "Save tokens"
+              },
+              "data_description": {
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies."
               }
             }
           }
         }
       },
       "abort": {
-        "reconfigure_successful": "Агент обновлён."
+        "reconfigure_successful": "Agent updated."
       }
     }
   },
