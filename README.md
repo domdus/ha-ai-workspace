@@ -138,17 +138,17 @@ flowchart LR
     AW[AI Workspace]
     HA[Home Assistant]
     MCP[MCP]
+    RT[AI Workspace Runtime]
     AW --> HA --> MCP
+    MCP <--> RT
   end
-  RT[AI Workspace Runtime]
-  MCP <--> RT
   CC[Cursor Cloud AI]
   CL[Claude / OpenRouter]
   RT --> CC
   RT --> CL
 ```
 
-*AI Workspace, Home Assistant, and MCP inside Home Assistant OS; the runtime sidecar talks to MCP and to Cursor Cloud AI and Claude / OpenRouter.*
+*AI Workspace, Home Assistant, MCP, and the runtime app inside Home Assistant OS; Cursor Cloud AI and Claude / OpenRouter outside.*
 
 Add this repository to Apps and install **AI Workspace Runtime**:
 
