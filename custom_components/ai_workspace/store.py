@@ -497,6 +497,11 @@ class Store:
             created_at=now,
         )
 
+    def delete_message(self, message_id: int) -> None:
+        with self._lock:
+            self._conn.execute("DELETE FROM messages WHERE id = ?", (int(message_id),))
+            self._conn.commit()
+
     def list_messages(self, session_id: str) -> list[ChatMessage]:
         session_id = _text(session_id)
         with self._lock:

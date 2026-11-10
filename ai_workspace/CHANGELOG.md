@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.4b3
+
+- When a Cursor chat cannot reach the Runtime (not found, refused token, still pairing, not answering), the reason is shown in the header instead of as a red answer in the chat. It stays there until a message gets through again.
+- The message itself is dimmed with a short "Not sent" note and goes back into the prompt, so you can send it again with one tap. Because it never reached the agent, it is not saved in the chat, and sending again does not repeat it.
+- Errors about one answer (for example a model or tool error) stay in the chat, next to the answer they belong to.
+
 ## 1.5.4b2
 
 - When the Cursor Runtime moves, for example from the App to the beta App or to another Docker host, the next chat finds it again. Before, AI Workspace kept the old address as long as the Cursor agent looked available, and every chat failed with "could not sync this chat to the Cursor Runtime" until the integration was reloaded.

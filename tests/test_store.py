@@ -312,3 +312,13 @@ def test_session_list_indexes_and_activity_flag(tmp_path: Path) -> None:
     listed = store.list_sessions("user-1")
     assert {item.id for item in listed} == {session.id, other.id}
     store.close()
+
+
+def test_a_message_that_never_reached_the_agent_can_be_removed(tmp_path: Path) -> None:
+    store = Store(tmp_path / "db.sqlite")
+    chat = store.create_session("user-1", "cursor")
+    kept = store.add_message(chat.id, "user", "first")
+    unsent = store.add_message(chat.id, "user", "Jetzt?")
+    store.delete_message(unsent.id)
+    assert [m.id for m in store.list_messages(chat.id)] == [kept.id]
+    store.close()

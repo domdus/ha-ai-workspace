@@ -66,3 +66,15 @@ def test_failure_names_pairing_when_that_is_the_reason() -> None:
     assert http._runtime_unreachable(hass).startswith("Pairing")
     hass.data[http.DOMAIN]["providers"] = {}
     assert "could not sync" in http._runtime_unreachable(hass)
+
+
+def test_unreachable_runtime_is_a_connection_error(monkeypatch) -> None:
+    hass, _data, _binds = _setup(monkeypatch, alive=set(), found=OLD)
+    chat = SimpleNamespace(id="s1", agent_id="")
+
+    async def first():
+        return await http._runtime_chat(hass, "u1", chat, "Jetzt?").__anext__()
+
+    event = asyncio.run(first())
+    assert event["type"] == "error"
+    assert event["connection"] is True

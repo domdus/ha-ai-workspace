@@ -1786,3 +1786,15 @@ ha-date-range-picker.usage-filter-dates {
     transition: none;
   }
 }
+
+/* A message that never reached the agent: dimmed, with a short note; the header says why. */
+.unsent {
+  opacity: 0.55;
+}
+
+.not-sent {
+  margin: 2px 4px 8px;
+  text-align: end;
+  font-size: 12px;
+  color: var(--secondary-text-color);
+}
