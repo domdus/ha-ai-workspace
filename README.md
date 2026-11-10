@@ -132,23 +132,7 @@ Install AI Workspace from HACS first ([step 1](#1-install-ai-workspace-from-hacs
 
 The **AI Workspace Runtime** app runs on the same machine as Home Assistant — **Cursor** (Composer, Grok, Cursor API key) and **Claude SDK** in one place.
 
-```mermaid
-flowchart LR
-  subgraph HAOS["Home Assistant OS"]
-    AW[AI Workspace]
-    HA[Home Assistant]
-    MCP[MCP]
-    RT[AI Workspace Runtime]
-    AW --> HA --> MCP
-    MCP <--> RT
-  end
-  CC[Cursor Cloud AI]
-  CL[Claude / OpenRouter]
-  RT --> CC
-  RT --> CL
-```
-
-*AI Workspace, Home Assistant, MCP, and the runtime app inside Home Assistant OS; Cursor Cloud AI and Claude / OpenRouter outside.*
+![Home Assistant OS with AI Workspace Runtime and Cursor / Claude Cloud](docs/os-architecture.jpg)
 
 Add this repository to Apps and install **AI Workspace Runtime**:
 
@@ -162,25 +146,7 @@ Home Assistant 2026.2 renamed "Add-ons" to "Apps".
 
 If Home Assistant is a Docker container (no Supervisor), run the **`ai-workspace-runtime`** container beside it. Home Assistant talks to that runtime; the runtime runs **Cursor** and **Claude SDK**, talks to MCP, and reaches Cursor Cloud AI or Claude / OpenRouter as needed.
 
-```mermaid
-flowchart LR
-  subgraph HAC["Home Assistant container"]
-    AW2[AI Workspace]
-    HA2[Home Assistant]
-    MCP2[MCP]
-    AW2 --> HA2 --> MCP2
-  end
-  subgraph RTBOX["ai-workspace-runtime"]
-    RTIN[Cursor + Claude SDK]
-  end
-  MCP2 <--> RTBOX
-  CC2[Cursor Cloud AI]
-  CL2[Claude / OpenRouter]
-  RTBOX --> CC2
-  RTBOX --> CL2
-```
-
-*Home Assistant in one container; **ai-workspace-runtime** beside it with Cursor and Claude SDK; cloud arrows as above.*
+![Home Assistant container, ai-workspace-runtime, Cursor / Claude Cloud](docs/docker-architecture.jpg)
 
 Paste your Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) into [docker-compose.runtime.yml](docker-compose.runtime.yml) when you use Cursor agents. For Claude SDK, set `OPENROUTER_API_KEY`, `CLAUDE_CODE_OAUTH_TOKEN`, or `ANTHROPIC_API_KEY` on the container ([details](docs/claude-runtime.md)); the compose file already lists them as comments.
 

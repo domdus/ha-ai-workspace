@@ -1,12 +1,12 @@
 architecture-beta
   group ha(server)[Home Assistant]
-  group sdk(server)[Cursor SDK]
+  group runtime(server)[ai-workspace-runtime]
   service ws(server)[AI Workspace] in ha
   service core(server)[Home Assistant] in ha
   service mcp(server)[MCP] in ha
-  service cursor(server)[Cursor SDK] in sdk
-  service cloud(internet)[Cursor Cloud AI]
+  service sdk(server)[Cursor + Claude SDK] in runtime
+  service cloud(internet)[Cursor / Claude Cloud]
   ws:R -- L:core
   core:R -- L:mcp
-  cursor:L --> R:mcp
-  cursor:R --> L:cloud
+  sdk:L --> R:mcp
+  sdk:R --> L:cloud
