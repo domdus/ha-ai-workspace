@@ -94,6 +94,7 @@ class Settings:
     auth_mode: str
     host: str
     port: int
+    claude_oauth_token: str = ""
     anthropic_api_key: str = ""
     claude_model: str = ""
     runtime_token: str = ""
@@ -128,6 +129,10 @@ class Settings:
         state_dir = Path(os.environ.get("CURSOR_STATE_DIR", str(data_dir / "cursor-state"))).resolve()
         key = os.environ.get("CURSOR_API_KEY", "").strip() or str(options.get("cursor_api_key") or "").strip()
         model = os.environ.get("CURSOR_MODEL", "").strip() or str(options.get("model") or "").strip() or "composer-2.5"
+        claude_oauth = (
+            os.environ.get("CLAUDE_CODE_OAUTH_TOKEN", "").strip()
+            or str(options.get("claude_oauth_token") or "").strip()
+        )
         anthropic_key = (
             os.environ.get("ANTHROPIC_API_KEY", "").strip()
             or str(options.get("anthropic_api_key") or "").strip()
@@ -155,6 +160,7 @@ class Settings:
             mcp_config_path=mcp_path,
             cursor_api_key=key,
             model=model,
+            claude_oauth_token=claude_oauth,
             anthropic_api_key=anthropic_key,
             claude_model=claude_model,
             auth_mode=auth_mode,

@@ -289,8 +289,7 @@
         "model_not_installed": "Bu model Ollama-da quraşdırılmayıb. Quraşdırılanlar: {installed}",
         "pick_model": "Server indi modellərini göstərir. Siyahıdan birini seçin.",
         "model_rejected": "Server bu açar üçün bu modelə icazə vermir: {server_message}",
-        "claude_runtime_old": "Claude SDK agentləri üçün AI Workspace Runtime-ı 1.6.0 və ya daha yeni versiyaya yeniləyin.",
-        "claude_plan_token": "Bu, Claude.ai abunə tokenidir. Claude SDK agentlərinə Claude Console-dan Anthropic API açarı (sk-ant-api…) lazımdır. Anthropic Agent SDK üzərində qurulan tətbiqlərə Claude.ai abunəsi ilə daxil olmağa icazə vermir."
+        "claude_runtime_old": "Claude SDK agentləri üçün AI Workspace Runtime-ı 1.6.0 və ya daha yeni versiyaya yeniləyin."
       },
       "step": {
         "provider": {
@@ -347,11 +346,11 @@
         },
         "provider_claude": {
           "title": "Claude SDK",
-          "description": "AI Workspace Runtime-da (Cursor ilə eyni tətbiq) işləyən Claude Code agenti. Anthropic API açarı lazımdır.",
+          "description": "AI Workspace Runtime-da (Cursor ilə eyni tətbiq) işləyən Claude Code agenti. Claude abunəliyinizdən (Pro, Max) və ya Anthropic API açarından istifadə edir.",
           "data": {
             "runtime_url": "Runtime ünvanı{runtime_url_mark}",
             "runtime_token": "Runtime parolu",
-            "claude_api_key": "Anthropic API açarı",
+            "claude_api_key": "Claude Plan tokeni və ya Anthropic API açarı",
             "model": "Model",
             "effort": "Səy",
             "allow_internet": "İnternetə icazə ver",
@@ -360,7 +359,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "AI Workspace Runtime-dakı eyni parol. Avtomatik cütləşmə ilə əlavə modul istifadə edərkən boş buraxın.",
-            "claude_api_key": "Claude Console-dan API açarı (sk-ant-api…). AI Workspace Runtime-dakı açarı istifadə etmək üçün və ya redaktə edərkən saxlanmış açarı saxlamaq üçün boş buraxın. Claude.ai abunə tokenləri işləmir. [API açarı al]({api_key_url})",
+            "claude_api_key": "Claude Plan tokeni (sk-ant-oat…, `claude setup-token` ilə yaradılır, Claude abunəliyinizdən istifadə edir) və ya Anthropic API açarı (sk-ant-api…, API kreditləri kimi ödənilir). AI Workspace Runtime-da təyin olunanı istifadə etmək üçün və ya redaktə edərkən saxlanmışı saxlamaq üçün boş buraxın. [API açarı al]({api_key_url})",
             "model": "Siyahıdan seçin və ya Anthropic model id-si yazın. Boş olduqda runtime-ın Claude modeli istifadə olunur (təyin edilməyibsə Claude Sonnet).",
             "effort": "Nə qədər düşünmə vaxtına icazə verilsin. Defolt olaraq Claude qərar verir.",
             "allow_internet": "Standart olaraq söndürülüb. Açıq olduqda bu agent admin söhbətlərində veb axtarışı, səhifə yükləmə və shell alətlərindən istifadə edə bilir. Söndürülü olduqda hər üçü silinir, beləliklə curl və ya skriptlər də internetə çıxa bilmir. Adi istifadəçilərin və səs peyklərinin söhbətləri onları heç vaxt almır.",

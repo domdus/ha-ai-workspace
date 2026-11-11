@@ -15,13 +15,14 @@ from app.providers.claude import (
     DEFAULT_MODEL,
     MISSING_KEY,
     NOT_INSTALLED,
-    PLAN_TOKEN,
     ClaudeProvider,
+    auth_mode,
     claude_subprocess_env,
     is_plan_token,
     mcp_for_sdk,
     resolve_credential,
     resolve_model,
+    runtime_credential,
     sdk_effort,
     tool_policy,
     usage_from_result,
@@ -47,6 +48,7 @@ def _settings(tmp_path: Path, **extra: str) -> Settings:
         mcp_config_path=tmp_path / "mcp.json",
         cursor_api_key="",
         model="composer-2.5",
+        claude_oauth_token=extra.get("oauth", ""),
         anthropic_api_key=extra.get("anthropic", ""),
         claude_model=extra.get("claude_model", ""),
         auth_mode="dev",
@@ -71,67 +73,82 @@ def _run(provider: ClaudeProvider, session, message: str = "hi", **kwargs) -> tu
 # --- credentials ---------------------------------------------------------------------------
 
 
-def test_agent_key_wins_over_runtime_key(tmp_path) -> None:
-    settings = _settings(tmp_path, anthropic=API_KEY)
+def test_agent_credential_wins_over_runtime_credentials(tmp_path) -> None:
+    settings = _settings(tmp_path, anthropic=API_KEY, oauth=PLAN)
     assert resolve_credential(settings, AGENT_KEY) == AGENT_KEY
-    assert resolve_credential(settings, "  ") == API_KEY
+    assert resolve_credential(_settings(tmp_path, oauth=PLAN), AGENT_KEY) == AGENT_KEY
+    assert resolve_credential(_settings(tmp_path, anthropic=API_KEY), PLAN) == PLAN
+    assert resolve_credential(settings, "  ") == PLAN  # runtime: Plan token first
+    assert resolve_credential(_settings(tmp_path, anthropic=API_KEY), "") == API_KEY
     assert resolve_credential(_settings(tmp_path), "") == ""
+    assert runtime_credential(_settings(tmp_path, oauth=f" {PLAN} ")) == PLAN
 
 
-def test_plan_tokens_are_recognised() -> None:
-    assert is_plan_token(PLAN)
-    assert is_plan_token(f"  {PLAN}  ")
-    assert not is_plan_token(API_KEY)
-    assert not is_plan_token("")
+def test_prefix_decides_the_sign_in() -> None:
+    assert is_plan_token(PLAN) and is_plan_token(f"  {PLAN}  ")
+    assert not is_plan_token(API_KEY) and not is_plan_token("")
+    assert auth_mode(PLAN) == "plan"
+    assert auth_mode(API_KEY) == "api"
 
 
-def test_subprocess_env_uses_only_the_api_key(tmp_path) -> None:
-    settings = _settings(tmp_path, anthropic=API_KEY)
+def test_api_key_env_carries_only_the_api_key(tmp_path) -> None:
+    settings = _settings(tmp_path, anthropic=API_KEY, oauth=PLAN)
     env = claude_subprocess_env(settings, AGENT_KEY)
     assert env["ANTHROPIC_API_KEY"] == AGENT_KEY
-    # Higher-priority credentials in Claude Code are blanked so nothing else can take over.
-    assert env["ANTHROPIC_AUTH_TOKEN"] == ""
     assert env["CLAUDE_CODE_OAUTH_TOKEN"] == ""
+    assert env["ANTHROPIC_AUTH_TOKEN"] == ""
     assert "ANTHROPIC_BASE_URL" not in env
     assert Path(env["CLAUDE_CONFIG_DIR"]) == settings.data_dir / "claude-config"
     assert Path(env["CLAUDE_CONFIG_DIR"]).is_dir()
+    assert PLAN not in json.dumps(env) and API_KEY not in json.dumps(env)
+
+
+def test_plan_env_carries_only_the_plan_token(tmp_path) -> None:
+    # ANTHROPIC_API_KEY outranks the OAuth token in Claude Code: it must be blank on Plan chats.
+    settings = _settings(tmp_path, anthropic=API_KEY)
+    env = claude_subprocess_env(settings, PLAN)
+    assert env["CLAUDE_CODE_OAUTH_TOKEN"] == PLAN
+    assert env["ANTHROPIC_API_KEY"] == ""
+    assert env["ANTHROPIC_AUTH_TOKEN"] == ""
     assert API_KEY not in json.dumps(env)
 
 
-def test_provider_info_needs_a_real_api_key(tmp_path) -> None:
+def test_provider_info_with_either_runtime_credential(tmp_path) -> None:
     runtime = CursorRuntime(_settings(tmp_path))
-    assert ClaudeProvider(_settings(tmp_path), runtime).info.available is False
-    assert ClaudeProvider(_settings(tmp_path), runtime).info.reason == MISSING_KEY
-    plan = ClaudeProvider(_settings(tmp_path, anthropic=PLAN), runtime).info
-    assert plan.available is False and plan.reason == PLAN_TOKEN
+    missing = ClaudeProvider(_settings(tmp_path), runtime).info
+    assert missing.available is False and missing.reason == MISSING_KEY
+    assert ClaudeProvider(_settings(tmp_path, oauth=PLAN), runtime).info.available is True
     assert ClaudeProvider(_settings(tmp_path, anthropic=API_KEY), runtime).info.available is True
 
 
-def test_send_refuses_without_key_and_with_plan_token(tmp_path, monkeypatch) -> None:
+def test_send_without_any_credential_stops_early(tmp_path, monkeypatch) -> None:
     calls: list[object] = []
     monkeypatch.setattr(claude_mod, "load_mcp_servers", lambda path: calls.append(path) or {})
     provider = ClaudeProvider(_settings(tmp_path), CursorRuntime(_settings(tmp_path)))
     events, _ = _run(provider, _session())
     assert events == [{"type": "error", "message": MISSING_KEY}]
-    events, _ = _run(provider, _session(), api_key=PLAN)
-    assert events == [{"type": "error", "message": PLAN_TOKEN}]
-    assert calls == []  # refused before any MCP or SDK work
+    assert calls == []
 
 
 def test_runtime_settings_read_app_options(tmp_path, monkeypatch) -> None:
     options = tmp_path / "options.json"
-    options.write_text(json.dumps({"anthropic_api_key": API_KEY, "claude_model": "claude-opus-5-5"}))
+    options.write_text(
+        json.dumps({"anthropic_api_key": API_KEY, "claude_oauth_token": PLAN, "claude_model": "claude-opus-5-5"})
+    )
     monkeypatch.setenv("ADDON_OPTIONS", str(options))
     monkeypatch.setenv("DATA_DIR", str(tmp_path / "data"))
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("CLAUDE_CODE_OAUTH_TOKEN", raising=False)
     monkeypatch.delenv("CLAUDE_MODEL", raising=False)
     settings = Settings.from_env()
     assert settings.anthropic_api_key == API_KEY
+    assert settings.claude_oauth_token == PLAN
     assert settings.claude_model == "claude-opus-5-5"
     monkeypatch.setenv("ANTHROPIC_API_KEY", AGENT_KEY)
     assert Settings.from_env().anthropic_api_key == AGENT_KEY
+    monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "sk-ant-oat01-env")
+    assert Settings.from_env().claude_oauth_token == "sk-ant-oat01-env"
     assert not hasattr(settings, "openrouter_api_key")
-    assert not hasattr(settings, "claude_oauth_token")
 
 
 # --- model, effort, tools --------------------------------------------------------------------
@@ -466,3 +483,14 @@ def test_stream_is_read_to_the_end(tmp_path, monkeypatch) -> None:
     assert drained == [True]
     assert ids == ["new-sess"]
     assert sum(e["type"] == "result" for e in events) == 1
+
+
+@needs_sdk
+def test_plan_turn_reaches_claude_code_with_the_plan_token(tmp_path, monkeypatch) -> None:
+    settings = _settings(tmp_path, anthropic=API_KEY)
+    captured: dict = {}
+    monkeypatch.setattr("claude_agent_sdk.query", _fake_query(captured, lambda: [_result()]))
+    events, ids = _run(ClaudeProvider(settings, CursorRuntime(settings)), _session(), api_key=PLAN, no_tools=True)
+    env = captured["options"].env
+    assert env["CLAUDE_CODE_OAUTH_TOKEN"] == PLAN and env["ANTHROPIC_API_KEY"] == ""
+    assert ids == ["new-sess"] and any(e["type"] == "result" for e in events)

@@ -6,26 +6,27 @@ The cloud agent **Claude (Anthropic)** is a different thing and is unchanged: it
 
 ## What you need
 
-An **Anthropic API key** (`sk-ant-api…`) from [Claude Console → API keys](https://console.anthropic.com/settings/keys). Usage is billed as API credits on that account.
+One of two Claude credentials:
+
+- **Claude Plan token** (`sk-ant-oat…`): uses your Claude subscription (Pro, Max). On any computer with [Claude Code](https://code.claude.com), run `claude setup-token`, approve in the browser, and copy the token it prints. It lasts one year; make a new one when Claude SDK chats start failing with a sign-in error.
+- **Anthropic API key** (`sk-ant-api…`): billed as API credits. From [Claude Console → API keys](https://console.anthropic.com/settings/keys).
 
 Put it in one of two places:
 
-- **On the agent** (Home Assistant → AI Workspace → Add agent → **Claude SDK** → **Anthropic API key**). Each agent can use its own key.
-- **On the runtime**, for every Claude SDK agent without its own key: the App option **Anthropic API key**, or `ANTHROPIC_API_KEY` in Docker.
+- **On the agent** (Home Assistant → AI Workspace → Add agent → **Claude SDK** → **Claude Plan token or Anthropic API key**). Each agent can use its own.
+- **On the runtime**, for every Claude SDK agent without its own: the App options **Claude Plan token** or **Anthropic API key**, or `CLAUDE_CODE_OAUTH_TOKEN` / `ANTHROPIC_API_KEY` on Docker. When both are set, the Plan token is used.
 
-The key on the agent wins. Saving the agent form checks the key with Anthropic.
+The credential on the agent wins. The prefix decides how Claude Code signs in, and only that one credential reaches it, so a Plan chat never falls back to API billing or the other way round. Saving the agent form checks an API key with Anthropic; a Plan token is checked on the first chat.
 
-### Claude.ai subscriptions (Pro, Max, Team) do not work
+There is no sign-in button or redirect in AI Workspace: `claude setup-token` does Anthropic's own browser sign-in on your computer, and you paste the result.
 
-A Claude.ai plan token (`sk-ant-oat…`, made with `claude setup-token`) is refused, on the form and on the runtime. Anthropic does not allow apps built on the Agent SDK to sign in with Claude.ai or to use a subscription's limits; it asks such apps to use API keys ([Agent SDK overview](https://code.claude.com/docs/en/agent-sdk/overview), [Legal and compliance](https://code.claude.com/docs/en/legal-and-compliance)). AI Workspace therefore has no Claude.ai sign-in and does not store plan tokens.
-
-To use a Claude subscription, use Claude Code or the Claude apps themselves.
+Anthropic's terms for the Agent SDK say third-party products should use API keys and not offer Claude.ai sign-in ([Agent SDK overview](https://code.claude.com/docs/en/agent-sdk/overview), [Legal and compliance](https://code.claude.com/docs/en/legal-and-compliance)). Whether your own Plan token on your own runtime is fine for you is your decision.
 
 ## Home Assistant
 
 1. Add an agent → **Claude SDK** (not “Claude (Anthropic)”).
 2. Runtime address and password: the same as for Cursor agents. Leave the address empty when the form says **Runtime found**.
-3. **Anthropic API key**: see above.
+3. **Claude Plan token or Anthropic API key**: see above.
 4. **Model**: an Anthropic model id such as `claude-sonnet-5-5`. Empty uses the runtime's **Claude model** option, or Claude Sonnet.
 5. **Effort**: Fast, High, and High fast map to Claude Code's low, high, and medium effort. Default lets Claude decide.
 
@@ -45,7 +46,8 @@ Claude SDK agents never load Claude Code settings, `CLAUDE.md`, skills, hooks, o
 
 | App option | Docker variable | Meaning |
 |---|---|---|
-| Anthropic API key | `ANTHROPIC_API_KEY` | Key for Claude SDK agents without their own key. |
+| Claude Plan token | `CLAUDE_CODE_OAUTH_TOKEN` | Plan token for Claude SDK agents without their own credential. Used first. |
+| Anthropic API key | `ANTHROPIC_API_KEY` | API key for Claude SDK agents without their own credential. |
 | Claude model | `CLAUDE_MODEL` | Default model when the agent's model is empty. |
 
 Claude Code keeps chat state in `claude-config` inside the runtime's data folder (`/data`), so a chat can resume after the runtime restarts.

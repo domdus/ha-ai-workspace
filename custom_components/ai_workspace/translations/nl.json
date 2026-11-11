@@ -289,8 +289,7 @@
         "model_not_installed": "Dit model is niet geïnstalleerd in Ollama. Geïnstalleerd: {installed}",
         "pick_model": "De server toont nu zijn modellen. Kies er een uit de lijst.",
         "model_rejected": "De server staat dit model niet toe voor deze sleutel: {server_message}",
-        "claude_runtime_old": "Werk de AI Workspace Runtime bij naar 1.6.0 of nieuwer voor Claude SDK-agents.",
-        "claude_plan_token": "Dit is een Claude.ai-abonnementstoken. Claude SDK-agents hebben een Anthropic-API-sleutel (sk-ant-api…) uit de Claude Console nodig. Anthropic staat apps op basis van de Agent SDK niet toe om met een Claude.ai-abonnement in te loggen."
+        "claude_runtime_old": "Werk de AI Workspace Runtime bij naar 1.6.0 of nieuwer voor Claude SDK-agents."
       },
       "step": {
         "provider": {
@@ -347,11 +346,11 @@
         },
         "provider_claude": {
           "title": "Claude SDK",
-          "description": "De agent van Claude Code op de AI Workspace Runtime, dezelfde app als Cursor. Heeft een Anthropic-API-sleutel nodig.",
+          "description": "De agent van Claude Code op de AI Workspace Runtime, dezelfde app als Cursor. Gebruikt je Claude-abonnement (Pro, Max) of een Anthropic-API-sleutel.",
           "data": {
             "runtime_url": "Runtime-adres{runtime_url_mark}",
             "runtime_token": "Runtime-wachtwoord",
-            "claude_api_key": "Anthropic-API-sleutel",
+            "claude_api_key": "Claude Plan-token of Anthropic-API-sleutel",
             "model": "Model",
             "effort": "Inzet",
             "allow_internet": "Internet toestaan",
@@ -360,7 +359,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "Hetzelfde wachtwoord als op de AI Workspace Runtime. Leeg laten bij de add-on met automatische koppeling.",
-            "claude_api_key": "Een API-sleutel (sk-ant-api…) uit de Claude Console. Leeg laten om de sleutel op de AI Workspace Runtime te gebruiken, of bij bewerken om de opgeslagen sleutel te houden. Claude.ai-abonnementstokens werken niet. [API-sleutel ophalen]({api_key_url})",
+            "claude_api_key": "Een Claude Plan-token (sk-ant-oat…, uit `claude setup-token`, gebruikt je Claude-abonnement) of een Anthropic-API-sleutel (sk-ant-api…, gefactureerd als API-tegoed). Leeg laten om die op de AI Workspace Runtime te gebruiken, of bij bewerken om de opgeslagen te houden. [API-sleutel ophalen]({api_key_url})",
             "model": "Kies uit de lijst of typ een Anthropic-model-id. Leeg gebruikt het Claude-model van de runtime (standaard Claude Sonnet).",
             "effort": "Hoeveel denktijd is toegestaan. Standaard laat Claude beslissen.",
             "allow_internet": "Standaard uit. Aan laat deze agent in beheerderschats webzoeken, pagina ophalen en de shell gebruiken. Uit verwijdert alle drie, zodat ook curl of scripts het web niet bereiken. Chats van gewone gebruikers en spraaksatellieten krijgen ze nooit.",

@@ -289,8 +289,7 @@
         "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
         "pick_model": "The server lists its models now. Pick one from the model list.",
         "model_rejected": "The server does not allow this model for this key: {server_message}",
-        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents.",
-        "claude_plan_token": "This is a Claude.ai plan token. Claude SDK agents need an Anthropic API key (sk-ant-api…) from the Claude Console. Anthropic does not allow apps built on the Agent SDK to sign in with Claude.ai plans."
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
       },
       "step": {
         "provider": {
@@ -347,11 +346,11 @@
         },
         "provider_claude": {
           "title": "Claude SDK",
-          "description": "Claude Code's agent on the AI Workspace Runtime, the same App as Cursor. Needs an Anthropic API key.",
+          "description": "Claude Code's agent on the AI Workspace Runtime, the same App as Cursor. Uses your Claude plan (Pro, Max) or an Anthropic API key.",
           "data": {
             "runtime_url": "Runtime address{runtime_url_mark}",
             "runtime_token": "Runtime password",
-            "claude_api_key": "Anthropic API key",
+            "claude_api_key": "Claude Plan token or Anthropic API key",
             "model": "Model",
             "effort": "Effort",
             "allow_internet": "Allow internet",
@@ -360,7 +359,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
-            "claude_api_key": "An API key (sk-ant-api…) from the Claude Console. Leave empty to use the key set on the AI Workspace Runtime, or when editing to keep the saved key. Claude.ai plan tokens do not work. [Get an API key]({api_key_url})",
+            "claude_api_key": "A Claude Plan token (sk-ant-oat…, from `claude setup-token`, uses your Claude subscription) or an Anthropic API key (sk-ant-api…, billed as API credits). Leave empty to use the one set on the AI Workspace Runtime, or when editing to keep the saved one. [Get an API key]({api_key_url})",
             "model": "Pick from the list or type an Anthropic model id. Empty uses the Runtime's Claude model (Claude Sonnet unless set).",
             "effort": "How much thinking time to allow. Default lets Claude decide.",
             "allow_internet": "Off by default. On lets this agent use web search, page fetch and the shell in admin chats. Off removes all three, so curl or scripts cannot reach the web either. Chats from normal users and voice satellites never get them.",

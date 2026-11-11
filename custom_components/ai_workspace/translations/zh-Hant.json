@@ -289,8 +289,7 @@
         "model_not_installed": "此模型未在 Ollama 中安裝。已安裝：{installed}",
         "pick_model": "伺服器現已列出其模型。請從清單中選擇一個。",
         "model_rejected": "伺服器不允許此金鑰使用該模型：{server_message}",
-        "claude_runtime_old": "請將 AI Workspace Runtime 更新到 1.6.0 或更新版本以使用 Claude SDK 智慧體。",
-        "claude_plan_token": "這是 Claude.ai 訂閱權杖。Claude SDK 智慧體需要來自 Claude Console 的 Anthropic API 金鑰（sk-ant-api…）。Anthropic 不允許基於 Agent SDK 的應用程式使用 Claude.ai 訂閱登入。"
+        "claude_runtime_old": "請將 AI Workspace Runtime 更新到 1.6.0 或更新版本以使用 Claude SDK 智慧體。"
       },
       "step": {
         "provider": {
@@ -347,11 +346,11 @@
         },
         "provider_claude": {
           "title": "Claude SDK",
-          "description": "在 AI Workspace Runtime（與 Cursor 同一個應用程式）上執行的 Claude Code 智慧體。需要 Anthropic API 金鑰。",
+          "description": "在 AI Workspace Runtime（與 Cursor 同一個應用程式）上執行的 Claude Code 智慧體。使用你的 Claude 訂閱（Pro、Max）或 Anthropic API 金鑰。",
           "data": {
             "runtime_url": "Runtime 位址{runtime_url_mark}",
             "runtime_token": "Runtime 密碼",
-            "claude_api_key": "Anthropic API 金鑰",
+            "claude_api_key": "Claude Plan 權杖或 Anthropic API 金鑰",
             "model": "模型",
             "effort": "推理強度",
             "allow_internet": "允許存取網際網路",
@@ -360,7 +359,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "與 AI Workspace Runtime 上相同的密碼。使用含自動配對的附加元件時請留空。",
-            "claude_api_key": "來自 Claude Console 的 API 金鑰（sk-ant-api…）。留空則使用 AI Workspace Runtime 上的金鑰；編輯時留空可保留已儲存的金鑰。Claude.ai 訂閱權杖無法使用。 [取得 API 金鑰]({api_key_url})",
+            "claude_api_key": "Claude Plan 權杖（sk-ant-oat…，由 `claude setup-token` 產生，使用你的 Claude 訂閱）或 Anthropic API 金鑰（sk-ant-api…，以 API 額度計費）。留空則使用 AI Workspace Runtime 上設定的值；編輯時留空可保留已儲存的值。 [取得 API 金鑰]({api_key_url})",
             "model": "從清單中選擇或輸入 Anthropic 模型 ID。留空則使用 Runtime 的 Claude 模型（未設定時為 Claude Sonnet）。",
             "effort": "允許多長的思考時間。預設由 Claude 決定。",
             "allow_internet": "預設關閉。開啟後，此智慧體可在管理員對話中使用網頁搜尋、網頁擷取和 Shell。關閉會移除這三項，因此 curl 或指令碼也無法連上網路。一般使用者的對話和語音衛星永遠不會取得這些工具。",

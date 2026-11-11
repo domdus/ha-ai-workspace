@@ -1,8 +1,8 @@
 """Claude Agent SDK provider (Claude Code CLI via claude-agent-sdk).
 
-Authentication is an Anthropic API key only (Claude Console). Anthropic does not allow
-third-party products built on the Agent SDK to sign in with Claude.ai subscription plans,
-so Plan (OAuth) tokens are refused with a clear message instead of being forwarded.
+Two credentials work: a Claude Plan token (``sk-ant-oat…`` from ``claude setup-token``, billed to the
+Claude subscription) or an Anthropic API key (``sk-ant-api…``, billed as API credits). The agent's own
+credential wins over the runtime's; the token prefix decides how Claude Code signs in.
 """
 
 from __future__ import annotations
@@ -25,25 +25,21 @@ DEFAULT_MODEL = "claude-sonnet-5-5"
 API_KEY_URL = "https://console.anthropic.com/settings/keys"
 
 MISSING_KEY = (
-    "No Anthropic API key is set for Claude SDK. Add one on the agent in Home Assistant, "
-    f"or set ANTHROPIC_API_KEY (App option anthropic_api_key) on the runtime. Keys: {API_KEY_URL}"
-)
-PLAN_TOKEN = (
-    "This is a Claude.ai subscription token (sk-ant-oat…). Claude SDK agents need an Anthropic API key "
-    f"(sk-ant-api…) from the Claude Console: {API_KEY_URL}. Anthropic does not allow apps built on the "
-    "Agent SDK to use Claude.ai plan sign-ins."
+    "No Claude credential is set for Claude SDK. Add a Claude Plan token (from `claude setup-token`) or an "
+    "Anthropic API key on the agent in Home Assistant, or on the runtime (App options claude_oauth_token / "
+    f"anthropic_api_key, Docker CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY). API keys: {API_KEY_URL}"
 )
 # Assistant message errors from Claude Code → what the chat shows instead of the CLI's own hint.
 API_ERRORS = {
     "authentication_failed": (
-        "Anthropic refused the API key. Check the Anthropic API key on the agent, "
-        "or the runtime's anthropic_api_key."
+        "Anthropic refused the Claude credential. Check the Claude Plan token or Anthropic API key on the "
+        "agent or the runtime. Plan tokens from `claude setup-token` last one year."
     ),
     "billing_error": (
-        "Anthropic refused the request for billing reasons. Check the credits of this API key's "
-        "account in the Claude Console."
+        "Anthropic refused the request for billing reasons. Check the Claude plan, or the credits of the "
+        "API key's account in the Claude Console."
     ),
-    "rate_limit": "This API key hit Anthropic's rate limit. Try again in a moment.",
+    "rate_limit": "This Claude credential hit its usage or rate limit. Try again later.",
 }
 NOT_INSTALLED = "Claude Agent SDK is not installed in this runtime. Update the AI Workspace Runtime."
 CLI_MISSING = "The Claude Code CLI that ships with the Claude Agent SDK was not found in this runtime."
@@ -73,23 +69,36 @@ def is_plan_token(credential: str) -> bool:
     return (credential or "").strip().startswith("sk-ant-oat")
 
 
+def runtime_credential(settings: Settings) -> str:
+    """The runtime's own credential: the Plan token first, then the API key."""
+    return (settings.claude_oauth_token or "").strip() or (settings.anthropic_api_key or "").strip()
+
+
 def resolve_credential(settings: Settings, api_key: str = "") -> str:
-    """The agent's own key wins over the runtime key."""
-    return (api_key or "").strip() or (settings.anthropic_api_key or "").strip()
+    """The agent's own credential wins over the runtime's."""
+    return (api_key or "").strip() or runtime_credential(settings)
+
+
+def auth_mode(credential: str) -> str:
+    """``plan`` for a Claude Plan token, ``api`` for anything else (an Anthropic API key)."""
+    return "plan" if is_plan_token(credential) else "api"
 
 
 def claude_subprocess_env(settings: Settings, credential: str) -> dict[str, str]:
     """Env vars merged onto the Claude Code subprocess (not the whole uvicorn worker)."""
     config_dir = settings.data_dir / "claude-config"
     config_dir.mkdir(parents=True, exist_ok=True)
+    cred = (credential or "").strip()
+    plan = auth_mode(cred) == "plan"
+    # Exactly one credential reaches Claude Code. The others are blanked: ANTHROPIC_AUTH_TOKEN and
+    # ANTHROPIC_API_KEY outrank CLAUDE_CODE_OAUTH_TOKEN, so a stray container variable would
+    # otherwise switch a Plan chat to API billing, or the other way round.
     return {
         "CLAUDE_AGENT_SDK_CLIENT_APP": "ha-ai-workspace",
         "CLAUDE_CONFIG_DIR": str(config_dir),
-        "ANTHROPIC_API_KEY": (credential or "").strip(),
-        # These outrank ANTHROPIC_API_KEY in Claude Code. Blank them so a stray container
-        # variable cannot switch this chat to another account or a subscription sign-in.
+        "CLAUDE_CODE_OAUTH_TOKEN": cred if plan else "",
+        "ANTHROPIC_API_KEY": "" if plan else cred,
         "ANTHROPIC_AUTH_TOKEN": "",
-        "CLAUDE_CODE_OAUTH_TOKEN": "",
     }
 
 
@@ -280,11 +289,8 @@ class ClaudeProvider:
 
     @property
     def info(self) -> ProviderInfo:
-        key = (self.settings.anthropic_api_key or "").strip()
-        if is_plan_token(key):
-            return ProviderInfo("claude", "Claude", False, PLAN_TOKEN)
-        if not key:
-            # Agents may still bring their own key; the integration checks that on the form.
+        if not runtime_credential(self.settings):
+            # Agents may still bring their own credential; the integration checks that on the form.
             return ProviderInfo("claude", "Claude", False, MISSING_KEY)
         return ProviderInfo("claude", "Claude", True, None)
 
@@ -310,9 +316,6 @@ class ClaudeProvider:
         credential = resolve_credential(self.settings, api_key)
         if not credential:
             yield {"type": "error", "message": MISSING_KEY}
-            return
-        if is_plan_token(credential):
-            yield {"type": "error", "message": PLAN_TOKEN}
             return
         try:
             exclusive = bool((mcp or {}).get("exclusive"))

@@ -289,8 +289,7 @@
         "model_not_installed": "Este modelo no está instalado en Ollama. Instalados: {installed}",
         "pick_model": "El servidor ya muestra sus modelos. Elige uno de la lista.",
         "model_rejected": "El servidor no permite este modelo con esta clave: {server_message}",
-        "claude_runtime_old": "Actualiza el AI Workspace Runtime a 1.6.0 o posterior para los agentes Claude SDK.",
-        "claude_plan_token": "Este es un token de suscripción de Claude.ai. Los agentes Claude SDK necesitan una clave API de Anthropic (sk-ant-api…) de la Claude Console. Anthropic no permite que las apps basadas en el Agent SDK inicien sesión con suscripciones de Claude.ai."
+        "claude_runtime_old": "Actualiza el AI Workspace Runtime a 1.6.0 o posterior para los agentes Claude SDK."
       },
       "step": {
         "provider": {
@@ -347,11 +346,11 @@
         },
         "provider_claude": {
           "title": "Claude SDK",
-          "description": "El agente de Claude Code en el AI Workspace Runtime, la misma app que Cursor. Necesita una clave API de Anthropic.",
+          "description": "El agente de Claude Code en el AI Workspace Runtime, la misma app que Cursor. Usa tu suscripción de Claude (Pro, Max) o una clave API de Anthropic.",
           "data": {
             "runtime_url": "Dirección del runtime{runtime_url_mark}",
             "runtime_token": "Contraseña del runtime",
-            "claude_api_key": "Clave API de Anthropic",
+            "claude_api_key": "Token de Claude Plan o clave API de Anthropic",
             "model": "Modelo",
             "effort": "Esfuerzo",
             "allow_internet": "Permitir Internet",
@@ -360,7 +359,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "La misma contraseña que en el AI Workspace Runtime. Déjala vacía con el complemento y el emparejamiento automático.",
-            "claude_api_key": "Una clave API (sk-ant-api…) de la Claude Console. Déjala vacía para usar la clave del AI Workspace Runtime, o al editar para conservar la clave guardada. Los tokens de suscripción de Claude.ai no funcionan. [Obtener una clave API]({api_key_url})",
+            "claude_api_key": "Un token de Claude Plan (sk-ant-oat…, de `claude setup-token`, usa tu suscripción de Claude) o una clave API de Anthropic (sk-ant-api…, facturada como créditos de API). Déjalo vacío para usar el del AI Workspace Runtime, o al editar para conservar el guardado. [Obtener una clave API]({api_key_url})",
             "model": "Elige de la lista o escribe un id de modelo de Anthropic. Vacío usa el modelo Claude del runtime (Claude Sonnet si no se ha configurado).",
             "effort": "Cuánto tiempo de pensamiento permitir. Por defecto decide Claude.",
             "allow_internet": "Desactivado por defecto. Activado permite a este agente usar la búsqueda web, la descarga de páginas y la shell en chats de administrador. Desactivado quita las tres, así que curl o scripts tampoco llegan a la web. Los chats de usuarios normales y satélites de voz nunca las tienen.",

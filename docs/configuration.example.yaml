@@ -109,6 +109,6 @@ ai_workspace:
     - id: claude-sdk
       title: Claude SDK
       provider: claude # Claude Agent SDK on the AI Workspace Runtime
-      claude_api_key: !secret anthropic_api_key # Anthropic API key (sk-ant-api…), not a Claude.ai plan token
+      claude_api_key: !secret claude_plan_token # Claude Plan token (claude setup-token) or Anthropic API key
       model: claude-sonnet-5-5
       assist: false

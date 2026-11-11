@@ -139,9 +139,9 @@ def _errors(flow, key):
     return asyncio.run(flow._claude_errors(key, ""))
 
 
-def test_form_refuses_plan_tokens_without_calling_anthropic(monkeypatch) -> None:
-    flow, checked = _flow(monkeypatch, {"claude": True})
-    assert _errors(flow, "sk-ant-oat01-abc") == {CONF_CLAUDE_API_KEY: "claude_plan_token"}
+def test_form_accepts_plan_tokens_without_an_api_key_check(monkeypatch) -> None:
+    flow, checked = _flow(monkeypatch, {"claude": False})
+    assert _errors(flow, "sk-ant-oat01-abc") == {}
     assert checked == []
 
 

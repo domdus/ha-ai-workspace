@@ -289,8 +289,7 @@
         "model_not_installed": "Ten model nie jest zainstalowany w Ollama. Zainstalowane: {installed}",
         "pick_model": "Serwer podaje teraz swoje modele. Wybierz jeden z listy.",
         "model_rejected": "Serwer nie zezwala na ten model dla tego klucza: {server_message}",
-        "claude_runtime_old": "Zaktualizuj AI Workspace Runtime do wersji 1.6.0 lub nowszej, aby używać agentów Claude SDK.",
-        "claude_plan_token": "To jest token subskrypcji Claude.ai. Agenci Claude SDK potrzebują klucza API Anthropic (sk-ant-api…) z Claude Console. Anthropic nie pozwala aplikacjom opartym na Agent SDK logować się subskrypcją Claude.ai."
+        "claude_runtime_old": "Zaktualizuj AI Workspace Runtime do wersji 1.6.0 lub nowszej, aby używać agentów Claude SDK."
       },
       "step": {
         "provider": {
@@ -347,11 +346,11 @@
         },
         "provider_claude": {
           "title": "Claude SDK",
-          "description": "Agent Claude Code w AI Workspace Runtime, tej samej aplikacji co Cursor. Wymaga klucza API Anthropic.",
+          "description": "Agent Claude Code w AI Workspace Runtime, tej samej aplikacji co Cursor. Używa Twojej subskrypcji Claude (Pro, Max) lub klucza API Anthropic.",
           "data": {
             "runtime_url": "Adres środowiska{runtime_url_mark}",
             "runtime_token": "Hasło runtime",
-            "claude_api_key": "Klucz API Anthropic",
+            "claude_api_key": "Token Claude Plan lub klucz API Anthropic",
             "model": "Model",
             "effort": "Wysiłek",
             "allow_internet": "Zezwól na internet",
@@ -360,7 +359,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "To samo hasło co w AI Workspace Runtime. Zostaw puste przy dodatku z automatycznym parowaniem.",
-            "claude_api_key": "Klucz API (sk-ant-api…) z Claude Console. Zostaw puste, aby użyć klucza z AI Workspace Runtime, lub przy edycji, aby zachować zapisany klucz. Tokeny subskrypcji Claude.ai nie działają. [Pobierz klucz API]({api_key_url})",
+            "claude_api_key": "Token Claude Plan (sk-ant-oat…, z `claude setup-token`, korzysta z Twojej subskrypcji Claude) lub klucz API Anthropic (sk-ant-api…, rozliczany jako kredyty API). Zostaw puste, aby użyć tego z AI Workspace Runtime, lub przy edycji, aby zachować zapisany. [Pobierz klucz API]({api_key_url})",
             "model": "Wybierz z listy lub wpisz identyfikator modelu Anthropic. Puste używa modelu Claude ze środowiska (domyślnie Claude Sonnet).",
             "effort": "Ile czasu na myślenie zezwolić. Domyślnie decyduje Claude.",
             "allow_internet": "Domyślnie wyłączone. Włączone pozwala temu agentowi w czatach administratora używać wyszukiwania w sieci, pobierania stron i powłoki. Wyłączone usuwa wszystkie trzy, więc curl ani skrypty też nie dotrą do sieci. Czaty zwykłych użytkowników i satelit głosowych nigdy ich nie dostają.",

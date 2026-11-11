@@ -289,8 +289,7 @@
         "model_not_installed": "Ce modèle n’est pas installé dans Ollama. Installés : {installed}",
         "pick_model": "Le serveur liste maintenant ses modèles. Choisissez-en un dans la liste.",
         "model_rejected": "Le serveur n'autorise pas ce modèle pour cette clé : {server_message}",
-        "claude_runtime_old": "Mettez à jour l'AI Workspace Runtime en 1.6.0 ou plus récent pour les agents Claude SDK.",
-        "claude_plan_token": "Ceci est un jeton d'abonnement Claude.ai. Les agents Claude SDK ont besoin d'une clé API Anthropic (sk-ant-api…) de la Claude Console. Anthropic n'autorise pas les applications basées sur l'Agent SDK à se connecter avec un abonnement Claude.ai."
+        "claude_runtime_old": "Mettez à jour l'AI Workspace Runtime en 1.6.0 ou plus récent pour les agents Claude SDK."
       },
       "step": {
         "provider": {
@@ -347,11 +346,11 @@
         },
         "provider_claude": {
           "title": "Claude SDK",
-          "description": "L'agent de Claude Code sur l'AI Workspace Runtime, la même app que Cursor. Nécessite une clé API Anthropic.",
+          "description": "L'agent de Claude Code sur l'AI Workspace Runtime, la même app que Cursor. Utilise votre abonnement Claude (Pro, Max) ou une clé API Anthropic.",
           "data": {
             "runtime_url": "Adresse du runtime{runtime_url_mark}",
             "runtime_token": "Mot de passe du runtime",
-            "claude_api_key": "Clé API Anthropic",
+            "claude_api_key": "Jeton Claude Plan ou clé API Anthropic",
             "model": "Modèle",
             "effort": "Effort",
             "allow_internet": "Autoriser Internet",
@@ -360,7 +359,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "Le même mot de passe que sur l'AI Workspace Runtime. Laissez vide avec le module complémentaire et l'appairage automatique.",
-            "claude_api_key": "Une clé API (sk-ant-api…) de la Claude Console. Laissez vide pour utiliser la clé de l'AI Workspace Runtime, ou à la modification pour garder la clé enregistrée. Les jetons d'abonnement Claude.ai ne fonctionnent pas. [Obtenir une clé API]({api_key_url})",
+            "claude_api_key": "Un jeton Claude Plan (sk-ant-oat…, issu de `claude setup-token`, utilise votre abonnement Claude) ou une clé API Anthropic (sk-ant-api…, facturée en crédits API). Laissez vide pour utiliser celui de l'AI Workspace Runtime, ou à la modification pour garder celui enregistré. [Obtenir une clé API]({api_key_url})",
             "model": "Choisissez dans la liste ou saisissez un identifiant de modèle Anthropic. Vide utilise le modèle Claude du runtime (Claude Sonnet par défaut).",
             "effort": "Combien de temps de réflexion autoriser. Par défaut, Claude décide.",
             "allow_internet": "Désactivé par défaut. Activé, cet agent peut utiliser la recherche web, la récupération de pages et le shell dans les discussions admin. Désactivé retire les trois, donc curl ou des scripts ne peuvent pas non plus accéder au web. Les discussions des utilisateurs normaux et des satellites vocaux ne les ont jamais.",

@@ -289,8 +289,7 @@
         "model_not_installed": "Tento model není v Ollamě nainstalovaný. Nainstalované: {installed}",
         "pick_model": "Server nyní vypisuje své modely. Vyberte jeden ze seznamu.",
         "model_rejected": "Server nepovoluje tento model pro tento klíč: {server_message}",
-        "claude_runtime_old": "Aktualizujte AI Workspace Runtime na 1.6.0 nebo novější pro agenty Claude SDK.",
-        "claude_plan_token": "Toto je token předplatného Claude.ai. Agenti Claude SDK potřebují klíč API Anthropic (sk-ant-api…) z Claude Console. Anthropic nedovoluje aplikacím postaveným na Agent SDK přihlašovat se předplatným Claude.ai."
+        "claude_runtime_old": "Aktualizujte AI Workspace Runtime na 1.6.0 nebo novější pro agenty Claude SDK."
       },
       "step": {
         "provider": {
@@ -347,11 +346,11 @@
         },
         "provider_claude": {
           "title": "Claude SDK",
-          "description": "Agent Claude Code v AI Workspace Runtime, stejné aplikaci jako Cursor. Potřebuje klíč API Anthropic.",
+          "description": "Agent Claude Code v AI Workspace Runtime, stejné aplikaci jako Cursor. Používá vaše předplatné Claude (Pro, Max) nebo klíč API Anthropic.",
           "data": {
             "runtime_url": "Adresa běhového prostředí{runtime_url_mark}",
             "runtime_token": "Heslo runtime",
-            "claude_api_key": "Klíč API Anthropic",
+            "claude_api_key": "Token Claude Plan nebo klíč API Anthropic",
             "model": "Model",
             "effort": "Úsilí",
             "allow_internet": "Povolit internet",
@@ -360,7 +359,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "Stejné heslo jako u AI Workspace Runtime. Nechte prázdné u doplňku s automatickým spárováním.",
-            "claude_api_key": "Klíč API (sk-ant-api…) z Claude Console. Nechte prázdné, chcete-li použít klíč z AI Workspace Runtime, nebo při úpravě, aby se zachoval uložený klíč. Tokeny předplatného Claude.ai nefungují. [Získat API klíč]({api_key_url})",
+            "claude_api_key": "Token Claude Plan (sk-ant-oat…, z `claude setup-token`, využívá vaše předplatné Claude) nebo klíč API Anthropic (sk-ant-api…, účtovaný jako kredity API). Nechte prázdné, chcete-li použít ten z AI Workspace Runtime, nebo při úpravě, aby se zachoval uložený. [Získat API klíč]({api_key_url})",
             "model": "Vyberte ze seznamu nebo zadejte ID modelu Anthropic. Prázdné použije model Claude z běhového prostředí (bez nastavení Claude Sonnet).",
             "effort": "Kolik času na přemýšlení povolit. Výchozí nechá rozhodnout Claude.",
             "allow_internet": "Ve výchozím stavu vypnuto. Zapnuto umožní tomuto agentovi v chatech správce používat webové vyhledávání, stahování stránek a shell. Vypnuto odebere všechny tři, takže ani curl či skripty se na web nedostanou. Chaty běžných uživatelů a hlasových satelitů je nikdy nedostanou.",

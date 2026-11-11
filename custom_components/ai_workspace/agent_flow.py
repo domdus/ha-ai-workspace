@@ -417,12 +417,11 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             return {CONF_RUNTIME_URL: "no_runtime"}
         if "claude" not in health:
             return {CONF_RUNTIME_URL: "claude_runtime_old"}
-        if claude_key.startswith("sk-ant-oat"):
-            # Claude.ai plan tokens: Anthropic does not allow Agent SDK apps to use them.
-            return {CONF_CLAUDE_API_KEY: "claude_plan_token"}
         if not claude_key and not health.get("claude"):
             return {CONF_CLAUDE_API_KEY: "required"}
-        if claude_key:
+        # A Claude Plan token (claude setup-token) signs in through Claude Code; only API keys
+        # can be checked against Anthropic's key endpoint here.
+        if claude_key and not claude_key.startswith("sk-ant-oat"):
             from .api_provider import async_check_api_key
 
             problem = await async_check_api_key(

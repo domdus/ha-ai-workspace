@@ -8,7 +8,7 @@ The chat UI is the **AI Workspace** HACS integration, not this app page.
 
 1. **Settings → Apps → Install app → ⋮ → Repositories**. Add this GitHub repository.
 2. Install **AI Workspace Runtime**.
-3. In the app **Configuration**, paste the Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) when you use Cursor agents. For **Claude SDK** agents, paste an Anthropic API key from the [Claude Console](https://console.anthropic.com/settings/keys) under **Anthropic API key**, or put one on each agent instead ([Claude SDK agents](../docs/claude-runtime.md)). Claude.ai plan tokens do not work. Model can stay `composer-2.5` for Cursor. MCP is set on the HACS integration, not here.
+3. In the app **Configuration**, paste the Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) when you use Cursor agents. For **Claude SDK** agents, paste a **Claude Plan token** (from `claude setup-token`, uses your Claude subscription) or an **Anthropic API key** from the [Claude Console](https://console.anthropic.com/settings/keys), or put one on each agent instead ([Claude SDK agents](../docs/claude-runtime.md)). Model can stay `composer-2.5` for Cursor. MCP is set on the HACS integration, not here.
 4. Start the app.
 5. Install **AI Workspace** from HACS (Integration), restart Home Assistant, then **Settings → Devices & services → Add integration → AI Workspace**. It finds this app on its own.
 6. Optional UI toggles live on the **integration**, not the app: **Settings → Devices & services → AI Workspace → Configure**.

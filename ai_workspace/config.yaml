@@ -1,5 +1,5 @@
 name: AI Workspace Runtime
-version: "1.6.0b1"
+version: "1.6.0b2"
 slug: ai_workspace
 description: >-
   Runs Cursor and Claude Agent SDK side by side next to Home Assistant and talks to LAN MCP.
@@ -22,12 +22,14 @@ watchdog: http://[HOST]:[PORT:8090]/api/health
 options:
   cursor_api_key: ""
   model: composer-2.5
+  claude_oauth_token: ""
   anthropic_api_key: ""
   claude_model: ""
   runtime_token: ""
 schema:
   cursor_api_key: password
   model: str
+  claude_oauth_token: password?
   anthropic_api_key: password?
   claude_model: str?
   runtime_token: password?

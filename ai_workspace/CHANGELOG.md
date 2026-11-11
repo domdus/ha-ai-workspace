@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.6.0b2
+
+**Claude SDK agents work with your Claude plan again.** 1.6.0b1 refused Claude Plan tokens; that was wrong and is undone. See [Claude SDK agents](../docs/claude-runtime.md).
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.6.0b2`) together with this release.** The change is in the runtime too. The chat shows a hint when the runtime is older.
+- The credential on a Claude SDK agent takes a **Claude Plan token** (`sk-ant-oat…`, from `claude setup-token`, uses your Claude subscription) or an **Anthropic API key** (`sk-ant-api…`, billed as API credits).
+- New App option **Claude Plan token** (`CLAUDE_CODE_OAUTH_TOKEN` on Docker) for every Claude SDK agent without its own credential. When the runtime has both, the Plan token is used.
+- The agent's own credential always wins over the runtime's, and only that one reaches Claude Code, so a Plan chat never falls back to API billing or the other way round.
+- Saving the agent form checks an API key with Anthropic; a Plan token is checked on the first chat. A refused, expired, or over-limit credential shows one plain message in the chat.
+
 ## 1.6.0b1
 
 **Claude SDK agents on the AI Workspace Runtime.** Add an agent of the new kind **Claude SDK** to chat with Claude Code's agent in Home Assistant, on the same runtime as Cursor. It is a separate kind from the cloud agent **Claude (Anthropic)**, which is unchanged. See [Claude SDK agents](../docs/claude-runtime.md).
