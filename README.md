@@ -54,7 +54,9 @@ The **Usage** page is the honest bit: what you spent, which model, which day. So
 ## Requirements
 
 - Home Assistant **2025.12** or newer
-- A **provider API key** from that provider's API console (⚠️ not a ChatGPT or Claude.ai plan; usually paid API credits), a local **Ollama** server, or credentials for **AI Workspace Runtime** — a **Cursor API key** and/or **Claude SDK** auth (Claude Plan, OpenRouter, or Anthropic API on the runtime)
+- A **provider API key** from that provider's API console (⚠️ not a ChatGPT or Claude.ai plan; usually paid API credits), a local **Ollama** server, or credentials for **AI Workspace Runtime** — a **Cursor API key** and/or a **Claude Plan** token from `claude setup-token` for **Claude SDK** agents
+
+Anthropic API and other Claude SDK credential modes on the runtime are configured separately; see [Claude on the runtime](docs/claude-runtime.md).
 
 You also need an MCP server:
 
@@ -119,6 +121,11 @@ Want **Cursor**'s own agent in that same chat, without opening the Cursor app? I
 
 If you only want Claude or GPT via a simple API key in Home Assistant, skip this and use [Cloud AI](#cloud-ai-quick-start) above — that is **Claude (Anthropic)** and other cloud providers, not the runtime.
 
+**Notice**
+> You can get some Cursor models with one [OpenRouter](https://openrouter.ai) key. No AI Workspace Runtime to install that way. Add that under [Cloud AI](#cloud-ai-quick-start).
+
+Cursor's own **Composer** and Tab completion are not on OpenRouter. If the Cursor desktop app uses OpenRouter, that is a Cursor setting, not AI Workspace. See [OpenRouter's Cursor notes](https://openrouter.ai/docs/cookbook/coding-agents/cursor-integration).
+
 ### Claude Plan (subscription)
 
 You have Claude Pro, Max, or Ultra? You do not need an Anthropic Console API key or Console credit.
@@ -130,15 +137,6 @@ You have Claude Pro, Max, or Ultra? You do not need an Anthropic Console API key
    - **Docker:** set `CLAUDE_CODE_OAUTH_TOKEN` in [docker-compose.runtime.yml](docker-compose.runtime.yml), then paste the same token on the **Claude SDK** agent if you want the integration to store it on the runtime for you.
 
 Leave other credential fields on the agent empty. Do not set `ANTHROPIC_API_KEY` on the runtime if you want Plan billing—Console API keys override the Plan token.
-
-OpenRouter and Anthropic API on the runtime are separate paths; see [Claude on the runtime](docs/claude-runtime.md).
-
-**Notice**
-> You can get some Cursor models with one [OpenRouter](https://openrouter.ai) key. No AI Workspace Runtime to install that way. Add that under [Cloud AI](#cloud-ai-quick-start).
-
-
-Cursor's own **Composer** and Tab completion are not on OpenRouter. If the Cursor desktop app uses OpenRouter, that is a Cursor setting, not AI Workspace. See [OpenRouter's Cursor notes](https://openrouter.ai/docs/cookbook/coding-agents/cursor-integration).
-
 
 Install AI Workspace from HACS first ([step 1](#1-install-ai-workspace-from-hacs)).
 

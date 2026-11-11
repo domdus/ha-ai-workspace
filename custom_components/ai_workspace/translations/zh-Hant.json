@@ -291,7 +291,7 @@
         "model_rejected": "The server does not allow this model for this key: {server_message}",
         "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents.",
         "claude_plan_not_api_key": "This looks like an Anthropic Console API key. Use a Claude Plan token (`sk-ant-oat-…`) from `claude setup-token` instead.",
-        "claude_plan_not_openrouter": "This is an OpenRouter key. Set OpenRouter on the AI Workspace Runtime app, or paste a Claude Plan token here.",
+        "claude_plan_not_openrouter": "This is not a Claude Plan token (`sk-ant-oat-…`). On your computer run `claude setup-token`, then paste that token here.",
         "claude_plan_invalid": "Claude Plan tokens start with `sk-ant-oat`. Run `claude setup-token` on your computer."
       },
       "step": {
