@@ -287,7 +287,7 @@ class ClaudeAgent:
     def __init__(self, agent: Agent, available: bool, reason: str | None) -> None:
         self.model = agent.model
         self.effort = agent.effort
-        self.api_key = agent.claude_api_key
+        self.api_key = agent.claude_oauth_token or agent.claude_api_key
         self.allow_internet = agent.allow_internet
         self.token_mode = agent.token_mode
         self.check_house = agent.check_house
