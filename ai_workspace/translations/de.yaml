@@ -11,5 +11,20 @@ configuration:
   hass_url:
     name: Home-Assistant-URL
     description: Wie die Runtime Home Assistant erreicht. Leer lassen; die App nutzt http://homeassistant:8123.
+  openrouter_api_key:
+    name: OpenRouter-API-Schlüssel
+    description: Für Claude SDK über OpenRouter. Nicht für Claude Plan (`claude_oauth_token`).
+  claude_oauth_token:
+    name: Claude-Plan-Token
+    description: Von `claude setup-token` auf deinem Rechner (`sk-ant-oat-…`). Wird als `CLAUDE_CODE_OAUTH_TOKEN` gespeichert. Kein Anthropic-Console-API-Schlüssel.
+  anthropic_api_key:
+    name: Anthropic-API-Schlüssel
+    description: Console-API-Guthaben (`sk-ant-api-…`). Überschreibt Claude-Plan-Abrechnung, wenn beides gesetzt ist.
+  anthropic_base_url:
+    name: Anthropic-API-Basis-URL
+    description: Optionale Proxy-Basis-URL. Leer lassen für den Standard-Anthropic-Endpunkt.
+  claude_model:
+    name: Standard-Claude-Modell
+    description: Standardmodell, wenn die Integration Modell leer lässt (z. B. claude-sonnet-5-5).
 network:
   8090/TCP: Wird von der HACS-Integration genutzt. Nicht auf dem Host veröffentlichen.

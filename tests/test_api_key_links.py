@@ -16,7 +16,7 @@ BASE = ROOT / "custom_components" / "ai_workspace"
 _NO_KEY_PAGE = {API_OLLAMA, API_COMPATIBLE}
 _LINK_FIELDS = (
     ("provider_cursor", "cursor_api_key"),
-    ("provider_claude", "claude_api_key"),
+    ("provider_claude", "claude_oauth_token"),
     ("provider_cloud", "api_key"),
     ("provider_azure", "api_key"),
 )

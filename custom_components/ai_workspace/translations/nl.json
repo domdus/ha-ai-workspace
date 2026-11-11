@@ -289,7 +289,10 @@
         "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
         "pick_model": "The server lists its models now. Pick one from the model list.",
         "model_rejected": "The server does not allow this model for this key: {server_message}",
-        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents.",
+        "claude_plan_not_api_key": "This looks like an Anthropic Console API key. Use a Claude Plan token (`sk-ant-oat-…`) from `claude setup-token` instead.",
+        "claude_plan_not_openrouter": "This is an OpenRouter key. Set OpenRouter on the AI Workspace Runtime app, or paste a Claude Plan token here.",
+        "claude_plan_invalid": "Claude Plan tokens start with `sk-ant-oat`. Run `claude setup-token` on your computer."
       },
       "step": {
         "provider": {
@@ -532,11 +535,11 @@
         },
         "provider_claude": {
           "title": "Claude SDK",
-          "description": "Same runtime sidecar as Cursor. OpenRouter key, Claude Plan token, or Anthropic API key.",
+          "description": "Same runtime sidecar as Cursor. For Claude Pro, Max, or Ultra, paste a Plan token below. Other Claude SDK auth is set on the AI Workspace Runtime app.",
           "data": {
             "runtime_url": "Runtime address{runtime_url_mark}",
             "runtime_token": "Runtime password",
-            "claude_api_key": "OpenRouter key, Claude Plan token, or Anthropic API key",
+            "claude_oauth_token": "Claude Plan token",
             "model": "Model",
             "effort": "Effort",
             "allow_internet": "Allow internet",
@@ -545,8 +548,8 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
-            "claude_api_key": "OpenRouter (`sk-or-…`), Claude Plan (`claude setup-token`), or Anthropic API key. Leave blank when editing to keep the saved credential. [Keys and tokens]({api_key_url})",
-            "model": "Anthropic id (e.g. claude-sonnet-5-5) or OpenRouter slug (e.g. anthropic/claude-sonnet-4.5).",
+            "claude_oauth_token": "Starts with `sk-ant-oat`. Not an API key. 1. On your computer run `claude setup-token`. 2. Sign in with your Claude subscription account (not Console API keys). 3. Paste the token here; it is stored on the runtime. Leave blank when editing to keep the saved token. If `ANTHROPIC_API_KEY` is also set on the runtime, it can override Plan billing. [Claude Plan setup]({api_key_url})",
+            "model": "Anthropic model id (e.g. claude-sonnet-5-5) when using Claude Plan or Anthropic API on the runtime.",
             "effort": "Reserved for future Claude SDK options.",
             "allow_internet": "Off by default. On allows WebSearch and WebFetch in admin chats with full tools.",
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only."

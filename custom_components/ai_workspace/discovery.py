@@ -425,6 +425,39 @@ async def _async_finish_pairing(hass: HomeAssistant, data: dict, slug: str, url:
     apply_runtime_to_providers(data, url, None if ok else BAD_TOKEN, data.get("runtime_notice"))
 
 
+async def async_sync_claude_plan_token(hass: HomeAssistant, token: str) -> None:
+    """Write Claude Plan OAuth token into the Supervisor runtime app options."""
+    if not _on_supervisor(hass):
+        return
+    from homeassistant.components.hassio import AddonError, AddonManager
+
+    text = str(token or "").strip()
+    manager = AddonManager(hass, _LOGGER, "AI Workspace Runtime", ADDON_SLUG)
+    try:
+        info = await manager.async_get_addon_info()
+    except AddonError as exc:
+        _LOGGER.warning("Could not read AI Workspace Runtime options for Claude Plan token: %s", exc)
+        return
+    opts = dict(info.options or {})
+    current = str(opts.get("claude_oauth_token") or "").strip()
+    if text == current:
+        return
+    if not text and not current:
+        return
+    opts["claude_oauth_token"] = text
+    try:
+        await manager.async_set_addon_options(opts)
+    except AddonError as exc:
+        _LOGGER.warning("Could not save Claude Plan token on AI Workspace Runtime: %s", exc)
+        return
+    if text:
+        _LOGGER.info("Restarting the AI Workspace Runtime app so it picks up the Claude Plan token")
+        try:
+            await manager.async_restart_addon()
+        except AddonError as exc:
+            _LOGGER.warning("Could not restart AI Workspace Runtime after Claude Plan token update: %s", exc)
+
+
 async def async_retry_runtime(hass: HomeAssistant, bucket: dict) -> None:
     """Keep probing after startup so a late Docker runtime still clears the Cursor banner."""
     for delay in (2, 5, 10, 20):

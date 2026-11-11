@@ -19,8 +19,8 @@ from app.store import Session
 logger = logging.getLogger(__name__)
 
 _MISSING_KEY = (
-    "No Claude credential is set. Add an OpenRouter key, Claude Plan token (CLAUDE_CODE_OAUTH_TOKEN), "
-    "or Anthropic API key in the runtime environment or addon options."
+    "No Claude credential is set on the runtime. Configure OpenRouter (OPENROUTER_API_KEY), "
+    "Claude Plan token (CLAUDE_CODE_OAUTH_TOKEN), or Anthropic API key in the runtime environment or add-on options."
 )
 
 _OPENROUTER_DEFAULT_MODEL = "anthropic/claude-sonnet-4.5"

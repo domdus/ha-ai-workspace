@@ -6,7 +6,7 @@ The cloud agent **Claude (Anthropic)** in the integration is unchanged—it stil
 
 ## Credentials (runtime or add-on)
 
-Configure **one** of these on the runtime host (environment or `ai_workspace` add-on options). Per-chat credentials can override on the **Claude SDK** agent form.
+Configure auth on the runtime host (environment or `ai_workspace` add-on options). Per-chat credentials can override on the **Claude SDK** agent form only when documented below.
 
 ### 1. OpenRouter (Agent SDK)
 
@@ -23,12 +23,12 @@ The runtime sets subprocess env:
 
 Use OpenRouter model slugs on the agent (e.g. `anthropic/claude-sonnet-4.5`).
 
-### 2. Claude Pro / Max / Ultra Plan (OAuth)
+### 2. Claude Pro / Max / Ultra (Plan)
 
 Household Plan billing via Claude Code:
 
 - `CLAUDE_CODE_OAUTH_TOKEN` or add-on `claude_oauth_token`
-- Create with `claude setup-token` on a machine with Claude Code
+- Create with `claude setup-token` on your **computer** (not on the Home Assistant or runtime host)
 
 Do **not** set `ANTHROPIC_API_KEY` or `ANTHROPIC_AUTH_TOKEN` on the runtime—they override Plan billing.
 
@@ -46,8 +46,8 @@ Optional `ANTHROPIC_BASE_URL` for proxies (not OpenRouter unless using mode 1).
 
 1. Add an agent → **Claude SDK** (not “Claude (Anthropic)”).
 2. Runtime URL and token: same as Cursor agents.
-3. **Credential** field: OpenRouter key, Plan token, or Anthropic API key (one field).
-4. Model: Anthropic id (`claude-sonnet-5-5`) or OpenRouter slug.
+3. **Claude Plan token**: paste the `sk-ant-oat-…` value from `claude setup-token` on your computer. The integration stores it on the runtime (`claude_oauth_token`). Leave the field empty when the runtime already has Plan or another Claude auth mode configured.
+4. Model: Anthropic id (`claude-sonnet-5-5`) for Plan or API; OpenRouter slugs when using OpenRouter on the runtime.
 
 Runtime health must report `"claude": true` (runtime **1.6.0** or newer). Older runtimes show an update notice for Claude SDK agents only; Cursor keeps working.
 

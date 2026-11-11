@@ -27,6 +27,7 @@ from .const import (
     CONF_AZURE_API_VERSION,
     CONF_CHECK_HOUSE,
     CONF_CLAUDE_API_KEY,
+    CONF_CLAUDE_OAUTH_TOKEN,
     CONF_CURSOR_API_KEY,
     CONF_EFFORT,
     CONF_LOW_TOKEN,
@@ -87,6 +88,7 @@ class Agent:
     azure_api_version: str = DEFAULT_AZURE_API_VERSION
     cursor_api_key: str = ""
     claude_api_key: str = ""
+    claude_oauth_token: str = ""
     allow_internet: bool = False
     subentry_id: str = ""
     # Typed or pasted model ids; replaces the server's own list.
@@ -164,6 +166,12 @@ def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Age
         azure_api_version=_text(raw.get(CONF_AZURE_API_VERSION)) or DEFAULT_AZURE_API_VERSION,
         cursor_api_key=_text(raw.get(CONF_CURSOR_API_KEY)),
         claude_api_key=_text(raw.get(CONF_CLAUDE_API_KEY)),
+        claude_oauth_token=_text(raw.get(CONF_CLAUDE_OAUTH_TOKEN))
+        or (
+            _text(raw.get(CONF_CLAUDE_API_KEY))
+            if _text(raw.get(CONF_CLAUDE_API_KEY)).startswith("sk-ant-oat")
+            else ""
+        ),
         allow_internet=bool(raw.get(CONF_ALLOW_INTERNET, False)),
     )
 

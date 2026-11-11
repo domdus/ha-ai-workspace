@@ -39,6 +39,8 @@ from .const import (
     CONF_AZURE_API_VERSION,
     CONF_BORROW,
     CONF_CLAUDE_API_KEY,
+    CONF_CLAUDE_OAUTH_TOKEN,
+    claude_plan_token_problem,
     CONF_CURSOR_API_KEY,
     CONF_EFFORT,
     CONF_LOW_TOKEN,
@@ -86,6 +88,7 @@ from .discovery import (
     async_resolve_runtime_url,
     async_runtime_form_url,
     async_runtime_health,
+    async_sync_claude_plan_token,
     runtime_form_placeholders,
 )
 
@@ -258,7 +261,7 @@ def _fields_schema(
     elif step == "claude":
         fields[vol.Optional(CONF_RUNTIME_URL, default=str(current.get(CONF_RUNTIME_URL) or ""))] = _URL
         fields[vol.Optional(CONF_RUNTIME_TOKEN, default="")] = _PASSWORD
-        fields[vol.Optional(CONF_CLAUDE_API_KEY, default="")] = _PASSWORD
+        fields[vol.Optional(CONF_CLAUDE_OAUTH_TOKEN, default="")] = _PASSWORD
         fields.update(_model_field(MODE_CLAUDE, current, choices=models))
     elif step == "ollama":
         fields[vol.Required(CONF_API_BASE, default=str(current.get(CONF_API_BASE) or default_api_base(API_OLLAMA)))] = str
@@ -410,15 +413,18 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             return {CONF_CURSOR_API_KEY: "required"}
         return {}
 
-    async def _claude_errors(self, claude_key: str, runtime_url: str) -> dict[str, str]:
+    async def _claude_errors(self, plan_token: str, runtime_url: str) -> dict[str, str]:
         runtime = await async_resolve_runtime_url(self.hass, runtime_url)
         health = await async_runtime_health(self.hass, runtime) if runtime else None
         if health is None:
             return {CONF_RUNTIME_URL: "no_runtime"}
         if "claude" not in health:
             return {CONF_RUNTIME_URL: "claude_runtime_old"}
-        if not claude_key and not health.get("claude"):
-            return {CONF_CLAUDE_API_KEY: "required"}
+        problem = claude_plan_token_problem(plan_token)
+        if problem:
+            return {CONF_CLAUDE_OAUTH_TOKEN: problem}
+        if not plan_token and not health.get("claude"):
+            return {CONF_CLAUDE_OAUTH_TOKEN: "required"}
         return {}
 
     async def _store_runtime(self, submitted_url: str, submitted_token: str) -> None:
@@ -519,7 +525,12 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                 merged[CONF_API_BASE] = borrowed["api_base"]
                 merged[CONF_AZURE_API_VERSION] = borrowed.get("azure_api_version") or DEFAULT_AZURE_API_VERSION
             cursor_key = str(merged.get(CONF_CURSOR_API_KEY) or current.get(CONF_CURSOR_API_KEY) or "").strip()
-            claude_key = str(merged.get(CONF_CLAUDE_API_KEY) or current.get(CONF_CLAUDE_API_KEY) or "").strip()
+            submitted_plan = str(user_input.get(CONF_CLAUDE_OAUTH_TOKEN) or "").strip()
+            plan_token = submitted_plan or str(current.get(CONF_CLAUDE_OAUTH_TOKEN) or "").strip()
+            if not plan_token:
+                legacy = str(current.get(CONF_CLAUDE_API_KEY) or "").strip()
+                if legacy.startswith("sk-ant-oat"):
+                    plan_token = legacy
             key = str(merged.get(CONF_API_KEY) or current.get(CONF_API_KEY) or "").strip()
             base = str(merged.get(CONF_API_BASE) or "").strip() or default_api_base(provider)
             version = str(merged.get(CONF_AZURE_API_VERSION) or DEFAULT_AZURE_API_VERSION)
@@ -536,7 +547,7 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                 )
             elif provider == MODE_CLAUDE:
                 errors = await self._claude_errors(
-                    claude_key, str(merged.get(CONF_RUNTIME_URL) or "")
+                    plan_token, str(merged.get(CONF_RUNTIME_URL) or "")
                 )
             elif provider == API_OLLAMA:
                 if not str(merged.get(CONF_API_BASE) or "").strip():
@@ -567,6 +578,8 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                         str(merged.get(CONF_RUNTIME_URL) or ""),
                         str(user_input.get(CONF_RUNTIME_TOKEN) or ""),
                     )
+                if provider == MODE_CLAUDE and plan_token:
+                    await async_sync_claude_plan_token(self.hass, plan_token)
                 effort = str(merged.get(CONF_EFFORT) or "")
                 data = {
                     CONF_MODE: provider
@@ -574,7 +587,8 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                     else MODE_API,
                     CONF_API_PROVIDER: provider,
                     CONF_CURSOR_API_KEY: cursor_key if provider == MODE_CURSOR else "",
-                    CONF_CLAUDE_API_KEY: claude_key if provider == MODE_CLAUDE else "",
+                    CONF_CLAUDE_OAUTH_TOKEN: plan_token if provider == MODE_CLAUDE else "",
+                    CONF_CLAUDE_API_KEY: "",
                     CONF_API_KEY: "" if provider in {MODE_CURSOR, MODE_CLAUDE} else key,
                     CONF_API_BASE: "" if provider in {MODE_CURSOR, MODE_CLAUDE} else base,
                     CONF_MODEL: model,

@@ -258,6 +258,22 @@ CONF_MCP_TOKEN = "mcp_token"
 CONF_MCP_EXTRA = "mcp_extra"
 CONF_CURSOR_API_KEY = "cursor_api_key"
 CONF_CLAUDE_API_KEY = "claude_api_key"
+CONF_CLAUDE_OAUTH_TOKEN = "claude_oauth_token"
+CLAUDE_PLAN_HELP_URL = "https://github.com/domdus/ha-ai-workspace#claude-plan"
+
+
+def claude_plan_token_problem(token: str) -> str | None:
+    """Config-flow error key when a Claude Plan field holds the wrong secret kind."""
+    text = str(token or "").strip()
+    if not text:
+        return None
+    if text.startswith("sk-ant-api") or (text.startswith("sk-ant-") and not text.startswith("sk-ant-oat")):
+        return "claude_plan_not_api_key"
+    if text.startswith("sk-or"):
+        return "claude_plan_not_openrouter"
+    if not text.startswith("sk-ant-oat"):
+        return "claude_plan_invalid"
+    return None
 CONF_MODEL = "model"
 # Model ids typed or pasted for servers that do not list their own (OpenAI-compatible, Azure).
 CONF_MODELS = "models"
@@ -777,7 +793,7 @@ API_KEY_URLS = {
     API_OPENROUTER: "https://openrouter.ai/keys",
     API_AZURE: "https://oai.azure.com/",
     MODE_CURSOR: "https://cursor.com/dashboard/integrations",
-    MODE_CLAUDE: "https://openrouter.ai/keys",
+    MODE_CLAUDE: CLAUDE_PLAN_HELP_URL,
 }
 
 

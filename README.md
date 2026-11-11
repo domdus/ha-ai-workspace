@@ -115,9 +115,23 @@ Open **AI Workspace** (`/ai-workspace`) and ask things like:
 
 ## AI Workspace Runtime (Cursor and Claude SDK)
 
-Want **Cursor**'s own agent in that same chat, without opening the Cursor app? It can work through a longer task and pick up the thread next time. There is still no editor: you only chat in Home Assistant. From 1.6.0 the same sidecar also runs **Claude SDK** agents ([Claude on the runtime](docs/claude-runtime.md): OpenRouter Agent SDK, Claude Plan OAuth, or Anthropic API).
+Want **Cursor**'s own agent in that same chat, without opening the Cursor app? It can work through a longer task and pick up the thread next time. There is still no editor: you only chat in Home Assistant. From 1.6.0 the same sidecar also runs **Claude SDK** agents ([Claude on the runtime](docs/claude-runtime.md)).
 
 If you only want Claude or GPT via a simple API key in Home Assistant, skip this and use [Cloud AI](#cloud-ai-quick-start) above — that is **Claude (Anthropic)** and other cloud providers, not the runtime.
+
+### Claude Plan (subscription)
+
+You have Claude Pro, Max, or Ultra? You do not need an Anthropic Console API key or Console credit.
+
+1. Install [Claude Code](https://docs.anthropic.com/en/docs/claude-code) on **your computer** (not the Home Assistant or runtime machine).
+2. In a terminal: `claude setup-token`
+3. Copy the `sk-ant-oat-…` token into AI Workspace:
+   - **Supervisor:** paste it on the **Claude SDK** agent as **Claude Plan token**, or in the runtime app **Claude Plan token** option (`claude_oauth_token`).
+   - **Docker:** set `CLAUDE_CODE_OAUTH_TOKEN` in [docker-compose.runtime.yml](docker-compose.runtime.yml), then paste the same token on the **Claude SDK** agent if you want the integration to store it on the runtime for you.
+
+Leave other credential fields on the agent empty. Do not set `ANTHROPIC_API_KEY` on the runtime if you want Plan billing—Console API keys override the Plan token.
+
+OpenRouter and Anthropic API on the runtime are separate paths; see [Claude on the runtime](docs/claude-runtime.md).
 
 **Notice**
 > You can get some Cursor models with one [OpenRouter](https://openrouter.ai) key. No AI Workspace Runtime to install that way. Add that under [Cloud AI](#cloud-ai-quick-start).
@@ -138,7 +152,7 @@ Add this repository to Apps and install **AI Workspace Runtime**:
 
 ![Add repository](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)
 
-For **Cursor**, paste the Cursor API key on the app and **Start** it. For **Claude SDK**, set OpenRouter, Claude Plan OAuth, or Anthropic API on the app instead ([details](docs/claude-runtime.md)). Leave **Runtime URL** on the integration empty; it is detected once the app runs. The integration also creates the shared [runtime token](#runtime-token) and writes it to the app for you.
+For **Cursor**, paste the Cursor API key on the app and **Start** it. For **Claude SDK** with a subscription, paste a [Claude Plan](#claude-plan) token on the agent form or in the app **Claude Plan token** option. Other Claude SDK auth modes use separate runtime options ([details](docs/claude-runtime.md)). Leave **Runtime URL** on the integration empty; it is detected once the app runs. The integration also creates the shared [runtime token](#runtime-token) and writes it to the app for you.
 
 Home Assistant 2026.2 renamed "Add-ons" to "Apps".
 
@@ -148,7 +162,7 @@ If Home Assistant is a Docker container (no Supervisor), run the **`ai-workspace
 
 ![Home Assistant container, ai-workspace-runtime, Cursor / Claude Cloud](docs/docker-architecture.jpg)
 
-Paste your Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) into [docker-compose.runtime.yml](docker-compose.runtime.yml) when you use Cursor agents. For Claude SDK, set `OPENROUTER_API_KEY`, `CLAUDE_CODE_OAUTH_TOKEN`, or `ANTHROPIC_API_KEY` on the container ([details](docs/claude-runtime.md)); the compose file already lists them as comments.
+Paste your Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) into [docker-compose.runtime.yml](docker-compose.runtime.yml) when you use Cursor agents. For **Claude Plan**, set `CLAUDE_CODE_OAUTH_TOKEN` to your `sk-ant-oat-…` token ([Claude Plan](#claude-plan)). Other Claude SDK modes use separate environment variables ([details](docs/claude-runtime.md)); the compose file lists them as comments.
 
 ```yaml
 name: ai-workspace-runtime
