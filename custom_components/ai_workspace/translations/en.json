@@ -103,7 +103,7 @@
       }
     },
     "error": {
-      "no_runtime": "Cannot reach the Cursor runtime. Start it and check the address on this form.",
+      "no_runtime": "Cannot reach the AI Workspace Runtime. Start it and check the address on this form.",
       "required": "This field is required.",
       "invalid_auth": "The provider rejected this API key.",
       "cannot_connect": "Could not reach the provider. Check the URL and the network."
@@ -216,7 +216,7 @@
       }
     },
     "error": {
-      "no_runtime": "Cannot reach the Cursor runtime. Start it and check the address on this form.",
+      "no_runtime": "Cannot reach the AI Workspace Runtime. Start it and check the address on this form.",
       "required": "This field is required.",
       "invalid_auth": "The provider rejected this API key.",
       "cannot_connect": "Could not reach the provider. Check the URL and the network."
@@ -282,13 +282,15 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Cannot reach the Cursor runtime. Start it and check the address on this form.",
+        "no_runtime": "Cannot reach the AI Workspace Runtime. Start it and check the address on this form.",
         "required": "This field is required.",
         "invalid_auth": "The provider rejected this API key.",
         "cannot_connect": "Could not reach the provider. Check the URL and the network.",
         "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
         "pick_model": "The server lists its models now. Pick one from the model list.",
-        "model_rejected": "The server does not allow this model for this key: {server_message}"
+        "model_rejected": "The server does not allow this model for this key: {server_message}",
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents.",
+        "claude_plan_token": "This is a Claude.ai plan token. Claude SDK agents need an Anthropic API key (sk-ant-api…) from the Claude Console. Anthropic does not allow apps built on the Agent SDK to sign in with Claude.ai plans."
       },
       "step": {
         "provider": {
@@ -298,14 +300,14 @@
             "api_provider": "Provider"
           },
           "data_description": {
-            "api_provider": "Cursor, or a cloud or local model."
+            "api_provider": "Cursor, Claude SDK, or a cloud or local model."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
           "description": "Cursor address, API key, model, and response speed.",
           "data": {
-            "runtime_url": "Cursor runtime address{runtime_url_mark}",
+            "runtime_url": "Runtime address{runtime_url_mark}",
             "runtime_token": "Runtime password",
             "cursor_api_key": "Cursor API key",
             "model": "Model",
@@ -315,11 +317,53 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Same password as on your Cursor runtime. Leave empty when using the add-on with automatic pairing.",
+            "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
             "cursor_api_key": "From your Cursor account (Integrations). Leave blank when editing to keep the saved key. [Get an API key]({api_key_url})",
             "model": "Pick from the list or type a model name. Empty uses Composer.",
             "effort": "How much thinking time to allow. Composer defaults to Fast.",
             "allow_internet": "Off by default. On lets this agent use Cursor's web search, page fetch and shell in admin chats. Off removes all three, so curl or scripts cannot reach the web either. Chats from normal users and voice satellites never get them.",
+            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
+          },
+          "sections": {
+            "model_list": {
+              "name": "Model list",
+              "data": {
+                "models": "Models"
+              },
+              "data_description": {
+                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
+              }
+            },
+            "advanced": {
+              "name": "Advanced",
+              "data": {
+                "save_tokens": "Save tokens"
+              },
+              "data_description": {
+                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
+              }
+            }
+          }
+        },
+        "provider_claude": {
+          "title": "Claude SDK",
+          "description": "Claude Code's agent on the AI Workspace Runtime, the same App as Cursor. Needs an Anthropic API key.",
+          "data": {
+            "runtime_url": "Runtime address{runtime_url_mark}",
+            "runtime_token": "Runtime password",
+            "claude_api_key": "Anthropic API key",
+            "model": "Model",
+            "effort": "Effort",
+            "allow_internet": "Allow internet",
+            "assist": "Add to Assist"
+          },
+          "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
+            "claude_api_key": "An API key (sk-ant-api…) from the Claude Console. Leave empty to use the key set on the AI Workspace Runtime, or when editing to keep the saved key. Claude.ai plan tokens do not work. [Get an API key]({api_key_url})",
+            "model": "Pick from the list or type an Anthropic model id. Empty uses the Runtime's Claude model (Claude Sonnet unless set).",
+            "effort": "How much thinking time to allow. Default lets Claude decide.",
+            "allow_internet": "Off by default. On lets this agent use web search, page fetch and the shell in admin chats. Off removes all three, so curl or scripts cannot reach the web either. Chats from normal users and voice satellites never get them.",
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
           },
           "sections": {

@@ -36,6 +36,7 @@ def _configure_logging() -> None:
     )
     logging.getLogger("app").setLevel(logging.INFO)
     logging.getLogger("app.providers.cursor").setLevel(logging.INFO)
+    logging.getLogger("app.providers.claude").setLevel(logging.INFO)
     access = logging.getLogger("uvicorn.access")
     if not any(isinstance(item, _HideProxySecret) for item in access.filters):
         access.addFilter(_HideProxySecret())
@@ -254,16 +255,22 @@ async def mcp_proxy(request: Request, secret: str, digest: str, actor: str = "")
     return await proxy_mcp(request, secret, digest, actor)
 
 
+def _provider_flag(providers: dict, key: str) -> bool:
+    item = providers.get(key)
+    return bool(item and item.info.available)
+
+
 @router.get("/api/health")
 def health(request: Request) -> dict:
     settings: Settings = request.app.state.settings
-    cursor = request.app.state.providers["cursor"].info
+    providers = request.app.state.providers
     return {
         "ok": True,
         "version": RUNTIME_VERSION,
         "auth_mode": settings.auth_mode,
         "model": settings.model,
-        "cursor": cursor.available,
+        "cursor": _provider_flag(providers, "cursor"),
+        "claude": _provider_flag(providers, "claude"),
         "token_required": bool(settings.runtime_token) or not settings.open_without_token(),
     }
 

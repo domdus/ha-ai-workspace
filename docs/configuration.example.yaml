@@ -47,7 +47,7 @@ ai_workspace:
   agents:
     - id: openai
       title: OpenAI
-      provider: openai # cursor | openai | anthropic | gemini | deepseek | qwen | xai | openrouter | ollama | azure | compatible
+      provider: openai # cursor | claude | openai | anthropic | gemini | deepseek | qwen | xai | openrouter | ollama | azure | compatible
       api_key: !secret openai_api_key
       model: gpt-5
       effort: default # default | fast | high | high_fast
@@ -105,4 +105,10 @@ ai_workspace:
       provider: cursor
       cursor_api_key: !secret cursor_api_key
       model: composer-2.5
+      assist: false
+    - id: claude-sdk
+      title: Claude SDK
+      provider: claude # Claude Agent SDK on the AI Workspace Runtime
+      claude_api_key: !secret anthropic_api_key # Anthropic API key (sk-ant-api…), not a Claude.ai plan token
+      model: claude-sonnet-5-5
       assist: false

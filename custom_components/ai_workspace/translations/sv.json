@@ -103,7 +103,7 @@
       }
     },
     "error": {
-      "no_runtime": "Kan inte nå Cursor-runtimen. Starta den och kontrollera adressen i det här formuläret.",
+      "no_runtime": "Kan inte nå AI Workspace Runtime. Starta den och kontrollera adressen i det här formuläret.",
       "required": "Det här fältet är obligatoriskt.",
       "invalid_auth": "Leverantören avvisade den här API-nyckeln.",
       "cannot_connect": "Kunde inte nå leverantören. Kontrollera URL:en och nätverket."
@@ -216,7 +216,7 @@
       }
     },
     "error": {
-      "no_runtime": "Kan inte nå Cursor-runtimen. Starta den och kontrollera adressen i det här formuläret.",
+      "no_runtime": "Kan inte nå AI Workspace Runtime. Starta den och kontrollera adressen i det här formuläret.",
       "required": "Det här fältet är obligatoriskt.",
       "invalid_auth": "Leverantören avvisade den här API-nyckeln.",
       "cannot_connect": "Kunde inte nå leverantören. Kontrollera URL:en och nätverket."
@@ -282,13 +282,15 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Kan inte nå Cursor-runtimen. Starta den och kontrollera adressen i det här formuläret.",
+        "no_runtime": "Kan inte nå AI Workspace Runtime. Starta den och kontrollera adressen i det här formuläret.",
         "required": "Det här fältet är obligatoriskt.",
         "invalid_auth": "Leverantören avvisade den här API-nyckeln.",
         "cannot_connect": "Kunde inte nå leverantören. Kontrollera URL:en och nätverket.",
         "model_not_installed": "Den här modellen är inte installerad i Ollama. Installerade: {installed}",
         "pick_model": "Servern listar nu sina modeller. Välj en i listan.",
-        "model_rejected": "Servern tillåter inte den här modellen för den här nyckeln: {server_message}"
+        "model_rejected": "Servern tillåter inte den här modellen för den här nyckeln: {server_message}",
+        "claude_runtime_old": "Uppdatera AI Workspace Runtime till 1.6.0 eller senare för Claude SDK-agenter.",
+        "claude_plan_token": "Det här är en Claude.ai-prenumerationstoken. Claude SDK-agenter behöver en Anthropic API-nyckel (sk-ant-api…) från Claude Console. Anthropic tillåter inte appar byggda på Agent SDK att logga in med Claude.ai-prenumerationer."
       },
       "step": {
         "provider": {
@@ -298,14 +300,14 @@
             "api_provider": "Leverantör"
           },
           "data_description": {
-            "api_provider": "Cursor, eller en molnmodell eller lokal modell."
+            "api_provider": "Cursor, Claude SDK, eller en molnmodell eller lokal modell."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
           "description": "Cursor-adress, API-nyckel, modell och svarshastighet.",
           "data": {
-            "runtime_url": "Cursor-runtime-adress{runtime_url_mark}",
+            "runtime_url": "Runtime-adress{runtime_url_mark}",
             "runtime_token": "Runtime-lösenord",
             "cursor_api_key": "Cursor API-nyckel",
             "model": "Modell",
@@ -315,11 +317,53 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Samma lösenord som på din Cursor-runtime. Lämna tomt när du använder tillägget med automatisk parkoppling.",
+            "runtime_token": "Samma lösenord som på AI Workspace Runtime. Lämna tomt när du använder tillägget med automatisk parkoppling.",
             "cursor_api_key": "Från ditt Cursor-konto (Integrations). Lämna tomt vid redigering för att behålla den sparade nyckeln. [Hämta API-nyckel]({api_key_url})",
             "model": "Välj från listan eller skriv ett modellnamn. Tomt använder Composer.",
             "effort": "Hur mycket tänketid som ska tillåtas. Composer använder Snabb som standard.",
             "allow_internet": "Av som standard. På låter agenten använda Cursors webbsökning, sidhämtning och skal i administratörschattar. Av tar bort alla tre, så att inte heller curl eller skript når webben. Chattar från vanliga användare och röstsatelliter får dem aldrig.",
+            "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist."
+          },
+          "sections": {
+            "model_list": {
+              "name": "Modellista",
+              "data": {
+                "models": "Modeller"
+              },
+              "data_description": {
+                "models": "Valfritt. Ditt eget urval av modeller för valet här och i chatten i stället för leverantörens hela lista. Namn åtskilda med komma, semikolon eller radbrytningar, t.ex. gpt-5.5, grok-4.7. Tomt visar leverantörens lista."
+              }
+            },
+            "advanced": {
+              "name": "Avancerat",
+              "data": {
+                "save_tokens": "Spara tokens"
+              },
+              "data_description": {
+                "save_tokens": "Skickar mindre med varje meddelande: en kortare prompt, mindre chatthistorik och kortare svar. Billigare, men svar om ditt hem kan bli mindre grundliga."
+              }
+            }
+          }
+        },
+        "provider_claude": {
+          "title": "Claude SDK",
+          "description": "Claude Codes agent på AI Workspace Runtime, samma app som Cursor. Kräver en Anthropic API-nyckel.",
+          "data": {
+            "runtime_url": "Runtime-adress{runtime_url_mark}",
+            "runtime_token": "Runtime-lösenord",
+            "claude_api_key": "Anthropic API-nyckel",
+            "model": "Modell",
+            "effort": "Ansträngning",
+            "allow_internet": "Tillåt internet",
+            "assist": "Lägg till i Assist"
+          },
+          "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Samma lösenord som på AI Workspace Runtime. Lämna tomt när du använder tillägget med automatisk parkoppling.",
+            "claude_api_key": "En API-nyckel (sk-ant-api…) från Claude Console. Lämna tomt för att använda nyckeln på AI Workspace Runtime, eller vid redigering för att behålla den sparade nyckeln. Claude.ai-prenumerationstoken fungerar inte. [Hämta API-nyckel]({api_key_url})",
+            "model": "Välj i listan eller skriv ett Anthropic-modell-id. Tomt använder runtimens Claude-modell (Claude Sonnet om inget är satt).",
+            "effort": "Hur mycket tänketid som ska tillåtas. Standard låter Claude bestämma.",
+            "allow_internet": "Av som standard. På låter agenten använda webbsökning, sidhämtning och skal i administratörschattar. Av tar bort alla tre, så att inte heller curl eller skript når webben. Chattar från vanliga användare och röstsatelliter får dem aldrig.",
             "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist."
           },
           "sections": {

@@ -103,7 +103,7 @@
       }
     },
     "error": {
-      "no_runtime": "Cursor 런타임에 연결할 수 없습니다. 런타임을 시작한 뒤 이 양식의 주소를 확인하세요.",
+      "no_runtime": "AI Workspace Runtime에 연결할 수 없습니다. 런타임을 시작한 뒤 이 양식의 주소를 확인하세요.",
       "required": "이 필드는 필수입니다.",
       "invalid_auth": "제공자가 이 API 키를 거부했습니다.",
       "cannot_connect": "제공자에 연결할 수 없습니다. URL과 네트워크를 확인하세요."
@@ -216,7 +216,7 @@
       }
     },
     "error": {
-      "no_runtime": "Cursor 런타임에 연결할 수 없습니다. 런타임을 시작한 뒤 이 양식의 주소를 확인하세요.",
+      "no_runtime": "AI Workspace Runtime에 연결할 수 없습니다. 런타임을 시작한 뒤 이 양식의 주소를 확인하세요.",
       "required": "이 필드는 필수입니다.",
       "invalid_auth": "제공자가 이 API 키를 거부했습니다.",
       "cannot_connect": "제공자에 연결할 수 없습니다. URL과 네트워크를 확인하세요."
@@ -282,13 +282,15 @@
       },
       "entry_type": "에이전트",
       "error": {
-        "no_runtime": "Cursor 런타임에 연결할 수 없습니다. 런타임을 시작한 뒤 이 양식의 주소를 확인하세요.",
+        "no_runtime": "AI Workspace Runtime에 연결할 수 없습니다. 런타임을 시작한 뒤 이 양식의 주소를 확인하세요.",
         "required": "이 필드는 필수입니다.",
         "invalid_auth": "제공자가 이 API 키를 거부했습니다.",
         "cannot_connect": "제공자에 연결할 수 없습니다. URL과 네트워크를 확인하세요.",
         "model_not_installed": "이 모델은 Ollama에 설치되어 있지 않습니다. 설치된 모델: {installed}",
         "pick_model": "이제 서버가 모델 목록을 제공합니다. 목록에서 하나를 고르세요.",
-        "model_rejected": "서버가 이 키에 이 모델을 허용하지 않습니다: {server_message}"
+        "model_rejected": "서버가 이 키에 이 모델을 허용하지 않습니다: {server_message}",
+        "claude_runtime_old": "Claude SDK 에이전트를 쓰려면 AI Workspace Runtime을 1.6.0 이상으로 업데이트하세요.",
+        "claude_plan_token": "Claude.ai 구독 토큰입니다. Claude SDK 에이전트에는 Claude Console의 Anthropic API 키(sk-ant-api…)가 필요합니다. Anthropic은 Agent SDK로 만든 앱이 Claude.ai 구독으로 로그인하는 것을 허용하지 않습니다."
       },
       "step": {
         "provider": {
@@ -298,14 +300,14 @@
             "api_provider": "제공자"
           },
           "data_description": {
-            "api_provider": "Cursor, 또는 클라우드나 로컬 모델입니다."
+            "api_provider": "Cursor, Claude SDK, 또는 클라우드나 로컬 모델입니다."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
           "description": "Cursor 주소, API 키, 모델, 응답 속도입니다.",
           "data": {
-            "runtime_url": "Cursor 런타임 주소{runtime_url_mark}",
+            "runtime_url": "런타임 주소{runtime_url_mark}",
             "runtime_token": "런타임 비밀번호",
             "cursor_api_key": "Cursor API 키",
             "model": "모델",
@@ -315,11 +317,53 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Cursor 런타임과 같은 비밀번호입니다. 자동 페어링 애드온을 쓰면 비워 두세요.",
+            "runtime_token": "AI Workspace Runtime과 같은 비밀번호입니다. 자동 페어링 애드온을 쓰면 비워 두세요.",
             "cursor_api_key": "Cursor 계정(Integrations)에서 가져옵니다. 수정 시 비워 두면 저장된 키를 유지합니다. [API 키 받기]({api_key_url})",
             "model": "목록에서 고르거나 모델 이름을 입력하세요. 비우면 Composer를 사용합니다.",
             "effort": "생각할 시간을 얼마나 줄지 정합니다. Composer 기본값은 빠름입니다.",
             "allow_internet": "기본값은 꺼짐입니다. 켜면 이 에이전트가 관리자 채팅에서 Cursor의 웹 검색, 페이지 가져오기, 셸을 사용할 수 있습니다. 끄면 세 가지가 모두 제거되어 curl이나 스크립트로도 웹에 접근할 수 없습니다. 일반 사용자 채팅과 음성 위성은 이를 받지 않습니다.",
+            "assist": "이 어시스턴트를 Home Assistant Assist(음성)에도 표시합니다. 끄면 AI Workspace 채팅에만 두고 Assist에 추가한 항목을 제거합니다."
+          },
+          "sections": {
+            "model_list": {
+              "name": "모델 목록",
+              "data": {
+                "models": "모델"
+              },
+              "data_description": {
+                "models": "선택 사항. 제공업체의 전체 목록 대신 여기와 채팅의 모델 선택에 쓸 나만의 모델 목록입니다. 쉼표, 세미콜론 또는 줄바꿈으로 구분한 이름(예: gpt-5.5, grok-4.7). 비워 두면 제공업체 목록을 표시합니다."
+              }
+            },
+            "advanced": {
+              "name": "고급",
+              "data": {
+                "save_tokens": "토큰 절약"
+              },
+              "data_description": {
+                "save_tokens": "메시지마다 더 적게 보냅니다: 더 짧은 프롬프트, 더 적은 대화 기록, 더 짧은 답변. 비용은 줄지만 집에 대한 답변이 덜 자세할 수 있습니다."
+              }
+            }
+          }
+        },
+        "provider_claude": {
+          "title": "Claude SDK",
+          "description": "AI Workspace Runtime(Cursor와 같은 앱)에서 실행되는 Claude Code 에이전트입니다. Anthropic API 키가 필요합니다.",
+          "data": {
+            "runtime_url": "런타임 주소{runtime_url_mark}",
+            "runtime_token": "런타임 비밀번호",
+            "claude_api_key": "Anthropic API 키",
+            "model": "모델",
+            "effort": "노력",
+            "allow_internet": "인터넷 허용",
+            "assist": "Assist에 추가"
+          },
+          "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "AI Workspace Runtime과 같은 비밀번호입니다. 자동 페어링 애드온을 쓰면 비워 두세요.",
+            "claude_api_key": "Claude Console의 API 키(sk-ant-api…)입니다. 비워 두면 AI Workspace Runtime의 키를 쓰고, 수정 시 비워 두면 저장된 키를 유지합니다. Claude.ai 구독 토큰은 작동하지 않습니다. [API 키 받기]({api_key_url})",
+            "model": "목록에서 고르거나 Anthropic 모델 ID를 입력하세요. 비워 두면 런타임의 Claude 모델(설정하지 않으면 Claude Sonnet)을 사용합니다.",
+            "effort": "생각할 시간을 얼마나 줄지 정합니다. 기본값은 Claude가 정합니다.",
+            "allow_internet": "기본값은 꺼짐입니다. 켜면 이 에이전트가 관리자 채팅에서 웹 검색, 페이지 가져오기, 셸을 사용할 수 있습니다. 끄면 세 가지가 모두 제거되어 curl이나 스크립트로도 웹에 접근할 수 없습니다. 일반 사용자 채팅과 음성 위성은 이를 받지 않습니다.",
             "assist": "이 어시스턴트를 Home Assistant Assist(음성)에도 표시합니다. 끄면 AI Workspace 채팅에만 두고 Assist에 추가한 항목을 제거합니다."
           },
           "sections": {

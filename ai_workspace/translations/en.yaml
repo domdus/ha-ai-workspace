@@ -5,6 +5,12 @@ configuration:
   model:
     name: Model
     description: Default Cursor model id, for example composer-2.5. The HACS form can override this.
+  anthropic_api_key:
+    name: Anthropic API key
+    description: For Claude SDK agents. An API key (sk-ant-api…) from console.anthropic.com → API keys. Optional when every Claude SDK agent has its own key. Claude.ai plan tokens do not work.
+  claude_model:
+    name: Claude model
+    description: Default model for Claude SDK agents, for example claude-sonnet-5-5. The agent's model in Home Assistant wins.
   runtime_token:
     name: Runtime token
     description: Filled in by the AI Workspace integration. Leave it alone unless you pair the integration by hand.

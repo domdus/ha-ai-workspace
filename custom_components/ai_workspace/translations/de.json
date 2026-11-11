@@ -103,7 +103,7 @@
       }
     },
     "error": {
-      "no_runtime": "Cursor-Runtime nicht erreichbar. Starte sie und prüfe die Adresse in diesem Formular.",
+      "no_runtime": "AI-Workspace-Runtime nicht erreichbar. Starte sie und prüfe die Adresse in diesem Formular.",
       "required": "Dieses Feld ist erforderlich.",
       "invalid_auth": "Der Anbieter hat diesen API-Schlüssel abgelehnt.",
       "cannot_connect": "Der Anbieter ist nicht erreichbar. Prüfe die URL und das Netzwerk."
@@ -216,7 +216,7 @@
       }
     },
     "error": {
-      "no_runtime": "Cursor-Runtime nicht erreichbar. Starte sie und prüfe die Adresse in diesem Formular.",
+      "no_runtime": "AI-Workspace-Runtime nicht erreichbar. Starte sie und prüfe die Adresse in diesem Formular.",
       "required": "Dieses Feld ist erforderlich.",
       "invalid_auth": "Der Anbieter hat diesen API-Schlüssel abgelehnt.",
       "cannot_connect": "Der Anbieter ist nicht erreichbar. Prüfe die URL und das Netzwerk."
@@ -282,13 +282,15 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Cursor-Runtime nicht erreichbar. Starte sie und prüfe die Adresse in diesem Formular.",
+        "no_runtime": "AI-Workspace-Runtime nicht erreichbar. Starte sie und prüfe die Adresse in diesem Formular.",
         "required": "Dieses Feld ist erforderlich.",
         "invalid_auth": "Der Anbieter hat diesen API-Schlüssel abgelehnt.",
         "cannot_connect": "Der Anbieter ist nicht erreichbar. Prüfe die URL und das Netzwerk.",
         "model_not_installed": "Dieses Modell ist in Ollama nicht installiert. Installiert: {installed}",
         "pick_model": "Der Server listet jetzt seine Modelle. Wähle eines aus der Modellliste.",
-        "model_rejected": "Der Server erlaubt dieses Modell für diesen Schlüssel nicht: {server_message}"
+        "model_rejected": "Der Server erlaubt dieses Modell für diesen Schlüssel nicht: {server_message}",
+        "claude_runtime_old": "Aktualisiere die AI-Workspace-Runtime auf 1.6.0 oder neuer für Claude-SDK-Agenten.",
+        "claude_plan_token": "Das ist ein Claude.ai-Abo-Token. Claude-SDK-Agenten brauchen einen Anthropic-API-Schlüssel (sk-ant-api…) aus der Claude Console. Anthropic erlaubt Apps auf Basis des Agent SDK keine Anmeldung mit Claude.ai-Abos."
       },
       "step": {
         "provider": {
@@ -298,14 +300,14 @@
             "api_provider": "Anbieter"
           },
           "data_description": {
-            "api_provider": "Cursor oder ein Cloud- bzw. lokales Modell."
+            "api_provider": "Cursor, Claude SDK oder ein Cloud- bzw. lokales Modell."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
           "description": "Cursor-Adresse, API-Schlüssel, Modell und Antwortgeschwindigkeit.",
           "data": {
-            "runtime_url": "Cursor-Runtime-Adresse{runtime_url_mark}",
+            "runtime_url": "Runtime-Adresse{runtime_url_mark}",
             "runtime_token": "Runtime-Passwort",
             "cursor_api_key": "Cursor-API-Schlüssel",
             "model": "Modell",
@@ -315,11 +317,53 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Dasselbe Passwort wie auf deiner Cursor-Runtime. Leer lassen bei Add-on mit automatischer Kopplung.",
+            "runtime_token": "Dasselbe Passwort wie auf der AI-Workspace-Runtime. Leer lassen bei Add-on mit automatischer Kopplung.",
             "cursor_api_key": "Aus deinem Cursor-Konto (Integrations). Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten. [API-Schlüssel holen]({api_key_url})",
             "model": "Aus der Liste wählen oder Modellnamen eingeben. Leer nutzt Composer.",
             "effort": "Wie viel Denkzeit erlaubt ist. Composer nutzt standardmäßig Schnell.",
             "allow_internet": "Standardmäßig aus. An erlaubt diesem Agenten in Admin-Chats Cursors Websuche, Seitenabruf und Shell. Aus entfernt alle drei, damit auch curl oder Skripte nicht ins Internet kommen. Chats normaler Benutzer und Sprachsatelliten bekommen sie nie.",
+            "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat."
+          },
+          "sections": {
+            "model_list": {
+              "name": "Modellliste",
+              "data": {
+                "models": "Modelle"
+              },
+              "data_description": {
+                "models": "Optional. Deine eigene Modellauswahl für die Auswahl hier und im Chat statt der vollständigen Liste des Anbieters. Namen getrennt durch Komma, Semikolon oder Zeilenumbruch, z. B. gpt-5.5, grok-4.7. Leer zeigt die Liste des Anbieters."
+              }
+            },
+            "advanced": {
+              "name": "Erweitert",
+              "data": {
+                "save_tokens": "Tokens sparen"
+              },
+              "data_description": {
+                "save_tokens": "Sendet mit jeder Nachricht weniger: einen kürzeren Prompt, weniger Chatverlauf und kürzere Antworten. Günstiger, aber Antworten zu deinem Zuhause können weniger gründlich sein."
+              }
+            }
+          }
+        },
+        "provider_claude": {
+          "title": "Claude SDK",
+          "description": "Der Agent von Claude Code auf der AI-Workspace-Runtime, derselben App wie Cursor. Braucht einen Anthropic-API-Schlüssel.",
+          "data": {
+            "runtime_url": "Runtime-Adresse{runtime_url_mark}",
+            "runtime_token": "Runtime-Passwort",
+            "claude_api_key": "Anthropic-API-Schlüssel",
+            "model": "Modell",
+            "effort": "Aufwand",
+            "allow_internet": "Internetzugriff erlauben",
+            "assist": "Zu Assist hinzufügen"
+          },
+          "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Dasselbe Passwort wie auf der AI-Workspace-Runtime. Leer lassen bei Add-on mit automatischer Kopplung.",
+            "claude_api_key": "Ein API-Schlüssel (sk-ant-api…) aus der Claude Console. Leer lassen, um den Schlüssel der AI-Workspace-Runtime zu nutzen, oder beim Bearbeiten, um den gespeicherten zu behalten. Claude.ai-Abo-Tokens funktionieren nicht. [API-Schlüssel holen]({api_key_url})",
+            "model": "Aus der Liste wählen oder eine Anthropic-Modell-ID eingeben. Leer nutzt das Claude-Modell der Runtime (ohne Einstellung Claude Sonnet).",
+            "effort": "Wie viel Denkzeit erlaubt ist. Standard lässt Claude entscheiden.",
+            "allow_internet": "Standardmäßig aus. An erlaubt diesem Agenten in Admin-Chats Websuche, Seitenabruf und Shell. Aus entfernt alle drei, damit auch curl oder Skripte nicht ins Internet kommen. Chats normaler Benutzer und Sprachsatelliten bekommen sie nie.",
             "assist": "Listet diesen Assistenten auch unter Home Assistant Assist (Sprache). Aus: nur AI-Workspace-Chat; entfernt, was er in Assist angelegt hat."
           },
           "sections": {

@@ -31,7 +31,7 @@ def test_docs_example_matches_schema() -> None:
     loaded = yaml.safe_load(text)
     conf = YAML_SCHEMA(loaded["ai_workspace"])
     assert len(conf["connections"]) == 2
-    assert [row["provider"] for row in conf["agents"]][-1] == "cursor"
+    assert [row["provider"] for row in conf["agents"]][-2:] == ["cursor", "claude"]
 
 
 def test_schema_accepts_full_example() -> None:

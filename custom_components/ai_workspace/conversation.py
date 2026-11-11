@@ -192,7 +192,7 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
         providers = data.get("providers") or {}
         provider = providers.get(self._agent_id)
         info = getattr(provider, "info", None)
-        if getattr(provider, "kind", "") == "cursor" and not getattr(info, "available", False):
+        if getattr(provider, "kind", "") in {"cursor", "claude"} and not getattr(info, "available", False):
             from .discovery import async_bind_runtime
 
             await async_bind_runtime(self.hass, data, force=True)
@@ -212,8 +212,13 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
 
         session = await self.hass.async_add_executor_job(store.get_session, user_id, conversation_id)
         if session is None:
-            if getattr(provider, "kind", "") == "cursor":
-                await _create_runtime_session(self.hass, user_id, conversation_id)
+            if getattr(provider, "kind", "") in {"cursor", "claude"}:
+                await _create_runtime_session(
+                    self.hass,
+                    user_id,
+                    conversation_id,
+                    provider=str(getattr(provider, "kind", "") or "cursor"),
+                )
             session = await self.hass.async_add_executor_job(
                 store.create_session, user_id, self._agent_id, conversation_id
             )
@@ -251,7 +256,7 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
             await self.hass.async_add_executor_job(store.rename_if_default, session.id, title_from_prompt(text))
             count = await self.hass.async_add_executor_job(lambda: len(store.list_messages(session.id)))
             handoff = ""
-            if getattr(provider, "kind", "") == "cursor":
+            if getattr(provider, "kind", "") in {"cursor", "claude"}:
                 rows = await self.hass.async_add_executor_job(store.list_messages, session.id)
                 handoff = handoff_note(
                     rows,

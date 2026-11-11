@@ -103,7 +103,7 @@
       }
     },
     "error": {
-      "no_runtime": "无法连接 Cursor runtime。请先启动它，并检查此表单上的地址。",
+      "no_runtime": "无法连接 AI Workspace Runtime。请先启动它，并检查此表单上的地址。",
       "required": "此字段为必填。",
       "invalid_auth": "提供商拒绝了此 API 密钥。",
       "cannot_connect": "无法连接提供商。请检查 URL 和网络。"
@@ -216,7 +216,7 @@
       }
     },
     "error": {
-      "no_runtime": "无法连接 Cursor runtime。请先启动它，并检查此表单上的地址。",
+      "no_runtime": "无法连接 AI Workspace Runtime。请先启动它，并检查此表单上的地址。",
       "required": "此字段为必填。",
       "invalid_auth": "提供商拒绝了此 API 密钥。",
       "cannot_connect": "无法连接提供商。请检查 URL 和网络。"
@@ -282,13 +282,15 @@
       },
       "entry_type": "智能体",
       "error": {
-        "no_runtime": "无法连接 Cursor runtime。请先启动它，并检查此表单上的地址。",
+        "no_runtime": "无法连接 AI Workspace Runtime。请先启动它，并检查此表单上的地址。",
         "required": "此字段为必填。",
         "invalid_auth": "提供商拒绝了此 API 密钥。",
         "cannot_connect": "无法连接提供商。请检查 URL 和网络。",
         "model_not_installed": "此模型未在 Ollama 中安装。已安装：{installed}",
         "pick_model": "服务器现已列出其模型。请从列表中选择一个。",
-        "model_rejected": "服务器不允许此密钥使用该模型：{server_message}"
+        "model_rejected": "服务器不允许此密钥使用该模型：{server_message}",
+        "claude_runtime_old": "请将 AI Workspace Runtime 更新到 1.6.0 或更高版本以使用 Claude SDK 智能体。",
+        "claude_plan_token": "这是 Claude.ai 订阅令牌。Claude SDK 智能体需要来自 Claude Console 的 Anthropic API 密钥（sk-ant-api…）。Anthropic 不允许基于 Agent SDK 的应用使用 Claude.ai 订阅登录。"
       },
       "step": {
         "provider": {
@@ -298,14 +300,14 @@
             "api_provider": "提供商"
           },
           "data_description": {
-            "api_provider": "Cursor，或云端或本地模型。"
+            "api_provider": "Cursor、Claude SDK，或云端或本地模型。"
           }
         },
         "provider_cursor": {
           "title": "Cursor",
           "description": "Cursor 地址、API 密钥、模型和回复速度。",
           "data": {
-            "runtime_url": "Cursor runtime 地址{runtime_url_mark}",
+            "runtime_url": "Runtime 地址{runtime_url_mark}",
             "runtime_token": "Runtime 密码",
             "cursor_api_key": "Cursor API 密钥",
             "model": "模型",
@@ -315,11 +317,53 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "与 Cursor runtime 上相同的密码。使用带自动配对的附加组件时请留空。",
+            "runtime_token": "与 AI Workspace Runtime 上相同的密码。使用带自动配对的附加组件时请留空。",
             "cursor_api_key": "来自你的 Cursor 账户（Integrations）。编辑时留空可保留已保存的密钥。 [获取 API 密钥]({api_key_url})",
             "model": "从列表中选择或输入模型名称。留空则使用 Composer。",
             "effort": "允许多长的思考时间。Composer 默认使用快速。",
             "allow_internet": "默认关闭。开启后，此智能体可在管理员对话中使用 Cursor 的网页搜索、网页抓取和 Shell。关闭会移除这三项，因此 curl 或脚本也无法访问网络。普通用户的对话和语音卫星永远不会获得这些工具。",
+            "assist": "同时在 Home Assistant Assist（语音）下列出此助手。关闭则仅留在 AI Workspace 聊天中，并移除它在 Assist 中添加的内容。"
+          },
+          "sections": {
+            "model_list": {
+              "name": "模型列表",
+              "data": {
+                "models": "模型"
+              },
+              "data_description": {
+                "models": "可选。为此处和聊天中的模型选择指定你自己的模型，而不是提供商的完整列表。以逗号、分号或换行分隔名称，例如 gpt-5.5, grok-4.7。留空则显示提供商的列表。"
+              }
+            },
+            "advanced": {
+              "name": "高级",
+              "data": {
+                "save_tokens": "节省令牌"
+              },
+              "data_description": {
+                "save_tokens": "每条消息发送更少内容：更短的提示词、更少的聊天记录和更短的回复。更便宜，但关于你家的回答可能不够详尽。"
+              }
+            }
+          }
+        },
+        "provider_claude": {
+          "title": "Claude SDK",
+          "description": "运行在 AI Workspace Runtime（与 Cursor 同一个应用）上的 Claude Code 智能体。需要 Anthropic API 密钥。",
+          "data": {
+            "runtime_url": "Runtime 地址{runtime_url_mark}",
+            "runtime_token": "Runtime 密码",
+            "claude_api_key": "Anthropic API 密钥",
+            "model": "模型",
+            "effort": "推理强度",
+            "allow_internet": "允许访问互联网",
+            "assist": "添加到 Assist"
+          },
+          "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "与 AI Workspace Runtime 上相同的密码。使用带自动配对的附加组件时请留空。",
+            "claude_api_key": "来自 Claude Console 的 API 密钥（sk-ant-api…）。留空则使用 AI Workspace Runtime 上的密钥；编辑时留空可保留已保存的密钥。Claude.ai 订阅令牌无法使用。 [获取 API 密钥]({api_key_url})",
+            "model": "从列表中选择或输入 Anthropic 模型 ID。留空则使用 Runtime 的 Claude 模型（未设置时为 Claude Sonnet）。",
+            "effort": "允许多长的思考时间。默认由 Claude 决定。",
+            "allow_internet": "默认关闭。开启后，此智能体可在管理员对话中使用网页搜索、网页抓取和 Shell。关闭会移除这三项，因此 curl 或脚本也无法访问网络。普通用户的对话和语音卫星永远不会获得这些工具。",
             "assist": "同时在 Home Assistant Assist（语音）下列出此助手。关闭则仅留在 AI Workspace 聊天中，并移除它在 Assist 中添加的内容。"
           },
           "sections": {

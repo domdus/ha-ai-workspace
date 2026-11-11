@@ -64,6 +64,7 @@ from .const import (
     MCP_CUSTOM,
     MCP_HA,
     MCP_KINDS,
+    MODE_CLAUDE,
     MODE_CURSOR,
     STT_BROWSER,
     SUBENTRY_AGENT,
@@ -587,7 +588,11 @@ class AiWorkspaceOptionsFlow(config_entries.OptionsFlow):
     async def async_step_init(self, user_input=None):
         current = self._current()
         if CONF_PROMPT_CACHE not in current:
-            agents = [agent for agent in entry_agents(self.config_entry) if agent.mode != MODE_CURSOR]
+            agents = [
+                agent
+                for agent in entry_agents(self.config_entry)
+                if agent.mode not in {MODE_CURSOR, MODE_CLAUDE}
+            ]
             if agents and all(not agent.prompt_cache for agent in agents):
                 current[CONF_PROMPT_CACHE] = False
         if user_input is not None:

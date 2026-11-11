@@ -103,7 +103,7 @@
       }
     },
     "error": {
-      "no_runtime": "Běhové prostředí Cursor není dostupné. Spusťte ho a zkontrolujte adresu v tomto formuláři.",
+      "no_runtime": "AI Workspace Runtime není dostupné. Spusťte ho a zkontrolujte adresu v tomto formuláři.",
       "required": "Toto pole je povinné.",
       "invalid_auth": "Poskytovatel tento klíč API odmítl.",
       "cannot_connect": "Poskytovatel není dostupný. Zkontrolujte URL a síť."
@@ -216,7 +216,7 @@
       }
     },
     "error": {
-      "no_runtime": "Běhové prostředí Cursor není dostupné. Spusťte ho a zkontrolujte adresu v tomto formuláři.",
+      "no_runtime": "AI Workspace Runtime není dostupné. Spusťte ho a zkontrolujte adresu v tomto formuláři.",
       "required": "Toto pole je povinné.",
       "invalid_auth": "Poskytovatel tento klíč API odmítl.",
       "cannot_connect": "Poskytovatel není dostupný. Zkontrolujte URL a síť."
@@ -282,13 +282,15 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Běhové prostředí Cursor není dostupné. Spusťte ho a zkontrolujte adresu v tomto formuláři.",
+        "no_runtime": "AI Workspace Runtime není dostupné. Spusťte ho a zkontrolujte adresu v tomto formuláři.",
         "required": "Toto pole je povinné.",
         "invalid_auth": "Poskytovatel tento klíč API odmítl.",
         "cannot_connect": "Poskytovatel není dostupný. Zkontrolujte URL a síť.",
         "model_not_installed": "Tento model není v Ollamě nainstalovaný. Nainstalované: {installed}",
         "pick_model": "Server nyní vypisuje své modely. Vyberte jeden ze seznamu.",
-        "model_rejected": "Server nepovoluje tento model pro tento klíč: {server_message}"
+        "model_rejected": "Server nepovoluje tento model pro tento klíč: {server_message}",
+        "claude_runtime_old": "Aktualizujte AI Workspace Runtime na 1.6.0 nebo novější pro agenty Claude SDK.",
+        "claude_plan_token": "Toto je token předplatného Claude.ai. Agenti Claude SDK potřebují klíč API Anthropic (sk-ant-api…) z Claude Console. Anthropic nedovoluje aplikacím postaveným na Agent SDK přihlašovat se předplatným Claude.ai."
       },
       "step": {
         "provider": {
@@ -298,14 +300,14 @@
             "api_provider": "Poskytovatel"
           },
           "data_description": {
-            "api_provider": "Cursor, nebo cloudový či místní model."
+            "api_provider": "Cursor, Claude SDK, nebo cloudový či místní model."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
           "description": "Adresa Cursor, klíč API, model a rychlost odpovědi.",
           "data": {
-            "runtime_url": "Adresa běhového prostředí Cursor{runtime_url_mark}",
+            "runtime_url": "Adresa běhového prostředí{runtime_url_mark}",
             "runtime_token": "Heslo runtime",
             "cursor_api_key": "Klíč API Cursor",
             "model": "Model",
@@ -315,11 +317,53 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Stejné heslo jako u vašeho běhového prostředí Cursor. Nechte prázdné u doplňku s automatickým spárováním.",
+            "runtime_token": "Stejné heslo jako u AI Workspace Runtime. Nechte prázdné u doplňku s automatickým spárováním.",
             "cursor_api_key": "Z účtu Cursor (Integrations). Při úpravě nechte prázdné, aby se zachoval uložený klíč. [Získat API klíč]({api_key_url})",
             "model": "Vyberte ze seznamu nebo zadejte název modelu. Prázdné použije Composer.",
             "effort": "Kolik času na přemýšlení povolit. Composer ve výchozím stavu použije Rychlé.",
             "allow_internet": "Ve výchozím stavu vypnuto. Zapnuto umožní tomuto agentovi v chatech správce používat webové vyhledávání, stahování stránek a shell Cursoru. Vypnuto odebere všechny tři, takže ani curl či skripty se na web nedostanou. Chaty běžných uživatelů a hlasových satelitů je nikdy nedostanou.",
+            "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist."
+          },
+          "sections": {
+            "model_list": {
+              "name": "Seznam modelů",
+              "data": {
+                "models": "Modely"
+              },
+              "data_description": {
+                "models": "Volitelné. Vlastní výběr modelů pro nabídku zde i v chatu místo úplného seznamu poskytovatele. Názvy oddělené čárkami, středníky nebo novými řádky, např. gpt-5.5, grok-4.7. Prázdné zobrazí seznam poskytovatele."
+              }
+            },
+            "advanced": {
+              "name": "Pokročilé",
+              "data": {
+                "save_tokens": "Šetřit tokeny"
+              },
+              "data_description": {
+                "save_tokens": "S každou zprávou posílá méně: kratší prompt, méně historie chatu a kratší odpovědi. Levnější, ale odpovědi o vaší domácnosti mohou být méně důkladné."
+              }
+            }
+          }
+        },
+        "provider_claude": {
+          "title": "Claude SDK",
+          "description": "Agent Claude Code v AI Workspace Runtime, stejné aplikaci jako Cursor. Potřebuje klíč API Anthropic.",
+          "data": {
+            "runtime_url": "Adresa běhového prostředí{runtime_url_mark}",
+            "runtime_token": "Heslo runtime",
+            "claude_api_key": "Klíč API Anthropic",
+            "model": "Model",
+            "effort": "Úsilí",
+            "allow_internet": "Povolit internet",
+            "assist": "Přidat do Assist"
+          },
+          "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Stejné heslo jako u AI Workspace Runtime. Nechte prázdné u doplňku s automatickým spárováním.",
+            "claude_api_key": "Klíč API (sk-ant-api…) z Claude Console. Nechte prázdné, chcete-li použít klíč z AI Workspace Runtime, nebo při úpravě, aby se zachoval uložený klíč. Tokeny předplatného Claude.ai nefungují. [Získat API klíč]({api_key_url})",
+            "model": "Vyberte ze seznamu nebo zadejte ID modelu Anthropic. Prázdné použije model Claude z běhového prostředí (bez nastavení Claude Sonnet).",
+            "effort": "Kolik času na přemýšlení povolit. Výchozí nechá rozhodnout Claude.",
+            "allow_internet": "Ve výchozím stavu vypnuto. Zapnuto umožní tomuto agentovi v chatech správce používat webové vyhledávání, stahování stránek a shell. Vypnuto odebere všechny tři, takže ani curl či skripty se na web nedostanou. Chaty běžných uživatelů a hlasových satelitů je nikdy nedostanou.",
             "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist."
           },
           "sections": {

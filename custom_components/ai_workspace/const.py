@@ -111,6 +111,7 @@ _API_DEFAULT_MODEL = {
 # OpenRouter, Azure, and custom OpenAI-compatible servers stay free-text.
 _API_MODEL_CHOICES = {
     "cursor": ["composer-2.5"],
+    "claude": ["claude-sonnet-5-5", "claude-opus-5-5", "claude-haiku-5-5"],
     API_OPENAI: ["gpt-5", "gpt-6-astra", "gpt-6.1-sol", "gpt-5-mini", "gpt-4.1"],
     API_ANTHROPIC: ["claude-sonnet-5-5", "claude-opus-5-5", "claude-haiku-5-5", "claude-sonnet-4-5"],
     API_GEMINI: ["gemini-3.8-flash", "gemini-2.5-pro", "gemini-2.5-flash"],
@@ -205,6 +206,8 @@ BORROW_DOMAINS = {
 def default_api_model(kind: str) -> str:
     if kind == "cursor":
         return DEFAULT_MODEL
+    if kind == MODE_CLAUDE:
+        return DEFAULT_ANTHROPIC_MODEL
     return _API_DEFAULT_MODEL.get(kind, DEFAULT_API_MODEL)
 
 
@@ -221,7 +224,8 @@ _CATALOG = _load_catalog()
 
 
 def model_catalog(kind: str) -> list[str]:
-    return list(_CATALOG.get(kind, ()))
+    # Claude SDK agents run Anthropic's own models through Claude Code.
+    return list(_CATALOG.get(API_ANTHROPIC if kind == "claude" else kind, ()))
 
 
 def api_model_picks(kind: str) -> list[str]:
@@ -247,6 +251,7 @@ CONF_MCP_KIND = "mcp_kind"
 CONF_MCP_TOKEN = "mcp_token"
 CONF_MCP_EXTRA = "mcp_extra"
 CONF_CURSOR_API_KEY = "cursor_api_key"
+CONF_CLAUDE_API_KEY = "claude_api_key"
 CONF_MODEL = "model"
 # Model ids typed or pasted for servers that do not list their own (OpenAI-compatible, Azure).
 CONF_MODELS = "models"
@@ -754,6 +759,7 @@ CONF_API_KEY = "api_key"
 CONF_API_BASE = "api_base"
 CONF_SYSTEM_PROMPT = "system_prompt"
 MODE_CURSOR = "cursor"
+MODE_CLAUDE = "claude"
 MODE_API = "api"
 API_KEY_URLS = {
     API_OPENAI: "https://platform.openai.com/api-keys",
@@ -765,6 +771,7 @@ API_KEY_URLS = {
     API_OPENROUTER: "https://openrouter.ai/keys",
     API_AZURE: "https://oai.azure.com/",
     MODE_CURSOR: "https://cursor.com/dashboard/integrations",
+    MODE_CLAUDE: "https://console.anthropic.com/settings/keys",
 }
 
 
@@ -1214,6 +1221,8 @@ def format_ui_page(page: dict[str, object] | None) -> str:
 COMPOSE_RUNTIME_URL = "http://ai-workspace:8090"
 COMPOSE_RUNTIME_URLS = (
     "http://ai-workspace:8090",
+    "http://ai-workspace-runtime:8090",
+    # Compose files from before 1.6.0 named the service cursor-sdk.
     "http://cursor-sdk:8090",
 )
 HOST_RUNTIME_URL = "http://127.0.0.1:8090"

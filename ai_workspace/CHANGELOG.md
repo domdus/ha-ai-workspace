@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.6.0b1
+
+**Claude SDK agents on the AI Workspace Runtime.** Add an agent of the new kind **Claude SDK** to chat with Claude Code's agent in Home Assistant, on the same runtime as Cursor. It is a separate kind from the cloud agent **Claude (Anthropic)**, which is unchanged. See [Claude SDK agents](../docs/claude-runtime.md).
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.6.0b1`) together with this release.** Claude SDK agents need it; Cursor agents keep working on 1.5.4, with the usual update hint.
+- **It needs an Anthropic API key** (`sk-ant-api…`) from the [Claude Console](https://console.anthropic.com/settings/keys), on the agent or once on the runtime. Claude.ai plan tokens (Pro, Max, `claude setup-token`) are refused: Anthropic does not allow apps built on the Agent SDK to sign in with Claude.ai plans.
+- Tools follow the Cursor rules: MCP only for normal users and voice satellites, workspace files in admin chats, and web search, page fetch, and the shell only with **Allow internet**. Claude Code settings, `CLAUDE.md`, skills, and hooks on the runtime's disk are never loaded.
+- Images in the chat, Effort, and token use and cost work as on Cursor agents. Follow-up messages continue the same Claude session.
+
+**Runtime**
+- New `claude-agent-sdk` provider. `GET /api/health` reports `"claude"`.
+- New App options **Anthropic API key** and **Claude model** (`ANTHROPIC_API_KEY`, `CLAUDE_MODEL` on Docker).
+- The App is now named **AI Workspace Runtime** everywhere. The Compose service and container are called `ai-workspace-runtime`; Home Assistant still finds a container named `cursor-sdk`.
+
+**Integration**
+- Agent kind **Claude SDK** in the agent form and in YAML (`provider: claude`, `claude_api_key`). Saving checks the key with Anthropic.
+- Runtime messages say "AI Workspace Runtime" instead of "Cursor Runtime".
+
 ## 1.5.4
 
 Everything from 1.5.4b1 to 1.5.4b3. Nothing needs to be changed in your setup.

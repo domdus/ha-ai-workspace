@@ -103,7 +103,7 @@
       }
     },
     "error": {
-      "no_runtime": "Impossible de joindre le runtime Cursor. Démarrez-le et vérifiez l'adresse sur ce formulaire.",
+      "no_runtime": "Impossible de joindre l'AI Workspace Runtime. Démarrez-le et vérifiez l'adresse sur ce formulaire.",
       "required": "Ce champ est obligatoire.",
       "invalid_auth": "Le fournisseur a refusé cette clé API.",
       "cannot_connect": "Impossible de joindre le fournisseur. Vérifiez l'URL et le réseau."
@@ -216,7 +216,7 @@
       }
     },
     "error": {
-      "no_runtime": "Impossible de joindre le runtime Cursor. Démarrez-le et vérifiez l'adresse sur ce formulaire.",
+      "no_runtime": "Impossible de joindre l'AI Workspace Runtime. Démarrez-le et vérifiez l'adresse sur ce formulaire.",
       "required": "Ce champ est obligatoire.",
       "invalid_auth": "Le fournisseur a refusé cette clé API.",
       "cannot_connect": "Impossible de joindre le fournisseur. Vérifiez l'URL et le réseau."
@@ -282,13 +282,15 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Impossible de joindre le runtime Cursor. Démarrez-le et vérifiez l'adresse sur ce formulaire.",
+        "no_runtime": "Impossible de joindre l'AI Workspace Runtime. Démarrez-le et vérifiez l'adresse sur ce formulaire.",
         "required": "Ce champ est obligatoire.",
         "invalid_auth": "Le fournisseur a refusé cette clé API.",
         "cannot_connect": "Impossible de joindre le fournisseur. Vérifiez l'URL et le réseau.",
         "model_not_installed": "Ce modèle n’est pas installé dans Ollama. Installés : {installed}",
         "pick_model": "Le serveur liste maintenant ses modèles. Choisissez-en un dans la liste.",
-        "model_rejected": "Le serveur n'autorise pas ce modèle pour cette clé : {server_message}"
+        "model_rejected": "Le serveur n'autorise pas ce modèle pour cette clé : {server_message}",
+        "claude_runtime_old": "Mettez à jour l'AI Workspace Runtime en 1.6.0 ou plus récent pour les agents Claude SDK.",
+        "claude_plan_token": "Ceci est un jeton d'abonnement Claude.ai. Les agents Claude SDK ont besoin d'une clé API Anthropic (sk-ant-api…) de la Claude Console. Anthropic n'autorise pas les applications basées sur l'Agent SDK à se connecter avec un abonnement Claude.ai."
       },
       "step": {
         "provider": {
@@ -298,14 +300,14 @@
             "api_provider": "Fournisseur"
           },
           "data_description": {
-            "api_provider": "Cursor, ou un modèle cloud ou local."
+            "api_provider": "Cursor, Claude SDK, ou un modèle cloud ou local."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
           "description": "Adresse Cursor, clé API, modèle et vitesse de réponse.",
           "data": {
-            "runtime_url": "Adresse du runtime Cursor{runtime_url_mark}",
+            "runtime_url": "Adresse du runtime{runtime_url_mark}",
             "runtime_token": "Mot de passe du runtime",
             "cursor_api_key": "Clé API Cursor",
             "model": "Modèle",
@@ -315,11 +317,53 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Le même mot de passe que sur votre runtime Cursor. Laissez vide avec le module complémentaire et l'appairage automatique.",
+            "runtime_token": "Le même mot de passe que sur l'AI Workspace Runtime. Laissez vide avec le module complémentaire et l'appairage automatique.",
             "cursor_api_key": "Depuis votre compte Cursor (Integrations). Laissez vide à la modification pour garder la clé enregistrée. [Obtenir une clé API]({api_key_url})",
             "model": "Choisissez dans la liste ou saisissez un nom de modèle. Vide utilise Composer.",
             "effort": "Combien de temps de réflexion autoriser. Composer utilise Rapide par défaut.",
             "allow_internet": "Désactivé par défaut. Activé, cet agent peut utiliser la recherche web, la récupération de pages et le shell de Cursor dans les discussions admin. Désactivé retire les trois, donc curl ou des scripts ne peuvent pas non plus accéder au web. Les discussions des utilisateurs normaux et des satellites vocaux ne les ont jamais.",
+            "assist": "Affiche aussi cet assistant sous Home Assistant Assist (voix). Désactivé : chat AI Workspace uniquement, et retire ce qu'il a ajouté à Assist."
+          },
+          "sections": {
+            "model_list": {
+              "name": "Liste des modèles",
+              "data": {
+                "models": "Modèles"
+              },
+              "data_description": {
+                "models": "Facultatif. Votre propre sélection de modèles pour le choix ici et dans le chat, au lieu de la liste complète du fournisseur. Noms séparés par des virgules, des points-virgules ou des retours à la ligne, p. ex. gpt-5.5, grok-4.7. Vide affiche la liste du fournisseur."
+              }
+            },
+            "advanced": {
+              "name": "Avancé",
+              "data": {
+                "save_tokens": "Économiser des jetons"
+              },
+              "data_description": {
+                "save_tokens": "Envoie moins à chaque message : une invite plus courte, moins d’historique et des réponses plus courtes. Moins cher, mais les réponses sur votre maison peuvent être moins complètes."
+              }
+            }
+          }
+        },
+        "provider_claude": {
+          "title": "Claude SDK",
+          "description": "L'agent de Claude Code sur l'AI Workspace Runtime, la même app que Cursor. Nécessite une clé API Anthropic.",
+          "data": {
+            "runtime_url": "Adresse du runtime{runtime_url_mark}",
+            "runtime_token": "Mot de passe du runtime",
+            "claude_api_key": "Clé API Anthropic",
+            "model": "Modèle",
+            "effort": "Effort",
+            "allow_internet": "Autoriser Internet",
+            "assist": "Ajouter à Assist"
+          },
+          "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Le même mot de passe que sur l'AI Workspace Runtime. Laissez vide avec le module complémentaire et l'appairage automatique.",
+            "claude_api_key": "Une clé API (sk-ant-api…) de la Claude Console. Laissez vide pour utiliser la clé de l'AI Workspace Runtime, ou à la modification pour garder la clé enregistrée. Les jetons d'abonnement Claude.ai ne fonctionnent pas. [Obtenir une clé API]({api_key_url})",
+            "model": "Choisissez dans la liste ou saisissez un identifiant de modèle Anthropic. Vide utilise le modèle Claude du runtime (Claude Sonnet par défaut).",
+            "effort": "Combien de temps de réflexion autoriser. Par défaut, Claude décide.",
+            "allow_internet": "Désactivé par défaut. Activé, cet agent peut utiliser la recherche web, la récupération de pages et le shell dans les discussions admin. Désactivé retire les trois, donc curl ou des scripts ne peuvent pas non plus accéder au web. Les discussions des utilisateurs normaux et des satellites vocaux ne les ont jamais.",
             "assist": "Affiche aussi cet assistant sous Home Assistant Assist (voix). Désactivé : chat AI Workspace uniquement, et retire ce qu'il a ajouté à Assist."
           },
           "sections": {

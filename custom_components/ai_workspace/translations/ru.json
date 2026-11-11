@@ -103,7 +103,7 @@
       }
     },
     "error": {
-      "no_runtime": "Не удаётся связаться с runtime Cursor. Запустите его и проверьте адрес в этой форме.",
+      "no_runtime": "Не удаётся связаться с AI Workspace Runtime. Запустите его и проверьте адрес в этой форме.",
       "required": "Это поле обязательно.",
       "invalid_auth": "Поставщик отклонил этот ключ API.",
       "cannot_connect": "Не удалось связаться с поставщиком. Проверьте URL и сеть."
@@ -216,7 +216,7 @@
       }
     },
     "error": {
-      "no_runtime": "Не удаётся связаться с runtime Cursor. Запустите его и проверьте адрес в этой форме.",
+      "no_runtime": "Не удаётся связаться с AI Workspace Runtime. Запустите его и проверьте адрес в этой форме.",
       "required": "Это поле обязательно.",
       "invalid_auth": "Поставщик отклонил этот ключ API.",
       "cannot_connect": "Не удалось связаться с поставщиком. Проверьте URL и сеть."
@@ -282,13 +282,15 @@
       },
       "entry_type": "Агент",
       "error": {
-        "no_runtime": "Не удаётся связаться с runtime Cursor. Запустите его и проверьте адрес в этой форме.",
+        "no_runtime": "Не удаётся связаться с AI Workspace Runtime. Запустите его и проверьте адрес в этой форме.",
         "required": "Это поле обязательно.",
         "invalid_auth": "Поставщик отклонил этот ключ API.",
         "cannot_connect": "Не удалось связаться с поставщиком. Проверьте URL и сеть.",
         "model_not_installed": "Эта модель не установлена в Ollama. Установлены: {installed}",
         "pick_model": "Сервер теперь показывает свои модели. Выберите одну из списка.",
-        "model_rejected": "Сервер не разрешает эту модель для этого ключа: {server_message}"
+        "model_rejected": "Сервер не разрешает эту модель для этого ключа: {server_message}",
+        "claude_runtime_old": "Обновите AI Workspace Runtime до 1.6.0 или новее для агентов Claude SDK.",
+        "claude_plan_token": "Это токен подписки Claude.ai. Агентам Claude SDK нужен API-ключ Anthropic (sk-ant-api…) из Claude Console. Anthropic не разрешает приложениям на базе Agent SDK входить через подписку Claude.ai."
       },
       "step": {
         "provider": {
@@ -298,14 +300,14 @@
             "api_provider": "Поставщик"
           },
           "data_description": {
-            "api_provider": "Cursor или облачная либо локальная модель."
+            "api_provider": "Cursor, Claude SDK или облачная либо локальная модель."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
           "description": "Адрес Cursor, ключ API, модель и скорость ответа.",
           "data": {
-            "runtime_url": "Адрес runtime Cursor{runtime_url_mark}",
+            "runtime_url": "Адрес runtime{runtime_url_mark}",
             "runtime_token": "Пароль runtime",
             "cursor_api_key": "Ключ API Cursor",
             "model": "Модель",
@@ -315,11 +317,53 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Тот же пароль, что и на вашем runtime Cursor. Оставьте пустым при использовании надстройки с автоматическим сопряжением.",
+            "runtime_token": "Тот же пароль, что и на AI Workspace Runtime. Оставьте пустым при использовании надстройки с автоматическим сопряжением.",
             "cursor_api_key": "Из учётной записи Cursor (Integrations). При редактировании оставьте пустым, чтобы сохранить сохранённый ключ. [Получить API-ключ]({api_key_url})",
             "model": "Выберите из списка или введите имя модели. Пусто использует Composer.",
             "effort": "Сколько времени на размышление разрешить. Composer по умолчанию использует Быстро.",
             "allow_internet": "По умолчанию выключено. Включено позволяет этому агенту в чатах администратора использовать веб-поиск, загрузку страниц и оболочку Cursor. Выключено убирает все три, так что curl или скрипты тоже не выйдут в интернет. Чаты обычных пользователей и голосовых спутников их никогда не получают.",
+            "assist": "Также показывает этого помощника в Home Assistant Assist (голос). Выкл: только чат AI Workspace; удаляет то, что он добавил в Assist."
+          },
+          "sections": {
+            "model_list": {
+              "name": "Список моделей",
+              "data": {
+                "models": "Модели"
+              },
+              "data_description": {
+                "models": "Необязательно. Ваш собственный набор моделей для выбора здесь и в чате вместо полного списка провайдера. Названия через запятую, точку с запятой или с новой строки, например gpt-5.5, grok-4.7. Пусто — показывается список провайдера."
+              }
+            },
+            "advanced": {
+              "name": "Дополнительно",
+              "data": {
+                "save_tokens": "Экономить токены"
+              },
+              "data_description": {
+                "save_tokens": "С каждым сообщением отправляется меньше: короче промпт, меньше истории чата и короче ответы. Дешевле, но ответы о вашем доме могут быть менее подробными."
+              }
+            }
+          }
+        },
+        "provider_claude": {
+          "title": "Claude SDK",
+          "description": "Агент Claude Code на AI Workspace Runtime — том же приложении, что и Cursor. Нужен API-ключ Anthropic.",
+          "data": {
+            "runtime_url": "Адрес runtime{runtime_url_mark}",
+            "runtime_token": "Пароль runtime",
+            "claude_api_key": "API-ключ Anthropic",
+            "model": "Модель",
+            "effort": "Усилие",
+            "allow_internet": "Разрешить интернет",
+            "assist": "Добавить в Assist"
+          },
+          "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Тот же пароль, что и на AI Workspace Runtime. Оставьте пустым при использовании надстройки с автоматическим сопряжением.",
+            "claude_api_key": "API-ключ (sk-ant-api…) из Claude Console. Оставьте пустым, чтобы использовать ключ AI Workspace Runtime, или при редактировании, чтобы сохранить сохранённый ключ. Токены подписки Claude.ai не работают. [Получить API-ключ]({api_key_url})",
+            "model": "Выберите из списка или введите id модели Anthropic. Пусто — модель Claude из runtime (по умолчанию Claude Sonnet).",
+            "effort": "Сколько времени на размышление разрешить. По умолчанию решает Claude.",
+            "allow_internet": "По умолчанию выключено. Включено позволяет этому агенту в чатах администратора использовать веб-поиск, загрузку страниц и оболочку. Выключено убирает все три, так что curl или скрипты тоже не выйдут в интернет. Чаты обычных пользователей и голосовых спутников их никогда не получают.",
             "assist": "Также показывает этого помощника в Home Assistant Assist (голос). Выкл: только чат AI Workspace; удаляет то, что он добавил в Assist."
           },
           "sections": {

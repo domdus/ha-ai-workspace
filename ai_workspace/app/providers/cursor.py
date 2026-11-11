@@ -856,16 +856,20 @@ def _public_error(exc: Exception, api_key: str) -> str:
 def build_providers(settings: Settings, runtime: CursorRuntime) -> dict:
     from app.providers.unavailable import UnavailableProvider
 
+    import importlib.util
+
+    if importlib.util.find_spec("claude_agent_sdk") is not None:
+        from app.providers.claude import ClaudeProvider
+
+        claude = ClaudeProvider(settings, runtime)
+    else:
+        from app.providers.claude import NOT_INSTALLED
+
+        claude = UnavailableProvider(ProviderInfo("claude", "Claude", False, NOT_INSTALLED))
+
     return {
         "cursor": CursorProvider(settings, runtime),
-        "claude": UnavailableProvider(
-            ProviderInfo(
-                "claude",
-                "Claude",
-                False,
-                "Claude uses the Claude Agent SDK in a later adapter. The chat shell is the same.",
-            )
-        ),
+        "claude": claude,
         "openai": UnavailableProvider(
             ProviderInfo(
                 "openai",

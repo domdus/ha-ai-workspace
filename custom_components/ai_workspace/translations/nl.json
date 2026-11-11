@@ -103,7 +103,7 @@
       }
     },
     "error": {
-      "no_runtime": "De Cursor-runtime is niet bereikbaar. Start hem en controleer het adres op dit formulier.",
+      "no_runtime": "De AI Workspace Runtime is niet bereikbaar. Start hem en controleer het adres op dit formulier.",
       "required": "Dit veld is verplicht.",
       "invalid_auth": "De provider heeft deze API-sleutel geweigerd.",
       "cannot_connect": "De provider is niet bereikbaar. Controleer de URL en het netwerk."
@@ -216,7 +216,7 @@
       }
     },
     "error": {
-      "no_runtime": "De Cursor-runtime is niet bereikbaar. Start hem en controleer het adres op dit formulier.",
+      "no_runtime": "De AI Workspace Runtime is niet bereikbaar. Start hem en controleer het adres op dit formulier.",
       "required": "Dit veld is verplicht.",
       "invalid_auth": "De provider heeft deze API-sleutel geweigerd.",
       "cannot_connect": "De provider is niet bereikbaar. Controleer de URL en het netwerk."
@@ -282,13 +282,15 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "De Cursor-runtime is niet bereikbaar. Start hem en controleer het adres op dit formulier.",
+        "no_runtime": "De AI Workspace Runtime is niet bereikbaar. Start hem en controleer het adres op dit formulier.",
         "required": "Dit veld is verplicht.",
         "invalid_auth": "De provider heeft deze API-sleutel geweigerd.",
         "cannot_connect": "De provider is niet bereikbaar. Controleer de URL en het netwerk.",
         "model_not_installed": "Dit model is niet geïnstalleerd in Ollama. Geïnstalleerd: {installed}",
         "pick_model": "De server toont nu zijn modellen. Kies er een uit de lijst.",
-        "model_rejected": "De server staat dit model niet toe voor deze sleutel: {server_message}"
+        "model_rejected": "De server staat dit model niet toe voor deze sleutel: {server_message}",
+        "claude_runtime_old": "Werk de AI Workspace Runtime bij naar 1.6.0 of nieuwer voor Claude SDK-agents.",
+        "claude_plan_token": "Dit is een Claude.ai-abonnementstoken. Claude SDK-agents hebben een Anthropic-API-sleutel (sk-ant-api…) uit de Claude Console nodig. Anthropic staat apps op basis van de Agent SDK niet toe om met een Claude.ai-abonnement in te loggen."
       },
       "step": {
         "provider": {
@@ -298,14 +300,14 @@
             "api_provider": "Provider"
           },
           "data_description": {
-            "api_provider": "Cursor, of een cloud- of lokaal model."
+            "api_provider": "Cursor, Claude SDK, of een cloud- of lokaal model."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
           "description": "Cursor-adres, API-sleutel, model en antwoordsnelheid.",
           "data": {
-            "runtime_url": "Cursor-runtime-adres{runtime_url_mark}",
+            "runtime_url": "Runtime-adres{runtime_url_mark}",
             "runtime_token": "Runtime-wachtwoord",
             "cursor_api_key": "Cursor-API-sleutel",
             "model": "Model",
@@ -315,11 +317,53 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Hetzelfde wachtwoord als op je Cursor-runtime. Leeg laten bij de add-on met automatische koppeling.",
+            "runtime_token": "Hetzelfde wachtwoord als op de AI Workspace Runtime. Leeg laten bij de add-on met automatische koppeling.",
             "cursor_api_key": "Uit je Cursor-account (Integrations). Leeg laten bij bewerken om de opgeslagen sleutel te houden. [API-sleutel ophalen]({api_key_url})",
             "model": "Kies uit de lijst of typ een modelnaam. Leeg gebruikt Composer.",
             "effort": "Hoeveel denktijd is toegestaan. Composer gebruikt standaard Snel.",
             "allow_internet": "Standaard uit. Aan laat deze agent in beheerderschats Cursors webzoekfunctie, pagina ophalen en shell gebruiken. Uit verwijdert alle drie, zodat ook curl of scripts het web niet bereiken. Chats van gewone gebruikers en spraaksatellieten krijgen ze nooit.",
+            "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
+          },
+          "sections": {
+            "model_list": {
+              "name": "Modellenlijst",
+              "data": {
+                "models": "Modellen"
+              },
+              "data_description": {
+                "models": "Optioneel. Je eigen modelkeuze voor de keuzelijst hier en in de chat, in plaats van de volledige lijst van de provider. Namen gescheiden door komma's, puntkomma's of nieuwe regels, bijv. gpt-5.5, grok-4.7. Leeg toont de lijst van de provider."
+              }
+            },
+            "advanced": {
+              "name": "Geavanceerd",
+              "data": {
+                "save_tokens": "Tokens besparen"
+              },
+              "data_description": {
+                "save_tokens": "Stuurt minder mee met elk bericht: een kortere prompt, minder chatgeschiedenis en kortere antwoorden. Goedkoper, maar antwoorden over je huis kunnen minder grondig zijn."
+              }
+            }
+          }
+        },
+        "provider_claude": {
+          "title": "Claude SDK",
+          "description": "De agent van Claude Code op de AI Workspace Runtime, dezelfde app als Cursor. Heeft een Anthropic-API-sleutel nodig.",
+          "data": {
+            "runtime_url": "Runtime-adres{runtime_url_mark}",
+            "runtime_token": "Runtime-wachtwoord",
+            "claude_api_key": "Anthropic-API-sleutel",
+            "model": "Model",
+            "effort": "Inzet",
+            "allow_internet": "Internet toestaan",
+            "assist": "Toevoegen aan Assist"
+          },
+          "data_description": {
+            "runtime_url": "{runtime_url_note}",
+            "runtime_token": "Hetzelfde wachtwoord als op de AI Workspace Runtime. Leeg laten bij de add-on met automatische koppeling.",
+            "claude_api_key": "Een API-sleutel (sk-ant-api…) uit de Claude Console. Leeg laten om de sleutel op de AI Workspace Runtime te gebruiken, of bij bewerken om de opgeslagen sleutel te houden. Claude.ai-abonnementstokens werken niet. [API-sleutel ophalen]({api_key_url})",
+            "model": "Kies uit de lijst of typ een Anthropic-model-id. Leeg gebruikt het Claude-model van de runtime (standaard Claude Sonnet).",
+            "effort": "Hoeveel denktijd is toegestaan. Standaard laat Claude beslissen.",
+            "allow_internet": "Standaard uit. Aan laat deze agent in beheerderschats webzoeken, pagina ophalen en de shell gebruiken. Uit verwijdert alle drie, zodat ook curl of scripts het web niet bereiken. Chats van gewone gebruikers en spraaksatellieten krijgen ze nooit.",
             "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
           },
           "sections": {

@@ -94,6 +94,8 @@ class Settings:
     auth_mode: str
     host: str
     port: int
+    anthropic_api_key: str = ""
+    claude_model: str = ""
     runtime_token: str = ""
     hass_url: str = ""
     shorten_mcp_results: bool = True
@@ -126,6 +128,14 @@ class Settings:
         state_dir = Path(os.environ.get("CURSOR_STATE_DIR", str(data_dir / "cursor-state"))).resolve()
         key = os.environ.get("CURSOR_API_KEY", "").strip() or str(options.get("cursor_api_key") or "").strip()
         model = os.environ.get("CURSOR_MODEL", "").strip() or str(options.get("model") or "").strip() or "composer-2.5"
+        anthropic_key = (
+            os.environ.get("ANTHROPIC_API_KEY", "").strip()
+            or str(options.get("anthropic_api_key") or "").strip()
+        )
+        claude_model = (
+            os.environ.get("CLAUDE_MODEL", "").strip()
+            or str(options.get("claude_model") or "").strip()
+        )
         auth_mode = os.environ.get("AUTH_MODE", "").strip()
         if not auth_mode:
             auth_mode = "ingress" if options else "dev"
@@ -145,6 +155,8 @@ class Settings:
             mcp_config_path=mcp_path,
             cursor_api_key=key,
             model=model,
+            anthropic_api_key=anthropic_key,
+            claude_model=claude_model,
             auth_mode=auth_mode,
             host=os.environ.get("HOST", "0.0.0.0"),
             port=int(os.environ.get("PORT", "8090")),

@@ -9,7 +9,7 @@
 AI Workspace is one integration with three kinds of rows:
 
 - **Connection:** one row per MCP server. The first one is created during setup; **Add connection** adds more.
-- **Agent:** one row per Cursor, OpenAI, Claude, Gemini, OpenRouter, Ollama, Azure, or other provider. **Add agent** adds more.
+- **Agent:** one row per Cursor, Claude SDK, OpenAI, Claude, Gemini, OpenRouter, Ollama, Azure, or other provider. **Add agent** adds more.
 - **Usage:** cost and token sensors on a device named **AI Workspace**. Created only if [Add Home Assistant usage sensors](cost.md#home-assistant-sensors) is on.
 
 Each row has its own device. Disable a device to switch off one MCP connection or one agent without deleting it.
@@ -22,7 +22,7 @@ Turning off **All LLM APIs** or unloading **MCP Server** in Home Assistant hides
 
 This is the standing instruction for the assistant. Use it for how you name rooms, which automations to leave alone, how short answers should be, or any other house rule. The assistant does not write in this field.
 
-What you write here replaces the built-in prompt. Leave the field empty to keep the built-in text, which covers helping with this Home Assistant and asking before it changes the house. The same text is used for cloud APIs and the Cursor runtime.
+What you write here replaces the built-in prompt. Leave the field empty to keep the built-in text, which covers helping with this Home Assistant and asking before it changes the house. The same text is used for cloud APIs and the AI Workspace Runtime.
 
 Tappable links to automations, entities, helpers, and devices are always added. You do not need to mention those in the prompt.
 
@@ -101,7 +101,7 @@ On each agent (**Add agent**, or the edit button on an agent row).
 | **Keep the cache for an hour** (under **Advanced**, Claude agents only) | Off by default. Keeps the cached system prompt and tools for an hour instead of 5 minutes. | [When it pays off](cost.md#prompt-cache). Cheaper when your messages are minutes apart; a cache write costs 2× instead of 1.25× input. |
 | **Allow internet** | Off by default. Cloud agents: adds `web_search` and `web_fetch` (public addresses only, never your local network). Cursor: keeps Cursor's web search, page fetch, and shell; off removes all three. Admin chats only. | Look up docs, prices, or release notes from the chat. See [Internet access](privacy.md#internet-access). |
 | **Effort** | Default, Fast, High, or High fast, when the model supports it. If it does not, the request still goes through. | High thinks longer: better on hard questions, but slower and more tokens. Fast is cheaper and quicker. |
-| **Cursor runtime address / Runtime password** | Only on Cursor agents. Leave the address empty when the form shows **Runtime found**. | Pairs Home Assistant with the Cursor runtime. See [Runtime token](../README.md#runtime-token). |
+| **Runtime address / Runtime password** | On Cursor and Claude SDK agents. Leave the address empty when the form shows **Runtime found**. | Pairs Home Assistant with the AI Workspace Runtime. See [Runtime token](../README.md#runtime-token). |
 | **Add to Assist** | On adds a Voice assistants pipeline for this agent. Off removes it again and keeps the agent in AI Workspace only. | Use the same model from Home Assistant’s Assist dialog. |
 | **Add Speech-to-text / Text-to-speech** | OpenAI, OpenRouter, OpenAI-compatible, and Gemini. Grok (xAI) has Text-to-speech only (26 voices, 1× to 1.5×, no model to pick). OpenAI-style is on by default. Gemini uses native generateContent (not Whisper / `/audio/*`). Gemini and Grok stay off on agents you already added. Uses this agent’s key. Off removes that engine. | Listen and speak with the same key. Cursor, Claude, Azure, and Ollama have no speech API of their own. |
 
