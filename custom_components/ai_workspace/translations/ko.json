@@ -360,8 +360,7 @@
             "assist_tts": "텍스트-음성 추가",
             "tts_model": "텍스트-음성 모델",
             "tts_voice": "음성",
-            "tts_speed": "속도",
-            "use_claude_runtime": "Claude SDK(런타임) 사용"
+            "tts_speed": "속도"
           },
           "data_description": {
             "borrow": "해당 통합구성요소에 이미 저장된 키를 사용합니다. 다른 통합구성요소는 그대로 둡니다.",
@@ -375,8 +374,7 @@
             "assist_tts": "이 어시스턴트의 키로 Home Assistant에 텍스트-음성 옵션을 추가합니다. 끄면 추가한 항목을 제거합니다.",
             "tts_model": "기본 음성 모델을 쓰려면 비워 두세요. 제공자가 다른 이름을 안내하면 입력할 수 있습니다.",
             "tts_voice": "Coral이 기본값입니다. 음성은 Assist → 언어에서 설정한 언어에 맞춰 동작합니다.",
-            "tts_speed": "이 음성이 말하는 속도입니다. 1×가 보통입니다. AI Workspace와 Assist에 적용됩니다.",
-            "use_claude_runtime": "채팅이 Anthropic 클라우드 API 대신 AI Workspace Runtime의 Claude Code를 거치며, Claude 구독(Pro, Max) 또는 Anthropic API 키를 사용합니다. 켜거나 끄면 해당하는 필드가 표시됩니다."
+            "tts_speed": "이 음성이 말하는 속도입니다. 1×가 보통입니다. AI Workspace와 Assist에 적용됩니다."
           },
           "sections": {
             "model_list": {
@@ -392,11 +390,13 @@
               "name": "고급",
               "data": {
                 "save_tokens": "토큰 절약",
-                "cache_1h": "캐시를 1시간 유지"
+                "cache_1h": "캐시를 1시간 유지",
+                "use_claude_runtime": "Claude SDK(런타임) 사용 (실험적)"
               },
               "data_description": {
                 "save_tokens": "메시지마다 더 적게 보냅니다: 더 짧은 프롬프트, 더 적은 대화 기록, 더 짧은 답변. 비용은 줄지만 집에 대한 답변이 덜 자세할 수 있습니다.",
-                "cache_1h": "Claude 전용. 시스템 프롬프트와 도구를 5분 대신 1시간 동안 캐시에 둡니다. 캐시 쓰기는 입력 가격의 1.25배 대신 2배, 읽기는 0.1배입니다. 메시지 사이에 5분 넘게 쉬는 일이 많으면 더 저렴하고, 채팅을 드물게 하면 조금 더 비쌉니다."
+                "cache_1h": "Claude 전용. 시스템 프롬프트와 도구를 5분 대신 1시간 동안 캐시에 둡니다. 캐시 쓰기는 입력 가격의 1.25배 대신 2배, 읽기는 0.1배입니다. 메시지 사이에 5분 넘게 쉬는 일이 많으면 더 저렴하고, 채팅을 드물게 하면 조금 더 비쌉니다.",
+                "use_claude_runtime": "채팅이 Anthropic 클라우드 API 대신 AI Workspace Runtime의 Claude Code를 거치며, Claude 구독(Pro, Max) 또는 Anthropic API 키를 사용합니다. 바꾼 뒤 확인을 누르면 해당하는 필드가 표시되며, 아직 저장되지는 않습니다."
               }
             },
             "claude_runtime": {

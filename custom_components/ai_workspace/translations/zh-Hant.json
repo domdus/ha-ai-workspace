@@ -360,8 +360,7 @@
             "assist_tts": "新增文字轉語音",
             "tts_model": "文字轉語音模型",
             "tts_voice": "聲音",
-            "tts_speed": "語速",
-            "use_claude_runtime": "使用 Claude SDK（Runtime）"
+            "tts_speed": "語速"
           },
           "data_description": {
             "borrow": "使用該整合已儲存的金鑰。另一個整合保持不變。",
@@ -375,8 +374,7 @@
             "assist_tts": "使用此助手的金鑰在 Home Assistant 中新增文字轉語音選項。關閉則移除它新增的內容。",
             "tts_model": "留空則使用預設語音模型。若供應商列出其他名稱，可以輸入。",
             "tts_voice": "Coral 為預設聲音。聲音會依 Assist → 語言中設定的語言運作。",
-            "tts_speed": "此聲音的語速。1× 為正常。適用於 AI Workspace 和 Assist。",
-            "use_claude_runtime": "聊天透過 AI Workspace Runtime 上的 Claude Code 進行，而不是 Anthropic 雲端 API，使用你的 Claude 訂閱（Pro、Max）或 Anthropic API 金鑰。開啟或關閉後會顯示對應的欄位。"
+            "tts_speed": "此聲音的語速。1× 為正常。適用於 AI Workspace 和 Assist。"
           },
           "sections": {
             "model_list": {
@@ -392,11 +390,13 @@
               "name": "進階",
               "data": {
                 "save_tokens": "節省權杖",
-                "cache_1h": "快取保留一小時"
+                "cache_1h": "快取保留一小時",
+                "use_claude_runtime": "使用 Claude SDK（Runtime）（實驗性）"
               },
               "data_description": {
                 "save_tokens": "每則訊息傳送更少內容：更短的提示詞、更少的聊天記錄和更短的回覆。更便宜，但關於你家的回答可能不夠詳盡。",
-                "cache_1h": "僅限 Claude。系統提示與工具在快取中保留一小時，而非 5 分鐘。寫入快取的費用是輸入價格的 2 倍（而非 1.25 倍），讀取為 0.1 倍。若你的訊息之間常隔 5 分鐘以上會更便宜；很少聊天時會稍貴一些。"
+                "cache_1h": "僅限 Claude。系統提示與工具在快取中保留一小時，而非 5 分鐘。寫入快取的費用是輸入價格的 2 倍（而非 1.25 倍），讀取為 0.1 倍。若你的訊息之間常隔 5 分鐘以上會更便宜；很少聊天時會稍貴一些。",
+                "use_claude_runtime": "聊天透過 AI Workspace Runtime 上的 Claude Code 進行，而不是 Anthropic 雲端 API，使用你的 Claude 訂閱（Pro、Max）或 Anthropic API 金鑰。變更後按確定：表單會顯示對應的欄位，此時尚未儲存。"
               }
             },
             "claude_runtime": {

@@ -298,8 +298,6 @@ def _fields_schema(
         fields.update(_model_field(API_COMPATIBLE, current, choices=models))
     else:
         runtime = provider == API_ANTHROPIC and uses_claude_runtime(current, provider)
-        if provider == API_ANTHROPIC:
-            fields[vol.Optional(CONF_USE_CLAUDE_RUNTIME, default=runtime)] = cv.boolean
         if not runtime:
             if borrows:
                 options = [{"value": "", "label": "Enter it here"}]
@@ -336,6 +334,9 @@ def _fields_schema(
     advanced = {vol.Optional(CONF_SAVE_TOKENS, default=saves_tokens(current)): cv.boolean}
     if step == "cloud" and provider == API_ANTHROPIC and not uses_claude_runtime(current, provider):
         advanced[vol.Optional(CONF_CACHE_1H, default=caches_an_hour(current))] = cv.boolean
+    if step == "cloud" and provider == API_ANTHROPIC:
+        # Experimental, so it sits under Advanced; OK then shows the fields that belong to it.
+        advanced[vol.Optional(CONF_USE_CLAUDE_RUNTIME, default=uses_claude_runtime(current, provider))] = cv.boolean
     fields[vol.Required(SECTION_ADVANCED)] = section(vol.Schema(advanced), {"collapsed": True})
     return vol.Schema(fields)
 
@@ -354,6 +355,14 @@ def saves_tokens(current: dict) -> bool:
     if isinstance(advanced, dict) and CONF_SAVE_TOKENS in advanced:
         return bool(advanced[CONF_SAVE_TOKENS])
     return token_mode_of(current.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF)) in {TOKEN_MODE_MEDIUM, TOKEN_MODE_EXTREME}
+
+
+def runtime_switch(user_input: dict) -> bool:
+    """Use Claude SDK (runtime), from the Advanced section of the submitted form."""
+    advanced = user_input.get(SECTION_ADVANCED)
+    if isinstance(advanced, dict) and CONF_USE_CLAUDE_RUNTIME in advanced:
+        return bool(advanced[CONF_USE_CLAUDE_RUNTIME])
+    return bool(user_input.get(CONF_USE_CLAUDE_RUNTIME))
 
 
 def caches_an_hour(current: dict) -> bool:
@@ -563,7 +572,7 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
         if user_input is not None:
             merged = {**current, **user_input, CONF_API_PROVIDER: provider}
             if provider == API_ANTHROPIC:
-                use_runtime = bool(user_input.get(CONF_USE_CLAUDE_RUNTIME))
+                use_runtime = runtime_switch(user_input)
                 merged[CONF_USE_CLAUDE_RUNTIME] = use_runtime
                 if use_runtime:
                     merged.update(_runtime_section(user_input))
@@ -701,8 +710,8 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             "server_message": getattr(self, "_server_message", "") or "-",
         }
         schema_current = dict(self._current)
-        if user_input and provider == API_ANTHROPIC and CONF_USE_CLAUDE_RUNTIME in user_input:
-            schema_current[CONF_USE_CLAUDE_RUNTIME] = bool(user_input[CONF_USE_CLAUDE_RUNTIME])
+        if user_input and provider == API_ANTHROPIC:
+            schema_current[CONF_USE_CLAUDE_RUNTIME] = runtime_switch(user_input)
         if step == "ollama":
             from .ollama_info import async_ollama_server, ollama_form_note
 

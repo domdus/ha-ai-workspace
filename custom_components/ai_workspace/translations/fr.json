@@ -360,8 +360,7 @@
             "assist_tts": "Ajouter texte vers parole",
             "tts_model": "Modèle texte vers parole",
             "tts_voice": "Voix",
-            "tts_speed": "Vitesse",
-            "use_claude_runtime": "Utiliser Claude SDK (runtime)"
+            "tts_speed": "Vitesse"
           },
           "data_description": {
             "borrow": "Utilise la clé déjà enregistrée par cette intégration. L'autre intégration n'est pas modifiée.",
@@ -375,8 +374,7 @@
             "assist_tts": "Ajoute une option texte vers parole dans Home Assistant avec la clé de cet assistant. Désactivé retire ce qu'il a ajouté.",
             "tts_model": "Laissez vide pour le modèle vocal par défaut. Vous pouvez saisir un autre nom si votre fournisseur en propose.",
             "tts_voice": "Coral est la voix par défaut. Les voix suivent les langues définies sous Assist → Langue.",
-            "tts_speed": "Vitesse de cette voix. 1× est normal. S'applique à AI Workspace et Assist.",
-            "use_claude_runtime": "Les discussions passent par Claude Code sur l'AI Workspace Runtime au lieu de l'API cloud d'Anthropic, avec votre abonnement Claude (Pro, Max) ou une clé API Anthropic. L'activer ou le désactiver affiche les champs correspondants."
+            "tts_speed": "Vitesse de cette voix. 1× est normal. S'applique à AI Workspace et Assist."
           },
           "sections": {
             "model_list": {
@@ -392,11 +390,13 @@
               "name": "Avancé",
               "data": {
                 "save_tokens": "Économiser des jetons",
-                "cache_1h": "Garder le cache une heure"
+                "cache_1h": "Garder le cache une heure",
+                "use_claude_runtime": "Utiliser Claude SDK (runtime) (expérimental)"
               },
               "data_description": {
                 "save_tokens": "Envoie moins à chaque message : une invite plus courte, moins d’historique et des réponses plus courtes. Moins cher, mais les réponses sur votre maison peuvent être moins complètes.",
-                "cache_1h": "Claude uniquement. Garde le prompt système et les outils en cache pendant une heure au lieu de 5 minutes. L’écriture dans le cache coûte 2× le prix d’entrée au lieu de 1,25× ; la lecture coûte 0,1×. Moins cher quand plus de 5 minutes séparent souvent vos messages, un peu plus cher si vous discutez rarement."
+                "cache_1h": "Claude uniquement. Garde le prompt système et les outils en cache pendant une heure au lieu de 5 minutes. L’écriture dans le cache coûte 2× le prix d’entrée au lieu de 1,25× ; la lecture coûte 0,1×. Moins cher quand plus de 5 minutes séparent souvent vos messages, un peu plus cher si vous discutez rarement.",
+                "use_claude_runtime": "Les discussions passent par Claude Code sur l'AI Workspace Runtime au lieu de l'API cloud d'Anthropic, avec votre abonnement Claude (Pro, Max) ou une clé API Anthropic. Appuyez sur OK après l'avoir modifié : le formulaire affiche alors les champs correspondants, rien n'est encore enregistré."
               }
             },
             "claude_runtime": {

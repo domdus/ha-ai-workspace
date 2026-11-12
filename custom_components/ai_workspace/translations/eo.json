@@ -360,8 +360,7 @@
             "assist_tts": "Aldoni tekston-al-parolo",
             "tts_model": "Modelo de teksto-al-parolo",
             "tts_voice": "Voĉo",
-            "tts_speed": "Rapido",
-            "use_claude_runtime": "Uzi Claude SDK (runtime)"
+            "tts_speed": "Rapido"
           },
           "data_description": {
             "borrow": "Uzas la ŝlosilon jam konservitan de tiu integraĵo. La alia integraĵo restas kiel ĝi estas.",
@@ -375,8 +374,7 @@
             "assist_tts": "Aldonas opcion de teksto-al-parolo en Home Assistant per la ŝlosilo de ĉi tiu asistanto. Malŝalte forigas tion, kion ĝi aldonis.",
             "tts_model": "Lasu malplena por la defaŭlta voĉmodelo. Vi povas tajpi alian nomon se via provizanto listigas unu.",
             "tts_voice": "Coral estas la defaŭlto. Voĉoj funkcias por la lingvoj kiujn vi agordis ĉe Assist → Lingvo.",
-            "tts_speed": "Kiel rapide ĉi tiu voĉo parolas. 1× estas normala. Aplikas al AI Workspace kaj Assist.",
-            "use_claude_runtime": "Babiloj iras tra Claude Code ĉe la AI Workspace Runtime anstataŭ la nuba API de Anthropic, kun via Claude-abono (Pro, Max) aŭ Anthropic-API-ŝlosilo. Ŝalti aŭ malŝalti montras la kongruajn kampojn."
+            "tts_speed": "Kiel rapide ĉi tiu voĉo parolas. 1× estas normala. Aplikas al AI Workspace kaj Assist."
           },
           "sections": {
             "model_list": {
@@ -392,11 +390,13 @@
               "name": "Altnivele",
               "data": {
                 "save_tokens": "Ŝpari ĵetonojn",
-                "cache_1h": "Teni la kaŝmemoron unu horon"
+                "cache_1h": "Teni la kaŝmemoron unu horon",
+                "use_claude_runtime": "Uzi Claude SDK (runtime) (eksperimenta)"
               },
               "data_description": {
                 "save_tokens": "Sendas malpli kun ĉiu mesaĝo: pli mallongan instrukcion, malpli da babilhistorio kaj pli mallongajn respondojn. Malpli kosta, sed respondoj pri via hejmo povas esti malpli detalaj.",
-                "cache_1h": "Nur Claude. Tenas la sisteman inviton kaj la ilojn en la kaŝmemoro unu horon anstataŭ 5 minutojn. Skribi en la kaŝmemoron kostas 2× la enigan prezon anstataŭ 1,25×; legi kostas 0,1×. Pli malmultekosta kiam ofte pasas pli ol 5 minutoj inter viaj mesaĝoj, iom pli multekosta se vi malofte babilas."
+                "cache_1h": "Nur Claude. Tenas la sisteman inviton kaj la ilojn en la kaŝmemoro unu horon anstataŭ 5 minutojn. Skribi en la kaŝmemoron kostas 2× la enigan prezon anstataŭ 1,25×; legi kostas 0,1×. Pli malmultekosta kiam ofte pasas pli ol 5 minutoj inter viaj mesaĝoj, iom pli multekosta se vi malofte babilas.",
+                "use_claude_runtime": "Babiloj iras tra Claude Code ĉe la AI Workspace Runtime anstataŭ la nuba API de Anthropic, kun via Claude-abono (Pro, Max) aŭ Anthropic-API-ŝlosilo. Premu OK post la ŝanĝo: la formularo tiam montras la kongruajn kampojn, ankoraŭ nenio estas konservita."
               }
             },
             "claude_runtime": {

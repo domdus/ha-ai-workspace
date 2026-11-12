@@ -360,8 +360,7 @@
             "assist_tts": "Lägg till text till tal",
             "tts_model": "Text-till-tal-modell",
             "tts_voice": "Röst",
-            "tts_speed": "Hastighet",
-            "use_claude_runtime": "Använd Claude SDK (runtime)"
+            "tts_speed": "Hastighet"
           },
           "data_description": {
             "borrow": "Använder nyckeln som redan sparats av den integrationen. Den andra integrationen lämnas oförändrad.",
@@ -375,8 +374,7 @@
             "assist_tts": "Lägger till ett text-till-tal-alternativ i Home Assistant med den här assistentens nyckel. Av tar bort det den lade till.",
             "tts_model": "Lämna tomt för standardröstmodellen. Du kan skriva ett annat namn om din leverantör listar ett.",
             "tts_voice": "Coral är standard. Röster fungerar för de språk du ställer in under Assist → Språk.",
-            "tts_speed": "Hur snabbt den här rösten talar. 1× är normalt. Gäller AI Workspace och Assist.",
-            "use_claude_runtime": "Chattar går via Claude Code på AI Workspace Runtime i stället för Anthropics moln-API, med din Claude-prenumeration (Pro, Max) eller en Anthropic API-nyckel. När du slår på eller av visas de fält som hör till."
+            "tts_speed": "Hur snabbt den här rösten talar. 1× är normalt. Gäller AI Workspace och Assist."
           },
           "sections": {
             "model_list": {
@@ -392,11 +390,13 @@
               "name": "Avancerat",
               "data": {
                 "save_tokens": "Spara tokens",
-                "cache_1h": "Behåll cachen i en timme"
+                "cache_1h": "Behåll cachen i en timme",
+                "use_claude_runtime": "Använd Claude SDK (runtime) (experimentellt)"
               },
               "data_description": {
                 "save_tokens": "Skickar mindre med varje meddelande: en kortare prompt, mindre chatthistorik och kortare svar. Billigare, men svar om ditt hem kan bli mindre grundliga.",
-                "cache_1h": "Endast Claude. Håller systemprompten och verktygen i cachen i en timme i stället för 5 minuter. Att skriva till cachen kostar 2× inmatningspriset i stället för 1,25×; att läsa kostar 0,1×. Billigare när det ofta går mer än 5 minuter mellan dina meddelanden, lite dyrare om du sällan chattar."
+                "cache_1h": "Endast Claude. Håller systemprompten och verktygen i cachen i en timme i stället för 5 minuter. Att skriva till cachen kostar 2× inmatningspriset i stället för 1,25×; att läsa kostar 0,1×. Billigare när det ofta går mer än 5 minuter mellan dina meddelanden, lite dyrare om du sällan chattar.",
+                "use_claude_runtime": "Chattar går via Claude Code på AI Workspace Runtime i stället för Anthropics moln-API, med din Claude-prenumeration (Pro, Max) eller en Anthropic API-nyckel. Tryck på OK efter ändringen: formuläret visar då de fält som hör till, inget sparas ännu."
               }
             },
             "claude_runtime": {

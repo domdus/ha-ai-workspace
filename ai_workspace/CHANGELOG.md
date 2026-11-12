@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.0b6
+
+- **Use Claude SDK (runtime)** on a Claude (Anthropic) agent moved to **Advanced** and is marked **experimental**.
+- Its help text now says what happens: press **OK** after changing it, and the form shows the matching fields without saving yet.
+- The runtime is unchanged from 1.6.0b2.
+
 ## 1.6.0b5
 
 **Saving settings no longer cuts off a running chat reply.**

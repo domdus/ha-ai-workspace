@@ -194,12 +194,19 @@ def _section(schema, name):
     return next(value for key, value in schema.schema.items() if str(key) == name)
 
 
+def _advanced(schema) -> set[str]:
+    return {str(key) for key in _section(schema, "advanced").schema.schema}
+
+
 def test_claude_form_fields() -> None:
     runtime = agent_flow._fields_schema(
         "cloud", {"api_provider": API_ANTHROPIC, CONF_USE_CLAUDE_RUNTIME: True}, [], models=api_model_choices(MODE_CLAUDE)
     )
     names = _names(runtime)
-    assert {CONF_USE_CLAUDE_RUNTIME, agent_flow.SECTION_CLAUDE_RUNTIME, "model", "effort"} <= names
+    assert {agent_flow.SECTION_CLAUDE_RUNTIME, "model", "effort"} <= names
+    # The experimental switch sits under Advanced, never at the top of the form.
+    assert CONF_USE_CLAUDE_RUNTIME not in names
+    assert _advanced(runtime) == {"save_tokens", CONF_USE_CLAUDE_RUNTIME}
     assert "api_key" not in names and "cursor_api_key" not in names
     section = _section(runtime, agent_flow.SECTION_CLAUDE_RUNTIME)
     assert {str(key) for key in section.schema.schema} == {CONF_RUNTIME_URL, "runtime_token", CONF_CLAUDE_API_KEY}
@@ -207,10 +214,11 @@ def test_claude_form_fields() -> None:
     assert section.options.get("collapsed") is False
     cloud = agent_flow._fields_schema("cloud", {"api_provider": API_ANTHROPIC}, [])
     names = _names(cloud)
-    assert {CONF_USE_CLAUDE_RUNTIME, "api_key", "model", "effort"} <= names
+    assert {"api_key", "model", "effort"} <= names
     assert agent_flow.SECTION_CLAUDE_RUNTIME not in names
+    assert _advanced(cloud) == {"save_tokens", "cache_1h", CONF_USE_CLAUDE_RUNTIME}
     # Other cloud providers have no runtime switch.
-    assert CONF_USE_CLAUDE_RUNTIME not in _names(agent_flow._fields_schema("cloud", {"api_provider": "openai"}, []))
+    assert CONF_USE_CLAUDE_RUNTIME not in _advanced(agent_flow._fields_schema("cloud", {"api_provider": "openai"}, []))
 
 
 def test_runtime_modes_skip_cloud_only_settings() -> None:
@@ -292,14 +300,14 @@ def _step(flow, user_input):
     return asyncio.run(flow._async_step_fields("cloud", user_input))
 
 
-def _cloud_input(**extra):
-    return {CONF_USE_CLAUDE_RUNTIME: False, "api_key": "", "model": "", "effort": "default", "advanced": {}, **extra}
+def _cloud_input(runtime=False, **extra):
+    return {"api_key": "", "model": "", "effort": "default", "advanced": {CONF_USE_CLAUDE_RUNTIME: runtime}, **extra}
 
 
 def test_turning_the_switch_on_shows_the_runtime_fields_before_saving(monkeypatch) -> None:
     # The Runtime already has a credential, so a save would succeed: it must still not save yet.
     flow, calls = _form(monkeypatch, health={"cursor": True, "claude": True})
-    result = _step(flow, _cloud_input(**{CONF_USE_CLAUDE_RUNTIME: True}))
+    result = _step(flow, _cloud_input(runtime=True))
     assert result["type"] == "form" and result["errors"] == {}
     assert calls["saved"] == [] and calls["key_checks"] == []
     shown = _names(result["data_schema"])
@@ -308,11 +316,10 @@ def test_turning_the_switch_on_shows_the_runtime_fields_before_saving(monkeypatc
     result = _step(
         flow,
         {
-            CONF_USE_CLAUDE_RUNTIME: True,
             agent_flow.SECTION_CLAUDE_RUNTIME: {CONF_RUNTIME_URL: "", "runtime_token": "", CONF_CLAUDE_API_KEY: "sk-ant-oat01-p"},
             "model": "",
             "effort": "high",
-            "advanced": {},
+            "advanced": {CONF_USE_CLAUDE_RUNTIME: True},
         },
     )
     assert result["type"] == "create_entry" and result["title"] == "Claude"
@@ -329,11 +336,10 @@ def test_turning_the_switch_off_shows_the_api_key_field_without_an_error(monkeyp
     result = _step(
         flow,
         {
-            CONF_USE_CLAUDE_RUNTIME: False,
             agent_flow.SECTION_CLAUDE_RUNTIME: {CONF_RUNTIME_URL: "", "runtime_token": "", CONF_CLAUDE_API_KEY: ""},
             "model": "",
             "effort": "default",
-            "advanced": {},
+            "advanced": {CONF_USE_CLAUDE_RUNTIME: False},
         },
     )
     assert result["type"] == "form" and result["errors"] == {}
@@ -392,8 +398,8 @@ def test_old_claude_sdk_agents_are_migrated_once(monkeypatch) -> None:
 def test_runtime_problems_show_at_the_top_of_the_form(monkeypatch) -> None:
     # Home Assistant draws no errors on fields inside a section, so they must land on "base".
     section = {CONF_RUNTIME_URL: "", "runtime_token": "", CONF_CLAUDE_API_KEY: ""}
-    runtime_input = {CONF_USE_CLAUDE_RUNTIME: True, agent_flow.SECTION_CLAUDE_RUNTIME: section,
-                     "model": "", "effort": "default", "advanced": {}}
+    runtime_input = {agent_flow.SECTION_CLAUDE_RUNTIME: section,
+                     "model": "", "effort": "default", "advanced": {CONF_USE_CLAUDE_RUNTIME: True}}
     for health, code in ((None, "claude_key_required"), ({"cursor": True}, "claude_runtime_old")):
         flow, calls = _form(monkeypatch, health=health)
         flow._current = {"api_provider": API_ANTHROPIC, CONF_USE_CLAUDE_RUNTIME: True}

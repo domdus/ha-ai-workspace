@@ -360,8 +360,7 @@
             "assist_tts": "Aggiungi testo in voce",
             "tts_model": "Modello testo in voce",
             "tts_voice": "Voce",
-            "tts_speed": "Velocità",
-            "use_claude_runtime": "Usa Claude SDK (runtime)"
+            "tts_speed": "Velocità"
           },
           "data_description": {
             "borrow": "Usa la chiave già salvata da quell'integrazione. L'altra integrazione non viene modificata.",
@@ -375,8 +374,7 @@
             "assist_tts": "Aggiunge un'opzione testo in voce in Home Assistant con la chiave di questo assistente. Disattivo rimuove ciò che ha aggiunto.",
             "tts_model": "Lascia vuoto per il modello vocale predefinito. Puoi digitare un altro nome se il fornitore ne elenca uno.",
             "tts_voice": "Coral è il valore predefinito. Le voci seguono le lingue impostate in Assist → Lingua.",
-            "tts_speed": "Quanto velocemente parla questa voce. 1× è il normale. Vale per AI Workspace e Assist.",
-            "use_claude_runtime": "Le chat passano da Claude Code sull'AI Workspace Runtime invece che dall'API cloud di Anthropic, con il tuo abbonamento Claude (Pro, Max) o una chiave API Anthropic. Attivandolo o disattivandolo compaiono i campi corrispondenti."
+            "tts_speed": "Quanto velocemente parla questa voce. 1× è il normale. Vale per AI Workspace e Assist."
           },
           "sections": {
             "model_list": {
@@ -392,11 +390,13 @@
               "name": "Avanzate",
               "data": {
                 "save_tokens": "Risparmia token",
-                "cache_1h": "Mantieni la cache per un’ora"
+                "cache_1h": "Mantieni la cache per un’ora",
+                "use_claude_runtime": "Usa Claude SDK (runtime) (sperimentale)"
               },
               "data_description": {
                 "save_tokens": "Invia meno a ogni messaggio: un prompt più corto, meno cronologia e risposte più brevi. Costa meno, ma le risposte sulla tua casa possono essere meno accurate.",
-                "cache_1h": "Solo Claude. Tiene in cache il prompt di sistema e gli strumenti per un’ora invece di 5 minuti. Scrivere nella cache costa 2× il prezzo di input invece di 1,25×; leggerla costa 0,1×. Più economico quando tra i tuoi messaggi passano spesso più di 5 minuti, un po’ più caro se chatti di rado."
+                "cache_1h": "Solo Claude. Tiene in cache il prompt di sistema e gli strumenti per un’ora invece di 5 minuti. Scrivere nella cache costa 2× il prezzo di input invece di 1,25×; leggerla costa 0,1×. Più economico quando tra i tuoi messaggi passano spesso più di 5 minuti, un po’ più caro se chatti di rado.",
+                "use_claude_runtime": "Le chat passano da Claude Code sull'AI Workspace Runtime invece che dall'API cloud di Anthropic, con il tuo abbonamento Claude (Pro, Max) o una chiave API Anthropic. Premi OK dopo averlo cambiato: il modulo mostra i campi corrispondenti, non viene ancora salvato nulla."
               }
             },
             "claude_runtime": {

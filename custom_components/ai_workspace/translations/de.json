@@ -360,8 +360,7 @@
             "assist_tts": "Text-zu-Sprache anlegen",
             "tts_model": "Text-zu-Sprache-Modell",
             "tts_voice": "Stimme",
-            "tts_speed": "Tempo",
-            "use_claude_runtime": "Claude SDK (Runtime) verwenden"
+            "tts_speed": "Tempo"
           },
           "data_description": {
             "borrow": "Nutzt den Schlüssel, den diese Integration schon gespeichert hat. Die andere Integration bleibt unverändert.",
@@ -375,8 +374,7 @@
             "assist_tts": "Fügt in Home Assistant eine Text-zu-Sprache-Option mit dem Schlüssel dieses Assistenten hinzu. Aus entfernt, was er angelegt hat.",
             "tts_model": "Leer für das Standard-Sprachmodell. Optional einen anderen Namen eingeben.",
             "tts_voice": "Coral ist der Standard. Stimmen passen zu den Sprachen unter Assist → Sprache.",
-            "tts_speed": "Wie schnell diese Stimme spricht. 1× ist normal. Gilt für AI Workspace und Assist.",
-            "use_claude_runtime": "Chats laufen über Claude Code auf der AI-Workspace-Runtime statt über Anthropics Cloud-API, mit deinem Claude-Abo (Pro, Max) oder einem Anthropic-API-Schlüssel. Beim Ein- oder Ausschalten erscheinen die passenden Felder."
+            "tts_speed": "Wie schnell diese Stimme spricht. 1× ist normal. Gilt für AI Workspace und Assist."
           },
           "sections": {
             "model_list": {
@@ -392,11 +390,13 @@
               "name": "Erweitert",
               "data": {
                 "save_tokens": "Tokens sparen",
-                "cache_1h": "Cache eine Stunde behalten"
+                "cache_1h": "Cache eine Stunde behalten",
+                "use_claude_runtime": "Claude SDK (Runtime) verwenden (experimentell)"
               },
               "data_description": {
                 "save_tokens": "Sendet mit jeder Nachricht weniger: einen kürzeren Prompt, weniger Chatverlauf und kürzere Antworten. Günstiger, aber Antworten zu deinem Zuhause können weniger gründlich sein.",
-                "cache_1h": "Nur Claude. Hält Systemprompt und Werkzeuge eine Stunde statt 5 Minuten im Cache. Das Schreiben in den Cache kostet das 2-Fache statt das 1,25-Fache des Eingabepreises, das Lesen das 0,1-Fache. Günstiger, wenn zwischen deinen Nachrichten oft mehr als 5 Minuten liegen; etwas teurer, wenn du selten chattest."
+                "cache_1h": "Nur Claude. Hält Systemprompt und Werkzeuge eine Stunde statt 5 Minuten im Cache. Das Schreiben in den Cache kostet das 2-Fache statt das 1,25-Fache des Eingabepreises, das Lesen das 0,1-Fache. Günstiger, wenn zwischen deinen Nachrichten oft mehr als 5 Minuten liegen; etwas teurer, wenn du selten chattest.",
+                "use_claude_runtime": "Chats laufen über Claude Code auf der AI-Workspace-Runtime statt über Anthropics Cloud-API, mit deinem Claude-Abo (Pro, Max) oder einem Anthropic-API-Schlüssel. Nach dem Umschalten OK drücken: Das Formular zeigt dann die passenden Felder, gespeichert wird noch nichts."
               }
             },
             "claude_runtime": {

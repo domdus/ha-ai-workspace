@@ -72,8 +72,8 @@ def test_one_hour_cache_box_is_only_on_claude_agents() -> None:
         section = next(value for key, value in schema.schema.items() if str(key) == "advanced")
         return {str(key) for key in section.schema.schema}
 
-    assert advanced_keys("anthropic") == {"save_tokens", "cache_1h"}
-    assert advanced_keys("anthropic", runtime=True) == {"save_tokens"}
+    assert advanced_keys("anthropic") == {"save_tokens", "cache_1h", "use_claude_runtime"}
+    assert advanced_keys("anthropic", runtime=True) == {"save_tokens", "use_claude_runtime"}
     assert advanced_keys("openai") == {"save_tokens"}
     assert uses_claude_runtime({"api_provider": "anthropic", "use_claude_runtime": True})
     assert not uses_claude_runtime({"api_provider": "anthropic", "mode": "api"})

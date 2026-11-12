@@ -2,7 +2,7 @@
 
 The **AI Workspace Runtime** (the Home Assistant App, or the Compose service `ai-workspace-runtime`) that runs Cursor also runs **Claude SDK** agents. They use Anthropic's [Claude Agent SDK](https://pypi.org/project/claude-agent-sdk/), which drives the Claude Code agent inside the runtime. Home Assistant talks to it the same way as to Cursor: Runtime address, Runtime password, and MCP through the runtime.
 
-Both are the same **Claude (Anthropic)** agent in Home Assistant. With **Use Claude SDK (runtime)** off, it calls Anthropic's API from inside Home Assistant and needs no runtime. With it on, it is a Claude SDK agent on the runtime.
+Both are the same **Claude (Anthropic)** agent in Home Assistant. With **Use Claude SDK (runtime) (experimental)** under **Advanced** off, it calls Anthropic's API from inside Home Assistant and needs no runtime. With it on, it is a Claude SDK agent on the runtime.
 
 ## What you need
 
@@ -13,7 +13,7 @@ One of two Claude credentials:
 
 Put it in one of two places:
 
-- **On the agent** (Home Assistant → AI Workspace → Add agent → **Claude (Anthropic)** → **Use Claude SDK (runtime)** → **Claude Plan token or Anthropic API key**). Each agent can use its own.
+- **On the agent** (Home Assistant → AI Workspace → Add agent → **Claude (Anthropic)** → **Advanced** → **Use Claude SDK (runtime) (experimental)** → OK → **Claude Plan token or Anthropic API key**). Each agent can use its own.
 - **On the runtime**, for every Claude SDK agent without its own: the App options **Claude Plan token** or **Anthropic API key**, or `CLAUDE_CODE_OAUTH_TOKEN` / `ANTHROPIC_API_KEY` on Docker. When both are set, the Plan token is used.
 
 The credential on the agent wins. The prefix decides how Claude Code signs in, and only that one credential reaches it, so a Plan chat never falls back to API billing or the other way round. Saving the agent form checks an API key with Anthropic; a Plan token is checked on the first chat.
@@ -25,7 +25,7 @@ Anthropic's terms for the Agent SDK say third-party products should use API keys
 ## Home Assistant
 
 1. Add an agent → **Claude (Anthropic)**.
-2. Turn on **Use Claude SDK (runtime)**. The form then shows the **Claude SDK (runtime)** section instead of the API key field.
+2. Open **Advanced**, turn on **Use Claude SDK (runtime) (experimental)**, and press **OK**. Nothing is saved yet: the form comes back with the **Claude SDK (runtime)** section instead of the API key field.
 3. Runtime address and password: the same as for Cursor agents. Leave the address empty when the form says **Runtime found**.
 4. **Claude Plan token or Anthropic API key**: see above.
 5. **Model**: an Anthropic model id such as `claude-sonnet-5-5`. Empty uses the runtime's **Claude model** option, or Claude Sonnet.

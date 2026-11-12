@@ -360,8 +360,7 @@
             "assist_tts": "Add Text-to-speech",
             "tts_model": "Text-to-speech model",
             "tts_voice": "Voice",
-            "tts_speed": "Speed",
-            "use_claude_runtime": "Use Claude SDK (runtime)"
+            "tts_speed": "Speed"
           },
           "data_description": {
             "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
@@ -375,8 +374,7 @@
             "assist_tts": "Adds a Text-to-speech option in Home Assistant using this assistant's key. Off removes what it added.",
             "tts_model": "Leave empty for the default voice model. You can type another name if your provider lists one.",
             "tts_voice": "Coral is the OpenAI default. Kore is the Gemini default. Voices work for the languages you set under Assist → Language.",
-            "tts_speed": "How fast this voice speaks. 1× is normal. Applies to AI Workspace and Assist.",
-            "use_claude_runtime": "Chats go through Claude Code on the AI Workspace Runtime instead of Anthropic's cloud API, with your Claude plan (Pro, Max) or an Anthropic API key. Turning it on or off shows the matching fields."
+            "tts_speed": "How fast this voice speaks. 1× is normal. Applies to AI Workspace and Assist."
           },
           "sections": {
             "model_list": {
@@ -392,11 +390,13 @@
               "name": "Advanced",
               "data": {
                 "save_tokens": "Save tokens",
-                "cache_1h": "Keep the cache for an hour"
+                "cache_1h": "Keep the cache for an hour",
+                "use_claude_runtime": "Use Claude SDK (runtime) (experimental)"
               },
               "data_description": {
                 "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough.",
-                "cache_1h": "Claude only. Keeps the system prompt and tools cached for an hour instead of 5 minutes. Writing the cache costs 2× the input price instead of 1.25×; reading it costs 0.1×. Cheaper when there are breaks of more than 5 minutes between your messages, a little more expensive if you rarely chat."
+                "cache_1h": "Claude only. Keeps the system prompt and tools cached for an hour instead of 5 minutes. Writing the cache costs 2× the input price instead of 1.25×; reading it costs 0.1×. Cheaper when there are breaks of more than 5 minutes between your messages, a little more expensive if you rarely chat.",
+                "use_claude_runtime": "Chats go through Claude Code on the AI Workspace Runtime instead of Anthropic's cloud API, with your Claude plan (Pro, Max) or an Anthropic API key. Press OK after changing it: the form then shows the matching fields, nothing is saved yet."
               }
             },
             "claude_runtime": {

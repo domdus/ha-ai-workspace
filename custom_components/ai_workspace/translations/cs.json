@@ -360,8 +360,7 @@
             "assist_tts": "Přidat převod textu na řeč",
             "tts_model": "Model textu na řeč",
             "tts_voice": "Hlas",
-            "tts_speed": "Rychlost",
-            "use_claude_runtime": "Použít Claude SDK (runtime)"
+            "tts_speed": "Rychlost"
           },
           "data_description": {
             "borrow": "Použije klíč, který už tato integrace uložila. Druhá integrace se nemění.",
@@ -375,8 +374,7 @@
             "assist_tts": "Přidá v Home Assistant možnost textu na řeč s klíčem tohoto asistenta. Vypnuto odstraní to, co přidal.",
             "tts_model": "Nechte prázdné pro výchozí hlasový model. Můžete zadat jiný název, pokud ho poskytovatel uvádí.",
             "tts_voice": "Coral je výchozí. Hlasy fungují pro jazyky nastavené v Assist → Jazyk.",
-            "tts_speed": "Jak rychle tento hlas mluví. 1× je běžné. Platí pro AI Workspace i Assist.",
-            "use_claude_runtime": "Chaty jdou přes Claude Code v AI Workspace Runtime místo cloudového API Anthropic, s vaším předplatným Claude (Pro, Max) nebo klíčem API Anthropic. Zapnutím nebo vypnutím se zobrazí odpovídající pole."
+            "tts_speed": "Jak rychle tento hlas mluví. 1× je běžné. Platí pro AI Workspace i Assist."
           },
           "sections": {
             "model_list": {
@@ -392,11 +390,13 @@
               "name": "Pokročilé",
               "data": {
                 "save_tokens": "Šetřit tokeny",
-                "cache_1h": "Držet mezipaměť hodinu"
+                "cache_1h": "Držet mezipaměť hodinu",
+                "use_claude_runtime": "Použít Claude SDK (runtime) (experimentální)"
               },
               "data_description": {
                 "save_tokens": "S každou zprávou posílá méně: kratší prompt, méně historie chatu a kratší odpovědi. Levnější, ale odpovědi o vaší domácnosti mohou být méně důkladné.",
-                "cache_1h": "Jen Claude. Drží systémový prompt a nástroje v mezipaměti hodinu místo 5 minut. Zápis do mezipaměti stojí 2× cenu vstupu místo 1,25×, čtení 0,1×. Levnější, když mezi zprávami často uplyne víc než 5 minut; o něco dražší, když píšete zřídka."
+                "cache_1h": "Jen Claude. Drží systémový prompt a nástroje v mezipaměti hodinu místo 5 minut. Zápis do mezipaměti stojí 2× cenu vstupu místo 1,25×, čtení 0,1×. Levnější, když mezi zprávami často uplyne víc než 5 minut; o něco dražší, když píšete zřídka.",
+                "use_claude_runtime": "Chaty jdou přes Claude Code v AI Workspace Runtime místo cloudového API Anthropic, s vaším předplatným Claude (Pro, Max) nebo klíčem API Anthropic. Po změně stiskněte OK: formulář pak ukáže odpovídající pole, zatím se nic neuloží."
               }
             },
             "claude_runtime": {

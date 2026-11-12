@@ -360,8 +360,7 @@
             "assist_tts": "Mətndən-nitqə əlavə et",
             "tts_model": "Mətndən-nitqə modeli",
             "tts_voice": "Səs",
-            "tts_speed": "Sürət",
-            "use_claude_runtime": "Claude SDK (runtime) istifadə et"
+            "tts_speed": "Sürət"
           },
           "data_description": {
             "borrow": "Həmin inteqrasiyanın artıq saxladığı açardan istifadə edir. Digər inteqrasiya dəyişməz qalır.",
@@ -375,8 +374,7 @@
             "assist_tts": "Bu köməkçinin açarı ilə Home Assistant-da mətndən-nitqə seçimi əlavə edir. Sönülü əlavə etdiyini silir.",
             "tts_model": "Defolt səs modeli üçün boş buraxın. Provayderiniz siyahıya salırsa, başqa ad yaza bilərsiniz.",
             "tts_voice": "Coral defoltdur. Səslər Assist → Dil altında təyin etdiyiniz dillər üçün işləyir.",
-            "tts_speed": "Bu səsin danışma sürəti. 1× normaldır. AI Workspace və Assist üçün keçərlidir.",
-            "use_claude_runtime": "Söhbətlər Anthropic bulud API-si əvəzinə AI Workspace Runtime-dakı Claude Code ilə gedir, Claude abunəliyiniz (Pro, Max) və ya Anthropic API açarı ilə. Yandırıb-söndürdükdə uyğun sahələr göstərilir."
+            "tts_speed": "Bu səsin danışma sürəti. 1× normaldır. AI Workspace və Assist üçün keçərlidir."
           },
           "sections": {
             "model_list": {
@@ -392,11 +390,13 @@
               "name": "Ətraflı",
               "data": {
                 "save_tokens": "Tokenlərə qənaət et",
-                "cache_1h": "Keşi bir saat saxla"
+                "cache_1h": "Keşi bir saat saxla",
+                "use_claude_runtime": "Claude SDK (runtime) istifadə et (eksperimental)"
               },
               "data_description": {
                 "save_tokens": "Hər mesajla daha az göndərir: daha qısa prompt, daha az söhbət tarixçəsi və daha qısa cavablar. Daha ucuzdur, amma eviniz haqqında cavablar daha az ətraflı ola bilər.",
-                "cache_1h": "Yalnız Claude. Sistem promptunu və alətləri 5 dəqiqə əvəzinə bir saat keşdə saxlayır. Keşə yazmaq giriş qiymətinin 1,25 qatı əvəzinə 2 qatına, oxumaq 0,1 qatına başa gəlir. Mesajlarınız arasında tez-tez 5 dəqiqədən çox fasilə olarsa daha ucuzdur; nadir yazırsınızsa bir az bahadır."
+                "cache_1h": "Yalnız Claude. Sistem promptunu və alətləri 5 dəqiqə əvəzinə bir saat keşdə saxlayır. Keşə yazmaq giriş qiymətinin 1,25 qatı əvəzinə 2 qatına, oxumaq 0,1 qatına başa gəlir. Mesajlarınız arasında tez-tez 5 dəqiqədən çox fasilə olarsa daha ucuzdur; nadir yazırsınızsa bir az bahadır.",
+                "use_claude_runtime": "Söhbətlər Anthropic bulud API-si əvəzinə AI Workspace Runtime-dakı Claude Code ilə gedir, Claude abunəliyiniz (Pro, Max) və ya Anthropic API açarı ilə. Dəyişdikdən sonra OK düyməsini basın: forma uyğun sahələri göstərir, hələ heç nə saxlanmır."
               }
             },
             "claude_runtime": {

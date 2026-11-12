@@ -360,8 +360,7 @@
             "assist_tts": "Dodaj tekst na mowę",
             "tts_model": "Model tekstu na mowę",
             "tts_voice": "Głos",
-            "tts_speed": "Tempo",
-            "use_claude_runtime": "Użyj Claude SDK (runtime)"
+            "tts_speed": "Tempo"
           },
           "data_description": {
             "borrow": "Używa klucza już zapisanego przez tę integrację. Druga integracja zostaje bez zmian.",
@@ -375,8 +374,7 @@
             "assist_tts": "Dodaje opcję tekstu na mowę w Home Assistant z kluczem tego asystenta. Wyłączenie usuwa to, co dodał.",
             "tts_model": "Zostaw puste dla domyślnego modelu głosu. Możesz wpisać inną nazwę, jeśli dostawca taką podaje.",
             "tts_voice": "Coral jest domyślny. Głosy działają dla języków ustawionych w Assist → Język.",
-            "tts_speed": "Jak szybko mówi ten głos. 1× to normalne tempo. Działa w AI Workspace i Assist.",
-            "use_claude_runtime": "Czaty idą przez Claude Code w AI Workspace Runtime zamiast przez chmurowe API Anthropic, z Twoją subskrypcją Claude (Pro, Max) lub kluczem API Anthropic. Włączenie lub wyłączenie pokazuje odpowiednie pola."
+            "tts_speed": "Jak szybko mówi ten głos. 1× to normalne tempo. Działa w AI Workspace i Assist."
           },
           "sections": {
             "model_list": {
@@ -392,11 +390,13 @@
               "name": "Zaawansowane",
               "data": {
                 "save_tokens": "Oszczędzaj tokeny",
-                "cache_1h": "Trzymaj pamięć podręczną przez godzinę"
+                "cache_1h": "Trzymaj pamięć podręczną przez godzinę",
+                "use_claude_runtime": "Użyj Claude SDK (runtime) (eksperymentalne)"
               },
               "data_description": {
                 "save_tokens": "Wysyła mniej z każdą wiadomością: krótszy prompt, mniej historii czatu i krótsze odpowiedzi. Taniej, ale odpowiedzi o Twoim domu mogą być mniej dokładne.",
-                "cache_1h": "Tylko Claude. Trzyma prompt systemowy i narzędzia w pamięci podręcznej przez godzinę zamiast 5 minut. Zapis do pamięci podręcznej kosztuje 2× cenę wejścia zamiast 1,25×, odczyt 0,1×. Taniej, gdy między wiadomościami często mija ponad 5 minut; nieco drożej, jeśli rzadko piszesz."
+                "cache_1h": "Tylko Claude. Trzyma prompt systemowy i narzędzia w pamięci podręcznej przez godzinę zamiast 5 minut. Zapis do pamięci podręcznej kosztuje 2× cenę wejścia zamiast 1,25×, odczyt 0,1×. Taniej, gdy między wiadomościami często mija ponad 5 minut; nieco drożej, jeśli rzadko piszesz.",
+                "use_claude_runtime": "Czaty idą przez Claude Code w AI Workspace Runtime zamiast przez chmurowe API Anthropic, z Twoją subskrypcją Claude (Pro, Max) lub kluczem API Anthropic. Po zmianie naciśnij OK: formularz pokaże odpowiednie pola, nic nie zostanie jeszcze zapisane."
               }
             },
             "claude_runtime": {
