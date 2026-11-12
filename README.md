@@ -117,7 +117,7 @@ Open **AI Workspace** (`/ai-workspace`) and ask things like:
 
 ## AI Workspace Runtime (Cursor and Claude SDK)
 
-Want **Cursor**'s own agent in that same chat, without opening the Cursor app? It can work through a longer task and pick up the thread next time. There is still no editor: you only chat in Home Assistant. From 1.6.0 the same sidecar also runs **Claude SDK** agents ([Claude on the runtime](docs/claude-runtime.md)).
+Want **Cursor**'s own agent in that same chat, without opening the Cursor app? It can work through a longer task and pick up the thread next time. There is still no editor: you only chat in Home Assistant. From 1.6.0 the runtime also runs **Claude SDK** agents ([Claude on the runtime](docs/claude-runtime.md)).
 
 If you only want Claude or GPT via a simple API key in Home Assistant, skip this and use [Cloud AI](#cloud-ai-quick-start) above — that is **Claude (Anthropic)** and other cloud providers, not the runtime.
 

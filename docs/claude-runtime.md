@@ -1,6 +1,6 @@
 # Claude Agent SDK on the AI Workspace runtime
 
-The same **AI Workspace Runtime** container (add-on or Compose service `ai-workspace-runtime`) that runs Cursor also runs **Claude SDK** agents via the [`claude-agent-sdk`](https://pypi.org/project/claude-agent-sdk/) package. Home Assistant talks to it the same way as Cursor: Runtime URL, shared `RUNTIME_TOKEN`, and MCP proxied through the runtime.
+The **AI Workspace Runtime** container (add-on or Compose service `ai-workspace-runtime`) runs **Claude SDK** agents via the [`claude-agent-sdk`](https://pypi.org/project/claude-agent-sdk/) package. Home Assistant uses the Runtime URL, shared `RUNTIME_TOKEN`, and MCP proxied through the runtime.
 
 The cloud agent **Claude (Anthropic)** in the integration is unchanged—it still uses the Messages API directly, not this runtime.
 
@@ -45,9 +45,9 @@ Use OpenRouter model slugs on the agent (e.g. `anthropic/claude-sonnet-4.5`).
 ## Home Assistant
 
 1. Add an agent → **Claude SDK** (not “Claude (Anthropic)”).
-2. Runtime URL and token: same as Cursor agents.
+2. Runtime URL and token: use your AI Workspace Runtime address and shared runtime token (Supervisor pairing can fill these automatically).
 3. **Claude Plan token**: paste the `sk-ant-oat-…` value from `claude setup-token` on your computer. The integration stores it on the runtime (`claude_oauth_token`). Leave the field empty when the runtime already has Plan or another Claude auth mode configured.
-4. Model: Anthropic id (`claude-sonnet-5-5`) for Plan or Anthropic API. When using OpenRouter on the runtime, use OpenRouter slugs (see [OpenRouter (Agent SDK)](#3-openrouter-agent-sdk) above).
+4. Model: Anthropic id (`claude-sonnet-5-5`) for Plan or Anthropic API.
 
 Runtime health must report `"claude": true` (runtime **1.6.0** or newer). Older runtimes show an update notice for Claude SDK agents only; Cursor keeps working.
 

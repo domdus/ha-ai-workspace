@@ -349,7 +349,7 @@
         },
         "provider_claude": {
           "title": "Claude SDK",
-          "description": "Same runtime sidecar as Cursor. For Claude Pro, Max, or Ultra, paste a Plan token below. Other Claude SDK auth is set on the AI Workspace Runtime app.",
+          "description": "The Claude Code agent on the AI Workspace Runtime. Uses your Claude subscription (Pro, Max) or an Anthropic API key.",
           "data": {
             "runtime_url": "Runtime address{runtime_url_mark}",
             "runtime_token": "Runtime password",
