@@ -289,7 +289,8 @@
         "model_not_installed": "Tento model není v Ollamě nainstalovaný. Nainstalované: {installed}",
         "pick_model": "Server nyní vypisuje své modely. Vyberte jeden ze seznamu.",
         "model_rejected": "Server nepovoluje tento model pro tento klíč: {server_message}",
-        "claude_runtime_old": "Aktualizujte AI Workspace Runtime na 1.6.0 nebo novější pro agenty Claude SDK."
+        "claude_runtime_old": "Aktualizujte AI Workspace Runtime na 1.6.0 nebo novější pro agenty Claude SDK.",
+        "claude_key_required": "Přidejte token Claude Plan nebo klíč API Anthropic v části Claude SDK (runtime), nebo jej nastavte v AI Workspace Runtime."
       },
       "step": {
         "provider": {
@@ -299,7 +300,7 @@
             "api_provider": "Poskytovatel"
           },
           "data_description": {
-            "api_provider": "Cursor, Claude SDK, nebo cloudový či místní model."
+            "api_provider": "Cursor, nebo cloudový či místní model. Pro Claude SDK v AI Workspace Runtime zvolte Claude (Anthropic) a zapněte jeho přepínač runtime."
           }
         },
         "provider_cursor": {
@@ -344,48 +345,6 @@
             }
           }
         },
-        "provider_claude": {
-          "title": "Claude SDK",
-          "description": "Agent Claude Code v AI Workspace Runtime, stejné aplikaci jako Cursor. Používá vaše předplatné Claude (Pro, Max) nebo klíč API Anthropic.",
-          "data": {
-            "runtime_url": "Adresa běhového prostředí{runtime_url_mark}",
-            "runtime_token": "Heslo runtime",
-            "claude_api_key": "Token Claude Plan nebo klíč API Anthropic",
-            "model": "Model",
-            "effort": "Úsilí",
-            "allow_internet": "Povolit internet",
-            "assist": "Přidat do Assist"
-          },
-          "data_description": {
-            "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Stejné heslo jako u AI Workspace Runtime. Nechte prázdné u doplňku s automatickým spárováním.",
-            "claude_api_key": "Token Claude Plan (sk-ant-oat…, z `claude setup-token`, využívá vaše předplatné Claude) nebo klíč API Anthropic (sk-ant-api…, účtovaný jako kredity API). Nechte prázdné, chcete-li použít ten z AI Workspace Runtime, nebo při úpravě, aby se zachoval uložený. [Získat API klíč]({api_key_url})",
-            "model": "Vyberte ze seznamu nebo zadejte ID modelu Anthropic. Prázdné použije model Claude z běhového prostředí (bez nastavení Claude Sonnet).",
-            "effort": "Kolik času na přemýšlení povolit. Výchozí nechá rozhodnout Claude.",
-            "allow_internet": "Ve výchozím stavu vypnuto. Zapnuto umožní tomuto agentovi v chatech správce používat webové vyhledávání, stahování stránek a shell. Vypnuto odebere všechny tři, takže ani curl či skripty se na web nedostanou. Chaty běžných uživatelů a hlasových satelitů je nikdy nedostanou.",
-            "assist": "Zobrazí tohoto asistenta i pod Home Assistant Assist (hlas). Vypnuto: jen chat AI Workspace a odstraní to, co přidal do Assist."
-          },
-          "sections": {
-            "model_list": {
-              "name": "Seznam modelů",
-              "data": {
-                "models": "Modely"
-              },
-              "data_description": {
-                "models": "Volitelné. Vlastní výběr modelů pro nabídku zde i v chatu místo úplného seznamu poskytovatele. Názvy oddělené čárkami, středníky nebo novými řádky, např. gpt-5.5, grok-4.7. Prázdné zobrazí seznam poskytovatele."
-              }
-            },
-            "advanced": {
-              "name": "Pokročilé",
-              "data": {
-                "save_tokens": "Šetřit tokeny"
-              },
-              "data_description": {
-                "save_tokens": "S každou zprávou posílá méně: kratší prompt, méně historie chatu a kratší odpovědi. Levnější, ale odpovědi o vaší domácnosti mohou být méně důkladné."
-              }
-            }
-          }
-        },
         "provider_cloud": {
           "title": "Cloudový agent",
           "description": "Tento agent si drží vlastní klíč. Zkopírujte ho z už nastavené integrace, nebo vložte nový. Při úpravě nechte klíč prázdný, aby se zachoval uložený.",
@@ -401,7 +360,8 @@
             "assist_tts": "Přidat převod textu na řeč",
             "tts_model": "Model textu na řeč",
             "tts_voice": "Hlas",
-            "tts_speed": "Rychlost"
+            "tts_speed": "Rychlost",
+            "use_claude_runtime": "Použít Claude SDK (runtime)"
           },
           "data_description": {
             "borrow": "Použije klíč, který už tato integrace uložila. Druhá integrace se nemění.",
@@ -415,7 +375,8 @@
             "assist_tts": "Přidá v Home Assistant možnost textu na řeč s klíčem tohoto asistenta. Vypnuto odstraní to, co přidal.",
             "tts_model": "Nechte prázdné pro výchozí hlasový model. Můžete zadat jiný název, pokud ho poskytovatel uvádí.",
             "tts_voice": "Coral je výchozí. Hlasy fungují pro jazyky nastavené v Assist → Jazyk.",
-            "tts_speed": "Jak rychle tento hlas mluví. 1× je běžné. Platí pro AI Workspace i Assist."
+            "tts_speed": "Jak rychle tento hlas mluví. 1× je běžné. Platí pro AI Workspace i Assist.",
+            "use_claude_runtime": "Chaty jdou přes Claude Code v AI Workspace Runtime místo cloudového API Anthropic, s vaším předplatným Claude (Pro, Max) nebo klíčem API Anthropic. Zapnutím nebo vypnutím se zobrazí odpovídající pole."
           },
           "sections": {
             "model_list": {
@@ -436,6 +397,20 @@
               "data_description": {
                 "save_tokens": "S každou zprávou posílá méně: kratší prompt, méně historie chatu a kratší odpovědi. Levnější, ale odpovědi o vaší domácnosti mohou být méně důkladné.",
                 "cache_1h": "Jen Claude. Drží systémový prompt a nástroje v mezipaměti hodinu místo 5 minut. Zápis do mezipaměti stojí 2× cenu vstupu místo 1,25×, čtení 0,1×. Levnější, když mezi zprávami často uplyne víc než 5 minut; o něco dražší, když píšete zřídka."
+              }
+            },
+            "claude_runtime": {
+              "name": "Claude SDK (runtime)",
+              "description": "Prázdný model použije model Claude z Runtime (Claude Sonnet, pokud není nastaven).",
+              "data": {
+                "runtime_url": "Adresa běhového prostředí{runtime_url_mark}",
+                "runtime_token": "Heslo runtime",
+                "claude_api_key": "Token Claude Plan nebo klíč API Anthropic"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "Stejné heslo jako u AI Workspace Runtime. Nechte prázdné u doplňku s automatickým spárováním.",
+                "claude_api_key": "Token Claude Plan (sk-ant-oat…, z `claude setup-token`, využívá vaše předplatné Claude) nebo klíč API Anthropic (sk-ant-api…, účtovaný jako kredity API). Nechte prázdné, chcete-li použít ten z AI Workspace Runtime, nebo při úpravě, aby se zachoval uložený. [Získat API klíč]({api_key_url})"
               }
             }
           }

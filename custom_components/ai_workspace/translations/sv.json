@@ -289,7 +289,8 @@
         "model_not_installed": "Den här modellen är inte installerad i Ollama. Installerade: {installed}",
         "pick_model": "Servern listar nu sina modeller. Välj en i listan.",
         "model_rejected": "Servern tillåter inte den här modellen för den här nyckeln: {server_message}",
-        "claude_runtime_old": "Uppdatera AI Workspace Runtime till 1.6.0 eller senare för Claude SDK-agenter."
+        "claude_runtime_old": "Uppdatera AI Workspace Runtime till 1.6.0 eller senare för Claude SDK-agenter.",
+        "claude_key_required": "Lägg till en Claude Plan-token eller en Anthropic API-nyckel under Claude SDK (runtime), eller ange en på AI Workspace Runtime."
       },
       "step": {
         "provider": {
@@ -299,7 +300,7 @@
             "api_provider": "Leverantör"
           },
           "data_description": {
-            "api_provider": "Cursor, Claude SDK, eller en molnmodell eller lokal modell."
+            "api_provider": "Cursor, eller en moln- eller lokal modell. För Claude SDK på AI Workspace Runtime väljer du Claude (Anthropic) och slår på dess runtime-reglage."
           }
         },
         "provider_cursor": {
@@ -344,48 +345,6 @@
             }
           }
         },
-        "provider_claude": {
-          "title": "Claude SDK",
-          "description": "Claude Codes agent på AI Workspace Runtime, samma app som Cursor. Använder din Claude-prenumeration (Pro, Max) eller en Anthropic API-nyckel.",
-          "data": {
-            "runtime_url": "Runtime-adress{runtime_url_mark}",
-            "runtime_token": "Runtime-lösenord",
-            "claude_api_key": "Claude Plan-token eller Anthropic API-nyckel",
-            "model": "Modell",
-            "effort": "Ansträngning",
-            "allow_internet": "Tillåt internet",
-            "assist": "Lägg till i Assist"
-          },
-          "data_description": {
-            "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Samma lösenord som på AI Workspace Runtime. Lämna tomt när du använder tillägget med automatisk parkoppling.",
-            "claude_api_key": "En Claude Plan-token (sk-ant-oat…, från `claude setup-token`, använder din Claude-prenumeration) eller en Anthropic API-nyckel (sk-ant-api…, debiteras som API-krediter). Lämna tomt för att använda den på AI Workspace Runtime, eller vid redigering för att behålla den sparade. [Hämta API-nyckel]({api_key_url})",
-            "model": "Välj i listan eller skriv ett Anthropic-modell-id. Tomt använder runtimens Claude-modell (Claude Sonnet om inget är satt).",
-            "effort": "Hur mycket tänketid som ska tillåtas. Standard låter Claude bestämma.",
-            "allow_internet": "Av som standard. På låter agenten använda webbsökning, sidhämtning och skal i administratörschattar. Av tar bort alla tre, så att inte heller curl eller skript når webben. Chattar från vanliga användare och röstsatelliter får dem aldrig.",
-            "assist": "Listar också den här assistenten under Home Assistant Assist (röst). Av behåller den i AI Workspace-chatten och tar bort det den lade till i Assist."
-          },
-          "sections": {
-            "model_list": {
-              "name": "Modellista",
-              "data": {
-                "models": "Modeller"
-              },
-              "data_description": {
-                "models": "Valfritt. Ditt eget urval av modeller för valet här och i chatten i stället för leverantörens hela lista. Namn åtskilda med komma, semikolon eller radbrytningar, t.ex. gpt-5.5, grok-4.7. Tomt visar leverantörens lista."
-              }
-            },
-            "advanced": {
-              "name": "Avancerat",
-              "data": {
-                "save_tokens": "Spara tokens"
-              },
-              "data_description": {
-                "save_tokens": "Skickar mindre med varje meddelande: en kortare prompt, mindre chatthistorik och kortare svar. Billigare, men svar om ditt hem kan bli mindre grundliga."
-              }
-            }
-          }
-        },
         "provider_cloud": {
           "title": "Molnagent",
           "description": "Den här agenten behåller sin egen nyckel. Kopiera en från en integration som redan är konfigurerad, eller klistra in en ny. Lämna nyckeln tom vid redigering för att behålla den sparade nyckeln.",
@@ -401,7 +360,8 @@
             "assist_tts": "Lägg till text till tal",
             "tts_model": "Text-till-tal-modell",
             "tts_voice": "Röst",
-            "tts_speed": "Hastighet"
+            "tts_speed": "Hastighet",
+            "use_claude_runtime": "Använd Claude SDK (runtime)"
           },
           "data_description": {
             "borrow": "Använder nyckeln som redan sparats av den integrationen. Den andra integrationen lämnas oförändrad.",
@@ -415,7 +375,8 @@
             "assist_tts": "Lägger till ett text-till-tal-alternativ i Home Assistant med den här assistentens nyckel. Av tar bort det den lade till.",
             "tts_model": "Lämna tomt för standardröstmodellen. Du kan skriva ett annat namn om din leverantör listar ett.",
             "tts_voice": "Coral är standard. Röster fungerar för de språk du ställer in under Assist → Språk.",
-            "tts_speed": "Hur snabbt den här rösten talar. 1× är normalt. Gäller AI Workspace och Assist."
+            "tts_speed": "Hur snabbt den här rösten talar. 1× är normalt. Gäller AI Workspace och Assist.",
+            "use_claude_runtime": "Chattar går via Claude Code på AI Workspace Runtime i stället för Anthropics moln-API, med din Claude-prenumeration (Pro, Max) eller en Anthropic API-nyckel. När du slår på eller av visas de fält som hör till."
           },
           "sections": {
             "model_list": {
@@ -436,6 +397,20 @@
               "data_description": {
                 "save_tokens": "Skickar mindre med varje meddelande: en kortare prompt, mindre chatthistorik och kortare svar. Billigare, men svar om ditt hem kan bli mindre grundliga.",
                 "cache_1h": "Endast Claude. Håller systemprompten och verktygen i cachen i en timme i stället för 5 minuter. Att skriva till cachen kostar 2× inmatningspriset i stället för 1,25×; att läsa kostar 0,1×. Billigare när det ofta går mer än 5 minuter mellan dina meddelanden, lite dyrare om du sällan chattar."
+              }
+            },
+            "claude_runtime": {
+              "name": "Claude SDK (runtime)",
+              "description": "En tom modell använder Runtimes Claude-modell (Claude Sonnet om inget är satt).",
+              "data": {
+                "runtime_url": "Runtime-adress{runtime_url_mark}",
+                "runtime_token": "Runtime-lösenord",
+                "claude_api_key": "Claude Plan-token eller Anthropic API-nyckel"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "Samma lösenord som på AI Workspace Runtime. Lämna tomt när du använder tillägget med automatisk parkoppling.",
+                "claude_api_key": "En Claude Plan-token (sk-ant-oat…, från `claude setup-token`, använder din Claude-prenumeration) eller en Anthropic API-nyckel (sk-ant-api…, debiteras som API-krediter). Lämna tomt för att använda den på AI Workspace Runtime, eller vid redigering för att behålla den sparade. [Hämta API-nyckel]({api_key_url})"
               }
             }
           }

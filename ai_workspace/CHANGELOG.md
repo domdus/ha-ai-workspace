@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.6.0b4
+
+**One Claude (Anthropic) agent, in the cloud or on the runtime.** The separate **Claude SDK** choice in **Add agent** is gone. Add **Claude (Anthropic)** and turn on **Use Claude SDK (runtime)** for a Claude SDK agent on the AI Workspace Runtime, or leave it off for Anthropic's cloud API. See [Claude SDK agents](../docs/claude-runtime.md).
+
+- Turning the switch on or off shows the matching fields right away: the **Claude SDK (runtime)** section with the runtime address, password, and **Claude Plan token or Anthropic API key**, or the cloud API key. Nothing is saved until you submit those.
+- Runtime problems (runtime not found, too old, no credential, key refused) show at the top of the form.
+- **Effort** stays on cloud Claude agents, as before.
+- New agents are named **Claude** either way; the switch only changes where Claude runs.
+- Claude SDK agents from 1.6.0b1 and b2 become Claude (Anthropic) agents with the switch on when the integration loads, with their credential, model, and name. In YAML, `provider: claude` still makes a Claude SDK agent.
+- The runtime is unchanged from 1.6.0b2; Cursor agents are unchanged.
+
+1.6.0b3 was withdrawn: it was built without 1.5.4 and the 1.6.0b1/b2 fixes. 1.6.0b4 has all of them.
+
 ## 1.6.0b2
 
 **Claude SDK agents work with your Claude plan again.** 1.6.0b1 refused Claude Plan tokens; that was wrong and is undone. See [Claude SDK agents](../docs/claude-runtime.md).

@@ -252,6 +252,7 @@ CONF_MCP_TOKEN = "mcp_token"
 CONF_MCP_EXTRA = "mcp_extra"
 CONF_CURSOR_API_KEY = "cursor_api_key"
 CONF_CLAUDE_API_KEY = "claude_api_key"
+CONF_USE_CLAUDE_RUNTIME = "use_claude_runtime"
 CONF_MODEL = "model"
 # Model ids typed or pasted for servers that do not list their own (OpenAI-compatible, Azure).
 CONF_MODELS = "models"

@@ -9,7 +9,7 @@
 AI Workspace is one integration with three kinds of rows:
 
 - **Connection:** one row per MCP server. The first one is created during setup; **Add connection** adds more.
-- **Agent:** one row per Cursor, Claude SDK, OpenAI, Claude, Gemini, OpenRouter, Ollama, Azure, or other provider. **Add agent** adds more.
+- **Agent:** one row per Cursor, OpenAI, Claude (cloud API or Claude SDK on the runtime), Gemini, OpenRouter, Ollama, Azure, or other provider. **Add agent** adds more.
 - **Usage:** cost and token sensors on a device named **AI Workspace**. Created only if [Add Home Assistant usage sensors](cost.md#home-assistant-sensors) is on.
 
 Each row has its own device. Disable a device to switch off one MCP connection or one agent without deleting it.

@@ -16,9 +16,16 @@ BASE = ROOT / "custom_components" / "ai_workspace"
 _NO_KEY_PAGE = {API_OLLAMA, API_COMPATIBLE}
 _LINK_FIELDS = (
     ("provider_cursor", "cursor_api_key"),
-    ("provider_claude", "claude_api_key"),
     ("provider_cloud", "api_key"),
     ("provider_azure", "api_key"),
+)
+
+_RUNTIME_KEY_FIELD = (
+    "provider_cloud",
+    "sections",
+    "claude_runtime",
+    "data_description",
+    "claude_api_key",
 )
 
 
@@ -41,6 +48,10 @@ def test_agent_form_strings_include_key_link():
             text = steps[step]["data_description"][field]
             assert "{api_key_url}" in text, f"{path.name} {step}.{field}"
             assert "]({api_key_url})" in text, f"{path.name} {step}.{field}"
+        sec = steps
+        for part in _RUNTIME_KEY_FIELD:
+            sec = sec[part]
+        assert "{api_key_url}" in sec and "]({api_key_url})" in sec
 
 
 def test_hacs_uses_git_archive_and_has_brand_icon():

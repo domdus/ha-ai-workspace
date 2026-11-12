@@ -289,7 +289,8 @@
         "model_not_installed": "Ĉi tiu modelo ne estas instalita en Ollama. Instalitaj: {installed}",
         "pick_model": "La servilo nun listigas siajn modelojn. Elektu unu el la listo.",
         "model_rejected": "La servilo ne permesas ĉi tiun modelon por ĉi tiu ŝlosilo: {server_message}",
-        "claude_runtime_old": "Ĝisdatigu la AI Workspace Runtime al 1.6.0 aŭ pli nova por Claude SDK-agentoj."
+        "claude_runtime_old": "Ĝisdatigu la AI Workspace Runtime al 1.6.0 aŭ pli nova por Claude SDK-agentoj.",
+        "claude_key_required": "Aldonu Claude Plan-ĵetonon aŭ Anthropic-API-ŝlosilon sub Claude SDK (runtime), aŭ agordu unu ĉe la AI Workspace Runtime."
       },
       "step": {
         "provider": {
@@ -299,7 +300,7 @@
             "api_provider": "Provizanto"
           },
           "data_description": {
-            "api_provider": "Cursor, Claude SDK, aŭ nuba aŭ loka modelo."
+            "api_provider": "Cursor, aŭ nuba aŭ loka modelo. Por Claude SDK ĉe la AI Workspace Runtime, elektu Claude (Anthropic) kaj ŝaltu ĝian runtime-ŝaltilon."
           }
         },
         "provider_cursor": {
@@ -344,48 +345,6 @@
             }
           }
         },
-        "provider_claude": {
-          "title": "Claude SDK",
-          "description": "La agento de Claude Code ĉe la AI Workspace Runtime, la sama aplikaĵo kiel Cursor. Uzas vian Claude-abonon (Pro, Max) aŭ Anthropic-API-ŝlosilon.",
-          "data": {
-            "runtime_url": "Adreso de la runtime{runtime_url_mark}",
-            "runtime_token": "Pasvorto de la runtime",
-            "claude_api_key": "Claude Plan-ĵetono aŭ Anthropic-API-ŝlosilo",
-            "model": "Modelo",
-            "effort": "Penado",
-            "allow_internet": "Permesi interreton",
-            "assist": "Aldoni al Assist"
-          },
-          "data_description": {
-            "runtime_url": "{runtime_url_note}",
-            "runtime_token": "La sama pasvorto kiel ĉe la AI Workspace Runtime. Lasu malplena kiam vi uzas la aldonaĵon kun aŭtomata parigo.",
-            "claude_api_key": "Claude Plan-ĵetono (sk-ant-oat…, el `claude setup-token`, uzas vian Claude-abonon) aŭ Anthropic-API-ŝlosilo (sk-ant-api…, fakturata kiel API-kreditoj). Lasu malplena por uzi tiun de la AI Workspace Runtime, aŭ dum redaktado por teni la konservitan. [Akiri API-ŝlosilon]({api_key_url})",
-            "model": "Elektu el la listo aŭ tajpu Anthropic-modelan id-on. Malplena uzas la Claude-modelon de la runtime (Claude Sonnet se nenio agordita).",
-            "effort": "Kiom da pensotempo permesi. Defaŭlte Claude decidas.",
-            "allow_internet": "Defaŭlte malŝaltita. Ŝaltita permesas al ĉi tiu agento uzi retserĉon, paĝ-elŝuton kaj ŝelon en administrantaj babiloj. Malŝaltita forigas ĉiujn tri, do ankaŭ curl aŭ skriptoj ne atingas la reton. Babiloj de ordinaraj uzantoj kaj voĉaj satelitoj neniam ricevas ilin.",
-            "assist": "Ankaŭ listigas ĉi tiun asistanton sub Home Assistant Assist (voĉo). Malŝalte tenas ĝin nur en la babilejo de AI Workspace kaj forigas tion, kion ĝi aldonis al Assist."
-          },
-          "sections": {
-            "model_list": {
-              "name": "Modellisto",
-              "data": {
-                "models": "Modeloj"
-              },
-              "data_description": {
-                "models": "Nedeviga. Via propra elekto de modeloj por la elektilo ĉi tie kaj en la babilo, anstataŭ la plena listo de la provizanto. Nomoj apartigitaj per komoj, punktokomoj aŭ novaj linioj, ekz. gpt-5.5, grok-4.7. Malplena montras la liston de la provizanto."
-              }
-            },
-            "advanced": {
-              "name": "Altnivele",
-              "data": {
-                "save_tokens": "Ŝpari ĵetonojn"
-              },
-              "data_description": {
-                "save_tokens": "Sendas malpli kun ĉiu mesaĝo: pli mallongan instrukcion, malpli da babilhistorio kaj pli mallongajn respondojn. Malpli kosta, sed respondoj pri via hejmo povas esti malpli detalaj."
-              }
-            }
-          }
-        },
         "provider_cloud": {
           "title": "Nuba agento",
           "description": "Ĉi tiu agento tenas sian propran ŝlosilon. Kopiu unu el integraĵo jam agordita, aŭ algluu novan. Lasu la ŝlosilon malplena dum redaktado por teni la konservitan ŝlosilon.",
@@ -401,7 +360,8 @@
             "assist_tts": "Aldoni tekston-al-parolo",
             "tts_model": "Modelo de teksto-al-parolo",
             "tts_voice": "Voĉo",
-            "tts_speed": "Rapido"
+            "tts_speed": "Rapido",
+            "use_claude_runtime": "Uzi Claude SDK (runtime)"
           },
           "data_description": {
             "borrow": "Uzas la ŝlosilon jam konservitan de tiu integraĵo. La alia integraĵo restas kiel ĝi estas.",
@@ -415,7 +375,8 @@
             "assist_tts": "Aldonas opcion de teksto-al-parolo en Home Assistant per la ŝlosilo de ĉi tiu asistanto. Malŝalte forigas tion, kion ĝi aldonis.",
             "tts_model": "Lasu malplena por la defaŭlta voĉmodelo. Vi povas tajpi alian nomon se via provizanto listigas unu.",
             "tts_voice": "Coral estas la defaŭlto. Voĉoj funkcias por la lingvoj kiujn vi agordis ĉe Assist → Lingvo.",
-            "tts_speed": "Kiel rapide ĉi tiu voĉo parolas. 1× estas normala. Aplikas al AI Workspace kaj Assist."
+            "tts_speed": "Kiel rapide ĉi tiu voĉo parolas. 1× estas normala. Aplikas al AI Workspace kaj Assist.",
+            "use_claude_runtime": "Babiloj iras tra Claude Code ĉe la AI Workspace Runtime anstataŭ la nuba API de Anthropic, kun via Claude-abono (Pro, Max) aŭ Anthropic-API-ŝlosilo. Ŝalti aŭ malŝalti montras la kongruajn kampojn."
           },
           "sections": {
             "model_list": {
@@ -436,6 +397,20 @@
               "data_description": {
                 "save_tokens": "Sendas malpli kun ĉiu mesaĝo: pli mallongan instrukcion, malpli da babilhistorio kaj pli mallongajn respondojn. Malpli kosta, sed respondoj pri via hejmo povas esti malpli detalaj.",
                 "cache_1h": "Nur Claude. Tenas la sisteman inviton kaj la ilojn en la kaŝmemoro unu horon anstataŭ 5 minutojn. Skribi en la kaŝmemoron kostas 2× la enigan prezon anstataŭ 1,25×; legi kostas 0,1×. Pli malmultekosta kiam ofte pasas pli ol 5 minutoj inter viaj mesaĝoj, iom pli multekosta se vi malofte babilas."
+              }
+            },
+            "claude_runtime": {
+              "name": "Claude SDK (runtime)",
+              "description": "Malplena modelo uzas la Claude-modelon de la Runtime (Claude Sonnet se ne agordita).",
+              "data": {
+                "runtime_url": "Adreso de la runtime{runtime_url_mark}",
+                "runtime_token": "Pasvorto de la runtime",
+                "claude_api_key": "Claude Plan-ĵetono aŭ Anthropic-API-ŝlosilo"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "La sama pasvorto kiel ĉe la AI Workspace Runtime. Lasu malplena kiam vi uzas la aldonaĵon kun aŭtomata parigo.",
+                "claude_api_key": "Claude Plan-ĵetono (sk-ant-oat…, el `claude setup-token`, uzas vian Claude-abonon) aŭ Anthropic-API-ŝlosilo (sk-ant-api…, fakturata kiel API-kreditoj). Lasu malplena por uzi tiun de la AI Workspace Runtime, aŭ dum redaktado por teni la konservitan. [Akiri API-ŝlosilon]({api_key_url})"
               }
             }
           }

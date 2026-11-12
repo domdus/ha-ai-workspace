@@ -289,7 +289,8 @@
         "model_not_installed": "Bu model Ollama-da quraşdırılmayıb. Quraşdırılanlar: {installed}",
         "pick_model": "Server indi modellərini göstərir. Siyahıdan birini seçin.",
         "model_rejected": "Server bu açar üçün bu modelə icazə vermir: {server_message}",
-        "claude_runtime_old": "Claude SDK agentləri üçün AI Workspace Runtime-ı 1.6.0 və ya daha yeni versiyaya yeniləyin."
+        "claude_runtime_old": "Claude SDK agentləri üçün AI Workspace Runtime-ı 1.6.0 və ya daha yeni versiyaya yeniləyin.",
+        "claude_key_required": "Claude SDK (runtime) bölməsində Claude Plan tokeni və ya Anthropic API açarı əlavə edin, ya da onu AI Workspace Runtime-da təyin edin."
       },
       "step": {
         "provider": {
@@ -299,7 +300,7 @@
             "api_provider": "Provayder"
           },
           "data_description": {
-            "api_provider": "Cursor, Claude SDK, və ya bulud və ya yerli model."
+            "api_provider": "Cursor və ya bulud ya da yerli model. AI Workspace Runtime-da Claude SDK üçün Claude (Anthropic) seçin və onun runtime açarını yandırın."
           }
         },
         "provider_cursor": {
@@ -344,48 +345,6 @@
             }
           }
         },
-        "provider_claude": {
-          "title": "Claude SDK",
-          "description": "AI Workspace Runtime-da (Cursor ilə eyni tətbiq) işləyən Claude Code agenti. Claude abunəliyinizdən (Pro, Max) və ya Anthropic API açarından istifadə edir.",
-          "data": {
-            "runtime_url": "Runtime ünvanı{runtime_url_mark}",
-            "runtime_token": "Runtime parolu",
-            "claude_api_key": "Claude Plan tokeni və ya Anthropic API açarı",
-            "model": "Model",
-            "effort": "Səy",
-            "allow_internet": "İnternetə icazə ver",
-            "assist": "Assist-ə əlavə et"
-          },
-          "data_description": {
-            "runtime_url": "{runtime_url_note}",
-            "runtime_token": "AI Workspace Runtime-dakı eyni parol. Avtomatik cütləşmə ilə əlavə modul istifadə edərkən boş buraxın.",
-            "claude_api_key": "Claude Plan tokeni (sk-ant-oat…, `claude setup-token` ilə yaradılır, Claude abunəliyinizdən istifadə edir) və ya Anthropic API açarı (sk-ant-api…, API kreditləri kimi ödənilir). AI Workspace Runtime-da təyin olunanı istifadə etmək üçün və ya redaktə edərkən saxlanmışı saxlamaq üçün boş buraxın. [API açarı al]({api_key_url})",
-            "model": "Siyahıdan seçin və ya Anthropic model id-si yazın. Boş olduqda runtime-ın Claude modeli istifadə olunur (təyin edilməyibsə Claude Sonnet).",
-            "effort": "Nə qədər düşünmə vaxtına icazə verilsin. Defolt olaraq Claude qərar verir.",
-            "allow_internet": "Standart olaraq söndürülüb. Açıq olduqda bu agent admin söhbətlərində veb axtarışı, səhifə yükləmə və shell alətlərindən istifadə edə bilir. Söndürülü olduqda hər üçü silinir, beləliklə curl və ya skriptlər də internetə çıxa bilmir. Adi istifadəçilərin və səs peyklərinin söhbətləri onları heç vaxt almır.",
-            "assist": "Bu köməkçini həm də Home Assistant Assist (səs) altında siyahıya salır. Sönülü onu yalnız AI Workspace söhbətində saxlayır və Assist-ə əlavə etdiyini silir."
-          },
-          "sections": {
-            "model_list": {
-              "name": "Model siyahısı",
-              "data": {
-                "models": "Modellər"
-              },
-              "data_description": {
-                "models": "İstəyə bağlı. Provayderin tam siyahısı əvəzinə burada və söhbətdə seçim üçün öz model seçiminiz. Adlar vergül, nöqtəli vergül və ya yeni sətirlə ayrılır, məs. gpt-5.5, grok-4.7. Boş olduqda provayderin siyahısı göstərilir."
-              }
-            },
-            "advanced": {
-              "name": "Ətraflı",
-              "data": {
-                "save_tokens": "Tokenlərə qənaət et"
-              },
-              "data_description": {
-                "save_tokens": "Hər mesajla daha az göndərir: daha qısa prompt, daha az söhbət tarixçəsi və daha qısa cavablar. Daha ucuzdur, amma eviniz haqqında cavablar daha az ətraflı ola bilər."
-              }
-            }
-          }
-        },
         "provider_cloud": {
           "title": "Bulud agenti",
           "description": "Bu agent öz açarını saxlayır. Artıq qurulmuş inteqrasiyadan birini kopyalayın və ya yenisini yapışdırın. Redaktə edərkən saxlanmış açarı saxlamaq üçün açarı boş buraxın.",
@@ -401,7 +360,8 @@
             "assist_tts": "Mətndən-nitqə əlavə et",
             "tts_model": "Mətndən-nitqə modeli",
             "tts_voice": "Səs",
-            "tts_speed": "Sürət"
+            "tts_speed": "Sürət",
+            "use_claude_runtime": "Claude SDK (runtime) istifadə et"
           },
           "data_description": {
             "borrow": "Həmin inteqrasiyanın artıq saxladığı açardan istifadə edir. Digər inteqrasiya dəyişməz qalır.",
@@ -415,7 +375,8 @@
             "assist_tts": "Bu köməkçinin açarı ilə Home Assistant-da mətndən-nitqə seçimi əlavə edir. Sönülü əlavə etdiyini silir.",
             "tts_model": "Defolt səs modeli üçün boş buraxın. Provayderiniz siyahıya salırsa, başqa ad yaza bilərsiniz.",
             "tts_voice": "Coral defoltdur. Səslər Assist → Dil altında təyin etdiyiniz dillər üçün işləyir.",
-            "tts_speed": "Bu səsin danışma sürəti. 1× normaldır. AI Workspace və Assist üçün keçərlidir."
+            "tts_speed": "Bu səsin danışma sürəti. 1× normaldır. AI Workspace və Assist üçün keçərlidir.",
+            "use_claude_runtime": "Söhbətlər Anthropic bulud API-si əvəzinə AI Workspace Runtime-dakı Claude Code ilə gedir, Claude abunəliyiniz (Pro, Max) və ya Anthropic API açarı ilə. Yandırıb-söndürdükdə uyğun sahələr göstərilir."
           },
           "sections": {
             "model_list": {
@@ -436,6 +397,20 @@
               "data_description": {
                 "save_tokens": "Hər mesajla daha az göndərir: daha qısa prompt, daha az söhbət tarixçəsi və daha qısa cavablar. Daha ucuzdur, amma eviniz haqqında cavablar daha az ətraflı ola bilər.",
                 "cache_1h": "Yalnız Claude. Sistem promptunu və alətləri 5 dəqiqə əvəzinə bir saat keşdə saxlayır. Keşə yazmaq giriş qiymətinin 1,25 qatı əvəzinə 2 qatına, oxumaq 0,1 qatına başa gəlir. Mesajlarınız arasında tez-tez 5 dəqiqədən çox fasilə olarsa daha ucuzdur; nadir yazırsınızsa bir az bahadır."
+              }
+            },
+            "claude_runtime": {
+              "name": "Claude SDK (runtime)",
+              "description": "Boş model Runtime-ın Claude modelindən istifadə edir (təyin edilməyibsə Claude Sonnet).",
+              "data": {
+                "runtime_url": "Runtime ünvanı{runtime_url_mark}",
+                "runtime_token": "Runtime parolu",
+                "claude_api_key": "Claude Plan tokeni və ya Anthropic API açarı"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "AI Workspace Runtime-dakı eyni parol. Avtomatik cütləşmə ilə əlavə modul istifadə edərkən boş buraxın.",
+                "claude_api_key": "Claude Plan tokeni (sk-ant-oat…, `claude setup-token` ilə yaradılır, Claude abunəliyinizdən istifadə edir) və ya Anthropic API açarı (sk-ant-api…, API kreditləri kimi ödənilir). AI Workspace Runtime-da təyin olunanı istifadə etmək üçün və ya redaktə edərkən saxlanmışı saxlamaq üçün boş buraxın. [API açarı al]({api_key_url})"
               }
             }
           }

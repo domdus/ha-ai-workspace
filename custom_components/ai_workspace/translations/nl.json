@@ -289,7 +289,8 @@
         "model_not_installed": "Dit model is niet geïnstalleerd in Ollama. Geïnstalleerd: {installed}",
         "pick_model": "De server toont nu zijn modellen. Kies er een uit de lijst.",
         "model_rejected": "De server staat dit model niet toe voor deze sleutel: {server_message}",
-        "claude_runtime_old": "Werk de AI Workspace Runtime bij naar 1.6.0 of nieuwer voor Claude SDK-agents."
+        "claude_runtime_old": "Werk de AI Workspace Runtime bij naar 1.6.0 of nieuwer voor Claude SDK-agents.",
+        "claude_key_required": "Voeg onder Claude SDK (runtime) een Claude Plan-token of een Anthropic-API-sleutel toe, of stel er een in op de AI Workspace Runtime."
       },
       "step": {
         "provider": {
@@ -299,7 +300,7 @@
             "api_provider": "Provider"
           },
           "data_description": {
-            "api_provider": "Cursor, Claude SDK, of een cloud- of lokaal model."
+            "api_provider": "Cursor, of een cloud- of lokaal model. Voor Claude SDK op de AI Workspace Runtime kies je Claude (Anthropic) en zet je de runtime-schakelaar aan."
           }
         },
         "provider_cursor": {
@@ -344,48 +345,6 @@
             }
           }
         },
-        "provider_claude": {
-          "title": "Claude SDK",
-          "description": "De agent van Claude Code op de AI Workspace Runtime, dezelfde app als Cursor. Gebruikt je Claude-abonnement (Pro, Max) of een Anthropic-API-sleutel.",
-          "data": {
-            "runtime_url": "Runtime-adres{runtime_url_mark}",
-            "runtime_token": "Runtime-wachtwoord",
-            "claude_api_key": "Claude Plan-token of Anthropic-API-sleutel",
-            "model": "Model",
-            "effort": "Inzet",
-            "allow_internet": "Internet toestaan",
-            "assist": "Toevoegen aan Assist"
-          },
-          "data_description": {
-            "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Hetzelfde wachtwoord als op de AI Workspace Runtime. Leeg laten bij de add-on met automatische koppeling.",
-            "claude_api_key": "Een Claude Plan-token (sk-ant-oat…, uit `claude setup-token`, gebruikt je Claude-abonnement) of een Anthropic-API-sleutel (sk-ant-api…, gefactureerd als API-tegoed). Leeg laten om die op de AI Workspace Runtime te gebruiken, of bij bewerken om de opgeslagen te houden. [API-sleutel ophalen]({api_key_url})",
-            "model": "Kies uit de lijst of typ een Anthropic-model-id. Leeg gebruikt het Claude-model van de runtime (standaard Claude Sonnet).",
-            "effort": "Hoeveel denktijd is toegestaan. Standaard laat Claude beslissen.",
-            "allow_internet": "Standaard uit. Aan laat deze agent in beheerderschats webzoeken, pagina ophalen en de shell gebruiken. Uit verwijdert alle drie, zodat ook curl of scripts het web niet bereiken. Chats van gewone gebruikers en spraaksatellieten krijgen ze nooit.",
-            "assist": "Toont deze assistent ook onder Home Assistant Assist (spraak). Uit: alleen AI Workspace-chat, en verwijdert wat hij aan Assist heeft toegevoegd."
-          },
-          "sections": {
-            "model_list": {
-              "name": "Modellenlijst",
-              "data": {
-                "models": "Modellen"
-              },
-              "data_description": {
-                "models": "Optioneel. Je eigen modelkeuze voor de keuzelijst hier en in de chat, in plaats van de volledige lijst van de provider. Namen gescheiden door komma's, puntkomma's of nieuwe regels, bijv. gpt-5.5, grok-4.7. Leeg toont de lijst van de provider."
-              }
-            },
-            "advanced": {
-              "name": "Geavanceerd",
-              "data": {
-                "save_tokens": "Tokens besparen"
-              },
-              "data_description": {
-                "save_tokens": "Stuurt minder mee met elk bericht: een kortere prompt, minder chatgeschiedenis en kortere antwoorden. Goedkoper, maar antwoorden over je huis kunnen minder grondig zijn."
-              }
-            }
-          }
-        },
         "provider_cloud": {
           "title": "Cloudagent",
           "description": "Deze agent bewaart een eigen sleutel. Kopieer er een van een al ingestelde integratie of plak een nieuwe. Laat de sleutel leeg bij bewerken om de opgeslagen te houden.",
@@ -401,7 +360,8 @@
             "assist_tts": "Tekst-naar-spraak toevoegen",
             "tts_model": "Tekst-naar-spraak-model",
             "tts_voice": "Stem",
-            "tts_speed": "Snelheid"
+            "tts_speed": "Snelheid",
+            "use_claude_runtime": "Claude SDK (runtime) gebruiken"
           },
           "data_description": {
             "borrow": "Gebruikt de sleutel die die integratie al heeft opgeslagen. De andere integratie blijft ongewijzigd.",
@@ -415,7 +375,8 @@
             "assist_tts": "Voegt in Home Assistant een tekst-naar-spraak-optie toe met de sleutel van deze assistent. Uit verwijdert wat hij heeft toegevoegd.",
             "tts_model": "Leeg laten voor het standaard spraakmodel. Je kunt een andere naam typen als je provider er een vermeldt.",
             "tts_voice": "Coral is de standaard. Stemmen volgen de talen onder Assist → Taal.",
-            "tts_speed": "Hoe snel deze stem spreekt. 1× is normaal. Geldt voor AI Workspace en Assist."
+            "tts_speed": "Hoe snel deze stem spreekt. 1× is normaal. Geldt voor AI Workspace en Assist.",
+            "use_claude_runtime": "Chats lopen via Claude Code op de AI Workspace Runtime in plaats van de cloud-API van Anthropic, met je Claude-abonnement (Pro, Max) of een Anthropic-API-sleutel. Aan- of uitzetten toont de passende velden."
           },
           "sections": {
             "model_list": {
@@ -436,6 +397,20 @@
               "data_description": {
                 "save_tokens": "Stuurt minder mee met elk bericht: een kortere prompt, minder chatgeschiedenis en kortere antwoorden. Goedkoper, maar antwoorden over je huis kunnen minder grondig zijn.",
                 "cache_1h": "Alleen Claude. Houdt de systeemprompt en tools een uur in de cache in plaats van 5 minuten. Schrijven in de cache kost 2× de invoerprijs in plaats van 1,25×; lezen kost 0,1×. Goedkoper als er vaak meer dan 5 minuten tussen je berichten zit, iets duurder als je weinig chat."
+              }
+            },
+            "claude_runtime": {
+              "name": "Claude SDK (runtime)",
+              "description": "Een leeg model gebruikt het Claude-model van de Runtime (Claude Sonnet tenzij ingesteld).",
+              "data": {
+                "runtime_url": "Runtime-adres{runtime_url_mark}",
+                "runtime_token": "Runtime-wachtwoord",
+                "claude_api_key": "Claude Plan-token of Anthropic-API-sleutel"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "Hetzelfde wachtwoord als op de AI Workspace Runtime. Leeg laten bij de add-on met automatische koppeling.",
+                "claude_api_key": "Een Claude Plan-token (sk-ant-oat…, uit `claude setup-token`, gebruikt je Claude-abonnement) of een Anthropic-API-sleutel (sk-ant-api…, gefactureerd als API-tegoed). Leeg laten om die op de AI Workspace Runtime te gebruiken, of bij bewerken om de opgeslagen te houden. [API-sleutel ophalen]({api_key_url})"
               }
             }
           }

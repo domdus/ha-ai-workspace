@@ -289,7 +289,8 @@
         "model_not_installed": "此模型未在 Ollama 中安装。已安装：{installed}",
         "pick_model": "服务器现已列出其模型。请从列表中选择一个。",
         "model_rejected": "服务器不允许此密钥使用该模型：{server_message}",
-        "claude_runtime_old": "请将 AI Workspace Runtime 更新到 1.6.0 或更高版本以使用 Claude SDK 智能体。"
+        "claude_runtime_old": "请将 AI Workspace Runtime 更新到 1.6.0 或更高版本以使用 Claude SDK 智能体。",
+        "claude_key_required": "请在 Claude SDK（Runtime）中填写 Claude Plan 令牌或 Anthropic API 密钥，或在 AI Workspace Runtime 上设置一个。"
       },
       "step": {
         "provider": {
@@ -299,7 +300,7 @@
             "api_provider": "提供商"
           },
           "data_description": {
-            "api_provider": "Cursor、Claude SDK，或云端或本地模型。"
+            "api_provider": "Cursor，或云端/本地模型。要在 AI Workspace Runtime 上使用 Claude SDK，请选择 Claude (Anthropic) 并打开其 Runtime 开关。"
           }
         },
         "provider_cursor": {
@@ -344,48 +345,6 @@
             }
           }
         },
-        "provider_claude": {
-          "title": "Claude SDK",
-          "description": "运行在 AI Workspace Runtime（与 Cursor 同一个应用）上的 Claude Code 智能体。使用你的 Claude 订阅（Pro、Max）或 Anthropic API 密钥。",
-          "data": {
-            "runtime_url": "Runtime 地址{runtime_url_mark}",
-            "runtime_token": "Runtime 密码",
-            "claude_api_key": "Claude Plan 令牌或 Anthropic API 密钥",
-            "model": "模型",
-            "effort": "推理强度",
-            "allow_internet": "允许访问互联网",
-            "assist": "添加到 Assist"
-          },
-          "data_description": {
-            "runtime_url": "{runtime_url_note}",
-            "runtime_token": "与 AI Workspace Runtime 上相同的密码。使用带自动配对的附加组件时请留空。",
-            "claude_api_key": "Claude Plan 令牌（sk-ant-oat…，由 `claude setup-token` 生成，使用你的 Claude 订阅）或 Anthropic API 密钥（sk-ant-api…，按 API 额度计费）。留空则使用 AI Workspace Runtime 上设置的值；编辑时留空可保留已保存的值。 [获取 API 密钥]({api_key_url})",
-            "model": "从列表中选择或输入 Anthropic 模型 ID。留空则使用 Runtime 的 Claude 模型（未设置时为 Claude Sonnet）。",
-            "effort": "允许多长的思考时间。默认由 Claude 决定。",
-            "allow_internet": "默认关闭。开启后，此智能体可在管理员对话中使用网页搜索、网页抓取和 Shell。关闭会移除这三项，因此 curl 或脚本也无法访问网络。普通用户的对话和语音卫星永远不会获得这些工具。",
-            "assist": "同时在 Home Assistant Assist（语音）下列出此助手。关闭则仅留在 AI Workspace 聊天中，并移除它在 Assist 中添加的内容。"
-          },
-          "sections": {
-            "model_list": {
-              "name": "模型列表",
-              "data": {
-                "models": "模型"
-              },
-              "data_description": {
-                "models": "可选。为此处和聊天中的模型选择指定你自己的模型，而不是提供商的完整列表。以逗号、分号或换行分隔名称，例如 gpt-5.5, grok-4.7。留空则显示提供商的列表。"
-              }
-            },
-            "advanced": {
-              "name": "高级",
-              "data": {
-                "save_tokens": "节省令牌"
-              },
-              "data_description": {
-                "save_tokens": "每条消息发送更少内容：更短的提示词、更少的聊天记录和更短的回复。更便宜，但关于你家的回答可能不够详尽。"
-              }
-            }
-          }
-        },
         "provider_cloud": {
           "title": "云端智能体",
           "description": "此智能体保存自己的密钥。可从已配置的集成复制，或粘贴新密钥。编辑时将密钥留空可保留已保存的密钥。",
@@ -401,7 +360,8 @@
             "assist_tts": "添加文字转语音",
             "tts_model": "文字转语音模型",
             "tts_voice": "声音",
-            "tts_speed": "语速"
+            "tts_speed": "语速",
+            "use_claude_runtime": "使用 Claude SDK（Runtime）"
           },
           "data_description": {
             "borrow": "使用该集成已保存的密钥。另一个集成保持不变。",
@@ -415,7 +375,8 @@
             "assist_tts": "使用此助手的密钥在 Home Assistant 中添加文字转语音选项。关闭则移除它添加的内容。",
             "tts_model": "留空则使用默认语音模型。若提供商列出其他名称，可以输入。",
             "tts_voice": "Coral 为默认声音。声音会按 Assist → 语言中设置的语言工作。",
-            "tts_speed": "此声音的语速。1× 为正常。适用于 AI Workspace 和 Assist。"
+            "tts_speed": "此声音的语速。1× 为正常。适用于 AI Workspace 和 Assist。",
+            "use_claude_runtime": "聊天通过 AI Workspace Runtime 上的 Claude Code 进行，而不是 Anthropic 云 API，使用你的 Claude 订阅（Pro、Max）或 Anthropic API 密钥。打开或关闭后会显示对应的字段。"
           },
           "sections": {
             "model_list": {
@@ -436,6 +397,20 @@
               "data_description": {
                 "save_tokens": "每条消息发送更少内容：更短的提示词、更少的聊天记录和更短的回复。更便宜，但关于你家的回答可能不够详尽。",
                 "cache_1h": "仅限 Claude。系统提示和工具在缓存中保留一小时，而不是 5 分钟。写入缓存的费用是输入价格的 2 倍（而不是 1.25 倍），读取为 0.1 倍。如果你的消息之间常隔 5 分钟以上会更便宜；很少聊天时会稍贵一些。"
+              }
+            },
+            "claude_runtime": {
+              "name": "Claude SDK（Runtime）",
+              "description": "模型留空时使用 Runtime 的 Claude 模型（未设置时为 Claude Sonnet）。",
+              "data": {
+                "runtime_url": "Runtime 地址{runtime_url_mark}",
+                "runtime_token": "Runtime 密码",
+                "claude_api_key": "Claude Plan 令牌或 Anthropic API 密钥"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "与 AI Workspace Runtime 上相同的密码。使用带自动配对的附加组件时请留空。",
+                "claude_api_key": "Claude Plan 令牌（sk-ant-oat…，由 `claude setup-token` 生成，使用你的 Claude 订阅）或 Anthropic API 密钥（sk-ant-api…，按 API 额度计费）。留空则使用 AI Workspace Runtime 上设置的值；编辑时留空可保留已保存的值。 [获取 API 密钥]({api_key_url})"
               }
             }
           }

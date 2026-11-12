@@ -289,7 +289,8 @@
         "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
         "pick_model": "The server lists its models now. Pick one from the model list.",
         "model_rejected": "The server does not allow this model for this key: {server_message}",
-        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents.",
+        "claude_key_required": "Add a Claude Plan token or an Anthropic API key under Claude SDK (runtime), or set one on the AI Workspace Runtime."
       },
       "step": {
         "provider": {
@@ -299,7 +300,7 @@
             "api_provider": "Provider"
           },
           "data_description": {
-            "api_provider": "Cursor, Claude SDK, or a cloud or local model."
+            "api_provider": "Cursor, or a cloud or local model. For Claude SDK on the AI Workspace Runtime, pick Claude (Anthropic) and turn on its runtime switch."
           }
         },
         "provider_cursor": {
@@ -344,48 +345,6 @@
             }
           }
         },
-        "provider_claude": {
-          "title": "Claude SDK",
-          "description": "Claude Code's agent on the AI Workspace Runtime, the same App as Cursor. Uses your Claude plan (Pro, Max) or an Anthropic API key.",
-          "data": {
-            "runtime_url": "Runtime address{runtime_url_mark}",
-            "runtime_token": "Runtime password",
-            "claude_api_key": "Claude Plan token or Anthropic API key",
-            "model": "Model",
-            "effort": "Effort",
-            "allow_internet": "Allow internet",
-            "assist": "Add to Assist"
-          },
-          "data_description": {
-            "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
-            "claude_api_key": "A Claude Plan token (sk-ant-oat…, from `claude setup-token`, uses your Claude subscription) or an Anthropic API key (sk-ant-api…, billed as API credits). Leave empty to use the one set on the AI Workspace Runtime, or when editing to keep the saved one. [Get an API key]({api_key_url})",
-            "model": "Pick from the list or type an Anthropic model id. Empty uses the Runtime's Claude model (Claude Sonnet unless set).",
-            "effort": "How much thinking time to allow. Default lets Claude decide.",
-            "allow_internet": "Off by default. On lets this agent use web search, page fetch and the shell in admin chats. Off removes all three, so curl or scripts cannot reach the web either. Chats from normal users and voice satellites never get them.",
-            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist."
-          },
-          "sections": {
-            "model_list": {
-              "name": "Model list",
-              "data": {
-                "models": "Models"
-              },
-              "data_description": {
-                "models": "Optional. Your own choice of models for the picker here and in the chat, instead of the provider's full list. Names separated by commas, semicolons or new lines, e.g. gpt-5.5, grok-4.7. Empty shows the provider's list."
-              }
-            },
-            "advanced": {
-              "name": "Advanced",
-              "data": {
-                "save_tokens": "Save tokens"
-              },
-              "data_description": {
-                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough."
-              }
-            }
-          }
-        },
         "provider_cloud": {
           "title": "Cloud agent",
           "description": "This agent keeps its own key. Copy one from an integration that is already set up, or paste a new one. Leave the key blank when editing to keep the saved key.",
@@ -401,7 +360,8 @@
             "assist_tts": "Add Text-to-speech",
             "tts_model": "Text-to-speech model",
             "tts_voice": "Voice",
-            "tts_speed": "Speed"
+            "tts_speed": "Speed",
+            "use_claude_runtime": "Use Claude SDK (runtime)"
           },
           "data_description": {
             "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
@@ -415,7 +375,8 @@
             "assist_tts": "Adds a Text-to-speech option in Home Assistant using this assistant's key. Off removes what it added.",
             "tts_model": "Leave empty for the default voice model. You can type another name if your provider lists one.",
             "tts_voice": "Coral is the OpenAI default. Kore is the Gemini default. Voices work for the languages you set under Assist → Language.",
-            "tts_speed": "How fast this voice speaks. 1× is normal. Applies to AI Workspace and Assist."
+            "tts_speed": "How fast this voice speaks. 1× is normal. Applies to AI Workspace and Assist.",
+            "use_claude_runtime": "Chats go through Claude Code on the AI Workspace Runtime instead of Anthropic's cloud API, with your Claude plan (Pro, Max) or an Anthropic API key. Turning it on or off shows the matching fields."
           },
           "sections": {
             "model_list": {
@@ -436,6 +397,20 @@
               "data_description": {
                 "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough.",
                 "cache_1h": "Claude only. Keeps the system prompt and tools cached for an hour instead of 5 minutes. Writing the cache costs 2× the input price instead of 1.25×; reading it costs 0.1×. Cheaper when there are breaks of more than 5 minutes between your messages, a little more expensive if you rarely chat."
+              }
+            },
+            "claude_runtime": {
+              "name": "Claude SDK (runtime)",
+              "description": "An empty model uses the Runtime's Claude model (Claude Sonnet unless set).",
+              "data": {
+                "runtime_url": "Runtime address{runtime_url_mark}",
+                "runtime_token": "Runtime password",
+                "claude_api_key": "Claude Plan token or Anthropic API key"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
+                "claude_api_key": "A Claude Plan token (sk-ant-oat…, from `claude setup-token`, uses your Claude subscription) or an Anthropic API key (sk-ant-api…, billed as API credits). Leave empty to use the one set on the AI Workspace Runtime, or when editing to keep the saved one. [Get an API key]({api_key_url})"
               }
             }
           }

@@ -16,11 +16,13 @@ from .const import (
     CONF_CONTEXT_WINDOW,
     CONF_TOOLS_ON_DEMAND,
     context_window_of,
+    API_ANTHROPIC,
     API_AZURE,
     API_PROVIDERS,
     API_SHORT_LABELS,
     CONF_AGENT_ID,
     CONF_CLAUDE_API_KEY,
+    CONF_USE_CLAUDE_RUNTIME,
     CONF_ALLOW_INTERNET,
     CONF_ALLOW_USERS,
     CONF_API_BASE,
@@ -383,13 +385,15 @@ def agent_payload(row: dict[str, Any], unique: str) -> dict[str, Any]:
     if effort not in EFFORTS or effort == EFFORT_DEFAULT:
         effort = ""
     title = str(row.get("title") or "").strip() or (
-        "Cursor" if cursor else ("Claude SDK" if provider == MODE_CLAUDE else API_SHORT_LABELS.get(provider, "Agent"))
+        "Cursor" if cursor else API_SHORT_LABELS.get(API_ANTHROPIC if provider == MODE_CLAUDE else provider, "Agent")
     )
     raw = {**row, CONF_API_PROVIDER: provider}
     data = {
         CONF_AGENT_ID: unique,
         CONF_MODE: provider if runtime else MODE_API,
-        CONF_API_PROVIDER: provider,
+        # A Claude SDK agent is the Claude (Anthropic) provider with the runtime switch on.
+        CONF_API_PROVIDER: API_ANTHROPIC if provider == MODE_CLAUDE else provider,
+        CONF_USE_CLAUDE_RUNTIME: provider == MODE_CLAUDE,
         CONF_CURSOR_API_KEY: str(row.get("cursor_api_key") or "").strip() if cursor else "",
         CONF_CLAUDE_API_KEY: str(row.get("claude_api_key") or "").strip() if provider == MODE_CLAUDE else "",
         CONF_API_KEY: "" if runtime else str(row.get("api_key") or "").strip(),

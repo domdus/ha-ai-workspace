@@ -56,6 +56,11 @@ from .const import (
     MCP_HA_MCP,
     MODE_API,
     CONF_MODE,
+    CONF_API_BASE,
+    CONF_API_KEY,
+    CONF_API_PROVIDER,
+    CONF_USE_CLAUDE_RUNTIME,
+    API_ANTHROPIC,
     MODE_CLAUDE,
     MODE_CURSOR,
     OVERLAY_JS,
@@ -298,6 +303,29 @@ def _move_tuning_to_agents(hass: HomeAssistant, entry: ConfigEntry) -> None:
 _TUNING_SIMPLE = "agent_tuning_simple"
 
 
+def _migrate_unified_claude_agent(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """One Claude (Anthropic) provider row; runtime SDK agents keep mode=claude on that provider."""
+    for sub in list(entry.subentries.values()):
+        if sub.subentry_type != SUBENTRY_AGENT:
+            continue
+        data = dict(sub.data)
+        prov = str(data.get(CONF_API_PROVIDER) or "")
+        mode = str(data.get(CONF_MODE) or "")
+        changed = False
+        if prov == MODE_CLAUDE or (mode == MODE_CLAUDE and prov != API_ANTHROPIC):
+            data[CONF_API_PROVIDER] = API_ANTHROPIC
+            data[CONF_MODE] = MODE_CLAUDE
+            data[CONF_USE_CLAUDE_RUNTIME] = True
+            data[CONF_API_KEY] = ""
+            data[CONF_API_BASE] = ""
+            changed = True
+        elif prov == API_ANTHROPIC and mode == MODE_CLAUDE and not data.get(CONF_USE_CLAUDE_RUNTIME):
+            data[CONF_USE_CLAUDE_RUNTIME] = True
+            changed = True
+        if changed:
+            hass.config_entries.async_update_subentry(entry, sub, data=data)
+
+
 def _simplify_agent_tuning(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """1.5: Look at Home Assistant first is always on and no longer on the agent form. Clear old choices once.
 
@@ -505,6 +533,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if yaml_conf:
         await async_apply_yaml(hass, entry, yaml_conf)
     _move_tuning_to_agents(hass, entry)
+    _migrate_unified_claude_agent(hass, entry)
     _simplify_agent_tuning(hass, entry)
     settings = await _build_settings(hass, entry)
     await hass.async_add_executor_job(settings.ensure_dirs)

@@ -289,7 +289,8 @@
         "model_not_installed": "Este modelo no está instalado en Ollama. Instalados: {installed}",
         "pick_model": "El servidor ya muestra sus modelos. Elige uno de la lista.",
         "model_rejected": "El servidor no permite este modelo con esta clave: {server_message}",
-        "claude_runtime_old": "Actualiza el AI Workspace Runtime a 1.6.0 o posterior para los agentes Claude SDK."
+        "claude_runtime_old": "Actualiza el AI Workspace Runtime a 1.6.0 o posterior para los agentes Claude SDK.",
+        "claude_key_required": "Añade un token de Claude Plan o una clave API de Anthropic en Claude SDK (runtime), o configura uno en el AI Workspace Runtime."
       },
       "step": {
         "provider": {
@@ -299,7 +300,7 @@
             "api_provider": "Proveedor"
           },
           "data_description": {
-            "api_provider": "Cursor, Claude SDK, o un modelo en la nube o local."
+            "api_provider": "Cursor, o un modelo en la nube o local. Para Claude SDK en el AI Workspace Runtime, elige Claude (Anthropic) y activa su opción de runtime."
           }
         },
         "provider_cursor": {
@@ -344,48 +345,6 @@
             }
           }
         },
-        "provider_claude": {
-          "title": "Claude SDK",
-          "description": "El agente de Claude Code en el AI Workspace Runtime, la misma app que Cursor. Usa tu suscripción de Claude (Pro, Max) o una clave API de Anthropic.",
-          "data": {
-            "runtime_url": "Dirección del runtime{runtime_url_mark}",
-            "runtime_token": "Contraseña del runtime",
-            "claude_api_key": "Token de Claude Plan o clave API de Anthropic",
-            "model": "Modelo",
-            "effort": "Esfuerzo",
-            "allow_internet": "Permitir Internet",
-            "assist": "Añadir a Assist"
-          },
-          "data_description": {
-            "runtime_url": "{runtime_url_note}",
-            "runtime_token": "La misma contraseña que en el AI Workspace Runtime. Déjala vacía con el complemento y el emparejamiento automático.",
-            "claude_api_key": "Un token de Claude Plan (sk-ant-oat…, de `claude setup-token`, usa tu suscripción de Claude) o una clave API de Anthropic (sk-ant-api…, facturada como créditos de API). Déjalo vacío para usar el del AI Workspace Runtime, o al editar para conservar el guardado. [Obtener una clave API]({api_key_url})",
-            "model": "Elige de la lista o escribe un id de modelo de Anthropic. Vacío usa el modelo Claude del runtime (Claude Sonnet si no se ha configurado).",
-            "effort": "Cuánto tiempo de pensamiento permitir. Por defecto decide Claude.",
-            "allow_internet": "Desactivado por defecto. Activado permite a este agente usar la búsqueda web, la descarga de páginas y la shell en chats de administrador. Desactivado quita las tres, así que curl o scripts tampoco llegan a la web. Los chats de usuarios normales y satélites de voz nunca las tienen.",
-            "assist": "También lista este asistente en Home Assistant Assist (voz). Desactivado: solo el chat de AI Workspace, y quita lo que añadió a Assist."
-          },
-          "sections": {
-            "model_list": {
-              "name": "Lista de modelos",
-              "data": {
-                "models": "Modelos"
-              },
-              "data_description": {
-                "models": "Opcional. Tu propia selección de modelos para el selector aquí y en el chat, en lugar de la lista completa del proveedor. Nombres separados por comas, punto y coma o saltos de línea, p. ej. gpt-5.5, grok-4.7. Vacío muestra la lista del proveedor."
-              }
-            },
-            "advanced": {
-              "name": "Avanzado",
-              "data": {
-                "save_tokens": "Ahorrar tokens"
-              },
-              "data_description": {
-                "save_tokens": "Envía menos con cada mensaje: un prompt más corto, menos historial y respuestas más cortas. Más barato, pero las respuestas sobre tu casa pueden ser menos completas."
-              }
-            }
-          }
-        },
         "provider_cloud": {
           "title": "Agente en la nube",
           "description": "Este agente guarda su propia clave. Copia una de una integración ya configurada o pega una nueva. Déjala en blanco al editar para conservar la guardada.",
@@ -401,7 +360,8 @@
             "assist_tts": "Añadir texto a voz",
             "tts_model": "Modelo de texto a voz",
             "tts_voice": "Voz",
-            "tts_speed": "Velocidad"
+            "tts_speed": "Velocidad",
+            "use_claude_runtime": "Usar Claude SDK (runtime)"
           },
           "data_description": {
             "borrow": "Usa la clave que esa integración ya tiene guardada. La otra integración no se modifica.",
@@ -415,7 +375,8 @@
             "assist_tts": "Añade una opción de texto a voz en Home Assistant con la clave de este asistente. Desactivado quita lo que añadió.",
             "tts_model": "Déjalo vacío para el modelo de voz predeterminado. Puedes escribir otro nombre si tu proveedor lo ofrece.",
             "tts_voice": "Coral es el valor predeterminado. Las voces siguen los idiomas que definas en Assist → Idioma.",
-            "tts_speed": "Qué tan rápido habla esta voz. 1× es lo normal. Vale para AI Workspace y Assist."
+            "tts_speed": "Qué tan rápido habla esta voz. 1× es lo normal. Vale para AI Workspace y Assist.",
+            "use_claude_runtime": "Los chats pasan por Claude Code en el AI Workspace Runtime en lugar de la API en la nube de Anthropic, con tu suscripción de Claude (Pro, Max) o una clave API de Anthropic. Al activarlo o desactivarlo se muestran los campos correspondientes."
           },
           "sections": {
             "model_list": {
@@ -436,6 +397,20 @@
               "data_description": {
                 "save_tokens": "Envía menos con cada mensaje: un prompt más corto, menos historial y respuestas más cortas. Más barato, pero las respuestas sobre tu casa pueden ser menos completas.",
                 "cache_1h": "Solo Claude. Mantiene el prompt del sistema y las herramientas en caché una hora en lugar de 5 minutos. Escribir en la caché cuesta 2× el precio de entrada en lugar de 1,25×; leerla cuesta 0,1×. Más barato cuando suele haber más de 5 minutos entre tus mensajes, algo más caro si chateas poco."
+              }
+            },
+            "claude_runtime": {
+              "name": "Claude SDK (runtime)",
+              "description": "Un modelo vacío usa el modelo Claude del Runtime (Claude Sonnet si no se define).",
+              "data": {
+                "runtime_url": "Dirección del runtime{runtime_url_mark}",
+                "runtime_token": "Contraseña del runtime",
+                "claude_api_key": "Token de Claude Plan o clave API de Anthropic"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "La misma contraseña que en el AI Workspace Runtime. Déjala vacía con el complemento y el emparejamiento automático.",
+                "claude_api_key": "Un token de Claude Plan (sk-ant-oat…, de `claude setup-token`, usa tu suscripción de Claude) o una clave API de Anthropic (sk-ant-api…, facturada como créditos de API). Déjalo vacío para usar el del AI Workspace Runtime, o al editar para conservar el guardado. [Obtener una clave API]({api_key_url})"
               }
             }
           }
