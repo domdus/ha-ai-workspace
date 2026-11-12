@@ -2,7 +2,7 @@
 
 ## 1.6.0b1
 
-**Claude Agent SDK on the same runtime as Cursor.** Add a **Claude SDK** agent in Home Assistant (distinct from cloud **Claude (Anthropic)**). OpenRouter, Claude Plan OAuth (`CLAUDE_CODE_OAUTH_TOKEN`), or Anthropic API on the runtime; optional per-agent credential. See [docs/claude-runtime.md](../docs/claude-runtime.md).
+**Claude Agent SDK on the AI Workspace Runtime.** Add a **Claude SDK** agent in Home Assistant (distinct from cloud **Claude (Anthropic)**). Use a Claude Plan token (`CLAUDE_CODE_OAUTH_TOKEN`, from `claude setup-token`) or an Anthropic API key on the runtime; the agent form allows an optional Plan token only—Anthropic keys are set in runtime add-on options, not as per-agent API keys. See [docs/claude-runtime.md](../docs/claude-runtime.md).
 
 **Runtime**
 - `claude-agent-sdk` provider with MCP proxy, resume via session id, and `GET /api/health` → `"claude"`.
