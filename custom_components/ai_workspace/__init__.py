@@ -588,7 +588,34 @@ def _heal_ha_mcp_after_start(hass: HomeAssistant, entry: ConfigEntry) -> None:
     entry.async_on_unload(async_at_started(hass, _started))
 
 
+# A reload cancels running chat replies. A saved setting waits this long for them to finish.
+RELOAD_WAIT_SECONDS = 600
+
+
+async def wait_for_replies(data: dict, limit: float = RELOAD_WAIT_SECONDS) -> None:
+    """Return once no chat reply runs, or after `limit` seconds. Replies started meanwhile count too."""
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + limit
+    while True:
+        running = [job for job in list(data.get("chat_jobs") or ()) if not job.done()]
+        left = deadline - loop.time()
+        if not running or left <= 0:
+            return
+        _LOGGER.info("AI Workspace: settings apply when %s running chat repl%s finish", len(running), "y" if len(running) == 1 else "ies")
+        await asyncio.wait(running, timeout=left)
+
+
 async def _reload(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    data = hass.data.get(DOMAIN)
+    if isinstance(data, dict):
+        # Several saves while a reply runs make one reload once it is done.
+        if data.get("reload_waiting"):
+            return
+        data["reload_waiting"] = True
+        await wait_for_replies(data)
+        if hass.data.get(DOMAIN) is not data:
+            # Reloaded or removed some other way in the meantime.
+            return
     await hass.config_entries.async_reload(entry.entry_id)
 
 

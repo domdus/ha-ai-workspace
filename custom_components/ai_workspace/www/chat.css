@@ -933,6 +933,13 @@ h1 {
   display: none;
 }
 
+.reply-cut {
+  margin-top: var(--ha-space-2);
+  color: var(--secondary-text-color);
+  font-size: var(--ha-font-size-s, 0.875rem);
+  font-style: italic;
+}
+
 .tools-summary {
   position: relative;
   overflow: hidden;

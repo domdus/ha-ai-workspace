@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.0b5
+
+**Saving settings no longer cuts off a running chat reply.**
+
+- A change in **Configure** or on an agent now waits until running chat replies finish (up to 10 minutes) before AI Workspace reloads with it. Before, the reload stopped the reply in the middle, and the chat showed only what had arrived so far.
+- A reply that is still cut off (Home Assistant restarts, or **Reload** on the integration) now says so under the reply, in the chat and later in the history, instead of looking finished.
+- The runtime is unchanged from 1.6.0b2.
+
 ## 1.6.0b4
 
 **One Claude (Anthropic) agent, in the cloud or on the runtime.** The separate **Claude SDK** choice in **Add agent** is gone. Add **Claude (Anthropic)** and turn on **Use Claude SDK (runtime)** for a Claude SDK agent on the AI Workspace Runtime, or leave it off for Anthropic's cloud API. See [Claude SDK agents](../docs/claude-runtime.md).

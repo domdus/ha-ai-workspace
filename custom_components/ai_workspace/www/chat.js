@@ -1987,6 +1987,15 @@ export async function mountAiWorkspace(root, options = {}) {
     return files;
   }
 
+  // A reply that stopped in the middle (Home Assistant restarted or the integration reloaded).
+  function markReplyCut(bubble) {
+    if (!bubble || bubble.querySelector(":scope > .reply-cut")) return;
+    const note = document.createElement("div");
+    note.className = "reply-cut";
+    note.textContent = t("reply_cut");
+    bubble.appendChild(note);
+  }
+
   function addBubble(role, content, events, opts = {}) {
     const empty = logEl.querySelector(".empty");
     if (empty) empty.remove();
@@ -2018,7 +2027,8 @@ export async function mountAiWorkspace(root, options = {}) {
     const pics = addBubbleImages(bubble, events);
     const files = addBubbleFiles(bubble, events);
     const chips = (events || []).filter(
-      (event) => event && event.type !== "image" && event.type !== "file" && event.type !== "error",
+      (event) =>
+        event && event.type !== "image" && event.type !== "file" && event.type !== "error" && event.type !== "interrupted",
     );
     if (chips.length) {
       const tools = document.createElement("div");
@@ -2037,6 +2047,7 @@ export async function mountAiWorkspace(root, options = {}) {
       md.hidden = !content;
       bubble.appendChild(md);
       if (content) bubble.classList.add("has-text");
+      if ((events || []).some((event) => event && event.type === "interrupted")) markReplyCut(bubble);
     } else if (content && !((pics.length || files.length) && isDefaultImageCaption(content))) {
       const text = uiCreate("ha-markdown", "div");
       text.className = "text";
@@ -4995,6 +5006,10 @@ export async function mountAiWorkspace(root, options = {}) {
               setMarkdown(node, t("reply_lost"));
               node.hidden = false;
               assistant.classList.add("has-text");
+            } else {
+              // Part of the reply arrived, then it stopped: do not let it look finished.
+              assistant.classList.remove("error");
+              markReplyCut(assistant);
             }
           }
         }

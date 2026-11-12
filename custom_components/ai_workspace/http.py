@@ -1260,6 +1260,8 @@ class ChatView(HomeAssistantView):
                         logger.debug("stopped turn usage not stored", exc_info=True)
                     answer = merge_reply_text("".join(parts), final)
                     if answer or tools:
+                        # Marked, so the chat says the reply was cut off instead of looking finished.
+                        cut = [*tools, {"type": "interrupted"}]
                         try:
                             await asyncio.shield(
                                 hass.async_add_executor_job(
@@ -1267,7 +1269,7 @@ class ChatView(HomeAssistantView):
                                     session.id,
                                     "assistant",
                                     answer,
-                                    json.dumps(list(tools), ensure_ascii=False),
+                                    json.dumps(cut, ensure_ascii=False),
                                 )
                             )
                         except Exception:
