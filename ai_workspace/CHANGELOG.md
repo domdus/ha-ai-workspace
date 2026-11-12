@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.6.0b3
+
+**One Claude (Anthropic) agent, cloud or runtime.** The separate **Claude SDK** provider row is gone. Add **Claude (Anthropic)** and turn on **Use Claude SDK (runtime)** for the AI Workspace Runtime, or leave it off for the direct Messages API with an Anthropic API key. Existing Claude SDK agents are migrated on the next integration load.
+
+**Claude SDK setup in Home Assistant**
+- Runtime URL, token, and an optional **Claude Plan token or Anthropic API key** (`sk-ant-oat-…` from `claude setup-token`, or `sk-ant-api…`) live under the collapsed **Claude SDK (runtime)** section—not mixed with cloud API key or OpenRouter in the agent form.
+- See [docs/claude-runtime.md](../docs/claude-runtime.md) for runtime host credentials (OpenRouter, Plan OAuth, or Anthropic API).
+
+**Integration only for this beta.** Runtime **1.6.0** or newer (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.6.0b2`) is still required for runtime Claude agents; Cursor on 1.5.2+ is unchanged.
+
 ## 1.6.0b1
 
 **Claude Agent SDK on the same runtime as Cursor.** Add a **Claude SDK** agent in Home Assistant (distinct from cloud **Claude (Anthropic)**). OpenRouter, Claude Plan OAuth (`CLAUDE_CODE_OAUTH_TOKEN`), or Anthropic API on the runtime; optional per-agent credential. See [docs/claude-runtime.md](../docs/claude-runtime.md).
