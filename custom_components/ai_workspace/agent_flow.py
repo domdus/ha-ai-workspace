@@ -81,7 +81,9 @@ from .const import (
     submitted_model,
     token_mode_of,
 )
+from .claude_login import async_finish_login, async_start_login
 from .discovery import (
+    _entry_value,
     async_detect_runtime_url,
     async_probe_runtime,
     async_resolve_runtime_url,
@@ -101,6 +103,17 @@ _DETAIL = {
 }
 
 SECTION_CLAUDE_RUNTIME = "claude_runtime"
+CONF_CLAUDE_SIGN_IN = "claude_sign_in"
+CONF_LOGIN_CODE = "code"
+# What the runtime's sign-in problems show on the form.
+_LOGIN_ERRORS = {
+    "no_runtime": "no_runtime",
+    "runtime_token": "runtime_refused",
+    "cli_missing": "claude_login_unavailable",
+    "expired": "claude_login_expired",
+    "code_rejected": "claude_code_rejected",
+    "bad_code": "claude_code_bad",
+}
 
 
 def uses_claude_runtime(current: dict, provider: str = "") -> bool:
@@ -311,6 +324,8 @@ def _fields_schema(
                 vol.Optional(CONF_RUNTIME_URL, default=str(current.get(CONF_RUNTIME_URL) or "")): _URL,
                 vol.Optional(CONF_RUNTIME_TOKEN, default=""): _PASSWORD,
                 vol.Optional(CONF_CLAUDE_API_KEY, default=""): _PASSWORD,
+                # Experimental: the runtime runs Anthropic's sign-in and fills in the token.
+                vol.Optional(CONF_CLAUDE_SIGN_IN, default=False): cv.boolean,
             }
             # Open, so the Plan token field is visible right after the switch is turned on.
             fields[vol.Required(SECTION_CLAUDE_RUNTIME)] = section(vol.Schema(inner), {"collapsed": False})
@@ -436,6 +451,53 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
 
     async def async_step_provider_cursor(self, user_input=None):
         return await self._async_step_fields("cursor", user_input)
+
+    async def _start_claude_login(self, step: str, user_input: dict, merged: dict) -> str:
+        """Ask the runtime for a sign-in link; "" when the sign-in step can show it, else the form error."""
+        base = await async_resolve_runtime_url(self.hass, str(merged.get(CONF_RUNTIME_URL) or ""))
+        if not base:
+            return "no_runtime"
+        token = str(_runtime_section(user_input).get(CONF_RUNTIME_TOKEN) or "").strip() or _entry_value(
+            self._get_entry(), CONF_RUNTIME_TOKEN
+        )
+        started, problem = await async_start_login(self.hass, base, token)
+        if started is None:
+            return _LOGIN_ERRORS.get(problem, "claude_login_failed")
+        self._login = {"base": base, "token": token, "step": step, "input": dict(user_input), **started}
+        return ""
+
+    async def async_step_claude_login(self, user_input=None):
+        """Sign in with Claude: show the runtime's link, take the code, then save the agent with the token."""
+        login = getattr(self, "_login", None)
+        if not login:
+            return await self._async_step_fields("cloud", None)
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            code = str(user_input.get(CONF_LOGIN_CODE) or "").strip()
+            plan, problem = await async_finish_login(self.hass, login["base"], login["token"], login["id"], code)
+            if plan:
+                self._login = None
+                pending = dict(login["input"])
+                pending[SECTION_CLAUDE_RUNTIME] = {
+                    **_runtime_section(pending),
+                    CONF_CLAUDE_API_KEY: plan,
+                    CONF_CLAUDE_SIGN_IN: False,
+                }
+                return await self._async_step_fields(login["step"], pending)
+            errors["base"] = _LOGIN_ERRORS.get(problem, "claude_login_failed")
+            if problem != "bad_code":
+                # Anthropic's code works once, so a refused or late one needs a new sign-in link.
+                started, again = await async_start_login(self.hass, login["base"], login["token"])
+                if started is None:
+                    errors["base"] = _LOGIN_ERRORS.get(again, "claude_login_failed")
+                else:
+                    login.update(started)
+        return self.async_show_form(
+            step_id="claude_login",
+            data_schema=vol.Schema({vol.Required(CONF_LOGIN_CODE): str}),
+            errors=errors,
+            description_placeholders={"login_url": login["url"]},
+        )
 
     async def async_step_provider_cloud(self, user_input=None):
         return await self._async_step_fields("cloud", user_input)
@@ -602,7 +664,21 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             # The switch changed which fields belong on the form (runtime section or cloud API key):
             # show the form again with the right fields instead of saving or failing on fields not shown.
             switched = provider == API_ANTHROPIC and use_runtime != (SECTION_CLAUDE_RUNTIME in user_input)
-            if switched:
+            runtime_input = _runtime_section(user_input)
+            sign_in = (
+                use_runtime
+                and not switched
+                and bool(runtime_input.get(CONF_CLAUDE_SIGN_IN))
+                and not str(runtime_input.get(CONF_CLAUDE_API_KEY) or "").strip()
+            )
+            if sign_in:
+                problem = await self._start_claude_login(step, user_input, merged)
+                if not problem:
+                    return await self.async_step_claude_login()
+                errors = {"base": problem}
+            # Not checked or saved yet: the form comes back with other fields, or the sign-in runs first.
+            hold = switched or sign_in
+            if hold:
                 pass
             elif provider == MODE_CURSOR:
                 errors = await self._cursor_errors(
@@ -627,15 +703,15 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                     errors[CONF_API_BASE] = "required"
             elif not key:
                 errors[CONF_API_KEY] = "required"
-            if not errors and not switched and provider not in {MODE_CURSOR, MODE_CLAUDE} and not use_runtime:
+            if not errors and not hold and provider not in {MODE_CURSOR, MODE_CLAUDE} and not use_runtime:
                 errors = await self._key_errors(provider, key, base, version)
             if not errors and provider == API_OLLAMA:
                 errors = await self._ollama_model_errors(base, model or default_api_model(API_OLLAMA))
-            if not errors and not switched and provider in _TEST_MODEL:
+            if not errors and not hold and provider in _TEST_MODEL:
                 errors = await self._gateway_model_errors(provider, key, base, model, stored_model, own_list)
                 if errors.get(CONF_MODEL) == "pick_model":
                     merged[CONF_MODEL] = self._suggested_model
-            if not errors and not switched:
+            if not errors and not hold:
                 runtime_token = str(
                     (user_input.get(CONF_RUNTIME_TOKEN) if step == "cursor" else _runtime_section(user_input).get(CONF_RUNTIME_TOKEN))
                     or user_input.get(CONF_RUNTIME_TOKEN)

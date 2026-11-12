@@ -18,7 +18,7 @@ Put it in one of two places:
 
 The credential on the agent wins. The prefix decides how Claude Code signs in, and only that one credential reaches it, so a Plan chat never falls back to API billing or the other way round. Saving the agent form checks an API key with Anthropic; a Plan token is checked on the first chat.
 
-There is no sign-in button or redirect in AI Workspace: `claude setup-token` does Anthropic's own browser sign-in on your computer, and you paste the result.
+You can also let the runtime do it (experimental, runtime 1.6.0b7 or newer): see [Sign in with Claude](#sign-in-with-claude). Or run `claude setup-token` yourself on any computer with Claude Code and paste the token.
 
 Anthropic's terms for the Agent SDK say third-party products should use API keys and not offer Claude.ai sign-in ([Agent SDK overview](https://code.claude.com/docs/en/agent-sdk/overview), [Legal and compliance](https://code.claude.com/docs/en/legal-and-compliance)). Whether your own Plan token on your own runtime is fine for you is your decision.
 
@@ -33,7 +33,17 @@ Anthropic's terms for the Agent SDK say third-party products should use API keys
 
 Turning the switch off again makes it a cloud Claude agent, which needs an Anthropic API key. Effort works for both. Claude SDK agents from 1.6.0b1 and b2 become Claude (Anthropic) agents with the switch on when the integration loads; nothing else about them changes. In YAML, `provider: claude` is still a Claude SDK agent.
 
-The runtime must be **1.6.0b1** or newer. An older runtime shows an update hint on Claude SDK agents only; Cursor agents keep working.
+The runtime must be **1.6.0b1** or newer (**1.6.0b7** for Sign in with Claude). An older runtime shows an update hint on Claude SDK agents only; Cursor agents keep working.
+
+## Sign in with Claude
+
+Experimental. The runtime runs Anthropic's own `claude setup-token` (the Claude Code CLI that comes with the Agent SDK) and hands the token back to the agent form, so you do not need Claude Code on your computer.
+
+1. On the agent, in the **Claude SDK (runtime)** section, leave **Claude Plan token or Anthropic API key** empty, tick **Sign in with Claude (experimental)**, and press **OK**.
+2. The form shows a link. Open it, sign in with the Claude account that has your plan, and copy the code Anthropic shows.
+3. Paste the code and press **OK**. The token is saved on the agent like a pasted one and lasts one year.
+
+A code works once. If Anthropic refuses it or you take longer than 15 minutes, the form shows a new link. The runtime keeps nothing: the CLI runs in a temporary folder that is deleted afterwards, and the code and token are never logged. If the CLI changes in a way the runtime does not expect, paste a token instead.
 
 ## Tools
 

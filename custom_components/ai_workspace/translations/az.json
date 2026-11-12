@@ -290,7 +290,13 @@
         "pick_model": "Server indi modellərini göstərir. Siyahıdan birini seçin.",
         "model_rejected": "Server bu açar üçün bu modelə icazə vermir: {server_message}",
         "claude_runtime_old": "Claude SDK agentləri üçün AI Workspace Runtime-ı 1.6.0 və ya daha yeni versiyaya yeniləyin.",
-        "claude_key_required": "Claude SDK (runtime) bölməsində Claude Plan tokeni və ya Anthropic API açarı əlavə edin, ya da onu AI Workspace Runtime-da təyin edin."
+        "claude_key_required": "Claude SDK (runtime) bölməsində Claude Plan tokeni və ya Anthropic API açarı əlavə edin, ya da onu AI Workspace Runtime-da təyin edin.",
+        "runtime_refused": "AI Workspace Runtime Runtime parolunu rədd etdi. Bu formada yoxlayın.",
+        "claude_login_unavailable": "Bu AI Workspace Runtime Claude-a daxil ola bilmir. Onu 1.6.0b7 və ya daha yeni versiyaya yeniləyin, ya da əvəzinə token yapışdırın.",
+        "claude_login_failed": "Claude girişi alınmadı. Yenidən cəhd edin, ya da əvəzinə token yapışdırın.",
+        "claude_login_expired": "Giriş çox uzun çəkdi. Yuxarıdakı yeni keçiddən istifadə edin və yeni kodu yapışdırın.",
+        "claude_code_rejected": "Anthropic bu kodu qəbul etmədi. Yuxarıdakı yeni keçidlə yenidən daxil olun və yeni kodu yapışdırın.",
+        "claude_code_bad": "Bu, Anthropic səhifəsindən kod deyil. Bütün kodu kopyalayıb yenidən yapışdırın."
       },
       "step": {
         "provider": {
@@ -405,12 +411,14 @@
               "data": {
                 "runtime_url": "Runtime ünvanı{runtime_url_mark}",
                 "runtime_token": "Runtime parolu",
-                "claude_api_key": "Claude Plan tokeni və ya Anthropic API açarı"
+                "claude_api_key": "Claude Plan tokeni və ya Anthropic API açarı",
+                "claude_sign_in": "Claude ilə daxil ol (eksperimental)"
               },
               "data_description": {
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "AI Workspace Runtime-dakı eyni parol. Avtomatik cütləşmə ilə əlavə modul istifadə edərkən boş buraxın.",
-                "claude_api_key": "Claude Plan tokeni (sk-ant-oat…, `claude setup-token` ilə yaradılır, Claude abunəliyinizdən istifadə edir) və ya Anthropic API açarı (sk-ant-api…, API kreditləri kimi ödənilir). AI Workspace Runtime-da təyin olunanı istifadə etmək üçün və ya redaktə edərkən saxlanmışı saxlamaq üçün boş buraxın. [API açarı al]({api_key_url})"
+                "claude_api_key": "Claude Plan tokeni (sk-ant-oat…, `claude setup-token` ilə yaradılır, Claude abunəliyinizdən istifadə edir) və ya Anthropic API açarı (sk-ant-api…, API kreditləri kimi ödənilir). AI Workspace Runtime-da təyin olunanı istifadə etmək üçün və ya redaktə edərkən saxlanmışı saxlamaq üçün boş buraxın. [API açarı al]({api_key_url})",
+                "claude_sign_in": "Token sahəsini boş buraxın, bunu seçin və OK basın: AI Workspace Runtime Claude abunəliyiniz (Pro, Max) üçün Anthropic girişini işə salır və tokeni sizin üçün doldurur."
               }
             }
           }
@@ -545,6 +553,16 @@
                 "save_tokens": "Hər mesajla daha az göndərir: daha qısa prompt, daha az söhbət tarixçəsi və daha qısa cavablar. Daha ucuzdur, amma eviniz haqqında cavablar daha az ətraflı ola bilər."
               }
             }
+          }
+        },
+        "claude_login": {
+          "title": "Claude ilə daxil ol",
+          "description": "1. [Claude ilə daxil ol]({login_url}) açın və abunəliyinizin olduğu Claude hesabı ilə daxil olun.\n2. Anthropic sonra bir kod göstərir. Onu tam kopyalayın.\n3. Aşağıya yapışdırın və OK basın. Token bu agentdə saxlanılır və bir il etibarlıdır.",
+          "data": {
+            "code": "Anthropic kodu"
+          },
+          "data_description": {
+            "code": "Daxil olduqdan sonra Anthropic səhifəsindəki tam kod."
           }
         }
       },

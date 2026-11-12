@@ -290,7 +290,13 @@
         "pick_model": "Le serveur liste maintenant ses modèles. Choisissez-en un dans la liste.",
         "model_rejected": "Le serveur n'autorise pas ce modèle pour cette clé : {server_message}",
         "claude_runtime_old": "Mettez à jour l'AI Workspace Runtime en 1.6.0 ou plus récent pour les agents Claude SDK.",
-        "claude_key_required": "Ajoutez un jeton Claude Plan ou une clé API Anthropic sous Claude SDK (runtime), ou définissez-en un sur l'AI Workspace Runtime."
+        "claude_key_required": "Ajoutez un jeton Claude Plan ou une clé API Anthropic sous Claude SDK (runtime), ou définissez-en un sur l'AI Workspace Runtime.",
+        "runtime_refused": "L'AI Workspace Runtime a refusé le mot de passe du Runtime. Vérifiez-le sur ce formulaire.",
+        "claude_login_unavailable": "Cet AI Workspace Runtime ne peut pas se connecter à Claude. Mettez-le à jour en 1.6.0b7 ou plus récent, ou collez plutôt un jeton.",
+        "claude_login_failed": "La connexion à Claude n'a pas fonctionné. Réessayez, ou collez plutôt un jeton.",
+        "claude_login_expired": "La connexion a pris trop de temps. Utilisez le nouveau lien ci-dessus et collez le nouveau code.",
+        "claude_code_rejected": "Anthropic n'a pas accepté ce code. Reconnectez-vous avec le nouveau lien ci-dessus et collez le nouveau code.",
+        "claude_code_bad": "Ce n'est pas un code de la page d'Anthropic. Copiez le code entier et collez-le à nouveau."
       },
       "step": {
         "provider": {
@@ -405,12 +411,14 @@
               "data": {
                 "runtime_url": "Adresse du runtime{runtime_url_mark}",
                 "runtime_token": "Mot de passe du runtime",
-                "claude_api_key": "Jeton Claude Plan ou clé API Anthropic"
+                "claude_api_key": "Jeton Claude Plan ou clé API Anthropic",
+                "claude_sign_in": "Se connecter avec Claude (expérimental)"
               },
               "data_description": {
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "Le même mot de passe que sur l'AI Workspace Runtime. Laissez vide avec le module complémentaire et l'appairage automatique.",
-                "claude_api_key": "Un jeton Claude Plan (sk-ant-oat…, issu de `claude setup-token`, utilise votre abonnement Claude) ou une clé API Anthropic (sk-ant-api…, facturée en crédits API). Laissez vide pour utiliser celui de l'AI Workspace Runtime, ou à la modification pour garder celui enregistré. [Obtenir une clé API]({api_key_url})"
+                "claude_api_key": "Un jeton Claude Plan (sk-ant-oat…, issu de `claude setup-token`, utilise votre abonnement Claude) ou une clé API Anthropic (sk-ant-api…, facturée en crédits API). Laissez vide pour utiliser celui de l'AI Workspace Runtime, ou à la modification pour garder celui enregistré. [Obtenir une clé API]({api_key_url})",
+                "claude_sign_in": "Laissez le champ du jeton vide, cochez ceci et appuyez sur OK : l'AI Workspace Runtime lance la connexion d'Anthropic pour votre abonnement Claude (Pro, Max) et remplit le jeton pour vous."
               }
             }
           }
@@ -545,6 +553,16 @@
                 "save_tokens": "Envoie moins à chaque message : une invite plus courte, moins d’historique et des réponses plus courtes. Moins cher, mais les réponses sur votre maison peuvent être moins complètes."
               }
             }
+          }
+        },
+        "claude_login": {
+          "title": "Se connecter avec Claude",
+          "description": "1. Ouvrez [Se connecter avec Claude]({login_url}) et connectez-vous avec le compte Claude de votre abonnement.\n2. Anthropic affiche ensuite un code. Copiez-le en entier.\n3. Collez-le ci-dessous et appuyez sur OK. Le jeton est enregistré sur cet agent et reste valable un an.",
+          "data": {
+            "code": "Code d'Anthropic"
+          },
+          "data_description": {
+            "code": "Le code complet affiché sur la page d'Anthropic après la connexion."
           }
         }
       },

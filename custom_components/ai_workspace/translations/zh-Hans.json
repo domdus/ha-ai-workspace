@@ -290,7 +290,13 @@
         "pick_model": "服务器现已列出其模型。请从列表中选择一个。",
         "model_rejected": "服务器不允许此密钥使用该模型：{server_message}",
         "claude_runtime_old": "请将 AI Workspace Runtime 更新到 1.6.0 或更高版本以使用 Claude SDK 智能体。",
-        "claude_key_required": "请在 Claude SDK（Runtime）中填写 Claude Plan 令牌或 Anthropic API 密钥，或在 AI Workspace Runtime 上设置一个。"
+        "claude_key_required": "请在 Claude SDK（Runtime）中填写 Claude Plan 令牌或 Anthropic API 密钥，或在 AI Workspace Runtime 上设置一个。",
+        "runtime_refused": "AI Workspace Runtime 拒绝了 Runtime 密码。请在此表单中检查。",
+        "claude_login_unavailable": "此 AI Workspace Runtime 无法登录 Claude。请更新到 1.6.0b7 或更高版本，或改为粘贴令牌。",
+        "claude_login_failed": "Claude 登录未成功。请重试，或改为粘贴令牌。",
+        "claude_login_expired": "登录耗时过长。请使用上方的新链接并粘贴新代码。",
+        "claude_code_rejected": "Anthropic 未接受此代码。请用上方的新链接重新登录并粘贴新代码。",
+        "claude_code_bad": "这不是 Anthropic 页面上的代码。请复制完整代码后重新粘贴。"
       },
       "step": {
         "provider": {
@@ -405,12 +411,14 @@
               "data": {
                 "runtime_url": "Runtime 地址{runtime_url_mark}",
                 "runtime_token": "Runtime 密码",
-                "claude_api_key": "Claude Plan 令牌或 Anthropic API 密钥"
+                "claude_api_key": "Claude Plan 令牌或 Anthropic API 密钥",
+                "claude_sign_in": "使用 Claude 登录（实验性）"
               },
               "data_description": {
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "与 AI Workspace Runtime 上相同的密码。使用带自动配对的附加组件时请留空。",
-                "claude_api_key": "Claude Plan 令牌（sk-ant-oat…，由 `claude setup-token` 生成，使用你的 Claude 订阅）或 Anthropic API 密钥（sk-ant-api…，按 API 额度计费）。留空则使用 AI Workspace Runtime 上设置的值；编辑时留空可保留已保存的值。 [获取 API 密钥]({api_key_url})"
+                "claude_api_key": "Claude Plan 令牌（sk-ant-oat…，由 `claude setup-token` 生成，使用你的 Claude 订阅）或 Anthropic API 密钥（sk-ant-api…，按 API 额度计费）。留空则使用 AI Workspace Runtime 上设置的值；编辑时留空可保留已保存的值。 [获取 API 密钥]({api_key_url})",
+                "claude_sign_in": "令牌字段留空，勾选此项并按确定：AI Workspace Runtime 会为你的 Claude 订阅（Pro、Max）运行 Anthropic 的登录，并替你填入令牌。"
               }
             }
           }
@@ -545,6 +553,16 @@
                 "save_tokens": "每条消息发送更少内容：更短的提示词、更少的聊天记录和更短的回复。更便宜，但关于你家的回答可能不够详尽。"
               }
             }
+          }
+        },
+        "claude_login": {
+          "title": "使用 Claude 登录",
+          "description": "1. 打开[使用 Claude 登录]({login_url})，用订阅所在的 Claude 账号登录。\n2. Anthropic 随后会显示一个代码。完整复制它。\n3. 粘贴到下方并按确定。令牌会保存在此智能体上，有效期一年。",
+          "data": {
+            "code": "Anthropic 的代码"
+          },
+          "data_description": {
+            "code": "登录后 Anthropic 页面上显示的完整代码。"
           }
         }
       },

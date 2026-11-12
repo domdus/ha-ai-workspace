@@ -290,7 +290,13 @@
         "pick_model": "Der Server listet jetzt seine Modelle. Wähle eines aus der Modellliste.",
         "model_rejected": "Der Server erlaubt dieses Modell für diesen Schlüssel nicht: {server_message}",
         "claude_runtime_old": "Aktualisiere die AI-Workspace-Runtime auf 1.6.0 oder neuer für Claude-SDK-Agenten.",
-        "claude_key_required": "Trage unter Claude SDK (Runtime) ein Claude-Plan-Token oder einen Anthropic-API-Schlüssel ein, oder hinterlege einen auf der AI-Workspace-Runtime."
+        "claude_key_required": "Trage unter Claude SDK (Runtime) ein Claude-Plan-Token oder einen Anthropic-API-Schlüssel ein, oder hinterlege einen auf der AI-Workspace-Runtime.",
+        "runtime_refused": "Die AI-Workspace-Runtime hat das Runtime-Passwort abgelehnt. Prüfe es in diesem Formular.",
+        "claude_login_unavailable": "Diese AI-Workspace-Runtime kann sich nicht bei Claude anmelden. Aktualisiere sie auf 1.6.0b7 oder neuer, oder füge stattdessen ein Token ein.",
+        "claude_login_failed": "Die Claude-Anmeldung hat nicht geklappt. Versuche es erneut oder füge stattdessen ein Token ein.",
+        "claude_login_expired": "Die Anmeldung hat zu lange gedauert. Nutze den neuen Link oben und füge den neuen Code ein.",
+        "claude_code_rejected": "Anthropic hat diesen Code nicht angenommen. Melde dich mit dem neuen Link oben erneut an und füge den neuen Code ein.",
+        "claude_code_bad": "Das ist kein Code von Anthropics Seite. Kopiere den ganzen Code und füge ihn erneut ein."
       },
       "step": {
         "provider": {
@@ -405,12 +411,14 @@
               "data": {
                 "runtime_url": "Runtime-Adresse{runtime_url_mark}",
                 "runtime_token": "Runtime-Passwort",
-                "claude_api_key": "Claude-Plan-Token oder Anthropic-API-Schlüssel"
+                "claude_api_key": "Claude-Plan-Token oder Anthropic-API-Schlüssel",
+                "claude_sign_in": "Mit Claude anmelden (experimentell)"
               },
               "data_description": {
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "Dasselbe Passwort wie auf der AI-Workspace-Runtime. Leer lassen bei Add-on mit automatischer Kopplung.",
-                "claude_api_key": "Ein Claude-Plan-Token (sk-ant-oat…, aus `claude setup-token`, nutzt dein Claude-Abo) oder ein Anthropic-API-Schlüssel (sk-ant-api…, abgerechnet als API-Guthaben). Leer lassen, um den Eintrag der AI-Workspace-Runtime zu nutzen, oder beim Bearbeiten, um den gespeicherten zu behalten. [API-Schlüssel holen]({api_key_url})"
+                "claude_api_key": "Ein Claude-Plan-Token (sk-ant-oat…, aus `claude setup-token`, nutzt dein Claude-Abo) oder ein Anthropic-API-Schlüssel (sk-ant-api…, abgerechnet als API-Guthaben). Leer lassen, um den Eintrag der AI-Workspace-Runtime zu nutzen, oder beim Bearbeiten, um den gespeicherten zu behalten. [API-Schlüssel holen]({api_key_url})",
+                "claude_sign_in": "Token-Feld leer lassen, dies ankreuzen und OK drücken: Die AI-Workspace-Runtime startet Anthropics Anmeldung für dein Claude-Abo (Pro, Max) und trägt das Token für dich ein."
               }
             }
           }
@@ -545,6 +553,16 @@
                 "save_tokens": "Sendet mit jeder Nachricht weniger: einen kürzeren Prompt, weniger Chatverlauf und kürzere Antworten. Günstiger, aber Antworten zu deinem Zuhause können weniger gründlich sein."
               }
             }
+          }
+        },
+        "claude_login": {
+          "title": "Mit Claude anmelden",
+          "description": "1. Öffne [Mit Claude anmelden]({login_url}) und melde dich mit dem Claude-Konto an, zu dem dein Abo gehört.\n2. Anthropic zeigt dann einen Code. Kopiere ihn vollständig.\n3. Füge ihn unten ein und drücke OK. Das Token wird an diesem Agenten gespeichert und gilt ein Jahr.",
+          "data": {
+            "code": "Code von Anthropic"
+          },
+          "data_description": {
+            "code": "Der vollständige Code von Anthropics Seite nach der Anmeldung."
           }
         }
       },

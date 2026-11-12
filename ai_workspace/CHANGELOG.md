@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.0b7
+
+**Sign in with Claude (experimental).** A Claude SDK agent can get its Claude Plan token without Claude Code on your computer: tick **Sign in with Claude (experimental)** in the **Claude SDK (runtime)** section and press OK, open the link, sign in, and paste the code Anthropic shows. The runtime runs Anthropic's own `claude setup-token` and the token is saved on the agent. See [Claude SDK agents](../docs/claude-runtime.md#sign-in-with-claude).
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.6.0b7`) for this.** An older runtime says so on the form; pasting a token still works.
+- A mistyped code can be corrected; a refused or expired one gets a new link.
+- The runtime keeps nothing: the CLI runs in a temporary folder that is deleted afterwards, and the code and token are never logged.
+
 ## 1.6.0b6
 
 - **Use Claude SDK (runtime)** on a Claude (Anthropic) agent moved to **Advanced** and is marked **experimental**.

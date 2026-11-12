@@ -290,7 +290,13 @@
         "pick_model": "이제 서버가 모델 목록을 제공합니다. 목록에서 하나를 고르세요.",
         "model_rejected": "서버가 이 키에 이 모델을 허용하지 않습니다: {server_message}",
         "claude_runtime_old": "Claude SDK 에이전트를 쓰려면 AI Workspace Runtime을 1.6.0 이상으로 업데이트하세요.",
-        "claude_key_required": "Claude SDK(런타임)에 Claude Plan 토큰 또는 Anthropic API 키를 넣거나, AI Workspace Runtime에 설정하세요."
+        "claude_key_required": "Claude SDK(런타임)에 Claude Plan 토큰 또는 Anthropic API 키를 넣거나, AI Workspace Runtime에 설정하세요.",
+        "runtime_refused": "AI Workspace Runtime이 Runtime 비밀번호를 거부했습니다. 이 양식에서 확인하세요.",
+        "claude_login_unavailable": "이 AI Workspace Runtime은 Claude에 로그인할 수 없습니다. 1.6.0b7 이상으로 업데이트하거나 대신 토큰을 붙여 넣으세요.",
+        "claude_login_failed": "Claude 로그인이 되지 않았습니다. 다시 시도하거나 대신 토큰을 붙여 넣으세요.",
+        "claude_login_expired": "로그인 시간이 너무 오래 걸렸습니다. 위의 새 링크를 사용하고 새 코드를 붙여 넣으세요.",
+        "claude_code_rejected": "Anthropic이 이 코드를 받아들이지 않았습니다. 위의 새 링크로 다시 로그인하고 새 코드를 붙여 넣으세요.",
+        "claude_code_bad": "Anthropic 페이지의 코드가 아닙니다. 전체 코드를 복사해 다시 붙여 넣으세요."
       },
       "step": {
         "provider": {
@@ -405,12 +411,14 @@
               "data": {
                 "runtime_url": "런타임 주소{runtime_url_mark}",
                 "runtime_token": "런타임 비밀번호",
-                "claude_api_key": "Claude Plan 토큰 또는 Anthropic API 키"
+                "claude_api_key": "Claude Plan 토큰 또는 Anthropic API 키",
+                "claude_sign_in": "Claude로 로그인 (실험적)"
               },
               "data_description": {
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "AI Workspace Runtime과 같은 비밀번호입니다. 자동 페어링 애드온을 쓰면 비워 두세요.",
-                "claude_api_key": "Claude Plan 토큰(sk-ant-oat…, `claude setup-token`으로 생성, Claude 구독 사용) 또는 Anthropic API 키(sk-ant-api…, API 크레딧으로 청구)입니다. 비워 두면 AI Workspace Runtime에 설정된 값을 쓰고, 수정 시 비워 두면 저장된 값을 유지합니다. [API 키 받기]({api_key_url})"
+                "claude_api_key": "Claude Plan 토큰(sk-ant-oat…, `claude setup-token`으로 생성, Claude 구독 사용) 또는 Anthropic API 키(sk-ant-api…, API 크레딧으로 청구)입니다. 비워 두면 AI Workspace Runtime에 설정된 값을 쓰고, 수정 시 비워 두면 저장된 값을 유지합니다. [API 키 받기]({api_key_url})",
+                "claude_sign_in": "토큰 칸을 비워 두고 이 항목을 선택한 뒤 확인을 누르세요. AI Workspace Runtime이 Claude 구독(Pro, Max)용 Anthropic 로그인을 실행하고 토큰을 대신 채웁니다."
               }
             }
           }
@@ -545,6 +553,16 @@
                 "save_tokens": "메시지마다 더 적게 보냅니다: 더 짧은 프롬프트, 더 적은 대화 기록, 더 짧은 답변. 비용은 줄지만 집에 대한 답변이 덜 자세할 수 있습니다."
               }
             }
+          }
+        },
+        "claude_login": {
+          "title": "Claude로 로그인",
+          "description": "1. [Claude로 로그인]({login_url})을 열고 구독이 있는 Claude 계정으로 로그인하세요.\n2. Anthropic이 코드를 보여 줍니다. 전체를 복사하세요.\n3. 아래에 붙여 넣고 확인을 누르세요. 토큰은 이 에이전트에 저장되며 1년 동안 유효합니다.",
+          "data": {
+            "code": "Anthropic 코드"
+          },
+          "data_description": {
+            "code": "로그인 후 Anthropic 페이지에 표시된 전체 코드입니다."
           }
         }
       },

@@ -290,7 +290,13 @@
         "pick_model": "La servilo nun listigas siajn modelojn. Elektu unu el la listo.",
         "model_rejected": "La servilo ne permesas ĉi tiun modelon por ĉi tiu ŝlosilo: {server_message}",
         "claude_runtime_old": "Ĝisdatigu la AI Workspace Runtime al 1.6.0 aŭ pli nova por Claude SDK-agentoj.",
-        "claude_key_required": "Aldonu Claude Plan-ĵetonon aŭ Anthropic-API-ŝlosilon sub Claude SDK (runtime), aŭ agordu unu ĉe la AI Workspace Runtime."
+        "claude_key_required": "Aldonu Claude Plan-ĵetonon aŭ Anthropic-API-ŝlosilon sub Claude SDK (runtime), aŭ agordu unu ĉe la AI Workspace Runtime.",
+        "runtime_refused": "La AI Workspace Runtime rifuzis la Runtime-pasvorton. Kontrolu ĝin en ĉi tiu formularo.",
+        "claude_login_unavailable": "Ĉi tiu AI Workspace Runtime ne povas ensaluti al Claude. Ĝisdatigu ĝin al 1.6.0b7 aŭ pli nova, aŭ algluu ĵetonon anstataŭe.",
+        "claude_login_failed": "La ensaluto al Claude ne funkciis. Provu denove, aŭ algluu ĵetonon anstataŭe.",
+        "claude_login_expired": "La ensaluto daŭris tro longe. Uzu la novan ligilon supre kaj algluu la novan kodon.",
+        "claude_code_rejected": "Anthropic ne akceptis ĉi tiun kodon. Ensalutu denove per la nova ligilo supre kaj algluu la novan kodon.",
+        "claude_code_bad": "Tio ne estas kodo de la paĝo de Anthropic. Kopiu la tutan kodon kaj algluu ĝin denove."
       },
       "step": {
         "provider": {
@@ -405,12 +411,14 @@
               "data": {
                 "runtime_url": "Adreso de la runtime{runtime_url_mark}",
                 "runtime_token": "Pasvorto de la runtime",
-                "claude_api_key": "Claude Plan-ĵetono aŭ Anthropic-API-ŝlosilo"
+                "claude_api_key": "Claude Plan-ĵetono aŭ Anthropic-API-ŝlosilo",
+                "claude_sign_in": "Ensaluti per Claude (eksperimenta)"
               },
               "data_description": {
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "La sama pasvorto kiel ĉe la AI Workspace Runtime. Lasu malplena kiam vi uzas la aldonaĵon kun aŭtomata parigo.",
-                "claude_api_key": "Claude Plan-ĵetono (sk-ant-oat…, el `claude setup-token`, uzas vian Claude-abonon) aŭ Anthropic-API-ŝlosilo (sk-ant-api…, fakturata kiel API-kreditoj). Lasu malplena por uzi tiun de la AI Workspace Runtime, aŭ dum redaktado por teni la konservitan. [Akiri API-ŝlosilon]({api_key_url})"
+                "claude_api_key": "Claude Plan-ĵetono (sk-ant-oat…, el `claude setup-token`, uzas vian Claude-abonon) aŭ Anthropic-API-ŝlosilo (sk-ant-api…, fakturata kiel API-kreditoj). Lasu malplena por uzi tiun de la AI Workspace Runtime, aŭ dum redaktado por teni la konservitan. [Akiri API-ŝlosilon]({api_key_url})",
+                "claude_sign_in": "Lasu la ĵetonan kampon malplena, marku ĉi tion kaj premu OK: la AI Workspace Runtime lanĉas la ensaluton de Anthropic por via Claude-abono (Pro, Max) kaj plenigas la ĵetonon por vi."
               }
             }
           }
@@ -545,6 +553,16 @@
                 "save_tokens": "Sendas malpli kun ĉiu mesaĝo: pli mallongan instrukcion, malpli da babilhistorio kaj pli mallongajn respondojn. Malpli kosta, sed respondoj pri via hejmo povas esti malpli detalaj."
               }
             }
+          }
+        },
+        "claude_login": {
+          "title": "Ensaluti per Claude",
+          "description": "1. Malfermu [Ensaluti per Claude]({login_url}) kaj ensalutu per la Claude-konto kun via abono.\n2. Anthropic tiam montras kodon. Kopiu ĝin tutan.\n3. Algluu ĝin sube kaj premu OK. La ĵetono estas konservita ĉe ĉi tiu agento kaj validas unu jaron.",
+          "data": {
+            "code": "Kodo de Anthropic"
+          },
+          "data_description": {
+            "code": "La tuta kodo de la paĝo de Anthropic post la ensaluto."
           }
         }
       },

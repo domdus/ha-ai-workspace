@@ -290,7 +290,13 @@
         "pick_model": "Сервер теперь показывает свои модели. Выберите одну из списка.",
         "model_rejected": "Сервер не разрешает эту модель для этого ключа: {server_message}",
         "claude_runtime_old": "Обновите AI Workspace Runtime до 1.6.0 или новее для агентов Claude SDK.",
-        "claude_key_required": "Добавьте токен Claude Plan или API-ключ Anthropic в разделе Claude SDK (runtime) либо задайте его на AI Workspace Runtime."
+        "claude_key_required": "Добавьте токен Claude Plan или API-ключ Anthropic в разделе Claude SDK (runtime) либо задайте его на AI Workspace Runtime.",
+        "runtime_refused": "AI Workspace Runtime отклонил пароль Runtime. Проверьте его в этой форме.",
+        "claude_login_unavailable": "Этот AI Workspace Runtime не может войти в Claude. Обновите его до 1.6.0b7 или новее либо вставьте токен.",
+        "claude_login_failed": "Вход в Claude не удался. Попробуйте ещё раз или вставьте токен.",
+        "claude_login_expired": "Вход занял слишком много времени. Используйте новую ссылку выше и вставьте новый код.",
+        "claude_code_rejected": "Anthropic не принял этот код. Войдите снова по новой ссылке выше и вставьте новый код.",
+        "claude_code_bad": "Это не код со страницы Anthropic. Скопируйте код целиком и вставьте снова."
       },
       "step": {
         "provider": {
@@ -405,12 +411,14 @@
               "data": {
                 "runtime_url": "Адрес runtime{runtime_url_mark}",
                 "runtime_token": "Пароль runtime",
-                "claude_api_key": "Токен Claude Plan или API-ключ Anthropic"
+                "claude_api_key": "Токен Claude Plan или API-ключ Anthropic",
+                "claude_sign_in": "Войти через Claude (экспериментально)"
               },
               "data_description": {
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "Тот же пароль, что и на AI Workspace Runtime. Оставьте пустым при использовании надстройки с автоматическим сопряжением.",
-                "claude_api_key": "Токен Claude Plan (sk-ant-oat…, из `claude setup-token`, использует вашу подписку Claude) или API-ключ Anthropic (sk-ant-api…, оплачивается API-кредитами). Оставьте пустым, чтобы использовать указанный на AI Workspace Runtime, или при редактировании, чтобы сохранить сохранённый. [Получить API-ключ]({api_key_url})"
+                "claude_api_key": "Токен Claude Plan (sk-ant-oat…, из `claude setup-token`, использует вашу подписку Claude) или API-ключ Anthropic (sk-ant-api…, оплачивается API-кредитами). Оставьте пустым, чтобы использовать указанный на AI Workspace Runtime, или при редактировании, чтобы сохранить сохранённый. [Получить API-ключ]({api_key_url})",
+                "claude_sign_in": "Оставьте поле токена пустым, отметьте это и нажмите OK: AI Workspace Runtime запустит вход Anthropic для вашей подписки Claude (Pro, Max) и сам впишет токен."
               }
             }
           }
@@ -545,6 +553,16 @@
                 "save_tokens": "С каждым сообщением отправляется меньше: короче промпт, меньше истории чата и короче ответы. Дешевле, но ответы о вашем доме могут быть менее подробными."
               }
             }
+          }
+        },
+        "claude_login": {
+          "title": "Войти через Claude",
+          "description": "1. Откройте [Войти через Claude]({login_url}) и войдите в аккаунт Claude с вашей подпиской.\n2. Anthropic покажет код. Скопируйте его целиком.\n3. Вставьте его ниже и нажмите OK. Токен сохранится в этом агенте и действует один год.",
+          "data": {
+            "code": "Код от Anthropic"
+          },
+          "data_description": {
+            "code": "Полный код со страницы Anthropic после входа."
           }
         }
       },

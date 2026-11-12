@@ -290,7 +290,13 @@
         "pick_model": "Server nyní vypisuje své modely. Vyberte jeden ze seznamu.",
         "model_rejected": "Server nepovoluje tento model pro tento klíč: {server_message}",
         "claude_runtime_old": "Aktualizujte AI Workspace Runtime na 1.6.0 nebo novější pro agenty Claude SDK.",
-        "claude_key_required": "Přidejte token Claude Plan nebo klíč API Anthropic v části Claude SDK (runtime), nebo jej nastavte v AI Workspace Runtime."
+        "claude_key_required": "Přidejte token Claude Plan nebo klíč API Anthropic v části Claude SDK (runtime), nebo jej nastavte v AI Workspace Runtime.",
+        "runtime_refused": "AI Workspace Runtime odmítl heslo Runtime. Zkontrolujte ho v tomto formuláři.",
+        "claude_login_unavailable": "Tento AI Workspace Runtime se nemůže přihlásit ke Claude. Aktualizujte ho na 1.6.0b7 nebo novější, nebo místo toho vložte token.",
+        "claude_login_failed": "Přihlášení ke Claude se nezdařilo. Zkuste to znovu, nebo místo toho vložte token.",
+        "claude_login_expired": "Přihlášení trvalo příliš dlouho. Použijte nový odkaz výše a vložte nový kód.",
+        "claude_code_rejected": "Anthropic tento kód nepřijal. Přihlaste se znovu novým odkazem výše a vložte nový kód.",
+        "claude_code_bad": "Toto není kód ze stránky Anthropic. Zkopírujte celý kód a vložte ho znovu."
       },
       "step": {
         "provider": {
@@ -405,12 +411,14 @@
               "data": {
                 "runtime_url": "Adresa běhového prostředí{runtime_url_mark}",
                 "runtime_token": "Heslo runtime",
-                "claude_api_key": "Token Claude Plan nebo klíč API Anthropic"
+                "claude_api_key": "Token Claude Plan nebo klíč API Anthropic",
+                "claude_sign_in": "Přihlásit se přes Claude (experimentální)"
               },
               "data_description": {
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "Stejné heslo jako u AI Workspace Runtime. Nechte prázdné u doplňku s automatickým spárováním.",
-                "claude_api_key": "Token Claude Plan (sk-ant-oat…, z `claude setup-token`, využívá vaše předplatné Claude) nebo klíč API Anthropic (sk-ant-api…, účtovaný jako kredity API). Nechte prázdné, chcete-li použít ten z AI Workspace Runtime, nebo při úpravě, aby se zachoval uložený. [Získat API klíč]({api_key_url})"
+                "claude_api_key": "Token Claude Plan (sk-ant-oat…, z `claude setup-token`, využívá vaše předplatné Claude) nebo klíč API Anthropic (sk-ant-api…, účtovaný jako kredity API). Nechte prázdné, chcete-li použít ten z AI Workspace Runtime, nebo při úpravě, aby se zachoval uložený. [Získat API klíč]({api_key_url})",
+                "claude_sign_in": "Pole tokenu nechte prázdné, zaškrtněte toto a stiskněte OK: AI Workspace Runtime spustí přihlášení Anthropic pro vaše předplatné Claude (Pro, Max) a token vyplní za vás."
               }
             }
           }
@@ -545,6 +553,16 @@
                 "save_tokens": "S každou zprávou posílá méně: kratší prompt, méně historie chatu a kratší odpovědi. Levnější, ale odpovědi o vaší domácnosti mohou být méně důkladné."
               }
             }
+          }
+        },
+        "claude_login": {
+          "title": "Přihlásit se přes Claude",
+          "description": "1. Otevřete [Přihlásit se přes Claude]({login_url}) a přihlaste se účtem Claude s vaším předplatným.\n2. Anthropic pak zobrazí kód. Zkopírujte ho celý.\n3. Vložte ho níže a stiskněte OK. Token se uloží u tohoto agenta a platí jeden rok.",
+          "data": {
+            "code": "Kód od Anthropic"
+          },
+          "data_description": {
+            "code": "Celý kód ze stránky Anthropic po přihlášení."
           }
         }
       },

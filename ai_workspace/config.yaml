@@ -1,5 +1,5 @@
 name: AI Workspace Runtime
-version: "1.6.0b6"
+version: "1.6.0b7"
 slug: ai_workspace
 description: >-
   Runs Cursor and Claude Agent SDK side by side next to Home Assistant and talks to LAN MCP.

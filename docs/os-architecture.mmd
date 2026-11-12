@@ -4,7 +4,7 @@ architecture-beta
   service core(server)[Home Assistant] in os
   service mcp(server)[MCP] in os
   service runtime(server)[AI Workspace Runtime] in os
-  service cloud(internet)[Cursor / Claude Cloud]
+  service cloud(internet)[Cursor Cloud]
   ws:R -- L:core
   core:R -- L:mcp
   mcp:R -- L:runtime

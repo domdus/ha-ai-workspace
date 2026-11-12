@@ -216,6 +216,9 @@ async def lifespan(app: FastAPI):
         if warmup is not None:
             warmup.cancel()
         store.close()
+        login = getattr(app.state, "claude_login", None)
+        if login is not None:
+            login.close()
         if runtime is not None:
             await runtime.aclose()
 
@@ -271,8 +274,60 @@ def health(request: Request) -> dict:
         "model": settings.model,
         "cursor": _provider_flag(providers, "cursor"),
         "claude": _provider_flag(providers, "claude"),
+        # The agent form offers "Sign in with Claude" only when the runtime can run it.
+        "claude_login": _login_manager(request.app).available(),
         "token_required": bool(settings.runtime_token) or not settings.open_without_token(),
     }
+
+
+def _login_manager(app: FastAPI):
+    from app.claude_login import LoginManager
+
+    manager = getattr(app.state, "claude_login", None)
+    if manager is None:
+        manager = LoginManager()
+        app.state.claude_login = manager
+    return manager
+
+
+class ClaudeLoginCode(BaseModel):
+    code: str = Field(default="", max_length=512)
+
+
+def _login_failed(exc) -> JSONResponse:
+    status = {"cli_missing": 501, "expired": 410, "bad_code": 400, "code_rejected": 400}.get(exc.key, 502)
+    return JSONResponse({"detail": exc.key}, status_code=status)
+
+
+@router.post("/api/claude/login")
+async def claude_login_start(request: Request):
+    """Start `claude setup-token` and return its sign-in link."""
+    from app.claude_login import LoginError
+
+    try:
+        login = await _login_manager(request.app).start()
+    except LoginError as exc:
+        logger.warning("Claude sign-in could not start: %s", exc.key)
+        return _login_failed(exc)
+    return {"id": login.id, "url": login.link}
+
+
+@router.post("/api/claude/login/{login_id}")
+async def claude_login_finish(login_id: str, body: ClaudeLoginCode, request: Request):
+    """Hand over the code from Anthropic's page; returns the Claude Plan token. Never logged."""
+    from app.claude_login import LoginError
+
+    try:
+        token = await _login_manager(request.app).finish(login_id, body.code)
+    except LoginError as exc:
+        logger.info("Claude sign-in did not finish: %s", exc.key)
+        return _login_failed(exc)
+    return {"token": token}
+
+
+@router.delete("/api/claude/login/{login_id}", status_code=204)
+async def claude_login_cancel(login_id: str, request: Request):
+    _login_manager(request.app).cancel(login_id)
 
 
 @router.get("/api/providers")

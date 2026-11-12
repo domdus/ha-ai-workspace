@@ -4,8 +4,8 @@ architecture-beta
   service ws(server)[AI Workspace] in ha
   service core(server)[Home Assistant] in ha
   service mcp(server)[MCP] in ha
-  service sdk(server)[Cursor + Claude SDK] in runtime
-  service cloud(internet)[Cursor / Claude Cloud]
+  service sdk(server)[Cursor SDK] in runtime
+  service cloud(internet)[Cursor Cloud]
   ws:R -- L:core
   core:R -- L:mcp
   sdk:L --> R:mcp

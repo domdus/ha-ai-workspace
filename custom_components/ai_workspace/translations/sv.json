@@ -290,7 +290,13 @@
         "pick_model": "Servern listar nu sina modeller. Välj en i listan.",
         "model_rejected": "Servern tillåter inte den här modellen för den här nyckeln: {server_message}",
         "claude_runtime_old": "Uppdatera AI Workspace Runtime till 1.6.0 eller senare för Claude SDK-agenter.",
-        "claude_key_required": "Lägg till en Claude Plan-token eller en Anthropic API-nyckel under Claude SDK (runtime), eller ange en på AI Workspace Runtime."
+        "claude_key_required": "Lägg till en Claude Plan-token eller en Anthropic API-nyckel under Claude SDK (runtime), eller ange en på AI Workspace Runtime.",
+        "runtime_refused": "AI Workspace Runtime nekade Runtime-lösenordet. Kontrollera det i det här formuläret.",
+        "claude_login_unavailable": "Den här AI Workspace Runtime kan inte logga in på Claude. Uppdatera den till 1.6.0b7 eller nyare, eller klistra in en token i stället.",
+        "claude_login_failed": "Inloggningen till Claude fungerade inte. Försök igen, eller klistra in en token i stället.",
+        "claude_login_expired": "Inloggningen tog för lång tid. Använd den nya länken ovan och klistra in den nya koden.",
+        "claude_code_rejected": "Anthropic godtog inte koden. Logga in igen med den nya länken ovan och klistra in den nya koden.",
+        "claude_code_bad": "Det där är ingen kod från Anthropics sida. Kopiera hela koden och klistra in den igen."
       },
       "step": {
         "provider": {
@@ -405,12 +411,14 @@
               "data": {
                 "runtime_url": "Runtime-adress{runtime_url_mark}",
                 "runtime_token": "Runtime-lösenord",
-                "claude_api_key": "Claude Plan-token eller Anthropic API-nyckel"
+                "claude_api_key": "Claude Plan-token eller Anthropic API-nyckel",
+                "claude_sign_in": "Logga in med Claude (experimentellt)"
               },
               "data_description": {
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "Samma lösenord som på AI Workspace Runtime. Lämna tomt när du använder tillägget med automatisk parkoppling.",
-                "claude_api_key": "En Claude Plan-token (sk-ant-oat…, från `claude setup-token`, använder din Claude-prenumeration) eller en Anthropic API-nyckel (sk-ant-api…, debiteras som API-krediter). Lämna tomt för att använda den på AI Workspace Runtime, eller vid redigering för att behålla den sparade. [Hämta API-nyckel]({api_key_url})"
+                "claude_api_key": "En Claude Plan-token (sk-ant-oat…, från `claude setup-token`, använder din Claude-prenumeration) eller en Anthropic API-nyckel (sk-ant-api…, debiteras som API-krediter). Lämna tomt för att använda den på AI Workspace Runtime, eller vid redigering för att behålla den sparade. [Hämta API-nyckel]({api_key_url})",
+                "claude_sign_in": "Lämna tokenfältet tomt, kryssa i detta och tryck på OK: AI Workspace Runtime kör Anthropics inloggning för din Claude-prenumeration (Pro, Max) och fyller i token åt dig."
               }
             }
           }
@@ -545,6 +553,16 @@
                 "save_tokens": "Skickar mindre med varje meddelande: en kortare prompt, mindre chatthistorik och kortare svar. Billigare, men svar om ditt hem kan bli mindre grundliga."
               }
             }
+          }
+        },
+        "claude_login": {
+          "title": "Logga in med Claude",
+          "description": "1. Öppna [Logga in med Claude]({login_url}) och logga in med Claude-kontot som har din prenumeration.\n2. Anthropic visar sedan en kod. Kopiera hela.\n3. Klistra in den nedan och tryck på OK. Token sparas på den här agenten och gäller i ett år.",
+          "data": {
+            "code": "Kod från Anthropic"
+          },
+          "data_description": {
+            "code": "Hela koden från Anthropics sida efter inloggningen."
           }
         }
       },

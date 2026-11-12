@@ -54,7 +54,7 @@ The **Usage** page is the honest bit: what you spent, which model, which day. So
 ## Requirements
 
 - Home Assistant **2025.12** or newer
-- A **provider API key** from that provider's API console (⚠️ not a ChatGPT or Claude.ai plan; usually paid API credits), a local **Ollama** server, or credentials for **AI Workspace Runtime** — a **Cursor API key** and/or a **Claude Plan token or Anthropic API key** for Claude SDK agents
+- A **provider API key** from that provider's API console (⚠️ not a ChatGPT or Claude.ai plan; usually paid API credits), a local **Ollama** server, or a **Cursor API key** (AI Workspace Runtime)
 
 You also need an MCP server:
 
@@ -113,11 +113,11 @@ Open **AI Workspace** (`/ai-workspace`) and ask things like:
 
 
 
-## AI Workspace Runtime (Cursor and Claude SDK)
+## Cursor AI (advanced)
 
-Want **Cursor**'s own agent in that same chat, without opening the Cursor app? It can work through a longer task and pick up the thread next time. There is still no editor: you only chat in Home Assistant. From 1.6.0 the same sidecar also runs **Claude SDK** agents ([Claude SDK agents](docs/claude-runtime.md), with your Claude plan or an Anthropic API key).
+Want Cursor's own agent in that same chat, without opening the Cursor app? It can work through a longer task and pick up the thread next time. There is still no editor: you only chat in AI Workspace.
 
-If you only want Claude or GPT via a simple API key in Home Assistant, skip this and use [Cloud AI](#cloud-ai-quick-start) above: pick **Claude (Anthropic)** and leave **Use Claude SDK (runtime) (experimental)** under **Advanced** off. Turn that switch on for a Claude SDK agent on the runtime.
+If you only want Claude or GPT, skip this and use [Cloud AI](#cloud-ai-quick-start) above. The extra runtime is for Cursor's own models (**Composer**, **Grok**) and a Cursor API key.
 
 **Notice**
 > You can get some Cursor models with one [OpenRouter](https://openrouter.ai) key. No AI Workspace Runtime to install that way. Add that under [Cloud AI](#cloud-ai-quick-start).
@@ -130,25 +130,25 @@ Install AI Workspace from HACS first ([step 1](#1-install-ai-workspace-from-hacs
 
 ### Option A: Home Assistant OS / Supervised (App)
 
-The **AI Workspace Runtime** app runs on the same machine as Home Assistant — **Cursor** (Composer, Grok, Cursor API key) and **Claude SDK** in one place.
+The **AI Workspace Runtime** app runs Cursor on the same machine as Home Assistant.
 
-![Home Assistant OS with AI Workspace Runtime and Cursor / Claude Cloud](docs/os-architecture.jpg)
+![Home Assistant OS with AI Workspace Runtime and Cursor Cloud](docs/os-architecture.jpg)
 
 Add this repository to Apps and install **AI Workspace Runtime**:
 
 ![Add repository](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)
 
-For **Cursor**, paste the Cursor API key on the app and **Start** it. For **Claude SDK**, paste a Claude Plan token (`claude setup-token`) or an Anthropic API key on the app or on the agent ([details](docs/claude-runtime.md)). Leave **Runtime URL** on the integration empty; it is detected once the app runs. The integration also creates the shared [runtime token](#runtime-token) and writes it to the app for you.
+Paste the Cursor API key on the app and **Start** it. Leave **Runtime URL** on the integration empty; it is detected once the app runs. The integration also creates the shared [runtime token](#runtime-token) and writes it to the app for you.
 
 Home Assistant 2026.2 renamed "Add-ons" to "Apps".
 
 ### Option B: Home Assistant Container (Docker)
 
-If Home Assistant is a Docker container (no Supervisor), run the **`ai-workspace-runtime`** container beside it. Home Assistant talks to that runtime; the runtime runs **Cursor** and **Claude SDK**, talks to MCP, and reaches Cursor or Anthropic as needed.
+If Home Assistant is a Docker container (no Supervisor), Cursor needs one extra container beside it, **`ai-workspace-runtime`**. Same idea as the app: Home Assistant talks to that runtime, and the runtime talks to Cursor and to MCP.
 
-![Home Assistant container, ai-workspace-runtime, Cursor / Claude Cloud](docs/docker-architecture.jpg)
+![Home Assistant container, ai-workspace-runtime, Cursor Cloud](docs/docker-architecture.jpg)
 
-Paste your Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) into [docker-compose.runtime.yml](docker-compose.runtime.yml) when you use Cursor agents. For Claude SDK, set `CLAUDE_CODE_OAUTH_TOKEN` (Claude Plan, from `claude setup-token`) or `ANTHROPIC_API_KEY` on the container, or paste one on the agent ([details](docs/claude-runtime.md)).
+Paste your Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) into [docker-compose.runtime.yml](docker-compose.runtime.yml):
 
 ```yaml
 name: ai-workspace-runtime
@@ -194,7 +194,7 @@ Running Docker's default bridge network instead, giving the agent a folder of fi
 The integration and the runtime share a token, and every chat request carries it.
 
 - **App (Home Assistant OS):** nothing to do. The integration generates the token, stores it on the app, and restarts the app once.
-- **Docker:** generate one, for example with `openssl rand -hex 32`. Put it in `RUNTIME_TOKEN` on the container and in **Runtime token** on the Cursor or Claude SDK agent.
+- **Docker:** generate one, for example with `openssl rand -hex 32`. Put it in `RUNTIME_TOKEN` on the container and in **Runtime token** on the Cursor agent.
 
 
 
@@ -240,5 +240,5 @@ The [docs](docs/README.md) go further once you are up and running:
 
 ## Contributing
 
-Open an issue or send a pull request from a fork. The chat is `custom_components/ai_workspace/`. The runtime (Cursor + Claude SDK) lives in `ai_workspace/`.
+Open an issue or send a pull request from a fork. The chat is `custom_components/ai_workspace/`. The Cursor runtime is `ai_workspace/`.
 
