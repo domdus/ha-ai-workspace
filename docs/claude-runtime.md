@@ -2,11 +2,11 @@
 
 The same **AI Workspace Runtime** container (add-on or Compose service `ai-workspace-runtime`) that runs Cursor also runs **Claude SDK** agents via the [`claude-agent-sdk`](https://pypi.org/project/claude-agent-sdk/) package. Home Assistant talks to it the same way as Cursor: Runtime URL, shared `RUNTIME_TOKEN`, and MCP proxied through the runtime.
 
-The cloud agent **Claude (Anthropic)** in the integration is unchanged—it still uses the Messages API directly, not this runtime.
+**Claude (Anthropic)** in Home Assistant is one provider row: leave **Use Claude SDK (runtime)** off for the direct Messages API, or turn it on for this runtime (same fields as below in a collapsed section).
 
 ## Credentials (runtime or add-on)
 
-Configure **one** of these on the runtime host (environment or `ai_workspace` add-on options). Per-chat credentials can override on the **Claude SDK** agent form.
+Configure **one** of these on the runtime host (environment or `ai_workspace` add-on options). Per-agent credentials can override on the **Claude (Anthropic)** agent when **Use Claude SDK (runtime)** is on.
 
 ### 1. OpenRouter (Agent SDK)
 
@@ -44,10 +44,11 @@ Optional `ANTHROPIC_BASE_URL` for proxies (not OpenRouter unless using mode 1).
 
 ## Home Assistant
 
-1. Add an agent → **Claude SDK** (not “Claude (Anthropic)”).
-2. Runtime URL and token: same as Cursor agents.
-3. **Credential** field: OpenRouter key, Plan token, or Anthropic API key (one field).
-4. Model: Anthropic id (`claude-sonnet-5-5`) or OpenRouter slug.
+1. Add an agent → **Claude (Anthropic)**.
+2. Turn on **Use Claude SDK (runtime)** (German: *Claude SDK (Runtime) verwenden*).
+3. In the collapsed **Claude SDK (runtime)** section: runtime URL and token (same as Cursor agents).
+4. **Claude Plan token or Anthropic API key** (`sk-ant-oat-…` or `sk-ant-api…`) — optional if the runtime already has credentials.
+5. Model: Anthropic id such as `claude-sonnet-5-5` (runtime OpenRouter slugs still work when the runtime is configured for OpenRouter).
 
 Runtime health must report `"claude": true` (runtime **1.6.0** or newer). Older runtimes show an update notice for Claude SDK agents only; Cursor keeps working.
 

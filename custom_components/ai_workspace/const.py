@@ -258,6 +258,7 @@ CONF_MCP_TOKEN = "mcp_token"
 CONF_MCP_EXTRA = "mcp_extra"
 CONF_CURSOR_API_KEY = "cursor_api_key"
 CONF_CLAUDE_API_KEY = "claude_api_key"
+CONF_USE_CLAUDE_RUNTIME = "use_claude_runtime"
 CONF_MODEL = "model"
 # Model ids typed or pasted for servers that do not list their own (OpenAI-compatible, Azure).
 CONF_MODELS = "models"
@@ -777,7 +778,7 @@ API_KEY_URLS = {
     API_OPENROUTER: "https://openrouter.ai/keys",
     API_AZURE: "https://oai.azure.com/",
     MODE_CURSOR: "https://cursor.com/dashboard/integrations",
-    MODE_CLAUDE: "https://openrouter.ai/keys",
+    MODE_CLAUDE: "https://console.anthropic.com/settings/keys",
 }
 
 

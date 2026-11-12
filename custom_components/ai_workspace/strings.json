@@ -299,7 +299,7 @@
             "api_provider": "Provider"
           },
           "data_description": {
-            "api_provider": "Cursor, Claude SDK, or a cloud or local model."
+            "api_provider": "Cursor or a cloud or local model. Claude cloud API and Claude SDK (runtime) share one Anthropic row."
           }
         },
         "provider_cursor": {
@@ -344,54 +344,13 @@
             }
           }
         },
-        "provider_claude": {
-          "title": "Claude SDK",
-          "description": "Same runtime sidecar as Cursor. OpenRouter key, Claude Plan token, or Anthropic API key.",
-          "data": {
-            "runtime_url": "Runtime address{runtime_url_mark}",
-            "runtime_token": "Runtime password",
-            "claude_api_key": "OpenRouter key, Claude Plan token, or Anthropic API key",
-            "model": "Model",
-            "effort": "Effort",
-            "allow_internet": "Allow internet",
-            "assist": "Add to Assist"
-          },
-          "data_description": {
-            "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
-            "claude_api_key": "OpenRouter (`sk-or-…`), Claude Plan (`claude setup-token`), or Anthropic API key. Leave blank when editing to keep the saved credential. [Keys and tokens]({api_key_url})",
-            "model": "Anthropic id (e.g. claude-sonnet-5-5) or OpenRouter slug (e.g. anthropic/claude-sonnet-4.5).",
-            "effort": "Reserved for future Claude SDK options.",
-            "allow_internet": "Off by default. On allows WebSearch and WebFetch in admin chats with full tools.",
-            "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only."
-          },
-          "sections": {
-            "model_list": {
-              "name": "Model list",
-              "data": {
-                "models": "Models"
-              },
-              "data_description": {
-                "models": "Optional custom list for the model picker in this form and in chat."
-              }
-            },
-            "advanced": {
-              "name": "Advanced",
-              "data": {
-                "save_tokens": "Save tokens"
-              },
-              "data_description": {
-                "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies."
-              }
-            }
-          }
-        },
         "provider_cloud": {
           "title": "Cloud agent",
           "description": "This agent keeps its own key. Copy one from an integration that is already set up, or paste a new one. Leave the key blank when editing to keep the saved key.",
           "data": {
             "borrow": "Copy key from",
             "api_key": "API key",
+            "use_claude_runtime": "Use Claude SDK (runtime)",
             "model": "Model",
             "effort": "Effort",
             "allow_internet": "Allow internet",
@@ -406,8 +365,9 @@
           "data_description": {
             "borrow": "Uses the key already stored by that integration. The other integration is left as it is.",
             "api_key": "Your key from the AI provider, not your Home Assistant login. [Get an API key]({api_key_url})",
+            "use_claude_runtime": "Chat via the AI Workspace Runtime (Claude Agent SDK) instead of the Anthropic cloud API. Cloud API key and 1-hour cache are ignored while this is on.",
             "model": "Pick from the list or type a model name. Empty uses the provider default.",
-            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Ignored when the model does not support it.",
+            "effort": "More effort means more thinking: better answers to hard questions, but slower and more tokens. Claude cloud API agents do not use this; runtime Claude agents do.",
             "allow_internet": "Off by default. On adds web search and page fetch tools in admin chats. Addresses on your local network stay blocked. Chats from normal users and voice satellites never get them.",
             "assist": "Also lists this assistant under Home Assistant Assist (voice). Off keeps it in AI Workspace chat only and removes what it added to Assist.",
             "assist_stt": "Adds a Speech-to-text option in Home Assistant using this assistant's key. Off removes what it added.",
@@ -435,7 +395,20 @@
               },
               "data_description": {
                 "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough.",
-                "cache_1h": "Claude only. Keeps the system prompt and tools cached for an hour instead of 5 minutes. Writing the cache costs 2× the input price instead of 1.25×; reading it costs 0.1×. Cheaper when there are breaks of more than 5 minutes between your messages, a little more expensive if you rarely chat."
+                "cache_1h": "Claude cloud API only (not runtime). Keeps the system prompt and tools cached for an hour instead of 5 minutes. Writing the cache costs 2× the input price instead of 1.25×; reading it costs 0.1×. Cheaper when there are breaks of more than 5 minutes between your messages, a little more expensive if you rarely chat."
+              }
+            },
+            "claude_runtime": {
+              "name": "Claude SDK (runtime)",
+              "data": {
+                "runtime_url": "Runtime address{runtime_url_mark}",
+                "runtime_token": "Runtime password",
+                "claude_api_key": "Claude Plan token or Anthropic API key"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
+                "claude_api_key": "Claude Plan OAuth token (`sk-ant-oat-…` from `claude setup-token`) or Anthropic API key for this agent. Overrides runtime defaults when set. Leave blank when editing to keep the saved credential. [Anthropic keys]({api_key_url})"
               }
             }
           }

@@ -39,6 +39,7 @@ from .const import (
     CONF_AZURE_API_VERSION,
     CONF_BORROW,
     CONF_CLAUDE_API_KEY,
+    CONF_USE_CLAUDE_RUNTIME,
     CONF_CURSOR_API_KEY,
     CONF_EFFORT,
     CONF_LOW_TOKEN,
@@ -94,15 +95,33 @@ _URL = TextSelector(TextSelectorConfig(type=TextSelectorType.URL))
 _PASSWORD = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
 _DETAIL = {
     MODE_CURSOR: "cursor",
-    MODE_CLAUDE: "claude",
     API_OLLAMA: "ollama",
     API_AZURE: "azure",
     API_COMPATIBLE: "compatible",
 }
 
+SECTION_CLAUDE_RUNTIME = "claude_runtime"
+
+
+def uses_claude_runtime(current: dict, provider: str = "") -> bool:
+    """Anthropic cloud API vs Claude Agent SDK on the AI Workspace Runtime."""
+    kind = provider or str(current.get(CONF_API_PROVIDER) or "")
+    if kind not in {API_ANTHROPIC, MODE_CLAUDE}:
+        return False
+    if CONF_USE_CLAUDE_RUNTIME in current:
+        return bool(current.get(CONF_USE_CLAUDE_RUNTIME))
+    if str(current.get(CONF_MODE) or "") == MODE_CLAUDE:
+        return True
+    return str(current.get(CONF_API_PROVIDER) or "") == MODE_CLAUDE
+
 
 def _agent_choices() -> dict[str, str]:
-    return {MODE_CURSOR: "Cursor", MODE_CLAUDE: "Claude SDK", **API_PROVIDERS}
+    return {MODE_CURSOR: "Cursor", **API_PROVIDERS}
+
+
+def _runtime_section(user_input: dict | None) -> dict:
+    folded = (user_input or {}).get(SECTION_CLAUDE_RUNTIME)
+    return folded if isinstance(folded, dict) else {}
 
 
 def _provider_schema(current: dict) -> vol.Schema:
@@ -255,11 +274,6 @@ def _fields_schema(
         fields[vol.Optional(CONF_RUNTIME_TOKEN, default="")] = _PASSWORD
         fields[vol.Optional(CONF_CURSOR_API_KEY, default="")] = _PASSWORD
         fields.update(_model_field(MODE_CURSOR, current, choices=models))
-    elif step == "claude":
-        fields[vol.Optional(CONF_RUNTIME_URL, default=str(current.get(CONF_RUNTIME_URL) or ""))] = _URL
-        fields[vol.Optional(CONF_RUNTIME_TOKEN, default="")] = _PASSWORD
-        fields[vol.Optional(CONF_CLAUDE_API_KEY, default="")] = _PASSWORD
-        fields.update(_model_field(MODE_CLAUDE, current, choices=models))
     elif step == "ollama":
         fields[vol.Required(CONF_API_BASE, default=str(current.get(CONF_API_BASE) or default_api_base(API_OLLAMA)))] = str
         fields.update(_model_field(API_OLLAMA, current, choices=models))
@@ -273,16 +287,29 @@ def _fields_schema(
         fields[vol.Required(CONF_API_BASE, default=str(current.get(CONF_API_BASE) or ""))] = str
         fields.update(_model_field(API_COMPATIBLE, current, choices=models))
     else:
-        if borrows:
-            options = [{"value": "", "label": "Enter it here"}]
-            options.extend({"value": item["id"], "label": item["label"]} for item in borrows)
-            fields[vol.Optional(CONF_BORROW, default="")] = SelectSelector(
-                SelectSelectorConfig(options=options, mode="dropdown")
-            )
-        fields[vol.Optional(CONF_API_KEY, default="")] = _PASSWORD
-        fields.update(_model_field(provider, current, choices=models))
+        runtime = provider == API_ANTHROPIC and uses_claude_runtime(current, provider)
+        if provider == API_ANTHROPIC:
+            fields[vol.Optional(CONF_USE_CLAUDE_RUNTIME, default=runtime)] = cv.boolean
+        if not runtime:
+            if borrows:
+                options = [{"value": "", "label": "Enter it here"}]
+                options.extend({"value": item["id"], "label": item["label"]} for item in borrows)
+                fields[vol.Optional(CONF_BORROW, default="")] = SelectSelector(
+                    SelectSelectorConfig(options=options, mode="dropdown")
+                )
+            fields[vol.Optional(CONF_API_KEY, default="")] = _PASSWORD
+        if runtime:
+            inner = {
+                vol.Optional(CONF_RUNTIME_URL, default=str(current.get(CONF_RUNTIME_URL) or "")): _URL,
+                vol.Optional(CONF_RUNTIME_TOKEN, default=""): _PASSWORD,
+                vol.Optional(CONF_CLAUDE_API_KEY, default=""): _PASSWORD,
+            }
+            fields[vol.Required(SECTION_CLAUDE_RUNTIME)] = section(vol.Schema(inner), {"collapsed": True})
+        model_kind = MODE_CLAUDE if runtime else provider
+        fields.update(_model_field(model_kind, current, choices=models))
     fields.update(_models_section(current))
-    fields.update(_effort_field(current))
+    if step != "cloud" or provider != API_ANTHROPIC or uses_claude_runtime(current, provider):
+        fields.update(_effort_field(current))
     fields[vol.Optional(CONF_ALLOW_INTERNET, default=bool(current.get(CONF_ALLOW_INTERNET, False)))] = cv.boolean
     fields[vol.Optional(CONF_ASSIST, default=assist_enabled(current, new=new))] = cv.boolean
     if provider_supports_stt(provider):
@@ -297,7 +324,7 @@ def _fields_schema(
             fields.update(_tts_speed_field(current, provider))
     # Rarely needed, so it stays folded away.
     advanced = {vol.Optional(CONF_SAVE_TOKENS, default=saves_tokens(current)): cv.boolean}
-    if step == "cloud" and provider == API_ANTHROPIC:
+    if step == "cloud" and provider == API_ANTHROPIC and not uses_claude_runtime(current, provider):
         advanced[vol.Optional(CONF_CACHE_1H, default=caches_an_hour(current))] = cv.boolean
     fields[vol.Required(SECTION_ADVANCED)] = section(vol.Schema(advanced), {"collapsed": True})
     return vol.Schema(fields)
@@ -339,8 +366,6 @@ def stored_token_mode(current: dict, save: bool) -> str:
 def _title(provider: str, used: set[str]) -> str:
     if provider == MODE_CURSOR:
         base = "Cursor"
-    elif provider == MODE_CLAUDE:
-        base = "Claude SDK"
     else:
         base = API_SHORT_LABELS.get(provider, "Agent")
     if base not in used:
@@ -371,6 +396,13 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
         self._editing = True
         self._current = dict(self._get_reconfigure_subentry().data)
         self._provider = str(self._current.get(CONF_API_PROVIDER) or MODE_CURSOR)
+        if self._provider == MODE_CLAUDE:
+            self._provider = API_ANTHROPIC
+            self._current = {
+                **self._current,
+                CONF_API_PROVIDER: API_ANTHROPIC,
+                CONF_USE_CLAUDE_RUNTIME: True,
+            }
         return await self.async_step_provider()
 
     async def async_step_provider(self, user_input: dict[str, Any] | None = None):
@@ -385,9 +417,6 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
 
     async def async_step_provider_cursor(self, user_input=None):
         return await self._async_step_fields("cursor", user_input)
-
-    async def async_step_provider_claude(self, user_input=None):
-        return await self._async_step_fields("claude", user_input)
 
     async def async_step_provider_cloud(self, user_input=None):
         return await self._async_step_fields("cloud", user_input)
@@ -449,9 +478,7 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             return None
         if provider == MODE_CURSOR:
             live = await async_cursor_models(self.hass, str(current.get(CONF_CURSOR_API_KEY) or ""))
-        elif provider == MODE_CLAUDE:
-            from .const import api_model_choices
-
+        elif provider == API_ANTHROPIC and uses_claude_runtime(current, provider):
             return api_model_choices(MODE_CLAUDE)
         else:
             live = await async_provider_models(
@@ -513,6 +540,11 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
         errors: dict[str, str] = {}
         if user_input is not None:
             merged = {**current, **user_input, CONF_API_PROVIDER: provider}
+            if provider == API_ANTHROPIC:
+                use_runtime = bool(user_input.get(CONF_USE_CLAUDE_RUNTIME))
+                merged[CONF_USE_CLAUDE_RUNTIME] = use_runtime
+                if use_runtime:
+                    merged.update(_runtime_section(user_input))
             borrowed = borrow_by_id(self.hass, str(user_input.get(CONF_BORROW) or ""))
             if borrowed and borrowed.get("provider") == provider and not str(user_input.get(CONF_API_KEY) or "").strip():
                 merged[CONF_API_KEY] = borrowed["api_key"]
@@ -528,13 +560,19 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                 model = str(borrowed.get("model") or "").strip()
             stored_model = str(current.get(CONF_MODEL) or "")
             own_list = submitted_models(user_input)
-            model, own_list = model_with_list(model, own_list, stored_model, default_api_model(provider))
+            model_kind = (
+                MODE_CLAUDE
+                if provider == API_ANTHROPIC and uses_claude_runtime(merged, provider)
+                else provider
+            )
+            model, own_list = model_with_list(model, own_list, stored_model, default_api_model(model_kind))
             merged[CONF_MODELS] = own_list
+            use_runtime = provider == API_ANTHROPIC and uses_claude_runtime(merged, provider)
             if provider == MODE_CURSOR:
                 errors = await self._cursor_errors(
                     cursor_key, str(merged.get(CONF_RUNTIME_URL) or "")
                 )
-            elif provider == MODE_CLAUDE:
+            elif use_runtime:
                 errors = await self._claude_errors(
                     claude_key, str(merged.get(CONF_RUNTIME_URL) or "")
                 )
@@ -553,7 +591,7 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                     errors[CONF_API_BASE] = "required"
             elif not key:
                 errors[CONF_API_KEY] = "required"
-            if not errors and provider not in {MODE_CURSOR, MODE_CLAUDE}:
+            if not errors and provider not in {MODE_CURSOR, MODE_CLAUDE} and not use_runtime:
                 errors = await self._key_errors(provider, key, base, version)
             if not errors and provider == API_OLLAMA:
                 errors = await self._ollama_model_errors(base, model or default_api_model(API_OLLAMA))
@@ -562,23 +600,32 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                 if errors.get(CONF_MODEL) == "pick_model":
                     merged[CONF_MODEL] = self._suggested_model
             if not errors:
-                if provider in {MODE_CURSOR, MODE_CLAUDE}:
-                    await self._store_runtime(
-                        str(merged.get(CONF_RUNTIME_URL) or ""),
-                        str(user_input.get(CONF_RUNTIME_TOKEN) or ""),
-                    )
+                runtime_token = str(
+                    (user_input.get(CONF_RUNTIME_TOKEN) if step == "cursor" else _runtime_section(user_input).get(CONF_RUNTIME_TOKEN))
+                    or user_input.get(CONF_RUNTIME_TOKEN)
+                    or ""
+                )
+                if provider == MODE_CURSOR or use_runtime:
+                    await self._store_runtime(str(merged.get(CONF_RUNTIME_URL) or ""), runtime_token)
                 effort = str(merged.get(CONF_EFFORT) or "")
+                if provider == MODE_CURSOR:
+                    mode = MODE_CURSOR
+                elif use_runtime:
+                    mode = MODE_CLAUDE
+                else:
+                    mode = MODE_API
                 data = {
-                    CONF_MODE: provider
-                    if provider in {MODE_CURSOR, MODE_CLAUDE}
-                    else MODE_API,
+                    CONF_MODE: mode,
                     CONF_API_PROVIDER: provider,
+                    CONF_USE_CLAUDE_RUNTIME: use_runtime,
                     CONF_CURSOR_API_KEY: cursor_key if provider == MODE_CURSOR else "",
-                    CONF_CLAUDE_API_KEY: claude_key if provider == MODE_CLAUDE else "",
-                    CONF_API_KEY: "" if provider in {MODE_CURSOR, MODE_CLAUDE} else key,
-                    CONF_API_BASE: "" if provider in {MODE_CURSOR, MODE_CLAUDE} else base,
+                    CONF_CLAUDE_API_KEY: claude_key if use_runtime else "",
+                    CONF_API_KEY: "" if provider == MODE_CURSOR or use_runtime else key,
+                    CONF_API_BASE: "" if provider == MODE_CURSOR or use_runtime else base,
                     CONF_MODEL: model,
-                    CONF_EFFORT: "" if effort == EFFORT_DEFAULT else effort,
+                    CONF_EFFORT: ""
+                    if effort == EFFORT_DEFAULT or (provider == API_ANTHROPIC and not use_runtime)
+                    else effort,
                     CONF_LOW_TOKEN: stored_token_mode(current, saves_tokens(merged)),
                     CONF_ALLOW_INTERNET: bool(merged.get(CONF_ALLOW_INTERNET, False)),
                     CONF_ASSIST: bool(user_input.get(CONF_ASSIST, assist_enabled(current, new=not self._editing))),
@@ -615,7 +662,7 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                     CONF_AZURE_API_VERSION: version if provider == API_AZURE else "",
                 }
                 data[CONF_MODELS] = own_list
-                if provider == API_ANTHROPIC:
+                if provider == API_ANTHROPIC and not use_runtime:
                     data[CONF_CACHE_1H] = caches_an_hour(merged)
                 if provider != MODE_CURSOR and CONF_PROMPT_CACHE in current:
                     data[CONF_PROMPT_CACHE] = bool(current.get(CONF_PROMPT_CACHE))
@@ -629,6 +676,8 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             "server_message": getattr(self, "_server_message", "") or "-",
         }
         schema_current = dict(self._current)
+        if user_input and provider == API_ANTHROPIC and CONF_USE_CLAUDE_RUNTIME in user_input:
+            schema_current[CONF_USE_CLAUDE_RUNTIME] = bool(user_input[CONF_USE_CLAUDE_RUNTIME])
         if step == "ollama":
             from .ollama_info import async_ollama_server, ollama_form_note
 
@@ -636,10 +685,11 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             placeholders["ollama_note"] = ollama_form_note(
                 await async_ollama_server(self.hass, url), example, self.hass.config.language
             )
-        if step == "cursor":
+        if step == "cursor" or (step == "cloud" and provider == API_ANTHROPIC and uses_claude_runtime(schema_current, provider)):
             entry = self._get_entry()
             saved = str({**entry.data, **entry.options}.get(CONF_RUNTIME_URL) or "")
-            typed = str((user_input or {}).get(CONF_RUNTIME_URL) or "")
+            rt = _runtime_section(user_input) if step == "cloud" else (user_input or {})
+            typed = str(rt.get(CONF_RUNTIME_URL) or (user_input or {}).get(CONF_RUNTIME_URL) or "")
             if typed:
                 shown = typed.strip().rstrip("/")
                 live = await async_probe_runtime(self.hass, shown)
@@ -648,6 +698,8 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                 shown, live, auto = await async_runtime_form_url(self.hass, saved)
             schema_current[CONF_RUNTIME_URL] = shown
             placeholders.update(runtime_form_placeholders(live=live, auto=auto, language=self.hass.config.language))
+            if step == "cloud" and provider == API_ANTHROPIC:
+                placeholders["api_key_url"] = api_key_url(MODE_CLAUDE)
         return self.async_show_form(
             step_id=f"provider_{step}",
             data_schema=_fields_schema(

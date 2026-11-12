@@ -13,12 +13,12 @@ def _const():
     return mod
 
 
-def test_agent_choices_include_claude_sdk() -> None:
+def test_agent_choices_single_claude_row() -> None:
     const = _const()
-    # Mirrors agent_flow._agent_choices without importing Home Assistant.
-    choices = {const.MODE_CURSOR: "Cursor", const.MODE_CLAUDE: "Claude SDK", **const.API_PROVIDERS}
-    assert const.MODE_CLAUDE in choices
-    assert choices[const.MODE_CLAUDE] == "Claude SDK"
+    choices = {const.MODE_CURSOR: "Cursor", **const.API_PROVIDERS}
+    assert const.MODE_CLAUDE not in choices
+    assert const.API_ANTHROPIC in choices
+    assert choices[const.API_ANTHROPIC] == "Claude (Anthropic)"
 
 
 def test_runtime_session_payload_uses_agent_kind() -> None:
