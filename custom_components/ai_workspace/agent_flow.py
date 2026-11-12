@@ -364,7 +364,7 @@ def _title(provider: str, used: set[str]) -> str:
     if provider == MODE_CURSOR:
         base = "Cursor"
     elif provider == MODE_CLAUDE:
-        base = "Claude SDK"
+        base = "Claude SDK (Runtime)"
     else:
         base = API_SHORT_LABELS.get(provider, "Agent")
     if base not in used:
@@ -445,7 +445,7 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
         if problem:
             return {CONF_CLAUDE_OAUTH_TOKEN: problem}
         if not plan_token and not health.get("claude"):
-            return {CONF_CLAUDE_OAUTH_TOKEN: "required"}
+            return {CONF_CLAUDE_OAUTH_TOKEN: "claude_auth_required"}
         return {}
 
     async def _store_runtime(self, submitted_url: str, submitted_token: str) -> None:

@@ -6,7 +6,7 @@ The cloud agent **Claude (Anthropic)** in the integration is unchanged—it stil
 
 ## Credentials (runtime or add-on)
 
-Configure auth on the runtime host (environment or `ai_workspace` add-on options). Per-chat credentials can override on the **Claude SDK** agent form only when documented below.
+Configure auth on the runtime host (environment or `ai_workspace` add-on options). The **Claude SDK** agent form only accepts an optional **Claude Plan token**; Anthropic API keys and other runtime auth modes are not set on that form.
 
 ### 1. Claude Pro / Max / Ultra (Plan)
 
@@ -32,7 +32,6 @@ Optional `ANTHROPIC_BASE_URL` for proxies (default Anthropic endpoint when empty
 Separate provider path—not Claude Plan billing. For [OpenRouter’s Anthropic Agent SDK](https://openrouter.ai/docs/guides/community/anthropic-agent-sdk) routing:
 
 - `OPENROUTER_API_KEY` or add-on `openrouter_api_key`
-- Or per-chat key starting with `sk-or-`
 
 The runtime sets subprocess env:
 

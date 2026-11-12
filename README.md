@@ -94,6 +94,7 @@ Until it is in the default HACS store, add it as a custom repository: **HACS →
 - **MCP type:** one from [Requirements](#requirements). Leave the MCP URL empty if it shows as detected.
 - Save. Home Assistant then asks for the first **agent**.
 - Pick the provider. Paste the key, use **Get an API key** under the field, or choose **Copy key from** when OpenRouter, OpenAI, Claude, Gemini, Ollama, or Azure is already set up. The key is checked before it is saved.
+- For **Claude SDK (Runtime)** on the AI Workspace Runtime, pick that provider instead and follow [Claude Plan](#claude-plan) (optional Plan token on the agent; Anthropic API key on the runtime). See [Claude on the runtime](docs/claude-runtime.md).
 - **Model:** the list comes from the provider with your key, so new models show up without an update. You can still type any model id.
 - Each agent also has **Allow internet** (off by default) and, under **Advanced**, **Save tokens**. See [Agent settings](docs/settings.md#agent-settings).
 - Add more agents later with **Add agent** on the AI Workspace entry. The chat shows an agent picker when more than one is set up. **Configure** sets the **Default agent** for new chats and can add a **model switcher** next to the agent picker.

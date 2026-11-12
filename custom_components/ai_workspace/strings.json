@@ -292,7 +292,8 @@
         "model_rejected": "The server does not allow this model for this key: {server_message}",
         "claude_plan_not_api_key": "This looks like an Anthropic Console API key. Use a Claude Plan token (`sk-ant-oat-…`) from `claude setup-token` instead.",
         "claude_plan_not_openrouter": "This is not a Claude Plan token (`sk-ant-oat-…`). On your computer run `claude setup-token`, then paste that token here.",
-        "claude_plan_invalid": "Claude Plan tokens start with `sk-ant-oat`. Run `claude setup-token` on your computer."
+        "claude_plan_invalid": "Claude Plan tokens start with `sk-ant-oat`. Run `claude setup-token` on your computer.",
+        "claude_auth_required": "Set a Claude Plan token here (`claude setup-token` on your computer) or an Anthropic API key on the AI Workspace Runtime (`ANTHROPIC_API_KEY` or add-on option)."
       },
       "step": {
         "provider": {
@@ -348,8 +349,8 @@
           }
         },
         "provider_claude": {
-          "title": "Claude SDK",
-          "description": "The Claude Code agent on the AI Workspace Runtime. Uses your Claude subscription (Pro, Max) or an Anthropic API key.",
+          "title": "Claude SDK (Runtime)",
+          "description": "The Claude Code agent on the AI Workspace Runtime. Uses your Claude subscription (Pro, Max) or an Anthropic API key. Set an Anthropic API key in the runtime options; leave this Plan token empty when the runtime already has that key.",
           "data": {
             "runtime_url": "Runtime address{runtime_url_mark}",
             "runtime_token": "Runtime password",
