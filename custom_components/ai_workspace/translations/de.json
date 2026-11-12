@@ -587,6 +587,7 @@
         "cursor": "Cursor",
         "openai": "OpenAI",
         "anthropic": "Claude (Anthropic)",
+        "claude": "Claude SDK (Runtime)",
         "gemini": "Google Gemini",
         "deepseek": "DeepSeek",
         "qwen": "Qwen (Alibaba)",

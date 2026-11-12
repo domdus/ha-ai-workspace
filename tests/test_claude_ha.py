@@ -16,9 +16,22 @@ def _const():
 def test_agent_choices_include_claude_sdk() -> None:
     const = _const()
     # Mirrors agent_flow._agent_choices without importing Home Assistant.
-    choices = {const.MODE_CURSOR: "Cursor", const.MODE_CLAUDE: "Claude SDK", **const.API_PROVIDERS}
+    label = "Claude SDK (Runtime)"
+    choices = {
+        const.MODE_CURSOR: "Cursor",
+        const.API_OPENAI: const.API_PROVIDERS[const.API_OPENAI],
+        const.API_ANTHROPIC: const.API_PROVIDERS[const.API_ANTHROPIC],
+        const.MODE_CLAUDE: label,
+        **{
+            k: v
+            for k, v in const.API_PROVIDERS.items()
+            if k not in (const.API_OPENAI, const.API_ANTHROPIC)
+        },
+    }
     assert const.MODE_CLAUDE in choices
-    assert choices[const.MODE_CLAUDE] == "Claude SDK"
+    assert choices[const.MODE_CLAUDE] == label
+    keys = list(choices)
+    assert keys.index(const.API_ANTHROPIC) + 1 == keys.index(const.MODE_CLAUDE)
 
 
 def test_runtime_session_payload_uses_agent_kind() -> None:

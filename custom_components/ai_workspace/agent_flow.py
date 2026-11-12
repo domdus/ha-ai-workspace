@@ -21,8 +21,14 @@ from .const import (
     API_ANTHROPIC,
     API_AZURE,
     API_COMPATIBLE,
+    API_DEEPSEEK,
+    API_GEMINI,
     API_OLLAMA,
+    API_OPENAI,
+    API_OPENROUTER,
     API_PROVIDERS,
+    API_QWEN,
+    API_XAI,
     API_SHORT_LABELS,
     CONF_AGENT_ID,
     CONF_ALLOW_INTERNET,
@@ -105,7 +111,22 @@ _DETAIL = {
 
 
 def _agent_choices() -> dict[str, str]:
-    return {MODE_CURSOR: "Cursor", MODE_CLAUDE: "Claude SDK", **API_PROVIDERS}
+    """Provider dropdown keys and fallback labels (translations override via agent_provider)."""
+    label = "Claude SDK (Runtime)"
+    return {
+        MODE_CURSOR: "Cursor",
+        API_OPENAI: API_PROVIDERS[API_OPENAI],
+        API_ANTHROPIC: API_PROVIDERS[API_ANTHROPIC],
+        MODE_CLAUDE: label,
+        API_GEMINI: API_PROVIDERS[API_GEMINI],
+        API_DEEPSEEK: API_PROVIDERS[API_DEEPSEEK],
+        API_QWEN: API_PROVIDERS[API_QWEN],
+        API_XAI: API_PROVIDERS[API_XAI],
+        API_OPENROUTER: API_PROVIDERS[API_OPENROUTER],
+        API_OLLAMA: API_PROVIDERS[API_OLLAMA],
+        API_AZURE: API_PROVIDERS[API_AZURE],
+        API_COMPATIBLE: API_PROVIDERS[API_COMPATIBLE],
+    }
 
 
 def _provider_schema(current: dict) -> vol.Schema:
