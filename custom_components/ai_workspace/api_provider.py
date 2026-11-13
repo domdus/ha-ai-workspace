@@ -77,6 +77,7 @@ from .mcp_observe import note_mcp_result
 from .tool_result import shorten_tool_result
 from .usage_cost import TokenUsage, estimate_cost, parse_usage, usage_payload
 from .write_guard import block_message, placeholder_write
+from .worker_usage import worker_usage_event
 
 logger = logging.getLogger(__name__)
 
@@ -1265,8 +1266,12 @@ class ApiProvider:
                         tools = tool_list()
                     label = _tool_label(mcp.original_name(name))
                     yield {"type": "tool", "name": name, "phase": "start", "text": f"Calling {label}..."}
+                    worker = None
                     try:
-                        body = self._tool_body(await self._invoke_tool(mcp, name, args, on_tool), name)
+                        result = await self._invoke_tool(mcp, name, args, on_tool)
+                        # Read before shortening: the worker's usage sits in the full result.
+                        worker = worker_usage_event(mcp.original_name(name), args, result)
+                        body = self._tool_body(result, name)
                     except _ERRORS as exc:
                         body = self._public(exc)
                     yield {
@@ -1276,6 +1281,8 @@ class ApiProvider:
                         "text": f"Finished {label}",
                         "note": tool_call_note(mcp.original_name(name), args, body),
                     }
+                    if worker is not None:
+                        yield worker
                     messages.append({"role": "tool", "tool_call_id": call.get("id"), "content": body})
                 continue
             break
@@ -1450,8 +1457,12 @@ class ApiProvider:
                         tools = tool_list()
                     label = _tool_label(mcp.original_name(name))
                     yield {"type": "tool", "name": name, "phase": "start", "text": f"Calling {label}..."}
+                    worker = None
                     try:
-                        body = self._tool_body(await self._invoke_tool(mcp, name, args, on_tool), name)
+                        result = await self._invoke_tool(mcp, name, args, on_tool)
+                        # Read before shortening: the worker's usage sits in the full result.
+                        worker = worker_usage_event(mcp.original_name(name), args, result)
+                        body = self._tool_body(result, name)
                     except _ERRORS as exc:
                         body = self._public(exc)
                     yield {
@@ -1461,6 +1472,8 @@ class ApiProvider:
                         "text": f"Finished {label}",
                         "note": tool_call_note(mcp.original_name(name), args, body),
                     }
+                    if worker is not None:
+                        yield worker
                     results.append({"type": "tool_result", "tool_use_id": block.get("id"), "content": body})
                 messages.append({"role": "user", "content": results})
                 continue

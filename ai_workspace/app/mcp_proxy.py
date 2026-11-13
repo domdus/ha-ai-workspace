@@ -24,6 +24,7 @@ from fastapi.responses import JSONResponse, Response
 from app.settings import _default_hass_url, _read_options
 from app.tool_result import shorten_mcp_response
 from app.bps_key import note_guide, prepare_write
+from app.worker_usage import worker_usage_from_response
 from app.write_guard import block_message, placeholder_write
 
 logger = logging.getLogger(__name__)
@@ -60,6 +61,25 @@ class McpProxy:
         self.actors: OrderedDict[str, dict[str, str]] = OrderedDict()
         # When each chat's agent last reached the proxy; a new agent with MCP must connect.
         self.seen: OrderedDict[str, float] = OrderedDict()
+        # Usage of finished worker jobs (agent_run / agent_job) per chat, until its turn reports it.
+        self.worker_usage: OrderedDict[str, list[dict[str, Any]]] = OrderedDict()
+
+    def note_worker_usage(self, actor: str, event: dict[str, Any] | None) -> None:
+        actor = str(actor or "").strip()
+        if not actor or not event:
+            return
+        pending = self.worker_usage.setdefault(actor, [])
+        run_id = str(event.get("run_id") or "")
+        if run_id and any(str(item.get("run_id") or "") == run_id for item in pending):
+            return
+        pending.append(dict(event))
+        del pending[:-32]
+        self.worker_usage.move_to_end(actor)
+        while len(self.worker_usage) > _MAX_UPSTREAMS:
+            self.worker_usage.popitem(last=False)
+
+    def take_worker_usage(self, actor: str) -> list[dict[str, Any]]:
+        return self.worker_usage.pop(str(actor or "").strip(), [])
 
     def note_hit(self, actor: str) -> None:
         actor = str(actor or "").strip()
@@ -322,6 +342,11 @@ async def proxy_mcp(request: Request, secret: str, digest: str, actor: str = "")
         await _activity_commit(request, activity_token, ok=tool_response_ok(status, raw), who=registry.actor(actor))
     if tool_call is not None:
         note_guide(tool_call[0], raw.decode("utf-8", "replace"))
+        # Read before shortening: a finished worker job reports its engine's usage here.
+        try:
+            registry.note_worker_usage(actor, worker_usage_from_response(tool_call[0], tool_call[1], raw))
+        except Exception:
+            logger.debug("worker usage not read from %s", tool_call[0], exc_info=True)
     kind = "unchanged"
     if request.method.upper() == "POST":
         raw, kind = shorten_mcp_response(body, raw, content_type, enabled=_shorten_enabled(request))

@@ -25,7 +25,7 @@ from .http import _create_runtime_session, async_agent_events
 from .small_talk import wants_house_tools
 from .store import Store
 from .titles import accept_generated_title, needs_title_summary, title_from_prompt
-from .usage_record import finalize_usage, record_usage_turn
+from .usage_record import finalize_usage, record_usage_turn, record_worker_usage
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -316,6 +316,15 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
                         )
                     elif kind == "error":
                         error = public_error(event.get("message"))
+                    elif kind == "usage" and event.get("worker"):
+                        await record_worker_usage(
+                            self.hass,
+                            store=store,
+                            user_id=user_id,
+                            session_id=session.id,
+                            event=event,
+                            origin="assist",
+                        )
                     elif kind == "usage":
                         billed = finalize_usage(
                             event,

@@ -354,10 +354,12 @@ def parse_usage(blob: object, *, model: str = "", run_id: str = "") -> TokenUsag
         cost = charged / 100.0
     elif cost is not None:
         source = "provider"
-    elif data.get("cost_source") == "estimate" and _float(data.get("cost_usd")) is not None:
-        # Our own usage event, read back: keep the estimate made per request.
+    elif _float(data.get("cost_usd")) is not None:
         cost = _float(data.get("cost_usd"))
-        source = "estimate"
+        # Our own usage event, read back, keeps the estimate made per request. Any other
+        # cost_usd was reported by the provider (Claude Code, the Cursor SDK) and must not
+        # be replaced by a list-price estimate.
+        source = "estimate" if data.get("cost_source") == "estimate" else "provider"
     used_model = str(data.get("model") or model or "").strip()
     used_run = str(data.get("run_id") or run_id or "").strip()
     return TokenUsage(
@@ -478,6 +480,19 @@ def estimate_cost(usage: TokenUsage, model: str = "") -> TokenUsage:
         output_tokens = out.reasoning_tokens
     cost += output_tokens * rates.get("output", 0.0)
     return replace(out, cost_usd=round(cost, 8), cost_source="estimate")
+
+
+def estimate_worker_cost(usage: TokenUsage) -> TokenUsage:
+    """Cost of a worker job: billed cents, else the engine's own cost, else list price.
+
+    The list price needs a model the price list knows. Without one (Codex reports no
+    price and often no model) the tokens are kept and the cost stays unknown, marked as
+    an estimate so it never reads as a provider charge.
+    """
+    out = estimate_cost(usage, model=usage.model)
+    if out.cost_usd is None:
+        return replace(out, cost_source="estimate")
+    return out
 
 
 def estimate_tts_cost(text: str, model: str = "") -> TokenUsage:
