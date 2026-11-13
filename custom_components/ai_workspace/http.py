@@ -136,6 +136,40 @@ def _runtime_headers(request: web.Request) -> dict[str, str]:
 
 # Runtime answers that mean the chat never reached the agent.
 _RUNTIME_DOWN = frozenset({401, 403, 404, 502, 503, 504})
+# What runtimes up to 1.6.0b7 accept in the helper fields; longer values made the whole turn fail
+# with HTTP 422. `question` is a copy of the message, used only to pick tools and a title.
+RUNTIME_QUESTION_CHARS = 8000
+RUNTIME_HANDOFF_CHARS = 120000
+RUNTIME_PROMPT_CHARS = 120000
+
+
+def runtime_helper_fields(question: str, handoff: str = "", prompt: str = "") -> tuple[str, str, str]:
+    """The helper fields cut to what every runtime accepts (the newest part of the handoff)."""
+    handoff = handoff or ""
+    if len(handoff) > RUNTIME_HANDOFF_CHARS:
+        handoff = "…" + handoff[-(RUNTIME_HANDOFF_CHARS - 1):]
+    return (question or "")[:RUNTIME_QUESTION_CHARS], handoff, (prompt or "")[:RUNTIME_PROMPT_CHARS]
+
+
+def _validation_text(detail: list) -> str:
+    """FastAPI's 422 detail (a list of problems) as one sentence."""
+    for item in detail:
+        if not isinstance(item, dict):
+            continue
+        field = ".".join(str(part) for part in (item.get("loc") or [])[1:]) or "request"
+        if item.get("type") == "string_too_long":
+            limit = (item.get("ctx") or {}).get("max_length")
+            if field == "message":
+                return (
+                    "This message is too long for the AI Workspace Runtime"
+                    + (f" (at most {int(limit):,} characters, files included)" if limit else "")
+                    + ". Shorten it or attach less."
+                )
+            return f"The AI Workspace Runtime refused the request: {field} is too long."
+        message = str(item.get("msg") or "").strip()
+        if message:
+            return f"The AI Workspace Runtime refused the request: {field}: {message}"[:400]
+    return ""
 
 
 def _runtime_error(status: int, text: str) -> str:
@@ -145,6 +179,10 @@ def _runtime_error(status: int, text: str) -> str:
         detail = None
     if isinstance(detail, str) and detail.strip():
         return detail.strip()[:400]
+    if isinstance(detail, list):
+        explained = _validation_text(detail)
+        if explained:
+            return explained
     if status == 401:
         return "The AI Workspace Runtime refused the token. Set the same Runtime token on both sides."
     if status == 404:
@@ -363,9 +401,10 @@ async def _runtime_chat(
     nudge = remember_nudge(settings, asked, admin=admin)
     if nudge:
         user_text = f"{user_text}\n\n{nudge}"
+    short_question, handoff, short_prompt = runtime_helper_fields((question or message).strip(), handoff, standing)
     payload: dict[str, Any] = {
         "message": f"{standing}\n\n{user_text}" if standing else user_text,
-        "question": (question or message).strip(),
+        "question": short_question,
         "origin": origin,
         "history_in_ha": True,
         "full_tools": _full_tools(user_id, admin),
@@ -375,7 +414,7 @@ async def _runtime_chat(
         "titles": token_mode_allows_extras(token_mode),
     }
     if standing:
-        payload["prompt"] = standing
+        payload["prompt"] = short_prompt
     if session.agent_id:
         payload["sync_agent_id"] = str(session.agent_id)
     if images:

@@ -13,7 +13,7 @@ from typing import Any
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.files import attach_files_to_message, file_events, parse_client_files
 from app.mcp_proxy import proxy_mcp
@@ -99,8 +99,17 @@ class ChatMcp(BaseModel):
     exclusive: bool = False
 
 
+# Helper fields are shortened, never a reason to refuse the turn: a long paste once made the whole
+# message fail with HTTP 422 because `question` (a copy of it) was over its limit.
+QUESTION_CHARS = 8000
+HANDOFF_CHARS = 120000
+PROMPT_CHARS = 120000
+# The chat text plus up to four attached files of 256 KB each, and the standing prompt.
+MESSAGE_CHARS = 1_200_000
+
+
 class ChatRequest(BaseModel):
-    message: str = Field(default="", max_length=320000)
+    message: str = Field(default="", max_length=MESSAGE_CHARS)
     origin: str = ""
     images: list[ChatImage] = Field(default_factory=list, max_length=4)
     files: list[ChatFile] = Field(default_factory=list, max_length=4)
@@ -114,15 +123,33 @@ class ChatRequest(BaseModel):
     model: str = ""
     effort: str = ""
     api_key: str = ""
-    question: str = Field(default="", max_length=8000)
-    handoff: str = Field(default="", max_length=120000)
+    question: str = ""
+    handoff: str = ""
     history_in_ha: bool = False
-    prompt: str = Field(default="", max_length=120000)
+    prompt: str = ""
     sync_agent_id: str = ""
     shorten_mcp_results: bool | None = None
     change_history: bool | None = None
     # Home Assistant's key for this chat's Change History callbacks.
     callback_key: str = Field(default="", max_length=200)
+
+    @field_validator("question", mode="before")
+    @classmethod
+    def _short_question(cls, value):
+        # Only used to pick tools and a title: the start is what matters.
+        return str(value or "")[:QUESTION_CHARS]
+
+    @field_validator("handoff", mode="before")
+    @classmethod
+    def _short_handoff(cls, value):
+        # The earlier conversation: the newest part matters most.
+        text = str(value or "")
+        return text if len(text) <= HANDOFF_CHARS else "…" + text[-(HANDOFF_CHARS - 1):]
+
+    @field_validator("prompt", mode="before")
+    @classmethod
+    def _short_prompt(cls, value):
+        return str(value or "")[:PROMPT_CHARS]
 
 
 def _with_ui_context(message: str, origin: str = "") -> str:

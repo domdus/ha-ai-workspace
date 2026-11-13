@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.0b8
+
+**Long pastes work with Cursor and Claude SDK agents.** A message over 8000 characters (for example pasted HTML) failed with "The AI Workspace Runtime answered HTTP 422" and never reached the agent.
+
+- The integration no longer sends more than the runtime accepts, so this works with an older runtime too.
+- The runtime shortens its helper fields instead of refusing the message, and takes messages with four full attachments.
+- If the runtime still refuses a request, the chat says why (for example that the message is too long) instead of a bare HTTP code.
+
 ## 1.6.0b7
 
 **Sign in with Claude (experimental).** A Claude SDK agent can get its Claude Plan token without Claude Code on your computer: tick **Sign in with Claude (experimental)** in the **Claude SDK (runtime)** section and press OK, open the link, sign in, and paste the code Anthropic shows. The runtime runs Anthropic's own `claude setup-token` and the token is saved on the agent. See [Claude SDK agents](../docs/claude-runtime.md#sign-in-with-claude).
