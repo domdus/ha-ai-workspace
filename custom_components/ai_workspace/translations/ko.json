@@ -292,11 +292,18 @@
         "claude_runtime_old": "Claude SDK 에이전트를 쓰려면 AI Workspace Runtime을 1.6.0 이상으로 업데이트하세요.",
         "claude_key_required": "Claude SDK(런타임)에 Claude Plan 토큰 또는 Anthropic API 키를 넣거나, AI Workspace Runtime에 설정하세요.",
         "runtime_refused": "AI Workspace Runtime이 Runtime 비밀번호를 거부했습니다. 이 양식에서 확인하세요.",
-        "claude_login_unavailable": "이 AI Workspace Runtime은 Claude에 로그인할 수 없습니다. 1.6.0b7 이상으로 업데이트하거나 대신 토큰을 붙여 넣으세요.",
-        "claude_login_failed": "Claude 로그인이 되지 않았습니다. 다시 시도하거나 대신 토큰을 붙여 넣으세요.",
-        "claude_login_expired": "로그인 시간이 너무 오래 걸렸습니다. 위의 새 링크를 사용하고 새 코드를 붙여 넣으세요.",
-        "claude_code_rejected": "Anthropic이 이 코드를 받아들이지 않았습니다. 위의 새 링크로 다시 로그인하고 새 코드를 붙여 넣으세요.",
-        "claude_code_bad": "Anthropic 페이지의 코드가 아닙니다. 전체 코드를 복사해 다시 붙여 넣으세요."
+        "bad_code": "Anthropic 페이지의 코드가 아닌 것 같습니다. 코드 전체를 복사해 다시 붙여 넣으세요.",
+        "code_rejected": "Anthropic이 코드를 받아들이지 않았습니다. 새 링크입니다: 다시 로그인하고 새 코드를 붙여 넣으세요.",
+        "too_many_attempts": "잘못된 코드가 너무 많습니다. 새 링크입니다.",
+        "busy": "런타임이 아직 이전 코드를 확인하고 있습니다. 잠시 후 다시 시도하세요.",
+        "expired": "로그인 시간이 지났습니다. 새 링크입니다.",
+        "timeout": "런타임이 제시간에 Anthropic의 응답을 받지 못했습니다. 새 링크입니다. 다시 시도하세요.",
+        "cli_missing": "AI Workspace Runtime에 Claude Code CLI가 없습니다. 런타임(App 또는 Docker 이미지)을 업데이트하세요.",
+        "no_link": "Claude Code가 로그인 링크를 보여 주지 않았습니다. 런타임이 claude.com에 연결되는지 확인하고 다시 시도하세요.",
+        "login_failed": "런타임에서 로그인에 실패했습니다. 런타임 로그를 확인하고 다시 시도하세요.",
+        "not_supported": "이 엔진은 요금제 로그인이 없습니다. API 키를 사용하세요.",
+        "runtime_rejected": "AI Workspace Runtime이 런타임 비밀번호를 거부했습니다. 런타임과 이 양식에 같은 비밀번호를 설정하세요.",
+        "runtime_old": "이 런타임은 아직 로그인을 지원하지 않습니다. AI Workspace Runtime을 업데이트하거나 에이전트 양식에 토큰을 붙여 넣으세요."
       },
       "step": {
         "provider": {
@@ -411,14 +418,12 @@
               "data": {
                 "runtime_url": "런타임 주소{runtime_url_mark}",
                 "runtime_token": "런타임 비밀번호",
-                "claude_api_key": "Claude Plan 토큰 또는 Anthropic API 키",
-                "claude_sign_in": "Claude로 로그인 (실험적)"
+                "claude_api_key": "Claude Plan 토큰 또는 Anthropic API 키"
               },
               "data_description": {
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "AI Workspace Runtime과 같은 비밀번호입니다. 자동 페어링 애드온을 쓰면 비워 두세요.",
-                "claude_api_key": "Claude Plan 토큰(sk-ant-oat…, `claude setup-token`으로 생성, Claude 구독 사용) 또는 Anthropic API 키(sk-ant-api…, API 크레딧으로 청구)입니다. 비워 두면 AI Workspace Runtime에 설정된 값을 쓰고, 수정 시 비워 두면 저장된 값을 유지합니다. [API 키 받기]({api_key_url})",
-                "claude_sign_in": "토큰 칸을 비워 두고 이 항목을 선택한 뒤 확인을 누르세요. AI Workspace Runtime이 Claude 구독(Pro, Max)용 Anthropic 로그인을 실행하고 토큰을 대신 채웁니다."
+                "claude_api_key": "Claude Plan 토큰(sk-ant-oat…, `claude setup-token`으로 생성, Claude 구독 사용) 또는 Anthropic API 키(sk-ant-api…, API 크레딧으로 청구)입니다. 비워 두면 AI Workspace Runtime에 설정된 값을 쓰고, 수정 시 비워 두면 저장된 값을 유지합니다. [API 키 받기]({api_key_url})"
               }
             }
           }
@@ -556,14 +561,32 @@
           }
         },
         "claude_login": {
-          "title": "Claude로 로그인",
-          "description": "1. [Claude로 로그인]({login_url})을 열고 구독이 있는 Claude 계정으로 로그인하세요.\n2. Anthropic이 코드를 보여 줍니다. 전체를 복사하세요.\n3. 아래에 붙여 넣고 확인을 누르세요. 토큰은 이 에이전트에 저장되며 1년 동안 유효합니다.",
+          "title": "Claude 요금제로 로그인",
+          "description": "1. 이 링크를 열고 Pro 또는 Max 요금제가 있는 Claude 계정으로 로그인하세요: [Claude로 로그인]({url})\n2. 그러면 Anthropic이 코드를 보여 줍니다. 전체를 복사해 아래에 붙여 넣으세요.\n\n링크는 15분 동안 유효합니다. Claude 비밀번호는 Home Assistant를 거치지 않습니다.",
           "data": {
             "code": "Anthropic 코드"
           },
           "data_description": {
-            "code": "로그인 후 Anthropic 페이지에 표시된 전체 코드입니다."
+            "code": "가운데에 #이 있는 긴 문자열입니다. 그대로 붙여 넣으세요."
           }
+        },
+        "claude_account": {
+          "title": "Claude 계정",
+          "description": "{status}\n\n로그인 정보는 Home Assistant가 아니라 AI Workspace Runtime에 저장되며, 해당 런타임의 모든 Claude SDK 에이전트가 사용합니다.",
+          "menu_options": {
+            "claude_save": "에이전트 저장",
+            "claude_login": "Claude 요금제로 로그인",
+            "claude_logout": "런타임에서 로그아웃",
+            "claude_back": "에이전트 설정으로 돌아가기"
+          }
+        },
+        "claude_signed_in": {
+          "title": "로그인됨",
+          "description": "{status}\n\n제출하면 에이전트를 저장합니다."
+        },
+        "claude_login_error": {
+          "title": "로그인하지 못했습니다",
+          "description": "제출하면 돌아갑니다."
         }
       },
       "abort": {

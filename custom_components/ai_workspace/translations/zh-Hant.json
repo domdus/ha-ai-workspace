@@ -292,11 +292,18 @@
         "claude_runtime_old": "請將 AI Workspace Runtime 更新到 1.6.0 或更新版本以使用 Claude SDK 智慧體。",
         "claude_key_required": "請在 Claude SDK（Runtime）中填寫 Claude Plan 權杖或 Anthropic API 金鑰，或在 AI Workspace Runtime 上設定一個。",
         "runtime_refused": "AI Workspace Runtime 拒絕了 Runtime 密碼。請在此表單中檢查。",
-        "claude_login_unavailable": "此 AI Workspace Runtime 無法登入 Claude。請更新到 1.6.0b7 或更新版本，或改為貼上權杖。",
-        "claude_login_failed": "Claude 登入未成功。請重試，或改為貼上權杖。",
-        "claude_login_expired": "登入耗時過長。請使用上方的新連結並貼上新代碼。",
-        "claude_code_rejected": "Anthropic 未接受此代碼。請用上方的新連結重新登入並貼上新代碼。",
-        "claude_code_bad": "這不是 Anthropic 頁面上的代碼。請複製完整代碼後重新貼上。"
+        "bad_code": "這看起來不像 Anthropic 頁面上的代碼。請完整複製代碼後重新貼上。",
+        "code_rejected": "Anthropic 未接受該代碼。這是新連結：請重新登入並貼上新代碼。",
+        "too_many_attempts": "錯誤代碼太多。這是新連結。",
+        "busy": "執行環境仍在檢查上一組代碼。請稍候再試。",
+        "expired": "此次登入已過期。這是新連結。",
+        "timeout": "執行環境沒有及時收到 Anthropic 的回覆。這是新連結，請重試。",
+        "cli_missing": "AI Workspace Runtime 沒有 Claude Code CLI。請更新執行環境（App 或 Docker 映像）。",
+        "no_link": "Claude Code 沒有顯示登入連結。請確認執行環境能連到 claude.com，然後重試。",
+        "login_failed": "執行環境上的登入失敗。請查看執行環境日誌後重試。",
+        "not_supported": "此引擎不支援訂閱登入。請使用 API 金鑰。",
+        "runtime_rejected": "AI Workspace Runtime 拒絕了執行環境密碼。請在執行環境和此表單中設定相同的密碼。",
+        "runtime_old": "此執行環境尚不支援登入。請更新 AI Workspace Runtime，或在代理表單中貼上權杖。"
       },
       "step": {
         "provider": {
@@ -411,14 +418,12 @@
               "data": {
                 "runtime_url": "Runtime 位址{runtime_url_mark}",
                 "runtime_token": "Runtime 密碼",
-                "claude_api_key": "Claude Plan 權杖或 Anthropic API 金鑰",
-                "claude_sign_in": "使用 Claude 登入（實驗性）"
+                "claude_api_key": "Claude Plan 權杖或 Anthropic API 金鑰"
               },
               "data_description": {
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "與 AI Workspace Runtime 上相同的密碼。使用含自動配對的附加元件時請留空。",
-                "claude_api_key": "Claude Plan 權杖（sk-ant-oat…，由 `claude setup-token` 產生，使用你的 Claude 訂閱）或 Anthropic API 金鑰（sk-ant-api…，以 API 額度計費）。留空則使用 AI Workspace Runtime 上設定的值；編輯時留空可保留已儲存的值。 [取得 API 金鑰]({api_key_url})",
-                "claude_sign_in": "權杖欄位留空，勾選此項並按確定：AI Workspace Runtime 會為你的 Claude 訂閱（Pro、Max）執行 Anthropic 的登入，並替你填入權杖。"
+                "claude_api_key": "Claude Plan 權杖（sk-ant-oat…，由 `claude setup-token` 產生，使用你的 Claude 訂閱）或 Anthropic API 金鑰（sk-ant-api…，以 API 額度計費）。留空則使用 AI Workspace Runtime 上設定的值；編輯時留空可保留已儲存的值。 [取得 API 金鑰]({api_key_url})"
               }
             }
           }
@@ -556,14 +561,32 @@
           }
         },
         "claude_login": {
-          "title": "使用 Claude 登入",
-          "description": "1. 開啟[使用 Claude 登入]({login_url})，用訂閱所在的 Claude 帳號登入。\n2. Anthropic 接著會顯示一組代碼。完整複製它。\n3. 貼到下方並按確定。權杖會儲存在此智慧體上，有效期一年。",
+          "title": "使用 Claude 訂閱登入",
+          "description": "1. 開啟此連結，用擁有 Pro 或 Max 訂閱的 Claude 帳戶登入：[使用 Claude 登入]({url})\n2. 接著 Anthropic 會顯示一組代碼。完整複製並貼到下方。\n\n連結 15 分鐘內有效。你的 Claude 密碼不會經過 Home Assistant。",
           "data": {
-            "code": "Anthropic 的代碼"
+            "code": "Anthropic 代碼"
           },
           "data_description": {
-            "code": "登入後 Anthropic 頁面上顯示的完整代碼。"
+            "code": "中間帶 # 的長字串。原樣貼上。"
           }
+        },
+        "claude_account": {
+          "title": "Claude 帳戶",
+          "description": "{status}\n\n登入資訊保存在 AI Workspace Runtime 上，而不是 Home Assistant 中，該執行環境上的所有 Claude SDK 代理都會使用它。",
+          "menu_options": {
+            "claude_save": "儲存代理",
+            "claude_login": "使用 Claude 訂閱登入",
+            "claude_logout": "在執行環境上登出",
+            "claude_back": "返回代理設定"
+          }
+        },
+        "claude_signed_in": {
+          "title": "已登入",
+          "description": "{status}\n\n送出以儲存代理。"
+        },
+        "claude_login_error": {
+          "title": "登入未成功",
+          "description": "送出以返回。"
         }
       },
       "abort": {

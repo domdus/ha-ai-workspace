@@ -69,9 +69,35 @@ def is_plan_token(credential: str) -> bool:
     return (credential or "").strip().startswith("sk-ant-oat")
 
 
+def signed_in_token(settings: Settings) -> str:
+    """The Claude Plan token saved by "Sign in with Claude" (see app.claude_login), or ""."""
+    from app.claude_login import load_token
+
+    return load_token(settings.claude_token_path)
+
+
 def runtime_credential(settings: Settings) -> str:
-    """The runtime's own credential: the Plan token first, then the API key."""
-    return (settings.claude_oauth_token or "").strip() or (settings.anthropic_api_key or "").strip()
+    """The runtime's own credential: the Plan token from the options, then the signed-in Plan token, then the API key.
+
+    A sign-in beats an Anthropic API key in the options: it is the newer, deliberate choice, and
+    Plan billing is what it is for. A per-agent key from Home Assistant still beats all of them.
+    """
+    return (
+        (settings.claude_oauth_token or "").strip()
+        or signed_in_token(settings)
+        or (settings.anthropic_api_key or "").strip()
+    )
+
+
+def credential_source(settings: Settings) -> str:
+    """settings | signed-in | none: where the runtime's own Claude credential comes from."""
+    if (settings.claude_oauth_token or "").strip():
+        return "settings"
+    if signed_in_token(settings):
+        return "signed-in"
+    if (settings.anthropic_api_key or "").strip():
+        return "settings"
+    return "none"
 
 
 def resolve_credential(settings: Settings, api_key: str = "") -> str:
