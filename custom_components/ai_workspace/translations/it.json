@@ -289,7 +289,19 @@
         "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
         "pick_model": "The server lists its models now. Pick one from the model list.",
         "model_rejected": "The server does not allow this model for this key: {server_message}",
-        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents.",
+        "bad_code": "Non sembra il codice della pagina di Anthropic. Copia tutto il codice e incollalo di nuovo.",
+        "code_rejected": "Anthropic non ha accettato il codice. Ecco un nuovo link: accedi di nuovo e incolla il nuovo codice.",
+        "too_many_attempts": "Troppi codici errati. Ecco un nuovo link.",
+        "busy": "Il Runtime sta ancora verificando il codice precedente. Attendi un momento e riprova.",
+        "expired": "Questo accesso è scaduto. Ecco un nuovo link.",
+        "timeout": "Il Runtime non ha ricevuto risposta da Anthropic in tempo. Ecco un nuovo link; riprova.",
+        "cli_missing": "AI Workspace Runtime non ha la CLI di Claude Code. Aggiorna il Runtime (App o immagine Docker).",
+        "no_link": "Claude Code non ha mostrato un link di accesso. Controlla che il Runtime raggiunga claude.com e riprova.",
+        "login_failed": "L'accesso non è riuscito sul Runtime. Controlla il log del Runtime e riprova.",
+        "not_supported": "Questo motore non ha un accesso con piano. Usa una chiave API.",
+        "runtime_rejected": "AI Workspace Runtime ha rifiutato la password del Runtime. Usa la stessa password sul Runtime e in questo modulo.",
+        "runtime_old": "Questo Runtime non supporta ancora l'accesso. Aggiorna AI Workspace Runtime, oppure incolla un token nel modulo dell'agente."
       },
       "step": {
         "provider": {
@@ -544,6 +556,34 @@
               }
             }
           }
+        },
+        "claude_account": {
+          "title": "Account Claude",
+          "description": "{status}\n\nL'accesso resta su AI Workspace Runtime, non in Home Assistant, e lo usa ogni agente Claude SDK di quel Runtime.",
+          "menu_options": {
+            "claude_save": "Salva agente",
+            "claude_login": "Accedi con il piano Claude",
+            "claude_logout": "Esci dal Runtime",
+            "claude_back": "Torna alle impostazioni dell'agente"
+          }
+        },
+        "claude_login": {
+          "title": "Accedi con il piano Claude",
+          "description": "1. Apri questo link e accedi con l'account Claude che ha il tuo piano Pro o Max: [Accedi con Claude]({url})\n2. Anthropic mostra poi un codice. Copialo per intero e incollalo qui sotto.\n\nIl link vale 15 minuti. La tua password Claude non passa mai da Home Assistant.",
+          "data": {
+            "code": "Codice di Anthropic"
+          },
+          "data_description": {
+            "code": "Una lunga stringa con un # nel mezzo. Incollala così com'è."
+          }
+        },
+        "claude_signed_in": {
+          "title": "Accesso effettuato",
+          "description": "{status}\n\nInvia per salvare l'agente."
+        },
+        "claude_login_error": {
+          "title": "L'accesso non è riuscito",
+          "description": "Invia per tornare indietro."
         }
       },
       "abort": {

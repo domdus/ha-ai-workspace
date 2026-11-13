@@ -289,7 +289,19 @@
         "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
         "pick_model": "The server lists its models now. Pick one from the model list.",
         "model_rejected": "The server does not allow this model for this key: {server_message}",
-        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents.",
+        "bad_code": "Tio ne aspektas kiel la kodo de la paĝo de Anthropic. Kopiu la tutan kodon kaj algluu ĝin denove.",
+        "code_rejected": "Anthropic ne akceptis tiun kodon. Jen nova ligilo: ensalutu denove kaj algluu la novan kodon.",
+        "too_many_attempts": "Tro da malĝustaj kodoj. Jen nova ligilo.",
+        "busy": "La rultempo ankoraŭ kontrolas la antaŭan kodon. Atendu momenton kaj reprovu.",
+        "expired": "Tiu ensaluto eksvalidiĝis. Jen nova ligilo.",
+        "timeout": "La rultempo ne ricevis respondon de Anthropic ĝustatempe. Jen nova ligilo; reprovu.",
+        "cli_missing": "AI Workspace Runtime ne havas la Claude Code-CLI. Ĝisdatigu la rultempon (App aŭ Docker-bildo).",
+        "no_link": "Claude Code ne montris ensalutan ligilon. Kontrolu, ke la rultempo atingas claude.com, kaj reprovu.",
+        "login_failed": "La ensaluto malsukcesis ĉe la rultempo. Rigardu la protokolon de la rultempo kaj reprovu.",
+        "not_supported": "Ĉi tiu motoro ne havas abonan ensaluton. Uzu API-ŝlosilon.",
+        "runtime_rejected": "AI Workspace Runtime rifuzis la rultempan pasvorton. Agordu la saman pasvorton ĉe la rultempo kaj en ĉi tiu formularo.",
+        "runtime_old": "Ĉi tiu rultempo ankoraŭ ne povas ensaluti. Ĝisdatigu AI Workspace Runtime, aŭ algluu ĵetonon en la agenta formularo."
       },
       "step": {
         "provider": {
@@ -544,6 +556,34 @@
               }
             }
           }
+        },
+        "claude_account": {
+          "title": "Claude-konto",
+          "description": "{status}\n\nLa ensaluto restas ĉe AI Workspace Runtime, ne en Home Assistant, kaj ĉiu Claude SDK-agento ĉe tiu rultempo uzas ĝin.",
+          "menu_options": {
+            "claude_save": "Konservi agenton",
+            "claude_login": "Ensaluti per Claude-abono",
+            "claude_logout": "Elsaluti ĉe la rultempo",
+            "claude_back": "Reen al la agentaj agordoj"
+          }
+        },
+        "claude_login": {
+          "title": "Ensaluti per Claude-abono",
+          "description": "1. Malfermu ĉi tiun ligilon kaj ensalutu per la Claude-konto kun via Pro- aŭ Max-abono: [Ensaluti per Claude]({url})\n2. Anthropic poste montras kodon. Kopiu ĝin tute kaj algluu ĝin sube.\n\nLa ligilo validas 15 minutojn. Via Claude-pasvorto neniam trairas Home Assistant.",
+          "data": {
+            "code": "Kodo de Anthropic"
+          },
+          "data_description": {
+            "code": "Longa signoĉeno kun # en la mezo. Algluu ĝin senŝanĝe."
+          }
+        },
+        "claude_signed_in": {
+          "title": "Ensalutinta",
+          "description": "{status}\n\nSendu por konservi la agenton."
+        },
+        "claude_login_error": {
+          "title": "Ensaluto ne sukcesis",
+          "description": "Sendu por reiri."
         }
       },
       "abort": {

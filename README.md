@@ -138,7 +138,7 @@ Add this repository to Apps and install **AI Workspace Runtime**:
 
 ![Add repository](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)
 
-For **Cursor**, paste the Cursor API key on the app and **Start** it. For **Claude SDK**, set OpenRouter, Claude Plan OAuth, or Anthropic API on the app instead ([details](docs/claude-runtime.md)). Leave **Runtime URL** on the integration empty; it is detected once the app runs. The integration also creates the shared [runtime token](#runtime-token) and writes it to the app for you.
+For **Cursor**, paste the Cursor API key on the app and **Start** it. For **Claude SDK**, use **Sign in with Claude plan** on the agent form (the app keeps the Plan token), or set OpenRouter, Claude Plan OAuth, or Anthropic API on the app ([details](docs/claude-runtime.md)). Leave **Runtime URL** on the integration empty; it is detected once the app runs. The integration also creates the shared [runtime token](#runtime-token) and writes it to the app for you.
 
 Home Assistant 2026.2 renamed "Add-ons" to "Apps".
 
@@ -148,7 +148,7 @@ If Home Assistant is a Docker container (no Supervisor), run the **`ai-workspace
 
 ![Home Assistant container, ai-workspace-runtime, Cursor / Claude Cloud](docs/docker-architecture.jpg)
 
-Paste your Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) into [docker-compose.runtime.yml](docker-compose.runtime.yml) when you use Cursor agents. For Claude SDK, set `OPENROUTER_API_KEY`, `CLAUDE_CODE_OAUTH_TOKEN`, or `ANTHROPIC_API_KEY` on the container ([details](docs/claude-runtime.md)); the compose file already lists them as comments.
+Paste your Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) into [docker-compose.runtime.yml](docker-compose.runtime.yml) when you use Cursor agents. For Claude SDK, use **Sign in with Claude plan** on the agent form (the token stays in the container's `/data` volume), or set `OPENROUTER_API_KEY`, `CLAUDE_CODE_OAUTH_TOKEN`, or `ANTHROPIC_API_KEY` on the container ([details](docs/claude-runtime.md)); the compose file already lists them as comments.
 
 ```yaml
 name: ai-workspace-runtime

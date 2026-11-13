@@ -5,6 +5,21 @@ configuration:
   model:
     name: Model
     description: Default Cursor model id, for example composer-2.5. The HACS form can override this.
+  openrouter_api_key:
+    name: OpenRouter API key
+    description: Optional. Claude SDK agents go through OpenRouter with this key. Wins over every other Claude credential.
+  claude_oauth_token:
+    name: Claude Plan token
+    description: Optional. Easier is "Sign in with Claude plan" on the Claude agent in Home Assistant, which keeps the token on this App by itself. A token here (sk-ant-oat-… from claude setup-token) wins over that sign-in.
+  anthropic_api_key:
+    name: Anthropic API key
+    description: Optional. Claude SDK agents bill Anthropic API credits with this key when nobody signed in with a Claude plan.
+  anthropic_base_url:
+    name: Anthropic base URL
+    description: Optional proxy address for the Anthropic API. Leave empty for Anthropic itself.
+  claude_model:
+    name: Claude model
+    description: Optional default model for Claude SDK agents whose model is empty, for example claude-sonnet-5-5.
   runtime_token:
     name: Runtime token
     description: Filled in by the AI Workspace integration. Leave it alone unless you pair the integration by hand.

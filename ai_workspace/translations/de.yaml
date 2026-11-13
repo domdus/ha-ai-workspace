@@ -5,6 +5,21 @@ configuration:
   model:
     name: Modell
     description: Standard-Modell von Cursor, zum Beispiel composer-2.5. Das HACS-Formular kann es überschreiben.
+  openrouter_api_key:
+    name: OpenRouter-API-Schlüssel
+    description: Optional. Claude-SDK-Agenten laufen mit diesem Schlüssel über OpenRouter. Hat Vorrang vor jedem anderen Claude-Zugang.
+  claude_oauth_token:
+    name: Claude-Plan-Token
+    description: Optional. Einfacher ist „Mit Claude-Abo anmelden“ am Claude-Agenten in Home Assistant; das Token bleibt dann von selbst in dieser App. Ein Token hier (sk-ant-oat-… aus claude setup-token) hat Vorrang vor dieser Anmeldung.
+  anthropic_api_key:
+    name: Anthropic-API-Schlüssel
+    description: Optional. Claude-SDK-Agenten rechnen mit diesem Schlüssel über Anthropic-API-Guthaben ab, wenn sich niemand mit einem Claude-Abo angemeldet hat.
+  anthropic_base_url:
+    name: Anthropic-Basis-URL
+    description: Optionale Proxy-Adresse für die Anthropic-API. Leer lassen für Anthropic selbst.
+  claude_model:
+    name: Claude-Modell
+    description: Optionales Standardmodell für Claude-SDK-Agenten ohne eigenes Modell, zum Beispiel claude-sonnet-5-5.
   runtime_token:
     name: Runtime-Token
     description: Wird von der AI-Workspace-Integration eingetragen. Nur ändern, wenn du die Integration von Hand koppelst.

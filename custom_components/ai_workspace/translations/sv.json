@@ -289,7 +289,19 @@
         "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
         "pick_model": "The server lists its models now. Pick one from the model list.",
         "model_rejected": "The server does not allow this model for this key: {server_message}",
-        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents.",
+        "bad_code": "Det ser inte ut som koden från Anthropics sida. Kopiera hela koden och klistra in den igen.",
+        "code_rejected": "Anthropic godtog inte koden. Här är en ny länk: logga in igen och klistra in den nya koden.",
+        "too_many_attempts": "För många felaktiga koder. Här är en ny länk.",
+        "busy": "Runtime kontrollerar fortfarande föregående kod. Vänta en stund och försök igen.",
+        "expired": "Inloggningen gick ut. Här är en ny länk.",
+        "timeout": "Runtime fick inget svar från Anthropic i tid. Här är en ny länk; försök igen.",
+        "cli_missing": "AI Workspace Runtime saknar Claude Code-CLI. Uppdatera Runtime (App eller Docker-avbild).",
+        "no_link": "Claude Code visade ingen inloggningslänk. Kontrollera att Runtime når claude.com och försök igen.",
+        "login_failed": "Inloggningen misslyckades på Runtime. Titta i Runtime-loggen och försök igen.",
+        "not_supported": "Den här motorn har ingen planinloggning. Använd en API-nyckel.",
+        "runtime_rejected": "AI Workspace Runtime nekade Runtime-lösenordet. Ange samma lösenord på Runtime och i det här formuläret.",
+        "runtime_old": "Den här Runtime kan inte logga in än. Uppdatera AI Workspace Runtime, eller klistra in en token i agentformuläret."
       },
       "step": {
         "provider": {
@@ -544,6 +556,34 @@
               }
             }
           }
+        },
+        "claude_account": {
+          "title": "Claude-konto",
+          "description": "{status}\n\nInloggningen sparas på AI Workspace Runtime, inte i Home Assistant, och varje Claude SDK-agent på den Runtime använder den.",
+          "menu_options": {
+            "claude_save": "Spara agent",
+            "claude_login": "Logga in med Claude-plan",
+            "claude_logout": "Logga ut på Runtime",
+            "claude_back": "Tillbaka till agentinställningarna"
+          }
+        },
+        "claude_login": {
+          "title": "Logga in med Claude-plan",
+          "description": "1. Öppna länken och logga in med Claude-kontot som har din Pro- eller Max-plan: [Logga in med Claude]({url})\n2. Anthropic visar sedan en kod. Kopiera hela och klistra in den nedan.\n\nLänken gäller i 15 minuter. Ditt Claude-lösenord går aldrig via Home Assistant.",
+          "data": {
+            "code": "Kod från Anthropic"
+          },
+          "data_description": {
+            "code": "En lång sträng med ett # i mitten. Klistra in den som den är."
+          }
+        },
+        "claude_signed_in": {
+          "title": "Inloggad",
+          "description": "{status}\n\nSkicka för att spara agenten."
+        },
+        "claude_login_error": {
+          "title": "Inloggningen fungerade inte",
+          "description": "Skicka för att gå tillbaka."
         }
       },
       "abort": {

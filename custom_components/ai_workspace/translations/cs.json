@@ -289,7 +289,19 @@
         "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
         "pick_model": "The server lists its models now. Pick one from the model list.",
         "model_rejected": "The server does not allow this model for this key: {server_message}",
-        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents.",
+        "bad_code": "To nevypadá jako kód ze stránky Anthropic. Zkopírujte celý kód a vložte ho znovu.",
+        "code_rejected": "Anthropic kód nepřijal. Tady je nový odkaz: přihlaste se znovu a vložte nový kód.",
+        "too_many_attempts": "Příliš mnoho chybných kódů. Tady je nový odkaz.",
+        "busy": "Runtime ještě ověřuje předchozí kód. Chvíli počkejte a zkuste to znovu.",
+        "expired": "Toto přihlášení vypršelo. Tady je nový odkaz.",
+        "timeout": "Runtime nedostal od Anthropic včas odpověď. Tady je nový odkaz; zkuste to znovu.",
+        "cli_missing": "AI Workspace Runtime nemá CLI Claude Code. Aktualizujte Runtime (App nebo Docker image).",
+        "no_link": "Claude Code neukázal přihlašovací odkaz. Zkontrolujte, že Runtime dosáhne na claude.com, a zkuste to znovu.",
+        "login_failed": "Přihlášení na Runtime selhalo. Podívejte se do logu Runtime a zkuste to znovu.",
+        "not_supported": "Tento engine nemá přihlášení předplatným. Použijte API klíč.",
+        "runtime_rejected": "AI Workspace Runtime odmítl heslo Runtime. Nastavte stejné heslo na Runtime i v tomto formuláři.",
+        "runtime_old": "Tento Runtime se zatím neumí přihlásit. Aktualizujte AI Workspace Runtime, nebo vložte token ve formuláři agenta."
       },
       "step": {
         "provider": {
@@ -544,6 +556,34 @@
               }
             }
           }
+        },
+        "claude_account": {
+          "title": "Účet Claude",
+          "description": "{status}\n\nPřihlášení se ukládá v AI Workspace Runtime, ne v Home Assistantu, a používá ho každý agent Claude SDK na tomto Runtime.",
+          "menu_options": {
+            "claude_save": "Uložit agenta",
+            "claude_login": "Přihlásit se předplatným Claude",
+            "claude_logout": "Odhlásit na Runtime",
+            "claude_back": "Zpět k nastavení agenta"
+          }
+        },
+        "claude_login": {
+          "title": "Přihlásit se předplatným Claude",
+          "description": "1. Otevřete tento odkaz a přihlaste se účtem Claude s předplatným Pro nebo Max: [Přihlásit se ke Claude]({url})\n2. Anthropic poté ukáže kód. Zkopírujte ho celý a vložte níže.\n\nOdkaz platí 15 minut. Vaše heslo ke Claude nikdy neprochází Home Assistantem.",
+          "data": {
+            "code": "Kód od Anthropic"
+          },
+          "data_description": {
+            "code": "Dlouhý řetězec se znakem # uprostřed. Vložte ho beze změny."
+          }
+        },
+        "claude_signed_in": {
+          "title": "Přihlášeno",
+          "description": "{status}\n\nOdesláním agenta uložíte."
+        },
+        "claude_login_error": {
+          "title": "Přihlášení se nezdařilo",
+          "description": "Odesláním se vrátíte."
         }
       },
       "abort": {

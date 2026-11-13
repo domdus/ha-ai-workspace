@@ -289,7 +289,19 @@
         "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
         "pick_model": "The server lists its models now. Pick one from the model list.",
         "model_rejected": "The server does not allow this model for this key: {server_message}",
-        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents.",
+        "bad_code": "That does not look like the code from Anthropic's page. Copy the whole code and paste it again.",
+        "code_rejected": "Anthropic did not accept that code. Here is a new link: sign in again and paste the new code.",
+        "too_many_attempts": "Too many wrong codes. Here is a new link.",
+        "busy": "The Runtime is still checking the previous code. Wait a moment and try again.",
+        "expired": "That sign-in ran out. Here is a new link.",
+        "timeout": "The Runtime got no answer from Anthropic in time. Here is a new link; try again.",
+        "cli_missing": "The AI Workspace Runtime has no Claude Code CLI. Update the Runtime (App or Docker image).",
+        "no_link": "Claude Code did not show a sign-in link. Check that the Runtime can reach claude.com, then try again.",
+        "login_failed": "The sign-in failed on the Runtime. Check the Runtime log and try again.",
+        "not_supported": "This engine has no plan sign-in. Use an API key.",
+        "runtime_rejected": "The AI Workspace Runtime refused the Runtime password. Set the same password on the Runtime and on this form.",
+        "runtime_old": "This Runtime cannot sign in yet. Update the AI Workspace Runtime, or paste a token on the agent form."
       },
       "step": {
         "provider": {
@@ -408,7 +420,7 @@
               "data_description": {
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
-                "claude_api_key": "Claude Plan OAuth token (`sk-ant-oat-…` from `claude setup-token`) or Anthropic API key for this agent. Overrides runtime defaults when set. Leave blank when editing to keep the saved credential. [Anthropic keys]({api_key_url})"
+                "claude_api_key": "Optional. Easier: leave this empty and use **Sign in with Claude plan** on the next step. Or paste a Claude Plan token (`sk-ant-oat-…` from `claude setup-token`) or an Anthropic API key for this agent only; it wins over the Runtime's credential. Leave blank when editing to keep the saved one. [Anthropic keys]({api_key_url})"
               }
             }
           }
@@ -544,6 +556,34 @@
               }
             }
           }
+        },
+        "claude_account": {
+          "title": "Claude account",
+          "description": "{status}\n\nThe sign-in is kept on the AI Workspace Runtime, not in Home Assistant, and every Claude SDK agent on that Runtime uses it.",
+          "menu_options": {
+            "claude_save": "Save agent",
+            "claude_login": "Sign in with Claude plan",
+            "claude_logout": "Sign out on the Runtime",
+            "claude_back": "Back to the agent settings"
+          }
+        },
+        "claude_login": {
+          "title": "Sign in with Claude plan",
+          "description": "1. Open this link and sign in with the Claude account that has your Pro or Max plan: [Sign in with Claude]({url})\n2. Anthropic then shows a code. Copy all of it and paste it below.\n\nThe link works for 15 minutes. Your Claude password never passes through Home Assistant.",
+          "data": {
+            "code": "Code from Anthropic"
+          },
+          "data_description": {
+            "code": "A long string with a # in the middle. Paste it as it is."
+          }
+        },
+        "claude_signed_in": {
+          "title": "Signed in",
+          "description": "{status}\n\nSubmit to save the agent."
+        },
+        "claude_login_error": {
+          "title": "Sign-in did not work",
+          "description": "Submit to go back."
         }
       },
       "abort": {

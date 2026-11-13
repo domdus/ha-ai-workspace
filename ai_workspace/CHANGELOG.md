@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+**Sign in with Claude plan.** Claude (Anthropic) agents with **Use Claude SDK (runtime)** on no longer need a pasted `claude setup-token`. After the agent form, a **Claude account** step shows the runtime's Claude credential and offers **Sign in with Claude plan**: open the link, sign in with your Pro or Max account, paste the code Anthropic shows, done. Cloud-API agents and Cursor agents are unchanged. See [docs/claude-runtime.md](../docs/claude-runtime.md#sign-in-with-claude-plan).
+
+**Runtime**
+- Sign-in API per engine: `GET /api/auth/{engine}`, `POST /api/auth/{engine}/login`, `GET|POST|DELETE /api/auth/{engine}/login/{id}`, `DELETE /api/auth/{engine}` (sign out). Claude uses the bundled Claude Code CLI (`claude setup-token`) in a pseudo-terminal; Cursor reports `not_supported` (API key only). `/api/health` lists engines with a sign-in under `"login"`.
+- The Plan token is kept in `/data/auth/claude-oauth-token` (owner-only), never sent to Home Assistant and never logged. The CLI runs without the runtime's own credentials in a temporary folder that is removed afterwards.
+- Credential order: agent token from Home Assistant → OpenRouter key → `claude_oauth_token` option → signed-in token → Anthropic API key.
+- Without Home Assistant: `docker exec -it ai-workspace-runtime python -m app.claude_login`.
+- The App's options for OpenRouter, Claude Plan token, Anthropic API key and base URL, and Claude model have names and descriptions (en, de); the empty Anthropic base URL default that the Supervisor rejects is gone.
+
+**Integration**
+- Agent form: **Claude account** step (Save agent / Sign in with Claude plan / Sign out on the Runtime / Back), the sign-in form with link and code field, and a **Signed in** confirmation with the sign-in date (no secrets). A rejected or expired code gets a fresh link on the same form; closing the dialog cancels a waiting sign-in.
+- The token field stays as an optional fallback. Signing in clears an older token on that agent, because it would win over the sign-in. Without any credential, saving waits for a sign-in instead of failing with "required" (runtimes without sign-in still ask for the token).
+- Translations for all 15 languages.
+
+**Update the runtime together with the integration** to get the sign-in; older runtimes show an update hint on the Claude account step and keep working with a pasted token.
+
 ## 1.6.0b3
 
 **One Claude (Anthropic) agent, cloud or runtime.** The separate **Claude SDK** provider row is gone. Add **Claude (Anthropic)** and turn on **Use Claude SDK (runtime)** for the AI Workspace Runtime, or leave it off for the direct Messages API with an Anthropic API key. Existing Claude SDK agents are migrated on the next integration load.

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import os
-from pathlib import Path
 from typing import Any, AsyncIterator, Callable
 
 from app.events import _resolved_tool_name, _tool_event, _tool_label
@@ -42,12 +41,36 @@ _FILE_AND_SHELL = (
 _INTERNET_TOOLS = ("WebSearch", "WebFetch")
 
 
+def signed_in_token(settings: Settings) -> str:
+    """The Claude Plan token saved by "Sign in with Claude" (see app.claude_login), or ""."""
+    from app.claude_login import load_token
+
+    return load_token(settings.claude_token_path)
+
+
 def _runtime_credential(settings: Settings) -> str:
+    """OpenRouter key, then Plan token from options, then the signed-in Plan token, then an API key.
+
+    A sign-in beats an Anthropic API key in the options: it is the newer, deliberate choice, and
+    Plan billing is what it is for. A per-agent key from Home Assistant still beats all of them.
+    """
     return (
         (settings.openrouter_api_key or "").strip()
         or (settings.claude_oauth_token or "").strip()
+        or signed_in_token(settings)
         or (settings.anthropic_api_key or "").strip()
     )
+
+
+def credential_source(settings: Settings) -> str:
+    """settings | signed-in | none: where the runtime's own Claude credential comes from."""
+    if (settings.openrouter_api_key or "").strip() or (settings.claude_oauth_token or "").strip():
+        return "settings"
+    if signed_in_token(settings):
+        return "signed-in"
+    if (settings.anthropic_api_key or "").strip():
+        return "settings"
+    return "none"
 
 
 def detect_auth_mode(credential: str, settings: Settings) -> str:

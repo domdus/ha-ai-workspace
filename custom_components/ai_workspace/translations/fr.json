@@ -289,7 +289,19 @@
         "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
         "pick_model": "The server lists its models now. Pick one from the model list.",
         "model_rejected": "The server does not allow this model for this key: {server_message}",
-        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents.",
+        "bad_code": "Cela ne ressemble pas au code de la page d'Anthropic. Copiez tout le code et collez-le à nouveau.",
+        "code_rejected": "Anthropic n'a pas accepté ce code. Voici un nouveau lien : reconnectez-vous et collez le nouveau code.",
+        "too_many_attempts": "Trop de codes erronés. Voici un nouveau lien.",
+        "busy": "Le Runtime vérifie encore le code précédent. Patientez un instant et réessayez.",
+        "expired": "Cette connexion a expiré. Voici un nouveau lien.",
+        "timeout": "Le Runtime n'a pas reçu de réponse d'Anthropic à temps. Voici un nouveau lien ; réessayez.",
+        "cli_missing": "AI Workspace Runtime n'a pas la CLI Claude Code. Mettez à jour le Runtime (App ou image Docker).",
+        "no_link": "Claude Code n'a pas affiché de lien de connexion. Vérifiez que le Runtime joint claude.com, puis réessayez.",
+        "login_failed": "La connexion a échoué sur le Runtime. Consultez le journal du Runtime et réessayez.",
+        "not_supported": "Ce moteur n'a pas de connexion par abonnement. Utilisez une clé API.",
+        "runtime_rejected": "AI Workspace Runtime a refusé le mot de passe du Runtime. Utilisez le même mot de passe sur le Runtime et dans ce formulaire.",
+        "runtime_old": "Ce Runtime ne sait pas encore se connecter. Mettez à jour AI Workspace Runtime, ou collez un jeton dans le formulaire de l'agent."
       },
       "step": {
         "provider": {
@@ -544,6 +556,34 @@
               }
             }
           }
+        },
+        "claude_account": {
+          "title": "Compte Claude",
+          "description": "{status}\n\nLa connexion est conservée sur AI Workspace Runtime, pas dans Home Assistant, et sert à chaque agent Claude SDK de ce Runtime.",
+          "menu_options": {
+            "claude_save": "Enregistrer l'agent",
+            "claude_login": "Se connecter avec l'abonnement Claude",
+            "claude_logout": "Se déconnecter du Runtime",
+            "claude_back": "Retour aux réglages de l'agent"
+          }
+        },
+        "claude_login": {
+          "title": "Se connecter avec l'abonnement Claude",
+          "description": "1. Ouvrez ce lien et connectez-vous avec le compte Claude qui a votre abonnement Pro ou Max : [Se connecter avec Claude]({url})\n2. Anthropic affiche ensuite un code. Copiez-le en entier et collez-le ci-dessous.\n\nLe lien est valable 15 minutes. Votre mot de passe Claude ne passe jamais par Home Assistant.",
+          "data": {
+            "code": "Code d'Anthropic"
+          },
+          "data_description": {
+            "code": "Une longue chaîne avec un # au milieu. Collez-la telle quelle."
+          }
+        },
+        "claude_signed_in": {
+          "title": "Connecté",
+          "description": "{status}\n\nValidez pour enregistrer l'agent."
+        },
+        "claude_login_error": {
+          "title": "La connexion n'a pas fonctionné",
+          "description": "Validez pour revenir."
         }
       },
       "abort": {

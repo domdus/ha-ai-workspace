@@ -289,7 +289,19 @@
         "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
         "pick_model": "The server lists its models now. Pick one from the model list.",
         "model_rejected": "The server does not allow this model for this key: {server_message}",
-        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents.",
+        "bad_code": "這看起來不像 Anthropic 頁面上的代碼。請完整複製代碼後重新貼上。",
+        "code_rejected": "Anthropic 未接受該代碼。這是新連結：請重新登入並貼上新代碼。",
+        "too_many_attempts": "錯誤代碼太多。這是新連結。",
+        "busy": "執行環境仍在檢查上一組代碼。請稍候再試。",
+        "expired": "此次登入已過期。這是新連結。",
+        "timeout": "執行環境沒有及時收到 Anthropic 的回覆。這是新連結，請重試。",
+        "cli_missing": "AI Workspace Runtime 沒有 Claude Code CLI。請更新執行環境（App 或 Docker 映像）。",
+        "no_link": "Claude Code 沒有顯示登入連結。請確認執行環境能連到 claude.com，然後重試。",
+        "login_failed": "執行環境上的登入失敗。請查看執行環境日誌後重試。",
+        "not_supported": "此引擎不支援訂閱登入。請使用 API 金鑰。",
+        "runtime_rejected": "AI Workspace Runtime 拒絕了執行環境密碼。請在執行環境和此表單中設定相同的密碼。",
+        "runtime_old": "此執行環境尚不支援登入。請更新 AI Workspace Runtime，或在代理表單中貼上權杖。"
       },
       "step": {
         "provider": {
@@ -544,6 +556,34 @@
               }
             }
           }
+        },
+        "claude_account": {
+          "title": "Claude 帳戶",
+          "description": "{status}\n\n登入資訊保存在 AI Workspace Runtime 上，而不是 Home Assistant 中，該執行環境上的所有 Claude SDK 代理都會使用它。",
+          "menu_options": {
+            "claude_save": "儲存代理",
+            "claude_login": "使用 Claude 訂閱登入",
+            "claude_logout": "在執行環境上登出",
+            "claude_back": "返回代理設定"
+          }
+        },
+        "claude_login": {
+          "title": "使用 Claude 訂閱登入",
+          "description": "1. 開啟此連結，用擁有 Pro 或 Max 訂閱的 Claude 帳戶登入：[使用 Claude 登入]({url})\n2. 接著 Anthropic 會顯示一組代碼。完整複製並貼到下方。\n\n連結 15 分鐘內有效。你的 Claude 密碼不會經過 Home Assistant。",
+          "data": {
+            "code": "Anthropic 代碼"
+          },
+          "data_description": {
+            "code": "中間帶 # 的長字串。原樣貼上。"
+          }
+        },
+        "claude_signed_in": {
+          "title": "已登入",
+          "description": "{status}\n\n送出以儲存代理。"
+        },
+        "claude_login_error": {
+          "title": "登入未成功",
+          "description": "送出以返回。"
         }
       },
       "abort": {

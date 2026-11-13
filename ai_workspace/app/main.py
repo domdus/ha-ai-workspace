@@ -174,7 +174,10 @@ def create_app(settings: Settings | None = None, providers: dict | None = None) 
                 return JSONResponse({"detail": detail}, status_code=401)
         return await call_next(request)
 
+    from app.auth import router as auth_router
+
     app.include_router(router)
+    app.include_router(auth_router)
     if not app.state.settings.runtime_token and not app.state.settings.open_without_token():
         logger.warning(
             "No RUNTIME_TOKEN set and the runtime listens on %s. Chat requests are refused until a token is set.",
@@ -216,6 +219,9 @@ async def lifespan(app: FastAPI):
         if warmup is not None:
             warmup.cancel()
         store.close()
+        from app.auth import close_engines
+
+        close_engines(getattr(app.state, "auth", None))
         if runtime is not None:
             await runtime.aclose()
 
@@ -260,6 +266,16 @@ def _provider_flag(providers: dict, key: str) -> bool:
     return bool(item and item.info.available)
 
 
+def _login_engines(request: Request) -> list[str]:
+    from app.auth import build_engines, login_engines
+
+    engines = getattr(request.app.state, "auth", None)
+    if engines is None:
+        engines = build_engines(request.app.state.settings)
+        request.app.state.auth = engines
+    return login_engines(engines)
+
+
 @router.get("/api/health")
 def health(request: Request) -> dict:
     settings: Settings = request.app.state.settings
@@ -271,6 +287,8 @@ def health(request: Request) -> dict:
         "model": settings.model,
         "cursor": _provider_flag(providers, "cursor"),
         "claude": _provider_flag(providers, "claude"),
+        # Engines with a plan sign-in at /api/auth/{engine}/login (details need the runtime token).
+        "login": _login_engines(request),
         "token_required": bool(settings.runtime_token) or not settings.open_without_token(),
     }
 

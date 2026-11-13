@@ -104,6 +104,11 @@ class Settings:
     shorten_mcp_results: bool = True
     change_history: bool = True
 
+    @property
+    def claude_token_path(self) -> Path:
+        """Claude Plan token from "Sign in with Claude" (owner-only file in the persistent data folder)."""
+        return self.data_dir / "auth" / "claude-oauth-token"
+
     def open_without_token(self) -> bool:
         """Only a runtime bound to loopback may answer without the shared token."""
         return self.host in {"127.0.0.1", "localhost", "::1"}

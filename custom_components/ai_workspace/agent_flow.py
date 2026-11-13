@@ -6,6 +6,7 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant import config_entries
+from homeassistant.core import callback
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig, TextSelector, TextSelectorConfig, TextSelectorType
@@ -101,6 +102,11 @@ _DETAIL = {
 }
 
 SECTION_CLAUDE_RUNTIME = "claude_runtime"
+# Engine name in the Runtime's sign-in API (/api/auth/{engine}).
+ENGINE_CLAUDE = "claude"
+CONF_LOGIN_CODE = "code"
+# Codes that only need typing again; anything else ended that sign-in on the Runtime.
+_RETYPE = frozenset({"bad_code"})
 
 
 def uses_claude_runtime(current: dict, provider: str = "") -> bool:
@@ -383,6 +389,12 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
         self._editing = False
         self._current: dict[str, Any] = {}
         self._provider = MODE_CURSOR
+        # Claude SDK agents: the checked agent waits here while the Runtime signs in.
+        self._pending: tuple[str, dict[str, Any]] | None = None
+        self._target: tuple[str, str] = ("", "")
+        self._login: dict[str, Any] | None = None
+        self._login_error = ""
+        self._auth: dict[str, Any] | None = None
 
     async def async_step_user(self, user_input=None):
         del user_input
@@ -447,6 +459,9 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
         if "claude" not in health:
             return {CONF_RUNTIME_URL: "claude_runtime_old"}
         if not claude_key and not health.get("claude"):
+            if ENGINE_CLAUDE in (health.get("login") or []):
+                # No credential yet: the next step offers "Sign in with Claude plan".
+                return {}
             return {CONF_CLAUDE_API_KEY: "required"}
         return {}
 
@@ -666,6 +681,11 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                     data[CONF_CACHE_1H] = caches_an_hour(merged)
                 if provider != MODE_CURSOR and CONF_PROMPT_CACHE in current:
                     data[CONF_PROMPT_CACHE] = bool(current.get(CONF_PROMPT_CACHE))
+                if use_runtime:
+                    # Claude SDK: show the Runtime's sign-in state (and the sign-in button) before saving.
+                    self._current = merged
+                    self._pending = (provider, data)
+                    return await self.async_step_claude_account()
                 return self._finish(provider, data)
             self._current = merged
         example = "https://YOUR-RESOURCE.openai.azure.com" if step == "azure" else default_api_base(API_OLLAMA)
@@ -712,6 +732,172 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             errors=errors,
             description_placeholders=placeholders,
         )
+
+    # ---- Claude SDK: sign in on the Runtime -------------------------------------------------------
+
+    async def _runtime_target(self) -> tuple[str, str]:
+        """Runtime URL and token as saved by the form (the same ones the chat uses)."""
+        entry = self._get_entry()
+        blob = {**entry.data, **entry.options}
+        base = await async_resolve_runtime_url(self.hass, str(blob.get(CONF_RUNTIME_URL) or ""))
+        self._target = (base, str(blob.get(CONF_RUNTIME_TOKEN) or ""))
+        return self._target
+
+    def _own_key(self) -> bool:
+        return bool(self._pending and str(self._pending[1].get(CONF_CLAUDE_API_KEY) or "").strip())
+
+    async def async_step_claude_account(self, user_input=None):
+        """Menu: the Runtime's Claude credential, with Sign in / Sign out / Save / Back."""
+        del user_input
+        from .local_text import claude_signin_text
+        from .runtime_auth import RuntimeAuthError, async_auth_status
+
+        if self._pending is None:
+            return await self.async_step_provider()
+        base, token = await self._runtime_target()
+        problem = ""
+        try:
+            self._auth = await async_auth_status(self.hass, base, token, ENGINE_CLAUDE)
+        except RuntimeAuthError as exc:
+            self._auth = None
+            problem = exc.key
+        status = self._auth
+        own_key = self._own_key()
+        options: list[str] = []
+        if own_key or bool(status and status.get("ready")):
+            options.append("claude_save")
+        if status and (status.get("login") or {}).get("supported"):
+            options.append("claude_login")
+        if status and status.get("signed_in"):
+            options.append("claude_logout")
+        options.append("claude_back")
+        return self.async_show_menu(
+            step_id="claude_account",
+            menu_options=options,
+            description_placeholders={
+                "status": claude_signin_text(status, own_key, self.hass.config.language, problem),
+            },
+        )
+
+    async def async_step_claude_save(self, user_input=None):
+        del user_input
+        if self._pending is None:
+            return await self.async_step_provider()
+        return self._finish(*self._pending)
+
+    async def async_step_claude_back(self, user_input=None):
+        del user_input
+        await self._cancel_login()
+        self._pending = None
+        return await self._async_step_fields("cloud", None)
+
+    async def async_step_claude_logout(self, user_input=None):
+        del user_input
+        from .runtime_auth import RuntimeAuthError, async_logout
+
+        base, token = await self._runtime_target()
+        try:
+            await async_logout(self.hass, base, token, ENGINE_CLAUDE)
+        except RuntimeAuthError as exc:
+            self._login_error = exc.key
+            return await self.async_step_claude_login_error()
+        return await self.async_step_claude_account()
+
+    async def _cancel_login(self) -> None:
+        from .runtime_auth import async_login_cancel
+
+        login, self._login = self._login, None
+        if login and login.get("id"):
+            base, token = self._target
+            await async_login_cancel(self.hass, base, token, ENGINE_CLAUDE, str(login["id"]))
+
+    async def _fresh_login(self) -> dict[str, Any] | None:
+        """The sign-in that still waits for its code, or a new one. None when it could not start."""
+        from .runtime_auth import RuntimeAuthError, async_login_start, async_login_state
+
+        base, token = await self._runtime_target()
+        if self._login is not None:
+            try:
+                state = await async_login_state(self.hass, base, token, ENGINE_CLAUDE, str(self._login.get("id")))
+            except RuntimeAuthError:
+                state = {}
+            if state.get("status") == "awaiting_code":
+                return self._login
+            self._login = None
+        try:
+            self._login = await async_login_start(self.hass, base, token, ENGINE_CLAUDE)
+        except RuntimeAuthError as exc:
+            self._login_error = exc.key
+            return None
+        return self._login
+
+    async def async_step_claude_login(self, user_input=None):
+        """Show the sign-in link; the code Anthropic shows afterwards is pasted back here."""
+        from .runtime_auth import RuntimeAuthError, async_login_code
+
+        if self._pending is None:
+            return await self.async_step_provider()
+        errors: dict[str, str] = {}
+        if user_input is not None and self._login is not None:
+            base, token = self._target
+            code = str(user_input.get(CONF_LOGIN_CODE) or "").strip()
+            try:
+                body = await async_login_code(self.hass, base, token, ENGINE_CLAUDE, str(self._login.get("id")), code)
+            except RuntimeAuthError as exc:
+                if exc.key in _RETYPE:
+                    errors[CONF_LOGIN_CODE] = exc.key
+                else:
+                    # That sign-in is over on the Runtime; the form comes back with a new link.
+                    errors["base"] = exc.key
+                    self._login = None
+            else:
+                self._login = None
+                self._auth = body.get("auth") if isinstance(body.get("auth"), dict) else None
+                provider, data = self._pending
+                # The sign-in is meant to be used: an older token on this agent would win over it.
+                self._pending = (provider, {**data, CONF_CLAUDE_API_KEY: ""})
+                return await self.async_step_claude_signed_in()
+        login = self._login if errors.get(CONF_LOGIN_CODE) else await self._fresh_login()
+        if login is None:
+            return await self.async_step_claude_login_error()
+        return self.async_show_form(
+            step_id="claude_login",
+            data_schema=vol.Schema({vol.Required(CONF_LOGIN_CODE): TextSelector(TextSelectorConfig())}),
+            errors=errors,
+            description_placeholders={"url": str(login.get("url") or "")},
+        )
+
+    async def async_step_claude_signed_in(self, user_input=None):
+        """Signed in: say so (no secrets), then save the agent."""
+        from .local_text import claude_signin_text
+
+        if self._pending is None:
+            return await self.async_step_provider()
+        if user_input is not None:
+            return self._finish(*self._pending)
+        return self.async_show_form(
+            step_id="claude_signed_in",
+            data_schema=vol.Schema({}),
+            description_placeholders={
+                "status": claude_signin_text(self._auth, self._own_key(), self.hass.config.language),
+            },
+        )
+
+    async def async_step_claude_login_error(self, user_input=None):
+        """The Runtime could not start (or end) the sign-in; submit goes back to the menu."""
+        if user_input is not None:
+            self._login_error = ""
+            return await self.async_step_claude_account()
+        from .runtime_auth import KNOWN_ERRORS
+
+        key = self._login_error if self._login_error in KNOWN_ERRORS else "login_failed"
+        return self.async_show_form(step_id="claude_login_error", data_schema=vol.Schema({}), errors={"base": key})
+
+    @callback
+    def async_remove(self) -> None:
+        """Dialog closed: stop a sign-in that still waits for its code."""
+        if self._login and self._login.get("id") and self.hass is not None:
+            self.hass.async_create_task(self._cancel_login())
 
     def _finish(self, provider: str, data: dict[str, Any]):
         entry = self._get_entry()

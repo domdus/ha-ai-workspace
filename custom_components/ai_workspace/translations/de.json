@@ -289,7 +289,19 @@
         "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
         "pick_model": "The server lists its models now. Pick one from the model list.",
         "model_rejected": "The server does not allow this model for this key: {server_message}",
-        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents.",
+        "bad_code": "Das sieht nicht wie der Code von Anthropics Seite aus. Kopiere den ganzen Code und füge ihn erneut ein.",
+        "code_rejected": "Anthropic hat den Code nicht angenommen. Hier ist ein neuer Link: melde dich erneut an und füge den neuen Code ein.",
+        "too_many_attempts": "Zu viele falsche Codes. Hier ist ein neuer Link.",
+        "busy": "Die Runtime prüft noch den vorigen Code. Warte kurz und versuche es erneut.",
+        "expired": "Diese Anmeldung ist abgelaufen. Hier ist ein neuer Link.",
+        "timeout": "Die Runtime hat von Anthropic nicht rechtzeitig eine Antwort bekommen. Hier ist ein neuer Link; versuche es erneut.",
+        "cli_missing": "Der AI-Workspace-Runtime fehlt die Claude-Code-CLI. Aktualisiere die Runtime (App oder Docker-Image).",
+        "no_link": "Claude Code hat keinen Anmeldelink gezeigt. Prüfe, ob die Runtime claude.com erreicht, und versuche es erneut.",
+        "login_failed": "Die Anmeldung ist auf der Runtime fehlgeschlagen. Sieh ins Runtime-Log und versuche es erneut.",
+        "not_supported": "Diese Engine hat keine Abo-Anmeldung. Nutze einen API-Schlüssel.",
+        "runtime_rejected": "Die AI-Workspace-Runtime hat das Runtime-Passwort abgelehnt. Setze dasselbe Passwort auf der Runtime und in diesem Formular.",
+        "runtime_old": "Diese Runtime kann sich noch nicht anmelden. Aktualisiere die AI-Workspace-Runtime oder füge im Agent-Formular ein Token ein."
       },
       "step": {
         "provider": {
@@ -408,7 +420,7 @@
               "data_description": {
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
-                "claude_api_key": "Claude Plan OAuth token (`sk-ant-oat-…` from `claude setup-token`) or Anthropic API key for this agent. Overrides runtime defaults when set. Leave blank when editing to keep the saved credential. [Anthropic keys]({api_key_url})"
+                "claude_api_key": "Optional. Einfacher: leer lassen und im nächsten Schritt **Mit Claude-Abo anmelden** wählen. Oder ein Claude-Plan-Token (`sk-ant-oat-…` aus `claude setup-token`) oder einen Anthropic-API-Schlüssel nur für diesen Agenten einfügen; er hat Vorrang vor dem Zugang der Runtime. Beim Bearbeiten leer lassen, um den gespeicherten zu behalten. [Anthropic-Schlüssel]({api_key_url})"
               }
             }
           }
@@ -544,6 +556,34 @@
               }
             }
           }
+        },
+        "claude_account": {
+          "title": "Claude-Konto",
+          "description": "{status}\n\nDie Anmeldung wird auf der AI-Workspace-Runtime gespeichert, nicht in Home Assistant, und gilt für jeden Claude-SDK-Agenten auf dieser Runtime.",
+          "menu_options": {
+            "claude_save": "Agent speichern",
+            "claude_login": "Mit Claude-Abo anmelden",
+            "claude_logout": "Auf der Runtime abmelden",
+            "claude_back": "Zurück zu den Agent-Einstellungen"
+          }
+        },
+        "claude_login": {
+          "title": "Mit Claude-Abo anmelden",
+          "description": "1. Öffne diesen Link und melde dich mit dem Claude-Konto an, das dein Pro- oder Max-Abo hat: [Mit Claude anmelden]({url})\n2. Anthropic zeigt danach einen Code. Kopiere ihn vollständig und füge ihn unten ein.\n\nDer Link gilt 15 Minuten. Dein Claude-Passwort geht nie durch Home Assistant.",
+          "data": {
+            "code": "Code von Anthropic"
+          },
+          "data_description": {
+            "code": "Eine lange Zeichenfolge mit einem # in der Mitte. Unverändert einfügen."
+          }
+        },
+        "claude_signed_in": {
+          "title": "Angemeldet",
+          "description": "{status}\n\nAbsenden speichert den Agenten."
+        },
+        "claude_login_error": {
+          "title": "Anmeldung hat nicht geklappt",
+          "description": "Absenden führt zurück."
         }
       },
       "abort": {

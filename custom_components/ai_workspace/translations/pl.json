@@ -289,7 +289,19 @@
         "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
         "pick_model": "The server lists its models now. Pick one from the model list.",
         "model_rejected": "The server does not allow this model for this key: {server_message}",
-        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents.",
+        "bad_code": "To nie wygląda na kod ze strony Anthropic. Skopiuj cały kod i wklej go ponownie.",
+        "code_rejected": "Anthropic nie przyjął tego kodu. Oto nowy link: zaloguj się ponownie i wklej nowy kod.",
+        "too_many_attempts": "Za dużo błędnych kodów. Oto nowy link.",
+        "busy": "Runtime wciąż sprawdza poprzedni kod. Poczekaj chwilę i spróbuj ponownie.",
+        "expired": "To logowanie wygasło. Oto nowy link.",
+        "timeout": "Runtime nie dostał na czas odpowiedzi od Anthropic. Oto nowy link; spróbuj ponownie.",
+        "cli_missing": "AI Workspace Runtime nie ma CLI Claude Code. Zaktualizuj Runtime (App lub obraz Docker).",
+        "no_link": "Claude Code nie pokazał linku logowania. Sprawdź, czy Runtime łączy się z claude.com, i spróbuj ponownie.",
+        "login_failed": "Logowanie w Runtime nie powiodło się. Sprawdź log Runtime i spróbuj ponownie.",
+        "not_supported": "Ten silnik nie ma logowania planem. Użyj klucza API.",
+        "runtime_rejected": "AI Workspace Runtime odrzucił hasło Runtime. Ustaw to samo hasło w Runtime i w tym formularzu.",
+        "runtime_old": "Ten Runtime nie obsługuje jeszcze logowania. Zaktualizuj AI Workspace Runtime albo wklej token w formularzu agenta."
       },
       "step": {
         "provider": {
@@ -544,6 +556,34 @@
               }
             }
           }
+        },
+        "claude_account": {
+          "title": "Konto Claude",
+          "description": "{status}\n\nLogowanie jest przechowywane w AI Workspace Runtime, nie w Home Assistant, i korzysta z niego każdy agent Claude SDK w tym Runtime.",
+          "menu_options": {
+            "claude_save": "Zapisz agenta",
+            "claude_login": "Zaloguj się planem Claude",
+            "claude_logout": "Wyloguj w Runtime",
+            "claude_back": "Wróć do ustawień agenta"
+          }
+        },
+        "claude_login": {
+          "title": "Zaloguj się planem Claude",
+          "description": "1. Otwórz ten link i zaloguj się kontem Claude z planem Pro lub Max: [Zaloguj się w Claude]({url})\n2. Anthropic pokaże potem kod. Skopiuj go w całości i wklej poniżej.\n\nLink działa 15 minut. Twoje hasło Claude nigdy nie przechodzi przez Home Assistant.",
+          "data": {
+            "code": "Kod od Anthropic"
+          },
+          "data_description": {
+            "code": "Długi ciąg znaków z # w środku. Wklej go bez zmian."
+          }
+        },
+        "claude_signed_in": {
+          "title": "Zalogowano",
+          "description": "{status}\n\nZatwierdź, aby zapisać agenta."
+        },
+        "claude_login_error": {
+          "title": "Logowanie nie powiodło się",
+          "description": "Zatwierdź, aby wrócić."
         }
       },
       "abort": {

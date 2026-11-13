@@ -289,7 +289,19 @@
         "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
         "pick_model": "The server lists its models now. Pick one from the model list.",
         "model_rejected": "The server does not allow this model for this key: {server_message}",
-        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents.",
+        "bad_code": "Anthropic 페이지의 코드가 아닌 것 같습니다. 코드 전체를 복사해 다시 붙여 넣으세요.",
+        "code_rejected": "Anthropic이 코드를 받아들이지 않았습니다. 새 링크입니다: 다시 로그인하고 새 코드를 붙여 넣으세요.",
+        "too_many_attempts": "잘못된 코드가 너무 많습니다. 새 링크입니다.",
+        "busy": "런타임이 아직 이전 코드를 확인하고 있습니다. 잠시 후 다시 시도하세요.",
+        "expired": "로그인 시간이 지났습니다. 새 링크입니다.",
+        "timeout": "런타임이 제시간에 Anthropic의 응답을 받지 못했습니다. 새 링크입니다. 다시 시도하세요.",
+        "cli_missing": "AI Workspace Runtime에 Claude Code CLI가 없습니다. 런타임(App 또는 Docker 이미지)을 업데이트하세요.",
+        "no_link": "Claude Code가 로그인 링크를 보여 주지 않았습니다. 런타임이 claude.com에 연결되는지 확인하고 다시 시도하세요.",
+        "login_failed": "런타임에서 로그인에 실패했습니다. 런타임 로그를 확인하고 다시 시도하세요.",
+        "not_supported": "이 엔진은 요금제 로그인이 없습니다. API 키를 사용하세요.",
+        "runtime_rejected": "AI Workspace Runtime이 런타임 비밀번호를 거부했습니다. 런타임과 이 양식에 같은 비밀번호를 설정하세요.",
+        "runtime_old": "이 런타임은 아직 로그인을 지원하지 않습니다. AI Workspace Runtime을 업데이트하거나 에이전트 양식에 토큰을 붙여 넣으세요."
       },
       "step": {
         "provider": {
@@ -544,6 +556,34 @@
               }
             }
           }
+        },
+        "claude_account": {
+          "title": "Claude 계정",
+          "description": "{status}\n\n로그인 정보는 Home Assistant가 아니라 AI Workspace Runtime에 저장되며, 해당 런타임의 모든 Claude SDK 에이전트가 사용합니다.",
+          "menu_options": {
+            "claude_save": "에이전트 저장",
+            "claude_login": "Claude 요금제로 로그인",
+            "claude_logout": "런타임에서 로그아웃",
+            "claude_back": "에이전트 설정으로 돌아가기"
+          }
+        },
+        "claude_login": {
+          "title": "Claude 요금제로 로그인",
+          "description": "1. 이 링크를 열고 Pro 또는 Max 요금제가 있는 Claude 계정으로 로그인하세요: [Claude로 로그인]({url})\n2. 그러면 Anthropic이 코드를 보여 줍니다. 전체를 복사해 아래에 붙여 넣으세요.\n\n링크는 15분 동안 유효합니다. Claude 비밀번호는 Home Assistant를 거치지 않습니다.",
+          "data": {
+            "code": "Anthropic 코드"
+          },
+          "data_description": {
+            "code": "가운데에 #이 있는 긴 문자열입니다. 그대로 붙여 넣으세요."
+          }
+        },
+        "claude_signed_in": {
+          "title": "로그인됨",
+          "description": "{status}\n\n제출하면 에이전트를 저장합니다."
+        },
+        "claude_login_error": {
+          "title": "로그인하지 못했습니다",
+          "description": "제출하면 돌아갑니다."
         }
       },
       "abort": {

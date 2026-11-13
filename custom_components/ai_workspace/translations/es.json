@@ -289,7 +289,19 @@
         "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
         "pick_model": "The server lists its models now. Pick one from the model list.",
         "model_rejected": "The server does not allow this model for this key: {server_message}",
-        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents.",
+        "bad_code": "Eso no parece el código de la página de Anthropic. Copia el código completo y pégalo de nuevo.",
+        "code_rejected": "Anthropic no aceptó ese código. Aquí tienes un enlace nuevo: inicia sesión otra vez y pega el código nuevo.",
+        "too_many_attempts": "Demasiados códigos incorrectos. Aquí tienes un enlace nuevo.",
+        "busy": "El Runtime todavía está comprobando el código anterior. Espera un momento y vuelve a intentarlo.",
+        "expired": "Ese inicio de sesión caducó. Aquí tienes un enlace nuevo.",
+        "timeout": "El Runtime no recibió respuesta de Anthropic a tiempo. Aquí tienes un enlace nuevo; inténtalo otra vez.",
+        "cli_missing": "AI Workspace Runtime no tiene la CLI de Claude Code. Actualiza el Runtime (App o imagen Docker).",
+        "no_link": "Claude Code no mostró un enlace de inicio de sesión. Comprueba que el Runtime llega a claude.com y vuelve a intentarlo.",
+        "login_failed": "El inicio de sesión falló en el Runtime. Revisa el registro del Runtime y vuelve a intentarlo.",
+        "not_supported": "Este motor no tiene inicio de sesión con plan. Usa una clave API.",
+        "runtime_rejected": "AI Workspace Runtime rechazó la contraseña del Runtime. Usa la misma contraseña en el Runtime y en este formulario.",
+        "runtime_old": "Este Runtime aún no puede iniciar sesión. Actualiza AI Workspace Runtime, o pega un token en el formulario del agente."
       },
       "step": {
         "provider": {
@@ -544,6 +556,34 @@
               }
             }
           }
+        },
+        "claude_account": {
+          "title": "Cuenta de Claude",
+          "description": "{status}\n\nEl inicio de sesión se guarda en AI Workspace Runtime, no en Home Assistant, y lo usan todos los agentes Claude SDK de ese Runtime.",
+          "menu_options": {
+            "claude_save": "Guardar agente",
+            "claude_login": "Iniciar sesión con el plan de Claude",
+            "claude_logout": "Cerrar sesión en el Runtime",
+            "claude_back": "Volver a los ajustes del agente"
+          }
+        },
+        "claude_login": {
+          "title": "Iniciar sesión con el plan de Claude",
+          "description": "1. Abre este enlace e inicia sesión con la cuenta de Claude que tiene tu plan Pro o Max: [Iniciar sesión con Claude]({url})\n2. Anthropic muestra después un código. Cópialo entero y pégalo abajo.\n\nEl enlace sirve durante 15 minutos. Tu contraseña de Claude nunca pasa por Home Assistant.",
+          "data": {
+            "code": "Código de Anthropic"
+          },
+          "data_description": {
+            "code": "Una cadena larga con un # en medio. Pégala tal cual."
+          }
+        },
+        "claude_signed_in": {
+          "title": "Sesión iniciada",
+          "description": "{status}\n\nEnvía para guardar el agente."
+        },
+        "claude_login_error": {
+          "title": "El inicio de sesión no funcionó",
+          "description": "Envía para volver."
         }
       },
       "abort": {

@@ -289,7 +289,19 @@
         "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
         "pick_model": "The server lists its models now. Pick one from the model list.",
         "model_rejected": "The server does not allow this model for this key: {server_message}",
-        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents.",
+        "bad_code": "Это не похоже на код со страницы Anthropic. Скопируйте код целиком и вставьте снова.",
+        "code_rejected": "Anthropic не принял этот код. Вот новая ссылка: войдите снова и вставьте новый код.",
+        "too_many_attempts": "Слишком много неверных кодов. Вот новая ссылка.",
+        "busy": "Runtime ещё проверяет предыдущий код. Подождите немного и попробуйте снова.",
+        "expired": "Время входа истекло. Вот новая ссылка.",
+        "timeout": "Runtime не получил ответ от Anthropic вовремя. Вот новая ссылка; попробуйте снова.",
+        "cli_missing": "В AI Workspace Runtime нет CLI Claude Code. Обновите Runtime (App или образ Docker).",
+        "no_link": "Claude Code не показал ссылку для входа. Проверьте, что Runtime видит claude.com, и попробуйте снова.",
+        "login_failed": "Вход на Runtime не удался. Проверьте журнал Runtime и попробуйте снова.",
+        "not_supported": "У этого движка нет входа по подписке. Используйте API-ключ.",
+        "runtime_rejected": "AI Workspace Runtime отклонил пароль Runtime. Укажите одинаковый пароль на Runtime и в этой форме.",
+        "runtime_old": "Этот Runtime пока не умеет входить. Обновите AI Workspace Runtime или вставьте токен в форме агента."
       },
       "step": {
         "provider": {
@@ -544,6 +556,34 @@
               }
             }
           }
+        },
+        "claude_account": {
+          "title": "Аккаунт Claude",
+          "description": "{status}\n\nВход хранится в AI Workspace Runtime, а не в Home Assistant, и его используют все агенты Claude SDK на этом Runtime.",
+          "menu_options": {
+            "claude_save": "Сохранить агента",
+            "claude_login": "Войти с подпиской Claude",
+            "claude_logout": "Выйти на Runtime",
+            "claude_back": "Назад к настройкам агента"
+          }
+        },
+        "claude_login": {
+          "title": "Войти с подпиской Claude",
+          "description": "1. Откройте ссылку и войдите в аккаунт Claude с подпиской Pro или Max: [Войти в Claude]({url})\n2. Затем Anthropic покажет код. Скопируйте его целиком и вставьте ниже.\n\nСсылка действует 15 минут. Пароль Claude никогда не проходит через Home Assistant.",
+          "data": {
+            "code": "Код от Anthropic"
+          },
+          "data_description": {
+            "code": "Длинная строка с символом # посередине. Вставьте как есть."
+          }
+        },
+        "claude_signed_in": {
+          "title": "Вход выполнен",
+          "description": "{status}\n\nОтправьте, чтобы сохранить агента."
+        },
+        "claude_login_error": {
+          "title": "Войти не удалось",
+          "description": "Отправьте, чтобы вернуться."
         }
       },
       "abort": {

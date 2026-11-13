@@ -289,7 +289,19 @@
         "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
         "pick_model": "The server lists its models now. Pick one from the model list.",
         "model_rejected": "The server does not allow this model for this key: {server_message}",
-        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents.",
+        "bad_code": "Bu Anthropic səhifəsindəki koda oxşamır. Bütün kodu kopyalayıb yenidən yapışdırın.",
+        "code_rejected": "Anthropic bu kodu qəbul etmədi. Budur yeni link: yenidən daxil olun və yeni kodu yapışdırın.",
+        "too_many_attempts": "Çox sayda səhv kod. Budur yeni link.",
+        "busy": "Runtime hələ əvvəlki kodu yoxlayır. Bir az gözləyin və yenidən cəhd edin.",
+        "expired": "Bu girişin vaxtı bitdi. Budur yeni link.",
+        "timeout": "Runtime vaxtında Anthropic-dən cavab almadı. Budur yeni link; yenidən cəhd edin.",
+        "cli_missing": "AI Workspace Runtime-da Claude Code CLI yoxdur. Runtime-ı yeniləyin (App və ya Docker imici).",
+        "no_link": "Claude Code giriş linki göstərmədi. Runtime-ın claude.com-a çatdığını yoxlayın və yenidən cəhd edin.",
+        "login_failed": "Runtime-da giriş alınmadı. Runtime jurnalına baxın və yenidən cəhd edin.",
+        "not_supported": "Bu mühərrikdə plan ilə giriş yoxdur. API açarından istifadə edin.",
+        "runtime_rejected": "AI Workspace Runtime Runtime parolunu rədd etdi. Runtime-da və bu formada eyni parolu təyin edin.",
+        "runtime_old": "Bu Runtime hələ daxil ola bilmir. AI Workspace Runtime-ı yeniləyin və ya agent formasına token yapışdırın."
       },
       "step": {
         "provider": {
@@ -544,6 +556,34 @@
               }
             }
           }
+        },
+        "claude_account": {
+          "title": "Claude hesabı",
+          "description": "{status}\n\nGiriş Home Assistant-da deyil, AI Workspace Runtime-da saxlanılır və həmin Runtime-dakı hər Claude SDK agenti ondan istifadə edir.",
+          "menu_options": {
+            "claude_save": "Agenti saxla",
+            "claude_login": "Claude planı ilə daxil ol",
+            "claude_logout": "Runtime-dan çıx",
+            "claude_back": "Agent ayarlarına qayıt"
+          }
+        },
+        "claude_login": {
+          "title": "Claude planı ilə daxil ol",
+          "description": "1. Bu linki açın və Pro və ya Max planı olan Claude hesabı ilə daxil olun: [Claude ilə daxil ol]({url})\n2. Sonra Anthropic kod göstərəcək. Onu tam kopyalayıb aşağıya yapışdırın.\n\nLink 15 dəqiqə işləyir. Claude parolunuz heç vaxt Home Assistant-dan keçmir.",
+          "data": {
+            "code": "Anthropic kodu"
+          },
+          "data_description": {
+            "code": "Ortasında # olan uzun sətir. Olduğu kimi yapışdırın."
+          }
+        },
+        "claude_signed_in": {
+          "title": "Daxil olundu",
+          "description": "{status}\n\nAgenti saxlamaq üçün göndərin."
+        },
+        "claude_login_error": {
+          "title": "Daxil olmaq alınmadı",
+          "description": "Geri qayıtmaq üçün göndərin."
         }
       },
       "abort": {

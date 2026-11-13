@@ -289,7 +289,19 @@
         "model_not_installed": "This model is not installed in Ollama. Installed: {installed}",
         "pick_model": "The server lists its models now. Pick one from the model list.",
         "model_rejected": "The server does not allow this model for this key: {server_message}",
-        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents."
+        "claude_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Claude SDK agents.",
+        "bad_code": "这看起来不像 Anthropic 页面上的代码。请完整复制代码后重新粘贴。",
+        "code_rejected": "Anthropic 未接受该代码。这是新链接：请重新登录并粘贴新代码。",
+        "too_many_attempts": "错误代码太多。这是新链接。",
+        "busy": "运行时仍在检查上一个代码。请稍候再试。",
+        "expired": "此次登录已过期。这是新链接。",
+        "timeout": "运行时没有及时收到 Anthropic 的回复。这是新链接，请重试。",
+        "cli_missing": "AI Workspace Runtime 没有 Claude Code CLI。请更新运行时（App 或 Docker 镜像）。",
+        "no_link": "Claude Code 没有显示登录链接。请确认运行时能访问 claude.com，然后重试。",
+        "login_failed": "运行时上的登录失败。请查看运行时日志后重试。",
+        "not_supported": "此引擎不支持订阅登录。请使用 API 密钥。",
+        "runtime_rejected": "AI Workspace Runtime 拒绝了运行时密码。请在运行时和此表单中设置相同的密码。",
+        "runtime_old": "此运行时尚不支持登录。请更新 AI Workspace Runtime，或在代理表单中粘贴令牌。"
       },
       "step": {
         "provider": {
@@ -544,6 +556,34 @@
               }
             }
           }
+        },
+        "claude_account": {
+          "title": "Claude 账户",
+          "description": "{status}\n\n登录信息保存在 AI Workspace Runtime 上，而不是 Home Assistant 中，该运行时上的所有 Claude SDK 代理都会使用它。",
+          "menu_options": {
+            "claude_save": "保存代理",
+            "claude_login": "使用 Claude 订阅登录",
+            "claude_logout": "在运行时上退出登录",
+            "claude_back": "返回代理设置"
+          }
+        },
+        "claude_login": {
+          "title": "使用 Claude 订阅登录",
+          "description": "1. 打开此链接，用拥有 Pro 或 Max 订阅的 Claude 账户登录：[使用 Claude 登录]({url})\n2. 随后 Anthropic 会显示一个代码。完整复制并粘贴到下方。\n\n链接 15 分钟内有效。你的 Claude 密码不会经过 Home Assistant。",
+          "data": {
+            "code": "Anthropic 代码"
+          },
+          "data_description": {
+            "code": "中间带 # 的长字符串。原样粘贴。"
+          }
+        },
+        "claude_signed_in": {
+          "title": "已登录",
+          "description": "{status}\n\n提交以保存代理。"
+        },
+        "claude_login_error": {
+          "title": "登录未成功",
+          "description": "提交以返回。"
         }
       },
       "abort": {
