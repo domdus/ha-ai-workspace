@@ -373,6 +373,8 @@ class CursorProvider:
                 if event.get("type") == "error" and not stream_error:
                     stream_error = str(event.get("message") or "")
                 yield event
+                for worker in _take_worker_usage(self.runtime, session.id):
+                    yield worker
             result = None if stalled["flag"] else await run.wait()
             if result is not None:
                 logger.info(
@@ -393,6 +395,9 @@ class CursorProvider:
             self.runtime.run_ended()
             if watchdog is not None:
                 watchdog.cancel()
+        # Worker jobs that finished after the last streamed message still count.
+        for worker in _take_worker_usage(self.runtime, session.id):
+            yield worker
         if stalled["flag"]:
             self.runtime.forget(session)
             on_agent_id("")
@@ -745,6 +750,18 @@ async def _cursor_usage(agent: Any, result: Any, run_id: str, model: str) -> dic
         "run_id": run_id,
     }
     return event
+
+
+def _take_worker_usage(runtime: Any, session_id: str) -> list[dict[str, Any]]:
+    """Usage events of worker jobs this chat's agent finished over the MCP proxy."""
+    take = getattr(getattr(runtime, "proxy", None), "take_worker_usage", None)
+    if not callable(take):
+        return []
+    try:
+        return list(take(session_id) or [])
+    except Exception:
+        logger.debug("worker usage not taken session=%s", session_id, exc_info=True)
+        return []
 
 
 def _request_id(result: Any) -> str:

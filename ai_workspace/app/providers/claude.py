@@ -13,7 +13,7 @@ from typing import Any, AsyncIterator, Callable
 from app.events import _resolved_tool_name, _tool_event, _tool_label
 from app.mcp_config import McpConfigError, load_mcp_servers, merge_mcp_servers, servers_from_chat_mcp
 from app.providers.base import ProviderInfo
-from app.providers.cursor import CursorRuntime, apply_handoff, apply_standing
+from app.providers.cursor import CursorRuntime, _take_worker_usage, apply_handoff, apply_standing
 from app.redact import redact
 from app.settings import Settings
 from app.small_talk import wants_house_tools
@@ -379,12 +379,18 @@ class ClaudeProvider:
                         on_agent_id(sid)
                 for event in map_claude_message(sdk_message, api_error):
                     yield event
+                # Worker jobs (agent_run / agent_job) this chat finished over the MCP proxy.
+                for worker in _take_worker_usage(self.runtime, session.id):
+                    yield worker
             if not finished:
                 yield {"type": "error", "message": "Claude stopped without an answer."}
         except Exception as exc:
             if finished:
                 # The result is already in the chat. Claude Code exits non-zero after an error result.
                 logger.debug("claude cli exit after result session=%s: %s", session.id, public_error(exc, credential))
-                return
-            logger.warning("claude turn failed session=%s: %s", session.id, public_error(exc, credential))
-            yield {"type": "error", "message": public_error(exc, credential)}
+            else:
+                logger.warning("claude turn failed session=%s: %s", session.id, public_error(exc, credential))
+                yield {"type": "error", "message": public_error(exc, credential)}
+        # Worker jobs that finished after the last streamed message, or before a failed turn, still count.
+        for worker in _take_worker_usage(self.runtime, session.id):
+            yield worker

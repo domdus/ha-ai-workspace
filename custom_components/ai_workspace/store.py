@@ -756,7 +756,13 @@ class Store:
         origin: str = "",
         characters: int = 0,
         created_at: str | None = None,
+        unique_run: bool = False,
     ) -> int:
+        """Store one usage row and return its id.
+
+        unique_run skips the row (and returns 0) when a row with the same run_id exists:
+        a worker job polled again repeats the usage it reported before.
+        """
         now = _text(created_at) or _now()
         total = _counted_tokens(
             prompt_tokens,
@@ -766,6 +772,12 @@ class Store:
             total_tokens,
         )
         with self._lock:
+            if unique_run and _text(run_id):
+                seen = self._conn.execute(
+                    "SELECT 1 FROM usage_turns WHERE run_id = ? LIMIT 1", (_text(run_id),)
+                ).fetchone()
+                if seen:
+                    return 0
             cursor = self._conn.execute(
                 """
                 INSERT INTO usage_turns (
@@ -799,6 +811,15 @@ class Store:
             )
             self._conn.commit()
             return int(cursor.lastrowid)
+
+    def has_usage_run(self, run_id: str) -> bool:
+        if not _text(run_id):
+            return False
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT 1 FROM usage_turns WHERE run_id = ? LIMIT 1", (_text(run_id),)
+            ).fetchone()
+        return row is not None
 
     def summarize_usage(
         self,

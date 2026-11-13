@@ -19,6 +19,7 @@ from .const import DOMAIN, SUBENTRY_USAGE, usage_device_ident
 from .store import Store
 from .usage_cost import SIGNAL_USAGE_UPDATE, empty_summary
 from .usage_record import day_bounds, provider_label
+from .worker_usage import WORKER_PREFIX
 
 SCAN = timedelta(minutes=15)
 
@@ -115,6 +116,8 @@ class UsageHub:
             "all": empty_summary(),
         }
         self.last: dict | None = None
+        # Worker jobs per engine (worker:claude, worker:codex, ...) for each window.
+        self.worker_windows: dict[str, dict[str, dict]] = {"today": {}, "month": {}, "all": {}}
         self.agent_windows: dict[str, dict[str, dict]] = {}
         self.agent_tts_windows: dict[str, dict[str, dict]] = {}
         self.agent_last: dict[str, dict | None] = {}
@@ -171,6 +174,11 @@ class UsageHub:
                         "agent_windows": {},
                         "agent_tts_windows": {},
                         "agent_last": {},
+                        "worker_windows": {
+                            "today": worker_rows(self.store.usage_by_agent(since=today, until=tomorrow)),
+                            "month": worker_rows(self.store.usage_by_agent(since=month)),
+                            "all": worker_rows(self.store.usage_by_agent()),
+                        },
                     }
                     for agent_id in agent_ids:
                         payload["agent_windows"][agent_id] = {
@@ -195,6 +203,7 @@ class UsageHub:
                     "all": data["tts_all"],
                 }
                 self.last = data["last"]
+                self.worker_windows = data["worker_windows"]
                 self.agent_windows = data["agent_windows"]
                 self.agent_tts_windows = data["agent_tts_windows"]
                 self.agent_last = data["agent_last"]
@@ -265,6 +274,23 @@ def _from_summary(kind: str, summary: dict | None):
     return int(row.get("turns") or 0)
 
 
+def worker_rows(rows: list[dict] | None) -> dict[str, dict]:
+    """usage_by_agent rows of worker jobs, keyed by worker:<engine>."""
+    out: dict[str, dict] = {}
+    for row in rows or []:
+        agent_id = str(row.get("agent_id") or "")
+        if not agent_id.startswith(WORKER_PREFIX):
+            continue
+        out[agent_id] = {
+            "agent": row.get("agent") or agent_id,
+            "turns": int(row.get("turns") or 0),
+            "total_tokens": int(row.get("total_tokens") or 0),
+            "cost_usd": row.get("cost_usd") or 0,
+            "missing_cost": bool(row.get("missing_cost")),
+        }
+    return out
+
+
 def _summary_attrs(summary: dict | None, extra: dict | None = None) -> dict:
     row = summary or empty_summary()
     attrs = {
@@ -325,7 +351,11 @@ class WorkspaceUsageSensor(_UsageBase):
         pool = self._hub.tts_windows if self._source == "tts" else self._hub.windows
         summary = pool.get(self._window) or empty_summary()
         self._attr_native_value = _from_summary(self._kind, summary)
-        self._attr_extra_state_attributes = _summary_attrs(summary, {"origin": "tts"} if self._source == "tts" else None)
+        if self._source == "tts":
+            extra = {"origin": "tts"}
+        else:
+            extra = {"workers": dict(self._hub.worker_windows.get(self._window) or {})}
+        self._attr_extra_state_attributes = _summary_attrs(summary, extra)
         self.async_write_ha_state()
 
 

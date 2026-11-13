@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+**Usage**
+- Coding workers count on the Usage page. When a chat agent gives a task to an Agent Worker (or the older Cursor Worker) over MCP, the usage the worker reports for a finished job (`agent_run` / `agent_job`, also `cursor_agent` / `cursor_job`) is stored on its own under **Worker: Claude Code**, **Worker: OpenAI Codex** or **Worker: Cursor**, separate from the chat agent's turn. It works for cloud agents and for Cursor and Claude SDK chats (through the Runtime's MCP proxy; update the Runtime too).
+  - Only finished jobs count (succeeded, failed, cancelled). Polling the same job again does not count it twice.
+  - The global usage sensors carry a `workers` attribute per engine.
+- A cost the provider reports itself (`cost_usd`, for example from Claude Code or the Cursor SDK) is kept instead of being replaced by a list-price estimate. Without a reported cost, the list price is used when the model is known; otherwise tokens are stored and the cost stays unknown.
+
 ## 1.6.0b8
 
 **Long pastes work with Cursor and Claude SDK agents.** A message over 8000 characters (for example pasted HTML) failed with "The AI Workspace Runtime answered HTTP 422" and never reached the agent.

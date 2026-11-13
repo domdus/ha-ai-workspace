@@ -494,3 +494,60 @@ def test_plan_turn_reaches_claude_code_with_the_plan_token(tmp_path, monkeypatch
     env = captured["options"].env
     assert env["CLAUDE_CODE_OAUTH_TOKEN"] == PLAN and env["ANTHROPIC_API_KEY"] == ""
     assert ids == ["new-sess"] and any(e["type"] == "result" for e in events)
+
+
+def _worker_event(job_id: str) -> dict:
+    return {
+        "type": "usage",
+        "worker": True,
+        "engine": "claude",
+        "model": "claude-sonnet-5-5",
+        "prompt_tokens": 10,
+        "completion_tokens": 5,
+        "total_tokens": 15,
+        "cost_usd": 0.01,
+        "run_id": f"worker:{job_id}",
+    }
+
+
+@needs_sdk
+def test_worker_usage_from_the_mcp_proxy_reaches_the_turn(tmp_path, monkeypatch) -> None:
+    from claude_agent_sdk import AssistantMessage, TextBlock
+
+    settings = _settings(tmp_path, anthropic=API_KEY)
+    runtime = CursorRuntime(settings)
+    proxy = runtime.proxy
+
+    def messages():
+        # The agent polls agent_job over the proxy while it streams, and once more just before it ends.
+        proxy.note_worker_usage("chat-1", _worker_event("j1"))
+        proxy.note_worker_usage("other-chat", _worker_event("x"))
+        yield AssistantMessage(content=[TextBlock(text="Started the job.")], model="claude-sonnet-5-5")
+        proxy.note_worker_usage("chat-1", _worker_event("j1"))  # same job polled again
+        yield _result()
+        proxy.note_worker_usage("chat-1", _worker_event("j2"))
+
+    monkeypatch.setattr("claude_agent_sdk.query", _fake_query({}, messages))
+    events, _ = _run(ClaudeProvider(settings, runtime), _session(), no_tools=True)
+    workers = [e for e in events if e.get("worker")]
+    # A poll after the queue was drained is passed on again; the integration stores each run_id once.
+    assert [e["run_id"] for e in workers] == ["worker:j1", "worker:j1", "worker:j2"]
+    own = [e for e in events if e["type"] == "usage" and not e.get("worker")]
+    assert len(own) == 1 and own[0]["run_id"] == "new-sess"
+    assert proxy.take_worker_usage("chat-1") == []
+    assert [e["run_id"] for e in proxy.take_worker_usage("other-chat")] == ["worker:x"]
+
+
+@needs_sdk
+def test_worker_usage_still_counts_when_the_turn_fails(tmp_path, monkeypatch) -> None:
+    settings = _settings(tmp_path, anthropic=API_KEY)
+    runtime = CursorRuntime(settings)
+
+    def messages():
+        runtime.proxy.note_worker_usage("chat-1", _worker_event("j3"))
+        yield RuntimeError("connection dropped")
+
+    monkeypatch.setattr("claude_agent_sdk.query", _fake_query({}, lambda: list(messages())))
+    events, _ = _run(ClaudeProvider(settings, runtime), _session(), no_tools=True)
+    assert [e["type"] for e in events] == ["status", "error", "usage"]
+    assert events[-1]["run_id"] == "worker:j3"

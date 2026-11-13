@@ -5501,7 +5501,8 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function applyTurnUsage(data) {
     if (!data || !usageTracking) return;
-    if (chatUsageEl && showChatUsage) {
+    // A worker job's usage is stored on its own; the "last" line stays this turn's.
+    if (chatUsageEl && showChatUsage && !data.worker) {
       const cost = data.cost_usd == null ? t("usage_unknown_cost") : money(data.cost_usd);
       chatUsageEl.hidden = false;
       chatUsageEl.textContent = `${t("usage_last")}: ${tokenLabel(data.total_tokens || 0)} · ${cost}`;

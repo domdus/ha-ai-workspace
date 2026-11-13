@@ -13,6 +13,7 @@ SHARED = [
     "files.py",
     "small_talk.py",
     "redact.py",
+    "worker_usage.py",
     "workspace_seed/AGENTS.md",
 ]
 

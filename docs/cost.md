@@ -22,12 +22,13 @@ The result is an estimate based on public list prices. Your provider's invoice i
 - **Cloud agents:** prompt and completion tokens from the provider, including cache and reasoning when they send them. Cost is list price (OpenAI, Anthropic, Gemini, DeepSeek, Qwen, Grok, Azure, OpenRouter, compatible). OpenRouter’s reported cost is used when it is present. Ollama is stored as $0.
 - **Text-to-speech:** when an AI Workspace voice is used (Assist, overlay speaker, auto-read). OpenAI-style engines are priced per character (`gpt-4o-mini-tts`, `tts-1`, and `tts-1-hd`). Grok (xAI) TTS is priced per character ($4.20 per million, xAI's beta price). Gemini TTS is priced from the audio tokens Google reports. Piper and other Home Assistant engines are not billed here. Speech-to-text (OpenAI transcribe or Gemini) is not stored on this page.
 - Unknown models still store tokens. Cost stays empty until the price list knows that model name.
+- **Coding workers (Agent Worker / Cursor Worker over MCP):** when a chat agent hands a task to a worker (`agent_run`, then `agent_job`; older `cursor_agent` / `cursor_job`), the worker reports what its own engine used once the job is finished (succeeded, failed or cancelled). That usage is stored as its own row under **Worker: Claude Code**, **Worker: OpenAI Codex** or **Worker: Cursor** (agent id `worker:<engine>`), not added to the chat agent's turn. Each job is counted once, however often the agent polls it. Cost: Cursor billed cents when present, else the cost the engine reports itself (Claude Code), else list price when the model is known. Codex reports no price and usually no model, so its tokens are stored with the cost unknown.
 
 ## Home Assistant sensors
 
 **Add Home Assistant usage sensors** is off by default. The Usage page does not need them.
 
-Turn it on if you want cost, token, and turn entities on your own Lovelace dashboards. You then get a device **AI Workspace** under **Usage**, plus sensors on each agent: cost / tokens / turns for today, this month, and total, last turn, and speech cost today / total. Home Assistant also fires `ai_workspace_usage` after every recorded turn.
+Turn it on if you want cost, token, and turn entities on your own Lovelace dashboards. You then get a device **AI Workspace** under **Usage**, plus sensors on each agent: cost / tokens / turns for today, this month, and total, last turn, and speech cost today / total. The cost, token and turn sensors of the **AI Workspace** device carry a `workers` attribute with the worker jobs of that window per engine (`worker:claude`, `worker:codex`, ...). Home Assistant also fires `ai_workspace_usage` after every recorded turn.
 
 Turn the option off again to remove those sensors. Tracking can stay on.
 

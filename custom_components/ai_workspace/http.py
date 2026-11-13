@@ -60,7 +60,7 @@ from .small_talk import wants_house_tools
 from .store import Session, Store
 from .titles import accept_generated_title, needs_title_summary, title_from_prompt
 from .usage_cost import estimate_cost
-from .usage_record import dashboard_payload, finalize_usage, record_usage_turn
+from .usage_record import dashboard_payload, finalize_usage, record_usage_turn, record_worker_usage
 
 logger = logging.getLogger(__name__)
 
@@ -1264,6 +1264,19 @@ class ChatView(HomeAssistantView):
                             error = public_error(event.get("message"))
                             unsent = bool(event.get("connection")) and not parts and not tools
                             event = {**event, "message": error}
+                        elif kind == "usage" and event.get("worker"):
+                            # A worker job's own usage: its engine, not this chat agent, once per job.
+                            worker = await record_worker_usage(
+                                hass,
+                                store=store,
+                                user_id=user_id,
+                                session_id=session.id,
+                                event=event,
+                                origin="chat",
+                            )
+                            if worker is None:
+                                continue
+                            event = worker
                         elif kind == "usage":
                             billed = finalize_usage(
                                 event,
