@@ -56,6 +56,8 @@ from .const import (
     MCP_HA_MCP,
     MODE_API,
     CONF_MODE,
+    CONF_API_BASE,
+    CONF_API_KEY,
     CONF_API_PROVIDER,
     CONF_USE_CLAUDE_RUNTIME,
     API_ANTHROPIC,
