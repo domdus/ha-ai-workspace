@@ -83,6 +83,16 @@ def _write_servers(path: Path, servers: dict, fallback: Path) -> Path:
     return path
 
 
+# How Codex chats are confined: "container" (the container is the sandbox, Codex runs with full access
+# inside it) or "codex" (Codex's own bubblewrap sandbox; needs user namespaces in the container).
+CODEX_SANDBOXES = ("container", "codex")
+
+
+def _codex_sandbox(raw: str) -> str:
+    value = (raw or "").strip().lower()
+    return value if value in CODEX_SANDBOXES else "container"
+
+
 @dataclass(frozen=True)
 class Settings:
     data_dir: Path
@@ -101,6 +111,25 @@ class Settings:
     hass_url: str = ""
     shorten_mcp_results: bool = True
     change_history: bool = True
+    # OpenAI Codex (openai-codex SDK): "Sign in with ChatGPT" (auth.json in CODEX_HOME) first, then an
+    # OpenAI API key. Empty model: Codex's own default for the account.
+    openai_api_key: str = ""
+    codex_model: str = ""
+    codex_home_dir: Path | None = None
+    # An auth.json to seed CODEX_HOME with once (path to a mounted file, or the JSON itself).
+    codex_auth_json: str = ""
+    codex_sandbox: str = "container"
+    # Extra `--config key=value` lines for Codex (TOML values), for example a custom model provider.
+    codex_config: tuple[str, ...] = ()
+
+    @property
+    def codex_home(self) -> Path:
+        """CODEX_HOME: auth.json, threads for resume and Codex's own state. In the persistent data folder."""
+        return self.codex_home_dir or self.data_dir / "codex"
+
+    @property
+    def codex_auth_path(self) -> Path:
+        return self.codex_home / "auth.json"
 
     @property
     def claude_token_path(self) -> Path:
@@ -146,6 +175,13 @@ class Settings:
             os.environ.get("CLAUDE_MODEL", "").strip()
             or str(options.get("claude_model") or "").strip()
         )
+        openai_key = (
+            os.environ.get("OPENAI_API_KEY", "").strip()
+            or os.environ.get("CODEX_API_KEY", "").strip()
+            or str(options.get("openai_api_key") or "").strip()
+        )
+        codex_model = os.environ.get("CODEX_MODEL", "").strip() or str(options.get("codex_model") or "").strip()
+        codex_home = os.environ.get("CODEX_HOME", "").strip()
         auth_mode = os.environ.get("AUTH_MODE", "").strip()
         if not auth_mode:
             auth_mode = "ingress" if options else "dev"
@@ -175,4 +211,12 @@ class Settings:
                 os.environ.get("RUNTIME_TOKEN", "").strip() or str(options.get("runtime_token") or "").strip()
             ),
             hass_url=_default_hass_url(options),
+            openai_api_key=openai_key,
+            codex_model=codex_model,
+            codex_home_dir=Path(codex_home).resolve() if codex_home else None,
+            codex_auth_json=os.environ.get("CODEX_AUTH_JSON", "").strip(),
+            codex_sandbox=_codex_sandbox(os.environ.get("CODEX_SANDBOX", "")),
+            codex_config=tuple(
+                line.strip() for line in os.environ.get("CODEX_CONFIG", "").splitlines() if "=" in line and line.strip()
+            ),
         )
