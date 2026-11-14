@@ -253,9 +253,9 @@ async def lifespan(app: FastAPI):
         if warmup is not None:
             warmup.cancel()
         store.close()
-        from app.auth import close_engines
+        from app.auth import aclose_engines
 
-        close_engines(getattr(app.state, "auth", None))
+        await aclose_engines(getattr(app.state, "auth", None))
         if runtime is not None:
             await runtime.aclose()
 
