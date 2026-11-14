@@ -331,7 +331,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "La sama pasvorto kiel ĉe la AI Workspace Runtime. Lasu malplena kiam vi uzas la aldonaĵon kun aŭtomata parigo.",
-            "cursor_api_key": "El via konto de Cursor (Integrations). Lasu malplena dum redaktado por teni la konservitan ŝlosilon. [Akiri API-ŝlosilon]({api_key_url})",
+            "cursor_api_key": "El via konto de Cursor (Integrations). Lasu malplena dum redaktado por teni la konservitan ŝlosilon. [Akiri API-ŝlosilon]({api_key_url}) {cursor_key_note}",
             "model": "Elektu el la listo aŭ tajpu modelnomon. Malplena uzas Composer.",
             "effort": "Kiom da pensotempo permesi. Composer defaŭlte uzas Rapida.",
             "allow_internet": "Defaŭlte malŝaltita. Ŝaltita permesas al ĉi tiu agento uzi la retserĉon, paĝ-elŝuton kaj ŝelon de Cursor en administrantaj babiloj. Malŝaltita forigas ĉiujn tri, do ankaŭ curl aŭ skriptoj ne atingas la reton. Babiloj de ordinaraj uzantoj kaj voĉaj satelitoj neniam ricevas ilin.",
@@ -574,6 +574,7 @@
           "title": "Claude-konto",
           "description": "{status}\n\nLa ensaluto restas ĉe AI Workspace Runtime, ne en Home Assistant, kaj ĉiu Claude SDK-agento ĉe tiu rultempo uzas ĝin.",
           "menu_options": {
+            "claude_use_runtime": "Uzi la ekzistantan aliron de la Runtime",
             "claude_save": "Konservi agenton",
             "claude_login": "Ensaluti per Claude-abono",
             "claude_logout": "Elsaluti ĉe la rultempo",

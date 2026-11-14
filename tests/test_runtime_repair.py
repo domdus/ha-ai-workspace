@@ -115,3 +115,18 @@ def test_no_saved_token_still_pairs_with_a_new_one(monkeypatch) -> None:
         assert state["pairs"] == [""] and cursor.info.available and bucket["runtime_token"] == "fresh"
 
     asyncio.run(run())
+
+
+def test_cursor_form_says_when_the_runtime_has_a_key() -> None:
+    import glob
+    import json
+
+    from custom_components.ai_workspace.local_text import LANGUAGES, cursor_key_note
+
+    assert cursor_key_note(True, "de").startswith("✅ Die Runtime hat schon einen Cursor-Schlüssel")
+    assert cursor_key_note(False, "de") == ""
+    assert all(cursor_key_note(True, lang) for lang in LANGUAGES)
+    for path in glob.glob("custom_components/ai_workspace/translations/*.json") + ["custom_components/ai_workspace/strings.json"]:
+        steps = json.load(open(path, encoding="utf-8"))["config_subentries"]["agent"]["step"]
+        assert "{cursor_key_note}" in steps["provider_cursor"]["data_description"]["cursor_api_key"], path
+        assert steps["claude_account"]["menu_options"]["claude_use_runtime"], path

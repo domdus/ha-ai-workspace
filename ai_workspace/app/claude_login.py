@@ -39,6 +39,8 @@ logger = logging.getLogger(__name__)
 
 LINK_SECONDS = 45
 TOKEN_SECONDS = 60
+# Pause between the pasted code and Enter (see finish).
+_ENTER_DELAY = 0.3
 # A sign-in that nobody finishes is dropped after this long.
 LOGIN_TTL_SECONDS = 15 * 60
 # Codes that are not even shaped like one; after this many the sign-in is dropped.
@@ -224,7 +226,11 @@ class ClaudeLogin:
             raise LoginError("expired")
         with self._lock:
             since = len(self._buf)
-        os.write(self._master, value.encode() + b"\r")
+        # Code and Enter must arrive apart: in one write the CLI's input takes it as a paste and the
+        # Enter stays part of the text, so nothing is submitted and the sign-in times out.
+        os.write(self._master, value.encode())
+        await asyncio.sleep(_ENTER_DELAY)
+        os.write(self._master, b"\r")
 
         def outcome(text: str):
             token = find_token(text)

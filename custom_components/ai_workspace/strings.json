@@ -331,7 +331,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
-            "cursor_api_key": "From your Cursor account (Integrations). Leave blank when editing to keep the saved key. [Get an API key]({api_key_url})",
+            "cursor_api_key": "From your Cursor account (Integrations). Leave blank when editing to keep the saved key. [Get an API key]({api_key_url}) {cursor_key_note}",
             "model": "Pick from the list or type a model name. Empty uses Composer.",
             "effort": "How much thinking time to allow. Composer defaults to Fast.",
             "allow_internet": "Off by default. On lets this agent use Cursor's web search, page fetch and shell in admin chats. Off removes all three, so curl or scripts cannot reach the web either. Chats from normal users and voice satellites never get them.",
@@ -574,6 +574,7 @@
           "title": "Claude account",
           "description": "{status}\n\nThe sign-in is kept on the AI Workspace Runtime, not in Home Assistant, and every Claude SDK agent on that Runtime uses it.",
           "menu_options": {
+            "claude_use_runtime": "Use the Runtime's existing access",
             "claude_save": "Save agent",
             "claude_login": "Sign in with Claude plan",
             "claude_logout": "Sign out on the Runtime",

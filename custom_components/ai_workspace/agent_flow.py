@@ -754,6 +754,13 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                 shown, live, auto = await async_runtime_form_url(self.hass, saved)
             schema_current[CONF_RUNTIME_URL] = shown
             placeholders.update(runtime_form_placeholders(live=live, auto=auto, language=self.hass.config.language))
+            if step == "cursor":
+                from .local_text import cursor_key_note
+
+                health = await async_runtime_health(self.hass, shown) if live and shown else None
+                placeholders["cursor_key_note"] = cursor_key_note(
+                    bool(health and health.get("cursor")), self.hass.config.language
+                )
             if step == "cloud" and provider == API_ANTHROPIC:
                 placeholders["api_key_url"] = api_key_url(MODE_CLAUDE)
         return self.async_show_form(
@@ -800,8 +807,11 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
         status = self._auth
         own_key = self._own_key()
         options: list[str] = []
-        if own_key or bool(status and status.get("ready")):
+        if own_key:
             options.append("claude_save")
+        elif status and status.get("ready"):
+            # The Runtime already has Claude access (its options, environment or an earlier sign-in).
+            options.append("claude_use_runtime")
         if status and (status.get("login") or {}).get("supported"):
             options.append("claude_login")
         if status and status.get("signed_in"):
@@ -820,6 +830,9 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
         if self._pending is None:
             return await self.async_step_provider()
         return self._finish(*self._pending)
+
+    async def async_step_claude_use_runtime(self, user_input=None):
+        return await self.async_step_claude_save(user_input)
 
     async def async_step_claude_back(self, user_input=None):
         del user_input

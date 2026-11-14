@@ -331,7 +331,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "Stejné heslo jako u AI Workspace Runtime. Nechte prázdné u doplňku s automatickým spárováním.",
-            "cursor_api_key": "Z účtu Cursor (Integrations). Při úpravě nechte prázdné, aby se zachoval uložený klíč. [Získat API klíč]({api_key_url})",
+            "cursor_api_key": "Z účtu Cursor (Integrations). Při úpravě nechte prázdné, aby se zachoval uložený klíč. [Získat API klíč]({api_key_url}) {cursor_key_note}",
             "model": "Vyberte ze seznamu nebo zadejte název modelu. Prázdné použije Composer.",
             "effort": "Kolik času na přemýšlení povolit. Composer ve výchozím stavu použije Rychlé.",
             "allow_internet": "Ve výchozím stavu vypnuto. Zapnuto umožní tomuto agentovi v chatech správce používat webové vyhledávání, stahování stránek a shell Cursoru. Vypnuto odebere všechny tři, takže ani curl či skripty se na web nedostanou. Chaty běžných uživatelů a hlasových satelitů je nikdy nedostanou.",
@@ -574,6 +574,7 @@
           "title": "Účet Claude",
           "description": "{status}\n\nPřihlášení se ukládá v AI Workspace Runtime, ne v Home Assistantu, a používá ho každý agent Claude SDK na tomto Runtime.",
           "menu_options": {
+            "claude_use_runtime": "Použít stávající přístup Runtime",
             "claude_save": "Uložit agenta",
             "claude_login": "Přihlásit se předplatným Claude",
             "claude_logout": "Odhlásit na Runtime",

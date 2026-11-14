@@ -331,7 +331,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "Le même mot de passe que sur l'AI Workspace Runtime. Laissez vide avec le module complémentaire et l'appairage automatique.",
-            "cursor_api_key": "Depuis votre compte Cursor (Integrations). Laissez vide à la modification pour garder la clé enregistrée. [Obtenir une clé API]({api_key_url})",
+            "cursor_api_key": "Depuis votre compte Cursor (Integrations). Laissez vide à la modification pour garder la clé enregistrée. [Obtenir une clé API]({api_key_url}) {cursor_key_note}",
             "model": "Choisissez dans la liste ou saisissez un nom de modèle. Vide utilise Composer.",
             "effort": "Combien de temps de réflexion autoriser. Composer utilise Rapide par défaut.",
             "allow_internet": "Désactivé par défaut. Activé, cet agent peut utiliser la recherche web, la récupération de pages et le shell de Cursor dans les discussions admin. Désactivé retire les trois, donc curl ou des scripts ne peuvent pas non plus accéder au web. Les discussions des utilisateurs normaux et des satellites vocaux ne les ont jamais.",
@@ -574,6 +574,7 @@
           "title": "Compte Claude",
           "description": "{status}\n\nLa connexion est conservée sur AI Workspace Runtime, pas dans Home Assistant, et sert à chaque agent Claude SDK de ce Runtime.",
           "menu_options": {
+            "claude_use_runtime": "Utiliser l’accès existant du Runtime",
             "claude_save": "Enregistrer l'agent",
             "claude_login": "Se connecter avec l'abonnement Claude",
             "claude_logout": "Se déconnecter du Runtime",

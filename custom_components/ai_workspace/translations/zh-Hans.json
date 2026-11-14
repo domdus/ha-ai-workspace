@@ -331,7 +331,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "与 AI Workspace Runtime 上相同的密码。使用带自动配对的附加组件时请留空。",
-            "cursor_api_key": "来自你的 Cursor 账户（Integrations）。编辑时留空可保留已保存的密钥。 [获取 API 密钥]({api_key_url})",
+            "cursor_api_key": "来自你的 Cursor 账户（Integrations）。编辑时留空可保留已保存的密钥。 [获取 API 密钥]({api_key_url}) {cursor_key_note}",
             "model": "从列表中选择或输入模型名称。留空则使用 Composer。",
             "effort": "允许多长的思考时间。Composer 默认使用快速。",
             "allow_internet": "默认关闭。开启后，此智能体可在管理员对话中使用 Cursor 的网页搜索、网页抓取和 Shell。关闭会移除这三项，因此 curl 或脚本也无法访问网络。普通用户的对话和语音卫星永远不会获得这些工具。",
@@ -574,6 +574,7 @@
           "title": "Claude 账户",
           "description": "{status}\n\n登录信息保存在 AI Workspace Runtime 上，而不是 Home Assistant 中，该运行时上的所有 Claude SDK 代理都会使用它。",
           "menu_options": {
+            "claude_use_runtime": "使用 Runtime 现有的访问权限",
             "claude_save": "保存代理",
             "claude_login": "使用 Claude 订阅登录",
             "claude_logout": "在运行时上退出登录",

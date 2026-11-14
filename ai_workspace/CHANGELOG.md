@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.0b10
+
+**Sign in with Claude works.** After you pasted the code, the form waited and then said that the Runtime got no answer from Anthropic in time. The code reached Claude Code, but Claude Code took the Enter that followed it as part of the pasted text, so the code was never sent. The Runtime now sends the Enter separately. A wrong code is rejected right away.
+
+- **The Runtime already has Claude access?** The Claude account step now offers **Use the Runtime's existing access** first: a Plan token or API key in the App options, or an earlier sign-in. No new sign-in needed.
+- **Cursor:** the form says under the key field when the Runtime already has a Cursor key, so you can leave the field empty.
+
 ## 1.6.0b9
 
 **Cursor no longer greys out for good after the Runtime App was reset.** A reinstalled or reset Runtime App comes back without its token. AI Workspace still had the old token saved, the Runtime refused it, and Cursor and Claude SDK agents stayed unavailable. Now AI Workspace pairs its own Runtime App again by itself and gives it the saved token back. If that fails, it tries again after 10 minutes at most instead of restarting the App on every check, and the agent says to set the same token on both sides.

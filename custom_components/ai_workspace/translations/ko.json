@@ -331,7 +331,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "AI Workspace Runtime과 같은 비밀번호입니다. 자동 페어링 애드온을 쓰면 비워 두세요.",
-            "cursor_api_key": "Cursor 계정(Integrations)에서 가져옵니다. 수정 시 비워 두면 저장된 키를 유지합니다. [API 키 받기]({api_key_url})",
+            "cursor_api_key": "Cursor 계정(Integrations)에서 가져옵니다. 수정 시 비워 두면 저장된 키를 유지합니다. [API 키 받기]({api_key_url}) {cursor_key_note}",
             "model": "목록에서 고르거나 모델 이름을 입력하세요. 비우면 Composer를 사용합니다.",
             "effort": "생각할 시간을 얼마나 줄지 정합니다. Composer 기본값은 빠름입니다.",
             "allow_internet": "기본값은 꺼짐입니다. 켜면 이 에이전트가 관리자 채팅에서 Cursor의 웹 검색, 페이지 가져오기, 셸을 사용할 수 있습니다. 끄면 세 가지가 모두 제거되어 curl이나 스크립트로도 웹에 접근할 수 없습니다. 일반 사용자 채팅과 음성 위성은 이를 받지 않습니다.",
@@ -574,6 +574,7 @@
           "title": "Claude 계정",
           "description": "{status}\n\n로그인 정보는 Home Assistant가 아니라 AI Workspace Runtime에 저장되며, 해당 런타임의 모든 Claude SDK 에이전트가 사용합니다.",
           "menu_options": {
+            "claude_use_runtime": "런타임의 기존 접근 사용",
             "claude_save": "에이전트 저장",
             "claude_login": "Claude 요금제로 로그인",
             "claude_logout": "런타임에서 로그아웃",

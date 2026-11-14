@@ -331,7 +331,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "與 AI Workspace Runtime 上相同的密碼。使用含自動配對的附加元件時請留空。",
-            "cursor_api_key": "來自你的 Cursor 帳戶（Integrations）。編輯時留空可保留已儲存的金鑰。 [取得 API 金鑰]({api_key_url})",
+            "cursor_api_key": "來自你的 Cursor 帳戶（Integrations）。編輯時留空可保留已儲存的金鑰。 [取得 API 金鑰]({api_key_url}) {cursor_key_note}",
             "model": "從清單中選擇或輸入模型名稱。留空則使用 Composer。",
             "effort": "允許多長的思考時間。Composer 預設使用快速。",
             "allow_internet": "預設關閉。開啟後，此智慧體可在管理員對話中使用 Cursor 的網頁搜尋、網頁擷取和 Shell。關閉會移除這三項，因此 curl 或指令碼也無法連上網路。一般使用者的對話和語音衛星永遠不會取得這些工具。",
@@ -574,6 +574,7 @@
           "title": "Claude 帳戶",
           "description": "{status}\n\n登入資訊保存在 AI Workspace Runtime 上，而不是 Home Assistant 中，該執行環境上的所有 Claude SDK 代理都會使用它。",
           "menu_options": {
+            "claude_use_runtime": "使用 Runtime 現有的存取權限",
             "claude_save": "儲存代理",
             "claude_login": "使用 Claude 訂閱登入",
             "claude_logout": "在執行環境上登出",

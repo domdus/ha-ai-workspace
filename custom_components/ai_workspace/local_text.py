@@ -331,3 +331,27 @@ def claude_signin_text(status: dict | None, own_key: bool, language: str = "", p
     if own_key:
         lines.append(words["own_key"])
     return "\n\n".join(lines)
+
+
+# Under the Cursor key field when the Runtime already has its own Cursor key.
+CURSOR_KEY_NOTE = {
+    "en": "✅ The Runtime already has a Cursor key. Leave this empty to use it.",
+    "de": "✅ Die Runtime hat schon einen Cursor-Schlüssel. Leer lassen, um ihn zu nutzen.",
+    "az": "✅ Runtime-da artıq Cursor açarı var. Ondan istifadə etmək üçün boş buraxın.",
+    "cs": "✅ Runtime už má klíč Cursor. Nechte pole prázdné a použije se.",
+    "eo": "✅ La Runtime jam havas Cursor-ŝlosilon. Lasu ĉi tion malplena por uzi ĝin.",
+    "es": "✅ El Runtime ya tiene una clave de Cursor. Déjalo vacío para usarla.",
+    "fr": "✅ Le Runtime a déjà une clé Cursor. Laissez ce champ vide pour l’utiliser.",
+    "it": "✅ Il Runtime ha già una chiave Cursor. Lascia vuoto per usarla.",
+    "ko": "✅ 런타임에 이미 Cursor 키가 있습니다. 그 키를 쓰려면 비워 두세요.",
+    "nl": "✅ De Runtime heeft al een Cursor-sleutel. Laat dit leeg om die te gebruiken.",
+    "pl": "✅ Runtime ma już klucz Cursor. Zostaw puste, aby go użyć.",
+    "ru": "✅ У Runtime уже есть ключ Cursor. Оставьте поле пустым, чтобы использовать его.",
+    "sv": "✅ Runtime har redan en Cursor-nyckel. Lämna tomt för att använda den.",
+    "zh-Hans": "✅ Runtime 已有 Cursor 密钥。留空即可使用它。",
+    "zh-Hant": "✅ Runtime 已有 Cursor 金鑰。留空即可使用它。",
+}
+
+
+def cursor_key_note(runtime_has_key: bool, language: str = "") -> str:
+    return pick(CURSOR_KEY_NOTE, language) if runtime_has_key else ""

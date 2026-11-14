@@ -331,7 +331,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "Samma lösenord som på AI Workspace Runtime. Lämna tomt när du använder tillägget med automatisk parkoppling.",
-            "cursor_api_key": "Från ditt Cursor-konto (Integrations). Lämna tomt vid redigering för att behålla den sparade nyckeln. [Hämta API-nyckel]({api_key_url})",
+            "cursor_api_key": "Från ditt Cursor-konto (Integrations). Lämna tomt vid redigering för att behålla den sparade nyckeln. [Hämta API-nyckel]({api_key_url}) {cursor_key_note}",
             "model": "Välj från listan eller skriv ett modellnamn. Tomt använder Composer.",
             "effort": "Hur mycket tänketid som ska tillåtas. Composer använder Snabb som standard.",
             "allow_internet": "Av som standard. På låter agenten använda Cursors webbsökning, sidhämtning och skal i administratörschattar. Av tar bort alla tre, så att inte heller curl eller skript når webben. Chattar från vanliga användare och röstsatelliter får dem aldrig.",
@@ -574,6 +574,7 @@
           "title": "Claude-konto",
           "description": "{status}\n\nInloggningen sparas på AI Workspace Runtime, inte i Home Assistant, och varje Claude SDK-agent på den Runtime använder den.",
           "menu_options": {
+            "claude_use_runtime": "Använd Runtimes befintliga åtkomst",
             "claude_save": "Spara agent",
             "claude_login": "Logga in med Claude-plan",
             "claude_logout": "Logga ut på Runtime",

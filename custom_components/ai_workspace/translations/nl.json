@@ -331,7 +331,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "Hetzelfde wachtwoord als op de AI Workspace Runtime. Leeg laten bij de add-on met automatische koppeling.",
-            "cursor_api_key": "Uit je Cursor-account (Integrations). Leeg laten bij bewerken om de opgeslagen sleutel te houden. [API-sleutel ophalen]({api_key_url})",
+            "cursor_api_key": "Uit je Cursor-account (Integrations). Leeg laten bij bewerken om de opgeslagen sleutel te houden. [API-sleutel ophalen]({api_key_url}) {cursor_key_note}",
             "model": "Kies uit de lijst of typ een modelnaam. Leeg gebruikt Composer.",
             "effort": "Hoeveel denktijd is toegestaan. Composer gebruikt standaard Snel.",
             "allow_internet": "Standaard uit. Aan laat deze agent in beheerderschats Cursors webzoekfunctie, pagina ophalen en shell gebruiken. Uit verwijdert alle drie, zodat ook curl of scripts het web niet bereiken. Chats van gewone gebruikers en spraaksatellieten krijgen ze nooit.",
@@ -574,6 +574,7 @@
           "title": "Claude-account",
           "description": "{status}\n\nDe aanmelding blijft op de AI Workspace Runtime, niet in Home Assistant, en elke Claude SDK-agent op die Runtime gebruikt haar.",
           "menu_options": {
+            "claude_use_runtime": "Bestaande toegang van de Runtime gebruiken",
             "claude_save": "Agent opslaan",
             "claude_login": "Aanmelden met Claude-abonnement",
             "claude_logout": "Afmelden op de Runtime",

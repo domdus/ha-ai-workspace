@@ -331,7 +331,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "To samo hasło co w AI Workspace Runtime. Zostaw puste przy dodatku z automatycznym parowaniem.",
-            "cursor_api_key": "Z konta Cursor (Integrations). Przy edycji zostaw puste, aby zachować zapisany klucz. [Pobierz klucz API]({api_key_url})",
+            "cursor_api_key": "Z konta Cursor (Integrations). Przy edycji zostaw puste, aby zachować zapisany klucz. [Pobierz klucz API]({api_key_url}) {cursor_key_note}",
             "model": "Wybierz z listy lub wpisz nazwę modelu. Puste używa Composer.",
             "effort": "Ile czasu na myślenie zezwolić. Composer domyślnie używa Szybki.",
             "allow_internet": "Domyślnie wyłączone. Włączone pozwala temu agentowi w czatach administratora używać wyszukiwania w sieci, pobierania stron i powłoki Cursora. Wyłączone usuwa wszystkie trzy, więc curl ani skrypty też nie dotrą do sieci. Czaty zwykłych użytkowników i satelit głosowych nigdy ich nie dostają.",
@@ -574,6 +574,7 @@
           "title": "Konto Claude",
           "description": "{status}\n\nLogowanie jest przechowywane w AI Workspace Runtime, nie w Home Assistant, i korzysta z niego każdy agent Claude SDK w tym Runtime.",
           "menu_options": {
+            "claude_use_runtime": "Użyj istniejącego dostępu Runtime",
             "claude_save": "Zapisz agenta",
             "claude_login": "Zaloguj się planem Claude",
             "claude_logout": "Wyloguj w Runtime",

@@ -331,7 +331,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "La stessa password dell'AI Workspace Runtime. Lascia vuoto con l'add-on e l'associazione automatica.",
-            "cursor_api_key": "Dal tuo account Cursor (Integrations). Lascia vuoto in modifica per conservare la chiave salvata. [Ottieni una chiave API]({api_key_url})",
+            "cursor_api_key": "Dal tuo account Cursor (Integrations). Lascia vuoto in modifica per conservare la chiave salvata. [Ottieni una chiave API]({api_key_url}) {cursor_key_note}",
             "model": "Scegli dall'elenco o digita un nome di modello. Vuoto usa Composer.",
             "effort": "Quanto tempo di ragionamento consentire. Composer usa Veloce per impostazione predefinita.",
             "allow_internet": "Disattivato per impostazione predefinita. Attivo consente a questo agente di usare la ricerca web, il recupero di pagine e la shell di Cursor nelle chat admin. Disattivo li rimuove tutti e tre, quindi nemmeno curl o script raggiungono il web. Le chat degli utenti normali e dei satelliti vocali non li ricevono mai.",
@@ -574,6 +574,7 @@
           "title": "Account Claude",
           "description": "{status}\n\nL'accesso resta su AI Workspace Runtime, non in Home Assistant, e lo usa ogni agente Claude SDK di quel Runtime.",
           "menu_options": {
+            "claude_use_runtime": "Usa l’accesso esistente del Runtime",
             "claude_save": "Salva agente",
             "claude_login": "Accedi con il piano Claude",
             "claude_logout": "Esci dal Runtime",

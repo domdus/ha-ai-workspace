@@ -41,7 +41,16 @@ out.write("Browser didn't open? Use the url below to sign in (c to copy)\\n\\n")
 out.write("{LINK}\\n\\n")
 out.write("Paste\\x1b[1Ccode\\x1b[1Chere\\x1b[1Cif\\x1b[1Cprompted\\x1b[1C>\\x1b[?25h")
 out.flush()
-code = sys.stdin.readline().strip()
+# Like the real CLI (Ink, raw mode): a chunk with text is a paste, an Enter inside it is not a submit.
+import tty
+tty.setraw(0)
+typed = b""
+while True:
+    chunk = os.read(0, 4096)
+    if chunk in (b"\\r", b"\\n"):
+        break
+    typed += chunk.replace(b"\\r", b"").replace(b"\\n", b"")
+code = typed.decode().strip()
 open(os.path.join(os.environ["HOME"], "code-seen"), "w").write(code)
 if code == "good#state":
     out.write("\\n \\x1b[32m\\u2713 Long-lived authentication token created successfully!\\x1b[0m\\n\\n")

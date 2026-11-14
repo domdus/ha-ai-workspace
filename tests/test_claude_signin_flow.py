@@ -166,12 +166,13 @@ def test_signed_in_menu_has_save_and_sign_out(monkeypatch) -> None:
     FakeRuntime(ready=True, credential="signed-in", signed_in=signed).install(monkeypatch)
     flow, saved, _ = _flow(monkeypatch, language="de")
     menu = run(flow.async_step_claude_account())
-    assert menu["menu_options"] == ["claude_save", "claude_login", "claude_logout", "claude_back"]
+    # The Runtime is already signed in: using that is offered first, no new sign-in needed.
+    assert menu["menu_options"] == ["claude_use_runtime", "claude_login", "claude_logout", "claude_back"]
     assert "angemeldet" in menu["description_placeholders"]["status"]
     out = run(flow.async_step_claude_logout())
     assert out["menu_options"] == ["claude_login", "claude_back"]
     FakeRuntime(ready=True, credential="signed-in", signed_in=signed).install(monkeypatch)
-    run(flow.async_step_claude_save())
+    run(flow.async_step_claude_use_runtime())
     assert saved["data"]["use_claude_runtime"] is True
 
 
@@ -336,3 +337,20 @@ def test_http_client_maps_runtime_answers(monkeypatch) -> None:
     with pytest.raises(RuntimeAuthError) as err:
         run(runtime_auth.async_auth_status(None, "", "tok", "claude"))
     assert err.value.key == "no_runtime"
+
+
+def test_a_key_in_the_runtime_options_is_offered_before_signing_in(monkeypatch) -> None:
+    FakeRuntime(ready=True, credential="settings").install(monkeypatch)
+    flow, saved, _ = _flow(monkeypatch, language="de")
+    menu = run(flow.async_step_claude_account())
+    assert menu["menu_options"][0] == "claude_use_runtime" and "claude_save" not in menu["menu_options"]
+    assert "Claude Plan" in menu["description_placeholders"]["status"]
+    result = run(flow.async_step_claude_use_runtime())
+    assert result["type"] == "create_entry" and saved["data"]["use_claude_runtime"] is True
+
+
+def test_no_access_anywhere_offers_only_sign_in(monkeypatch) -> None:
+    FakeRuntime().install(monkeypatch)
+    flow, _saved, _ = _flow(monkeypatch)
+    menu = run(flow.async_step_claude_account())
+    assert menu["menu_options"] == ["claude_login", "claude_back"]

@@ -331,7 +331,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "AI Workspace Runtime-dakı eyni parol. Avtomatik cütləşmə ilə əlavə modul istifadə edərkən boş buraxın.",
-            "cursor_api_key": "Cursor hesabınızdan (Integrations). Redaktə edərkən saxlanmış açarı saxlamaq üçün boş buraxın. [API açarı al]({api_key_url})",
+            "cursor_api_key": "Cursor hesabınızdan (Integrations). Redaktə edərkən saxlanmış açarı saxlamaq üçün boş buraxın. [API açarı al]({api_key_url}) {cursor_key_note}",
             "model": "Siyahıdan seçin və ya model adı yazın. Boş Composer istifadə edir.",
             "effort": "Nə qədər düşünmə vaxtına icazə verilsin. Composer defolt olaraq Sürətli istifadə edir.",
             "allow_internet": "Standart olaraq söndürülüb. Açıq olduqda bu agent admin söhbətlərində Cursor-un veb axtarışı, səhifə yükləmə və shell alətlərindən istifadə edə bilir. Söndürülü olduqda hər üçü silinir, beləliklə curl və ya skriptlər də internetə çıxa bilmir. Adi istifadəçilərin və səs peyklərinin söhbətləri onları heç vaxt almır.",
@@ -574,6 +574,7 @@
           "title": "Claude hesabı",
           "description": "{status}\n\nGiriş Home Assistant-da deyil, AI Workspace Runtime-da saxlanılır və həmin Runtime-dakı hər Claude SDK agenti ondan istifadə edir.",
           "menu_options": {
+            "claude_use_runtime": "Runtime-ın mövcud girişindən istifadə et",
             "claude_save": "Agenti saxla",
             "claude_login": "Claude planı ilə daxil ol",
             "claude_logout": "Runtime-dan çıx",

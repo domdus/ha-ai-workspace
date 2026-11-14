@@ -331,7 +331,7 @@
           "data_description": {
             "runtime_url": "{runtime_url_note}",
             "runtime_token": "Dasselbe Passwort wie auf der AI-Workspace-Runtime. Leer lassen bei Add-on mit automatischer Kopplung.",
-            "cursor_api_key": "Aus deinem Cursor-Konto (Integrations). Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten. [API-Schlüssel holen]({api_key_url})",
+            "cursor_api_key": "Aus deinem Cursor-Konto (Integrations). Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten. [API-Schlüssel holen]({api_key_url}) {cursor_key_note}",
             "model": "Aus der Liste wählen oder Modellnamen eingeben. Leer nutzt Composer.",
             "effort": "Wie viel Denkzeit erlaubt ist. Composer nutzt standardmäßig Schnell.",
             "allow_internet": "Standardmäßig aus. An erlaubt diesem Agenten in Admin-Chats Cursors Websuche, Seitenabruf und Shell. Aus entfernt alle drei, damit auch curl oder Skripte nicht ins Internet kommen. Chats normaler Benutzer und Sprachsatelliten bekommen sie nie.",
@@ -574,6 +574,7 @@
           "title": "Claude-Konto",
           "description": "{status}\n\nDie Anmeldung wird auf der AI-Workspace-Runtime gespeichert, nicht in Home Assistant, und gilt für jeden Claude-SDK-Agenten auf dieser Runtime.",
           "menu_options": {
+            "claude_use_runtime": "Vorhandenen Zugang der Runtime verwenden",
             "claude_save": "Agent speichern",
             "claude_login": "Mit Claude-Abo anmelden",
             "claude_logout": "Auf der Runtime abmelden",
