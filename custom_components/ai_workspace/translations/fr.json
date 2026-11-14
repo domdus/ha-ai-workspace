@@ -292,11 +292,18 @@
         "claude_runtime_old": "Mettez à jour l'AI Workspace Runtime en 1.6.0 ou plus récent pour les agents Claude SDK.",
         "claude_key_required": "Ajoutez un jeton Claude Plan ou une clé API Anthropic sous Claude SDK (runtime), ou définissez-en un sur l'AI Workspace Runtime.",
         "runtime_refused": "L'AI Workspace Runtime a refusé le mot de passe du Runtime. Vérifiez-le sur ce formulaire.",
-        "claude_login_unavailable": "Cet AI Workspace Runtime ne peut pas se connecter à Claude. Mettez-le à jour en 1.6.0b7 ou plus récent, ou collez plutôt un jeton.",
-        "claude_login_failed": "La connexion à Claude n'a pas fonctionné. Réessayez, ou collez plutôt un jeton.",
-        "claude_login_expired": "La connexion a pris trop de temps. Utilisez le nouveau lien ci-dessus et collez le nouveau code.",
-        "claude_code_rejected": "Anthropic n'a pas accepté ce code. Reconnectez-vous avec le nouveau lien ci-dessus et collez le nouveau code.",
-        "claude_code_bad": "Ce n'est pas un code de la page d'Anthropic. Copiez le code entier et collez-le à nouveau."
+        "bad_code": "Cela ne ressemble pas au code de la page d'Anthropic. Copiez tout le code et collez-le à nouveau.",
+        "code_rejected": "Anthropic n'a pas accepté ce code. Voici un nouveau lien : reconnectez-vous et collez le nouveau code.",
+        "too_many_attempts": "Trop de codes erronés. Voici un nouveau lien.",
+        "busy": "Le Runtime vérifie encore le code précédent. Patientez un instant et réessayez.",
+        "expired": "Cette connexion a expiré. Voici un nouveau lien.",
+        "timeout": "Le Runtime n'a pas reçu de réponse d'Anthropic à temps. Voici un nouveau lien ; réessayez.",
+        "cli_missing": "AI Workspace Runtime n'a pas la CLI Claude Code. Mettez à jour le Runtime (App ou image Docker).",
+        "no_link": "Claude Code n'a pas affiché de lien de connexion. Vérifiez que le Runtime joint claude.com, puis réessayez.",
+        "login_failed": "La connexion a échoué sur le Runtime. Consultez le journal du Runtime et réessayez.",
+        "not_supported": "Ce moteur n'a pas de connexion par abonnement. Utilisez une clé API.",
+        "runtime_rejected": "AI Workspace Runtime a refusé le mot de passe du Runtime. Utilisez le même mot de passe sur le Runtime et dans ce formulaire.",
+        "runtime_old": "Ce Runtime ne sait pas encore se connecter. Mettez à jour AI Workspace Runtime, ou collez un jeton dans le formulaire de l'agent."
       },
       "step": {
         "provider": {
@@ -411,14 +418,12 @@
               "data": {
                 "runtime_url": "Adresse du runtime{runtime_url_mark}",
                 "runtime_token": "Mot de passe du runtime",
-                "claude_api_key": "Jeton Claude Plan ou clé API Anthropic",
-                "claude_sign_in": "Se connecter avec Claude (expérimental)"
+                "claude_api_key": "Jeton Claude Plan ou clé API Anthropic"
               },
               "data_description": {
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "Le même mot de passe que sur l'AI Workspace Runtime. Laissez vide avec le module complémentaire et l'appairage automatique.",
-                "claude_api_key": "Un jeton Claude Plan (sk-ant-oat…, issu de `claude setup-token`, utilise votre abonnement Claude) ou une clé API Anthropic (sk-ant-api…, facturée en crédits API). Laissez vide pour utiliser celui de l'AI Workspace Runtime, ou à la modification pour garder celui enregistré. [Obtenir une clé API]({api_key_url})",
-                "claude_sign_in": "Laissez le champ du jeton vide, cochez ceci et appuyez sur OK : l'AI Workspace Runtime lance la connexion d'Anthropic pour votre abonnement Claude (Pro, Max) et remplit le jeton pour vous."
+                "claude_api_key": "Un jeton Claude Plan (sk-ant-oat…, issu de `claude setup-token`, utilise votre abonnement Claude) ou une clé API Anthropic (sk-ant-api…, facturée en crédits API). Laissez vide pour utiliser celui de l'AI Workspace Runtime, ou à la modification pour garder celui enregistré. [Obtenir une clé API]({api_key_url})"
               }
             }
           }
@@ -556,14 +561,32 @@
           }
         },
         "claude_login": {
-          "title": "Se connecter avec Claude",
-          "description": "1. Ouvrez [Se connecter avec Claude]({login_url}) et connectez-vous avec le compte Claude de votre abonnement.\n2. Anthropic affiche ensuite un code. Copiez-le en entier.\n3. Collez-le ci-dessous et appuyez sur OK. Le jeton est enregistré sur cet agent et reste valable un an.",
+          "title": "Se connecter avec l'abonnement Claude",
+          "description": "1. Ouvrez ce lien et connectez-vous avec le compte Claude qui a votre abonnement Pro ou Max : [Se connecter avec Claude]({url})\n2. Anthropic affiche ensuite un code. Copiez-le en entier et collez-le ci-dessous.\n\nLe lien est valable 15 minutes. Votre mot de passe Claude ne passe jamais par Home Assistant.",
           "data": {
             "code": "Code d'Anthropic"
           },
           "data_description": {
-            "code": "Le code complet affiché sur la page d'Anthropic après la connexion."
+            "code": "Une longue chaîne avec un # au milieu. Collez-la telle quelle."
           }
+        },
+        "claude_account": {
+          "title": "Compte Claude",
+          "description": "{status}\n\nLa connexion est conservée sur AI Workspace Runtime, pas dans Home Assistant, et sert à chaque agent Claude SDK de ce Runtime.",
+          "menu_options": {
+            "claude_save": "Enregistrer l'agent",
+            "claude_login": "Se connecter avec l'abonnement Claude",
+            "claude_logout": "Se déconnecter du Runtime",
+            "claude_back": "Retour aux réglages de l'agent"
+          }
+        },
+        "claude_signed_in": {
+          "title": "Connecté",
+          "description": "{status}\n\nValidez pour enregistrer l'agent."
+        },
+        "claude_login_error": {
+          "title": "La connexion n'a pas fonctionné",
+          "description": "Validez pour revenir."
         }
       },
       "abort": {

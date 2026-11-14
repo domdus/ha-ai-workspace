@@ -292,11 +292,18 @@
         "claude_runtime_old": "Werk de AI Workspace Runtime bij naar 1.6.0 of nieuwer voor Claude SDK-agents.",
         "claude_key_required": "Voeg onder Claude SDK (runtime) een Claude Plan-token of een Anthropic-API-sleutel toe, of stel er een in op de AI Workspace Runtime.",
         "runtime_refused": "De AI Workspace Runtime weigerde het Runtime-wachtwoord. Controleer het op dit formulier.",
-        "claude_login_unavailable": "Deze AI Workspace Runtime kan niet aanmelden bij Claude. Werk hem bij naar 1.6.0b7 of nieuwer, of plak in plaats daarvan een token.",
-        "claude_login_failed": "Het aanmelden bij Claude is niet gelukt. Probeer het opnieuw, of plak in plaats daarvan een token.",
-        "claude_login_expired": "Het aanmelden duurde te lang. Gebruik de nieuwe link hierboven en plak de nieuwe code.",
-        "claude_code_rejected": "Anthropic accepteerde deze code niet. Meld je opnieuw aan met de nieuwe link hierboven en plak de nieuwe code.",
-        "claude_code_bad": "Dat is geen code van de pagina van Anthropic. Kopieer de hele code en plak hem opnieuw."
+        "bad_code": "Dat lijkt niet op de code van de pagina van Anthropic. Kopieer de hele code en plak hem opnieuw.",
+        "code_rejected": "Anthropic accepteerde die code niet. Hier is een nieuwe link: meld je opnieuw aan en plak de nieuwe code.",
+        "too_many_attempts": "Te veel verkeerde codes. Hier is een nieuwe link.",
+        "busy": "De Runtime controleert de vorige code nog. Wacht even en probeer het opnieuw.",
+        "expired": "Deze aanmelding is verlopen. Hier is een nieuwe link.",
+        "timeout": "De Runtime kreeg niet op tijd antwoord van Anthropic. Hier is een nieuwe link; probeer het opnieuw.",
+        "cli_missing": "De AI Workspace Runtime heeft geen Claude Code-CLI. Werk de Runtime bij (App of Docker-image).",
+        "no_link": "Claude Code toonde geen aanmeldlink. Controleer of de Runtime claude.com bereikt en probeer het opnieuw.",
+        "login_failed": "Aanmelden is mislukt op de Runtime. Bekijk het Runtime-log en probeer het opnieuw.",
+        "not_supported": "Deze engine heeft geen abonnementsaanmelding. Gebruik een API-sleutel.",
+        "runtime_rejected": "De AI Workspace Runtime weigerde het Runtime-wachtwoord. Gebruik hetzelfde wachtwoord op de Runtime en in dit formulier.",
+        "runtime_old": "Deze Runtime kan nog niet aanmelden. Werk de AI Workspace Runtime bij, of plak een token in het agentformulier."
       },
       "step": {
         "provider": {
@@ -411,14 +418,12 @@
               "data": {
                 "runtime_url": "Runtime-adres{runtime_url_mark}",
                 "runtime_token": "Runtime-wachtwoord",
-                "claude_api_key": "Claude Plan-token of Anthropic-API-sleutel",
-                "claude_sign_in": "Aanmelden met Claude (experimenteel)"
+                "claude_api_key": "Claude Plan-token of Anthropic-API-sleutel"
               },
               "data_description": {
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "Hetzelfde wachtwoord als op de AI Workspace Runtime. Leeg laten bij de add-on met automatische koppeling.",
-                "claude_api_key": "Een Claude Plan-token (sk-ant-oat…, uit `claude setup-token`, gebruikt je Claude-abonnement) of een Anthropic-API-sleutel (sk-ant-api…, gefactureerd als API-tegoed). Leeg laten om die op de AI Workspace Runtime te gebruiken, of bij bewerken om de opgeslagen te houden. [API-sleutel ophalen]({api_key_url})",
-                "claude_sign_in": "Laat het tokenveld leeg, vink dit aan en druk op OK: de AI Workspace Runtime start de aanmelding van Anthropic voor je Claude-abonnement (Pro, Max) en vult het token voor je in."
+                "claude_api_key": "Een Claude Plan-token (sk-ant-oat…, uit `claude setup-token`, gebruikt je Claude-abonnement) of een Anthropic-API-sleutel (sk-ant-api…, gefactureerd als API-tegoed). Leeg laten om die op de AI Workspace Runtime te gebruiken, of bij bewerken om de opgeslagen te houden. [API-sleutel ophalen]({api_key_url})"
               }
             }
           }
@@ -556,14 +561,32 @@
           }
         },
         "claude_login": {
-          "title": "Aanmelden met Claude",
-          "description": "1. Open [Aanmelden met Claude]({login_url}) en meld je aan met het Claude-account van je abonnement.\n2. Anthropic toont dan een code. Kopieer die volledig.\n3. Plak die hieronder en druk op OK. Het token wordt op deze agent opgeslagen en is een jaar geldig.",
+          "title": "Aanmelden met Claude-abonnement",
+          "description": "1. Open deze link en meld je aan met het Claude-account met je Pro- of Max-abonnement: [Aanmelden met Claude]({url})\n2. Anthropic toont daarna een code. Kopieer die helemaal en plak hem hieronder.\n\nDe link werkt 15 minuten. Je Claude-wachtwoord gaat nooit via Home Assistant.",
           "data": {
             "code": "Code van Anthropic"
           },
           "data_description": {
-            "code": "De volledige code van de pagina van Anthropic na het aanmelden."
+            "code": "Een lange tekenreeks met een # in het midden. Plak hem zoals hij is."
           }
+        },
+        "claude_account": {
+          "title": "Claude-account",
+          "description": "{status}\n\nDe aanmelding blijft op de AI Workspace Runtime, niet in Home Assistant, en elke Claude SDK-agent op die Runtime gebruikt haar.",
+          "menu_options": {
+            "claude_save": "Agent opslaan",
+            "claude_login": "Aanmelden met Claude-abonnement",
+            "claude_logout": "Afmelden op de Runtime",
+            "claude_back": "Terug naar de agentinstellingen"
+          }
+        },
+        "claude_signed_in": {
+          "title": "Aangemeld",
+          "description": "{status}\n\nVerstuur om de agent op te slaan."
+        },
+        "claude_login_error": {
+          "title": "Aanmelden is niet gelukt",
+          "description": "Verstuur om terug te gaan."
         }
       },
       "abort": {

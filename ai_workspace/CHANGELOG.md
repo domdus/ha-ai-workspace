@@ -8,6 +8,22 @@
   - The global usage sensors carry a `workers` attribute per engine.
 - A cost the provider reports itself (`cost_usd`, for example from Claude Code or the Cursor SDK) is kept instead of being replaced by a list-price estimate. Without a reported cost, the list price is used when the model is known; otherwise tokens are stored and the cost stays unknown.
 
+**Sign in with Claude plan.** Claude (Anthropic) agents with **Use Claude SDK (runtime)** on get a **Claude account** step after the agent form. It shows the runtime's Claude credential and offers **Sign in with Claude plan**: open the link, sign in with your Pro or Max account, paste the code Anthropic shows, done. The runtime keeps the Plan token itself, so every Claude SDK agent on it can use it. This replaces the **Sign in with Claude (experimental)** tick box from 1.6.0b7. Cloud-API agents and Cursor agents are unchanged. See [docs/claude-runtime.md](../docs/claude-runtime.md#sign-in-with-claude-plan).
+
+**Runtime**
+- Sign-in API per engine: `GET /api/auth/{engine}`, `POST /api/auth/{engine}/login`, `GET|POST|DELETE /api/auth/{engine}/login/{id}`, `DELETE /api/auth/{engine}` (sign out). Claude uses the bundled Claude Code CLI (`claude setup-token`) in a pseudo-terminal; Cursor reports `not_supported` (API key only). `/api/health` lists engines with a sign-in under `"login"`.
+- The Plan token is kept in `/data/auth/claude-oauth-token` (owner-only), never sent to Home Assistant and never logged. The CLI runs without the runtime's own credentials in a temporary folder that is removed afterwards.
+- Credential order: agent token from Home Assistant → **Claude Plan token** option → signed-in token → **Anthropic API key** option.
+- `/api/claude/login` from 1.6.0b7 still answers older integrations and shares the one sign-in at a time with the new API.
+- Without Home Assistant: `docker exec -it ai-workspace-runtime python -m app.claude_login`.
+
+**Integration**
+- Agent form: **Claude account** step (Save agent / Sign in with Claude plan / Sign out on the Runtime / Back), the sign-in form with link and code field, and a **Signed in** confirmation with the sign-in date (no secrets). A rejected or expired code gets a fresh link on the same form; closing the dialog cancels a waiting sign-in.
+- The token field stays as an optional fallback. Signing in clears an older token on that agent, because it would win over the sign-in. Without any credential, saving waits for a sign-in instead of failing with "required" (runtimes without sign-in still ask for the token).
+- Translations for all 15 languages.
+
+**Update the runtime together with the integration** to get the sign-in; older runtimes show an update hint on the Claude account step and keep working with a pasted token.
+
 ## 1.6.0b8
 
 **Long pastes work with Cursor and Claude SDK agents.** A message over 8000 characters (for example pasted HTML) failed with "The AI Workspace Runtime answered HTTP 422" and never reached the agent.

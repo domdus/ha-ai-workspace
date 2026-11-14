@@ -210,7 +210,7 @@ def test_claude_form_fields() -> None:
     assert "api_key" not in names and "cursor_api_key" not in names
     section = _section(runtime, agent_flow.SECTION_CLAUDE_RUNTIME)
     assert {str(key) for key in section.schema.schema} == {
-        CONF_RUNTIME_URL, "runtime_token", CONF_CLAUDE_API_KEY, agent_flow.CONF_CLAUDE_SIGN_IN,
+        CONF_RUNTIME_URL, "runtime_token", CONF_CLAUDE_API_KEY,
     }
     # Open, so the Plan token field is visible as soon as the switch is on.
     assert section.options.get("collapsed") is False
@@ -292,7 +292,16 @@ def _form(monkeypatch, *, health=None, editing=None):
         calls["saved"].append(kwargs)
         return {"type": "abort", **kwargs}
 
+    def show_menu(**kwargs):
+        calls["shown"].append(kwargs)
+        return {"type": "menu", **kwargs}
+
+    async def auth_status(hass, base, token, engine):
+        return {"engine": engine, "ready": False, "credential": "none", "signed_in": None, "login": {"supported": True}}
+
+    monkeypatch.setattr("custom_components.ai_workspace.runtime_auth.async_auth_status", auth_status)
     flow.async_show_form = show_form
+    flow.async_show_menu = show_menu
     flow.async_create_entry = create
     flow.async_update_and_abort = update
     return flow, calls
@@ -324,6 +333,10 @@ def test_turning_the_switch_on_shows_the_runtime_fields_before_saving(monkeypatc
             "advanced": {CONF_USE_CLAUDE_RUNTIME: True},
         },
     )
+    # Claude SDK: the Claude account step comes first; the agent's own token is enough to save.
+    assert result["type"] == "menu" and result["step_id"] == "claude_account"
+    assert "claude_save" in result["menu_options"] and calls["saved"] == []
+    result = asyncio.run(flow.async_step_claude_save())
     assert result["type"] == "create_entry" and result["title"] == "Claude"
     data = result["data"]
     assert data["mode"] == MODE_CLAUDE and data["api_provider"] == API_ANTHROPIC and data[CONF_USE_CLAUDE_RUNTIME]
@@ -414,104 +427,13 @@ def test_runtime_problems_show_at_the_top_of_the_form(monkeypatch) -> None:
 
 
 # --- Sign in with Claude --------------------------------------------------------------------------
-
-PLAN = "sk-ant-oat01-" + "x" * 40
-
-
-def _login_runtime(monkeypatch, *, start_problem="", codes=None):
-    """The runtime's sign-in, faked: each start gives a new link; codes maps code -> (token, problem)."""
-    calls = {"start": [], "finish": []}
-
-    async def start(hass, base, token):
-        calls["start"].append((base, token))
-        if start_problem:
-            return None, start_problem
-        return {"id": f"L{len(calls['start'])}", "url": f"https://claude.com/cai/oauth/authorize?n={len(calls['start'])}"}, ""
-
-    async def finish(hass, base, token, login_id, code):
-        calls["finish"].append((login_id, code))
-        return (codes or {}).get(code, ("", "code_rejected"))
-
-    monkeypatch.setattr(agent_flow, "async_start_login", start)
-    monkeypatch.setattr(agent_flow, "async_finish_login", finish)
-    return calls
+# The Claude account menu, sign-in and sign-out are covered in test_claude_signin_flow.py.
 
 
-def _sign_in_input():
-    return {
-        agent_flow.SECTION_CLAUDE_RUNTIME: {
-            CONF_RUNTIME_URL: "", "runtime_token": "", CONF_CLAUDE_API_KEY: "", agent_flow.CONF_CLAUDE_SIGN_IN: True,
-        },
-        "model": "",
-        "effort": "default",
-        "advanced": {CONF_USE_CLAUDE_RUNTIME: True},
-    }
-
-
-def _runtime_flow(monkeypatch):
-    flow, calls = _form(monkeypatch)
-    flow._current = {"api_provider": API_ANTHROPIC, CONF_USE_CLAUDE_RUNTIME: True}
-    flow._get_entry().options = {"runtime_token": "saved-secret"}
-    return flow, calls
-
-
-def test_sign_in_with_claude_fills_in_the_plan_token(monkeypatch) -> None:
-    flow, calls = _runtime_flow(monkeypatch)
-    login = _login_runtime(monkeypatch, codes={"good#s": (PLAN, ""), "typo": ("", "bad_code")})
-    result = _step(flow, _sign_in_input())
-    assert result["step_id"] == "claude_login" and result["errors"] == {}
-    assert result["description_placeholders"]["login_url"].endswith("n=1")
-    # The saved Runtime password is used when none is typed.
-    assert login["start"] == [("http://r:8090", "saved-secret")]
-    assert calls["saved"] == []
-    # A mistyped code keeps the same sign-in.
-    result = asyncio.run(flow.async_step_claude_login({"code": "typo"}))
-    assert result["errors"] == {"base": "claude_code_bad"} and len(login["start"]) == 1
-    # A refused code needs a new link.
-    result = asyncio.run(flow.async_step_claude_login({"code": "used-already"}))
-    assert result["errors"] == {"base": "claude_code_rejected"}
-    assert result["description_placeholders"]["login_url"].endswith("n=2")
-    result = asyncio.run(flow.async_step_claude_login({"code": "good#s"}))
-    assert login["finish"][-1] == ("L2", "good#s")
-    assert result["type"] == "create_entry" and result["title"] == "Claude"
-    data = result["data"]
-    assert data[CONF_CLAUDE_API_KEY] == PLAN and data["mode"] == MODE_CLAUDE and data[CONF_USE_CLAUDE_RUNTIME]
-    assert "claude_sign_in" not in data and "code" not in data
-
-
-def test_sign_in_problems_show_on_the_form(monkeypatch) -> None:
-    for problem, shown in (
-        ("cli_missing", "claude_login_unavailable"),
-        ("runtime_token", "runtime_refused"),
-        ("no_link", "claude_login_failed"),
-    ):
-        flow, calls = _runtime_flow(monkeypatch)
-        _login_runtime(monkeypatch, start_problem=problem)
-        result = _step(flow, _sign_in_input())
-        assert result["type"] == "form" and result["step_id"] == "provider_cloud"
-        assert result["errors"] == {"base": shown} and calls["saved"] == []
-
-
-def test_a_typed_token_wins_over_sign_in(monkeypatch) -> None:
-    flow, calls = _runtime_flow(monkeypatch)
-    login = _login_runtime(monkeypatch)
-    pasted = _sign_in_input()
-    pasted[agent_flow.SECTION_CLAUDE_RUNTIME][CONF_CLAUDE_API_KEY] = PLAN
-    result = _step(flow, pasted)
-    assert result["type"] == "create_entry" and login["start"] == []
-
-
-def test_sign_in_box_is_in_the_runtime_section() -> None:
+def test_the_old_sign_in_tick_box_is_gone() -> None:
+    # 1.6.0b7/b8 had a "Sign in with Claude (experimental)" box that saved the token on the agent;
+    # the Claude account step after the form replaces it.
     schema = agent_flow._fields_schema("cloud", {"api_provider": API_ANTHROPIC, CONF_USE_CLAUDE_RUNTIME: True}, [])
     section = _section(schema, agent_flow.SECTION_CLAUDE_RUNTIME)
-    assert agent_flow.CONF_CLAUDE_SIGN_IN in {str(key) for key in section.schema.schema}
-
-
-def test_runtime_answers_become_form_problems() -> None:
-    from custom_components.ai_workspace import claude_login as client
-
-    assert client._problem(None, {}) == "no_runtime"
-    assert client._problem(401, {}) == "runtime_token"
-    assert client._problem(404, {}) == "cli_missing"
-    assert client._problem(400, {"detail": "code_rejected"}) == "code_rejected"
-    assert client._problem(500, {"detail": "<html>"}) == "login_failed"
+    assert "claude_sign_in" not in {str(key) for key in section.schema.schema}
+    assert not hasattr(agent_flow, "CONF_CLAUDE_SIGN_IN")

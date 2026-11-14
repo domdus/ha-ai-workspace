@@ -201,7 +201,10 @@ def create_app(settings: Settings | None = None, providers: dict | None = None) 
                 return JSONResponse({"detail": detail}, status_code=401)
         return await call_next(request)
 
+    from app.auth import router as auth_router
+
     app.include_router(router)
+    app.include_router(auth_router)
     if not app.state.settings.runtime_token and not app.state.settings.open_without_token():
         logger.warning(
             "No RUNTIME_TOKEN set and the runtime listens on %s. Chat requests are refused until a token is set.",
@@ -243,9 +246,9 @@ async def lifespan(app: FastAPI):
         if warmup is not None:
             warmup.cancel()
         store.close()
-        login = getattr(app.state, "claude_login", None)
-        if login is not None:
-            login.close()
+        from app.auth import close_engines
+
+        close_engines(getattr(app.state, "auth", None))
         if runtime is not None:
             await runtime.aclose()
 
@@ -290,6 +293,12 @@ def _provider_flag(providers: dict, key: str) -> bool:
     return bool(item and item.info.available)
 
 
+def _login_engines(request: Request) -> list[str]:
+    from app.auth import engines_for, login_engines
+
+    return login_engines(engines_for(request.app))
+
+
 @router.get("/api/health")
 def health(request: Request) -> dict:
     settings: Settings = request.app.state.settings
@@ -301,20 +310,19 @@ def health(request: Request) -> dict:
         "model": settings.model,
         "cursor": _provider_flag(providers, "cursor"),
         "claude": _provider_flag(providers, "claude"),
-        # The agent form offers "Sign in with Claude" only when the runtime can run it.
+        # 1.6.0b7/b8 agent forms offer "Sign in with Claude" only when the runtime can run it.
         "claude_login": _login_manager(request.app).available(),
+        # Engines with a plan sign-in at /api/auth/{engine}/login (details need the runtime token).
+        "login": _login_engines(request),
         "token_required": bool(settings.runtime_token) or not settings.open_without_token(),
     }
 
 
 def _login_manager(app: FastAPI):
-    from app.claude_login import LoginManager
+    """The Claude sign-in of /api/auth/claude: the 1.6.0b7 endpoints below share it (one sign-in at a time)."""
+    from app.auth import engines_for
 
-    manager = getattr(app.state, "claude_login", None)
-    if manager is None:
-        manager = LoginManager()
-        app.state.claude_login = manager
-    return manager
+    return engines_for(app)["claude"].manager
 
 
 class ClaudeLoginCode(BaseModel):
@@ -326,6 +334,8 @@ def _login_failed(exc) -> JSONResponse:
     return JSONResponse({"detail": exc.key}, status_code=status)
 
 
+# 1.6.0b7/b8 integrations: the Plan token goes back to Home Assistant and is saved on the agent.
+# Newer agent forms use /api/auth/claude (app.auth), where the runtime keeps the token itself.
 @router.post("/api/claude/login")
 async def claude_login_start(request: Request):
     """Start `claude setup-token` and return its sign-in link."""

@@ -159,3 +159,175 @@ RUNTIME_FORM = {
     "az": ("✅ Runtime tapıldı.", "AI Workspace Runtime bu sistemdə tapıldı.", "Home Assistant-dan görünən AI Workspace Runtime ünvanı. Runtime əlçatan olanda avtomatik tapmaq üçün boş saxlayın.", " · avtomatik tapıldı"),
     "eo": ("✅ Rultempo trovita.", "Ni trovis vian AI Workspace Runtime en ĉi tiu sistemo.", "Adreso de via AI Workspace Runtime, vidata el Home Assistant. Lasu malplena por aŭtomate trovi ĝin, kiam la rultempo estas atingebla.", " · aŭtomate trovita"),
 }
+
+
+# Claude sign-in state on the agent form (Claude SDK on the Runtime). {saved}, {expires}, {kind}
+CLAUDE_SIGNIN = {
+    "en": {
+        "signed_in": "✅ Signed in with your Claude plan on the Runtime (since {saved}, valid until about {expires}).",
+        "settings": "✅ The Runtime has a Claude credential in its own options or environment ({kind}).",
+        "none": "⚠️ Not signed in yet. Sign in with your Claude plan, or go back and paste a token.",
+        "overridden": "Note: a Plan token in the Runtime's options wins over your sign-in.",
+        "own_key": "This agent has its own token or key, which wins over the Runtime's credential. Signing in removes it from this agent.",
+        "old": "This Runtime cannot sign in yet. Update the AI Workspace Runtime, or go back and paste a token.",
+        "unreachable": "The Runtime did not answer, so the sign-in state is unknown.",
+    },
+    "de": {
+        "signed_in": "✅ Auf der Runtime mit deinem Claude-Abo angemeldet (seit {saved}, gültig bis etwa {expires}).",
+        "settings": "✅ Die Runtime hat einen Claude-Zugang in ihren eigenen Optionen oder der Umgebung ({kind}).",
+        "none": "⚠️ Noch nicht angemeldet. Melde dich mit deinem Claude-Abo an oder geh zurück und füge ein Token ein.",
+        "overridden": "Hinweis: Ein Plan-Token in den Optionen der Runtime hat Vorrang vor deiner Anmeldung.",
+        "own_key": "Dieser Agent hat ein eigenes Token oder einen eigenen Schlüssel, der Vorrang vor dem Zugang der Runtime hat. Die Anmeldung entfernt es von diesem Agenten.",
+        "old": "Diese Runtime kann sich noch nicht anmelden. Aktualisiere die AI-Workspace-Runtime oder geh zurück und füge ein Token ein.",
+        "unreachable": "Die Runtime hat nicht geantwortet, der Anmeldestatus ist unbekannt.",
+    },
+    "fr": {
+        "signed_in": "✅ Connecté avec votre abonnement Claude sur le Runtime (depuis le {saved}, valable jusqu'au {expires} environ).",
+        "settings": "✅ Le Runtime a un identifiant Claude dans ses propres options ou son environnement ({kind}).",
+        "none": "⚠️ Pas encore connecté. Connectez-vous avec votre abonnement Claude, ou revenez en arrière et collez un jeton.",
+        "overridden": "Remarque : un jeton Plan dans les options du Runtime l'emporte sur votre connexion.",
+        "own_key": "Cet agent a son propre jeton ou sa propre clé, qui l'emporte sur l'identifiant du Runtime. La connexion le retire de cet agent.",
+        "old": "Ce Runtime ne sait pas encore se connecter. Mettez à jour AI Workspace Runtime, ou revenez en arrière et collez un jeton.",
+        "unreachable": "Le Runtime n'a pas répondu, l'état de connexion est inconnu.",
+    },
+    "es": {
+        "signed_in": "✅ Sesión iniciada con tu plan de Claude en el Runtime (desde {saved}, válida hasta aprox. {expires}).",
+        "settings": "✅ El Runtime tiene una credencial de Claude en sus propias opciones o entorno ({kind}).",
+        "none": "⚠️ Aún sin sesión. Inicia sesión con tu plan de Claude, o vuelve atrás y pega un token.",
+        "overridden": "Nota: un token Plan en las opciones del Runtime tiene prioridad sobre tu sesión.",
+        "own_key": "Este agente tiene su propio token o clave, que tiene prioridad sobre la credencial del Runtime. Al iniciar sesión se quita de este agente.",
+        "old": "Este Runtime aún no puede iniciar sesión. Actualiza AI Workspace Runtime, o vuelve atrás y pega un token.",
+        "unreachable": "El Runtime no respondió, así que no se sabe el estado de la sesión.",
+    },
+    "it": {
+        "signed_in": "✅ Accesso effettuato con il tuo piano Claude sul Runtime (dal {saved}, valido fino a circa {expires}).",
+        "settings": "✅ Il Runtime ha una credenziale Claude nelle proprie opzioni o nell'ambiente ({kind}).",
+        "none": "⚠️ Accesso non ancora effettuato. Accedi con il tuo piano Claude, oppure torna indietro e incolla un token.",
+        "overridden": "Nota: un token Plan nelle opzioni del Runtime ha la precedenza sul tuo accesso.",
+        "own_key": "Questo agente ha un proprio token o chiave, che ha la precedenza sulla credenziale del Runtime. L'accesso lo rimuove da questo agente.",
+        "old": "Questo Runtime non supporta ancora l'accesso. Aggiorna AI Workspace Runtime, oppure torna indietro e incolla un token.",
+        "unreachable": "Il Runtime non ha risposto, lo stato di accesso è sconosciuto.",
+    },
+    "nl": {
+        "signed_in": "✅ Aangemeld met je Claude-abonnement op de Runtime (sinds {saved}, geldig tot ongeveer {expires}).",
+        "settings": "✅ De Runtime heeft een Claude-toegang in zijn eigen opties of omgeving ({kind}).",
+        "none": "⚠️ Nog niet aangemeld. Meld je aan met je Claude-abonnement, of ga terug en plak een token.",
+        "overridden": "Let op: een Plan-token in de opties van de Runtime gaat voor op je aanmelding.",
+        "own_key": "Deze agent heeft een eigen token of sleutel, die voorgaat op de toegang van de Runtime. Aanmelden verwijdert die van deze agent.",
+        "old": "Deze Runtime kan nog niet aanmelden. Werk de AI Workspace Runtime bij, of ga terug en plak een token.",
+        "unreachable": "De Runtime antwoordde niet, de aanmeldstatus is onbekend.",
+    },
+    "pl": {
+        "signed_in": "✅ Zalogowano planem Claude w Runtime (od {saved}, ważne do ok. {expires}).",
+        "settings": "✅ Runtime ma dane logowania Claude we własnych opcjach lub środowisku ({kind}).",
+        "none": "⚠️ Jeszcze nie zalogowano. Zaloguj się planem Claude albo wróć i wklej token.",
+        "overridden": "Uwaga: token Plan w opcjach Runtime ma pierwszeństwo przed Twoim logowaniem.",
+        "own_key": "Ten agent ma własny token lub klucz, który ma pierwszeństwo przed danymi Runtime. Zalogowanie usuwa go z tego agenta.",
+        "old": "Ten Runtime nie obsługuje jeszcze logowania. Zaktualizuj AI Workspace Runtime albo wróć i wklej token.",
+        "unreachable": "Runtime nie odpowiedział, stan logowania jest nieznany.",
+    },
+    "cs": {
+        "signed_in": "✅ Přihlášeno předplatným Claude na Runtime (od {saved}, platné přibližně do {expires}).",
+        "settings": "✅ Runtime má přístup ke Claude ve vlastních volbách nebo prostředí ({kind}).",
+        "none": "⚠️ Zatím nepřihlášeno. Přihlaste se předplatným Claude, nebo se vraťte a vložte token.",
+        "overridden": "Pozor: token Plan ve volbách Runtime má přednost před vaším přihlášením.",
+        "own_key": "Tento agent má vlastní token nebo klíč, který má přednost před přístupem Runtime. Přihlášení jej z agenta odebere.",
+        "old": "Tento Runtime se zatím neumí přihlásit. Aktualizujte AI Workspace Runtime, nebo se vraťte a vložte token.",
+        "unreachable": "Runtime neodpověděl, stav přihlášení není znám.",
+    },
+    "sv": {
+        "signed_in": "✅ Inloggad med din Claude-plan på Runtime (sedan {saved}, giltig till ungefär {expires}).",
+        "settings": "✅ Runtime har en Claude-inloggning i sina egna alternativ eller sin miljö ({kind}).",
+        "none": "⚠️ Inte inloggad än. Logga in med din Claude-plan, eller gå tillbaka och klistra in en token.",
+        "overridden": "Obs: en Plan-token i Runtimes alternativ går före din inloggning.",
+        "own_key": "Den här agenten har en egen token eller nyckel, som går före Runtimes inloggning. Inloggningen tar bort den från agenten.",
+        "old": "Den här Runtime kan inte logga in än. Uppdatera AI Workspace Runtime, eller gå tillbaka och klistra in en token.",
+        "unreachable": "Runtime svarade inte, så inloggningsstatus är okänd.",
+    },
+    "ru": {
+        "signed_in": "✅ Выполнен вход с подпиской Claude в Runtime (с {saved}, действует примерно до {expires}).",
+        "settings": "✅ У Runtime есть учётные данные Claude в собственных настройках или окружении ({kind}).",
+        "none": "⚠️ Вход ещё не выполнен. Войдите с подпиской Claude или вернитесь назад и вставьте токен.",
+        "overridden": "Внимание: токен Plan в настройках Runtime важнее вашего входа.",
+        "own_key": "У этого агента свой токен или ключ, он важнее учётных данных Runtime. Вход удалит его у этого агента.",
+        "old": "Этот Runtime пока не умеет входить. Обновите AI Workspace Runtime или вернитесь назад и вставьте токен.",
+        "unreachable": "Runtime не ответил, состояние входа неизвестно.",
+    },
+    "ko": {
+        "signed_in": "✅ 런타임에서 Claude 요금제로 로그인했습니다 ({saved}부터, 약 {expires}까지 유효).",
+        "settings": "✅ 런타임의 자체 옵션 또는 환경에 Claude 자격 증명이 있습니다 ({kind}).",
+        "none": "⚠️ 아직 로그인하지 않았습니다. Claude 요금제로 로그인하거나, 돌아가서 토큰을 붙여 넣으세요.",
+        "overridden": "참고: 런타임 옵션의 Plan 토큰이 로그인보다 우선합니다.",
+        "own_key": "이 에이전트에는 런타임 자격 증명보다 우선하는 자체 토큰이나 키가 있습니다. 로그인하면 이 에이전트에서 제거됩니다.",
+        "old": "이 런타임은 아직 로그인을 지원하지 않습니다. AI Workspace Runtime을 업데이트하거나, 돌아가서 토큰을 붙여 넣으세요.",
+        "unreachable": "런타임이 응답하지 않아 로그인 상태를 알 수 없습니다.",
+    },
+    "zh-Hans": {
+        "signed_in": "✅ 已在运行时上用你的 Claude 订阅登录（自 {saved} 起，约有效至 {expires}）。",
+        "settings": "✅ 运行时在自己的选项或环境中有 Claude 凭据（{kind}）。",
+        "none": "⚠️ 尚未登录。请用你的 Claude 订阅登录，或返回并粘贴令牌。",
+        "overridden": "注意：运行时选项中的 Plan 令牌优先于你的登录。",
+        "own_key": "此代理有自己的令牌或密钥，优先于运行时的凭据。登录后会从此代理中移除。",
+        "old": "此运行时尚不支持登录。请更新 AI Workspace Runtime，或返回并粘贴令牌。",
+        "unreachable": "运行时没有响应，登录状态未知。",
+    },
+    "zh-Hant": {
+        "signed_in": "✅ 已在執行環境上用你的 Claude 訂閱登入（自 {saved} 起，約有效至 {expires}）。",
+        "settings": "✅ 執行環境在自己的選項或環境中有 Claude 憑證（{kind}）。",
+        "none": "⚠️ 尚未登入。請用你的 Claude 訂閱登入，或返回並貼上權杖。",
+        "overridden": "注意：執行環境選項中的 Plan 權杖優先於你的登入。",
+        "own_key": "此代理有自己的權杖或金鑰，優先於執行環境的憑證。登入後會從此代理移除。",
+        "old": "此執行環境尚不支援登入。請更新 AI Workspace Runtime，或返回並貼上權杖。",
+        "unreachable": "執行環境沒有回應，登入狀態未知。",
+    },
+    "az": {
+        "signed_in": "✅ Runtime-da Claude planınızla daxil olunub ({saved} tarixindən, təxminən {expires} tarixinədək etibarlıdır).",
+        "settings": "✅ Runtime-ın öz seçimlərində və ya mühitində Claude giriş məlumatı var ({kind}).",
+        "none": "⚠️ Hələ daxil olunmayıb. Claude planınızla daxil olun və ya geri qayıdıb token yapışdırın.",
+        "overridden": "Qeyd: Runtime seçimlərindəki Plan tokeni girişinizdən üstündür.",
+        "own_key": "Bu agentin öz tokeni və ya açarı var və o, Runtime məlumatından üstündür. Daxil olmaq onu bu agentdən silir.",
+        "old": "Bu Runtime hələ daxil ola bilmir. AI Workspace Runtime-ı yeniləyin və ya geri qayıdıb token yapışdırın.",
+        "unreachable": "Runtime cavab vermədi, giriş vəziyyəti məlum deyil.",
+    },
+    "eo": {
+        "signed_in": "✅ Ensalutinta per via Claude-abono ĉe la rultempo (ekde {saved}, valida ĝis ĉirkaŭ {expires}).",
+        "settings": "✅ La rultempo havas Claude-akreditaĵon en siaj propraj agordoj aŭ medio ({kind}).",
+        "none": "⚠️ Ankoraŭ ne ensalutinta. Ensalutu per via Claude-abono, aŭ reiru kaj algluu ĵetonon.",
+        "overridden": "Rimarko: Plan-ĵetono en la agordoj de la rultempo superas vian ensaluton.",
+        "own_key": "Ĉi tiu agento havas propran ĵetonon aŭ ŝlosilon, kiu superas la akreditaĵon de la rultempo. Ensaluto forigas ĝin de ĉi tiu agento.",
+        "old": "Ĉi tiu rultempo ankoraŭ ne povas ensaluti. Ĝisdatigu AI Workspace Runtime, aŭ reiru kaj algluu ĵetonon.",
+        "unreachable": "La rultempo ne respondis, do la ensaluta stato estas nekonata.",
+    },
+}
+
+_CLAUDE_KIND = {"plan": "Claude Plan", "api": "Anthropic API"}
+
+
+def claude_signin_text(status: dict | None, own_key: bool, language: str = "", problem: str = "") -> str:
+    """One or two sentences for the agent form: is the Runtime signed in, and what wins."""
+    words = pick(CLAUDE_SIGNIN, language)
+    lines: list[str] = []
+    if problem == "runtime_old":
+        lines.append(words["old"])
+    elif problem or status is None:
+        lines.append(words["unreachable"])
+    else:
+        signed = status.get("signed_in") or None
+        source = str(status.get("credential") or "none")
+        if source == "signed-in" and isinstance(signed, dict):
+            lines.append(
+                words["signed_in"].format(
+                    saved=str(signed.get("saved_at") or "")[:10] or "?",
+                    expires=str(signed.get("expires_at") or "")[:10] or "?",
+                )
+            )
+        elif source == "settings":
+            kind = _CLAUDE_KIND.get(str(status.get("kind") or ""), "Claude")
+            lines.append(words["settings"].format(kind=kind))
+            if status.get("overridden"):
+                lines.append(words["overridden"])
+        else:
+            lines.append(words["none"])
+    if own_key:
+        lines.append(words["own_key"])
+    return "\n\n".join(lines)

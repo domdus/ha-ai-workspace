@@ -292,11 +292,18 @@
         "claude_runtime_old": "Actualiza el AI Workspace Runtime a 1.6.0 o posterior para los agentes Claude SDK.",
         "claude_key_required": "Añade un token de Claude Plan o una clave API de Anthropic en Claude SDK (runtime), o configura uno en el AI Workspace Runtime.",
         "runtime_refused": "El AI Workspace Runtime rechazó la contraseña del Runtime. Revísala en este formulario.",
-        "claude_login_unavailable": "Este AI Workspace Runtime no puede iniciar sesión en Claude. Actualízalo a 1.6.0b7 o posterior, o pega un token en su lugar.",
-        "claude_login_failed": "El inicio de sesión con Claude no funcionó. Inténtalo de nuevo o pega un token en su lugar.",
-        "claude_login_expired": "El inicio de sesión tardó demasiado. Usa el nuevo enlace de arriba y pega el nuevo código.",
-        "claude_code_rejected": "Anthropic no aceptó este código. Vuelve a iniciar sesión con el nuevo enlace de arriba y pega el nuevo código.",
-        "claude_code_bad": "Eso no es un código de la página de Anthropic. Copia el código completo y pégalo de nuevo."
+        "bad_code": "Eso no parece el código de la página de Anthropic. Copia el código completo y pégalo de nuevo.",
+        "code_rejected": "Anthropic no aceptó ese código. Aquí tienes un enlace nuevo: inicia sesión otra vez y pega el código nuevo.",
+        "too_many_attempts": "Demasiados códigos incorrectos. Aquí tienes un enlace nuevo.",
+        "busy": "El Runtime todavía está comprobando el código anterior. Espera un momento y vuelve a intentarlo.",
+        "expired": "Ese inicio de sesión caducó. Aquí tienes un enlace nuevo.",
+        "timeout": "El Runtime no recibió respuesta de Anthropic a tiempo. Aquí tienes un enlace nuevo; inténtalo otra vez.",
+        "cli_missing": "AI Workspace Runtime no tiene la CLI de Claude Code. Actualiza el Runtime (App o imagen Docker).",
+        "no_link": "Claude Code no mostró un enlace de inicio de sesión. Comprueba que el Runtime llega a claude.com y vuelve a intentarlo.",
+        "login_failed": "El inicio de sesión falló en el Runtime. Revisa el registro del Runtime y vuelve a intentarlo.",
+        "not_supported": "Este motor no tiene inicio de sesión con plan. Usa una clave API.",
+        "runtime_rejected": "AI Workspace Runtime rechazó la contraseña del Runtime. Usa la misma contraseña en el Runtime y en este formulario.",
+        "runtime_old": "Este Runtime aún no puede iniciar sesión. Actualiza AI Workspace Runtime, o pega un token en el formulario del agente."
       },
       "step": {
         "provider": {
@@ -411,14 +418,12 @@
               "data": {
                 "runtime_url": "Dirección del runtime{runtime_url_mark}",
                 "runtime_token": "Contraseña del runtime",
-                "claude_api_key": "Token de Claude Plan o clave API de Anthropic",
-                "claude_sign_in": "Iniciar sesión con Claude (experimental)"
+                "claude_api_key": "Token de Claude Plan o clave API de Anthropic"
               },
               "data_description": {
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "La misma contraseña que en el AI Workspace Runtime. Déjala vacía con el complemento y el emparejamiento automático.",
-                "claude_api_key": "Un token de Claude Plan (sk-ant-oat…, de `claude setup-token`, usa tu suscripción de Claude) o una clave API de Anthropic (sk-ant-api…, facturada como créditos de API). Déjalo vacío para usar el del AI Workspace Runtime, o al editar para conservar el guardado. [Obtener una clave API]({api_key_url})",
-                "claude_sign_in": "Deja vacío el campo del token, marca esto y pulsa OK: el AI Workspace Runtime ejecuta el inicio de sesión de Anthropic para tu suscripción de Claude (Pro, Max) y rellena el token por ti."
+                "claude_api_key": "Un token de Claude Plan (sk-ant-oat…, de `claude setup-token`, usa tu suscripción de Claude) o una clave API de Anthropic (sk-ant-api…, facturada como créditos de API). Déjalo vacío para usar el del AI Workspace Runtime, o al editar para conservar el guardado. [Obtener una clave API]({api_key_url})"
               }
             }
           }
@@ -556,14 +561,32 @@
           }
         },
         "claude_login": {
-          "title": "Iniciar sesión con Claude",
-          "description": "1. Abre [Iniciar sesión con Claude]({login_url}) e inicia sesión con la cuenta de Claude de tu suscripción.\n2. Anthropic muestra entonces un código. Cópialo entero.\n3. Pégalo abajo y pulsa OK. El token se guarda en este agente y dura un año.",
+          "title": "Iniciar sesión con el plan de Claude",
+          "description": "1. Abre este enlace e inicia sesión con la cuenta de Claude que tiene tu plan Pro o Max: [Iniciar sesión con Claude]({url})\n2. Anthropic muestra después un código. Cópialo entero y pégalo abajo.\n\nEl enlace sirve durante 15 minutos. Tu contraseña de Claude nunca pasa por Home Assistant.",
           "data": {
             "code": "Código de Anthropic"
           },
           "data_description": {
-            "code": "El código completo de la página de Anthropic tras iniciar sesión."
+            "code": "Una cadena larga con un # en medio. Pégala tal cual."
           }
+        },
+        "claude_account": {
+          "title": "Cuenta de Claude",
+          "description": "{status}\n\nEl inicio de sesión se guarda en AI Workspace Runtime, no en Home Assistant, y lo usan todos los agentes Claude SDK de ese Runtime.",
+          "menu_options": {
+            "claude_save": "Guardar agente",
+            "claude_login": "Iniciar sesión con el plan de Claude",
+            "claude_logout": "Cerrar sesión en el Runtime",
+            "claude_back": "Volver a los ajustes del agente"
+          }
+        },
+        "claude_signed_in": {
+          "title": "Sesión iniciada",
+          "description": "{status}\n\nEnvía para guardar el agente."
+        },
+        "claude_login_error": {
+          "title": "El inicio de sesión no funcionó",
+          "description": "Envía para volver."
         }
       },
       "abort": {
