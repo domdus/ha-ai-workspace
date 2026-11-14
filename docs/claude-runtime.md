@@ -41,7 +41,7 @@ Anthropic's terms for the Agent SDK say third-party products should use API keys
 
 Turning the switch off again makes it a cloud Claude agent, which needs an Anthropic API key. Effort works for both. Claude SDK agents from 1.6.0b1 and b2 become Claude (Anthropic) agents with the switch on when the integration loads; nothing else about them changes. In YAML, `provider: claude` is still a Claude SDK agent.
 
-The runtime must be **1.6.0b1** or newer (newer than **1.6.0b8** for Sign in with Claude plan). An older runtime shows an update hint on Claude SDK agents only; Cursor agents keep working.
+The runtime must be **1.6.0b1** or newer (**1.6.0b9** or newer for Sign in with Claude plan). An older runtime shows an update hint on Claude SDK agents only; Cursor agents keep working.
 
 ## Sign in with Claude plan
 

@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.6.0b9
+
+**Cursor no longer greys out for good after the Runtime App was reset.** A reinstalled or reset Runtime App comes back without its token. AI Workspace still had the old token saved, the Runtime refused it, and Cursor and Claude SDK agents stayed unavailable. Now AI Workspace pairs its own Runtime App again by itself and gives it the saved token back. If that fails, it tries again after 10 minutes at most instead of restarting the App on every check, and the agent says to set the same token on both sides.
 
 **Usage**
 - Coding workers count on the Usage page. When a chat agent gives a task to an Agent Worker (or the older Cursor Worker) over MCP, the usage the worker reports for a finished job (`agent_run` / `agent_job`, also `cursor_agent` / `cursor_job`) is stored on its own under **Worker: Claude Code**, **Worker: OpenAI Codex** or **Worker: Cursor**, separate from the chat agent's turn. It works for cloud agents and for Cursor and Claude SDK chats (through the Runtime's MCP proxy; update the Runtime too).
