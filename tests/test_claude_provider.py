@@ -132,7 +132,8 @@ def test_send_without_any_credential_stops_early(tmp_path, monkeypatch) -> None:
     assert calls == []
 
 
-def test_runtime_settings_read_app_options(tmp_path, monkeypatch) -> None:
+def test_runtime_settings_read_env_and_old_app_options(tmp_path, monkeypatch) -> None:
+    # 1.6.0b12: the App has no Claude fields. Docker uses env vars; old option values still work quietly.
     options = tmp_path / "options.json"
     options.write_text(
         json.dumps({"anthropic_api_key": API_KEY, "claude_oauth_token": PLAN, "claude_model": "claude-opus-5-5"})
@@ -144,12 +145,20 @@ def test_runtime_settings_read_app_options(tmp_path, monkeypatch) -> None:
     monkeypatch.delenv("CLAUDE_MODEL", raising=False)
     settings = Settings.from_env()
     assert settings.anthropic_api_key == API_KEY
-    assert settings.claude_oauth_token == PLAN
     assert settings.claude_model == "claude-opus-5-5"
+    # The old options Plan token is only moved into the sign-in (app.legacy_options), never used as is.
+    assert settings.claude_oauth_token == ""
+    assert settings.legacy_claude_token == PLAN
+    assert settings.legacy_claude_options == ("claude_oauth_token", "anthropic_api_key", "claude_model")
+    assert PLAN not in repr(settings) and API_KEY not in repr(settings)
     monkeypatch.setenv("ANTHROPIC_API_KEY", AGENT_KEY)
-    assert Settings.from_env().anthropic_api_key == AGENT_KEY
+    monkeypatch.setenv("CLAUDE_MODEL", "claude-haiku-5-5")
     monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "sk-ant-oat01-env")
-    assert Settings.from_env().claude_oauth_token == "sk-ant-oat01-env"
+    env = Settings.from_env()
+    assert env.anthropic_api_key == AGENT_KEY
+    assert env.claude_model == "claude-haiku-5-5"
+    assert env.claude_oauth_token == "sk-ant-oat01-env"
+    assert env.legacy_claude_options == ("claude_oauth_token",)
     assert not hasattr(settings, "openrouter_api_key")
 
 

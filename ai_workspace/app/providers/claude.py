@@ -26,9 +26,9 @@ DEFAULT_MODEL = "claude-sonnet-5-5"
 API_KEY_URL = "https://console.anthropic.com/settings/keys"
 
 MISSING_KEY = (
-    "No Claude credential is set for Claude SDK. Add a Claude Plan token (from `claude setup-token`) or an "
-    "Anthropic API key on the agent in Home Assistant, or on the runtime (App options claude_oauth_token / "
-    f"anthropic_api_key, Docker CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY). API keys: {API_KEY_URL}"
+    "No Claude credential is set for Claude SDK. Open the agent in Home Assistant and use Sign in with "
+    "Claude plan, or paste a Claude Plan token (from `claude setup-token`) or an Anthropic API key there. "
+    f"Docker runtimes can set CLAUDE_CODE_OAUTH_TOKEN or ANTHROPIC_API_KEY. API keys: {API_KEY_URL}"
 )
 # Assistant message errors from Claude Code → what the chat shows instead of the CLI's own hint.
 API_ERRORS = {

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 
@@ -12,6 +12,16 @@ def _read_options() -> dict:
         return {}
     data = json.loads(path.read_text(encoding="utf-8"))
     return data if isinstance(data, dict) else {}
+
+
+# Claude fields the App options had up to 1.6.0b11. The App no longer shows them: Claude signs in on
+# the agent in Home Assistant, and Docker runtimes set CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY /
+# CLAUDE_MODEL. Old values are still read (see app.legacy_options) so nobody loses Claude on update.
+LEGACY_CLAUDE_OPTIONS = ("claude_oauth_token", "anthropic_api_key", "claude_model")
+
+
+def _option_text(options: dict, key: str) -> str:
+    return str(options.get(key) or "").strip()
 
 
 def _file_servers(path: Path) -> dict:
@@ -89,15 +99,22 @@ class Settings:
     workspace_dir: Path
     state_dir: Path
     mcp_config_path: Path
-    cursor_api_key: str
+    cursor_api_key: str = field(repr=False)
     model: str
     auth_mode: str
     host: str
     port: int
-    claude_oauth_token: str = ""
-    anthropic_api_key: str = ""
+    # Docker: CLAUDE_CODE_OAUTH_TOKEN. A sign-in on the agent wins over it.
+    claude_oauth_token: str = field(default="", repr=False)
+    # Docker: ANTHROPIC_API_KEY, else the old App option (legacy, not shown any more).
+    anthropic_api_key: str = field(default="", repr=False)
+    # Docker: CLAUDE_MODEL, else the old App option (legacy).
     claude_model: str = ""
-    runtime_token: str = ""
+    # The old App option claude_oauth_token: only moved into the sign-in once, never used directly.
+    legacy_claude_token: str = field(default="", repr=False)
+    # Which of LEGACY_CLAUDE_OPTIONS came from the old App options (names only, for one log line).
+    legacy_claude_options: tuple[str, ...] = ()
+    runtime_token: str = field(default="", repr=False)
     hass_url: str = ""
     shorten_mcp_results: bool = True
     change_history: bool = True
@@ -134,18 +151,18 @@ class Settings:
         state_dir = Path(os.environ.get("CURSOR_STATE_DIR", str(data_dir / "cursor-state"))).resolve()
         key = os.environ.get("CURSOR_API_KEY", "").strip() or str(options.get("cursor_api_key") or "").strip()
         model = os.environ.get("CURSOR_MODEL", "").strip() or str(options.get("model") or "").strip() or "composer-2.5"
-        claude_oauth = (
-            os.environ.get("CLAUDE_CODE_OAUTH_TOKEN", "").strip()
-            or str(options.get("claude_oauth_token") or "").strip()
-        )
-        anthropic_key = (
-            os.environ.get("ANTHROPIC_API_KEY", "").strip()
-            or str(options.get("anthropic_api_key") or "").strip()
-        )
-        claude_model = (
-            os.environ.get("CLAUDE_MODEL", "").strip()
-            or str(options.get("claude_model") or "").strip()
-        )
+        claude_oauth = os.environ.get("CLAUDE_CODE_OAUTH_TOKEN", "").strip()
+        anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+        claude_model = os.environ.get("CLAUDE_MODEL", "").strip()
+        legacy = []
+        if _option_text(options, "claude_oauth_token"):
+            legacy.append("claude_oauth_token")
+        if not anthropic_key and _option_text(options, "anthropic_api_key"):
+            anthropic_key = _option_text(options, "anthropic_api_key")
+            legacy.append("anthropic_api_key")
+        if not claude_model and _option_text(options, "claude_model"):
+            claude_model = _option_text(options, "claude_model")
+            legacy.append("claude_model")
         auth_mode = os.environ.get("AUTH_MODE", "").strip()
         if not auth_mode:
             auth_mode = "ingress" if options else "dev"
@@ -168,6 +185,8 @@ class Settings:
             claude_oauth_token=claude_oauth,
             anthropic_api_key=anthropic_key,
             claude_model=claude_model,
+            legacy_claude_token=_option_text(options, "claude_oauth_token"),
+            legacy_claude_options=tuple(legacy),
             auth_mode=auth_mode,
             host=os.environ.get("HOST", "0.0.0.0"),
             port=int(os.environ.get("PORT", "8090")),

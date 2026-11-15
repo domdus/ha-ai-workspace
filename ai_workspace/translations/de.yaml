@@ -1,19 +1,10 @@
 configuration:
   cursor_api_key:
     name: Cursor-API-Schlüssel
-    description: User-API-Schlüssel aus dem Cursor Dashboard → Integrations
+    description: Optional. User-API-Schlüssel aus dem Cursor Dashboard → Integrations, für Cursor-Agents. Leer lassen, wenn du nur Claude nutzt; Claude-Agents melden sich am Agenten in Home Assistant an.
   model:
     name: Modell
     description: Standard-Modell von Cursor, zum Beispiel composer-2.5. Das HACS-Formular kann es überschreiben.
-  claude_oauth_token:
-    name: Claude-Plan-Token
-    description: Optional. Einfacher ist „Mit Claude-Abo anmelden“ am Claude-Agent in Home Assistant; das Token bleibt dann von selbst in dieser App. Ein Token hier (sk-ant-oat… aus `claude setup-token`) hat Vorrang vor dieser Anmeldung und vor dem Anthropic-API-Schlüssel.
-  anthropic_api_key:
-    name: Anthropic-API-Schlüssel
-    description: Für Claude-SDK-Agents, abgerechnet als API-Guthaben. Ein API-Schlüssel (sk-ant-api…) von console.anthropic.com → API keys. Gilt, wenn sich niemand mit einem Claude-Abo angemeldet hat. Optional, wenn jeder Claude-SDK-Agent eigene Zugangsdaten hat.
-  claude_model:
-    name: Claude-Modell
-    description: Standard-Modell für Claude-SDK-Agents, zum Beispiel claude-sonnet-5-5. Das Modell am Agent in Home Assistant hat Vorrang.
   runtime_token:
     name: Runtime-Token
     description: Wird von der AI-Workspace-Integration eingetragen. Nur ändern, wenn du die Integration von Hand koppelst.

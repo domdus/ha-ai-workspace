@@ -5,6 +5,7 @@ import hashlib
 import hmac
 import json
 import logging
+import os
 import re
 import time
 from contextlib import asynccontextmanager
@@ -226,6 +227,7 @@ async def lifespan(app: FastAPI):
         # A wrong token or an unreachable repo must not take the chat down with it.
         logger.error("Could not set up GIT_REPO in the workspace: %s", exc)
     settings.ensure_dirs()
+    settings = await _with_legacy_options(app, settings)
     store = Store(settings.data_dir / "ai-workspace.sqlite")
     app.state.store = store
     app.state.locks = {}
@@ -253,6 +255,20 @@ async def lifespan(app: FastAPI):
         close_engines(getattr(app.state, "auth", None))
         if runtime is not None:
             await runtime.aclose()
+
+
+async def _with_legacy_options(app: FastAPI, settings: Settings) -> Settings:
+    """Claude fields that left the App options (1.6.0b12): old values keep working, see app.legacy_options."""
+    from app.legacy_options import apply_legacy_options, supervisor_options
+
+    try:
+        stored = await asyncio.to_thread(supervisor_options) if os.environ.get("SUPERVISOR_TOKEN") else {}
+        settings = await asyncio.to_thread(apply_legacy_options, settings, stored)
+    except Exception:  # noqa: BLE001 - the old options must never stop the runtime
+        logger.warning("Could not read the old Claude App options", exc_info=False)
+        return settings
+    app.state.settings = settings
+    return settings
 
 
 def _user_id(request: Request) -> str:
