@@ -415,8 +415,11 @@ async def _runtime_chat(
     }
     if standing:
         payload["prompt"] = short_prompt
-    if session.agent_id:
+    if session.agent_id and runtime_kind == "cursor":
+        # Only a Cursor agent can pick up an agent id kept in Home Assistant.
         payload["sync_agent_id"] = str(session.agent_id)
+    # The Runtime moves the chat to this engine when it started on another one.
+    payload["provider"] = runtime_kind
     if images:
         payload["images"] = [
             {"name": item["name"], "mime": item["mime"], "data": item["data"]} for item in images
@@ -1036,6 +1039,10 @@ class ChatView(HomeAssistantView):
         model = session.model
         if requested and (requested in providers or requested in known_assist) and requested != session.provider:
             await hass.async_add_executor_job(store.set_provider, user_id, session.id, requested)
+            if session.agent_id:
+                # The old agent's id means nothing to the new one; the transcript carries the chat over.
+                await hass.async_add_executor_job(store.set_agent_id, session.id, "")
+                session.agent_id = None
             session.provider = requested
             model = ""
         switcher = bool(getattr(settings, "model_switcher", False))

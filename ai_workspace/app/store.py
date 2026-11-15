@@ -128,6 +128,14 @@ class Store:
         ).fetchone()
         return _session(row) if row else None
 
+    def set_provider(self, session_id: str, provider: str) -> None:
+        """Another engine takes over the chat: its agent id belongs to the old engine."""
+        self._conn.execute(
+            "UPDATE sessions SET provider = ?, agent_id = NULL, updated_at = ? WHERE id = ?",
+            (provider, _now(), session_id),
+        )
+        self._conn.commit()
+
     def set_agent_id(self, session_id: str, agent_id: str) -> None:
         self._conn.execute(
             "UPDATE sessions SET agent_id = ?, updated_at = ? WHERE id = ?",

@@ -8,6 +8,7 @@ credential wins over the runtime's; the token prefix decides how Claude Code sig
 from __future__ import annotations
 
 import logging
+import uuid
 from typing import Any, AsyncIterator, Callable
 
 from app.events import _resolved_tool_name, _tool_event, _tool_label
@@ -63,6 +64,14 @@ _NEVER = ("Task", "Agent")
 
 # AI Workspace effort choices (shared with Cursor) → Claude Code effort levels.
 _EFFORT = {"fast": "low", "high": "high", "high_fast": "medium"}
+
+
+def _claude_session_id(agent_id: str | None) -> str | None:
+    """Claude Code session ids are UUIDs; anything else is a Cursor agent id from before a switch."""
+    try:
+        return str(uuid.UUID(str(agent_id or "").strip()))
+    except ValueError:
+        return None
 
 
 def is_plan_token(credential: str) -> bool:
@@ -359,7 +368,7 @@ class ClaudeProvider:
         asked = (question or "").strip()
         attach_tools = not no_tools and (bool(images) or wants_house_tools(asked or message))
         run_servers = mcp_for_sdk(self.runtime.wrap_mcp(mcp_servers, session.id)) if attach_tools else {}
-        resume = None if fresh else (session.agent_id or None)
+        resume = None if fresh else _claude_session_id(session.agent_id)
         cold = fresh or not resume
         outbound = apply_standing(message, prompt, cold)
         outbound = apply_handoff(outbound, handoff, cold, question=asked or question)

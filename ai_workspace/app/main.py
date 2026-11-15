@@ -128,6 +128,8 @@ class ChatRequest(BaseModel):
     history_in_ha: bool = False
     prompt: str = ""
     sync_agent_id: str = ""
+    # The engine Home Assistant picked for this turn. A chat can move between Cursor and Claude.
+    provider: str = ""
     shorten_mcp_results: bool | None = None
     change_history: bool | None = None
     # Home Assistant's key for this chat's Change History callbacks.
@@ -462,14 +464,25 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
     settings: Settings = request.app.state.settings
     store: Store = request.app.state.store
     session = _session_or_404(store, _user_id(request), session_id)
-    provider = request.app.state.providers.get(session.provider)
-    if provider is None:
-        provider = next((item for item in request.app.state.providers.values() if item.info.available), None)
-    if provider is None:
-        raise HTTPException(status_code=400, detail="Unknown provider.")
     lock: asyncio.Lock = request.app.state.locks.setdefault(session.id, asyncio.Lock())
     if lock.locked():
         raise HTTPException(status_code=409, detail="This chat is already waiting on the agent.")
+    providers = request.app.state.providers
+    wanted = body.provider.strip()
+    switched = bool(wanted) and wanted in providers and wanted != session.provider
+    if switched:
+        # The chat started on another engine: without this, a Claude turn kept running on Cursor.
+        logger.info("chat session=%s moves from %s to %s", session.id, session.provider, wanted)
+        store.set_provider(session.id, wanted)
+        session.provider, session.agent_id = wanted, None
+        runtime = request.app.state.runtime
+        if runtime is not None:
+            runtime.drop(session.id)
+    provider = providers.get(session.provider)
+    if provider is None:
+        provider = next((item for item in providers.values() if item.info.available), None)
+    if provider is None:
+        raise HTTPException(status_code=400, detail="Unknown provider.")
     images = parse_client_images([item.model_dump() for item in body.images])
     files = parse_client_files([item.model_dump() for item in body.files])
     message = caption_for(body.message, len(images), len(files))
@@ -505,7 +518,8 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
         and body.titles
         and needs_title_summary(question)
     )
-    sync_id = body.sync_agent_id.strip()
+    # An agent id sent with an engine switch belongs to the old engine.
+    sync_id = "" if switched else body.sync_agent_id.strip()
     if sync_id and session.agent_id != sync_id:
         store.set_agent_id(session.id, sync_id)
         session.agent_id = sync_id

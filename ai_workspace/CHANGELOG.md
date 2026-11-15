@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.0b11
+
+**Switching an existing chat from Cursor to Claude works.** New chats were fine, but in a chat that started on Cursor, picking Claude in the chat bar still ran the turn on Cursor in the Runtime. Without a Cursor key on the Runtime, every Claude message ended with "Cursor API key is not set". The Runtime kept the engine a chat was created with and ignored the switch. Now AI Workspace sends the chosen engine with every turn, and the Runtime moves the chat to it. The new engine starts a fresh agent and gets the chat so far from Home Assistant, as after any agent switch. Switching back works the same way.
+
+- An agent id from the old engine is no longer handed to the new one. Claude only resumes its own sessions.
+- Update the Runtime App to 1.6.0b11 too. AI Workspace asks for it.
+
 ## 1.6.0b10
 
 **Sign in with Claude works.** After you pasted the code, the form waited and then said that the Runtime got no answer from Anthropic in time. The code reached Claude Code, but Claude Code took the Enter that followed it as part of the pasted text, so the code was never sent. The Runtime now sends the Enter separately. A wrong code is rejected right away.
