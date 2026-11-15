@@ -34,6 +34,8 @@ from app.settings import Settings
 API_KEY = "sk-ant-api03-runtime-key"
 AGENT_KEY = "sk-ant-api03-agent-key"
 PLAN = "sk-ant-oat01-plan-token"
+# Claude Code session ids are UUIDs; anything else is a Cursor agent id and is not resumed.
+OLD_SESSION = "0b6f3c1e-2d4a-4e8b-9c7d-5a1f2e3b4c6d"
 
 needs_sdk = pytest.mark.skipif(
     importlib.util.find_spec("claude_agent_sdk") is None, reason="claude-agent-sdk not installed"
@@ -363,14 +365,14 @@ def test_full_turn_passes_safe_options(tmp_path, monkeypatch) -> None:
     provider = ClaudeProvider(settings, runtime)
     events, ids = _run(
         provider,
-        _session("old-sess"),
+        _session(OLD_SESSION),
         "turn on the kitchen light",
         api_key=AGENT_KEY,
         effort="fast",
         mcp={"servers": {"home": {"url": "http://ha/mcp"}}},
     )
     options = captured["options"]
-    assert options.resume == "old-sess"
+    assert options.resume == OLD_SESSION
     assert options.setting_sources == []
     assert options.strict_mcp_config is True
     assert options.permission_mode == "dontAsk"
