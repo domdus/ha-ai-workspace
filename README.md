@@ -138,7 +138,7 @@ Add this repository to Apps and install **AI Workspace Runtime**:
 
 ![Add repository](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)
 
-Paste the Cursor API key on the app and **Start** it. Leave **Runtime URL** on the integration empty; it is detected once the app runs. The integration also creates the shared [runtime token](#runtime-token) and writes it to the app for you.
+Paste the Cursor API key on the app and **Start** it. (Claude SDK agents on the runtime need nothing on the app: they use **Sign in with Claude plan** on the agent, see [Claude SDK agents](docs/claude-runtime.md).) Leave **Runtime URL** on the integration empty; it is detected once the app runs. The integration also creates the shared [runtime token](#runtime-token) and writes it to the app for you.
 
 Home Assistant 2026.2 renamed "Add-ons" to "Apps".
 

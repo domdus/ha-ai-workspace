@@ -8,7 +8,7 @@ The chat UI is the **AI Workspace** HACS integration, not this app page.
 
 1. **Settings → Apps → Install app → ⋮ → Repositories**. Add this GitHub repository.
 2. Install **AI Workspace Runtime**.
-3. In the app **Configuration**, paste the Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) when you use Cursor agents. For **Claude SDK** agents, nothing is needed here: use **Sign in with Claude plan** on the Claude agent in Home Assistant, and this app keeps the Plan token in its own data folder. Or paste a **Claude Plan token** (from `claude setup-token`, uses your Claude subscription) or an **Anthropic API key** from the [Claude Console](https://console.anthropic.com/settings/keys), or put one on each agent instead ([Claude SDK agents](../docs/claude-runtime.md)). Model can stay `composer-2.5` for Cursor. MCP is set on the HACS integration, not here.
+3. In the app **Configuration**, paste the Cursor API key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations) when you use Cursor agents. It is optional: leave it empty if you only use Claude. **Claude SDK** agents have no fields here: use **Sign in with Claude plan** on the Claude agent in Home Assistant (this app keeps the Plan token in its own data folder), or paste a Plan token or an Anthropic API key on the agent ([Claude SDK agents](../docs/claude-runtime.md)). Model can stay `composer-2.5` for Cursor. MCP is set on the HACS integration, not here.
 4. Start the app.
 5. Install **AI Workspace** from HACS (Integration), restart Home Assistant, then **Settings → Devices & services → Add integration → AI Workspace**. It finds this app on its own.
 6. Optional UI toggles live on the **integration**, not the app: **Settings → Devices & services → AI Workspace → Configure**.
@@ -23,6 +23,7 @@ See [`docker-compose.runtime.yml`](../docker-compose.runtime.yml) in the repo ro
 
 - Pull: `docker compose -f docker-compose.runtime.yml up -d` → `ghcr.io/domdus/ha-ai-workspace-runtime:latest`
 - Build from this checkout: `docker compose -f docker-compose.runtime.yml up -d --build`
+- Claude SDK agents: use **Sign in with Claude plan** on the agent, as on the App. For a headless setup the container also takes `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY` (and `CLAUDE_MODEL`); these exist for Docker only, and a sign-in on the agent wins over them.
 
 The compose file uses host networking and binds to `127.0.0.1`, so only this machine reaches port 8090. On loopback the token is optional.
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.6.0b12 (unreleased)
+
+**Claude is set up in one place: the agent form.** The Runtime App's **Configuration** no longer has **Claude Plan token**, **Anthropic API key** or **Claude model**. Use **Sign in with Claude plan** on the Claude (Anthropic) agent with **Use Claude SDK (runtime)** on, or paste a token or key on that agent. `CLAUDE_CODE_OAUTH_TOKEN`, `ANTHROPIC_API_KEY` and `CLAUDE_MODEL` stay for Docker runtimes. See [docs/claude-runtime.md](../docs/claude-runtime.md#runtime-options).
+
+- **Nothing to do on update.** A Plan token from the old App options becomes the Runtime's sign-in on the first start, unless someone already signed in (that sign-in stays). It happens once; a later sign-out stays signed out. An old Anthropic API key and Claude model keep working in the background without a field, until the App's Configuration is saved again. The App log names the old fields it found, never their values.
+- **The Cursor API key is optional on the App.** A Claude-only App has no required field; Cursor then shows as not set up and Claude works.
+- **A fresh sign-in wins.** Order: credential on the agent → **Sign in with Claude plan** → `CLAUDE_CODE_OAUTH_TOKEN` → `ANTHROPIC_API_KEY` (or the old App option key). Before, a Plan token in the App options or the environment won over a sign-in. The Claude account step no longer says that an options token wins; with an older Runtime it says to update it.
+- **Expired or revoked sign-in.** When Anthropic refuses the Claude credential (HTTP 401, `authentication_error`, "Invalid API key", an expired or revoked OAuth token), the chat says so in your language: open the agent's settings and sign in with Claude again, or replace the token or key. Other errors keep their own message. The Runtime sends it as error code `claude_auth_failed`.
+- Update the Runtime App and the integration together.
+
 ## 1.6.0b11
 
 **Switching an existing chat from Cursor to Claude works.** New chats were fine, but in a chat that started on Cursor, picking Claude in the chat bar still ran the turn on Cursor in the Runtime. Without a Cursor key on the Runtime, every Claude message ended with "Cursor API key is not set". The Runtime kept the engine a chat was created with and ignored the switch. Now AI Workspace sends the chosen engine with every turn, and the Runtime moves the chat to it. The new engine starts a fresh agent and gets the chat so far from Home Assistant, as after any agent switch. Switching back works the same way.
