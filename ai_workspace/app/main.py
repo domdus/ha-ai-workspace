@@ -321,6 +321,11 @@ def _login_engines(request: Request) -> list[str]:
 def health(request: Request) -> dict:
     settings: Settings = request.app.state.settings
     providers = request.app.state.providers
+    plan_quota = {}
+    runtime = getattr(request.app.state, "runtime", None)
+    book = getattr(runtime, "plan_quota", None) if runtime is not None else None
+    if book is not None:
+        plan_quota = book.public()
     return {
         "ok": True,
         "version": RUNTIME_VERSION,
@@ -328,6 +333,7 @@ def health(request: Request) -> dict:
         "model": settings.model,
         "cursor": _provider_flag(providers, "cursor"),
         "claude": _provider_flag(providers, "claude"),
+        "plan_quota": plan_quota,
         # 1.6.0b7/b8 agent forms offer "Sign in with Claude" only when the runtime can run it.
         "claude_login": _login_manager(request.app).available(),
         # Engines with a plan sign-in at /api/auth/{engine}/login (details need the runtime token).

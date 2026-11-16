@@ -360,6 +360,25 @@ def claude_auth_failed_text(language: str = "") -> str:
     return str(pick(CLAUDE_AUTH_FAILED, language))
 
 
+CLAUDE_PLAN_REJECTED_SESSION = {
+    "en": "Claude session is full. Continue from {reset}.",
+    "de": "Claude-Sitzung ist voll. Weiter ab {reset}.",
+    "fr": "La session Claude est pleine. Reprenez à partir de {reset}.",
+    "es": "La sesión de Claude está llena. Continúe a partir de las {reset}.",
+}
+CLAUDE_PLAN_REJECTED_WEEK = {
+    "en": "Claude weekly limit is full. Continue from {reset}.",
+    "de": "Claude-Wochenlimit ist voll. Weiter ab {reset}.",
+    "fr": "La limite hebdomadaire Claude est atteinte. Reprenez à partir de {reset}.",
+    "es": "El límite semanal de Claude está lleno. Continúe a partir de las {reset}.",
+}
+
+
+def claude_plan_rejected_text(language: str = "", *, window: str = "session", reset: str = "?") -> str:
+    table = CLAUDE_PLAN_REJECTED_WEEK if str(window or "") == "week" else CLAUDE_PLAN_REJECTED_SESSION
+    return str(pick(table, language)).format(reset=reset or "?")
+
+
 # Under the Cursor key field when the Runtime already has its own Cursor key.
 CURSOR_KEY_NOTE = {
     "en": "✅ The Runtime already has a Cursor key. Leave this empty to use it.",

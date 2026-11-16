@@ -557,6 +557,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         for agent in entry_agents(entry)
         if agent.subentry_id not in disabled
     }
+    from .plan_quota_store import async_init_plan_quota
+
+    await async_init_plan_quota(hass)
     await async_bind_runtime(hass, bucket, force=True)
     hass.async_create_background_task(async_retry_runtime(hass, bucket), "ai_workspace_runtime")
     _heal_ha_mcp_after_start(hass, entry)

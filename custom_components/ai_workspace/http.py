@@ -481,20 +481,65 @@ async def _runtime_chat(
         async for name, payload in _iter_sse(resp):
             event = dict(payload)
             event.setdefault("type", name)
-            yield _localized_runtime_error(event, language)
+            await _ingest_runtime_plan_event(hass, event)
+            yield _localized_runtime_error(hass, event, language)
     finally:
         resp.release()
 
 
-def _localized_runtime_error(event: dict, language: str = "") -> dict:
+def _format_plan_reset(hass, epoch: object) -> str:
+    if epoch in (None, "", 0):
+        return "?"
+    from datetime import datetime, timezone
+
+    from .usage_record import zone_info
+
+    try:
+        ts = int(epoch)
+    except (TypeError, ValueError):
+        return "?"
+    when = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone(zone_info(hass))
+    return when.strftime("%H:%M")
+
+
+def _localized_runtime_error(hass, event: dict, language: str = "") -> dict:
     """Runtime errors with a known code read in the chat's language (the Runtime only knows English)."""
     if event.get("type") != "error":
         return event
-    from .local_text import CLAUDE_AUTH_FAILED_CODE, claude_auth_failed_text
+    from .local_text import CLAUDE_AUTH_FAILED_CODE, claude_auth_failed_text, claude_plan_rejected_text
+    from .plan_quota import CLAUDE_PLAN_REJECTED_CODE
 
     if event.get("code") == CLAUDE_AUTH_FAILED_CODE:
         return {**event, "message": claude_auth_failed_text(language)}
+    if event.get("code") == CLAUDE_PLAN_REJECTED_CODE:
+        return {
+            **event,
+            "message": claude_plan_rejected_text(
+                language,
+                window=str(event.get("window") or "session"),
+                reset=_format_plan_reset(hass, event.get("reset_at")),
+            ),
+        }
     return event
+
+
+async def _ingest_runtime_plan_event(hass, event: dict) -> None:
+    from .plan_quota import ENGINES
+    from .plan_quota_store import async_merge_plan_quota
+
+    kind = event.get("type")
+    engine = str(event.get("engine") or "claude").strip().lower()
+    if engine not in ENGINES:
+        return
+    if kind == "plan_notice":
+        snapshot = {
+            "status": event.get("status"),
+            "session_percent": event.get("session_percent"),
+            "week_percent": event.get("week_percent"),
+            "session_reset_at": event.get("session_reset_at"),
+            "week_reset_at": event.get("week_reset_at"),
+        }
+        await async_merge_plan_quota(hass, engine, snapshot)
 
 
 async def async_agent_events(
@@ -1278,7 +1323,10 @@ class ChatView(HomeAssistantView):
                                     **({"note": event["note"]} if event.get("note") else {}),
                                 }
                             )
+                        elif kind == "plan_notice":
+                            await _ingest_runtime_plan_event(hass, event)
                         elif kind == "error":
+                            event = _localized_runtime_error(hass, event, language)
                             error = public_error(event.get("message"))
                             unsent = bool(event.get("connection")) and not parts and not tools
                             event = {**event, "message": error}

@@ -1670,6 +1670,49 @@ export async function mountAiWorkspace(root, options = {}) {
     setActivity(bubble, text);
   }
 
+  function planResetLabel(epoch) {
+    const ts = Number(epoch);
+    if (!Number.isFinite(ts) || ts <= 0) return "?";
+    const tz = hassObj()?.config?.time_zone;
+    try {
+      return new Date(ts * 1000).toLocaleString(undefined, {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: tz || undefined,
+      });
+    } catch (_err) {
+      return new Date(ts * 1000).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+    }
+  }
+
+  function planEngineTitle(engine) {
+    const key = `usage_plan_${String(engine || "claude")}`;
+    return t(key);
+  }
+
+  function planNoticeText(data) {
+    const engine = planEngineTitle(data?.engine || "claude");
+    const session = data?.session_percent;
+    const week = data?.week_percent;
+  const reset = planResetLabel(data?.session_reset_at);
+    if (session != null && week != null) {
+      return t("plan_notice_both", { engine, session, week, reset });
+    }
+    if (session != null) return t("plan_notice_session", { engine, percent: session, reset });
+    if (week != null) return t("plan_notice_week", { engine, percent: week });
+    return "";
+  }
+
+  function appendPlanNotice(data) {
+    const text = planNoticeText(data);
+    if (!text || !logEl) return;
+    const note = document.createElement("p");
+    note.className = "plan-notice";
+    note.textContent = text;
+    logEl.appendChild(note);
+    if (nearBottom()) followBottom();
+  }
+
   function rewriteAssistantLinks(content, mentions = true) {
     let text = stripRemoteMedia(content);
     const here = window.location.origin;
@@ -3693,6 +3736,8 @@ export async function mountAiWorkspace(root, options = {}) {
           setActivity(bubble, "");
         } else if (name === "status") {
           setActivity(bubble, data.text);
+        } else if (name === "plan_notice") {
+          appendPlanNotice(data);
         } else if (name === "done" || name === "error") {
           settleTools(bubble);
         }
@@ -4909,6 +4954,8 @@ export async function mountAiWorkspace(root, options = {}) {
         } else if (name === "status") {
           setStatus(data.text);
           drainSpeech(false, true);
+        } else if (name === "plan_notice") {
+          appendPlanNotice(data);
         } else if (name === "error" && data.connection && !streamFull) {
           // Nothing was sent: the header says why, the prompt gets the message back.
           drainSpeech(true);
@@ -6065,6 +6112,49 @@ export async function mountAiWorkspace(root, options = {}) {
       metricCard(t("usage_all"), body.totals?.all),
     );
     frag.appendChild(grid);
+    const plan = body.plan_quota || {};
+    const planLinks = body.plan_links || {};
+    const engineOrder = ["claude", "cursor", "codex"];
+    const planRows = engineOrder
+      .map((engine) => [engine, plan[engine]])
+      .filter(([, snap]) => snap && (snap.session_percent != null || snap.week_percent != null || snap.session_reset_at));
+    const heading = document.createElement("p");
+    heading.className = "usage-heading";
+    heading.textContent = t("usage_plan_heading");
+    frag.appendChild(heading);
+    if (!planRows.length) {
+      const note = document.createElement("p");
+      note.className = "usage-empty";
+      note.textContent = t("usage_plan_empty");
+      frag.appendChild(note);
+    }
+    for (const [engine, snap] of planRows) {
+        const card = document.createElement("article");
+        card.className = "usage-plan";
+        const title = document.createElement("p");
+        title.className = "usage-plan-title";
+        title.textContent = t(`usage_plan_${engine}`);
+        const line = document.createElement("p");
+        line.className = "usage-plan-line";
+        const session =
+          snap.session_percent == null ? t("usage_plan_unknown") : `${snap.session_percent}%`;
+        const week = snap.week_percent == null ? t("usage_plan_unknown") : `${snap.week_percent}%`;
+        const reset =
+          snap.session_reset_at == null ? t("usage_plan_unknown") : planResetLabel(snap.session_reset_at);
+        line.textContent = `${t("usage_plan_session")}: ${session} · ${t("usage_plan_week")}: ${week} · ${t("usage_plan_reset")}: ${reset}`;
+        card.append(title, line);
+        const link = planLinks[engine];
+        if (link) {
+          const a = document.createElement("a");
+          a.className = "usage-plan-link";
+          a.href = link;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          a.textContent = t("usage_plan_official");
+          card.appendChild(a);
+        }
+        frag.appendChild(card);
+    }
     if (body.tts?.today?.turns || body.tts?.all?.turns) {
       frag.appendChild(metricCard(t("usage_tts"), body.tts.today, "tts"));
     }

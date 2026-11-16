@@ -16,6 +16,12 @@ from typing import Any, AsyncIterator, Callable
 from app.events import _resolved_tool_name, _tool_event, _tool_label
 from app.mcp_config import McpConfigError, load_mcp_servers, merge_mcp_servers, servers_from_chat_mcp
 from app.providers.base import ProviderInfo
+from app.plan_quota import (
+    CLAUDE_PLAN_REJECTED_CODE,
+    is_plan_rejection,
+    plan_events_from_sdk,
+    plan_rejection_error,
+)
 from app.providers.cursor import CursorRuntime, _take_worker_usage, apply_handoff, apply_standing
 from app.redact import redact
 from app.settings import Settings
@@ -271,10 +277,15 @@ def map_claude_message(message: Any, api_error: str = "") -> list[dict[str, Any]
             ):
                 events.append(error_event(AUTH_FAILED))
             else:
-                text = (
-                    API_ERRORS.get(api_error) or str(message.result or "").strip() or "Claude stopped without an answer."
-                )
-                events.append(error_event(text[:400]))
+                if api_error == "rate_limit" or is_plan_rejection(api_error=api_error, text=str(message.result or "")):
+                    events.append(plan_rejection_error("claude", None))
+                else:
+                    text = (
+                        API_ERRORS.get(api_error)
+                        or str(message.result or "").strip()
+                        or "Claude stopped without an answer."
+                    )
+                    events.append(error_event(text[:400]))
         else:
             events.append(
                 {
@@ -461,9 +472,12 @@ class ClaudeProvider:
             options = ClaudeAgentOptions(**options_kwargs)
             stream = query(prompt=content if isinstance(content, str) else _stream_prompt(content), options=options)
             # Read the stream to its end: leaving it early closes the SDK's generator from the wrong task.
+            book = self.runtime.plan_quota
             async for sdk_message in stream:
                 if finished:
                     continue
+                for notice in plan_events_from_sdk(book, "claude", sdk_message):
+                    yield notice
                 if isinstance(sdk_message, AssistantMessage) and sdk_message.error:
                     api_error = str(sdk_message.error)
                 if isinstance(sdk_message, ResultMessage):
@@ -472,6 +486,11 @@ class ClaudeProvider:
                     if sid:
                         on_agent_id(sid)
                 for event in map_claude_message(sdk_message, api_error):
+                    if event.get("type") == "error" and event.get("code") == CLAUDE_PLAN_REJECTED_CODE:
+                        snap = book.get("claude")
+                        event = plan_rejection_error("claude", snap)
+                        if not event.get("message"):
+                            event["message"] = API_ERRORS.get("rate_limit", "")
                     yield event
                 # Worker jobs (agent_run / agent_job) this chat finished over the MCP proxy.
                 for worker in _take_worker_usage(self.runtime, session.id):

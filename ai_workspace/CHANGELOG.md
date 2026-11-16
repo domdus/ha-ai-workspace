@@ -1,14 +1,16 @@
 # Changelog
 
-## 1.6.0b12 (unreleased)
+## 1.6.0b12
 
 **Claude is set up in one place: the agent form.** The Runtime App's **Configuration** no longer has **Claude Plan token**, **Anthropic API key** or **Claude model**. Use **Sign in with Claude plan** on the Claude (Anthropic) agent with **Use Claude SDK (runtime)** on, or paste a token or key on that agent. `CLAUDE_CODE_OAUTH_TOKEN`, `ANTHROPIC_API_KEY` and `CLAUDE_MODEL` stay for Docker runtimes. See [docs/claude-runtime.md](../docs/claude-runtime.md#runtime-options).
 
+- **Plan limits in the chat and on Usage.** Claude SDK `rate_limit_event` drives a compact plan notice when usage crosses into warning (once per crossing), and a translated rejection with local reset time when the session or week is full. The Usage page has a **Plan limits** block (separate from token cost) with a link to the official Claude usage page. Home Assistant sensors on the Usage device show session %, week % and session reset when plan tracking is on. Cursor and Codex use the same storage when their streams report limits; otherwise their slots stay empty.
 - **Nothing to do on update.** A Plan token from the old App options becomes the Runtime's sign-in on the first start, unless someone already signed in (that sign-in stays). It happens once; a later sign-out stays signed out. An old Anthropic API key and Claude model keep working in the background without a field, until the App's Configuration is saved again. The App log names the old fields it found, never their values.
 - **The Cursor API key is optional on the App.** A Claude-only App has no required field; Cursor then shows as not set up and Claude works.
 - **A fresh sign-in wins.** Order: credential on the agent → **Sign in with Claude plan** → `CLAUDE_CODE_OAUTH_TOKEN` → `ANTHROPIC_API_KEY` (or the old App option key). Before, a Plan token in the App options or the environment won over a sign-in. The Claude account step no longer says that an options token wins; with an older Runtime it says to update it.
 - **Expired or revoked sign-in.** When Anthropic refuses the Claude credential (HTTP 401, `authentication_error`, "Invalid API key", an expired or revoked OAuth token), the chat says so in your language: open the agent's settings and sign in with Claude again, or replace the token or key. Other errors keep their own message. The Runtime sends it as error code `claude_auth_failed`.
-- Update the Runtime App and the integration together.
+- **Worker usage:** agent-worker jobs that report status `completed` or legacy `succeeded` count as final, like `succeeded`.
+- Update the Runtime App to **1.6.0b12** and the integration together.
 
 ## 1.6.0b11
 

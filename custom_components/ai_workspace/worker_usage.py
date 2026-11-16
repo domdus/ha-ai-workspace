@@ -22,7 +22,7 @@ JOB_TOOLS = frozenset(
 )
 # Tools that take a model argument for the job they start.
 _STARTS = frozenset({"agent_run", "cursor_agent"})
-FINAL_STATUSES = frozenset({"succeeded", "failed", "cancelled"})
+FINAL_STATUSES = frozenset({"succeeded", "failed", "cancelled", "completed"})
 WORKER_PREFIX = "worker:"
 ENGINE_LABELS = {"cursor": "Cursor", "claude": "Claude Code", "codex": "OpenAI Codex"}
 
@@ -141,7 +141,11 @@ def worker_usage_event(name: object, args: Any, result: Any) -> dict[str, Any] |
         return None
     status = str(job.get("status") or "").strip().lower()
     if status not in FINAL_STATUSES:
-        return None
+        legacy = str(job.get("legacy_status") or "").strip().lower()
+        if legacy in FINAL_STATUSES:
+            status = legacy
+        else:
+            return None
     usage = job.get("usage")
     if not isinstance(usage, dict) or not _has_usage(usage):
         return None

@@ -53,7 +53,7 @@ def _version_key(text: str) -> tuple[int, int, int, int] | None:
 # The oldest Runtime this integration works with as intended. Raise it in a release that
 # changes the Runtime (ai_workspace/app), so older Runtimes get the update notice. A release
 # that only changes the integration leaves it, and no notice appears.
-MIN_RUNTIME = "1.6.0b11"
+MIN_RUNTIME = "1.6.0b12"
 
 
 def runtime_notice(
@@ -418,6 +418,9 @@ async def async_bind_runtime(hass: HomeAssistant, bucket: dict | None = None, *,
         and any(getattr(item, "kind", "") == "claude" for item in (data.get("providers") or {}).values())
         else None
     )
+    from .plan_quota_store import async_merge_runtime_plan_quota
+
+    await async_merge_runtime_plan_quota(hass, health.get("plan_quota") or {})
     notice = runtime_notice(data["runtime_version"], VERSION, MIN_RUNTIME)
     if notice and data.get("runtime_notice") != notice:
         _LOGGER.warning(

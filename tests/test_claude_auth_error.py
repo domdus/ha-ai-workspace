@@ -33,7 +33,7 @@ def test_code_matches_the_runtime() -> None:
 )
 def test_the_auth_error_is_translated(language, expected) -> None:
     event = {"type": "error", "message": RUNTIME_TEXT, "code": CODE}
-    out = http._localized_runtime_error(event, language)
+    out = http._localized_runtime_error(None, event, language)
     assert out == {"type": "error", "message": expected, "code": CODE}
     # The chat keeps the translated text as it is.
     assert public_error(out["message"]) == expected
@@ -46,9 +46,9 @@ def test_german_and_english_say_to_sign_in_again() -> None:
 
 def test_other_events_pass_unchanged() -> None:
     plain = {"type": "error", "message": "Overloaded"}
-    assert http._localized_runtime_error(plain, "de") is plain
+    assert http._localized_runtime_error(None, plain, "de") is plain
     text = {"type": "text", "delta": "hi", "code": CODE}
-    assert http._localized_runtime_error(text, "de") is text
+    assert http._localized_runtime_error(None, text, "de") is text
 
 
 class _Content:

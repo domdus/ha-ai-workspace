@@ -14,6 +14,7 @@ SHARED = [
     "small_talk.py",
     "redact.py",
     "worker_usage.py",
+    "plan_quota.py",
     "workspace_seed/AGENTS.md",
 ]
 

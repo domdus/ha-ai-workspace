@@ -51,6 +51,9 @@ class CursorRuntime:
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
+        from app.plan_quota import PlanQuotaBook
+
+        self.plan_quota = PlanQuotaBook(settings.data_dir / "plan_quota.json")
         self._client: Any = None
         self._agents: dict[str, Any] = {}
         self._mcp_by_session: dict[str, str] = {}
@@ -367,7 +370,7 @@ class CursorProvider:
         )
         self.runtime.run_started()
         try:
-            async for event in _iter_messages(run):
+            async for event in _iter_messages(run, self.runtime):
                 if stalled["flag"]:
                     break
                 if event.get("type") == "error" and not stream_error:
@@ -818,8 +821,13 @@ async def _watch_mcp_connect(runtime: Any, session_id: str, run: Any, started: f
         logger.debug("cancelling the stalled run failed", exc_info=True)
 
 
-async def _iter_messages(run: Any) -> AsyncIterator[dict]:
+async def _iter_messages(run: Any, runtime: CursorRuntime | None = None) -> AsyncIterator[dict]:
+    from app.plan_quota import plan_events_from_sdk
+
     async for sdk_message in run.messages():
+        if runtime is not None:
+            for notice in plan_events_from_sdk(runtime.plan_quota, "cursor", sdk_message):
+                yield notice
         for event in map_sdk_message(sdk_message):
             yield event
 

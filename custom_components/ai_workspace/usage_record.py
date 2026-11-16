@@ -544,9 +544,14 @@ def dashboard_payload(
             _add_model(provider_model(provider))
     for name in choices["models"]:
         _add_model(name)
+    from .plan_quota import OFFICIAL_LINKS
+    from .plan_quota_store import public_plan_quota
+
     return {
         "enabled": enabled,
         "range": chosen,
+        "plan_quota": public_plan_quota(hass),
+        "plan_links": dict(OFFICIAL_LINKS),
         "totals": totals,
         "tts": tts,
         "last": last,

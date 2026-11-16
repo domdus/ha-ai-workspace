@@ -1798,3 +1798,14 @@ ha-date-range-picker.usage-filter-dates {
   font-size: 12px;
   color: var(--secondary-text-color);
 }
+
+.plan-notice {
+  margin: 6px 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--secondary-text-color);
+  background: rgba(var(--rgb-primary-color), 0.06);
+  border: 1px solid rgba(var(--rgb-primary-color), 0.15);
+}
