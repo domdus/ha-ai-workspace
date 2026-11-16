@@ -1,4 +1,4 @@
-"""Sign-in per engine: one API shape for Claude today and any engine that gets a plan login later.
+"""Sign-in per engine: one API shape for Claude, OpenAI Codex and any engine that gets a plan login later.
 
     GET    /api/auth                       every engine's status
     GET    /api/auth/{engine}              status: where the credential comes from, never the secret
@@ -9,9 +9,9 @@
     DELETE /api/auth/{engine}/login/{id}   cancel
     DELETE /api/auth/{engine}              sign out (forget the stored credential)
 
-`flow` says what the UI must do: "paste_code" (open url, paste the code shown there back) or
-"device_code" (open url, enter user_code there, then poll). Engines without a plan login (Cursor:
-API key only) answer the status calls and refuse login with 501 not_supported.
+`flow` says what the UI must do: "paste_code" (Claude: open url, paste the code shown there back) or
+"device_code" (Codex: open url, enter user_code there, then poll). Engines without a plan login
+(Cursor: API key only) answer the status calls and refuse login with 501 not_supported.
 
 A login is: {id, engine, flow, status, url, user_code?, expires_in?, error?}. status is one of
 starting, awaiting_code, verifying, succeeded, failed, cancelled, expired.
@@ -37,6 +37,7 @@ _STATUS = {
     "not_supported": 501,
     "cli_missing": 501,
     "no_link": 502,
+    "no_code": 502,
     "login_failed": 502,
     "bad_code": 400,
     "code_rejected": 400,
@@ -198,12 +199,96 @@ class ClaudeAuth(EngineAuth):
         self.manager.close()
 
 
+class CodexAuth(EngineAuth):
+    """OpenAI Codex: "Sign in with ChatGPT" through the device-code flow; auth.json in CODEX_HOME."""
+
+    name = "codex"
+    flow = "device_code"
+
+    def __init__(self, settings: Settings, manager=None) -> None:
+        super().__init__(settings)
+        if manager is None:
+            from app.codex_login import CodexLoginManager
+
+            manager = CodexLoginManager(settings)
+        self.manager = manager
+
+    def _login(self, login) -> dict[str, Any]:
+        return {**login.as_dict(), "engine": self.name, "flow": self.flow}
+
+    def status(self) -> dict[str, Any]:
+        from app.codex_login import credential_source, signed_in_info
+
+        source = credential_source(self.settings)
+        signed = signed_in_info(self.settings)
+        pending = self.manager.current()
+        return {
+            "engine": self.name,
+            "ready": source != "none",
+            # signed-in: auth.json in the runtime's data folder; settings: an OpenAI API key option.
+            "credential": {"chatgpt": "signed-in", "api-key": "signed-in", "env-api": "settings"}.get(source, "none"),
+            "kind": {"chatgpt": "plan", "api-key": "api", "env-api": "api"}.get(source),
+            "plan": (signed or {}).get("plan"),
+            "signed_in": signed,
+            # auth.json always wins over an API key option, so nothing in the options hides a sign-in.
+            "overridden": False,
+            "login": {
+                "supported": True,
+                "flow": self.flow,
+                "available": self.manager.available(),
+                "pending": self._login(pending) if pending else None,
+            },
+        }
+
+    async def start(self) -> dict[str, Any]:
+        from app.codex_login import CodexLoginError
+
+        try:
+            login = await self.manager.start()
+        except CodexLoginError as exc:
+            raise _error(exc.key) from None
+        logger.info("Codex sign-in started (device code)")
+        return self._login(login)
+
+    async def get(self, login_id: str, wait: int = 0) -> dict[str, Any]:
+        from app.codex_login import CodexLoginError
+
+        try:
+            login = await self.manager.wait(login_id, wait)
+        except CodexLoginError as exc:
+            raise _error(exc.key) from None
+        out = self._login(login)
+        if login.status == "succeeded":
+            out["auth"] = self.status()
+        return out
+
+    async def submit(self, login_id: str, code: str) -> dict[str, Any]:
+        # Device code: the code is typed at OpenAI, nothing comes back here. Poll the state instead.
+        del login_id, code
+        raise _error("not_supported")
+
+    async def cancel(self, login_id: str) -> bool:
+        return await self.manager.cancel(login_id)
+
+    async def logout(self) -> bool:
+        from app.codex_login import forget_auth
+
+        await self.manager.aclose()
+        removed = forget_auth(self.settings)
+        if removed:
+            logger.info("Codex sign-in removed")
+        return removed
+
+    async def aclose(self) -> None:
+        await self.manager.aclose()
+
+
 def _error(key: str) -> HTTPException:
     return HTTPException(status_code=_STATUS.get(key, 502), detail=key)
 
 
 def build_engines(settings: Settings) -> dict[str, EngineAuth]:
-    return {"claude": ClaudeAuth(settings), "cursor": CursorAuth(settings)}
+    return {"claude": ClaudeAuth(settings), "codex": CodexAuth(settings), "cursor": CursorAuth(settings)}
 
 
 def login_engines(engines: dict[str, EngineAuth]) -> list[str]:
@@ -217,6 +302,18 @@ def close_engines(engines: dict[str, EngineAuth] | None) -> None:
             item.close()
         except Exception:  # noqa: BLE001 - shutting down
             logger.debug("closing %s sign-in failed", item.name, exc_info=True)
+
+
+async def aclose_engines(engines: dict[str, EngineAuth] | None) -> None:
+    """Shutting down: stop every sign-in that still runs (Codex's needs its app-server closed)."""
+    close_engines(engines)
+    for item in (engines or {}).values():
+        closer = getattr(item, "aclose", None)
+        if callable(closer):
+            try:
+                await closer()
+            except Exception:  # noqa: BLE001 - shutting down
+                logger.debug("closing %s sign-in failed", item.name, exc_info=True)
 
 
 router = APIRouter()
@@ -260,10 +357,7 @@ async def auth_login_start(request: Request, engine: str) -> dict[str, Any]:
 @router.get("/api/auth/{engine}/login/{login_id}")
 async def auth_login_state(request: Request, engine: str, login_id: str, wait: int = 0) -> dict[str, Any]:
     item = _engine(request, engine)
-    result = item.get(login_id, min(max(int(wait or 0), 0), 120))
-    if asyncio.iscoroutine(result):
-        result = await result
-    return result
+    return await _maybe(item.get(login_id, min(max(int(wait or 0), 0), 120)))
 
 
 @router.post("/api/auth/{engine}/login/{login_id}")
@@ -271,13 +365,17 @@ async def auth_login_code(request: Request, engine: str, login_id: str, body: Lo
     return await _engine(request, engine).submit(login_id, body.code)
 
 
+async def _maybe(result):
+    return await result if asyncio.iscoroutine(result) else result
+
+
 @router.delete("/api/auth/{engine}/login/{login_id}", status_code=204)
-def auth_login_cancel(request: Request, engine: str, login_id: str) -> None:
-    _engine(request, engine).cancel(login_id)
+async def auth_login_cancel(request: Request, engine: str, login_id: str) -> None:
+    await _maybe(_engine(request, engine).cancel(login_id))
 
 
 @router.delete("/api/auth/{engine}")
-def auth_logout(request: Request, engine: str) -> dict[str, Any]:
+async def auth_logout(request: Request, engine: str) -> dict[str, Any]:
     item = _engine(request, engine)
-    removed = item.logout()
-    return {"removed": removed, "auth": item.status()}
+    removed = await _maybe(item.logout())
+    return {"removed": bool(removed), "auth": item.status()}
