@@ -12,14 +12,18 @@ import pytest
 
 from app.providers import claude as claude_mod
 from app.providers.claude import (
+    AUTH_FAILED,
+    AUTH_FAILED_CODE,
     DEFAULT_MODEL,
     MISSING_KEY,
     NOT_INSTALLED,
     ClaudeProvider,
     auth_mode,
     claude_subprocess_env,
+    is_auth_failure,
     is_plan_token,
     mcp_for_sdk,
+    public_error,
     resolve_credential,
     resolve_model,
     runtime_credential,
@@ -346,7 +350,9 @@ def test_map_messages() -> None:
     assert done[1]["type"] == "usage"
 
     failed = map_claude_message(_result(is_error=True, subtype="error_during_execution", result="Invalid API key"))
-    assert failed[0] == {"type": "error", "message": "Invalid API key"}
+    assert failed[0] == {"type": "error", "message": AUTH_FAILED, "code": AUTH_FAILED_CODE}
+    other = map_claude_message(_result(is_error=True, subtype="error_during_execution", result="Overloaded"))
+    assert other[0] == {"type": "error", "message": "Overloaded"}
 
 
 def _fake_query(captured: dict, messages):
@@ -477,7 +483,7 @@ def test_api_errors_show_once_in_plain_words(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr("claude_agent_sdk.query", _fake_query({}, lambda: failed))
     events, _ = _run(ClaudeProvider(settings, CursorRuntime(settings)), _session(), no_tools=True)
     assert [e["type"] for e in events] == ["status", "error"]
-    assert events[-1]["message"] == claude_mod.API_ERRORS["authentication_failed"]
+    assert events[-1] == {"type": "error", "message": AUTH_FAILED, "code": AUTH_FAILED_CODE}
 
 
 @needs_sdk
@@ -562,3 +568,89 @@ def test_worker_usage_still_counts_when_the_turn_fails(tmp_path, monkeypatch) ->
     events, _ = _run(ClaudeProvider(settings, runtime), _session(), no_tools=True)
     assert [e["type"] for e in events] == ["status", "error", "usage"]
     assert events[-1]["run_id"] == "worker:j3"
+
+
+# --- expired or revoked credential ------------------------------------------------------------
+
+_REFUSED = (
+    'API Error: 401 {"type":"error","error":{"type":"authentication_error","message":"OAuth token has expired."}}',
+    "Invalid API key · Please run /login",
+    "OAuth token has been revoked",
+    "invalid x-api-key",
+    "Failed to authenticate. API Error: 401",
+    "Not logged in · Please run /login",
+)
+_NOT_REFUSED = (
+    "Overloaded",
+    "API Error: 529 overloaded_error",
+    "rate_limit_error: Number of requests has exceeded your rate limit",
+    "MCP server home: HTTP 401 Unauthorized",
+    "Your credit balance is too low",
+    "",
+)
+
+
+@pytest.mark.parametrize("text", _REFUSED)
+def test_refused_credentials_are_recognised(text) -> None:
+    assert is_auth_failure(text)
+
+
+@pytest.mark.parametrize("text", _NOT_REFUSED)
+def test_other_failures_are_not_a_sign_in_problem(text) -> None:
+    assert not is_auth_failure(text)
+
+
+def test_auth_failure_signals_from_the_sdk() -> None:
+    assert is_auth_failure(api_error="authentication_failed")
+    assert is_auth_failure(status=401)
+    assert not is_auth_failure(api_error="rate_limit", status=429)
+
+
+def test_public_error_turns_a_refused_credential_into_the_sign_in_hint() -> None:
+    assert public_error(RuntimeError("Command failed: API Error: 401 authentication_error"), PLAN) == AUTH_FAILED
+    error = RuntimeError("Command failed with exit code 1")
+    error.stderr = "Invalid API key · Please run /login"
+    assert public_error(error, PLAN) == AUTH_FAILED
+    error = RuntimeError("Claude Code returned an error result")
+    error.api_error_status = 401
+    assert public_error(error, PLAN) == AUTH_FAILED
+    # Anything else stays as it was, without the secret.
+    assert public_error(RuntimeError(f"boom {PLAN}"), PLAN) == "boom [redacted]"
+    assert "sign in" in AUTH_FAILED.lower() and PLAN not in AUTH_FAILED
+
+
+@needs_sdk
+def test_expired_sign_in_result_carries_the_code(tmp_path, monkeypatch) -> None:
+    settings = _settings(tmp_path, oauth=PLAN)
+    expired = [_result(is_error=True, subtype="success", result="API Error: 401", api_error_status=401, usage={})]
+    monkeypatch.setattr("claude_agent_sdk.query", _fake_query({}, lambda: expired))
+    events, _ = _run(ClaudeProvider(settings, CursorRuntime(settings)), _session(), no_tools=True)
+    assert events[-1] == {"type": "error", "message": AUTH_FAILED, "code": AUTH_FAILED_CODE}
+
+
+@needs_sdk
+def test_cli_crash_after_a_refused_credential_on_stderr(tmp_path, monkeypatch) -> None:
+    settings = _settings(tmp_path, oauth=PLAN)
+
+    async def fake_query(*, prompt, options):
+        options.stderr("Error: OAuth token has expired. Please run /login")
+        raise RuntimeError("Command failed with exit code 1 (exit code: 1)")
+        yield  # pragma: no cover - makes this an async generator
+
+    monkeypatch.setattr("claude_agent_sdk.query", fake_query)
+    events, _ = _run(ClaudeProvider(settings, CursorRuntime(settings)), _session(), no_tools=True)
+    assert events[-1] == {"type": "error", "message": AUTH_FAILED, "code": AUTH_FAILED_CODE}
+
+
+@needs_sdk
+def test_other_cli_crash_keeps_its_message(tmp_path, monkeypatch) -> None:
+    settings = _settings(tmp_path, oauth=PLAN)
+
+    async def fake_query(*, prompt, options):
+        options.stderr("some debug line")
+        raise RuntimeError("Command failed with exit code 2")
+        yield  # pragma: no cover
+
+    monkeypatch.setattr("claude_agent_sdk.query", fake_query)
+    events, _ = _run(ClaudeProvider(settings, CursorRuntime(settings)), _session(), no_tools=True)
+    assert events[-1] == {"type": "error", "message": "Command failed with exit code 2"}

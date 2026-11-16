@@ -9,6 +9,7 @@ how Claude Code signs in.
 from __future__ import annotations
 
 import logging
+import re
 import uuid
 from typing import Any, AsyncIterator, Callable
 
@@ -31,12 +32,23 @@ MISSING_KEY = (
     "Claude plan, or paste a Claude Plan token (from `claude setup-token`) or an Anthropic API key there. "
     f"Docker runtimes can set CLAUDE_CODE_OAUTH_TOKEN or ANTHROPIC_API_KEY. API keys: {API_KEY_URL}"
 )
+# Expired or revoked sign-in / key. The integration shows its own translation for this code.
+AUTH_FAILED_CODE = "claude_auth_failed"
+AUTH_FAILED = (
+    "Anthropic no longer accepts this Claude sign-in or key: it has expired or was revoked. Open the agent's "
+    "settings in Home Assistant and sign in with Claude again, or replace the token or API key there."
+)
+# What Claude Code and the Anthropic API say when the credential is refused. Strong phrases only: a bare
+# "401 Unauthorized" can also be an MCP server and must not send people to sign in again.
+_AUTH_TEXT = re.compile(
+    r"authentication_error|authentication_failed|invalid[\s_-]*(?:x-)?api[\s_-]*key|invalid bearer token"
+    r"|oauth token (?:has )?(?:expired|been revoked)|token (?:has )?been revoked|token has expired"
+    r"|api error:?\s*401|please run /login|not logged in|invalid_grant",
+    re.IGNORECASE,
+)
 # Assistant message errors from Claude Code → what the chat shows instead of the CLI's own hint.
 API_ERRORS = {
-    "authentication_failed": (
-        "Anthropic refused the Claude credential. Check the Claude Plan token or Anthropic API key on the "
-        "agent or the runtime. Plan tokens from `claude setup-token` last one year."
-    ),
+    "authentication_failed": AUTH_FAILED,
     "billing_error": (
         "Anthropic refused the request for billing reasons. Check the Claude plan, or the credits of the "
         "API key's account in the Claude Console."
@@ -204,6 +216,23 @@ async def _stream_prompt(content: list[dict[str, Any]]):
     yield {"type": "user", "message": {"role": "user", "content": content}, "parent_tool_use_id": None}
 
 
+def is_auth_failure(*texts: object, api_error: str = "", status: object = None) -> bool:
+    """True when Anthropic refused the credential (expired, revoked or wrong), not for other failures."""
+    if str(api_error or "").strip() == "authentication_failed":
+        return True
+    if status == 401:
+        return True
+    return any(_AUTH_TEXT.search(str(text)) for text in texts if text)
+
+
+def error_event(message: str) -> dict[str, Any]:
+    """A chat error; the expired-credential one carries a stable code for the integration."""
+    event: dict[str, Any] = {"type": "error", "message": message}
+    if message == AUTH_FAILED:
+        event["code"] = AUTH_FAILED_CODE
+    return event
+
+
 def map_claude_message(message: Any, api_error: str = "") -> list[dict[str, Any]]:
     try:
         from claude_agent_sdk import AssistantMessage, ResultMessage, TextBlock, ThinkingBlock, ToolResultBlock, ToolUseBlock, UserMessage
@@ -234,8 +263,18 @@ def map_claude_message(message: Any, api_error: str = "") -> list[dict[str, Any]
         return events
     if isinstance(message, ResultMessage):
         if message.is_error or str(getattr(message, "subtype", "") or "").startswith("error_"):
-            text = API_ERRORS.get(api_error) or str(message.result or "").strip() or "Claude stopped without an answer."
-            events.append({"type": "error", "message": text[:400]})
+            if is_auth_failure(
+                message.result,
+                *(getattr(message, "errors", None) or []),
+                api_error=api_error,
+                status=getattr(message, "api_error_status", None),
+            ):
+                events.append(error_event(AUTH_FAILED))
+            else:
+                text = (
+                    API_ERRORS.get(api_error) or str(message.result or "").strip() or "Claude stopped without an answer."
+                )
+                events.append(error_event(text[:400]))
         else:
             events.append(
                 {
@@ -317,6 +356,14 @@ def public_error(exc: Exception, credential: str) -> str:
         CLINotFoundError = ()  # type: ignore[assignment]
     if CLINotFoundError and isinstance(exc, CLINotFoundError):
         return CLI_MISSING
+    if is_auth_failure(
+        str(exc),
+        getattr(exc, "stderr", None),
+        getattr(exc, "result", None),
+        *(getattr(exc, "errors", None) or []),
+        status=getattr(exc, "api_error_status", None),
+    ):
+        return AUTH_FAILED
     text = redact(str(exc), [credential]).strip() or type(exc).__name__
     return text[:400]
 
@@ -379,6 +426,14 @@ class ClaudeProvider:
         content = user_content(outbound, images)
         yield {"type": "status", "text": "Thinking..."}
 
+        # Claude Code may only say on stderr that the credential was refused.
+        refused: list[bool] = []
+
+        def on_stderr(line: str) -> None:
+            if not refused and is_auth_failure(line):
+                refused.append(True)
+            logger.debug("claude cli: %s", redact(line, [credential]))
+
         options_kwargs: dict[str, Any] = {
             "cwd": str(self.settings.workspace_dir),
             # No user, project or local settings, CLAUDE.md, skills or hooks: only what this chat sends.
@@ -388,7 +443,7 @@ class ClaudeProvider:
             "env": claude_subprocess_env(self.settings, credential),
             "resume": resume,
             "mcp_servers": run_servers,
-            "stderr": lambda line: logger.debug("claude cli: %s", redact(line, [credential])),
+            "stderr": on_stderr,
             **tool_policy(
                 no_tools=no_tools,
                 full_tools=full_tools,
@@ -400,11 +455,11 @@ class ClaudeProvider:
         if level:
             options_kwargs["effort"] = level
         finished = False
+        api_error = ""
         try:
             self.settings.workspace_dir.mkdir(parents=True, exist_ok=True)
             options = ClaudeAgentOptions(**options_kwargs)
             stream = query(prompt=content if isinstance(content, str) else _stream_prompt(content), options=options)
-            api_error = ""
             # Read the stream to its end: leaving it early closes the SDK's generator from the wrong task.
             async for sdk_message in stream:
                 if finished:
@@ -422,14 +477,18 @@ class ClaudeProvider:
                 for worker in _take_worker_usage(self.runtime, session.id):
                     yield worker
             if not finished:
-                yield {"type": "error", "message": "Claude stopped without an answer."}
+                refused_now = is_auth_failure(api_error=api_error) or bool(refused)
+                yield error_event(AUTH_FAILED if refused_now else "Claude stopped without an answer.")
         except Exception as exc:
+            text = public_error(exc, credential)
+            if not finished and text != AUTH_FAILED and (refused or is_auth_failure(api_error=api_error)):
+                text = AUTH_FAILED
             if finished:
                 # The result is already in the chat. Claude Code exits non-zero after an error result.
-                logger.debug("claude cli exit after result session=%s: %s", session.id, public_error(exc, credential))
+                logger.debug("claude cli exit after result session=%s: %s", session.id, text)
             else:
-                logger.warning("claude turn failed session=%s: %s", session.id, public_error(exc, credential))
-                yield {"type": "error", "message": public_error(exc, credential)}
+                logger.warning("claude turn failed session=%s: %s", session.id, text)
+                yield error_event(text)
         # Worker jobs that finished after the last streamed message, or before a failed turn, still count.
         for worker in _take_worker_usage(self.runtime, session.id):
             yield worker
