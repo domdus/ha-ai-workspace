@@ -6,7 +6,6 @@ Pure Python: the integration and the Runtime ship separate copies of this file.
 from __future__ import annotations
 
 import json
-import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any

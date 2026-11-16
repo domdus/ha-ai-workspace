@@ -418,9 +418,14 @@ async def async_bind_runtime(hass: HomeAssistant, bucket: dict | None = None, *,
         and any(getattr(item, "kind", "") == "claude" for item in (data.get("providers") or {}).values())
         else None
     )
-    from .plan_quota_store import async_merge_runtime_plan_quota
+    plan_quota = health.get("plan_quota")
+    if isinstance(plan_quota, dict) and plan_quota:
+        from .plan_quota_store import async_merge_runtime_plan_quota
 
-    await async_merge_runtime_plan_quota(hass, health.get("plan_quota") or {})
+        try:
+            await async_merge_runtime_plan_quota(hass, plan_quota)
+        except Exception:  # noqa: BLE001 - plan quota is extra; binding the Runtime must not fail on it.
+            _LOGGER.warning("Could not store the Runtime's plan quota", exc_info=True)
     notice = runtime_notice(data["runtime_version"], VERSION, MIN_RUNTIME)
     if notice and data.get("runtime_notice") != notice:
         _LOGGER.warning(
