@@ -12,7 +12,17 @@ from custom_components.ai_workspace.ollama_info import OllamaModel, OllamaServer
 SHIPPED = sorted(p.stem for p in (Path(__file__).resolve().parents[1] / "custom_components/ai_workspace/translations").glob("*.json"))
 
 
-@pytest.mark.parametrize("table", [local_text.CHAT_ONLY, local_text.OLLAMA_FORM, local_text.RUNTIME_FORM])
+@pytest.mark.parametrize(
+    "table",
+    [
+        local_text.CHAT_ONLY,
+        local_text.OLLAMA_FORM,
+        local_text.RUNTIME_FORM,
+        local_text.CLAUDE_SIGNIN,
+        local_text.CLAUDE_AUTH_FAILED,
+        local_text.CURSOR_KEY_NOTE,
+    ],
+)
 def test_every_table_covers_every_language(table) -> None:
     assert sorted(table) == SHIPPED == sorted(local_text.LANGUAGES)
 
@@ -35,3 +45,15 @@ def test_language_codes_resolve() -> None:
     assert local_text.pick(table, "zh-CN") == table["zh-Hans"]
     assert local_text.pick(table, "pt-BR") == table["en"]
     assert local_text.pick(table, "") == table["en"]
+
+
+@pytest.mark.parametrize("language", SHIPPED)
+def test_claude_sign_in_texts_format(language) -> None:
+    words = local_text.CLAUDE_SIGNIN[language]
+    assert set(words) == set(local_text.CLAUDE_SIGNIN["en"])
+    settings = local_text.claude_signin_text({"credential": "settings", "kind": "plan"}, False, language)
+    assert "Claude Plan" in settings and "{" not in settings
+    old = local_text.claude_signin_text({"credential": "settings", "kind": "api", "overridden": True}, False, language)
+    assert words["overridden"] in old
+    assert "Runtime" in words["overridden"]
+    assert "{" not in local_text.claude_auth_failed_text(language)

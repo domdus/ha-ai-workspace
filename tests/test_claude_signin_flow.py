@@ -293,7 +293,8 @@ def test_status_text_in_every_language() -> None:
         assert set(table) == set(local_text.CLAUDE_SIGNIN["en"]), lang
     status = {"credential": "settings", "kind": "plan", "overridden": True, "signed_in": {"saved_at": "x"}}
     text = local_text.claude_signin_text(status, False, "en")
-    assert "Claude Plan" in text and "wins over your sign-in" in text
+    # Only Runtimes before 1.6.0b12 report "overridden"; the note says to update the Runtime.
+    assert "Claude Plan" in text and "win over your sign-in" in text and "Update the AI Workspace Runtime" in text
     assert "did not answer" in local_text.claude_signin_text(None, False, "en", "no_runtime")
 
 

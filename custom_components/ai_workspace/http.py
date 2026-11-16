@@ -481,9 +481,20 @@ async def _runtime_chat(
         async for name, payload in _iter_sse(resp):
             event = dict(payload)
             event.setdefault("type", name)
-            yield event
+            yield _localized_runtime_error(event, language)
     finally:
         resp.release()
+
+
+def _localized_runtime_error(event: dict, language: str = "") -> dict:
+    """Runtime errors with a known code read in the chat's language (the Runtime only knows English)."""
+    if event.get("type") != "error":
+        return event
+    from .local_text import CLAUDE_AUTH_FAILED_CODE, claude_auth_failed_text
+
+    if event.get("code") == CLAUDE_AUTH_FAILED_CODE:
+        return {**event, "message": claude_auth_failed_text(language)}
+    return event
 
 
 async def async_agent_events(
