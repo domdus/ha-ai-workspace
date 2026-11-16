@@ -135,8 +135,9 @@ class ClaudeAuth(EngineAuth):
             # plan | api: how the runtime bills Claude with its own credential.
             "kind": auth_mode(credential) if credential else None,
             "signed_in": signed_in,
-            # Signed in, but a Plan token in the add-on options wins.
-            "overridden": bool(signed_in) and source == "settings",
+            # Up to 1.6.0b11 a Plan token in the App options won over a sign-in. Now a sign-in always
+            # wins over the runtime's environment, so nothing overrides it. Kept for older integrations.
+            "overridden": False,
             "login": {
                 "supported": True,
                 "flow": self.flow,

@@ -224,14 +224,22 @@ def test_credential_order_and_the_agent_turn_uses_the_signed_in_token(tmp_path) 
     # The agent's own credential still wins over the sign-in.
     assert resolve_credential(plain, "sk-ant-api03-agent") == "sk-ant-api03-agent"
 
-    # A sign-in beats an Anthropic API key in the add-on options...
+    # A sign-in beats an Anthropic API key (env or old App option)...
     api = replace(plain, anthropic_api_key="sk-ant-api03-x")
     assert runtime_credential(api) == TOKEN and credential_source(api) == "signed-in"
-    # ...but an explicit Plan token in the options wins, and the status says so.
-    option = replace(plain, claude_oauth_token="sk-ant-oat01-option")
-    assert runtime_credential(option) == "sk-ant-oat01-option"
-    status = ClaudeAuth(option, LoginManager(cli_finder=lambda: "")).status()
-    assert status["credential"] == "settings" and status["overridden"] is True
+    # ...and CLAUDE_CODE_OAUTH_TOKEN from a Docker environment too (1.6.0b12): the fresh sign-in wins.
+    env = replace(plain, claude_oauth_token="sk-ant-oat01-environment", anthropic_api_key="sk-ant-api03-x")
+    assert runtime_credential(env) == TOKEN
+    status = ClaudeAuth(env, LoginManager(cli_finder=lambda: "")).status()
+    assert status["credential"] == "signed-in" and status["overridden"] is False
+    assert status["kind"] == "plan"
+    # Signed out: the environment token, then the API key.
+    claude_login.forget_token(plain.claude_token_path)
+    assert runtime_credential(env) == "sk-ant-oat01-environment" and credential_source(env) == "settings"
+    assert runtime_credential(api) == "sk-ant-api03-x" and credential_source(api) == "settings"
+    status = ClaudeAuth(env, LoginManager(cli_finder=lambda: "")).status()
+    assert status["credential"] == "settings" and status["overridden"] is False
+    assert credential_source(plain) == "none" and runtime_credential(plain) == ""
 
 
 def test_token_info_and_a_broken_file(tmp_path) -> None:

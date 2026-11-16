@@ -2,7 +2,8 @@
 
 Two credentials work: a Claude Plan token (``sk-ant-oat…`` from ``claude setup-token``, billed to the
 Claude subscription) or an Anthropic API key (``sk-ant-api…``, billed as API credits). The agent's own
-credential wins over the runtime's; the token prefix decides how Claude Code signs in.
+credential wins over the runtime's (a sign-in, then the Docker environment); the token prefix decides
+how Claude Code signs in.
 """
 
 from __future__ import annotations
@@ -86,31 +87,34 @@ def signed_in_token(settings: Settings) -> str:
 
 
 def runtime_credential(settings: Settings) -> str:
-    """The runtime's own credential: the Plan token from the options, then the signed-in Plan token, then the API key.
+    """The runtime's own credential: the signed-in Plan token, then CLAUDE_CODE_OAUTH_TOKEN, then the API key.
 
-    A sign-in beats an Anthropic API key in the options: it is the newer, deliberate choice, and
-    Plan billing is what it is for. A per-agent key from Home Assistant still beats all of them.
+    A sign-in is the deliberate, visible choice on the agent form, so it beats whatever a Docker
+    environment (or an old App option) carries. A per-agent credential from Home Assistant still
+    beats all of them (see ``resolve_credential``).
     """
     return (
-        (settings.claude_oauth_token or "").strip()
-        or signed_in_token(settings)
+        signed_in_token(settings)
+        or (settings.claude_oauth_token or "").strip()
         or (settings.anthropic_api_key or "").strip()
     )
 
 
 def credential_source(settings: Settings) -> str:
-    """settings | signed-in | none: where the runtime's own Claude credential comes from."""
-    if (settings.claude_oauth_token or "").strip():
-        return "settings"
+    """signed-in | settings | none: where the runtime's own Claude credential comes from.
+
+    ``settings`` is the runtime's environment (CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY) or an old
+    App option Anthropic API key. It only counts when nobody signed in.
+    """
     if signed_in_token(settings):
         return "signed-in"
-    if (settings.anthropic_api_key or "").strip():
+    if (settings.claude_oauth_token or "").strip() or (settings.anthropic_api_key or "").strip():
         return "settings"
     return "none"
 
 
 def resolve_credential(settings: Settings, api_key: str = "") -> str:
-    """The agent's own credential wins over the runtime's."""
+    """Agent credential > signed-in token > CLAUDE_CODE_OAUTH_TOKEN > ANTHROPIC_API_KEY (or the old option)."""
     return (api_key or "").strip() or runtime_credential(settings)
 
 

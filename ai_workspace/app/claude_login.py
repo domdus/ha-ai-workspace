@@ -489,8 +489,7 @@ def main() -> None:
     settings = Settings.from_env()
     if settings.claude_oauth_token:
         print(
-            "Note: a Claude Plan token is set in the runtime options or environment and "
-            "wins over a signed-in token.",
+            "Note: CLAUDE_CODE_OAUTH_TOKEN is set in the environment. A sign-in here wins over it.",
             file=sys.stderr,
         )
     raise SystemExit(asyncio.run(_interactive(settings.claude_token_path)))
