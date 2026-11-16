@@ -394,10 +394,9 @@ async def _runtime_chat(
         user_text = f"{user_text}\n\n{CHECK_HOUSE_NOTE}"
     from .notes import notes_update, remember_nudge
 
-    # Claude keeps its session under Save tokens until it grows (the Runtime decides), so it still
-    # needs to hear when the notes change.
-    fresh_agent = token_mode_fresh_agent(token_mode) and runtime_kind != "claude"
-    changed_notes = notes_update(hass, settings, session.id, fresh=fresh_agent)
+    # Under Save tokens the Runtime keeps the agent for a while (Claude until it grows, Cursor a few turns),
+    # so a warm agent still needs to hear when the notes change.
+    changed_notes = notes_update(hass, settings, session.id)
     if changed_notes:
         user_text = f"{user_text}\n\n{changed_notes}"
     nudge = remember_nudge(settings, asked, admin=admin)

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.0b14
+
+**Save tokens on Cursor agents keeps the agent for 4 turns.** With **Save tokens** on, a Cursor agent on the Runtime started over on every turn and forgot its own tool results. Now a warm agent runs 4 turns, then the next turn starts a new one with the recent history from Home Assistant. Cursor reports tokens per turn summed over all its model calls (often several 100,000 for one turn), so the size of its context cannot be measured as on Claude, and turns are counted instead. A chat idle for 2 minutes still gets a new agent, as before.
+
+- **Save tokens never picks up an old stored agent or session.** It only keeps one the Runtime is running or has measured. After a Runtime restart, the first turn starts new, for Claude and Cursor.
+- **Changed Remembered notes** now reach a kept Cursor agent too.
+- Update the Runtime App to 1.6.0b14 too. AI Workspace asks for it.
+
 ## 1.6.0b13
 
 **Save tokens on Claude SDK agents keeps Claude's session.** With **Save tokens** on, a Claude SDK agent started a new Claude session on every turn. Claude forgot its own tool results, and the cached start of the chat had to be sent and written again each time. Now the session continues until a turn's context reaches about 40,000 tokens. The next turn then starts a new session, and Home Assistant hands over the last messages as before. With Save tokens off, nothing changes: the session always continues. Changed **Remembered notes** reach a continued session as before. Cursor agents still start a new agent every turn with Save tokens.

@@ -117,7 +117,7 @@ class ChatRequest(BaseModel):
     mcp: ChatMcp | None = None
     full_tools: bool = False
     allow_internet: bool = False
-    # Reduce token usage on the agent: fresh agent each turn (Medium, Extreme; Claude only once the session grew),
+    # Reduce token usage on the agent: new agent under Medium/Extreme (Claude once the session grew, Cursor every 4 turns),
     # chat only (Extreme), auto titles (Off).
     fresh: bool = False
     no_tools: bool = False

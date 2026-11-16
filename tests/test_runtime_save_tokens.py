@@ -1,4 +1,4 @@
-"""Save tokens on Runtime agents: the effort still reaches the Runtime, and Claude hears about changed notes.
+"""Save tokens on Runtime agents: the effort still reaches the Runtime, and a kept agent hears about changed notes.
 
 Save tokens dropped the effort, which on cloud agents goes with a reply cap. The Runtime has no reply cap,
 so Claude Code and Cursor ran at their own, often higher, default effort.
@@ -57,6 +57,6 @@ def test_effort_reaches_the_runtime_with_save_tokens(monkeypatch, kind, mode) ->
     assert sent["fresh"] is (mode == TOKEN_MODE_MEDIUM)
 
 
-def test_claude_keeps_its_session_so_it_hears_about_changed_notes(monkeypatch) -> None:
-    assert _send(monkeypatch, "claude", TOKEN_MODE_MEDIUM)[1] == [False]
-    assert _send(monkeypatch, "cursor", TOKEN_MODE_MEDIUM)[1] == [True]
+@pytest.mark.parametrize("kind", ["claude", "cursor"])
+def test_a_kept_agent_hears_about_changed_notes(monkeypatch, kind) -> None:
+    assert _send(monkeypatch, kind, TOKEN_MODE_MEDIUM)[1] == [False]

@@ -31,6 +31,10 @@ _MISSING_KEY = (
 # After this pause the saved Cursor thread is often empty, so open a new agent.
 # The HA transcript is still pasted on every turn, including a quick follow-up.
 _IDLE_RESTORE = 120.0
+# Save tokens keeps a warm Cursor agent for this many turns, then starts a new one with the HA handoff.
+# Cursor reports usage per run, summed over all model calls (often several 100k tokens for one turn),
+# so unlike Claude the context size cannot be measured and turns are counted instead.
+KEEP_TURNS = 4
 
 # A new agent with MCP servers connects to them right after its run starts. When nothing
 # reaches the proxy in this time, the bridge is stuck (agents then only see mcp_auth):
@@ -56,6 +60,8 @@ class CursorRuntime:
         self.plan_quota = PlanQuotaBook(settings.data_dir / "plan_quota.json")
         self._client: Any = None
         self._agents: dict[str, Any] = {}
+        # Turns each warm agent has run, for Save tokens.
+        self._turns: dict[str, int] = {}
         self._mcp_by_session: dict[str, str] = {}
         self._used_at: dict[str, float] = {}
         self._with_tools: set[str] = set()
@@ -141,9 +147,10 @@ class CursorRuntime:
         fingerprint = config_key or _agent_fingerprint(mcp_servers, resolved_model, effort, key_tag, tools, blocked)
         cached = self._agents.get(session.id)
         previous = self._mcp_by_session.get(session.id)
-        cold = self._cold(session) or fresh
+        cold = self._cold(session) or (fresh and self._turns.get(session.id, 0) >= KEEP_TURNS)
         if cached is not None and previous == fingerprint and not cold:
             self._touch(session.id)
+            self._turns[session.id] = self._turns.get(session.id, 0) + 1
             logger.info("reuse agent session=%s", session.id)
             return cached, False
         if cached is not None:
@@ -164,7 +171,8 @@ class CursorRuntime:
         )
         agent = None
         # A cold cloud thread often comes back empty. Start a new agent and let the HA transcript resume the chat.
-        resume_id = None if cold else (session.agent_id if previous in (None, fingerprint) else None)
+        # Save tokens keeps only the warm agent above: a stored thread may be any size.
+        resume_id = None if cold or fresh else (session.agent_id if previous in (None, fingerprint) else None)
         if resume_id:
             try:
                 logger.info("resume agent session=%s agent=%s", session.id, resume_id)
@@ -178,6 +186,7 @@ class CursorRuntime:
         self._agents[session.id] = agent
         self._mcp_by_session[session.id] = fingerprint
         self._touch(session.id)
+        self._turns[session.id] = 1
         if mcp_servers:
             self._with_tools.add(session.id)
         else:
@@ -211,6 +220,7 @@ class CursorRuntime:
 
     def drop(self, session_id: str) -> None:
         self._agents.pop(session_id, None)
+        self._turns.pop(session_id, None)
         self._mcp_by_session.pop(session_id, None)
         self._used_at.pop(session_id, None)
         self._with_tools.discard(session_id)

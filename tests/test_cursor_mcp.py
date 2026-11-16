@@ -426,3 +426,32 @@ def test_fresh_turn_never_resumes_and_extreme_has_no_tools(tmp_path: Path, monke
 
     asyncio.run(run(full_tools=True, no_tools=True, fresh=True))
     assert seen[-1] == ({}, [], ["webSearch", "webFetch", "shell"], True)
+
+
+def test_save_tokens_keeps_a_warm_agent_for_a_few_turns(tmp_path: Path, monkeypatch) -> None:
+    """Save tokens once opened a new Cursor agent every turn. Now a warm one runs KEEP_TURNS turns."""
+    from app.providers.cursor import KEEP_TURNS
+
+    _install_fake_sdk(monkeypatch)
+    created: list[str] = []
+
+    class FakeClient:
+        async def create_agent(self, options):
+            del options
+            created.append("new")
+            return SimpleNamespace(agent_id=f"fresh-{len(created)}")
+
+        async def resume_agent(self, agent_id, options):
+            del options
+            return SimpleNamespace(agent_id=agent_id)
+
+    runtime = CursorRuntime(_settings(tmp_path))
+    runtime._client = FakeClient()
+    session = Session("s1", "u1", "cursor", "Chat", None, "t", "t")
+    opened = [asyncio.run(runtime.open_agent(session, {}, fresh=True)) for _ in range(KEEP_TURNS + 1)]
+    assert [new for _agent, new in opened] == [True] + [False] * (KEEP_TURNS - 1) + [True]
+    assert created == ["new", "new"]
+    # Idle still means a new agent, as without Save tokens.
+    runtime._used_at[session.id] -= 200
+    _agent, after_pause = asyncio.run(runtime.open_agent(session, {}, fresh=True))
+    assert after_pause and len(created) == 3

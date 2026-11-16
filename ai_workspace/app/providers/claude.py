@@ -404,8 +404,11 @@ class ClaudeProvider:
         self._context: dict[str, int] = {}
 
     def keeps_session(self, session_id: str, fresh: bool) -> bool:
-        """Off: always resume. Save tokens: resume until the context reaches CONTEXT_BUDGET."""
-        return not fresh or self._context.get(session_id, 0) < CONTEXT_BUDGET
+        """Off: always resume. Save tokens: resume only a session measured below CONTEXT_BUDGET.
+
+        A session this Runtime has not measured (for example after a restart) may be any size.
+        """
+        return not fresh or self._context.get(session_id, CONTEXT_BUDGET) < CONTEXT_BUDGET
 
     @property
     def info(self) -> ProviderInfo:

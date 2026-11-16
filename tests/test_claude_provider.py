@@ -674,7 +674,7 @@ def test_save_tokens_keeps_the_session_until_it_grows(tmp_path, monkeypatch) -> 
     captured: dict = {}
     monkeypatch.setattr("claude_agent_sdk.query", _fake_query(captured, turn))
     _run(provider, _session(OLD_SESSION), fresh=True)
-    assert captured["options"].resume == OLD_SESSION  # nothing measured yet
+    assert captured["options"].resume is None  # not measured yet (e.g. after a restart): may be any size
     _run(provider, _session(OLD_SESSION), fresh=True)
     assert captured["options"].resume == OLD_SESSION  # 12k is small
     _run(provider, _session(OLD_SESSION), fresh=True)
