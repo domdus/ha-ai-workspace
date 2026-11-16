@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.0b13
+
+**Save tokens on Claude SDK agents keeps Claude's session.** With **Save tokens** on, a Claude SDK agent started a new Claude session on every turn. Claude forgot its own tool results, and the cached start of the chat had to be sent and written again each time. Now the session continues until a turn's context reaches about 40,000 tokens. The next turn then starts a new session, and Home Assistant hands over the last messages as before. With Save tokens off, nothing changes: the session always continues. Changed **Remembered notes** reach a continued session as before. Cursor agents still start a new agent every turn with Save tokens.
+
+- **Effort stays with Save tokens on Runtime agents.** Save tokens dropped the agent's **Effort** setting. On cloud agents this goes with a reply cap, but the Runtime has none, so Claude Code and Cursor fell back to their own, often higher, default. A **Fast** agent with Save tokens could think more than without it. Cursor and Claude SDK agents now always send their effort.
+- **Binding the Runtime no longer depends on the plan limits.** The Runtime's plan limits are only stored when it reports some, and a storage error is logged instead of making Cursor and Claude unavailable.
+- Update the Runtime App to 1.6.0b13 too. AI Workspace asks for it.
+
 ## 1.6.0b12
 
 **Claude is set up in one place: the agent form.** The Runtime App's **Configuration** no longer has **Claude Plan token**, **Anthropic API key** or **Claude model**. Use **Sign in with Claude plan** on the Claude (Anthropic) agent with **Use Claude SDK (runtime)** on, or paste a token or key on that agent. `CLAUDE_CODE_OAUTH_TOKEN`, `ANTHROPIC_API_KEY` and `CLAUDE_MODEL` stay for Docker runtimes. See [docs/claude-runtime.md](../docs/claude-runtime.md#runtime-options).

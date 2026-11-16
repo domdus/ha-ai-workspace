@@ -56,6 +56,10 @@ Every agent, Cursor included, has one box under **Advanced**: **Save tokens**. I
 
 With Save tokens, files and images are not attached, and extras such as auto titles and page context are skipped. A house-check turn usually costs about 25–45% less.
 
+**Agents on the AI Workspace Runtime** (Cursor, Claude SDK) get the short prompt and the shorter history too. Replies are not capped there, and the agent's **Effort** still applies.
+- **Claude SDK** keeps its session while it is small, so Claude remembers its own tool results and reuses the cached start of the chat. Once a turn's context reaches about 40,000 tokens, the next turn starts a new session that gets the recent history from Home Assistant. With Save tokens off, the session simply continues.
+- **Cursor** starts a new agent every turn.
+
 The context window comes from the model id (for example 400,000 tokens for GPT-5, 200,000 for Claude, 1,000,000 for Gemini, otherwise 128,000). For Ollama, AI Workspace asks Ollama itself. Set `context_window: <tokens>` in YAML to override it.
 
 **Chat only.** An agent without tools can answer questions but cannot check or change your home. AI Workspace switches to chat only by itself when an Ollama model cannot use tools, or when Ollama runs it with a context window too small for them, and says so once in the chat. To force chat only, set `low_token: extreme` on the agent in YAML. Agents that used **Extreme** before 1.5 stay chat only while **Save tokens** stays on. Chat only remembers the last few messages.

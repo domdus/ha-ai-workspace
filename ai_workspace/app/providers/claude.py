@@ -82,6 +82,23 @@ _ONLINE_TOOLS = ("WebSearch", "WebFetch", "Bash", "BashOutput", "KillShell", "Ki
 _NEVER = ("Task", "Agent")
 
 # AI Workspace effort choices (shared with Cursor) → Claude Code effort levels.
+# Save tokens keeps a Claude session while it is small and starts a new one once a turn's context
+# (prompt, history and tool results Claude Code sends to the model) reaches this size. A new session
+# every turn lost Claude's own tool results and the cached prefix of the chat.
+CONTEXT_BUDGET = 40_000
+
+
+def context_tokens(message: Any) -> int:
+    """Context of one model call: everything sent as input, cached or not."""
+    if getattr(message, "parent_tool_use_id", None):
+        return 0
+    usage = getattr(message, "usage", None) or {}
+    return sum(
+        _int_usage(_pick(usage, key))
+        for key in ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
+    )
+
+
 _EFFORT = {"fast": "low", "high": "high", "high_fast": "medium"}
 
 
@@ -383,6 +400,12 @@ class ClaudeProvider:
     def __init__(self, settings: Settings, runtime: CursorRuntime) -> None:
         self.settings = settings
         self.runtime = runtime
+        # Context size of each chat's last model call, for Save tokens.
+        self._context: dict[str, int] = {}
+
+    def keeps_session(self, session_id: str, fresh: bool) -> bool:
+        """Off: always resume. Save tokens: resume until the context reaches CONTEXT_BUDGET."""
+        return not fresh or self._context.get(session_id, 0) < CONTEXT_BUDGET
 
     @property
     def info(self) -> ProviderInfo:
@@ -430,8 +453,11 @@ class ClaudeProvider:
         asked = (question or "").strip()
         attach_tools = not no_tools and (bool(images) or wants_house_tools(asked or message))
         run_servers = mcp_for_sdk(self.runtime.wrap_mcp(mcp_servers, session.id)) if attach_tools else {}
-        resume = None if fresh else _claude_session_id(session.agent_id)
-        cold = fresh or not resume
+        resume = _claude_session_id(session.agent_id) if self.keeps_session(session.id, fresh) else None
+        cold = not resume
+        if fresh and not resume and session.agent_id:
+            logger.info("claude session=%s grew past %s tokens, starting a new one", session.id, CONTEXT_BUDGET)
+        self._context.pop(session.id, None)
         outbound = apply_standing(message, prompt, cold)
         outbound = apply_handoff(outbound, handoff, cold, question=asked or question)
         content = user_content(outbound, images)
@@ -478,8 +504,12 @@ class ClaudeProvider:
                     continue
                 for notice in plan_events_from_sdk(book, "claude", sdk_message):
                     yield notice
-                if isinstance(sdk_message, AssistantMessage) and sdk_message.error:
-                    api_error = str(sdk_message.error)
+                if isinstance(sdk_message, AssistantMessage):
+                    if sdk_message.error:
+                        api_error = str(sdk_message.error)
+                    size = context_tokens(sdk_message)
+                    if size:
+                        self._context[session.id] = size
                 if isinstance(sdk_message, ResultMessage):
                     finished = True
                     sid = str(sdk_message.session_id or "")

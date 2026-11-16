@@ -654,3 +654,40 @@ def test_other_cli_crash_keeps_its_message(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr("claude_agent_sdk.query", fake_query)
     events, _ = _run(ClaudeProvider(settings, CursorRuntime(settings)), _session(), no_tools=True)
     assert events[-1] == {"type": "error", "message": "Command failed with exit code 2"}
+
+
+@needs_sdk
+def test_save_tokens_keeps_the_session_until_it_grows(tmp_path, monkeypatch) -> None:
+    """Save tokens once started a new Claude session every turn: no memory of tool results, no cache."""
+    from claude_agent_sdk import AssistantMessage, TextBlock
+
+    from app.providers.claude import CONTEXT_BUDGET
+
+    settings = _settings(tmp_path, anthropic=API_KEY)
+    provider = ClaudeProvider(settings, CursorRuntime(settings))
+    sizes = iter([12_000, CONTEXT_BUDGET + 1, 9_000])
+
+    def turn():
+        call = {"input_tokens": 50, "cache_read_input_tokens": next(sizes) - 50}
+        return [AssistantMessage(content=[TextBlock(text="ok")], model="m", usage=call), _result()]
+
+    captured: dict = {}
+    monkeypatch.setattr("claude_agent_sdk.query", _fake_query(captured, turn))
+    _run(provider, _session(OLD_SESSION), fresh=True)
+    assert captured["options"].resume == OLD_SESSION  # nothing measured yet
+    _run(provider, _session(OLD_SESSION), fresh=True)
+    assert captured["options"].resume == OLD_SESSION  # 12k is small
+    _run(provider, _session(OLD_SESSION), fresh=True)
+    assert captured["options"].resume is None  # grew past the budget: new session with the HA handoff
+    assert provider.keeps_session("s", fresh=False)
+
+
+def test_context_is_read_from_main_model_calls_only() -> None:
+    from types import SimpleNamespace
+
+    from app.providers.claude import context_tokens
+
+    call = {"input_tokens": 10, "cache_read_input_tokens": 1000, "cache_creation_input_tokens": 90, "output_tokens": 5}
+    assert context_tokens(SimpleNamespace(usage=call, parent_tool_use_id=None)) == 1100
+    assert context_tokens(SimpleNamespace(usage=call, parent_tool_use_id="t1")) == 0
+    assert context_tokens(SimpleNamespace(usage=None, parent_tool_use_id=None)) == 0

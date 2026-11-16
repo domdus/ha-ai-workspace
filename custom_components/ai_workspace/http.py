@@ -36,7 +36,6 @@ from .const import (
     token_mode_checks_house,
     token_mode_clip_user,
     token_mode_fresh_agent,
-    token_mode_reply_limit,
 )
 from .mcp_config import with_mcp_auth
 from .mcp_observe import last_mcp_result, note_mcp_result
@@ -395,7 +394,10 @@ async def _runtime_chat(
         user_text = f"{user_text}\n\n{CHECK_HOUSE_NOTE}"
     from .notes import notes_update, remember_nudge
 
-    changed_notes = notes_update(hass, settings, session.id, fresh=token_mode_fresh_agent(token_mode))
+    # Claude keeps its session under Save tokens until it grows (the Runtime decides), so it still
+    # needs to hear when the notes change.
+    fresh_agent = token_mode_fresh_agent(token_mode) and runtime_kind != "claude"
+    changed_notes = notes_update(hass, settings, session.id, fresh=fresh_agent)
     if changed_notes:
         user_text = f"{user_text}\n\n{changed_notes}"
     nudge = remember_nudge(settings, asked, admin=admin)
@@ -432,7 +434,9 @@ async def _runtime_chat(
     payload.update(_runtime_agent_overrides(hass, access_token=token, admin=admin))
     if model:
         payload["model"] = model
-    if effort and token_mode_reply_limit(token_mode) is None:
+    if effort:
+        # Save tokens drops the effort on cloud agents, where it also caps the reply length. The Runtime has
+        # no such cap: without the effort, Claude Code and Cursor fell back to their own, often higher, default.
         payload["effort"] = effort
     if api_key:
         payload["api_key"] = api_key
