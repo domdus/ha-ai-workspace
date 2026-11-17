@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.6.0b16
+
+**Plan limits for the Claude plan now show up.** Since 1.6.0b12 the Usage page said "No plan data yet" for Claude SDK agents on a Claude plan, however much they chatted, and the chat never warned before the limit. Claude Code does report the plan's use with each turn, but the Claude Agent SDK hands it over as an object the Runtime did not read, so every report was dropped. Now the Runtime reads it.
+
+- **Plan limits** on the Usage page show session (5 hours) and week (7 days) in percent, when each resets, and when they were last seen. The newest values are kept on the Runtime and in Home Assistant.
+- **Every reading reaches Home Assistant**, not only the one that crosses the warning zone. Opening the Usage page also fetches the Runtime's latest values.
+- **A turn without numbers:** the Runtime reads them from Anthropic's usage endpoint, the one Claude Code's `/usage` uses. It is not a model call and uses no quota, and it runs at most every 10 minutes. `CLAUDE_PLAN_USAGE_READ=off` on the Runtime turns it off. Tokens from `claude setup-token` may not be allowed to read it; then the chat's own numbers count.
+- **Only a status, no percent:** shows as "Below the warning threshold" instead of "No plan data yet". A window that has reset since says so instead of an old percentage.
+- The chat hint when a plan enters its warning zone works again, because it relied on the same reports.
+- Update the Runtime App to 1.6.0b16 too. AI Workspace asks for it.
+
 ## 1.6.0b15
 
 **MCP tools can ask you in the chat (elicitation).** The Runtime now tells MCP servers it can ask the user. When a server asks something during a Cursor or Claude SDK turn (`elicitation/create`), for example the agent-worker before it runs a command on another server, the chat shows a card with the message, the exact command and **Allow** / **Deny**. The answer (accept, decline, cancel) goes back to the server. See [docs/mcp.md](../docs/mcp.md#questions-and-approvals-from-mcp-tools).
