@@ -1,6 +1,6 @@
 const CACHE = new URL(import.meta.url).search;
 const { stringsFor } = await import(`./i18n.js${CACHE}`);
-const { takeSpeech, speechPlain, takePendingClip, speechTail, splitSpeechClip, MAX_CHARS, clipWatch } = await import(
+const { takeSpeech, speechPlain, takePendingClip, speechTail, splitSpeechClip, MAX_CHARS, clipWatch, unlockOnSend, releaseAudio } = await import(
   `./speech.js${CACHE}`
 );
 const { stripRemoteMedia, watchRenderedMedia } = await import(`./media_guard.js${CACHE}`);
@@ -4682,11 +4682,11 @@ export async function mountAiWorkspace(root, options = {}) {
     try {
       replyAudio.src = SILENCE;
       await replyAudio.play();
-      replyAudio.pause();
-      replyAudio.currentTime = 0;
     } catch (_err) {
       /* WebView may still block until a later tap */
     }
+    // Unlocked now; drop the silent clip at once so Android gives audio focus back.
+    if (String(replyAudio.src || "").startsWith("data:")) releaseAudio(replyAudio);
   }
 
   function encodeWav(chunks, sampleRate) {
@@ -4858,11 +4858,11 @@ export async function mountAiWorkspace(root, options = {}) {
     speakPending.length = 0;
     speakInflight.length = 0;
     if (speakRelease) speakRelease();
-    if (replyAudio && !replyAudio.paused && !replyAudio.ended) replyAudio.pause();
     if (replyObjectUrl) {
       URL.revokeObjectURL(replyObjectUrl);
       replyObjectUrl = "";
     }
+    releaseAudio(replyAudio);
     setSpeakUi("idle");
   }
 
@@ -5064,6 +5064,15 @@ export async function mountAiWorkspace(root, options = {}) {
       .finally(() => {
         speakBusy = false;
         if (speakPending.length || speakInflight.length) kickSpeak();
+        else if (gen === speakGen && played && replyAudio) {
+          // Read-aloud finished: give audio focus back so other apps are no longer ducked.
+          if (replyObjectUrl) {
+            URL.revokeObjectURL(replyObjectUrl);
+            replyObjectUrl = "";
+          }
+          releaseAudio(replyAudio);
+          setSpeakUi("idle");
+        }
       });
   }
 
@@ -5270,7 +5279,9 @@ export async function mountAiWorkspace(root, options = {}) {
     const speechPlaying = Boolean(
       speakBusy || (replyAudio && !replyAudio.paused && !replyAudio.ended && replyObjectUrl),
     );
-    if (!keepComposer || !speechPlaying) unlockOutput();
+    // Only when the reply is read aloud automatically — otherwise leave audio alone
+    // (unlocking plays a silent clip, and Android ducks other apps for it).
+    if (unlockOnSend(voice) && (!keepComposer || !speechPlaying)) unlockOutput();
     if (keepComposerFocus()) messageEl.focus();
     else hideKeyboard();
     streaming = true;
@@ -6862,7 +6873,7 @@ export async function mountAiWorkspace(root, options = {}) {
     for (const undo of teardown.splice(0)) undo();
     if (followRaf) cancelAnimationFrame(followRaf);
     if (keyboardRaf) cancelAnimationFrame(keyboardRaf);
-    replyAudio?.pause();
+    releaseAudio(replyAudio);
     replyAudio = null;
     root.replaceChildren();
   }

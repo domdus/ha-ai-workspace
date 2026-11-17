@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.0b17
+
+**Sending a prompt no longer lowers other audio on your phone.** With auto read-aloud off, every send still played a silent clip to prepare read-aloud. On Android (Home Assistant app) that took audio focus, so a YouTube video or music went quiet before any answer came. Now AI Workspace leaves audio alone unless the reply is read aloud.
+
+- **Auto read-aloud off:** sending touches no audio. Tapping **Read aloud** still works as before.
+- **Auto read-aloud on:** unchanged, sending still prepares playback so the reply can be read on phones.
+- **After read-aloud ends or is stopped**, the audio is unloaded, so other apps play at full volume again.
+- Only the chat changed. The Runtime App can stay on 1.6.0b16.
+
 ## 1.6.0b16
 
 **Plan limits for the Claude plan now show up.** Since 1.6.0b12 the Usage page said "No plan data yet" for Claude SDK agents on a Claude plan, however much they chatted, and the chat never warned before the limit. Claude Code does report the plan's use with each turn, but the Claude Agent SDK hands it over as an object the Runtime did not read, so every report was dropped. Now the Runtime reads it.
