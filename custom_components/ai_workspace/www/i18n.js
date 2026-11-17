@@ -170,6 +170,11 @@ export const I18N = {
     usage_plan_reset: "Reset",
     usage_plan_official: "Official usage page",
     usage_plan_unknown: "—",
+    usage_plan_below_warning: "Below the warning threshold — the SDK sent no detailed numbers yet",
+    usage_plan_status_warning: "Approaching the limit",
+    usage_plan_status_rejected: "Limit reached",
+    usage_plan_rolled_over: "window reset since",
+    usage_plan_updated: "As of {when}",
   },
   de: {
     title: "AI Workspace",
@@ -342,6 +347,11 @@ export const I18N = {
     usage_plan_reset: "Reset",
     usage_plan_official: "Offizielle Nutzungsseite",
     usage_plan_unknown: "—",
+    usage_plan_below_warning: "Unter Warnschwelle – keine Detaildaten vom SDK",
+    usage_plan_status_warning: "Nahe am Limit",
+    usage_plan_status_rejected: "Limit erreicht",
+    usage_plan_rolled_over: "seitdem zurückgesetzt",
+    usage_plan_updated: "Stand {when}",
   },
   fr: {
     title: "AI Workspace",

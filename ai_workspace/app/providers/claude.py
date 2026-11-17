@@ -402,6 +402,10 @@ class ClaudeProvider:
         self.runtime = runtime
         # Context size of each chat's last model call, for Save tokens.
         self._context: dict[str, int] = {}
+        from app.claude_usage import ClaudeUsageReader
+
+        # Fills the Usage page's Plan-Limits when a turn brought no rate_limit_event (see app.claude_usage).
+        self.usage_reader = ClaudeUsageReader()
 
     def keeps_session(self, session_id: str, fresh: bool) -> bool:
         """Off: always resume. Save tokens: resume only a session measured below CONTEXT_BUDGET.
@@ -495,6 +499,7 @@ class ClaudeProvider:
         if level:
             options_kwargs["effort"] = level
         finished = False
+        plan_seen = False
         api_error = ""
         try:
             self.settings.workspace_dir.mkdir(parents=True, exist_ok=True)
@@ -506,6 +511,7 @@ class ClaudeProvider:
                 if finished:
                     continue
                 for notice in plan_events_from_sdk(book, "claude", sdk_message):
+                    plan_seen = True
                     yield notice
                 if isinstance(sdk_message, AssistantMessage):
                     if sdk_message.error:
@@ -544,3 +550,13 @@ class ClaudeProvider:
         # Worker jobs that finished after the last streamed message, or before a failed turn, still count.
         for worker in _take_worker_usage(self.runtime, session.id):
             yield worker
+        if is_plan_token(credential):
+            self._refresh_plan_usage(credential, plan_seen)
+
+    def _refresh_plan_usage(self, credential: str, plan_seen: bool) -> None:
+        """Read the plan's utilization (no tokens) when this turn's stream brought no percent."""
+        book = self.runtime.plan_quota
+        snap = book.get("claude") or {}
+        if plan_seen and (snap.get("session_percent") is not None or snap.get("week_percent") is not None):
+            return
+        self.usage_reader.refresh_in_background(book, credential)

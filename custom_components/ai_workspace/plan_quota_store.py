@@ -111,3 +111,32 @@ async def async_merge_runtime_plan_quota(hass: HomeAssistant, payload: dict[str,
 def public_plan_quota(hass: HomeAssistant) -> dict[str, dict[str, Any]]:
     cached = plan_quota_cache(hass)
     return {engine: dict(cached[engine]) for engine in ENGINES if engine in cached}
+
+_REFRESH_EVERY = 30.0
+
+
+async def async_refresh_runtime_plan_quota(hass: HomeAssistant) -> None:
+    """Pull the Runtime's latest plan snapshots (from /api/health) when the Usage page opens.
+
+    The chat stream already carries them (plan_usage events); this also picks up what the Runtime
+    read on its own after a turn (app.claude_usage) and what came in while HA was not listening.
+    """
+    import time
+
+    bucket = hass.data.get(DOMAIN) or {}
+    base = str(bucket.get("runtime_url") or "")
+    if not base:
+        return
+    now = time.monotonic()
+    if now - float(bucket.get("plan_quota_pulled") or 0) < _REFRESH_EVERY:
+        return
+    bucket["plan_quota_pulled"] = now
+    from .discovery import async_runtime_health
+
+    try:
+        health = await async_runtime_health(hass, base)
+        payload = (health or {}).get("plan_quota")
+        if isinstance(payload, dict) and payload:
+            await async_merge_runtime_plan_quota(hass, payload)
+    except Exception:  # noqa: BLE001 - the Usage page must open without the Runtime.
+        _LOGGER.debug("Runtime plan quota not pulled", exc_info=True)

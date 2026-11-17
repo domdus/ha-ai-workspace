@@ -538,15 +538,13 @@ async def _ingest_runtime_plan_event(hass, event: dict) -> None:
     engine = str(event.get("engine") or "claude").strip().lower()
     if engine not in ENGINES:
         return
-    if kind == "plan_notice":
-        snapshot = {
-            "status": event.get("status"),
-            "session_percent": event.get("session_percent"),
-            "week_percent": event.get("week_percent"),
-            "session_reset_at": event.get("session_reset_at"),
-            "week_reset_at": event.get("week_reset_at"),
-        }
-        await async_merge_plan_quota(hass, engine, snapshot)
+    if kind in {"plan_notice", "plan_usage"}:
+        from .plan_quota import snapshot_from_event
+
+        try:
+            await async_merge_plan_quota(hass, engine, snapshot_from_event(event))
+        except Exception:  # noqa: BLE001 - plan data is extra; the chat must go on.
+            logger.debug("plan quota not stored", exc_info=True)
 
 
 async def async_agent_events(
@@ -1345,6 +1343,10 @@ class ChatView(HomeAssistantView):
                             )
                         elif kind == "plan_notice":
                             await _ingest_runtime_plan_event(hass, event)
+                        elif kind == "plan_usage":
+                            # Stored for the Usage page; nothing to show in the chat.
+                            await _ingest_runtime_plan_event(hass, event)
+                            continue
                         elif kind == "error":
                             event = _localized_runtime_error(hass, event, language)
                             error = public_error(event.get("message"))
@@ -2020,6 +2022,9 @@ class UsageView(HomeAssistantView):
         model = str(request.query.get("model") or "").strip()
         since = str(request.query.get("since") or "").strip()
         until = str(request.query.get("until") or "").strip()
+        from .plan_quota_store import async_refresh_runtime_plan_quota
+
+        await async_refresh_runtime_plan_quota(hass)
         payload = await hass.async_add_executor_job(
             lambda: dashboard_payload(
                 hass,

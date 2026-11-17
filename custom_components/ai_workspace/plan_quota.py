@@ -46,6 +46,32 @@ def _mapping(obj: Any) -> dict[str, Any]:
     return {}
 
 
+def _info_dict(info: Any) -> dict[str, Any] | None:
+    """The CLI's rate_limit_info as a camelCase dict.
+
+    claude-agent-sdk (0.2.x) hands over ``RateLimitEvent(rate_limit_info=RateLimitInfo(...))``
+    dataclasses, not dicts. ``RateLimitInfo.raw`` is the CLI's own JSON (with ``unifiedWindows``);
+    the typed fields are the fallback for an SDK that leaves ``raw`` empty.
+    """
+    if isinstance(info, dict):
+        return info
+    if info is None:
+        return None
+    raw = getattr(info, "raw", None)
+    out: dict[str, Any] = dict(raw) if isinstance(raw, dict) else {}
+    for attr, key in (
+        ("status", "status"),
+        ("resets_at", "resetsAt"),
+        ("rate_limit_type", "rateLimitType"),
+        ("utilization", "utilization"),
+        ("overage_status", "overageStatus"),
+    ):
+        value = getattr(info, attr, None)
+        if value is not None and key not in out:
+            out[key] = value
+    return out if out.get("status") or out.get("unifiedWindows") else None
+
+
 def _pick(blob: Any, *keys: str) -> Any:
     for key in keys:
         if isinstance(blob, dict) and key in blob:
@@ -78,14 +104,17 @@ def _epoch(value: object) -> int | None:
         return None
 
 
-def _percent(value: object) -> int | None:
-    if value is None:
+def _percent(value: object, *, fraction: bool | None = None) -> int | None:
+    """0..100. ``fraction`` True: 0.0-1.0 (the CLI's headers); False: already percent (/api/oauth/usage)."""
+    if value is None or isinstance(value, bool):
         return None
     try:
         raw = float(value)
     except (TypeError, ValueError):
         return None
-    if raw <= 1.0 and raw > 0:
+    if fraction is None:
+        fraction = 0 < raw <= 1.0
+    if fraction:
         raw *= 100
     pct = int(round(raw))
     return max(0, min(100, pct))
@@ -105,11 +134,12 @@ def normalize_rate_limit_info(info: dict[str, Any]) -> dict[str, Any]:
     rate_type = str(info.get("rateLimitType") or info.get("rate_limit_type") or "").strip().lower()
     session_row = _window_blob(info, "five_hour")
     week_row = _window_blob(info, "seven_day")
-    session_pct = _percent(session_row.get("utilization"))
-    week_pct = _percent(week_row.get("utilization"))
+    # The CLI sends utilization as a fraction (0.0-1.0) in unifiedWindows and at the top level.
+    session_pct = _percent(session_row.get("utilization"), fraction=True)
+    week_pct = _percent(week_row.get("utilization"), fraction=True)
     session_reset = _epoch(session_row.get("resetsAt") or session_row.get("resets_at"))
     week_reset = _epoch(week_row.get("resetsAt") or week_row.get("resets_at"))
-    primary_util = _percent(info.get("utilization"))
+    primary_util = _percent(info.get("utilization"), fraction=True)
     primary_reset = _epoch(info.get("resetsAt") or info.get("resets_at"))
     if rate_type in _WEEK_TYPES:
         if week_reset is None and primary_reset is not None:
@@ -130,6 +160,7 @@ def normalize_rate_limit_info(info: dict[str, Any]) -> dict[str, Any]:
         "session_reset_at": session_reset,
         "week_reset_at": week_reset,
         "rate_limit_type": rate_type,
+        "source": "sdk",
         "updated_at": _utc_now(),
     }
     if info.get("isUsingOverage") is not None:
@@ -138,10 +169,32 @@ def normalize_rate_limit_info(info: dict[str, Any]) -> dict[str, Any]:
 
 
 def parse_rate_limit_event(payload: dict[str, Any]) -> dict[str, Any] | None:
-    info = payload.get("rate_limit_info") or payload.get("rateLimitInfo")
-    if not isinstance(info, dict):
+    info = _info_dict(payload.get("rate_limit_info") or payload.get("rateLimitInfo"))
+    if not info:
         return None
     return normalize_rate_limit_info(info)
+
+
+def normalize_oauth_usage(body: dict[str, Any]) -> dict[str, Any] | None:
+    """Snapshot from Anthropic's ``GET /api/oauth/usage`` (what Claude Code's ``/usage`` shows).
+
+    Percent values (0-100) and ISO reset times; reading it costs no tokens. ``status`` stays empty:
+    the endpoint has no allowed/warning/rejected verdict, the in-chat rate_limit_event does.
+    """
+    if not isinstance(body, dict):
+        return None
+    five = body.get("five_hour") if isinstance(body.get("five_hour"), dict) else {}
+    seven = body.get("seven_day") if isinstance(body.get("seven_day"), dict) else {}
+    if not five and not seven:
+        return None
+    return {
+        "session_percent": _percent(five.get("utilization"), fraction=False),
+        "week_percent": _percent(seven.get("utilization"), fraction=False),
+        "session_reset_at": _epoch(five.get("resets_at")),
+        "week_reset_at": _epoch(seven.get("resets_at")),
+        "source": "usage_api",
+        "updated_at": _utc_now(),
+    }
 
 
 def parse_claude_sdk_message(message: Any) -> dict[str, Any] | None:
@@ -176,7 +229,11 @@ def parse_codex_sdk_message(message: Any) -> dict[str, Any] | None:
     return _dig_plan_fields(_mapping(message))
 
 
+_RESET_FOR = {"session_percent": "session_reset_at", "week_percent": "week_reset_at"}
+
+
 def merge_snapshots(old: dict[str, Any] | None, new: dict[str, Any]) -> dict[str, Any]:
+    """Newest known values win; a value the new snapshot does not carry (None) keeps the old one."""
     base = dict(old or {})
     for key, value in new.items():
         if key == "updated_at":
@@ -184,8 +241,17 @@ def merge_snapshots(old: dict[str, Any] | None, new: dict[str, Any]) -> dict[str
             continue
         if value is None:
             continue
-        if key in {"session_percent", "week_percent"} and value == 0 and base.get(key):
-            continue
+        if key in _RESET_FOR and value == 0 and base.get(key):
+            # A bare 0 next to a known percent is a partial reading, unless the window has rolled
+            # over (a new reset time, or the stored one has passed).
+            reset_key = _RESET_FOR[key]
+            new_reset = new.get(reset_key)
+            old_reset = base.get(reset_key)
+            rolled = (new_reset is not None and new_reset != old_reset) or (
+                isinstance(old_reset, (int, float)) and old_reset <= datetime.now(timezone.utc).timestamp()
+            )
+            if not rolled:
+                continue
         base[key] = value
     if not base.get("updated_at"):
         base["updated_at"] = _utc_now()
@@ -196,6 +262,39 @@ def crossed_warning(old: dict[str, Any] | None, new: dict[str, Any]) -> bool:
     previous = str((old or {}).get("status") or "")
     current = str(new.get("status") or "")
     return current == _STATUS_WARNING and previous != _STATUS_WARNING
+
+
+_USAGE_FIELDS = (
+    "status",
+    "session_percent",
+    "week_percent",
+    "session_reset_at",
+    "week_reset_at",
+    "rate_limit_type",
+    "overage",
+    "source",
+    "updated_at",
+)
+
+
+def plan_usage_event(engine: str, snapshot: dict[str, Any]) -> dict[str, Any]:
+    """The latest snapshot for Home Assistant to store (not shown in the chat)."""
+    event: dict[str, Any] = {"type": "plan_usage", "engine": engine}
+    for key in _USAGE_FIELDS:
+        if snapshot.get(key) is not None:
+            event[key] = snapshot[key]
+    return event
+
+
+def snapshot_from_event(event: dict[str, Any]) -> dict[str, Any]:
+    """plan_usage / plan_notice event -> snapshot for merge_snapshots (Home Assistant side)."""
+    return {key: event.get(key) for key in _USAGE_FIELDS if key in event}
+
+
+def has_plan_data(snapshot: dict[str, Any] | None) -> bool:
+    if not snapshot:
+        return False
+    return any(snapshot.get(key) is not None for key in ("status", "session_percent", "week_percent", "session_reset_at", "week_reset_at"))
 
 
 def plan_notice_event(engine: str, snapshot: dict[str, Any]) -> dict[str, Any]:
@@ -289,11 +388,15 @@ class PlanQuotaBook:
         return dict(row) if isinstance(row, dict) else None
 
     def apply(self, engine: str, snapshot: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+        """Store the newest values; events: plan_usage (always) and plan_notice (on crossing the warning)."""
         old = self.get(engine)
         merged = merge_snapshots(old, snapshot)
         self._engines[engine] = merged
-        self.save()
-        events: list[dict[str, Any]] = []
+        try:
+            self.save()
+        except OSError:
+            pass  # The snapshot still reaches Home Assistant in the event; the file is a cache.
+        events: list[dict[str, Any]] = [plan_usage_event(engine, merged)]
         if crossed_warning(old, merged):
             events.append(plan_notice_event(engine, merged))
         return merged, events
@@ -308,7 +411,10 @@ def plan_events_from_sdk(book: PlanQuotaBook, engine: str, message: Any) -> list
     parser = parsers.get(engine)
     if parser is None:
         return []
-    snapshot = parser(message)
+    try:
+        snapshot = parser(message)
+    except Exception:  # noqa: BLE001 - plan data is extra; a strange message must not break the turn.
+        return []
     if not snapshot:
         return []
     _, events = book.apply(engine, snapshot)

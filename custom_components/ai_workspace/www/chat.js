@@ -1690,6 +1690,61 @@ export async function mountAiWorkspace(root, options = {}) {
     }
   }
 
+  function planResetDayLabel(epoch) {
+    const ts = Number(epoch);
+    if (!Number.isFinite(ts) || ts <= 0) return "?";
+    const tz = hassObj()?.config?.time_zone;
+    const opts = { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" };
+    try {
+      return new Date(ts * 1000).toLocaleString(undefined, { ...opts, timeZone: tz || undefined });
+    } catch (_err) {
+      return new Date(ts * 1000).toLocaleString(undefined, opts);
+    }
+  }
+
+  function planHasData(snap) {
+    if (!snap) return false;
+    return ["status", "session_percent", "week_percent", "session_reset_at", "week_reset_at"].some(
+      (key) => snap[key] != null && snap[key] !== "",
+    );
+  }
+
+  // One line per plan: session % (reset), week % (reset). Status only (the SDK sent no percent): say so.
+  function planUsageLine(snap) {
+    const nowSec = Date.now() / 1000;
+    const hasPercent = snap.session_percent != null || snap.week_percent != null;
+    if (!hasPercent) {
+      if (snap.status === "rejected") return t("usage_plan_status_rejected");
+      if (snap.status === "allowed_warning") return t("usage_plan_status_warning");
+      return t("usage_plan_below_warning");
+    }
+    const parts = [];
+    const sessionGone = snap.session_reset_at != null && Number(snap.session_reset_at) <= nowSec;
+    const weekGone = snap.week_reset_at != null && Number(snap.week_reset_at) <= nowSec;
+    let session = snap.session_percent == null ? t("usage_plan_unknown") : `${snap.session_percent}%`;
+    if (sessionGone) session = t("usage_plan_rolled_over");
+    else if (snap.session_reset_at != null) session += ` (${t("usage_plan_reset")} ${planResetLabel(snap.session_reset_at)})`;
+    parts.push(`${t("usage_plan_session")}: ${session}`);
+    let week = snap.week_percent == null ? t("usage_plan_unknown") : `${snap.week_percent}%`;
+    if (weekGone) week = t("usage_plan_rolled_over");
+    else if (snap.week_reset_at != null) week += ` (${t("usage_plan_reset")} ${planResetDayLabel(snap.week_reset_at)})`;
+    parts.push(`${t("usage_plan_week")}: ${week}`);
+    return parts.join(" · ");
+  }
+
+  function planUsageMeta(snap) {
+    const bits = [];
+    if (snap.session_percent != null || snap.week_percent != null) {
+      if (snap.status === "rejected") bits.push(t("usage_plan_status_rejected"));
+      else if (snap.status === "allowed_warning") bits.push(t("usage_plan_status_warning"));
+    }
+    const when = Date.parse(snap.updated_at || "");
+    if (Number.isFinite(when)) {
+      bits.push(t("usage_plan_updated", { when: planResetDayLabel(Math.floor(when / 1000)) }));
+    }
+    return bits.join(" · ");
+  }
+
   function planEngineTitle(engine) {
     const key = `usage_plan_${String(engine || "claude")}`;
     return t(key);
@@ -6481,7 +6536,7 @@ export async function mountAiWorkspace(root, options = {}) {
     const engineOrder = ["claude", "cursor", "codex"];
     const planRows = engineOrder
       .map((engine) => [engine, plan[engine]])
-      .filter(([, snap]) => snap && (snap.session_percent != null || snap.week_percent != null || snap.session_reset_at));
+      .filter(([, snap]) => planHasData(snap));
     const heading = document.createElement("p");
     heading.className = "usage-heading";
     heading.textContent = t("usage_plan_heading");
@@ -6500,13 +6555,15 @@ export async function mountAiWorkspace(root, options = {}) {
         title.textContent = t(`usage_plan_${engine}`);
         const line = document.createElement("p");
         line.className = "usage-plan-line";
-        const session =
-          snap.session_percent == null ? t("usage_plan_unknown") : `${snap.session_percent}%`;
-        const week = snap.week_percent == null ? t("usage_plan_unknown") : `${snap.week_percent}%`;
-        const reset =
-          snap.session_reset_at == null ? t("usage_plan_unknown") : planResetLabel(snap.session_reset_at);
-        line.textContent = `${t("usage_plan_session")}: ${session} · ${t("usage_plan_week")}: ${week} · ${t("usage_plan_reset")}: ${reset}`;
+        line.textContent = planUsageLine(snap);
         card.append(title, line);
+        const meta = planUsageMeta(snap);
+        if (meta) {
+          const note = document.createElement("p");
+          note.className = "usage-plan-line usage-plan-meta";
+          note.textContent = meta;
+          card.appendChild(note);
+        }
         const link = planLinks[engine];
         if (link) {
           const a = document.createElement("a");

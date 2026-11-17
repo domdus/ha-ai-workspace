@@ -111,6 +111,7 @@ On Docker, these environment variables work:
 | `CLAUDE_CODE_OAUTH_TOKEN` | Plan token for Claude SDK agents without their own credential, when nobody signed in. |
 | `ANTHROPIC_API_KEY` | API key for Claude SDK agents without their own credential, when nobody signed in and no Plan token is set. |
 | `CLAUDE_MODEL` | Default model when the agent's model is empty. |
+| `CLAUDE_PLAN_USAGE_READ` | `off` stops the Runtime from reading the plan's usage from Anthropic (`/api/oauth/usage`, no tokens) when a turn reported none. Default on. See [Plan limits](cost.md#plan-limits). |
 
 ### Coming from 1.6.0b11 or older
 

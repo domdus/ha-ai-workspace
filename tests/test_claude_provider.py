@@ -691,3 +691,66 @@ def test_context_is_read_from_main_model_calls_only() -> None:
     assert context_tokens(SimpleNamespace(usage=call, parent_tool_use_id=None)) == 1100
     assert context_tokens(SimpleNamespace(usage=call, parent_tool_use_id="t1")) == 0
     assert context_tokens(SimpleNamespace(usage=None, parent_tool_use_id=None)) == 0
+
+
+# --- plan limits (1.6.0b16) ------------------------------------------------------------------
+
+_PLAN_INFO = {
+    "status": "allowed",
+    "resetsAt": 1774918800,
+    "rateLimitType": "five_hour",
+    "unifiedWindows": {
+        "five_hour": {"utilization": 0.23, "resetsAt": 1774918800},
+        "seven_day": {"utilization": 0.41, "resetsAt": 1775300000},
+    },
+}
+
+
+def _rate_limit_event(info=None):
+    from claude_agent_sdk._internal.message_parser import parse_message
+
+    return parse_message(
+        {"type": "rate_limit_event", "rate_limit_info": info or _PLAN_INFO, "uuid": "u", "session_id": "s"}
+    )
+
+
+@needs_sdk
+def test_plan_turn_reports_plan_usage(tmp_path, monkeypatch) -> None:
+    settings = _settings(tmp_path, oauth=PLAN)
+    runtime = CursorRuntime(settings)
+    captured: dict = {}
+    monkeypatch.setattr("claude_agent_sdk.query", _fake_query(captured, lambda: [_rate_limit_event(), _result()]))
+    provider = ClaudeProvider(settings, runtime)
+    reads: list[str] = []
+    monkeypatch.setattr(provider.usage_reader, "refresh_in_background", lambda book, token: reads.append(token))
+    events, _ = _run(provider, _session())
+    usage = [e for e in events if e["type"] == "plan_usage"]
+    assert len(usage) == 1
+    assert usage[0]["engine"] == "claude"
+    assert (usage[0]["session_percent"], usage[0]["week_percent"]) == (23, 41)
+    assert runtime.plan_quota.get("claude")["week_reset_at"] == 1775300000
+    assert reads == []  # the stream had the numbers: no extra read
+
+
+@needs_sdk
+def test_plan_turn_without_event_reads_usage(tmp_path, monkeypatch) -> None:
+    settings = _settings(tmp_path, oauth=PLAN)
+    runtime = CursorRuntime(settings)
+    monkeypatch.setattr("claude_agent_sdk.query", _fake_query({}, lambda: [_result()]))
+    provider = ClaudeProvider(settings, runtime)
+    reads: list[str] = []
+    monkeypatch.setattr(provider.usage_reader, "refresh_in_background", lambda book, token: reads.append(token))
+    _run(provider, _session())
+    assert reads == [PLAN]
+
+
+@needs_sdk
+def test_api_key_turn_never_reads_plan_usage(tmp_path, monkeypatch) -> None:
+    settings = _settings(tmp_path, anthropic=API_KEY)
+    runtime = CursorRuntime(settings)
+    monkeypatch.setattr("claude_agent_sdk.query", _fake_query({}, lambda: [_result()]))
+    provider = ClaudeProvider(settings, runtime)
+    reads: list[str] = []
+    monkeypatch.setattr(provider.usage_reader, "refresh_in_background", lambda book, token: reads.append(token))
+    _run(provider, _session())
+    assert reads == []

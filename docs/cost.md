@@ -24,6 +24,16 @@ The result is an estimate based on public list prices. Your provider's invoice i
 - Unknown models still store tokens. Cost stays empty until the price list knows that model name.
 - **Coding workers (Agent Worker / Cursor Worker over MCP):** when a chat agent hands a task to a worker (`agent_run`, then `agent_job`; older `cursor_agent` / `cursor_job`), the worker reports what its own engine used once the job is finished (succeeded, failed or cancelled). That usage is stored as its own row under **Worker: Claude Code**, **Worker: OpenAI Codex** or **Worker: Cursor** (agent id `worker:<engine>`), not added to the chat agent's turn. Each job is counted once, however often the agent polls it. Cost: Cursor billed cents when present, else the cost the engine reports itself (Claude Code), else list price when the model is known. Codex reports no price and usually no model, so its tokens are stored with the cost unknown.
 
+## Plan limits
+
+The **Plan limits** block shows how much of a subscription plan (Claude plan, Cursor, Codex) is used: the 5-hour session window and the 7-day week window in percent, when each resets, and when that was last seen. It is not token cost.
+
+- **Claude plan (Claude SDK agents with a Plan token or Sign in with Claude):** Claude Code reports the plan's utilization with each turn (`rate_limit_event`; first answer of a turn and whenever a rounded percent changes). The Runtime stores the newest values (`plan_quota.json` in its data folder) and sends them to Home Assistant, which keeps the last state. If a turn brought no numbers, the Runtime reads them once from Anthropic's usage endpoint, the same one Claude Code's `/usage` uses (`GET /api/oauth/usage`, no model call, no quota), at most every 10 minutes. Tokens from `claude setup-token` may not be allowed to read it; then only the chat's numbers count. `CLAUDE_PLAN_USAGE_READ=off` on the Runtime switches the read off.
+- **Below the warning threshold – no detailed numbers** means Claude reported its status (allowed) without percentages.
+- When a window has reset since the last reading, the row says so instead of showing an old percentage.
+- The chat shows a short hint once when a plan crosses into its warning zone, and a translated message with the reset time when the limit is reached.
+- Anthropic API keys have no plan limits; their row stays empty.
+
 ## Home Assistant sensors
 
 **Add Home Assistant usage sensors** is off by default. The Usage page does not need them.
