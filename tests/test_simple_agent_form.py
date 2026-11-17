@@ -74,7 +74,8 @@ def test_one_hour_cache_box_is_only_on_claude_agents() -> None:
 
     assert advanced_keys("anthropic") == {"save_tokens", "cache_1h", "use_claude_runtime"}
     assert advanced_keys("anthropic", runtime=True) == {"save_tokens", "use_claude_runtime"}
-    assert advanced_keys("openai") == {"save_tokens"}
+    assert advanced_keys("openai") == {"save_tokens", "use_codex_runtime"}
+    assert advanced_keys("gemini") == {"save_tokens"}
     assert uses_claude_runtime({"api_provider": "anthropic", "use_claude_runtime": True})
     assert not uses_claude_runtime({"api_provider": "anthropic", "mode": "api"})
     assert caches_an_hour({"cache_1h": True}) is True

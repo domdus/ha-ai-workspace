@@ -307,7 +307,11 @@
         "login_failed": "Inloggningen misslyckades på Runtime. Titta i Runtime-loggen och försök igen.",
         "not_supported": "Den här motorn har ingen planinloggning. Använd en API-nyckel.",
         "runtime_rejected": "AI Workspace Runtime nekade Runtime-lösenordet. Ange samma lösenord på Runtime och i det här formuläret.",
-        "runtime_old": "Den här Runtime kan inte logga in än. Uppdatera AI Workspace Runtime, eller klistra in en token i agentformuläret."
+        "runtime_old": "Den här Runtime kan inte logga in än. Uppdatera AI Workspace Runtime, eller klistra in en token i agentformuläret.",
+        "codex_runtime_old": "Uppdatera AI Workspace Runtime till 1.6.0 eller senare för Codex-agenter.",
+        "codex_key_required": "Lägg till en OpenAI API-nyckel under Codex (runtime), eller logga in med ChatGPT på AI Workspace Runtime.",
+        "not_signed_in_yet": "OpenAI har inte bekräftat inloggningen ännu. Ange koden på OpenAI:s sida och skicka igen.",
+        "no_code": "Codex fick ingen inloggningskod från OpenAI. Kontrollera att Runtime når auth.openai.com och försök igen."
       },
       "step": {
         "provider": {
@@ -408,12 +412,14 @@
               "data": {
                 "save_tokens": "Spara tokens",
                 "cache_1h": "Behåll cachen i en timme",
-                "use_claude_runtime": "Använd Claude SDK (runtime) (experimentellt)"
+                "use_claude_runtime": "Använd Claude SDK (runtime) (experimentellt)",
+                "use_codex_runtime": "Använd Codex (runtime) (experimentell)"
               },
               "data_description": {
                 "save_tokens": "Skickar mindre med varje meddelande: en kortare prompt, mindre chatthistorik och kortare svar. Billigare, men svar om ditt hem kan bli mindre grundliga.",
                 "cache_1h": "Endast Claude. Håller systemprompten och verktygen i cachen i en timme i stället för 5 minuter. Att skriva till cachen kostar 2× inmatningspriset i stället för 1,25×; att läsa kostar 0,1×. Billigare när det ofta går mer än 5 minuter mellan dina meddelanden, lite dyrare om du sällan chattar.",
-                "use_claude_runtime": "Chattar går via Claude Code på AI Workspace Runtime i stället för Anthropics moln-API, med din Claude-prenumeration (Pro, Max) eller en Anthropic API-nyckel. Tryck på OK efter ändringen: formuläret visar då de fält som hör till, inget sparas ännu."
+                "use_claude_runtime": "Chattar går via Claude Code på AI Workspace Runtime i stället för Anthropics moln-API, med din Claude-prenumeration (Pro, Max) eller en Anthropic API-nyckel. Tryck på OK efter ändringen: formuläret visar då de fält som hör till, inget sparas ännu.",
+                "use_codex_runtime": "Chattar går via OpenAI Codex på AI Workspace Runtime i stället för OpenAI:s moln-API, med ditt ChatGPT-abonnemang (Plus, Pro, Business) eller en OpenAI API-nyckel. Tryck OK efter ändringen: formuläret visar då rätt fält, inget sparas ännu."
               }
             },
             "claude_runtime": {
@@ -428,6 +434,20 @@
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "Samma lösenord som på AI Workspace Runtime. Lämna tomt när du använder tillägget med automatisk parkoppling.",
                 "claude_api_key": "En Claude Plan-token (sk-ant-oat…, från `claude setup-token`, använder din Claude-prenumeration) eller en Anthropic API-nyckel (sk-ant-api…, debiteras som API-krediter). Lämna tomt för att använda den på AI Workspace Runtime, eller vid redigering för att behålla den sparade. [Hämta API-nyckel]({api_key_url})"
+              }
+            },
+            "codex_runtime": {
+              "name": "Codex (runtime)",
+              "description": "En tom modell använder Codex standardmodell för ditt konto.",
+              "data": {
+                "runtime_url": "Runtime-adress{runtime_url_mark}",
+                "runtime_token": "Runtime-lösenord",
+                "codex_api_key": "OpenAI API-nyckel (valfritt)"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "Samma lösenord som på AI Workspace Runtime. Lämna tomt med tillägget och automatisk parkoppling.",
+                "codex_api_key": "Valfritt. Enklare: lämna tomt och använd **Logga in med ChatGPT** i nästa steg. Eller klistra in en OpenAI API-nyckel bara för den här agenten (debiteras som API-användning); den går före Runtimes inloggning. Lämna tomt vid redigering för att behålla den sparade. [OpenAI-nycklar]({api_key_url})"
               }
             }
           }
@@ -590,6 +610,29 @@
           "description": "{status}\n\nSkicka för att spara agenten."
         },
         "claude_login_error": {
+          "title": "Inloggningen fungerade inte",
+          "description": "Skicka för att gå tillbaka."
+        },
+        "codex_account": {
+          "title": "Codex-konto",
+          "description": "{status}\n\nInloggningen sparas på AI Workspace Runtime, inte i Home Assistant, och varje Codex-agent på den Runtime använder den.",
+          "menu_options": {
+            "codex_use_runtime": "Använd Runtimes befintliga åtkomst",
+            "codex_save": "Spara agent",
+            "codex_login": "Logga in med ChatGPT",
+            "codex_logout": "Logga ut på Runtime",
+            "codex_back": "Tillbaka till agentinställningarna"
+          }
+        },
+        "codex_login": {
+          "title": "Logga in med ChatGPT",
+          "description": "1. Öppna länken och logga in med ChatGPT-kontot som har ditt abonnemang: [Logga in med ChatGPT]({url})\n2. Ange den här engångskoden där: **{code}**\n3. Skicka sedan här.\n\nKoden gäller i 15 minuter. Ditt ChatGPT-lösenord går aldrig via Home Assistant. Om OpenAI avvisar koden, slå en gång på inloggning med enhetskod i ChatGPT under **Inställningar → Säkerhet** (för ett arbetsytekonto tillåter administratören det)."
+        },
+        "codex_signed_in": {
+          "title": "Inloggad",
+          "description": "{status}\n\nSkicka för att spara agenten."
+        },
+        "codex_login_error": {
           "title": "Inloggningen fungerade inte",
           "description": "Skicka för att gå tillbaka."
         }

@@ -307,7 +307,11 @@
         "login_failed": "執行環境上的登入失敗。請查看執行環境日誌後重試。",
         "not_supported": "此引擎不支援訂閱登入。請使用 API 金鑰。",
         "runtime_rejected": "AI Workspace Runtime 拒絕了執行環境密碼。請在執行環境和此表單中設定相同的密碼。",
-        "runtime_old": "此執行環境尚不支援登入。請更新 AI Workspace Runtime，或在代理表單中貼上權杖。"
+        "runtime_old": "此執行環境尚不支援登入。請更新 AI Workspace Runtime，或在代理表單中貼上權杖。",
+        "codex_runtime_old": "要使用 Codex 代理，請將 AI Workspace 執行環境更新至 1.6.0 或更新版本。",
+        "codex_key_required": "在 Codex（執行環境）下新增 OpenAI API 金鑰，或在 AI Workspace 執行環境上用 ChatGPT 登入。",
+        "not_signed_in_yet": "OpenAI 尚未確認登入。請在 OpenAI 頁面輸入代碼，然後再次送出。",
+        "no_code": "Codex 沒有從 OpenAI 取得登入代碼。請檢查執行環境能否連到 auth.openai.com，然後重試。"
       },
       "step": {
         "provider": {
@@ -408,12 +412,14 @@
               "data": {
                 "save_tokens": "節省權杖",
                 "cache_1h": "快取保留一小時",
-                "use_claude_runtime": "使用 Claude SDK（Runtime）（實驗性）"
+                "use_claude_runtime": "使用 Claude SDK（Runtime）（實驗性）",
+                "use_codex_runtime": "使用 Codex（執行環境）（實驗性）"
               },
               "data_description": {
                 "save_tokens": "每則訊息傳送更少內容：更短的提示詞、更少的聊天記錄和更短的回覆。更便宜，但關於你家的回答可能不夠詳盡。",
                 "cache_1h": "僅限 Claude。系統提示與工具在快取中保留一小時，而非 5 分鐘。寫入快取的費用是輸入價格的 2 倍（而非 1.25 倍），讀取為 0.1 倍。若你的訊息之間常隔 5 分鐘以上會更便宜；很少聊天時會稍貴一些。",
-                "use_claude_runtime": "聊天透過 AI Workspace Runtime 上的 Claude Code 進行，而不是 Anthropic 雲端 API，使用你的 Claude 訂閱（Pro、Max）或 Anthropic API 金鑰。變更後按確定：表單會顯示對應的欄位，此時尚未儲存。"
+                "use_claude_runtime": "聊天透過 AI Workspace Runtime 上的 Claude Code 進行，而不是 Anthropic 雲端 API，使用你的 Claude 訂閱（Pro、Max）或 Anthropic API 金鑰。變更後按確定：表單會顯示對應的欄位，此時尚未儲存。",
+                "use_codex_runtime": "聊天會透過 AI Workspace 執行環境上的 OpenAI Codex 進行，而非 OpenAI 的雲端 API，使用你的 ChatGPT 方案（Plus、Pro、Business）或 OpenAI API 金鑰。變更後按確定：表單會顯示相應欄位，目前尚未儲存。"
               }
             },
             "claude_runtime": {
@@ -428,6 +434,20 @@
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "與 AI Workspace Runtime 上相同的密碼。使用含自動配對的附加元件時請留空。",
                 "claude_api_key": "Claude Plan 權杖（sk-ant-oat…，由 `claude setup-token` 產生，使用你的 Claude 訂閱）或 Anthropic API 金鑰（sk-ant-api…，以 API 額度計費）。留空則使用 AI Workspace Runtime 上設定的值；編輯時留空可保留已儲存的值。 [取得 API 金鑰]({api_key_url})"
+              }
+            },
+            "codex_runtime": {
+              "name": "Codex（執行環境）",
+              "description": "模型留空時使用 Codex 為你的帳戶提供的預設模型。",
+              "data": {
+                "runtime_url": "執行環境位址{runtime_url_mark}",
+                "runtime_token": "執行環境密碼",
+                "codex_api_key": "OpenAI API 金鑰（選填）"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "與 AI Workspace 執行環境上的密碼相同。使用自動配對的附加元件時留空。",
+                "codex_api_key": "選填。更簡單：留空，在下一步使用 **用 ChatGPT 登入**。或貼上僅供此代理使用的 OpenAI API 金鑰（依 API 用量計費），它優先於執行環境的登入。編輯時留空可保留已儲存的金鑰。[OpenAI 金鑰]({api_key_url})"
               }
             }
           }
@@ -590,6 +610,29 @@
           "description": "{status}\n\n送出以儲存代理。"
         },
         "claude_login_error": {
+          "title": "登入未成功",
+          "description": "送出以返回。"
+        },
+        "codex_account": {
+          "title": "Codex 帳戶",
+          "description": "{status}\n\n登入保存在 AI Workspace 執行環境上，而不是 Home Assistant 中，該執行環境上的每個 Codex 代理都會使用它。",
+          "menu_options": {
+            "codex_use_runtime": "使用執行環境現有的存取",
+            "codex_save": "儲存代理",
+            "codex_login": "用 ChatGPT 登入",
+            "codex_logout": "在執行環境上登出",
+            "codex_back": "返回代理設定"
+          }
+        },
+        "codex_login": {
+          "title": "用 ChatGPT 登入",
+          "description": "1. 開啟此連結，用擁有方案的 ChatGPT 帳戶登入：[用 ChatGPT 登入]({url})\n2. 在那裡輸入此一次性代碼：**{code}**\n3. 然後在這裡送出。\n\n代碼 15 分鐘內有效。你的 ChatGPT 密碼不會經過 Home Assistant。若 OpenAI 拒絕該代碼，請在 ChatGPT 的 **設定 → 安全性** 中啟用一次裝置代碼登入（工作區帳戶由管理員允許）。"
+        },
+        "codex_signed_in": {
+          "title": "已登入",
+          "description": "{status}\n\n送出以儲存代理。"
+        },
+        "codex_login_error": {
           "title": "登入未成功",
           "description": "送出以返回。"
         }

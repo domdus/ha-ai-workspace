@@ -65,7 +65,7 @@ from .usage_record import dashboard_payload, finalize_usage, record_usage_turn, 
 
 logger = logging.getLogger(__name__)
 
-_RUNTIME_PROVIDER_KINDS = frozenset({"cursor", "claude"})
+_RUNTIME_PROVIDER_KINDS = frozenset({"cursor", "claude", "codex"})
 
 
 def _is_runtime_provider(provider: Any) -> bool:
@@ -364,7 +364,7 @@ async def _runtime_chat(
     check_house: bool = True,
     runtime_provider: str = "cursor",
 ) -> AsyncIterator[dict]:
-    """One SDK runtime turn (Cursor or Claude). Reduce token usage and Check the house work as on cloud agents."""
+    """One SDK runtime turn (Cursor, Claude or Codex). Reduce token usage and Check the house work as on cloud agents."""
     runtime_kind = runtime_provider if runtime_provider in _RUNTIME_PROVIDER_KINDS else "cursor"
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
@@ -819,6 +819,7 @@ class HealthView(HomeAssistantView):
                 "runtime": bool(data.get("runtime_url")),
                 "cursor": any(getattr(item, "kind", "") == "cursor" and item.info.available for item in providers),
                 "claude": any(getattr(item, "kind", "") == "claude" and item.info.available for item in providers),
+                "codex": any(getattr(item, "kind", "") == "codex" and item.info.available for item in providers),
                 "overlay": settings.enable_overlay,
                 "dictate": settings.enable_dictate,
             }

@@ -307,7 +307,11 @@
         "login_failed": "La ensaluto malsukcesis ĉe la rultempo. Rigardu la protokolon de la rultempo kaj reprovu.",
         "not_supported": "Ĉi tiu motoro ne havas abonan ensaluton. Uzu API-ŝlosilon.",
         "runtime_rejected": "AI Workspace Runtime rifuzis la rultempan pasvorton. Agordu la saman pasvorton ĉe la rultempo kaj en ĉi tiu formularo.",
-        "runtime_old": "Ĉi tiu rultempo ankoraŭ ne povas ensaluti. Ĝisdatigu AI Workspace Runtime, aŭ algluu ĵetonon en la agenta formularo."
+        "runtime_old": "Ĉi tiu rultempo ankoraŭ ne povas ensaluti. Ĝisdatigu AI Workspace Runtime, aŭ algluu ĵetonon en la agenta formularo.",
+        "codex_runtime_old": "Ĝisdatigu la AI Workspace Runtime al 1.6.0 aŭ pli nova por Codex-agentoj.",
+        "codex_key_required": "Aldonu OpenAI-API-ŝlosilon sub Codex (rultempo), aŭ ensalutu per ChatGPT sur la AI Workspace Runtime.",
+        "not_signed_in_yet": "OpenAI ankoraŭ ne konfirmis la ensaluton. Entajpu la kodon en la paĝo de OpenAI, poste sendu denove.",
+        "no_code": "Codex ne ricevis ensalutan kodon de OpenAI. Kontrolu, ke la Runtime atingas auth.openai.com, kaj reprovu."
       },
       "step": {
         "provider": {
@@ -408,12 +412,14 @@
               "data": {
                 "save_tokens": "Ŝpari ĵetonojn",
                 "cache_1h": "Teni la kaŝmemoron unu horon",
-                "use_claude_runtime": "Uzi Claude SDK (runtime) (eksperimenta)"
+                "use_claude_runtime": "Uzi Claude SDK (runtime) (eksperimenta)",
+                "use_codex_runtime": "Uzi Codex (rultempo) (eksperimenta)"
               },
               "data_description": {
                 "save_tokens": "Sendas malpli kun ĉiu mesaĝo: pli mallongan instrukcion, malpli da babilhistorio kaj pli mallongajn respondojn. Malpli kosta, sed respondoj pri via hejmo povas esti malpli detalaj.",
                 "cache_1h": "Nur Claude. Tenas la sisteman inviton kaj la ilojn en la kaŝmemoro unu horon anstataŭ 5 minutojn. Skribi en la kaŝmemoron kostas 2× la enigan prezon anstataŭ 1,25×; legi kostas 0,1×. Pli malmultekosta kiam ofte pasas pli ol 5 minutoj inter viaj mesaĝoj, iom pli multekosta se vi malofte babilas.",
-                "use_claude_runtime": "Babiloj iras tra Claude Code ĉe la AI Workspace Runtime anstataŭ la nuba API de Anthropic, kun via Claude-abono (Pro, Max) aŭ Anthropic-API-ŝlosilo. Premu OK post la ŝanĝo: la formularo tiam montras la kongruajn kampojn, ankoraŭ nenio estas konservita."
+                "use_claude_runtime": "Babiloj iras tra Claude Code ĉe la AI Workspace Runtime anstataŭ la nuba API de Anthropic, kun via Claude-abono (Pro, Max) aŭ Anthropic-API-ŝlosilo. Premu OK post la ŝanĝo: la formularo tiam montras la kongruajn kampojn, ankoraŭ nenio estas konservita.",
+                "use_codex_runtime": "Babiloj iras per OpenAI Codex sur la AI Workspace Runtime anstataŭ per la nuba API de OpenAI, kun via ChatGPT-abono (Plus, Pro, Business) aŭ OpenAI-API-ŝlosilo. Premu OK post la ŝanĝo: la formularo tiam montras la taŭgajn kampojn, nenio estas ankoraŭ konservita."
               }
             },
             "claude_runtime": {
@@ -428,6 +434,20 @@
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "La sama pasvorto kiel ĉe la AI Workspace Runtime. Lasu malplena kiam vi uzas la aldonaĵon kun aŭtomata parigo.",
                 "claude_api_key": "Claude Plan-ĵetono (sk-ant-oat…, el `claude setup-token`, uzas vian Claude-abonon) aŭ Anthropic-API-ŝlosilo (sk-ant-api…, fakturata kiel API-kreditoj). Lasu malplena por uzi tiun de la AI Workspace Runtime, aŭ dum redaktado por teni la konservitan. [Akiri API-ŝlosilon]({api_key_url})"
+              }
+            },
+            "codex_runtime": {
+              "name": "Codex (rultempo)",
+              "description": "Malplena modelo uzas la defaŭltan modelon de Codex por via konto.",
+              "data": {
+                "runtime_url": "Runtime-adreso{runtime_url_mark}",
+                "runtime_token": "Runtime-pasvorto",
+                "codex_api_key": "OpenAI-API-ŝlosilo (nedeviga)"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "La sama pasvorto kiel sur la AI Workspace Runtime. Lasu malplena ĉe la aldonaĵo kun aŭtomata parigo.",
+                "codex_api_key": "Nedeviga. Pli facile: lasu malplena kaj uzu **Ensaluti per ChatGPT** en la sekva paŝo. Aŭ algluu OpenAI-API-ŝlosilon nur por ĉi tiu agento (fakturata kiel API-uzo); ĝi venkas la ensaluton de la Runtime. Lasu malplena dum redaktado por konservi la konservitan. [OpenAI-ŝlosiloj]({api_key_url})"
               }
             }
           }
@@ -591,6 +611,29 @@
         },
         "claude_login_error": {
           "title": "Ensaluto ne sukcesis",
+          "description": "Sendu por reiri."
+        },
+        "codex_account": {
+          "title": "Codex-konto",
+          "description": "{status}\n\nLa ensaluto restas sur la AI Workspace Runtime, ne en Home Assistant, kaj ĉiu Codex-agento sur tiu Runtime uzas ĝin.",
+          "menu_options": {
+            "codex_use_runtime": "Uzi la ekzistantan aliron de la Runtime",
+            "codex_save": "Konservi agenton",
+            "codex_login": "Ensaluti per ChatGPT",
+            "codex_logout": "Elsaluti sur la Runtime",
+            "codex_back": "Reen al la agentaj agordoj"
+          }
+        },
+        "codex_login": {
+          "title": "Ensaluti per ChatGPT",
+          "description": "1. Malfermu ĉi tiun ligilon kaj ensalutu per la ChatGPT-konto kun via abono: [Ensaluti per ChatGPT]({url})\n2. Tie entajpu ĉi tiun unufojan kodon: **{code}**\n3. Poste sendu ĉi tie.\n\nLa kodo validas 15 minutojn. Via ChatGPT-pasvorto neniam trairas Home Assistant. Se OpenAI rifuzas la kodon, ŝaltu unufoje ensaluton per aparata kodo en ChatGPT sub **Agordoj → Sekureco** (por laborspaca konto, la administranto permesas ĝin)."
+        },
+        "codex_signed_in": {
+          "title": "Ensalutinta",
+          "description": "{status}\n\nSendu por konservi la agenton."
+        },
+        "codex_login_error": {
+          "title": "La ensaluto ne funkciis",
           "description": "Sendu por reiri."
         }
       },

@@ -61,6 +61,10 @@ class EngineAuth:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
 
+    def offers_login(self) -> bool:
+        """Listed under "login" in /api/health: the agent form then offers the plan sign-in."""
+        return bool(self.flow)
+
     def status(self) -> dict[str, Any]:
         raise NotImplementedError
 
@@ -217,6 +221,10 @@ class CodexAuth(EngineAuth):
     def _login(self, login) -> dict[str, Any]:
         return {**login.as_dict(), "engine": self.name, "flow": self.flow}
 
+    def offers_login(self) -> bool:
+        # Only when the Codex SDK and its CLI are in this image: otherwise the sign-in could not run.
+        return self.manager.available()
+
     def status(self) -> dict[str, Any]:
         from app.codex_login import credential_source, signed_in_info
 
@@ -294,7 +302,7 @@ def build_engines(settings: Settings) -> dict[str, EngineAuth]:
 
 def login_engines(engines: dict[str, EngineAuth]) -> list[str]:
     """Engines with a plan sign-in, for /api/health."""
-    return [name for name, item in engines.items() if item.flow]
+    return [name for name, item in engines.items() if item.offers_login()]
 
 
 def close_engines(engines: dict[str, EngineAuth] | None) -> None:

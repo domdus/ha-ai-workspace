@@ -2,7 +2,7 @@
 
 ## 1.6.0
 
-Everything from 1.6.0b1 to 1.6.0b17. Nothing needs to be changed in your setup.
+Everything from 1.6.0b1 to 1.6.0b17, plus OpenAI Codex agents on the Runtime. Nothing needs to be changed in your setup.
 
 - **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.6.0`) together with this release.** Much of it is in the runtime. The chat shows a hint when the runtime is older than 1.6.0.
 
@@ -12,6 +12,13 @@ Everything from 1.6.0b1 to 1.6.0b17. Nothing needs to be changed in your setup.
 - ⚠️ **It is not clear whether Anthropic allows a Claude plan here.** Anthropic does not permit third-party apps to offer Claude.ai login or to route requests through plan credentials. It *may* still count as private use on your own hardware with your own account, but Anthropic has not confirmed that. An Anthropic API key is the safe choice. See [Use your Claude or ChatGPT plan](../README.md#use-your-claude-or-chatgpt-plan-experimental).
 - The Runtime App's options no longer have Claude fields; old values carry over by themselves. An expired or revoked sign-in says so in the chat, in your language.
 - An existing chat can switch between Cursor and Claude in the chat bar.
+
+**OpenAI Codex on the Runtime (experimental)**
+- An **OpenAI** agent can run OpenAI Codex on the AI Workspace Runtime: **Advanced → Use Codex (runtime) (experimental)**. Off, it stays a cloud agent with an OpenAI API key. MCP tools, images, Effort, Save tokens, usage and approval cards work as on Cursor and Claude SDK agents. See [Codex agents](../docs/codex-runtime.md).
+- **Sign in with ChatGPT** on the agent form: open OpenAI's link, enter the one-time code the form shows, submit. Uses your ChatGPT plan (Plus, Pro, Business); device-code sign-in has to be allowed once in ChatGPT under **Settings → Security**. Or paste an OpenAI API key on the agent. If the Runtime already has access, the form offers **Use the Runtime's existing access**.
+- Tools follow the same rules: MCP only for normal users, workspace file edits in admin chats, the shell and web search only with **Allow internet**. Nothing that would need an approval runs.
+- **Plan limits** for the ChatGPT plan (5-hour and weekly windows) appear on the Usage page and warn in the chat near the limit.
+- Codex agents offer no speech-to-text or text-to-speech; those need an OpenAI API key in Home Assistant.
 
 **Usage and plan limits**
 - **Plan limits** on the Usage page: session (5 hours) and week (7 days) in percent with reset times, for the Claude plan and, when they report them, Cursor and Codex. A chat hint when a plan enters its warning zone, and a translated message when it is full. Optional sensors.

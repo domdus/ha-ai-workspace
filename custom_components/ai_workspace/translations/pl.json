@@ -307,7 +307,11 @@
         "login_failed": "Logowanie w Runtime nie powiodło się. Sprawdź log Runtime i spróbuj ponownie.",
         "not_supported": "Ten silnik nie ma logowania planem. Użyj klucza API.",
         "runtime_rejected": "AI Workspace Runtime odrzucił hasło Runtime. Ustaw to samo hasło w Runtime i w tym formularzu.",
-        "runtime_old": "Ten Runtime nie obsługuje jeszcze logowania. Zaktualizuj AI Workspace Runtime albo wklej token w formularzu agenta."
+        "runtime_old": "Ten Runtime nie obsługuje jeszcze logowania. Zaktualizuj AI Workspace Runtime albo wklej token w formularzu agenta.",
+        "codex_runtime_old": "Zaktualizuj AI Workspace Runtime do 1.6.0 lub nowszej dla agentów Codex.",
+        "codex_key_required": "Dodaj klucz API OpenAI w sekcji Codex (runtime) lub zaloguj się przez ChatGPT w AI Workspace Runtime.",
+        "not_signed_in_yet": "OpenAI jeszcze nie potwierdziło logowania. Wpisz kod na stronie OpenAI i wyślij ponownie.",
+        "no_code": "Codex nie dostał kodu logowania od OpenAI. Sprawdź, czy Runtime łączy się z auth.openai.com, i spróbuj ponownie."
       },
       "step": {
         "provider": {
@@ -408,12 +412,14 @@
               "data": {
                 "save_tokens": "Oszczędzaj tokeny",
                 "cache_1h": "Trzymaj pamięć podręczną przez godzinę",
-                "use_claude_runtime": "Użyj Claude SDK (runtime) (eksperymentalne)"
+                "use_claude_runtime": "Użyj Claude SDK (runtime) (eksperymentalne)",
+                "use_codex_runtime": "Użyj Codex (runtime) (eksperymentalne)"
               },
               "data_description": {
                 "save_tokens": "Wysyła mniej z każdą wiadomością: krótszy prompt, mniej historii czatu i krótsze odpowiedzi. Taniej, ale odpowiedzi o Twoim domu mogą być mniej dokładne.",
                 "cache_1h": "Tylko Claude. Trzyma prompt systemowy i narzędzia w pamięci podręcznej przez godzinę zamiast 5 minut. Zapis do pamięci podręcznej kosztuje 2× cenę wejścia zamiast 1,25×, odczyt 0,1×. Taniej, gdy między wiadomościami często mija ponad 5 minut; nieco drożej, jeśli rzadko piszesz.",
-                "use_claude_runtime": "Czaty idą przez Claude Code w AI Workspace Runtime zamiast przez chmurowe API Anthropic, z Twoją subskrypcją Claude (Pro, Max) lub kluczem API Anthropic. Po zmianie naciśnij OK: formularz pokaże odpowiednie pola, nic nie zostanie jeszcze zapisane."
+                "use_claude_runtime": "Czaty idą przez Claude Code w AI Workspace Runtime zamiast przez chmurowe API Anthropic, z Twoją subskrypcją Claude (Pro, Max) lub kluczem API Anthropic. Po zmianie naciśnij OK: formularz pokaże odpowiednie pola, nic nie zostanie jeszcze zapisane.",
+                "use_codex_runtime": "Czaty idą przez OpenAI Codex w AI Workspace Runtime zamiast przez chmurowe API OpenAI, z Twoim planem ChatGPT (Plus, Pro, Business) lub kluczem API OpenAI. Po zmianie naciśnij OK: formularz pokaże pasujące pola, nic nie jest jeszcze zapisywane."
               }
             },
             "claude_runtime": {
@@ -428,6 +434,20 @@
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "To samo hasło co w AI Workspace Runtime. Zostaw puste przy dodatku z automatycznym parowaniem.",
                 "claude_api_key": "Token Claude Plan (sk-ant-oat…, z `claude setup-token`, korzysta z Twojej subskrypcji Claude) lub klucz API Anthropic (sk-ant-api…, rozliczany jako kredyty API). Zostaw puste, aby użyć tego z AI Workspace Runtime, lub przy edycji, aby zachować zapisany. [Pobierz klucz API]({api_key_url})"
+              }
+            },
+            "codex_runtime": {
+              "name": "Codex (runtime)",
+              "description": "Pusty model używa domyślnego modelu Codex dla Twojego konta.",
+              "data": {
+                "runtime_url": "Adres Runtime{runtime_url_mark}",
+                "runtime_token": "Hasło Runtime",
+                "codex_api_key": "Klucz API OpenAI (opcjonalnie)"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "To samo hasło co w AI Workspace Runtime. Zostaw puste przy dodatku z automatycznym parowaniem.",
+                "codex_api_key": "Opcjonalnie. Prościej: zostaw puste i użyj **Zaloguj się przez ChatGPT** w następnym kroku. Albo wklej klucz API OpenAI tylko dla tego agenta (rozliczany jako użycie API); ma pierwszeństwo przed logowaniem Runtime. Przy edycji zostaw puste, aby zachować zapisany. [Klucze OpenAI]({api_key_url})"
               }
             }
           }
@@ -592,6 +612,29 @@
         "claude_login_error": {
           "title": "Logowanie nie powiodło się",
           "description": "Zatwierdź, aby wrócić."
+        },
+        "codex_account": {
+          "title": "Konto Codex",
+          "description": "{status}\n\nLogowanie jest przechowywane w AI Workspace Runtime, nie w Home Assistant, i korzysta z niego każdy agent Codex na tym Runtime.",
+          "menu_options": {
+            "codex_use_runtime": "Użyj istniejącego dostępu Runtime",
+            "codex_save": "Zapisz agenta",
+            "codex_login": "Zaloguj się przez ChatGPT",
+            "codex_logout": "Wyloguj na Runtime",
+            "codex_back": "Wróć do ustawień agenta"
+          }
+        },
+        "codex_login": {
+          "title": "Zaloguj się przez ChatGPT",
+          "description": "1. Otwórz ten link i zaloguj się kontem ChatGPT z Twoim planem: [Zaloguj się przez ChatGPT]({url})\n2. Wpisz tam ten jednorazowy kod: **{code}**\n3. Potem wyślij tutaj.\n\nKod jest ważny 15 minut. Twoje hasło ChatGPT nigdy nie przechodzi przez Home Assistant. Jeśli OpenAI odrzuci kod, włącz raz logowanie kodem urządzenia w ChatGPT w **Ustawienia → Bezpieczeństwo** (dla konta workspace zezwala na to administrator)."
+        },
+        "codex_signed_in": {
+          "title": "Zalogowano",
+          "description": "{status}\n\nWyślij, aby zapisać agenta."
+        },
+        "codex_login_error": {
+          "title": "Logowanie nie powiodło się",
+          "description": "Wyślij, aby wrócić."
         }
       },
       "abort": {

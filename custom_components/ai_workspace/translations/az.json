@@ -307,7 +307,11 @@
         "login_failed": "Runtime-da giriş alınmadı. Runtime jurnalına baxın və yenidən cəhd edin.",
         "not_supported": "Bu mühərrikdə plan ilə giriş yoxdur. API açarından istifadə edin.",
         "runtime_rejected": "AI Workspace Runtime Runtime parolunu rədd etdi. Runtime-da və bu formada eyni parolu təyin edin.",
-        "runtime_old": "Bu Runtime hələ daxil ola bilmir. AI Workspace Runtime-ı yeniləyin və ya agent formasına token yapışdırın."
+        "runtime_old": "Bu Runtime hələ daxil ola bilmir. AI Workspace Runtime-ı yeniləyin və ya agent formasına token yapışdırın.",
+        "codex_runtime_old": "Codex agentləri üçün AI Workspace Runtime-ı 1.6.0 və ya daha yeni versiyaya yeniləyin.",
+        "codex_key_required": "Codex (runtime) altında OpenAI API açarı əlavə edin və ya AI Workspace Runtime-da ChatGPT ilə daxil olun.",
+        "not_signed_in_yet": "OpenAI girişi hələ təsdiqləməyib. Kodu OpenAI səhifəsində daxil edin, sonra yenidən göndərin.",
+        "no_code": "Codex OpenAI-dan giriş kodu almadı. Runtime-ın auth.openai.com-a çatdığını yoxlayın və yenidən cəhd edin."
       },
       "step": {
         "provider": {
@@ -408,12 +412,14 @@
               "data": {
                 "save_tokens": "Tokenlərə qənaət et",
                 "cache_1h": "Keşi bir saat saxla",
-                "use_claude_runtime": "Claude SDK (runtime) istifadə et (eksperimental)"
+                "use_claude_runtime": "Claude SDK (runtime) istifadə et (eksperimental)",
+                "use_codex_runtime": "Codex (runtime) istifadə et (eksperimental)"
               },
               "data_description": {
                 "save_tokens": "Hər mesajla daha az göndərir: daha qısa prompt, daha az söhbət tarixçəsi və daha qısa cavablar. Daha ucuzdur, amma eviniz haqqında cavablar daha az ətraflı ola bilər.",
                 "cache_1h": "Yalnız Claude. Sistem promptunu və alətləri 5 dəqiqə əvəzinə bir saat keşdə saxlayır. Keşə yazmaq giriş qiymətinin 1,25 qatı əvəzinə 2 qatına, oxumaq 0,1 qatına başa gəlir. Mesajlarınız arasında tez-tez 5 dəqiqədən çox fasilə olarsa daha ucuzdur; nadir yazırsınızsa bir az bahadır.",
-                "use_claude_runtime": "Söhbətlər Anthropic bulud API-si əvəzinə AI Workspace Runtime-dakı Claude Code ilə gedir, Claude abunəliyiniz (Pro, Max) və ya Anthropic API açarı ilə. Dəyişdikdən sonra OK düyməsini basın: forma uyğun sahələri göstərir, hələ heç nə saxlanmır."
+                "use_claude_runtime": "Söhbətlər Anthropic bulud API-si əvəzinə AI Workspace Runtime-dakı Claude Code ilə gedir, Claude abunəliyiniz (Pro, Max) və ya Anthropic API açarı ilə. Dəyişdikdən sonra OK düyməsini basın: forma uyğun sahələri göstərir, hələ heç nə saxlanmır.",
+                "use_codex_runtime": "Söhbətlər OpenAI-ın bulud API-si əvəzinə AI Workspace Runtime üzərindəki OpenAI Codex ilə gedir, ChatGPT planınızla (Plus, Pro, Business) və ya OpenAI API açarı ilə. Dəyişdikdən sonra OK basın: forma uyğun sahələri göstərir, hələ heç nə saxlanmır."
               }
             },
             "claude_runtime": {
@@ -428,6 +434,20 @@
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "AI Workspace Runtime-dakı eyni parol. Avtomatik cütləşmə ilə əlavə modul istifadə edərkən boş buraxın.",
                 "claude_api_key": "Claude Plan tokeni (sk-ant-oat…, `claude setup-token` ilə yaradılır, Claude abunəliyinizdən istifadə edir) və ya Anthropic API açarı (sk-ant-api…, API kreditləri kimi ödənilir). AI Workspace Runtime-da təyin olunanı istifadə etmək üçün və ya redaktə edərkən saxlanmışı saxlamaq üçün boş buraxın. [API açarı al]({api_key_url})"
+              }
+            },
+            "codex_runtime": {
+              "name": "Codex (runtime)",
+              "description": "Boş model hesabınız üçün Codex-in standart modelindən istifadə edir.",
+              "data": {
+                "runtime_url": "Runtime ünvanı{runtime_url_mark}",
+                "runtime_token": "Runtime parolu",
+                "codex_api_key": "OpenAI API açarı (istəyə bağlı)"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "AI Workspace Runtime-dakı ilə eyni parol. Avtomatik cütləşdirmə ilə əlavədə boş qoyun.",
+                "codex_api_key": "İstəyə bağlı. Daha asan: boş qoyun və növbəti addımda **ChatGPT ilə daxil ol** seçin. Və ya yalnız bu agent üçün OpenAI API açarı yapışdırın (API istifadəsi kimi hesablanır); Runtime girişindən üstündür. Redaktə edərkən saxlanmışı saxlamaq üçün boş qoyun. [OpenAI açarları]({api_key_url})"
               }
             }
           }
@@ -591,6 +611,29 @@
         },
         "claude_login_error": {
           "title": "Daxil olmaq alınmadı",
+          "description": "Geri qayıtmaq üçün göndərin."
+        },
+        "codex_account": {
+          "title": "Codex hesabı",
+          "description": "{status}\n\nGiriş Home Assistant-da deyil, AI Workspace Runtime-da saxlanılır və həmin Runtime-dakı hər Codex agenti ondan istifadə edir.",
+          "menu_options": {
+            "codex_use_runtime": "Runtime-ın mövcud girişindən istifadə et",
+            "codex_save": "Agenti saxla",
+            "codex_login": "ChatGPT ilə daxil ol",
+            "codex_logout": "Runtime-da çıxış et",
+            "codex_back": "Agent ayarlarına qayıt"
+          }
+        },
+        "codex_login": {
+          "title": "ChatGPT ilə daxil ol",
+          "description": "1. Bu linki açın və planınız olan ChatGPT hesabı ilə daxil olun: [ChatGPT ilə daxil ol]({url})\n2. Orada bu birdəfəlik kodu daxil edin: **{code}**\n3. Sonra burada göndərin.\n\nKod 15 dəqiqə etibarlıdır. ChatGPT parolunuz heç vaxt Home Assistant-dan keçmir. OpenAI kodu rədd edərsə, ChatGPT-də **Ayarlar → Təhlükəsizlik** bölməsində cihaz kodu ilə girişi bir dəfə aktiv edin (iş sahəsi hesabında admin icazə verir)."
+        },
+        "codex_signed_in": {
+          "title": "Daxil olundu",
+          "description": "{status}\n\nAgenti saxlamaq üçün göndərin."
+        },
+        "codex_login_error": {
+          "title": "Giriş alınmadı",
           "description": "Geri qayıtmaq üçün göndərin."
         }
       },

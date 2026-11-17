@@ -3,3 +3,6 @@ uvicorn>=0.32.0
 --only-binary=cursor-sdk
 cursor-sdk>=1.0.38
 claude-agent-sdk==0.2.180
+# OpenAI Codex: the official Python SDK; pulls the matching Codex CLI (openai-codex-cli-bin).
+--only-binary=openai-codex-cli-bin
+openai-codex==0.169.0

@@ -2,7 +2,7 @@ name: AI Workspace Runtime
 version: "1.6.0"
 slug: ai_workspace
 description: >-
-  Runs Cursor and Claude Agent SDK side by side next to Home Assistant and talks to LAN MCP.
+  Runs Cursor, Claude Agent SDK and OpenAI Codex side by side next to Home Assistant and talks to LAN MCP.
   Install the AI Workspace HACS integration for the sidebar chat.
 url: https://github.com/domdus/ha-ai-workspace
 image: ghcr.io/domdus/ha-ai-workspace-runtime

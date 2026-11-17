@@ -336,6 +336,7 @@ def health(request: Request) -> dict:
         "model": settings.model,
         "cursor": _provider_flag(providers, "cursor"),
         "claude": _provider_flag(providers, "claude"),
+        "codex": _provider_flag(providers, "codex"),
         "plan_quota": plan_quota,
         # 1.6.0b7/b8 agent forms offer "Sign in with Claude" only when the runtime can run it.
         "claude_login": _login_manager(request.app).available(),
@@ -430,6 +431,21 @@ async def models(request: Request) -> list[dict]:
         _models_cache.pop(old, None)
     _models_cache[tag] = (now + _MODEL_TTL, rows)
     return rows
+
+
+@router.get("/api/models/codex")
+async def codex_models(request: Request) -> list[dict]:
+    """Models the runtime's Codex credential (or the agent's OpenAI key in X-OpenAI-Api-Key) offers."""
+    provider = request.app.state.providers.get("codex")
+    lister = getattr(provider, "models", None)
+    if not callable(lister):
+        raise HTTPException(status_code=400, detail="OpenAI Codex is not available on this runtime.")
+    key = (request.headers.get("x-openai-api-key") or "").strip()
+    try:
+        return await lister(key)
+    except Exception as exc:
+        logger.warning("codex model list failed: %s", redact(str(exc), [key]))
+        raise HTTPException(status_code=502, detail="Codex did not return its model list.") from None
 
 
 @router.get("/api/sessions")

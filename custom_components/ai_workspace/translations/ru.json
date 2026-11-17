@@ -307,7 +307,11 @@
         "login_failed": "Вход на Runtime не удался. Проверьте журнал Runtime и попробуйте снова.",
         "not_supported": "У этого движка нет входа по подписке. Используйте API-ключ.",
         "runtime_rejected": "AI Workspace Runtime отклонил пароль Runtime. Укажите одинаковый пароль на Runtime и в этой форме.",
-        "runtime_old": "Этот Runtime пока не умеет входить. Обновите AI Workspace Runtime или вставьте токен в форме агента."
+        "runtime_old": "Этот Runtime пока не умеет входить. Обновите AI Workspace Runtime или вставьте токен в форме агента.",
+        "codex_runtime_old": "Обновите AI Workspace Runtime до 1.6.0 или новее для агентов Codex.",
+        "codex_key_required": "Добавьте ключ API OpenAI в разделе Codex (runtime) или войдите через ChatGPT на AI Workspace Runtime.",
+        "not_signed_in_yet": "OpenAI ещё не подтвердил вход. Введите код на странице OpenAI и отправьте снова.",
+        "no_code": "Codex не получил код входа от OpenAI. Проверьте, что Runtime доступен auth.openai.com, и попробуйте снова."
       },
       "step": {
         "provider": {
@@ -408,12 +412,14 @@
               "data": {
                 "save_tokens": "Экономить токены",
                 "cache_1h": "Хранить кэш час",
-                "use_claude_runtime": "Использовать Claude SDK (runtime) (экспериментально)"
+                "use_claude_runtime": "Использовать Claude SDK (runtime) (экспериментально)",
+                "use_codex_runtime": "Использовать Codex (runtime) (экспериментально)"
               },
               "data_description": {
                 "save_tokens": "С каждым сообщением отправляется меньше: короче промпт, меньше истории чата и короче ответы. Дешевле, но ответы о вашем доме могут быть менее подробными.",
                 "cache_1h": "Только Claude. Хранит системный промпт и инструменты в кэше час вместо 5 минут. Запись в кэш стоит 2× цены ввода вместо 1,25×, чтение — 0,1×. Дешевле, если между сообщениями часто проходит больше 5 минут; немного дороже, если вы пишете редко.",
-                "use_claude_runtime": "Чаты идут через Claude Code на AI Workspace Runtime вместо облачного API Anthropic, с вашей подпиской Claude (Pro, Max) или API-ключом Anthropic. После переключения нажмите OK: форма покажет нужные поля, пока ничего не сохраняется."
+                "use_claude_runtime": "Чаты идут через Claude Code на AI Workspace Runtime вместо облачного API Anthropic, с вашей подпиской Claude (Pro, Max) или API-ключом Anthropic. После переключения нажмите OK: форма покажет нужные поля, пока ничего не сохраняется.",
+                "use_codex_runtime": "Чаты идут через OpenAI Codex на AI Workspace Runtime вместо облачного API OpenAI — с вашим планом ChatGPT (Plus, Pro, Business) или ключом API OpenAI. После изменения нажмите OK: форма покажет нужные поля, пока ничего не сохраняется."
               }
             },
             "claude_runtime": {
@@ -428,6 +434,20 @@
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "Тот же пароль, что и на AI Workspace Runtime. Оставьте пустым при использовании надстройки с автоматическим сопряжением.",
                 "claude_api_key": "Токен Claude Plan (sk-ant-oat…, из `claude setup-token`, использует вашу подписку Claude) или API-ключ Anthropic (sk-ant-api…, оплачивается API-кредитами). Оставьте пустым, чтобы использовать указанный на AI Workspace Runtime, или при редактировании, чтобы сохранить сохранённый. [Получить API-ключ]({api_key_url})"
+              }
+            },
+            "codex_runtime": {
+              "name": "Codex (runtime)",
+              "description": "Пустая модель — модель Codex по умолчанию для вашей учётной записи.",
+              "data": {
+                "runtime_url": "Адрес Runtime{runtime_url_mark}",
+                "runtime_token": "Пароль Runtime",
+                "codex_api_key": "Ключ API OpenAI (необязательно)"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "Тот же пароль, что и на AI Workspace Runtime. Оставьте пустым для дополнения с автоматическим сопряжением.",
+                "codex_api_key": "Необязательно. Проще: оставьте пустым и на следующем шаге выберите **Войти через ChatGPT**. Или вставьте ключ API OpenAI только для этого агента (оплачивается как использование API); он важнее входа Runtime. При изменении оставьте пустым, чтобы сохранить прежний. [Ключи OpenAI]({api_key_url})"
               }
             }
           }
@@ -590,6 +610,29 @@
           "description": "{status}\n\nОтправьте, чтобы сохранить агента."
         },
         "claude_login_error": {
+          "title": "Войти не удалось",
+          "description": "Отправьте, чтобы вернуться."
+        },
+        "codex_account": {
+          "title": "Учётная запись Codex",
+          "description": "{status}\n\nВход хранится на AI Workspace Runtime, а не в Home Assistant, и его использует каждый агент Codex на этом Runtime.",
+          "menu_options": {
+            "codex_use_runtime": "Использовать имеющийся доступ Runtime",
+            "codex_save": "Сохранить агента",
+            "codex_login": "Войти через ChatGPT",
+            "codex_logout": "Выйти на Runtime",
+            "codex_back": "Назад к настройкам агента"
+          }
+        },
+        "codex_login": {
+          "title": "Войти через ChatGPT",
+          "description": "1. Откройте ссылку и войдите в учётную запись ChatGPT с вашим планом: [Войти через ChatGPT]({url})\n2. Введите там этот одноразовый код: **{code}**\n3. Затем отправьте форму здесь.\n\nКод действует 15 минут. Пароль ChatGPT никогда не проходит через Home Assistant. Если OpenAI отклоняет код, один раз включите вход по коду устройства в ChatGPT в разделе **Настройки → Безопасность** (для рабочей учётной записи это разрешает администратор)."
+        },
+        "codex_signed_in": {
+          "title": "Вход выполнен",
+          "description": "{status}\n\nОтправьте, чтобы сохранить агента."
+        },
+        "codex_login_error": {
           "title": "Войти не удалось",
           "description": "Отправьте, чтобы вернуться."
         }

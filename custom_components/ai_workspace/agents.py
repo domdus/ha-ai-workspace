@@ -28,6 +28,8 @@ from .const import (
     CONF_CHECK_HOUSE,
     CONF_CLAUDE_API_KEY,
     CONF_USE_CLAUDE_RUNTIME,
+    CONF_CODEX_API_KEY,
+    CONF_USE_CODEX_RUNTIME,
     CONF_CURSOR_API_KEY,
     CONF_EFFORT,
     CONF_LOW_TOKEN,
@@ -41,6 +43,7 @@ from .const import (
     EFFORTS,
     MODE_API,
     MODE_CLAUDE,
+    MODE_CODEX,
     MODE_CURSOR,
     SUBENTRY_AGENT,
     assist_enabled,
@@ -90,6 +93,8 @@ class Agent:
     claude_api_key: str = ""
     allow_internet: bool = False
     use_claude_runtime: bool = False
+    codex_api_key: str = ""
+    use_codex_runtime: bool = False
     subentry_id: str = ""
     # Typed or pasted model ids; replaces the server's own list.
     models: tuple[str, ...] = ()
@@ -99,7 +104,7 @@ class Agent:
             self.provider,
             "Cursor"
             if self.mode == MODE_CURSOR
-            else ("Claude" if self.mode == MODE_CLAUDE else "Agent"),
+            else ("Claude" if self.mode == MODE_CLAUDE else ("Codex" if self.mode == MODE_CODEX else "Agent")),
         )
         model = (self.model or "").strip()
         effort = EFFORTS.get(self.effort or "", "")
@@ -128,6 +133,7 @@ def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Age
     provider = _text(raw.get(CONF_API_PROVIDER))
     mode = _text(raw.get(CONF_MODE))
     use_claude_runtime = False
+    use_codex_runtime = False
     if provider == MODE_CURSOR or mode == MODE_CURSOR:
         mode = MODE_CURSOR
         provider = MODE_CURSOR
@@ -140,6 +146,12 @@ def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Age
     ):
         mode = MODE_CLAUDE
         use_claude_runtime = True
+    elif provider == MODE_CODEX or mode == MODE_CODEX or (
+        provider == API_OPENAI and bool(raw.get(CONF_USE_CODEX_RUNTIME))
+    ):
+        mode = MODE_CODEX
+        provider = API_OPENAI
+        use_codex_runtime = True
     elif provider not in API_PROVIDERS:
         provider = API_OPENAI
         mode = MODE_API
@@ -178,6 +190,8 @@ def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Age
         claude_api_key=_text(raw.get(CONF_CLAUDE_API_KEY)),
         allow_internet=bool(raw.get(CONF_ALLOW_INTERNET, False)),
         use_claude_runtime=use_claude_runtime,
+        codex_api_key=_text(raw.get(CONF_CODEX_API_KEY)),
+        use_codex_runtime=use_codex_runtime,
     )
 
 
@@ -304,6 +318,29 @@ class ClaudeAgent:
             title=agent.title,
             model=agent.model or default_api_model(MODE_CLAUDE),
             provider=MODE_CLAUDE,
+        )
+
+
+class CodexAgent:
+    """OpenAI Codex chats use the same runtime sidecar as Cursor and Claude SDK agents."""
+
+    kind = "codex"
+
+    def __init__(self, agent: Agent, available: bool, reason: str | None) -> None:
+        self.model = agent.model
+        self.effort = agent.effort
+        self.api_key = agent.codex_api_key
+        self.allow_internet = agent.allow_internet
+        self.token_mode = agent.token_mode
+        self.check_house = agent.check_house
+        self.info = ProviderInfo(
+            agent.id,
+            agent.label(),
+            available,
+            reason,
+            title=agent.title,
+            model=agent.model,
+            provider=MODE_CODEX,
         )
 
 

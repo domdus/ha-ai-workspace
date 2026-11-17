@@ -32,7 +32,10 @@ PAIRING = "Pairing with the AI Workspace Runtime app. Try again in a minute."
 CLAUDE_RUNTIME_OLD = (
     "Update the AI Workspace Runtime to 1.6.0 or newer to use Claude SDK agents in the sidecar."
 )
-_RUNTIME_KINDS = frozenset({"cursor", "claude"})
+CODEX_RUNTIME_OLD = (
+    "Update the AI Workspace Runtime to 1.6.0 or newer to use OpenAI Codex agents in the sidecar."
+)
+_RUNTIME_KINDS = frozenset({"cursor", "claude", "codex"})
 OUTDATED_RUNTIME = (
     "The AI Workspace Runtime is {have}, this integration is {want}. Update the Runtime "
     "(App or Docker image) so Cursor and Claude SDK agents get the same fixes."
@@ -318,6 +321,7 @@ def apply_runtime_to_providers(
     notice: tuple[str, dict[str, str]] | None = None,
     *,
     claude_reason: str | None = None,
+    codex_reason: str | None = None,
 ) -> None:
     bucket["runtime_url"] = runtime_url
     if not runtime_url and reason is None:
@@ -332,6 +336,9 @@ def apply_runtime_to_providers(
         if kind == "claude" and claude_reason:
             available = False
             item_reason = claude_reason
+        elif kind == "codex" and codex_reason:
+            available = False
+            item_reason = codex_reason
         else:
             available = reason is None
             item_reason = reason
@@ -418,6 +425,12 @@ async def async_bind_runtime(hass: HomeAssistant, bucket: dict | None = None, *,
         and any(getattr(item, "kind", "") == "claude" for item in (data.get("providers") or {}).values())
         else None
     )
+    codex_reason = (
+        CODEX_RUNTIME_OLD
+        if "codex" not in health
+        and any(getattr(item, "kind", "") == "codex" for item in (data.get("providers") or {}).values())
+        else None
+    )
     plan_quota = health.get("plan_quota")
     if isinstance(plan_quota, dict) and plan_quota:
         from .plan_quota_store import async_merge_runtime_plan_quota
@@ -435,7 +448,7 @@ async def async_bind_runtime(hass: HomeAssistant, bucket: dict | None = None, *,
             )
         )
     data["runtime_notice"] = notice
-    apply_runtime_to_providers(data, url, reason, notice, claude_reason=claude_reason)
+    apply_runtime_to_providers(data, url, reason, notice, claude_reason=claude_reason, codex_reason=codex_reason)
     if url != previous:
         _LOGGER.info("AI Workspace Runtime at %s", url)
     return url

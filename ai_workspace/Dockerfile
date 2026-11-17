@@ -4,9 +4,9 @@ ARG VERSION=dev
 
 LABEL \
   org.opencontainers.image.source="https://github.com/domdus/ha-ai-workspace" \
-  org.opencontainers.image.description="Cursor and Claude Agent SDK sidecar for Home Assistant AI Workspace" \
+  org.opencontainers.image.description="Cursor, Claude Agent SDK and OpenAI Codex sidecar for Home Assistant AI Workspace" \
   io.hass.name="AI Workspace Runtime" \
-  io.hass.description="Cursor and Claude Agent SDK sidecar for Home Assistant AI Workspace" \
+  io.hass.description="Cursor, Claude Agent SDK and OpenAI Codex sidecar for Home Assistant AI Workspace" \
   io.hass.version="${VERSION}" \
   io.hass.type="addon" \
   io.hass.arch="amd64|aarch64"
@@ -22,7 +22,9 @@ RUN apt-get update \
 
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install --no-cache-dir --only-binary=cursor-sdk -r requirements.txt
+RUN pip install --no-cache-dir --only-binary=cursor-sdk -r requirements.txt \
+    && CODEX_HOME=/tmp/codex-check "$(python -c 'from codex_cli_bin import bundled_codex_path; print(bundled_codex_path())')" --version \
+    && rm -rf /tmp/codex-check
 COPY app ./app
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
