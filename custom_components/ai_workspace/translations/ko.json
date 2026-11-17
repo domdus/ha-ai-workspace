@@ -307,7 +307,11 @@
         "login_failed": "런타임에서 로그인에 실패했습니다. 런타임 로그를 확인하고 다시 시도하세요.",
         "not_supported": "이 엔진은 요금제 로그인이 없습니다. API 키를 사용하세요.",
         "runtime_rejected": "AI Workspace Runtime이 런타임 비밀번호를 거부했습니다. 런타임과 이 양식에 같은 비밀번호를 설정하세요.",
-        "runtime_old": "이 런타임은 아직 로그인을 지원하지 않습니다. AI Workspace Runtime을 업데이트하거나 에이전트 양식에 토큰을 붙여 넣으세요."
+        "runtime_old": "이 런타임은 아직 로그인을 지원하지 않습니다. AI Workspace Runtime을 업데이트하거나 에이전트 양식에 토큰을 붙여 넣으세요.",
+        "codex_runtime_old": "Codex 에이전트를 쓰려면 AI Workspace 런타임을 1.6.0 이상으로 업데이트하세요.",
+        "codex_key_required": "Codex(런타임) 아래에 OpenAI API 키를 추가하거나 AI Workspace 런타임에서 ChatGPT로 로그인하세요.",
+        "not_signed_in_yet": "OpenAI가 아직 로그인을 확인하지 않았습니다. OpenAI 페이지에 코드를 입력한 뒤 다시 제출하세요.",
+        "no_code": "Codex가 OpenAI에서 로그인 코드를 받지 못했습니다. 런타임이 auth.openai.com에 연결되는지 확인하고 다시 시도하세요."
       },
       "step": {
         "provider": {
@@ -408,12 +412,14 @@
               "data": {
                 "save_tokens": "토큰 절약",
                 "cache_1h": "캐시를 1시간 유지",
-                "use_claude_runtime": "Claude SDK(런타임) 사용 (실험적)"
+                "use_claude_runtime": "Claude SDK(런타임) 사용 (실험적)",
+                "use_codex_runtime": "Codex(런타임) 사용(실험적)"
               },
               "data_description": {
                 "save_tokens": "메시지마다 더 적게 보냅니다: 더 짧은 프롬프트, 더 적은 대화 기록, 더 짧은 답변. 비용은 줄지만 집에 대한 답변이 덜 자세할 수 있습니다.",
                 "cache_1h": "Claude 전용. 시스템 프롬프트와 도구를 5분 대신 1시간 동안 캐시에 둡니다. 캐시 쓰기는 입력 가격의 1.25배 대신 2배, 읽기는 0.1배입니다. 메시지 사이에 5분 넘게 쉬는 일이 많으면 더 저렴하고, 채팅을 드물게 하면 조금 더 비쌉니다.",
-                "use_claude_runtime": "채팅이 Anthropic 클라우드 API 대신 AI Workspace Runtime의 Claude Code를 거치며, Claude 구독(Pro, Max) 또는 Anthropic API 키를 사용합니다. 바꾼 뒤 확인을 누르면 해당하는 필드가 표시되며, 아직 저장되지는 않습니다."
+                "use_claude_runtime": "채팅이 Anthropic 클라우드 API 대신 AI Workspace Runtime의 Claude Code를 거치며, Claude 구독(Pro, Max) 또는 Anthropic API 키를 사용합니다. 바꾼 뒤 확인을 누르면 해당하는 필드가 표시되며, 아직 저장되지는 않습니다.",
+                "use_codex_runtime": "채팅이 OpenAI 클라우드 API 대신 AI Workspace 런타임의 OpenAI Codex를 거치며, ChatGPT 요금제(Plus, Pro, Business) 또는 OpenAI API 키를 사용합니다. 바꾼 뒤 확인을 누르세요. 양식에 맞는 필드가 표시되며 아직 아무것도 저장되지 않습니다."
               }
             },
             "claude_runtime": {
@@ -428,6 +434,20 @@
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "AI Workspace Runtime과 같은 비밀번호입니다. 자동 페어링 애드온을 쓰면 비워 두세요.",
                 "claude_api_key": "Claude Plan 토큰(sk-ant-oat…, `claude setup-token`으로 생성, Claude 구독 사용) 또는 Anthropic API 키(sk-ant-api…, API 크레딧으로 청구)입니다. 비워 두면 AI Workspace Runtime에 설정된 값을 쓰고, 수정 시 비워 두면 저장된 값을 유지합니다. [API 키 받기]({api_key_url})"
+              }
+            },
+            "codex_runtime": {
+              "name": "Codex(런타임)",
+              "description": "모델을 비워 두면 계정의 Codex 기본 모델을 사용합니다.",
+              "data": {
+                "runtime_url": "런타임 주소{runtime_url_mark}",
+                "runtime_token": "런타임 비밀번호",
+                "codex_api_key": "OpenAI API 키(선택)"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "AI Workspace 런타임과 같은 비밀번호입니다. 자동 페어링 애드온이면 비워 두세요.",
+                "codex_api_key": "선택 사항입니다. 더 쉬운 방법: 비워 두고 다음 단계에서 **ChatGPT로 로그인**을 사용하세요. 또는 이 에이전트 전용 OpenAI API 키를 붙여 넣으세요(API 사용량으로 청구). 런타임 로그인보다 우선합니다. 편집할 때 비워 두면 저장된 키를 유지합니다. [OpenAI 키]({api_key_url})"
               }
             }
           }
@@ -590,6 +610,29 @@
           "description": "{status}\n\n제출하면 에이전트를 저장합니다."
         },
         "claude_login_error": {
+          "title": "로그인하지 못했습니다",
+          "description": "제출하면 돌아갑니다."
+        },
+        "codex_account": {
+          "title": "Codex 계정",
+          "description": "{status}\n\n로그인은 Home Assistant가 아니라 AI Workspace 런타임에 보관되며, 그 런타임의 모든 Codex 에이전트가 사용합니다.",
+          "menu_options": {
+            "codex_use_runtime": "런타임의 기존 액세스 사용",
+            "codex_save": "에이전트 저장",
+            "codex_login": "ChatGPT로 로그인",
+            "codex_logout": "런타임에서 로그아웃",
+            "codex_back": "에이전트 설정으로 돌아가기"
+          }
+        },
+        "codex_login": {
+          "title": "ChatGPT로 로그인",
+          "description": "1. 이 링크를 열고 요금제가 있는 ChatGPT 계정으로 로그인하세요: [ChatGPT로 로그인]({url})\n2. 그곳에 이 일회용 코드를 입력하세요: **{code}**\n3. 그런 다음 여기서 제출하세요.\n\n코드는 15분 동안 유효합니다. ChatGPT 비밀번호는 Home Assistant를 거치지 않습니다. OpenAI가 코드를 거부하면 ChatGPT의 **설정 → 보안**에서 기기 코드 로그인을 한 번 켜세요(워크스페이스 계정은 관리자가 허용)."
+        },
+        "codex_signed_in": {
+          "title": "로그인됨",
+          "description": "{status}\n\n제출하면 에이전트가 저장됩니다."
+        },
+        "codex_login_error": {
           "title": "로그인하지 못했습니다",
           "description": "제출하면 돌아갑니다."
         }

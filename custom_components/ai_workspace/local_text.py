@@ -334,6 +334,52 @@ def claude_signin_text(status: dict | None, own_key: bool, language: str = "", p
     return "\n\n".join(lines)
 
 
+CODEX_SIGNIN = {
+    "en": {
+        "old": "⚠️ This Runtime is too old for OpenAI Codex. Update the AI Workspace Runtime (App or Docker image) to 1.6.0 or newer.",
+        "unreachable": "⚠️ The Runtime did not answer. Check the Runtime address and password on the previous page.",
+        "signed_in": "✅ Signed in with ChatGPT on the Runtime{plan} (since {saved}). Every Codex agent on this Runtime without its own key uses it.",
+        "api_key": "✅ The Runtime has an OpenAI API key for Codex (billed as API usage).",
+        "none": "⚠️ Not signed in yet. Pick **Sign in with ChatGPT**, or go back and paste an OpenAI API key.",
+        "own_key": "This agent uses its own OpenAI API key; it wins over the Runtime's sign-in.",
+    },
+    "de": {
+        "old": "⚠️ Diese Runtime ist zu alt für OpenAI Codex. Aktualisiere die AI-Workspace-Runtime (App oder Docker-Image) auf 1.6.0 oder neuer.",
+        "unreachable": "⚠️ Die Runtime hat nicht geantwortet. Prüfe Runtime-Adresse und Passwort auf der vorigen Seite.",
+        "signed_in": "✅ Auf der Runtime mit ChatGPT angemeldet{plan} (seit {saved}). Jeder Codex-Agent auf dieser Runtime ohne eigenen Schlüssel nutzt das.",
+        "api_key": "✅ Die Runtime hat einen OpenAI-API-Schlüssel für Codex (abgerechnet als API-Nutzung).",
+        "none": "⚠️ Noch nicht angemeldet. Wähle **Mit ChatGPT anmelden** oder geh zurück und füge einen OpenAI-API-Schlüssel ein.",
+        "own_key": "Dieser Agent nutzt seinen eigenen OpenAI-API-Schlüssel; er hat Vorrang vor der Anmeldung der Runtime.",
+    },
+}
+
+
+def codex_signin_text(status: dict | None, own_key: bool, language: str = "", problem: str = "") -> str:
+    """For the Codex account step: is the Runtime signed in with ChatGPT, and what wins."""
+    words = CODEX_SIGNIN.get((language or "en").split("-")[0], CODEX_SIGNIN["en"])
+    lines: list[str] = []
+    if problem == "runtime_old":
+        lines.append(words["old"])
+    elif problem or status is None:
+        lines.append(words["unreachable"])
+    else:
+        signed = status.get("signed_in") if isinstance(status.get("signed_in"), dict) else None
+        if signed and signed.get("mode") == "chatgpt":
+            plan = str(signed.get("plan") or "").strip()
+            lines.append(
+                words["signed_in"].format(
+                    plan=f" ({plan.title()})" if plan else "", saved=str(signed.get("saved_at") or "")[:10] or "?"
+                )
+            )
+        elif status.get("ready"):
+            lines.append(words["api_key"])
+        else:
+            lines.append(words["none"])
+    if own_key:
+        lines.append(words["own_key"])
+    return "\n\n".join(lines)
+
+
 # Chat error when Anthropic refuses the Claude credential (Runtime error code claude_auth_failed).
 CLAUDE_AUTH_FAILED_CODE = "claude_auth_failed"
 CLAUDE_AUTH_FAILED = {

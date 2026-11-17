@@ -307,7 +307,11 @@
         "login_failed": "Die Anmeldung ist auf der Runtime fehlgeschlagen. Sieh ins Runtime-Log und versuche es erneut.",
         "not_supported": "Diese Engine hat keine Abo-Anmeldung. Nutze einen API-Schlüssel.",
         "runtime_rejected": "Die AI-Workspace-Runtime hat das Runtime-Passwort abgelehnt. Setze dasselbe Passwort auf der Runtime und in diesem Formular.",
-        "runtime_old": "Diese Runtime kann sich noch nicht anmelden. Aktualisiere die AI-Workspace-Runtime oder füge im Agent-Formular ein Token ein."
+        "runtime_old": "Diese Runtime kann sich noch nicht anmelden. Aktualisiere die AI-Workspace-Runtime oder füge im Agent-Formular ein Token ein.",
+        "codex_runtime_old": "Aktualisiere die AI-Workspace-Runtime auf 1.6.0 oder neuer für Codex-Agenten.",
+        "codex_key_required": "Füge unter Codex (Runtime) einen OpenAI-API-Schlüssel hinzu oder melde dich auf der AI-Workspace-Runtime mit ChatGPT an.",
+        "not_signed_in_yet": "OpenAI hat die Anmeldung noch nicht bestätigt. Gib den Code auf der Seite von OpenAI ein und sende dann erneut ab.",
+        "no_code": "Codex hat von OpenAI keinen Anmeldecode bekommen. Prüfe, ob die Runtime auth.openai.com erreicht, und versuche es erneut."
       },
       "step": {
         "provider": {
@@ -408,12 +412,14 @@
               "data": {
                 "save_tokens": "Tokens sparen",
                 "cache_1h": "Cache eine Stunde behalten",
-                "use_claude_runtime": "Claude SDK (Runtime) verwenden (experimentell)"
+                "use_claude_runtime": "Claude SDK (Runtime) verwenden (experimentell)",
+                "use_codex_runtime": "Codex (Runtime) verwenden (experimentell)"
               },
               "data_description": {
                 "save_tokens": "Sendet mit jeder Nachricht weniger: einen kürzeren Prompt, weniger Chatverlauf und kürzere Antworten. Günstiger, aber Antworten zu deinem Zuhause können weniger gründlich sein.",
                 "cache_1h": "Nur Claude. Hält Systemprompt und Werkzeuge eine Stunde statt 5 Minuten im Cache. Das Schreiben in den Cache kostet das 2-Fache statt das 1,25-Fache des Eingabepreises, das Lesen das 0,1-Fache. Günstiger, wenn zwischen deinen Nachrichten oft mehr als 5 Minuten liegen; etwas teurer, wenn du selten chattest.",
-                "use_claude_runtime": "Chats laufen über Claude Code auf der AI-Workspace-Runtime statt über Anthropics Cloud-API, mit deinem Claude-Abo (Pro, Max) oder einem Anthropic-API-Schlüssel. Nach dem Umschalten OK drücken: Das Formular zeigt dann die passenden Felder, gespeichert wird noch nichts."
+                "use_claude_runtime": "Chats laufen über Claude Code auf der AI-Workspace-Runtime statt über Anthropics Cloud-API, mit deinem Claude-Abo (Pro, Max) oder einem Anthropic-API-Schlüssel. Nach dem Umschalten OK drücken: Das Formular zeigt dann die passenden Felder, gespeichert wird noch nichts.",
+                "use_codex_runtime": "Chats laufen über OpenAI Codex auf der AI-Workspace-Runtime statt über OpenAIs Cloud-API, mit deinem ChatGPT-Abo (Plus, Pro, Business) oder einem OpenAI-API-Schlüssel. Nach dem Umschalten OK drücken: Das Formular zeigt dann die passenden Felder, gespeichert wird noch nichts."
               }
             },
             "claude_runtime": {
@@ -428,6 +434,20 @@
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "Dasselbe Passwort wie auf der AI-Workspace-Runtime. Leer lassen bei Add-on mit automatischer Kopplung.",
                 "claude_api_key": "Optional. Einfacher: leer lassen und im nächsten Schritt **Mit Claude-Abo anmelden** wählen. Oder ein Claude-Plan-Token (`sk-ant-oat-…` aus `claude setup-token`) oder einen Anthropic-API-Schlüssel nur für diesen Agenten einfügen; er hat Vorrang vor dem Zugang der Runtime. Beim Bearbeiten leer lassen, um den gespeicherten zu behalten. [Anthropic-Schlüssel]({api_key_url})"
+              }
+            },
+            "codex_runtime": {
+              "name": "Codex (Runtime)",
+              "description": "Ein leeres Modell nutzt das Standardmodell von Codex für dein Konto.",
+              "data": {
+                "runtime_url": "Runtime-Adresse{runtime_url_mark}",
+                "runtime_token": "Runtime-Passwort",
+                "codex_api_key": "OpenAI-API-Schlüssel (optional)"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "Dasselbe Passwort wie auf der AI-Workspace-Runtime. Leer lassen bei Add-on mit automatischer Kopplung.",
+                "codex_api_key": "Optional. Einfacher: leer lassen und im nächsten Schritt **Mit ChatGPT anmelden** wählen. Oder einen OpenAI-API-Schlüssel nur für diesen Agenten einfügen (abgerechnet als API-Nutzung); er hat Vorrang vor der Anmeldung der Runtime. Beim Bearbeiten leer lassen, um den gespeicherten zu behalten. [OpenAI-Schlüssel]({api_key_url})"
               }
             }
           }
@@ -592,6 +612,29 @@
         "claude_login_error": {
           "title": "Anmeldung hat nicht geklappt",
           "description": "Absenden führt zurück."
+        },
+        "codex_account": {
+          "title": "Codex-Konto",
+          "description": "{status}\n\nDie Anmeldung liegt auf der AI-Workspace-Runtime, nicht in Home Assistant, und jeder Codex-Agent auf dieser Runtime nutzt sie.",
+          "menu_options": {
+            "codex_use_runtime": "Vorhandenen Zugang der Runtime nutzen",
+            "codex_save": "Agent speichern",
+            "codex_login": "Mit ChatGPT anmelden",
+            "codex_logout": "Auf der Runtime abmelden",
+            "codex_back": "Zurück zu den Agent-Einstellungen"
+          }
+        },
+        "codex_login": {
+          "title": "Mit ChatGPT anmelden",
+          "description": "1. Öffne diesen Link und melde dich mit dem ChatGPT-Konto mit deinem Abo an: [Mit ChatGPT anmelden]({url})\n2. Gib dort diesen Einmal-Code ein: **{code}**\n3. Dann hier absenden.\n\nDer Code gilt 15 Minuten. Dein ChatGPT-Passwort läuft nie über Home Assistant. Lehnt OpenAI den Code ab, schalte einmal in ChatGPT unter **Einstellungen → Sicherheit** die Anmeldung per Gerätecode ein (bei einem Workspace-Konto erlaubt es der Admin)."
+        },
+        "codex_signed_in": {
+          "title": "Angemeldet",
+          "description": "{status}\n\nAbsenden, um den Agenten zu speichern."
+        },
+        "codex_login_error": {
+          "title": "Anmeldung hat nicht geklappt",
+          "description": "Absenden, um zurückzugehen."
         }
       },
       "abort": {

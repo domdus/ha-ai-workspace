@@ -307,7 +307,11 @@
         "login_failed": "运行时上的登录失败。请查看运行时日志后重试。",
         "not_supported": "此引擎不支持订阅登录。请使用 API 密钥。",
         "runtime_rejected": "AI Workspace Runtime 拒绝了运行时密码。请在运行时和此表单中设置相同的密码。",
-        "runtime_old": "此运行时尚不支持登录。请更新 AI Workspace Runtime，或在代理表单中粘贴令牌。"
+        "runtime_old": "此运行时尚不支持登录。请更新 AI Workspace Runtime，或在代理表单中粘贴令牌。",
+        "codex_runtime_old": "要使用 Codex 代理，请将 AI Workspace 运行时更新到 1.6.0 或更高版本。",
+        "codex_key_required": "在 Codex（运行时）下添加 OpenAI API 密钥，或在 AI Workspace 运行时上用 ChatGPT 登录。",
+        "not_signed_in_yet": "OpenAI 尚未确认登录。请在 OpenAI 页面输入代码，然后再次提交。",
+        "no_code": "Codex 没有从 OpenAI 获得登录代码。请检查运行时能否访问 auth.openai.com，然后重试。"
       },
       "step": {
         "provider": {
@@ -408,12 +412,14 @@
               "data": {
                 "save_tokens": "节省令牌",
                 "cache_1h": "缓存保留一小时",
-                "use_claude_runtime": "使用 Claude SDK（Runtime）（实验性）"
+                "use_claude_runtime": "使用 Claude SDK（Runtime）（实验性）",
+                "use_codex_runtime": "使用 Codex（运行时）（实验性）"
               },
               "data_description": {
                 "save_tokens": "每条消息发送更少内容：更短的提示词、更少的聊天记录和更短的回复。更便宜，但关于你家的回答可能不够详尽。",
                 "cache_1h": "仅限 Claude。系统提示和工具在缓存中保留一小时，而不是 5 分钟。写入缓存的费用是输入价格的 2 倍（而不是 1.25 倍），读取为 0.1 倍。如果你的消息之间常隔 5 分钟以上会更便宜；很少聊天时会稍贵一些。",
-                "use_claude_runtime": "聊天通过 AI Workspace Runtime 上的 Claude Code 进行，而不是 Anthropic 云 API，使用你的 Claude 订阅（Pro、Max）或 Anthropic API 密钥。更改后按确定：表单会显示对应的字段，此时尚未保存。"
+                "use_claude_runtime": "聊天通过 AI Workspace Runtime 上的 Claude Code 进行，而不是 Anthropic 云 API，使用你的 Claude 订阅（Pro、Max）或 Anthropic API 密钥。更改后按确定：表单会显示对应的字段，此时尚未保存。",
+                "use_codex_runtime": "聊天通过 AI Workspace 运行时上的 OpenAI Codex 进行，而不是 OpenAI 的云端 API，使用你的 ChatGPT 订阅（Plus、Pro、Business）或 OpenAI API 密钥。更改后按确定：表单会显示相应字段，此时尚未保存。"
               }
             },
             "claude_runtime": {
@@ -428,6 +434,20 @@
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "与 AI Workspace Runtime 上相同的密码。使用带自动配对的附加组件时请留空。",
                 "claude_api_key": "Claude Plan 令牌（sk-ant-oat…，由 `claude setup-token` 生成，使用你的 Claude 订阅）或 Anthropic API 密钥（sk-ant-api…，按 API 额度计费）。留空则使用 AI Workspace Runtime 上设置的值；编辑时留空可保留已保存的值。 [获取 API 密钥]({api_key_url})"
+              }
+            },
+            "codex_runtime": {
+              "name": "Codex（运行时）",
+              "description": "模型留空时使用 Codex 为你的账户提供的默认模型。",
+              "data": {
+                "runtime_url": "运行时地址{runtime_url_mark}",
+                "runtime_token": "运行时密码",
+                "codex_api_key": "OpenAI API 密钥（可选）"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "与 AI Workspace 运行时上的密码相同。使用自动配对的加载项时留空。",
+                "codex_api_key": "可选。更简单：留空，在下一步使用 **用 ChatGPT 登录**。或粘贴仅供此代理使用的 OpenAI API 密钥（按 API 用量计费），它优先于运行时的登录。编辑时留空可保留已保存的密钥。[OpenAI 密钥]({api_key_url})"
               }
             }
           }
@@ -590,6 +610,29 @@
           "description": "{status}\n\n提交以保存代理。"
         },
         "claude_login_error": {
+          "title": "登录未成功",
+          "description": "提交以返回。"
+        },
+        "codex_account": {
+          "title": "Codex 账户",
+          "description": "{status}\n\n登录保存在 AI Workspace 运行时上，而不是 Home Assistant 中，该运行时上的每个 Codex 代理都会使用它。",
+          "menu_options": {
+            "codex_use_runtime": "使用运行时已有的访问",
+            "codex_save": "保存代理",
+            "codex_login": "用 ChatGPT 登录",
+            "codex_logout": "在运行时上退出登录",
+            "codex_back": "返回代理设置"
+          }
+        },
+        "codex_login": {
+          "title": "用 ChatGPT 登录",
+          "description": "1. 打开此链接，用拥有订阅的 ChatGPT 账户登录：[用 ChatGPT 登录]({url})\n2. 在那里输入此一次性代码：**{code}**\n3. 然后在这里提交。\n\n代码 15 分钟内有效。你的 ChatGPT 密码不会经过 Home Assistant。如果 OpenAI 拒绝该代码，请在 ChatGPT 的 **设置 → 安全** 中启用一次设备代码登录（工作区账户由管理员允许）。"
+        },
+        "codex_signed_in": {
+          "title": "已登录",
+          "description": "{status}\n\n提交以保存代理。"
+        },
+        "codex_login_error": {
           "title": "登录未成功",
           "description": "提交以返回。"
         }

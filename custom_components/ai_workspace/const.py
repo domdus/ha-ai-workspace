@@ -222,6 +222,9 @@ def default_api_model(kind: str) -> str:
         return DEFAULT_MODEL
     if kind == MODE_CLAUDE:
         return DEFAULT_ANTHROPIC_MODEL
+    if kind == MODE_CODEX:
+        # Empty: Codex picks the default model of the signed-in account.
+        return ""
     return _API_DEFAULT_MODEL.get(kind, DEFAULT_API_MODEL)
 
 
@@ -267,6 +270,8 @@ CONF_MCP_EXTRA = "mcp_extra"
 CONF_CURSOR_API_KEY = "cursor_api_key"
 CONF_CLAUDE_API_KEY = "claude_api_key"
 CONF_USE_CLAUDE_RUNTIME = "use_claude_runtime"
+CONF_CODEX_API_KEY = "codex_api_key"
+CONF_USE_CODEX_RUNTIME = "use_codex_runtime"
 CONF_MODEL = "model"
 # Model ids typed or pasted for servers that do not list their own (OpenAI-compatible, Azure).
 CONF_MODELS = "models"
@@ -776,6 +781,7 @@ CONF_API_BASE = "api_base"
 CONF_SYSTEM_PROMPT = "system_prompt"
 MODE_CURSOR = "cursor"
 MODE_CLAUDE = "claude"
+MODE_CODEX = "codex"
 MODE_API = "api"
 API_KEY_URLS = {
     API_OPENAI: "https://platform.openai.com/api-keys",

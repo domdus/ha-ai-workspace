@@ -307,7 +307,11 @@
         "login_failed": "Přihlášení na Runtime selhalo. Podívejte se do logu Runtime a zkuste to znovu.",
         "not_supported": "Tento engine nemá přihlášení předplatným. Použijte API klíč.",
         "runtime_rejected": "AI Workspace Runtime odmítl heslo Runtime. Nastavte stejné heslo na Runtime i v tomto formuláři.",
-        "runtime_old": "Tento Runtime se zatím neumí přihlásit. Aktualizujte AI Workspace Runtime, nebo vložte token ve formuláři agenta."
+        "runtime_old": "Tento Runtime se zatím neumí přihlásit. Aktualizujte AI Workspace Runtime, nebo vložte token ve formuláři agenta.",
+        "codex_runtime_old": "Aktualizujte AI Workspace Runtime na 1.6.0 nebo novější pro agenty Codex.",
+        "codex_key_required": "Přidejte klíč API OpenAI v části Codex (runtime), nebo se na AI Workspace Runtime přihlaste přes ChatGPT.",
+        "not_signed_in_yet": "OpenAI přihlášení ještě nepotvrdilo. Zadejte kód na stránce OpenAI a odešlete znovu.",
+        "no_code": "Codex nedostal od OpenAI přihlašovací kód. Zkontrolujte, že Runtime dosáhne na auth.openai.com, a zkuste to znovu."
       },
       "step": {
         "provider": {
@@ -408,12 +412,14 @@
               "data": {
                 "save_tokens": "Šetřit tokeny",
                 "cache_1h": "Držet mezipaměť hodinu",
-                "use_claude_runtime": "Použít Claude SDK (runtime) (experimentální)"
+                "use_claude_runtime": "Použít Claude SDK (runtime) (experimentální)",
+                "use_codex_runtime": "Použít Codex (runtime) (experimentální)"
               },
               "data_description": {
                 "save_tokens": "S každou zprávou posílá méně: kratší prompt, méně historie chatu a kratší odpovědi. Levnější, ale odpovědi o vaší domácnosti mohou být méně důkladné.",
                 "cache_1h": "Jen Claude. Drží systémový prompt a nástroje v mezipaměti hodinu místo 5 minut. Zápis do mezipaměti stojí 2× cenu vstupu místo 1,25×, čtení 0,1×. Levnější, když mezi zprávami často uplyne víc než 5 minut; o něco dražší, když píšete zřídka.",
-                "use_claude_runtime": "Chaty jdou přes Claude Code v AI Workspace Runtime místo cloudového API Anthropic, s vaším předplatným Claude (Pro, Max) nebo klíčem API Anthropic. Po změně stiskněte OK: formulář pak ukáže odpovídající pole, zatím se nic neuloží."
+                "use_claude_runtime": "Chaty jdou přes Claude Code v AI Workspace Runtime místo cloudového API Anthropic, s vaším předplatným Claude (Pro, Max) nebo klíčem API Anthropic. Po změně stiskněte OK: formulář pak ukáže odpovídající pole, zatím se nic neuloží.",
+                "use_codex_runtime": "Chaty jdou přes OpenAI Codex na AI Workspace Runtime místo cloudového API OpenAI, s vaším plánem ChatGPT (Plus, Pro, Business) nebo klíčem API OpenAI. Po změně stiskněte OK: formulář pak ukáže odpovídající pole, zatím se nic neukládá."
               }
             },
             "claude_runtime": {
@@ -428,6 +434,20 @@
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "Stejné heslo jako u AI Workspace Runtime. Nechte prázdné u doplňku s automatickým spárováním.",
                 "claude_api_key": "Token Claude Plan (sk-ant-oat…, z `claude setup-token`, využívá vaše předplatné Claude) nebo klíč API Anthropic (sk-ant-api…, účtovaný jako kredity API). Nechte prázdné, chcete-li použít ten z AI Workspace Runtime, nebo při úpravě, aby se zachoval uložený. [Získat API klíč]({api_key_url})"
+              }
+            },
+            "codex_runtime": {
+              "name": "Codex (runtime)",
+              "description": "Prázdný model použije výchozí model Codexu pro váš účet.",
+              "data": {
+                "runtime_url": "Adresa Runtime{runtime_url_mark}",
+                "runtime_token": "Heslo Runtime",
+                "codex_api_key": "Klíč API OpenAI (volitelné)"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "Stejné heslo jako na AI Workspace Runtime. Nechte prázdné u doplňku s automatickým párováním.",
+                "codex_api_key": "Volitelné. Jednodušší: nechte prázdné a v dalším kroku použijte **Přihlásit se přes ChatGPT**. Nebo vložte klíč API OpenAI jen pro tohoto agenta (účtuje se jako využití API); má přednost před přihlášením Runtime. Při úpravě nechte prázdné pro zachování uloženého. [Klíče OpenAI]({api_key_url})"
               }
             }
           }
@@ -592,6 +612,29 @@
         "claude_login_error": {
           "title": "Přihlášení se nezdařilo",
           "description": "Odesláním se vrátíte."
+        },
+        "codex_account": {
+          "title": "Účet Codex",
+          "description": "{status}\n\nPřihlášení zůstává na AI Workspace Runtime, ne v Home Assistant, a používá ho každý agent Codex na tomto Runtime.",
+          "menu_options": {
+            "codex_use_runtime": "Použít stávající přístup Runtime",
+            "codex_save": "Uložit agenta",
+            "codex_login": "Přihlásit se přes ChatGPT",
+            "codex_logout": "Odhlásit na Runtime",
+            "codex_back": "Zpět k nastavení agenta"
+          }
+        },
+        "codex_login": {
+          "title": "Přihlásit se přes ChatGPT",
+          "description": "1. Otevřete tento odkaz a přihlaste se účtem ChatGPT s vaším plánem: [Přihlásit se přes ChatGPT]({url})\n2. Zadejte tam tento jednorázový kód: **{code}**\n3. Pak odešlete zde.\n\nKód platí 15 minut. Vaše heslo k ChatGPT nikdy neprochází přes Home Assistant. Pokud OpenAI kód odmítne, zapněte jednou v ChatGPT přihlášení kódem zařízení v **Nastavení → Zabezpečení** (u účtu workspace to povolí správce)."
+        },
+        "codex_signed_in": {
+          "title": "Přihlášeno",
+          "description": "{status}\n\nOdešlete pro uložení agenta."
+        },
+        "codex_login_error": {
+          "title": "Přihlášení se nezdařilo",
+          "description": "Odešlete pro návrat."
         }
       },
       "abort": {

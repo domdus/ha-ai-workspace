@@ -17,6 +17,7 @@ from .const import (
     API_AZURE,
     DOMAIN,
     MODE_CLAUDE,
+    MODE_CODEX,
     MODE_CURSOR,
     api_model_choices,
     api_model_picks,
@@ -164,6 +165,9 @@ async def async_agent_models(hass: HomeAssistant, agent) -> list[str]:
         return merge_models(MODE_CURSOR, agent.model or default_api_model(MODE_CURSOR), live)
     if agent.mode == MODE_CLAUDE:
         return merge_models(MODE_CLAUDE, agent.model or default_api_model(MODE_CLAUDE), api_model_choices(MODE_CLAUDE))
+    if agent.mode == MODE_CODEX:
+        # Codex offers what the signed-in account may use; an empty model is Codex's own default.
+        return [agent.model] if agent.model else []
     if agent.provider == API_AZURE:
         return [agent.model] if agent.model else []
     live = await async_provider_models(hass, agent.provider, agent.api_key, agent.api_base)

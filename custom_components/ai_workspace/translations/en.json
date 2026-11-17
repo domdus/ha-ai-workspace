@@ -307,7 +307,11 @@
         "login_failed": "The sign-in failed on the Runtime. Check the Runtime log and try again.",
         "not_supported": "This engine has no plan sign-in. Use an API key.",
         "runtime_rejected": "The AI Workspace Runtime refused the Runtime password. Set the same password on the Runtime and on this form.",
-        "runtime_old": "This Runtime cannot sign in yet. Update the AI Workspace Runtime, or paste a token on the agent form."
+        "runtime_old": "This Runtime cannot sign in yet. Update the AI Workspace Runtime, or paste a token on the agent form.",
+        "codex_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Codex agents.",
+        "codex_key_required": "Add an OpenAI API key under Codex (runtime), or sign in with ChatGPT on the AI Workspace Runtime.",
+        "not_signed_in_yet": "OpenAI has not confirmed the sign-in yet. Enter the code on OpenAI's page, then submit again.",
+        "no_code": "Codex did not get a sign-in code from OpenAI. Check that the Runtime can reach auth.openai.com, then try again."
       },
       "step": {
         "provider": {
@@ -408,12 +412,14 @@
               "data": {
                 "save_tokens": "Save tokens",
                 "cache_1h": "Keep the cache for an hour",
-                "use_claude_runtime": "Use Claude SDK (runtime) (experimental)"
+                "use_claude_runtime": "Use Claude SDK (runtime) (experimental)",
+                "use_codex_runtime": "Use Codex (runtime) (experimental)"
               },
               "data_description": {
                 "save_tokens": "Sends less with each message: a shorter prompt, less chat history, and shorter replies. Cheaper, but answers about your home can be less thorough.",
                 "cache_1h": "Claude only. Keeps the system prompt and tools cached for an hour instead of 5 minutes. Writing the cache costs 2× the input price instead of 1.25×; reading it costs 0.1×. Cheaper when there are breaks of more than 5 minutes between your messages, a little more expensive if you rarely chat.",
-                "use_claude_runtime": "Chats go through Claude Code on the AI Workspace Runtime instead of Anthropic's cloud API, with your Claude plan (Pro, Max) or an Anthropic API key. Press OK after changing it: the form then shows the matching fields, nothing is saved yet."
+                "use_claude_runtime": "Chats go through Claude Code on the AI Workspace Runtime instead of Anthropic's cloud API, with your Claude plan (Pro, Max) or an Anthropic API key. Press OK after changing it: the form then shows the matching fields, nothing is saved yet.",
+                "use_codex_runtime": "Chats go through OpenAI Codex on the AI Workspace Runtime instead of OpenAI's cloud API, with your ChatGPT plan (Plus, Pro, Business) or an OpenAI API key. Press OK after changing it: the form then shows the matching fields, nothing is saved yet."
               }
             },
             "claude_runtime": {
@@ -428,6 +434,20 @@
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
                 "claude_api_key": "Optional. Easier: leave this empty and use **Sign in with Claude plan** on the next step. Or paste a Claude Plan token (`sk-ant-oat-…` from `claude setup-token`) or an Anthropic API key for this agent only; it wins over the Runtime's credential. Leave blank when editing to keep the saved one. [Anthropic keys]({api_key_url})"
+              }
+            },
+            "codex_runtime": {
+              "name": "Codex (runtime)",
+              "description": "An empty model uses Codex's default model for your account.",
+              "data": {
+                "runtime_url": "Runtime address{runtime_url_mark}",
+                "runtime_token": "Runtime password",
+                "codex_api_key": "OpenAI API key (optional)"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "Same password as on the AI Workspace Runtime. Leave empty when using the add-on with automatic pairing.",
+                "codex_api_key": "Optional. Easier: leave this empty and use **Sign in with ChatGPT** on the next step. Or paste an OpenAI API key for this agent only (billed as API usage); it wins over the Runtime's sign-in. Leave blank when editing to keep the saved one. [OpenAI keys]({api_key_url})"
               }
             }
           }
@@ -590,6 +610,29 @@
           "description": "{status}\n\nSubmit to save the agent."
         },
         "claude_login_error": {
+          "title": "Sign-in did not work",
+          "description": "Submit to go back."
+        },
+        "codex_account": {
+          "title": "Codex account",
+          "description": "{status}\n\nThe sign-in is kept on the AI Workspace Runtime, not in Home Assistant, and every Codex agent on that Runtime uses it.",
+          "menu_options": {
+            "codex_use_runtime": "Use the Runtime's existing access",
+            "codex_save": "Save agent",
+            "codex_login": "Sign in with ChatGPT",
+            "codex_logout": "Sign out on the Runtime",
+            "codex_back": "Back to the agent settings"
+          }
+        },
+        "codex_login": {
+          "title": "Sign in with ChatGPT",
+          "description": "1. Open this link and sign in with the ChatGPT account that has your plan: [Sign in with ChatGPT]({url})\n2. Enter this one-time code there: **{code}**\n3. Then submit here.\n\nThe code works for 15 minutes. Your ChatGPT password never passes through Home Assistant. If OpenAI refuses the code, turn on device code sign-in once in ChatGPT under **Settings → Security** (for a workspace account, the admin allows it)."
+        },
+        "codex_signed_in": {
+          "title": "Signed in",
+          "description": "{status}\n\nSubmit to save the agent."
+        },
+        "codex_login_error": {
           "title": "Sign-in did not work",
           "description": "Submit to go back."
         }

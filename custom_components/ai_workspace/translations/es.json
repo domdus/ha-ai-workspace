@@ -307,7 +307,11 @@
         "login_failed": "El inicio de sesión falló en el Runtime. Revisa el registro del Runtime y vuelve a intentarlo.",
         "not_supported": "Este motor no tiene inicio de sesión con plan. Usa una clave API.",
         "runtime_rejected": "AI Workspace Runtime rechazó la contraseña del Runtime. Usa la misma contraseña en el Runtime y en este formulario.",
-        "runtime_old": "Este Runtime aún no puede iniciar sesión. Actualiza AI Workspace Runtime, o pega un token en el formulario del agente."
+        "runtime_old": "Este Runtime aún no puede iniciar sesión. Actualiza AI Workspace Runtime, o pega un token en el formulario del agente.",
+        "codex_runtime_old": "Actualiza el Runtime de AI Workspace a 1.6.0 o posterior para los agentes Codex.",
+        "codex_key_required": "Añade una clave API de OpenAI en Codex (runtime) o inicia sesión con ChatGPT en el Runtime de AI Workspace.",
+        "not_signed_in_yet": "OpenAI aún no ha confirmado el inicio de sesión. Introduce el código en la página de OpenAI y vuelve a enviar.",
+        "no_code": "Codex no recibió un código de inicio de sesión de OpenAI. Comprueba que el Runtime llega a auth.openai.com y vuelve a intentarlo."
       },
       "step": {
         "provider": {
@@ -408,12 +412,14 @@
               "data": {
                 "save_tokens": "Ahorrar tokens",
                 "cache_1h": "Mantener la caché una hora",
-                "use_claude_runtime": "Usar Claude SDK (runtime) (experimental)"
+                "use_claude_runtime": "Usar Claude SDK (runtime) (experimental)",
+                "use_codex_runtime": "Usar Codex (runtime) (experimental)"
               },
               "data_description": {
                 "save_tokens": "Envía menos con cada mensaje: un prompt más corto, menos historial y respuestas más cortas. Más barato, pero las respuestas sobre tu casa pueden ser menos completas.",
                 "cache_1h": "Solo Claude. Mantiene el prompt del sistema y las herramientas en caché una hora en lugar de 5 minutos. Escribir en la caché cuesta 2× el precio de entrada en lugar de 1,25×; leerla cuesta 0,1×. Más barato cuando suele haber más de 5 minutos entre tus mensajes, algo más caro si chateas poco.",
-                "use_claude_runtime": "Los chats pasan por Claude Code en el AI Workspace Runtime en lugar de la API en la nube de Anthropic, con tu suscripción de Claude (Pro, Max) o una clave API de Anthropic. Pulsa OK tras cambiarlo: el formulario muestra entonces los campos correspondientes, aún no se guarda nada."
+                "use_claude_runtime": "Los chats pasan por Claude Code en el AI Workspace Runtime en lugar de la API en la nube de Anthropic, con tu suscripción de Claude (Pro, Max) o una clave API de Anthropic. Pulsa OK tras cambiarlo: el formulario muestra entonces los campos correspondientes, aún no se guarda nada.",
+                "use_codex_runtime": "Los chats pasan por OpenAI Codex en el Runtime de AI Workspace en lugar de la API en la nube de OpenAI, con tu plan de ChatGPT (Plus, Pro, Business) o una clave API de OpenAI. Pulsa OK después de cambiarlo: el formulario muestra entonces los campos adecuados, aún no se guarda nada."
               }
             },
             "claude_runtime": {
@@ -428,6 +434,20 @@
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "La misma contraseña que en el AI Workspace Runtime. Déjala vacía con el complemento y el emparejamiento automático.",
                 "claude_api_key": "Un token de Claude Plan (sk-ant-oat…, de `claude setup-token`, usa tu suscripción de Claude) o una clave API de Anthropic (sk-ant-api…, facturada como créditos de API). Déjalo vacío para usar el del AI Workspace Runtime, o al editar para conservar el guardado. [Obtener una clave API]({api_key_url})"
+              }
+            },
+            "codex_runtime": {
+              "name": "Codex (runtime)",
+              "description": "Un modelo vacío usa el modelo predeterminado de Codex para tu cuenta.",
+              "data": {
+                "runtime_url": "Dirección del Runtime{runtime_url_mark}",
+                "runtime_token": "Contraseña del Runtime",
+                "codex_api_key": "Clave API de OpenAI (opcional)"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "La misma contraseña que en el Runtime de AI Workspace. Déjala vacía con el complemento y el emparejamiento automático.",
+                "codex_api_key": "Opcional. Más fácil: déjala vacía y usa **Iniciar sesión con ChatGPT** en el siguiente paso. O pega una clave API de OpenAI solo para este agente (se factura como uso de API); tiene prioridad sobre el inicio de sesión del Runtime. Déjala vacía al editar para conservar la guardada. [Claves de OpenAI]({api_key_url})"
               }
             }
           }
@@ -590,6 +610,29 @@
           "description": "{status}\n\nEnvía para guardar el agente."
         },
         "claude_login_error": {
+          "title": "El inicio de sesión no funcionó",
+          "description": "Envía para volver."
+        },
+        "codex_account": {
+          "title": "Cuenta de Codex",
+          "description": "{status}\n\nEl inicio de sesión se guarda en el Runtime de AI Workspace, no en Home Assistant, y todos los agentes Codex de ese Runtime lo usan.",
+          "menu_options": {
+            "codex_use_runtime": "Usar el acceso existente del Runtime",
+            "codex_save": "Guardar agente",
+            "codex_login": "Iniciar sesión con ChatGPT",
+            "codex_logout": "Cerrar sesión en el Runtime",
+            "codex_back": "Volver a los ajustes del agente"
+          }
+        },
+        "codex_login": {
+          "title": "Iniciar sesión con ChatGPT",
+          "description": "1. Abre este enlace e inicia sesión con la cuenta de ChatGPT que tiene tu plan: [Iniciar sesión con ChatGPT]({url})\n2. Introduce allí este código de un solo uso: **{code}**\n3. Después envía aquí.\n\nEl código vale 15 minutos. Tu contraseña de ChatGPT nunca pasa por Home Assistant. Si OpenAI rechaza el código, activa una vez el inicio de sesión con código de dispositivo en ChatGPT en **Configuración → Seguridad** (en una cuenta de espacio de trabajo, lo permite el administrador)."
+        },
+        "codex_signed_in": {
+          "title": "Sesión iniciada",
+          "description": "{status}\n\nEnvía para guardar el agente."
+        },
+        "codex_login_error": {
           "title": "El inicio de sesión no funcionó",
           "description": "Envía para volver."
         }

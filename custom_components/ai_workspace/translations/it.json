@@ -307,7 +307,11 @@
         "login_failed": "L'accesso non è riuscito sul Runtime. Controlla il log del Runtime e riprova.",
         "not_supported": "Questo motore non ha un accesso con piano. Usa una chiave API.",
         "runtime_rejected": "AI Workspace Runtime ha rifiutato la password del Runtime. Usa la stessa password sul Runtime e in questo modulo.",
-        "runtime_old": "Questo Runtime non supporta ancora l'accesso. Aggiorna AI Workspace Runtime, oppure incolla un token nel modulo dell'agente."
+        "runtime_old": "Questo Runtime non supporta ancora l'accesso. Aggiorna AI Workspace Runtime, oppure incolla un token nel modulo dell'agente.",
+        "codex_runtime_old": "Aggiorna il Runtime di AI Workspace alla 1.6.0 o successiva per gli agenti Codex.",
+        "codex_key_required": "Aggiungi una chiave API OpenAI in Codex (runtime), oppure accedi con ChatGPT sul Runtime di AI Workspace.",
+        "not_signed_in_yet": "OpenAI non ha ancora confermato l'accesso. Inserisci il codice sulla pagina di OpenAI, poi invia di nuovo.",
+        "no_code": "Codex non ha ricevuto un codice di accesso da OpenAI. Verifica che il Runtime raggiunga auth.openai.com e riprova."
       },
       "step": {
         "provider": {
@@ -408,12 +412,14 @@
               "data": {
                 "save_tokens": "Risparmia token",
                 "cache_1h": "Mantieni la cache per un’ora",
-                "use_claude_runtime": "Usa Claude SDK (runtime) (sperimentale)"
+                "use_claude_runtime": "Usa Claude SDK (runtime) (sperimentale)",
+                "use_codex_runtime": "Usa Codex (runtime) (sperimentale)"
               },
               "data_description": {
                 "save_tokens": "Invia meno a ogni messaggio: un prompt più corto, meno cronologia e risposte più brevi. Costa meno, ma le risposte sulla tua casa possono essere meno accurate.",
                 "cache_1h": "Solo Claude. Tiene in cache il prompt di sistema e gli strumenti per un’ora invece di 5 minuti. Scrivere nella cache costa 2× il prezzo di input invece di 1,25×; leggerla costa 0,1×. Più economico quando tra i tuoi messaggi passano spesso più di 5 minuti, un po’ più caro se chatti di rado.",
-                "use_claude_runtime": "Le chat passano da Claude Code sull'AI Workspace Runtime invece che dall'API cloud di Anthropic, con il tuo abbonamento Claude (Pro, Max) o una chiave API Anthropic. Premi OK dopo averlo cambiato: il modulo mostra i campi corrispondenti, non viene ancora salvato nulla."
+                "use_claude_runtime": "Le chat passano da Claude Code sull'AI Workspace Runtime invece che dall'API cloud di Anthropic, con il tuo abbonamento Claude (Pro, Max) o una chiave API Anthropic. Premi OK dopo averlo cambiato: il modulo mostra i campi corrispondenti, non viene ancora salvato nulla.",
+                "use_codex_runtime": "Le chat passano da OpenAI Codex sul Runtime di AI Workspace invece che dall'API cloud di OpenAI, con il tuo piano ChatGPT (Plus, Pro, Business) o una chiave API OpenAI. Premi OK dopo averlo cambiato: il modulo mostra i campi adatti, non viene ancora salvato nulla."
               }
             },
             "claude_runtime": {
@@ -428,6 +434,20 @@
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "La stessa password dell'AI Workspace Runtime. Lascia vuoto con l'add-on e l'associazione automatica.",
                 "claude_api_key": "Un token Claude Plan (sk-ant-oat…, da `claude setup-token`, usa il tuo abbonamento Claude) o una chiave API Anthropic (sk-ant-api…, addebitata come crediti API). Lascia vuoto per usare quello dell'AI Workspace Runtime, o in modifica per conservare quello salvato. [Ottieni una chiave API]({api_key_url})"
+              }
+            },
+            "codex_runtime": {
+              "name": "Codex (runtime)",
+              "description": "Un modello vuoto usa il modello predefinito di Codex per il tuo account.",
+              "data": {
+                "runtime_url": "Indirizzo del Runtime{runtime_url_mark}",
+                "runtime_token": "Password del Runtime",
+                "codex_api_key": "Chiave API OpenAI (facoltativa)"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "La stessa password del Runtime di AI Workspace. Lascia vuoto con l'add-on e l'abbinamento automatico.",
+                "codex_api_key": "Facoltativa. Più semplice: lascia vuoto e usa **Accedi con ChatGPT** al passo successivo. Oppure incolla una chiave API OpenAI solo per questo agente (fatturata come uso API); ha la precedenza sull'accesso del Runtime. Lascia vuoto in modifica per mantenere quella salvata. [Chiavi OpenAI]({api_key_url})"
               }
             }
           }
@@ -590,6 +610,29 @@
           "description": "{status}\n\nInvia per salvare l'agente."
         },
         "claude_login_error": {
+          "title": "L'accesso non è riuscito",
+          "description": "Invia per tornare indietro."
+        },
+        "codex_account": {
+          "title": "Account Codex",
+          "description": "{status}\n\nL'accesso resta sul Runtime di AI Workspace, non in Home Assistant, e ogni agente Codex su quel Runtime lo usa.",
+          "menu_options": {
+            "codex_use_runtime": "Usa l'accesso esistente del Runtime",
+            "codex_save": "Salva agente",
+            "codex_login": "Accedi con ChatGPT",
+            "codex_logout": "Esci sul Runtime",
+            "codex_back": "Torna alle impostazioni dell'agente"
+          }
+        },
+        "codex_login": {
+          "title": "Accedi con ChatGPT",
+          "description": "1. Apri questo link e accedi con l'account ChatGPT che ha il tuo piano: [Accedi con ChatGPT]({url})\n2. Inserisci lì questo codice monouso: **{code}**\n3. Poi invia qui.\n\nIl codice vale 15 minuti. La tua password ChatGPT non passa mai da Home Assistant. Se OpenAI rifiuta il codice, attiva una volta l'accesso con codice dispositivo in ChatGPT in **Impostazioni → Sicurezza** (per un account workspace lo consente l'amministratore)."
+        },
+        "codex_signed_in": {
+          "title": "Accesso effettuato",
+          "description": "{status}\n\nInvia per salvare l'agente."
+        },
+        "codex_login_error": {
           "title": "L'accesso non è riuscito",
           "description": "Invia per tornare indietro."
         }

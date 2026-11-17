@@ -14,7 +14,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
-from .agents import ClaudeAgent, CursorAgent, entry_agents
+from .agents import ClaudeAgent, CodexAgent, CursorAgent, entry_agents
 from .assist_pipelines import async_remove_assist_pipeline
 from .const import (
     CONF_CONTEXT_WINDOW,
@@ -65,6 +65,7 @@ from .const import (
     CONF_USE_CLAUDE_RUNTIME,
     API_ANTHROPIC,
     MODE_CLAUDE,
+    MODE_CODEX,
     MODE_CURSOR,
     OVERLAY_JS,
     PANEL_ELEMENT,
@@ -242,6 +243,8 @@ def _one_provider(hass: HomeAssistant, settings: Settings, agent, store):
         return CursorAgent(agent, False, None)
     if agent.mode == MODE_CLAUDE:
         return ClaudeAgent(agent, False, None)
+    if agent.mode == MODE_CODEX:
+        return CodexAgent(agent, False, None)
     agent_settings = replace(
         settings,
         mode=MODE_API,
@@ -265,7 +268,7 @@ def _one_provider(hass: HomeAssistant, settings: Settings, agent, store):
 def _workspace_prompt_cache(entry: ConfigEntry, data: dict) -> bool:
     if CONF_PROMPT_CACHE in data or CONF_PROMPT_CACHE in (entry.options or {}):
         return bool(data.get(CONF_PROMPT_CACHE, True))
-    agents = [agent for agent in entry_agents(entry) if agent.mode not in {MODE_CURSOR, MODE_CLAUDE}]
+    agents = [agent for agent in entry_agents(entry) if agent.mode not in {MODE_CURSOR, MODE_CLAUDE, MODE_CODEX}]
     if agents and all(not agent.prompt_cache for agent in agents):
         return False
     return True
@@ -279,7 +282,7 @@ def _move_tuning_to_agents(hass: HomeAssistant, entry: ConfigEntry) -> None:
     old = {**entry.data, **entry.options}
     if CONF_LOW_TOKEN not in old and CONF_CHECK_HOUSE not in old:
         return
-    cloud = [agent for agent in entry_agents(entry) if agent.mode not in {MODE_CURSOR, MODE_CLAUDE}]
+    cloud = [agent for agent in entry_agents(entry) if agent.mode not in {MODE_CURSOR, MODE_CLAUDE, MODE_CODEX}]
     # Same fallbacks the old workspace setting used when only one of the two keys was saved.
     if CONF_LOW_TOKEN in old:
         mode = token_mode_of(old.get(CONF_LOW_TOKEN))
@@ -292,7 +295,7 @@ def _move_tuning_to_agents(hass: HomeAssistant, entry: ConfigEntry) -> None:
     # Light used to force the check on and Medium/Extreme force it off; keep what each agent did.
     check = {TOKEN_MODE_LIGHT: True, TOKEN_MODE_MEDIUM: False, TOKEN_MODE_EXTREME: False}.get(mode, check)
     for sub in list(entry.subentries.values()):
-        if sub.subentry_type != SUBENTRY_AGENT or str(sub.data.get(CONF_MODE) or "") in {MODE_CURSOR, MODE_CLAUDE}:
+        if sub.subentry_type != SUBENTRY_AGENT or str(sub.data.get(CONF_MODE) or "") in {MODE_CURSOR, MODE_CLAUDE, MODE_CODEX}:
             continue
         data = {**sub.data, CONF_LOW_TOKEN: mode, CONF_CHECK_HOUSE: check}
         if data != dict(sub.data):

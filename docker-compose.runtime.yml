@@ -1,4 +1,4 @@
-# AI Workspace Runtime (Cursor + Claude Agent SDK) — same Docker host as Home Assistant.
+# AI Workspace Runtime (Cursor + Claude Agent SDK + OpenAI Codex) — same Docker host as Home Assistant.
 # This is not a second Home Assistant. Copy this file, paste the key, start it.
 #
 #   docker compose -f docker-compose.runtime.yml up -d
@@ -38,6 +38,9 @@ services:
       # CLAUDE_CODE_OAUTH_TOKEN: ""
       # ANTHROPIC_API_KEY: ""
       # CLAUDE_MODEL: claude-sonnet-5-5
+      # Codex agents: easiest is Sign in with ChatGPT on the agent. Headless: an OpenAI API key.
+      # See docs/codex-runtime.md.
+      # OPENAI_API_KEY: ""
       RUNTIME_TOKEN: ""
       AUTH_MODE: ingress
       DATA_DIR: /data

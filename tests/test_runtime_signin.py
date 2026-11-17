@@ -17,6 +17,11 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+# Codex offers its sign-in only where the Runtime image has the openai-codex SDK and its CLI.
+from app.codex_login import cli_path, sdk_installed
+
+LOGIN_ENGINES = ["claude", "codex"] if sdk_installed() and cli_path() else ["claude"]
+
 from app import claude_login
 from app.auth import ClaudeAuth
 from app.claude_login import LoginError, LoginManager, clean_code, find_link, find_token, load_token, plain_text, token_info
@@ -133,7 +138,7 @@ def test_sign_in_over_http_saves_the_token_owner_only_and_never_returns_it(tmp_p
     settings = _settings(tmp_path, runtime_token="rt")
     auth = {"Authorization": "Bearer rt"}
     with _client(settings, fake_cli, monkeypatch) as client:
-        assert client.get("/api/health").json()["login"] == ["claude"]
+        assert client.get("/api/health").json()["login"] == LOGIN_ENGINES
         assert client.post("/api/auth/claude/login").status_code == 401
         before = client.get("/api/auth/claude", headers=auth).json()
         assert before["credential"] == "none" and before["ready"] is False
@@ -187,7 +192,7 @@ def test_the_1_6_0b7_endpoint_still_answers_and_shares_the_one_sign_in(tmp_path,
     settings = _settings(tmp_path)
     with _client(settings, fake_cli, monkeypatch) as client:
         health = client.get("/api/health").json()
-        assert health["claude_login"] is True and health["login"] == ["claude"]
+        assert health["claude_login"] is True and health["login"] == LOGIN_ENGINES
         old = client.post("/api/claude/login").json()
         assert old["url"] == LINK
         # One sign-in at a time: the new API sees the one an older integration started.
@@ -207,7 +212,7 @@ def test_missing_cli_unknown_engine_and_cursor_has_no_plan_login(tmp_path, monke
         missing = client.post("/api/auth/claude/login")
         assert missing.status_code == 501 and missing.json()["detail"] == "cli_missing"
         assert client.get("/api/auth/claude").json()["login"]["available"] is False
-        assert client.get("/api/auth/codex").status_code == 404
+        assert client.get("/api/auth/gemini").status_code == 404
         cursor = client.get("/api/auth/cursor").json()
         assert cursor["credential"] == "settings" and cursor["login"] == {"supported": False, "reason": "api_key_only"}
         refused = client.post("/api/auth/cursor/login")

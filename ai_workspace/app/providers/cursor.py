@@ -902,9 +902,19 @@ def build_providers(settings: Settings, runtime: CursorRuntime) -> dict:
 
         claude = UnavailableProvider(ProviderInfo("claude", "Claude", False, NOT_INSTALLED))
 
+    if importlib.util.find_spec("openai_codex") is not None:
+        from app.providers.codex import CodexProvider
+
+        codex = CodexProvider(settings, runtime)
+    else:
+        from app.providers.codex import NOT_INSTALLED as CODEX_NOT_INSTALLED
+
+        codex = UnavailableProvider(ProviderInfo("codex", "Codex", False, CODEX_NOT_INSTALLED))
+
     return {
         "cursor": CursorProvider(settings, runtime),
         "claude": claude,
+        "codex": codex,
         "openai": UnavailableProvider(
             ProviderInfo(
                 "openai",

@@ -307,7 +307,11 @@
         "login_failed": "Aanmelden is mislukt op de Runtime. Bekijk het Runtime-log en probeer het opnieuw.",
         "not_supported": "Deze engine heeft geen abonnementsaanmelding. Gebruik een API-sleutel.",
         "runtime_rejected": "De AI Workspace Runtime weigerde het Runtime-wachtwoord. Gebruik hetzelfde wachtwoord op de Runtime en in dit formulier.",
-        "runtime_old": "Deze Runtime kan nog niet aanmelden. Werk de AI Workspace Runtime bij, of plak een token in het agentformulier."
+        "runtime_old": "Deze Runtime kan nog niet aanmelden. Werk de AI Workspace Runtime bij, of plak een token in het agentformulier.",
+        "codex_runtime_old": "Werk de AI Workspace Runtime bij naar 1.6.0 of nieuwer voor Codex-agents.",
+        "codex_key_required": "Voeg een OpenAI API-sleutel toe onder Codex (runtime), of meld je aan met ChatGPT op de AI Workspace Runtime.",
+        "not_signed_in_yet": "OpenAI heeft de aanmelding nog niet bevestigd. Voer de code in op de pagina van OpenAI en verstuur opnieuw.",
+        "no_code": "Codex kreeg geen aanmeldcode van OpenAI. Controleer of de Runtime auth.openai.com bereikt en probeer het opnieuw."
       },
       "step": {
         "provider": {
@@ -408,12 +412,14 @@
               "data": {
                 "save_tokens": "Tokens besparen",
                 "cache_1h": "Cache een uur bewaren",
-                "use_claude_runtime": "Claude SDK (runtime) gebruiken (experimenteel)"
+                "use_claude_runtime": "Claude SDK (runtime) gebruiken (experimenteel)",
+                "use_codex_runtime": "Codex (runtime) gebruiken (experimenteel)"
               },
               "data_description": {
                 "save_tokens": "Stuurt minder mee met elk bericht: een kortere prompt, minder chatgeschiedenis en kortere antwoorden. Goedkoper, maar antwoorden over je huis kunnen minder grondig zijn.",
                 "cache_1h": "Alleen Claude. Houdt de systeemprompt en tools een uur in de cache in plaats van 5 minuten. Schrijven in de cache kost 2× de invoerprijs in plaats van 1,25×; lezen kost 0,1×. Goedkoper als er vaak meer dan 5 minuten tussen je berichten zit, iets duurder als je weinig chat.",
-                "use_claude_runtime": "Chats lopen via Claude Code op de AI Workspace Runtime in plaats van de cloud-API van Anthropic, met je Claude-abonnement (Pro, Max) of een Anthropic-API-sleutel. Druk na het wijzigen op OK: het formulier toont dan de passende velden, er wordt nog niets opgeslagen."
+                "use_claude_runtime": "Chats lopen via Claude Code op de AI Workspace Runtime in plaats van de cloud-API van Anthropic, met je Claude-abonnement (Pro, Max) of een Anthropic-API-sleutel. Druk na het wijzigen op OK: het formulier toont dan de passende velden, er wordt nog niets opgeslagen.",
+                "use_codex_runtime": "Chats lopen via OpenAI Codex op de AI Workspace Runtime in plaats van via OpenAI's cloud-API, met je ChatGPT-abonnement (Plus, Pro, Business) of een OpenAI API-sleutel. Druk na het wijzigen op OK: het formulier toont dan de passende velden, er wordt nog niets opgeslagen."
               }
             },
             "claude_runtime": {
@@ -428,6 +434,20 @@
                 "runtime_url": "{runtime_url_note}",
                 "runtime_token": "Hetzelfde wachtwoord als op de AI Workspace Runtime. Leeg laten bij de add-on met automatische koppeling.",
                 "claude_api_key": "Een Claude Plan-token (sk-ant-oat…, uit `claude setup-token`, gebruikt je Claude-abonnement) of een Anthropic-API-sleutel (sk-ant-api…, gefactureerd als API-tegoed). Leeg laten om die op de AI Workspace Runtime te gebruiken, of bij bewerken om de opgeslagen te houden. [API-sleutel ophalen]({api_key_url})"
+              }
+            },
+            "codex_runtime": {
+              "name": "Codex (runtime)",
+              "description": "Een leeg model gebruikt het standaardmodel van Codex voor je account.",
+              "data": {
+                "runtime_url": "Runtime-adres{runtime_url_mark}",
+                "runtime_token": "Runtime-wachtwoord",
+                "codex_api_key": "OpenAI API-sleutel (optioneel)"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "Hetzelfde wachtwoord als op de AI Workspace Runtime. Leeg laten bij de add-on met automatische koppeling.",
+                "codex_api_key": "Optioneel. Makkelijker: laat leeg en gebruik **Aanmelden met ChatGPT** in de volgende stap. Of plak een OpenAI API-sleutel alleen voor deze agent (gefactureerd als API-gebruik); die gaat voor de aanmelding van de Runtime. Leeg laten bij bewerken om de opgeslagen te houden. [OpenAI-sleutels]({api_key_url})"
               }
             }
           }
@@ -590,6 +610,29 @@
           "description": "{status}\n\nVerstuur om de agent op te slaan."
         },
         "claude_login_error": {
+          "title": "Aanmelden is niet gelukt",
+          "description": "Verstuur om terug te gaan."
+        },
+        "codex_account": {
+          "title": "Codex-account",
+          "description": "{status}\n\nDe aanmelding blijft op de AI Workspace Runtime, niet in Home Assistant, en elke Codex-agent op die Runtime gebruikt haar.",
+          "menu_options": {
+            "codex_use_runtime": "Bestaande toegang van de Runtime gebruiken",
+            "codex_save": "Agent opslaan",
+            "codex_login": "Aanmelden met ChatGPT",
+            "codex_logout": "Afmelden op de Runtime",
+            "codex_back": "Terug naar de agentinstellingen"
+          }
+        },
+        "codex_login": {
+          "title": "Aanmelden met ChatGPT",
+          "description": "1. Open deze link en meld je aan met het ChatGPT-account met je abonnement: [Aanmelden met ChatGPT]({url})\n2. Voer daar deze eenmalige code in: **{code}**\n3. Verstuur daarna hier.\n\nDe code is 15 minuten geldig. Je ChatGPT-wachtwoord gaat nooit via Home Assistant. Weigert OpenAI de code, zet dan eenmalig aanmelden met apparaatcode aan in ChatGPT onder **Instellingen → Beveiliging** (bij een werkruimte-account staat de beheerder het toe)."
+        },
+        "codex_signed_in": {
+          "title": "Aangemeld",
+          "description": "{status}\n\nVerstuur om de agent op te slaan."
+        },
+        "codex_login_error": {
           "title": "Aanmelden is niet gelukt",
           "description": "Verstuur om terug te gaan."
         }

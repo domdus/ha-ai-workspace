@@ -214,7 +214,7 @@ After the runtime is running: **Settings → Devices & services → Add integrat
 
 ## Use your Claude or ChatGPT plan (experimental)
 
-Cloud agents need API credits. Two setups can use a subscription plan instead. Both need software next to Home Assistant, and both are experimental.
+Cloud agents need API credits. Claude and OpenAI agents can use a subscription plan instead by running on the AI Workspace Runtime. Both are experimental.
 
 ### Claude plan: Claude SDK on the Runtime
 
@@ -232,15 +232,21 @@ The **Usage** page then shows the plan's session and week limits. Details: [Clau
 >
 > Our reading, and it is only that: it *may* still count as private use. The Runtime runs on your own hardware, signs in with your own account, and only you chat with it, much like running Claude Code yourself. It is not a commercial service, and no one else signs in to your plan through it. Anthropic has not confirmed this. It may limit or block plan sign-ins used this way. Whether you use it is your decision. To be on the safe side, use an **Anthropic API key** on the same agent instead: same switch, paste the key (`sk-ant-api…`) into the key field.
 
-### ChatGPT plan: Codex through the Agent Worker
+### ChatGPT plan: Codex on the Runtime
 
-AI Workspace has no Codex chat agent yet. Your ChatGPT plan (Plus, Pro, Business) can still do the work through [Agent Worker](https://github.com/domdus/agent-worker), a separate container that runs **OpenAI Codex** (as well as Cursor and Claude Code):
+An **OpenAI** agent can run OpenAI Codex on the AI Workspace Runtime, signed in with your ChatGPT plan (Plus, Pro, Business).
 
-1. Run the Agent Worker and sign it in with ChatGPT: see [OpenAI Codex](https://github.com/domdus/agent-worker#openai-codex) in its README.
-2. Add the worker as an MCP server: **Add connection** on the AI Workspace entry, with the worker's MCP URL and token (see the worker's README).
-3. Your chat agent hands coding tasks to the worker with the `codex` engine. The worker's usage appears on the **Usage** page under **Worker: OpenAI Codex**, and the plan's limits under **Plan limits** when Codex reports them.
+1. Install the Runtime as in [Cursor AI](#cursor-ai-advanced), Option A or B. A Cursor API key is not needed for Codex only.
+2. **Add agent → OpenAI**. Open **Advanced**, turn on **Use Codex (runtime) (experimental)**, and press **OK**. The form comes back with the Runtime fields instead of the API key field.
+3. Leave the key field empty and submit.
+4. On the **Codex account** step, pick **Sign in with ChatGPT**. Open the link, sign in with the ChatGPT account that has your plan, enter the code the form shows, and submit. Device-code sign-in has to be allowed once in ChatGPT under **Settings → Security**.
 
-The chat itself still needs an agent from the sections above.
+The **Usage** page then shows the plan's limits when Codex reports them. Details: [Codex agents](docs/codex-runtime.md).
+
+> [!WARNING]
+> **Experimental.** A ChatGPT plan is for your own use with your own account. Check OpenAI's [terms](https://openai.com/policies/) for your plan. To be on the safe side, paste an **OpenAI API key** on the same agent instead.
+
+Codex can also do coding work for any chat agent through [Agent Worker](https://github.com/domdus/agent-worker), a separate container added as an MCP connection. Its jobs count on the **Usage** page under **Worker: OpenAI Codex**.
 
 ---
 

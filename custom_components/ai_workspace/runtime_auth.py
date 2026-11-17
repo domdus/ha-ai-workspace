@@ -28,6 +28,8 @@ KNOWN_ERRORS = frozenset(
         "no_runtime",
         "runtime_rejected",
         "runtime_old",
+        "no_code",
+        "not_signed_in_yet",
     }
 )
 
@@ -94,8 +96,12 @@ async def async_login_start(hass: HomeAssistant, base: str, token: str, engine: 
     return await _call(hass, "POST", base, f"/api/auth/{engine}/login", token, seconds=60)
 
 
-async def async_login_state(hass: HomeAssistant, base: str, token: str, engine: str, login_id: str) -> dict[str, Any]:
-    return await _call(hass, "GET", base, f"/api/auth/{engine}/login/{login_id}", token, seconds=10)
+async def async_login_state(
+    hass: HomeAssistant, base: str, token: str, engine: str, login_id: str, wait: int = 0
+) -> dict[str, Any]:
+    """The sign-in's state; ``wait`` lets the Runtime hold the answer until it changes (device code)."""
+    path = f"/api/auth/{engine}/login/{login_id}" + (f"?wait={int(wait)}" if wait else "")
+    return await _call(hass, "GET", base, path, token, seconds=10 + max(0, int(wait)))
 
 
 async def async_login_code(

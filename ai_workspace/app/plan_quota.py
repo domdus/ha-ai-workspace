@@ -225,8 +225,58 @@ def parse_cursor_sdk_message(message: Any) -> dict[str, Any] | None:
     return _dig_plan_fields(_mapping(message))
 
 
+# Codex warns from this share of a window on; it has no allowed/warning verdict of its own.
+CODEX_WARNING_PERCENT = 80
+
+
+def normalize_codex_rate_limits(limits: dict[str, Any]) -> dict[str, Any] | None:
+    """Snapshot from Codex's ``account/rateLimits/updated`` (``rateLimits``: primary and secondary window).
+
+    Each window has ``usedPercent`` (0-100), ``windowDurationMins`` and ``resetsAt`` (epoch seconds).
+    A window up to a day long is the session window (ChatGPT plans: 5 hours), a longer one the week.
+    """
+    if not isinstance(limits, dict):
+        return None
+    session: dict[str, Any] = {}
+    week: dict[str, Any] = {}
+    for key, fallback in (("primary", "session"), ("secondary", "week")):
+        window = limits.get(key)
+        if not isinstance(window, dict) or window.get("usedPercent", window.get("used_percent")) is None:
+            continue
+        minutes = window.get("windowDurationMins", window.get("window_duration_mins"))
+        kind = fallback if not isinstance(minutes, (int, float)) else ("session" if minutes <= 24 * 60 else "week")
+        target = session if kind == "session" else week
+        if not target:
+            target.update(window)
+    if not session and not week:
+        return None
+    session_pct = _percent(session.get("usedPercent", session.get("used_percent")), fraction=False)
+    week_pct = _percent(week.get("usedPercent", week.get("used_percent")), fraction=False)
+    reached = limits.get("rateLimitReachedType", limits.get("rate_limit_reached_type"))
+    highest = max([pct for pct in (session_pct, week_pct) if pct is not None], default=0)
+    if reached:
+        status = "rejected"
+    elif highest >= CODEX_WARNING_PERCENT:
+        status = _STATUS_WARNING
+    else:
+        status = "allowed"
+    return {
+        "status": status,
+        "session_percent": session_pct,
+        "week_percent": week_pct,
+        "session_reset_at": _epoch(session.get("resetsAt", session.get("resets_at"))),
+        "week_reset_at": _epoch(week.get("resetsAt", week.get("resets_at"))),
+        "source": "codex",
+        "updated_at": _utc_now(),
+    }
+
+
 def parse_codex_sdk_message(message: Any) -> dict[str, Any] | None:
-    return _dig_plan_fields(_mapping(message))
+    data = _mapping(message)
+    limits = data.get("rateLimits", data.get("rate_limits"))
+    if isinstance(limits, dict):
+        return normalize_codex_rate_limits(limits)
+    return _dig_plan_fields(data)
 
 
 _RESET_FOR = {"session_percent": "session_reset_at", "week_percent": "week_reset_at"}
