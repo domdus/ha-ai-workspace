@@ -24,6 +24,9 @@ class LiveTurn:
         self.events: list[dict[str, Any]] = []
         self.done = False
         self._followers: set[asyncio.Queue] = set()
+        # Writes an event to the page that sent the message (not to followers). Set by the chat view,
+        # so events that do not come from the reply itself (an approval card) reach that page too.
+        self.direct: Any = None
 
     def publish(self, event: dict[str, Any]) -> None:
         if self.done or str(event.get("type")) in _SKIP:

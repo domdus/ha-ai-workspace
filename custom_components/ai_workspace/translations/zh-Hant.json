@@ -77,13 +77,15 @@
               "house_map": "設定目錄",
               "shorten_mcp_results": "縮短過長的 Home Assistant 回覆",
               "change_history": "變更歷史",
-              "change_history_ttl_days": "可回滾期限"
+              "change_history_ttl_days": "可回滾期限",
+              "approval_timeout_minutes": "審核等待時間"
             },
             "data_description": {
               "house_map": "預設關閉。一個關於自動化、實體與分區如何關聯的本機索引，一次查詢就能回答「哪些東西用到廚房燈？」這類問題。每則訊息會稍微增加一點內容，所以只有經常詢問東西如何關聯時才開啟。即時狀態仍來自 Home Assistant。",
               "shorten_mcp_results": "預設開啟。Home Assistant 的超長回覆在傳送給 AI 前會被縮小：大型實體清單會被壓縮，回覆中的超長文字（例如巨大的通知）會被縮短，仍超過 100,000 個字元的部分會被截斷。節省權杖並保持回覆迅速。關閉則傳送完整文字。",
               "change_history": "預設開啟。記錄助手所做的每一項設定變更，方便你查看改了什麼，並請它還原到先前的版本。關閉後不再新增紀錄；助手仍可進行變更。",
-              "change_history_ttl_days": "Rollback 與「讓助理復原」保持可用的天數。到期後紀錄仍在日誌中；還原舊快照可能覆蓋之後的變更。預設 7。1 大約是一天。"
+              "change_history_ttl_days": "Rollback 與「讓助理復原」保持可用的天數。到期後紀錄仍在日誌中；還原舊快照可能覆蓋之後的變更。預設 7。1 大約是一天。",
+              "approval_timeout_minutes": "MCP 工具的提問在聊天中等待你回答的分鐘數，例如 worker 想在伺服器上執行指令時。逾時後取消。預設 10。"
             }
           },
           "prompt": {
@@ -190,13 +192,15 @@
               "house_map": "設定目錄",
               "shorten_mcp_results": "縮短過長的 Home Assistant 回覆",
               "change_history": "變更歷史",
-              "change_history_ttl_days": "可回滾期限"
+              "change_history_ttl_days": "可回滾期限",
+              "approval_timeout_minutes": "審核等待時間"
             },
             "data_description": {
               "house_map": "預設關閉。一個關於自動化、實體與分區如何關聯的本機索引，一次查詢就能回答「哪些東西用到廚房燈？」這類問題。每則訊息會稍微增加一點內容，所以只有經常詢問東西如何關聯時才開啟。即時狀態仍來自 Home Assistant。",
               "shorten_mcp_results": "預設開啟。Home Assistant 的超長回覆在傳送給 AI 前會被縮小：大型實體清單會被壓縮，回覆中的超長文字（例如巨大的通知）會被縮短，仍超過 100,000 個字元的部分會被截斷。節省權杖並保持回覆迅速。關閉則傳送完整文字。",
               "change_history": "預設開啟。記錄助手所做的每一項設定變更，方便你查看改了什麼，並請它還原到先前的版本。關閉後不再新增紀錄；助手仍可進行變更。",
-              "change_history_ttl_days": "Rollback 與「讓助理復原」保持可用的天數。到期後紀錄仍在日誌中；還原舊快照可能覆蓋之後的變更。預設 7。1 大約是一天。"
+              "change_history_ttl_days": "Rollback 與「讓助理復原」保持可用的天數。到期後紀錄仍在日誌中；還原舊快照可能覆蓋之後的變更。預設 7。1 大約是一天。",
+              "approval_timeout_minutes": "MCP 工具的提問在聊天中等待你回答的分鐘數，例如 worker 想在伺服器上執行指令時。逾時後取消。預設 10。"
             }
           },
           "prompt": {

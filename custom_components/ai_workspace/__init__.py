@@ -32,6 +32,9 @@ from .const import (
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
     CONF_CHANGE_HISTORY_TTL_DAYS,
+    CONF_APPROVAL_TIMEOUT_MINUTES,
+    DEFAULT_APPROVAL_TIMEOUT_MINUTES,
+    approval_timeout_minutes,
     CONF_CHECK_HOUSE,
     CONF_LOW_TOKEN,
     CONF_PROMPT_CACHE,
@@ -208,6 +211,9 @@ async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
         change_history=bool(data.get(CONF_CHANGE_HISTORY, True)),
         change_history_ttl_days=change_history_ttl_days(
             data.get(CONF_CHANGE_HISTORY_TTL_DAYS, DEFAULT_CHANGE_HISTORY_TTL_DAYS)
+        ),
+        approval_timeout_minutes=approval_timeout_minutes(
+            data.get(CONF_APPROVAL_TIMEOUT_MINUTES, DEFAULT_APPROVAL_TIMEOUT_MINUTES)
         ),
         track_usage=bool(data.get(CONF_TRACK_USAGE, True)),
         show_chat_usage=bool(data.get(CONF_SHOW_CHAT_USAGE, True)),

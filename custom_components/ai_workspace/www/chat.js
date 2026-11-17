@@ -943,6 +943,7 @@ export async function mountAiWorkspace(root, options = {}) {
           <div class="${haUi ? "log messages ha-scrollbar" : "log"}"><p class="empty">${t("empty")}</p></div>
           <form class="composer">
             ${scrollBottomMarkup}
+            <div class="approvals" hidden aria-live="polite"></div>
             ${haUi ? `<${composerTag} class="composer-box">
               <div class="next-row" hidden></div>
               <div class="attach-row" hidden></div>
@@ -1000,6 +1001,7 @@ export async function mountAiWorkspace(root, options = {}) {
   const headerEl = chatEl?.querySelector("header");
   const stageEl = root.querySelector(".stage");
   const logEl = root.querySelector(".log");
+  const approvalsEl = root.querySelector(".approvals");
   const sessionsEl = root.querySelector(".sessions");
   const searchOpen = root.querySelector(".search-open");
   const searchBox = root.querySelector(".nav-search");
@@ -1068,6 +1070,9 @@ export async function mountAiWorkspace(root, options = {}) {
   let routeGen = 0;
   const workspaceLink = root.querySelector(".workspace-link");
   const teardown = [];
+  teardown.push(() => {
+    if (approvalPoll) window.clearInterval(approvalPoll);
+  });
 
   function listen(target, type, handler, opts) {
     if (!target) return;
@@ -1711,6 +1716,359 @@ export async function mountAiWorkspace(root, options = {}) {
     note.textContent = text;
     logEl.appendChild(note);
     if (nearBottom()) followBottom();
+  }
+
+  // Questions from MCP tools (elicitation) and worker jobs waiting for an approval. Only a click
+  // here answers them; the agent never sees them and chat text does not count.
+  const approvalCards = new Map();
+  let approvalPoll = 0;
+
+  function approvalTarget(worker) {
+    const host = worker.user ? `${worker.user}@${worker.host}` : worker.host || "";
+    return worker.hostname && worker.hostname !== worker.host ? `${host} (${worker.hostname})` : host;
+  }
+
+  function approvalLeft(data) {
+    const at = Number(data.expires_at || 0) * 1000;
+    if (at) return Math.max(0, Math.round((at - Date.now()) / 1000));
+    return Math.max(0, Number(data.expires_in || 0) - Math.round((performance.now() - (data._seen || 0)) / 1000));
+  }
+
+  function syncApprovalTimer(entry) {
+    const left = approvalLeft(entry.data);
+    if (left <= 0) {
+      closeApprovalCard(entry.data.id, "timeout");
+      return;
+    }
+    entry.timerEl.textContent =
+      left < 60 ? t("approval_expires_soon") : t("approval_expires", { minutes: Math.ceil(left / 60) });
+  }
+
+  function approvalField(field) {
+    const row = document.createElement("label");
+    row.className = "approval-field";
+    const name = document.createElement("span");
+    name.className = "approval-field-name";
+    name.textContent = field.title || field.name;
+    if (field.required) name.textContent += " *";
+    let input;
+    if (field.kind === "boolean") {
+      row.classList.add("approval-check");
+      input = document.createElement("input");
+      input.type = "checkbox";
+      input.checked = field.default === true;
+      row.append(input, name);
+    } else if (field.kind === "enum") {
+      input = document.createElement("select");
+      if (!field.required) input.append(new Option("", ""));
+      (field.choices || []).forEach((value, index) => {
+        input.append(new Option((field.labels || [])[index] || value, value));
+      });
+      if (field.default != null) input.value = String(field.default);
+      row.append(name, input);
+    } else if (field.kind === "number" || field.kind === "integer") {
+      input = document.createElement("input");
+      input.type = "number";
+      input.step = field.kind === "integer" ? "1" : "any";
+      if (field.minimum != null) input.min = String(field.minimum);
+      if (field.maximum != null) input.max = String(field.maximum);
+      if (field.default != null) input.value = String(field.default);
+      row.append(name, input);
+    } else if (field.kind === "string") {
+      input = document.createElement("input");
+      input.type = { email: "email", uri: "url", date: "date", "date-time": "datetime-local" }[field.format] || "text";
+      if (field.maxLength) input.maxLength = field.maxLength;
+      if (field.default != null) input.value = String(field.default);
+      row.append(name, input);
+    } else {
+      const note = document.createElement("span");
+      note.className = "approval-hint";
+      note.textContent = t("approval_unsupported");
+      row.append(name, note);
+      return { row, read: () => undefined, field };
+    }
+    input.className = "approval-input";
+    input.name = field.name;
+    if (field.description) {
+      const hint = document.createElement("span");
+      hint.className = "approval-hint";
+      hint.textContent = field.description;
+      row.append(hint);
+    }
+    const error = document.createElement("span");
+    error.className = "approval-error";
+    error.hidden = true;
+    row.append(error);
+    const read = () => {
+      if (field.kind === "boolean") return input.checked;
+      const value = String(input.value ?? "");
+      if (!value.trim()) return undefined;
+      if (field.kind === "number" || field.kind === "integer") return Number(value);
+      return value;
+    };
+    return { row, read, field, error };
+  }
+
+  function approvalCard(data) {
+    const card = document.createElement("div");
+    card.className = "approval-card";
+    card.dataset.approvalId = data.id;
+    card.setAttribute("role", "group");
+    const head = document.createElement("div");
+    head.className = "approval-head";
+    const icon = document.createElement("ha-icon");
+    icon.setAttribute("icon", "mdi:shield-key-outline");
+    const title = document.createElement("strong");
+    title.textContent = data.confirmation === false ? t("approval_question") : t("approval_title");
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "approval-dismiss";
+    close.setAttribute("aria-label", t("approval_dismiss"));
+    close.title = t("approval_dismiss");
+    close.textContent = "×";
+    head.append(icon, title, close);
+    card.setAttribute("aria-label", title.textContent);
+    const from = document.createElement("div");
+    from.className = "approval-from";
+    from.textContent = t("approval_from", { server: data.server || "MCP" });
+    card.append(head, from);
+    const worker = data.kind === "worker" ? data.worker || {} : null;
+    if (worker) {
+      const what = document.createElement("div");
+      what.className = "approval-what";
+      what.textContent = `${worker.tool || "ssh"} · ${t("approval_target")} ${approvalTarget(worker)}`;
+      const cmdLabel = document.createElement("div");
+      cmdLabel.className = "approval-label";
+      cmdLabel.textContent = t("approval_command");
+      const cmd = document.createElement("pre");
+      cmd.className = "approval-command";
+      cmd.textContent = worker.command || t("approval_interactive");
+      card.append(what, cmdLabel, cmd);
+      if (worker.job_id) {
+        const job = document.createElement("div");
+        job.className = "approval-hint";
+        job.textContent = t("approval_job", { job: worker.job_id });
+        card.append(job);
+      }
+    } else if (data.message) {
+      const message = document.createElement("div");
+      message.className = "approval-message";
+      message.textContent = data.message;
+      card.append(message);
+    }
+    const flag = data.approval_field || "";
+    const inputs = (data.fields || []).filter((field) => field.name !== flag).map(approvalField);
+    if (inputs.length) {
+      const form = document.createElement("div");
+      form.className = "approval-form";
+      inputs.forEach((item) => form.append(item.row));
+      card.append(form);
+    }
+    const status = document.createElement("div");
+    status.className = "approval-status";
+    status.hidden = true;
+    const actions = document.createElement("div");
+    actions.className = "approval-actions";
+    const timerEl = document.createElement("span");
+    timerEl.className = "approval-timer";
+    const deny = document.createElement("ha-button");
+    deny.setAttribute("type", "button");
+    deny.setAttribute("appearance", "plain");
+    deny.setAttribute("variant", "danger");
+    deny.className = "approval-deny";
+    deny.textContent = t("approval_deny");
+    const allow = document.createElement("ha-button");
+    allow.setAttribute("type", "button");
+    allow.setAttribute("variant", "brand");
+    allow.className = "approval-allow";
+    allow.textContent = data.confirmation === false ? t("approval_submit") : t("approval_allow");
+    actions.append(timerEl, deny, allow);
+    card.append(status, actions);
+    const entry = { data, card, inputs, status, timerEl, buttons: [allow, deny, close], busy: false };
+    // The cards sit in the composer form: no click or Enter here may send the chat message.
+    const click = (action) => (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      answerApproval(entry, action);
+    };
+    allow.addEventListener("click", click("accept"));
+    deny.addEventListener("click", click("decline"));
+    close.addEventListener("click", click("cancel"));
+    card.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" || event.target?.localName !== "input") return;
+      event.preventDefault();
+      event.stopPropagation();
+    });
+    return entry;
+  }
+
+  function syncApprovalsShown() {
+    if (!approvalsEl) return;
+    approvalsEl.hidden = !approvalsEl.childElementCount;
+    const open = [...approvalCards.values()].some((entry) => !entry.closed);
+    if (open && !approvalPoll) {
+      approvalPoll = window.setInterval(() => {
+        approvalCards.forEach((entry) => {
+          if (!entry.closed) syncApprovalTimer(entry);
+        });
+        if (sessionId && chatVisible() && !document.hidden) refreshApprovals(sessionId);
+      }, 15000);
+    } else if (!open && approvalPoll) {
+      window.clearInterval(approvalPoll);
+      approvalPoll = 0;
+    }
+  }
+
+  function clearApprovals() {
+    approvalCards.clear();
+    approvalsEl?.replaceChildren();
+    syncApprovalsShown();
+  }
+
+  function showApproval(data) {
+    if (!data?.id || !approvalsEl) return;
+    if (data.session_id && sessionId && data.session_id !== sessionId) return;
+    if (data.status && data.status !== "pending") {
+      closeApprovalCard(data.id, data.status);
+      return;
+    }
+    const known = approvalCards.get(data.id);
+    if (known) {
+      if (!known.closed) {
+        known.data = { ...known.data, ...data };
+        syncApprovalTimer(known);
+      }
+      return;
+    }
+    const entry = approvalCard({ ...data, _seen: performance.now() });
+    approvalCards.set(data.id, entry);
+    approvalsEl.append(entry.card);
+    syncApprovalTimer(entry);
+    syncApprovalsShown();
+    if (nearBottom()) followBottom();
+  }
+
+  function closeApprovalCard(id, status) {
+    const entry = approvalCards.get(id);
+    if (!entry || entry.closed) return;
+    entry.closed = true;
+    entry.buttons.forEach((button) => {
+      button.disabled = true;
+    });
+    entry.card.classList.add("closed", `approval-${status}`);
+    entry.card.querySelector(".approval-form")?.remove();
+    entry.card.querySelector(".approval-actions")?.remove();
+    entry.status.hidden = false;
+    const key = `approval_done_${status}`;
+    entry.status.textContent = t(key) === key ? t("approval_done_gone") : t(key);
+    // Answered cards go away after a moment; a timeout stays until dismissed, so it is seen.
+    const remove = () => {
+      if (approvalCards.get(id) !== entry) return;
+      approvalCards.delete(id);
+      entry.card.remove();
+      syncApprovalsShown();
+    };
+    if (status === "timeout" || status === "ended") {
+      const ok = document.createElement("button");
+      ok.type = "button";
+      ok.className = "approval-dismiss";
+      ok.setAttribute("aria-label", t("approval_dismiss"));
+      ok.textContent = "×";
+      ok.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        remove();
+      });
+      entry.card.querySelector(".approval-head .approval-dismiss")?.replaceWith(ok);
+    } else {
+      window.setTimeout(remove, 6000);
+    }
+    syncApprovalsShown();
+  }
+
+  function syncApprovals(list, id = sessionId) {
+    if (id !== sessionId) return;
+    const open = new Set((list || []).map((item) => item.id));
+    approvalCards.forEach((entry, key) => {
+      // Answered on another device or timed out there: this page catches up.
+      if (!entry.closed && !entry.busy && !open.has(key)) closeApprovalCard(key, "gone");
+    });
+    (list || []).forEach(showApproval);
+    syncApprovalsShown();
+  }
+
+  async function refreshApprovals(id) {
+    if (!id) return;
+    const response = await apiFetch(`${API}/sessions/${id}/approvals`);
+    if (!response?.ok || id !== sessionId) return;
+    try {
+      syncApprovals(await response.json(), id);
+    } catch (_error) {
+      // A broken answer leaves the cards as they are.
+    }
+  }
+
+  async function answerApproval(entry, action) {
+    if (entry.busy || entry.closed) return;
+    const content = {};
+    let bad = false;
+    if (action === "accept") {
+      entry.inputs.forEach((item) => {
+        if (item.error) item.error.hidden = true;
+        const value = item.read();
+        if (value === undefined || Number.isNaN(value)) {
+          if (item.field.required && item.error) {
+            item.error.textContent = t("approval_required");
+            item.error.hidden = false;
+            bad = true;
+          }
+          return;
+        }
+        content[item.field.name] = value;
+      });
+      if (entry.data.approval_field) content[entry.data.approval_field] = true;
+    }
+    if (bad) return;
+    entry.busy = true;
+    entry.buttons.forEach((button) => {
+      button.disabled = true;
+    });
+    entry.status.hidden = true;
+    let body = null;
+    let response = null;
+    try {
+      response = await apiFetch(`${API}/approvals/${encodeURIComponent(entry.data.id)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(action === "accept" ? { action, content } : { action }),
+      });
+      body = response ? await response.json().catch(() => null) : null;
+    } catch (_error) {
+      body = null;
+    }
+    entry.busy = false;
+    const result = body?.status;
+    if (result === "invalid") {
+      const errors = body.errors || {};
+      entry.inputs.forEach((item) => {
+        if (!item.error || !errors[item.field.name]) return;
+        item.error.textContent = t(errors[item.field.name] === "required" ? "approval_required" : "approval_invalid");
+        item.error.hidden = false;
+      });
+    }
+    if (result === "answered" || result === "expired" || result === "gone" || result === "closed") {
+      const status =
+        result === "answered" ? action : body?.approval?.status && body.approval.status !== "pending" ? body.approval.status : result === "expired" ? "timeout" : "gone";
+      closeApprovalCard(entry.data.id, status);
+      return;
+    }
+    entry.buttons.forEach((button) => {
+      button.disabled = false;
+    });
+    if (result !== "invalid") {
+      entry.status.textContent = t("approval_failed");
+      entry.status.hidden = false;
+    }
   }
 
   function rewriteAssistantLinks(content, mentions = true) {
@@ -3547,6 +3905,7 @@ export async function mountAiWorkspace(root, options = {}) {
     if (switching) {
       restoreQueued();
       leaveChatStream();
+      clearApprovals();
     }
     watchGen += 1;
     if (!id) {
@@ -3583,6 +3942,7 @@ export async function mountAiWorkspace(root, options = {}) {
     const session = await response.json();
     setChatChoice(session.provider, session.model);
     paintSession(session, gen);
+    if (Array.isArray(session.approvals)) syncApprovals(session.approvals, id);
     selectSessionRow(id);
     if (session.pending) watchPending(id);
     refreshChatUsage();
@@ -3738,6 +4098,8 @@ export async function mountAiWorkspace(root, options = {}) {
           setActivity(bubble, data.text);
         } else if (name === "plan_notice") {
           appendPlanNotice(data);
+        } else if (name === "approval") {
+          showApproval(data.approval);
         } else if (name === "done" || name === "error") {
           settleTools(bubble);
         }
@@ -4956,6 +5318,8 @@ export async function mountAiWorkspace(root, options = {}) {
           drainSpeech(false, true);
         } else if (name === "plan_notice") {
           appendPlanNotice(data);
+        } else if (name === "approval") {
+          showApproval(data.approval);
         } else if (name === "error" && data.connection && !streamFull) {
           // Nothing was sent: the header says why, the prompt gets the message back.
           drainSpeech(true);
@@ -6398,6 +6762,7 @@ export async function mountAiWorkspace(root, options = {}) {
   listen(document, "visibilitychange", () => {
     loadDictate();
     if (sessionId && chatVisible()) watchPending(sessionId);
+    if (sessionId && chatVisible() && !document.hidden) refreshApprovals(sessionId);
     if (bannerEl && !bannerEl.hidden) loadProviders();
   });
   listen(window, "resize", () => {
@@ -6405,6 +6770,7 @@ export async function mountAiWorkspace(root, options = {}) {
   });
   listen(window, "pageshow", () => {
     if (sessionId && chatVisible()) watchPending(sessionId);
+    if (sessionId && chatVisible()) refreshApprovals(sessionId);
   });
 
   loadProviders();

@@ -21,6 +21,17 @@ from typing import Any
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse, Response
 
+from app.elicitation import (
+    DEFAULT_TIMEOUT,
+    ELICIT_METHOD,
+    ElicitationBroker,
+    Target,
+    clamp_timeout,
+    forged_answer,
+    is_server_request,
+    with_elicitation_capability,
+    worker_jobs,
+)
 from app.settings import _default_hass_url, _read_options
 from app.tool_result import shorten_mcp_response
 from app.bps_key import note_guide, prepare_write
@@ -63,6 +74,8 @@ class McpProxy:
         self.seen: OrderedDict[str, float] = OrderedDict()
         # Usage of finished worker jobs (agent_run / agent_job) per chat, until its turn reports it.
         self.worker_usage: OrderedDict[str, list[dict[str, Any]]] = OrderedDict()
+        # Questions MCP servers ask the user (elicitation), answered from the Home Assistant chat.
+        self.elicitations = ElicitationBroker()
 
     def note_worker_usage(self, actor: str, event: dict[str, Any] | None) -> None:
         actor = str(actor or "").strip()
@@ -108,7 +121,7 @@ class McpProxy:
             digest = hashlib.sha256(
                 json.dumps({"url": url, "headers": cfg.get("headers") or {}}, sort_keys=True).encode()
             ).hexdigest()[:20]
-            self.upstreams[digest] = {"url": url, "headers": dict(cfg.get("headers") or {})}
+            self.upstreams[digest] = {"url": url, "headers": dict(cfg.get("headers") or {}), "name": str(name)}
             self.upstreams.move_to_end(digest)
             while len(self.upstreams) > _MAX_UPSTREAMS:
                 self.upstreams.popitem(last=False)
@@ -120,8 +133,18 @@ class McpProxy:
             wrapped[name] = forwarded
         return wrapped
 
-    def note_actor(self, session_id: str, user_id: str, agent: str, callback_key: str = "") -> None:
-        """callback_key is the key Home Assistant issued for this chat's callbacks."""
+    def note_actor(
+        self,
+        session_id: str,
+        user_id: str,
+        agent: str,
+        callback_key: str = "",
+        approval_timeout: int | None = None,
+    ) -> None:
+        """callback_key is the key Home Assistant issued for this chat's callbacks.
+
+        approval_timeout: seconds a question to the user (MCP elicitation) waits before it is cancelled.
+        """
         session_id = str(session_id or "").strip()
         user_id = str(user_id or "").strip()
         if not session_id or not user_id:
@@ -130,6 +153,7 @@ class McpProxy:
             "user_id": user_id,
             "agent": str(agent or "Cursor")[:120],
             "callback_key": str(callback_key or "").strip(),
+            "approval_timeout": str(clamp_timeout(approval_timeout or DEFAULT_TIMEOUT)),
         }
         self.actors.move_to_end(session_id)
         while len(self.actors) > _MAX_UPSTREAMS:
@@ -277,6 +301,16 @@ async def proxy_mcp(request: Request, secret: str, digest: str, actor: str = "")
         return Response(status_code=405, headers={"Allow": "POST, DELETE"})
     upstream = registry.upstreams[digest]
     body = await request.body()
+    broker: ElicitationBroker = registry.elicitations
+    if request.method.upper() == "POST":
+        # The chat can answer elicitation/create (the user does, in Home Assistant), so say so.
+        body = with_elicitation_capability(body) or body
+        if forged_answer(body, broker.was_intercepted(digest)):
+            logger.warning("mcp proxy dropped an elicitation answer that did not come from the user")
+            return JSONResponse(
+                {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Only the user answers this."}},
+                status_code=403,
+            )
     headers = {str(key): str(value) for key, value in (upstream.get("headers") or {}).items()}
     for key, value in request.headers.items():
         if key.lower() in _FORWARD and value:
@@ -326,11 +360,31 @@ async def proxy_mcp(request: Request, secret: str, digest: str, actor: str = "")
                 )
             else:
                 logger.info("activity prepare returned no token for %s", name)
+    who = registry.actor(actor) or {}
+    callback_base, callback_key = _activity_target(request, who) if who else ("", "")
+    cards = Target(callback_base, callback_key)
+    server_name = str(upstream.get("name") or "MCP")
+
+    def on_request(message: dict[str, Any]) -> dict[str, Any] | None:
+        """Answer server requests the agent must not see. Runs in the forward thread."""
+        if message.get("method") != ELICIT_METHOD:
+            return None
+        return broker.ask(
+            message,
+            session_id=actor if who else "",
+            server=server_name,
+            target=cards,
+            timeout=clamp_timeout(who.get("approval_timeout")),
+            upstream=digest,
+        )
+
     try:
         loop = asyncio.get_running_loop()
         status, response_headers, raw = await loop.run_in_executor(
             _FORWARD_POOL,
-            functools.partial(_forward, target, headers, body, request.method, label=digest[:8]),
+            functools.partial(
+                _forward, target, headers, body, request.method, label=digest[:8], on_request=on_request
+            ),
         )
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         if activity_token:
@@ -347,6 +401,21 @@ async def proxy_mcp(request: Request, secret: str, digest: str, actor: str = "")
             registry.note_worker_usage(actor, worker_usage_from_response(tool_call[0], tool_call[1], raw))
         except Exception:
             logger.debug("worker usage not read from %s", tool_call[0], exc_info=True)
+        # A worker job that waits for an approval with no open question: the chat shows a card for it.
+        jobs = worker_jobs(tool_call[0], raw)
+        if jobs:
+            try:
+                await asyncio.to_thread(
+                    broker.note_worker_jobs,
+                    jobs,
+                    session_id=actor if who else "",
+                    server=server_name,
+                    upstream_url=target,
+                    upstream_headers=dict(upstream.get("headers") or {}),
+                    target=cards,
+                )
+            except Exception:
+                logger.warning("worker approval card failed for %s", tool_call[0], exc_info=True)
     kind = "unchanged"
     if request.method.upper() == "POST":
         raw, kind = shorten_mcp_response(body, raw, content_type, enabled=_shorten_enabled(request))
@@ -553,6 +622,7 @@ def _forward(
     *,
     deadline: float = _ANSWER_DEADLINE,
     label: str = "",
+    on_request: Any = None,
 ) -> tuple[int, dict[str, str], bytes]:
     data = body if method.upper() not in {"GET", "HEAD"} else None
     req = urllib.request.Request(url, data=data, headers=headers, method=method.upper())
@@ -560,7 +630,19 @@ def _forward(
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             content_type = str(resp.headers.get("Content-Type") or "").lower()
             if "text/event-stream" in content_type:
-                raw = _read_answer_events(resp, _request_ids(body), time.monotonic() + deadline, label)
+                session = str(resp.headers.get("Mcp-Session-Id") or "")
+
+                def reply(message: dict[str, Any]) -> None:
+                    _reply_upstream(url, headers, message, session)
+
+                raw = _read_answer_events(
+                    resp,
+                    _request_ids(body),
+                    time.monotonic() + deadline,
+                    label,
+                    on_request=on_request,
+                    reply=reply,
+                )
                 return resp.status, dict(resp.headers), raw
             return resp.status, dict(resp.headers), resp.read()
     except urllib.error.HTTPError as exc:
@@ -591,10 +673,70 @@ def _answered(data: bytes, pending: set[str]) -> None:
             pending.discard(json.dumps(message.get("id")))
 
 
-def _read_answer_events(resp: Any, ids: set[str], deadline: float, label: str = "") -> bytes:
-    """Read an event stream until every request in it has its answer, the stream ends, or the deadline."""
+def _reply_upstream(url: str, headers: dict[str, str], message: dict[str, Any], session: str = "") -> None:
+    """POST the client's answer to a server request (MCP Streamable HTTP); the server says 202."""
+    sent = {key: value for key, value in headers.items() if key.lower() not in {"content-type", "accept"}}
+    sent["Content-Type"] = "application/json"
+    sent["Accept"] = "application/json, text/event-stream"
+    if session and not _header(sent, "mcp-session-id"):
+        sent["Mcp-Session-Id"] = session
+    data = json.dumps(message, ensure_ascii=False).encode()
+    req = urllib.request.Request(url, data=data, headers=sent, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            resp.read()
+    except urllib.error.HTTPError as exc:
+        logger.warning("MCP server refused the elicitation answer: HTTP %s", exc.code)
+    except (urllib.error.URLError, TimeoutError, OSError):
+        logger.warning("elicitation answer did not reach the MCP server", exc_info=False)
+
+
+def _serve_requests(data: bytes, on_request: Any, reply: Any) -> bytes | None:
+    """Answer the server requests in one event that the agent must not see.
+
+    None: nothing was taken, pass the event on as it is. Otherwise the rest of the event for the
+    agent (b"" when nothing is left).
+    """
+    try:
+        payload = json.loads(data)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return None
+    messages = payload if isinstance(payload, list) else [payload]
+    rest: list[Any] = []
+    taken = False
+    for message in messages:
+        answer = on_request(message) if is_server_request(message) else None
+        if answer is None:
+            rest.append(message)
+            continue
+        taken = True
+        if reply is not None:
+            reply(answer)
+    if not taken:
+        return None
+    if not rest:
+        return b""
+    left = rest if isinstance(payload, list) else rest[0]
+    return b"data: " + json.dumps(left, ensure_ascii=False).encode() + b"\n\n"
+
+
+def _read_answer_events(
+    resp: Any,
+    ids: set[str],
+    deadline: float,
+    label: str = "",
+    *,
+    on_request: Any = None,
+    reply: Any = None,
+) -> bytes:
+    """Read an event stream until every request in it has its answer, the stream ends, or the deadline.
+
+    on_request answers server requests (elicitation) in the stream; those events never reach the
+    agent, and the time the user takes does not count against the deadline.
+    """
     out = bytearray()
     pending = set(ids)
+    lines: list[bytes] = []
     event: list[bytes] = []
     while True:
         if time.monotonic() >= deadline:
@@ -603,15 +745,27 @@ def _read_answer_events(resp: Any, ids: set[str], deadline: float, label: str = 
         line = resp.readline()
         if not line:
             break
-        out += line
+        lines.append(line)
         text = line.strip()
         if text.startswith(b"data:"):
             event.append(text[5:].strip())
-        elif not text and event:
-            _answered(b"\n".join(event), pending)
-            event = []
+        elif not text:
+            if event:
+                joined = b"\n".join(event)
+                kept = None
+                if on_request is not None:
+                    started = time.monotonic()
+                    kept = _serve_requests(joined, on_request, reply)
+                    deadline += time.monotonic() - started
+                out += b"".join(lines) if kept is None else kept
+                _answered(joined, pending)
+                event = []
+            else:
+                out += b"".join(lines)
+            lines = []
             if ids and not pending:
                 break
+    out += b"".join(lines)
     if event and ids and pending:
         _answered(b"\n".join(event), pending)
     return bytes(out)

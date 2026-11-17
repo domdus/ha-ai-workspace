@@ -77,13 +77,15 @@
               "house_map": "Catálogo de configuración",
               "shorten_mcp_results": "Acortar las respuestas largas de Home Assistant",
               "change_history": "Historial de cambios",
-              "change_history_ttl_days": "Rollback durante"
+              "change_history_ttl_days": "Rollback durante",
+              "approval_timeout_minutes": "Espera de aprobación"
             },
             "data_description": {
               "house_map": "Desactivado por defecto. Un índice local de cómo se relacionan automatizaciones, entidades y áreas, para que una sola consulta responda preguntas como «¿qué usa la luz de la cocina?». Añade un poco a cada mensaje, así que actívalo solo si preguntas a menudo cómo están conectadas las cosas. Los estados en vivo siguen viniendo de Home Assistant.",
               "shorten_mcp_results": "Activado por defecto. Las respuestas muy largas de Home Assistant se reducen antes de enviarlas a la IA: las listas grandes de entidades se compactan, los textos muy largos dentro de una respuesta (como una notificación enorme) se acortan y lo que aún supere los 100.000 caracteres se corta. Ahorra tokens y mantiene las respuestas rápidas. Desactivado envía el texto completo.",
               "change_history": "Activado por defecto. Guarda un registro de cada cambio de configuración que hace el asistente, para que veas qué cambió y le pidas restaurar una versión anterior. Desactivado: no hay entradas nuevas; el asistente puede seguir haciendo cambios.",
-              "change_history_ttl_days": "Días que Rollback y Deshacer con el agente siguen disponibles. Después la fila permanece en el registro; restaurar una copia antigua puede sobrescribir trabajo posterior. Por defecto 7. 1 es aproximadamente un día."
+              "change_history_ttl_days": "Días que Rollback y Deshacer con el agente siguen disponibles. Después la fila permanece en el registro; restaurar una copia antigua puede sobrescribir trabajo posterior. Por defecto 7. 1 es aproximadamente un día.",
+              "approval_timeout_minutes": "Minutos que una pregunta de una herramienta MCP espera tu respuesta en el chat, por ejemplo un worker que quiere ejecutar un comando en un servidor. Después se cancela. Por defecto 10."
             }
           },
           "prompt": {
@@ -190,13 +192,15 @@
               "house_map": "Catálogo de configuración",
               "shorten_mcp_results": "Acortar las respuestas largas de Home Assistant",
               "change_history": "Historial de cambios",
-              "change_history_ttl_days": "Rollback durante"
+              "change_history_ttl_days": "Rollback durante",
+              "approval_timeout_minutes": "Espera de aprobación"
             },
             "data_description": {
               "house_map": "Desactivado por defecto. Un índice local de cómo se relacionan automatizaciones, entidades y áreas, para que una sola consulta responda preguntas como «¿qué usa la luz de la cocina?». Añade un poco a cada mensaje, así que actívalo solo si preguntas a menudo cómo están conectadas las cosas. Los estados en vivo siguen viniendo de Home Assistant.",
               "shorten_mcp_results": "Activado por defecto. Las respuestas muy largas de Home Assistant se reducen antes de enviarlas a la IA: las listas grandes de entidades se compactan, los textos muy largos dentro de una respuesta (como una notificación enorme) se acortan y lo que aún supere los 100.000 caracteres se corta. Ahorra tokens y mantiene las respuestas rápidas. Desactivado envía el texto completo.",
               "change_history": "Activado por defecto. Guarda un registro de cada cambio de configuración que hace el asistente, para que veas qué cambió y le pidas restaurar una versión anterior. Desactivado: no hay entradas nuevas; el asistente puede seguir haciendo cambios.",
-              "change_history_ttl_days": "Días que Rollback y Deshacer con el agente siguen disponibles. Después la fila permanece en el registro; restaurar una copia antigua puede sobrescribir trabajo posterior. Por defecto 7. 1 es aproximadamente un día."
+              "change_history_ttl_days": "Días que Rollback y Deshacer con el agente siguen disponibles. Después la fila permanece en el registro; restaurar una copia antigua puede sobrescribir trabajo posterior. Por defecto 7. 1 es aproximadamente un día.",
+              "approval_timeout_minutes": "Minutos que una pregunta de una herramienta MCP espera tu respuesta en el chat, por ejemplo un worker que quiere ejecutar un comando en un servidor. Después se cancela. Por defecto 10."
             }
           },
           "prompt": {

@@ -23,6 +23,11 @@ from homeassistant.helpers.selector import (
 from .agent_flow import AgentSubentryFlow
 from .agents import entry_agents
 from .const import (
+    APPROVAL_TIMEOUT_MAX_MINUTES,
+    APPROVAL_TIMEOUT_MIN_MINUTES,
+    CONF_APPROVAL_TIMEOUT_MINUTES,
+    DEFAULT_APPROVAL_TIMEOUT_MINUTES,
+    approval_timeout_minutes,
     CONF_ALLOW_USERS,
     CONF_CROSS_CHAT,
     CONF_DEFAULT_AGENT,
@@ -89,6 +94,7 @@ SECTION_CHAT = "chat"
 SECTION_COST = "cost"
 SECTION_HOUSE = "house"
 _SHARED_KEYS = (
+    CONF_APPROVAL_TIMEOUT_MINUTES,
     CONF_SYSTEM_PROMPT,
     CONF_RUNTIME_URL,
     CONF_RUNTIME_TOKEN,
@@ -244,6 +250,20 @@ def _house_schema(current: dict) -> vol.Schema:
                     unit_of_measurement="d",
                 )
             ),
+            vol.Optional(
+                CONF_APPROVAL_TIMEOUT_MINUTES,
+                default=approval_timeout_minutes(
+                    current.get(CONF_APPROVAL_TIMEOUT_MINUTES, DEFAULT_APPROVAL_TIMEOUT_MINUTES)
+                ),
+            ): NumberSelector(
+                NumberSelectorConfig(
+                    min=APPROVAL_TIMEOUT_MIN_MINUTES,
+                    max=APPROVAL_TIMEOUT_MAX_MINUTES,
+                    mode="box",
+                    step=1,
+                    unit_of_measurement="min",
+                )
+            ),
         }
     )
 
@@ -275,6 +295,8 @@ def _normalize(user_input: dict, hass: HomeAssistant | None = None) -> dict:
         out[CONF_KEEP_CHATS] = max(1, min(keep, 500))
     if CONF_CHANGE_HISTORY_TTL_DAYS in out:
         out[CONF_CHANGE_HISTORY_TTL_DAYS] = change_history_ttl_days(out[CONF_CHANGE_HISTORY_TTL_DAYS])
+    if CONF_APPROVAL_TIMEOUT_MINUTES in out:
+        out[CONF_APPROVAL_TIMEOUT_MINUTES] = approval_timeout_minutes(out[CONF_APPROVAL_TIMEOUT_MINUTES])
     if CONF_UI_THEME in out:
         out[CONF_UI_THEME] = ui_theme_of(out.get(CONF_UI_THEME))
     return out

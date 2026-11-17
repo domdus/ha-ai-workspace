@@ -77,13 +77,15 @@
               "house_map": "Konfigurationskatalog",
               "shorten_mcp_results": "Korta långa Home Assistant-svar",
               "change_history": "Ändringshistorik",
-              "change_history_ttl_days": "Rollback i"
+              "change_history_ttl_days": "Rollback i",
+              "approval_timeout_minutes": "Väntetid för godkännande"
             },
             "data_description": {
               "house_map": "Av som standard. Ett lokalt register över hur automationer, entiteter och områden hänger ihop, så att en enda sökning besvarar frågor som ”vad använder köksbelysningen?”. Lägger till lite i varje meddelande, så slå bara på det om du ofta frågar hur saker är kopplade. Aktuella tillstånd kommer fortfarande från Home Assistant.",
               "shorten_mcp_results": "På som standard. Mycket långa svar från Home Assistant görs mindre innan de skickas till AI:n: stora entitetslistor blir kompakta, mycket långa texter i ett svar (till exempel en enorm avisering) kortas, och det som fortfarande är över 100 000 tecken klipps. Sparar tokens och håller svaren snabba. Av skickar hela texten.",
               "change_history": "På som standard. Sparar varje konfigurationsändring som assistenten gör, så att du ser vad som ändrats och kan be den återställa en tidigare version. Av stoppar nya poster; assistenten kan fortfarande göra ändringar.",
-              "change_history_ttl_days": "Dagar som Rollback och Ångra via agenten förblir tillgängliga. Därefter stannar raden i loggen; att återställa en gammal ögonblicksbild kan skriva över senare arbete. Standard 7. 1 är ungefär en dag."
+              "change_history_ttl_days": "Dagar som Rollback och Ångra via agenten förblir tillgängliga. Därefter stannar raden i loggen; att återställa en gammal ögonblicksbild kan skriva över senare arbete. Standard 7. 1 är ungefär en dag.",
+              "approval_timeout_minutes": "Minuter som en fråga från ett MCP-verktyg väntar på ditt svar i chatten, till exempel när en worker vill köra ett kommando på en server. Sedan avbryts den. Standard 10."
             }
           },
           "prompt": {
@@ -190,13 +192,15 @@
               "house_map": "Konfigurationskatalog",
               "shorten_mcp_results": "Korta långa Home Assistant-svar",
               "change_history": "Ändringshistorik",
-              "change_history_ttl_days": "Rollback i"
+              "change_history_ttl_days": "Rollback i",
+              "approval_timeout_minutes": "Väntetid för godkännande"
             },
             "data_description": {
               "house_map": "Av som standard. Ett lokalt register över hur automationer, entiteter och områden hänger ihop, så att en enda sökning besvarar frågor som ”vad använder köksbelysningen?”. Lägger till lite i varje meddelande, så slå bara på det om du ofta frågar hur saker är kopplade. Aktuella tillstånd kommer fortfarande från Home Assistant.",
               "shorten_mcp_results": "På som standard. Mycket långa svar från Home Assistant görs mindre innan de skickas till AI:n: stora entitetslistor blir kompakta, mycket långa texter i ett svar (till exempel en enorm avisering) kortas, och det som fortfarande är över 100 000 tecken klipps. Sparar tokens och håller svaren snabba. Av skickar hela texten.",
               "change_history": "På som standard. Sparar varje konfigurationsändring som assistenten gör, så att du ser vad som ändrats och kan be den återställa en tidigare version. Av stoppar nya poster; assistenten kan fortfarande göra ändringar.",
-              "change_history_ttl_days": "Dagar som Rollback och Ångra via agenten förblir tillgängliga. Därefter stannar raden i loggen; att återställa en gammal ögonblicksbild kan skriva över senare arbete. Standard 7. 1 är ungefär en dag."
+              "change_history_ttl_days": "Dagar som Rollback och Ångra via agenten förblir tillgängliga. Därefter stannar raden i loggen; att återställa en gammal ögonblicksbild kan skriva över senare arbete. Standard 7. 1 är ungefär en dag.",
+              "approval_timeout_minutes": "Minuter som en fråga från ett MCP-verktyg väntar på ditt svar i chatten, till exempel när en worker vill köra ett kommando på en server. Sedan avbryts den. Standard 10."
             }
           },
           "prompt": {

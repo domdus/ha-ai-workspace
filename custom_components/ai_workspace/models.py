@@ -69,6 +69,7 @@ class Settings:
     shorten_mcp_results: bool = True
     change_history: bool = True
     change_history_ttl_days: int = 7
+    approval_timeout_minutes: int = 10
     track_usage: bool = True
     show_chat_usage: bool = True
     ha_usage_sensors: bool = False

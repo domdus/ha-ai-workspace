@@ -13,6 +13,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
 from .const import (
+    APPROVAL_TIMEOUT_MAX_MINUTES,
+    APPROVAL_TIMEOUT_MIN_MINUTES,
+    CONF_APPROVAL_TIMEOUT_MINUTES,
+    DEFAULT_APPROVAL_TIMEOUT_MINUTES,
+    approval_timeout_minutes,
     CONF_CONTEXT_WINDOW,
     CONF_TOOLS_ON_DEMAND,
     context_window_of,
@@ -125,6 +130,7 @@ YAML_SHARED_KEYS = (
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
     CONF_CHANGE_HISTORY_TTL_DAYS,
+    CONF_APPROVAL_TIMEOUT_MINUTES,
     CONF_TRACK_USAGE,
     CONF_SHOW_CHAT_USAGE,
     CONF_HA_USAGE_SENSORS,
@@ -154,6 +160,7 @@ YAML_OPTION_DEFAULTS = {
     CONF_SHORTEN_MCP_RESULTS: True,
     CONF_CHANGE_HISTORY: True,
     CONF_CHANGE_HISTORY_TTL_DAYS: DEFAULT_CHANGE_HISTORY_TTL_DAYS,
+    CONF_APPROVAL_TIMEOUT_MINUTES: DEFAULT_APPROVAL_TIMEOUT_MINUTES,
     CONF_TRACK_USAGE: True,
     CONF_SHOW_CHAT_USAGE: True,
     CONF_HA_USAGE_SENSORS: False,
@@ -189,6 +196,8 @@ def _normalize_option(key: str, value: Any) -> Any:
         return context_window_of(value)
     if key == CONF_CHANGE_HISTORY_TTL_DAYS:
         return change_history_ttl_days(value)
+    if key == CONF_APPROVAL_TIMEOUT_MINUTES:
+        return approval_timeout_minutes(value)
     if key in {
         CONF_ENABLE_OVERLAY,
         CONF_ENABLE_SIDEBAR,
@@ -279,6 +288,10 @@ YAML_SCHEMA = vol.Schema(
         vol.Optional(CONF_CHANGE_HISTORY_TTL_DAYS): vol.All(
             vol.Coerce(int),
             vol.Range(min=CHANGE_HISTORY_TTL_MIN_DAYS, max=CHANGE_HISTORY_TTL_MAX_DAYS),
+        ),
+        vol.Optional(CONF_APPROVAL_TIMEOUT_MINUTES): vol.All(
+            vol.Coerce(int),
+            vol.Range(min=APPROVAL_TIMEOUT_MIN_MINUTES, max=APPROVAL_TIMEOUT_MAX_MINUTES),
         ),
         vol.Optional(CONF_CHECK_HOUSE): cv.boolean,
         vol.Optional(CONF_TRACK_USAGE): cv.boolean,

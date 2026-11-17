@@ -77,13 +77,15 @@
               "house_map": "Agorda katalogo",
               "shorten_mcp_results": "Mallongigi longajn respondojn de Home Assistant",
               "change_history": "Ŝanĝohistorio",
-              "change_history_ttl_days": "Restaŭro dum"
+              "change_history_ttl_days": "Restaŭro dum",
+              "approval_timeout_minutes": "Atendo por aprobo"
             },
             "data_description": {
               "house_map": "Defaŭlte malŝalta. Loka indekso pri kiel aŭtomatigoj, entoj kaj areoj estas ligitaj, por ke unu serĉo respondu demandojn kiel „kio uzas la kuirejan lumon?“. Aldonas iomete al ĉiu mesaĝo, do ŝaltu ĝin nur se vi ofte demandas kiel aferoj estas kunligitaj. Vivaj statoj ankoraŭ venas el Home Assistant.",
               "shorten_mcp_results": "Defaŭlte ŝaltita. Tre longaj respondoj de Home Assistant estas malgrandigitaj antaŭ ol iri al la AI: grandaj listoj de entoj iĝas kompaktaj, tre longaj tekstoj en respondo (ekz. grandega sciigo) estas mallongigitaj, kaj kio ankoraŭ superas 100 000 signojn estas tranĉita. Ŝparas ĵetonojn kaj tenas respondojn rapidaj. Malŝaltite sendas la plenan tekston.",
               "change_history": "Defaŭlte ŝalta. Registras ĉiun agordan ŝanĝon, kiun la asistanto faras, por ke vi vidu kio ŝanĝiĝis kaj petu ĝin restarigi pli fruan version. Malŝalte ĉesigas novajn enskribojn; la asistanto ankoraŭ povas fari ŝanĝojn.",
-              "change_history_ttl_days": "Tagoj dum kiuj Restaŭro kaj Malfari per la agento restas haveblaj. Poste la linio restas en la protokolo; restarigi malnovan kopion povas anstataŭigi postan laboron. Defaŭlte 7. 1 estas ĉirkaŭ unu tago."
+              "change_history_ttl_days": "Tagoj dum kiuj Restaŭro kaj Malfari per la agento restas haveblaj. Poste la linio restas en la protokolo; restarigi malnovan kopion povas anstataŭigi postan laboron. Defaŭlte 7. 1 estas ĉirkaŭ unu tago.",
+              "approval_timeout_minutes": "Minutoj, dum kiuj demando de MCP-ilo atendas vian respondon en la babilo, ekzemple kiam worker volas ruli komandon en servilo. Poste ĝi nuliĝas. Defaŭlte 10."
             }
           },
           "prompt": {
@@ -190,13 +192,15 @@
               "house_map": "Agorda katalogo",
               "shorten_mcp_results": "Mallongigi longajn respondojn de Home Assistant",
               "change_history": "Ŝanĝohistorio",
-              "change_history_ttl_days": "Restaŭro dum"
+              "change_history_ttl_days": "Restaŭro dum",
+              "approval_timeout_minutes": "Atendo por aprobo"
             },
             "data_description": {
               "house_map": "Defaŭlte malŝalta. Loka indekso pri kiel aŭtomatigoj, entoj kaj areoj estas ligitaj, por ke unu serĉo respondu demandojn kiel „kio uzas la kuirejan lumon?“. Aldonas iomete al ĉiu mesaĝo, do ŝaltu ĝin nur se vi ofte demandas kiel aferoj estas kunligitaj. Vivaj statoj ankoraŭ venas el Home Assistant.",
               "shorten_mcp_results": "Defaŭlte ŝaltita. Tre longaj respondoj de Home Assistant estas malgrandigitaj antaŭ ol iri al la AI: grandaj listoj de entoj iĝas kompaktaj, tre longaj tekstoj en respondo (ekz. grandega sciigo) estas mallongigitaj, kaj kio ankoraŭ superas 100 000 signojn estas tranĉita. Ŝparas ĵetonojn kaj tenas respondojn rapidaj. Malŝaltite sendas la plenan tekston.",
               "change_history": "Defaŭlte ŝalta. Registras ĉiun agordan ŝanĝon, kiun la asistanto faras, por ke vi vidu kio ŝanĝiĝis kaj petu ĝin restarigi pli fruan version. Malŝalte ĉesigas novajn enskribojn; la asistanto ankoraŭ povas fari ŝanĝojn.",
-              "change_history_ttl_days": "Tagoj dum kiuj Restaŭro kaj Malfari per la agento restas haveblaj. Poste la linio restas en la protokolo; restarigi malnovan kopion povas anstataŭigi postan laboron. Defaŭlte 7. 1 estas ĉirkaŭ unu tago."
+              "change_history_ttl_days": "Tagoj dum kiuj Restaŭro kaj Malfari per la agento restas haveblaj. Poste la linio restas en la protokolo; restarigi malnovan kopion povas anstataŭigi postan laboron. Defaŭlte 7. 1 estas ĉirkaŭ unu tago.",
+              "approval_timeout_minutes": "Minutoj, dum kiuj demando de MCP-ilo atendas vian respondon en la babilo, ekzemple kiam worker volas ruli komandon en servilo. Poste ĝi nuliĝas. Defaŭlte 10."
             }
           },
           "prompt": {

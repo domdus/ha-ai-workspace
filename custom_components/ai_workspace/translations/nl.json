@@ -77,13 +77,15 @@
               "house_map": "Configuratiecatalogus",
               "shorten_mcp_results": "Lange Home Assistant-antwoorden inkorten",
               "change_history": "Wijzigingsgeschiedenis",
-              "change_history_ttl_days": "Rollback geldig"
+              "change_history_ttl_days": "Rollback geldig",
+              "approval_timeout_minutes": "Wachttijd voor goedkeuring"
             },
             "data_description": {
               "house_map": "Standaard uit. Een lokale index van hoe automatiseringen, entiteiten en ruimtes samenhangen, zodat één opzoeking vragen beantwoordt als “wat gebruikt de keukenlamp?”. Voegt iets toe aan elk bericht, dus zet het alleen aan als je vaak vraagt hoe dingen gekoppeld zijn. Live statussen komen nog steeds uit Home Assistant.",
               "shorten_mcp_results": "Standaard aan. Zeer lange antwoorden van Home Assistant worden verkleind voordat ze naar de AI gaan: grote entiteitenlijsten worden compact, zeer lange teksten in een antwoord (zoals een enorme melding) worden ingekort, en wat daarna nog boven de 100.000 tekens ligt, wordt afgeknipt. Bespaart tokens en houdt antwoorden snel. Uit stuurt de volledige tekst.",
               "change_history": "Standaard aan. Houdt elke configuratiewijziging van de assistent bij, zodat je ziet wat er veranderd is en kunt vragen een eerdere versie terug te zetten. Uit: geen nieuwe items; de assistent kan nog steeds wijzigingen maken.",
-              "change_history_ttl_days": "Dagen dat Rollback en Ongedaan maken via agent beschikbaar blijven. Daarna blijft de regel in het logboek; een oud momentopname terugzetten kan later werk overschrijven. Standaard 7. 1 is ongeveer een dag."
+              "change_history_ttl_days": "Dagen dat Rollback en Ongedaan maken via agent beschikbaar blijven. Daarna blijft de regel in het logboek; een oud momentopname terugzetten kan later werk overschrijven. Standaard 7. 1 is ongeveer een dag.",
+              "approval_timeout_minutes": "Minuten dat een vraag van een MCP-tool in de chat op je antwoord wacht, bijvoorbeeld een worker die een opdracht op een server wil uitvoeren. Daarna wordt die geannuleerd. Standaard 10."
             }
           },
           "prompt": {
@@ -190,13 +192,15 @@
               "house_map": "Configuratiecatalogus",
               "shorten_mcp_results": "Lange Home Assistant-antwoorden inkorten",
               "change_history": "Wijzigingsgeschiedenis",
-              "change_history_ttl_days": "Rollback geldig"
+              "change_history_ttl_days": "Rollback geldig",
+              "approval_timeout_minutes": "Wachttijd voor goedkeuring"
             },
             "data_description": {
               "house_map": "Standaard uit. Een lokale index van hoe automatiseringen, entiteiten en ruimtes samenhangen, zodat één opzoeking vragen beantwoordt als “wat gebruikt de keukenlamp?”. Voegt iets toe aan elk bericht, dus zet het alleen aan als je vaak vraagt hoe dingen gekoppeld zijn. Live statussen komen nog steeds uit Home Assistant.",
               "shorten_mcp_results": "Standaard aan. Zeer lange antwoorden van Home Assistant worden verkleind voordat ze naar de AI gaan: grote entiteitenlijsten worden compact, zeer lange teksten in een antwoord (zoals een enorme melding) worden ingekort, en wat daarna nog boven de 100.000 tekens ligt, wordt afgeknipt. Bespaart tokens en houdt antwoorden snel. Uit stuurt de volledige tekst.",
               "change_history": "Standaard aan. Houdt elke configuratiewijziging van de assistent bij, zodat je ziet wat er veranderd is en kunt vragen een eerdere versie terug te zetten. Uit: geen nieuwe items; de assistent kan nog steeds wijzigingen maken.",
-              "change_history_ttl_days": "Dagen dat Rollback en Ongedaan maken via agent beschikbaar blijven. Daarna blijft de regel in het logboek; een oud momentopname terugzetten kan later werk overschrijven. Standaard 7. 1 is ongeveer een dag."
+              "change_history_ttl_days": "Dagen dat Rollback en Ongedaan maken via agent beschikbaar blijven. Daarna blijft de regel in het logboek; een oud momentopname terugzetten kan later werk overschrijven. Standaard 7. 1 is ongeveer een dag.",
+              "approval_timeout_minutes": "Minuten dat een vraag van een MCP-tool in de chat op je antwoord wacht, bijvoorbeeld een worker die een opdracht op een server wil uitvoeren. Daarna wordt die geannuleerd. Standaard 10."
             }
           },
           "prompt": {

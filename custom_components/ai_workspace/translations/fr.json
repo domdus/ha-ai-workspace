@@ -77,13 +77,15 @@
               "house_map": "Catalogue de configuration",
               "shorten_mcp_results": "Raccourcir les longues réponses de Home Assistant",
               "change_history": "Historique des modifications",
-              "change_history_ttl_days": "Rollback pendant"
+              "change_history_ttl_days": "Rollback pendant",
+              "approval_timeout_minutes": "Délai d’approbation"
             },
             "data_description": {
               "house_map": "Désactivé par défaut. Un index local des liens entre automatisations, entités et pièces, pour qu’une seule recherche réponde à des questions comme « qu’est-ce qui utilise la lumière de la cuisine ? ». Ajoute un peu à chaque message : activez-le seulement si vous demandez souvent comment les choses sont reliées. Les états en direct viennent toujours de Home Assistant.",
               "shorten_mcp_results": "Activé par défaut. Les réponses très longues de Home Assistant sont réduites avant d'être envoyées à l'IA : les grandes listes d'entités deviennent compactes, les textes très longs dans une réponse (comme une énorme notification) sont raccourcis, et ce qui dépasse encore 100 000 caractères est coupé. Économise des tokens et garde des réponses rapides. Désactivé envoie le texte complet.",
               "change_history": "Activé par défaut. Garde une trace de chaque modification de configuration faite par l’assistant, pour voir ce qui a changé et lui demander de restaurer une version précédente. Désactivé : plus de nouvelles entrées ; l’assistant peut toujours faire des modifications.",
-              "change_history_ttl_days": "Jours pendant lesquels Rollback et Annuler via l’agent restent disponibles. Ensuite la ligne reste dans le journal ; restaurer une ancienne copie peut écraser un travail plus récent. Par défaut 7. 1 correspond à environ un jour."
+              "change_history_ttl_days": "Jours pendant lesquels Rollback et Annuler via l’agent restent disponibles. Ensuite la ligne reste dans le journal ; restaurer une ancienne copie peut écraser un travail plus récent. Par défaut 7. 1 correspond à environ un jour.",
+              "approval_timeout_minutes": "Minutes pendant lesquelles une question d’un outil MCP attend votre réponse dans le chat, par exemple un worker qui veut lancer une commande sur un serveur. Ensuite, elle est annulée. Par défaut 10."
             }
           },
           "prompt": {
@@ -190,13 +192,15 @@
               "house_map": "Catalogue de configuration",
               "shorten_mcp_results": "Raccourcir les longues réponses de Home Assistant",
               "change_history": "Historique des modifications",
-              "change_history_ttl_days": "Rollback pendant"
+              "change_history_ttl_days": "Rollback pendant",
+              "approval_timeout_minutes": "Délai d’approbation"
             },
             "data_description": {
               "house_map": "Désactivé par défaut. Un index local des liens entre automatisations, entités et pièces, pour qu’une seule recherche réponde à des questions comme « qu’est-ce qui utilise la lumière de la cuisine ? ». Ajoute un peu à chaque message : activez-le seulement si vous demandez souvent comment les choses sont reliées. Les états en direct viennent toujours de Home Assistant.",
               "shorten_mcp_results": "Activé par défaut. Les réponses très longues de Home Assistant sont réduites avant d'être envoyées à l'IA : les grandes listes d'entités deviennent compactes, les textes très longs dans une réponse (comme une énorme notification) sont raccourcis, et ce qui dépasse encore 100 000 caractères est coupé. Économise des tokens et garde des réponses rapides. Désactivé envoie le texte complet.",
               "change_history": "Activé par défaut. Garde une trace de chaque modification de configuration faite par l’assistant, pour voir ce qui a changé et lui demander de restaurer une version précédente. Désactivé : plus de nouvelles entrées ; l’assistant peut toujours faire des modifications.",
-              "change_history_ttl_days": "Jours pendant lesquels Rollback et Annuler via l’agent restent disponibles. Ensuite la ligne reste dans le journal ; restaurer une ancienne copie peut écraser un travail plus récent. Par défaut 7. 1 correspond à environ un jour."
+              "change_history_ttl_days": "Jours pendant lesquels Rollback et Annuler via l’agent restent disponibles. Ensuite la ligne reste dans le journal ; restaurer une ancienne copie peut écraser un travail plus récent. Par défaut 7. 1 correspond à environ un jour.",
+              "approval_timeout_minutes": "Minutes pendant lesquelles une question d’un outil MCP attend votre réponse dans le chat, par exemple un worker qui veut lancer une commande sur un serveur. Ensuite, elle est annulée. Par défaut 10."
             }
           },
           "prompt": {

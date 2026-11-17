@@ -25,6 +25,20 @@ def change_history_ttl_days(value) -> int:
     return max(CHANGE_HISTORY_TTL_MIN_DAYS, min(days, CHANGE_HISTORY_TTL_MAX_DAYS))
 
 
+# How long a question from an MCP server (elicitation, a worker's approval) waits in the chat.
+DEFAULT_APPROVAL_TIMEOUT_MINUTES = 10
+APPROVAL_TIMEOUT_MIN_MINUTES = 1
+APPROVAL_TIMEOUT_MAX_MINUTES = 60
+
+
+def approval_timeout_minutes(value) -> int:
+    try:
+        minutes = int(float(value if value is not None else DEFAULT_APPROVAL_TIMEOUT_MINUTES))
+    except (TypeError, ValueError):
+        minutes = DEFAULT_APPROVAL_TIMEOUT_MINUTES
+    return max(APPROVAL_TIMEOUT_MIN_MINUTES, min(minutes, APPROVAL_TIMEOUT_MAX_MINUTES))
+
+
 def activity_restore_expired(created_at: str, *, days: int, now=None) -> bool:
     """True when Rollback for this row has passed the configured TTL."""
     from datetime import datetime, timedelta, timezone
@@ -266,6 +280,7 @@ CONF_NOTES_TEXT = "notes_text"
 CONF_SHORTEN_MCP_RESULTS = "shorten_mcp_results"
 CONF_CHANGE_HISTORY = "change_history"
 CONF_CHANGE_HISTORY_TTL_DAYS = "change_history_ttl_days"
+CONF_APPROVAL_TIMEOUT_MINUTES = "approval_timeout_minutes"
 CONF_TRACK_USAGE = "track_usage"
 CONF_SHOW_CHAT_USAGE = "show_chat_usage"
 CONF_HA_USAGE_SENSORS = "ha_usage_sensors"

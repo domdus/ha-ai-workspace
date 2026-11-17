@@ -136,6 +136,8 @@ class ChatRequest(BaseModel):
     change_history: bool | None = None
     # Home Assistant's key for this chat's Change History callbacks.
     callback_key: str = Field(default="", max_length=200)
+    # Seconds a question from an MCP server to the user (elicitation) waits before it is cancelled.
+    approval_timeout: int | None = Field(default=None, ge=0, le=86400)
 
     @field_validator("question", mode="before")
     @classmethod
@@ -573,6 +575,7 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
             _user_id(request),
             request.headers.get("x-ai-workspace-agent") or "Cursor",
             body.callback_key,
+            approval_timeout=body.approval_timeout,
         )
 
     async def generate():
@@ -652,12 +655,94 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
             lock.release()
             if title_task is not None and not title_task.done():
                 title_task.cancel()
+            if proxy is not None:
+                # A stopped or failed turn leaves no MCP call to answer: its questions are cancelled.
+                await asyncio.to_thread(proxy.elicitations.end_session, session.id)
 
     return StreamingResponse(
-        generate(),
+        with_pings(generate()),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+# A turn can wait on the user for a while (an MCP question in the chat). Comments keep Home
+# Assistant's read timeout and proxies from closing the quiet stream.
+PING_SECONDS = 15.0
+
+
+async def with_pings(stream, every: float | None = None):
+    """The chat stream with an SSE comment whenever nothing was sent for a while.
+
+    The turn runs in one task of its own, so the SDK generators inside are always resumed from
+    the task that started them; closing this generator cancels that task.
+    """
+    queue: asyncio.Queue = asyncio.Queue()
+    done = object()
+
+    async def pump() -> None:
+        try:
+            async for chunk in stream:
+                await queue.put(chunk)
+        except Exception as exc:  # noqa: BLE001 - handed to the reader below
+            await queue.put(exc)
+        finally:
+            await queue.put(done)
+
+    task = asyncio.create_task(pump())
+    wait = PING_SECONDS if every is None else every
+    try:
+        while True:
+            try:
+                item = await asyncio.wait_for(queue.get(), timeout=wait)
+            except TimeoutError:
+                yield ": ping\n\n"
+                continue
+            if item is done:
+                break
+            if isinstance(item, Exception):
+                raise item
+            yield item
+    finally:
+        if not task.done():
+            task.cancel()
+            try:
+                await task
+            except BaseException:  # noqa: BLE001 - only waiting for the turn to unwind
+                pass
+
+
+class ElicitationAnswer(BaseModel):
+    key: str = Field(default="", max_length=200)
+    action: str = Field(default="", max_length=20)
+    content: dict[str, Any] | None = None
+
+
+def _broker(request: Request):
+    runtime = getattr(request.app.state, "runtime", None)
+    proxy = getattr(runtime, "proxy", None) if runtime is not None else None
+    return getattr(proxy, "elicitations", None)
+
+
+@router.get("/api/elicitations")
+def list_elicitations(request: Request, session_id: str = "") -> list[dict]:
+    """Open questions to the user (without their answer keys)."""
+    broker = _broker(request)
+    if broker is None:
+        return []
+    return [item.public() | {"session_id": item.session_id} for item in broker.pending(session_id)]
+
+
+@router.post("/api/elicitations/{item_id}")
+async def answer_elicitation(request: Request, item_id: str, body: ElicitationAnswer) -> dict:
+    """The user's click in Home Assistant: accept (with the form), decline or cancel.
+
+    Needs the Runtime token and the card's key, which only Home Assistant was given.
+    """
+    broker = _broker(request)
+    if broker is None:
+        return {"status": "gone"}
+    return await asyncio.to_thread(broker.answer, item_id, body.key, body.action, body.content)
 
 
 @router.get("/")

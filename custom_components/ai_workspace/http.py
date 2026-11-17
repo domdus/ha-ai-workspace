@@ -20,6 +20,7 @@ from .const import (
     activity_restore_expired,
     activity_restore_flags,
     change_history_ttl_days,
+    approval_timeout_minutes,
     CLOUD_ONLY_MODELS,
     standing_chat_prompt,
     DOMAIN,
@@ -40,6 +41,7 @@ from .const import (
 from .mcp_config import with_mcp_auth
 from .mcp_observe import last_mcp_result, note_mcp_result
 from .mcp_resolve import for_runtime, ha_hosts, hass_mcp_server_url
+from .approvals import open_cards, register_approval_views
 from .callback_keys import Caller
 from .live_turn import end_turn, live_turn, start_turn
 from .local_time import house_zone, stamped_now, time_rule
@@ -443,6 +445,8 @@ async def _runtime_chat(
         payload["handoff"] = handoff
     # The Runtime's Change History callbacks for this turn must carry this key.
     payload["callback_key"] = issue_callback_key(hass, user_id, session.id, agent or "Cursor", access_token=token)
+    # How long a question from an MCP tool (elicitation, worker approval) waits for the user's click.
+    payload["approval_timeout"] = approval_timeout_minutes(getattr(settings, "approval_timeout_minutes", None)) * 60
     sent = {**(headers or _runtime_headers_for(hass, user_id)), "Accept": "text/event-stream"}
     if agent:
         sent["X-Ai-Workspace-Agent"] = agent
@@ -930,12 +934,17 @@ class SessionView(HomeAssistantView):
             session = store.get_session(user_id, session_id)
             if session is None:
                 return None
-            return session, store.list_messages(session.id), store.has_session_activity(session.id)
+            return (
+                session,
+                store.list_messages(session.id),
+                store.has_session_activity(session.id),
+                open_cards(store, session.id),
+            )
 
         payload = await hass.async_add_executor_job(load)
         if payload is None:
             raise web.HTTPNotFound(text=CHAT_GONE)
-        session, messages, has_activity = payload
+        session, messages, has_activity, approvals = payload
         pending = False
         lock = _runtime(hass).get("locks", {}).get(session.id)
         if lock is not None:
@@ -946,6 +955,8 @@ class SessionView(HomeAssistantView):
                 "pending": pending,
                 "has_activity": has_activity,
                 "messages": [_message_dict(item) for item in messages],
+                # Questions from MCP tools still waiting for this user's click.
+                "approvals": approvals,
             }
         )
 
@@ -1242,10 +1253,8 @@ class ChatView(HomeAssistantView):
         client_gone = False
         live = start_turn(hass, session.id)
 
-        async def send(event: dict) -> None:
+        async def write_direct(event: dict) -> None:
             nonlocal client_gone
-            # A reloaded page follows the reply from here, also after this connection is gone.
-            live.publish(event)
             if client_gone:
                 return
             try:
@@ -1255,6 +1264,14 @@ class ChatView(HomeAssistantView):
                 await response.write(_sse(str(event["type"]), event))
             except Exception:
                 client_gone = True
+
+        async def send(event: dict) -> None:
+            # A reloaded page follows the reply from here, also after this connection is gone.
+            live.publish(event)
+            await write_direct(event)
+
+        # Approval cards come from Runtime callbacks, not from the reply: they reach this page too.
+        live.direct = write_direct
 
         user = await hass.auth.async_get_user(user_id)
         user_name = str(getattr(user, "name", "") or "") if user else user_id
@@ -2040,3 +2057,4 @@ def register_views(hass: HomeAssistant) -> None:
     hass.http.register_view(McpProxyView)
     hass.http.register_view(ActivityPrepareView)
     hass.http.register_view(ActivityCommitView)
+    register_approval_views(hass)

@@ -15,6 +15,7 @@ SHARED = [
     "redact.py",
     "worker_usage.py",
     "plan_quota.py",
+    "elicitation_form.py",
     "workspace_seed/AGENTS.md",
 ]
 
