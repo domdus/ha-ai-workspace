@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.0b15
+
+**MCP tools can ask you in the chat (elicitation).** The Runtime now tells MCP servers it can ask the user. When a server asks something during a Cursor or Claude SDK turn (`elicitation/create`), for example the agent-worker before it runs a command on another server, the chat shows a card with the message, the exact command and **Allow** / **Deny**. The answer (accept, decline, cancel) goes back to the server. See [docs/mcp.md](../docs/mcp.md#questions-and-approvals-from-mcp-tools).
+
+- **Only a click approves.** The model never sees the request, and chat text or tool output cannot answer it: the Runtime only takes an answer from Home Assistant with the card's own key.
+- **Cards stay open** when you close and reopen the chat or the app, and several can wait at once. **Approval wait** (AI Workspace → Configure, default 10 minutes) cancels a card nobody answers.
+- **agent-worker jobs in `input_required`** get the same card, and the click approves or denies the job at the worker (`POST /jobs/<id>/approve`).
+- Update the Runtime App to 1.6.0b15 too. AI Workspace asks for it.
+
 ## 1.6.0b14
 
 **Save tokens on Cursor agents keeps the agent for 4 turns.** With **Save tokens** on, a Cursor agent on the Runtime started over on every turn and forgot its own tool results. Now a warm agent runs 4 turns, then the next turn starts a new one with the recent history from Home Assistant. Cursor reports tokens per turn summed over all its model calls (often several 100,000 for one turn), so the size of its context cannot be measured as on Claude, and turns are counted instead. A chat idle for 2 minutes still gets a new agent, as before.
