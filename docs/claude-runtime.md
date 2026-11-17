@@ -21,7 +21,7 @@ Where it goes:
 
 The prefix decides how Claude Code signs in, and only that one credential reaches it, so a Plan chat never falls back to API billing or the other way round. Saving the agent form checks an API key with Anthropic; a Plan token is checked on the first chat.
 
-Anthropic's terms for the Agent SDK say third-party products should use API keys and not offer Claude.ai sign-in ([Agent SDK overview](https://code.claude.com/docs/en/agent-sdk/overview), [Legal and compliance](https://code.claude.com/docs/en/legal-and-compliance)). Whether your own Plan token on your own runtime is fine for you is your decision.
+⚠️ **It is not clear whether Anthropic allows the Plan token here.** Anthropic says: *"Anthropic does not permit third-party developers to offer Claude.ai login into their own applications, or to route requests through Free, Pro, Max, or Ultra plan credentials on behalf of their users"*, and products built on the Agent SDK should use API keys ([Agent SDK overview](https://code.claude.com/docs/en/agent-sdk/overview), [Legal and compliance](https://code.claude.com/docs/en/legal-and-compliance)). It *may* still count as private use, because the runtime runs on your own hardware with your own account and only you chat with it, but Anthropic has not confirmed that. Whether you use it is your decision; an Anthropic API key is the safe choice.
 
 ### Which credential wins
 

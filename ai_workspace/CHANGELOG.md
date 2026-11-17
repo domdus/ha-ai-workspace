@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.6.0
+
+Everything from 1.6.0b1 to 1.6.0b17. Nothing needs to be changed in your setup.
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.6.0`) together with this release.** Much of it is in the runtime. The chat shows a hint when the runtime is older than 1.6.0.
+
+**Claude on the Runtime (experimental)**
+- A **Claude (Anthropic)** agent can run Claude Code on the AI Workspace Runtime: **Advanced → Use Claude SDK (runtime) (experimental)**. Off, it stays a cloud agent with an Anthropic API key. Tools, images, Effort, usage and cost work as on Cursor agents.
+- **Sign in with Claude plan** on the agent form: open the link, sign in with your Pro or Max account, paste the code. Or paste a Claude Plan token or an Anthropic API key on the agent. If the Runtime already has access, the form offers **Use the Runtime's existing access**.
+- ⚠️ **It is not clear whether Anthropic allows a Claude plan here.** Anthropic does not permit third-party apps to offer Claude.ai login or to route requests through plan credentials. It *may* still count as private use on your own hardware with your own account, but Anthropic has not confirmed that. An Anthropic API key is the safe choice. See [Use your Claude or ChatGPT plan](../README.md#use-your-claude-or-chatgpt-plan-experimental).
+- The Runtime App's options no longer have Claude fields; old values carry over by themselves. An expired or revoked sign-in says so in the chat, in your language.
+- An existing chat can switch between Cursor and Claude in the chat bar.
+
+**Usage and plan limits**
+- **Plan limits** on the Usage page: session (5 hours) and week (7 days) in percent with reset times, for the Claude plan and, when they report them, Cursor and Codex. A chat hint when a plan enters its warning zone, and a translated message when it is full. Optional sensors.
+- **Coding workers count:** jobs handed to an Agent Worker over MCP are stored under **Worker: Claude Code**, **Worker: OpenAI Codex** or **Worker: Cursor**.
+- A cost the provider reports itself is kept instead of a list-price estimate.
+
+**Chat and MCP**
+- **MCP tools can ask you in the chat** (elicitation): an approval card with **Allow** / **Deny** for Cursor and Claude SDK turns, also for agent-worker jobs waiting for approval. Only a click answers it.
+- **Save tokens** on Runtime agents keeps the agent for a while (Claude until its context reaches about 40,000 tokens, Cursor for 4 turns) instead of starting over every turn, and keeps the agent's **Effort**.
+- Long pastes (over 8,000 characters) reach Cursor and Claude SDK agents.
+- Saving settings waits for running replies instead of cutting them off, and a reply that was still cut off says so.
+- Sending no longer lowers other audio on phones when read-aloud is off.
+
+**Runtime**
+- A reset or reinstalled Runtime App is paired again by itself, so Cursor and Claude no longer stay greyed out.
+- The Cursor API key is optional on the App; a Claude-only Runtime works.
+
 ## 1.6.0b17
 
 **Sending a prompt no longer lowers other audio on your phone.** With auto read-aloud off, every send still played a silent clip to prepare read-aloud. On Android (Home Assistant app) that took audio focus, so a YouTube video or music went quiet before any answer came. Now AI Workspace leaves audio alone unless the reply is read aloud.

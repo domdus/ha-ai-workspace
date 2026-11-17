@@ -54,7 +54,7 @@ The **Usage** page is the honest bit: what you spent, which model, which day. So
 ## Requirements
 
 - Home Assistant **2025.12** or newer
-- A **provider API key** from that provider's API console (⚠️ not a ChatGPT or Claude.ai plan; usually paid API credits), a local **Ollama** server, or a **Cursor API key** (AI Workspace Runtime)
+- A **provider API key** from that provider's API console (usually paid API credits), a local **Ollama** server, or a **Cursor API key** (AI Workspace Runtime). A Claude or ChatGPT plan only works through the extra Runtime or Agent Worker, see [Use your Claude or ChatGPT plan](#use-your-claude-or-chatgpt-plan-experimental).
 
 You also need an MCP server:
 
@@ -73,7 +73,7 @@ Add an agent for **OpenAI**, **Claude**, **Gemini**, **DeepSeek**, **Qwen**, **G
 
 You type in **AI Workspace**. The reply comes from that provider. **MCP** is how the model reaches Home Assistant.
 
-⚠️ A ChatGPT or Claude.ai subscription does not include this. OpenAI and Claude need API credits on [platform.openai.com](https://platform.openai.com) and [console.anthropic.com](https://console.anthropic.com). Gemini has a free API tier with limits. OpenRouter is its own credit balance (it then pays the model behind it). Ollama stays on your hardware and does not bill a cloud API.
+⚠️ A ChatGPT or Claude.ai subscription does not include this (for the experimental plan setups see [Use your Claude or ChatGPT plan](#use-your-claude-or-chatgpt-plan-experimental)). OpenAI and Claude need API credits on [platform.openai.com](https://platform.openai.com) and [console.anthropic.com](https://console.anthropic.com). Gemini has a free API tier with limits. OpenRouter is its own credit balance (it then pays the model behind it). Ollama stays on your hardware and does not bill a cloud API.
 
 ![AI Workspace, MCP, Home Assistant, AI Cloud API](docs/cloud-architecture.jpg)
 
@@ -209,6 +209,40 @@ After the runtime is running: **Settings → Devices & services → Add integrat
 - **Allow internet** is off by default: Cursor then has no web search, page fetch, or shell, so it cannot reach the internet from the runtime. Turn it on if you want Cursor to look things up. See [Internet access](docs/privacy.md#internet-access).
 - Paste the Cursor API key, unless the runtime already has one.
 - Open **AI Workspace** (`/ai-workspace`).
+
+
+
+## Use your Claude or ChatGPT plan (experimental)
+
+Cloud agents need API credits. Two setups can use a subscription plan instead. Both need software next to Home Assistant, and both are experimental.
+
+### Claude plan: Claude SDK on the Runtime
+
+A **Claude (Anthropic)** agent can run Claude Code on the AI Workspace Runtime, signed in with your Claude plan (Pro, Max).
+
+1. Install the Runtime as in [Cursor AI](#cursor-ai-advanced), Option A or B. A Cursor API key is not needed for Claude only.
+2. **Add agent → Claude (Anthropic)**. Open **Advanced**, turn on **Use Claude SDK (runtime) (experimental)**, and press **OK**. The form comes back with the Runtime fields instead of the API key field.
+3. Leave the key field empty and submit.
+4. On the **Claude account** step, pick **Sign in with Claude plan**. Open the link, sign in with the Claude account that has your plan, and paste the code Anthropic shows. If the Runtime already has a Claude sign-in, pick **Use the Runtime's existing access** instead.
+
+The **Usage** page then shows the plan's session and week limits. Details: [Claude SDK agents](docs/claude-runtime.md).
+
+> [!WARNING]
+> **It is not clear whether Anthropic allows this.** Anthropic's [Agent SDK overview](https://code.claude.com/docs/en/agent-sdk/overview) and [Legal and compliance](https://code.claude.com/docs/en/legal-and-compliance) page say: *"Anthropic does not permit third-party developers to offer Claude.ai login into their own applications, or to route requests through Free, Pro, Max, or Ultra plan credentials on behalf of their users."* Products built on the Agent SDK should use API keys.
+>
+> Our reading, and it is only that: it *may* still count as private use. The Runtime runs on your own hardware, signs in with your own account, and only you chat with it, much like running Claude Code yourself. It is not a commercial service, and no one else signs in to your plan through it. Anthropic has not confirmed this. It may limit or block plan sign-ins used this way. Whether you use it is your decision. To be on the safe side, use an **Anthropic API key** on the same agent instead: same switch, paste the key (`sk-ant-api…`) into the key field.
+
+### ChatGPT plan: Codex through the Agent Worker
+
+AI Workspace has no Codex chat agent yet. Your ChatGPT plan (Plus, Pro, Business) can still do the work through [Agent Worker](https://github.com/domdus/agent-worker), a separate container that runs **OpenAI Codex** (as well as Cursor and Claude Code):
+
+1. Run the Agent Worker and sign it in with ChatGPT: see [OpenAI Codex](https://github.com/domdus/agent-worker#openai-codex) in its README.
+2. Add the worker as an MCP server: **Add connection** on the AI Workspace entry, with the worker's MCP URL and token (see the worker's README).
+3. Your chat agent hands coding tasks to the worker with the `codex` engine. The worker's usage appears on the **Usage** page under **Worker: OpenAI Codex**, and the plan's limits under **Plan limits** when Codex reports them.
+
+The chat itself still needs an agent from the sections above.
+
+---
 
 
 
