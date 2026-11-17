@@ -1,5 +1,202 @@
 # Changelog
 
+## 1.6.0
+
+Everything from 1.6.0b1 to 1.6.0b17. Nothing needs to be changed in your setup.
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.6.0`) together with this release.** Much of it is in the runtime. The chat shows a hint when the runtime is older than 1.6.0.
+
+**Claude on the Runtime (experimental)**
+- A **Claude (Anthropic)** agent can run Claude Code on the AI Workspace Runtime: **Advanced → Use Claude SDK (runtime) (experimental)**. Off, it stays a cloud agent with an Anthropic API key. Tools, images, Effort, usage and cost work as on Cursor agents.
+- **Sign in with Claude plan** on the agent form: open the link, sign in with your Pro or Max account, paste the code. Or paste a Claude Plan token or an Anthropic API key on the agent. If the Runtime already has access, the form offers **Use the Runtime's existing access**.
+- ⚠️ **It is not clear whether Anthropic allows a Claude plan here.** Anthropic does not permit third-party apps to offer Claude.ai login or to route requests through plan credentials. It *may* still count as private use on your own hardware with your own account, but Anthropic has not confirmed that. An Anthropic API key is the safe choice. See [Use your Claude or ChatGPT plan](../README.md#use-your-claude-or-chatgpt-plan-experimental).
+- The Runtime App's options no longer have Claude fields; old values carry over by themselves. An expired or revoked sign-in says so in the chat, in your language.
+- An existing chat can switch between Cursor and Claude in the chat bar.
+
+**Usage and plan limits**
+- **Plan limits** on the Usage page: session (5 hours) and week (7 days) in percent with reset times, for the Claude plan and, when they report them, Cursor and Codex. A chat hint when a plan enters its warning zone, and a translated message when it is full. Optional sensors.
+- **Coding workers count:** jobs handed to an Agent Worker over MCP are stored under **Worker: Claude Code**, **Worker: OpenAI Codex** or **Worker: Cursor**.
+- A cost the provider reports itself is kept instead of a list-price estimate.
+
+**Chat and MCP**
+- **MCP tools can ask you in the chat** (elicitation): an approval card with **Allow** / **Deny** for Cursor and Claude SDK turns, also for agent-worker jobs waiting for approval. Only a click answers it.
+- **Save tokens** on Runtime agents keeps the agent for a while (Claude until its context reaches about 40,000 tokens, Cursor for 4 turns) instead of starting over every turn, and keeps the agent's **Effort**.
+- Long pastes (over 8,000 characters) reach Cursor and Claude SDK agents.
+- Saving settings waits for running replies instead of cutting them off, and a reply that was still cut off says so.
+- Sending no longer lowers other audio on phones when read-aloud is off.
+
+**Runtime**
+- A reset or reinstalled Runtime App is paired again by itself, so Cursor and Claude no longer stay greyed out.
+- The Cursor API key is optional on the App; a Claude-only Runtime works.
+
+## 1.6.0b17
+
+**Sending a prompt no longer lowers other audio on your phone.** With auto read-aloud off, every send still played a silent clip to prepare read-aloud. On Android (Home Assistant app) that took audio focus, so a YouTube video or music went quiet before any answer came. Now AI Workspace leaves audio alone unless the reply is read aloud.
+
+- **Auto read-aloud off:** sending touches no audio. Tapping **Read aloud** still works as before.
+- **Auto read-aloud on:** unchanged, sending still prepares playback so the reply can be read on phones.
+- **After read-aloud ends or is stopped**, the audio is unloaded, so other apps play at full volume again.
+- Only the chat changed. The Runtime App can stay on 1.6.0b16.
+
+## 1.6.0b16
+
+**Plan limits for the Claude plan now show up.** Since 1.6.0b12 the Usage page said "No plan data yet" for Claude SDK agents on a Claude plan, however much they chatted, and the chat never warned before the limit. Claude Code does report the plan's use with each turn, but the Claude Agent SDK hands it over as an object the Runtime did not read, so every report was dropped. Now the Runtime reads it.
+
+- **Plan limits** on the Usage page show session (5 hours) and week (7 days) in percent, when each resets, and when they were last seen. The newest values are kept on the Runtime and in Home Assistant.
+- **Every reading reaches Home Assistant**, not only the one that crosses the warning zone. Opening the Usage page also fetches the Runtime's latest values.
+- **A turn without numbers:** the Runtime reads them from Anthropic's usage endpoint, the one Claude Code's `/usage` uses. It is not a model call and uses no quota, and it runs at most every 10 minutes. `CLAUDE_PLAN_USAGE_READ=off` on the Runtime turns it off. Tokens from `claude setup-token` may not be allowed to read it; then the chat's own numbers count.
+- **Only a status, no percent:** shows as "Below the warning threshold" instead of "No plan data yet". A window that has reset since says so instead of an old percentage.
+- The chat hint when a plan enters its warning zone works again, because it relied on the same reports.
+- Update the Runtime App to 1.6.0b16 too. AI Workspace asks for it.
+
+## 1.6.0b15
+
+**MCP tools can ask you in the chat (elicitation).** The Runtime now tells MCP servers it can ask the user. When a server asks something during a Cursor or Claude SDK turn (`elicitation/create`), for example the agent-worker before it runs a command on another server, the chat shows a card with the message, the exact command and **Allow** / **Deny**. The answer (accept, decline, cancel) goes back to the server. See [docs/mcp.md](../docs/mcp.md#questions-and-approvals-from-mcp-tools).
+
+- **Only a click approves.** The model never sees the request, and chat text or tool output cannot answer it: the Runtime only takes an answer from Home Assistant with the card's own key.
+- **Cards stay open** when you close and reopen the chat or the app, and several can wait at once. **Approval wait** (AI Workspace → Configure, default 10 minutes) cancels a card nobody answers.
+- **agent-worker jobs in `input_required`** get the same card, and the click approves or denies the job at the worker (`POST /jobs/<id>/approve`).
+- Update the Runtime App to 1.6.0b15 too. AI Workspace asks for it.
+
+## 1.6.0b14
+
+**Save tokens on Cursor agents keeps the agent for 4 turns.** With **Save tokens** on, a Cursor agent on the Runtime started over on every turn and forgot its own tool results. Now a warm agent runs 4 turns, then the next turn starts a new one with the recent history from Home Assistant. Cursor reports tokens per turn summed over all its model calls (often several 100,000 for one turn), so the size of its context cannot be measured as on Claude, and turns are counted instead. A chat idle for 2 minutes still gets a new agent, as before.
+
+- **Save tokens never picks up an old stored agent or session.** It only keeps one the Runtime is running or has measured. After a Runtime restart, the first turn starts new, for Claude and Cursor.
+- **Changed Remembered notes** now reach a kept Cursor agent too.
+- Update the Runtime App to 1.6.0b14 too. AI Workspace asks for it.
+
+## 1.6.0b13
+
+**Save tokens on Claude SDK agents keeps Claude's session.** With **Save tokens** on, a Claude SDK agent started a new Claude session on every turn. Claude forgot its own tool results, and the cached start of the chat had to be sent and written again each time. Now the session continues until a turn's context reaches about 40,000 tokens. The next turn then starts a new session, and Home Assistant hands over the last messages as before. With Save tokens off, nothing changes: the session always continues. Changed **Remembered notes** reach a continued session as before. Cursor agents still start a new agent every turn with Save tokens.
+
+- **Effort stays with Save tokens on Runtime agents.** Save tokens dropped the agent's **Effort** setting. On cloud agents this goes with a reply cap, but the Runtime has none, so Claude Code and Cursor fell back to their own, often higher, default. A **Fast** agent with Save tokens could think more than without it. Cursor and Claude SDK agents now always send their effort.
+- **Binding the Runtime no longer depends on the plan limits.** The Runtime's plan limits are only stored when it reports some, and a storage error is logged instead of making Cursor and Claude unavailable.
+- Update the Runtime App to 1.6.0b13 too. AI Workspace asks for it.
+
+## 1.6.0b12
+
+**Claude is set up in one place: the agent form.** The Runtime App's **Configuration** no longer has **Claude Plan token**, **Anthropic API key** or **Claude model**. Use **Sign in with Claude plan** on the Claude (Anthropic) agent with **Use Claude SDK (runtime)** on, or paste a token or key on that agent. `CLAUDE_CODE_OAUTH_TOKEN`, `ANTHROPIC_API_KEY` and `CLAUDE_MODEL` stay for Docker runtimes. See [docs/claude-runtime.md](../docs/claude-runtime.md#runtime-options).
+
+- **Plan limits in the chat and on Usage.** Claude SDK `rate_limit_event` drives a compact plan notice when usage crosses into warning (once per crossing), and a translated rejection with local reset time when the session or week is full. The Usage page has a **Plan limits** block (separate from token cost) with a link to the official Claude usage page. Home Assistant sensors on the Usage device show session %, week % and session reset when plan tracking is on. Cursor and Codex use the same storage when their streams report limits; otherwise their slots stay empty.
+- **Nothing to do on update.** A Plan token from the old App options becomes the Runtime's sign-in on the first start, unless someone already signed in (that sign-in stays). It happens once; a later sign-out stays signed out. An old Anthropic API key and Claude model keep working in the background without a field, until the App's Configuration is saved again. The App log names the old fields it found, never their values.
+- **The Cursor API key is optional on the App.** A Claude-only App has no required field; Cursor then shows as not set up and Claude works.
+- **A fresh sign-in wins.** Order: credential on the agent → **Sign in with Claude plan** → `CLAUDE_CODE_OAUTH_TOKEN` → `ANTHROPIC_API_KEY` (or the old App option key). Before, a Plan token in the App options or the environment won over a sign-in. The Claude account step no longer says that an options token wins; with an older Runtime it says to update it.
+- **Expired or revoked sign-in.** When Anthropic refuses the Claude credential (HTTP 401, `authentication_error`, "Invalid API key", an expired or revoked OAuth token), the chat says so in your language: open the agent's settings and sign in with Claude again, or replace the token or key. Other errors keep their own message. The Runtime sends it as error code `claude_auth_failed`.
+- **Worker usage:** agent-worker jobs that report status `completed` or legacy `succeeded` count as final, like `succeeded`.
+- Update the Runtime App to **1.6.0b12** and the integration together.
+
+## 1.6.0b11
+
+**Switching an existing chat from Cursor to Claude works.** New chats were fine, but in a chat that started on Cursor, picking Claude in the chat bar still ran the turn on Cursor in the Runtime. Without a Cursor key on the Runtime, every Claude message ended with "Cursor API key is not set". The Runtime kept the engine a chat was created with and ignored the switch. Now AI Workspace sends the chosen engine with every turn, and the Runtime moves the chat to it. The new engine starts a fresh agent and gets the chat so far from Home Assistant, as after any agent switch. Switching back works the same way.
+
+- An agent id from the old engine is no longer handed to the new one. Claude only resumes its own sessions.
+- Update the Runtime App to 1.6.0b11 too. AI Workspace asks for it.
+
+## 1.6.0b10
+
+**Sign in with Claude works.** After you pasted the code, the form waited and then said that the Runtime got no answer from Anthropic in time. The code reached Claude Code, but Claude Code took the Enter that followed it as part of the pasted text, so the code was never sent. The Runtime now sends the Enter separately. A wrong code is rejected right away.
+
+- **The Runtime already has Claude access?** The Claude account step now offers **Use the Runtime's existing access** first: a Plan token or API key in the App options, or an earlier sign-in. No new sign-in needed.
+- **Cursor:** the form says under the key field when the Runtime already has a Cursor key, so you can leave the field empty.
+
+## 1.6.0b9
+
+**Cursor no longer greys out for good after the Runtime App was reset.** A reinstalled or reset Runtime App comes back without its token. AI Workspace still had the old token saved, the Runtime refused it, and Cursor and Claude SDK agents stayed unavailable. Now AI Workspace pairs its own Runtime App again by itself and gives it the saved token back. If that fails, it tries again after 10 minutes at most instead of restarting the App on every check, and the agent says to set the same token on both sides.
+
+**Usage**
+- Coding workers count on the Usage page. When a chat agent gives a task to an Agent Worker (or the older Cursor Worker) over MCP, the usage the worker reports for a finished job (`agent_run` / `agent_job`, also `cursor_agent` / `cursor_job`) is stored on its own under **Worker: Claude Code**, **Worker: OpenAI Codex** or **Worker: Cursor**, separate from the chat agent's turn. It works for cloud agents and for Cursor and Claude SDK chats (through the Runtime's MCP proxy; update the Runtime too).
+  - Only finished jobs count (succeeded, failed, cancelled). Polling the same job again does not count it twice.
+  - The global usage sensors carry a `workers` attribute per engine.
+- A cost the provider reports itself (`cost_usd`, for example from Claude Code or the Cursor SDK) is kept instead of being replaced by a list-price estimate. Without a reported cost, the list price is used when the model is known; otherwise tokens are stored and the cost stays unknown.
+
+**Sign in with Claude plan.** Claude (Anthropic) agents with **Use Claude SDK (runtime)** on get a **Claude account** step after the agent form. It shows the runtime's Claude credential and offers **Sign in with Claude plan**: open the link, sign in with your Pro or Max account, paste the code Anthropic shows, done. The runtime keeps the Plan token itself, so every Claude SDK agent on it can use it. This replaces the **Sign in with Claude (experimental)** tick box from 1.6.0b7. Cloud-API agents and Cursor agents are unchanged. See [docs/claude-runtime.md](../docs/claude-runtime.md#sign-in-with-claude-plan).
+
+**Runtime**
+- Sign-in API per engine: `GET /api/auth/{engine}`, `POST /api/auth/{engine}/login`, `GET|POST|DELETE /api/auth/{engine}/login/{id}`, `DELETE /api/auth/{engine}` (sign out). Claude uses the bundled Claude Code CLI (`claude setup-token`) in a pseudo-terminal; Cursor reports `not_supported` (API key only). `/api/health` lists engines with a sign-in under `"login"`.
+- The Plan token is kept in `/data/auth/claude-oauth-token` (owner-only), never sent to Home Assistant and never logged. The CLI runs without the runtime's own credentials in a temporary folder that is removed afterwards.
+- Credential order: agent token from Home Assistant → **Claude Plan token** option → signed-in token → **Anthropic API key** option.
+- `/api/claude/login` from 1.6.0b7 still answers older integrations and shares the one sign-in at a time with the new API.
+- Without Home Assistant: `docker exec -it ai-workspace-runtime python -m app.claude_login`.
+
+**Integration**
+- Agent form: **Claude account** step (Save agent / Sign in with Claude plan / Sign out on the Runtime / Back), the sign-in form with link and code field, and a **Signed in** confirmation with the sign-in date (no secrets). A rejected or expired code gets a fresh link on the same form; closing the dialog cancels a waiting sign-in.
+- The token field stays as an optional fallback. Signing in clears an older token on that agent, because it would win over the sign-in. Without any credential, saving waits for a sign-in instead of failing with "required" (runtimes without sign-in still ask for the token).
+- Translations for all 15 languages.
+
+**Update the runtime together with the integration** to get the sign-in; older runtimes show an update hint on the Claude account step and keep working with a pasted token.
+
+## 1.6.0b8
+
+**Long pastes work with Cursor and Claude SDK agents.** A message over 8000 characters (for example pasted HTML) failed with "The AI Workspace Runtime answered HTTP 422" and never reached the agent.
+
+- The integration no longer sends more than the runtime accepts, so this works with an older runtime too.
+- The runtime shortens its helper fields instead of refusing the message, and takes messages with four full attachments.
+- If the runtime still refuses a request, the chat says why (for example that the message is too long) instead of a bare HTTP code.
+
+## 1.6.0b7
+
+**Sign in with Claude (experimental).** A Claude SDK agent can get its Claude Plan token without Claude Code on your computer: tick **Sign in with Claude (experimental)** in the **Claude SDK (runtime)** section and press OK, open the link, sign in, and paste the code Anthropic shows. The runtime runs Anthropic's own `claude setup-token` and the token is saved on the agent. See [Claude SDK agents](../docs/claude-runtime.md#sign-in-with-claude).
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.6.0b7`) for this.** An older runtime says so on the form; pasting a token still works.
+- A mistyped code can be corrected; a refused or expired one gets a new link.
+- The runtime keeps nothing: the CLI runs in a temporary folder that is deleted afterwards, and the code and token are never logged.
+
+## 1.6.0b6
+
+- **Use Claude SDK (runtime)** on a Claude (Anthropic) agent moved to **Advanced** and is marked **experimental**.
+- Its help text now says what happens: press **OK** after changing it, and the form shows the matching fields without saving yet.
+- The runtime is unchanged from 1.6.0b2.
+
+## 1.6.0b5
+
+**Saving settings no longer cuts off a running chat reply.**
+
+- A change in **Configure** or on an agent now waits until running chat replies finish (up to 10 minutes) before AI Workspace reloads with it. Before, the reload stopped the reply in the middle, and the chat showed only what had arrived so far.
+- A reply that is still cut off (Home Assistant restarts, or **Reload** on the integration) now says so under the reply, in the chat and later in the history, instead of looking finished.
+- The runtime is unchanged from 1.6.0b2.
+
+## 1.6.0b4
+
+**One Claude (Anthropic) agent, in the cloud or on the runtime.** The separate **Claude SDK** choice in **Add agent** is gone. Add **Claude (Anthropic)** and turn on **Use Claude SDK (runtime)** for a Claude SDK agent on the AI Workspace Runtime, or leave it off for Anthropic's cloud API. See [Claude SDK agents](../docs/claude-runtime.md).
+
+- Turning the switch on or off shows the matching fields right away: the **Claude SDK (runtime)** section with the runtime address, password, and **Claude Plan token or Anthropic API key**, or the cloud API key. Nothing is saved until you submit those.
+- Runtime problems (runtime not found, too old, no credential, key refused) show at the top of the form.
+- **Effort** stays on cloud Claude agents, as before.
+- New agents are named **Claude** either way; the switch only changes where Claude runs.
+- Claude SDK agents from 1.6.0b1 and b2 become Claude (Anthropic) agents with the switch on when the integration loads, with their credential, model, and name. In YAML, `provider: claude` still makes a Claude SDK agent.
+- The runtime is unchanged from 1.6.0b2; Cursor agents are unchanged.
+
+1.6.0b3 was withdrawn: it was built without 1.5.4 and the 1.6.0b1/b2 fixes. 1.6.0b4 has all of them.
+
+## 1.6.0b2
+
+**Claude SDK agents work with your Claude plan again.** 1.6.0b1 refused Claude Plan tokens; that was wrong and is undone. See [Claude SDK agents](../docs/claude-runtime.md).
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.6.0b2`) together with this release.** The change is in the runtime too. The chat shows a hint when the runtime is older.
+- The credential on a Claude SDK agent takes a **Claude Plan token** (`sk-ant-oat…`, from `claude setup-token`, uses your Claude subscription) or an **Anthropic API key** (`sk-ant-api…`, billed as API credits).
+- New App option **Claude Plan token** (`CLAUDE_CODE_OAUTH_TOKEN` on Docker) for every Claude SDK agent without its own credential. When the runtime has both, the Plan token is used.
+- The agent's own credential always wins over the runtime's, and only that one reaches Claude Code, so a Plan chat never falls back to API billing or the other way round.
+- Saving the agent form checks an API key with Anthropic; a Plan token is checked on the first chat. A refused, expired, or over-limit credential shows one plain message in the chat.
+
+## 1.6.0b1
+
+**Claude SDK agents on the AI Workspace Runtime.** Add an agent of the new kind **Claude SDK** to chat with Claude Code's agent in Home Assistant, on the same runtime as Cursor. It is a separate kind from the cloud agent **Claude (Anthropic)**, which is unchanged. See [Claude SDK agents](../docs/claude-runtime.md).
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.6.0b1`) together with this release.** Claude SDK agents need it; Cursor agents keep working on 1.5.4, with the usual update hint.
+- **It needs an Anthropic API key** (`sk-ant-api…`) from the [Claude Console](https://console.anthropic.com/settings/keys), on the agent or once on the runtime. Claude.ai plan tokens (Pro, Max, `claude setup-token`) are refused: Anthropic does not allow apps built on the Agent SDK to sign in with Claude.ai plans.
+- Tools follow the Cursor rules: MCP only for normal users and voice satellites, workspace files in admin chats, and web search, page fetch, and the shell only with **Allow internet**. Claude Code settings, `CLAUDE.md`, skills, and hooks on the runtime's disk are never loaded.
+- Images in the chat, Effort, and token use and cost work as on Cursor agents. Follow-up messages continue the same Claude session.
+
+**Runtime**
+- New `claude-agent-sdk` provider. `GET /api/health` reports `"claude"`.
+- New App options **Anthropic API key** and **Claude model** (`ANTHROPIC_API_KEY`, `CLAUDE_MODEL` on Docker).
+- The App is now named **AI Workspace Runtime** everywhere. The Compose service and container are called `ai-workspace-runtime`; Home Assistant still finds a container named `cursor-sdk`.
+
+**Integration**
+- Agent kind **Claude SDK** in the agent form and in YAML (`provider: claude`, `claude_api_key`). Saving checks the key with Anthropic.
+- Runtime messages say "AI Workspace Runtime" instead of "Cursor Runtime".
+
 ## 1.5.4
 
 Everything from 1.5.4b1 to 1.5.4b3. Nothing needs to be changed in your setup.

@@ -77,13 +77,15 @@
               "house_map": "Configuratiecatalogus",
               "shorten_mcp_results": "Lange Home Assistant-antwoorden inkorten",
               "change_history": "Wijzigingsgeschiedenis",
-              "change_history_ttl_days": "Rollback geldig"
+              "change_history_ttl_days": "Rollback geldig",
+              "approval_timeout_minutes": "Wachttijd voor goedkeuring"
             },
             "data_description": {
               "house_map": "Standaard uit. Een lokale index van hoe automatiseringen, entiteiten en ruimtes samenhangen, zodat één opzoeking vragen beantwoordt als “wat gebruikt de keukenlamp?”. Voegt iets toe aan elk bericht, dus zet het alleen aan als je vaak vraagt hoe dingen gekoppeld zijn. Live statussen komen nog steeds uit Home Assistant.",
               "shorten_mcp_results": "Standaard aan. Zeer lange antwoorden van Home Assistant worden verkleind voordat ze naar de AI gaan: grote entiteitenlijsten worden compact, zeer lange teksten in een antwoord (zoals een enorme melding) worden ingekort, en wat daarna nog boven de 100.000 tekens ligt, wordt afgeknipt. Bespaart tokens en houdt antwoorden snel. Uit stuurt de volledige tekst.",
               "change_history": "Standaard aan. Houdt elke configuratiewijziging van de assistent bij, zodat je ziet wat er veranderd is en kunt vragen een eerdere versie terug te zetten. Uit: geen nieuwe items; de assistent kan nog steeds wijzigingen maken.",
-              "change_history_ttl_days": "Dagen dat Rollback en Ongedaan maken via agent beschikbaar blijven. Daarna blijft de regel in het logboek; een oud momentopname terugzetten kan later werk overschrijven. Standaard 7. 1 is ongeveer een dag."
+              "change_history_ttl_days": "Dagen dat Rollback en Ongedaan maken via agent beschikbaar blijven. Daarna blijft de regel in het logboek; een oud momentopname terugzetten kan later werk overschrijven. Standaard 7. 1 is ongeveer een dag.",
+              "approval_timeout_minutes": "Minuten dat een vraag van een MCP-tool in de chat op je antwoord wacht, bijvoorbeeld een worker die een opdracht op een server wil uitvoeren. Daarna wordt die geannuleerd. Standaard 10."
             }
           },
           "prompt": {
@@ -103,7 +105,7 @@
       }
     },
     "error": {
-      "no_runtime": "De Cursor-runtime is niet bereikbaar. Start hem en controleer het adres op dit formulier.",
+      "no_runtime": "De AI Workspace Runtime is niet bereikbaar. Start hem en controleer het adres op dit formulier.",
       "required": "Dit veld is verplicht.",
       "invalid_auth": "De provider heeft deze API-sleutel geweigerd.",
       "cannot_connect": "De provider is niet bereikbaar. Controleer de URL en het netwerk."
@@ -190,13 +192,15 @@
               "house_map": "Configuratiecatalogus",
               "shorten_mcp_results": "Lange Home Assistant-antwoorden inkorten",
               "change_history": "Wijzigingsgeschiedenis",
-              "change_history_ttl_days": "Rollback geldig"
+              "change_history_ttl_days": "Rollback geldig",
+              "approval_timeout_minutes": "Wachttijd voor goedkeuring"
             },
             "data_description": {
               "house_map": "Standaard uit. Een lokale index van hoe automatiseringen, entiteiten en ruimtes samenhangen, zodat één opzoeking vragen beantwoordt als “wat gebruikt de keukenlamp?”. Voegt iets toe aan elk bericht, dus zet het alleen aan als je vaak vraagt hoe dingen gekoppeld zijn. Live statussen komen nog steeds uit Home Assistant.",
               "shorten_mcp_results": "Standaard aan. Zeer lange antwoorden van Home Assistant worden verkleind voordat ze naar de AI gaan: grote entiteitenlijsten worden compact, zeer lange teksten in een antwoord (zoals een enorme melding) worden ingekort, en wat daarna nog boven de 100.000 tekens ligt, wordt afgeknipt. Bespaart tokens en houdt antwoorden snel. Uit stuurt de volledige tekst.",
               "change_history": "Standaard aan. Houdt elke configuratiewijziging van de assistent bij, zodat je ziet wat er veranderd is en kunt vragen een eerdere versie terug te zetten. Uit: geen nieuwe items; de assistent kan nog steeds wijzigingen maken.",
-              "change_history_ttl_days": "Dagen dat Rollback en Ongedaan maken via agent beschikbaar blijven. Daarna blijft de regel in het logboek; een oud momentopname terugzetten kan later werk overschrijven. Standaard 7. 1 is ongeveer een dag."
+              "change_history_ttl_days": "Dagen dat Rollback en Ongedaan maken via agent beschikbaar blijven. Daarna blijft de regel in het logboek; een oud momentopname terugzetten kan later werk overschrijven. Standaard 7. 1 is ongeveer een dag.",
+              "approval_timeout_minutes": "Minuten dat een vraag van een MCP-tool in de chat op je antwoord wacht, bijvoorbeeld een worker die een opdracht op een server wil uitvoeren. Daarna wordt die geannuleerd. Standaard 10."
             }
           },
           "prompt": {
@@ -216,7 +220,7 @@
       }
     },
     "error": {
-      "no_runtime": "De Cursor-runtime is niet bereikbaar. Start hem en controleer het adres op dit formulier.",
+      "no_runtime": "De AI Workspace Runtime is niet bereikbaar. Start hem en controleer het adres op dit formulier.",
       "required": "Dit veld is verplicht.",
       "invalid_auth": "De provider heeft deze API-sleutel geweigerd.",
       "cannot_connect": "De provider is niet bereikbaar. Controleer de URL en het netwerk."
@@ -282,13 +286,28 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "De Cursor-runtime is niet bereikbaar. Start hem en controleer het adres op dit formulier.",
+        "no_runtime": "De AI Workspace Runtime is niet bereikbaar. Start hem en controleer het adres op dit formulier.",
         "required": "Dit veld is verplicht.",
         "invalid_auth": "De provider heeft deze API-sleutel geweigerd.",
         "cannot_connect": "De provider is niet bereikbaar. Controleer de URL en het netwerk.",
         "model_not_installed": "Dit model is niet geïnstalleerd in Ollama. Geïnstalleerd: {installed}",
         "pick_model": "De server toont nu zijn modellen. Kies er een uit de lijst.",
-        "model_rejected": "De server staat dit model niet toe voor deze sleutel: {server_message}"
+        "model_rejected": "De server staat dit model niet toe voor deze sleutel: {server_message}",
+        "claude_runtime_old": "Werk de AI Workspace Runtime bij naar 1.6.0 of nieuwer voor Claude SDK-agents.",
+        "claude_key_required": "Voeg onder Claude SDK (runtime) een Claude Plan-token of een Anthropic-API-sleutel toe, of stel er een in op de AI Workspace Runtime.",
+        "runtime_refused": "De AI Workspace Runtime weigerde het Runtime-wachtwoord. Controleer het op dit formulier.",
+        "bad_code": "Dat lijkt niet op de code van de pagina van Anthropic. Kopieer de hele code en plak hem opnieuw.",
+        "code_rejected": "Anthropic accepteerde die code niet. Hier is een nieuwe link: meld je opnieuw aan en plak de nieuwe code.",
+        "too_many_attempts": "Te veel verkeerde codes. Hier is een nieuwe link.",
+        "busy": "De Runtime controleert de vorige code nog. Wacht even en probeer het opnieuw.",
+        "expired": "Deze aanmelding is verlopen. Hier is een nieuwe link.",
+        "timeout": "De Runtime kreeg niet op tijd antwoord van Anthropic. Hier is een nieuwe link; probeer het opnieuw.",
+        "cli_missing": "De AI Workspace Runtime heeft geen Claude Code-CLI. Werk de Runtime bij (App of Docker-image).",
+        "no_link": "Claude Code toonde geen aanmeldlink. Controleer of de Runtime claude.com bereikt en probeer het opnieuw.",
+        "login_failed": "Aanmelden is mislukt op de Runtime. Bekijk het Runtime-log en probeer het opnieuw.",
+        "not_supported": "Deze engine heeft geen abonnementsaanmelding. Gebruik een API-sleutel.",
+        "runtime_rejected": "De AI Workspace Runtime weigerde het Runtime-wachtwoord. Gebruik hetzelfde wachtwoord op de Runtime en in dit formulier.",
+        "runtime_old": "Deze Runtime kan nog niet aanmelden. Werk de AI Workspace Runtime bij, of plak een token in het agentformulier."
       },
       "step": {
         "provider": {
@@ -298,14 +317,14 @@
             "api_provider": "Provider"
           },
           "data_description": {
-            "api_provider": "Cursor, of een cloud- of lokaal model."
+            "api_provider": "Cursor, of een cloud- of lokaal model. Voor Claude SDK op de AI Workspace Runtime kies je Claude (Anthropic) en zet je de runtime-schakelaar aan."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
           "description": "Cursor-adres, API-sleutel, model en antwoordsnelheid.",
           "data": {
-            "runtime_url": "Cursor-runtime-adres{runtime_url_mark}",
+            "runtime_url": "Runtime-adres{runtime_url_mark}",
             "runtime_token": "Runtime-wachtwoord",
             "cursor_api_key": "Cursor-API-sleutel",
             "model": "Model",
@@ -315,8 +334,8 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Hetzelfde wachtwoord als op je Cursor-runtime. Leeg laten bij de add-on met automatische koppeling.",
-            "cursor_api_key": "Uit je Cursor-account (Integrations). Leeg laten bij bewerken om de opgeslagen sleutel te houden. [API-sleutel ophalen]({api_key_url})",
+            "runtime_token": "Hetzelfde wachtwoord als op de AI Workspace Runtime. Leeg laten bij de add-on met automatische koppeling.",
+            "cursor_api_key": "Uit je Cursor-account (Integrations). Leeg laten bij bewerken om de opgeslagen sleutel te houden. [API-sleutel ophalen]({api_key_url}) {cursor_key_note}",
             "model": "Kies uit de lijst of typ een modelnaam. Leeg gebruikt Composer.",
             "effort": "Hoeveel denktijd is toegestaan. Composer gebruikt standaard Snel.",
             "allow_internet": "Standaard uit. Aan laat deze agent in beheerderschats Cursors webzoekfunctie, pagina ophalen en shell gebruiken. Uit verwijdert alle drie, zodat ook curl of scripts het web niet bereiken. Chats van gewone gebruikers en spraaksatellieten krijgen ze nooit.",
@@ -388,11 +407,27 @@
               "name": "Geavanceerd",
               "data": {
                 "save_tokens": "Tokens besparen",
-                "cache_1h": "Cache een uur bewaren"
+                "cache_1h": "Cache een uur bewaren",
+                "use_claude_runtime": "Claude SDK (runtime) gebruiken (experimenteel)"
               },
               "data_description": {
                 "save_tokens": "Stuurt minder mee met elk bericht: een kortere prompt, minder chatgeschiedenis en kortere antwoorden. Goedkoper, maar antwoorden over je huis kunnen minder grondig zijn.",
-                "cache_1h": "Alleen Claude. Houdt de systeemprompt en tools een uur in de cache in plaats van 5 minuten. Schrijven in de cache kost 2× de invoerprijs in plaats van 1,25×; lezen kost 0,1×. Goedkoper als er vaak meer dan 5 minuten tussen je berichten zit, iets duurder als je weinig chat."
+                "cache_1h": "Alleen Claude. Houdt de systeemprompt en tools een uur in de cache in plaats van 5 minuten. Schrijven in de cache kost 2× de invoerprijs in plaats van 1,25×; lezen kost 0,1×. Goedkoper als er vaak meer dan 5 minuten tussen je berichten zit, iets duurder als je weinig chat.",
+                "use_claude_runtime": "Chats lopen via Claude Code op de AI Workspace Runtime in plaats van de cloud-API van Anthropic, met je Claude-abonnement (Pro, Max) of een Anthropic-API-sleutel. Druk na het wijzigen op OK: het formulier toont dan de passende velden, er wordt nog niets opgeslagen."
+              }
+            },
+            "claude_runtime": {
+              "name": "Claude SDK (runtime)",
+              "description": "Een leeg model gebruikt het Claude-model van de Runtime (Claude Sonnet tenzij ingesteld).",
+              "data": {
+                "runtime_url": "Runtime-adres{runtime_url_mark}",
+                "runtime_token": "Runtime-wachtwoord",
+                "claude_api_key": "Claude Plan-token of Anthropic-API-sleutel"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "Hetzelfde wachtwoord als op de AI Workspace Runtime. Leeg laten bij de add-on met automatische koppeling.",
+                "claude_api_key": "Een Claude Plan-token (sk-ant-oat…, uit `claude setup-token`, gebruikt je Claude-abonnement) of een Anthropic-API-sleutel (sk-ant-api…, gefactureerd als API-tegoed). Leeg laten om die op de AI Workspace Runtime te gebruiken, of bij bewerken om de opgeslagen te houden. [API-sleutel ophalen]({api_key_url})"
               }
             }
           }
@@ -528,6 +563,35 @@
               }
             }
           }
+        },
+        "claude_login": {
+          "title": "Aanmelden met Claude-abonnement",
+          "description": "1. Open deze link en meld je aan met het Claude-account met je Pro- of Max-abonnement: [Aanmelden met Claude]({url})\n2. Anthropic toont daarna een code. Kopieer die helemaal en plak hem hieronder.\n\nDe link werkt 15 minuten. Je Claude-wachtwoord gaat nooit via Home Assistant.",
+          "data": {
+            "code": "Code van Anthropic"
+          },
+          "data_description": {
+            "code": "Een lange tekenreeks met een # in het midden. Plak hem zoals hij is."
+          }
+        },
+        "claude_account": {
+          "title": "Claude-account",
+          "description": "{status}\n\nDe aanmelding blijft op de AI Workspace Runtime, niet in Home Assistant, en elke Claude SDK-agent op die Runtime gebruikt haar.",
+          "menu_options": {
+            "claude_use_runtime": "Bestaande toegang van de Runtime gebruiken",
+            "claude_save": "Agent opslaan",
+            "claude_login": "Aanmelden met Claude-abonnement",
+            "claude_logout": "Afmelden op de Runtime",
+            "claude_back": "Terug naar de agentinstellingen"
+          }
+        },
+        "claude_signed_in": {
+          "title": "Aangemeld",
+          "description": "{status}\n\nVerstuur om de agent op te slaan."
+        },
+        "claude_login_error": {
+          "title": "Aanmelden is niet gelukt",
+          "description": "Verstuur om terug te gaan."
         }
       },
       "abort": {

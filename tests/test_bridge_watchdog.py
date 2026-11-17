@@ -60,7 +60,7 @@ def _setup(tmp_path, monkeypatch, plan):
 
         return Agent(), True
 
-    async def fake_iter(run):
+    async def fake_iter(run, runtime=None):
         if run.connects:
             run.runtime.proxy.note_hit(run.session_id)
             yield {"type": "text", "text": "Answer"}

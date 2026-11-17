@@ -5,6 +5,7 @@ import hashlib
 import hmac
 import json
 import logging
+import os
 import re
 import time
 from contextlib import asynccontextmanager
@@ -13,7 +14,7 @@ from typing import Any
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.files import attach_files_to_message, file_events, parse_client_files
 from app.mcp_proxy import proxy_mcp
@@ -36,6 +37,7 @@ def _configure_logging() -> None:
     )
     logging.getLogger("app").setLevel(logging.INFO)
     logging.getLogger("app.providers.cursor").setLevel(logging.INFO)
+    logging.getLogger("app.providers.claude").setLevel(logging.INFO)
     access = logging.getLogger("uvicorn.access")
     if not any(isinstance(item, _HideProxySecret) for item in access.filters):
         access.addFilter(_HideProxySecret())
@@ -98,30 +100,62 @@ class ChatMcp(BaseModel):
     exclusive: bool = False
 
 
+# Helper fields are shortened, never a reason to refuse the turn: a long paste once made the whole
+# message fail with HTTP 422 because `question` (a copy of it) was over its limit.
+QUESTION_CHARS = 8000
+HANDOFF_CHARS = 120000
+PROMPT_CHARS = 120000
+# The chat text plus up to four attached files of 256 KB each, and the standing prompt.
+MESSAGE_CHARS = 1_200_000
+
+
 class ChatRequest(BaseModel):
-    message: str = Field(default="", max_length=320000)
+    message: str = Field(default="", max_length=MESSAGE_CHARS)
     origin: str = ""
     images: list[ChatImage] = Field(default_factory=list, max_length=4)
     files: list[ChatFile] = Field(default_factory=list, max_length=4)
     mcp: ChatMcp | None = None
     full_tools: bool = False
     allow_internet: bool = False
-    # Reduce token usage on the agent: fresh agent each turn (Medium, Extreme), chat only (Extreme), auto titles (Off).
+    # Reduce token usage on the agent: new agent under Medium/Extreme (Claude once the session grew, Cursor every 4 turns),
+    # chat only (Extreme), auto titles (Off).
     fresh: bool = False
     no_tools: bool = False
     titles: bool = True
     model: str = ""
     effort: str = ""
     api_key: str = ""
-    question: str = Field(default="", max_length=8000)
-    handoff: str = Field(default="", max_length=120000)
+    question: str = ""
+    handoff: str = ""
     history_in_ha: bool = False
-    prompt: str = Field(default="", max_length=120000)
+    prompt: str = ""
     sync_agent_id: str = ""
+    # The engine Home Assistant picked for this turn. A chat can move between Cursor and Claude.
+    provider: str = ""
     shorten_mcp_results: bool | None = None
     change_history: bool | None = None
     # Home Assistant's key for this chat's Change History callbacks.
     callback_key: str = Field(default="", max_length=200)
+    # Seconds a question from an MCP server to the user (elicitation) waits before it is cancelled.
+    approval_timeout: int | None = Field(default=None, ge=0, le=86400)
+
+    @field_validator("question", mode="before")
+    @classmethod
+    def _short_question(cls, value):
+        # Only used to pick tools and a title: the start is what matters.
+        return str(value or "")[:QUESTION_CHARS]
+
+    @field_validator("handoff", mode="before")
+    @classmethod
+    def _short_handoff(cls, value):
+        # The earlier conversation: the newest part matters most.
+        text = str(value or "")
+        return text if len(text) <= HANDOFF_CHARS else "…" + text[-(HANDOFF_CHARS - 1):]
+
+    @field_validator("prompt", mode="before")
+    @classmethod
+    def _short_prompt(cls, value):
+        return str(value or "")[:PROMPT_CHARS]
 
 
 def _with_ui_context(message: str, origin: str = "") -> str:
@@ -173,7 +207,10 @@ def create_app(settings: Settings | None = None, providers: dict | None = None) 
                 return JSONResponse({"detail": detail}, status_code=401)
         return await call_next(request)
 
+    from app.auth import router as auth_router
+
     app.include_router(router)
+    app.include_router(auth_router)
     if not app.state.settings.runtime_token and not app.state.settings.open_without_token():
         logger.warning(
             "No RUNTIME_TOKEN set and the runtime listens on %s. Chat requests are refused until a token is set.",
@@ -193,6 +230,7 @@ async def lifespan(app: FastAPI):
         # A wrong token or an unreachable repo must not take the chat down with it.
         logger.error("Could not set up GIT_REPO in the workspace: %s", exc)
     settings.ensure_dirs()
+    settings = await _with_legacy_options(app, settings)
     store = Store(settings.data_dir / "ai-workspace.sqlite")
     app.state.store = store
     app.state.locks = {}
@@ -215,8 +253,25 @@ async def lifespan(app: FastAPI):
         if warmup is not None:
             warmup.cancel()
         store.close()
+        from app.auth import close_engines
+
+        close_engines(getattr(app.state, "auth", None))
         if runtime is not None:
             await runtime.aclose()
+
+
+async def _with_legacy_options(app: FastAPI, settings: Settings) -> Settings:
+    """Claude fields that left the App options (1.6.0b12): old values keep working, see app.legacy_options."""
+    from app.legacy_options import apply_legacy_options, supervisor_options
+
+    try:
+        stored = await asyncio.to_thread(supervisor_options) if os.environ.get("SUPERVISOR_TOKEN") else {}
+        settings = await asyncio.to_thread(apply_legacy_options, settings, stored)
+    except Exception:  # noqa: BLE001 - the old options must never stop the runtime
+        logger.warning("Could not read the old Claude App options", exc_info=False)
+        return settings
+    app.state.settings = settings
+    return settings
 
 
 def _user_id(request: Request) -> str:
@@ -254,18 +309,89 @@ async def mcp_proxy(request: Request, secret: str, digest: str, actor: str = "")
     return await proxy_mcp(request, secret, digest, actor)
 
 
+def _provider_flag(providers: dict, key: str) -> bool:
+    item = providers.get(key)
+    return bool(item and item.info.available)
+
+
+def _login_engines(request: Request) -> list[str]:
+    from app.auth import engines_for, login_engines
+
+    return login_engines(engines_for(request.app))
+
+
 @router.get("/api/health")
 def health(request: Request) -> dict:
     settings: Settings = request.app.state.settings
-    cursor = request.app.state.providers["cursor"].info
+    providers = request.app.state.providers
+    plan_quota = {}
+    runtime = getattr(request.app.state, "runtime", None)
+    book = getattr(runtime, "plan_quota", None) if runtime is not None else None
+    if book is not None:
+        plan_quota = book.public()
     return {
         "ok": True,
         "version": RUNTIME_VERSION,
         "auth_mode": settings.auth_mode,
         "model": settings.model,
-        "cursor": cursor.available,
+        "cursor": _provider_flag(providers, "cursor"),
+        "claude": _provider_flag(providers, "claude"),
+        "plan_quota": plan_quota,
+        # 1.6.0b7/b8 agent forms offer "Sign in with Claude" only when the runtime can run it.
+        "claude_login": _login_manager(request.app).available(),
+        # Engines with a plan sign-in at /api/auth/{engine}/login (details need the runtime token).
+        "login": _login_engines(request),
         "token_required": bool(settings.runtime_token) or not settings.open_without_token(),
     }
+
+
+def _login_manager(app: FastAPI):
+    """The Claude sign-in of /api/auth/claude: the 1.6.0b7 endpoints below share it (one sign-in at a time)."""
+    from app.auth import engines_for
+
+    return engines_for(app)["claude"].manager
+
+
+class ClaudeLoginCode(BaseModel):
+    code: str = Field(default="", max_length=512)
+
+
+def _login_failed(exc) -> JSONResponse:
+    status = {"cli_missing": 501, "expired": 410, "bad_code": 400, "code_rejected": 400}.get(exc.key, 502)
+    return JSONResponse({"detail": exc.key}, status_code=status)
+
+
+# 1.6.0b7/b8 integrations: the Plan token goes back to Home Assistant and is saved on the agent.
+# Newer agent forms use /api/auth/claude (app.auth), where the runtime keeps the token itself.
+@router.post("/api/claude/login")
+async def claude_login_start(request: Request):
+    """Start `claude setup-token` and return its sign-in link."""
+    from app.claude_login import LoginError
+
+    try:
+        login = await _login_manager(request.app).start()
+    except LoginError as exc:
+        logger.warning("Claude sign-in could not start: %s", exc.key)
+        return _login_failed(exc)
+    return {"id": login.id, "url": login.link}
+
+
+@router.post("/api/claude/login/{login_id}")
+async def claude_login_finish(login_id: str, body: ClaudeLoginCode, request: Request):
+    """Hand over the code from Anthropic's page; returns the Claude Plan token. Never logged."""
+    from app.claude_login import LoginError
+
+    try:
+        token = await _login_manager(request.app).finish(login_id, body.code)
+    except LoginError as exc:
+        logger.info("Claude sign-in did not finish: %s", exc.key)
+        return _login_failed(exc)
+    return {"token": token}
+
+
+@router.delete("/api/claude/login/{login_id}", status_code=204)
+async def claude_login_cancel(login_id: str, request: Request):
+    _login_manager(request.app).cancel(login_id)
 
 
 @router.get("/api/providers")
@@ -363,14 +489,25 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
     settings: Settings = request.app.state.settings
     store: Store = request.app.state.store
     session = _session_or_404(store, _user_id(request), session_id)
-    provider = request.app.state.providers.get(session.provider)
-    if provider is None:
-        provider = next((item for item in request.app.state.providers.values() if item.info.available), None)
-    if provider is None:
-        raise HTTPException(status_code=400, detail="Unknown provider.")
     lock: asyncio.Lock = request.app.state.locks.setdefault(session.id, asyncio.Lock())
     if lock.locked():
         raise HTTPException(status_code=409, detail="This chat is already waiting on the agent.")
+    providers = request.app.state.providers
+    wanted = body.provider.strip()
+    switched = bool(wanted) and wanted in providers and wanted != session.provider
+    if switched:
+        # The chat started on another engine: without this, a Claude turn kept running on Cursor.
+        logger.info("chat session=%s moves from %s to %s", session.id, session.provider, wanted)
+        store.set_provider(session.id, wanted)
+        session.provider, session.agent_id = wanted, None
+        runtime = request.app.state.runtime
+        if runtime is not None:
+            runtime.drop(session.id)
+    provider = providers.get(session.provider)
+    if provider is None:
+        provider = next((item for item in providers.values() if item.info.available), None)
+    if provider is None:
+        raise HTTPException(status_code=400, detail="Unknown provider.")
     images = parse_client_images([item.model_dump() for item in body.images])
     files = parse_client_files([item.model_dump() for item in body.files])
     message = caption_for(body.message, len(images), len(files))
@@ -406,7 +543,8 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
         and body.titles
         and needs_title_summary(question)
     )
-    sync_id = body.sync_agent_id.strip()
+    # An agent id sent with an engine switch belongs to the old engine.
+    sync_id = "" if switched else body.sync_agent_id.strip()
     if sync_id and session.agent_id != sync_id:
         store.set_agent_id(session.id, sync_id)
         session.agent_id = sync_id
@@ -437,6 +575,7 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
             _user_id(request),
             request.headers.get("x-ai-workspace-agent") or "Cursor",
             body.callback_key,
+            approval_timeout=body.approval_timeout,
         )
 
     async def generate():
@@ -516,12 +655,94 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
             lock.release()
             if title_task is not None and not title_task.done():
                 title_task.cancel()
+            if proxy is not None:
+                # A stopped or failed turn leaves no MCP call to answer: its questions are cancelled.
+                await asyncio.to_thread(proxy.elicitations.end_session, session.id)
 
     return StreamingResponse(
-        generate(),
+        with_pings(generate()),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+# A turn can wait on the user for a while (an MCP question in the chat). Comments keep Home
+# Assistant's read timeout and proxies from closing the quiet stream.
+PING_SECONDS = 15.0
+
+
+async def with_pings(stream, every: float | None = None):
+    """The chat stream with an SSE comment whenever nothing was sent for a while.
+
+    The turn runs in one task of its own, so the SDK generators inside are always resumed from
+    the task that started them; closing this generator cancels that task.
+    """
+    queue: asyncio.Queue = asyncio.Queue()
+    done = object()
+
+    async def pump() -> None:
+        try:
+            async for chunk in stream:
+                await queue.put(chunk)
+        except Exception as exc:  # noqa: BLE001 - handed to the reader below
+            await queue.put(exc)
+        finally:
+            await queue.put(done)
+
+    task = asyncio.create_task(pump())
+    wait = PING_SECONDS if every is None else every
+    try:
+        while True:
+            try:
+                item = await asyncio.wait_for(queue.get(), timeout=wait)
+            except TimeoutError:
+                yield ": ping\n\n"
+                continue
+            if item is done:
+                break
+            if isinstance(item, Exception):
+                raise item
+            yield item
+    finally:
+        if not task.done():
+            task.cancel()
+            try:
+                await task
+            except BaseException:  # noqa: BLE001 - only waiting for the turn to unwind
+                pass
+
+
+class ElicitationAnswer(BaseModel):
+    key: str = Field(default="", max_length=200)
+    action: str = Field(default="", max_length=20)
+    content: dict[str, Any] | None = None
+
+
+def _broker(request: Request):
+    runtime = getattr(request.app.state, "runtime", None)
+    proxy = getattr(runtime, "proxy", None) if runtime is not None else None
+    return getattr(proxy, "elicitations", None)
+
+
+@router.get("/api/elicitations")
+def list_elicitations(request: Request, session_id: str = "") -> list[dict]:
+    """Open questions to the user (without their answer keys)."""
+    broker = _broker(request)
+    if broker is None:
+        return []
+    return [item.public() | {"session_id": item.session_id} for item in broker.pending(session_id)]
+
+
+@router.post("/api/elicitations/{item_id}")
+async def answer_elicitation(request: Request, item_id: str, body: ElicitationAnswer) -> dict:
+    """The user's click in Home Assistant: accept (with the form), decline or cancel.
+
+    Needs the Runtime token and the card's key, which only Home Assistant was given.
+    """
+    broker = _broker(request)
+    if broker is None:
+        return {"status": "gone"}
+    return await asyncio.to_thread(broker.answer, item_id, body.key, body.action, body.content)
 
 
 @router.get("/")

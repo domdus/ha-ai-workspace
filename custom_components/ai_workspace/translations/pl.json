@@ -77,13 +77,15 @@
               "house_map": "Katalog konfiguracji",
               "shorten_mcp_results": "Skracaj długie odpowiedzi Home Assistant",
               "change_history": "Historia zmian",
-              "change_history_ttl_days": "Rollback przez"
+              "change_history_ttl_days": "Rollback przez",
+              "approval_timeout_minutes": "Czas na zatwierdzenie"
             },
             "data_description": {
               "house_map": "Domyślnie wyłączone. Lokalny indeks powiązań między automatyzacjami, encjami i obszarami, żeby jedno wyszukanie odpowiadało na pytania typu „co używa światła w kuchni?”. Dodaje trochę do każdej wiadomości, więc włącz tylko, jeśli często pytasz, jak rzeczy są połączone. Stany na żywo nadal pochodzą z Home Assistant.",
               "shorten_mcp_results": "Domyślnie włączone. Bardzo długie odpowiedzi z Home Assistant są zmniejszane przed wysłaniem do AI: duże listy encji stają się zwięzłe, bardzo długie teksty w odpowiedzi (np. ogromne powiadomienie) są skracane, a to, co nadal przekracza 100 000 znaków, jest obcinane. Oszczędza tokeny i przyspiesza odpowiedzi. Wyłączone wysyła pełny tekst.",
               "change_history": "Domyślnie włączone. Zapisuje każdą zmianę konfiguracji wykonaną przez asystenta, żebyś widział, co się zmieniło, i mógł poprosić o przywrócenie wcześniejszej wersji. Wyłączone: bez nowych wpisów; asystent nadal może wprowadzać zmiany.",
-              "change_history_ttl_days": "Dni, przez które Rollback i Cofnij przez agenta pozostają dostępne. Potem wpis zostaje w dzienniku; przywrócenie starego zrzutu może nadpisać późniejszą pracę. Domyślnie 7. 1 to około dzień."
+              "change_history_ttl_days": "Dni, przez które Rollback i Cofnij przez agenta pozostają dostępne. Potem wpis zostaje w dzienniku; przywrócenie starego zrzutu może nadpisać późniejszą pracę. Domyślnie 7. 1 to około dzień.",
+              "approval_timeout_minutes": "Minuty, przez które pytanie narzędzia MCP czeka w czacie na twoją odpowiedź, na przykład gdy worker chce uruchomić polecenie na serwerze. Potem zostaje anulowane. Domyślnie 10."
             }
           },
           "prompt": {
@@ -103,7 +105,7 @@
       }
     },
     "error": {
-      "no_runtime": "Nie można połączyć się ze środowiskiem Cursor. Uruchom je i sprawdź adres w tym formularzu.",
+      "no_runtime": "Nie można połączyć się z AI Workspace Runtime. Uruchom je i sprawdź adres w tym formularzu.",
       "required": "To pole jest wymagane.",
       "invalid_auth": "Dostawca odrzucił ten klucz API.",
       "cannot_connect": "Nie można połączyć się z dostawcą. Sprawdź adres URL i sieć."
@@ -190,13 +192,15 @@
               "house_map": "Katalog konfiguracji",
               "shorten_mcp_results": "Skracaj długie odpowiedzi Home Assistant",
               "change_history": "Historia zmian",
-              "change_history_ttl_days": "Rollback przez"
+              "change_history_ttl_days": "Rollback przez",
+              "approval_timeout_minutes": "Czas na zatwierdzenie"
             },
             "data_description": {
               "house_map": "Domyślnie wyłączone. Lokalny indeks powiązań między automatyzacjami, encjami i obszarami, żeby jedno wyszukanie odpowiadało na pytania typu „co używa światła w kuchni?”. Dodaje trochę do każdej wiadomości, więc włącz tylko, jeśli często pytasz, jak rzeczy są połączone. Stany na żywo nadal pochodzą z Home Assistant.",
               "shorten_mcp_results": "Domyślnie włączone. Bardzo długie odpowiedzi z Home Assistant są zmniejszane przed wysłaniem do AI: duże listy encji stają się zwięzłe, bardzo długie teksty w odpowiedzi (np. ogromne powiadomienie) są skracane, a to, co nadal przekracza 100 000 znaków, jest obcinane. Oszczędza tokeny i przyspiesza odpowiedzi. Wyłączone wysyła pełny tekst.",
               "change_history": "Domyślnie włączone. Zapisuje każdą zmianę konfiguracji wykonaną przez asystenta, żebyś widział, co się zmieniło, i mógł poprosić o przywrócenie wcześniejszej wersji. Wyłączone: bez nowych wpisów; asystent nadal może wprowadzać zmiany.",
-              "change_history_ttl_days": "Dni, przez które Rollback i Cofnij przez agenta pozostają dostępne. Potem wpis zostaje w dzienniku; przywrócenie starego zrzutu może nadpisać późniejszą pracę. Domyślnie 7. 1 to około dzień."
+              "change_history_ttl_days": "Dni, przez które Rollback i Cofnij przez agenta pozostają dostępne. Potem wpis zostaje w dzienniku; przywrócenie starego zrzutu może nadpisać późniejszą pracę. Domyślnie 7. 1 to około dzień.",
+              "approval_timeout_minutes": "Minuty, przez które pytanie narzędzia MCP czeka w czacie na twoją odpowiedź, na przykład gdy worker chce uruchomić polecenie na serwerze. Potem zostaje anulowane. Domyślnie 10."
             }
           },
           "prompt": {
@@ -216,7 +220,7 @@
       }
     },
     "error": {
-      "no_runtime": "Nie można połączyć się ze środowiskiem Cursor. Uruchom je i sprawdź adres w tym formularzu.",
+      "no_runtime": "Nie można połączyć się z AI Workspace Runtime. Uruchom je i sprawdź adres w tym formularzu.",
       "required": "To pole jest wymagane.",
       "invalid_auth": "Dostawca odrzucił ten klucz API.",
       "cannot_connect": "Nie można połączyć się z dostawcą. Sprawdź adres URL i sieć."
@@ -282,13 +286,28 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Nie można połączyć się ze środowiskiem Cursor. Uruchom je i sprawdź adres w tym formularzu.",
+        "no_runtime": "Nie można połączyć się z AI Workspace Runtime. Uruchom je i sprawdź adres w tym formularzu.",
         "required": "To pole jest wymagane.",
         "invalid_auth": "Dostawca odrzucił ten klucz API.",
         "cannot_connect": "Nie można połączyć się z dostawcą. Sprawdź adres URL i sieć.",
         "model_not_installed": "Ten model nie jest zainstalowany w Ollama. Zainstalowane: {installed}",
         "pick_model": "Serwer podaje teraz swoje modele. Wybierz jeden z listy.",
-        "model_rejected": "Serwer nie zezwala na ten model dla tego klucza: {server_message}"
+        "model_rejected": "Serwer nie zezwala na ten model dla tego klucza: {server_message}",
+        "claude_runtime_old": "Zaktualizuj AI Workspace Runtime do wersji 1.6.0 lub nowszej, aby używać agentów Claude SDK.",
+        "claude_key_required": "Dodaj token Claude Plan lub klucz API Anthropic w sekcji Claude SDK (runtime) albo ustaw go w AI Workspace Runtime.",
+        "runtime_refused": "AI Workspace Runtime odrzucił hasło Runtime. Sprawdź je w tym formularzu.",
+        "bad_code": "To nie wygląda na kod ze strony Anthropic. Skopiuj cały kod i wklej go ponownie.",
+        "code_rejected": "Anthropic nie przyjął tego kodu. Oto nowy link: zaloguj się ponownie i wklej nowy kod.",
+        "too_many_attempts": "Za dużo błędnych kodów. Oto nowy link.",
+        "busy": "Runtime wciąż sprawdza poprzedni kod. Poczekaj chwilę i spróbuj ponownie.",
+        "expired": "To logowanie wygasło. Oto nowy link.",
+        "timeout": "Runtime nie dostał na czas odpowiedzi od Anthropic. Oto nowy link; spróbuj ponownie.",
+        "cli_missing": "AI Workspace Runtime nie ma CLI Claude Code. Zaktualizuj Runtime (App lub obraz Docker).",
+        "no_link": "Claude Code nie pokazał linku logowania. Sprawdź, czy Runtime łączy się z claude.com, i spróbuj ponownie.",
+        "login_failed": "Logowanie w Runtime nie powiodło się. Sprawdź log Runtime i spróbuj ponownie.",
+        "not_supported": "Ten silnik nie ma logowania planem. Użyj klucza API.",
+        "runtime_rejected": "AI Workspace Runtime odrzucił hasło Runtime. Ustaw to samo hasło w Runtime i w tym formularzu.",
+        "runtime_old": "Ten Runtime nie obsługuje jeszcze logowania. Zaktualizuj AI Workspace Runtime albo wklej token w formularzu agenta."
       },
       "step": {
         "provider": {
@@ -298,14 +317,14 @@
             "api_provider": "Dostawca"
           },
           "data_description": {
-            "api_provider": "Cursor albo model w chmurze lub lokalny."
+            "api_provider": "Cursor albo model w chmurze lub lokalny. Aby użyć Claude SDK w AI Workspace Runtime, wybierz Claude (Anthropic) i włącz przełącznik runtime."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
           "description": "Adres Cursor, klucz API, model i szybkość odpowiedzi.",
           "data": {
-            "runtime_url": "Adres środowiska Cursor{runtime_url_mark}",
+            "runtime_url": "Adres środowiska{runtime_url_mark}",
             "runtime_token": "Hasło runtime",
             "cursor_api_key": "Klucz API Cursor",
             "model": "Model",
@@ -315,8 +334,8 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "To samo hasło co w twoim środowisku Cursor. Zostaw puste przy dodatku z automatycznym parowaniem.",
-            "cursor_api_key": "Z konta Cursor (Integrations). Przy edycji zostaw puste, aby zachować zapisany klucz. [Pobierz klucz API]({api_key_url})",
+            "runtime_token": "To samo hasło co w AI Workspace Runtime. Zostaw puste przy dodatku z automatycznym parowaniem.",
+            "cursor_api_key": "Z konta Cursor (Integrations). Przy edycji zostaw puste, aby zachować zapisany klucz. [Pobierz klucz API]({api_key_url}) {cursor_key_note}",
             "model": "Wybierz z listy lub wpisz nazwę modelu. Puste używa Composer.",
             "effort": "Ile czasu na myślenie zezwolić. Composer domyślnie używa Szybki.",
             "allow_internet": "Domyślnie wyłączone. Włączone pozwala temu agentowi w czatach administratora używać wyszukiwania w sieci, pobierania stron i powłoki Cursora. Wyłączone usuwa wszystkie trzy, więc curl ani skrypty też nie dotrą do sieci. Czaty zwykłych użytkowników i satelit głosowych nigdy ich nie dostają.",
@@ -388,11 +407,27 @@
               "name": "Zaawansowane",
               "data": {
                 "save_tokens": "Oszczędzaj tokeny",
-                "cache_1h": "Trzymaj pamięć podręczną przez godzinę"
+                "cache_1h": "Trzymaj pamięć podręczną przez godzinę",
+                "use_claude_runtime": "Użyj Claude SDK (runtime) (eksperymentalne)"
               },
               "data_description": {
                 "save_tokens": "Wysyła mniej z każdą wiadomością: krótszy prompt, mniej historii czatu i krótsze odpowiedzi. Taniej, ale odpowiedzi o Twoim domu mogą być mniej dokładne.",
-                "cache_1h": "Tylko Claude. Trzyma prompt systemowy i narzędzia w pamięci podręcznej przez godzinę zamiast 5 minut. Zapis do pamięci podręcznej kosztuje 2× cenę wejścia zamiast 1,25×, odczyt 0,1×. Taniej, gdy między wiadomościami często mija ponad 5 minut; nieco drożej, jeśli rzadko piszesz."
+                "cache_1h": "Tylko Claude. Trzyma prompt systemowy i narzędzia w pamięci podręcznej przez godzinę zamiast 5 minut. Zapis do pamięci podręcznej kosztuje 2× cenę wejścia zamiast 1,25×, odczyt 0,1×. Taniej, gdy między wiadomościami często mija ponad 5 minut; nieco drożej, jeśli rzadko piszesz.",
+                "use_claude_runtime": "Czaty idą przez Claude Code w AI Workspace Runtime zamiast przez chmurowe API Anthropic, z Twoją subskrypcją Claude (Pro, Max) lub kluczem API Anthropic. Po zmianie naciśnij OK: formularz pokaże odpowiednie pola, nic nie zostanie jeszcze zapisane."
+              }
+            },
+            "claude_runtime": {
+              "name": "Claude SDK (runtime)",
+              "description": "Pusty model oznacza model Claude z Runtime (Claude Sonnet, jeśli nie ustawiono).",
+              "data": {
+                "runtime_url": "Adres środowiska{runtime_url_mark}",
+                "runtime_token": "Hasło runtime",
+                "claude_api_key": "Token Claude Plan lub klucz API Anthropic"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "To samo hasło co w AI Workspace Runtime. Zostaw puste przy dodatku z automatycznym parowaniem.",
+                "claude_api_key": "Token Claude Plan (sk-ant-oat…, z `claude setup-token`, korzysta z Twojej subskrypcji Claude) lub klucz API Anthropic (sk-ant-api…, rozliczany jako kredyty API). Zostaw puste, aby użyć tego z AI Workspace Runtime, lub przy edycji, aby zachować zapisany. [Pobierz klucz API]({api_key_url})"
               }
             }
           }
@@ -528,6 +563,35 @@
               }
             }
           }
+        },
+        "claude_login": {
+          "title": "Zaloguj się planem Claude",
+          "description": "1. Otwórz ten link i zaloguj się kontem Claude z planem Pro lub Max: [Zaloguj się w Claude]({url})\n2. Anthropic pokaże potem kod. Skopiuj go w całości i wklej poniżej.\n\nLink działa 15 minut. Twoje hasło Claude nigdy nie przechodzi przez Home Assistant.",
+          "data": {
+            "code": "Kod od Anthropic"
+          },
+          "data_description": {
+            "code": "Długi ciąg znaków z # w środku. Wklej go bez zmian."
+          }
+        },
+        "claude_account": {
+          "title": "Konto Claude",
+          "description": "{status}\n\nLogowanie jest przechowywane w AI Workspace Runtime, nie w Home Assistant, i korzysta z niego każdy agent Claude SDK w tym Runtime.",
+          "menu_options": {
+            "claude_use_runtime": "Użyj istniejącego dostępu Runtime",
+            "claude_save": "Zapisz agenta",
+            "claude_login": "Zaloguj się planem Claude",
+            "claude_logout": "Wyloguj w Runtime",
+            "claude_back": "Wróć do ustawień agenta"
+          }
+        },
+        "claude_signed_in": {
+          "title": "Zalogowano",
+          "description": "{status}\n\nZatwierdź, aby zapisać agenta."
+        },
+        "claude_login_error": {
+          "title": "Logowanie nie powiodło się",
+          "description": "Zatwierdź, aby wrócić."
         }
       },
       "abort": {

@@ -77,13 +77,15 @@
               "house_map": "配置目录",
               "shorten_mcp_results": "缩短过长的 Home Assistant 回复",
               "change_history": "更改历史",
-              "change_history_ttl_days": "可回滚期限"
+              "change_history_ttl_days": "可回滚期限",
+              "approval_timeout_minutes": "审批等待时间"
             },
             "data_description": {
               "house_map": "默认关闭。一个关于自动化、实体和区域如何关联的本地索引，一次查询就能回答“哪些东西用到了厨房灯？”这类问题。每条消息会稍微增加一点内容，所以只有经常询问东西如何关联时才开启。实时状态仍来自 Home Assistant。",
               "shorten_mcp_results": "默认开启。Home Assistant 的超长回复在发送给 AI 前会被缩小：大型实体列表会被压缩，回复中的超长文本（例如巨大的通知）会被缩短，仍超过 100,000 个字符的部分会被截断。节省令牌并保持回复迅速。关闭则发送完整文本。",
               "change_history": "默认开启。记录助手所做的每一项配置更改，方便你查看改了什么，并让它恢复到之前的版本。关闭后不再新增记录；助手仍可进行更改。",
-              "change_history_ttl_days": "Rollback 和“让助手撤销”保持可用的天数。到期后记录仍在日志中；恢复旧快照可能覆盖之后的改动。默认 7。1 大约是一天。"
+              "change_history_ttl_days": "Rollback 和“让助手撤销”保持可用的天数。到期后记录仍在日志中；恢复旧快照可能覆盖之后的改动。默认 7。1 大约是一天。",
+              "approval_timeout_minutes": "MCP 工具的提问在聊天中等待你回答的分钟数，例如 worker 想在服务器上运行命令时。超时后取消。默认 10。"
             }
           },
           "prompt": {
@@ -103,7 +105,7 @@
       }
     },
     "error": {
-      "no_runtime": "无法连接 Cursor runtime。请先启动它，并检查此表单上的地址。",
+      "no_runtime": "无法连接 AI Workspace Runtime。请先启动它，并检查此表单上的地址。",
       "required": "此字段为必填。",
       "invalid_auth": "提供商拒绝了此 API 密钥。",
       "cannot_connect": "无法连接提供商。请检查 URL 和网络。"
@@ -190,13 +192,15 @@
               "house_map": "配置目录",
               "shorten_mcp_results": "缩短过长的 Home Assistant 回复",
               "change_history": "更改历史",
-              "change_history_ttl_days": "可回滚期限"
+              "change_history_ttl_days": "可回滚期限",
+              "approval_timeout_minutes": "审批等待时间"
             },
             "data_description": {
               "house_map": "默认关闭。一个关于自动化、实体和区域如何关联的本地索引，一次查询就能回答“哪些东西用到了厨房灯？”这类问题。每条消息会稍微增加一点内容，所以只有经常询问东西如何关联时才开启。实时状态仍来自 Home Assistant。",
               "shorten_mcp_results": "默认开启。Home Assistant 的超长回复在发送给 AI 前会被缩小：大型实体列表会被压缩，回复中的超长文本（例如巨大的通知）会被缩短，仍超过 100,000 个字符的部分会被截断。节省令牌并保持回复迅速。关闭则发送完整文本。",
               "change_history": "默认开启。记录助手所做的每一项配置更改，方便你查看改了什么，并让它恢复到之前的版本。关闭后不再新增记录；助手仍可进行更改。",
-              "change_history_ttl_days": "Rollback 和“让助手撤销”保持可用的天数。到期后记录仍在日志中；恢复旧快照可能覆盖之后的改动。默认 7。1 大约是一天。"
+              "change_history_ttl_days": "Rollback 和“让助手撤销”保持可用的天数。到期后记录仍在日志中；恢复旧快照可能覆盖之后的改动。默认 7。1 大约是一天。",
+              "approval_timeout_minutes": "MCP 工具的提问在聊天中等待你回答的分钟数，例如 worker 想在服务器上运行命令时。超时后取消。默认 10。"
             }
           },
           "prompt": {
@@ -216,7 +220,7 @@
       }
     },
     "error": {
-      "no_runtime": "无法连接 Cursor runtime。请先启动它，并检查此表单上的地址。",
+      "no_runtime": "无法连接 AI Workspace Runtime。请先启动它，并检查此表单上的地址。",
       "required": "此字段为必填。",
       "invalid_auth": "提供商拒绝了此 API 密钥。",
       "cannot_connect": "无法连接提供商。请检查 URL 和网络。"
@@ -282,13 +286,28 @@
       },
       "entry_type": "智能体",
       "error": {
-        "no_runtime": "无法连接 Cursor runtime。请先启动它，并检查此表单上的地址。",
+        "no_runtime": "无法连接 AI Workspace Runtime。请先启动它，并检查此表单上的地址。",
         "required": "此字段为必填。",
         "invalid_auth": "提供商拒绝了此 API 密钥。",
         "cannot_connect": "无法连接提供商。请检查 URL 和网络。",
         "model_not_installed": "此模型未在 Ollama 中安装。已安装：{installed}",
         "pick_model": "服务器现已列出其模型。请从列表中选择一个。",
-        "model_rejected": "服务器不允许此密钥使用该模型：{server_message}"
+        "model_rejected": "服务器不允许此密钥使用该模型：{server_message}",
+        "claude_runtime_old": "请将 AI Workspace Runtime 更新到 1.6.0 或更高版本以使用 Claude SDK 智能体。",
+        "claude_key_required": "请在 Claude SDK（Runtime）中填写 Claude Plan 令牌或 Anthropic API 密钥，或在 AI Workspace Runtime 上设置一个。",
+        "runtime_refused": "AI Workspace Runtime 拒绝了 Runtime 密码。请在此表单中检查。",
+        "bad_code": "这看起来不像 Anthropic 页面上的代码。请完整复制代码后重新粘贴。",
+        "code_rejected": "Anthropic 未接受该代码。这是新链接：请重新登录并粘贴新代码。",
+        "too_many_attempts": "错误代码太多。这是新链接。",
+        "busy": "运行时仍在检查上一个代码。请稍候再试。",
+        "expired": "此次登录已过期。这是新链接。",
+        "timeout": "运行时没有及时收到 Anthropic 的回复。这是新链接，请重试。",
+        "cli_missing": "AI Workspace Runtime 没有 Claude Code CLI。请更新运行时（App 或 Docker 镜像）。",
+        "no_link": "Claude Code 没有显示登录链接。请确认运行时能访问 claude.com，然后重试。",
+        "login_failed": "运行时上的登录失败。请查看运行时日志后重试。",
+        "not_supported": "此引擎不支持订阅登录。请使用 API 密钥。",
+        "runtime_rejected": "AI Workspace Runtime 拒绝了运行时密码。请在运行时和此表单中设置相同的密码。",
+        "runtime_old": "此运行时尚不支持登录。请更新 AI Workspace Runtime，或在代理表单中粘贴令牌。"
       },
       "step": {
         "provider": {
@@ -298,14 +317,14 @@
             "api_provider": "提供商"
           },
           "data_description": {
-            "api_provider": "Cursor，或云端或本地模型。"
+            "api_provider": "Cursor，或云端/本地模型。要在 AI Workspace Runtime 上使用 Claude SDK，请选择 Claude (Anthropic) 并打开其 Runtime 开关。"
           }
         },
         "provider_cursor": {
           "title": "Cursor",
           "description": "Cursor 地址、API 密钥、模型和回复速度。",
           "data": {
-            "runtime_url": "Cursor runtime 地址{runtime_url_mark}",
+            "runtime_url": "Runtime 地址{runtime_url_mark}",
             "runtime_token": "Runtime 密码",
             "cursor_api_key": "Cursor API 密钥",
             "model": "模型",
@@ -315,8 +334,8 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "与 Cursor runtime 上相同的密码。使用带自动配对的附加组件时请留空。",
-            "cursor_api_key": "来自你的 Cursor 账户（Integrations）。编辑时留空可保留已保存的密钥。 [获取 API 密钥]({api_key_url})",
+            "runtime_token": "与 AI Workspace Runtime 上相同的密码。使用带自动配对的附加组件时请留空。",
+            "cursor_api_key": "来自你的 Cursor 账户（Integrations）。编辑时留空可保留已保存的密钥。 [获取 API 密钥]({api_key_url}) {cursor_key_note}",
             "model": "从列表中选择或输入模型名称。留空则使用 Composer。",
             "effort": "允许多长的思考时间。Composer 默认使用快速。",
             "allow_internet": "默认关闭。开启后，此智能体可在管理员对话中使用 Cursor 的网页搜索、网页抓取和 Shell。关闭会移除这三项，因此 curl 或脚本也无法访问网络。普通用户的对话和语音卫星永远不会获得这些工具。",
@@ -388,11 +407,27 @@
               "name": "高级",
               "data": {
                 "save_tokens": "节省令牌",
-                "cache_1h": "缓存保留一小时"
+                "cache_1h": "缓存保留一小时",
+                "use_claude_runtime": "使用 Claude SDK（Runtime）（实验性）"
               },
               "data_description": {
                 "save_tokens": "每条消息发送更少内容：更短的提示词、更少的聊天记录和更短的回复。更便宜，但关于你家的回答可能不够详尽。",
-                "cache_1h": "仅限 Claude。系统提示和工具在缓存中保留一小时，而不是 5 分钟。写入缓存的费用是输入价格的 2 倍（而不是 1.25 倍），读取为 0.1 倍。如果你的消息之间常隔 5 分钟以上会更便宜；很少聊天时会稍贵一些。"
+                "cache_1h": "仅限 Claude。系统提示和工具在缓存中保留一小时，而不是 5 分钟。写入缓存的费用是输入价格的 2 倍（而不是 1.25 倍），读取为 0.1 倍。如果你的消息之间常隔 5 分钟以上会更便宜；很少聊天时会稍贵一些。",
+                "use_claude_runtime": "聊天通过 AI Workspace Runtime 上的 Claude Code 进行，而不是 Anthropic 云 API，使用你的 Claude 订阅（Pro、Max）或 Anthropic API 密钥。更改后按确定：表单会显示对应的字段，此时尚未保存。"
+              }
+            },
+            "claude_runtime": {
+              "name": "Claude SDK（Runtime）",
+              "description": "模型留空时使用 Runtime 的 Claude 模型（未设置时为 Claude Sonnet）。",
+              "data": {
+                "runtime_url": "Runtime 地址{runtime_url_mark}",
+                "runtime_token": "Runtime 密码",
+                "claude_api_key": "Claude Plan 令牌或 Anthropic API 密钥"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "与 AI Workspace Runtime 上相同的密码。使用带自动配对的附加组件时请留空。",
+                "claude_api_key": "Claude Plan 令牌（sk-ant-oat…，由 `claude setup-token` 生成，使用你的 Claude 订阅）或 Anthropic API 密钥（sk-ant-api…，按 API 额度计费）。留空则使用 AI Workspace Runtime 上设置的值；编辑时留空可保留已保存的值。 [获取 API 密钥]({api_key_url})"
               }
             }
           }
@@ -528,6 +563,35 @@
               }
             }
           }
+        },
+        "claude_login": {
+          "title": "使用 Claude 订阅登录",
+          "description": "1. 打开此链接，用拥有 Pro 或 Max 订阅的 Claude 账户登录：[使用 Claude 登录]({url})\n2. 随后 Anthropic 会显示一个代码。完整复制并粘贴到下方。\n\n链接 15 分钟内有效。你的 Claude 密码不会经过 Home Assistant。",
+          "data": {
+            "code": "Anthropic 代码"
+          },
+          "data_description": {
+            "code": "中间带 # 的长字符串。原样粘贴。"
+          }
+        },
+        "claude_account": {
+          "title": "Claude 账户",
+          "description": "{status}\n\n登录信息保存在 AI Workspace Runtime 上，而不是 Home Assistant 中，该运行时上的所有 Claude SDK 代理都会使用它。",
+          "menu_options": {
+            "claude_use_runtime": "使用 Runtime 现有的访问权限",
+            "claude_save": "保存代理",
+            "claude_login": "使用 Claude 订阅登录",
+            "claude_logout": "在运行时上退出登录",
+            "claude_back": "返回代理设置"
+          }
+        },
+        "claude_signed_in": {
+          "title": "已登录",
+          "description": "{status}\n\n提交以保存代理。"
+        },
+        "claude_login_error": {
+          "title": "登录未成功",
+          "description": "提交以返回。"
         }
       },
       "abort": {

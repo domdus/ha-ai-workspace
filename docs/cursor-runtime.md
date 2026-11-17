@@ -1,4 +1,4 @@
-# Cursor runtime in Docker
+# AI Workspace Runtime in Docker
 
 These are extras for [Option B](../README.md#option-b-home-assistant-container-docker) (Home Assistant Container). The basic setup with `network_mode: host` needs none of this. The Home Assistant OS app handles network and token for you.
 
@@ -20,12 +20,12 @@ Inside a bridge container, `127.0.0.1` is the container itself, not Home Assista
 ```
 
 - `127.0.0.1:8090:8090` publishes port **8090** only on this machine, not on your network.
-- `RUNTIME_TOKEN` is required here. A runtime that listens on more than loopback refuses chats until a token is set, so nobody else on the network can use your Cursor key. Put the same value in **Cursor agent → Runtime token** ([Runtime token](../README.md#runtime-token)).
-- If Home Assistant is another container on the same bridge, set the agent's **Cursor runtime address** to `http://cursor-sdk:8090`.
+- `RUNTIME_TOKEN` is required here. A runtime that listens on more than loopback refuses chats until a token is set, so nobody else on the network can use your keys. Put the same value in **Runtime token** on the Cursor or Claude SDK agent ([Runtime token](../README.md#runtime-token)).
+- If Home Assistant is another container on the same bridge, set the agent's **Runtime address** to `http://ai-workspace-runtime:8090`.
 
 ## Files on disk
 
-Why: Cursor agents can read and write files. That is useful for notes, scripts, or a project you want the assistant to work on next to the chat. Your automations and dashboards are **not** edited this way; those changes always go through MCP.
+Why: Cursor and Claude SDK agents can read and write files in the shared workspace. That is useful for notes, scripts, or a project you want the assistant to work on next to the chat. Your automations and dashboards are **not** edited this way; those changes always go through MCP.
 
 The agent works in `WORKSPACE_DIR` (default `/data/workspace`, inside the `ai-workspace-data` volume). Whatever it writes there survives restarts. On the first start the runtime adds two instruction files, `AGENTS.md` and `.cursor/rules/home-assistant.mdc`, only if they are missing. It never overwrites your own files.
 

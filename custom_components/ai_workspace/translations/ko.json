@@ -77,13 +77,15 @@
               "house_map": "구성 카탈로그",
               "shorten_mcp_results": "긴 Home Assistant 답변 줄이기",
               "change_history": "변경 기록",
-              "change_history_ttl_days": "롤백 기간"
+              "change_history_ttl_days": "롤백 기간",
+              "approval_timeout_minutes": "승인 대기 시간"
             },
             "data_description": {
               "house_map": "기본값은 꺼짐입니다. 자동화, 엔터티, 영역이 어떻게 연결되어 있는지 담은 로컬 색인으로, 한 번의 조회로 “주방 조명을 사용하는 것은 무엇인가요?” 같은 질문에 답합니다. 모든 메시지에 조금씩 더해지므로 연결 관계를 자주 묻는 경우에만 켜세요. 실시간 상태는 계속 Home Assistant에서 가져옵니다.",
               "shorten_mcp_results": "기본값은 켜짐입니다. Home Assistant의 매우 긴 응답은 AI로 보내기 전에 줄어듭니다. 큰 엔터티 목록은 간결해지고, 응답 안의 매우 긴 텍스트(예: 거대한 알림)는 짧아지며, 그래도 100,000자를 넘는 부분은 잘립니다. 토큰을 아끼고 응답을 빠르게 유지합니다. 끄면 전체 텍스트를 보냅니다.",
               "change_history": "기본값은 켜짐입니다. 어시스턴트가 만든 모든 구성 변경을 기록해, 무엇이 바뀌었는지 보고 이전 버전으로 복원해 달라고 요청할 수 있습니다. 끄면 새 항목이 추가되지 않지만 어시스턴트는 계속 변경할 수 있습니다.",
-              "change_history_ttl_days": "롤백과 에이전트로 되돌리기가 남아 있는 일수입니다. 그 이후에도 기록은 남지만, 오래된 스냅샷을 되돌리면 나중 작업이 덮일 수 있습니다. 기본값 7. 1은 약 하루입니다."
+              "change_history_ttl_days": "롤백과 에이전트로 되돌리기가 남아 있는 일수입니다. 그 이후에도 기록은 남지만, 오래된 스냅샷을 되돌리면 나중 작업이 덮일 수 있습니다. 기본값 7. 1은 약 하루입니다.",
+              "approval_timeout_minutes": "MCP 도구의 질문이 채팅에서 답을 기다리는 시간(분)입니다. 예: 워커가 서버에서 명령을 실행하려는 경우. 그 후에는 취소됩니다. 기본값 10."
             }
           },
           "prompt": {
@@ -103,7 +105,7 @@
       }
     },
     "error": {
-      "no_runtime": "Cursor 런타임에 연결할 수 없습니다. 런타임을 시작한 뒤 이 양식의 주소를 확인하세요.",
+      "no_runtime": "AI Workspace Runtime에 연결할 수 없습니다. 런타임을 시작한 뒤 이 양식의 주소를 확인하세요.",
       "required": "이 필드는 필수입니다.",
       "invalid_auth": "제공자가 이 API 키를 거부했습니다.",
       "cannot_connect": "제공자에 연결할 수 없습니다. URL과 네트워크를 확인하세요."
@@ -190,13 +192,15 @@
               "house_map": "구성 카탈로그",
               "shorten_mcp_results": "긴 Home Assistant 답변 줄이기",
               "change_history": "변경 기록",
-              "change_history_ttl_days": "롤백 기간"
+              "change_history_ttl_days": "롤백 기간",
+              "approval_timeout_minutes": "승인 대기 시간"
             },
             "data_description": {
               "house_map": "기본값은 꺼짐입니다. 자동화, 엔터티, 영역이 어떻게 연결되어 있는지 담은 로컬 색인으로, 한 번의 조회로 “주방 조명을 사용하는 것은 무엇인가요?” 같은 질문에 답합니다. 모든 메시지에 조금씩 더해지므로 연결 관계를 자주 묻는 경우에만 켜세요. 실시간 상태는 계속 Home Assistant에서 가져옵니다.",
               "shorten_mcp_results": "기본값은 켜짐입니다. Home Assistant의 매우 긴 응답은 AI로 보내기 전에 줄어듭니다. 큰 엔터티 목록은 간결해지고, 응답 안의 매우 긴 텍스트(예: 거대한 알림)는 짧아지며, 그래도 100,000자를 넘는 부분은 잘립니다. 토큰을 아끼고 응답을 빠르게 유지합니다. 끄면 전체 텍스트를 보냅니다.",
               "change_history": "기본값은 켜짐입니다. 어시스턴트가 만든 모든 구성 변경을 기록해, 무엇이 바뀌었는지 보고 이전 버전으로 복원해 달라고 요청할 수 있습니다. 끄면 새 항목이 추가되지 않지만 어시스턴트는 계속 변경할 수 있습니다.",
-              "change_history_ttl_days": "롤백과 에이전트로 되돌리기가 남아 있는 일수입니다. 그 이후에도 기록은 남지만, 오래된 스냅샷을 되돌리면 나중 작업이 덮일 수 있습니다. 기본값 7. 1은 약 하루입니다."
+              "change_history_ttl_days": "롤백과 에이전트로 되돌리기가 남아 있는 일수입니다. 그 이후에도 기록은 남지만, 오래된 스냅샷을 되돌리면 나중 작업이 덮일 수 있습니다. 기본값 7. 1은 약 하루입니다.",
+              "approval_timeout_minutes": "MCP 도구의 질문이 채팅에서 답을 기다리는 시간(분)입니다. 예: 워커가 서버에서 명령을 실행하려는 경우. 그 후에는 취소됩니다. 기본값 10."
             }
           },
           "prompt": {
@@ -216,7 +220,7 @@
       }
     },
     "error": {
-      "no_runtime": "Cursor 런타임에 연결할 수 없습니다. 런타임을 시작한 뒤 이 양식의 주소를 확인하세요.",
+      "no_runtime": "AI Workspace Runtime에 연결할 수 없습니다. 런타임을 시작한 뒤 이 양식의 주소를 확인하세요.",
       "required": "이 필드는 필수입니다.",
       "invalid_auth": "제공자가 이 API 키를 거부했습니다.",
       "cannot_connect": "제공자에 연결할 수 없습니다. URL과 네트워크를 확인하세요."
@@ -282,13 +286,28 @@
       },
       "entry_type": "에이전트",
       "error": {
-        "no_runtime": "Cursor 런타임에 연결할 수 없습니다. 런타임을 시작한 뒤 이 양식의 주소를 확인하세요.",
+        "no_runtime": "AI Workspace Runtime에 연결할 수 없습니다. 런타임을 시작한 뒤 이 양식의 주소를 확인하세요.",
         "required": "이 필드는 필수입니다.",
         "invalid_auth": "제공자가 이 API 키를 거부했습니다.",
         "cannot_connect": "제공자에 연결할 수 없습니다. URL과 네트워크를 확인하세요.",
         "model_not_installed": "이 모델은 Ollama에 설치되어 있지 않습니다. 설치된 모델: {installed}",
         "pick_model": "이제 서버가 모델 목록을 제공합니다. 목록에서 하나를 고르세요.",
-        "model_rejected": "서버가 이 키에 이 모델을 허용하지 않습니다: {server_message}"
+        "model_rejected": "서버가 이 키에 이 모델을 허용하지 않습니다: {server_message}",
+        "claude_runtime_old": "Claude SDK 에이전트를 쓰려면 AI Workspace Runtime을 1.6.0 이상으로 업데이트하세요.",
+        "claude_key_required": "Claude SDK(런타임)에 Claude Plan 토큰 또는 Anthropic API 키를 넣거나, AI Workspace Runtime에 설정하세요.",
+        "runtime_refused": "AI Workspace Runtime이 Runtime 비밀번호를 거부했습니다. 이 양식에서 확인하세요.",
+        "bad_code": "Anthropic 페이지의 코드가 아닌 것 같습니다. 코드 전체를 복사해 다시 붙여 넣으세요.",
+        "code_rejected": "Anthropic이 코드를 받아들이지 않았습니다. 새 링크입니다: 다시 로그인하고 새 코드를 붙여 넣으세요.",
+        "too_many_attempts": "잘못된 코드가 너무 많습니다. 새 링크입니다.",
+        "busy": "런타임이 아직 이전 코드를 확인하고 있습니다. 잠시 후 다시 시도하세요.",
+        "expired": "로그인 시간이 지났습니다. 새 링크입니다.",
+        "timeout": "런타임이 제시간에 Anthropic의 응답을 받지 못했습니다. 새 링크입니다. 다시 시도하세요.",
+        "cli_missing": "AI Workspace Runtime에 Claude Code CLI가 없습니다. 런타임(App 또는 Docker 이미지)을 업데이트하세요.",
+        "no_link": "Claude Code가 로그인 링크를 보여 주지 않았습니다. 런타임이 claude.com에 연결되는지 확인하고 다시 시도하세요.",
+        "login_failed": "런타임에서 로그인에 실패했습니다. 런타임 로그를 확인하고 다시 시도하세요.",
+        "not_supported": "이 엔진은 요금제 로그인이 없습니다. API 키를 사용하세요.",
+        "runtime_rejected": "AI Workspace Runtime이 런타임 비밀번호를 거부했습니다. 런타임과 이 양식에 같은 비밀번호를 설정하세요.",
+        "runtime_old": "이 런타임은 아직 로그인을 지원하지 않습니다. AI Workspace Runtime을 업데이트하거나 에이전트 양식에 토큰을 붙여 넣으세요."
       },
       "step": {
         "provider": {
@@ -298,14 +317,14 @@
             "api_provider": "제공자"
           },
           "data_description": {
-            "api_provider": "Cursor, 또는 클라우드나 로컬 모델입니다."
+            "api_provider": "Cursor 또는 클라우드/로컬 모델입니다. AI Workspace Runtime의 Claude SDK를 쓰려면 Claude (Anthropic)를 고르고 런타임 스위치를 켜세요."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
           "description": "Cursor 주소, API 키, 모델, 응답 속도입니다.",
           "data": {
-            "runtime_url": "Cursor 런타임 주소{runtime_url_mark}",
+            "runtime_url": "런타임 주소{runtime_url_mark}",
             "runtime_token": "런타임 비밀번호",
             "cursor_api_key": "Cursor API 키",
             "model": "모델",
@@ -315,8 +334,8 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Cursor 런타임과 같은 비밀번호입니다. 자동 페어링 애드온을 쓰면 비워 두세요.",
-            "cursor_api_key": "Cursor 계정(Integrations)에서 가져옵니다. 수정 시 비워 두면 저장된 키를 유지합니다. [API 키 받기]({api_key_url})",
+            "runtime_token": "AI Workspace Runtime과 같은 비밀번호입니다. 자동 페어링 애드온을 쓰면 비워 두세요.",
+            "cursor_api_key": "Cursor 계정(Integrations)에서 가져옵니다. 수정 시 비워 두면 저장된 키를 유지합니다. [API 키 받기]({api_key_url}) {cursor_key_note}",
             "model": "목록에서 고르거나 모델 이름을 입력하세요. 비우면 Composer를 사용합니다.",
             "effort": "생각할 시간을 얼마나 줄지 정합니다. Composer 기본값은 빠름입니다.",
             "allow_internet": "기본값은 꺼짐입니다. 켜면 이 에이전트가 관리자 채팅에서 Cursor의 웹 검색, 페이지 가져오기, 셸을 사용할 수 있습니다. 끄면 세 가지가 모두 제거되어 curl이나 스크립트로도 웹에 접근할 수 없습니다. 일반 사용자 채팅과 음성 위성은 이를 받지 않습니다.",
@@ -388,11 +407,27 @@
               "name": "고급",
               "data": {
                 "save_tokens": "토큰 절약",
-                "cache_1h": "캐시를 1시간 유지"
+                "cache_1h": "캐시를 1시간 유지",
+                "use_claude_runtime": "Claude SDK(런타임) 사용 (실험적)"
               },
               "data_description": {
                 "save_tokens": "메시지마다 더 적게 보냅니다: 더 짧은 프롬프트, 더 적은 대화 기록, 더 짧은 답변. 비용은 줄지만 집에 대한 답변이 덜 자세할 수 있습니다.",
-                "cache_1h": "Claude 전용. 시스템 프롬프트와 도구를 5분 대신 1시간 동안 캐시에 둡니다. 캐시 쓰기는 입력 가격의 1.25배 대신 2배, 읽기는 0.1배입니다. 메시지 사이에 5분 넘게 쉬는 일이 많으면 더 저렴하고, 채팅을 드물게 하면 조금 더 비쌉니다."
+                "cache_1h": "Claude 전용. 시스템 프롬프트와 도구를 5분 대신 1시간 동안 캐시에 둡니다. 캐시 쓰기는 입력 가격의 1.25배 대신 2배, 읽기는 0.1배입니다. 메시지 사이에 5분 넘게 쉬는 일이 많으면 더 저렴하고, 채팅을 드물게 하면 조금 더 비쌉니다.",
+                "use_claude_runtime": "채팅이 Anthropic 클라우드 API 대신 AI Workspace Runtime의 Claude Code를 거치며, Claude 구독(Pro, Max) 또는 Anthropic API 키를 사용합니다. 바꾼 뒤 확인을 누르면 해당하는 필드가 표시되며, 아직 저장되지는 않습니다."
+              }
+            },
+            "claude_runtime": {
+              "name": "Claude SDK(런타임)",
+              "description": "모델을 비워 두면 Runtime의 Claude 모델(설정하지 않으면 Claude Sonnet)을 사용합니다.",
+              "data": {
+                "runtime_url": "런타임 주소{runtime_url_mark}",
+                "runtime_token": "런타임 비밀번호",
+                "claude_api_key": "Claude Plan 토큰 또는 Anthropic API 키"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "AI Workspace Runtime과 같은 비밀번호입니다. 자동 페어링 애드온을 쓰면 비워 두세요.",
+                "claude_api_key": "Claude Plan 토큰(sk-ant-oat…, `claude setup-token`으로 생성, Claude 구독 사용) 또는 Anthropic API 키(sk-ant-api…, API 크레딧으로 청구)입니다. 비워 두면 AI Workspace Runtime에 설정된 값을 쓰고, 수정 시 비워 두면 저장된 값을 유지합니다. [API 키 받기]({api_key_url})"
               }
             }
           }
@@ -528,6 +563,35 @@
               }
             }
           }
+        },
+        "claude_login": {
+          "title": "Claude 요금제로 로그인",
+          "description": "1. 이 링크를 열고 Pro 또는 Max 요금제가 있는 Claude 계정으로 로그인하세요: [Claude로 로그인]({url})\n2. 그러면 Anthropic이 코드를 보여 줍니다. 전체를 복사해 아래에 붙여 넣으세요.\n\n링크는 15분 동안 유효합니다. Claude 비밀번호는 Home Assistant를 거치지 않습니다.",
+          "data": {
+            "code": "Anthropic 코드"
+          },
+          "data_description": {
+            "code": "가운데에 #이 있는 긴 문자열입니다. 그대로 붙여 넣으세요."
+          }
+        },
+        "claude_account": {
+          "title": "Claude 계정",
+          "description": "{status}\n\n로그인 정보는 Home Assistant가 아니라 AI Workspace Runtime에 저장되며, 해당 런타임의 모든 Claude SDK 에이전트가 사용합니다.",
+          "menu_options": {
+            "claude_use_runtime": "런타임의 기존 접근 사용",
+            "claude_save": "에이전트 저장",
+            "claude_login": "Claude 요금제로 로그인",
+            "claude_logout": "런타임에서 로그아웃",
+            "claude_back": "에이전트 설정으로 돌아가기"
+          }
+        },
+        "claude_signed_in": {
+          "title": "로그인됨",
+          "description": "{status}\n\n제출하면 에이전트를 저장합니다."
+        },
+        "claude_login_error": {
+          "title": "로그인하지 못했습니다",
+          "description": "제출하면 돌아갑니다."
         }
       },
       "abort": {

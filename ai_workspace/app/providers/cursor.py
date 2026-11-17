@@ -31,6 +31,10 @@ _MISSING_KEY = (
 # After this pause the saved Cursor thread is often empty, so open a new agent.
 # The HA transcript is still pasted on every turn, including a quick follow-up.
 _IDLE_RESTORE = 120.0
+# Save tokens keeps a warm Cursor agent for this many turns, then starts a new one with the HA handoff.
+# Cursor reports usage per run, summed over all model calls (often several 100k tokens for one turn),
+# so unlike Claude the context size cannot be measured and turns are counted instead.
+KEEP_TURNS = 4
 
 # A new agent with MCP servers connects to them right after its run starts. When nothing
 # reaches the proxy in this time, the bridge is stuck (agents then only see mcp_auth):
@@ -51,8 +55,13 @@ class CursorRuntime:
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
+        from app.plan_quota import PlanQuotaBook
+
+        self.plan_quota = PlanQuotaBook(settings.data_dir / "plan_quota.json")
         self._client: Any = None
         self._agents: dict[str, Any] = {}
+        # Turns each warm agent has run, for Save tokens.
+        self._turns: dict[str, int] = {}
         self._mcp_by_session: dict[str, str] = {}
         self._used_at: dict[str, float] = {}
         self._with_tools: set[str] = set()
@@ -138,9 +147,10 @@ class CursorRuntime:
         fingerprint = config_key or _agent_fingerprint(mcp_servers, resolved_model, effort, key_tag, tools, blocked)
         cached = self._agents.get(session.id)
         previous = self._mcp_by_session.get(session.id)
-        cold = self._cold(session) or fresh
+        cold = self._cold(session) or (fresh and self._turns.get(session.id, 0) >= KEEP_TURNS)
         if cached is not None and previous == fingerprint and not cold:
             self._touch(session.id)
+            self._turns[session.id] = self._turns.get(session.id, 0) + 1
             logger.info("reuse agent session=%s", session.id)
             return cached, False
         if cached is not None:
@@ -161,7 +171,8 @@ class CursorRuntime:
         )
         agent = None
         # A cold cloud thread often comes back empty. Start a new agent and let the HA transcript resume the chat.
-        resume_id = None if cold else (session.agent_id if previous in (None, fingerprint) else None)
+        # Save tokens keeps only the warm agent above: a stored thread may be any size.
+        resume_id = None if cold or fresh else (session.agent_id if previous in (None, fingerprint) else None)
         if resume_id:
             try:
                 logger.info("resume agent session=%s agent=%s", session.id, resume_id)
@@ -175,6 +186,7 @@ class CursorRuntime:
         self._agents[session.id] = agent
         self._mcp_by_session[session.id] = fingerprint
         self._touch(session.id)
+        self._turns[session.id] = 1
         if mcp_servers:
             self._with_tools.add(session.id)
         else:
@@ -208,6 +220,7 @@ class CursorRuntime:
 
     def drop(self, session_id: str) -> None:
         self._agents.pop(session_id, None)
+        self._turns.pop(session_id, None)
         self._mcp_by_session.pop(session_id, None)
         self._used_at.pop(session_id, None)
         self._with_tools.discard(session_id)
@@ -367,12 +380,14 @@ class CursorProvider:
         )
         self.runtime.run_started()
         try:
-            async for event in _iter_messages(run):
+            async for event in _iter_messages(run, self.runtime):
                 if stalled["flag"]:
                     break
                 if event.get("type") == "error" and not stream_error:
                     stream_error = str(event.get("message") or "")
                 yield event
+                for worker in _take_worker_usage(self.runtime, session.id):
+                    yield worker
             result = None if stalled["flag"] else await run.wait()
             if result is not None:
                 logger.info(
@@ -393,6 +408,9 @@ class CursorProvider:
             self.runtime.run_ended()
             if watchdog is not None:
                 watchdog.cancel()
+        # Worker jobs that finished after the last streamed message still count.
+        for worker in _take_worker_usage(self.runtime, session.id):
+            yield worker
         if stalled["flag"]:
             self.runtime.forget(session)
             on_agent_id("")
@@ -747,6 +765,18 @@ async def _cursor_usage(agent: Any, result: Any, run_id: str, model: str) -> dic
     return event
 
 
+def _take_worker_usage(runtime: Any, session_id: str) -> list[dict[str, Any]]:
+    """Usage events of worker jobs this chat's agent finished over the MCP proxy."""
+    take = getattr(getattr(runtime, "proxy", None), "take_worker_usage", None)
+    if not callable(take):
+        return []
+    try:
+        return list(take(session_id) or [])
+    except Exception:
+        logger.debug("worker usage not taken session=%s", session_id, exc_info=True)
+        return []
+
+
 def _request_id(result: Any) -> str:
     for name in ("request_id", "requestId"):
         value = getattr(result, name, None)
@@ -801,8 +831,13 @@ async def _watch_mcp_connect(runtime: Any, session_id: str, run: Any, started: f
         logger.debug("cancelling the stalled run failed", exc_info=True)
 
 
-async def _iter_messages(run: Any) -> AsyncIterator[dict]:
+async def _iter_messages(run: Any, runtime: CursorRuntime | None = None) -> AsyncIterator[dict]:
+    from app.plan_quota import plan_events_from_sdk
+
     async for sdk_message in run.messages():
+        if runtime is not None:
+            for notice in plan_events_from_sdk(runtime.plan_quota, "cursor", sdk_message):
+                yield notice
         for event in map_sdk_message(sdk_message):
             yield event
 
@@ -856,16 +891,20 @@ def _public_error(exc: Exception, api_key: str) -> str:
 def build_providers(settings: Settings, runtime: CursorRuntime) -> dict:
     from app.providers.unavailable import UnavailableProvider
 
+    import importlib.util
+
+    if importlib.util.find_spec("claude_agent_sdk") is not None:
+        from app.providers.claude import ClaudeProvider
+
+        claude = ClaudeProvider(settings, runtime)
+    else:
+        from app.providers.claude import NOT_INSTALLED
+
+        claude = UnavailableProvider(ProviderInfo("claude", "Claude", False, NOT_INSTALLED))
+
     return {
         "cursor": CursorProvider(settings, runtime),
-        "claude": UnavailableProvider(
-            ProviderInfo(
-                "claude",
-                "Claude",
-                False,
-                "Claude uses the Claude Agent SDK in a later adapter. The chat shell is the same.",
-            )
-        ),
+        "claude": claude,
         "openai": UnavailableProvider(
             ProviderInfo(
                 "openai",

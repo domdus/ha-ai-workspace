@@ -1,7 +1,7 @@
 configuration:
   cursor_api_key:
     name: Cursor-API-Schlüssel
-    description: User-API-Schlüssel aus dem Cursor Dashboard → Integrations
+    description: Optional. User-API-Schlüssel aus dem Cursor Dashboard → Integrations, für Cursor-Agents. Leer lassen, wenn du nur Claude nutzt; Claude-Agents melden sich am Agenten in Home Assistant an.
   model:
     name: Modell
     description: Standard-Modell von Cursor, zum Beispiel composer-2.5. Das HACS-Formular kann es überschreiben.

@@ -77,13 +77,15 @@
               "house_map": "Katalog konfigurace",
               "shorten_mcp_results": "Zkrátit dlouhé odpovědi Home Assistant",
               "change_history": "Historie změn",
-              "change_history_ttl_days": "Rollback po"
+              "change_history_ttl_days": "Rollback po",
+              "approval_timeout_minutes": "Čekání na schválení"
             },
             "data_description": {
               "house_map": "Ve výchozím stavu vypnuto. Místní index propojení automatizací, entit a oblastí, takže jedno vyhledání odpoví na otázky jako „co používá světlo v kuchyni?“. Ke každé zprávě trochu přidá, proto ho zapněte, jen pokud se často ptáte, jak jsou věci propojené. Živé stavy dál přicházejí z Home Assistant.",
               "shorten_mcp_results": "Ve výchozím stavu zapnuto. Velmi dlouhé odpovědi z Home Assistantu se před odesláním AI zmenší: velké seznamy entit se zhustí, velmi dlouhé texty v odpovědi (třeba obří oznámení) se zkrátí a co i pak přesahuje 100 000 znaků, se ořízne. Šetří tokeny a udržuje odpovědi rychlé. Vypnuto posílá celý text.",
               "change_history": "Ve výchozím stavu zapnuto. Zaznamenává každou změnu konfigurace, kterou asistent udělá, takže vidíte, co se změnilo, a můžete ho požádat o obnovení dřívější verze. Vypnuto: bez nových záznamů; asistent může dál provádět změny.",
-              "change_history_ttl_days": "Dny, po které zůstane Rollback a Vrátit pomocí agenta dostupné. Poté záznam v protokolu zůstane; obnovení starého snímku může přepsat pozdější práci. Výchozí 7. 1 je asi den."
+              "change_history_ttl_days": "Dny, po které zůstane Rollback a Vrátit pomocí agenta dostupné. Poté záznam v protokolu zůstane; obnovení starého snímku může přepsat pozdější práci. Výchozí 7. 1 je asi den.",
+              "approval_timeout_minutes": "Minuty, po které dotaz nástroje MCP čeká v chatu na tvou odpověď, například když worker chce spustit příkaz na serveru. Potom se zruší. Výchozí 10."
             }
           },
           "prompt": {
@@ -103,7 +105,7 @@
       }
     },
     "error": {
-      "no_runtime": "Běhové prostředí Cursor není dostupné. Spusťte ho a zkontrolujte adresu v tomto formuláři.",
+      "no_runtime": "AI Workspace Runtime není dostupné. Spusťte ho a zkontrolujte adresu v tomto formuláři.",
       "required": "Toto pole je povinné.",
       "invalid_auth": "Poskytovatel tento klíč API odmítl.",
       "cannot_connect": "Poskytovatel není dostupný. Zkontrolujte URL a síť."
@@ -190,13 +192,15 @@
               "house_map": "Katalog konfigurace",
               "shorten_mcp_results": "Zkrátit dlouhé odpovědi Home Assistant",
               "change_history": "Historie změn",
-              "change_history_ttl_days": "Rollback po"
+              "change_history_ttl_days": "Rollback po",
+              "approval_timeout_minutes": "Čekání na schválení"
             },
             "data_description": {
               "house_map": "Ve výchozím stavu vypnuto. Místní index propojení automatizací, entit a oblastí, takže jedno vyhledání odpoví na otázky jako „co používá světlo v kuchyni?“. Ke každé zprávě trochu přidá, proto ho zapněte, jen pokud se často ptáte, jak jsou věci propojené. Živé stavy dál přicházejí z Home Assistant.",
               "shorten_mcp_results": "Ve výchozím stavu zapnuto. Velmi dlouhé odpovědi z Home Assistantu se před odesláním AI zmenší: velké seznamy entit se zhustí, velmi dlouhé texty v odpovědi (třeba obří oznámení) se zkrátí a co i pak přesahuje 100 000 znaků, se ořízne. Šetří tokeny a udržuje odpovědi rychlé. Vypnuto posílá celý text.",
               "change_history": "Ve výchozím stavu zapnuto. Zaznamenává každou změnu konfigurace, kterou asistent udělá, takže vidíte, co se změnilo, a můžete ho požádat o obnovení dřívější verze. Vypnuto: bez nových záznamů; asistent může dál provádět změny.",
-              "change_history_ttl_days": "Dny, po které zůstane Rollback a Vrátit pomocí agenta dostupné. Poté záznam v protokolu zůstane; obnovení starého snímku může přepsat pozdější práci. Výchozí 7. 1 je asi den."
+              "change_history_ttl_days": "Dny, po které zůstane Rollback a Vrátit pomocí agenta dostupné. Poté záznam v protokolu zůstane; obnovení starého snímku může přepsat pozdější práci. Výchozí 7. 1 je asi den.",
+              "approval_timeout_minutes": "Minuty, po které dotaz nástroje MCP čeká v chatu na tvou odpověď, například když worker chce spustit příkaz na serveru. Potom se zruší. Výchozí 10."
             }
           },
           "prompt": {
@@ -216,7 +220,7 @@
       }
     },
     "error": {
-      "no_runtime": "Běhové prostředí Cursor není dostupné. Spusťte ho a zkontrolujte adresu v tomto formuláři.",
+      "no_runtime": "AI Workspace Runtime není dostupné. Spusťte ho a zkontrolujte adresu v tomto formuláři.",
       "required": "Toto pole je povinné.",
       "invalid_auth": "Poskytovatel tento klíč API odmítl.",
       "cannot_connect": "Poskytovatel není dostupný. Zkontrolujte URL a síť."
@@ -282,13 +286,28 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Běhové prostředí Cursor není dostupné. Spusťte ho a zkontrolujte adresu v tomto formuláři.",
+        "no_runtime": "AI Workspace Runtime není dostupné. Spusťte ho a zkontrolujte adresu v tomto formuláři.",
         "required": "Toto pole je povinné.",
         "invalid_auth": "Poskytovatel tento klíč API odmítl.",
         "cannot_connect": "Poskytovatel není dostupný. Zkontrolujte URL a síť.",
         "model_not_installed": "Tento model není v Ollamě nainstalovaný. Nainstalované: {installed}",
         "pick_model": "Server nyní vypisuje své modely. Vyberte jeden ze seznamu.",
-        "model_rejected": "Server nepovoluje tento model pro tento klíč: {server_message}"
+        "model_rejected": "Server nepovoluje tento model pro tento klíč: {server_message}",
+        "claude_runtime_old": "Aktualizujte AI Workspace Runtime na 1.6.0 nebo novější pro agenty Claude SDK.",
+        "claude_key_required": "Přidejte token Claude Plan nebo klíč API Anthropic v části Claude SDK (runtime), nebo jej nastavte v AI Workspace Runtime.",
+        "runtime_refused": "AI Workspace Runtime odmítl heslo Runtime. Zkontrolujte ho v tomto formuláři.",
+        "bad_code": "To nevypadá jako kód ze stránky Anthropic. Zkopírujte celý kód a vložte ho znovu.",
+        "code_rejected": "Anthropic kód nepřijal. Tady je nový odkaz: přihlaste se znovu a vložte nový kód.",
+        "too_many_attempts": "Příliš mnoho chybných kódů. Tady je nový odkaz.",
+        "busy": "Runtime ještě ověřuje předchozí kód. Chvíli počkejte a zkuste to znovu.",
+        "expired": "Toto přihlášení vypršelo. Tady je nový odkaz.",
+        "timeout": "Runtime nedostal od Anthropic včas odpověď. Tady je nový odkaz; zkuste to znovu.",
+        "cli_missing": "AI Workspace Runtime nemá CLI Claude Code. Aktualizujte Runtime (App nebo Docker image).",
+        "no_link": "Claude Code neukázal přihlašovací odkaz. Zkontrolujte, že Runtime dosáhne na claude.com, a zkuste to znovu.",
+        "login_failed": "Přihlášení na Runtime selhalo. Podívejte se do logu Runtime a zkuste to znovu.",
+        "not_supported": "Tento engine nemá přihlášení předplatným. Použijte API klíč.",
+        "runtime_rejected": "AI Workspace Runtime odmítl heslo Runtime. Nastavte stejné heslo na Runtime i v tomto formuláři.",
+        "runtime_old": "Tento Runtime se zatím neumí přihlásit. Aktualizujte AI Workspace Runtime, nebo vložte token ve formuláři agenta."
       },
       "step": {
         "provider": {
@@ -298,14 +317,14 @@
             "api_provider": "Poskytovatel"
           },
           "data_description": {
-            "api_provider": "Cursor, nebo cloudový či místní model."
+            "api_provider": "Cursor, nebo cloudový či místní model. Pro Claude SDK v AI Workspace Runtime zvolte Claude (Anthropic) a zapněte jeho přepínač runtime."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
           "description": "Adresa Cursor, klíč API, model a rychlost odpovědi.",
           "data": {
-            "runtime_url": "Adresa běhového prostředí Cursor{runtime_url_mark}",
+            "runtime_url": "Adresa běhového prostředí{runtime_url_mark}",
             "runtime_token": "Heslo runtime",
             "cursor_api_key": "Klíč API Cursor",
             "model": "Model",
@@ -315,8 +334,8 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Stejné heslo jako u vašeho běhového prostředí Cursor. Nechte prázdné u doplňku s automatickým spárováním.",
-            "cursor_api_key": "Z účtu Cursor (Integrations). Při úpravě nechte prázdné, aby se zachoval uložený klíč. [Získat API klíč]({api_key_url})",
+            "runtime_token": "Stejné heslo jako u AI Workspace Runtime. Nechte prázdné u doplňku s automatickým spárováním.",
+            "cursor_api_key": "Z účtu Cursor (Integrations). Při úpravě nechte prázdné, aby se zachoval uložený klíč. [Získat API klíč]({api_key_url}) {cursor_key_note}",
             "model": "Vyberte ze seznamu nebo zadejte název modelu. Prázdné použije Composer.",
             "effort": "Kolik času na přemýšlení povolit. Composer ve výchozím stavu použije Rychlé.",
             "allow_internet": "Ve výchozím stavu vypnuto. Zapnuto umožní tomuto agentovi v chatech správce používat webové vyhledávání, stahování stránek a shell Cursoru. Vypnuto odebere všechny tři, takže ani curl či skripty se na web nedostanou. Chaty běžných uživatelů a hlasových satelitů je nikdy nedostanou.",
@@ -388,11 +407,27 @@
               "name": "Pokročilé",
               "data": {
                 "save_tokens": "Šetřit tokeny",
-                "cache_1h": "Držet mezipaměť hodinu"
+                "cache_1h": "Držet mezipaměť hodinu",
+                "use_claude_runtime": "Použít Claude SDK (runtime) (experimentální)"
               },
               "data_description": {
                 "save_tokens": "S každou zprávou posílá méně: kratší prompt, méně historie chatu a kratší odpovědi. Levnější, ale odpovědi o vaší domácnosti mohou být méně důkladné.",
-                "cache_1h": "Jen Claude. Drží systémový prompt a nástroje v mezipaměti hodinu místo 5 minut. Zápis do mezipaměti stojí 2× cenu vstupu místo 1,25×, čtení 0,1×. Levnější, když mezi zprávami často uplyne víc než 5 minut; o něco dražší, když píšete zřídka."
+                "cache_1h": "Jen Claude. Drží systémový prompt a nástroje v mezipaměti hodinu místo 5 minut. Zápis do mezipaměti stojí 2× cenu vstupu místo 1,25×, čtení 0,1×. Levnější, když mezi zprávami často uplyne víc než 5 minut; o něco dražší, když píšete zřídka.",
+                "use_claude_runtime": "Chaty jdou přes Claude Code v AI Workspace Runtime místo cloudového API Anthropic, s vaším předplatným Claude (Pro, Max) nebo klíčem API Anthropic. Po změně stiskněte OK: formulář pak ukáže odpovídající pole, zatím se nic neuloží."
+              }
+            },
+            "claude_runtime": {
+              "name": "Claude SDK (runtime)",
+              "description": "Prázdný model použije model Claude z Runtime (Claude Sonnet, pokud není nastaven).",
+              "data": {
+                "runtime_url": "Adresa běhového prostředí{runtime_url_mark}",
+                "runtime_token": "Heslo runtime",
+                "claude_api_key": "Token Claude Plan nebo klíč API Anthropic"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "Stejné heslo jako u AI Workspace Runtime. Nechte prázdné u doplňku s automatickým spárováním.",
+                "claude_api_key": "Token Claude Plan (sk-ant-oat…, z `claude setup-token`, využívá vaše předplatné Claude) nebo klíč API Anthropic (sk-ant-api…, účtovaný jako kredity API). Nechte prázdné, chcete-li použít ten z AI Workspace Runtime, nebo při úpravě, aby se zachoval uložený. [Získat API klíč]({api_key_url})"
               }
             }
           }
@@ -528,6 +563,35 @@
               }
             }
           }
+        },
+        "claude_login": {
+          "title": "Přihlásit se předplatným Claude",
+          "description": "1. Otevřete tento odkaz a přihlaste se účtem Claude s předplatným Pro nebo Max: [Přihlásit se ke Claude]({url})\n2. Anthropic poté ukáže kód. Zkopírujte ho celý a vložte níže.\n\nOdkaz platí 15 minut. Vaše heslo ke Claude nikdy neprochází Home Assistantem.",
+          "data": {
+            "code": "Kód od Anthropic"
+          },
+          "data_description": {
+            "code": "Dlouhý řetězec se znakem # uprostřed. Vložte ho beze změny."
+          }
+        },
+        "claude_account": {
+          "title": "Účet Claude",
+          "description": "{status}\n\nPřihlášení se ukládá v AI Workspace Runtime, ne v Home Assistantu, a používá ho každý agent Claude SDK na tomto Runtime.",
+          "menu_options": {
+            "claude_use_runtime": "Použít stávající přístup Runtime",
+            "claude_save": "Uložit agenta",
+            "claude_login": "Přihlásit se předplatným Claude",
+            "claude_logout": "Odhlásit na Runtime",
+            "claude_back": "Zpět k nastavení agenta"
+          }
+        },
+        "claude_signed_in": {
+          "title": "Přihlášeno",
+          "description": "{status}\n\nOdesláním agenta uložíte."
+        },
+        "claude_login_error": {
+          "title": "Přihlášení se nezdařilo",
+          "description": "Odesláním se vrátíte."
         }
       },
       "abort": {

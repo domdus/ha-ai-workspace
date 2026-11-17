@@ -77,13 +77,15 @@
               "house_map": "Konfigurationskatalog",
               "shorten_mcp_results": "Korta långa Home Assistant-svar",
               "change_history": "Ändringshistorik",
-              "change_history_ttl_days": "Rollback i"
+              "change_history_ttl_days": "Rollback i",
+              "approval_timeout_minutes": "Väntetid för godkännande"
             },
             "data_description": {
               "house_map": "Av som standard. Ett lokalt register över hur automationer, entiteter och områden hänger ihop, så att en enda sökning besvarar frågor som ”vad använder köksbelysningen?”. Lägger till lite i varje meddelande, så slå bara på det om du ofta frågar hur saker är kopplade. Aktuella tillstånd kommer fortfarande från Home Assistant.",
               "shorten_mcp_results": "På som standard. Mycket långa svar från Home Assistant görs mindre innan de skickas till AI:n: stora entitetslistor blir kompakta, mycket långa texter i ett svar (till exempel en enorm avisering) kortas, och det som fortfarande är över 100 000 tecken klipps. Sparar tokens och håller svaren snabba. Av skickar hela texten.",
               "change_history": "På som standard. Sparar varje konfigurationsändring som assistenten gör, så att du ser vad som ändrats och kan be den återställa en tidigare version. Av stoppar nya poster; assistenten kan fortfarande göra ändringar.",
-              "change_history_ttl_days": "Dagar som Rollback och Ångra via agenten förblir tillgängliga. Därefter stannar raden i loggen; att återställa en gammal ögonblicksbild kan skriva över senare arbete. Standard 7. 1 är ungefär en dag."
+              "change_history_ttl_days": "Dagar som Rollback och Ångra via agenten förblir tillgängliga. Därefter stannar raden i loggen; att återställa en gammal ögonblicksbild kan skriva över senare arbete. Standard 7. 1 är ungefär en dag.",
+              "approval_timeout_minutes": "Minuter som en fråga från ett MCP-verktyg väntar på ditt svar i chatten, till exempel när en worker vill köra ett kommando på en server. Sedan avbryts den. Standard 10."
             }
           },
           "prompt": {
@@ -103,7 +105,7 @@
       }
     },
     "error": {
-      "no_runtime": "Kan inte nå Cursor-runtimen. Starta den och kontrollera adressen i det här formuläret.",
+      "no_runtime": "Kan inte nå AI Workspace Runtime. Starta den och kontrollera adressen i det här formuläret.",
       "required": "Det här fältet är obligatoriskt.",
       "invalid_auth": "Leverantören avvisade den här API-nyckeln.",
       "cannot_connect": "Kunde inte nå leverantören. Kontrollera URL:en och nätverket."
@@ -190,13 +192,15 @@
               "house_map": "Konfigurationskatalog",
               "shorten_mcp_results": "Korta långa Home Assistant-svar",
               "change_history": "Ändringshistorik",
-              "change_history_ttl_days": "Rollback i"
+              "change_history_ttl_days": "Rollback i",
+              "approval_timeout_minutes": "Väntetid för godkännande"
             },
             "data_description": {
               "house_map": "Av som standard. Ett lokalt register över hur automationer, entiteter och områden hänger ihop, så att en enda sökning besvarar frågor som ”vad använder köksbelysningen?”. Lägger till lite i varje meddelande, så slå bara på det om du ofta frågar hur saker är kopplade. Aktuella tillstånd kommer fortfarande från Home Assistant.",
               "shorten_mcp_results": "På som standard. Mycket långa svar från Home Assistant görs mindre innan de skickas till AI:n: stora entitetslistor blir kompakta, mycket långa texter i ett svar (till exempel en enorm avisering) kortas, och det som fortfarande är över 100 000 tecken klipps. Sparar tokens och håller svaren snabba. Av skickar hela texten.",
               "change_history": "På som standard. Sparar varje konfigurationsändring som assistenten gör, så att du ser vad som ändrats och kan be den återställa en tidigare version. Av stoppar nya poster; assistenten kan fortfarande göra ändringar.",
-              "change_history_ttl_days": "Dagar som Rollback och Ångra via agenten förblir tillgängliga. Därefter stannar raden i loggen; att återställa en gammal ögonblicksbild kan skriva över senare arbete. Standard 7. 1 är ungefär en dag."
+              "change_history_ttl_days": "Dagar som Rollback och Ångra via agenten förblir tillgängliga. Därefter stannar raden i loggen; att återställa en gammal ögonblicksbild kan skriva över senare arbete. Standard 7. 1 är ungefär en dag.",
+              "approval_timeout_minutes": "Minuter som en fråga från ett MCP-verktyg väntar på ditt svar i chatten, till exempel när en worker vill köra ett kommando på en server. Sedan avbryts den. Standard 10."
             }
           },
           "prompt": {
@@ -216,7 +220,7 @@
       }
     },
     "error": {
-      "no_runtime": "Kan inte nå Cursor-runtimen. Starta den och kontrollera adressen i det här formuläret.",
+      "no_runtime": "Kan inte nå AI Workspace Runtime. Starta den och kontrollera adressen i det här formuläret.",
       "required": "Det här fältet är obligatoriskt.",
       "invalid_auth": "Leverantören avvisade den här API-nyckeln.",
       "cannot_connect": "Kunde inte nå leverantören. Kontrollera URL:en och nätverket."
@@ -282,13 +286,28 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Kan inte nå Cursor-runtimen. Starta den och kontrollera adressen i det här formuläret.",
+        "no_runtime": "Kan inte nå AI Workspace Runtime. Starta den och kontrollera adressen i det här formuläret.",
         "required": "Det här fältet är obligatoriskt.",
         "invalid_auth": "Leverantören avvisade den här API-nyckeln.",
         "cannot_connect": "Kunde inte nå leverantören. Kontrollera URL:en och nätverket.",
         "model_not_installed": "Den här modellen är inte installerad i Ollama. Installerade: {installed}",
         "pick_model": "Servern listar nu sina modeller. Välj en i listan.",
-        "model_rejected": "Servern tillåter inte den här modellen för den här nyckeln: {server_message}"
+        "model_rejected": "Servern tillåter inte den här modellen för den här nyckeln: {server_message}",
+        "claude_runtime_old": "Uppdatera AI Workspace Runtime till 1.6.0 eller senare för Claude SDK-agenter.",
+        "claude_key_required": "Lägg till en Claude Plan-token eller en Anthropic API-nyckel under Claude SDK (runtime), eller ange en på AI Workspace Runtime.",
+        "runtime_refused": "AI Workspace Runtime nekade Runtime-lösenordet. Kontrollera det i det här formuläret.",
+        "bad_code": "Det ser inte ut som koden från Anthropics sida. Kopiera hela koden och klistra in den igen.",
+        "code_rejected": "Anthropic godtog inte koden. Här är en ny länk: logga in igen och klistra in den nya koden.",
+        "too_many_attempts": "För många felaktiga koder. Här är en ny länk.",
+        "busy": "Runtime kontrollerar fortfarande föregående kod. Vänta en stund och försök igen.",
+        "expired": "Inloggningen gick ut. Här är en ny länk.",
+        "timeout": "Runtime fick inget svar från Anthropic i tid. Här är en ny länk; försök igen.",
+        "cli_missing": "AI Workspace Runtime saknar Claude Code-CLI. Uppdatera Runtime (App eller Docker-avbild).",
+        "no_link": "Claude Code visade ingen inloggningslänk. Kontrollera att Runtime når claude.com och försök igen.",
+        "login_failed": "Inloggningen misslyckades på Runtime. Titta i Runtime-loggen och försök igen.",
+        "not_supported": "Den här motorn har ingen planinloggning. Använd en API-nyckel.",
+        "runtime_rejected": "AI Workspace Runtime nekade Runtime-lösenordet. Ange samma lösenord på Runtime och i det här formuläret.",
+        "runtime_old": "Den här Runtime kan inte logga in än. Uppdatera AI Workspace Runtime, eller klistra in en token i agentformuläret."
       },
       "step": {
         "provider": {
@@ -298,14 +317,14 @@
             "api_provider": "Leverantör"
           },
           "data_description": {
-            "api_provider": "Cursor, eller en molnmodell eller lokal modell."
+            "api_provider": "Cursor, eller en moln- eller lokal modell. För Claude SDK på AI Workspace Runtime väljer du Claude (Anthropic) och slår på dess runtime-reglage."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
           "description": "Cursor-adress, API-nyckel, modell och svarshastighet.",
           "data": {
-            "runtime_url": "Cursor-runtime-adress{runtime_url_mark}",
+            "runtime_url": "Runtime-adress{runtime_url_mark}",
             "runtime_token": "Runtime-lösenord",
             "cursor_api_key": "Cursor API-nyckel",
             "model": "Modell",
@@ -315,8 +334,8 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Samma lösenord som på din Cursor-runtime. Lämna tomt när du använder tillägget med automatisk parkoppling.",
-            "cursor_api_key": "Från ditt Cursor-konto (Integrations). Lämna tomt vid redigering för att behålla den sparade nyckeln. [Hämta API-nyckel]({api_key_url})",
+            "runtime_token": "Samma lösenord som på AI Workspace Runtime. Lämna tomt när du använder tillägget med automatisk parkoppling.",
+            "cursor_api_key": "Från ditt Cursor-konto (Integrations). Lämna tomt vid redigering för att behålla den sparade nyckeln. [Hämta API-nyckel]({api_key_url}) {cursor_key_note}",
             "model": "Välj från listan eller skriv ett modellnamn. Tomt använder Composer.",
             "effort": "Hur mycket tänketid som ska tillåtas. Composer använder Snabb som standard.",
             "allow_internet": "Av som standard. På låter agenten använda Cursors webbsökning, sidhämtning och skal i administratörschattar. Av tar bort alla tre, så att inte heller curl eller skript når webben. Chattar från vanliga användare och röstsatelliter får dem aldrig.",
@@ -388,11 +407,27 @@
               "name": "Avancerat",
               "data": {
                 "save_tokens": "Spara tokens",
-                "cache_1h": "Behåll cachen i en timme"
+                "cache_1h": "Behåll cachen i en timme",
+                "use_claude_runtime": "Använd Claude SDK (runtime) (experimentellt)"
               },
               "data_description": {
                 "save_tokens": "Skickar mindre med varje meddelande: en kortare prompt, mindre chatthistorik och kortare svar. Billigare, men svar om ditt hem kan bli mindre grundliga.",
-                "cache_1h": "Endast Claude. Håller systemprompten och verktygen i cachen i en timme i stället för 5 minuter. Att skriva till cachen kostar 2× inmatningspriset i stället för 1,25×; att läsa kostar 0,1×. Billigare när det ofta går mer än 5 minuter mellan dina meddelanden, lite dyrare om du sällan chattar."
+                "cache_1h": "Endast Claude. Håller systemprompten och verktygen i cachen i en timme i stället för 5 minuter. Att skriva till cachen kostar 2× inmatningspriset i stället för 1,25×; att läsa kostar 0,1×. Billigare när det ofta går mer än 5 minuter mellan dina meddelanden, lite dyrare om du sällan chattar.",
+                "use_claude_runtime": "Chattar går via Claude Code på AI Workspace Runtime i stället för Anthropics moln-API, med din Claude-prenumeration (Pro, Max) eller en Anthropic API-nyckel. Tryck på OK efter ändringen: formuläret visar då de fält som hör till, inget sparas ännu."
+              }
+            },
+            "claude_runtime": {
+              "name": "Claude SDK (runtime)",
+              "description": "En tom modell använder Runtimes Claude-modell (Claude Sonnet om inget är satt).",
+              "data": {
+                "runtime_url": "Runtime-adress{runtime_url_mark}",
+                "runtime_token": "Runtime-lösenord",
+                "claude_api_key": "Claude Plan-token eller Anthropic API-nyckel"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "Samma lösenord som på AI Workspace Runtime. Lämna tomt när du använder tillägget med automatisk parkoppling.",
+                "claude_api_key": "En Claude Plan-token (sk-ant-oat…, från `claude setup-token`, använder din Claude-prenumeration) eller en Anthropic API-nyckel (sk-ant-api…, debiteras som API-krediter). Lämna tomt för att använda den på AI Workspace Runtime, eller vid redigering för att behålla den sparade. [Hämta API-nyckel]({api_key_url})"
               }
             }
           }
@@ -528,6 +563,35 @@
               }
             }
           }
+        },
+        "claude_login": {
+          "title": "Logga in med Claude-plan",
+          "description": "1. Öppna länken och logga in med Claude-kontot som har din Pro- eller Max-plan: [Logga in med Claude]({url})\n2. Anthropic visar sedan en kod. Kopiera hela och klistra in den nedan.\n\nLänken gäller i 15 minuter. Ditt Claude-lösenord går aldrig via Home Assistant.",
+          "data": {
+            "code": "Kod från Anthropic"
+          },
+          "data_description": {
+            "code": "En lång sträng med ett # i mitten. Klistra in den som den är."
+          }
+        },
+        "claude_account": {
+          "title": "Claude-konto",
+          "description": "{status}\n\nInloggningen sparas på AI Workspace Runtime, inte i Home Assistant, och varje Claude SDK-agent på den Runtime använder den.",
+          "menu_options": {
+            "claude_use_runtime": "Använd Runtimes befintliga åtkomst",
+            "claude_save": "Spara agent",
+            "claude_login": "Logga in med Claude-plan",
+            "claude_logout": "Logga ut på Runtime",
+            "claude_back": "Tillbaka till agentinställningarna"
+          }
+        },
+        "claude_signed_in": {
+          "title": "Inloggad",
+          "description": "{status}\n\nSkicka för att spara agenten."
+        },
+        "claude_login_error": {
+          "title": "Inloggningen fungerade inte",
+          "description": "Skicka för att gå tillbaka."
         }
       },
       "abort": {

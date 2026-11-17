@@ -21,9 +21,11 @@ from .usage_cost import (
     TokenUsage,
     estimate_cost,
     estimate_tts_cost,
+    estimate_worker_cost,
     parse_usage,
     usage_payload,
 )
+from .worker_usage import FINAL_STATUSES, worker_agent_id, worker_agent_label
 
 _LOGGER = logging.getLogger(__name__)
 _TTS_USER: ContextVar[str] = ContextVar("ai_workspace_tts_user", default="")
@@ -104,7 +106,9 @@ async def record_usage_turn(
     provider: Any | None,
     usage: TokenUsage,
     origin: str = "chat",
+    unique_run: bool = False,
 ) -> dict[str, Any]:
+    """Store one usage row. unique_run: skip it when its run_id is stored already (payload["duplicate"])."""
     settings = (hass.data.get(DOMAIN) or {}).get("settings")
     payload = usage_payload(usage)
     payload.update(
@@ -118,7 +122,7 @@ async def record_usage_turn(
     )
     if not bool(getattr(settings, "track_usage", True)):
         return payload
-    await hass.async_add_executor_job(
+    row = await hass.async_add_executor_job(
         lambda: store.add_usage(
             user_id=user_id,
             session_id=session_id,
@@ -138,8 +142,12 @@ async def record_usage_turn(
             charged_cents=payload.get("charged_cents"),
             run_id=str(payload.get("run_id") or ""),
             origin=origin,
+            unique_run=unique_run,
         )
     )
+    if unique_run and not row:
+        payload["duplicate"] = True
+        return payload
     hass.bus.async_fire(EVENT_USAGE, payload)
     async_dispatcher_send(hass, SIGNAL_USAGE_UPDATE)
     _LOGGER.debug(
@@ -149,6 +157,69 @@ async def record_usage_turn(
         payload.get("total_tokens"),
         payload.get("cost_usd"),
         payload.get("cost_source"),
+    )
+    return payload
+
+
+class WorkerIdentity:
+    """Who a worker job's usage belongs to: the engine, not the chat agent that started it."""
+
+    kind = "worker"
+
+    def __init__(self, engine: str) -> None:
+        self.engine = str(engine or "").strip().lower() or "unknown"
+        self.id = worker_agent_id(self.engine)
+        self.title = worker_agent_label(self.engine)
+        self.model = ""
+
+
+def finalize_worker_usage(event: dict[str, Any]) -> TokenUsage | None:
+    """Priced usage of a finished worker job, or None (still running, nothing used).
+
+    Never priced with the chat agent's model: the worker ran its own.
+    """
+    status = str(event.get("status") or "").strip().lower()
+    if status not in FINAL_STATUSES:
+        return None
+    usage = parse_usage(event, model=str(event.get("model") or ""), run_id=str(event.get("run_id") or ""))
+    if usage.empty():
+        return None
+    return estimate_worker_cost(usage)
+
+
+async def record_worker_usage(
+    hass: HomeAssistant,
+    *,
+    store: Store,
+    user_id: str,
+    session_id: str,
+    event: dict[str, Any],
+    origin: str = "chat",
+) -> dict[str, Any] | None:
+    """Store a worker job's usage under worker:<engine>, once per job. None when there is nothing new."""
+    billed = finalize_worker_usage(event)
+    if billed is None:
+        return None
+    engine = str(event.get("engine") or "")
+    payload = await record_usage_turn(
+        hass,
+        store=store,
+        user_id=user_id,
+        session_id=session_id,
+        provider=WorkerIdentity(engine),
+        usage=billed,
+        origin=origin,
+        unique_run=bool(billed.run_id),
+    )
+    if payload.get("duplicate"):
+        return None
+    payload.update(
+        {
+            "worker": True,
+            "engine": WorkerIdentity(engine).engine,
+            "job_id": str(event.get("job_id") or ""),
+            "status": str(event.get("status") or ""),
+        }
     )
     return payload
 
@@ -473,9 +544,14 @@ def dashboard_payload(
             _add_model(provider_model(provider))
     for name in choices["models"]:
         _add_model(name)
+    from .plan_quota import OFFICIAL_LINKS
+    from .plan_quota_store import public_plan_quota
+
     return {
         "enabled": enabled,
         "range": chosen,
+        "plan_quota": public_plan_quota(hass),
+        "plan_links": dict(OFFICIAL_LINKS),
         "totals": totals,
         "tts": tts,
         "last": last,

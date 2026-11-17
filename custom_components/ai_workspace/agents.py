@@ -26,6 +26,8 @@ from .const import (
     CONF_API_PROVIDER,
     CONF_AZURE_API_VERSION,
     CONF_CHECK_HOUSE,
+    CONF_CLAUDE_API_KEY,
+    CONF_USE_CLAUDE_RUNTIME,
     CONF_CURSOR_API_KEY,
     CONF_EFFORT,
     CONF_LOW_TOKEN,
@@ -38,6 +40,7 @@ from .const import (
     EFFORT_DEFAULT,
     EFFORTS,
     MODE_API,
+    MODE_CLAUDE,
     MODE_CURSOR,
     SUBENTRY_AGENT,
     assist_enabled,
@@ -84,13 +87,20 @@ class Agent:
     check_house: bool = True
     azure_api_version: str = DEFAULT_AZURE_API_VERSION
     cursor_api_key: str = ""
+    claude_api_key: str = ""
     allow_internet: bool = False
+    use_claude_runtime: bool = False
     subentry_id: str = ""
     # Typed or pasted model ids; replaces the server's own list.
     models: tuple[str, ...] = ()
 
     def label(self) -> str:
-        name = self.title or API_SHORT_LABELS.get(self.provider, "Cursor" if self.mode == MODE_CURSOR else "Agent")
+        name = self.title or API_SHORT_LABELS.get(
+            self.provider,
+            "Cursor"
+            if self.mode == MODE_CURSOR
+            else ("Claude" if self.mode == MODE_CLAUDE else "Agent"),
+        )
         model = (self.model or "").strip()
         effort = EFFORTS.get(self.effort or "", "")
         bits = [name]
@@ -117,9 +127,19 @@ def agent_token_mode(value: Any) -> str:
 def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Agent:
     provider = _text(raw.get(CONF_API_PROVIDER))
     mode = _text(raw.get(CONF_MODE))
+    use_claude_runtime = False
     if provider == MODE_CURSOR or mode == MODE_CURSOR:
         mode = MODE_CURSOR
         provider = MODE_CURSOR
+    elif provider == MODE_CLAUDE or mode == MODE_CLAUDE:
+        mode = MODE_CLAUDE
+        provider = API_ANTHROPIC
+        use_claude_runtime = True
+    elif provider == API_ANTHROPIC and (
+        bool(raw.get(CONF_USE_CLAUDE_RUNTIME)) or mode == MODE_CLAUDE
+    ):
+        mode = MODE_CLAUDE
+        use_claude_runtime = True
     elif provider not in API_PROVIDERS:
         provider = API_OPENAI
         mode = MODE_API
@@ -130,7 +150,8 @@ def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Age
         effort = ""
     return Agent(
         id=agent_id,
-        title=_text(title) or API_SHORT_LABELS.get(provider, "Agent"),
+        title=_text(title) or {MODE_CURSOR: "Cursor"}.get(provider)
+        or API_SHORT_LABELS.get(provider, "Agent"),
         mode=mode,
         provider=provider,
         api_key=_text(raw.get(CONF_API_KEY)),
@@ -148,11 +169,15 @@ def agent_from_mapping(agent_id: str, title: str, raw: Mapping[str, Any]) -> Age
         tts_speed=resolved_tts_speed(raw, provider),
         token_mode=agent_token_mode(raw.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF)),
         prompt_cache=bool(raw.get(CONF_PROMPT_CACHE, True)),
-        cache_1h=bool(raw.get(CONF_CACHE_1H, False)) and provider == API_ANTHROPIC,
+        cache_1h=bool(raw.get(CONF_CACHE_1H, False))
+        and provider == API_ANTHROPIC
+        and mode != MODE_CLAUDE,
         check_house=bool(raw.get(CONF_CHECK_HOUSE, True)),
         azure_api_version=_text(raw.get(CONF_AZURE_API_VERSION)) or DEFAULT_AZURE_API_VERSION,
         cursor_api_key=_text(raw.get(CONF_CURSOR_API_KEY)),
+        claude_api_key=_text(raw.get(CONF_CLAUDE_API_KEY)),
         allow_internet=bool(raw.get(CONF_ALLOW_INTERNET, False)),
+        use_claude_runtime=use_claude_runtime,
     )
 
 
@@ -256,6 +281,29 @@ class CursorAgent:
             title=agent.title,
             model=agent.model or default_api_model(MODE_CURSOR),
             provider=MODE_CURSOR,
+        )
+
+
+class ClaudeAgent:
+    """Claude SDK chats use the same runtime sidecar as Cursor."""
+
+    kind = "claude"
+
+    def __init__(self, agent: Agent, available: bool, reason: str | None) -> None:
+        self.model = agent.model
+        self.effort = agent.effort
+        self.api_key = agent.claude_api_key
+        self.allow_internet = agent.allow_internet
+        self.token_mode = agent.token_mode
+        self.check_house = agent.check_house
+        self.info = ProviderInfo(
+            agent.id,
+            agent.label(),
+            available,
+            reason,
+            title=agent.title,
+            model=agent.model or default_api_model(MODE_CLAUDE),
+            provider=MODE_CLAUDE,
         )
 
 

@@ -42,3 +42,18 @@ def test_translation_covers_every_port(path):
     doc = yaml.safe_load(path.read_text(encoding="utf-8"))
     ports = {p.upper() for p in CONFIG.get("ports", {})}
     assert ports <= {p.upper() for p in doc.get("network", {})}
+
+
+def test_claude_has_no_app_fields_and_cursor_is_optional():
+    # 1.6.0b12: Claude signs in on the agent in Home Assistant; Docker uses environment variables.
+    for key in ("claude_oauth_token", "anthropic_api_key", "claude_model"):
+        assert key not in CONFIG["options"]
+        assert key not in CONFIG["schema"]
+    # A Claude-only user has no required Cursor field.
+    assert str(CONFIG["schema"]["cursor_api_key"]).endswith("?")
+
+
+@pytest.mark.parametrize("path", TRANSLATIONS, ids=lambda p: p.name)
+def test_translations_have_no_removed_claude_fields(path):
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    assert set(doc["configuration"]) <= set(CONFIG["schema"]), path.name

@@ -2,3 +2,4 @@ fastapi>=0.115.0
 uvicorn>=0.32.0
 --only-binary=cursor-sdk
 cursor-sdk>=1.0.38
+claude-agent-sdk==0.2.180

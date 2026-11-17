@@ -1,7 +1,7 @@
 configuration:
   cursor_api_key:
     name: Cursor API key
-    description: User API key from Cursor Dashboard → Integrations
+    description: Optional. User API key from Cursor Dashboard → Integrations, for Cursor agents. Leave it empty if you only use Claude; Claude agents sign in on the agent in Home Assistant.
   model:
     name: Model
     description: Default Cursor model id, for example composer-2.5. The HACS form can override this.

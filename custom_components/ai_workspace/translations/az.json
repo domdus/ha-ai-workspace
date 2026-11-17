@@ -77,13 +77,15 @@
               "house_map": "Konfiqurasiya kataloqu",
               "shorten_mcp_results": "Uzun Home Assistant cavablarını qısalt",
               "change_history": "Dəyişiklik tarixçəsi",
-              "change_history_ttl_days": "Rollback müddəti"
+              "change_history_ttl_days": "Rollback müddəti",
+              "approval_timeout_minutes": "Təsdiq gözləmə vaxtı"
             },
             "data_description": {
               "house_map": "Defolt olaraq sönülüdür. Avtomatlaşdırmaların, obyektlərin və ərazilərin necə bağlı olduğuna dair yerli indeks: bir axtarış “mətbəx işığını nə istifadə edir?” kimi suallara cavab verir. Hər mesaja bir az əlavə edir, ona görə yalnız tez-tez şeylərin necə bağlandığını soruşursunuzsa açın. Canlı vəziyyətlər yenə Home Assistant-dan gəlir.",
               "shorten_mcp_results": "Defolt olaraq açıqdır. Home Assistant-ın çox uzun cavabları AI-yə getməzdən əvvəl kiçildilir: böyük obyekt siyahıları yığcamlaşır, cavabdakı çox uzun mətnlər (məsələn, nəhəng bildiriş) qısaldılır, hələ də 100 000 simvoldan uzun olan hissə kəsilir. Tokenlərə qənaət edir və cavabları sürətli saxlayır. Söndürüldükdə tam mətn göndərilir.",
               "change_history": "Defolt olaraq açıqdır. Köməkçinin etdiyi hər konfiqurasiya dəyişikliyini qeyd edir ki, nəyin dəyişdiyini görə və ondan əvvəlki versiyanı bərpa etməsini istəyə biləsiniz. Sönülü yeni qeydləri dayandırır; köməkçi yenə dəyişiklik edə bilər.",
-              "change_history_ttl_days": "Rollback və Agentlə geri qaytarın əlçatan qaldığı günlər. Sonra sətir jurnaldа qalır; köhnə anlıq görüntünü bərpa etmək sonrakı işi üstələyə bilər. Defolt 7. 1 təxminən bir gündür."
+              "change_history_ttl_days": "Rollback və Agentlə geri qaytarın əlçatan qaldığı günlər. Sonra sətir jurnaldа qalır; köhnə anlıq görüntünü bərpa etmək sonrakı işi üstələyə bilər. Defolt 7. 1 təxminən bir gündür.",
+              "approval_timeout_minutes": "MCP alətinin sualının söhbətdə cavabınızı gözlədiyi dəqiqələr, məsələn worker serverdə əmr işlətmək istədikdə. Sonra ləğv olunur. Standart 10."
             }
           },
           "prompt": {
@@ -103,7 +105,7 @@
       }
     },
     "error": {
-      "no_runtime": "Cursor runtime-ə çatmaq mümkün deyil. Onu işə salın və bu formadakı ünvanı yoxlayın.",
+      "no_runtime": "AI Workspace Runtime-a çatmaq mümkün deyil. Onu işə salın və bu formadakı ünvanı yoxlayın.",
       "required": "Bu sahə tələb olunur.",
       "invalid_auth": "Provayder bu API açarını rədd etdi.",
       "cannot_connect": "Provayderə çatmaq mümkün olmadı. URL-i və şəbəkəni yoxlayın."
@@ -190,13 +192,15 @@
               "house_map": "Konfiqurasiya kataloqu",
               "shorten_mcp_results": "Uzun Home Assistant cavablarını qısalt",
               "change_history": "Dəyişiklik tarixçəsi",
-              "change_history_ttl_days": "Rollback müddəti"
+              "change_history_ttl_days": "Rollback müddəti",
+              "approval_timeout_minutes": "Təsdiq gözləmə vaxtı"
             },
             "data_description": {
               "house_map": "Defolt olaraq sönülüdür. Avtomatlaşdırmaların, obyektlərin və ərazilərin necə bağlı olduğuna dair yerli indeks: bir axtarış “mətbəx işığını nə istifadə edir?” kimi suallara cavab verir. Hər mesaja bir az əlavə edir, ona görə yalnız tez-tez şeylərin necə bağlandığını soruşursunuzsa açın. Canlı vəziyyətlər yenə Home Assistant-dan gəlir.",
               "shorten_mcp_results": "Defolt olaraq açıqdır. Home Assistant-ın çox uzun cavabları AI-yə getməzdən əvvəl kiçildilir: böyük obyekt siyahıları yığcamlaşır, cavabdakı çox uzun mətnlər (məsələn, nəhəng bildiriş) qısaldılır, hələ də 100 000 simvoldan uzun olan hissə kəsilir. Tokenlərə qənaət edir və cavabları sürətli saxlayır. Söndürüldükdə tam mətn göndərilir.",
               "change_history": "Defolt olaraq açıqdır. Köməkçinin etdiyi hər konfiqurasiya dəyişikliyini qeyd edir ki, nəyin dəyişdiyini görə və ondan əvvəlki versiyanı bərpa etməsini istəyə biləsiniz. Sönülü yeni qeydləri dayandırır; köməkçi yenə dəyişiklik edə bilər.",
-              "change_history_ttl_days": "Rollback və Agentlə geri qaytarın əlçatan qaldığı günlər. Sonra sətir jurnaldа qalır; köhnə anlıq görüntünü bərpa etmək sonrakı işi üstələyə bilər. Defolt 7. 1 təxminən bir gündür."
+              "change_history_ttl_days": "Rollback və Agentlə geri qaytarın əlçatan qaldığı günlər. Sonra sətir jurnaldа qalır; köhnə anlıq görüntünü bərpa etmək sonrakı işi üstələyə bilər. Defolt 7. 1 təxminən bir gündür.",
+              "approval_timeout_minutes": "MCP alətinin sualının söhbətdə cavabınızı gözlədiyi dəqiqələr, məsələn worker serverdə əmr işlətmək istədikdə. Sonra ləğv olunur. Standart 10."
             }
           },
           "prompt": {
@@ -216,7 +220,7 @@
       }
     },
     "error": {
-      "no_runtime": "Cursor runtime-ə çatmaq mümkün deyil. Onu işə salın və bu formadakı ünvanı yoxlayın.",
+      "no_runtime": "AI Workspace Runtime-a çatmaq mümkün deyil. Onu işə salın və bu formadakı ünvanı yoxlayın.",
       "required": "Bu sahə tələb olunur.",
       "invalid_auth": "Provayder bu API açarını rədd etdi.",
       "cannot_connect": "Provayderə çatmaq mümkün olmadı. URL-i və şəbəkəni yoxlayın."
@@ -282,13 +286,28 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Cursor runtime-ə çatmaq mümkün deyil. Onu işə salın və bu formadakı ünvanı yoxlayın.",
+        "no_runtime": "AI Workspace Runtime-a çatmaq mümkün deyil. Onu işə salın və bu formadakı ünvanı yoxlayın.",
         "required": "Bu sahə tələb olunur.",
         "invalid_auth": "Provayder bu API açarını rədd etdi.",
         "cannot_connect": "Provayderə çatmaq mümkün olmadı. URL-i və şəbəkəni yoxlayın.",
         "model_not_installed": "Bu model Ollama-da quraşdırılmayıb. Quraşdırılanlar: {installed}",
         "pick_model": "Server indi modellərini göstərir. Siyahıdan birini seçin.",
-        "model_rejected": "Server bu açar üçün bu modelə icazə vermir: {server_message}"
+        "model_rejected": "Server bu açar üçün bu modelə icazə vermir: {server_message}",
+        "claude_runtime_old": "Claude SDK agentləri üçün AI Workspace Runtime-ı 1.6.0 və ya daha yeni versiyaya yeniləyin.",
+        "claude_key_required": "Claude SDK (runtime) bölməsində Claude Plan tokeni və ya Anthropic API açarı əlavə edin, ya da onu AI Workspace Runtime-da təyin edin.",
+        "runtime_refused": "AI Workspace Runtime Runtime parolunu rədd etdi. Bu formada yoxlayın.",
+        "bad_code": "Bu Anthropic səhifəsindəki koda oxşamır. Bütün kodu kopyalayıb yenidən yapışdırın.",
+        "code_rejected": "Anthropic bu kodu qəbul etmədi. Budur yeni link: yenidən daxil olun və yeni kodu yapışdırın.",
+        "too_many_attempts": "Çox sayda səhv kod. Budur yeni link.",
+        "busy": "Runtime hələ əvvəlki kodu yoxlayır. Bir az gözləyin və yenidən cəhd edin.",
+        "expired": "Bu girişin vaxtı bitdi. Budur yeni link.",
+        "timeout": "Runtime vaxtında Anthropic-dən cavab almadı. Budur yeni link; yenidən cəhd edin.",
+        "cli_missing": "AI Workspace Runtime-da Claude Code CLI yoxdur. Runtime-ı yeniləyin (App və ya Docker imici).",
+        "no_link": "Claude Code giriş linki göstərmədi. Runtime-ın claude.com-a çatdığını yoxlayın və yenidən cəhd edin.",
+        "login_failed": "Runtime-da giriş alınmadı. Runtime jurnalına baxın və yenidən cəhd edin.",
+        "not_supported": "Bu mühərrikdə plan ilə giriş yoxdur. API açarından istifadə edin.",
+        "runtime_rejected": "AI Workspace Runtime Runtime parolunu rədd etdi. Runtime-da və bu formada eyni parolu təyin edin.",
+        "runtime_old": "Bu Runtime hələ daxil ola bilmir. AI Workspace Runtime-ı yeniləyin və ya agent formasına token yapışdırın."
       },
       "step": {
         "provider": {
@@ -298,14 +317,14 @@
             "api_provider": "Provayder"
           },
           "data_description": {
-            "api_provider": "Cursor, və ya bulud və ya yerli model."
+            "api_provider": "Cursor və ya bulud ya da yerli model. AI Workspace Runtime-da Claude SDK üçün Claude (Anthropic) seçin və onun runtime açarını yandırın."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
           "description": "Cursor ünvanı, API açarı, model və cavab sürəti.",
           "data": {
-            "runtime_url": "Cursor runtime ünvanı{runtime_url_mark}",
+            "runtime_url": "Runtime ünvanı{runtime_url_mark}",
             "runtime_token": "Runtime parolu",
             "cursor_api_key": "Cursor API açarı",
             "model": "Model",
@@ -315,8 +334,8 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "Cursor runtime-dəki eyni parol. Avtomatik cütləşmə ilə əlavə modul istifadə edərkən boş buraxın.",
-            "cursor_api_key": "Cursor hesabınızdan (Integrations). Redaktə edərkən saxlanmış açarı saxlamaq üçün boş buraxın. [API açarı al]({api_key_url})",
+            "runtime_token": "AI Workspace Runtime-dakı eyni parol. Avtomatik cütləşmə ilə əlavə modul istifadə edərkən boş buraxın.",
+            "cursor_api_key": "Cursor hesabınızdan (Integrations). Redaktə edərkən saxlanmış açarı saxlamaq üçün boş buraxın. [API açarı al]({api_key_url}) {cursor_key_note}",
             "model": "Siyahıdan seçin və ya model adı yazın. Boş Composer istifadə edir.",
             "effort": "Nə qədər düşünmə vaxtına icazə verilsin. Composer defolt olaraq Sürətli istifadə edir.",
             "allow_internet": "Standart olaraq söndürülüb. Açıq olduqda bu agent admin söhbətlərində Cursor-un veb axtarışı, səhifə yükləmə və shell alətlərindən istifadə edə bilir. Söndürülü olduqda hər üçü silinir, beləliklə curl və ya skriptlər də internetə çıxa bilmir. Adi istifadəçilərin və səs peyklərinin söhbətləri onları heç vaxt almır.",
@@ -388,11 +407,27 @@
               "name": "Ətraflı",
               "data": {
                 "save_tokens": "Tokenlərə qənaət et",
-                "cache_1h": "Keşi bir saat saxla"
+                "cache_1h": "Keşi bir saat saxla",
+                "use_claude_runtime": "Claude SDK (runtime) istifadə et (eksperimental)"
               },
               "data_description": {
                 "save_tokens": "Hər mesajla daha az göndərir: daha qısa prompt, daha az söhbət tarixçəsi və daha qısa cavablar. Daha ucuzdur, amma eviniz haqqında cavablar daha az ətraflı ola bilər.",
-                "cache_1h": "Yalnız Claude. Sistem promptunu və alətləri 5 dəqiqə əvəzinə bir saat keşdə saxlayır. Keşə yazmaq giriş qiymətinin 1,25 qatı əvəzinə 2 qatına, oxumaq 0,1 qatına başa gəlir. Mesajlarınız arasında tez-tez 5 dəqiqədən çox fasilə olarsa daha ucuzdur; nadir yazırsınızsa bir az bahadır."
+                "cache_1h": "Yalnız Claude. Sistem promptunu və alətləri 5 dəqiqə əvəzinə bir saat keşdə saxlayır. Keşə yazmaq giriş qiymətinin 1,25 qatı əvəzinə 2 qatına, oxumaq 0,1 qatına başa gəlir. Mesajlarınız arasında tez-tez 5 dəqiqədən çox fasilə olarsa daha ucuzdur; nadir yazırsınızsa bir az bahadır.",
+                "use_claude_runtime": "Söhbətlər Anthropic bulud API-si əvəzinə AI Workspace Runtime-dakı Claude Code ilə gedir, Claude abunəliyiniz (Pro, Max) və ya Anthropic API açarı ilə. Dəyişdikdən sonra OK düyməsini basın: forma uyğun sahələri göstərir, hələ heç nə saxlanmır."
+              }
+            },
+            "claude_runtime": {
+              "name": "Claude SDK (runtime)",
+              "description": "Boş model Runtime-ın Claude modelindən istifadə edir (təyin edilməyibsə Claude Sonnet).",
+              "data": {
+                "runtime_url": "Runtime ünvanı{runtime_url_mark}",
+                "runtime_token": "Runtime parolu",
+                "claude_api_key": "Claude Plan tokeni və ya Anthropic API açarı"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "AI Workspace Runtime-dakı eyni parol. Avtomatik cütləşmə ilə əlavə modul istifadə edərkən boş buraxın.",
+                "claude_api_key": "Claude Plan tokeni (sk-ant-oat…, `claude setup-token` ilə yaradılır, Claude abunəliyinizdən istifadə edir) və ya Anthropic API açarı (sk-ant-api…, API kreditləri kimi ödənilir). AI Workspace Runtime-da təyin olunanı istifadə etmək üçün və ya redaktə edərkən saxlanmışı saxlamaq üçün boş buraxın. [API açarı al]({api_key_url})"
               }
             }
           }
@@ -528,6 +563,35 @@
               }
             }
           }
+        },
+        "claude_login": {
+          "title": "Claude planı ilə daxil ol",
+          "description": "1. Bu linki açın və Pro və ya Max planı olan Claude hesabı ilə daxil olun: [Claude ilə daxil ol]({url})\n2. Sonra Anthropic kod göstərəcək. Onu tam kopyalayıb aşağıya yapışdırın.\n\nLink 15 dəqiqə işləyir. Claude parolunuz heç vaxt Home Assistant-dan keçmir.",
+          "data": {
+            "code": "Anthropic kodu"
+          },
+          "data_description": {
+            "code": "Ortasında # olan uzun sətir. Olduğu kimi yapışdırın."
+          }
+        },
+        "claude_account": {
+          "title": "Claude hesabı",
+          "description": "{status}\n\nGiriş Home Assistant-da deyil, AI Workspace Runtime-da saxlanılır və həmin Runtime-dakı hər Claude SDK agenti ondan istifadə edir.",
+          "menu_options": {
+            "claude_use_runtime": "Runtime-ın mövcud girişindən istifadə et",
+            "claude_save": "Agenti saxla",
+            "claude_login": "Claude planı ilə daxil ol",
+            "claude_logout": "Runtime-dan çıx",
+            "claude_back": "Agent ayarlarına qayıt"
+          }
+        },
+        "claude_signed_in": {
+          "title": "Daxil olundu",
+          "description": "{status}\n\nAgenti saxlamaq üçün göndərin."
+        },
+        "claude_login_error": {
+          "title": "Daxil olmaq alınmadı",
+          "description": "Geri qayıtmaq üçün göndərin."
         }
       },
       "abort": {

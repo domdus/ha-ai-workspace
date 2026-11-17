@@ -13,13 +13,21 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
 from .const import (
+    APPROVAL_TIMEOUT_MAX_MINUTES,
+    APPROVAL_TIMEOUT_MIN_MINUTES,
+    CONF_APPROVAL_TIMEOUT_MINUTES,
+    DEFAULT_APPROVAL_TIMEOUT_MINUTES,
+    approval_timeout_minutes,
     CONF_CONTEXT_WINDOW,
     CONF_TOOLS_ON_DEMAND,
     context_window_of,
+    API_ANTHROPIC,
     API_AZURE,
     API_PROVIDERS,
     API_SHORT_LABELS,
     CONF_AGENT_ID,
+    CONF_CLAUDE_API_KEY,
+    CONF_USE_CLAUDE_RUNTIME,
     CONF_ALLOW_INTERNET,
     CONF_ALLOW_USERS,
     CONF_API_BASE,
@@ -79,6 +87,7 @@ from .const import (
     MCP_HA,
     MCP_KINDS,
     MODE_API,
+    MODE_CLAUDE,
     MODE_CURSOR,
     STT_BROWSER,
     SUBENTRY_AGENT,
@@ -106,7 +115,8 @@ YAML_STORAGE = f"{DOMAIN}_yaml"
 _SLUG = re.compile(r"[^a-z0-9]+")
 YAML_CONNECTIONS = "connections"
 YAML_AGENTS = "agents"
-_PROVIDERS = (MODE_CURSOR, *API_PROVIDERS)
+_PROVIDERS = (MODE_CURSOR, MODE_CLAUDE, *API_PROVIDERS)
+_RUNTIME_MODES = (MODE_CURSOR, MODE_CLAUDE)
 YAML_SHARED_KEYS = (
     CONF_SYSTEM_PROMPT,
     CONF_RUNTIME_URL,
@@ -120,6 +130,7 @@ YAML_SHARED_KEYS = (
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
     CONF_CHANGE_HISTORY_TTL_DAYS,
+    CONF_APPROVAL_TIMEOUT_MINUTES,
     CONF_TRACK_USAGE,
     CONF_SHOW_CHAT_USAGE,
     CONF_HA_USAGE_SENSORS,
@@ -149,6 +160,7 @@ YAML_OPTION_DEFAULTS = {
     CONF_SHORTEN_MCP_RESULTS: True,
     CONF_CHANGE_HISTORY: True,
     CONF_CHANGE_HISTORY_TTL_DAYS: DEFAULT_CHANGE_HISTORY_TTL_DAYS,
+    CONF_APPROVAL_TIMEOUT_MINUTES: DEFAULT_APPROVAL_TIMEOUT_MINUTES,
     CONF_TRACK_USAGE: True,
     CONF_SHOW_CHAT_USAGE: True,
     CONF_HA_USAGE_SENSORS: False,
@@ -184,6 +196,8 @@ def _normalize_option(key: str, value: Any) -> Any:
         return context_window_of(value)
     if key == CONF_CHANGE_HISTORY_TTL_DAYS:
         return change_history_ttl_days(value)
+    if key == CONF_APPROVAL_TIMEOUT_MINUTES:
+        return approval_timeout_minutes(value)
     if key in {
         CONF_ENABLE_OVERLAY,
         CONF_ENABLE_SIDEBAR,
@@ -242,6 +256,7 @@ AGENT_SCHEMA = vol.Schema(
         vol.Optional("model", default=""): cv.string,
         vol.Optional("effort", default=EFFORT_DEFAULT): vol.In(list(EFFORTS)),
         vol.Optional("cursor_api_key", default=""): cv.string,
+        vol.Optional("claude_api_key", default=""): cv.string,
         vol.Optional("azure_api_version", default=DEFAULT_AZURE_API_VERSION): cv.string,
         vol.Optional(CONF_CHECK_HOUSE): cv.boolean,
         vol.Optional(CONF_LOW_TOKEN): vol.All(token_mode_of, vol.In(list(TOKEN_MODES))),
@@ -273,6 +288,10 @@ YAML_SCHEMA = vol.Schema(
         vol.Optional(CONF_CHANGE_HISTORY_TTL_DAYS): vol.All(
             vol.Coerce(int),
             vol.Range(min=CHANGE_HISTORY_TTL_MIN_DAYS, max=CHANGE_HISTORY_TTL_MAX_DAYS),
+        ),
+        vol.Optional(CONF_APPROVAL_TIMEOUT_MINUTES): vol.All(
+            vol.Coerce(int),
+            vol.Range(min=APPROVAL_TIMEOUT_MIN_MINUTES, max=APPROVAL_TIMEOUT_MAX_MINUTES),
         ),
         vol.Optional(CONF_CHECK_HOUSE): cv.boolean,
         vol.Optional(CONF_TRACK_USAGE): cv.boolean,
@@ -374,18 +393,24 @@ def agent_payload(row: dict[str, Any], unique: str) -> dict[str, Any]:
     if provider not in _PROVIDERS:
         provider = MODE_CURSOR
     cursor = provider == MODE_CURSOR
+    runtime = provider in _RUNTIME_MODES
     effort = str(row.get("effort") or "")
     if effort not in EFFORTS or effort == EFFORT_DEFAULT:
         effort = ""
-    title = str(row.get("title") or "").strip() or ("Cursor" if cursor else API_SHORT_LABELS.get(provider, "Agent"))
+    title = str(row.get("title") or "").strip() or (
+        "Cursor" if cursor else API_SHORT_LABELS.get(API_ANTHROPIC if provider == MODE_CLAUDE else provider, "Agent")
+    )
     raw = {**row, CONF_API_PROVIDER: provider}
     data = {
         CONF_AGENT_ID: unique,
-        CONF_MODE: MODE_CURSOR if cursor else MODE_API,
-        CONF_API_PROVIDER: provider,
+        CONF_MODE: provider if runtime else MODE_API,
+        # A Claude SDK agent is the Claude (Anthropic) provider with the runtime switch on.
+        CONF_API_PROVIDER: API_ANTHROPIC if provider == MODE_CLAUDE else provider,
+        CONF_USE_CLAUDE_RUNTIME: provider == MODE_CLAUDE,
         CONF_CURSOR_API_KEY: str(row.get("cursor_api_key") or "").strip() if cursor else "",
-        CONF_API_KEY: "" if cursor else str(row.get("api_key") or "").strip(),
-        CONF_API_BASE: "" if cursor else str(row.get("api_base") or "").strip(),
+        CONF_CLAUDE_API_KEY: str(row.get("claude_api_key") or "").strip() if provider == MODE_CLAUDE else "",
+        CONF_API_KEY: "" if runtime else str(row.get("api_key") or "").strip(),
+        CONF_API_BASE: "" if runtime else str(row.get("api_base") or "").strip(),
         CONF_MODEL: str(row.get("model") or "").strip(),
         CONF_EFFORT: effort,
         CONF_ALLOW_INTERNET: bool(row.get(CONF_ALLOW_INTERNET, False)),
@@ -416,7 +441,7 @@ def agents_from_yaml(conf: dict[str, Any]) -> list[dict[str, Any]]:
     defaults = agent_tuning_defaults(conf)
     for row in conf.get(YAML_AGENTS) or []:
         unique = agent_unique_id(row, used)
-        legacy = defaults if str(row.get("provider") or "") != MODE_CURSOR else {}
+        legacy = defaults if str(row.get("provider") or "") not in _RUNTIME_MODES else {}
         found.append(agent_payload({**legacy, **row}, unique))
     return found
 
@@ -498,7 +523,7 @@ async def async_apply_yaml(hass: HomeAssistant, entry: ConfigEntry, conf: dict[s
         # No agent list in YAML: the old workspace keys still set every cloud agent, as they did before.
         tuning = agent_tuning_defaults(conf)
         for sub in list(entry.subentries.values()):
-            if sub.subentry_type != SUBENTRY_AGENT or str(sub.data.get(CONF_MODE) or "") == MODE_CURSOR:
+            if sub.subentry_type != SUBENTRY_AGENT or str(sub.data.get(CONF_MODE) or "") in _RUNTIME_MODES:
                 continue
             data = {**sub.data}
             if CONF_LOW_TOKEN in tuning:

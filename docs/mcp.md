@@ -10,7 +10,7 @@ See [How it is organized](settings.md#how-it-is-organized) for connections vs ag
 
 Cloud agents (OpenAI, Claude, and the others) call MCP from inside Home Assistant.
 
-Cursor is different: the model runs in the Cursor runtime next to Home Assistant, and tools go through that runtime. You do not point Cursor at your MCP URL yourself; AI Workspace does that when you chat.
+Cursor is different: the model runs in the AI Workspace Runtime next to Home Assistant, and tools go through that runtime. You do not point Cursor at your MCP URL yourself; AI Workspace does that when you chat.
 
 ## HA-MCP inside Home Assistant
 
@@ -38,9 +38,21 @@ Everything else reaches the model exactly as Home Assistant or the MCP server se
 
 A result over 100,000 characters first has its longest texts shortened, for example one huge notification inside HA-MCP's system overview. Every other part stays, the JSON stays valid, and each shortened text says where it came from (such as the notification or entity id), so the agent can tell you which integration or device makes answers that large. Only when that is not enough is the result cut at the end, with a note that it is incomplete, must not be written back, and should be asked for in smaller parts.
 
-The setting lives in AI Workspace → Configure. The integration sends it to the Cursor runtime with every chat, so the Runtime App and the Docker image have no setting of their own for it.
+The setting lives in AI Workspace → Configure. The integration sends it to the AI Workspace Runtime with every chat, so the Runtime App and the Docker image have no setting of their own for it.
 
 Turn this off if you want every attribute of a large listing in one shot and you accept the extra tokens.
+
+## Questions and approvals from MCP tools
+
+Some MCP servers ask you something in the middle of a tool call. An example is the agent-worker, which asks before it runs a command on another server. MCP calls this **elicitation**. Runtime agents (Cursor and Claude SDK) support it: the AI Workspace Runtime tells every MCP server it connects to that it can ask the user (`capabilities.elicitation`, form mode).
+
+- An `elicitation/create` request never reaches the model. It shows up in the chat as a card with the server's message, the exact command and target for worker approvals, and **Allow** / **Deny**. Closing the card (×) answers *cancel*.
+- **Only your click answers it.** Chat text, the model's output and tool calls cannot. The Runtime drops any answer that does not come from Home Assistant with the card's own key.
+- Open cards stay when you close and reopen the chat or the app. Several can be open at once.
+- A card waits for **Approval wait** (AI Workspace → Configure, default 10 minutes, 1 to 60). Then the server gets *cancel*. Stopping the turn cancels its open questions too.
+- **Fallback for agent-worker jobs:** when a job result says `input_required` (or `needs_approval`) with an approval that has no open MCP request, the same card appears. Allow or Deny goes straight to the worker (`POST /jobs/<id>/approve` with `{"approve": true|false}`). Closing that card only hides it; the job keeps waiting until the worker's own timeout.
+
+Cloud agents call MCP from inside Home Assistant and do not offer elicitation yet. Servers then fall back to their own way, for example the worker's `agent_approve` tool.
 
 ## Change History
 

@@ -14,7 +14,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
-from .agents import CursorAgent, entry_agents
+from .agents import ClaudeAgent, CursorAgent, entry_agents
 from .assist_pipelines import async_remove_assist_pipeline
 from .const import (
     CONF_CONTEXT_WINDOW,
@@ -32,6 +32,9 @@ from .const import (
     CONF_SHORTEN_MCP_RESULTS,
     CONF_CHANGE_HISTORY,
     CONF_CHANGE_HISTORY_TTL_DAYS,
+    CONF_APPROVAL_TIMEOUT_MINUTES,
+    DEFAULT_APPROVAL_TIMEOUT_MINUTES,
+    approval_timeout_minutes,
     CONF_CHECK_HOUSE,
     CONF_LOW_TOKEN,
     CONF_PROMPT_CACHE,
@@ -56,6 +59,12 @@ from .const import (
     MCP_HA_MCP,
     MODE_API,
     CONF_MODE,
+    CONF_API_BASE,
+    CONF_API_KEY,
+    CONF_API_PROVIDER,
+    CONF_USE_CLAUDE_RUNTIME,
+    API_ANTHROPIC,
+    MODE_CLAUDE,
     MODE_CURSOR,
     OVERLAY_JS,
     PANEL_ELEMENT,
@@ -203,6 +212,9 @@ async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
         change_history_ttl_days=change_history_ttl_days(
             data.get(CONF_CHANGE_HISTORY_TTL_DAYS, DEFAULT_CHANGE_HISTORY_TTL_DAYS)
         ),
+        approval_timeout_minutes=approval_timeout_minutes(
+            data.get(CONF_APPROVAL_TIMEOUT_MINUTES, DEFAULT_APPROVAL_TIMEOUT_MINUTES)
+        ),
         track_usage=bool(data.get(CONF_TRACK_USAGE, True)),
         show_chat_usage=bool(data.get(CONF_SHOW_CHAT_USAGE, True)),
         ha_usage_sensors=bool(data.get(CONF_HA_USAGE_SENSORS, False)),
@@ -228,6 +240,8 @@ def _one_provider(hass: HomeAssistant, settings: Settings, agent, store):
 
     if agent.mode == MODE_CURSOR:
         return CursorAgent(agent, False, None)
+    if agent.mode == MODE_CLAUDE:
+        return ClaudeAgent(agent, False, None)
     agent_settings = replace(
         settings,
         mode=MODE_API,
@@ -251,7 +265,7 @@ def _one_provider(hass: HomeAssistant, settings: Settings, agent, store):
 def _workspace_prompt_cache(entry: ConfigEntry, data: dict) -> bool:
     if CONF_PROMPT_CACHE in data or CONF_PROMPT_CACHE in (entry.options or {}):
         return bool(data.get(CONF_PROMPT_CACHE, True))
-    agents = [agent for agent in entry_agents(entry) if agent.mode != MODE_CURSOR]
+    agents = [agent for agent in entry_agents(entry) if agent.mode not in {MODE_CURSOR, MODE_CLAUDE}]
     if agents and all(not agent.prompt_cache for agent in agents):
         return False
     return True
@@ -265,7 +279,7 @@ def _move_tuning_to_agents(hass: HomeAssistant, entry: ConfigEntry) -> None:
     old = {**entry.data, **entry.options}
     if CONF_LOW_TOKEN not in old and CONF_CHECK_HOUSE not in old:
         return
-    cloud = [agent for agent in entry_agents(entry) if agent.mode != MODE_CURSOR]
+    cloud = [agent for agent in entry_agents(entry) if agent.mode not in {MODE_CURSOR, MODE_CLAUDE}]
     # Same fallbacks the old workspace setting used when only one of the two keys was saved.
     if CONF_LOW_TOKEN in old:
         mode = token_mode_of(old.get(CONF_LOW_TOKEN))
@@ -278,7 +292,7 @@ def _move_tuning_to_agents(hass: HomeAssistant, entry: ConfigEntry) -> None:
     # Light used to force the check on and Medium/Extreme force it off; keep what each agent did.
     check = {TOKEN_MODE_LIGHT: True, TOKEN_MODE_MEDIUM: False, TOKEN_MODE_EXTREME: False}.get(mode, check)
     for sub in list(entry.subentries.values()):
-        if sub.subentry_type != SUBENTRY_AGENT or str(sub.data.get(CONF_MODE) or "") == MODE_CURSOR:
+        if sub.subentry_type != SUBENTRY_AGENT or str(sub.data.get(CONF_MODE) or "") in {MODE_CURSOR, MODE_CLAUDE}:
             continue
         data = {**sub.data, CONF_LOW_TOKEN: mode, CONF_CHECK_HOUSE: check}
         if data != dict(sub.data):
@@ -293,6 +307,29 @@ def _move_tuning_to_agents(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
 
 _TUNING_SIMPLE = "agent_tuning_simple"
+
+
+def _migrate_unified_claude_agent(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """One Claude (Anthropic) provider row; runtime SDK agents keep mode=claude on that provider."""
+    for sub in list(entry.subentries.values()):
+        if sub.subentry_type != SUBENTRY_AGENT:
+            continue
+        data = dict(sub.data)
+        prov = str(data.get(CONF_API_PROVIDER) or "")
+        mode = str(data.get(CONF_MODE) or "")
+        changed = False
+        if prov == MODE_CLAUDE or (mode == MODE_CLAUDE and prov != API_ANTHROPIC):
+            data[CONF_API_PROVIDER] = API_ANTHROPIC
+            data[CONF_MODE] = MODE_CLAUDE
+            data[CONF_USE_CLAUDE_RUNTIME] = True
+            data[CONF_API_KEY] = ""
+            data[CONF_API_BASE] = ""
+            changed = True
+        elif prov == API_ANTHROPIC and mode == MODE_CLAUDE and not data.get(CONF_USE_CLAUDE_RUNTIME):
+            data[CONF_USE_CLAUDE_RUNTIME] = True
+            changed = True
+        if changed:
+            hass.config_entries.async_update_subentry(entry, sub, data=data)
 
 
 def _simplify_agent_tuning(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -502,6 +539,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if yaml_conf:
         await async_apply_yaml(hass, entry, yaml_conf)
     _move_tuning_to_agents(hass, entry)
+    _migrate_unified_claude_agent(hass, entry)
     _simplify_agent_tuning(hass, entry)
     settings = await _build_settings(hass, entry)
     await hass.async_add_executor_job(settings.ensure_dirs)
@@ -525,6 +563,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         for agent in entry_agents(entry)
         if agent.subentry_id not in disabled
     }
+    from .plan_quota_store import async_init_plan_quota
+
+    await async_init_plan_quota(hass)
     await async_bind_runtime(hass, bucket, force=True)
     hass.async_create_background_task(async_retry_runtime(hass, bucket), "ai_workspace_runtime")
     _heal_ha_mcp_after_start(hass, entry)
@@ -556,7 +597,34 @@ def _heal_ha_mcp_after_start(hass: HomeAssistant, entry: ConfigEntry) -> None:
     entry.async_on_unload(async_at_started(hass, _started))
 
 
+# A reload cancels running chat replies. A saved setting waits this long for them to finish.
+RELOAD_WAIT_SECONDS = 600
+
+
+async def wait_for_replies(data: dict, limit: float = RELOAD_WAIT_SECONDS) -> None:
+    """Return once no chat reply runs, or after `limit` seconds. Replies started meanwhile count too."""
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + limit
+    while True:
+        running = [job for job in list(data.get("chat_jobs") or ()) if not job.done()]
+        left = deadline - loop.time()
+        if not running or left <= 0:
+            return
+        _LOGGER.info("AI Workspace: settings apply when %s running chat repl%s finish", len(running), "y" if len(running) == 1 else "ies")
+        await asyncio.wait(running, timeout=left)
+
+
 async def _reload(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    data = hass.data.get(DOMAIN)
+    if isinstance(data, dict):
+        # Several saves while a reply runs make one reload once it is done.
+        if data.get("reload_waiting"):
+            return
+        data["reload_waiting"] = True
+        await wait_for_replies(data)
+        if hass.data.get(DOMAIN) is not data:
+            # Reloaded or removed some other way in the meantime.
+            return
     await hass.config_entries.async_reload(entry.entry_id)
 
 

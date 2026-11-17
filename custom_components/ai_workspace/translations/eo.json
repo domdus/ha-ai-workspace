@@ -77,13 +77,15 @@
               "house_map": "Agorda katalogo",
               "shorten_mcp_results": "Mallongigi longajn respondojn de Home Assistant",
               "change_history": "Ŝanĝohistorio",
-              "change_history_ttl_days": "Restaŭro dum"
+              "change_history_ttl_days": "Restaŭro dum",
+              "approval_timeout_minutes": "Atendo por aprobo"
             },
             "data_description": {
               "house_map": "Defaŭlte malŝalta. Loka indekso pri kiel aŭtomatigoj, entoj kaj areoj estas ligitaj, por ke unu serĉo respondu demandojn kiel „kio uzas la kuirejan lumon?“. Aldonas iomete al ĉiu mesaĝo, do ŝaltu ĝin nur se vi ofte demandas kiel aferoj estas kunligitaj. Vivaj statoj ankoraŭ venas el Home Assistant.",
               "shorten_mcp_results": "Defaŭlte ŝaltita. Tre longaj respondoj de Home Assistant estas malgrandigitaj antaŭ ol iri al la AI: grandaj listoj de entoj iĝas kompaktaj, tre longaj tekstoj en respondo (ekz. grandega sciigo) estas mallongigitaj, kaj kio ankoraŭ superas 100 000 signojn estas tranĉita. Ŝparas ĵetonojn kaj tenas respondojn rapidaj. Malŝaltite sendas la plenan tekston.",
               "change_history": "Defaŭlte ŝalta. Registras ĉiun agordan ŝanĝon, kiun la asistanto faras, por ke vi vidu kio ŝanĝiĝis kaj petu ĝin restarigi pli fruan version. Malŝalte ĉesigas novajn enskribojn; la asistanto ankoraŭ povas fari ŝanĝojn.",
-              "change_history_ttl_days": "Tagoj dum kiuj Restaŭro kaj Malfari per la agento restas haveblaj. Poste la linio restas en la protokolo; restarigi malnovan kopion povas anstataŭigi postan laboron. Defaŭlte 7. 1 estas ĉirkaŭ unu tago."
+              "change_history_ttl_days": "Tagoj dum kiuj Restaŭro kaj Malfari per la agento restas haveblaj. Poste la linio restas en la protokolo; restarigi malnovan kopion povas anstataŭigi postan laboron. Defaŭlte 7. 1 estas ĉirkaŭ unu tago.",
+              "approval_timeout_minutes": "Minutoj, dum kiuj demando de MCP-ilo atendas vian respondon en la babilo, ekzemple kiam worker volas ruli komandon en servilo. Poste ĝi nuliĝas. Defaŭlte 10."
             }
           },
           "prompt": {
@@ -103,7 +105,7 @@
       }
     },
     "error": {
-      "no_runtime": "Ne povas atingi la Cursor-runtime. Startigu ĝin kaj kontrolu la adreson en ĉi tiu formularo.",
+      "no_runtime": "Ne povas atingi la AI Workspace Runtime. Startigu ĝin kaj kontrolu la adreson en ĉi tiu formularo.",
       "required": "Ĉi tiu kampo estas deviga.",
       "invalid_auth": "La provizanto malakceptis ĉi tiun API-ŝlosilon.",
       "cannot_connect": "Ne povis atingi la provizanton. Kontrolu la URL-on kaj la reton."
@@ -190,13 +192,15 @@
               "house_map": "Agorda katalogo",
               "shorten_mcp_results": "Mallongigi longajn respondojn de Home Assistant",
               "change_history": "Ŝanĝohistorio",
-              "change_history_ttl_days": "Restaŭro dum"
+              "change_history_ttl_days": "Restaŭro dum",
+              "approval_timeout_minutes": "Atendo por aprobo"
             },
             "data_description": {
               "house_map": "Defaŭlte malŝalta. Loka indekso pri kiel aŭtomatigoj, entoj kaj areoj estas ligitaj, por ke unu serĉo respondu demandojn kiel „kio uzas la kuirejan lumon?“. Aldonas iomete al ĉiu mesaĝo, do ŝaltu ĝin nur se vi ofte demandas kiel aferoj estas kunligitaj. Vivaj statoj ankoraŭ venas el Home Assistant.",
               "shorten_mcp_results": "Defaŭlte ŝaltita. Tre longaj respondoj de Home Assistant estas malgrandigitaj antaŭ ol iri al la AI: grandaj listoj de entoj iĝas kompaktaj, tre longaj tekstoj en respondo (ekz. grandega sciigo) estas mallongigitaj, kaj kio ankoraŭ superas 100 000 signojn estas tranĉita. Ŝparas ĵetonojn kaj tenas respondojn rapidaj. Malŝaltite sendas la plenan tekston.",
               "change_history": "Defaŭlte ŝalta. Registras ĉiun agordan ŝanĝon, kiun la asistanto faras, por ke vi vidu kio ŝanĝiĝis kaj petu ĝin restarigi pli fruan version. Malŝalte ĉesigas novajn enskribojn; la asistanto ankoraŭ povas fari ŝanĝojn.",
-              "change_history_ttl_days": "Tagoj dum kiuj Restaŭro kaj Malfari per la agento restas haveblaj. Poste la linio restas en la protokolo; restarigi malnovan kopion povas anstataŭigi postan laboron. Defaŭlte 7. 1 estas ĉirkaŭ unu tago."
+              "change_history_ttl_days": "Tagoj dum kiuj Restaŭro kaj Malfari per la agento restas haveblaj. Poste la linio restas en la protokolo; restarigi malnovan kopion povas anstataŭigi postan laboron. Defaŭlte 7. 1 estas ĉirkaŭ unu tago.",
+              "approval_timeout_minutes": "Minutoj, dum kiuj demando de MCP-ilo atendas vian respondon en la babilo, ekzemple kiam worker volas ruli komandon en servilo. Poste ĝi nuliĝas. Defaŭlte 10."
             }
           },
           "prompt": {
@@ -216,7 +220,7 @@
       }
     },
     "error": {
-      "no_runtime": "Ne povas atingi la Cursor-runtime. Startigu ĝin kaj kontrolu la adreson en ĉi tiu formularo.",
+      "no_runtime": "Ne povas atingi la AI Workspace Runtime. Startigu ĝin kaj kontrolu la adreson en ĉi tiu formularo.",
       "required": "Ĉi tiu kampo estas deviga.",
       "invalid_auth": "La provizanto malakceptis ĉi tiun API-ŝlosilon.",
       "cannot_connect": "Ne povis atingi la provizanton. Kontrolu la URL-on kaj la reton."
@@ -282,13 +286,28 @@
       },
       "entry_type": "Agent",
       "error": {
-        "no_runtime": "Ne povas atingi la Cursor-runtime. Startigu ĝin kaj kontrolu la adreson en ĉi tiu formularo.",
+        "no_runtime": "Ne povas atingi la AI Workspace Runtime. Startigu ĝin kaj kontrolu la adreson en ĉi tiu formularo.",
         "required": "Ĉi tiu kampo estas deviga.",
         "invalid_auth": "La provizanto malakceptis ĉi tiun API-ŝlosilon.",
         "cannot_connect": "Ne povis atingi la provizanton. Kontrolu la URL-on kaj la reton.",
         "model_not_installed": "Ĉi tiu modelo ne estas instalita en Ollama. Instalitaj: {installed}",
         "pick_model": "La servilo nun listigas siajn modelojn. Elektu unu el la listo.",
-        "model_rejected": "La servilo ne permesas ĉi tiun modelon por ĉi tiu ŝlosilo: {server_message}"
+        "model_rejected": "La servilo ne permesas ĉi tiun modelon por ĉi tiu ŝlosilo: {server_message}",
+        "claude_runtime_old": "Ĝisdatigu la AI Workspace Runtime al 1.6.0 aŭ pli nova por Claude SDK-agentoj.",
+        "claude_key_required": "Aldonu Claude Plan-ĵetonon aŭ Anthropic-API-ŝlosilon sub Claude SDK (runtime), aŭ agordu unu ĉe la AI Workspace Runtime.",
+        "runtime_refused": "La AI Workspace Runtime rifuzis la Runtime-pasvorton. Kontrolu ĝin en ĉi tiu formularo.",
+        "bad_code": "Tio ne aspektas kiel la kodo de la paĝo de Anthropic. Kopiu la tutan kodon kaj algluu ĝin denove.",
+        "code_rejected": "Anthropic ne akceptis tiun kodon. Jen nova ligilo: ensalutu denove kaj algluu la novan kodon.",
+        "too_many_attempts": "Tro da malĝustaj kodoj. Jen nova ligilo.",
+        "busy": "La rultempo ankoraŭ kontrolas la antaŭan kodon. Atendu momenton kaj reprovu.",
+        "expired": "Tiu ensaluto eksvalidiĝis. Jen nova ligilo.",
+        "timeout": "La rultempo ne ricevis respondon de Anthropic ĝustatempe. Jen nova ligilo; reprovu.",
+        "cli_missing": "AI Workspace Runtime ne havas la Claude Code-CLI. Ĝisdatigu la rultempon (App aŭ Docker-bildo).",
+        "no_link": "Claude Code ne montris ensalutan ligilon. Kontrolu, ke la rultempo atingas claude.com, kaj reprovu.",
+        "login_failed": "La ensaluto malsukcesis ĉe la rultempo. Rigardu la protokolon de la rultempo kaj reprovu.",
+        "not_supported": "Ĉi tiu motoro ne havas abonan ensaluton. Uzu API-ŝlosilon.",
+        "runtime_rejected": "AI Workspace Runtime rifuzis la rultempan pasvorton. Agordu la saman pasvorton ĉe la rultempo kaj en ĉi tiu formularo.",
+        "runtime_old": "Ĉi tiu rultempo ankoraŭ ne povas ensaluti. Ĝisdatigu AI Workspace Runtime, aŭ algluu ĵetonon en la agenta formularo."
       },
       "step": {
         "provider": {
@@ -298,14 +317,14 @@
             "api_provider": "Provizanto"
           },
           "data_description": {
-            "api_provider": "Cursor, aŭ nuba aŭ loka modelo."
+            "api_provider": "Cursor, aŭ nuba aŭ loka modelo. Por Claude SDK ĉe la AI Workspace Runtime, elektu Claude (Anthropic) kaj ŝaltu ĝian runtime-ŝaltilon."
           }
         },
         "provider_cursor": {
           "title": "Cursor",
           "description": "Adreso de Cursor, API-ŝlosilo, modelo kaj respondorapido.",
           "data": {
-            "runtime_url": "Adreso de la Cursor-runtime{runtime_url_mark}",
+            "runtime_url": "Adreso de la runtime{runtime_url_mark}",
             "runtime_token": "Pasvorto de la runtime",
             "cursor_api_key": "API-ŝlosilo de Cursor",
             "model": "Modelo",
@@ -315,8 +334,8 @@
           },
           "data_description": {
             "runtime_url": "{runtime_url_note}",
-            "runtime_token": "La sama pasvorto kiel ĉe via Cursor-runtime. Lasu malplena kiam vi uzas la aldonaĵon kun aŭtomata parigo.",
-            "cursor_api_key": "El via konto de Cursor (Integrations). Lasu malplena dum redaktado por teni la konservitan ŝlosilon. [Akiri API-ŝlosilon]({api_key_url})",
+            "runtime_token": "La sama pasvorto kiel ĉe la AI Workspace Runtime. Lasu malplena kiam vi uzas la aldonaĵon kun aŭtomata parigo.",
+            "cursor_api_key": "El via konto de Cursor (Integrations). Lasu malplena dum redaktado por teni la konservitan ŝlosilon. [Akiri API-ŝlosilon]({api_key_url}) {cursor_key_note}",
             "model": "Elektu el la listo aŭ tajpu modelnomon. Malplena uzas Composer.",
             "effort": "Kiom da pensotempo permesi. Composer defaŭlte uzas Rapida.",
             "allow_internet": "Defaŭlte malŝaltita. Ŝaltita permesas al ĉi tiu agento uzi la retserĉon, paĝ-elŝuton kaj ŝelon de Cursor en administrantaj babiloj. Malŝaltita forigas ĉiujn tri, do ankaŭ curl aŭ skriptoj ne atingas la reton. Babiloj de ordinaraj uzantoj kaj voĉaj satelitoj neniam ricevas ilin.",
@@ -388,11 +407,27 @@
               "name": "Altnivele",
               "data": {
                 "save_tokens": "Ŝpari ĵetonojn",
-                "cache_1h": "Teni la kaŝmemoron unu horon"
+                "cache_1h": "Teni la kaŝmemoron unu horon",
+                "use_claude_runtime": "Uzi Claude SDK (runtime) (eksperimenta)"
               },
               "data_description": {
                 "save_tokens": "Sendas malpli kun ĉiu mesaĝo: pli mallongan instrukcion, malpli da babilhistorio kaj pli mallongajn respondojn. Malpli kosta, sed respondoj pri via hejmo povas esti malpli detalaj.",
-                "cache_1h": "Nur Claude. Tenas la sisteman inviton kaj la ilojn en la kaŝmemoro unu horon anstataŭ 5 minutojn. Skribi en la kaŝmemoron kostas 2× la enigan prezon anstataŭ 1,25×; legi kostas 0,1×. Pli malmultekosta kiam ofte pasas pli ol 5 minutoj inter viaj mesaĝoj, iom pli multekosta se vi malofte babilas."
+                "cache_1h": "Nur Claude. Tenas la sisteman inviton kaj la ilojn en la kaŝmemoro unu horon anstataŭ 5 minutojn. Skribi en la kaŝmemoron kostas 2× la enigan prezon anstataŭ 1,25×; legi kostas 0,1×. Pli malmultekosta kiam ofte pasas pli ol 5 minutoj inter viaj mesaĝoj, iom pli multekosta se vi malofte babilas.",
+                "use_claude_runtime": "Babiloj iras tra Claude Code ĉe la AI Workspace Runtime anstataŭ la nuba API de Anthropic, kun via Claude-abono (Pro, Max) aŭ Anthropic-API-ŝlosilo. Premu OK post la ŝanĝo: la formularo tiam montras la kongruajn kampojn, ankoraŭ nenio estas konservita."
+              }
+            },
+            "claude_runtime": {
+              "name": "Claude SDK (runtime)",
+              "description": "Malplena modelo uzas la Claude-modelon de la Runtime (Claude Sonnet se ne agordita).",
+              "data": {
+                "runtime_url": "Adreso de la runtime{runtime_url_mark}",
+                "runtime_token": "Pasvorto de la runtime",
+                "claude_api_key": "Claude Plan-ĵetono aŭ Anthropic-API-ŝlosilo"
+              },
+              "data_description": {
+                "runtime_url": "{runtime_url_note}",
+                "runtime_token": "La sama pasvorto kiel ĉe la AI Workspace Runtime. Lasu malplena kiam vi uzas la aldonaĵon kun aŭtomata parigo.",
+                "claude_api_key": "Claude Plan-ĵetono (sk-ant-oat…, el `claude setup-token`, uzas vian Claude-abonon) aŭ Anthropic-API-ŝlosilo (sk-ant-api…, fakturata kiel API-kreditoj). Lasu malplena por uzi tiun de la AI Workspace Runtime, aŭ dum redaktado por teni la konservitan. [Akiri API-ŝlosilon]({api_key_url})"
               }
             }
           }
@@ -528,6 +563,35 @@
               }
             }
           }
+        },
+        "claude_login": {
+          "title": "Ensaluti per Claude-abono",
+          "description": "1. Malfermu ĉi tiun ligilon kaj ensalutu per la Claude-konto kun via Pro- aŭ Max-abono: [Ensaluti per Claude]({url})\n2. Anthropic poste montras kodon. Kopiu ĝin tute kaj algluu ĝin sube.\n\nLa ligilo validas 15 minutojn. Via Claude-pasvorto neniam trairas Home Assistant.",
+          "data": {
+            "code": "Kodo de Anthropic"
+          },
+          "data_description": {
+            "code": "Longa signoĉeno kun # en la mezo. Algluu ĝin senŝanĝe."
+          }
+        },
+        "claude_account": {
+          "title": "Claude-konto",
+          "description": "{status}\n\nLa ensaluto restas ĉe AI Workspace Runtime, ne en Home Assistant, kaj ĉiu Claude SDK-agento ĉe tiu rultempo uzas ĝin.",
+          "menu_options": {
+            "claude_use_runtime": "Uzi la ekzistantan aliron de la Runtime",
+            "claude_save": "Konservi agenton",
+            "claude_login": "Ensaluti per Claude-abono",
+            "claude_logout": "Elsaluti ĉe la rultempo",
+            "claude_back": "Reen al la agentaj agordoj"
+          }
+        },
+        "claude_signed_in": {
+          "title": "Ensalutinta",
+          "description": "{status}\n\nSendu por konservi la agenton."
+        },
+        "claude_login_error": {
+          "title": "Ensaluto ne sukcesis",
+          "description": "Sendu por reiri."
         }
       },
       "abort": {

@@ -17,8 +17,11 @@ from homeassistant.helpers.event import async_track_time_interval
 from .agents import Agent, entry_agents
 from .const import DOMAIN, SUBENTRY_USAGE, usage_device_ident
 from .store import Store
+from .plan_quota import ENGINES, OFFICIAL_LINKS
+from .plan_quota_store import SIGNAL_PLAN_QUOTA_UPDATE, public_plan_quota
 from .usage_cost import SIGNAL_USAGE_UPDATE, empty_summary
 from .usage_record import day_bounds, provider_label
+from .worker_usage import WORKER_PREFIX
 
 SCAN = timedelta(minutes=15)
 
@@ -34,6 +37,7 @@ async def async_setup_entry(
     store: Store = hass.data[DOMAIN]["store"]
     agents = entry_agents(entry)
     hub = UsageHub(hass, store, [agent.id for agent in agents])
+    plan_hub = PlanQuotaHub(hass)
     usage_sub = next((sub.subentry_id for sub in entry.subentries.values() if sub.subentry_type == SUBENTRY_USAGE), None)
     async_add_entities(
         [
@@ -57,6 +61,17 @@ async def async_setup_entry(
         ],
         config_subentry_id=usage_sub,
     )
+    plan_entities = []
+    for engine in ENGINES:
+        title = {"claude": "Claude", "cursor": "Cursor", "codex": "Codex"}[engine]
+        plan_entities.extend(
+            [
+                PlanQuotaSensor(hass, entry, plan_hub, engine, f"{engine}_session_percent", f"{title} plan session %", "session_percent"),
+                PlanQuotaSensor(hass, entry, plan_hub, engine, f"{engine}_week_percent", f"{title} plan week %", "week_percent"),
+                PlanQuotaSensor(hass, entry, plan_hub, engine, f"{engine}_session_reset", f"{title} plan session reset", "session_reset_at"),
+            ]
+        )
+    async_add_entities(plan_entities, config_subentry_id=usage_sub)
     for agent in agents:
         async_add_entities(
             [
@@ -97,6 +112,114 @@ async def async_setup_entry(
         )
 
 
+class PlanQuotaHub:
+    def __init__(self, hass: HomeAssistant) -> None:
+        self.hass = hass
+        self.snapshots: dict[str, dict] = {}
+        self._unsub: list[Callable[[], None]] = []
+        self._entities: list["_PlanQuotaBase"] = []
+
+    def attach(self, entity: "_PlanQuotaBase") -> None:
+        self._entities.append(entity)
+
+    async def async_setup(self) -> None:
+        if self._unsub:
+            return
+        self._unsub.append(async_dispatcher_connect(self.hass, SIGNAL_PLAN_QUOTA_UPDATE, self._on_update))
+        await self.refresh()
+
+    @callback
+    def _on_update(self) -> None:
+        self.hass.async_create_task(self.refresh())
+
+    async def refresh(self) -> None:
+        self.snapshots = public_plan_quota(self.hass)
+        for entity in self._entities:
+            entity.apply_hub()
+
+    def detach(self, entity: "_PlanQuotaBase") -> None:
+        if entity in self._entities:
+            self._entities.remove(entity)
+        while self._unsub:
+            self._unsub.pop()()
+
+
+class _PlanQuotaBase(SensorEntity):
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, hub: PlanQuotaHub, engine: str) -> None:
+        self.hass = hass
+        self._hub = hub
+        self._engine = engine
+        self._attr_has_entity_name = True
+        self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        self._attr_should_poll = False
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, usage_device_ident(entry.entry_id))},
+            name="AI Workspace",
+            manufacturer="AI Workspace",
+            model="Usage",
+            entry_type=DeviceEntryType.SERVICE,
+        )
+
+    async def async_added_to_hass(self) -> None:
+        self._hub.attach(self)
+        await self._hub.async_setup()
+        self.apply_hub()
+
+    async def async_will_remove_from_hass(self) -> None:
+        self._hub.detach(self)
+
+    def apply_hub(self) -> None:
+        raise NotImplementedError
+
+
+class PlanQuotaSensor(_PlanQuotaBase):
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        hub: PlanQuotaHub,
+        engine: str,
+        unique: str,
+        name: str,
+        field: str,
+    ) -> None:
+        super().__init__(hass, entry, hub, engine)
+        self._field = field
+        self._attr_name = name
+        self._attr_unique_id = f"{entry.entry_id}_{unique}"
+        if field.endswith("percent"):
+            self._attr_native_unit_of_measurement = "%"
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+            self._attr_icon = "mdi:gauge"
+        elif field.endswith("reset_at"):
+            self._attr_icon = "mdi:clock-outline"
+            self._attr_device_class = "timestamp"
+
+    def apply_hub(self) -> None:
+        snap = self._hub.snapshots.get(self._engine) or {}
+        value = snap.get(self._field)
+        if self._field.endswith("percent"):
+            self._attr_native_value = value if value is not None else None
+        elif self._field.endswith("reset_at"):
+            if value in (None, "", 0):
+                self._attr_native_value = None
+            else:
+                try:
+                    from datetime import datetime, timezone
+
+                    self._attr_native_value = datetime.fromtimestamp(int(value), tz=timezone.utc).isoformat()
+                except (TypeError, ValueError, OverflowError):
+                    self._attr_native_value = None
+        else:
+            self._attr_native_value = value
+        link = OFFICIAL_LINKS.get(self._engine)
+        attrs = dict(snap) if snap else {}
+        if link:
+            attrs["official_url"] = link
+        self._attr_extra_state_attributes = attrs
+        self.async_write_ha_state()
+
+
 class UsageHub:
     """One SQLite pass for every usage sensor."""
 
@@ -115,6 +238,8 @@ class UsageHub:
             "all": empty_summary(),
         }
         self.last: dict | None = None
+        # Worker jobs per engine (worker:claude, worker:codex, ...) for each window.
+        self.worker_windows: dict[str, dict[str, dict]] = {"today": {}, "month": {}, "all": {}}
         self.agent_windows: dict[str, dict[str, dict]] = {}
         self.agent_tts_windows: dict[str, dict[str, dict]] = {}
         self.agent_last: dict[str, dict | None] = {}
@@ -171,6 +296,11 @@ class UsageHub:
                         "agent_windows": {},
                         "agent_tts_windows": {},
                         "agent_last": {},
+                        "worker_windows": {
+                            "today": worker_rows(self.store.usage_by_agent(since=today, until=tomorrow)),
+                            "month": worker_rows(self.store.usage_by_agent(since=month)),
+                            "all": worker_rows(self.store.usage_by_agent()),
+                        },
                     }
                     for agent_id in agent_ids:
                         payload["agent_windows"][agent_id] = {
@@ -195,6 +325,7 @@ class UsageHub:
                     "all": data["tts_all"],
                 }
                 self.last = data["last"]
+                self.worker_windows = data["worker_windows"]
                 self.agent_windows = data["agent_windows"]
                 self.agent_tts_windows = data["agent_tts_windows"]
                 self.agent_last = data["agent_last"]
@@ -265,6 +396,23 @@ def _from_summary(kind: str, summary: dict | None):
     return int(row.get("turns") or 0)
 
 
+def worker_rows(rows: list[dict] | None) -> dict[str, dict]:
+    """usage_by_agent rows of worker jobs, keyed by worker:<engine>."""
+    out: dict[str, dict] = {}
+    for row in rows or []:
+        agent_id = str(row.get("agent_id") or "")
+        if not agent_id.startswith(WORKER_PREFIX):
+            continue
+        out[agent_id] = {
+            "agent": row.get("agent") or agent_id,
+            "turns": int(row.get("turns") or 0),
+            "total_tokens": int(row.get("total_tokens") or 0),
+            "cost_usd": row.get("cost_usd") or 0,
+            "missing_cost": bool(row.get("missing_cost")),
+        }
+    return out
+
+
 def _summary_attrs(summary: dict | None, extra: dict | None = None) -> dict:
     row = summary or empty_summary()
     attrs = {
@@ -325,7 +473,11 @@ class WorkspaceUsageSensor(_UsageBase):
         pool = self._hub.tts_windows if self._source == "tts" else self._hub.windows
         summary = pool.get(self._window) or empty_summary()
         self._attr_native_value = _from_summary(self._kind, summary)
-        self._attr_extra_state_attributes = _summary_attrs(summary, {"origin": "tts"} if self._source == "tts" else None)
+        if self._source == "tts":
+            extra = {"origin": "tts"}
+        else:
+            extra = {"workers": dict(self._hub.worker_windows.get(self._window) or {})}
+        self._attr_extra_state_attributes = _summary_attrs(summary, extra)
         self.async_write_ha_state()
 
 

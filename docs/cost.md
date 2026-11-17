@@ -22,12 +22,23 @@ The result is an estimate based on public list prices. Your provider's invoice i
 - **Cloud agents:** prompt and completion tokens from the provider, including cache and reasoning when they send them. Cost is list price (OpenAI, Anthropic, Gemini, DeepSeek, Qwen, Grok, Azure, OpenRouter, compatible). OpenRouter’s reported cost is used when it is present. Ollama is stored as $0.
 - **Text-to-speech:** when an AI Workspace voice is used (Assist, overlay speaker, auto-read). OpenAI-style engines are priced per character (`gpt-4o-mini-tts`, `tts-1`, and `tts-1-hd`). Grok (xAI) TTS is priced per character ($4.20 per million, xAI's beta price). Gemini TTS is priced from the audio tokens Google reports. Piper and other Home Assistant engines are not billed here. Speech-to-text (OpenAI transcribe or Gemini) is not stored on this page.
 - Unknown models still store tokens. Cost stays empty until the price list knows that model name.
+- **Coding workers (Agent Worker / Cursor Worker over MCP):** when a chat agent hands a task to a worker (`agent_run`, then `agent_job`; older `cursor_agent` / `cursor_job`), the worker reports what its own engine used once the job is finished (succeeded, failed or cancelled). That usage is stored as its own row under **Worker: Claude Code**, **Worker: OpenAI Codex** or **Worker: Cursor** (agent id `worker:<engine>`), not added to the chat agent's turn. Each job is counted once, however often the agent polls it. Cost: Cursor billed cents when present, else the cost the engine reports itself (Claude Code), else list price when the model is known. Codex reports no price and usually no model, so its tokens are stored with the cost unknown.
+
+## Plan limits
+
+The **Plan limits** block shows how much of a subscription plan (Claude plan, Cursor, Codex) is used: the 5-hour session window and the 7-day week window in percent, when each resets, and when that was last seen. It is not token cost.
+
+- **Claude plan (Claude SDK agents with a Plan token or Sign in with Claude):** Claude Code reports the plan's utilization with each turn (`rate_limit_event`; first answer of a turn and whenever a rounded percent changes). The Runtime stores the newest values (`plan_quota.json` in its data folder) and sends them to Home Assistant, which keeps the last state. If a turn brought no numbers, the Runtime reads them once from Anthropic's usage endpoint, the same one Claude Code's `/usage` uses (`GET /api/oauth/usage`, no model call, no quota), at most every 10 minutes. Tokens from `claude setup-token` may not be allowed to read it; then only the chat's numbers count. `CLAUDE_PLAN_USAGE_READ=off` on the Runtime switches the read off.
+- **Below the warning threshold – no detailed numbers** means Claude reported its status (allowed) without percentages.
+- When a window has reset since the last reading, the row says so instead of showing an old percentage.
+- The chat shows a short hint once when a plan crosses into its warning zone, and a translated message with the reset time when the limit is reached.
+- Anthropic API keys have no plan limits; their row stays empty.
 
 ## Home Assistant sensors
 
 **Add Home Assistant usage sensors** is off by default. The Usage page does not need them.
 
-Turn it on if you want cost, token, and turn entities on your own Lovelace dashboards. You then get a device **AI Workspace** under **Usage**, plus sensors on each agent: cost / tokens / turns for today, this month, and total, last turn, and speech cost today / total. Home Assistant also fires `ai_workspace_usage` after every recorded turn.
+Turn it on if you want cost, token, and turn entities on your own Lovelace dashboards. You then get a device **AI Workspace** under **Usage**, plus sensors on each agent: cost / tokens / turns for today, this month, and total, last turn, and speech cost today / total. The cost, token and turn sensors of the **AI Workspace** device carry a `workers` attribute with the worker jobs of that window per engine (`worker:claude`, `worker:codex`, ...). Home Assistant also fires `ai_workspace_usage` after every recorded turn.
 
 Turn the option off again to remove those sensors. Tracking can stay on.
 
@@ -54,6 +65,10 @@ Every agent, Cursor included, has one box under **Advanced**: **Save tokens**. I
 | **Save tokens** | Loaded on demand, shorter descriptions | 3% of the window, at most 2,000 tokens | Short | Capped; long messages are shortened |
 
 With Save tokens, files and images are not attached, and extras such as auto titles and page context are skipped. A house-check turn usually costs about 25–45% less.
+
+**Agents on the AI Workspace Runtime** (Cursor, Claude SDK) get the short prompt and the shorter history too. Replies are not capped there, and the agent's **Effort** still applies.
+- **Claude SDK** keeps its session while it is small, so Claude remembers its own tool results and reuses the cached start of the chat. Once a turn's context reaches about 40,000 tokens, the next turn starts a new session that gets the recent history from Home Assistant. A session the Runtime has not measured yet, for example after a restart, also starts new. With Save tokens off, the session simply continues.
+- **Cursor** keeps its agent for 4 turns, then starts a new one with the recent history. Cursor reports tokens per turn summed over all its model calls, so the size of its context cannot be measured and turns are counted instead. With or without Save tokens, a Cursor chat idle for 2 minutes gets a new agent.
 
 The context window comes from the model id (for example 400,000 tokens for GPT-5, 200,000 for Claude, 1,000,000 for Gemini, otherwise 128,000). For Ollama, AI Workspace asks Ollama itself. Set `context_window: <tokens>` in YAML to override it.
 

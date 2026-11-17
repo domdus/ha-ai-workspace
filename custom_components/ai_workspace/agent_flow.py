@@ -6,6 +6,7 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant import config_entries
+from homeassistant.core import callback
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig, TextSelector, TextSelectorConfig, TextSelectorType
@@ -38,6 +39,8 @@ from .const import (
     CONF_TTS_VOICE,
     CONF_AZURE_API_VERSION,
     CONF_BORROW,
+    CONF_CLAUDE_API_KEY,
+    CONF_USE_CLAUDE_RUNTIME,
     CONF_CURSOR_API_KEY,
     CONF_EFFORT,
     CONF_LOW_TOKEN,
@@ -51,6 +54,7 @@ from .const import (
     EFFORT_DEFAULT,
     EFFORTS,
     MODE_API,
+    MODE_CLAUDE,
     MODE_CURSOR,
     TOKEN_MODE_EXTREME,
     TOKEN_MODE_MEDIUM,
@@ -97,9 +101,43 @@ _DETAIL = {
     API_COMPATIBLE: "compatible",
 }
 
+SECTION_CLAUDE_RUNTIME = "claude_runtime"
+# Engine name in the Runtime's sign-in API (/api/auth/{engine}).
+ENGINE_CLAUDE = "claude"
+CONF_LOGIN_CODE = "code"
+# Codes that only need typing again; anything else ended that sign-in on the Runtime.
+_RETYPE = frozenset({"bad_code"})
+
+
+def uses_claude_runtime(current: dict, provider: str = "") -> bool:
+    """Anthropic cloud API vs Claude Agent SDK on the AI Workspace Runtime."""
+    kind = provider or str(current.get(CONF_API_PROVIDER) or "")
+    if kind not in {API_ANTHROPIC, MODE_CLAUDE}:
+        return False
+    if CONF_USE_CLAUDE_RUNTIME in current:
+        return bool(current.get(CONF_USE_CLAUDE_RUNTIME))
+    if str(current.get(CONF_MODE) or "") == MODE_CLAUDE:
+        return True
+    return str(current.get(CONF_API_PROVIDER) or "") == MODE_CLAUDE
+
+
+def _runtime_section_errors(errors: dict[str, str]) -> dict[str, str]:
+    """Home Assistant shows no errors on fields inside a section, so these go to the top of the form."""
+    out = {key: value for key, value in errors.items() if key not in {CONF_RUNTIME_URL, CONF_CLAUDE_API_KEY}}
+    for key in (CONF_RUNTIME_URL, CONF_CLAUDE_API_KEY):
+        code = errors.get(key)
+        if code:
+            out["base"] = "claude_key_required" if code == "required" else code
+    return out
+
 
 def _agent_choices() -> dict[str, str]:
     return {MODE_CURSOR: "Cursor", **API_PROVIDERS}
+
+
+def _runtime_section(user_input: dict | None) -> dict:
+    folded = (user_input or {}).get(SECTION_CLAUDE_RUNTIME)
+    return folded if isinstance(folded, dict) else {}
 
 
 def _provider_schema(current: dict) -> vol.Schema:
@@ -265,14 +303,25 @@ def _fields_schema(
         fields[vol.Required(CONF_API_BASE, default=str(current.get(CONF_API_BASE) or ""))] = str
         fields.update(_model_field(API_COMPATIBLE, current, choices=models))
     else:
-        if borrows:
-            options = [{"value": "", "label": "Enter it here"}]
-            options.extend({"value": item["id"], "label": item["label"]} for item in borrows)
-            fields[vol.Optional(CONF_BORROW, default="")] = SelectSelector(
-                SelectSelectorConfig(options=options, mode="dropdown")
-            )
-        fields[vol.Optional(CONF_API_KEY, default="")] = _PASSWORD
-        fields.update(_model_field(provider, current, choices=models))
+        runtime = provider == API_ANTHROPIC and uses_claude_runtime(current, provider)
+        if not runtime:
+            if borrows:
+                options = [{"value": "", "label": "Enter it here"}]
+                options.extend({"value": item["id"], "label": item["label"]} for item in borrows)
+                fields[vol.Optional(CONF_BORROW, default="")] = SelectSelector(
+                    SelectSelectorConfig(options=options, mode="dropdown")
+                )
+            fields[vol.Optional(CONF_API_KEY, default="")] = _PASSWORD
+        if runtime:
+            inner = {
+                vol.Optional(CONF_RUNTIME_URL, default=str(current.get(CONF_RUNTIME_URL) or "")): _URL,
+                vol.Optional(CONF_RUNTIME_TOKEN, default=""): _PASSWORD,
+                vol.Optional(CONF_CLAUDE_API_KEY, default=""): _PASSWORD,
+            }
+            # Open, so the Plan token field is visible right after the switch is turned on.
+            fields[vol.Required(SECTION_CLAUDE_RUNTIME)] = section(vol.Schema(inner), {"collapsed": False})
+        model_kind = MODE_CLAUDE if runtime else provider
+        fields.update(_model_field(model_kind, current, choices=models))
     fields.update(_models_section(current))
     fields.update(_effort_field(current))
     fields[vol.Optional(CONF_ALLOW_INTERNET, default=bool(current.get(CONF_ALLOW_INTERNET, False)))] = cv.boolean
@@ -289,8 +338,11 @@ def _fields_schema(
             fields.update(_tts_speed_field(current, provider))
     # Rarely needed, so it stays folded away.
     advanced = {vol.Optional(CONF_SAVE_TOKENS, default=saves_tokens(current)): cv.boolean}
-    if step == "cloud" and provider == API_ANTHROPIC:
+    if step == "cloud" and provider == API_ANTHROPIC and not uses_claude_runtime(current, provider):
         advanced[vol.Optional(CONF_CACHE_1H, default=caches_an_hour(current))] = cv.boolean
+    if step == "cloud" and provider == API_ANTHROPIC:
+        # Experimental, so it sits under Advanced; OK then shows the fields that belong to it.
+        advanced[vol.Optional(CONF_USE_CLAUDE_RUNTIME, default=uses_claude_runtime(current, provider))] = cv.boolean
     fields[vol.Required(SECTION_ADVANCED)] = section(vol.Schema(advanced), {"collapsed": True})
     return vol.Schema(fields)
 
@@ -311,6 +363,14 @@ def saves_tokens(current: dict) -> bool:
     return token_mode_of(current.get(CONF_LOW_TOKEN, TOKEN_MODE_OFF)) in {TOKEN_MODE_MEDIUM, TOKEN_MODE_EXTREME}
 
 
+def runtime_switch(user_input: dict) -> bool:
+    """Use Claude SDK (runtime), from the Advanced section of the submitted form."""
+    advanced = user_input.get(SECTION_ADVANCED)
+    if isinstance(advanced, dict) and CONF_USE_CLAUDE_RUNTIME in advanced:
+        return bool(advanced[CONF_USE_CLAUDE_RUNTIME])
+    return bool(user_input.get(CONF_USE_CLAUDE_RUNTIME))
+
+
 def caches_an_hour(current: dict) -> bool:
     """1-hour cache checkbox: from the form when it was shown again, else from the stored agent."""
     advanced = current.get(SECTION_ADVANCED)
@@ -329,7 +389,10 @@ def stored_token_mode(current: dict, save: bool) -> str:
 
 
 def _title(provider: str, used: set[str]) -> str:
-    base = "Cursor" if provider == MODE_CURSOR else API_SHORT_LABELS.get(provider, "Agent")
+    if provider == MODE_CURSOR:
+        base = "Cursor"
+    else:
+        base = API_SHORT_LABELS.get(provider, "Agent")
     if base not in used:
         return base
     number = 2
@@ -345,6 +408,12 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
         self._editing = False
         self._current: dict[str, Any] = {}
         self._provider = MODE_CURSOR
+        # Claude SDK agents: the checked agent waits here while the Runtime signs in.
+        self._pending: tuple[str, dict[str, Any]] | None = None
+        self._target: tuple[str, str] = ("", "")
+        self._login: dict[str, Any] | None = None
+        self._login_error = ""
+        self._auth: dict[str, Any] | None = None
 
     async def async_step_user(self, user_input=None):
         del user_input
@@ -358,6 +427,13 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
         self._editing = True
         self._current = dict(self._get_reconfigure_subentry().data)
         self._provider = str(self._current.get(CONF_API_PROVIDER) or MODE_CURSOR)
+        if self._provider == MODE_CLAUDE:
+            self._provider = API_ANTHROPIC
+            self._current = {
+                **self._current,
+                CONF_API_PROVIDER: API_ANTHROPIC,
+                CONF_USE_CLAUDE_RUNTIME: True,
+            }
         return await self.async_step_provider()
 
     async def async_step_provider(self, user_input: dict[str, Any] | None = None):
@@ -394,6 +470,32 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             return {CONF_CURSOR_API_KEY: "required"}
         return {}
 
+    async def _claude_errors(self, claude_key: str, runtime_url: str) -> dict[str, str]:
+        runtime = await async_resolve_runtime_url(self.hass, runtime_url)
+        health = await async_runtime_health(self.hass, runtime) if runtime else None
+        if health is None:
+            return {CONF_RUNTIME_URL: "no_runtime"}
+        if "claude" not in health:
+            return {CONF_RUNTIME_URL: "claude_runtime_old"}
+        if not claude_key and not health.get("claude"):
+            if ENGINE_CLAUDE in (health.get("login") or []):
+                # No credential yet: the next step offers "Sign in with Claude plan".
+                return {}
+            return {CONF_CLAUDE_API_KEY: "required"}
+        # A Claude Plan token (claude setup-token) signs in through Claude Code; only API keys
+        # can be checked against Anthropic's key endpoint here.
+        if claude_key and not claude_key.startswith("sk-ant-oat"):
+            from .api_provider import async_check_api_key
+
+            problem = await async_check_api_key(
+                self.hass, API_ANTHROPIC, claude_key, default_api_base(API_ANTHROPIC), DEFAULT_AZURE_API_VERSION
+            )
+            if problem == "invalid_auth":
+                return {CONF_CLAUDE_API_KEY: "invalid_auth"}
+            if problem:
+                return {"base": problem}
+        return {}
+
     async def _store_runtime(self, submitted_url: str, submitted_token: str) -> None:
         entry = self._get_entry()
         detected = await async_detect_runtime_url(self.hass)
@@ -422,6 +524,8 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             return None
         if provider == MODE_CURSOR:
             live = await async_cursor_models(self.hass, str(current.get(CONF_CURSOR_API_KEY) or ""))
+        elif provider == API_ANTHROPIC and uses_claude_runtime(current, provider):
+            return api_model_choices(MODE_CLAUDE)
         else:
             live = await async_provider_models(
                 self.hass, provider, str(current.get(CONF_API_KEY) or ""), str(current.get(CONF_API_BASE) or "")
@@ -482,12 +586,18 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
         errors: dict[str, str] = {}
         if user_input is not None:
             merged = {**current, **user_input, CONF_API_PROVIDER: provider}
+            if provider == API_ANTHROPIC:
+                use_runtime = runtime_switch(user_input)
+                merged[CONF_USE_CLAUDE_RUNTIME] = use_runtime
+                if use_runtime:
+                    merged.update(_runtime_section(user_input))
             borrowed = borrow_by_id(self.hass, str(user_input.get(CONF_BORROW) or ""))
             if borrowed and borrowed.get("provider") == provider and not str(user_input.get(CONF_API_KEY) or "").strip():
                 merged[CONF_API_KEY] = borrowed["api_key"]
                 merged[CONF_API_BASE] = borrowed["api_base"]
                 merged[CONF_AZURE_API_VERSION] = borrowed.get("azure_api_version") or DEFAULT_AZURE_API_VERSION
             cursor_key = str(merged.get(CONF_CURSOR_API_KEY) or current.get(CONF_CURSOR_API_KEY) or "").strip()
+            claude_key = str(merged.get(CONF_CLAUDE_API_KEY) or current.get(CONF_CLAUDE_API_KEY) or "").strip()
             key = str(merged.get(CONF_API_KEY) or current.get(CONF_API_KEY) or "").strip()
             base = str(merged.get(CONF_API_BASE) or "").strip() or default_api_base(provider)
             version = str(merged.get(CONF_AZURE_API_VERSION) or DEFAULT_AZURE_API_VERSION)
@@ -496,11 +606,28 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                 model = str(borrowed.get("model") or "").strip()
             stored_model = str(current.get(CONF_MODEL) or "")
             own_list = submitted_models(user_input)
-            model, own_list = model_with_list(model, own_list, stored_model, default_api_model(provider))
+            model_kind = (
+                MODE_CLAUDE
+                if provider == API_ANTHROPIC and uses_claude_runtime(merged, provider)
+                else provider
+            )
+            model, own_list = model_with_list(model, own_list, stored_model, default_api_model(model_kind))
             merged[CONF_MODELS] = own_list
-            if provider == MODE_CURSOR:
+            use_runtime = provider == API_ANTHROPIC and uses_claude_runtime(merged, provider)
+            # The switch changed which fields belong on the form (runtime section or cloud API key):
+            # show the form again with the right fields instead of saving or failing on fields not shown.
+            switched = provider == API_ANTHROPIC and use_runtime != (SECTION_CLAUDE_RUNTIME in user_input)
+            # Not checked or saved yet: the form comes back with the other fields.
+            hold = switched
+            if hold:
+                pass
+            elif provider == MODE_CURSOR:
                 errors = await self._cursor_errors(
                     cursor_key, str(merged.get(CONF_RUNTIME_URL) or "")
+                )
+            elif use_runtime:
+                errors = _runtime_section_errors(
+                    await self._claude_errors(claude_key, str(merged.get(CONF_RUNTIME_URL) or ""))
                 )
             elif provider == API_OLLAMA:
                 if not str(merged.get(CONF_API_BASE) or "").strip():
@@ -517,27 +644,37 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                     errors[CONF_API_BASE] = "required"
             elif not key:
                 errors[CONF_API_KEY] = "required"
-            if not errors and provider != MODE_CURSOR:
+            if not errors and not hold and provider not in {MODE_CURSOR, MODE_CLAUDE} and not use_runtime:
                 errors = await self._key_errors(provider, key, base, version)
             if not errors and provider == API_OLLAMA:
                 errors = await self._ollama_model_errors(base, model or default_api_model(API_OLLAMA))
-            if not errors and provider in _TEST_MODEL:
+            if not errors and not hold and provider in _TEST_MODEL:
                 errors = await self._gateway_model_errors(provider, key, base, model, stored_model, own_list)
                 if errors.get(CONF_MODEL) == "pick_model":
                     merged[CONF_MODEL] = self._suggested_model
-            if not errors:
-                if provider == MODE_CURSOR:
-                    await self._store_runtime(
-                        str(merged.get(CONF_RUNTIME_URL) or ""),
-                        str(user_input.get(CONF_RUNTIME_TOKEN) or ""),
-                    )
+            if not errors and not hold:
+                runtime_token = str(
+                    (user_input.get(CONF_RUNTIME_TOKEN) if step == "cursor" else _runtime_section(user_input).get(CONF_RUNTIME_TOKEN))
+                    or user_input.get(CONF_RUNTIME_TOKEN)
+                    or ""
+                )
+                if provider == MODE_CURSOR or use_runtime:
+                    await self._store_runtime(str(merged.get(CONF_RUNTIME_URL) or ""), runtime_token)
                 effort = str(merged.get(CONF_EFFORT) or "")
+                if provider == MODE_CURSOR:
+                    mode = MODE_CURSOR
+                elif use_runtime:
+                    mode = MODE_CLAUDE
+                else:
+                    mode = MODE_API
                 data = {
-                    CONF_MODE: MODE_CURSOR if provider == MODE_CURSOR else MODE_API,
+                    CONF_MODE: mode,
                     CONF_API_PROVIDER: provider,
+                    CONF_USE_CLAUDE_RUNTIME: use_runtime,
                     CONF_CURSOR_API_KEY: cursor_key if provider == MODE_CURSOR else "",
-                    CONF_API_KEY: "" if provider == MODE_CURSOR else key,
-                    CONF_API_BASE: "" if provider == MODE_CURSOR else base,
+                    CONF_CLAUDE_API_KEY: claude_key if use_runtime else "",
+                    CONF_API_KEY: "" if provider == MODE_CURSOR or use_runtime else key,
+                    CONF_API_BASE: "" if provider == MODE_CURSOR or use_runtime else base,
                     CONF_MODEL: model,
                     CONF_EFFORT: "" if effort == EFFORT_DEFAULT else effort,
                     CONF_LOW_TOKEN: stored_token_mode(current, saves_tokens(merged)),
@@ -576,10 +713,15 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                     CONF_AZURE_API_VERSION: version if provider == API_AZURE else "",
                 }
                 data[CONF_MODELS] = own_list
-                if provider == API_ANTHROPIC:
+                if provider == API_ANTHROPIC and not use_runtime:
                     data[CONF_CACHE_1H] = caches_an_hour(merged)
-                if provider != MODE_CURSOR and CONF_PROMPT_CACHE in current:
+                if provider != MODE_CURSOR and not use_runtime and CONF_PROMPT_CACHE in current:
                     data[CONF_PROMPT_CACHE] = bool(current.get(CONF_PROMPT_CACHE))
+                if use_runtime:
+                    # Claude SDK: show the Runtime's sign-in state (and the sign-in button) before saving.
+                    self._current = merged
+                    self._pending = (provider, data)
+                    return await self.async_step_claude_account()
                 return self._finish(provider, data)
             self._current = merged
         example = "https://YOUR-RESOURCE.openai.azure.com" if step == "azure" else default_api_base(API_OLLAMA)
@@ -590,6 +732,8 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             "server_message": getattr(self, "_server_message", "") or "-",
         }
         schema_current = dict(self._current)
+        if user_input and provider == API_ANTHROPIC:
+            schema_current[CONF_USE_CLAUDE_RUNTIME] = runtime_switch(user_input)
         if step == "ollama":
             from .ollama_info import async_ollama_server, ollama_form_note
 
@@ -597,10 +741,11 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             placeholders["ollama_note"] = ollama_form_note(
                 await async_ollama_server(self.hass, url), example, self.hass.config.language
             )
-        if step == "cursor":
+        if step == "cursor" or (step == "cloud" and provider == API_ANTHROPIC and uses_claude_runtime(schema_current, provider)):
             entry = self._get_entry()
             saved = str({**entry.data, **entry.options}.get(CONF_RUNTIME_URL) or "")
-            typed = str((user_input or {}).get(CONF_RUNTIME_URL) or "")
+            rt = _runtime_section(user_input) if step == "cloud" else (user_input or {})
+            typed = str(rt.get(CONF_RUNTIME_URL) or (user_input or {}).get(CONF_RUNTIME_URL) or "")
             if typed:
                 shown = typed.strip().rstrip("/")
                 live = await async_probe_runtime(self.hass, shown)
@@ -609,6 +754,15 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
                 shown, live, auto = await async_runtime_form_url(self.hass, saved)
             schema_current[CONF_RUNTIME_URL] = shown
             placeholders.update(runtime_form_placeholders(live=live, auto=auto, language=self.hass.config.language))
+            if step == "cursor":
+                from .local_text import cursor_key_note
+
+                health = await async_runtime_health(self.hass, shown) if live and shown else None
+                placeholders["cursor_key_note"] = cursor_key_note(
+                    bool(health and health.get("cursor")), self.hass.config.language
+                )
+            if step == "cloud" and provider == API_ANTHROPIC:
+                placeholders["api_key_url"] = api_key_url(MODE_CLAUDE)
         return self.async_show_form(
             step_id=f"provider_{step}",
             data_schema=_fields_schema(
@@ -621,6 +775,178 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             errors=errors,
             description_placeholders=placeholders,
         )
+
+    # ---- Claude SDK: sign in on the Runtime -------------------------------------------------------
+
+    async def _runtime_target(self) -> tuple[str, str]:
+        """Runtime URL and token as saved by the form (the same ones the chat uses)."""
+        entry = self._get_entry()
+        blob = {**entry.data, **entry.options}
+        base = await async_resolve_runtime_url(self.hass, str(blob.get(CONF_RUNTIME_URL) or ""))
+        self._target = (base, str(blob.get(CONF_RUNTIME_TOKEN) or ""))
+        return self._target
+
+    def _own_key(self) -> bool:
+        return bool(self._pending and str(self._pending[1].get(CONF_CLAUDE_API_KEY) or "").strip())
+
+    async def async_step_claude_account(self, user_input=None):
+        """Menu: the Runtime's Claude credential, with Sign in / Sign out / Save / Back."""
+        del user_input
+        from .local_text import claude_signin_text
+        from .runtime_auth import RuntimeAuthError, async_auth_status
+
+        if self._pending is None:
+            return await self.async_step_provider()
+        base, token = await self._runtime_target()
+        problem = ""
+        try:
+            self._auth = await async_auth_status(self.hass, base, token, ENGINE_CLAUDE)
+        except RuntimeAuthError as exc:
+            self._auth = None
+            problem = exc.key
+        status = self._auth
+        own_key = self._own_key()
+        options: list[str] = []
+        if own_key:
+            options.append("claude_save")
+        elif status and status.get("ready"):
+            # The Runtime already has Claude access (its options, environment or an earlier sign-in).
+            options.append("claude_use_runtime")
+        if status and (status.get("login") or {}).get("supported"):
+            options.append("claude_login")
+        if status and status.get("signed_in"):
+            options.append("claude_logout")
+        options.append("claude_back")
+        return self.async_show_menu(
+            step_id="claude_account",
+            menu_options=options,
+            description_placeholders={
+                "status": claude_signin_text(status, own_key, self.hass.config.language, problem),
+            },
+        )
+
+    async def async_step_claude_save(self, user_input=None):
+        del user_input
+        if self._pending is None:
+            return await self.async_step_provider()
+        return self._finish(*self._pending)
+
+    async def async_step_claude_use_runtime(self, user_input=None):
+        return await self.async_step_claude_save(user_input)
+
+    async def async_step_claude_back(self, user_input=None):
+        del user_input
+        await self._cancel_login()
+        self._pending = None
+        return await self._async_step_fields("cloud", None)
+
+    async def async_step_claude_logout(self, user_input=None):
+        del user_input
+        from .runtime_auth import RuntimeAuthError, async_logout
+
+        base, token = await self._runtime_target()
+        try:
+            await async_logout(self.hass, base, token, ENGINE_CLAUDE)
+        except RuntimeAuthError as exc:
+            self._login_error = exc.key
+            return await self.async_step_claude_login_error()
+        return await self.async_step_claude_account()
+
+    async def _cancel_login(self) -> None:
+        from .runtime_auth import async_login_cancel
+
+        login, self._login = self._login, None
+        if login and login.get("id"):
+            base, token = self._target
+            await async_login_cancel(self.hass, base, token, ENGINE_CLAUDE, str(login["id"]))
+
+    async def _fresh_login(self) -> dict[str, Any] | None:
+        """The sign-in that still waits for its code, or a new one. None when it could not start."""
+        from .runtime_auth import RuntimeAuthError, async_login_start, async_login_state
+
+        base, token = await self._runtime_target()
+        if self._login is not None:
+            try:
+                state = await async_login_state(self.hass, base, token, ENGINE_CLAUDE, str(self._login.get("id")))
+            except RuntimeAuthError:
+                state = {}
+            if state.get("status") == "awaiting_code":
+                return self._login
+            self._login = None
+        try:
+            self._login = await async_login_start(self.hass, base, token, ENGINE_CLAUDE)
+        except RuntimeAuthError as exc:
+            self._login_error = exc.key
+            return None
+        return self._login
+
+    async def async_step_claude_login(self, user_input=None):
+        """Show the sign-in link; the code Anthropic shows afterwards is pasted back here."""
+        from .runtime_auth import RuntimeAuthError, async_login_code
+
+        if self._pending is None:
+            return await self.async_step_provider()
+        errors: dict[str, str] = {}
+        if user_input is not None and self._login is not None:
+            base, token = self._target
+            code = str(user_input.get(CONF_LOGIN_CODE) or "").strip()
+            try:
+                body = await async_login_code(self.hass, base, token, ENGINE_CLAUDE, str(self._login.get("id")), code)
+            except RuntimeAuthError as exc:
+                if exc.key in _RETYPE:
+                    errors[CONF_LOGIN_CODE] = exc.key
+                else:
+                    # That sign-in is over on the Runtime; the form comes back with a new link.
+                    errors["base"] = exc.key
+                    self._login = None
+            else:
+                self._login = None
+                self._auth = body.get("auth") if isinstance(body.get("auth"), dict) else None
+                provider, data = self._pending
+                # The sign-in is meant to be used: an older token on this agent would win over it.
+                self._pending = (provider, {**data, CONF_CLAUDE_API_KEY: ""})
+                return await self.async_step_claude_signed_in()
+        login = self._login if errors.get(CONF_LOGIN_CODE) else await self._fresh_login()
+        if login is None:
+            return await self.async_step_claude_login_error()
+        return self.async_show_form(
+            step_id="claude_login",
+            data_schema=vol.Schema({vol.Required(CONF_LOGIN_CODE): TextSelector(TextSelectorConfig())}),
+            errors=errors,
+            description_placeholders={"url": str(login.get("url") or "")},
+        )
+
+    async def async_step_claude_signed_in(self, user_input=None):
+        """Signed in: say so (no secrets), then save the agent."""
+        from .local_text import claude_signin_text
+
+        if self._pending is None:
+            return await self.async_step_provider()
+        if user_input is not None:
+            return self._finish(*self._pending)
+        return self.async_show_form(
+            step_id="claude_signed_in",
+            data_schema=vol.Schema({}),
+            description_placeholders={
+                "status": claude_signin_text(self._auth, self._own_key(), self.hass.config.language),
+            },
+        )
+
+    async def async_step_claude_login_error(self, user_input=None):
+        """The Runtime could not start (or end) the sign-in; submit goes back to the menu."""
+        if user_input is not None:
+            self._login_error = ""
+            return await self.async_step_claude_account()
+        from .runtime_auth import KNOWN_ERRORS
+
+        key = self._login_error if self._login_error in KNOWN_ERRORS else "login_failed"
+        return self.async_show_form(step_id="claude_login_error", data_schema=vol.Schema({}), errors={"base": key})
+
+    @callback
+    def async_remove(self) -> None:
+        """Dialog closed: stop a sign-in that still waits for its code."""
+        if self._login and self._login.get("id") and self.hass is not None:
+            self.hass.async_create_task(self._cancel_login())
 
     def _finish(self, provider: str, data: dict[str, Any]):
         entry = self._get_entry()

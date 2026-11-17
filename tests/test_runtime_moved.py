@@ -35,7 +35,7 @@ def _setup(monkeypatch, alive: set[str], found: str):
         bucket["runtime_url"] = found
         return found
 
-    async def create(hass_, user_id, session_id, agent_id):
+    async def create(hass_, user_id, session_id, agent_id, **_kw):
         return None
 
     monkeypatch.setattr(http, "async_get_clientsession", lambda hass_: Session())

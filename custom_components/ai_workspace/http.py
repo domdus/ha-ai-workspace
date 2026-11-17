@@ -20,6 +20,7 @@ from .const import (
     activity_restore_expired,
     activity_restore_flags,
     change_history_ttl_days,
+    approval_timeout_minutes,
     CLOUD_ONLY_MODELS,
     standing_chat_prompt,
     DOMAIN,
@@ -36,11 +37,11 @@ from .const import (
     token_mode_checks_house,
     token_mode_clip_user,
     token_mode_fresh_agent,
-    token_mode_reply_limit,
 )
 from .mcp_config import with_mcp_auth
 from .mcp_observe import last_mcp_result, note_mcp_result
 from .mcp_resolve import for_runtime, ha_hosts, hass_mcp_server_url
+from .approvals import open_cards, register_approval_views
 from .callback_keys import Caller
 from .live_turn import end_turn, live_turn, start_turn
 from .local_time import house_zone, stamped_now, time_rule
@@ -60,9 +61,15 @@ from .small_talk import wants_house_tools
 from .store import Session, Store
 from .titles import accept_generated_title, needs_title_summary, title_from_prompt
 from .usage_cost import estimate_cost
-from .usage_record import dashboard_payload, finalize_usage, record_usage_turn
+from .usage_record import dashboard_payload, finalize_usage, record_usage_turn, record_worker_usage
 
 logger = logging.getLogger(__name__)
+
+_RUNTIME_PROVIDER_KINDS = frozenset({"cursor", "claude"})
+
+
+def _is_runtime_provider(provider: Any) -> bool:
+    return getattr(provider, "kind", "") in _RUNTIME_PROVIDER_KINDS
 CHAT_GONE = "Chat not found. It may have been deleted, for example on another device."
 
 
@@ -130,6 +137,40 @@ def _runtime_headers(request: web.Request) -> dict[str, str]:
 
 # Runtime answers that mean the chat never reached the agent.
 _RUNTIME_DOWN = frozenset({401, 403, 404, 502, 503, 504})
+# What runtimes up to 1.6.0b7 accept in the helper fields; longer values made the whole turn fail
+# with HTTP 422. `question` is a copy of the message, used only to pick tools and a title.
+RUNTIME_QUESTION_CHARS = 8000
+RUNTIME_HANDOFF_CHARS = 120000
+RUNTIME_PROMPT_CHARS = 120000
+
+
+def runtime_helper_fields(question: str, handoff: str = "", prompt: str = "") -> tuple[str, str, str]:
+    """The helper fields cut to what every runtime accepts (the newest part of the handoff)."""
+    handoff = handoff or ""
+    if len(handoff) > RUNTIME_HANDOFF_CHARS:
+        handoff = "…" + handoff[-(RUNTIME_HANDOFF_CHARS - 1):]
+    return (question or "")[:RUNTIME_QUESTION_CHARS], handoff, (prompt or "")[:RUNTIME_PROMPT_CHARS]
+
+
+def _validation_text(detail: list) -> str:
+    """FastAPI's 422 detail (a list of problems) as one sentence."""
+    for item in detail:
+        if not isinstance(item, dict):
+            continue
+        field = ".".join(str(part) for part in (item.get("loc") or [])[1:]) or "request"
+        if item.get("type") == "string_too_long":
+            limit = (item.get("ctx") or {}).get("max_length")
+            if field == "message":
+                return (
+                    "This message is too long for the AI Workspace Runtime"
+                    + (f" (at most {int(limit):,} characters, files included)" if limit else "")
+                    + ". Shorten it or attach less."
+                )
+            return f"The AI Workspace Runtime refused the request: {field} is too long."
+        message = str(item.get("msg") or "").strip()
+        if message:
+            return f"The AI Workspace Runtime refused the request: {field}: {message}"[:400]
+    return ""
 
 
 def _runtime_error(status: int, text: str) -> str:
@@ -139,15 +180,19 @@ def _runtime_error(status: int, text: str) -> str:
         detail = None
     if isinstance(detail, str) and detail.strip():
         return detail.strip()[:400]
+    if isinstance(detail, list):
+        explained = _validation_text(detail)
+        if explained:
+            return explained
     if status == 401:
-        return "The Cursor SDK Runtime refused the token. Set the same Runtime token on both sides."
+        return "The AI Workspace Runtime refused the token. Set the same Runtime token on both sides."
     if status == 404:
         return (
-            "This chat exists in Home Assistant but the Cursor Runtime did not have a matching session "
+            "This chat exists in Home Assistant but the AI Workspace Runtime did not have a matching session "
             "(often after a container rebuild). The integration retried once; if this persists, check the "
-            "Runtime URL and token on the Cursor agent."
+            "Runtime URL and token on the agent."
         )
-    return f"The Cursor SDK Runtime answered HTTP {status}."
+    return f"The AI Workspace Runtime answered HTTP {status}."
 
 
 async def _create_runtime_session(
@@ -155,12 +200,13 @@ async def _create_runtime_session(
     user_id: str,
     session_id: str | None = None,
     agent_id: str | None = None,
+    provider: str = "cursor",
 ) -> str | None:
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
         return None
     http: ClientSession = async_get_clientsession(hass)
-    payload: dict[str, str] = {"provider": "cursor"}
+    payload: dict[str, str] = {"provider": provider if provider in _RUNTIME_PROVIDER_KINDS else "cursor"}
     if session_id:
         payload["id"] = session_id
     if agent_id:
@@ -183,20 +229,25 @@ async def _create_runtime_session(
     return str((body or {}).get("id") or "") or None
 
 
-def _runtime_unreachable(hass: HomeAssistant) -> str:
+def _runtime_unreachable(hass: HomeAssistant, kind: str = "cursor") -> str:
     """Why a chat could not reach the Runtime: pairing or token problems say so themselves."""
     for item in (_runtime(hass).get("providers") or {}).values():
         info = getattr(item, "info", None)
-        if getattr(item, "kind", "") == "cursor" and info is not None and not info.available and info.reason:
+        if getattr(item, "kind", "") == kind and info is not None and not info.available and info.reason:
             return str(info.reason)
     return (
-        "Home Assistant could not sync this chat to the Cursor Runtime. "
-        "Check the Runtime URL and token on the Cursor agent, then try again."
+        "Home Assistant could not sync this chat to the AI Workspace Runtime. "
+        "Check the Runtime URL and token on the agent, then try again."
     )
 
 
 async def _ensure_runtime_session(
-    hass: HomeAssistant, user_id: str, session: Session, *, rebind: bool = True
+    hass: HomeAssistant,
+    user_id: str,
+    session: Session,
+    *,
+    rebind: bool = True,
+    runtime_provider: str = "cursor",
 ) -> bool:
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
@@ -216,7 +267,9 @@ async def _ensure_runtime_session(
     except Exception:
         logger.debug("runtime session lookup skipped", exc_info=True)
     for _ in range(2):
-        created = await _create_runtime_session(hass, user_id, session.id, agent_id)
+        created = await _create_runtime_session(
+            hass, user_id, session.id, agent_id, provider=runtime_provider
+        )
         if created:
             return True
     logger.warning("runtime session sync failed session=%s", session.id)
@@ -225,8 +278,8 @@ async def _ensure_runtime_session(
         # look for it again instead of failing every chat against the old address.
         url = (await async_bind_runtime(hass, _runtime(hass), force=True) or "").rstrip("/")
         if url and url != base:
-            logger.info("Cursor Runtime moved from %s to %s; syncing the chat there", base, url)
-            return await _ensure_runtime_session(hass, user_id, session, rebind=False)
+            logger.info("AI Workspace Runtime moved from %s to %s; syncing the chat there", base, url)
+            return await _ensure_runtime_session(hass, user_id, session, rebind=False, runtime_provider=runtime_provider)
     return False
 
 
@@ -309,14 +362,16 @@ async def _runtime_chat(
     allow_internet: bool = False,
     token_mode: str = TOKEN_MODE_OFF,
     check_house: bool = True,
+    runtime_provider: str = "cursor",
 ) -> AsyncIterator[dict]:
-    """One Cursor turn. Reduce token usage and Check the house work as on cloud agents."""
+    """One SDK runtime turn (Cursor or Claude). Reduce token usage and Check the house work as on cloud agents."""
+    runtime_kind = runtime_provider if runtime_provider in _RUNTIME_PROVIDER_KINDS else "cursor"
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
-        yield {"type": "error", "message": "Cursor Runtime is not configured.", "connection": True}
+        yield {"type": "error", "message": "AI Workspace Runtime is not configured.", "connection": True}
         return
-    if not await _ensure_runtime_session(hass, user_id, session):
-        yield {"type": "error", "message": _runtime_unreachable(hass), "connection": True}
+    if not await _ensure_runtime_session(hass, user_id, session, runtime_provider=runtime_kind):
+        yield {"type": "error", "message": _runtime_unreachable(hass, runtime_kind), "connection": True}
         return
     # Syncing may have found the Runtime at a new address.
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
@@ -341,15 +396,18 @@ async def _runtime_chat(
         user_text = f"{user_text}\n\n{CHECK_HOUSE_NOTE}"
     from .notes import notes_update, remember_nudge
 
-    changed_notes = notes_update(hass, settings, session.id, fresh=token_mode_fresh_agent(token_mode))
+    # Under Save tokens the Runtime keeps the agent for a while (Claude until it grows, Cursor a few turns),
+    # so a warm agent still needs to hear when the notes change.
+    changed_notes = notes_update(hass, settings, session.id)
     if changed_notes:
         user_text = f"{user_text}\n\n{changed_notes}"
     nudge = remember_nudge(settings, asked, admin=admin)
     if nudge:
         user_text = f"{user_text}\n\n{nudge}"
+    short_question, handoff, short_prompt = runtime_helper_fields((question or message).strip(), handoff, standing)
     payload: dict[str, Any] = {
         "message": f"{standing}\n\n{user_text}" if standing else user_text,
-        "question": (question or message).strip(),
+        "question": short_question,
         "origin": origin,
         "history_in_ha": True,
         "full_tools": _full_tools(user_id, admin),
@@ -359,9 +417,12 @@ async def _runtime_chat(
         "titles": token_mode_allows_extras(token_mode),
     }
     if standing:
-        payload["prompt"] = standing
-    if session.agent_id:
+        payload["prompt"] = short_prompt
+    if session.agent_id and runtime_kind == "cursor":
+        # Only a Cursor agent can pick up an agent id kept in Home Assistant.
         payload["sync_agent_id"] = str(session.agent_id)
+    # The Runtime moves the chat to this engine when it started on another one.
+    payload["provider"] = runtime_kind
     if images:
         payload["images"] = [
             {"name": item["name"], "mime": item["mime"], "data": item["data"]} for item in images
@@ -374,7 +435,9 @@ async def _runtime_chat(
     payload.update(_runtime_agent_overrides(hass, access_token=token, admin=admin))
     if model:
         payload["model"] = model
-    if effort and token_mode_reply_limit(token_mode) is None:
+    if effort:
+        # Save tokens drops the effort on cloud agents, where it also caps the reply length. The Runtime has
+        # no such cap: without the effort, Claude Code and Cursor fell back to their own, often higher, default.
         payload["effort"] = effort
     if api_key:
         payload["api_key"] = api_key
@@ -382,6 +445,8 @@ async def _runtime_chat(
         payload["handoff"] = handoff
     # The Runtime's Change History callbacks for this turn must carry this key.
     payload["callback_key"] = issue_callback_key(hass, user_id, session.id, agent or "Cursor", access_token=token)
+    # How long a question from an MCP tool (elicitation, worker approval) waits for the user's click.
+    payload["approval_timeout"] = approval_timeout_minutes(getattr(settings, "approval_timeout_minutes", None)) * 60
     sent = {**(headers or _runtime_headers_for(hass, user_id)), "Accept": "text/event-stream"}
     if agent:
         sent["X-Ai-Workspace-Agent"] = agent
@@ -406,7 +471,7 @@ async def _runtime_chat(
         resp.release()
         resp = None
         logger.info("runtime chat 404, resyncing session=%s", session.id)
-        if not await _ensure_runtime_session(hass, user_id, session):
+        if not await _ensure_runtime_session(hass, user_id, session, runtime_provider=runtime_kind):
             yield {"type": "error", "message": _runtime_error(404, ""), "connection": True}
             return
     if resp is None:
@@ -423,9 +488,63 @@ async def _runtime_chat(
         async for name, payload in _iter_sse(resp):
             event = dict(payload)
             event.setdefault("type", name)
-            yield event
+            await _ingest_runtime_plan_event(hass, event)
+            yield _localized_runtime_error(hass, event, language)
     finally:
         resp.release()
+
+
+def _format_plan_reset(hass, epoch: object) -> str:
+    if epoch in (None, "", 0):
+        return "?"
+    from datetime import datetime, timezone
+
+    from .usage_record import zone_info
+
+    try:
+        ts = int(epoch)
+    except (TypeError, ValueError):
+        return "?"
+    when = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone(zone_info(hass))
+    return when.strftime("%H:%M")
+
+
+def _localized_runtime_error(hass, event: dict, language: str = "") -> dict:
+    """Runtime errors with a known code read in the chat's language (the Runtime only knows English)."""
+    if event.get("type") != "error":
+        return event
+    from .local_text import CLAUDE_AUTH_FAILED_CODE, claude_auth_failed_text, claude_plan_rejected_text
+    from .plan_quota import CLAUDE_PLAN_REJECTED_CODE
+
+    if event.get("code") == CLAUDE_AUTH_FAILED_CODE:
+        return {**event, "message": claude_auth_failed_text(language)}
+    if event.get("code") == CLAUDE_PLAN_REJECTED_CODE:
+        return {
+            **event,
+            "message": claude_plan_rejected_text(
+                language,
+                window=str(event.get("window") or "session"),
+                reset=_format_plan_reset(hass, event.get("reset_at")),
+            ),
+        }
+    return event
+
+
+async def _ingest_runtime_plan_event(hass, event: dict) -> None:
+    from .plan_quota import ENGINES
+    from .plan_quota_store import async_merge_plan_quota
+
+    kind = event.get("type")
+    engine = str(event.get("engine") or "claude").strip().lower()
+    if engine not in ENGINES:
+        return
+    if kind in {"plan_notice", "plan_usage"}:
+        from .plan_quota import snapshot_from_event
+
+        try:
+            await async_merge_plan_quota(hass, engine, snapshot_from_event(event))
+        except Exception:  # noqa: BLE001 - plan data is extra; the chat must go on.
+            logger.debug("plan quota not stored", exc_info=True)
 
 
 async def async_agent_events(
@@ -452,7 +571,7 @@ async def async_agent_events(
             hass.async_add_executor_job(store.set_agent_id, session.id, agent_id)
         session.agent_id = agent_id
 
-    if getattr(provider, "kind", "") == "cursor":
+    if _is_runtime_provider(provider):
         async for event in _runtime_chat(
             hass,
             user_id,
@@ -471,6 +590,7 @@ async def async_agent_events(
             allow_internet=bool(getattr(provider, "allow_internet", False)),
             token_mode=provider_token_mode(provider),
             check_house=bool(getattr(provider, "check_house", True)),
+            runtime_provider=str(getattr(provider, "kind", "") or "cursor"),
         ):
             yield event
         return
@@ -497,7 +617,7 @@ def _with_model(provider: Any, model: str) -> Any:
     model = str(model or "").strip()
     if provider is None or not model:
         return provider
-    if getattr(provider, "kind", "") == "cursor":
+    if _is_runtime_provider(provider):
         if model == str(getattr(provider, "model", "") or ""):
             return provider
         clone = copy.copy(provider)
@@ -698,6 +818,7 @@ class HealthView(HomeAssistantView):
                 "ok": True,
                 "runtime": bool(data.get("runtime_url")),
                 "cursor": any(getattr(item, "kind", "") == "cursor" and item.info.available for item in providers),
+                "claude": any(getattr(item, "kind", "") == "claude" and item.info.available for item in providers),
                 "overlay": settings.enable_overlay,
                 "dictate": settings.enable_dictate,
             }
@@ -714,7 +835,7 @@ class ProvidersView(HomeAssistantView):
         hass = _hass(request)
         data = _runtime(hass)
         if any(
-            getattr(item, "kind", "") == "cursor" and not item.info.available
+            getattr(item, "kind", "") in _RUNTIME_PROVIDER_KINDS and not item.info.available
             for item in (data.get("providers") or {}).values()
         ):
             await async_bind_runtime(hass, data, force=True)
@@ -783,8 +904,10 @@ class SessionsView(HomeAssistantView):
         user_id = _user_id(request)
         session_id = None
         chosen = providers.get(provider)
-        if getattr(chosen, "kind", "") == "cursor":
-            session_id = await _create_runtime_session(hass, user_id)
+        if _is_runtime_provider(chosen):
+            session_id = await _create_runtime_session(
+                hass, user_id, provider=str(getattr(chosen, "kind", "") or "cursor")
+            )
         session = await hass.async_add_executor_job(
             store.create_session, user_id, provider, session_id
         )
@@ -809,12 +932,17 @@ class SessionView(HomeAssistantView):
             session = store.get_session(user_id, session_id)
             if session is None:
                 return None
-            return session, store.list_messages(session.id), store.has_session_activity(session.id)
+            return (
+                session,
+                store.list_messages(session.id),
+                store.has_session_activity(session.id),
+                open_cards(store, session.id),
+            )
 
         payload = await hass.async_add_executor_job(load)
         if payload is None:
             raise web.HTTPNotFound(text=CHAT_GONE)
-        session, messages, has_activity = payload
+        session, messages, has_activity, approvals = payload
         pending = False
         lock = _runtime(hass).get("locks", {}).get(session.id)
         if lock is not None:
@@ -825,6 +953,8 @@ class SessionView(HomeAssistantView):
                 "pending": pending,
                 "has_activity": has_activity,
                 "messages": [_message_dict(item) for item in messages],
+                # Questions from MCP tools still waiting for this user's click.
+                "approvals": approvals,
             }
         )
 
@@ -977,6 +1107,10 @@ class ChatView(HomeAssistantView):
         model = session.model
         if requested and (requested in providers or requested in known_assist) and requested != session.provider:
             await hass.async_add_executor_job(store.set_provider, user_id, session.id, requested)
+            if session.agent_id:
+                # The old agent's id means nothing to the new one; the transcript carries the chat over.
+                await hass.async_add_executor_job(store.set_agent_id, session.id, "")
+                session.agent_id = None
             session.provider = requested
             model = ""
         switcher = bool(getattr(settings, "model_switcher", False))
@@ -987,7 +1121,8 @@ class ChatView(HomeAssistantView):
             session.model = model
         assist = session.provider in known_assist
         if not assist and any(
-            getattr(item, "kind", "") == "cursor" and not item.info.available for item in providers.values()
+            getattr(item, "kind", "") in _RUNTIME_PROVIDER_KINDS and not item.info.available
+            for item in providers.values()
         ):
             await async_bind_runtime(hass, data, force=True)
             providers = data.get("providers") or {}
@@ -1020,7 +1155,7 @@ class ChatView(HomeAssistantView):
         if note:
             outbound = f"{outbound}\n\n{note}"
         handoff = ""
-        if assist or getattr(provider, "kind", "") == "cursor":
+        if assist or _is_runtime_provider(provider):
             rows = await hass.async_add_executor_job(store.list_messages, session.id)
             handoff = handoff_note(
                 rows,
@@ -1030,15 +1165,16 @@ class ChatView(HomeAssistantView):
                 manual_window=int(getattr(settings, "context_window", 0) or 0),
                 zone=house_zone(hass),
             )
-            if getattr(provider, "kind", "") == "cursor":
+            if _is_runtime_provider(provider):
                 logger.info(
-                    "cursor handoff session=%s prior=%s chars=%s",
+                    "runtime handoff session=%s prior=%s chars=%s kind=%s",
                     session.id,
                     max(0, len(rows) - 1),
                     len(handoff),
+                    getattr(provider, "kind", ""),
                 )
                 if len(rows) > 1 and not handoff:
-                    logger.warning("cursor handoff empty despite stored turns session=%s", session.id)
+                    logger.warning("runtime handoff empty despite stored turns session=%s", session.id)
         access_token = _bearer(request)
         runtime_headers = _runtime_headers(request)
 
@@ -1060,7 +1196,7 @@ class ChatView(HomeAssistantView):
                 ):
                     yield event
                 return
-            if getattr(provider, "kind", "") == "cursor":
+            if _is_runtime_provider(provider):
                 async for event in _runtime_chat(
                     hass,
                     user_id,
@@ -1082,6 +1218,7 @@ class ChatView(HomeAssistantView):
                     allow_internet=bool(getattr(provider, "allow_internet", False)),
                     token_mode=token_mode,
                     check_house=bool(getattr(provider, "check_house", True)),
+                    runtime_provider=str(getattr(provider, "kind", "") or "cursor"),
                 ):
                     yield event
                 return
@@ -1114,10 +1251,8 @@ class ChatView(HomeAssistantView):
         client_gone = False
         live = start_turn(hass, session.id)
 
-        async def send(event: dict) -> None:
+        async def write_direct(event: dict) -> None:
             nonlocal client_gone
-            # A reloaded page follows the reply from here, also after this connection is gone.
-            live.publish(event)
             if client_gone:
                 return
             try:
@@ -1127,6 +1262,14 @@ class ChatView(HomeAssistantView):
                 await response.write(_sse(str(event["type"]), event))
             except Exception:
                 client_gone = True
+
+        async def send(event: dict) -> None:
+            # A reloaded page follows the reply from here, also after this connection is gone.
+            live.publish(event)
+            await write_direct(event)
+
+        # Approval cards come from Runtime callbacks, not from the reply: they reach this page too.
+        live.direct = write_direct
 
         user = await hass.auth.async_get_user(user_id)
         user_name = str(getattr(user, "name", "") or "") if user else user_id
@@ -1198,10 +1341,30 @@ class ChatView(HomeAssistantView):
                                     **({"note": event["note"]} if event.get("note") else {}),
                                 }
                             )
+                        elif kind == "plan_notice":
+                            await _ingest_runtime_plan_event(hass, event)
+                        elif kind == "plan_usage":
+                            # Stored for the Usage page; nothing to show in the chat.
+                            await _ingest_runtime_plan_event(hass, event)
+                            continue
                         elif kind == "error":
+                            event = _localized_runtime_error(hass, event, language)
                             error = public_error(event.get("message"))
                             unsent = bool(event.get("connection")) and not parts and not tools
                             event = {**event, "message": error}
+                        elif kind == "usage" and event.get("worker"):
+                            # A worker job's own usage: its engine, not this chat agent, once per job.
+                            worker = await record_worker_usage(
+                                hass,
+                                store=store,
+                                user_id=user_id,
+                                session_id=session.id,
+                                event=event,
+                                origin="chat",
+                            )
+                            if worker is None:
+                                continue
+                            event = worker
                         elif kind == "usage":
                             billed = finalize_usage(
                                 event,
@@ -1237,6 +1400,8 @@ class ChatView(HomeAssistantView):
                         logger.debug("stopped turn usage not stored", exc_info=True)
                     answer = merge_reply_text("".join(parts), final)
                     if answer or tools:
+                        # Marked, so the chat says the reply was cut off instead of looking finished.
+                        cut = [*tools, {"type": "interrupted"}]
                         try:
                             await asyncio.shield(
                                 hass.async_add_executor_job(
@@ -1244,7 +1409,7 @@ class ChatView(HomeAssistantView):
                                     session.id,
                                     "assistant",
                                     answer,
-                                    json.dumps(list(tools), ensure_ascii=False),
+                                    json.dumps(cut, ensure_ascii=False),
                                 )
                             )
                         except Exception:
@@ -1857,6 +2022,9 @@ class UsageView(HomeAssistantView):
         model = str(request.query.get("model") or "").strip()
         since = str(request.query.get("since") or "").strip()
         until = str(request.query.get("until") or "").strip()
+        from .plan_quota_store import async_refresh_runtime_plan_quota
+
+        await async_refresh_runtime_plan_quota(hass)
         payload = await hass.async_add_executor_job(
             lambda: dashboard_payload(
                 hass,
@@ -1894,3 +2062,4 @@ def register_views(hass: HomeAssistant) -> None:
     hass.http.register_view(McpProxyView)
     hass.http.register_view(ActivityPrepareView)
     hass.http.register_view(ActivityCommitView)
+    register_approval_views(hass)

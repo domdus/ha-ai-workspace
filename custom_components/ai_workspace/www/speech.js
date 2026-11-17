@@ -319,3 +319,28 @@ export function clipWatch({ now, startedAt, lastProgress, started, paused, ended
   if (paused) return "wait";
   return now - lastProgress > CLIP_STALL_MS ? "done" : "wait";
 }
+
+/**
+ * Sending a prompt may prepare audio output only when the reply will be read aloud
+ * automatically. Otherwise touching audio makes Android duck other apps (e.g. YouTube).
+ */
+export function unlockOnSend(voice) {
+  return Boolean(voice?.speak && voice?.tts);
+}
+
+/**
+ * Lets go of an audio element so the OS drops audio focus and other apps play at
+ * full volume again. The element stays reusable (it keeps its user-gesture unlock).
+ */
+export function releaseAudio(audio) {
+  if (!audio) return;
+  try {
+    if (!audio.paused) audio.pause();
+    if (audio.hasAttribute?.("src") || audio.src) {
+      audio.removeAttribute?.("src");
+      audio.load?.();
+    }
+  } catch (_err) {
+    /* already released */
+  }
+}

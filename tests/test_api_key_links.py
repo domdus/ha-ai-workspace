@@ -6,6 +6,7 @@ from custom_components.ai_workspace.const import (
     API_KEY_URLS,
     API_OLLAMA,
     API_PROVIDERS,
+    MODE_CLAUDE,
     MODE_CURSOR,
     api_key_url,
 )
@@ -19,6 +20,14 @@ _LINK_FIELDS = (
     ("provider_azure", "api_key"),
 )
 
+_RUNTIME_KEY_FIELD = (
+    "provider_cloud",
+    "sections",
+    "claude_runtime",
+    "data_description",
+    "claude_api_key",
+)
+
 
 def test_cloud_providers_have_key_pages():
     for kind in API_PROVIDERS:
@@ -28,7 +37,7 @@ def test_cloud_providers_have_key_pages():
         else:
             assert url.startswith("https://"), kind
     assert api_key_url(MODE_CURSOR).startswith("https://")
-    assert set(API_KEY_URLS) == (set(API_PROVIDERS) | {MODE_CURSOR}) - _NO_KEY_PAGE
+    assert set(API_KEY_URLS) == (set(API_PROVIDERS) | {MODE_CURSOR, MODE_CLAUDE}) - _NO_KEY_PAGE
 
 
 def test_agent_form_strings_include_key_link():
@@ -39,6 +48,10 @@ def test_agent_form_strings_include_key_link():
             text = steps[step]["data_description"][field]
             assert "{api_key_url}" in text, f"{path.name} {step}.{field}"
             assert "]({api_key_url})" in text, f"{path.name} {step}.{field}"
+        sec = steps
+        for part in _RUNTIME_KEY_FIELD:
+            sec = sec[part]
+        assert "{api_key_url}" in sec and "]({api_key_url})" in sec
 
 
 def test_hacs_uses_git_archive_and_has_brand_icon():

@@ -208,6 +208,19 @@ class Store:
             CREATE INDEX IF NOT EXISTS usage_turns_created ON usage_turns(created_at);
             CREATE INDEX IF NOT EXISTS usage_turns_agent ON usage_turns(agent_id, created_at);
             CREATE INDEX IF NOT EXISTS usage_turns_session ON usage_turns(session_id);
+            CREATE TABLE IF NOT EXISTS approvals (
+                id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                kind TEXT NOT NULL DEFAULT 'elicitation',
+                card TEXT NOT NULL DEFAULT '{}',
+                answer_key TEXT NOT NULL DEFAULT '',
+                status TEXT NOT NULL DEFAULT 'pending',
+                created_at TEXT NOT NULL,
+                expires_at REAL NOT NULL DEFAULT 0,
+                closed_at TEXT
+            );
+            CREATE INDEX IF NOT EXISTS approvals_session ON approvals(session_id, status);
             """
         )
         cols = {row[1] for row in self._conn.execute("PRAGMA table_info(sessions)")}
@@ -538,6 +551,7 @@ class Store:
             return False
         with self._lock:
             self._conn.execute("DELETE FROM messages WHERE session_id = ?", (_text(session_id),))
+            self._conn.execute("DELETE FROM approvals WHERE session_id = ?", (_text(session_id),))
             self._conn.execute("DELETE FROM sessions WHERE id = ?", (_text(session_id),))
             self._conn.commit()
         return True
@@ -756,7 +770,13 @@ class Store:
         origin: str = "",
         characters: int = 0,
         created_at: str | None = None,
+        unique_run: bool = False,
     ) -> int:
+        """Store one usage row and return its id.
+
+        unique_run skips the row (and returns 0) when a row with the same run_id exists:
+        a worker job polled again repeats the usage it reported before.
+        """
         now = _text(created_at) or _now()
         total = _counted_tokens(
             prompt_tokens,
@@ -766,6 +786,12 @@ class Store:
             total_tokens,
         )
         with self._lock:
+            if unique_run and _text(run_id):
+                seen = self._conn.execute(
+                    "SELECT 1 FROM usage_turns WHERE run_id = ? LIMIT 1", (_text(run_id),)
+                ).fetchone()
+                if seen:
+                    return 0
             cursor = self._conn.execute(
                 """
                 INSERT INTO usage_turns (
@@ -799,6 +825,15 @@ class Store:
             )
             self._conn.commit()
             return int(cursor.lastrowid)
+
+    def has_usage_run(self, run_id: str) -> bool:
+        if not _text(run_id):
+            return False
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT 1 FROM usage_turns WHERE run_id = ? LIMIT 1", (_text(run_id),)
+            ).fetchone()
+        return row is not None
 
     def summarize_usage(
         self,
@@ -1125,6 +1160,61 @@ class Store:
             }
             for row in rows
         ]
+
+    # Questions to the user from MCP servers (elicitation) and worker approvals, per chat. Kept
+    # here so a closed panel or the companion app shows them again; the answer key never leaves.
+
+    def save_approval(
+        self,
+        item_id: str,
+        session_id: str,
+        user_id: str,
+        kind: str,
+        card: str,
+        answer_key: str,
+        expires_at: float,
+    ) -> bool:
+        """Store a new open card. False when that id is already known (a job polled again)."""
+        with self._lock:
+            found = self._conn.execute("SELECT 1 FROM approvals WHERE id = ?", (_text(item_id),)).fetchone()
+            if found is not None:
+                return False
+            self._conn.execute(
+                """
+                INSERT INTO approvals (id, session_id, user_id, kind, card, answer_key, status, created_at, expires_at)
+                VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+                """,
+                (_text(item_id), _text(session_id), _text(user_id), _text(kind), card, answer_key, _now(), float(expires_at)),
+            )
+            self._conn.execute(
+                "DELETE FROM approvals WHERE status != 'pending' AND id NOT IN "
+                "(SELECT id FROM approvals ORDER BY created_at DESC LIMIT 500)"
+            )
+            self._conn.commit()
+        return True
+
+    def get_approval(self, item_id: str) -> dict | None:
+        with self._lock:
+            row = self._conn.execute("SELECT * FROM approvals WHERE id = ?", (_text(item_id),)).fetchone()
+        return dict(row) if row else None
+
+    def list_approvals(self, session_id: str, *, open_only: bool = True) -> list[dict]:
+        query = "SELECT * FROM approvals WHERE session_id = ?"
+        if open_only:
+            query += " AND status = 'pending'"
+        with self._lock:
+            rows = self._conn.execute(query + " ORDER BY created_at, id", (_text(session_id),)).fetchall()
+        return [dict(row) for row in rows]
+
+    def close_approval(self, item_id: str, status: str) -> bool:
+        """Mark an open card answered, expired or gone. False when it was not open any more."""
+        with self._lock:
+            cur = self._conn.execute(
+                "UPDATE approvals SET status = ?, closed_at = ? WHERE id = ? AND status = 'pending'",
+                (_text(status) or "closed", _now(), _text(item_id)),
+            )
+            self._conn.commit()
+        return cur.rowcount > 0
 
 
 def _restore_target(document: str) -> tuple[str, str, str]:

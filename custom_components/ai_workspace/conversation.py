@@ -25,7 +25,7 @@ from .http import _create_runtime_session, async_agent_events
 from .small_talk import wants_house_tools
 from .store import Store
 from .titles import accept_generated_title, needs_title_summary, title_from_prompt
-from .usage_record import finalize_usage, record_usage_turn
+from .usage_record import finalize_usage, record_usage_turn, record_worker_usage
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -192,7 +192,7 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
         providers = data.get("providers") or {}
         provider = providers.get(self._agent_id)
         info = getattr(provider, "info", None)
-        if getattr(provider, "kind", "") == "cursor" and not getattr(info, "available", False):
+        if getattr(provider, "kind", "") in {"cursor", "claude"} and not getattr(info, "available", False):
             from .discovery import async_bind_runtime
 
             await async_bind_runtime(self.hass, data, force=True)
@@ -212,8 +212,13 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
 
         session = await self.hass.async_add_executor_job(store.get_session, user_id, conversation_id)
         if session is None:
-            if getattr(provider, "kind", "") == "cursor":
-                await _create_runtime_session(self.hass, user_id, conversation_id)
+            if getattr(provider, "kind", "") in {"cursor", "claude"}:
+                await _create_runtime_session(
+                    self.hass,
+                    user_id,
+                    conversation_id,
+                    provider=str(getattr(provider, "kind", "") or "cursor"),
+                )
             session = await self.hass.async_add_executor_job(
                 store.create_session, user_id, self._agent_id, conversation_id
             )
@@ -251,7 +256,7 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
             await self.hass.async_add_executor_job(store.rename_if_default, session.id, title_from_prompt(text))
             count = await self.hass.async_add_executor_job(lambda: len(store.list_messages(session.id)))
             handoff = ""
-            if getattr(provider, "kind", "") == "cursor":
+            if getattr(provider, "kind", "") in {"cursor", "claude"}:
                 rows = await self.hass.async_add_executor_job(store.list_messages, session.id)
                 handoff = handoff_note(
                     rows,
@@ -316,6 +321,15 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
                         )
                     elif kind == "error":
                         error = public_error(event.get("message"))
+                    elif kind == "usage" and event.get("worker"):
+                        await record_worker_usage(
+                            self.hass,
+                            store=store,
+                            user_id=user_id,
+                            session_id=session.id,
+                            event=event,
+                            origin="assist",
+                        )
                     elif kind == "usage":
                         billed = finalize_usage(
                             event,

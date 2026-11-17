@@ -23,15 +23,19 @@ from .const import (
     VERSION,
 )
 
-MISSING_RUNTIME = "Start the Cursor SDK Runtime and set its URL on the Cursor agent."
+MISSING_RUNTIME = "Start the AI Workspace Runtime and set its URL on the agent."
 BAD_TOKEN = (
-    "The Cursor SDK Runtime refused the token. Set the same Runtime token on the Runtime "
+    "The AI Workspace Runtime refused the token. Set the same Runtime token on the Runtime "
     "and on AI Workspace (Configure)."
 )
 PAIRING = "Pairing with the AI Workspace Runtime app. Try again in a minute."
+CLAUDE_RUNTIME_OLD = (
+    "Update the AI Workspace Runtime to 1.6.0 or newer to use Claude SDK agents in the sidecar."
+)
+_RUNTIME_KINDS = frozenset({"cursor", "claude"})
 OUTDATED_RUNTIME = (
     "The AI Workspace Runtime is {have}, this integration is {want}. Update the Runtime "
-    "(App or Docker image) so Cursor agents get the same fixes."
+    "(App or Docker image) so Cursor and Claude SDK agents get the same fixes."
 )
 OUTDATED_RUNTIME_KEY = "outdated_runtime"
 _VERSION = re.compile(r"(\d+)\.(\d+)\.(\d+)(?:b(\d+))?")
@@ -49,7 +53,7 @@ def _version_key(text: str) -> tuple[int, int, int, int] | None:
 # The oldest Runtime this integration works with as intended. Raise it in a release that
 # changes the Runtime (ai_workspace/app), so older Runtimes get the update notice. A release
 # that only changes the integration leaves it, and no notice appears.
-MIN_RUNTIME = "1.5.4"
+MIN_RUNTIME = "1.6.0"
 
 
 def runtime_notice(
@@ -78,6 +82,9 @@ _RETIRED_OPTIONS = ("shorten_mcp_results", "change_history")
 _PROBE_COOLDOWN = 30.0
 _PAIR_WAIT = 90.0
 _PAIRING = "ai_workspace_pairing"
+_PAIRED_AT = "ai_workspace_paired_at"
+# A pairing restarts the App; when it keeps failing, do not restart it every probe.
+_PAIR_AGAIN_AFTER = 600.0
 
 
 def _slug_matches(slug: str) -> bool:
@@ -262,8 +269,12 @@ def _runtime_hass_url(hass: HomeAssistant) -> str:
     return f"{scheme}://127.0.0.1:{port}"
 
 
-async def _async_pair_addon(hass: HomeAssistant, slug: str, base: str) -> str:
-    """Give the Runtime app a token through the Supervisor, the way Z-Wave JS sets its keys."""
+async def _async_pair_addon(hass: HomeAssistant, slug: str, base: str, wanted: str = "") -> str:
+    """Give the Runtime app a token through the Supervisor, the way Z-Wave JS sets its keys.
+
+    `wanted` is the token saved on AI Workspace. When the App lost its options (reinstalled,
+    reset to defaults) it gets that token back, so the saved one keeps working.
+    """
     from homeassistant.components.hassio import AddonError, AddonManager
 
     manager = AddonManager(hass, _LOGGER, "AI Workspace Runtime", slug)
@@ -279,7 +290,7 @@ async def _async_pair_addon(hass: HomeAssistant, slug: str, base: str) -> str:
                     pass
             return token
         if not token:
-            token = secrets.token_urlsafe(32)
+            token = wanted or secrets.token_urlsafe(32)
             opts = {
                 **(info.options or {}),
                 CONF_RUNTIME_TOKEN: token,
@@ -305,6 +316,8 @@ def apply_runtime_to_providers(
     runtime_url: str,
     reason: str | None = None,
     notice: tuple[str, dict[str, str]] | None = None,
+    *,
+    claude_reason: str | None = None,
 ) -> None:
     bucket["runtime_url"] = runtime_url
     if not runtime_url and reason is None:
@@ -312,13 +325,19 @@ def apply_runtime_to_providers(
     notice_key = notice[0] if notice else None
     notice_params = notice[1] if notice else None
     for item in (bucket.get("providers") or {}).values():
-        if getattr(item, "kind", "") != "cursor":
+        kind = getattr(item, "kind", "")
+        if kind not in _RUNTIME_KINDS:
             continue
         info = item.info
-        available = reason is None
+        if kind == "claude" and claude_reason:
+            available = False
+            item_reason = claude_reason
+        else:
+            available = reason is None
+            item_reason = reason
         if (
             bool(info.available) == available
-            and info.reason == reason
+            and info.reason == item_reason
             and info.notice_key == notice_key
             and info.notice_params == notice_params
         ):
@@ -326,15 +345,15 @@ def apply_runtime_to_providers(
         item.info = replace(
             info,
             available=available,
-            reason=reason,
+            reason=item_reason,
             notice=None,
             notice_key=notice_key,
             notice_params=notice_params,
         )
 
 
-def _needs_cursor(bucket: dict) -> bool:
-    return any(getattr(item, "kind", "") == "cursor" for item in (bucket.get("providers") or {}).values())
+def _needs_runtime(bucket: dict) -> bool:
+    return any(getattr(item, "kind", "") in _RUNTIME_KINDS for item in (bucket.get("providers") or {}).values())
 
 
 async def async_bind_runtime(hass: HomeAssistant, bucket: dict | None = None, *, force: bool = False) -> str:
@@ -361,26 +380,52 @@ async def async_bind_runtime(hass: HomeAssistant, bucket: dict | None = None, *,
     if health.get("token_required") or token:
         accepted = bool(token) and await async_token_accepted(hass, url, token)
         addon = _hassio_addon(hass)
-        own_addon = bool(addon) and addon[1] == url and not _entry_value(entry, CONF_RUNTIME_TOKEN)
+        # Our own App is healed even when a token is saved on AI Workspace: a reinstalled or
+        # reset App comes back with no token and would otherwise refuse every chat for good.
+        own_addon = bool(addon) and addon[1] == url
+        saved = _entry_value(entry, CONF_RUNTIME_TOKEN)
         if not accepted and own_addon:
             stored = await _async_addon_token(hass, addon[0])
             if stored and await async_token_accepted(hass, url, stored):
                 token, accepted = stored, True
+                if saved and saved != stored:
+                    _LOGGER.info("The token saved on AI Workspace is outdated; using the Runtime app's token")
         if not accepted:
             if own_addon:
                 reason = PAIRING
                 # The flag lives outside the entry's bucket: a reload during pairing (for
                 # example the HA-MCP check saving a new address) must not pair again and
                 # restart the App a second time.
-                if not hass.data.get(_PAIRING) and _needs_cursor(data):
+                last = float(hass.data.get(_PAIRED_AT) or 0)
+                recent = bool(last) and now - last < _PAIR_AGAIN_AFTER
+                if recent and not hass.data.get(_PAIRING):
+                    # The last pairing did not take; say what to fix instead of "try again".
+                    reason = BAD_TOKEN
+                elif not hass.data.get(_PAIRING) and _needs_runtime(data):
                     hass.data[_PAIRING] = True
+                    hass.data[_PAIRED_AT] = now
+                    _LOGGER.warning("The AI Workspace Runtime app refused our token; pairing it again")
                     hass.async_create_background_task(
-                        _async_finish_pairing(hass, data, addon[0], url), "ai_workspace_pair_runtime"
+                        _async_finish_pairing(hass, data, addon[0], url, saved), "ai_workspace_pair_runtime"
                     )
             else:
                 reason = BAD_TOKEN
     data["runtime_token"] = token
     data["runtime_version"] = str(health.get("version") or "")
+    claude_reason = (
+        CLAUDE_RUNTIME_OLD
+        if "claude" not in health
+        and any(getattr(item, "kind", "") == "claude" for item in (data.get("providers") or {}).values())
+        else None
+    )
+    plan_quota = health.get("plan_quota")
+    if isinstance(plan_quota, dict) and plan_quota:
+        from .plan_quota_store import async_merge_runtime_plan_quota
+
+        try:
+            await async_merge_runtime_plan_quota(hass, plan_quota)
+        except Exception:  # noqa: BLE001 - plan quota is extra; binding the Runtime must not fail on it.
+            _LOGGER.warning("Could not store the Runtime's plan quota", exc_info=True)
     notice = runtime_notice(data["runtime_version"], VERSION, MIN_RUNTIME)
     if notice and data.get("runtime_notice") != notice:
         _LOGGER.warning(
@@ -390,15 +435,15 @@ async def async_bind_runtime(hass: HomeAssistant, bucket: dict | None = None, *,
             )
         )
     data["runtime_notice"] = notice
-    apply_runtime_to_providers(data, url, reason, notice)
+    apply_runtime_to_providers(data, url, reason, notice, claude_reason=claude_reason)
     if url != previous:
-        _LOGGER.info("AI Workspace Cursor Runtime at %s", url)
+        _LOGGER.info("AI Workspace Runtime at %s", url)
     return url
 
 
-async def _async_finish_pairing(hass: HomeAssistant, data: dict, slug: str, url: str) -> None:
+async def _async_finish_pairing(hass: HomeAssistant, data: dict, slug: str, url: str, wanted: str = "") -> None:
     try:
-        token = await _async_pair_addon(hass, slug, url)
+        token = await _async_pair_addon(hass, slug, url, wanted)
     finally:
         hass.data[_PAIRING] = False
     if token:
@@ -410,12 +455,12 @@ async def _async_finish_pairing(hass: HomeAssistant, data: dict, slug: str, url:
 async def async_retry_runtime(hass: HomeAssistant, bucket: dict) -> None:
     """Keep probing after startup so a late Docker runtime still clears the Cursor banner."""
     for delay in (2, 5, 10, 20):
-        if not _needs_cursor(bucket):
+        if not _needs_runtime(bucket):
             return
         if str(bucket.get("runtime_url") or "") and all(
             item.info.available
             for item in (bucket.get("providers") or {}).values()
-            if getattr(item, "kind", "") == "cursor"
+            if getattr(item, "kind", "") in _RUNTIME_KINDS
         ):
             return
         await asyncio.sleep(delay)
