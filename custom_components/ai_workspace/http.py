@@ -28,13 +28,11 @@ from .const import (
     format_ui_page,
     parse_ui_page,
     ui_theme_of,
-    CHECK_HOUSE_NOTE,
     TOKEN_MODE_OFF,
     provider_token_mode,
     token_mode_allows_extras,
     token_mode_allows_files,
     token_mode_allows_tools,
-    token_mode_checks_house,
     token_mode_clip_user,
     token_mode_fresh_agent,
 )
@@ -361,10 +359,9 @@ async def _runtime_chat(
     agent: str = "",
     allow_internet: bool = False,
     token_mode: str = TOKEN_MODE_OFF,
-    check_house: bool = True,
     runtime_provider: str = "cursor",
 ) -> AsyncIterator[dict]:
-    """One SDK runtime turn (Cursor, Claude or Codex). Reduce token usage and Check the house work as on cloud agents."""
+    """One SDK runtime turn (Cursor, Claude or Codex). Reduce token usage works as on cloud agents."""
     runtime_kind = runtime_provider if runtime_provider in _RUNTIME_PROVIDER_KINDS else "cursor"
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
@@ -392,8 +389,6 @@ async def _runtime_chat(
         message = message[:clip]
     user_text = stamped_now(attach_files_to_message(message, files or []), house_zone(hass))
     asked = (question or message).strip()
-    if token_mode_checks_house(token_mode, check_house) and not images and wants_house_tools(asked):
-        user_text = f"{user_text}\n\n{CHECK_HOUSE_NOTE}"
     from .notes import notes_update, remember_nudge
 
     # Under Save tokens the Runtime keeps the agent for a while (Claude until it grows, Cursor a few turns),
@@ -589,7 +584,6 @@ async def async_agent_events(
             agent=_agent_label(provider),
             allow_internet=bool(getattr(provider, "allow_internet", False)),
             token_mode=provider_token_mode(provider),
-            check_house=bool(getattr(provider, "check_house", True)),
             runtime_provider=str(getattr(provider, "kind", "") or "cursor"),
         ):
             yield event
@@ -1218,7 +1212,6 @@ class ChatView(HomeAssistantView):
                     agent=_agent_label(provider),
                     allow_internet=bool(getattr(provider, "allow_internet", False)),
                     token_mode=token_mode,
-                    check_house=bool(getattr(provider, "check_house", True)),
                     runtime_provider=str(getattr(provider, "kind", "") or "cursor"),
                 ):
                     yield event

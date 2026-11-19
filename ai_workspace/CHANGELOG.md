@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.6.1b1
+
+**Fewer unneeded Home Assistant lookups.** Agents were told to call a Home Assistant tool before answering anything that sounded like the house, so a question about cutting back a plant, frost protection or how much to water ran a lookup, opened with a status sentence and sometimes linked a random entity. Now an agent looks things up only when you ask for live house data (a device, state, history, count, list, weather) or want a change.
+
+- **General questions get a direct answer.** Plant care, gardening, frost protection, watering math from amounts you gave and other general reasoning get no tool call and no status sentence. Live house data still always comes from a tool, never from memory.
+- **The status sentence only comes with a real tool call**, and never more than one per request.
+- **No made-up entity links.** Only real Home Assistant items a tool returned in this chat are linked. Plants, products and other things without an entity stay plain text.
+- **The per-message house note is gone.** Cursor, Claude SDK and Codex turns no longer get "call a Home Assistant tool before you answer" appended to every house-sounding message. The standing instructions say when to look.
+- Your own system prompt stays as it is. A Runtime workspace `AGENTS.md` or `.cursor/rules/home-assistant.mdc` that is still an unedited built-in version gets the new text by itself; an edited one is left alone.
+- Update the Runtime App to 1.6.1b1 for the new Cursor workspace rules. The rest works with a 1.6.0 Runtime.
+
 ## 1.6.0
 
 Everything from 1.6.0b1 to 1.6.0b17, plus OpenAI Codex agents on the Runtime. Nothing needs to be changed in your setup.

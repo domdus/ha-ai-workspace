@@ -864,9 +864,11 @@ Be concise. If a tool fails, say so. Ask before doing something hard to undo, su
 HOUSE_RULES = (
     "A hello, thanks, or other small talk gets a short friendly reply. "
     "Do not list what you can do until the user asks about the house.\n\n"
-    "Home Assistant is reached only through the connected MCP tools. Before you answer any question about "
-    "this house (automations, entities, devices, states, counts, weather), call a Home Assistant tool. "
-    "Never answer those from memory, and never invent entity ids, dashboard ids, states, or history. "
+    "Home Assistant is reached only through the connected MCP tools. Call a Home Assistant tool only when "
+    "the user asks for live house data (a device, state, history, count, list, weather) or wants a change. "
+    "Plant care, gardening, cutting, frost protection, watering math from amounts the user gave, and other "
+    "general reasoning are not house questions: answer directly, with no tool and no status sentence. "
+    "Never answer live house data from memory, and never invent entity ids, states, or history. "
     "Before you say what a saved automation, script, scene, or dashboard contains, read it again with a tool: "
     "earlier messages in this chat may describe an older version or a plan that was never saved."
 )
@@ -903,7 +905,8 @@ STATUS_LINE_INSTRUCTIONS = (
     "answer needs tools, or when you start real work (a change or a write). "
     "If you do, make it a natural sentence in the user's language about "
     "what you are about to do for this request, not a generic filler. "
-    "Write at most one status sentence per request. Between tool calls write nothing at all; "
+    "Write it only if you are actually calling a tool in this answer, and never more than one per request. "
+    "Between tool calls write nothing at all; "
     "the UI already shows them. Your next text is the answer."
 )
 # Sent with a voice turn: the status sentence would be read aloud before every answer.
@@ -1105,7 +1108,7 @@ TONE_INSTRUCTIONS = (
     "returned. Use it to avoid repeating lookups, but check live state again before you change something, "
     "and never write such a line yourself."
 )
-HA_LINK_INSTRUCTIONS = """Every automation, script, scene, device, helper, entity, or dashboard/view you mention must be a Markdown link. Do not list plain names or bare paths. Do not ask whether the user wants links. Use root-relative paths that start with /. Never use 127.0.0.1, localhost, or an MCP URL in those links — those are only how tools reach Home Assistant from Docker. Do not link the words Home Assistant.
+HA_LINK_INSTRUCTIONS = """Every automation, script, scene, device, helper, entity, or dashboard/view you mention must be a Markdown link. Link only real Home Assistant items returned by a tool in this chat. Plants, products, and other things without an entity are plain text; never attach an unrelated entity link to them. Do not list plain names or bare paths. Do not ask whether the user wants links. Use root-relative paths that start with /. Never use 127.0.0.1, localhost, or an MCP URL in those links — those are only how tools reach Home Assistant from Docker. Do not link the words Home Assistant.
 
 URL rules (wrong ids open a blank editor):
 - Automations: [Name](/config/automation/edit/{id}) where {id} is the automation config id / unique_id from the tool. That may be a yaml id (balcony_irrigation) or a numeric timestamp (1687972788597). NEVER use entity_id. Wrong: /config/automation/edit/automation.balcony_irrigation Right: /config/automation/edit/balcony_irrigation
@@ -1144,11 +1147,6 @@ def ui_link_instructions(origin: str = "") -> str:
 def with_ui_context(message: str, origin: str = "") -> str:
     return f"{ui_link_instructions(origin)}\n\n{message}"
 
-
-# Cursor cannot be forced to call a tool first, so it is asked to.
-CHECK_HOUSE_NOTE = (
-    "If this message is about the house (devices, states, lists, weather), call a Home Assistant tool before you answer."
-)
 
 
 def standing_chat_prompt(

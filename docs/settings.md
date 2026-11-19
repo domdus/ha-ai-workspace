@@ -109,9 +109,9 @@ On each agent (**Add agent**, or the edit button on an agent row).
 
 A model that is not told otherwise answers from what it guesses. For a house that means invented automations, wrong counts, or “the light is off” while it is on — said with confidence. Asking “use a tool” in the prompt is not enough on its own.
 
-So every agent with tools looks at Home Assistant first: a cloud model must call a Home Assistant tool before it answers a question about the house, so lists, counts, and states come from your instance. After that first call it decides freely. Cursor cannot be forced to call a tool, so a Cursor agent is told to look first on each house question.
+So every agent with tools looks at Home Assistant first when you ask for live house data: a cloud model must call a Home Assistant tool before it answers a question about devices, states, history, counts, lists, or weather, so they come from your instance. After that first call it decides freely. Runtime agents (Cursor, Claude, Codex) cannot be forced to call a tool; their standing instructions tell them to look up live house data and to answer general questions (plant care, gardening, watering math from numbers you gave) directly, without a lookup.
 
-It may write one status line before the first tool call, or when it starts a change — a natural complete sentence in your language that names what it is about to do, not a generic filler. At most one such line per turn; nothing between later tool calls.
+It may write one status line before the first tool call, or when it starts a change — a natural complete sentence in your language that names what it is about to do, not a generic filler. Only when it really calls a tool in that answer, and at most one such line per turn; nothing between later tool calls. Links point only to real Home Assistant items a tool returned; plants, products, and other things without an entity stay plain text.
 
 A wrong answer about the house costs more than one extra tool call, so this is always on and not on the agent form. Greetings, thanks, and messages with images or files are never forced. To turn it off for one agent anyway, set `check_house: false` on that agent in YAML.
 
