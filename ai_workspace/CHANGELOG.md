@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.6.1b4
 
 **Copy and read aloud under every reply, and what you type stays in its chat.** Each finished agent reply gets its own small row with copy, read aloud and the reply time. Text typed but not sent, and prompts queued while a reply runs, now stay with their chat.
 
@@ -20,6 +20,8 @@
 - Prompts queued while a reply runs belong to that chat. Switching to another chat no longer drops them or puts the first one into the other chat's message field.
 - They are still sent in their own chat when the reply finishes, also while you look at another chat or the panel is closed, one after the other. The reply gets its unread dot in the chat list.
 - Back in the chat, its queue is shown again (only there) and goes on from there. If the chat is still busy (for example from another device), a new message waits in the queue instead of failing.
+
+- Only the chat changed. The Runtime App can stay on 1.6.1b3.
 
 ## 1.6.1b3
 
