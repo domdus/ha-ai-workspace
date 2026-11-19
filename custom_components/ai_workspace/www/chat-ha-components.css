@@ -127,8 +127,14 @@
 .ui-theme-ha-components .chat-actions {
   margin-top: var(--ha-space-1);
   margin-left: 0;
-  /* Full width so the reply time can sit on the right. */
   align-self: stretch;
+}
+
+/* The reply's own row sits under the grey bubble, inside its message container. */
+.ui-theme-ha-components .message-container > .reply-actions {
+  margin-top: calc(-1 * var(--ha-space-1, 4px));
+  margin-inline-start: -4px;
+  margin-inline-end: var(--ha-space-6);
 }
 
 .ui-theme-ha-components .stage {

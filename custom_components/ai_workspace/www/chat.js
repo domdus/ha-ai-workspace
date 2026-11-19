@@ -31,7 +31,7 @@ const {
   SLOW_HINT_MS,
   LOAD_TIMEOUT_MS,
 } = await import(`./chat_cache.js${CACHE}`);
-const { replyTimeLabel, replyTimeTitle, haHour12, haTimeZone, lastReply, replyTimeFor } = await import(
+const { replyTimeLabel, replyTimeTitle, haHour12, haTimeZone, replyRows } = await import(
   `./reply_meta.js${CACHE}`
 );
 
@@ -1750,8 +1750,12 @@ export async function mountAiWorkspace(root, options = {}) {
       fillActivitySlot(el, label);
       bubble.appendChild(el);
     }
-    // Keep the status chip under tools and text so it never shifts the answer.
-    if (el.parentElement !== bubble || bubble.lastElementChild !== el) {
+    // Keep the status chip under tools and text so it never shifts the answer
+    // (but above the reply's own action row, which stays last).
+    const row = bubble.querySelector(":scope > .reply-actions");
+    if (row) {
+      if (el.nextElementSibling !== row) bubble.insertBefore(el, row);
+    } else if (el.parentElement !== bubble || bubble.lastElementChild !== el) {
       bubble.appendChild(el);
     }
     return el;
@@ -2657,17 +2661,164 @@ export async function mountAiWorkspace(root, options = {}) {
     return [...logEl.querySelectorAll(".bubble")].map((bubble) => {
       const md = bubble.querySelector("ha-markdown.text");
       return {
+        bubble,
         role: bubble.classList.contains("assistant") ? "assistant" : "user",
         // The reply markdown only: tool chips, status and "reply cut" notes live outside it.
         text: String(md?.content || md?.textContent || ""),
         streaming: bubble.classList.contains("streaming"),
+        error: bubble.classList.contains("error") || bubble.getAttribute("alert-type") === "error",
         createdAt: bubble.dataset.createdAt || "",
       };
     });
   }
 
+  // The row sits under the reply: inside the bubble (Standard, no bubble background) or
+  // after it in the message container (HA Components, so it stays off the grey bubble).
+  function replyRowHost(bubble) {
+    const parent = bubble.parentElement;
+    return parent?.classList.contains("message-container") ? parent : bubble;
+  }
+
+  function replyRowOf(bubble) {
+    return bubble ? replyRowHost(bubble).querySelector(":scope > .reply-actions") : null;
+  }
+
+  function replyActionButton(action, icon, label) {
+    const btn = document.createElement("ha-icon-button");
+    btn.className = `reply-action reply-${action}`;
+    btn.type = "button";
+    btn.dataset.action = action;
+    btn.label = label;
+    btn.setAttribute("aria-label", label);
+    const glyph = document.createElement("ha-icon");
+    glyph.setAttribute("icon", icon);
+    btn.appendChild(glyph);
+    return btn;
+  }
+
+  function setActionLabel(btn, label) {
+    btn.label = label;
+    btn.setAttribute("aria-label", label);
+  }
+
+  // One row per finished reply: copy, read aloud, time. Clicks go through one listener on
+  // the log (see onReplyAction), so long chats add no listener per message.
+  function syncReplyRows(entries) {
+    const rows = replyRows(entries);
+    const keep = new Set();
+    const opts = replyTimeOptions();
+    const today = new Date().toDateString();
+    for (const info of rows) {
+      const bubble = entries[info.index].bubble;
+      const host = replyRowHost(bubble);
+      let row = host.querySelector(":scope > .reply-actions");
+      if (!row) {
+        row = document.createElement("div");
+        row.className = "reply-actions";
+        row.setAttribute("role", "group");
+        row.setAttribute("aria-label", t("reply_actions"));
+        row.appendChild(replyActionButton("copy", "mdi:content-copy", t("copy_reply")));
+        row.appendChild(replyActionButton("speak", "mdi:volume-high", t("speak_reply")));
+        const timeEl = document.createElement("time");
+        timeEl.className = "reply-time";
+        row.appendChild(timeEl);
+      }
+      if (host.lastElementChild !== row) host.appendChild(row);
+      keep.add(row);
+      row.classList.toggle("is-last", info.last);
+      const speakBtn = row.querySelector(".reply-speak");
+      if (speakBtn) speakBtn.hidden = !voice.tts;
+      // Time labels are cached per day: "today"/"yesterday" only change at midnight.
+      const at = bubble.dataset.createdAt || "";
+      const timeEl = row.querySelector(".reply-time");
+      if (timeEl && (timeEl.dataset.at !== at || timeEl.dataset.day !== today)) {
+        timeEl.dataset.at = at;
+        timeEl.dataset.day = today;
+        const label = at ? replyTimeLabel(at, opts) : "";
+        timeEl.textContent = label;
+        timeEl.hidden = !label;
+        if (label) {
+          timeEl.dateTime = String(at);
+          timeEl.title = replyTimeTitle(at, opts);
+        } else {
+          timeEl.removeAttribute("datetime");
+          timeEl.removeAttribute("title");
+        }
+      }
+    }
+    for (const row of logEl.querySelectorAll(".reply-actions")) {
+      if (!keep.has(row)) row.remove();
+    }
+    if (speakTarget && !keep.has(replyRowOf(speakTarget))) speakTarget = null;
+    syncReplySpeakUi();
+  }
+
+  function syncReplySpeakUi() {
+    const live = speechLive();
+    for (const btn of logEl.querySelectorAll(".reply-actions .reply-speak")) {
+      const row = btn.closest(".reply-actions");
+      const mine = Boolean(speakTarget && live && replyRowOf(speakTarget) === row);
+      if (btn.classList.contains("speaking") === mine && btn.dataset.ready) continue;
+      btn.dataset.ready = "1";
+      btn.classList.toggle("speaking", mine);
+      btn.setAttribute("aria-pressed", mine ? "true" : "false");
+      btn.querySelector("ha-icon")?.setAttribute("icon", mine ? "mdi:stop" : "mdi:volume-high");
+      setActionLabel(btn, t(mine ? "stop_reading" : "speak_reply"));
+    }
+  }
+
+  function replyBubbleOfRow(row) {
+    const host = row?.parentElement;
+    if (!host) return null;
+    return host.classList.contains("bubble") ? host : host.querySelector(":scope > .bubble");
+  }
+
+  function replyTextOf(bubble) {
+    const md = bubble?.querySelector("ha-markdown.text");
+    return String(md?.content || md?.textContent || "").trim();
+  }
+
+  async function onReplyAction(event) {
+    const btn = event.target?.closest?.(".reply-actions .reply-action");
+    if (!btn || !logEl.contains(btn) || btn.disabled) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const bubble = replyBubbleOfRow(btn.closest(".reply-actions"));
+    const text = replyTextOf(bubble);
+    if (!bubble || !text) return;
+    if (btn.dataset.action === "copy") {
+      await copyText(text);
+      const icon = btn.querySelector("ha-icon");
+      icon?.setAttribute("icon", "mdi:check");
+      setActionLabel(btn, t("copied"));
+      window.clearTimeout(btn._copiedTimer);
+      btn._copiedTimer = window.setTimeout(() => {
+        icon?.setAttribute("icon", "mdi:content-copy");
+        setActionLabel(btn, t("copy_reply"));
+      }, 1600);
+      return;
+    }
+    if (btn.dataset.action === "speak") {
+      // Same reply playing: stop. Another reply: stop that one and read this one.
+      if (speakTarget === bubble && speechLive()) {
+        haltSpeech();
+        return;
+      }
+      await speakReply(text, true, bubble);
+    }
+  }
+
+  let replyRowsQueued = false;
+
   function stampReply(bubble) {
     if (bubble && !bubble.dataset.createdAt) bubble.dataset.createdAt = new Date().toISOString();
+    // The reply is finished: its own action row appears (once per frame, however many finish).
+    if (replyRowsQueued) return;
+    replyRowsQueued = true;
+    requestAnimationFrame(() => {
+      replyRowsQueued = false;
+      syncCopyChat();
+    });
   }
 
   function replyTimeOptions() {
@@ -2712,48 +2863,19 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function syncCopyChat() {
     let row = logEl.querySelector(".chat-actions");
-    const hasChat = Boolean(logEl.querySelector(".bubble.has-text, .bubble .bubble-files, .bubble .bubble-images"));
-    const busy = streaming || Boolean(logEl.querySelector(".bubble.streaming"));
-    const live = speechLive();
-    const showSpeak = Boolean(voice.tts && (live || (Boolean(lastAssistantText()) && !busy)));
-    const showCopy = hasChat && !busy;
+    syncReplyRows(replyEntries());
+    // Copy, read aloud and the time live in each reply's own row. The bottom row keeps the
+    // chat-level actions, plus a speaker while a reply is read on its own (auto read-aloud),
+    // so that reading can still be paused or stopped.
+    const showSpeak = Boolean(voice.tts && speechLive() && !speakTarget);
     const showHistory = Boolean(turnHasHistory);
-    const entries = replyEntries();
-    const hasReply = Boolean(lastReply(entries));
-    const replyAt = busy ? "" : replyTimeFor(entries);
-    if (!showCopy && !showSpeak && !showHistory) {
+    if (!showSpeak && !showHistory) {
       if (row) row.hidden = true;
       return;
     }
     if (!row) {
       row = document.createElement("div");
       row.className = "chat-actions";
-      const btn = document.createElement("ha-icon-button");
-      btn.className = "copy-chat";
-      btn.type = "button";
-      btn.label = t("copy_last_reply");
-      const icon = document.createElement("ha-icon");
-      icon.setAttribute("icon", "mdi:content-copy");
-      btn.appendChild(icon);
-      btn.addEventListener("click", async (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        const reply = lastReply(replyEntries());
-        if (!reply) return;
-        await copyText(reply.text);
-        icon.setAttribute("icon", "mdi:check");
-        btn.label = t("copied");
-        window.setTimeout(() => {
-          icon.setAttribute("icon", "mdi:content-copy");
-          btn.label = t("copy_last_reply");
-        }, 1600);
-      });
-      row.appendChild(btn);
-    }
-    const copyBtn = row.querySelector(".copy-chat");
-    if (copyBtn) {
-      copyBtn.hidden = !showCopy;
-      copyBtn.disabled = !hasReply;
     }
     let speakBtn = row.querySelector(".speak-chat");
     if (voice.tts) {
@@ -2770,7 +2892,7 @@ export async function mountAiWorkspace(root, options = {}) {
           event.stopPropagation();
           await toggleSpeak();
         });
-        row.appendChild(speakBtn);
+        row.prepend(speakBtn);
       }
       speakBtn.hidden = !showSpeak;
     } else if (speakBtn) {
@@ -2793,26 +2915,8 @@ export async function mountAiWorkspace(root, options = {}) {
       row.appendChild(historyBtn);
     }
     historyBtn.hidden = !turnHasHistory;
-    let timeEl = row.querySelector(".reply-time");
-    if (!timeEl) {
-      timeEl = document.createElement("time");
-      timeEl.className = "reply-time";
-      row.appendChild(timeEl);
-    }
-    const opts = replyTimeOptions();
-    const label = replyAt ? replyTimeLabel(replyAt, opts) : "";
-    timeEl.textContent = label;
-    timeEl.hidden = !label;
-    if (label) {
-      timeEl.dateTime = String(replyAt);
-      timeEl.title = replyTimeTitle(replyAt, opts);
-    } else {
-      timeEl.removeAttribute("datetime");
-      timeEl.removeAttribute("title");
-    }
-    row.appendChild(timeEl);
     row.hidden = false;
-    logEl.appendChild(row);
+    if (logEl.lastElementChild !== row) logEl.appendChild(row);
   }
 
   function haLinkPath(href) {
@@ -4413,6 +4517,7 @@ export async function mountAiWorkspace(root, options = {}) {
       else logEl.prepend(head);
     });
     settleTools(logEl);
+    syncCopyChat();
     stickToBottom();
   }
 
@@ -4467,6 +4572,8 @@ export async function mountAiWorkspace(root, options = {}) {
       if (first) logEl.insertBefore(head, first);
       else logEl.prepend(head);
       settleTools(logEl);
+      // Older replies get their own action row too.
+      syncCopyChat();
       stickToBottom();
     });
   }
@@ -5084,6 +5191,7 @@ export async function mountAiWorkspace(root, options = {}) {
   let speakFlush = false;
   let speakFresh = false;
   let speakRelease = null;
+  let speakTarget = null;
   const speakPending = [];
   const speakInflight = [];
   const SILENCE =
@@ -5226,9 +5334,9 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function setSpeakUi(state) {
+    syncCopyChat();
     const btn = logEl.querySelector(".speak-chat");
     if (!btn) return;
-    syncCopyChat();
     const icon = btn.querySelector("ha-icon");
     if (state === "playing") {
       icon?.setAttribute("icon", "mdi:pause");
@@ -5264,6 +5372,7 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function haltSpeech() {
     speakGen += 1;
+    speakTarget = null;
     speakHeld = "";
     speakRaw = "";
     speakStarted = false;
@@ -5309,7 +5418,8 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function feedSpeech(delta) {
-    if (!voice.speak || !delta) return;
+    // A reply picked by hand is being read: the live reply does not cut in.
+    if (!voice.speak || !delta || speakTarget) return;
     speakRaw += delta;
     speakHeld += delta;
     drainSpeech(false);
@@ -5487,6 +5597,11 @@ export async function mountAiWorkspace(root, options = {}) {
             replyObjectUrl = "";
           }
           releaseAudio(replyAudio);
+          speakTarget = null;
+          setSpeakUi("idle");
+        } else if (gen === speakGen && speakTarget) {
+          // Nothing could be played for this reply: its button goes back to "read aloud".
+          speakTarget = null;
           setSpeakUi("idle");
         }
       });
@@ -5516,14 +5631,21 @@ export async function mountAiWorkspace(root, options = {}) {
     await speakReply(text, true);
   }
 
-  async function speakReply(text, fromUser = false) {
+  async function speakReply(text, fromUser = false, target = null) {
     if (!voice.tts || !String(text || "").trim()) return;
     haltSpeech();
+    // The reply whose own button started this; its button shows "stop" while it plays.
+    speakTarget = target;
     speakFromUser = fromUser;
+    const gen = speakGen;
     if (fromUser) await unlockOutput();
+    // Another reply was started (or this one stopped) while the output unlocked.
+    if (gen !== speakGen) return;
     speakFlush = true;
     const taken = takeSpeech(String(text), false, true, { heavy: voice.ttsHeavy });
     for (const piece of taken.pieces) queueSpeech(piece);
+    // Show "stop" at once, not only when the first clip starts playing.
+    if (target) syncCopyChat();
   }
 
   function lastAssistantText() {
@@ -7214,6 +7336,8 @@ export async function mountAiWorkspace(root, options = {}) {
     if (wrap.classList.contains("nav-open")) setNavOpen(false);
   });
   listen(mqNarrow, "change", () => setNarrow(options.narrow));
+
+  logEl.addEventListener("click", onReplyAction);
 
   logEl.addEventListener("click", (event) => {
     const link = event.composedPath().find((node) => node && node.tagName === "A");

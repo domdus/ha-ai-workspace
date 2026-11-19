@@ -1,5 +1,6 @@
 /**
- * Reply meta in the chat action row: reply time label and "copy last reply".
+ * Reply meta: reply time label and the action row under each finished reply
+ * (copy, read aloud, time).
  * Run: node tests/test_reply_meta.mjs
  */
 import assert from "node:assert/strict";
@@ -7,9 +8,9 @@ import { readFileSync } from "node:fs";
 import {
   haHour12,
   haTimeZone,
-  lastReply,
   parseReplyTime,
-  replyTimeFor,
+  replyActionText,
+  replyRows,
   replyTimeLabel,
   replyTimeTitle,
 } from "../custom_components/ai_workspace/www/reply_meta.js";
@@ -82,81 +83,115 @@ assert.equal(haTimeZone({ config: { time_zone: "Europe/Berlin" }, locale: { time
 assert.equal(haTimeZone({ config: { time_zone: "Europe/Berlin" }, locale: { time_zone: "local" } }), undefined);
 assert.equal(haTimeZone(null), undefined);
 
-// --- copy last reply ---
-assert.equal(lastReply([]), null);
-assert.equal(lastReply(null), null);
-assert.equal(lastReply([{ role: "user", text: "Hallo" }]), null, "no assistant reply: nothing to copy");
-assert.equal(
-  lastReply([
-    { role: "user", text: "a" },
-    { role: "assistant", text: "  **first**  " },
-    { role: "user", text: "b" },
-    { role: "assistant", text: "## second\n\n- x" },
-  ]).text,
-  "## second\n\n- x",
-  "newest reply, markdown kept",
+// --- which replies get their own action row ---
+assert.deepEqual(replyRows([]), []);
+assert.deepEqual(replyRows(null), []);
+assert.deepEqual(replyRows([{ role: "user", text: "Hallo" }]), [], "user messages get no row");
+assert.equal(replyActionText({ role: "assistant", text: "  **first**  " }), "**first**", "markdown kept, trimmed");
+assert.equal(replyActionText({ role: "assistant", text: "half", streaming: true }), "", "streaming: no row yet");
+assert.equal(replyActionText({ role: "assistant", text: "", createdAt: "x" }), "", "only tool steps: no row");
+assert.equal(replyActionText({ role: "assistant", text: "  \n " }), "", "blank text: no row");
+assert.equal(replyActionText({ role: "assistant", text: "Fehler", error: true }), "", "errors: no row");
+assert.equal(replyActionText(null), "");
+const chat = [
+  { role: "user", text: "a" },
+  { role: "assistant", text: "  **first**  " },
+  { role: "user", text: "b" },
+  { role: "assistant", text: "" },
+  { role: "assistant", text: "## second\n\n- x" },
+  { role: "user", text: "c" },
+  { role: "assistant", text: "third, still going", streaming: true },
+];
+assert.deepEqual(replyRows(chat), [
+  { index: 1, text: "**first**", last: false },
+  { index: 4, text: "## second\n\n- x", last: true },
+], "every finished reply, newest one marked last");
+assert.deepEqual(
+  replyRows([{ role: "assistant", text: "only" }]).map((row) => row.last),
+  [true],
 );
-assert.equal(
-  lastReply([
-    { role: "assistant", text: "done before" },
-    { role: "user", text: "next" },
-    { role: "assistant", text: "", createdAt: "x" },
-  ]).text,
-  "done before",
-  "a reply with only tool chips (no text) is skipped",
-);
-assert.equal(
-  lastReply([
-    { role: "assistant", text: "old" },
-    { role: "assistant", text: "half", streaming: true },
-  ]).text,
-  "old",
-  "a reply still streaming is not copied",
-);
-assert.equal(lastReply([{ role: "assistant", text: "  first  " }]).text, "first", "trimmed");
-
-// --- which time is shown ---
-assert.equal(replyTimeFor([]), "");
-assert.equal(replyTimeFor([{ role: "assistant", createdAt: "t1" }]), "t1");
-assert.equal(replyTimeFor([{ role: "assistant", createdAt: "t1" }, { role: "user", createdAt: "t2" }]), "", "never user times");
-assert.equal(replyTimeFor([{ role: "assistant", createdAt: "t1", streaming: true }]), "", "shown once finished");
 
 // --- source wiring ---
 assert.match(chatSrc, /await import\(\s*`\.\/reply_meta\.js\$\{CACHE\}`/);
 assert.doesNotMatch(chatSrc, /transcriptText/, "whole-chat copy is gone");
 assert.doesNotMatch(chatSrc, /copy_chat/);
-assert.match(chatSrc, /btn\.label = t\("copy_last_reply"\)/);
-assert.match(chatSrc, /copyBtn\.disabled = !hasReply/);
-assert.match(chatSrc, /await copyText\(reply\.text\)/);
+assert.doesNotMatch(chatSrc, /copy_last_reply|copy-chat/, "the bottom row no longer copies: each reply has its own button");
+assert.match(chatSrc, /const rows = replyRows\(entries\)/);
+assert.match(chatSrc, /replyActionButton\("copy", "mdi:content-copy", t\("copy_reply"\)\)/);
+assert.match(chatSrc, /replyActionButton\("speak", "mdi:volume-high", t\("speak_reply"\)\)/);
+assert.match(chatSrc, /btn\.setAttribute\("aria-label", label\)/, "buttons carry an aria-label");
+assert.match(chatSrc, /row\.setAttribute\("role", "group"\)/);
+assert.match(chatSrc, /row\.setAttribute\("aria-label", t\("reply_actions"\)\)/);
+assert.match(chatSrc, /if \(speakBtn\) speakBtn\.hidden = !voice\.tts;/, "speaker hidden without TTS");
+assert.match(chatSrc, /row\.classList\.toggle\("is-last", info\.last\)/);
+// One delegated listener for all rows, none per message.
+assert.match(chatSrc, /logEl\.addEventListener\("click", onReplyAction\)/);
+const rowFn = chatSrc.match(/function syncReplyRows\(entries\) \{([\s\S]*?)\n  \}\n/)?.[1] || "";
+assert.ok(rowFn, "syncReplyRows found");
+assert.doesNotMatch(rowFn, /addEventListener/, "no listener per reply row");
+const onAction = chatSrc.match(/async function onReplyAction\(event\) \{([\s\S]*?)\n  \}\n/)?.[1] || "";
+assert.match(onAction, /await copyText\(text\)/);
+assert.match(onAction, /speakTarget === bubble && speechLive\(\)\) \{\s*haltSpeech\(\);/, "same reply: stop");
+assert.match(onAction, /await speakReply\(text, true, bubble\)/, "other reply: read that one");
+// The copied/read text is the reply markdown only (no tool chips, status, "reply cut" note).
+assert.match(chatSrc, /function replyTextOf\(bubble\) \{\s*const md = bubble\?\.querySelector\("ha-markdown\.text"\);/);
+// Read-aloud: one reply at a time, the button shows stop while its reply plays.
+assert.match(chatSrc, /function speakReply\(text, fromUser = false, target = null\) \{[\s\S]{0,200}haltSpeech\(\);\s*\/\/[^\n]*\n\s*speakTarget = target;/);
+assert.match(chatSrc, /const gen = speakGen;\s*if \(fromUser\) await unlockOutput\(\);\s*\/\/[^\n]*\n\s*if \(gen !== speakGen\) return;/, "a newer click wins");
+assert.match(chatSrc, /if \(target\) syncCopyChat\(\);/, "stop state shows at once");
+assert.match(chatSrc, /function haltSpeech\(\) \{\s*speakGen \+= 1;\s*speakTarget = null;/);
+assert.match(chatSrc, /mine \? "mdi:stop" : "mdi:volume-high"/);
+assert.match(chatSrc, /t\(mine \? "stop_reading" : "speak_reply"\)/);
+assert.match(chatSrc, /btn\.setAttribute\("aria-pressed", mine \? "true" : "false"\)/);
+assert.match(chatSrc, /if \(!voice\.speak \|\| !delta \|\| speakTarget\) return;/, "auto read-aloud does not cut in");
+// The bottom speaker only shows for auto read-aloud (no reply button owns it).
+assert.match(chatSrc, /const showSpeak = Boolean\(voice\.tts && speechLive\(\) && !speakTarget\);/);
 assert.match(chatSrc, /timeEl\.className = "reply-time"/);
 assert.match(chatSrc, /timeEl\.title = replyTimeTitle\(/);
 assert.match(chatSrc, /createdAt: bubble\.dataset\.createdAt/);
-// Live replies get their time when they finish.
+// Live replies get their time (and row) when they finish; older parts of the chat too.
 const stamps = chatSrc.match(/stampReply\((assistant|live)\)/g) || [];
 assert.ok(stamps.length >= 4, `streamed replies are stamped (${stamps.length})`);
 assert.match(
   chatSrc,
   /name === "done"\) \{[\s\S]{0,900}assistant\.classList\.remove\("streaming"\);\s*stampReply\(assistant\);/,
 );
+assert.match(chatSrc, /function stampReply\(bubble\) \{[\s\S]{0,400}requestAnimationFrame\(\(\) => \{\s*replyRowsQueued = false;\s*syncCopyChat\(\);/);
+assert.ok((chatSrc.match(/settleTools\(logEl\);\s*(?:\/\/[^\n]*\n\s*)?syncCopyChat\(\);/g) || []).length >= 3, "rows after every paint");
+// The status line stays above the reply row.
+assert.match(chatSrc, /if \(el\.nextElementSibling !== row\) bubble\.insertBefore\(el, row\);/);
 
-// Every language has both strings, German as asked.
+// Every language has the strings, German as asked.
 const langs = (i18nSrc.match(/^ {2}(?:"[\w-]+"|\w+): \{$/gm) || []).length;
 assert.ok(langs >= 10);
-assert.equal((i18nSrc.match(/^ {4}copy_last_reply: "/gm) || []).length, langs);
+for (const key of ["copy_reply", "stop_reading", "reply_actions", "speak_reply", "copied"]) {
+  assert.equal((i18nSrc.match(new RegExp(`^ {4}${key}: "[^"]+"`, "gm")) || []).length, langs, key);
+}
+assert.equal((i18nSrc.match(/^ {4}copy_last_reply: "/gm) || []).length, 0, "old key gone");
 assert.equal((i18nSrc.match(/^ {4}reply_yesterday: "[^"]*\{time\}[^"]*"/gm) || []).length, langs);
-assert.match(i18nSrc, /copy_last_reply: "Letzte Antwort kopieren"/);
+assert.match(i18nSrc, /copy_reply: "Antwort kopieren"/);
+assert.match(i18nSrc, /stop_reading: "Vorlesen stoppen"/);
 assert.match(i18nSrc, /reply_yesterday: "gestern, \{time\}"/);
 
-// Both themes: right-aligned, muted, small, no wrap.
+// Both themes: subtle row, full on hover/focus, always on touch; time right-aligned, muted,
+// small, no wrap; older replies show it on hover/focus.
 for (const css of [cssStandard, cssLayout]) {
-  const rule = css.match(/\.chat-actions \.reply-time \{([^}]*)\}/)?.[1] || "";
+  const row = css.match(/\n\.reply-actions \{([^}]*)\}/)?.[1] || "";
+  assert.match(row, /display: flex/);
+  assert.match(row, /opacity: 0\.6/);
+  assert.match(css, /\.reply-actions:focus-within \{\s*opacity: 1;/);
+  assert.match(css, /@media \(hover: none\) \{\s*\.reply-actions \{\s*opacity: 1;/);
+  assert.match(css, /\.reply-actions \[hidden\] \{\s*display: none !important;/);
+  const rule = css.match(/\.reply-actions \.reply-time \{([^}]*)\}/)?.[1] || "";
   assert.match(rule, /margin-inline-start: auto/);
   assert.match(rule, /white-space: nowrap/);
   assert.match(rule, /text-overflow: ellipsis/);
   assert.match(rule, /color: var\(--secondary-text-color\)/);
   assert.match(rule, /font-size: var\(--ha-font-size-s/);
-  assert.match(css, /\.chat-actions \.reply-time\[hidden\]/);
+  assert.match(css, /\.reply-actions:not\(\.is-last\) \.reply-time \{\s*opacity: 0;/);
+  assert.match(css, /\.reply-actions:focus-within \.reply-time \{\s*opacity: 1;/);
+  assert.doesNotMatch(css, /copy-chat|\.chat-actions \.reply-time/);
 }
-assert.match(cssHa, /\.ui-theme-ha-components \.chat-actions \{[^}]*align-self: stretch/);
+assert.match(cssHa, /\.ui-theme-ha-components \.message-container > \.reply-actions \{/);
 
 console.log("reply meta ok");

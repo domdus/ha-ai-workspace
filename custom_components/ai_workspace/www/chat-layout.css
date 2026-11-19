@@ -833,15 +833,62 @@ h1 {
 }
 
 .chat-actions[hidden],
-.chat-actions .copy-chat[hidden],
 .chat-actions .speak-chat[hidden],
 .chat-actions .history-chat[hidden] {
   display: none !important;
 }
 
-/* Reply time, right-aligned in the action row. It shrinks (and finally hides) before
-   the buttons wrap on narrow screens. */
-.chat-actions .reply-time {
+.chat-actions > ha-icon-button {
+  flex: 0 0 auto;
+}
+
+.chat-actions .speak-chat,
+.chat-actions .history-chat {
+  --mdc-icon-button-size: 32px;
+  --mdc-icon-size: 18px;
+  color: var(--secondary-text-color);
+}
+
+/* Action row under each finished reply: copy, read aloud, time. Subtle on desktop
+   (full on hover/focus), always visible on touch screens. */
+.reply-actions {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  min-width: 0;
+  margin-top: var(--ha-space-1, 4px);
+  margin-inline-start: -8px;
+  opacity: 0.6;
+  transition: opacity 120ms ease;
+}
+
+.bubble:hover > .reply-actions,
+.message-container:hover > .reply-actions,
+.reply-actions:hover,
+.reply-actions:focus-within {
+  opacity: 1;
+}
+
+.reply-actions [hidden] {
+  display: none !important;
+}
+
+.reply-actions > ha-icon-button {
+  flex: 0 0 auto;
+  --mdc-icon-button-size: 32px;
+  --mdc-icon-size: 18px;
+  color: var(--secondary-text-color);
+}
+
+.reply-actions > ha-icon-button:hover,
+.reply-actions > ha-icon-button:focus-visible,
+.reply-actions > ha-icon-button.speaking {
+  color: var(--primary-text-color);
+}
+
+/* Reply time, right-aligned. It shrinks (and finally hides) before the buttons wrap on
+   narrow screens. Older replies show it on hover/focus only; the newest always. */
+.reply-actions .reply-time {
   margin-inline-start: auto;
   padding-inline: var(--ha-space-2, 8px) 0;
   min-width: 0;
@@ -854,28 +901,37 @@ h1 {
   color: var(--secondary-text-color);
   font-variant-numeric: tabular-nums;
   cursor: default;
+  transition: opacity 120ms ease;
 }
 
-.chat-actions .reply-time[hidden] {
-  display: none !important;
+.reply-actions:not(.is-last) .reply-time {
+  opacity: 0;
 }
 
-.chat-actions > ha-icon-button {
-  flex: 0 0 auto;
+.bubble:hover > .reply-actions .reply-time,
+.message-container:hover > .reply-actions .reply-time,
+.reply-actions:hover .reply-time,
+.reply-actions:focus-within .reply-time {
+  opacity: 1;
 }
 
-@media (max-width: 260px) {
-  .chat-actions .reply-time {
-    display: none;
+@media (hover: none) {
+  .reply-actions {
+    opacity: 1;
   }
 }
 
-.chat-actions .copy-chat,
-.chat-actions .speak-chat,
-.chat-actions .history-chat {
-  --mdc-icon-button-size: 32px;
-  --mdc-icon-size: 18px;
-  color: var(--secondary-text-color);
+@media (prefers-reduced-motion: reduce) {
+  .reply-actions,
+  .reply-actions .reply-time {
+    transition: none;
+  }
+}
+
+@media (max-width: 260px) {
+  .reply-actions .reply-time {
+    display: none;
+  }
 }
 
 .activity {
