@@ -1,4 +1,4 @@
-// Reply meta in the chat action row: reply time and the "copy last reply" text.
+// Reply meta for the action row under each reply: reply time and the text to copy or read aloud.
 // Pure helpers (no DOM), tested in tests/test_reply_meta.mjs.
 
 function safeFormat(locale, options) {
@@ -87,24 +87,27 @@ export function haTimeZone(hass) {
 }
 
 /**
- * The newest finished assistant reply among chat entries ({ role, text, streaming }),
- * or null. Only the reply text counts — tool chips and status lines are not part of it.
+ * The text a reply's own action row copies and reads aloud, or "" when the entry gets no row.
+ * Entries are chat bubbles as { role, text, streaming, error }: only the reply markdown counts —
+ * tool steps, status lines and the "reply cut" note live outside it. User messages, replies
+ * still streaming, errors and replies with only tool steps get no row.
  */
-export function lastReply(entries) {
-  const list = Array.isArray(entries) ? entries : [];
-  for (let i = list.length - 1; i >= 0; i -= 1) {
-    const entry = list[i];
-    if (!entry || entry.role !== "assistant" || entry.streaming) continue;
-    const text = String(entry.text || "").trim();
-    if (text) return { ...entry, text };
-  }
-  return null;
+export function replyActionText(entry) {
+  if (!entry || entry.role !== "assistant" || entry.streaming || entry.error) return "";
+  return String(entry.text || "").trim();
 }
 
-/** The reply time belongs in the action row only when the chat ends with a finished reply. */
-export function replyTimeFor(entries) {
+/**
+ * Which entries get an action row: [{ index, text, last }]. `last` marks the newest one;
+ * its time is always shown, older rows show it on hover/focus.
+ */
+export function replyRows(entries) {
   const list = Array.isArray(entries) ? entries : [];
-  const last = list[list.length - 1];
-  if (!last || last.role !== "assistant" || last.streaming) return "";
-  return last.createdAt || "";
+  const rows = [];
+  list.forEach((entry, index) => {
+    const text = replyActionText(entry);
+    if (text) rows.push({ index, text, last: false });
+  });
+  if (rows.length) rows[rows.length - 1].last = true;
+  return rows;
 }

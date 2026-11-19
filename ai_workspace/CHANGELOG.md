@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+**Copy and read aloud under every reply.** Each finished agent reply gets its own small row: copy, read aloud and the reply time.
+
+**Under each reply**
+- **Copy** copies that reply's text and markdown, without tool steps, status lines or the "cut off" note.
+- **Read aloud** reads that reply with your text-to-speech voice. Only one reply plays at a time: starting another one stops the first, and while a reply plays its button turns into **Stop**. The button is hidden when no text-to-speech engine is set up.
+- The **time** sits on the right ("21:04", "gestern, 21:04", "17.11., 21:04"). The newest reply always shows it; on older replies it shows when you point at or focus the row.
+- On a computer the row is faint until you point at or focus the reply. On a phone or tablet it is always fully visible. The buttons work with the keyboard and have screen-reader labels in all languages.
+- Your own messages, replies still being written, error messages and replies that only ran tools get no row.
+- The row under the chat now only has the chat-wide actions (**Verlauf**). The "copy last reply" button and the time are gone from there because each reply has its own now. The speaker only shows there while a reply is read aloud on its own (automatic read-aloud), so you can pause or stop it.
+
 ## 1.6.1b3
 
 **The agent finds the chat you mean.** “Im Bewässerungs-Chat”, “Bewässerungschat”, “bewaesserung” or a small typo all find the chat titled “Bewässerung”, and a newer or pinned chat that only shares a common word (“Börse Tabelle” for “mach eine neue Tabelle”) no longer wins.
