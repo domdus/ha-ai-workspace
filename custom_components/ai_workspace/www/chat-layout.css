@@ -404,6 +404,16 @@
   margin-inline-end: 2px;
 }
 
+/* Typed but not sent in a chat that is not open. */
+.sessions .session-row .draft-mark {
+  flex: none;
+  align-self: center;
+  margin-inline: 6px 2px;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--secondary-text-color);
+}
+
 .chat-nav-toggle {
   position: relative;
 }

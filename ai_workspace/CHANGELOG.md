@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+**What you type stays in its chat.** Text typed but not sent no longer follows you into the next chat. Every chat, and the new chat screen, keeps its own draft and gets it back when you return, with the cursor at the end.
+
+**Drafts**
+- Kept per user in this browser for 7 days (text only, up to 8,000 characters, the 30 newest chats; see [privacy](../docs/privacy.md)). Attached files and pictures stay with the draft while the page is open.
+- Sending clears the draft, and deleting a chat clears it too. A chat in the list that has a draft shows *Draft* next to its title.
+
+**Queued prompts stay in their chat**
+- Prompts queued while a reply runs belong to that chat. Switching to another chat no longer drops them or puts the first one into the other chat's message field.
+- They are still sent in their own chat when the reply finishes, also while you look at another chat or the panel is closed, one after the other. The reply gets its unread dot in the chat list.
+- Back in the chat, its queue is shown again (only there) and goes on from there. If the chat is still busy (for example from another device), a new message waits in the queue instead of failing.
+
 ## 1.6.1b3
 
 **The agent finds the chat you mean.** “Im Bewässerungs-Chat”, “Bewässerungschat”, “bewaesserung” or a small typo all find the chat titled “Bewässerung”, and a newer or pinned chat that only shares a common word (“Börse Tabelle” for “mach eine neue Tabelle”) no longer wins.

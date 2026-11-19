@@ -81,8 +81,8 @@ ok(sendButtonMode({ streaming: false, hasDraft: true }).action === "send", "Send
 
 ok(keepQueueOnHalt("stop") === false, "Stop cancels the queued stack too");
 ok(keepQueueOnHalt("send") === true, "Sending the next turn keeps remaining queued prompts");
-ok(keepQueueOnHalt("switch") === false, "Queued prompts never go out in another chat");
-ok(keepQueueOnHalt("destroy") === false, "Destroying the panel drops the queue");
+ok(keepQueueOnHalt("switch") === true, "A chat switch keeps the chat's own queue (it is sent there)");
+ok(keepQueueOnHalt("destroy") === true, "Closing the panel keeps the queue for its chat");
 
 ok(filesLeftOut(5, 4) === 1, "A fifth photo is reported as left out");
 ok(filesLeftOut(2, 0) === 2, "No free slot leaves every file out");
@@ -138,7 +138,17 @@ ok(filesToRead(["a", "b"], 0).length === 0, "No slots means no files are read");
 
 ok(chatSrc.includes("takeInputFiles("), "chat.js copies picker files before clearing");
 ok(chatSrc.includes("keepQueueOnHalt("), "chat.js asks send_guard whether the queue survives");
-ok(chatSrc.includes('keepQueueOnHalt("switch")'), "Leaving a chat drops its queue");
+ok(chatSrc.includes('keepQueueOnHalt("switch")'), "Leaving a chat asks whether its queue survives");
+{
+  const leave = chatSrc.slice(chatSrc.indexOf("function leaveChat()"), chatSrc.indexOf("function haltStream("));
+  ok(!leave.includes("restoreQueued"), "Leaving a chat never moves a queued prompt into the composer");
+  ok(leave.includes("sendQueueInBackground(from)"), "Leaving a chat sends its queue there in the background");
+  const load = chatSrc.slice(chatSrc.indexOf("async function loadSession"), chatSrc.indexOf("function prependOlder"));
+  ok(!load.includes("restoreQueued"), "Opening another chat does not pull the queue into the composer");
+  ok(load.includes("switchComposer(id)"), "Opening a chat brings back its own draft and queue");
+  const fresh = chatSrc.slice(chatSrc.indexOf("function startNewChat"), chatSrc.indexOf("const historyEl"));
+  ok(!fresh.includes("restoreQueued") && fresh.includes('switchComposer("")'), "New chat gets its own draft, no queued prompt");
+}
 {
   const stop = chatSrc.slice(chatSrc.indexOf("async function stopTurn"), chatSrc.indexOf("function hasDraft"));
   ok(!stop.includes("flushNext"), "Stop does not send the next queued prompt");
