@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.1b2
+
+**Sign in with ChatGPT goes on by itself.** On a Codex (runtime) agent the form shows OpenAI's link and the one-time code and then moves on as soon as OpenAI confirms the code. No more submitting to check.
+
+**OpenAI Codex on the Runtime**
+- **Sign in with ChatGPT is one step less.** The form shows OpenAI's link and the one-time code and then goes on by itself as soon as OpenAI confirms the code. No more submitting to check. Closing the dialog stops the sign-in on the Runtime.
+- If OpenAI refuses the code, the form says what to do: allow device-code sign-in once in ChatGPT under **Settings → Security** (a workspace admin allows it for workspace accounts).
+- **An expired or revoked ChatGPT sign-in says so in the chat, in your language**, with the way out: sign in with ChatGPT again on the agent (or replace the OpenAI API key). Before, some of these showed OpenAI's raw message.
+- **Plan limits for the ChatGPT plan now really show up.** Codex reports them outside the chat turn, so the Runtime never saw them. It now reads them after each turn (Runtime 1.6.1b2).
+- The Codex account step shows its status in all 15 languages (it was English or German only).
+- Update the Runtime App to 1.6.1b2 too for the plan limits and the expired sign-in message.
+
 ## 1.6.1b1
 
 **Fewer unneeded Home Assistant lookups.** Agents were told to call a Home Assistant tool before answering anything that sounded like the house, so a question about cutting back a plant, frost protection or how much to water ran a lookup, opened with a status sentence and sometimes linked a random entity. Now an agent looks things up only when you ask for live house data (a device, state, history, count, list, weather) or want a change.
@@ -10,13 +22,6 @@
 - **The per-message house note is gone.** Cursor, Claude SDK and Codex turns no longer get "call a Home Assistant tool before you answer" appended to every house-sounding message. The standing instructions say when to look.
 - Your own system prompt stays as it is. A Runtime workspace `AGENTS.md` or `.cursor/rules/home-assistant.mdc` that is still an unedited built-in version gets the new text by itself; an edited one is left alone.
 - Update the Runtime App to 1.6.1b1 for the new Cursor workspace rules. The rest works with a 1.6.0 Runtime.
-
-**OpenAI Codex on the Runtime**
-- **Sign in with ChatGPT is one step less.** The form shows OpenAI's link and the one-time code and then goes on by itself as soon as OpenAI confirms the code. No more submitting to check. Closing the dialog stops the sign-in on the Runtime.
-- If OpenAI refuses the code, the form says what to do: allow device-code sign-in once in ChatGPT under **Settings → Security** (a workspace admin allows it for workspace accounts).
-- **An expired or revoked ChatGPT sign-in says so in the chat, in your language**, with the way out: sign in with ChatGPT again on the agent (or replace the OpenAI API key). Before, some of these showed OpenAI's raw message.
-- **Plan limits for the ChatGPT plan now really show up.** Codex reports them outside the chat turn, so the Runtime never saw them. It now reads them after each turn (Runtime 1.6.1b1).
-- The Codex account step shows its status in all 15 languages (it was English or German only).
 
 ## 1.6.0
 
