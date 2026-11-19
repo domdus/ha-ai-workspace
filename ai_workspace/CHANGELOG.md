@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.6.1b3
+
+**The agent finds the chat you mean.** “Im Bewässerungs-Chat”, “Bewässerungschat”, “bewaesserung” or a small typo all find the chat titled “Bewässerung”, and a newer or pinned chat that only shares a common word (“Börse Tabelle” for “mach eine neue Tabelle”) no longer wins.
+
+**Other chats**
+- Title matching ignores case, umlauts (ä/ae), hyphens and endings, understands compounds with -chat, -verlauf and -thread and allows small typos. The whole title in the message beats a word right next to “chat”, which beats a few shared words; rarer words count more. Pin and recency only break a tie. Only the best chat is used, a second one only when it fits just as well.
+- “Im anderen / vorigen / letzten Chat” without a title means the chat you used last.
+- The excerpt is filled from the newest message back (about 16,000 characters): the newest reply comes whole, with tables and code intact, and anything left out is marked. A short summary of the older messages comes with it.
+- Agents can look themselves: new read-only tools `list_chats` and `read_chat`, for Cursor, Claude and Codex on the Runtime and for cloud agents. They only see your own chats.
+- The same for every engine and every token mode (the save modes get a smaller excerpt, and clipping a long message never cuts it). Assist agents get it too. The excerpt is kept with your message, so it is still there after a resume, a restart or an agent switch.
+
+**Opening a chat**
+- The chat shows placeholder bubbles while it loads (no animation with reduced motion), and after 8 seconds says that it takes longer than usual. After 20 seconds, or when Home Assistant does not answer, you get **Try again** instead of an empty new chat. Only a chat that was really deleted falls back to a new chat.
+- Faster start: the chat’s messages are asked for as soon as the panel opens, the theme from your last visit is used right away, agents, mic and usage settings load after the chat, and the last chat you opened paints at once from your browser (see [privacy](../docs/privacy.md)).
+- While AI Workspace is still starting, its API answers 503 with Retry-After instead of a server error.
+
+**Unread replies**
+- A dot on a chat in the list means an agent reply arrived there while the chat was not open. Opening the chat clears it, on every device. On a phone the **Chats** button shows the dot too. The list updates by itself while a reply runs in the background.
+
+**Under the reply**
+- The copy button under the chat now copies only the last agent reply (its text and markdown, without tool steps), not the whole chat. It is greyed out while there is no reply yet.
+- The time of the reply shows on the right of that row: “21:04” today, “gestern, 21:04” yesterday, “17.11., 21:04” before that (with the year if it is not this year), in your Home Assistant language, time zone and clock format. Hover it for the full date. A live reply gets its time when it is finished; on a narrow screen the time gets shorter before the buttons move.
+
+- Update the Runtime App to 1.6.1b3 too, so Cursor, Claude and Codex agents on the Runtime are told about `list_chats` and `read_chat`. The rest works with an older Runtime.
+
 ## 1.6.1b2
 
 **Sign in with ChatGPT goes on by itself.** On a Codex (runtime) agent the form shows OpenAI's link and the one-time code and then moves on as soon as OpenAI confirms the code. No more submitting to check.
