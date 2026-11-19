@@ -99,6 +99,23 @@ class HaAiWorkspacePanel extends HTMLElement {
     }, 0);
   }
 
+  _setUnread(unread, ui) {
+    const chats = this.shadowRoot?.querySelector(".chats-menu");
+    if (!chats) return;
+    let dot = chats.querySelector(".unread-dot");
+    if (unread && !dot) {
+      dot = document.createElement("span");
+      dot.className = "unread-dot";
+      dot.setAttribute("aria-hidden", "true");
+      chats.appendChild(dot);
+    } else if (!unread) {
+      dot?.remove();
+    }
+    const label = unread ? ui.chats_unread || ui.chats : ui.chats;
+    chats.label = label;
+    chats.setAttribute("label", label);
+  }
+
   _overlayNav() {
     return Boolean(this._narrow) || this._mq.matches;
   }
@@ -123,9 +140,11 @@ class HaAiWorkspacePanel extends HTMLElement {
     this._mounting = true;
     let mountAiWorkspace;
     let prefetchUiTheme;
+    let prefetchSession;
+    let routeSessionId;
     let stringsFor;
     try {
-      [{ mountAiWorkspace, prefetchUiTheme }, { stringsFor }] = await this._mods;
+      [{ mountAiWorkspace, prefetchUiTheme, prefetchSession, routeSessionId }, { stringsFor }] = await this._mods;
     } catch (err) {
       this._mounting = false;
       console.error("AI Workspace failed to load", err);
@@ -136,7 +155,10 @@ class HaAiWorkspacePanel extends HTMLElement {
       return;
     }
     this._mounted = true;
-    await prefetchUiTheme(() => this._hass?.auth?.data?.access_token || "");
+    const token = () => this._hass?.auth?.data?.access_token || "";
+    // The chat in the address is asked for now, in parallel with the theme and the page itself.
+    prefetchSession?.(routeSessionId?.() || "", token);
+    await prefetchUiTheme(token);
     const ui = stringsFor(this._hass.locale?.language || this._hass.language);
     await customElements.whenDefined("ha-top-app-bar-fixed");
     this.shadowRoot.innerHTML = `
@@ -161,6 +183,21 @@ class HaAiWorkspacePanel extends HTMLElement {
         }
         .chats-menu[hidden] {
           display: none !important;
+        }
+        .chats-menu {
+          position: relative;
+        }
+        /* Some chat has an agent reply that was not read yet. */
+        .chats-menu .unread-dot {
+          position: absolute;
+          top: 8px;
+          inset-inline-end: 8px;
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: var(--primary-color);
+          box-shadow: 0 0 0 2px var(--app-header-background-color, var(--primary-background-color));
+          pointer-events: none;
         }
         .page-title {
           font-size: inherit;
@@ -198,6 +235,7 @@ class HaAiWorkspacePanel extends HTMLElement {
         onRemount: (api) => {
           this._ui = api;
         },
+        onUnread: (unread) => this._setUnread(unread, ui),
         navigate: (path, options = {}) => {
           const hass = this._hass;
           if (typeof hass?.navigate === "function") {

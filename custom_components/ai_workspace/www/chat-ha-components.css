@@ -127,7 +127,8 @@
 .ui-theme-ha-components .chat-actions {
   margin-top: var(--ha-space-1);
   margin-left: 0;
-  align-self: flex-start;
+  /* Full width so the reply time can sit on the right. */
+  align-self: stretch;
 }
 
 .ui-theme-ha-components .stage {

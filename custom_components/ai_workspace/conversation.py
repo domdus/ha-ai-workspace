@@ -17,8 +17,8 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .agents import Agent, entry_agents
-from .const import DOMAIN, VOICE_TURN_NOTE, provider_token_mode, token_mode_allows_extras
-from .chat_scope import handoff_note, merge_reply_text, other_chat_note
+from .const import DOMAIN, VOICE_TURN_NOTE, cross_chat_budget, provider_token_mode, token_mode_allows_extras
+from .chat_scope import cross_chat_event, handoff_note, merge_reply_text, other_chat_context
 from .local_time import house_zone
 from .error_text import public_error
 from .http import _create_runtime_session, async_agent_events
@@ -232,12 +232,15 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
         if extras:
             outbound = f"{VOICE_TURN_NOTE}\n\n{outbound}"
         cross = bool(getattr(data.get("settings"), "cross_chat", False))
-        note = (
-            ""
-            if not extras
-            else await self.hass.async_add_executor_job(
-                other_chat_note, store, user_id, session.id, text, cross
-            )
+        # In every token mode, like the chat page: the save modes only get a smaller excerpt.
+        note, note_chats = await self.hass.async_add_executor_job(
+            other_chat_context,
+            store,
+            user_id,
+            session.id,
+            text,
+            cross,
+            cross_chat_budget(provider_token_mode(provider)),
         )
         if note:
             outbound = f"{outbound}\n\n{note}"
@@ -252,7 +255,8 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
             self._reply(chat_log, "This chat is already waiting on the agent.")
             return conversation.async_get_result_from_chat_log(user_input, chat_log)
         async with lock:
-            await self.hass.async_add_executor_job(store.add_message, session.id, "user", text, "[]")
+            user_events = json.dumps([cross_chat_event(note, note_chats)] if note else [], ensure_ascii=False)
+            await self.hass.async_add_executor_job(store.add_message, session.id, "user", text, user_events)
             await self.hass.async_add_executor_job(store.rename_if_default, session.id, title_from_prompt(text))
             count = await self.hass.async_add_executor_job(lambda: len(store.list_messages(session.id)))
             handoff = ""
@@ -367,6 +371,8 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
                 answer,
                 json.dumps(stored, ensure_ascii=False),
             )
+            # Heard through Assist: no unread dot for a reply the user already got.
+            await self.hass.async_add_executor_job(store.mark_read, user_id, session.id, None)
 
         if locks.get(session.id) is lock and not lock.locked():
             locks.pop(session.id, None)

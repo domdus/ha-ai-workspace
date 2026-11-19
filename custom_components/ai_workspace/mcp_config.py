@@ -28,6 +28,7 @@ _PREFIX_ALIASES = {
     "catalog": "catalog",
     "house-map": "catalog",
     "notes": "notes",
+    "chats": "chats",
 }
 
 
@@ -165,10 +166,11 @@ def _needs_ha_bearer(name: str, url: str, ha_hosts: frozenset[str] | set[str]) -
     if host not in ha_hosts:
         return False
     key = str(name or "").strip().lower()
-    if key in {"catalog", "house-map", "notes"}:
+    if key in {"catalog", "house-map", "notes", "chats"}:
         return True
     return (
         "/api/mcp" in path
+        or "/api/ai_workspace/chats/" in path
         or "/api/ai_workspace/catalog/" in path
         or "/api/ai_workspace/house_map/" in path
         or "/api/ai_workspace/notes/" in path

@@ -17,7 +17,26 @@ const {
   `./send_guard.js${CACHE}`
 );
 
+const {
+  chatCacheKey,
+  readChatCache,
+  writeChatCache,
+  clearChatCache,
+  sameChat,
+  olderCount,
+  loadOutcome,
+  anyUnread,
+  timeoutSignal,
+  SKELETON_DELAY_MS,
+  SLOW_HINT_MS,
+  LOAD_TIMEOUT_MS,
+} = await import(`./chat_cache.js${CACHE}`);
+const { replyTimeLabel, replyTimeTitle, haHour12, haTimeZone, lastReply, replyTimeFor } = await import(
+  `./reply_meta.js${CACHE}`
+);
+
 const API = "/api/ai_workspace";
+const UI_THEME_KEY = "ai_workspace_ui_theme";
 const SESSION_CACHE_KEY = "ai_workspace_sessions";
 const PAINT_TAIL = 24;
 
@@ -49,6 +68,7 @@ function writeSessionCache(sessions) {
           id: session.id,
           title: session.title || "",
           pinned: Boolean(session.pinned),
+          unread: Boolean(session.unread),
         })),
       ),
     );
@@ -57,6 +77,63 @@ function writeSessionCache(sessions) {
   }
 }
 
+function userId() {
+  return document.querySelector("home-assistant")?.hass?.user?.id || "";
+}
+
+function chatCacheSlot() {
+  return chatCacheKey(userId());
+}
+
+/** The chat id in /ai-workspace/<id>, also before the page is mounted. */
+export function routeSessionId(pathname = location.pathname) {
+  const match = String(pathname || "").match(/^\/ai-workspace(?:\/conversations)?\/([0-9a-fA-F-]{8,})\/?$/);
+  return match ? match[1] : "";
+}
+
+// Signed-in fetch for code that runs before mountAiWorkspace (panel open), with a time limit.
+async function authFetch(url, init = {}, getToken = null, timeoutMs = 0) {
+  const hass = hassObj();
+  const limit = timeoutMs ? timeoutSignal(timeoutMs, init.signal) : null;
+  const options = limit ? { ...init, signal: limit.signal } : init;
+  try {
+    if (typeof hass?.fetchWithAuth === "function") return await hass.fetchWithAuth(url, options);
+    const token = (typeof getToken === "function" ? getToken() : "") || hass?.auth?.data?.access_token || "";
+    if (!token) return null;
+    return await fetch(url, { ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` } });
+  } finally {
+    limit?.done();
+  }
+}
+
+// The open chat's messages, asked for the moment the panel opens, in parallel with everything else.
+let sessionPrefetch = null;
+const PREFETCH_FRESH_MS = 10000;
+
+export function prefetchSession(id = routeSessionId(), getToken = null) {
+  if (!id) return null;
+  if (sessionPrefetch && sessionPrefetch.id === id && Date.now() - sessionPrefetch.at < PREFETCH_FRESH_MS) {
+    return sessionPrefetch.promise;
+  }
+  const promise = authFetch(
+    `${API}/sessions/${id}`,
+    { headers: { Accept: "application/json" }, priority: "high" },
+    getToken,
+    LOAD_TIMEOUT_MS,
+  ).then(
+    async (response) => ({ response, body: response?.ok ? await response.json() : null }),
+    (error) => ({ response: null, body: null, timedOut: error?.name === "TimeoutError" || error?.name === "AbortError", error }),
+  );
+  sessionPrefetch = { id, at: Date.now(), promise };
+  return promise;
+}
+
+function takeSessionPrefetch(id) {
+  const hit = sessionPrefetch;
+  if (!hit || hit.id !== id || Date.now() - hit.at >= PREFETCH_FRESH_MS) return null;
+  sessionPrefetch = null;
+  return hit.promise;
+}
 
 export { takeSpeech };
 
@@ -293,24 +370,45 @@ function uiCreate(...names) {
   return haCreate(...names);
 }
 
-async function fetchUiTheme(getToken) {
-  const hass = hassObj();
-  const token = (typeof getToken === "function" ? getToken() : "") || hass?.auth?.data?.access_token || "";
-  if (typeof hass?.fetchWithAuth !== "function" && !token) return uiTheme;
-  const headers = { Accept: "application/json" };
+// One /ui answer serves the panel, the theme check and the mic/usage settings: they ask within moments.
+let uiBodyCache = null;
+const UI_BODY_FRESH_MS = 5000;
+
+function storedUiTheme() {
   try {
-    const response =
-      typeof hass?.fetchWithAuth === "function"
-        ? await hass.fetchWithAuth(`${API}/ui`, { headers })
-        : await fetch(`${API}/ui`, { headers: { ...headers, Authorization: `Bearer ${token}` } });
-    if (response?.status === 401 || response?.status === 403) return uiTheme;
-    if (response?.ok) {
-      const body = await response.json();
-      uiTheme = body.ui_theme === "ha_components" ? "ha_components" : "standard";
-      uiThemeLoaded = true;
-    }
+    const saved = localStorage.getItem(UI_THEME_KEY);
+    return saved === "ha_components" || saved === "standard" ? saved : "";
   } catch (_err) {
-    return uiTheme;
+    return "";
+  }
+}
+
+function fetchUiBody(getToken, { fresh = false } = {}) {
+  if (!fresh && uiBodyCache && Date.now() - uiBodyCache.at < UI_BODY_FRESH_MS) return uiBodyCache.promise;
+  const promise = (async () => {
+    try {
+      const response = await authFetch(`${API}/ui`, { headers: { Accept: "application/json" } }, getToken, LOAD_TIMEOUT_MS);
+      if (!response?.ok) return null;
+      const body = await response.json();
+      try {
+        localStorage.setItem(UI_THEME_KEY, body.ui_theme === "ha_components" ? "ha_components" : "standard");
+      } catch (_err) {
+        /* private mode */
+      }
+      return body;
+    } catch (_err) {
+      return null;
+    }
+  })();
+  uiBodyCache = { at: Date.now(), promise };
+  return promise;
+}
+
+async function fetchUiTheme(getToken) {
+  const body = await fetchUiBody(getToken);
+  if (body) {
+    uiTheme = body.ui_theme === "ha_components" ? "ha_components" : "standard";
+    uiThemeLoaded = true;
   }
   return uiTheme;
 }
@@ -319,10 +417,18 @@ export function invalidateUiThemeCache() {
   uiThemeLoaded = false;
 }
 
+/** The theme to mount with. The last one seen in this browser goes at once; /ui is checked in the background. */
 export async function prefetchUiTheme(getToken, { force = false } = {}) {
   if (force) invalidateUiThemeCache();
   if (uiThemeLoaded && !force) {
     void fetchUiTheme(getToken);
+    return uiTheme;
+  }
+  const saved = force ? "" : storedUiTheme();
+  if (saved) {
+    uiTheme = saved;
+    uiThemeLoaded = true;
+    void fetchUiBody(getToken);
     return uiTheme;
   }
   return fetchUiTheme(getToken);
@@ -777,10 +883,17 @@ function releaseMountHold(root) {
 export async function mountAiWorkspace(root, options = {}) {
   // Read at mount, not at import: the user is known by then, and it may have changed.
   let cachedSessions = readSessionCache();
+  // The open chat's messages are asked for first, in parallel with the theme and everything else.
+  const earlyId =
+    options.restoreSessionId ||
+    (options.compact ? localStorage.getItem("ai_workspace_session") || "" : options.routed ? routeSessionId() : "");
+  if (earlyId) prefetchSession(earlyId, options.getToken);
+  // A different user on this device must not see the last user's cached chat.
+  const ownChatCache = chatCacheSlot();
+  if (ownChatCache) clearChatCache(localStorage, "", { keepKey: ownChatCache });
   await prefetchUiTheme(options.getToken, { force: Boolean(options.forceUiTheme) });
   const haUi = haComponentsUi();
   let activeUiTheme = haUi ? "ha_components" : "standard";
-  if (haUi) void ensureHaComponents(HA_COMPONENT_PRELOAD);
   const compact = Boolean(options.compact);
   const strings = stringsFor(hassLanguage());
   const t = (key, vars = {}) => {
@@ -1453,7 +1566,18 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   // Resolves to null when nobody is signed in. Network errors reject only with { raise: true }.
-  async function apiFetch(url, options = {}, { raise = false } = {}) {
+  // With { timeout }, the request is aborted after that many ms (a TimeoutError with raise).
+  async function apiFetch(url, options = {}, { raise = false, timeout = 0 } = {}) {
+    const limit = timeout ? timeoutSignal(timeout, options.signal) : null;
+    if (limit) options = { ...options, signal: limit.signal };
+    try {
+      return await apiFetchNow(url, options, raise);
+    } finally {
+      limit?.done();
+    }
+  }
+
+  async function apiFetchNow(url, options, raise) {
     const hass = hassObj();
     const auth = hass?.auth;
     try {
@@ -2529,26 +2653,31 @@ export async function mountAiWorkspace(root, options = {}) {
     return bubble;
   }
 
-  function transcriptText() {
-    const parts = [];
-    for (const bubble of logEl.querySelectorAll(".bubble")) {
-      const role = bubble.classList.contains("user") ? t("you") : t("assistant");
+  function replyEntries() {
+    return [...logEl.querySelectorAll(".bubble")].map((bubble) => {
       const md = bubble.querySelector("ha-markdown.text");
-      const textEl = bubble.querySelector("div.text");
-      const body = md
-        ? String(md.content || "").trim()
-        : String(textEl?.textContent || "").trim();
-      const attachments = [
-        ...[...bubble.querySelectorAll(".bubble-images img")].map((img) => img.alt || "image"),
-        ...[...bubble.querySelectorAll(".bubble-files .file-chip")].map((el) => haChipLabel(el).trim()),
-      ].filter(Boolean);
-      if (!body && !attachments.length) continue;
-      const lines = [];
-      if (attachments.length) lines.push(attachments.map((name) => `[${name}]`).join(" "));
-      if (body) lines.push(body);
-      parts.push(`${role}:\n${lines.join("\n")}`);
-    }
-    return parts.join("\n\n");
+      return {
+        role: bubble.classList.contains("assistant") ? "assistant" : "user",
+        // The reply markdown only: tool chips, status and "reply cut" notes live outside it.
+        text: String(md?.content || md?.textContent || ""),
+        streaming: bubble.classList.contains("streaming"),
+        createdAt: bubble.dataset.createdAt || "",
+      };
+    });
+  }
+
+  function stampReply(bubble) {
+    if (bubble && !bubble.dataset.createdAt) bubble.dataset.createdAt = new Date().toISOString();
+  }
+
+  function replyTimeOptions() {
+    const hass = hassObj();
+    return {
+      locale: hassLanguage(),
+      timeZone: haTimeZone(hass),
+      hour12: haHour12(hass?.locale?.time_format),
+      yesterday: t("reply_yesterday"),
+    };
   }
 
   async function copyText(text) {
@@ -2589,6 +2718,9 @@ export async function mountAiWorkspace(root, options = {}) {
     const showSpeak = Boolean(voice.tts && (live || (Boolean(lastAssistantText()) && !busy)));
     const showCopy = hasChat && !busy;
     const showHistory = Boolean(turnHasHistory);
+    const entries = replyEntries();
+    const hasReply = Boolean(lastReply(entries));
+    const replyAt = busy ? "" : replyTimeFor(entries);
     if (!showCopy && !showSpeak && !showHistory) {
       if (row) row.hidden = true;
       return;
@@ -2599,27 +2731,30 @@ export async function mountAiWorkspace(root, options = {}) {
       const btn = document.createElement("ha-icon-button");
       btn.className = "copy-chat";
       btn.type = "button";
-      btn.label = t("copy_chat");
+      btn.label = t("copy_last_reply");
       const icon = document.createElement("ha-icon");
       icon.setAttribute("icon", "mdi:content-copy");
       btn.appendChild(icon);
       btn.addEventListener("click", async (event) => {
         event.preventDefault();
         event.stopPropagation();
-        const text = transcriptText();
-        if (!text) return;
-        await copyText(text);
+        const reply = lastReply(replyEntries());
+        if (!reply) return;
+        await copyText(reply.text);
         icon.setAttribute("icon", "mdi:check");
         btn.label = t("copied");
         window.setTimeout(() => {
           icon.setAttribute("icon", "mdi:content-copy");
-          btn.label = t("copy_chat");
+          btn.label = t("copy_last_reply");
         }, 1600);
       });
       row.appendChild(btn);
     }
     const copyBtn = row.querySelector(".copy-chat");
-    if (copyBtn) copyBtn.hidden = !showCopy;
+    if (copyBtn) {
+      copyBtn.hidden = !showCopy;
+      copyBtn.disabled = !hasReply;
+    }
     let speakBtn = row.querySelector(".speak-chat");
     if (voice.tts) {
       if (!speakBtn) {
@@ -2658,6 +2793,24 @@ export async function mountAiWorkspace(root, options = {}) {
       row.appendChild(historyBtn);
     }
     historyBtn.hidden = !turnHasHistory;
+    let timeEl = row.querySelector(".reply-time");
+    if (!timeEl) {
+      timeEl = document.createElement("time");
+      timeEl.className = "reply-time";
+      row.appendChild(timeEl);
+    }
+    const opts = replyTimeOptions();
+    const label = replyAt ? replyTimeLabel(replyAt, opts) : "";
+    timeEl.textContent = label;
+    timeEl.hidden = !label;
+    if (label) {
+      timeEl.dateTime = String(replyAt);
+      timeEl.title = replyTimeTitle(replyAt, opts);
+    } else {
+      timeEl.removeAttribute("datetime");
+      timeEl.removeAttribute("title");
+    }
+    row.appendChild(timeEl);
     row.hidden = false;
     logEl.appendChild(row);
   }
@@ -3027,6 +3180,7 @@ export async function mountAiWorkspace(root, options = {}) {
     const live = logEl.querySelector(".bubble.assistant.streaming");
     if (live) {
       live.classList.remove("streaming");
+      stampReply(live);
       settleTools(live);
       setActivity(live, "");
       const text = String(live.querySelector(".text")?.content || live.querySelector(".text")?.textContent || "").trim();
@@ -3649,6 +3803,7 @@ export async function mountAiWorkspace(root, options = {}) {
       showNotice(await errorText(response));
       return;
     }
+    clearChatCache(localStorage, chatCacheSlot(), { id: session.id });
     if (session.id === sessionId) startNewChat();
     await loadSessions();
   }
@@ -3728,6 +3883,126 @@ export async function mountAiWorkspace(root, options = {}) {
     syncSearchIcon();
   }
 
+  // Unread agent replies: a dot on the chat's row and on the buttons that open the chat list.
+  const readSent = new Map();
+
+  function paintRowUnread(row, on) {
+    if (!row) return;
+    row.dataset.unread = on ? "1" : "0";
+    const item = row.querySelector(".session");
+    let dot = row.querySelector(".unread-dot");
+    if (!on) {
+      dot?.remove();
+      return;
+    }
+    if (dot || !item) return;
+    dot = document.createElement("span");
+    dot.className = "unread-dot";
+    dot.setAttribute("role", "img");
+    dot.setAttribute("aria-label", t("unread_reply"));
+    dot.title = t("unread_reply");
+    const label = item.querySelector(".item-text");
+    if (label) label.after(dot);
+    else item.prepend(dot);
+  }
+
+  function setRowUnread(id, on) {
+    const row = sessionsEl?.querySelector(`.session-row[data-session-id="${id}"]`);
+    if (on && id === sessionId && chatVisible()) {
+      // The open chat on this screen: the reply is being read right now.
+      markRead(id);
+      return;
+    }
+    paintRowUnread(row, on);
+  }
+
+  function syncUnreadBadge() {
+    const rows = [...(sessionsEl?.querySelectorAll(".session-row[data-unread='1']") || [])];
+    const unread = anyUnread(
+      rows.map((row) => ({ id: row.dataset.sessionId, unread: true })),
+      sessionId,
+      chatVisible(),
+    );
+    root.querySelectorAll(".chat-nav-toggle").forEach((btn) => {
+      let dot = btn.querySelector(".unread-dot");
+      if (!unread) {
+        dot?.remove();
+        btn.removeAttribute("data-unread");
+        return;
+      }
+      btn.setAttribute("data-unread", "1");
+      if (!dot) {
+        dot = document.createElement("span");
+        dot.className = "unread-dot";
+        dot.setAttribute("aria-hidden", "true");
+        btn.appendChild(dot);
+      }
+    });
+    options.onUnread?.(unread);
+  }
+
+  /** The open, visible chat was seen up to its newest message: on the server, so on every device. */
+  function markRead(id, messages = null) {
+    if (!id || id !== sessionId || !chatVisible()) return;
+    const last = Array.isArray(messages) && messages.length ? messages[messages.length - 1]?.id : null;
+    const row = sessionsEl?.querySelector(`.session-row[data-session-id="${id}"]`);
+    const wasUnread = row?.dataset.unread === "1";
+    paintRowUnread(row, false);
+    syncUnreadBadge();
+    const key = last == null ? `*${Date.now()}` : String(last);
+    if (!wasUnread && readSent.get(id) === key) return;
+    readSent.set(id, key);
+    void apiFetch(`${API}/sessions/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ read: typeof last === "number" ? last : true }),
+    });
+  }
+
+  // While a reply runs in the background the list is asked again soon; otherwise now and then,
+  // so a reply finished on another device or in another chat gets its dot.
+  let sessionsPoll = 0;
+  const SESSIONS_POLL_BUSY_MS = 4000;
+  const SESSIONS_POLL_IDLE_MS = 60000;
+
+  function scheduleSessionsPoll(sessions) {
+    window.clearTimeout(sessionsPoll);
+    if (compact || !sessionsEl) return;
+    const busy = (sessions || []).some((session) => session?.pending);
+    sessionsPoll = window.setTimeout(refreshSessions, busy ? SESSIONS_POLL_BUSY_MS : SESSIONS_POLL_IDLE_MS);
+  }
+  teardown.push(() => window.clearTimeout(sessionsPoll));
+
+  function listShape(sessions) {
+    return sessions.map((session) => `${session.id}|${session.title || ""}|${session.pinned ? 1 : 0}`).join(",");
+  }
+
+  async function refreshSessions() {
+    if (compact || !sessionsEl) return;
+    if (document.visibilityState === "hidden" || searchInput?.value.trim()) {
+      scheduleSessionsPoll(cachedSessions);
+      return;
+    }
+    const response = await apiFetch(`${API}/sessions`, {}, { timeout: LOAD_TIMEOUT_MS });
+    if (!response?.ok) {
+      scheduleSessionsPoll([]);
+      return;
+    }
+    const sessions = await response.json();
+    if (searchInput?.value.trim()) return;
+    const shown = [...sessionsEl.querySelectorAll(".session-row")].map((row) => ({
+      id: row.dataset.sessionId,
+      title: row.dataset.title,
+      pinned: row.dataset.pinned === "1",
+    }));
+    cachedSessions = sessions;
+    writeSessionCache(sessions);
+    const menuOpen = sessionsEl.querySelector(".session-more[aria-expanded='true']");
+    if (listShape(shown) !== listShape(sessions) && !menuOpen) paintSessionList(sessions);
+    else for (const session of sessions) setRowUnread(session.id, Boolean(session.unread));
+    syncUnreadBadge();
+    scheduleSessionsPoll(sessions);
+  }
+
   // Placeholder rows until the first list arrives; a busy system can take a few seconds.
   function sessionSkeleton() {
     const widths = [72, 58, 84, 64, 76, 52, 68];
@@ -3763,6 +4038,9 @@ export async function mountAiWorkspace(root, options = {}) {
     label.className = "item-text";
     label.textContent = displayTitle(session.title);
     item.appendChild(label);
+    row.dataset.unread = "0";
+    const openHere = session.id === sessionId && chatVisible();
+    if (session.unread && !openHere) paintRowUnread(row, true);
     if (session.id === sessionId) {
       markSessionSelected(item, true);
       markSessionSelected(row, true);
@@ -3772,6 +4050,7 @@ export async function mountAiWorkspace(root, options = {}) {
       closeNavIfOverlay();
       openSession(session.id);
     });
+    if (session.unread && openHere) queueMicrotask(() => markRead(session.id));
     const host = document.createElement("div");
     host.className = "session-menu";
     const more = document.createElement("ha-icon-button");
@@ -3856,6 +4135,8 @@ export async function mountAiWorkspace(root, options = {}) {
       writeSessionCache(sessions);
     }
     paintSessionList(sessions, query);
+    syncUnreadBadge();
+    scheduleSessionsPoll(sessions);
   }
 
   // Rows only count all chats while nothing filters them, and an active search keeps its way out.
@@ -3951,6 +4232,78 @@ export async function mountAiWorkspace(root, options = {}) {
     return work;
   }
 
+  // Placeholder bubbles while a chat loads, user right and agent left, like the chat list's rows.
+  function messageSkeleton() {
+    const rows = [
+      ["user", 46, 44],
+      ["assistant", 72, 96],
+      ["user", 38, 44],
+      ["assistant", 64, 128],
+      ["user", 52, 44],
+      ["assistant", 58, 72],
+    ];
+    const bubbles = rows
+      .map(([role, w, h]) => `<div class="bubble-skeleton ${role}" style="--w:${w}%;--h:${h}px"></div>`)
+      .join("");
+    return `<div class="message-skeleton" aria-hidden="true">${bubbles}</div><p class="sr" role="status">${htmlAttr(t("chat_loading"))}</p>`;
+  }
+
+  let skeletonTimer = 0;
+  let slowTimer = 0;
+
+  function clearLoadState() {
+    window.clearTimeout(skeletonTimer);
+    window.clearTimeout(slowTimer);
+    skeletonTimer = 0;
+    slowTimer = 0;
+    logEl.removeAttribute("aria-busy");
+    logEl.querySelector(".message-skeleton")?.remove();
+    logEl.querySelector(".chat-load-hint")?.remove();
+    logEl.querySelector(".sr[role='status']")?.remove();
+  }
+
+  function showMessageSkeleton() {
+    setWelcome(false, false);
+    logEl.setAttribute("aria-busy", "true");
+    logEl.innerHTML = messageSkeleton();
+  }
+
+  // Loading the chat failed (timeout, 5xx, network). Keep the chat and its address, offer a retry.
+  function showLoadError(id) {
+    clearLoadState();
+    setWelcome(false, false);
+    const card = document.createElement("div");
+    card.className = "chat-load-error";
+    card.setAttribute("role", "alert");
+    const text = document.createElement("p");
+    text.textContent = t("chat_load_failed");
+    const retry = document.createElement("ha-button");
+    retry.setAttribute("appearance", "accent");
+    retry.setAttribute("size", "s");
+    retry.className = "chat-load-retry";
+    retry.textContent = t("retry");
+    retry.addEventListener("click", () => {
+      card.remove();
+      sessionId = "";
+      openSession(id, true);
+    });
+    card.append(text, retry);
+    logEl.replaceChildren(card);
+  }
+
+  let firstLoad = true;
+
+  async function fetchSession(id) {
+    const early = takeSessionPrefetch(id);
+    if (early) return early;
+    try {
+      const response = await apiFetch(`${API}/sessions/${id}`, { priority: "high" }, { raise: true, timeout: LOAD_TIMEOUT_MS });
+      return { response, body: response?.ok ? await response.json() : null };
+    } catch (error) {
+      return { response: null, body: null, timedOut: error?.name === "TimeoutError" || error?.name === "AbortError" };
+    }
+  }
+
   async function loadSession(id, fromUrl = false) {
     if (id && id === sessionId && (streaming || liveStream)) {
       selectSessionRow(id);
@@ -3963,6 +4316,7 @@ export async function mountAiWorkspace(root, options = {}) {
       clearApprovals();
     }
     watchGen += 1;
+    clearLoadState();
     if (!id) {
       routeGen += 1;
       sessionId = "";
@@ -3977,30 +4331,89 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     if (fromUrl && id === sessionId) return;
     const gen = ++routeGen;
+    const initial = firstLoad;
+    firstLoad = false;
     sessionId = id;
     freshChat = false;
     const listed = sessionsEl?.querySelector(`.session-row[data-session-id="${id}"]`);
     if (listed?.dataset.title) titleEl.textContent = displayTitle(listed.dataset.title);
     selectSessionRow(id);
-    if (switching) logEl.replaceChildren();
     if (compact) localStorage.setItem("ai_workspace_session", id);
     if (!fromUrl) goToSession(id);
-    const response = await apiFetch(`${API}/sessions/${id}`);
+    // The last chat seen in this browser paints at once; the server's answer replaces it if it differs.
+    const cached = readChatCache(localStorage, chatCacheSlot(), id);
+    if (cached) {
+      setChatChoice(cached.provider, cached.model);
+      paintSession(cached, gen);
+    } else if (initial) {
+      showMessageSkeleton();
+    } else if (switching) {
+      logEl.replaceChildren();
+      // A quick switch never flashes placeholders.
+      skeletonTimer = window.setTimeout(() => {
+        if (gen === routeGen) showMessageSkeleton();
+      }, SKELETON_DELAY_MS);
+    }
+    slowTimer = window.setTimeout(() => {
+      if (gen !== routeGen || cached || (!logEl.querySelector(".message-skeleton") && !switching && !initial)) return;
+      const hint = document.createElement("p");
+      hint.className = "chat-load-hint";
+      hint.textContent = t("chat_slow");
+      if (!logEl.querySelector(".message-skeleton")) showMessageSkeleton();
+      logEl.appendChild(hint);
+    }, SLOW_HINT_MS);
+    const { response, body, timedOut } = await fetchSession(id);
     if (gen !== routeGen) return;
-    if (!response?.ok) {
+    clearLoadState();
+    const outcome = loadOutcome(response, timedOut);
+    if (outcome === "gone") {
+      // Only a chat that is really gone falls back to a new chat.
+      clearChatCache(localStorage, chatCacheSlot(), { id });
       sessionId = "";
       titleEl.textContent = t("new_chat");
       showEmpty();
       goToSession("", true);
       return;
     }
-    const session = await response.json();
+    if (outcome !== "ok" || !body) {
+      if (!cached) showLoadError(id);
+      return;
+    }
+    const session = body;
     setChatChoice(session.provider, session.model);
-    paintSession(session, gen);
+    if (!cached || !sameChat(cached, session)) paintSession(session, gen);
+    else {
+      // Same newest messages: only the older ones, which the cache leaves out, are added above.
+      turnHasHistory = Boolean(session.has_activity);
+      prependOlder(session.messages, olderCount(cached, session));
+    }
+    writeChatCache(localStorage, chatCacheSlot(), session);
     if (Array.isArray(session.approvals)) syncApprovals(session.approvals, id);
     selectSessionRow(id);
     if (session.pending) watchPending(id);
+    else markRead(id, session.messages);
     refreshChatUsage();
+  }
+
+  function prependOlder(messages, count) {
+    if (!count) return;
+    const head = document.createDocumentFragment();
+    for (let i = 0; i < count; i += 1) {
+      const message = messages[i];
+      addBubble(message.role, message.content, message.events, {
+        animate: false,
+        follow: false,
+        createdAt: message.created_at,
+        parent: head,
+      });
+    }
+    holdChatScroll(() => {
+      const first = logEl.querySelector(".message-container, .bubble");
+      if (first) logEl.insertBefore(head, first);
+      else logEl.prepend(head);
+    });
+    settleTools(logEl);
+    stickToBottom();
   }
 
   function paintSession(session, gen = routeGen) {
@@ -4209,6 +4622,7 @@ export async function mountAiWorkspace(root, options = {}) {
         const live = logEl.querySelector(".bubble.assistant.streaming");
         if (live) {
           live.classList.remove("streaming");
+          stampReply(live);
           setActivity(live, "");
         }
         // Nothing runs any more, so no tool chip can still be busy. Without this a reply
@@ -4219,6 +4633,8 @@ export async function mountAiWorkspace(root, options = {}) {
       resizeComposer();
       syncCopyChat();
       bumpSession(id, session.title, session.pinned);
+      writeChatCache(localStorage, chatCacheSlot(), session);
+      markRead(id, session.messages);
       if (sawPending && voice.speak && voice.tts) {
         const leftover = speechTail(speakRaw, lastAssistantText());
         if (leftover) {
@@ -5184,9 +5600,8 @@ export async function mountAiWorkspace(root, options = {}) {
     let usageOn = true;
     let headerUsageOn = true;
     try {
-      const response = await apiFetch(`${API}/ui`);
-      if (response?.ok) {
-        const body = await response.json();
+      const body = await fetchUiBody(getToken);
+      if (body) {
         show = body.dictate === true;
         historyOn = body.change_history !== false;
         usageOn = body.track_usage !== false;
@@ -5409,6 +5824,7 @@ export async function mountAiWorkspace(root, options = {}) {
           }
           settleTools(assistant);
           setActivity(assistant, "");
+          if (sessionId === chatId) markRead(chatId);
         } else if (name === "done") {
           sawDone = true;
           streamFinal = true;
@@ -5423,9 +5839,12 @@ export async function mountAiWorkspace(root, options = {}) {
           settleTools(assistant);
           streaming = false;
           assistant.classList.remove("streaming");
+          stampReply(assistant);
           setActivity(assistant, "");
           resizeComposer();
           bumpSession(chatId, titleEl.textContent);
+          // Seen as it arrived: no unread dot here or on the user's other devices.
+          if (sessionId === chatId) markRead(chatId);
           waitForStream().then(() => {
             if (token === streamToken && sessionId === chatId) {
               syncCopyChat();
@@ -5473,6 +5892,7 @@ export async function mountAiWorkspace(root, options = {}) {
         if (!found) {
           streaming = false;
           assistant.classList.remove("streaming");
+          stampReply(assistant);
           settleTools(assistant);
           setActivity(assistant, "");
           if (!streamFull) {
@@ -5494,6 +5914,7 @@ export async function mountAiWorkspace(root, options = {}) {
         streaming = false;
         settleTools(assistant);
         assistant.classList.remove("streaming");
+        stampReply(assistant);
         setActivity(assistant, "");
       }
       syncCopyChat();
@@ -6829,6 +7250,8 @@ export async function mountAiWorkspace(root, options = {}) {
   listen(window, "focus", loadDictate);
   listen(document, "visibilitychange", () => {
     loadDictate();
+    // Back on the page: a reply that finished meanwhile gets its dot, or is read when its chat is open.
+    if (!document.hidden) void refreshSessions();
     if (sessionId && chatVisible()) watchPending(sessionId);
     if (sessionId && chatVisible() && !document.hidden) refreshApprovals(sessionId);
     if (bannerEl && !bannerEl.hidden) loadProviders();
@@ -6841,8 +7264,6 @@ export async function mountAiWorkspace(root, options = {}) {
     if (sessionId && chatVisible()) refreshApprovals(sessionId);
   });
 
-  loadProviders();
-  loadDictate();
   const startRoute = compact || !routed ? { view: "chat", sessionId: "" } : workspaceRoute();
   const startId =
     options.restoreSessionId ||
@@ -6857,6 +7278,27 @@ export async function mountAiWorkspace(root, options = {}) {
   } else if (startId) openSession(startId, true);
   else showEmpty();
   resizeComposer();
+  // Agents, mic and usage settings and the HA component chunks are not needed to read the chat:
+  // they load once it is on screen, or when the browser is idle.
+  let deferredStarted = false;
+  const startDeferred = () => {
+    if (deferredStarted) return;
+    deferredStarted = true;
+    loadProviders();
+    loadDictate();
+    if (haUi) void ensureHaComponents(HA_COMPONENT_PRELOAD);
+  };
+  const whenIdle = (fn) =>
+    typeof window.requestIdleCallback === "function" ? window.requestIdleCallback(fn, { timeout: 800 }) : window.setTimeout(fn, 0);
+  sessionLoad.then(() => whenIdle(startDeferred));
+  const deferredTimer = window.setTimeout(startDeferred, 2500);
+  teardown.push(() => window.clearTimeout(deferredTimer));
+  // Mounted with the theme last seen in this browser; switch when /ui says otherwise.
+  fetchUiBody(getToken).then((body) => {
+    if (!body || !root.isConnected) return;
+    const next = body.ui_theme === "ha_components" ? "ha_components" : "standard";
+    if (next !== activeUiTheme) void remountForUiTheme(next);
+  });
   const linkWatch = new MutationObserver(() => retargetHaLinks(logEl));
   linkWatch.observe(logEl, { subtree: true, childList: true, attributes: true, attributeFilter: ["href", "target"] });
   teardown.push(() => linkWatch.disconnect());

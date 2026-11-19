@@ -25,7 +25,7 @@ Call a Home Assistant tool only when the user asks for live house data (a device
 
 Be concise. If a tool fails, say so. Ask before something hard to undo.
 
-This chat is separate from the user's other chats. Do not assume what was said in them. Use another chat only when the message includes a read-only excerpt from it.
+This chat is separate from the user's other chats. Do not assume what was said in them. Use another chat only when the message includes a read-only excerpt from it, or after you read it with the read_chat tool (list_chats finds the user's chats by title).
 
 Always answer in the same language the user wrote their latest message in. If that message does not make the language clear, answer in the Home Assistant language named in the message. Do not assume English.
 """
@@ -41,6 +41,7 @@ alwaysApply: true
 # was never edited, so it is replaced with the current text. Edited files are left alone.
 _OLD_IDENTITY_SHA256 = frozenset(
     {
+        "fa88b87c95b579f11d62d339a9ae492747aa49a6f0a892ac32fdf7a0d7bb5243",
         "0d576271bc104d9198371d0f0f928b18003932d853f73595885ea50276815d38",
         "11d9f0af218cc5710714e52ed6fb205ec98e89dda06303eec6448d12febe5ba6",
         "15b76d8326fd467dfd134c72c765f54c5d03510703308a8c33b9f181997d0fb2",
@@ -61,6 +62,7 @@ _OLD_IDENTITY_SHA256 = frozenset(
 )
 _OLD_RULE_SHA256 = frozenset(
     {
+        "756984f48e5b80fdbd20e11201e62b41e97a8ed2f4fea08deb1a69a869377d44",
         "1540f46fdd4485e2479275c448cd1edbbddb51a09f390077b75f32779a4c8a88",
         "24ed48d227ab9563b72ad98df8323cbbfe3e19e7daa4c6519902548d4aebf914",
         "2faf31e125e043c5c6512176147f5876debecd2764f2267705d056e6a76fa853",

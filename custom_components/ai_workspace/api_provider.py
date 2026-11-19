@@ -15,6 +15,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .bps_key import note_guide, prepare_write
 from .images import anthropic_user_content, openai_user_content
+from .chat_scope import clip_keeping_excerpt, with_prior_excerpt
 from .context import as_messages, history_for, tool_call_note
 from .local_text import CHAT_ONLY, pick
 from .ollama_info import MIN_TOOL_WINDOW, OllamaModel, async_ollama_model
@@ -122,7 +123,7 @@ SMALL_WINDOW = 32_000
 _MODE_OVERRIDE: ContextVar[str] = ContextVar("ai_workspace_mode_override", default="")
 _MCP_CACHE_MAX = 32
 _MCP_CACHE = f"{DOMAIN}_mcp_cache"
-_LOCAL_TOOLS = {"catalog", "house-map", "web", "notes"}
+_LOCAL_TOOLS = {"catalog", "house-map", "web", "notes", "chats"}
 _ERRORS = (McpError, ClientError, TimeoutError, OSError, json.JSONDecodeError, RuntimeError)
 
 
@@ -960,7 +961,9 @@ class ApiProvider:
                 return str(row.get("kind") or "")
         return MCP_CUSTOM
 
-    async def _open_tools(self, http: ClientSession, access_token: str, admin: bool) -> tuple[McpBundle, list[str], str]:
+    async def _open_tools(
+        self, http: ClientSession, access_token: str, admin: bool, user_id: str = "", session_id: str = ""
+    ) -> tuple[McpBundle, list[str], str]:
         bundle = McpBundle()
         skipped: list[str] = []
         first_error = ""
@@ -991,6 +994,11 @@ class ApiProvider:
 
             notes = NotesClient(self.hass, admin=admin)
             bundle.add("notes", notes, await notes.list_tools())
+        if user_id and self.store is not None and self.hass is not None:
+            from .chat_tools import ChatsClient
+
+            chats = ChatsClient(self.hass, self.store, user_id, session_id)
+            bundle.add("chats", chats, await chats.list_tools())
         if admin and self.settings.allow_internet:
             from .web_tools import WebClient
 
@@ -1061,7 +1069,8 @@ class ApiProvider:
                 _MODE_OVERRIDE.set(mode)
         clip = token_mode_clip_user(mode)
         if clip:
-            message = _clip(message, clip)
+            # An excerpt from another chat comes after the message and is never clipped with it.
+            message = clip_keeping_excerpt(message, clip, _clip)
         if not token_mode_allows_files(mode):
             pictures = []
         use_tools = (wants_house_tools(message) if tools is None else bool(tools)) or bool(pictures)
@@ -1072,12 +1081,15 @@ class ApiProvider:
             rows = await self.hass.async_add_executor_job(self.store.list_messages, session.id)
         if token_mode_history_limit(mode) and rows:
             history = _history_messages(rows, mode, self._model(), self.settings, window, house_zone(self.hass))
+            history = with_prior_excerpt(history, rows, message)
         yield {"type": "status", "text": "Working"}
         if note and not _said_before(rows, note):
             # Once per chat, so the user knows why the agent cannot see the house.
             yield {"type": "text", "delta": f"{note}\n\n"}
         if use_tools and token_mode_allows_tools(mode):
-            bundle, skipped, first_error = await self._open_tools(http, str(access_token or ""), admin)
+            bundle, skipped, first_error = await self._open_tools(
+                http, str(access_token or ""), admin, str(getattr(session, "user_id", "") or ""), session.id
+            )
             if skipped and not bundle.names:
                 yield {"type": "error", "message": first_error}
                 return

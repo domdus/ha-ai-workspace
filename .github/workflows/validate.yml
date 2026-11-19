@@ -45,3 +45,5 @@ jobs:
           node tests/test_send_guard.mjs
           node tests/test_media_guard.mjs
           node tests/test_speech.mjs
+          node tests/test_chat_cache.mjs
+          node tests/test_reply_meta.mjs

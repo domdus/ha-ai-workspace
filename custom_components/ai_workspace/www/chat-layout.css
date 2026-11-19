@@ -335,6 +335,93 @@
   }
 }
 
+/* Placeholder bubbles while a chat loads: user right, agent left, same shimmer as the chat list. */
+.message-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ha-space-4, 16px);
+  padding: var(--ha-space-4, 16px) var(--ha-space-2, 8px);
+}
+
+.message-skeleton .bubble-skeleton {
+  align-self: flex-start;
+  width: var(--w, 60%);
+  max-width: 640px;
+  height: var(--h, 56px);
+  border-radius: 18px;
+  border-end-start-radius: 6px;
+  background: var(--secondary-text-color);
+  opacity: 0.14;
+  animation: session-skeleton 1.4s ease-in-out infinite;
+}
+
+.message-skeleton .bubble-skeleton.user {
+  align-self: flex-end;
+  border-end-start-radius: 18px;
+  border-end-end-radius: 6px;
+}
+
+.chat-load-hint {
+  margin: 0;
+  padding: 0 var(--ha-space-2, 8px);
+  color: var(--secondary-text-color);
+  font-size: var(--ha-font-size-s, 0.85rem);
+  text-align: center;
+}
+
+.chat-load-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ha-space-3, 12px);
+  margin: var(--ha-space-6, 24px) auto;
+  padding: var(--ha-space-4, 16px) var(--ha-space-5, 20px);
+  max-width: 420px;
+  border: 1px solid var(--divider-color);
+  border-radius: var(--ha-card-border-radius, 12px);
+  background: var(--card-background-color, var(--primary-background-color));
+  color: var(--primary-text-color);
+  text-align: center;
+}
+
+.chat-load-error p {
+  margin: 0;
+}
+
+/* An agent reply that arrived while the chat was not open. */
+.unread-dot {
+  flex: none;
+  align-self: flex-start;
+  width: 8px;
+  height: 8px;
+  margin-top: 4px;
+  margin-inline-start: 4px;
+  border-radius: 50%;
+  background: var(--primary-color);
+}
+
+.sessions .session-row .item-text + .unread-dot {
+  margin-inline-end: 2px;
+}
+
+.chat-nav-toggle {
+  position: relative;
+}
+
+.chat-nav-toggle .unread-dot {
+  position: absolute;
+  top: 8px;
+  inset-inline-end: 8px;
+  margin: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .message-skeleton .bubble-skeleton {
+    animation: none;
+  }
+}
+
 .nav-scrim {
   display: none;
 }
@@ -750,6 +837,37 @@ h1 {
 .chat-actions .speak-chat[hidden],
 .chat-actions .history-chat[hidden] {
   display: none !important;
+}
+
+/* Reply time, right-aligned in the action row. It shrinks (and finally hides) before
+   the buttons wrap on narrow screens. */
+.chat-actions .reply-time {
+  margin-inline-start: auto;
+  padding-inline: var(--ha-space-2, 8px) 0;
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: var(--ha-font-size-s, 12px);
+  line-height: 32px;
+  color: var(--secondary-text-color);
+  font-variant-numeric: tabular-nums;
+  cursor: default;
+}
+
+.chat-actions .reply-time[hidden] {
+  display: none !important;
+}
+
+.chat-actions > ha-icon-button {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 260px) {
+  .chat-actions .reply-time {
+    display: none;
+  }
 }
 
 .chat-actions .copy-chat,

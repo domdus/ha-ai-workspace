@@ -976,6 +976,26 @@ def token_mode_allows_extras(mode: str) -> bool:
     return mode == TOKEN_MODE_OFF
 
 
+# Excerpts from another chat: total characters, filled from the newest message backwards.
+CROSS_CHAT_BUDGET = 16_000
+_CROSS_CHAT_BUDGETS = {
+    TOKEN_MODE_OFF: CROSS_CHAT_BUDGET,
+    TOKEN_MODE_LIGHT: 8_000,
+    TOKEN_MODE_MEDIUM: 4_000,
+    TOKEN_MODE_EXTREME: 2_000,
+}
+# The newest assistant reply is kept whole up to this many characters, older messages up to the other cap.
+CROSS_CHAT_REPLY_CAP = 10_000
+CROSS_CHAT_MESSAGE_CAP = 4_000
+CROSS_CHAT_SUMMARY_CHARS = 1_500
+CROSS_CHAT_MIN_SCORE = 30
+
+
+def cross_chat_budget(mode: str) -> int:
+    """Excerpts come in every token mode; the save modes only get a smaller one."""
+    return _CROSS_CHAT_BUDGETS.get(mode, CROSS_CHAT_BUDGET)
+
+
 def token_mode_allows_files(mode: str) -> bool:
     return mode in {TOKEN_MODE_OFF, TOKEN_MODE_LIGHT}
 
@@ -1080,7 +1100,8 @@ def workspace_system_prompt(settings, *, admin: bool = True) -> str:
 _CHAT_SCOPE = (
     "This chat is separate from the user's other chats. "
     "Do not assume what was said in them. "
-    "Use another chat only when the message includes a read-only excerpt from it. "
+    "Use another chat only when the message includes a read-only excerpt from it, "
+    "or after you read it with the read_chat tool (list_chats finds the user's chats by title). "
     "When the user confirms an action, do it and then answer. Do not ask again. "
     "Do not repeat a tool call you already made in this turn. "
     "If a device is already in the requested state, say so."

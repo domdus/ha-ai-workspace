@@ -10,6 +10,12 @@ Chat history is stored in `config/ai_workspace/ai-workspace.sqlite`. Change Hist
 
 Change History keeps a before-image of each recorded write and can restore it with **Rollback**, with or without HA-MCP. When there is no snapshot, **Undo with agent** sends the change details to the chat instead, so they go to your AI provider like any other message.
 
+Read marks (which agent replies you have seen, for the unread dot) are stored per chat in the same database, so they are the same on every device you sign in with.
+
+**In your browser:** the last chat you opened (its newest 24 messages, without image data, at most about 200 KB) is kept in the browser’s local storage under your user id, so it shows at once when you open AI Workspace again. It is replaced as soon as Home Assistant answers, removed when you delete that chat, and removed when another user signs in on the same browser. The chat list titles (session storage) and the last UI theme are kept there too. Clearing the site data in the browser removes all of it.
+
+**Other chats:** when you mention another chat (“im Bewässerungs-Chat”, “in the other chat”), a read-only excerpt of that chat goes to the agent with your message, and the agent can read your own other chats with the `list_chats` and `read_chat` tools. It never sees other users’ chats.
+
 API keys live in Home Assistant’s config entries, like any other integration.
 
 ## Internet access

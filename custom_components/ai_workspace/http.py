@@ -35,6 +35,7 @@ from .const import (
     token_mode_allows_tools,
     token_mode_clip_user,
     token_mode_fresh_agent,
+    cross_chat_budget,
 )
 from .mcp_config import with_mcp_auth
 from .mcp_observe import last_mcp_result, note_mcp_result
@@ -45,7 +46,17 @@ from .live_turn import end_turn, live_turn, start_turn
 from .local_time import house_zone, stamped_now, time_rule
 from .callback_keys import caller as callback_caller
 from .callback_keys import issue as issue_callback_key
-from .chat_scope import handoff_note, merge_reply_text, other_chat_note, text_after_pause, text_after_tools
+from .chat_scope import (
+    clip_keeping_excerpt,
+    cross_chat_event,
+    handoff_note,
+    mentions_chat,
+    merge_reply_text,
+    other_chat_context,
+    public_events,
+    text_after_pause,
+    text_after_tools,
+)
 from .error_text import public_error
 from .files import attach_files_to_message, file_events, parse_client_files
 from .images import caption_for, image_events, parse_client_images
@@ -85,6 +96,7 @@ def _session_dict(session: Session) -> dict:
         "created_at": session.created_at,
         "updated_at": session.updated_at,
         "pinned": bool(getattr(session, "pinned", False)),
+        "unread": bool(getattr(session, "unread", False)),
     }
 
 
@@ -97,7 +109,7 @@ def _message_dict(item) -> dict:
         "id": item.id,
         "role": item.role,
         "content": item.content,
-        "events": events,
+        "events": public_events(events) if isinstance(events, list) else [],
         "created_at": item.created_at,
     }
 
@@ -110,7 +122,14 @@ def _hass(request: web.Request) -> HomeAssistant:
 
 
 def _runtime(hass: HomeAssistant) -> dict[str, Any]:
-    return hass.data[DOMAIN]
+    data = hass.data.get(DOMAIN)
+    if data is None:
+        # Still starting or reloading: the page tries again instead of showing a server error.
+        raise web.HTTPServiceUnavailable(
+            text="AI Workspace is starting. Try again in a moment.",
+            headers={"Retry-After": "5"},
+        )
+    return data
 
 
 def _runtime_headers_for(hass: HomeAssistant, user_id: str, accept: str = "application/json") -> dict[str, str]:
@@ -318,6 +337,10 @@ def _runtime_agent_overrides(
         servers = {"mcp": {"type": "http", "url": hass_mcp_server_url(hass)}}
     else:
         servers = {}
+    from .chat_tools import SERVER_NAME as CHATS_SERVER, mcp_server_config as chats_mcp_server_config
+
+    # Read-only list_chats / read_chat for every user: the endpoint only shows the caller's own chats.
+    servers[CHATS_SERVER] = chats_mcp_server_config(hass)
     servers = with_mcp_auth(servers, access_token=str(access_token or ""), ha_hosts=ha_hosts(hass))
     from .discovery import _runtime_hass_url
 
@@ -386,7 +409,8 @@ async def _runtime_chat(
         images, files = [], []
     clip = token_mode_clip_user(token_mode)
     if clip:
-        message = message[:clip]
+        # An excerpt from another chat comes after the message and is never clipped with it.
+        message = clip_keeping_excerpt(message, clip)
     user_text = stamped_now(attach_files_to_message(message, files or []), house_zone(hass))
     asked = (question or message).strip()
     from .notes import notes_update, remember_nudge
@@ -887,7 +911,14 @@ class SessionsView(HomeAssistantView):
         user_id = _user_id(request)
         query = str(request.query.get("q") or "").strip()[:200]
         sessions = await hass.async_add_executor_job(store.list_sessions, user_id, query)
-        return self.json([_session_dict(item) for item in sessions])
+        locks = _runtime(hass).get("locks") or {}
+
+        def row(item: Session) -> dict:
+            lock = locks.get(item.id)
+            # A reply still running in the background: the page looks again until it is done.
+            return {**_session_dict(item), "pending": bool(lock is not None and lock.locked())}
+
+        return self.json([row(item) for item in sessions])
 
     async def post(self, request: web.Request) -> web.Response:
         hass: HomeAssistant = _hass(request)
@@ -980,6 +1011,11 @@ class SessionView(HomeAssistantView):
                 session = await hass.async_add_executor_job(store.get_session, user_id, session_id) or session
         if title:
             session = await hass.async_add_executor_job(store.rename_session, user_id, session_id, title)
+        read = body.get("read")
+        if read is not None and read is not False:
+            # The chat was open and visible: its replies are read, on every device of this user.
+            upto = None if read is True else read
+            session = await hass.async_add_executor_job(store.mark_read, user_id, session_id, upto) or session
         agent = str(body.get("provider") or body.get("agent") or "").strip()
         if agent or "model" in body:
             data = _runtime(hass)
@@ -1136,7 +1172,16 @@ class ChatView(HomeAssistantView):
         extras = token_mode_allows_extras(token_mode)
         origin = _frontend_origin(request, body)
         page_note = format_ui_page(parse_ui_page(body.get("page")))
-        events_json = json.dumps(image_events(images) + file_events(files), ensure_ascii=False)
+        cross = bool(getattr(settings, "cross_chat", False))
+        # In every token mode: the save modes only get a smaller excerpt.
+        note, note_chats = await hass.async_add_executor_job(
+            other_chat_context, store, user_id, session.id, message, cross, cross_chat_budget(token_mode)
+        )
+        user_events = image_events(images) + file_events(files)
+        if note:
+            # Kept with the message, so a resumed, restarted or switched agent gets it again.
+            user_events.append(cross_chat_event(note, note_chats))
+        events_json = json.dumps(user_events, ensure_ascii=False)
         sent = await hass.async_add_executor_job(store.add_message, session.id, "user", message, events_json)
         await hass.async_add_executor_job(store.rename_if_default, session.id, title_from_prompt(message))
         count = await hass.async_add_executor_job(lambda: len(store.list_messages(session.id)))
@@ -1149,13 +1194,8 @@ class ChatView(HomeAssistantView):
         if page_note and extras:
             outbound = f"{page_note}\n\n{outbound}"
         language = str(body.get("language") or "").strip()
-        cross = bool(getattr(settings, "cross_chat", False))
-        note = (
-            ""
-            if not extras
-            else await hass.async_add_executor_job(other_chat_note, store, user_id, session.id, message, cross)
-        )
         if note:
+            # Last, after the message: clipping in the save modes cuts the message, never the excerpt.
             outbound = f"{outbound}\n\n{note}"
         handoff = ""
         if assist or _is_runtime_provider(provider):
@@ -1195,7 +1235,7 @@ class ChatView(HomeAssistantView):
                     session.id,
                     attach_files_to_message(message, files),
                     language,
-                    page_note,
+                    "\n\n".join(part for part in (page_note, note) if part),
                 ):
                     yield event
                 return
@@ -1235,7 +1275,7 @@ class ChatView(HomeAssistantView):
                 frontend_origin=origin,
                 images=images,
                 language=language,
-                tools=bool(images) or bool(files) or wants_house_tools(message),
+                tools=bool(images) or bool(files) or wants_house_tools(message) or mentions_chat(message),
                 admin=admin,
                 force_tools=not images and not files and wants_house_tools(message),
                 **(await _activity_kwargs(hass, provider, user_id, session.id, access_token)),
@@ -1754,6 +1794,70 @@ class NotesMcpView(HomeAssistantView):
         return web.json_response({"jsonrpc": "2.0", "id": req_id, "result": result})
 
 
+class ChatsMcpView(HomeAssistantView):
+    """Read-only list_chats / read_chat over MCP for agents on the Runtime. Only the caller's own chats."""
+
+    url = "/api/ai_workspace/chats/mcp"
+    name = "api:ai_workspace:chats:mcp"
+    requires_auth = True
+
+    async def post(self, request: web.Request) -> web.Response:
+        hass = _hass(request)
+        user_id = _user_id(request)
+        try:
+            body = await request.json()
+        except json.JSONDecodeError:
+            return web.json_response(
+                {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Parse error"}},
+                status=400,
+            )
+        if not isinstance(body, dict):
+            return web.json_response(
+                {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid request"}},
+                status=400,
+            )
+        req_id = body.get("id")
+        method = str(body.get("method") or "")
+        params = body.get("params") if isinstance(body.get("params"), dict) else {}
+        from .chat_tools import READ_TOOL, ChatsClient
+
+        store: Store = _runtime(hass)["store"]
+        client = ChatsClient(hass, store, user_id, str(request.query.get("session") or ""))
+        if method.startswith("notifications/"):
+            return web.Response(status=202)
+        if method == "initialize":
+            result = {
+                "protocolVersion": "2025-03-26",
+                "capabilities": {"tools": {}},
+                "serverInfo": {"name": "ai-workspace-chats", "version": "1"},
+            }
+        elif method == "tools/list":
+            result = {"tools": await client.list_tools()}
+        elif method == "tools/call":
+            name = str(params.get("name") or "")
+            arguments = params.get("arguments") if isinstance(params.get("arguments"), dict) else {}
+            try:
+                payload = await client.call_tool(name or READ_TOOL, arguments)
+            except Exception as exc:
+                return web.json_response(
+                    {"jsonrpc": "2.0", "id": req_id, "error": {"code": -32000, "message": str(exc)[:300]}},
+                    status=200,
+                )
+            text = payload.get("text") if isinstance(payload, dict) and payload.get("text") else None
+            content = text or json.dumps(payload, ensure_ascii=False)
+            result = {"content": [{"type": "text", "text": content}], "structuredContent": payload}
+        elif method == "ping":
+            result = {}
+        else:
+            return web.json_response(
+                {"jsonrpc": "2.0", "id": req_id, "error": {"code": -32601, "message": f"Method not found: {method}"}},
+                status=200,
+            )
+        if req_id is None:
+            return web.Response(status=202)
+        return web.json_response({"jsonrpc": "2.0", "id": req_id, "result": result})
+
+
 async def _record_unbilled(hass: HomeAssistant, store: Store, user_id: str, session_id: str, provider: Any) -> None:
     """A stopped or failed turn still used tokens. Record the requests that finished."""
     take = getattr(provider, "take_unbilled", None)
@@ -2059,6 +2163,7 @@ def register_views(hass: HomeAssistant) -> None:
     hass.http.register_view(HouseMapMcpView)
     hass.http.register_view(CatalogMcpView)
     hass.http.register_view(NotesMcpView)
+    hass.http.register_view(ChatsMcpView)
     hass.http.register_view(ActivityView)
     hass.http.register_view(ActivityRollbackView)
     hass.http.register_view(McpProxyView)
