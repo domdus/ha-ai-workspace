@@ -31,6 +31,17 @@ const {
   SLOW_HINT_MS,
   LOAD_TIMEOUT_MS,
 } = await import(`./chat_cache.js${CACHE}`);
+const {
+  draftStoreKey,
+  draftSlot,
+  readDraft,
+  writeDraft,
+  clearDraft,
+  draftSlots,
+  createChatQueues,
+  drainQueue,
+  NEW_CHAT_DRAFT,
+} = await import(`./chat_drafts.js${CACHE}`);
 const { replyTimeLabel, replyTimeTitle, haHour12, haTimeZone, replyRows } = await import(
   `./reply_meta.js${CACHE}`
 );
@@ -1307,9 +1318,9 @@ export async function mountAiWorkspace(root, options = {}) {
     if (id === sessionId && !leavingUsage) return;
     if (id) openSession(id, true);
     else {
-      restoreQueued();
-      leaveChatStream();
+      leaveChat();
       sessionId = "";
+      switchComposer("");
       freshChat = true;
       titleEl.textContent = t("new_chat");
       showEmpty();
@@ -1320,8 +1331,19 @@ export async function mountAiWorkspace(root, options = {}) {
   let watchGen = 0;
   let turnStopping = false;
   let turnStopDone = null;
-  let nextTurns = [];
+  // Queued prompts belong to their chat; nextTurns is the open chat's own list.
+  const chatQueues = createChatQueues();
+  let nextTurns = chatQueues.of("");
   let sendQueued = null;
+  // Chat ids whose queued prompts are being sent while another chat is open.
+  const backgroundRuns = new Map();
+  let destroyed = false;
+  // The chat the composer text belongs to (NEW_CHAT_DRAFT for the new chat screen).
+  let draftOwner = null;
+  // Picked files and images of a draft stay in memory only (too big for localStorage).
+  const draftFiles = new Map();
+  const draftMemory = new Map();
+  let draftSaveTimer = 0;
   const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
   const MAX_FILE_BYTES = 256 * 1024;
   const IMAGE_EDGE = 1280;
@@ -3225,6 +3247,7 @@ export async function mountAiWorkspace(root, options = {}) {
     nextTurns.push({ text, attachments: attachments.slice() });
     pending = [];
     messageEl.value = "";
+    dropDraft(sessionId);
     // Microphone only — TTS of the current reply keeps going.
     stopSpeech();
     renderThumbs();
@@ -3249,6 +3272,212 @@ export async function mountAiWorkspace(root, options = {}) {
     renderThumbs();
     renderNext();
     resizeComposer();
+  }
+
+  // --- Drafts: what was typed (and attached) but not sent stays with its chat. ---
+
+  function draftKey() {
+    return draftStoreKey(userId());
+  }
+
+  function saveDraft() {
+    window.clearTimeout(draftSaveTimer);
+    draftSaveTimer = 0;
+    if (draftOwner == null || !messageEl) return;
+    const key = draftKey();
+    // Without a known user nothing is stored; the draft still lives while the page is open.
+    if (key) writeDraft(localStorage, key, draftOwner, messageEl.value);
+    else if (messageEl.value.trim()) draftMemory.set(draftOwner, messageEl.value);
+    else draftMemory.delete(draftOwner);
+    if (pending.length) draftFiles.set(draftOwner, pending.slice());
+    else draftFiles.delete(draftOwner);
+  }
+
+  function saveDraftSoon() {
+    window.clearTimeout(draftSaveTimer);
+    draftSaveTimer = window.setTimeout(saveDraft, 400);
+  }
+
+  function dropDraft(id) {
+    const slot = draftSlot(id);
+    clearDraft(localStorage, draftKey(), slot);
+    draftMemory.delete(slot);
+    draftFiles.delete(slot);
+    paintRowDraft(id, false);
+  }
+
+  /** The composer now shows chat `id` (or the new chat): keep the old text, bring back the new one's. */
+  function switchComposer(id) {
+    const from = draftOwner;
+    saveDraft();
+    if (from && from !== NEW_CHAT_DRAFT) paintRowDraft(from, Boolean(messageEl?.value.trim() || draftFiles.has(from)));
+    draftOwner = draftSlot(id);
+    nextTurns = chatQueues.of(id);
+    sendQueued = null;
+    if (!messageEl) return;
+    const key = draftKey();
+    messageEl.value = key ? readDraft(localStorage, key, draftOwner) : draftMemory.get(draftOwner) || "";
+    pending = (draftFiles.get(draftOwner) || []).slice();
+    paintRowDraft(id, false);
+    renderThumbs();
+    renderNext();
+    resizeComposer();
+    syncSendButton();
+    const end = String(messageEl.value || "").length;
+    try {
+      messageEl.setSelectionRange?.(end, end);
+    } catch (_err) {
+      /* ha-textarea before it is upgraded */
+    }
+  }
+
+  /** The new chat just got its id: its draft slot and queue move along. */
+  function adoptNewChat(id) {
+    chatQueues.rename("", id);
+    nextTurns = chatQueues.of(id);
+    if (draftOwner === NEW_CHAT_DRAFT) {
+      clearDraft(localStorage, draftKey(), NEW_CHAT_DRAFT);
+      draftMemory.delete(NEW_CHAT_DRAFT);
+      const files = draftFiles.get(NEW_CHAT_DRAFT);
+      draftFiles.delete(NEW_CHAT_DRAFT);
+      if (files) draftFiles.set(id, files);
+      draftOwner = draftSlot(id);
+      if (messageEl?.value.trim()) saveDraft();
+    }
+  }
+
+  // Read once per list paint, not once per row.
+  let draftCache = null;
+  function rowDrafts() {
+    if (!draftCache) {
+      draftCache = draftSlots(localStorage, draftKey());
+      for (const slot of [...draftFiles.keys(), ...draftMemory.keys()]) draftCache.add(slot);
+      queueMicrotask(() => {
+        draftCache = null;
+      });
+    }
+    return draftCache;
+  }
+
+  function paintRowDraft(id, on) {
+    if (!id || id === NEW_CHAT_DRAFT) return;
+    const row = sessionsEl?.querySelector(`.session-row[data-session-id="${id}"]`);
+    const label = row?.querySelector(".item-text");
+    if (!label) return;
+    let mark = row.querySelector(".draft-mark");
+    if (!on) {
+      mark?.remove();
+      return;
+    }
+    if (mark) return;
+    mark = document.createElement("span");
+    mark.className = "draft-mark";
+    mark.textContent = t("draft");
+    label.after(mark);
+  }
+
+  // --- Queued prompts of a chat that is not open: they still go out in their own chat. ---
+
+  async function backgroundStatus(id) {
+    const response = await apiFetch(`${API}/sessions`, {}, { timeout: LOAD_TIMEOUT_MS });
+    if (!response?.ok) return "pending";
+    const rows = await response.json().catch(() => null);
+    if (!Array.isArray(rows)) return "pending";
+    const row = rows.find((item) => item?.id === id);
+    if (!row) return "gone";
+    return row.pending ? "pending" : "idle";
+  }
+
+  async function backgroundSend(id, turn) {
+    const attachments = turn.attachments || [];
+    const images = attachments.filter((item) => item.kind === "image");
+    const files = attachments.filter((item) => item.kind === "file");
+    let response;
+    try {
+      // No agent or model: the chat keeps its own (the picker shows the open chat's).
+      response = await apiFetch(
+        `${API}/sessions/${id}/chat`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            message: turn.text,
+            origin: window.location.origin,
+            language: speechLanguage(),
+            images: images.map((img) => ({ name: img.name, mime: img.mime, data: img.data })),
+            files: files.map((file) => ({ name: file.name, mime: file.mime, text: file.text })),
+          }),
+        },
+        { raise: true },
+      );
+    } catch (_err) {
+      return "error";
+    }
+    if (response?.status === 409) return "busy";
+    if (response?.status === 404) return "gone";
+    if (!response?.ok || !response.body) return "error";
+    try {
+      // The reply runs on the server either way; reading it to the end tells us when it is done.
+      await readSSE(response, (name, data) => {
+        if (destroyed) return;
+        if (name === "title" && data.title) applySessionTitle(id, data.title);
+      });
+    } catch (_err) {
+      /* connection dropped: the server finishes the reply, the next send waits for it */
+    }
+    return "ok";
+  }
+
+  /** Leaving chat `id` with prompts still queued: send them there once its reply is done. */
+  function sendQueueInBackground(id) {
+    if (!id || !chatQueues.has(id) || backgroundRuns.has(id)) return;
+    const run = drainQueue(id, chatQueues, {
+      isActive: (chat) => !destroyed && chat === sessionId,
+      status: backgroundStatus,
+      send: backgroundSend,
+      wait: (ms) => new Promise((resolve) => window.setTimeout(resolve, ms)),
+      onSent: (chat) => {
+        if (!destroyed) bumpSession(chat);
+      },
+    })
+      .catch(() => "error")
+      .then((reason) => {
+        backgroundRuns.delete(id);
+        if (destroyed) return reason;
+        // The reply's unread dot comes with the list.
+        refreshSessions();
+        if (id === sessionId) resumeQueue(id);
+        return reason;
+      });
+    backgroundRuns.set(id, run);
+  }
+
+  /** The open chat has queued prompts: send the next one once nothing runs there any more. */
+  function resumeQueue(id) {
+    if (!id || id !== sessionId || streaming || liveStream || sendQueued || !nextTurns.length) return;
+    if (backgroundRuns.has(id)) {
+      // It stops on its own now that the chat is open and then calls back here.
+      // Until then the reply it sent is followed live.
+      watchPending(id);
+      return;
+    }
+    watchPending(id).then((found) => {
+      if (found && id === sessionId && !streaming) flushNext();
+    });
+  }
+
+  /** Before the screen shows another chat: the old chat keeps its draft and its queue. */
+  function leaveChat() {
+    const from = sessionId;
+    if (sendQueued) {
+      // Picked for sending but not out yet: it goes back to its own chat.
+      chatQueues.of(from).unshift(sendQueued);
+      sendQueued = null;
+    }
+    leaveChatStream();
+    // After the caller has switched sessionId, so the old chat no longer counts as open.
+    if (from) window.setTimeout(() => sendQueueInBackground(from), 0);
+    // A new chat that never got an id has nowhere to send them.
+    else chatQueues.drop("");
   }
 
   function haltStream({ keepQueue = true, keepSpeech = false } = {}) {
@@ -3299,7 +3528,7 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   // Leaving a chat: its queued prompts were written for it and must not go out in the next one.
-  // restoreQueued() has already moved the first one into an empty composer.
+  // They stay on that chat's own list (see leaveChat) and never move into the composer.
   function leaveChatStream() {
     haltStream({ keepQueue: keepQueueOnHalt("switch") });
   }
@@ -3500,6 +3729,13 @@ export async function mountAiWorkspace(root, options = {}) {
   function chatGone(restore = null) {
     if (!sessionId) return;
     watchGen += 1;
+    const goneId = sessionId;
+    chatQueues.drop(goneId);
+    // What was typed stays on screen and now belongs to the new chat.
+    dropDraft(goneId);
+    draftOwner = NEW_CHAT_DRAFT;
+    nextTurns = chatQueues.of("");
+    renderNext();
     sessionId = "";
     freshChat = true;
     goToSession("", true);
@@ -3909,6 +4145,8 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     clearChatCache(localStorage, chatCacheSlot(), { id: session.id });
     if (session.id === sessionId) startNewChat();
+    chatQueues.drop(session.id);
+    dropDraft(session.id);
     await loadSessions();
   }
 
@@ -4143,6 +4381,12 @@ export async function mountAiWorkspace(root, options = {}) {
     label.textContent = displayTitle(session.title);
     item.appendChild(label);
     row.dataset.unread = "0";
+    if (session.id !== sessionId && rowDrafts().has(session.id)) {
+      const mark = document.createElement("span");
+      mark.className = "draft-mark";
+      mark.textContent = t("draft");
+      label.after(mark);
+    }
     const openHere = session.id === sessionId && chatVisible();
     if (session.unread && !openHere) paintRowUnread(row, true);
     if (session.id === sessionId) {
@@ -4315,6 +4559,7 @@ export async function mountAiWorkspace(root, options = {}) {
       return null;
     }
     sessionId = session.id;
+    adoptNewChat(session.id);
     freshChat = false;
     chatAgent = session.provider || chatAgent;
     bumpSession(session.id, session.title, session.pinned);
@@ -4415,8 +4660,7 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     const switching = id !== sessionId;
     if (switching) {
-      restoreQueued();
-      leaveChatStream();
+      leaveChat();
       clearApprovals();
     }
     watchGen += 1;
@@ -4424,6 +4668,7 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!id) {
       routeGen += 1;
       sessionId = "";
+      if (switching || draftOwner == null) switchComposer("");
       freshChat = true;
       setChatChoice("", "");
       titleEl.textContent = t("new_chat");
@@ -4438,6 +4683,7 @@ export async function mountAiWorkspace(root, options = {}) {
     const initial = firstLoad;
     firstLoad = false;
     sessionId = id;
+    if (switching || draftOwner == null) switchComposer(id);
     freshChat = false;
     const listed = sessionsEl?.querySelector(`.session-row[data-session-id="${id}"]`);
     if (listed?.dataset.title) titleEl.textContent = displayTitle(listed.dataset.title);
@@ -4473,7 +4719,10 @@ export async function mountAiWorkspace(root, options = {}) {
     if (outcome === "gone") {
       // Only a chat that is really gone falls back to a new chat.
       clearChatCache(localStorage, chatCacheSlot(), { id });
+      chatQueues.drop(id);
+      dropDraft(id);
       sessionId = "";
+      switchComposer("");
       titleEl.textContent = t("new_chat");
       showEmpty();
       goToSession("", true);
@@ -4494,7 +4743,9 @@ export async function mountAiWorkspace(root, options = {}) {
     writeChatCache(localStorage, chatCacheSlot(), session);
     if (Array.isArray(session.approvals)) syncApprovals(session.approvals, id);
     selectSessionRow(id);
-    if (session.pending) watchPending(id);
+    // Queued prompts of this chat (written before switching away) go on from here.
+    if (nextTurns.length) resumeQueue(id);
+    else if (session.pending) watchPending(id);
     else markRead(id, session.messages);
     refreshChatUsage();
   }
@@ -5771,13 +6022,18 @@ export async function mountAiWorkspace(root, options = {}) {
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     typingAt = 0;
+    // Taken before any wait: the chat a queued prompt was written in; it must not go out anywhere else.
+    const picked = sendQueued;
+    sendQueued = null;
+    let queuedFrom = picked ? sessionId : null;
+    let queuedTurn = null;
     if (turnStopDone) await turnStopDone;
     let keepComposer = false;
     let text;
     let attachments;
-    if (sendQueued) {
-      const turn = sendQueued;
-      sendQueued = null;
+    if (picked) {
+      const turn = picked;
+      queuedTurn = turn;
       text = turn.text;
       attachments = turn.attachments.slice();
       keepComposer = true;
@@ -5794,12 +6050,22 @@ export async function mountAiWorkspace(root, options = {}) {
       if (!text && !attachments.length) {
         if (!nextTurns.length) return;
         const turn = nextTurns.shift();
+        queuedFrom = sessionId;
+        queuedTurn = turn;
         text = turn.text;
         attachments = turn.attachments.slice();
         renderNext();
         keepComposer = true;
       }
     }
+    const handBack = () => {
+      // Back on its own chat's list, first in line; sent there when that chat is free.
+      if (!queuedTurn) return;
+      chatQueues.of(queuedFrom).unshift(queuedTurn);
+      queuedTurn = null;
+      if (queuedFrom === sessionId) renderNext();
+      else if (queuedFrom) sendQueueInBackground(queuedFrom);
+    };
     const images = attachments.filter((item) => item.kind === "image");
     const files = attachments.filter((item) => item.kind === "file");
     if (!text && !attachments.length) return;
@@ -5807,6 +6073,11 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!sessionId) {
       const known = knownSessionId();
       if (known) await openSession(known, true);
+    }
+    if (queuedTurn && sessionId !== queuedFrom) {
+      // The user switched chats while it was being picked up.
+      handBack();
+      return;
     }
     abandonStream({ keepSpeech: keepComposer });
     const token = streamToken;
@@ -5833,6 +6104,7 @@ export async function mountAiWorkspace(root, options = {}) {
       pending = [];
       renderThumbs();
       messageEl.value = "";
+      dropDraft(sessionId);
     }
     resizeComposer();
     syncSendButton();
@@ -5855,6 +6127,7 @@ export async function mountAiWorkspace(root, options = {}) {
     setActivity(assistant, t("thinking"));
     let recover = false;
     let sawDone = false;
+    let busyRetry = false;
     let chatId = "";
     liveStream = true;
     try {
@@ -5884,6 +6157,17 @@ export async function mountAiWorkspace(root, options = {}) {
         { raise: true },
       );
       if (token !== streamToken) return;
+      if (response?.status === 409) {
+        // A reply still runs in this chat (sent from the background or another device): wait in line.
+        for (const bubble of [userBubble, assistant]) (bubble?.closest(".message-container") || bubble)?.remove();
+        if (queuedTurn) handBack();
+        else {
+          nextTurns.push({ text, attachments: sentPending.length ? sentPending : attachments.slice() });
+          renderNext();
+        }
+        busyRetry = true;
+        return;
+      }
       if (response?.status === 404) {
         // Deleted, most likely on another device. Hand the message back for a new chat.
         for (const bubble of [userBubble, assistant]) (bubble?.closest(".message-container") || bubble)?.remove();
@@ -6044,6 +6328,12 @@ export async function mountAiWorkspace(root, options = {}) {
       window.setTimeout(() => {
         if (token === streamToken && sessionId === chatId) refreshTurnHistory(turnSince);
       }, 500);
+      if (busyRetry) {
+        streaming = false;
+        resizeComposer();
+        window.setTimeout(() => resumeQueue(chatId), 1500);
+        return;
+      }
       if (followUp && sessionId === chatId && nextTurns.length) {
         flushNext();
         return;
@@ -6159,6 +6449,7 @@ export async function mountAiWorkspace(root, options = {}) {
   form.addEventListener("input", (event) => {
     if (!fromComposerField(event)) return;
     typingAt = performance.now();
+    saveDraftSoon();
     if (!nearBottom()) releaseFollow();
     holdChatScroll(resizeComposer);
   });
@@ -6223,12 +6514,13 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function startNewChat() {
     setSearchOpen(false);
-    restoreQueued();
-    leaveChatStream();
+    const wasNew = !sessionId && draftOwner === NEW_CHAT_DRAFT;
+    leaveChat();
     clearMicHelp();
     routeGen += 1;
     watchGen += 1;
     sessionId = "";
+    if (!wasNew) switchComposer("");
     freshChat = true;
     setChatChoice("", "");
     renderThumbs();
@@ -7401,6 +7693,7 @@ export async function mountAiWorkspace(root, options = {}) {
     openUsagePage();
   } else if (startId) openSession(startId, true);
   else showEmpty();
+  if (draftOwner == null && !startId) switchComposer("");
   resizeComposer();
   // Agents, mic and usage settings and the HA component chunks are not needed to read the chat:
   // they load once it is on screen, or when the browser is idle.
@@ -7428,11 +7721,19 @@ export async function mountAiWorkspace(root, options = {}) {
   teardown.push(() => linkWatch.disconnect());
   function resume() {
     loadDictate();
-    if (sessionId) watchPending(sessionId);
+    if (sessionId && nextTurns.length) resumeQueue(sessionId);
+    else if (sessionId) watchPending(sessionId);
   }
 
   function destroy() {
+    saveDraft();
+    const openChat = sessionId;
+    if (sendQueued) chatQueues.of(openChat).unshift(sendQueued);
+    sendQueued = null;
     haltStream({ keepQueue: keepQueueOnHalt("destroy") });
+    destroyed = true;
+    // Queued prompts of the open chat still go out there, also with the panel closed.
+    if (openChat) sendQueueInBackground(openChat);
     stopSpeech();
     watchGen += 1;
     routeGen += 1;

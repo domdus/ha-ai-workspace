@@ -37,12 +37,12 @@ export function pullQueuedDraft(queue, { draftText = "", pending = [], maxAttach
 }
 
 /**
- * Only a new send keeps the stack (the queue runs on after it).
- * Stop cancels everything, and the queue belongs to its chat: a chat switch
- * or a new chat drops it, so prompts never go out in a chat they were not written for.
+ * Stop cancels the queued stack. A new send keeps it (the queue runs on after it).
+ * A chat switch or closing the panel keeps it too: the queue belongs to its chat
+ * (one list per chat id) and is sent there in the background, never in another chat.
  */
 export function keepQueueOnHalt(reason = "send") {
-  return reason === "send";
+  return reason !== "stop";
 }
 
 /** How many of the picked files did not fit, given the free attachment slots. */

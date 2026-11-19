@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-**Copy and read aloud under every reply.** Each finished agent reply gets its own small row: copy, read aloud and the reply time.
+**Copy and read aloud under every reply, and what you type stays in its chat.** Each finished agent reply gets its own small row with copy, read aloud and the reply time. Text typed but not sent, and prompts queued while a reply runs, now stay with their chat.
 
 **Under each reply**
 - **Copy** copies that reply's text and markdown, without tool steps, status lines or the "cut off" note.
@@ -11,6 +11,15 @@
 - On a computer the row is faint until you point at or focus the reply. On a phone or tablet it is always fully visible. The buttons work with the keyboard and have screen-reader labels in all languages.
 - Your own messages, replies still being written, error messages and replies that only ran tools get no row.
 - The row under the chat now only has the chat-wide actions (**Verlauf**). The "copy last reply" button and the time are gone from there because each reply has its own now. The speaker only shows there while a reply is read aloud on its own (automatic read-aloud), so you can pause or stop it.
+
+**Drafts**
+- Kept per user in this browser for 7 days (text only, up to 8,000 characters, the 30 newest chats; see [privacy](../docs/privacy.md)). Attached files and pictures stay with the draft while the page is open.
+- Sending clears the draft, and deleting a chat clears it too. A chat in the list that has a draft shows *Draft* next to its title.
+
+**Queued prompts stay in their chat**
+- Prompts queued while a reply runs belong to that chat. Switching to another chat no longer drops them or puts the first one into the other chat's message field.
+- They are still sent in their own chat when the reply finishes, also while you look at another chat or the panel is closed, one after the other. The reply gets its unread dot in the chat list.
+- Back in the chat, its queue is shown again (only there) and goes on from there. If the chat is still busy (for example from another device), a new message waits in the queue instead of failing.
 
 ## 1.6.1b3
 
