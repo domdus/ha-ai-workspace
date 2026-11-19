@@ -310,8 +310,8 @@
         "runtime_old": "This Runtime cannot sign in yet. Update the AI Workspace Runtime, or paste a token on the agent form.",
         "codex_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Codex agents.",
         "codex_key_required": "Add an OpenAI API key under Codex (runtime), or sign in with ChatGPT on the AI Workspace Runtime.",
-        "not_signed_in_yet": "OpenAI has not confirmed the sign-in yet. Enter the code on OpenAI's page, then submit again.",
-        "no_code": "Codex did not get a sign-in code from OpenAI. Check that the Runtime can reach auth.openai.com, then try again."
+        "no_code": "Codex did not get a sign-in code from OpenAI. Check that the Runtime can reach auth.openai.com, then try again.",
+        "codex_login_failed": "OpenAI did not confirm the sign-in. If it refused the code, allow device code sign-in once in ChatGPT under Settings → Security (for a workspace account, the admin allows it), then try again."
       },
       "step": {
         "provider": {
@@ -625,8 +625,7 @@
           }
         },
         "codex_login": {
-          "title": "Sign in with ChatGPT",
-          "description": "1. Open this link and sign in with the ChatGPT account that has your plan: [Sign in with ChatGPT]({url})\n2. Enter this one-time code there: **{code}**\n3. Then submit here.\n\nThe code works for 15 minutes. Your ChatGPT password never passes through Home Assistant. If OpenAI refuses the code, turn on device code sign-in once in ChatGPT under **Settings → Security** (for a workspace account, the admin allows it)."
+          "title": "Sign in with ChatGPT"
         },
         "codex_signed_in": {
           "title": "Signed in",
@@ -639,6 +638,9 @@
       },
       "abort": {
         "reconfigure_successful": "Agent updated."
+      },
+      "progress": {
+        "codex_login": "1. Open this link and sign in with the ChatGPT account that has your plan: [Sign in with ChatGPT]({url})\n2. Enter this one-time code there: **{code}**\n3. That's it: this window goes on by itself as soon as OpenAI confirms the code.\n\nThe code works for 15 minutes. Your ChatGPT password never passes through Home Assistant. If OpenAI refuses the code, turn on device code sign-in once in ChatGPT under **Settings → Security** (for a workspace account, the admin allows it)."
       }
     }
   },

@@ -52,6 +52,20 @@ AUTH_FAILED = (
     "or check the OpenAI API key."
 )
 AUTH_FAILED_CODE = "codex_auth_failed"
+# How Codex words a ChatGPT sign-in that no longer works (expired or reused refresh token, revoked).
+_AUTH_MARKS = (
+    "401",
+    "unauthorized",
+    "sign in again",
+    "log in again",
+    "login again",
+    "refresh token",
+    "refresh_token",
+    "token_expired",
+    "invalid_grant",
+    "not logged in",
+)
+RATE_LIMITS_SECONDS = 10
 START_SECONDS = 60
 INTERRUPT_SECONDS = 10
 # Save tokens keeps a Codex thread while a model call's input stays below this (as on Claude).
@@ -350,11 +364,21 @@ def _error_kind(error: dict[str, Any] | None) -> str:
     return ""
 
 
+def is_auth_failure(text: str) -> bool:
+    low = str(text or "").lower()
+    return any(mark in low for mark in _AUTH_MARKS)
+
+
+def auth_failed_event() -> dict[str, Any]:
+    """The integration shows this in the chat's language: sign in with ChatGPT again (or a new key)."""
+    return {"type": "error", "message": AUTH_FAILED, "code": AUTH_FAILED_CODE}
+
+
 def error_event(error: dict[str, Any] | None, model: str, secrets: list[str], book: Any = None) -> dict[str, Any]:
     kind = _error_kind(error)
     message = redact(str((error or {}).get("message") or ""), secrets).strip()
-    if kind == "unauthorized":
-        return {"type": "error", "message": AUTH_FAILED, "code": AUTH_FAILED_CODE}
+    if kind == "unauthorized" or (kind not in _API_ERRORS and kind != "modelNotFound" and is_auth_failure(message)):
+        return auth_failed_event()
     if kind == "usageLimitExceeded" and book is not None:
         event = plan_rejection_error("codex", book.get("codex"))
         event["message"] = _API_ERRORS[kind]
@@ -500,7 +524,7 @@ class CodexProvider:
             except Exception as exc:
                 text = self._public(exc, secrets)
                 logger.warning("codex turn failed session=%s: %s", session.id, text)
-                yield {"type": "error", "message": text}
+                yield self._error(text)
                 return
             stream = handle.stream()
             try:
@@ -525,7 +549,7 @@ class CodexProvider:
                 if not state.status:
                     text = self._public(exc, secrets)
                     logger.warning("codex stream failed session=%s: %s", session.id, text)
-                    yield {"type": "error", "message": text}
+                    yield self._error(text)
                     return
                 logger.debug("codex stream ended after the turn session=%s", session.id, exc_info=True)
             finally:
@@ -533,6 +557,10 @@ class CodexProvider:
                     await stream.aclose()
                 except Exception:
                     pass
+            if kind == "chatgpt":
+                # Codex sends plan usage as a notification outside the turn; ask for it once instead.
+                for notice in await self._plan_limits(codex, book):
+                    yield notice
         finally:
             try:
                 await asyncio.shield(asyncio.wait_for(codex.close(), 10))
@@ -560,9 +588,34 @@ class CodexProvider:
         if isinstance(exc, FileNotFoundError) and "codex" in str(exc).lower():
             return CLI_MISSING
         text = (redact(str(exc), secrets).strip() or type(exc).__name__)[:400]
-        if "401" in text or "unauthorized" in text.lower():
+        if is_auth_failure(text):
             return AUTH_FAILED
         return text
+
+    @staticmethod
+    def _error(text: str) -> dict[str, Any]:
+        return auth_failed_event() if text == AUTH_FAILED else {"type": "error", "message": text}
+
+    async def _plan_limits(self, codex: Any, book: Any) -> list[dict[str, Any]]:
+        """ChatGPT plan windows (account/rateLimits/read) -> plan_notice / plan_usage events. Never raises."""
+        if book is None:
+            return []
+        request = getattr(getattr(codex, "_client", None), "request", None)
+        if not callable(request):
+            return []
+        try:
+            from openai_codex.generated.v2_all import GetAccountRateLimitsResponse
+
+            answer = await asyncio.wait_for(
+                request("account/rateLimits/read", None, response_model=GetAccountRateLimitsResponse),
+                RATE_LIMITS_SECONDS,
+            )
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.debug("codex rate limits not read", exc_info=True)
+            return []
+        return plan_events_from_sdk(book, "codex", as_dict(answer))
 
     async def models(self, api_key: str = "") -> list[dict[str, str]]:
         """Models the Codex account offers."""

@@ -118,27 +118,57 @@ def _flow(monkeypatch, *, key=""):
     return flow, saved
 
 
+def _tasks(flow, monkeypatch) -> None:
+    """The progress step waits in a real task, as Home Assistant runs it."""
+    monkeypatch.setattr(flow_mod, "_DEVICE_PAUSE", 0.001)
+    flow.hass.async_create_task = lambda coro, *a, **k: asyncio.get_running_loop().create_task(coro)
+
+
 def test_sign_in_with_chatgpt_by_device_code(monkeypatch) -> None:
     runtime = FakeRuntime().install(monkeypatch)
     flow, saved = _flow(monkeypatch)
+    _tasks(flow, monkeypatch)
 
     async def run():
         menu = await flow.async_step_codex_account()
         assert menu["menu_options"] == ["codex_login", "codex_back"]
         assert "Not signed in yet" in menu["description_placeholders"]["status"]
-        form = await flow.async_step_codex_login()
-        assert form["description_placeholders"] == {"url": DEVICE_URL, "code": "ABCD-1234"}
-        # Submitted before the code was entered at OpenAI: same code, a hint.
-        again = await flow.async_step_codex_login({})
-        assert again["errors"] == {"base": "not_signed_in_yet"} and again["description_placeholders"]["code"] == "ABCD-1234"
-        assert runtime.waits == [flow_mod._DEVICE_WAIT]
+        shown = await flow.async_step_codex_login()
+        # Link and code on a progress step: nothing to type back, nothing to submit.
+        assert shown["type"] == "progress" and shown["progress_action"] == "codex_login"
+        assert shown["description_placeholders"] == {"url": DEVICE_URL, "code": "ABCD-1234"}
+        await asyncio.sleep(0)
+        assert not shown["progress_task"].done() and runtime.waits[0] == flow_mod._DEVICE_WAIT
+        # Home Assistant asks again while the wait runs: still the same code.
+        again = await flow.async_step_codex_login()
+        assert again["type"] == "progress" and again["description_placeholders"]["code"] == "ABCD-1234"
         runtime.finish_sign_in()
-        done = await flow.async_step_codex_login({})
-        assert done["step_id"] == "codex_signed_in" and "(Pro)" in done["description_placeholders"]["status"]
+        await asyncio.wait_for(shown["progress_task"], 2)
+        done = await flow.async_step_codex_login()
+        assert done["type"] == "progress_done" and done["step_id"] == "codex_signed_in"
+        signed = await flow.async_step_codex_signed_in()
+        assert "(Pro)" in signed["description_placeholders"]["status"]
         await flow.async_step_codex_signed_in({})
 
     asyncio.run(run())
     assert saved["data"]["mode"] == "codex" and saved["data"]["codex_api_key"] == ""
+    assert runtime.logins == {"L1": "succeeded"}
+
+
+def test_closing_the_dialog_stops_the_wait_and_the_sign_in(monkeypatch) -> None:
+    runtime = FakeRuntime().install(monkeypatch)
+    flow, _saved = _flow(monkeypatch)
+    _tasks(flow, monkeypatch)
+
+    async def run():
+        shown = await flow.async_step_codex_login()
+        await asyncio.sleep(0)
+        flow.async_remove()
+        await asyncio.sleep(0.05)
+        return shown["progress_task"]
+
+    task = asyncio.run(run())
+    assert task.cancelled() and runtime.logins == {}
 
 
 def test_existing_runtime_access_is_offered_first(monkeypatch) -> None:
@@ -167,19 +197,73 @@ def test_own_key_saves_directly_and_says_it_wins(monkeypatch) -> None:
     assert "its own OpenAI API key" in menu["description_placeholders"]["status"]
 
 
-def test_expired_device_code_goes_to_the_error_step(monkeypatch) -> None:
+def _login_ending_in(monkeypatch, status: str):
     runtime = FakeRuntime().install(monkeypatch)
     flow, _saved = _flow(monkeypatch)
+    _tasks(flow, monkeypatch)
 
     async def run():
-        await flow.async_step_codex_login()
-        runtime.logins["L1"] = "expired"
-        return await flow.async_step_codex_login({})
+        shown = await flow.async_step_codex_login()
+        runtime.logins["L1"] = status
+        await asyncio.wait_for(shown["progress_task"], 2)
+        done = await flow.async_step_codex_login()
+        assert done["type"] == "progress_done" and done["step_id"] == "codex_login_error"
+        return await flow.async_step_codex_login_error()
 
-    result = asyncio.run(run())
+    return asyncio.run(run())
+
+
+def test_expired_device_code_goes_to_the_error_step(monkeypatch) -> None:
+    result = _login_ending_in(monkeypatch, "expired")
     assert result["step_id"] == "codex_login_error" and result["errors"] == {"base": "expired"}
+
+
+def test_refused_code_explains_the_chatgpt_security_setting(monkeypatch) -> None:
+    result = _login_ending_in(monkeypatch, "failed")
+    assert result["errors"] == {"base": "codex_login_failed"}
+    import json
+    from pathlib import Path
+
+    root = Path(flow_mod.__file__).parent
+    for path in [root / "strings.json", *sorted((root / "translations").glob("*.json"))]:
+        agent = json.loads(path.read_text(encoding="utf-8"))["config_subentries"]["agent"]
+        assert "{url}" in agent["progress"]["codex_login"] and "{code}" in agent["progress"]["codex_login"], path.name
+        assert agent["error"]["codex_login_failed"], path.name
+
+
+def test_could_not_start_shows_the_error_without_progress(monkeypatch) -> None:
+    FakeRuntime().install(monkeypatch)
+    flow, _saved = _flow(monkeypatch)
+
+    async def broken(hass, base, token, engine):
+        raise RuntimeAuthError("no_code")
+
+    monkeypatch.setattr(runtime_auth, "async_login_start", broken)
+    result = asyncio.run(flow.async_step_codex_login())
+    assert result["step_id"] == "codex_login_error" and result["errors"] == {"base": "no_code"}
 
 
 def test_status_text_in_german() -> None:
     text = local_text.codex_signin_text(None, False, "de", "runtime_old")
     assert text.startswith("⚠️ Diese Runtime ist zu alt")
+
+
+def test_status_and_auth_error_texts_in_every_language() -> None:
+    langs = set(local_text.CLAUDE_AUTH_FAILED)
+    assert len(langs) == 15
+    assert set(local_text.CODEX_SIGNIN) == langs and set(local_text.CODEX_AUTH_FAILED) == langs
+    keys = set(local_text.CODEX_SIGNIN["en"])
+    for lang, words in local_text.CODEX_SIGNIN.items():
+        assert set(words) == keys, lang
+        assert "{plan}" in words["signed_in"] and "{saved}" in words["signed_in"], lang
+    signed = {"ready": True, "signed_in": {"mode": "chatgpt", "plan": "plus", "saved_at": "2026-11-17T10:00:00+00:00"}}
+    assert "ChatGPT" in local_text.codex_signin_text(signed, False, "zh-Hant")
+    assert "執行環境" in local_text.codex_signin_text(signed, False, "zh-Hant")
+
+
+def test_codex_auth_failure_reads_in_the_chat_language() -> None:
+    from custom_components.ai_workspace.http import _localized_runtime_error
+
+    event = {"type": "error", "message": "OpenAI refused the Codex credential.", "code": "codex_auth_failed"}
+    out = _localized_runtime_error(None, event, "de")
+    assert "erneut mit ChatGPT an" in out["message"] and out["code"] == "codex_auth_failed"

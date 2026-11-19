@@ -310,8 +310,8 @@
         "runtime_old": "Questo Runtime non supporta ancora l'accesso. Aggiorna AI Workspace Runtime, oppure incolla un token nel modulo dell'agente.",
         "codex_runtime_old": "Aggiorna il Runtime di AI Workspace alla 1.6.0 o successiva per gli agenti Codex.",
         "codex_key_required": "Aggiungi una chiave API OpenAI in Codex (runtime), oppure accedi con ChatGPT sul Runtime di AI Workspace.",
-        "not_signed_in_yet": "OpenAI non ha ancora confermato l'accesso. Inserisci il codice sulla pagina di OpenAI, poi invia di nuovo.",
-        "no_code": "Codex non ha ricevuto un codice di accesso da OpenAI. Verifica che il Runtime raggiunga auth.openai.com e riprova."
+        "no_code": "Codex non ha ricevuto un codice di accesso da OpenAI. Verifica che il Runtime raggiunga auth.openai.com e riprova.",
+        "codex_login_failed": "OpenAI non ha confermato l'accesso. Se ha rifiutato il codice, consenti una volta l'accesso con codice dispositivo in ChatGPT in Impostazioni → Sicurezza (per un account workspace lo consente l'amministratore), poi riprova."
       },
       "step": {
         "provider": {
@@ -625,8 +625,7 @@
           }
         },
         "codex_login": {
-          "title": "Accedi con ChatGPT",
-          "description": "1. Apri questo link e accedi con l'account ChatGPT che ha il tuo piano: [Accedi con ChatGPT]({url})\n2. Inserisci lì questo codice monouso: **{code}**\n3. Poi invia qui.\n\nIl codice vale 15 minuti. La tua password ChatGPT non passa mai da Home Assistant. Se OpenAI rifiuta il codice, attiva una volta l'accesso con codice dispositivo in ChatGPT in **Impostazioni → Sicurezza** (per un account workspace lo consente l'amministratore)."
+          "title": "Accedi con ChatGPT"
         },
         "codex_signed_in": {
           "title": "Accesso effettuato",
@@ -639,6 +638,9 @@
       },
       "abort": {
         "reconfigure_successful": "Agente aggiornato."
+      },
+      "progress": {
+        "codex_login": "1. Apri questo link e accedi con l'account ChatGPT che ha il tuo piano: [Accedi con ChatGPT]({url})\n2. Inserisci lì questo codice monouso: **{code}**\n3. Fatto: questa finestra prosegue da sola non appena OpenAI conferma il codice.\n\nIl codice vale 15 minuti. La tua password ChatGPT non passa mai da Home Assistant. Se OpenAI rifiuta il codice, attiva una volta l'accesso con codice dispositivo in ChatGPT in **Impostazioni → Sicurezza** (per un account workspace lo consente l'amministratore)."
       }
     }
   },

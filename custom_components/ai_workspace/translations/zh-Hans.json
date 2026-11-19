@@ -310,8 +310,8 @@
         "runtime_old": "此运行时尚不支持登录。请更新 AI Workspace Runtime，或在代理表单中粘贴令牌。",
         "codex_runtime_old": "要使用 Codex 代理，请将 AI Workspace 运行时更新到 1.6.0 或更高版本。",
         "codex_key_required": "在 Codex（运行时）下添加 OpenAI API 密钥，或在 AI Workspace 运行时上用 ChatGPT 登录。",
-        "not_signed_in_yet": "OpenAI 尚未确认登录。请在 OpenAI 页面输入代码，然后再次提交。",
-        "no_code": "Codex 没有从 OpenAI 获得登录代码。请检查运行时能否访问 auth.openai.com，然后重试。"
+        "no_code": "Codex 没有从 OpenAI 获得登录代码。请检查运行时能否访问 auth.openai.com，然后重试。",
+        "codex_login_failed": "OpenAI 未确认此次登录。如果代码被拒绝，请先在 ChatGPT 的 设置 → 安全 中允许一次设备代码登录（工作区账户由管理员允许），然后重试。"
       },
       "step": {
         "provider": {
@@ -625,8 +625,7 @@
           }
         },
         "codex_login": {
-          "title": "用 ChatGPT 登录",
-          "description": "1. 打开此链接，用拥有订阅的 ChatGPT 账户登录：[用 ChatGPT 登录]({url})\n2. 在那里输入此一次性代码：**{code}**\n3. 然后在这里提交。\n\n代码 15 分钟内有效。你的 ChatGPT 密码不会经过 Home Assistant。如果 OpenAI 拒绝该代码，请在 ChatGPT 的 **设置 → 安全** 中启用一次设备代码登录（工作区账户由管理员允许）。"
+          "title": "用 ChatGPT 登录"
         },
         "codex_signed_in": {
           "title": "已登录",
@@ -639,6 +638,9 @@
       },
       "abort": {
         "reconfigure_successful": "智能体已更新。"
+      },
+      "progress": {
+        "codex_login": "1. 打开此链接，用拥有订阅的 ChatGPT 账户登录：[用 ChatGPT 登录]({url})\n2. 在那里输入此一次性代码：**{code}**\n3. 就这样：OpenAI 确认代码后，此窗口会自动继续。\n\n代码 15 分钟内有效。你的 ChatGPT 密码不会经过 Home Assistant。如果 OpenAI 拒绝该代码，请在 ChatGPT 的 **设置 → 安全** 中启用一次设备代码登录（工作区账户由管理员允许）。"
       }
     }
   },

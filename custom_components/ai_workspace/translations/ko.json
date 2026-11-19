@@ -310,8 +310,8 @@
         "runtime_old": "이 런타임은 아직 로그인을 지원하지 않습니다. AI Workspace Runtime을 업데이트하거나 에이전트 양식에 토큰을 붙여 넣으세요.",
         "codex_runtime_old": "Codex 에이전트를 쓰려면 AI Workspace 런타임을 1.6.0 이상으로 업데이트하세요.",
         "codex_key_required": "Codex(런타임) 아래에 OpenAI API 키를 추가하거나 AI Workspace 런타임에서 ChatGPT로 로그인하세요.",
-        "not_signed_in_yet": "OpenAI가 아직 로그인을 확인하지 않았습니다. OpenAI 페이지에 코드를 입력한 뒤 다시 제출하세요.",
-        "no_code": "Codex가 OpenAI에서 로그인 코드를 받지 못했습니다. 런타임이 auth.openai.com에 연결되는지 확인하고 다시 시도하세요."
+        "no_code": "Codex가 OpenAI에서 로그인 코드를 받지 못했습니다. 런타임이 auth.openai.com에 연결되는지 확인하고 다시 시도하세요.",
+        "codex_login_failed": "OpenAI가 로그인을 확인하지 않았습니다. 코드가 거부되었다면 ChatGPT의 설정 → 보안에서 기기 코드 로그인을 한 번 허용한 뒤(워크스페이스 계정은 관리자가 허용) 다시 시도하세요."
       },
       "step": {
         "provider": {
@@ -625,8 +625,7 @@
           }
         },
         "codex_login": {
-          "title": "ChatGPT로 로그인",
-          "description": "1. 이 링크를 열고 요금제가 있는 ChatGPT 계정으로 로그인하세요: [ChatGPT로 로그인]({url})\n2. 그곳에 이 일회용 코드를 입력하세요: **{code}**\n3. 그런 다음 여기서 제출하세요.\n\n코드는 15분 동안 유효합니다. ChatGPT 비밀번호는 Home Assistant를 거치지 않습니다. OpenAI가 코드를 거부하면 ChatGPT의 **설정 → 보안**에서 기기 코드 로그인을 한 번 켜세요(워크스페이스 계정은 관리자가 허용)."
+          "title": "ChatGPT로 로그인"
         },
         "codex_signed_in": {
           "title": "로그인됨",
@@ -639,6 +638,9 @@
       },
       "abort": {
         "reconfigure_successful": "에이전트가 업데이트되었습니다."
+      },
+      "progress": {
+        "codex_login": "1. 이 링크를 열고 요금제가 있는 ChatGPT 계정으로 로그인하세요: [ChatGPT로 로그인]({url})\n2. 그곳에 이 일회용 코드를 입력하세요: **{code}**\n3. 끝입니다. OpenAI가 코드를 확인하면 이 창이 자동으로 다음 단계로 넘어갑니다.\n\n코드는 15분 동안 유효합니다. ChatGPT 비밀번호는 Home Assistant를 거치지 않습니다. OpenAI가 코드를 거부하면 ChatGPT의 **설정 → 보안**에서 기기 코드 로그인을 한 번 켜세요(워크스페이스 계정은 관리자가 허용)."
       }
     }
   },

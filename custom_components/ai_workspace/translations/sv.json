@@ -310,8 +310,8 @@
         "runtime_old": "Den här Runtime kan inte logga in än. Uppdatera AI Workspace Runtime, eller klistra in en token i agentformuläret.",
         "codex_runtime_old": "Uppdatera AI Workspace Runtime till 1.6.0 eller senare för Codex-agenter.",
         "codex_key_required": "Lägg till en OpenAI API-nyckel under Codex (runtime), eller logga in med ChatGPT på AI Workspace Runtime.",
-        "not_signed_in_yet": "OpenAI har inte bekräftat inloggningen ännu. Ange koden på OpenAI:s sida och skicka igen.",
-        "no_code": "Codex fick ingen inloggningskod från OpenAI. Kontrollera att Runtime når auth.openai.com och försök igen."
+        "no_code": "Codex fick ingen inloggningskod från OpenAI. Kontrollera att Runtime når auth.openai.com och försök igen.",
+        "codex_login_failed": "OpenAI bekräftade inte inloggningen. Om koden avvisades, tillåt en gång inloggning med enhetskod i ChatGPT under Inställningar → Säkerhet (för ett arbetsytekonto gör administratören det) och försök igen."
       },
       "step": {
         "provider": {
@@ -625,8 +625,7 @@
           }
         },
         "codex_login": {
-          "title": "Logga in med ChatGPT",
-          "description": "1. Öppna länken och logga in med ChatGPT-kontot som har ditt abonnemang: [Logga in med ChatGPT]({url})\n2. Ange den här engångskoden där: **{code}**\n3. Skicka sedan här.\n\nKoden gäller i 15 minuter. Ditt ChatGPT-lösenord går aldrig via Home Assistant. Om OpenAI avvisar koden, slå en gång på inloggning med enhetskod i ChatGPT under **Inställningar → Säkerhet** (för ett arbetsytekonto tillåter administratören det)."
+          "title": "Logga in med ChatGPT"
         },
         "codex_signed_in": {
           "title": "Inloggad",
@@ -639,6 +638,9 @@
       },
       "abort": {
         "reconfigure_successful": "Agenten har uppdaterats."
+      },
+      "progress": {
+        "codex_login": "1. Öppna länken och logga in med ChatGPT-kontot som har ditt abonnemang: [Logga in med ChatGPT]({url})\n2. Ange den här engångskoden där: **{code}**\n3. Klart: det här fönstret går vidare av sig självt så snart OpenAI bekräftar koden.\n\nKoden gäller i 15 minuter. Ditt ChatGPT-lösenord går aldrig via Home Assistant. Om OpenAI avvisar koden, slå en gång på inloggning med enhetskod i ChatGPT under **Inställningar → Säkerhet** (för ett arbetsytekonto tillåter administratören det)."
       }
     }
   },

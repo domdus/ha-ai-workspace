@@ -239,7 +239,7 @@ An **OpenAI** agent can run OpenAI Codex on the AI Workspace Runtime, signed in 
 1. Install the Runtime as in [Cursor AI](#cursor-ai-advanced), Option A or B. A Cursor API key is not needed for Codex only.
 2. **Add agent → OpenAI**. Open **Advanced**, turn on **Use Codex (runtime) (experimental)**, and press **OK**. The form comes back with the Runtime fields instead of the API key field.
 3. Leave the key field empty and submit.
-4. On the **Codex account** step, pick **Sign in with ChatGPT**. Open the link, sign in with the ChatGPT account that has your plan, enter the code the form shows, and submit. Device-code sign-in has to be allowed once in ChatGPT under **Settings → Security**.
+4. On the **Codex account** step, pick **Sign in with ChatGPT**. Open the link, sign in with the ChatGPT account that has your plan, and enter the code the form shows. The form goes on by itself once OpenAI confirms it. Device-code sign-in has to be allowed once in ChatGPT under **Settings → Security**.
 
 The **Usage** page then shows the plan's limits when Codex reports them. Details: [Codex agents](docs/codex-runtime.md).
 

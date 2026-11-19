@@ -310,8 +310,8 @@
         "runtime_old": "Ce Runtime ne sait pas encore se connecter. Mettez à jour AI Workspace Runtime, ou collez un jeton dans le formulaire de l'agent.",
         "codex_runtime_old": "Mettez à jour le Runtime AI Workspace en 1.6.0 ou plus récent pour les agents Codex.",
         "codex_key_required": "Ajoutez une clé API OpenAI sous Codex (runtime), ou connectez-vous avec ChatGPT sur le Runtime AI Workspace.",
-        "not_signed_in_yet": "OpenAI n'a pas encore confirmé la connexion. Saisissez le code sur la page d'OpenAI, puis validez à nouveau.",
-        "no_code": "Codex n'a pas reçu de code de connexion d'OpenAI. Vérifiez que le Runtime peut joindre auth.openai.com, puis réessayez."
+        "no_code": "Codex n'a pas reçu de code de connexion d'OpenAI. Vérifiez que le Runtime peut joindre auth.openai.com, puis réessayez.",
+        "codex_login_failed": "OpenAI n'a pas confirmé la connexion. S'il a refusé le code, autorisez une fois la connexion par code d'appareil dans ChatGPT sous Paramètres → Sécurité (pour un compte d'espace de travail, l'administrateur l'autorise), puis réessayez."
       },
       "step": {
         "provider": {
@@ -625,8 +625,7 @@
           }
         },
         "codex_login": {
-          "title": "Se connecter avec ChatGPT",
-          "description": "1. Ouvrez ce lien et connectez-vous avec le compte ChatGPT qui a votre abonnement : [Se connecter avec ChatGPT]({url})\n2. Saisissez-y ce code à usage unique : **{code}**\n3. Puis validez ici.\n\nLe code est valable 15 minutes. Votre mot de passe ChatGPT ne passe jamais par Home Assistant. Si OpenAI refuse le code, activez une fois la connexion par code d'appareil dans ChatGPT sous **Paramètres → Sécurité** (pour un compte d'espace de travail, l'administrateur l'autorise)."
+          "title": "Se connecter avec ChatGPT"
         },
         "codex_signed_in": {
           "title": "Connecté",
@@ -639,6 +638,9 @@
       },
       "abort": {
         "reconfigure_successful": "Agent mis à jour."
+      },
+      "progress": {
+        "codex_login": "1. Ouvrez ce lien et connectez-vous avec le compte ChatGPT qui a votre abonnement : [Se connecter avec ChatGPT]({url})\n2. Saisissez-y ce code à usage unique : **{code}**\n3. C'est tout : cette fenêtre continue d'elle-même dès qu'OpenAI confirme le code.\n\nLe code est valable 15 minutes. Votre mot de passe ChatGPT ne passe jamais par Home Assistant. Si OpenAI refuse le code, activez une fois la connexion par code d'appareil dans ChatGPT sous **Paramètres → Sécurité** (pour un compte d'espace de travail, l'administrateur l'autorise)."
       }
     }
   },

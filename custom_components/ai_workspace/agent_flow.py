@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import time
 from typing import Any
 
 import voluptuous as vol
@@ -116,8 +118,12 @@ RUNTIME_SECTION = {API_ANTHROPIC: SECTION_CLAUDE_RUNTIME, API_OPENAI: SECTION_CO
 RUNTIME_KEY = {API_ANTHROPIC: CONF_CLAUDE_API_KEY, API_OPENAI: CONF_CODEX_API_KEY}
 RUNTIME_MODE = {API_ANTHROPIC: MODE_CLAUDE, API_OPENAI: MODE_CODEX}
 RUNTIME_ENGINE = {API_ANTHROPIC: ENGINE_CLAUDE, API_OPENAI: ENGINE_CODEX}
-# A device-code sign-in (Codex) is checked this long each time the user says the code is entered.
+# A device-code sign-in (Codex): the Runtime holds each state call up to this long (long poll).
 _DEVICE_WAIT = 20
+# OpenAI's device codes last 15 minutes; the form stops waiting a little later.
+_DEVICE_DEADLINE = 16 * 60
+# Between two state calls, in case the Runtime answers at once instead of holding the request.
+_DEVICE_PAUSE = 2.0
 CONF_LOGIN_CODE = "code"
 # Codes that only need typing again; anything else ended that sign-in on the Runtime.
 _RETYPE = frozenset({"bad_code"})
@@ -452,6 +458,8 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
         self._login: dict[str, Any] | None = None
         self._login_error = ""
         self._auth: dict[str, Any] | None = None
+        # Codex: waits in the background until OpenAI confirms the device code (progress step).
+        self._device_wait: asyncio.Task | None = None
         # Which Runtime engine the account steps are about (claude or codex).
         self._engine = ENGINE_CLAUDE
 
@@ -1082,50 +1090,66 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             return await self.async_step_codex_login_error()
         return await self.async_step_codex_account()
 
+    async def _await_device_code(self, base: str, token: str, login_id: str) -> dict[str, Any]:
+        """Long-poll the Runtime until OpenAI confirmed (or refused) the code; never raises."""
+        from .runtime_auth import RuntimeAuthError, async_login_state
+
+        deadline = time.monotonic() + _DEVICE_DEADLINE
+        while True:
+            try:
+                state = await async_login_state(self.hass, base, token, ENGINE_CODEX, login_id, wait=_DEVICE_WAIT)
+            except RuntimeAuthError as exc:
+                return {"status": "failed", "error": exc.key}
+            status = str(state.get("status") or "")
+            if status not in {"starting", "awaiting_code"}:
+                return state
+            if time.monotonic() > deadline:
+                return {"status": "expired", "error": "expired"}
+            await asyncio.sleep(_DEVICE_PAUSE)
+
     async def async_step_codex_login(self, user_input=None):
-        """Show OpenAI's link and one-time code; submit once the code is entered there."""
-        from .runtime_auth import RuntimeAuthError, async_login_start, async_login_state
+        """Show OpenAI's link and one-time code; the form goes on by itself once OpenAI confirms it."""
+        del user_input
+        from .runtime_auth import RuntimeAuthError, async_login_start
 
         if self._pending is None:
             return await self.async_step_provider()
-        errors: dict[str, str] = {}
-        base, token = self._target if user_input is not None else await self._runtime_target()
-        if user_input is not None and self._login is not None:
-            try:
-                state = await async_login_state(
-                    self.hass, base, token, ENGINE_CODEX, str(self._login.get("id")), wait=_DEVICE_WAIT
-                )
-            except RuntimeAuthError as exc:
-                state = {"status": "failed", "error": exc.key}
-            status = str(state.get("status") or "")
-            if status == "succeeded":
-                self._login = None
-                self._auth = state.get("auth") if isinstance(state.get("auth"), dict) else None
-                provider, data = self._pending
-                # The sign-in is meant to be used: an API key on this agent would win over it.
-                self._pending = (provider, {**data, CONF_CODEX_API_KEY: ""})
-                return await self.async_step_codex_signed_in()
-            if status in {"starting", "awaiting_code"}:
-                errors["base"] = "not_signed_in_yet"
-            else:
-                self._login = None
-                self._login_error = str(state.get("error") or ("expired" if status == "expired" else "login_failed"))
-                return await self.async_step_codex_login_error()
-        if self._login is None:
+        if self._device_wait is None:
+            base, token = await self._runtime_target()
             try:
                 self._login = await async_login_start(self.hass, base, token, ENGINE_CODEX)
             except RuntimeAuthError as exc:
+                self._login = None
                 self._login_error = exc.key
                 return await self.async_step_codex_login_error()
-        return self.async_show_form(
-            step_id="codex_login",
-            data_schema=vol.Schema({}),
-            errors=errors,
-            description_placeholders={
-                "url": str(self._login.get("url") or ""),
-                "code": str(self._login.get("user_code") or ""),
-            },
-        )
+            self._device_wait = self.hass.async_create_task(
+                self._await_device_code(base, token, str(self._login.get("id") or ""))
+            )
+        if not self._device_wait.done():
+            login = self._login or {}
+            return self.async_show_progress(
+                step_id="codex_login",
+                progress_action="codex_login",
+                description_placeholders={"url": str(login.get("url") or ""), "code": str(login.get("user_code") or "")},
+                progress_task=self._device_wait,
+            )
+        task, self._device_wait = self._device_wait, None
+        self._login = None
+        try:
+            state = task.result()
+        except (asyncio.CancelledError, Exception):  # noqa: BLE001 - shown as a failed sign-in
+            state = {"status": "failed", "error": "login_failed"}
+        status = str(state.get("status") or "")
+        if status == "succeeded":
+            self._auth = state.get("auth") if isinstance(state.get("auth"), dict) else None
+            provider, data = self._pending
+            # The sign-in is meant to be used: an API key on this agent would win over it.
+            self._pending = (provider, {**data, CONF_CODEX_API_KEY: ""})
+            return self.async_show_progress_done(next_step_id="codex_signed_in")
+        error = str(state.get("error") or ("expired" if status == "expired" else "login_failed"))
+        # OpenAI refused or never confirmed the code: most often device-code sign-in is not allowed yet.
+        self._login_error = "codex_login_failed" if error == "login_failed" else error
+        return self.async_show_progress_done(next_step_id="codex_login_error")
 
     async def async_step_codex_signed_in(self, user_input=None):
         from .local_text import codex_signin_text
@@ -1154,6 +1178,9 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
     @callback
     def async_remove(self) -> None:
         """Dialog closed: stop a sign-in that still waits for its code."""
+        wait, self._device_wait = self._device_wait, None
+        if wait is not None and not wait.done():
+            wait.cancel()
         if self._login and self._login.get("id") and self.hass is not None:
             self.hass.async_create_task(self._cancel_login())
 

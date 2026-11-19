@@ -310,8 +310,8 @@
         "runtime_old": "Deze Runtime kan nog niet aanmelden. Werk de AI Workspace Runtime bij, of plak een token in het agentformulier.",
         "codex_runtime_old": "Werk de AI Workspace Runtime bij naar 1.6.0 of nieuwer voor Codex-agents.",
         "codex_key_required": "Voeg een OpenAI API-sleutel toe onder Codex (runtime), of meld je aan met ChatGPT op de AI Workspace Runtime.",
-        "not_signed_in_yet": "OpenAI heeft de aanmelding nog niet bevestigd. Voer de code in op de pagina van OpenAI en verstuur opnieuw.",
-        "no_code": "Codex kreeg geen aanmeldcode van OpenAI. Controleer of de Runtime auth.openai.com bereikt en probeer het opnieuw."
+        "no_code": "Codex kreeg geen aanmeldcode van OpenAI. Controleer of de Runtime auth.openai.com bereikt en probeer het opnieuw.",
+        "codex_login_failed": "OpenAI heeft de aanmelding niet bevestigd. Weigerde het de code, sta dan eenmalig aanmelden met apparaatcode toe in ChatGPT onder Instellingen → Beveiliging (bij een werkruimte-account doet de beheerder dat) en probeer het opnieuw."
       },
       "step": {
         "provider": {
@@ -625,8 +625,7 @@
           }
         },
         "codex_login": {
-          "title": "Aanmelden met ChatGPT",
-          "description": "1. Open deze link en meld je aan met het ChatGPT-account met je abonnement: [Aanmelden met ChatGPT]({url})\n2. Voer daar deze eenmalige code in: **{code}**\n3. Verstuur daarna hier.\n\nDe code is 15 minuten geldig. Je ChatGPT-wachtwoord gaat nooit via Home Assistant. Weigert OpenAI de code, zet dan eenmalig aanmelden met apparaatcode aan in ChatGPT onder **Instellingen → Beveiliging** (bij een werkruimte-account staat de beheerder het toe)."
+          "title": "Aanmelden met ChatGPT"
         },
         "codex_signed_in": {
           "title": "Aangemeld",
@@ -639,6 +638,9 @@
       },
       "abort": {
         "reconfigure_successful": "Agent bijgewerkt."
+      },
+      "progress": {
+        "codex_login": "1. Open deze link en meld je aan met het ChatGPT-account met je abonnement: [Aanmelden met ChatGPT]({url})\n2. Voer daar deze eenmalige code in: **{code}**\n3. Klaar: dit venster gaat vanzelf verder zodra OpenAI de code bevestigt.\n\nDe code is 15 minuten geldig. Je ChatGPT-wachtwoord gaat nooit via Home Assistant. Weigert OpenAI de code, zet dan eenmalig aanmelden met apparaatcode aan in ChatGPT onder **Instellingen → Beveiliging** (bij een werkruimte-account staat de beheerder het toe)."
       }
     }
   },

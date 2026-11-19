@@ -310,8 +310,8 @@
         "runtime_old": "此執行環境尚不支援登入。請更新 AI Workspace Runtime，或在代理表單中貼上權杖。",
         "codex_runtime_old": "要使用 Codex 代理，請將 AI Workspace 執行環境更新至 1.6.0 或更新版本。",
         "codex_key_required": "在 Codex（執行環境）下新增 OpenAI API 金鑰，或在 AI Workspace 執行環境上用 ChatGPT 登入。",
-        "not_signed_in_yet": "OpenAI 尚未確認登入。請在 OpenAI 頁面輸入代碼，然後再次送出。",
-        "no_code": "Codex 沒有從 OpenAI 取得登入代碼。請檢查執行環境能否連到 auth.openai.com，然後重試。"
+        "no_code": "Codex 沒有從 OpenAI 取得登入代碼。請檢查執行環境能否連到 auth.openai.com，然後重試。",
+        "codex_login_failed": "OpenAI 未確認此次登入。若代碼被拒絕，請先在 ChatGPT 的 設定 → 安全性 中允許一次裝置代碼登入（工作區帳戶由管理員允許），然後重試。"
       },
       "step": {
         "provider": {
@@ -625,8 +625,7 @@
           }
         },
         "codex_login": {
-          "title": "用 ChatGPT 登入",
-          "description": "1. 開啟此連結，用擁有方案的 ChatGPT 帳戶登入：[用 ChatGPT 登入]({url})\n2. 在那裡輸入此一次性代碼：**{code}**\n3. 然後在這裡送出。\n\n代碼 15 分鐘內有效。你的 ChatGPT 密碼不會經過 Home Assistant。若 OpenAI 拒絕該代碼，請在 ChatGPT 的 **設定 → 安全性** 中啟用一次裝置代碼登入（工作區帳戶由管理員允許）。"
+          "title": "用 ChatGPT 登入"
         },
         "codex_signed_in": {
           "title": "已登入",
@@ -639,6 +638,9 @@
       },
       "abort": {
         "reconfigure_successful": "智慧體已更新。"
+      },
+      "progress": {
+        "codex_login": "1. 開啟此連結，用擁有方案的 ChatGPT 帳戶登入：[用 ChatGPT 登入]({url})\n2. 在那裡輸入此一次性代碼：**{code}**\n3. 就這樣：OpenAI 確認代碼後，此視窗會自動繼續。\n\n代碼 15 分鐘內有效。你的 ChatGPT 密碼不會經過 Home Assistant。若 OpenAI 拒絕該代碼，請在 ChatGPT 的 **設定 → 安全性** 中啟用一次裝置代碼登入（工作區帳戶由管理員允許）。"
       }
     }
   },

@@ -11,9 +11,9 @@ Ways to get it there:
      `codex login --device-auth` in the terminal.
   3. CODEX_AUTH_JSON: an auth.json from `codex login` on another computer (a mounted file or the JSON
      itself). It is copied into CODEX_HOME once, when CODEX_HOME has none.
-An OpenAI API key (agent field in Home Assistant, App option openai_api_key, or OPENAI_API_KEY /
-CODEX_API_KEY) is the fallback when there is no auth.json; it is handed to Codex per chat in memory
-and never written to disk.
+An OpenAI API key on the agent in Home Assistant wins over auth.json; OPENAI_API_KEY / CODEX_API_KEY (Docker
+only) is the fallback when there is no auth.json. A key is handed to Codex per chat in memory and never
+written to disk.
 
 Device-code sign-in has to be allowed once for the ChatGPT account (ChatGPT Settings > Security) or
 by a workspace admin. Without it OpenAI refuses the code.
@@ -421,7 +421,7 @@ def _describe(settings: Settings) -> str:
     if source == "api-key":
         return "an OpenAI API key is stored in auth.json"
     if source == "env-api":
-        return "not signed in; the OpenAI API key from the options or environment is used"
+        return "not signed in; OPENAI_API_KEY from the environment is used"
     return "not signed in"
 
 

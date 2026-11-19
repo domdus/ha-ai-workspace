@@ -508,11 +508,19 @@ def _localized_runtime_error(hass, event: dict, language: str = "") -> dict:
     """Runtime errors with a known code read in the chat's language (the Runtime only knows English)."""
     if event.get("type") != "error":
         return event
-    from .local_text import CLAUDE_AUTH_FAILED_CODE, claude_auth_failed_text, claude_plan_rejected_text
+    from .local_text import (
+        CLAUDE_AUTH_FAILED_CODE,
+        CODEX_AUTH_FAILED_CODE,
+        claude_auth_failed_text,
+        claude_plan_rejected_text,
+        codex_auth_failed_text,
+    )
     from .plan_quota import CLAUDE_PLAN_REJECTED_CODE
 
     if event.get("code") == CLAUDE_AUTH_FAILED_CODE:
         return {**event, "message": claude_auth_failed_text(language)}
+    if event.get("code") == CODEX_AUTH_FAILED_CODE:
+        return {**event, "message": codex_auth_failed_text(language)}
     if event.get("code") == CLAUDE_PLAN_REJECTED_CODE:
         return {
             **event,

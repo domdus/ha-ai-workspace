@@ -310,8 +310,8 @@
         "runtime_old": "Tento Runtime se zatím neumí přihlásit. Aktualizujte AI Workspace Runtime, nebo vložte token ve formuláři agenta.",
         "codex_runtime_old": "Aktualizujte AI Workspace Runtime na 1.6.0 nebo novější pro agenty Codex.",
         "codex_key_required": "Přidejte klíč API OpenAI v části Codex (runtime), nebo se na AI Workspace Runtime přihlaste přes ChatGPT.",
-        "not_signed_in_yet": "OpenAI přihlášení ještě nepotvrdilo. Zadejte kód na stránce OpenAI a odešlete znovu.",
-        "no_code": "Codex nedostal od OpenAI přihlašovací kód. Zkontrolujte, že Runtime dosáhne na auth.openai.com, a zkuste to znovu."
+        "no_code": "Codex nedostal od OpenAI přihlašovací kód. Zkontrolujte, že Runtime dosáhne na auth.openai.com, a zkuste to znovu.",
+        "codex_login_failed": "OpenAI přihlášení nepotvrdilo. Pokud kód odmítlo, povolte jednou v ChatGPT přihlášení kódem zařízení v Nastavení → Zabezpečení (u účtu workspace to povolí správce) a zkuste to znovu."
       },
       "step": {
         "provider": {
@@ -625,8 +625,7 @@
           }
         },
         "codex_login": {
-          "title": "Přihlásit se přes ChatGPT",
-          "description": "1. Otevřete tento odkaz a přihlaste se účtem ChatGPT s vaším plánem: [Přihlásit se přes ChatGPT]({url})\n2. Zadejte tam tento jednorázový kód: **{code}**\n3. Pak odešlete zde.\n\nKód platí 15 minut. Vaše heslo k ChatGPT nikdy neprochází přes Home Assistant. Pokud OpenAI kód odmítne, zapněte jednou v ChatGPT přihlášení kódem zařízení v **Nastavení → Zabezpečení** (u účtu workspace to povolí správce)."
+          "title": "Přihlásit se přes ChatGPT"
         },
         "codex_signed_in": {
           "title": "Přihlášeno",
@@ -639,6 +638,9 @@
       },
       "abort": {
         "reconfigure_successful": "Agent aktualizován."
+      },
+      "progress": {
+        "codex_login": "1. Otevřete tento odkaz a přihlaste se účtem ChatGPT s vaším plánem: [Přihlásit se přes ChatGPT]({url})\n2. Zadejte tam tento jednorázový kód: **{code}**\n3. To je vše: toto okno pokračuje samo, jakmile OpenAI kód potvrdí.\n\nKód platí 15 minut. Vaše heslo k ChatGPT nikdy neprochází přes Home Assistant. Pokud OpenAI kód odmítne, zapněte jednou v ChatGPT přihlášení kódem zařízení v **Nastavení → Zabezpečení** (u účtu workspace to povolí správce)."
       }
     }
   },
