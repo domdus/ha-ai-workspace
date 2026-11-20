@@ -27,10 +27,14 @@ from app.redact import redact
 from app.settings import Settings
 from app.small_talk import wants_house_tools
 from app.store import Session
+from app.titles import clean_title, title_prompt
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL = "claude-sonnet-5-5"
+# Chat titles: a few words, so the smallest model (Claude Code resolves the alias).
+TITLE_MODEL = "haiku"
+TITLE_SYSTEM = "You write short chat titles. Reply with the title only."
 API_KEY_URL = "https://console.anthropic.com/settings/keys"
 
 MISSING_KEY = (
@@ -552,6 +556,55 @@ class ClaudeProvider:
             yield worker
         if is_plan_token(credential):
             self._refresh_plan_usage(credential, plan_seen)
+
+    async def suggest_title(
+        self,
+        user: str,
+        assistant: str = "",
+        *,
+        api_key: str = "",
+        model: str = "",
+    ) -> str | None:
+        """A short chat title from the first message: one small Haiku call, no tools, no session."""
+        del model  # the chat's model is far more than a few words need
+        credential = resolve_credential(self.settings, api_key)
+        if not credential:
+            return None
+        try:
+            from claude_agent_sdk import AssistantMessage, ClaudeAgentOptions, ResultMessage, TextBlock, query
+        except ImportError:
+            return None
+        options = ClaudeAgentOptions(
+            cwd=str(self.settings.workspace_dir),
+            setting_sources=[],
+            strict_mcp_config=True,
+            model=TITLE_MODEL,
+            system_prompt=TITLE_SYSTEM,
+            max_turns=1,
+            env=claude_subprocess_env(self.settings, credential),
+            mcp_servers={},
+            stderr=lambda line: logger.debug("claude title cli: %s", redact(line, [credential])),
+            **tool_policy(no_tools=True, full_tools=False, allow_internet=False, mcp_servers={}),
+        )
+        parts: list[str] = []
+        result = ""
+        failed = False
+        try:
+            self.settings.workspace_dir.mkdir(parents=True, exist_ok=True)
+            # Read to the end: leaving the SDK's stream early closes it from the wrong task.
+            async for message in query(prompt=title_prompt(user, assistant), options=options):
+                if isinstance(message, AssistantMessage):
+                    parts.extend(b.text for b in message.content if isinstance(b, TextBlock))
+                elif isinstance(message, ResultMessage):
+                    failed = bool(message.is_error)
+                    result = str(message.result or "")
+        except Exception as exc:
+            if not (result or parts):
+                logger.debug("claude title failed: %s", redact(str(exc), [credential]))
+                return None
+        if failed:
+            return None
+        return clean_title(result or "".join(parts)) or None
 
     def _refresh_plan_usage(self, credential: str, plan_seen: bool) -> None:
         """Read the plan's utilization (no tokens) when this turn's stream brought no percent."""

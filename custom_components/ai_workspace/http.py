@@ -383,8 +383,13 @@ async def _runtime_chat(
     allow_internet: bool = False,
     token_mode: str = TOKEN_MODE_OFF,
     runtime_provider: str = "cursor",
+    title: bool = False,
 ) -> AsyncIterator[dict]:
-    """One SDK runtime turn (Cursor, Claude or Codex). Reduce token usage works as on cloud agents."""
+    """One SDK runtime turn (Cursor, Claude or Codex). Reduce token usage works as on cloud agents.
+
+    ``title``: the chat's first turn, and its first title had to shorten the message. The Runtime then
+    has the engine write a short title next to the reply and sends it as a "title" event.
+    """
     runtime_kind = runtime_provider if runtime_provider in _RUNTIME_PROVIDER_KINDS else "cursor"
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
@@ -435,6 +440,9 @@ async def _runtime_chat(
         "no_tools": not token_mode_allows_tools(token_mode),
         "titles": token_mode_allows_extras(token_mode),
     }
+    if title and token_mode_allows_extras(token_mode):
+        # Home Assistant owns the chat's history: only it knows this is the first turn.
+        payload["title_now"] = True
     if standing:
         payload["prompt"] = short_prompt
     if session.agent_id and runtime_kind == "cursor":
@@ -1187,11 +1195,8 @@ class ChatView(HomeAssistantView):
             store.rename_if_default, session.id, title_from_prompt(message)
         )
         count = await hass.async_add_executor_job(lambda: len(store.list_messages(session.id)))
-        suggest = (
-            getattr(provider, "suggest_title", None)
-            if extras and count <= 1 and needs_title_summary(message)
-            else None
-        )
+        first_turn_title = bool(extras and count <= 1 and needs_title_summary(message))
+        suggest = getattr(provider, "suggest_title", None) if first_turn_title else None
         outbound = attach_files_to_message(message, files) if token_mode_allows_files(token_mode) else message
         if page_note and extras:
             outbound = f"{page_note}\n\n{outbound}"
@@ -1263,6 +1268,7 @@ class ChatView(HomeAssistantView):
                     allow_internet=bool(getattr(provider, "allow_internet", False)),
                     token_mode=token_mode,
                     runtime_provider=str(getattr(provider, "kind", "") or "cursor"),
+                    title=first_turn_title,
                 ):
                     yield event
                 return

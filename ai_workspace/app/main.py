@@ -122,6 +122,8 @@ class ChatRequest(BaseModel):
     fresh: bool = False
     no_tools: bool = False
     titles: bool = True
+    # Home Assistant owns the history and says this is the chat's first turn: write a title for it.
+    title_now: bool = False
     model: str = ""
     effort: str = ""
     api_key: str = ""
@@ -552,13 +554,8 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
         store.rename_if_default(session.id, title_from_prompt(question))
     outbound = _with_ui_context(attach_files_to_message(message, files), body.origin)
     suggest = getattr(provider, "suggest_title", None)
-    want_title = (
-        not ha_owned
-        and len(store.list_messages(session.id)) <= 1
-        and callable(suggest)
-        and body.titles
-        and needs_title_summary(question)
-    )
+    first_turn = body.title_now if ha_owned else len(store.list_messages(session.id)) <= 1
+    want_title = first_turn and callable(suggest) and body.titles and needs_title_summary(question)
     # An agent id sent with an engine switch belongs to the old engine.
     sync_id = "" if switched else body.sync_agent_id.strip()
     if sync_id and session.agent_id != sync_id:
@@ -600,6 +597,27 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
         error: str | None = None
         final: str | None = None
         disconnected = False
+        title_asked = False
+
+        async def written_title(wait: bool) -> str | None:
+            """The engine's title once it is there (``wait``: also wait for it), sent once."""
+            nonlocal title_asked
+            if title_task is None or title_asked or (not wait and not title_task.done()):
+                return None
+            title_asked = True
+            try:
+                raw = await title_task
+            except Exception:
+                logger.debug("title generation failed", exc_info=True)
+                return None
+            label = accept_generated_title(question, raw or "")
+            if not label:
+                return None
+            if ha_owned:
+                # Home Assistant checks it is still the automatic title and stores it.
+                return label
+            return store.apply_generated_title(_user_id(request), session.id, question, label)
+
         try:
             try:
                 async for event in provider.send(
@@ -641,6 +659,10 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
                         disconnected = True
                         continue
                     yield _sse(str(event["type"]), event)
+                    # The title is ready while the reply still runs: show it now, not after the reply.
+                    early = await written_title(False)
+                    if early:
+                        yield _sse("title", {"type": "title", "title": early})
             except Exception as exc:
                 logger.exception("chat failed session=%s", session.id)
                 error = _public(settings, exc)
@@ -655,16 +677,8 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
             if error is None and not disconnected:
                 yield _sse("done", {"type": "done", "answer": answer})
                 yield _sse("status", {"type": "status", "text": "Done."})
-            if error is None and title_task is not None and not disconnected:
-                try:
-                    raw = await title_task
-                except Exception:
-                    logger.debug("title generation failed", exc_info=True)
-                    raw = None
-                label = accept_generated_title(question, raw or "")
-                applied = store.apply_generated_title(
-                    _user_id(request), session.id, question, label
-                )
+            if error is None and not disconnected:
+                applied = await written_title(True)
                 if applied:
                     yield _sse("title", {"type": "title", "title": applied})
         finally:

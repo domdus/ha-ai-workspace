@@ -357,3 +357,51 @@ def test_empty_chat_without_images_is_rejected(tmp_path: Path) -> None:
         streamed = client.post(f"/api/sessions/{session_id}/chat", json={"message": "  "})
         assert streamed.status_code == 400
 
+
+
+HEISE = (
+    "https://www.heise.de/tests/DGX-Spark-Nvidias-Desktop-KI-Computer-im-Test-11102661.html?seite=3\n\n"
+    "Die verfügbaren mini PCs haben alle Schwächen beim Speicher interface etc."
+)
+
+
+class FakeCursorHeise(FakeCursor):
+    def __init__(self) -> None:
+        super().__init__()
+        self.asked: list[str] = []
+
+    async def suggest_title(self, user: str, assistant: str = "", **_kwargs) -> str | None:
+        self.asked.append(user)
+        return "Heise Artikel über Nvidia Spark"
+
+
+def test_ha_owned_first_turn_gets_a_written_title(tmp_path: Path) -> None:
+    # Home Assistant keeps the history, so only it can say "first turn"; the runtime writes the title.
+    provider = FakeCursorHeise()
+    app = create_app(settings(tmp_path), {"cursor": provider})
+    with TestClient(app, base_url=LOCAL) as client:
+        session_id = client.post("/api/sessions", json={"provider": "cursor"}).json()["id"]
+        streamed = client.post(
+            f"/api/sessions/{session_id}/chat",
+            json={"message": HEISE, "question": HEISE, "history_in_ha": True, "title_now": True},
+        )
+        assert streamed.status_code == 200
+        assert "event: title" in streamed.text
+        assert "Heise Artikel über Nvidia Spark" in streamed.text
+        assert provider.asked == [HEISE]
+        # Stored by Home Assistant, not here.
+        assert client.get(f"/api/sessions/{session_id}").json()["title"] == "New Chat"
+
+
+def test_ha_owned_turn_without_title_now_writes_no_title(tmp_path: Path) -> None:
+    provider = FakeCursorHeise()
+    app = create_app(settings(tmp_path), {"cursor": provider})
+    with TestClient(app, base_url=LOCAL) as client:
+        session_id = client.post("/api/sessions", json={"provider": "cursor"}).json()["id"]
+        streamed = client.post(
+            f"/api/sessions/{session_id}/chat",
+            json={"message": HEISE, "question": HEISE, "history_in_ha": True},
+        )
+        assert streamed.status_code == 200
+        assert "event: title" not in streamed.text
+        assert provider.asked == []

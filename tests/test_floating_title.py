@@ -162,3 +162,94 @@ def test_floating_chat_header_follows_the_title() -> None:
 @pytest.mark.skipif(not shutil.which("node"), reason="node not installed")
 def test_chat_title_module() -> None:
     subprocess.run(["node", str(ROOT / "tests" / "test_chat_title.mjs")], check=True, cwd=ROOT)
+
+
+HEISE = (
+    "https://www.heise.de/tests/DGX-Spark-Nvidias-Desktop-KI-Computer-im-Test-11102661.html?seite=3\n\n"
+    "Die verfügbaren mini PCs haben alle Schwächen beim Speicher interface etc.\n"
+    "Weißt du ob Modelle angekündigt wurden auf die es sich lohnt zu warten?"
+)
+
+
+class _RuntimeAgent(_Provider):
+    kind = "claude"
+    token_mode = "off"
+
+
+def _runtime_turn(tmp_path, monkeypatch, message, written: str | None, first_title: str = "New Chat"):
+    seen: dict = {}
+
+    async def fake_runtime_chat(hass, user_id, session, message_, *args, **kwargs):
+        seen.update(kwargs)
+        yield {"type": "text", "delta": "Angekündigt sind ..."}
+        if written is not None:
+            yield {"type": "title", "title": written}
+        yield {"type": "done", "answer": "Angekündigt sind ..."}
+
+    monkeypatch.setattr(http, "_runtime_chat", fake_runtime_chat)
+    monkeypatch.setattr(http, "_is_runtime_provider", lambda provider: True)
+    events, saved = _run_turn(tmp_path, monkeypatch, message, _RuntimeAgent(), first_title)
+    return events, saved, seen
+
+
+def test_runtime_agent_is_asked_for_a_title_on_the_first_turn(tmp_path, monkeypatch) -> None:
+    # The reported chat ran on a Runtime agent: until now it never got a written title.
+    events, saved, seen = _runtime_turn(tmp_path, monkeypatch, HEISE, "Heise Artikel über Nvidia Spark")
+    assert seen["title"] is True
+    titles = [data["title"] for name, data in events if name == "title"]
+    assert titles == ["Heise: DGX Spark Nvidias Desktop KI Computer", "Heise Artikel über Nvidia Spark"]
+    assert saved == "Heise Artikel über Nvidia Spark"
+
+
+def test_runtime_title_never_overwrites_a_real_title(tmp_path, monkeypatch) -> None:
+    events, saved, seen = _runtime_turn(
+        tmp_path, monkeypatch, HEISE, "Heise Artikel über Nvidia Spark", first_title="Mini PC Kauf"
+    )
+    assert saved == "Mini PC Kauf"
+    assert "title" not in [name for name, _ in events]
+
+
+def test_short_first_message_asks_the_runtime_for_no_title(tmp_path, monkeypatch) -> None:
+    _, saved, seen = _runtime_turn(tmp_path, monkeypatch, "Status der Bewässerung?", None)
+    assert seen["title"] is False
+    assert saved == "Status der Bewässerung"
+
+
+def test_runtime_payload_carries_title_now_only_when_asked(monkeypatch) -> None:
+    from test_claude_auth_error import _Stream
+
+    def send(title: bool, mode: str = "off") -> dict:
+        sent: dict = {}
+
+        class Session:
+            async def post(self, url, json=None, headers=None, timeout=None):
+                sent.update(json or {})
+                return _Stream([{"type": "done", "answer": "ok"}])
+
+        async def ensure(*a, **k):
+            return True
+
+        hass = SimpleNamespace(data={DOMAIN: {"runtime_url": "http://rt:8090", "settings": None, "providers": {}}})
+        monkeypatch.setattr(http, "async_get_clientsession", lambda hass_: Session())
+        monkeypatch.setattr(http, "_ensure_runtime_session", ensure)
+        monkeypatch.setattr(http, "_runtime_headers_for", lambda *a, **k: {})
+        monkeypatch.setattr(http, "standing_chat_prompt", lambda *a, **k: "")
+        monkeypatch.setattr(http, "house_zone", lambda hass_: None)
+        monkeypatch.setattr(http, "issue_callback_key", lambda *a, **k: "key")
+        chat = SimpleNamespace(id="s1", agent_id="", provider="claude")
+
+        async def collect():
+            return [
+                e
+                async for e in http._runtime_chat(
+                    hass, "u1", chat, HEISE, token_mode=mode, runtime_provider="claude", title=title
+                )
+            ]
+
+        asyncio.run(collect())
+        return sent
+
+    assert send(True)["title_now"] is True
+    assert "title_now" not in send(False)
+    # Save tokens: no extra call for a title.
+    assert "title_now" not in send(True, "medium")
