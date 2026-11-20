@@ -4,7 +4,15 @@
 
 **Track usage and costs** (on by default) records tokens and estimated cost in USD after each Cursor or cloud reply, including Assist. The sidebar **Usage** button opens `/ai-workspace/usage`: today / month / all-time totals, filters for agent, model, existing chat, and date, 30-day cost and token charts, and a model comparison (tokens per turn, cost per turn, highest spend, most used, cheapest turn).
 
-**Show cost in chat header** (on by default) puts a short usage line under the chat title. Turn it off if you only want the Usage page.
+**Show cost in chat header** (on by default) puts a short usage line under the chat title. Turn it off if you only want the Usage page. For an agent on a subscription plan (Claude or Codex with a plan sign-in or plan token, once plan limits are known), the $ value in that line is replaced by the plan usage, for example `5h 12% · W 16%`, colored by the higher window (green, yellow from 60 %, red from 85 %). Hover or long-press for both percentages, both reset times and the chat's theoretical API price. API-key agents (Cursor, OpenAI, Gemini, Ollama, an Anthropic API key, ...) keep showing $.
+
+Which agents count as plan agents:
+
+- **Own Plan token** on a Claude agent: plan, with the numbers that token's turns reported.
+- **No key on the agent** (Claude or Codex using the Runtime's credential): whatever the Runtime really uses. The Runtime reports it per engine in `/api/health` under `credentials` (`kind`: `subscription` or `api_key`, `source`: `signed-in`, `env-plan`, `env-api` or `auth-json`, and a one-way `id`; never the secret). Plan % only with `subscription` for that engine; an API key in the Runtime's environment shows $.
+- **Runtime unreachable, or a Runtime older than 1.6.1b16:** $. Plan % is never shown on a guess.
+- **Precedence** when the Runtime has both a plan login and an API key: the Runtime hands the engine exactly one credential and reports that one. Claude: Sign in with Claude, then `CLAUDE_CODE_OAUTH_TOKEN`, then `ANTHROPIC_API_KEY`; the others are blanked for Claude Code, which on its own would prefer `ANTHROPIC_API_KEY` over an OAuth token. Codex: auth.json in `CODEX_HOME` (Sign in with ChatGPT, or a key saved there), then `OPENAI_API_KEY` / `CODEX_API_KEY`. An API key on the agent always wins and is billed as an API key.
+- **Per credential:** each plan snapshot carries the ID of the credential its turn ran on, and the header uses it only for the agent on that credential. Another agent's sign-in or another engine's plan never shows up. Snapshots from before 1.6.1b16 have no ID: $ until the next reading.
 
 Off on **Track usage and costs** stops new records. Existing history stays. Deleting a chat removes the messages, not the usage: the provider already billed that turn, so it stays on the Usage page.
 
@@ -26,13 +34,16 @@ The result is an estimate based on public list prices. Your provider's invoice i
 
 ## Plan limits
 
-The **Plan limits** block shows how much of a subscription plan (Claude plan, Cursor, Codex) is used: the 5-hour session window and the 7-day week window in percent, when each resets, and when that was last seen. It is not token cost.
+The **Plan limits** block shows how much of a subscription plan (Claude plan, Cursor, Codex) is used: one card per plan with a bar for the 5-hour session window and one for the 7-day week window (green, yellow from 60 %, red from 85 %), when each resets (the session reset as a time when it is today, otherwise with weekday and date), an **Overage active** warning when the plan bills beyond its limit, when that was last seen and a link to the official usage page. It is not token cost.
+
+When a plan has data, its cards come first on the Usage page, above the cost cards: on a subscription the limits are what counts, and the $ figures for plan agents are only theoretical API list prices (the page says so under the cost cards and on those agents' rows).
 
 - **Claude plan (Claude SDK agents with a Plan token or Sign in with Claude):** Claude Code reports the plan's utilization with each turn (`rate_limit_event`; first answer of a turn and whenever a rounded percent changes). The Runtime stores the newest values (`plan_quota.json` in its data folder) and sends them to Home Assistant, which keeps the last state. If a turn brought no numbers, the Runtime reads them once from Anthropic's usage endpoint, the same one Claude Code's `/usage` uses (`GET /api/oauth/usage`, no model call, no quota), at most every 10 minutes. Tokens from `claude setup-token` may not be allowed to read it; then only the chat's numbers count. `CLAUDE_PLAN_USAGE_READ=off` on the Runtime switches the read off.
 - **Below the warning threshold – no detailed numbers** means Claude reported its status (allowed) without percentages.
-- When a window has reset since the last reading, the row says so instead of showing an old percentage.
+- When a window has reset since the last reading, its bar drops to 0 % and says so instead of showing an old percentage.
 - The chat shows a short hint once when a plan crosses into its warning zone, and a translated message with the reset time when the limit is reached.
 - Anthropic API keys have no plan limits; their row stays empty.
+- With **Add Home Assistant usage sensors** on, each plan has `sensor.ai_workspace_<engine>_plan_session`, `..._plan_week` (percent) and `..._plan_session_reset` (a timestamp; the snapshot is in the attributes).
 
 ## Home Assistant sensors
 

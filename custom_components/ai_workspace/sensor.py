@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-from homeassistant.components.sensor import SensorEntity, SensorStateClass
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
@@ -36,6 +36,16 @@ def _live(entity: SensorEntity) -> bool:
     if getattr(entity, "hass", None) is None or not getattr(entity, "entity_id", None):
         return False
     return getattr(entity, "_platform_state", None) != EntityPlatformState.REMOVED
+
+
+def reset_datetime(value: object) -> datetime | None:
+    """A plan reset (unix seconds) as the aware datetime a timestamp sensor needs; None if unknown."""
+    if value in (None, "", 0) or isinstance(value, bool):
+        return None
+    try:
+        return datetime.fromtimestamp(int(value), tz=timezone.utc)
+    except (TypeError, ValueError, OverflowError, OSError):
+        return None
 
 
 def _write(entity: SensorEntity) -> None:
@@ -215,7 +225,7 @@ class PlanQuotaSensor(_PlanQuotaBase):
             self._attr_icon = "mdi:gauge"
         elif field.endswith("reset_at"):
             self._attr_icon = "mdi:clock-outline"
-            self._attr_device_class = "timestamp"
+            self._attr_device_class = SensorDeviceClass.TIMESTAMP
 
     def apply_hub(self) -> None:
         snap = self._hub.snapshots.get(self._engine) or {}
@@ -223,15 +233,9 @@ class PlanQuotaSensor(_PlanQuotaBase):
         if self._field.endswith("percent"):
             self._attr_native_value = value if value is not None else None
         elif self._field.endswith("reset_at"):
-            if value in (None, "", 0):
-                self._attr_native_value = None
-            else:
-                try:
-                    from datetime import datetime, timezone
-
-                    self._attr_native_value = datetime.fromtimestamp(int(value), tz=timezone.utc).isoformat()
-                except (TypeError, ValueError, OverflowError):
-                    self._attr_native_value = None
+            # A timestamp sensor needs an aware datetime: an ISO string made HA reject every state
+            # write, so the sensor stayed "unavailable" although the snapshot had the reset time.
+            self._attr_native_value = reset_datetime(value)
         else:
             self._attr_native_value = value
         link = OFFICIAL_LINKS.get(self._engine)

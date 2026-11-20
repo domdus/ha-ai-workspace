@@ -2117,6 +2117,132 @@ ha-button.send ha-icon {
   padding: var(--ha-space-3) var(--ha-space-4);
 }
 
+/* Plan limits: one card per plan, a bar per window. Green, yellow from 60 %, red from 85 %. */
+.usage-plans {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+}
+
+.wrap.page-usage .usage-grid.usage-plans {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+}
+
+.usage-plan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ha-space-2);
+  min-width: 0;
+}
+
+.usage-plan .usage-card-title {
+  margin: 0;
+}
+
+.usage-plan-row {
+  --usage-plan-color: var(--success-color, #43a047);
+  min-width: 0;
+}
+
+.usage-plan-row[data-level="mid"] {
+  --usage-plan-color: var(--warning-color, #ffa600);
+}
+
+.usage-plan-row[data-level="high"] {
+  --usage-plan-color: var(--error-color, #db4437);
+}
+
+.usage-plan-row-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--ha-space-2);
+  font-size: var(--ha-font-size-s);
+}
+
+.usage-plan-pct {
+  font-weight: var(--ha-font-weight-heading);
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-plan-bar {
+  height: 8px;
+  margin-top: 4px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--divider-color);
+}
+
+.usage-plan-fill {
+  display: block;
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+  background: var(--usage-plan-color);
+  transition: width var(--ha-animation-duration-normal, 200ms) ease;
+}
+
+.usage-plan-reset,
+.usage-plan-warn {
+  margin: 4px 0 0;
+  font-size: var(--ha-font-size-s);
+  overflow-wrap: anywhere;
+}
+
+.usage-plan-reset {
+  color: var(--secondary-text-color);
+}
+
+.usage-plan-warn {
+  margin: 0;
+  color: var(--warning-color, #ffa600);
+  font-weight: var(--ha-font-weight-heading);
+}
+
+.usage-plan-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px var(--ha-space-3);
+  padding-top: var(--ha-space-2);
+  border-top: 1px solid var(--divider-color);
+  font-size: var(--ha-font-size-xs, 0.75rem);
+  color: var(--secondary-text-color);
+}
+
+.usage-plan-link {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.usage-plan-link:hover,
+.usage-plan-link:focus-visible {
+  text-decoration: underline;
+}
+
+.usage-plan-cost-note {
+  margin: calc(-1 * var(--ha-space-2)) 0 var(--ha-space-2);
+  padding: 0 var(--ha-space-4);
+}
+
+.wrap.page-usage .usage-plan-cost-note {
+  padding-inline: 0;
+}
+
+/* Chat header: the plan in place of the $ value, colored by the higher window. */
+.chat-plan {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--success-color, #43a047);
+}
+
+.chat-plan[data-level="mid"] {
+  color: var(--warning-color, #ffa600);
+}
+
+.chat-plan[data-level="high"] {
+  color: var(--error-color, #db4437);
+}
+
 .nav-toolbar .usage-open[aria-current="page"],
 .header-usage[aria-current="page"] {
   color: var(--primary-color);

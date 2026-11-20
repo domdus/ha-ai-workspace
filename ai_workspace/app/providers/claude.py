@@ -18,6 +18,7 @@ from app.mcp_config import McpConfigError, load_mcp_servers, merge_mcp_servers, 
 from app.providers.base import ProviderInfo
 from app.plan_quota import (
     CLAUDE_PLAN_REJECTED_CODE,
+    credential_id,
     is_plan_rejection,
     plan_events_from_sdk,
     plan_rejection_error,
@@ -514,7 +515,7 @@ class ClaudeProvider:
             async for sdk_message in stream:
                 if finished:
                     continue
-                for notice in plan_events_from_sdk(book, "claude", sdk_message):
+                for notice in plan_events_from_sdk(book, "claude", sdk_message, credential_id(credential)):
                     plan_seen = True
                     yield notice
                 if isinstance(sdk_message, AssistantMessage):

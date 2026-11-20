@@ -342,12 +342,26 @@ def health(request: Request) -> dict:
         "claude": _provider_flag(providers, "claude"),
         "codex": _provider_flag(providers, "codex"),
         "plan_quota": plan_quota,
+        # 1.6.1b16: per engine, what the Runtime's own credential is (subscription | api_key | None),
+        # where it comes from and a non-secret ID. Home Assistant shows plan limits for a runtime
+        # agent only when its engine reports "subscription" here (app.credentials).
+        "credentials": _credentials(settings),
         # 1.6.0b7/b8 agent forms offer "Sign in with Claude" only when the runtime can run it.
         "claude_login": _login_manager(request.app).available(),
         # Engines with a plan sign-in at /api/auth/{engine}/login (details need the runtime token).
         "login": _login_engines(request),
         "token_required": bool(settings.runtime_token) or not settings.open_without_token(),
     }
+
+
+def _credentials(settings: Settings) -> dict:
+    from app.credentials import engine_credentials
+
+    try:
+        return engine_credentials(settings)
+    except Exception:  # noqa: BLE001 - health must answer
+        logger.debug("runtime credentials not read", exc_info=True)
+        return {}
 
 
 def _login_manager(app: FastAPI):

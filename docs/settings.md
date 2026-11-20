@@ -60,7 +60,7 @@ Tappable links to automations, entities, helpers, and devices are always added. 
 | Option | What it does | Why it matters |
 | --- | --- | --- |
 | **Track usage and costs** | On by default. Records tokens and estimated cost. Sidebar **Usage** opens `/ai-workspace/usage`. | [See what you spend](cost.md). Off stops new records; history stays. Deleting a chat does not remove its usage. |
-| **Show cost in chat header** | On by default. Tokens and cost under the chat title. | Cost at a glance. Off hides only that line. |
+| **Show cost in chat header** | On by default. Tokens and cost under the chat title; for plan agents the plan usage (`5h 12% · W 16%`) instead of $. | Cost at a glance. Off hides only that line. |
 | **Add Home Assistant usage sensors** | Off by default. Creates cost, token, and turn sensors. | [For your own dashboards and automations](cost.md#home-assistant-sensors). The Usage page does not need them. |
 
 ### Home Assistant answers

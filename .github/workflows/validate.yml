@@ -51,3 +51,4 @@ jobs:
           node tests/test_chat_drafts.mjs
           node tests/test_chat_title.mjs
           node tests/test_composer_height.mjs
+          node tests/test_plan_header.mjs

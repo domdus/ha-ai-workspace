@@ -1891,11 +1891,224 @@ export async function mountAiWorkspace(root, options = {}) {
     }
   }
 
+  // Session reset: only the time when it is today (in HA's time zone), else weekday, date and time.
+  function planResetSmartLabel(epoch) {
+    const ts = Number(epoch);
+    if (!Number.isFinite(ts) || ts <= 0) return "?";
+    const tz = hassObj()?.config?.time_zone;
+    const day = (when) => {
+      try {
+        return new Date(when).toLocaleDateString("en-CA", { timeZone: tz || undefined });
+      } catch (_err) {
+        return new Date(when).toLocaleDateString("en-CA");
+      }
+    };
+    return day(ts * 1000) === day(Date.now()) ? planResetLabel(ts) : planResetDayLabel(ts);
+  }
+
   function planHasData(snap) {
     if (!snap) return false;
     return ["status", "session_percent", "week_percent", "session_reset_at", "week_reset_at"].some(
       (key) => snap[key] != null && snap[key] !== "",
     );
+  }
+
+  function planHasPercent(snap) {
+    return Boolean(snap) && (snap.session_percent != null || snap.week_percent != null);
+  }
+
+  // One window of a snapshot: percent (0 once the window has rolled over), reset, rolled over.
+  function planWindow(snap, name) {
+    const raw = snap?.[`${name}_percent`];
+    const reset = snap?.[`${name}_reset_at`];
+    const gone = reset != null && Number(reset) > 0 && Number(reset) <= Date.now() / 1000;
+    let percent = raw == null || raw === "" ? null : Math.max(0, Math.min(100, Math.round(Number(raw))));
+    if (!Number.isFinite(percent)) percent = null;
+    if (gone && percent != null) percent = 0;
+    return { percent, reset: reset == null || gone ? null : reset, gone };
+  }
+
+  // Same thresholds for the Usage cards and the chat header: yellow from 60 %, red from 85 %.
+  function planLevel(percent) {
+    const n = Number(percent);
+    if (percent == null || !Number.isFinite(n)) return "ok";
+    if (n >= 85) return "high";
+    if (n >= 60) return "mid";
+    return "ok";
+  }
+
+  // Plan data for an agent that bills a subscription. The backend resolves "billing" ("plan": its own
+  // Plan token, or the Runtime's own credential when the Runtime reports a subscription for that
+  // engine; "api_key" / "unknown" / "api": $) and names the credential in "plan_credential". Only a
+  // snapshot of that engine from exactly that credential counts: never another agent's sign-in.
+  function planSnapForAgent(item, quota) {
+    if (!item || String(item.billing || "") !== "plan") return null;
+    const credential = String(item.plan_credential || "");
+    if (!credential) return null;
+    const snap = quota?.[String(item.provider || "")];
+    if (!snap || String(snap.credential || "") !== credential) return null;
+    return planHasPercent(snap) ? snap : null;
+  }
+
+  let lastPlanQuota = {};
+
+  function planAgentIds(quota) {
+    return new Set(providerItems.filter((item) => planSnapForAgent(item, quota)).map((item) => item.id));
+  }
+
+  // Header text where the chat's $ used to be: "5h 12% · W 16%", colored by the higher window.
+  function planChip(snap, costText) {
+    const session = planWindow(snap, "session");
+    const week = planWindow(snap, "week");
+    const fmt = (value) => (value.percent == null ? t("usage_plan_unknown") : `${value.percent}%`);
+    const chip = document.createElement("span");
+    chip.className = "chat-plan";
+    chip.dataset.level = planLevel(Math.max(session.percent ?? -1, week.percent ?? -1));
+    chip.textContent = t("chat_plan_short", { session: fmt(session), week: fmt(week) });
+    const resetText = (value, label) =>
+      value.gone ? t("usage_plan_rolled_over") : value.reset != null ? `${t("usage_plan_reset")} ${label(value.reset)}` : "";
+    const line = (name, value, label) => {
+      const reset = resetText(value, label);
+      const pct = value.percent == null ? t("usage_plan_unknown") : `${value.percent}%`;
+      return `${name}: ${pct}${reset ? ` (${reset})` : ""}`;
+    };
+    const lines = [
+      line(t("usage_plan_session"), session, planResetSmartLabel),
+      line(t("usage_plan_week"), week, planResetDayLabel),
+    ];
+    if (snap.overage) lines.push(t("usage_plan_overage"));
+    if (costText) lines.push(t("chat_plan_cost", { cost: costText }));
+    chip.title = lines.join("\n");
+    chip.setAttribute("aria-label", lines.join(". "));
+    return chip;
+  }
+
+  // The chat's usage line; for a plan agent the $ part becomes the plan chip (same place, no new row).
+  let chatUsageShown = null;
+
+  function setChatUsageLine(prefix, bits, costText, snap) {
+    if (!chatUsageEl) return;
+    chatUsageShown = { prefix, bits, costText };
+    const nodes = [];
+    const text = (value) => document.createTextNode(value);
+    if (prefix) nodes.push(text(`${prefix}: `));
+    const before = bits.before.join(" · ");
+    const after = bits.after.join(" · ");
+    if (snap) {
+      if (before) nodes.push(text(`${before} · `));
+      nodes.push(planChip(snap, costText));
+      if (after) nodes.push(text(` · ${after}`));
+    } else {
+      nodes.push(text([...bits.before, ...(costText ? [costText] : []), ...bits.after].join(" · ")));
+    }
+    chatUsageEl.replaceChildren(...nodes);
+    chatUsageEl.hidden = false;
+  }
+
+  function chatPlanSnap() {
+    return planSnapForAgent(providerItems.find((item) => item.id === selectedAgent()), lastPlanQuota);
+  }
+
+  // The agent list arrived or the chat's agent changed: $ or plan for the line already shown.
+  function rerenderChatUsage() {
+    if (!chatUsageShown || !chatUsageEl || chatUsageEl.hidden) return;
+    const { prefix, bits, costText } = chatUsageShown;
+    setChatUsageLine(prefix, bits, costText, chatPlanSnap());
+  }
+
+  function planBar(label, value, resetLabel) {
+    const row = document.createElement("div");
+    row.className = "usage-plan-row";
+    row.dataset.level = planLevel(value.percent);
+    const head = document.createElement("div");
+    head.className = "usage-plan-row-head";
+    const name = document.createElement("span");
+    name.className = "usage-plan-label";
+    name.textContent = label;
+    const pct = document.createElement("span");
+    pct.className = "usage-plan-pct";
+    pct.textContent = value.percent == null ? t("usage_plan_unknown") : `${value.percent}%`;
+    head.append(name, pct);
+    const bar = document.createElement("div");
+    bar.className = "usage-plan-bar";
+    bar.setAttribute("role", "progressbar");
+    bar.setAttribute("aria-label", label);
+    bar.setAttribute("aria-valuemin", "0");
+    bar.setAttribute("aria-valuemax", "100");
+    if (value.percent != null) bar.setAttribute("aria-valuenow", String(value.percent));
+    const fill = document.createElement("span");
+    fill.className = "usage-plan-fill";
+    fill.style.width = `${value.percent ?? 0}%`;
+    bar.appendChild(fill);
+    row.append(head, bar);
+    const resetText = value.gone
+      ? t("usage_plan_rolled_over")
+      : value.reset != null
+        ? `${t("usage_plan_reset")} ${resetLabel(value.reset)}`
+        : "";
+    if (resetText) {
+      const reset = document.createElement("p");
+      reset.className = "usage-plan-reset";
+      reset.textContent = resetText;
+      row.appendChild(reset);
+    }
+    return row;
+  }
+
+  // One plan as a usage card: two bars (session, week) with their resets, warnings, as-of and link.
+  function planCard(engine, snap, link) {
+    const card = document.createElement("article");
+    card.className = "usage-card usage-plan";
+    const title = document.createElement("p");
+    title.className = "usage-card-title";
+    title.textContent = t(`usage_plan_${engine}`);
+    card.appendChild(title);
+    if (planHasPercent(snap)) {
+      card.append(
+        planBar(t("usage_plan_session"), planWindow(snap, "session"), planResetSmartLabel),
+        planBar(t("usage_plan_week"), planWindow(snap, "week"), planResetDayLabel),
+      );
+    } else {
+      const line = document.createElement("p");
+      line.className = "usage-card-meta";
+      line.textContent = planUsageLine(snap);
+      card.appendChild(line);
+    }
+    const warnings = [];
+    if (planHasPercent(snap)) {
+      if (snap.status === "rejected") warnings.push(t("usage_plan_status_rejected"));
+      else if (snap.status === "allowed_warning") warnings.push(t("usage_plan_status_warning"));
+    }
+    if (snap.overage) warnings.push(t("usage_plan_overage"));
+    for (const text of warnings) {
+      const warn = document.createElement("p");
+      warn.className = "usage-plan-warn";
+      warn.setAttribute("role", "status");
+      warn.textContent = text;
+      card.appendChild(warn);
+    }
+    const when = Date.parse(snap.updated_at || "");
+    if (Number.isFinite(when) || link) {
+      const foot = document.createElement("div");
+      foot.className = "usage-plan-foot";
+      if (Number.isFinite(when)) {
+        const asOf = document.createElement("span");
+        asOf.className = "usage-plan-asof";
+        asOf.textContent = t("usage_plan_updated", { when: planResetDayLabel(Math.floor(when / 1000)) });
+        foot.appendChild(asOf);
+      }
+      if (link) {
+        const a = document.createElement("a");
+        a.className = "usage-plan-link";
+        a.href = link;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.textContent = t("usage_plan_official");
+        foot.appendChild(a);
+      }
+      card.appendChild(foot);
+    }
+    return card;
   }
 
   // One line per plan: session % (reset), week % (reset). Status only (the SDK sent no percent): say so.
@@ -1919,19 +2132,6 @@ export async function mountAiWorkspace(root, options = {}) {
     else if (snap.week_reset_at != null) week += ` (${t("usage_plan_reset")} ${planResetDayLabel(snap.week_reset_at)})`;
     parts.push(`${t("usage_plan_week")}: ${week}`);
     return parts.join(" · ");
-  }
-
-  function planUsageMeta(snap) {
-    const bits = [];
-    if (snap.session_percent != null || snap.week_percent != null) {
-      if (snap.status === "rejected") bits.push(t("usage_plan_status_rejected"));
-      else if (snap.status === "allowed_warning") bits.push(t("usage_plan_status_warning"));
-    }
-    const when = Date.parse(snap.updated_at || "");
-    if (Number.isFinite(when)) {
-      bits.push(t("usage_plan_updated", { when: planResetDayLabel(Math.floor(when / 1000)) }));
-    }
-    return bits.join(" · ");
   }
 
   function planEngineTitle(engine) {
@@ -3849,6 +4049,8 @@ export async function mountAiWorkspace(root, options = {}) {
     const current = selectedAgent();
     const item = providerItems.find((row) => row.id === current);
     renderAgentBadge(item);
+    // Checks chatUsageShown first: safe before the header's usage line exists.
+    rerenderChatUsage();
     if (!agentPicker || !agentMenu || !agentLabel) return;
     const ready = agentChoices(providerItems);
     const models = modelSwitcher && item && item.kind !== "assist";
@@ -6859,15 +7061,22 @@ export async function mountAiWorkspace(root, options = {}) {
     return Number(summary?.cache_read_tokens || 0) + Number(summary?.cache_write_tokens || 0);
   }
 
+  // A summary's line in parts: before the cost, the cost, after it (the chat header swaps the cost).
+  function usageParts(summary) {
+    const before = [`${tokenLabel(summary.total_tokens || 0)} ${t("usage_tokens")}`];
+    const cached = cachedTokens(summary);
+    if (cached) before.push(`${tokenLabel(cached)} ${t("usage_cached")}`);
+    let cost = "";
+    if (summary.cost_usd != null) cost = money(summary.cost_usd);
+    else if (summary.missing_cost) cost = t("usage_unknown_cost");
+    const after = summary.turns ? [`${summary.turns} ${turnWord(summary.turns)}`] : [];
+    return { before, cost, after };
+  }
+
   function usageLine(summary) {
     if (!summary) return "";
-    const bits = [`${tokenLabel(summary.total_tokens || 0)} ${t("usage_tokens")}`];
-    const cached = cachedTokens(summary);
-    if (cached) bits.push(`${tokenLabel(cached)} ${t("usage_cached")}`);
-    if (summary.cost_usd != null) bits.push(money(summary.cost_usd));
-    else if (summary.missing_cost) bits.push(t("usage_unknown_cost"));
-    if (summary.turns) bits.push(`${summary.turns} ${turnWord(summary.turns)}`);
-    return bits.join(" · ");
+    const { before, cost, after } = usageParts(summary);
+    return [...before, ...(cost ? [cost] : []), ...after].join(" · ");
   }
 
   function applyTurnUsage(data) {
@@ -6875,8 +7084,12 @@ export async function mountAiWorkspace(root, options = {}) {
     // A worker job's usage is stored on its own; the "last" line stays this turn's.
     if (chatUsageEl && showChatUsage && !data.worker) {
       const cost = data.cost_usd == null ? t("usage_unknown_cost") : money(data.cost_usd);
-      chatUsageEl.hidden = false;
-      chatUsageEl.textContent = `${t("usage_last")}: ${tokenLabel(data.total_tokens || 0)} · ${cost}`;
+      setChatUsageLine(
+        t("usage_last"),
+        { before: [tokenLabel(data.total_tokens || 0)], after: [] },
+        cost,
+        chatPlanSnap(),
+      );
     }
     refreshChatUsage();
     if (usageIsVisible()) loadUsage();
@@ -6899,13 +7112,14 @@ export async function mountAiWorkspace(root, options = {}) {
       const resp = await apiFetch(`${API}/usage?session_id=${encodeURIComponent(sessionId)}`);
       if (!resp?.ok) return;
       const body = await resp.json();
+      if (body.plan_quota && typeof body.plan_quota === "object") lastPlanQuota = body.plan_quota;
       const summary = body.session;
       if (!summary || !summary.turns) {
         chatUsageEl.hidden = true;
         return;
       }
-      chatUsageEl.hidden = false;
-      chatUsageEl.textContent = usageLine(summary);
+      const { before, cost, after } = usageParts(summary);
+      setChatUsageLine("", { before, after }, cost, chatPlanSnap());
     } catch (_err) {
       /* keep last */
     }
@@ -7425,6 +7639,31 @@ export async function mountAiWorkspace(root, options = {}) {
       usageList.replaceChildren(frag);
       return;
     }
+    const plan = body.plan_quota || {};
+    if (plan && typeof plan === "object") lastPlanQuota = plan;
+    const planLinks = body.plan_links || {};
+    const engineOrder = ["claude", "cursor", "codex"];
+    const planRows = engineOrder
+      .map((engine) => [engine, plan[engine]])
+      .filter(([, snap]) => planHasData(snap));
+    const planSection = document.createDocumentFragment();
+    const planHeading = document.createElement("p");
+    planHeading.className = "usage-heading";
+    planHeading.textContent = t("usage_plan_heading");
+    planSection.appendChild(planHeading);
+    if (planRows.length) {
+      const planGrid = document.createElement("div");
+      planGrid.className = "usage-grid usage-plans";
+      for (const [engine, snap] of planRows) planGrid.appendChild(planCard(engine, snap, planLinks[engine]));
+      planSection.appendChild(planGrid);
+    } else {
+      const note = document.createElement("p");
+      note.className = "usage-empty";
+      note.textContent = t("usage_plan_empty");
+      planSection.appendChild(note);
+    }
+    // On a subscription the limits are what counts: plan cards first, the $ estimates below.
+    if (planRows.length) frag.appendChild(planSection);
     const grid = document.createElement("div");
     grid.className = "usage-grid";
     if (body.range === "custom" && body.totals?.selected) {
@@ -7436,51 +7675,14 @@ export async function mountAiWorkspace(root, options = {}) {
       metricCard(t("usage_all"), body.totals?.all),
     );
     frag.appendChild(grid);
-    const plan = body.plan_quota || {};
-    const planLinks = body.plan_links || {};
-    const engineOrder = ["claude", "cursor", "codex"];
-    const planRows = engineOrder
-      .map((engine) => [engine, plan[engine]])
-      .filter(([, snap]) => planHasData(snap));
-    const heading = document.createElement("p");
-    heading.className = "usage-heading";
-    heading.textContent = t("usage_plan_heading");
-    frag.appendChild(heading);
-    if (!planRows.length) {
+    const planAgents = planAgentIds(plan);
+    if (planAgents.size) {
       const note = document.createElement("p");
-      note.className = "usage-empty";
-      note.textContent = t("usage_plan_empty");
+      note.className = "usage-card-meta usage-plan-cost-note";
+      note.textContent = t("usage_plan_cost_note");
       frag.appendChild(note);
     }
-    for (const [engine, snap] of planRows) {
-        const card = document.createElement("article");
-        card.className = "usage-plan";
-        const title = document.createElement("p");
-        title.className = "usage-plan-title";
-        title.textContent = t(`usage_plan_${engine}`);
-        const line = document.createElement("p");
-        line.className = "usage-plan-line";
-        line.textContent = planUsageLine(snap);
-        card.append(title, line);
-        const meta = planUsageMeta(snap);
-        if (meta) {
-          const note = document.createElement("p");
-          note.className = "usage-plan-line usage-plan-meta";
-          note.textContent = meta;
-          card.appendChild(note);
-        }
-        const link = planLinks[engine];
-        if (link) {
-          const a = document.createElement("a");
-          a.className = "usage-plan-link";
-          a.href = link;
-          a.target = "_blank";
-          a.rel = "noopener noreferrer";
-          a.textContent = t("usage_plan_official");
-          card.appendChild(a);
-        }
-        frag.appendChild(card);
-    }
+    if (!planRows.length) frag.appendChild(planSection);
     if (body.tts?.today?.turns || body.tts?.all?.turns) {
       frag.appendChild(metricCard(t("usage_tts"), body.tts.today, "tts"));
     }
@@ -7548,6 +7750,12 @@ export async function mountAiWorkspace(root, options = {}) {
         all.className = "usage-agent-all";
         all.textContent = `${t("usage_all")}: ${usageLine(agent.all)}`;
         row.append(name, today, all);
+        if (planAgents.has(agent.id)) {
+          const note = document.createElement("p");
+          note.className = "usage-agent-all";
+          note.textContent = t("usage_plan_theoretical");
+          row.appendChild(note);
+        }
         frag.appendChild(row);
       }
     }

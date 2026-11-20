@@ -169,6 +169,25 @@ def auth_info(path: Path) -> dict[str, Any]:
     return {"mode": "", "plan": None}
 
 
+def account_key(path: Path) -> str:
+    """Which ChatGPT account auth.json signs in (account id, else the token subject), or "".
+
+    Tokens rotate while Codex refreshes them; the account does not. Only used, hashed, to tell which
+    credential a plan snapshot came from (app.plan_quota.credential_id). Never sent as is.
+    """
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return ""
+    tokens = data.get("tokens") if isinstance(data, dict) and isinstance(data.get("tokens"), dict) else {}
+    if not (tokens.get("refresh_token") or tokens.get("access_token")):
+        return ""
+    claims = _jwt_claims(str(tokens.get("id_token") or ""))
+    auth = claims.get("https://api.openai.com/auth")
+    account = (auth.get("chatgpt_account_id") if isinstance(auth, dict) else None) or tokens.get("account_id")
+    return str(account or claims.get("sub") or "signed-in")
+
+
 def _seed_text(raw: str) -> str:
     value = (raw or "").strip()
     if not value:

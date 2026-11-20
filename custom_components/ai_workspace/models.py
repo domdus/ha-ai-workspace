@@ -50,6 +50,11 @@ class ProviderInfo:
     title: str = ""
     model: str = ""
     provider: str = ""
+    # How the agent pays: "plan" (a plan token of its own), "runtime" (the Runtime's own credential,
+    # a plan sign-in or an API key), "api_key" (an API key) or "api" (a cloud provider's API key).
+    # "runtime" is resolved per request with the Runtime's credential report (billing.py) before it
+    # reaches the chat: plan (subscription), api_key, or unknown ($) when the Runtime does not say.
+    billing: str = "api"
 
     def as_dict(self) -> dict:
         return {
@@ -63,6 +68,7 @@ class ProviderInfo:
             "title": self.title or self.label,
             "model": self.model,
             "provider": self.provider,
+            "billing": self.billing,
         }
 
 

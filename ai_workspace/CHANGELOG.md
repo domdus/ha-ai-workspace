@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.1b16
+
+**Plan limits as cards, first on the Usage page, and in the chat header.**
+
+- **Usage page:** each plan with data (Claude, Cursor, Codex) is its own card in the style of the other usage cards: the plan name, a bar for the session window and one for the week window (green, yellow from 60 %, red from 85 %, in the theme's colors), each with its reset time (session: only the time when it is today, otherwise weekday, date and time; week: weekday, date and time). **Overage active** shows as a warning; the "As of" time and the official usage page link sit in the card's footer. Fits on a 390 px phone without sideways scrolling.
+- **Plan first:** when a plan has data, its cards come before the Today / This month / Total cost cards. A short note under the cost cards (and on the rows of plan agents) says that their $ figures are theoretical API list prices. Without plan data the page looks as before.
+- **Chat header:** for an agent on a subscription plan (Claude or Codex signed in with the plan or using a plan token, once plan limits are known) the $ value in the usage line becomes the plan usage, for example `5h 12% · W 16%`, in the same place and colored by the higher window. The tooltip and screen reader label have both percentages, both reset times, overage and the chat's theoretical API price. Agents with an API key (Cursor, OpenAI, Gemini, Ollama, an Anthropic or OpenAI key on a runtime agent, ...) keep showing $. The agent list now says how each agent pays (`billing`: plan, api_key, unknown, api; `billing_source`: agent or runtime; `plan_credential`).
+- **Runtime agents bill what the Runtime really uses:** a Claude or Codex agent without a key of its own runs on the Runtime's credential, which can be a plan sign-in or an API key in its environment (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY` / `CODEX_API_KEY`). The Runtime now reports per engine which kind it uses (`credentials` in `/api/health`: `subscription` or `api_key`, the source and a one-way credential ID; never a secret). Plan % shows only when the Runtime reports a subscription for exactly that engine; with an API key, an unreachable Runtime or an older Runtime that reports nothing the header shows $. Precedence is the Runtime's own, which hands the engine exactly one credential: Claude: Sign in with Claude > `CLAUDE_CODE_OAUTH_TOKEN` > `ANTHROPIC_API_KEY` (the other variables are blanked for Claude Code, which would otherwise prefer the API key); Codex: auth.json (Sign in with ChatGPT) > `OPENAI_API_KEY` / `CODEX_API_KEY`.
+- **Plan data per credential:** every plan snapshot now carries the ID of the credential its turn ran on. The chat header uses a snapshot only for the agent with that credential (its own Plan token, or the Runtime's sign-in for that engine), never another agent's sign-in or another engine's numbers; a reading from another credential replaces the stored one instead of mixing with it. Snapshots stored before this version have no ID, so the header shows $ until the next plan reading.
+- **Sensors:** `sensor.ai_workspace_<engine>_plan_session_reset` was always unavailable: it handed Home Assistant a text instead of a date and time, which a timestamp sensor rejects. It now shows the session reset.
+- Integration and Runtime both change: update the Runtime (App or Docker image) to 1.6.1b16 too; with an older Runtime, runtime agents show $.
+
 ## 1.6.1b15
 
 **Agents build AI Workspace tasks, and new tasks get the label automatically.**

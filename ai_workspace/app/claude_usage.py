@@ -25,7 +25,7 @@ import urllib.error
 import urllib.request
 from typing import Any
 
-from app.plan_quota import normalize_oauth_usage
+from app.plan_quota import credential_id, normalize_oauth_usage
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +106,7 @@ class ClaudeUsageReader:
         async def run() -> None:
             snap = await self.read(token)
             if snap:
-                book.apply("claude", snap)
+                book.apply("claude", snap, credential_id(token))
 
         try:
             self._task = asyncio.get_running_loop().create_task(run())

@@ -908,11 +908,18 @@ class ProvidersView(HomeAssistantView):
             for item in (data.get("providers") or {}).values()
         ):
             await async_bind_runtime(hass, data, force=True)
+        from .billing import async_runtime_credentials, resolve_row
+
+        providers = list(data["providers"].values())
+        # Runtime agents bill whatever the Runtime's own credential is: ask it (cached 30 s). Unknown
+        # (unreachable, older Runtime) resolves to $, never to plan limits.
+        needs_runtime = any(getattr(item.info, "billing", "") == "runtime" for item in providers)
+        credentials = await async_runtime_credentials(hass) if needs_runtime else {}
         rows = []
-        for item in data["providers"].values():
+        for item in providers:
             row = item.info.as_dict()
             row["kind"] = getattr(item, "kind", "api")
-            rows.append(row)
+            rows.append(resolve_row(row, item, credentials))
         rows.extend(list_assist_agents(hass))
         return self.json(rows)
 

@@ -186,6 +186,11 @@ export const I18N = {
     usage_plan_status_rejected: "Limit reached",
     usage_plan_rolled_over: "window reset since",
     usage_plan_updated: "As of {when}",
+    usage_plan_overage: "Overage active – extra costs beyond the plan",
+    usage_plan_cost_note: "For plan agents the $ figures are theoretical API list prices; the plan limits above are what counts.",
+    usage_plan_theoretical: "Theoretical API price (billed via the plan)",
+    chat_plan_short: "5h {session} · W {week}",
+    chat_plan_cost: "Theoretical API price of this chat: {cost}",
   },
   de: {
     active_agent: "Aktiver Agent",
@@ -374,6 +379,11 @@ export const I18N = {
     usage_plan_status_rejected: "Limit erreicht",
     usage_plan_rolled_over: "seitdem zurückgesetzt",
     usage_plan_updated: "Stand {when}",
+    usage_plan_overage: "Zusatzkosten aktiv (Overage über das Plan-Limit hinaus)",
+    usage_plan_cost_note: "Bei Plan-Agenten sind die $-Werte theoretische API-Listenpreise; maßgeblich sind die Plan-Limits oben.",
+    usage_plan_theoretical: "Theoretischer API-Preis (abgerechnet über den Plan)",
+    chat_plan_short: "5h {session} · W {week}",
+    chat_plan_cost: "Theoretischer API-Preis dieses Chats: {cost}",
   },
   fr: {
     active_agent: "Agent actif",

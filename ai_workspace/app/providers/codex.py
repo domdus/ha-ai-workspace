@@ -31,7 +31,8 @@ from typing import Any, AsyncIterator, Callable
 from app.codex_login import cli_path, credential_source, sdk_config, sdk_installed
 from app.events import _tool_event
 from app.mcp_config import McpConfigError, load_mcp_servers, merge_mcp_servers, servers_from_chat_mcp
-from app.plan_quota import plan_events_from_sdk, plan_rejection_error
+from app.credentials import codex_runtime_id
+from app.plan_quota import credential_id, plan_events_from_sdk, plan_rejection_error
 from app.providers.base import ProviderInfo
 from app.providers.cursor import CursorRuntime, _take_worker_usage, apply_handoff, apply_standing
 from app.redact import redact
@@ -483,6 +484,9 @@ class CodexProvider:
             yield {"type": "error", "message": MISSING_KEY}
             return
         secrets = [key] if key else []
+        # Which credential this turn's plan windows belong to (app.credentials): the ChatGPT sign-in,
+        # or the API key. Home Assistant only shows a snapshot for the agent that ran on it.
+        plan_credential = codex_runtime_id(self.settings) if kind == "chatgpt" else credential_id(key)
         try:
             exclusive = bool((mcp or {}).get("exclusive"))
             file_servers = {} if exclusive else load_mcp_servers(self.settings.mcp_config_path)
@@ -549,7 +553,7 @@ class CodexProvider:
                     method = str(getattr(note, "method", ""))
                     payload = getattr(note, "payload", None)
                     if method == "account/rateLimits/updated":
-                        for notice in plan_events_from_sdk(book, "codex", as_dict(payload)):
+                        for notice in plan_events_from_sdk(book, "codex", as_dict(payload), plan_credential):
                             yield notice
                         continue
                     for event in map_notification(method, payload, state):
@@ -576,7 +580,7 @@ class CodexProvider:
                     pass
             if kind == "chatgpt":
                 # Codex sends plan usage as a notification outside the turn; ask for it once instead.
-                for notice in await self._plan_limits(codex, book):
+                for notice in await self._plan_limits(codex, book, plan_credential):
                     yield notice
         finally:
             try:
@@ -613,7 +617,7 @@ class CodexProvider:
     def _error(text: str) -> dict[str, Any]:
         return auth_failed_event() if text == AUTH_FAILED else {"type": "error", "message": text}
 
-    async def _plan_limits(self, codex: Any, book: Any) -> list[dict[str, Any]]:
+    async def _plan_limits(self, codex: Any, book: Any, credential: str = "") -> list[dict[str, Any]]:
         """ChatGPT plan windows (account/rateLimits/read) -> plan_notice / plan_usage events. Never raises."""
         if book is None:
             return []
@@ -632,7 +636,7 @@ class CodexProvider:
         except Exception:
             logger.debug("codex rate limits not read", exc_info=True)
             return []
-        return plan_events_from_sdk(book, "codex", as_dict(answer))
+        return plan_events_from_sdk(book, "codex", as_dict(answer), credential)
 
     async def models(self, api_key: str = "") -> list[dict[str, str]]:
         """Models the Codex account offers."""
