@@ -1,13 +1,14 @@
 # Changelog
 
-## Unreleased (agent fallback)
+## 1.6.1b6
+
+**Agent fallback, agent tasks, and "Use HA Components" only changes the message field.** When one agent's provider fails, the next agent in your list carries on. The new action `ai_workspace.run_task` and a **Tasks** page run prompts on a schedule as real automations. Messages always use the standard look.
 
 **Agent fallback: when one agent's provider fails, the next one in your list carries on.** Optional and off by default; existing setups do not change.
 
 **Settings → AI Workspace → Configure → Fallback** (collapsed)
 - **Enable fallback** and an ordered list of your agents (the order you pick them in; remove and add one again to move it down). The first agent is the preferred one and new chats start with it. While fallback is on, this list replaces the **Default agent**.
 - **Back to the preferred agent**: *Off* (the chat stays on the agent that took over), *On new message*, or *After reset or wait time*. It never switches in the middle of a reply.
-- The **Last used** choice of **Default agent** is now translated (German "Zuletzt verwendet" and all other languages).
 
 **When it switches**
 - Only for provider-side failures: plan or token limit, HTTP 429, expired or invalid sign-in, timeouts, connection errors, overloaded or failing servers (5xx/529).
@@ -27,27 +28,15 @@
 - Checked only at the start of a turn, from the top of the list. Limits are never checked before their known reset; other failures wait 5, 15, then 60 minutes. The check is cheap (Runtime status and sign-in, or the provider's model list), never a model prompt. After going back, the chat stays put for 10 minutes so two agents do not take turns failing.
 - A chat you moved to another agent yourself stays where you put it.
 
-- The Runtime App changed a little (tool calls carry a short summary of their arguments and results for the journal). The fallback also works with an older Runtime, the journal then only has the tool names.
-
-## Unreleased (HA components)
-
-**"Use HA Components" now only changes the message field.** Messages always look the same, with the option on or off.
-
-- With **Use HA Components** on, only the composer changes: Home Assistant's own message field (label "Message") with the agent and model pickers under it, as before. Your messages, the agent's replies, the "Thinking" line, the row with time, copy and read aloud, notices and tool steps always use the standard look, in the floating chat and in the full panel.
-- The standard look follows your Home Assistant theme as before. The floating chat button is the same in both modes.
-- The option stays off by default and keeps its setting. If you had it on, you now get the standard messages with the HA message field; nothing to change.
-- Copy, read aloud, the reply row fading in after a reply, drafts, queued prompts and the chat title work the same with both message fields.
-
-## Unreleased (agent tasks)
-
 **Agent tasks: prompts that run on a schedule, as real Home Assistant automations.** A new action **AI Workspace: Run agent task** (`ai_workspace.run_task`) runs a prompt with an agent, and a new **Tasks** page in AI Workspace creates and manages those automations for you.
 
 **The action**
-- `prompt` (templates work), `task_name`, `agent` (empty: the default agent, then the others as fallback), `chat` (none, or one continuing task chat per task, titled after the task), `notify` (short result as a push message), `allow_changes` (off by default) and `timeout` (10 minutes by default). It shows in the automation and script editor with its fields in all 15 languages.
+- `prompt` (templates work), `task_name`, `agent` (empty: the Fallback list when on, else the default agent, then the others), `chat` (none, or one continuing task chat per task, titled after the task), `notify` (short result as a push message), `allow_changes` (off by default) and `timeout` (10 minutes by default). It shows in the automation and script editor with its fields in all 15 languages.
 - With a response variable it returns `status`, `response`, `agent`, `chat_id`, `duration` and `usage`. Without one it runs in the background.
 - Every run starts fresh; only the task chat keeps earlier runs. Write the prompt so it says everything the agent needs.
 - **Read-only by default:** with Allow changes off the agent only gets tools that read Home Assistant; service calls and config writes are refused.
 - **Loop protection, always:** a task cannot start tasks, trigger automations, or create, edit or delete automations or scripts. Runtime agents get no shell or file tools during a task. The same task never runs twice at once, at most three run together.
+- Without a named agent, task runs use the **Fallback** list when Fallback is on (agents waiting out a limit last) and hand over to the next agent on provider failures with a journal of the tool calls already made, like chats do. A failing tool or a refusal never switches. Tasks do not pause; with no agent left the run ends with an error.
 - Task runs count on the Usage page, tagged as tasks. A settings reload waits for running tasks like it waits for chat replies.
 
 **The Tasks page** (administrators)
@@ -56,8 +45,20 @@
 - Each task shows on/paused, the last run and its result, and has Run now, Open task chat, Open in automation editor, and Delete.
 - Tasks you change in the automation editor keep working; the page shows what it can and keeps the rest.
 
-- The Runtime App changed: Claude, Cursor and Codex agents need Runtime 1.6.1b6 or newer to run tasks (its MCP proxy enforces read-only and loop protection). Cloud agents work with Home Assistant alone.
 - Examples (morning briefing, weekly report, evening check): [docs/tasks.md](../docs/tasks.md).
+
+**"Use HA Components" now only changes the message field.** Messages always look the same, with the option on or off.
+
+- With **Use HA Components** on, only the composer changes: Home Assistant's own message field (label "Message") with the agent and model pickers under it, as before. Your messages, the agent's replies, the "Thinking" line, the row with time, copy and read aloud, notices and tool steps always use the standard look, in the floating chat and in the full panel.
+- The standard look follows your Home Assistant theme as before. The floating chat button is the same in both modes.
+- The option stays off by default and keeps its setting. If you had it on, you now get the standard messages with the HA message field; nothing to change.
+- Copy, read aloud, the reply row fading in after a reply, drafts, queued prompts and the chat title work the same with both message fields.
+
+- The **Last used** choice of **Default agent** is now translated (German "Zuletzt verwendet" and all other languages).
+
+**Update**
+- Update the integration and the Runtime App to 1.6.1b6.
+- Runtime: Claude, Cursor and Codex agents need Runtime 1.6.1b6 or newer to run tasks (its MCP proxy enforces read-only and loop protection). Tool calls also carry a short summary of their arguments and results for the fallback journal; with an older Runtime the fallback still works and the journal only has the tool names. Cloud agents work with Home Assistant alone.
 
 ## 1.6.1b5
 
