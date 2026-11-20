@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.1b8
+
+**Model prices refreshed from LiteLLM.** The cost display knows a few new models and an updated price tier. Nothing else changes.
+
+- New: `claude-fable-5-2`, `claude-mythos-5-2`, `gemini-4-carbon`, `gemini-4-hydrogen`.
+- `gpt-6-cyber` now has separate prices above 272k tokens of context (input, cache read and output), like the other GPT-6 models.
+- Only the integration's price table changes. The Runtime app version moves to 1.6.1b8 with the release but has no functional change.
+
 ## 1.6.1b7
 
 **The fallback agent list can be reordered by drag.** In **Settings → AI Workspace → Configure → Fallback**, every agent chip in **Agents in order** now has a drag handle. Drag a chip with the mouse or by touch to move it; you no longer have to remove an agent and add it again.
