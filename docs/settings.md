@@ -42,7 +42,7 @@ Tappable links to automations, entities, helpers, and devices are always added. 
 | **Show floating AI button** | Bottom-right robot icon on other Home Assistant pages. It slides up when another corner button is already there. | Open the same chat without leaving the page you are on. |
 | **Show dictate button** | Microphone in the message box. On by default. | Hide it if you never dictate. |
 | **Allow normal users** | Off by default. Non-admins get the floating chat only, with the same Home Assistant access as their own login. | [Privacy](privacy.md). Only turn this on if you trust everyone with a login. |
-| **Use HA Components** | Off by default. Builds the chat from Home Assistant’s own UI parts. | Can look better with some themes. |
+| **Use HA Components** | Off by default. Only the message field and the agent and model pickers under it use Home Assistant’s own style. | Messages always use the standard look, which follows your theme. |
 | **Cross chat** | Off by default. A question can use a short excerpt from another chat whose title shares words with it. That other chat is not changed. | Helps when you already discussed a room or automation in a different chat. |
 | **Chats to keep** | Newest unpinned chats per person (default 30). Pinned chats are always kept. | Stops the history list growing forever. |
 

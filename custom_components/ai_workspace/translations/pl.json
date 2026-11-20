@@ -51,7 +51,7 @@
               "enable_overlay": "Okrągły przycisk AI w rogu każdej strony Home Assistant, żeby pytać bez opuszczania strony. Na stronach Ustawień jest wyżej, żeby nie zasłaniał innych przycisków.",
               "enable_dictate": "Przycisk mikrofonu w polu wiadomości. Ukryj go, jeśli nigdy nie dyktujesz.",
               "allow_users": "Wyłączone: tylko administratorzy. Włączone: użytkownicy bez uprawnień administratora dostają pływający czat z takim samym dostępem do Home Assistant jak ich własne konto. Pełna strona AI Workspace zostaje tylko dla administratorów. Włącz tylko, jeśli ufasz wszystkim, którzy mają konto.",
-              "ui_theme": "Domyślnie wyłączone. Buduje czat z własnych elementów interfejsu Home Assistant. Wypróbuj, jeśli czat nie pasuje do twojego motywu.",
+              "ui_theme": "Domyślnie wyłączone. Zmienia tylko pole wiadomości oraz wybór agenta i modelu na styl Home Assistant. Wiadomości zawsze mają standardowy wygląd.",
               "cross_chat": "Domyślnie wyłączone. Gdy włączone, pytanie może użyć krótkiego fragmentu innego czatu, którego tytuł ma wspólne słowa, nawet jeśli o nim nie wspomnisz. Pomaga, gdy już rozmawiałeś o tym samym pomieszczeniu lub automatyzacji. Tamten czat nie jest zmieniany.",
               "keep_chats": "Najnowsze nieprzypięte czaty zachowywane na osobę. Starsze są usuwane, żeby lista nie rosła bez końca. Przypięte czaty zostają zawsze. Domyślnie 30."
             }
@@ -166,7 +166,7 @@
               "enable_overlay": "Okrągły przycisk AI w rogu każdej strony Home Assistant, żeby pytać bez opuszczania strony. Na stronach Ustawień jest wyżej, żeby nie zasłaniał innych przycisków.",
               "enable_dictate": "Przycisk mikrofonu w polu wiadomości. Ukryj go, jeśli nigdy nie dyktujesz.",
               "allow_users": "Wyłączone: tylko administratorzy. Włączone: użytkownicy bez uprawnień administratora dostają pływający czat z takim samym dostępem do Home Assistant jak ich własne konto. Pełna strona AI Workspace zostaje tylko dla administratorów. Włącz tylko, jeśli ufasz wszystkim, którzy mają konto.",
-              "ui_theme": "Domyślnie wyłączone. Buduje czat z własnych elementów interfejsu Home Assistant. Wypróbuj, jeśli czat nie pasuje do twojego motywu.",
+              "ui_theme": "Domyślnie wyłączone. Zmienia tylko pole wiadomości oraz wybór agenta i modelu na styl Home Assistant. Wiadomości zawsze mają standardowy wygląd.",
               "cross_chat": "Domyślnie wyłączone. Gdy włączone, pytanie może użyć krótkiego fragmentu innego czatu, którego tytuł ma wspólne słowa, nawet jeśli o nim nie wspomnisz. Pomaga, gdy już rozmawiałeś o tym samym pomieszczeniu lub automatyzacji. Tamten czat nie jest zmieniany.",
               "keep_chats": "Najnowsze nieprzypięte czaty zachowywane na osobę. Starsze są usuwane, żeby lista nie rosła bez końca. Przypięte czaty zostają zawsze. Domyślnie 30."
             }

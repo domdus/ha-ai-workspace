@@ -51,7 +51,7 @@
               "enable_overlay": "Hər Home Assistant səhifəsinin küncündə dairəvi AI düyməsi: səhifədən çıxmadan sual verə bilərsiniz. Ayarlar səhifələrində digər düymələri örtməmək üçün daha yuxarıda durur.",
               "enable_dictate": "Mesaj qutusunda mikrofon düyməsi. Heç vaxt diktə etmirsinizsə, gizlədin.",
               "allow_users": "Sönülü: yalnız idarəçilər. Açıq: idarəçi olmayan istifadəçilər üzən söhbəti öz hesablarının Home Assistant icazələri ilə alır. Tam AI Workspace səhifəsi yalnız idarəçilər üçün qalır. Bunu yalnız hesabı olan hər kəsə etibar edirsinizsə açın.",
-              "ui_theme": "Defolt olaraq sönülüdür. Söhbəti Home Assistant-ın öz interfeys hissələrindən qurur. Söhbət temanıza uyğun gəlmirsə, sınayın.",
+              "ui_theme": "Defolt olaraq sönülüdür. Yalnız mesaj sahəsini və agent və model seçicilərini Home Assistant üslubuna keçirir. Mesajlar həmişə standart görünüşdədir.",
               "cross_chat": "Defolt olaraq sönülüdür. Açıq olanda sual, başlığında ortaq sözlər olan başqa söhbətdən qısa parçanı, siz o söhbəti xatırlatmasanız belə, istifadə edə bilər. Eyni otaq və ya avtomatlaşdırma barədə artıq danışmısınızsa, kömək edir. Digər söhbət dəyişmir.",
               "keep_chats": "Hər şəxs üçün saxlanılan ən yeni sancılmamış söhbətlər. Siyahı sonsuz böyüməsin deyə köhnələri silinir. Sancılmış söhbətlər həmişə saxlanılır. Defolt 30."
             }
@@ -166,7 +166,7 @@
               "enable_overlay": "Hər Home Assistant səhifəsinin küncündə dairəvi AI düyməsi: səhifədən çıxmadan sual verə bilərsiniz. Ayarlar səhifələrində digər düymələri örtməmək üçün daha yuxarıda durur.",
               "enable_dictate": "Mesaj qutusunda mikrofon düyməsi. Heç vaxt diktə etmirsinizsə, gizlədin.",
               "allow_users": "Sönülü: yalnız idarəçilər. Açıq: idarəçi olmayan istifadəçilər üzən söhbəti öz hesablarının Home Assistant icazələri ilə alır. Tam AI Workspace səhifəsi yalnız idarəçilər üçün qalır. Bunu yalnız hesabı olan hər kəsə etibar edirsinizsə açın.",
-              "ui_theme": "Defolt olaraq sönülüdür. Söhbəti Home Assistant-ın öz interfeys hissələrindən qurur. Söhbət temanıza uyğun gəlmirsə, sınayın.",
+              "ui_theme": "Defolt olaraq sönülüdür. Yalnız mesaj sahəsini və agent və model seçicilərini Home Assistant üslubuna keçirir. Mesajlar həmişə standart görünüşdədir.",
               "cross_chat": "Defolt olaraq sönülüdür. Açıq olanda sual, başlığında ortaq sözlər olan başqa söhbətdən qısa parçanı, siz o söhbəti xatırlatmasanız belə, istifadə edə bilər. Eyni otaq və ya avtomatlaşdırma barədə artıq danışmısınızsa, kömək edir. Digər söhbət dəyişmir.",
               "keep_chats": "Hər şəxs üçün saxlanılan ən yeni sancılmamış söhbətlər. Siyahı sonsuz böyüməsin deyə köhnələri silinir. Sancılmış söhbətlər həmişə saxlanılır. Defolt 30."
             }

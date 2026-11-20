@@ -939,7 +939,6 @@ h1 {
 }
 
 .bubble:hover > .reply-actions,
-.message-container:hover > .reply-actions,
 .reply-actions:hover,
 .reply-actions:focus-within {
   opacity: 1;
@@ -985,7 +984,6 @@ h1 {
 }
 
 .bubble:hover > .reply-actions .reply-time,
-.message-container:hover > .reply-actions .reply-time,
 .reply-actions:hover .reply-time,
 .reply-actions:focus-within .reply-time {
   opacity: 1;
@@ -1172,8 +1170,7 @@ h1 {
   display: flex !important;
 }
 
-.tools-list span,
-.tools-list ha-assist-chip {
+.tools-list span {
   position: relative;
   overflow: hidden;
   font-size: var(--ha-font-size-s);
@@ -1184,31 +1181,20 @@ h1 {
   animation: chip-in 240ms ease both;
 }
 
-.tools-list ha-assist-chip {
-  --ha-button-height: 28px;
-  --ha-chip-label-size: var(--ha-font-size-s);
-  background: transparent;
-  padding: 0;
-}
-
-.bubble.instant .tools-list span,
-.bubble.instant .tools-list ha-assist-chip {
+.bubble.instant .tools-list span {
   animation: none;
 }
 
-.tools-list span.done,
-.tools-list ha-assist-chip.done {
+.tools-list span.done {
   opacity: 0.72;
 }
 
-.tools-list span.busy,
-.tools-list ha-assist-chip.busy {
+.tools-list span.busy {
   color: var(--primary-text-color);
 }
 
 .tools.busy .tools-summary::after,
-.tools-list span.busy::after,
-.tools-list ha-assist-chip.busy::after {
+.tools-list span.busy::after {
   content: "";
   position: absolute;
   top: 0;
@@ -1433,7 +1419,8 @@ h1 {
   display: none !important;
 }
 
-.agent-trigger {
+/* Standard pickers are plain buttons; the HA composer uses ha-button (chat-ha-composer.css). */
+button.agent-trigger {
   display: inline-flex;
   align-items: center;
   gap: 2px;
@@ -1456,7 +1443,7 @@ h1 {
   white-space: nowrap;
 }
 
-.agent-trigger ha-icon {
+button.agent-trigger ha-icon {
   --mdc-icon-size: 16px;
   width: 16px;
   height: 16px;
@@ -1464,12 +1451,12 @@ h1 {
   transition: transform 160ms ease;
 }
 
-.agent-trigger[aria-expanded="true"] ha-icon {
+button.agent-trigger[aria-expanded="true"] ha-icon {
   transform: rotate(180deg);
 }
 
-.agent-trigger:hover,
-.agent-trigger[aria-expanded="true"] {
+button.agent-trigger:hover,
+button.agent-trigger[aria-expanded="true"] {
   background: var(
     --ha-color-fill-neutral-quiet-hover,
     color-mix(in srgb, var(--primary-text-color) 8%, transparent)
@@ -1565,7 +1552,6 @@ h1 {
 }
 
 .file-chip,
-ha-assist-chip.file-chip,
 ha-input-chip.file-chip {
   position: relative;
   display: inline-flex;
@@ -1579,7 +1565,6 @@ ha-input-chip.file-chip {
   line-height: 1.3;
 }
 
-ha-assist-chip.file-chip,
 ha-input-chip.file-chip {
   --ha-button-height: 28px;
   background: transparent;
@@ -1719,11 +1704,14 @@ textarea:focus {
 
 .send {
   flex: 0 0 auto;
+}
+
+ha-button.send {
   --ha-button-height: 36px;
   --ha-button-border-radius: 999px;
 }
 
-.send::part(base) {
+ha-button.send::part(base) {
   width: 36px;
   min-width: 36px;
   padding: 0;
@@ -1731,12 +1719,12 @@ textarea:focus {
   align-items: center;
 }
 
-.send::part(start),
-.send::part(end) {
+ha-button.send::part(start),
+ha-button.send::part(end) {
   display: none;
 }
 
-.send::part(label) {
+ha-button.send::part(label) {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1744,12 +1732,17 @@ textarea:focus {
   margin: 0;
 }
 
-.send ha-icon {
+ha-button.send ha-icon {
   margin: 0;
 }
 
-.mic {
+.mic,
+.attach {
   flex: 0 0 auto;
+}
+
+/* The HA composer keeps HA's own icon button size. */
+:where(.wrap:not(.composer-ha)) .mic {
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -1758,8 +1751,7 @@ textarea:focus {
   --mdc-icon-button-size: 36px;
 }
 
-.attach {
-  flex: 0 0 auto;
+:where(.wrap:not(.composer-ha)) .attach {
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -2387,7 +2379,6 @@ ha-date-range-picker.usage-filter-dates {
 
   .bubble,
   .tools-list span,
-  .tools-list ha-assist-chip,
   .tools.busy .tools-summary {
     animation: none;
   }
@@ -2400,8 +2391,7 @@ ha-date-range-picker.usage-filter-dates {
   }
 
   .tools.busy .tools-summary::after,
-  .tools-list span.busy::after,
-  .tools-list ha-assist-chip.busy::after {
+  .tools-list span.busy::after {
     display: none;
   }
 }

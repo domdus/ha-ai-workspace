@@ -51,7 +51,7 @@
               "enable_overlay": "Ronda AI-butono en la angulo de ĉiu paĝo de Home Assistant, por ke vi povu demandi sen forlasi la paĝon. Ĉe paĝoj de Agordoj ĝi sidas pli alte por ne kovri aliajn butonojn.",
               "enable_dictate": "Mikrofona butono en la mesaĝa kampo. Kaŝu ĝin se vi neniam diktas.",
               "allow_users": "Malŝalte: nur administrantoj. Ŝalte: ne-administrantoj ricevas la ŝveban babilejon, kun la sama aliro al Home Assistant kiel ilia propra konto. La plena paĝo de AI Workspace restas nur por administrantoj. Ŝaltu ĉi tion nur se vi fidas ĉiujn, kiuj havas konton.",
-              "ui_theme": "Defaŭlte malŝalta. Konstruas la babilejon el la propraj interfacaj partoj de Home Assistant. Provu ĝin se la babilejo ne kongruas kun via etoso.",
+              "ui_theme": "Defaŭlte malŝalta. Ŝanĝas nur la mesaĝkampon kaj la elektilojn de agento kaj modelo al la stilo de Home Assistant. Mesaĝoj ĉiam uzas la norman aspekton.",
               "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi mallongan eltiraĵon el alia babilejo, kies titolo kunhavas vortojn kun ĝi, sen ke vi mencias tiun babilejon. Helpas kiam vi jam parolis pri la sama ĉambro aŭ aŭtomatigo. La alia babilejo ne ŝanĝiĝas.",
               "keep_chats": "Plej novaj nealpinglitaj babilejoj konservataj po persono. Pli malnovaj estas forigitaj, por ke la listo ne kresku senfine. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."
             }
@@ -166,7 +166,7 @@
               "enable_overlay": "Ronda AI-butono en la angulo de ĉiu paĝo de Home Assistant, por ke vi povu demandi sen forlasi la paĝon. Ĉe paĝoj de Agordoj ĝi sidas pli alte por ne kovri aliajn butonojn.",
               "enable_dictate": "Mikrofona butono en la mesaĝa kampo. Kaŝu ĝin se vi neniam diktas.",
               "allow_users": "Malŝalte: nur administrantoj. Ŝalte: ne-administrantoj ricevas la ŝveban babilejon, kun la sama aliro al Home Assistant kiel ilia propra konto. La plena paĝo de AI Workspace restas nur por administrantoj. Ŝaltu ĉi tion nur se vi fidas ĉiujn, kiuj havas konton.",
-              "ui_theme": "Defaŭlte malŝalta. Konstruas la babilejon el la propraj interfacaj partoj de Home Assistant. Provu ĝin se la babilejo ne kongruas kun via etoso.",
+              "ui_theme": "Defaŭlte malŝalta. Ŝanĝas nur la mesaĝkampon kaj la elektilojn de agento kaj modelo al la stilo de Home Assistant. Mesaĝoj ĉiam uzas la norman aspekton.",
               "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi mallongan eltiraĵon el alia babilejo, kies titolo kunhavas vortojn kun ĝi, sen ke vi mencias tiun babilejon. Helpas kiam vi jam parolis pri la sama ĉambro aŭ aŭtomatigo. La alia babilejo ne ŝanĝiĝas.",
               "keep_chats": "Plej novaj nealpinglitaj babilejoj konservataj po persono. Pli malnovaj estas forigitaj, por ke la listo ne kresku senfine. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."
             }
