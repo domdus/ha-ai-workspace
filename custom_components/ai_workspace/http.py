@@ -1434,7 +1434,7 @@ class ChatView(HomeAssistantView):
                             applied = None
                             if label:
                                 applied = await hass.async_add_executor_job(
-                                    store.apply_generated_title, user_id, session.id, title_from_prompt(message), label
+                                    store.apply_generated_title, user_id, session.id, message, label
                                 )
                             if not applied:
                                 continue
@@ -1499,7 +1499,7 @@ class ChatView(HomeAssistantView):
                 title = accept_generated_title(message, raw or "")
                 if title:
                     applied = await hass.async_add_executor_job(
-                        store.apply_generated_title, user_id, session.id, title_from_prompt(message), title
+                        store.apply_generated_title, user_id, session.id, message, title
                     )
                     if applied:
                         await send({"type": "title", "title": applied})

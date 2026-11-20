@@ -384,7 +384,7 @@ class AiWorkspaceConversationEntity(conversation.ConversationEntity):
                 title = ""
             if title:
                 await self.hass.async_add_executor_job(
-                    store.apply_generated_title, user_id, session.id, title_from_prompt(text), title
+                    store.apply_generated_title, user_id, session.id, text, title
                 )
         return conversation.async_get_result_from_chat_log(user_input, chat_log)
 

@@ -23,6 +23,8 @@ from custom_components.ai_workspace.store import Store  # noqa: E402
 ROOT = Path(__file__).resolve().parents[1]
 WWW = ROOT / "custom_components" / "ai_workspace" / "www"
 URL = "https://www.heise.de/tests/DGX-Spark-Nvidias-Desktop-KI-Computer-im-Test-1110266"
+# The first title of a chat that starts with this link: the article's name, never the URL.
+FIRST = "Heise: DGX Spark Nvidias Desktop KI Computer"
 
 
 class _Provider:
@@ -114,16 +116,16 @@ def _run_turn(tmp_path: Path, monkeypatch, message: str, provider: _Provider, fi
 def test_first_title_reaches_the_open_chat_before_the_reply(tmp_path, monkeypatch) -> None:
     # The reported chat: a long URL as first message, no generated title.
     events, saved = _run_turn(tmp_path, monkeypatch, URL, _Provider())
-    assert saved == URL
+    assert saved == FIRST
     names = [name for name, _ in events]
-    assert names[0] == "title" and events[0][1]["title"] == URL
+    assert names[0] == "title" and events[0][1]["title"] == FIRST
     assert names.index("title") < names.index("text") < names.index("done")
 
 
 def test_generated_title_follows_after_the_reply(tmp_path, monkeypatch) -> None:
     events, saved = _run_turn(tmp_path, monkeypatch, URL, _Provider("DGX Spark im Test"))
     titles = [data["title"] for name, data in events if name == "title"]
-    assert titles == [URL, "DGX Spark im Test"]
+    assert titles == [FIRST, "DGX Spark im Test"]
     assert saved == "DGX Spark im Test"
 
 

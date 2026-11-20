@@ -93,3 +93,57 @@ def test_pinned_chats_sort_above_unpinned(tmp_path) -> None:
     sessions = store.list_sessions("local")
     assert [item.id for item in sessions] == [newer.id, older.id]
     store.close()
+
+
+# The reported chat: a Heise link as the first line, then the question in German.
+HEISE = (
+    "https://www.heise.de/tests/DGX-Spark-Nvidias-Desktop-KI-Computer-im-Test-11102661.html?seite=3\n\n"
+    "Die verfügbaren mini PCs haben alle Schwächen beim Speicher interface etc.\n"
+    "Weißt du ob Modelle angekündigt wurden auf die es sich lohnt zu warten? Wo die Schwächen beseitigt werden?"
+)
+
+
+def test_a_link_never_becomes_the_title() -> None:
+    title = title_from_prompt(HEISE)
+    assert title == "Heise: DGX Spark Nvidias Desktop KI Computer"
+    assert "http" not in title and "heise.de" not in title
+    # The link alone, as the floating chat once showed it cut at 80 characters.
+    assert title_from_prompt(HEISE.split("\n")[0][:80]) == title
+    assert needs_title_summary(HEISE)
+
+
+def test_link_without_a_slug_leaves_the_words() -> None:
+    assert title_from_prompt("Kannst du das erklären? https://www.youtube.com/watch?v=dQw4w9WgXcQ") == (
+        "Kannst du das erklären"
+    )
+    assert title_from_prompt("https://www.youtube.com/watch?v=dQw4w9WgXcQ") == "YouTube"
+    assert title_from_prompt("https://www.home-assistant.io/integrations/mqtt/") == "Home Assistant: mqtt"
+
+
+def test_long_text_is_cut_to_a_few_words_of_the_first_sentence() -> None:
+    title = title_from_prompt(
+        "Die verfügbaren mini PCs haben alle Schwächen beim Speicher interface etc. Weißt du mehr?"
+    )
+    assert title == "Die verfügbaren mini PCs"
+    assert len(title.split()) <= 6 and len(title) <= 48
+    # No dangling little word at the end.
+    assert title_from_prompt("Warum geht das Licht in der Küche nicht mehr an") == "Warum geht das Licht"
+
+
+def test_generated_title_replaces_the_first_title_but_no_url() -> None:
+    assert accept_generated_title(HEISE, "Heise Artikel über Nvidia Spark") == "Heise Artikel über Nvidia Spark"
+    assert accept_generated_title(HEISE, "https://www.heise.de/tests/DGX-Spark") == ""
+    assert is_placeholder_title(title_from_prompt(HEISE), HEISE)
+    # Older versions stored the first line cut at 80 characters: still automatic, may be replaced.
+    assert is_placeholder_title(HEISE.replace("\n", " ")[:80], HEISE)
+    assert not is_placeholder_title("Nvidia Spark Alternativen", HEISE)
+
+
+def test_apply_generated_title_replaces_a_link_title(tmp_path) -> None:
+    store = Store(tmp_path / "db.sqlite")
+    session = store.create_session("local", "cursor")
+    store.rename_if_default(session.id, title_from_prompt(HEISE))
+    assert store.apply_generated_title("local", session.id, HEISE, "Heise Artikel über Nvidia Spark") == (
+        "Heise Artikel über Nvidia Spark"
+    )
+    store.close()

@@ -663,7 +663,7 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
                     raw = None
                 label = accept_generated_title(question, raw or "")
                 applied = store.apply_generated_title(
-                    _user_id(request), session.id, title_from_prompt(question), label
+                    _user_id(request), session.id, question, label
                 )
                 if applied:
                     yield _sse("title", {"type": "title", "title": applied})
