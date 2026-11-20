@@ -669,3 +669,54 @@ def test_panel_routes_tasks_page() -> None:
     page = (BASE / "www" / "tasks_page.js").read_text(encoding="utf-8")
     assert "config/automation/config/" in page
     assert "/label" in page
+
+
+# --- Fallback chain (agent fallback feature) ----------------------------------------------------
+
+
+def test_agent_chain_follows_fallback_list(monkeypatch) -> None:
+    from custom_components.ai_workspace.fallback import KIND_LIMIT, Failure
+    from custom_components.ai_workspace.fallback_ha import book_of
+
+    one, two, three = _provider("a1", "OpenAI"), _provider("a2", "Claude"), _provider("a3", "Cursor")
+    settings = SimpleNamespace(fallback_enabled=True, fallback_agents=["a3", "a1", "gone"])
+    data = {"providers": {"a1": one, "a2": two, "a3": three}, "settings": settings}
+    hass = SimpleNamespace()
+    assert tasks.task_agent_chain(hass, data, "") == [three, one]
+    book_of(hass, data).mark_failed("a3", Failure(KIND_LIMIT))
+    assert tasks.task_agent_chain(hass, data, "") == [one, three]
+    assert tasks.task_agent_chain(hass, data, "a2") == [two]
+
+
+def test_limit_hands_over_with_journal_and_marks_agent(run_env) -> None:
+    from custom_components.ai_workspace.const import DOMAIN
+    from custom_components.ai_workspace.fallback import KIND_LIMIT, Failure
+    from custom_components.ai_workspace.fallback_ha import book_of
+
+    first, second = _provider("a1", "Claude"), _provider("a2", "OpenAI")
+    data = run_env.hass.data[DOMAIN]
+    data["providers"] = {"a1": first, "a2": second}
+    data["settings"] = SimpleNamespace(fallback_enabled=True, fallback_agents=["a1", "a2"])
+    data["fallback_loaded"] = True
+    run_env.monkeypatch.setattr(tasks, "task_agent_chain", lambda hass, data, wanted: [first, second])
+    failed = tasks._Turn(
+        error="Claude hit its usage limit",
+        failure=Failure(KIND_LIMIT),
+        events=[{"type": "tool", "name": "HassTurnOff", "phase": "end", "text": "done"}],
+    )
+    _turns(run_env, failed, tasks._Turn(answer="Lights are off."))
+    params = RUN_TASK_SCHEMA({"prompt": "Turn off the lights", "allow_changes": True})
+    result = asyncio.run(tasks.async_run_task(run_env.hass, params)).payload()
+    assert result["status"] == "ok" and result["agent"] == "OpenAI" and result["response"] == "Lights are off."
+    handed = run_env.turns[1]["outbound"]
+    assert "[Agent handoff]" in handed and "HassTurnOff" in handed and "Turn off the lights" in handed
+    book = book_of(run_env.hass, data)
+    assert book.blocked("a1") and not book.blocked("a2")
+
+
+def test_tool_or_refusal_errors_do_not_switch(run_env) -> None:
+    first, second = _provider("a1", "Claude"), _provider("a2", "OpenAI")
+    run_env.monkeypatch.setattr(tasks, "task_agent_chain", lambda hass, data, wanted: [first, second])
+    _turns(run_env, tasks._Turn(error="The MCP tool failed"), tasks._Turn(answer="never"))
+    result = asyncio.run(tasks.async_run_task(run_env.hass, RUN_TASK_SCHEMA({"prompt": "x"}))).payload()
+    assert result["status"] == "error" and result["agent"] == "Claude" and len(run_env.turns) == 1

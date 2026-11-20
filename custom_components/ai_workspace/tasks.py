@@ -208,9 +208,9 @@ def _find_provider(providers: dict[str, Any], wanted: str) -> Any | None:
 def task_agent_chain(hass: HomeAssistant, data: dict[str, Any], wanted: str = "") -> list[Any]:
     """The agents a task tries, in order. THE single place that picks agents for a task.
 
-    A named agent runs alone. Without one: the default agent, then every other available agent as a
-    fallback when the one before could not be reached. When the agent fallback chain feature lands,
-    this is the function to route through it.
+    A named agent runs alone. Without one and with Fallback on: the fallback list in its order, agents
+    that are waiting out a limit or backoff last. With Fallback off: the default agent, then every
+    other available agent as a fallback when the one before failed on the provider side.
     """
     providers: dict[str, Any] = dict(data.get("providers") or {})
     wanted = _agent_from_entity(hass, str(wanted or "").strip())
@@ -219,6 +219,17 @@ def task_agent_chain(hass: HomeAssistant, data: dict[str, Any], wanted: str = ""
         if found is None:
             raise ServiceValidationError(f"AI Workspace has no agent named {wanted!r}.")
         return [found]
+    from .fallback_ha import book_of, fallback_chain
+
+    ordered = fallback_chain(data)
+    if ordered:
+        book = book_of(hass, data)
+        now = book.clock()
+        ready = [agent for agent in ordered if not book.blocked(agent, now)]
+        waiting = [agent for agent in ordered if agent not in ready]
+        listed = [providers[agent] for agent in ready + waiting if agent in providers]
+        available = [provider for provider in listed if getattr(getattr(provider, "info", None), "available", False)]
+        return available or listed[:1]
     from .http import _default_agent
 
     chain: list[Any] = []
@@ -314,6 +325,9 @@ class _Turn:
     error: str = ""
     connection: bool = False
     tools: list[dict[str, Any]] = field(default_factory=list)
+    # Provider-side failure (fallback.classify_failure) and the raw tool events for the handoff journal.
+    failure: Any = None
+    events: list[dict[str, Any]] = field(default_factory=list)
 
 
 async def _one_turn(
@@ -331,6 +345,7 @@ async def _one_turn(
     from .chat_scope import merge_reply_text
     from .conversation import _login_token
     from .error_text import public_error
+    from .fallback import classify_failure
     from .http import async_agent_events
     from .usage_record import finalize_usage, record_usage_turn, record_worker_usage
 
@@ -362,9 +377,11 @@ async def _one_turn(
             final = str(event.get("text") or "")
         elif kind == "tool":
             turn.tools.append({key: event.get(key) for key in ("name", "phase", "text") if key in event})
+            turn.events.append(dict(event))
         elif kind == "error":
             turn.error = public_error(event.get("message"))
             turn.connection = bool(event.get("connection"))
+            turn.failure = turn.failure or classify_failure(event)
         elif kind == "usage" and event.get("worker"):
             add_usage(
                 usage,
@@ -540,10 +557,16 @@ async def _run_chain(
 ) -> None:
     from .chat_scope import handoff_note
     from .const import provider_token_mode
+    from .fallback import KIND_CONNECTION, Failure, TurnJournal, handoff_prompt
+    from .fallback_ha import async_load_book, fallback_chain, known_reset
     from .local_time import house_zone
 
     store = data["store"]
     reasons: list[str] = []
+    # With Fallback on, task runs feed the same agent health as chats (limits, backoff).
+    book = await async_load_book(hass, data) if fallback_chain(data) else None
+    journal = TurnJournal()
+    sent = outbound
     for provider in chain:
         reason = _not_ready(data, provider)
         if reason:
@@ -572,7 +595,7 @@ async def _run_chain(
                     )
                 await hass.async_add_executor_job(store.add_message, session.id, "user", prompt, "[]")
                 turn = await _one_turn(
-                    hass, data, provider, session, user_id, outbound, prompt, handoff, policy, result.usage
+                    hass, data, provider, session, user_id, sent, prompt, handoff, policy, result.usage
                 )
                 stored = list(turn.tools)
                 if turn.error:
@@ -589,11 +612,22 @@ async def _run_chain(
                 locks.pop(session.id, None)
             if not keeps_chat:
                 await _drop_session(hass, data, user_id, session.id)
-        if turn.answer or not turn.connection:
+        failure = turn.failure or (Failure(KIND_CONNECTION) if turn.connection else None)
+        if failure is None:
+            if book is not None and not turn.error:
+                book.mark_ok(result.agent_id)
             result.response = turn.answer
             result.error = "" if turn.answer else (turn.error or "The agent returned nothing.")
             return
+        # Provider-side failure (limit, sign-in, timeout, connection, overloaded): the next agent
+        # takes over with the task and a journal of the tool calls already made in this run.
+        if book is not None and result.agent_id:
+            book.mark_failed(result.agent_id, known_reset(hass, provider, failure))
+        for event in turn.events:
+            journal.note(event, result.agent)
         reasons.append(f"{result.agent}: {turn.error}")
+        # No partial reply text: nobody watched it, so the next agent writes the whole result again.
+        sent = handoff_prompt(outbound, journal, failed_agent=result.agent, reason=failure.kind)
     result.error = "; ".join(reasons) or "AI Workspace has no agent that can run tasks."
 
 

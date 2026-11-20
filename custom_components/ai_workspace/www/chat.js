@@ -938,7 +938,8 @@ export async function mountAiWorkspace(root, options = {}) {
     .join(" ");
   const themeCss = `<link rel="stylesheet" href="/ai_workspace/static/chat.css${CACHE}">${
     haUi ? `<link rel="stylesheet" href="/ai_workspace/static/chat-ha-composer.css${CACHE}">` : ""
-  }<link rel="stylesheet" href="/ai_workspace/static/tasks.css${CACHE}">`;
+  }`;
+  const tasksCss = `<link rel="stylesheet" href="/ai_workspace/static/tasks.css${CACHE}">`;
   // The Tasks page (agent tasks as automations) is for administrators on the full page only.
   const tasksAllowed = routed && Boolean(hassObj()?.user?.is_admin);
   const tasksButton = (extra = "") =>
@@ -997,7 +998,7 @@ export async function mountAiWorkspace(root, options = {}) {
   // Inline, so it applies before the theme sheets that define the transitions.
   root.innerHTML = `
     <style class="mount-hold">.wrap, .wrap * { transition: none !important; }</style>
-    ${themeCss}
+    ${themeCss}${tasksCss}
     <div class="${wrapClass}">
       <button type="button" class="nav-scrim" hidden aria-label="${t("close")}"></button>
       <div class="notice-pop" role="dialog" aria-label="${t("notice")}" hidden></div>

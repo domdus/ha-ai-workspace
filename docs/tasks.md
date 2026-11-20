@@ -42,6 +42,8 @@ usage: {prompt_tokens: 5400, completion_tokens: 310, total_tokens: 5710, cost_us
 
 Without it the task runs in the background and the automation goes on at once.
 
+**Which agent runs it.** A named `agent` runs alone. Without one, a task uses the **Fallback** list when Fallback is on (Settings → AI Workspace → Configure → Fallback): from the top, agents that are waiting out a limit or a backoff last. When an agent fails on the provider side (plan or rate limit, expired sign-in, timeout, connection error, overloaded server), the next one takes over in the same run with the task and a journal of the tool calls already made, so device actions are not repeated; the failed agent waits like it does for chats. With Fallback off it is the default agent, then the other available agents in the same way. A failing tool, a refusal or a bad request never switches the agent. Tasks do not pause: if no agent is left, the run ends with `status: error`.
+
 **Every run starts fresh.** The agent remembers nothing from earlier runs and cannot ask you anything, so the prompt has to say everything: what to check, how long the answer should be, and what counts as a problem. Only with `chat: task` does the agent see that task's earlier runs in its chat. Templates work in the prompt like in any action, for example `{{ now().strftime('%A') }}`.
 
 ### What a task may do
