@@ -181,7 +181,7 @@
             },
             "data_description": {
               "fallback_enabled": "Av som standard. Ett stoppat svar, ett verktyg som fallerar, en vägran eller en felaktig begäran byter aldrig agent.",
-              "fallback_agents": "Ordningen räknas: den första agenten är den föredragna och nya chattar börjar med den; de andra tar över uppifrån och ned. Ta bort en agent och lägg till den igen för att flytta den sist. Uppgifter som behöver en arbetsyta eller ett skal går bara till Runtime-agenter (Claude SDK, Cursor, Codex).",
+              "fallback_agents": "Ordningen räknas: den första agenten är den föredragna och nya chattar börjar med den; de andra tar över uppifrån och ned. Dra en agent för att ändra ordningen. Uppgifter som behöver en arbetsyta eller ett skal går bara till Runtime-agenter (Claude SDK, Cursor, Codex).",
               "fallback_return": "Av: chatten stannar hos agenten som tog över. Vid nytt meddelande: nästa meddelande provar den föredragna agenten igen. Efter återställning eller väntetid: först när dess gräns har återställts eller väntetiden (5, 15, 60 minuter) har gått. Aldrig mitt i ett svar."
             }
           },

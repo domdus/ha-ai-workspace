@@ -206,6 +206,21 @@ def _default_agent_field(current: dict, agents: list) -> dict:
     }
 
 
+class ReorderableSelectSelector(SelectSelector):
+    """A multiple select whose chips can be dragged into a new order.
+
+    The Home Assistant frontend (ha-selector-select, 2025.12+) renders `reorder: true` with a drag
+    handle on every chip (ha-sortable: mouse and touch). The core SelectSelector schema does not list
+    `reorder` yet and rejects it, so the flag is added after the normal validation.
+    """
+
+    def __init__(self, config: SelectSelectorConfig | None = None) -> None:
+        config = dict(config or {})
+        reorder = bool(config.pop("reorder", True))
+        super().__init__(config)
+        self.config = {**self.config, "reorder": reorder and bool(self.config.get("multiple"))}
+
+
 def _fallback_schema(current: dict, agents: list) -> vol.Schema:
     """Fallback: off by default. When on, the ordered list replaces the Default agent (first = preferred)."""
     from .fallback import DEFAULT_RETURN, RETURN_MODES
@@ -222,10 +237,10 @@ def _fallback_schema(current: dict, agents: list) -> vol.Schema:
     return vol.Schema(
         {
             vol.Optional(CONF_FALLBACK_ENABLED, default=bool(current.get(CONF_FALLBACK_ENABLED, False))): cv.boolean,
-            vol.Optional(CONF_FALLBACK_AGENTS, default=saved): SelectSelector(
+            vol.Optional(CONF_FALLBACK_AGENTS, default=saved): ReorderableSelectSelector(
                 SelectSelectorConfig(
                     options=[{"value": agent.id, "label": agent.title} for agent in agents],
-                    # Chips in the order picked: removing and adding one again moves it to the end.
+                    # Chips in the saved order; drag a chip to move it (the saved list keeps that order).
                     multiple=True,
                     mode="dropdown",
                 )

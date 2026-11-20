@@ -181,7 +181,7 @@
             },
             "data_description": {
               "fallback_enabled": "Ve výchozím stavu vypnuto. Zastavená odpověď, selhání nástroje, odmítnutí nebo chybný požadavek nikdy agenta nemění.",
-              "fallback_agents": "Na pořadí záleží: první agent je preferovaný a nové chaty začínají s ním; ostatní přebírají shora dolů. Chcete-li agenta posunout na konec, odeberte ho a přidejte znovu. Úlohy, které potřebují pracovní prostor nebo shell, jdou jen agentům Runtime (Claude SDK, Cursor, Codex).",
+              "fallback_agents": "Na pořadí záleží: první agent je preferovaný a nové chaty začínají s ním; ostatní přebírají shora dolů. Přetažením agenta změníte pořadí. Úlohy, které potřebují pracovní prostor nebo shell, jdou jen agentům Runtime (Claude SDK, Cursor, Codex).",
               "fallback_return": "Vypnuto: chat zůstane u agenta, který převzal. Při nové zprávě: další zpráva znovu zkusí preferovaného agenta. Po obnovení nebo čekání: až po obnovení jeho limitu nebo uplynutí čekací doby (5, 15, 60 minut). Nikdy uprostřed odpovědi."
             }
           },

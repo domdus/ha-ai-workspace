@@ -181,7 +181,7 @@
             },
             "data_description": {
               "fallback_enabled": "Standaard uit. Een gestopt antwoord, een falende tool, een weigering of een foute aanvraag wisselen nooit van agent.",
-              "fallback_agents": "De volgorde telt: de eerste agent is de voorkeursagent en nieuwe chats beginnen ermee; de andere nemen van boven naar beneden over. Om een agent naar achteren te zetten, verwijder je hem en voeg je hem opnieuw toe. Taken die een werkruimte of shell nodig hebben gaan alleen naar Runtime-agents (Claude SDK, Cursor, Codex).",
+              "fallback_agents": "De volgorde telt: de eerste agent is de voorkeursagent en nieuwe chats beginnen ermee; de andere nemen van boven naar beneden over. Sleep een agent om de volgorde te wijzigen. Taken die een werkruimte of shell nodig hebben gaan alleen naar Runtime-agents (Claude SDK, Cursor, Codex).",
               "fallback_return": "Uit: de chat blijft bij de agent die overnam. Bij nieuw bericht: het volgende bericht probeert de voorkeursagent opnieuw. Na reset of wachttijd: pas als zijn limiet gereset is of de wachttijd (5, 15, 60 minuten) voorbij is. Nooit midden in een antwoord."
             }
           },

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.1b7
+
+**The fallback agent list can be reordered by drag.** In **Settings → AI Workspace → Configure → Fallback**, every agent chip in **Agents in order** now has a drag handle. Drag a chip with the mouse or by touch to move it; you no longer have to remove an agent and add it again.
+
+- The saved order is exactly the order shown. Lists saved with 1.6.1b6 keep their order.
+- The help text in all 15 languages now says to drag an agent to change the order.
+- Uses Home Assistant's own sortable chips (`reorder` on the select selector), so it looks like the other Home Assistant forms. Needs Home Assistant 2025.12 or newer, the same minimum as before.
+- Only the integration changes; the Runtime app does not need an update.
+
 ## 1.6.1b6
 
 **Agent fallback, agent tasks, and "Use HA Components" only changes the message field.** When one agent's provider fails, the next agent in your list carries on. The new action `ai_workspace.run_task` and a **Tasks** page run prompts on a schedule as real automations. Messages always use the standard look.
@@ -7,7 +16,7 @@
 **Agent fallback: when one agent's provider fails, the next one in your list carries on.** Optional and off by default; existing setups do not change.
 
 **Settings → AI Workspace → Configure → Fallback** (collapsed)
-- **Enable fallback** and an ordered list of your agents (the order you pick them in; remove and add one again to move it down). The first agent is the preferred one and new chats start with it. While fallback is on, this list replaces the **Default agent**.
+- **Enable fallback** and an ordered list of your agents (drag the chips to change the order, since 1.6.1b7). The first agent is the preferred one and new chats start with it. While fallback is on, this list replaces the **Default agent**.
 - **Back to the preferred agent**: *Off* (the chat stays on the agent that took over), *On new message*, or *After reset or wait time*. It never switches in the middle of a reply.
 
 **When it switches**

@@ -181,7 +181,7 @@
             },
             "data_description": {
               "fallback_enabled": "Desactivado por defecto. Detener una respuesta, una herramienta que falla, un rechazo o una petición incorrecta nunca cambian de agente.",
-              "fallback_agents": "El orden cuenta: el primer agente es el preferido y los chats nuevos empiezan con él; los demás toman el relevo de arriba abajo. Para mover un agente al final, quítalo y vuelve a añadirlo. Las tareas que necesitan un espacio de trabajo o un shell solo van a agentes Runtime (Claude SDK, Cursor, Codex).",
+              "fallback_agents": "El orden cuenta: el primer agente es el preferido y los chats nuevos empiezan con él; los demás toman el relevo de arriba abajo. Arrastra un agente para cambiar el orden. Las tareas que necesitan un espacio de trabajo o un shell solo van a agentes Runtime (Claude SDK, Cursor, Codex).",
               "fallback_return": "Desactivado: el chat se queda con el agente que tomó el relevo. Con un mensaje nuevo: el siguiente mensaje vuelve a probar el agente preferido. Tras el restablecimiento o la espera: solo cuando se haya restablecido su límite o haya pasado la espera (5, 15, 60 minutos). Nunca a mitad de una respuesta."
             }
           },

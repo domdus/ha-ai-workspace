@@ -442,6 +442,46 @@ def test_fallback_section_and_last_used_choice() -> None:
     assert {CONF_FALLBACK_ENABLED, CONF_FALLBACK_AGENTS, CONF_FALLBACK_RETURN} <= set(config_flow._SHARED_KEYS)
 
 
+def test_fallback_agents_are_reorderable_and_keep_their_order() -> None:
+    config_flow = pytest.importorskip("custom_components.ai_workspace.config_flow")
+    from custom_components.ai_workspace.agents import agent_from_mapping
+    from custom_components.ai_workspace.const import CONF_FALLBACK_AGENTS
+
+    agents = [
+        agent_from_mapping("a1", "Claude", {"api_provider": "claude"}),
+        agent_from_mapping("a2", "Cursor", {"api_provider": "cursor"}),
+        agent_from_mapping("a3", "OpenAI", {"api_provider": "openai"}),
+    ]
+    schema = config_flow._fallback_schema({CONF_FALLBACK_AGENTS: ["a3", "a1", "a2"]}, agents)
+    keys = {getattr(key, "schema", key): key for key in schema.schema}
+    selector = schema.schema[keys[CONF_FALLBACK_AGENTS]]
+    # The frontend gets `reorder: true` next to `multiple: true`: chips with drag handles.
+    serialized = selector.serialize()["selector"]["select"]
+    assert serialized["multiple"] is True and serialized["reorder"] is True
+    # The form shows the saved order, and a dragged order is stored exactly as shown.
+    assert schema({})[CONF_FALLBACK_AGENTS] == ["a3", "a1", "a2"]
+    assert schema({CONF_FALLBACK_AGENTS: ["a2", "a3", "a1"]})[CONF_FALLBACK_AGENTS] == ["a2", "a3", "a1"]
+    assert config_flow._normalize({CONF_FALLBACK_AGENTS: ["a2", "a3", "a1"]})[CONF_FALLBACK_AGENTS] == [
+        "a2",
+        "a3",
+        "a1",
+    ]
+    # The field serializes the way Home Assistant sends a flow form to the frontend.
+    import voluptuous as vol
+    from homeassistant.helpers import config_validation as cv
+
+    try:  # Home Assistant 2026.x serializes forms with probatio, older releases with voluptuous_serialize.
+        from probatio import to_field_list as convert
+    except ImportError:
+        from voluptuous_serialize import convert
+    fields = convert(vol.Schema({keys[CONF_FALLBACK_AGENTS]: selector}), custom_serializer=cv.custom_serializer)
+    field = next(item for item in fields if item["name"] == CONF_FALLBACK_AGENTS)
+    assert field["selector"]["select"]["reorder"] is True
+    # A single select never gets the flag (core rejects reorder without multiple).
+    single = config_flow.ReorderableSelectSelector(config_flow.SelectSelectorConfig(options=["x"]))
+    assert single.config["reorder"] is False
+
+
 def test_translations_name_the_fallback_section_in_every_language() -> None:
     import json
     from pathlib import Path

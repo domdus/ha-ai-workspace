@@ -181,7 +181,7 @@
             },
             "data_description": {
               "fallback_enabled": "Defaŭlte malŝaltita. Haltigita respondo, fiaskanta ilo, rifuzo aŭ malĝusta peto neniam ŝanĝas la agenton.",
-              "fallback_agents": "La ordo gravas: la unua agento estas la preferata kaj novaj babiloj komenciĝas per ĝi; la aliaj transprenas de supre malsupren. Por movi agenton al la fino, forigu ĝin kaj aldonu ĝin denove. Taskoj, kiuj bezonas laborspacon aŭ ŝelon, iras nur al Runtime-agentoj (Claude SDK, Cursor, Codex).",
+              "fallback_agents": "La ordo gravas: la unua agento estas la preferata kaj novaj babiloj komenciĝas per ĝi; la aliaj transprenas de supre malsupren. Trenu agenton por ŝanĝi la ordon. Taskoj, kiuj bezonas laborspacon aŭ ŝelon, iras nur al Runtime-agentoj (Claude SDK, Cursor, Codex).",
               "fallback_return": "Malŝaltita: la babilo restas ĉe la agento, kiu transprenis. Ĉe nova mesaĝo: la sekva mesaĝo reprovas la preferatan agenton. Post restarigo aŭ atendo: nur kiam ĝia limo restariĝis aŭ la atendotempo (5, 15, 60 minutoj) pasis. Neniam meze de respondo."
             }
           },

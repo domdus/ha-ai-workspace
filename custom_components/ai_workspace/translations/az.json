@@ -181,7 +181,7 @@
             },
             "data_description": {
               "fallback_enabled": "Defolt olaraq söndürülüb. Cavabı dayandırmaq, alət xətası, imtina və ya səhv sorğu heç vaxt agenti dəyişmir.",
-              "fallback_agents": "Sıra önəmlidir: birinci agent üstün agentdir və yeni söhbətlər onunla başlayır; digərləri yuxarıdan aşağı növbə ilə davam edir. Agenti sona keçirmək üçün onu silin və yenidən əlavə edin. İş sahəsi və ya shell tələb edən tapşırıqlar yalnız Runtime agentlərinə (Claude SDK, Cursor, Codex) gedir.",
+              "fallback_agents": "Sıra önəmlidir: birinci agent üstün agentdir və yeni söhbətlər onunla başlayır; digərləri yuxarıdan aşağı növbə ilə davam edir. Sıranı dəyişmək üçün agenti sürüşdürün. İş sahəsi və ya shell tələb edən tapşırıqlar yalnız Runtime agentlərinə (Claude SDK, Cursor, Codex) gedir.",
               "fallback_return": "Söndürülüb: söhbət davam edən agentdə qalır. Yeni mesajda: növbəti mesaj üstün agenti yenidən sınayır. Sıfırlanma və ya gözləmədən sonra: yalnız limiti sıfırlananda və ya gözləmə vaxtı (5, 15, 60 dəqiqə) keçəndə. Heç vaxt cavabın ortasında."
             }
           },

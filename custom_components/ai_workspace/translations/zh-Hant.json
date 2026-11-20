@@ -181,7 +181,7 @@
             },
             "data_description": {
               "fallback_enabled": "預設關閉。停止回覆、工具失敗、拒絕回答或錯誤請求都不會切換代理。",
-              "fallback_agents": "順序很重要：第一個是首選代理，新對話從它開始；其餘代理依由上而下的順序接手。要把某個代理移到後面，請先移除再重新加入。需要工作區或 shell 的任務只交給 Runtime 代理（Claude SDK、Cursor、Codex）。",
+              "fallback_agents": "順序很重要：第一個是首選代理，新對話從它開始；其餘代理依由上而下的順序接手。拖曳代理即可變更順序。需要工作區或 shell 的任務只交給 Runtime 代理（Claude SDK、Cursor、Codex）。",
               "fallback_return": "關閉：對話留在接手的代理上。收到新訊息時：下一則訊息會再次嘗試首選代理。重設或等待之後：僅在其上限重設或等待時間（5、15、60 分鐘）過去之後。絕不在回覆中途切換。"
             }
           },

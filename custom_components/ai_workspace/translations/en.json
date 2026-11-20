@@ -181,7 +181,7 @@
             },
             "data_description": {
               "fallback_enabled": "Off by default. Stopping a reply, a failing tool, a refusal or a wrong request never switches the agent.",
-              "fallback_agents": "Order counts: the first agent is the preferred one and new chats start with it; the others take over from top to bottom. To move an agent down, remove it and add it again. Tasks that need a workspace or shell only go to Runtime agents (Claude SDK, Cursor, Codex).",
+              "fallback_agents": "Order counts: the first agent is the preferred one and new chats start with it; the others take over from top to bottom. Drag an agent to change the order. Tasks that need a workspace or shell only go to Runtime agents (Claude SDK, Cursor, Codex).",
               "fallback_return": "Off: the chat stays on the agent that took over. On new message: the next message tries the preferred agent again. After reset or wait time: only once its limit reset or the wait time (5, 15, 60 minutes) has passed. Never in the middle of a reply."
             }
           },
