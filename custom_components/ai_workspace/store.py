@@ -476,20 +476,23 @@ class Store:
             self._conn.commit()
         return True
 
-    def rename_if_default(self, session_id: str, title: str) -> None:
+    def rename_if_default(self, session_id: str, title: str) -> str:
+        """The title it set, or "" when the chat already had a real one."""
         session_id = _text(session_id)
-        if not session_id:
-            return
+        label = (title or "").strip()[:80]
+        if not session_id or not label:
+            return ""
         with self._lock:
-            self._conn.execute(
+            cursor = self._conn.execute(
                 """
                 UPDATE sessions
                 SET title = ?, updated_at = ?
                 WHERE id = ? AND title IN ('New Chat', 'New chat', 'Neuer Chat')
                 """,
-                (title[:80], _now(), session_id),
+                (label, _now(), session_id),
             )
             self._conn.commit()
+        return label if cursor.rowcount else ""
 
     def apply_generated_title(self, user_id: str, session_id: str, first_user: str, title: str) -> str | None:
         from .titles import is_placeholder_title

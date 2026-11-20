@@ -45,6 +45,7 @@ const {
 const { replyTimeLabel, replyTimeTitle, haHour12, haTimeZone, replyRows } = await import(
   `./reply_meta.js${CACHE}`
 );
+const { isPlaceholderTitle, headerTitle, realTitle } = await import(`./chat_title.js${CACHE}`);
 
 const API = "/api/ai_workspace";
 const UI_THEME_KEY = "ai_workspace_ui_theme";
@@ -4151,8 +4152,21 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function displayTitle(title) {
-    if (!title || ["New Chat", "New chat", "Neuer Chat"].includes(title)) return t("new_chat");
-    return title;
+    return headerTitle(title, t("new_chat"));
+  }
+
+  /** The header still says "New chat" while the server may already have the title: ask it. */
+  async function syncHeaderTitle(id) {
+    if (!id || sessionId !== id || !isPlaceholderTitle(titleEl.textContent, t("new_chat"))) return;
+    let session = null;
+    try {
+      const response = await apiFetch(`${API}/sessions/${id}`, {}, { timeout: LOAD_TIMEOUT_MS });
+      if (response?.ok) session = await response.json();
+    } catch (_error) {
+      return;
+    }
+    const title = realTitle(session?.title, t("new_chat"));
+    if (title) applySessionTitle(id, title);
   }
 
   function promptTitle(text) {
@@ -4926,6 +4940,8 @@ export async function mountAiWorkspace(root, options = {}) {
           appendPlanNotice(data);
         } else if (name === "approval") {
           showApproval(data.approval);
+        } else if (name === "title" && data.title) {
+          applySessionTitle(id, data.title);
         } else if (name === "done" || name === "error") {
           settleTools(bubble);
         }
@@ -4990,6 +5006,7 @@ export async function mountAiWorkspace(root, options = {}) {
       streaming = false;
       resizeComposer();
       syncCopyChat();
+      applySessionTitle(id, session.title);
       bumpSession(id, session.title, session.pinned);
       writeChatCache(localStorage, chatCacheSlot(), session);
       markRead(id, session.messages);
@@ -6136,7 +6153,7 @@ export async function mountAiWorkspace(root, options = {}) {
         const created = await createSession();
         if (token !== streamToken || !created) return;
         titleEl.textContent = promptTitle(text) || attachments[0]?.name || t("new_chat");
-        bumpSession(sessionId, titleEl.textContent);
+        bumpSession(sessionId, realTitle(titleEl.textContent, t("new_chat")));
       }
       if (token !== streamToken) return;
       chatId = sessionId;
@@ -6248,7 +6265,8 @@ export async function mountAiWorkspace(root, options = {}) {
           stampReply(assistant);
           setActivity(assistant, "");
           resizeComposer();
-          bumpSession(chatId, titleEl.textContent);
+          // The header belongs to the open chat; "New chat" there is no title for this row.
+          bumpSession(chatId, sessionId === chatId ? realTitle(titleEl.textContent, t("new_chat")) : undefined);
           // Seen as it arrived: no unread dot here or on the user's other devices.
           if (sessionId === chatId) markRead(chatId);
           waitForStream().then(() => {
@@ -6269,6 +6287,8 @@ export async function mountAiWorkspace(root, options = {}) {
       await waitForStream();
       streamNode = null;
       if (!sawDone) recover = true;
+      // The floating chat has no chat list that would bring the title in later.
+      else void syncHeaderTitle(chatId);
     } catch (error) {
       if (token !== streamToken) return;
       if (chatId && (isDisconnect(error) || document.visibilityState === "hidden") && sessionId === chatId) {

@@ -1183,7 +1183,9 @@ class ChatView(HomeAssistantView):
             user_events.append(cross_chat_event(note, note_chats))
         events_json = json.dumps(user_events, ensure_ascii=False)
         sent = await hass.async_add_executor_job(store.add_message, session.id, "user", message, events_json)
-        await hass.async_add_executor_job(store.rename_if_default, session.id, title_from_prompt(message))
+        first_title = await hass.async_add_executor_job(
+            store.rename_if_default, session.id, title_from_prompt(message)
+        )
         count = await hass.async_add_executor_job(lambda: len(store.list_messages(session.id)))
         suggest = (
             getattr(provider, "suggest_title", None)
@@ -1349,6 +1351,9 @@ class ChatView(HomeAssistantView):
                     await response.prepare(request)
                 except Exception:
                     client_gone = True
+                if first_title:
+                    # The chat just got its first title: the open header shows it now, not "New chat".
+                    await send({"type": "title", "title": first_title})
                 try:
                     async for event in events():
                         kind = event.get("type")
