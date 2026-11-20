@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.1b10
+
+**The Cursor model list matches the Cursor SDK list again.** The built-in Cursor model list (used when the Runtime cannot list the models itself) is synced with the Cursor SDK as of 2026-11-20.
+
+- New: `claude-fable-5-2`, `gemini-4-neon`, `gemini-4-carbon`, `gemini-4-hydrogen` and `deepseek-v41-flash-1017` (DeepSeek is a new provider in the Cursor list).
+- Removed: `gemini-3.7-flash` and `gemini-3.6-flash`, which Cursor no longer lists.
+- Only the integration changes. The Runtime app version moves to 1.6.1b10 with the release but has no functional change.
+
 ## 1.6.1b9
 
 **The message field stays one line until the text needs more.** After sending, the prompt often stayed two lines tall although it was empty. Now it goes back to one line, in the floating chat and the full panel, with the standard field and with **Use HA Components**.
