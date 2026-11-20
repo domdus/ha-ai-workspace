@@ -942,9 +942,10 @@ export async function mountAiWorkspace(root, options = {}) {
   const tasksCss = `<link rel="stylesheet" href="/ai_workspace/static/tasks.css${CACHE}">`;
   // The Tasks page (agent tasks as automations) is for administrators on the full page only.
   const tasksAllowed = routed && Boolean(hassObj()?.user?.is_admin);
-  const tasksButton = (extra = "") =>
+  // The Tasks entry lives in the chat list toolbar only, next to Activity and Usage.
+  const tasksButton = () =>
     tasksAllowed
-      ? `<ha-icon-button class="tasks-open${extra}" label="${taskStrings(hassLanguage()).tasks}">
+      ? `<ha-icon-button class="tasks-open" label="${taskStrings(hassLanguage()).tasks}">
                 <ha-icon icon="mdi:calendar-clock"></ha-icon>
               </ha-icon-button>`
       : "";
@@ -1054,8 +1055,7 @@ export async function mountAiWorkspace(root, options = {}) {
             </ha-icon-button>
             <ha-icon-button class="usage-open header-usage" label="${t("usage")}">
               <ha-icon icon="mdi:chart-bar"></ha-icon>
-            </ha-icon-button>
-            ${tasksButton(" header-tasks")}`}
+            </ha-icon-button>`}
             <h1 class="title">${t("new_chat")}</h1>
             <span class="agent-badge" title="${htmlAttr(t("active_agent"))}" hidden></span>
           </div>

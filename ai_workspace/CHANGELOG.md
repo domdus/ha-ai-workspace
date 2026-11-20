@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.1b11
+
+**No more Tasks icon in front of the chat title.** Since 1.6.1b6 the full panel showed the calendar icon that opens the **Tasks** page in the chat header, directly before the title, in every chat (most visible on phones). It is gone from the header.
+
+- The **Tasks** page is still one tap away: the same icon sits at the top of the chat list, next to Activity and Usage. On a phone, open the chat list first.
+- Task chats get no header icon either; they look like any other chat.
+- The floating chat never had the icon and is unchanged.
+- Only the integration changes. The Runtime app version moves to 1.6.1b11 with the release but has no functional change.
+
 ## 1.6.1b10
 
 **The Cursor model list matches the Cursor SDK list again.** The built-in Cursor model list (used when the Runtime cannot list the models itself) is synced with the Cursor SDK as of 2026-11-20.

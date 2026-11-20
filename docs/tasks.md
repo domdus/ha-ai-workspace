@@ -4,7 +4,7 @@ An agent task is a prompt that an AI Workspace agent runs on its own, for exampl
 
 ## The Tasks page
 
-Open AI Workspace in the sidebar and choose the calendar icon (**Tasks**). The page is for administrators only.
+Open AI Workspace in the sidebar and choose the calendar icon (**Tasks**) at the top of the chat list, next to Activity and Usage. On a phone, open the chat list first. The page is for administrators only.
 
 - **New task** asks for a name, the prompt, a schedule (daily, weekly, or every N minutes/hours), the agent, where the result goes (task chat, push message, or both), and **Allow changes**.
 - **Save** creates or updates a real automation through Home Assistant's automation config API, the same one the automation editor uses, and gives it the **AI Workspace** label. The page lists exactly the automations with that label.
