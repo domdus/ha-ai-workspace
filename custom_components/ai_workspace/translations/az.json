@@ -181,7 +181,7 @@
             },
             "data_description": {
               "fallback_enabled": "Defolt olaraq söndürülüb. Cavabı dayandırmaq, alət xətası, imtina və ya səhv sorğu heç vaxt agenti dəyişmir.",
-              "fallback_agents": "Sıra önəmlidir: birinci agent üstün agentdir və yeni söhbətlər onunla başlayır; digərləri yuxarıdan aşağı növbə ilə davam edir. Sıranı dəyişmək üçün agenti sürüşdürün. İş sahəsi və ya shell tələb edən tapşırıqlar yalnız Runtime agentlərinə (Claude SDK, Cursor, Codex) gedir.",
+              "fallback_agents": "Yalnız ehtiyat aktiv olduqda istifadə olunur; ehtiyat aktiv halda yadda saxlayana qədər siyahı sadəcə təklifdir. Tapşırıqlar da eyni siyahıya əməl edir. Sıra önəmlidir: birinci agent üstün agentdir və yeni söhbətlər onunla başlayır; digərləri yuxarıdan aşağı növbə ilə davam edir. Sıranı dəyişmək üçün agenti sürüşdürün. İş sahəsi və ya shell tələb edən tapşırıqlar yalnız Runtime agentlərinə (Claude SDK, Cursor, Codex) gedir.",
               "fallback_return": "Söndürülüb: söhbət davam edən agentdə qalır. Yeni mesajda: növbəti mesaj üstün agenti yenidən sınayır. Sıfırlanma və ya gözləmədən sonra: yalnız limiti sıfırlananda və ya gözləmə vaxtı (5, 15, 60 dəqiqə) keçəndə. Heç vaxt cavabın ortasında."
             }
           },
@@ -724,7 +724,7 @@
         },
         "agent": {
           "name": "Agent",
-          "description": "Agentin id-si, adı və ya söhbət obyekti. Boş: standart agent, sonra digərləri ehtiyat kimi."
+          "description": "Agentin id-si, adı və ya söhbət obyekti. Boş: standart agent; o 'Son istifadə olunan' olaraq qurulubsa, ilk Runtime agenti (Claude, Cursor, Codex). Digər agentlərə keçid yalnız ehtiyat (Fallback) aktiv olduqda."
         },
         "chat": {
           "name": "Söhbət",

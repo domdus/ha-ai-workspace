@@ -269,17 +269,71 @@ def _provider(agent_id: str, title: str, available: bool = True, kind: str = "ap
 
 
 def test_agent_chain(monkeypatch) -> None:
-    from custom_components.ai_workspace import http
-
     one, two, off = _provider("a1", "OpenAI"), _provider("a2", "Claude"), _provider("a3", "Off", False)
-    data = {"providers": {"a1": one, "a2": two, "a3": off}}
-    monkeypatch.setattr(http, "_default_agent", lambda hass, data: "a2")
+    data = {"providers": {"a1": one, "a2": two, "a3": off}, "settings": SimpleNamespace(default_agent="a2")}
     hass = SimpleNamespace()
-    assert tasks.task_agent_chain(hass, data, "") == [two, one]
+    # Fallback off: exactly one agent, never the others as a fallback.
+    assert tasks.task_agent_chain(hass, data, "") == [two]
     assert tasks.task_agent_chain(hass, data, "a1") == [one]
     assert tasks.task_agent_chain(hass, data, "openai") == [one]
     with pytest.raises(Exception, match="no agent"):
         tasks.task_agent_chain(hass, data, "nobody")
+
+
+def _subentries():
+    """Agents in creation order, like the observed setup: OpenAI, Ollama, Gemini, Cursor, Claude."""
+    return OrderedDict(
+        (
+            ("o", _provider("o", "OpenAI")),
+            ("l", _provider("l", "Ollama")),
+            ("g", _provider("g", "Gemini")),
+            ("cu", _provider("cu", "Cursor", kind="cursor")),
+            ("cl", _provider("cl", "Claude", kind="claude")),
+        )
+    )
+
+
+def test_last_used_picks_first_runtime_agent_without_fallback() -> None:
+    providers = _subentries()
+    # Options never saved: no fallback_* keys, default agent "Last used" (stored as "").
+    data = {"providers": providers, "settings": SimpleNamespace(default_agent=""), "runtime_version": tasks.TASK_RUNTIME_MIN}
+    hass = SimpleNamespace()
+    assert tasks.task_agent_chain(hass, data, "") == [providers["cl"]]
+    assert not tasks.task_fallback_on(data)
+    # Claude signed out: Cursor is next in the documented order, still alone.
+    providers["cl"].info.available = False
+    assert tasks.task_agent_chain(hass, data, "") == [providers["cu"]]
+    # No Runtime agent can take it: the first agent that can.
+    providers["cu"].info.available = False
+    assert tasks.task_agent_chain(hass, data, "") == [providers["o"]]
+    # A too old Runtime does not count as a Runtime agent for tasks.
+    providers["cl"].info.available = True
+    data["runtime_version"] = "1.6.1b5"
+    assert tasks.task_agent_chain(hass, data, "") == [providers["o"]]
+
+
+def test_unsaved_or_off_fallback_never_switches() -> None:
+    providers = _subentries()
+    hass = SimpleNamespace()
+    for settings in (
+        SimpleNamespace(default_agent=""),  # never saved
+        SimpleNamespace(default_agent="", fallback_enabled=False, fallback_agents=("o", "g", "cu")),
+        SimpleNamespace(default_agent="", fallback_enabled=True, fallback_agents=()),  # on, but no list
+    ):
+        data = {"providers": providers, "settings": settings, "runtime_version": tasks.TASK_RUNTIME_MIN}
+        assert len(tasks.task_agent_chain(hass, data, "")) == 1
+        assert tasks.task_agent_chain(hass, data, "g") == [providers["g"]]
+
+
+def test_fallback_on_uses_saved_order_and_named_agent_first() -> None:
+    providers = _subentries()
+    settings = SimpleNamespace(default_agent="", fallback_enabled=True, fallback_agents=("cu", "o", "g"))
+    data = {"providers": providers, "settings": settings}
+    hass = SimpleNamespace()
+    assert tasks.task_agent_chain(hass, data, "") == [providers["cu"], providers["o"], providers["g"]]
+    assert tasks.task_agent_chain(hass, data, "o") == [providers["o"], providers["cu"], providers["g"]]
+    # A named agent outside the list starts, then the list follows.
+    assert tasks.task_agent_chain(hass, data, "cl") == [providers["cl"], providers["cu"], providers["o"], providers["g"]]
 
 
 def test_old_runtime_gets_no_tasks() -> None:
@@ -685,7 +739,8 @@ def test_agent_chain_follows_fallback_list(monkeypatch) -> None:
     assert tasks.task_agent_chain(hass, data, "") == [three, one]
     book_of(hass, data).mark_failed("a3", Failure(KIND_LIMIT))
     assert tasks.task_agent_chain(hass, data, "") == [one, three]
-    assert tasks.task_agent_chain(hass, data, "a2") == [two]
+    # A named agent starts; with Fallback on the list follows (a1 before a3: a3 is waiting).
+    assert tasks.task_agent_chain(hass, data, "a2") == [two, one, three]
 
 
 def test_limit_hands_over_with_journal_and_marks_agent(run_env) -> None:
@@ -845,3 +900,26 @@ def test_fallback_switch_and_finish_are_logged(run_env, caplog) -> None:
     text = caplog.text
     assert "fallback switched from OpenAI" in text and "to Claude" in text
     assert "finished with fallback agent Claude" in text
+
+
+# --- Agent choice without Fallback (1.6.1b13) ----------------------------------------------------
+
+
+def test_fallback_off_failure_ends_the_task_without_switching(run_env, caplog) -> None:
+    import logging
+
+    from custom_components.ai_workspace.const import DOMAIN
+    from custom_components.ai_workspace.fallback import KIND_AUTH, Failure
+
+    providers = _subentries()
+    data = run_env.hass.data[DOMAIN]
+    data["providers"] = providers
+    data["settings"] = SimpleNamespace(default_agent="")
+    data["runtime_version"] = tasks.TASK_RUNTIME_MIN
+    _turns(run_env, tasks._Turn(error="Claude sign-in expired", failure=Failure(KIND_AUTH)), tasks._Turn(answer="never"))
+    with caplog.at_level(logging.INFO, logger=tasks._LOGGER.name):
+        result = asyncio.run(tasks.async_run_task(run_env.hass, RUN_TASK_SCHEMA({"prompt": "x", "task_name": "Morning"}))).payload()
+    assert result["status"] == "error" and result["agent"] == "Claude" and "sign-in" in result["response"]
+    assert [turn["provider"] for turn in run_env.turns] == [providers["cl"]]
+    assert "task Morning: agent Claude (fallback off)" in caplog.text
+    assert "fallback switched" not in caplog.text

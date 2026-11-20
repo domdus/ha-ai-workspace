@@ -181,7 +181,7 @@
             },
             "data_description": {
               "fallback_enabled": "Standardmäßig aus. Eine gestoppte Antwort, ein fehlschlagendes Tool, eine Ablehnung oder eine fehlerhafte Anfrage wechseln nie den Agent.",
-              "fallback_agents": "Die Reihenfolge zählt: Der erste Agent ist der bevorzugte, neue Chats starten mit ihm; die anderen übernehmen von oben nach unten. Ziehe einen Agenten, um die Reihenfolge zu ändern. Aufgaben, die einen Workspace oder eine Shell brauchen, gehen nur an Runtime-Agenten (Claude SDK, Cursor, Codex).",
+              "fallback_agents": "Gilt nur bei aktivem Fallback; bis du mit aktivem Fallback speicherst, ist die Liste nur ein Vorschlag. Aufgaben folgen derselben Liste. Die Reihenfolge zählt: Der erste Agent ist der bevorzugte, neue Chats starten mit ihm; die anderen übernehmen von oben nach unten. Ziehe einen Agenten, um die Reihenfolge zu ändern. Aufgaben, die einen Workspace oder eine Shell brauchen, gehen nur an Runtime-Agenten (Claude SDK, Cursor, Codex).",
               "fallback_return": "Aus: Der Chat bleibt beim Agent, der übernommen hat. Bei neuer Nachricht: Die nächste Nachricht versucht wieder den bevorzugten Agent. Nach Reset oder Wartezeit: erst wenn sein Limit zurückgesetzt ist oder die Wartezeit (5, 15, 60 Minuten) vorbei ist. Nie mitten in einer Antwort."
             }
           },
@@ -724,7 +724,7 @@
         },
         "agent": {
           "name": "Agent",
-          "description": "Agent-ID, Titel oder Konversations-Entität. Leer: der Standard-Agent, danach die anderen als Ausweich."
+          "description": "Agent-ID, Titel oder Konversations-Entität. Leer: der Standard-Agent; steht der auf 'Zuletzt verwendet', der erste Runtime-Agent (Claude, Cursor, Codex). Ausweichen auf andere Agents nur bei aktivem Fallback."
         },
         "chat": {
           "name": "Chat",

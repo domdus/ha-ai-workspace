@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.1b13
+
+**Tasks respect "Enable fallback".** A task without an `agent` could switch from one agent to the next (for example OpenAI → Gemini → Cursor) although Fallback was off in the options: with Fallback off, `ai_workspace.run_task` still used every other agent as a fallback, in the order the agents were created.
+
+- **Fallback off (the default, also while the Fallback section was never saved):** a task runs with exactly one agent and never switches. If it fails, the run ends with `status: error` and a warning in the log.
+- **Which agent without `agent`:** the Default agent from the options. If that is "Last used" (an automation has no browser that last picked one), the first signed-in Runtime agent in the order Claude, Cursor, Codex; without one, the first agent that can take tasks. No longer simply the oldest agent.
+- **Fallback on:** only the saved Fallback list is used, in its order. A task with a named `agent` starts with that agent; if it fails on the provider side, the list continues from the top, like in a chat.
+- **Log:** each run starts with `task <name>: agent <agent> (fallback on|off)`.
+- **Options:** the Fallback list says that it only applies while Fallback is on, and that an unsaved list is only a suggestion. A new (unsaved) list now suggests the Default agent first, then the Runtime agents (Claude, Cursor, Codex), then the others. Saved lists are unchanged.
+- The `agent` field description of the action is updated in all languages; see [docs/tasks.md](https://github.com/domdus/ha-ai-workspace/blob/beta/docs/tasks.md).
+- Only the integration changes. The Runtime app version moves to 1.6.1b13 with the release but has no functional change.
+
 ## 1.6.1b12
 
 **Rollback button back in the reply row, and clean task results.**

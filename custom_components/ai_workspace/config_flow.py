@@ -228,9 +228,15 @@ def _fallback_schema(current: dict, agents: list) -> vol.Schema:
     ids = [agent.id for agent in agents]
     saved = [item for item in (current.get(CONF_FALLBACK_AGENTS) or []) if item in ids]
     if not saved:
-        # A new list starts with the Default agent on top, then the other agents in their order.
+        # Only a suggestion until saved (an unsaved list is never used): the Default agent on top,
+        # then the Runtime agents (Claude, Cursor, Codex), then the other agents in their order.
         first = str(current.get(CONF_DEFAULT_AGENT) or "")
-        saved = ([first] if first in ids else []) + [item for item in ids if item != first]
+        rank = {kind: place for place, kind in enumerate(("claude", "cursor", "codex"))}
+        rest = sorted(
+            (agent for agent in agents if agent.id != first),
+            key=lambda agent: rank.get(str(getattr(agent, "mode", "") or ""), len(rank)),
+        )
+        saved = ([first] if first in ids else []) + [agent.id for agent in rest]
     back = str(current.get(CONF_FALLBACK_RETURN) or DEFAULT_RETURN)
     if back not in RETURN_MODES:
         back = DEFAULT_RETURN

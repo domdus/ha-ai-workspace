@@ -21,7 +21,7 @@ data:
   task_name: Morning briefing   # task chat title, logs, last run
   prompt: >-
     Give me a short morning briefing ...
-  agent: ""                     # agent id, title or conversation entity; empty = default agent, then the others
+  agent: ""                     # agent id, title or conversation entity; empty = default agent (see below)
   chat: task                    # none (default) or task: one continuing chat per task
   notify: notify.mobile_app_my_phone   # optional: the result as a push message (plain text, task_name as title)
   allow_changes: false          # default: read-only
@@ -44,7 +44,7 @@ Without it the task runs in the background and the automation goes on at once.
 
 **The result is only the final answer.** Status lines an agent writes before or between its tool calls ("Reading the weather data.") are left out of `response`, the push message and the task chat. The push message is plain text: phones do not render Markdown, so `**bold**`, `_italic_`, code marks, `#` headings and link syntax are removed, list items start with "• ", and a long answer is cut at a line or word boundary after about 1000 characters ("…"). The task chat and `response` keep the Markdown.
 
-**Which agent runs it.** A named `agent` runs alone. Without one, a task uses the **Fallback** list when Fallback is on (Settings → AI Workspace → Configure → Fallback): from the top, agents that are waiting out a limit or a backoff last. When an agent fails on the provider side (plan or rate limit, expired sign-in, timeout, connection error, overloaded server), the next one takes over in the same run with the task and a journal of the tool calls already made, so device actions are not repeated; the failed agent waits like it does for chats. With Fallback off it is the default agent, then the other available agents in the same way. A failing tool, a refusal or a bad request never switches the agent. Tasks do not pause: if no agent is left, the run ends with `status: error`.
+**Which agent runs it.** With **Fallback** off (the default, and also while the Fallback section was never saved) a task runs with exactly one agent and never switches: the named `agent`, else the **Default agent** (Settings → AI Workspace → Configure → Chat). If the Default agent is "Last used" (an automation has no browser that last picked one), the task takes the first signed-in Runtime agent in this order: Claude, Cursor, Codex; without one, the first agent that can take tasks. If that agent fails, the run ends with `status: error`. With Fallback on, the saved Fallback list decides: from the top, agents that are waiting out a limit or a backoff last; a named `agent` goes first and the rest of the list follows. When an agent fails on the provider side (plan or rate limit, expired sign-in, timeout, connection error, overloaded server), the next one takes over in the same run with the task and a journal of the tool calls already made, so device actions are not repeated; the failed agent waits like it does for chats. A failing tool, a refusal or a bad request never switches the agent. Tasks do not pause: if no agent is left, the run ends with `status: error`. The Home Assistant log shows the choice at the start of each run: `task <name>: agent <agent> (fallback on|off)`.
 
 **Every run starts fresh.** The agent remembers nothing from earlier runs and cannot ask you anything, so the prompt has to say everything: what to check, how long the answer should be, and what counts as a problem. Only with `chat: task` does the agent see that task's earlier runs in its chat. Templates work in the prompt like in any action, for example `{{ now().strftime('%A') }}`.
 
@@ -54,7 +54,7 @@ Without it the task runs in the background and the automation goes on at once.
 - **Allow changes on:** the agent may control devices and call services like in the chat.
 - **Always, either way (loop protection):** a task can never start `ai_workspace.run_task`, trigger an automation, or create, edit or delete automations or scripts. Runtime agents (Claude, Cursor, Codex) also get no shell or file tools during a task. The same task never runs twice at once, and at most three tasks run at the same time.
 
-Cloud agents apply these rules in their tool loop. Runtime agents apply them in the Runtime's MCP proxy, so the Runtime App must be 1.6.1b6 or newer; an older Runtime is skipped for tasks.
+Cloud agents apply these rules in their tool loop. Runtime agents apply them in the Runtime's MCP proxy, so the Runtime App must be 1.6.1b6 or newer; an older Runtime cannot take tasks (with Fallback on the list moves on to the next agent).
 
 Task runs show on the **Usage** page like chat turns and are tagged as tasks. A reload of AI Workspace waits for running tasks the same way it waits for chat replies.
 

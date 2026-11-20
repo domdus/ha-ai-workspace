@@ -315,40 +315,74 @@ def _find_provider(providers: dict[str, Any], wanted: str) -> Any | None:
     return None
 
 
+# Runtime agents a task without an agent prefers when the Default agent is "Last used" (an automation
+# has no browser that last picked one). Fixed, documented order: Claude, Cursor, Codex.
+RUNTIME_ORDER = ("claude", "cursor", "codex")
+
+
+def _is_ready(provider: Any) -> bool:
+    return bool(getattr(getattr(provider, "info", None), "available", False))
+
+
+def task_default_agent(hass: HomeAssistant, data: dict[str, Any]) -> Any | None:
+    """The one agent a task without `agent` starts with (Fallback list aside).
+
+    The Default agent from the options when it is set. With "Last used" (stored as ""): the first
+    signed-in Runtime agent in RUNTIME_ORDER (Runtime new enough for tasks), else the first agent that
+    can take a task, else the first agent.
+    """
+    providers: dict[str, Any] = dict(data.get("providers") or {})
+    if not providers:
+        return None
+    wanted = str(getattr(data.get("settings"), "default_agent", "") or "").strip()
+    if wanted:
+        found = _find_provider(providers, _agent_from_entity(hass, wanted))
+        if found is not None:
+            return found
+    rows = list(providers.values())
+    for kind in RUNTIME_ORDER:
+        for provider in rows:
+            if str(getattr(provider, "kind", "") or "") == kind and not _not_ready(data, provider):
+                return provider
+    return next((provider for provider in rows if not _not_ready(data, provider)), rows[0])
+
+
+def task_fallback_on(data: dict[str, Any]) -> bool:
+    """Fallback for tasks: only when it is switched on and a list was saved (fallback_ha.fallback_chain)."""
+    from .fallback_ha import fallback_chain
+
+    return bool(fallback_chain(data))
+
+
 def task_agent_chain(hass: HomeAssistant, data: dict[str, Any], wanted: str = "") -> list[Any]:
     """The agents a task tries, in order. THE single place that picks agents for a task.
 
-    A named agent runs alone. Without one and with Fallback on: the fallback list in its order, agents
-    that are waiting out a limit or backoff last. With Fallback off: the default agent, then every
-    other available agent as a fallback when the one before failed on the provider side.
+    Fallback off (or never saved): exactly one agent, no switching. That is the named agent, else
+    task_default_agent. Fallback on: the saved Fallback list in its order, agents waiting out a limit
+    or backoff last; a named agent goes first and the rest of the list follows (as in a chat).
     """
     providers: dict[str, Any] = dict(data.get("providers") or {})
     wanted = _agent_from_entity(hass, str(wanted or "").strip())
+    named: Any | None = None
     if wanted:
-        found = _find_provider(providers, wanted)
-        if found is None:
+        named = _find_provider(providers, wanted)
+        if named is None:
             raise ServiceValidationError(f"AI Workspace has no agent named {wanted!r}.")
-        return [found]
     from .fallback_ha import book_of, fallback_chain
 
     ordered = fallback_chain(data)
-    if ordered:
-        book = book_of(hass, data)
-        now = book.clock()
-        ready = [agent for agent in ordered if not book.blocked(agent, now)]
-        waiting = [agent for agent in ordered if agent not in ready]
-        listed = [providers[agent] for agent in ready + waiting if agent in providers]
-        available = [provider for provider in listed if getattr(getattr(provider, "info", None), "available", False)]
-        return available or listed[:1]
-    from .http import _default_agent
-
-    chain: list[Any] = []
-    default = _default_agent(hass, data)
-    if default in providers:
-        chain.append(providers[default])
-    chain.extend(provider for provider in providers.values() if provider not in chain)
-    available = [provider for provider in chain if getattr(getattr(provider, "info", None), "available", False)]
-    return available or chain[:1]
+    if not ordered:
+        one = named or task_default_agent(hass, data)
+        return [one] if one is not None else []
+    book = book_of(hass, data)
+    now = book.clock()
+    ready = [agent for agent in ordered if not book.blocked(agent, now)]
+    waiting = [agent for agent in ordered if agent not in ready]
+    listed = [providers[agent] for agent in ready + waiting if agent in providers]
+    if named is not None:
+        return [named] + [provider for provider in listed if provider is not named and _is_ready(provider)]
+    available = [provider for provider in listed if _is_ready(provider)]
+    return available or listed[:1]
 
 
 def _runtime_kind(provider: Any) -> bool:
@@ -614,6 +648,12 @@ async def async_run_task(hass: HomeAssistant, params: dict[str, Any], caller: st
     try:
         user_id = await _task_user(hass, caller)
         chain = task_agent_chain(hass, data, str(params.get("agent") or ""))
+        _LOGGER.info(
+            "AI Workspace task %s: agent %s (fallback %s)",
+            name or "(unnamed)",
+            _agent_label(chain[0]) if chain else "-",
+            "on" if task_fallback_on(data) else "off",
+        )
         prompt = str(params.get("prompt") or "").strip()
         outbound = f"{task_preamble(name, allow_changes, keeps_chat)}\n\n{prompt}"
         policy = tool_policy(allow_changes)

@@ -181,7 +181,7 @@
             },
             "data_description": {
               "fallback_enabled": "Disattivato per impostazione predefinita. Fermare una risposta, uno strumento che fallisce, un rifiuto o una richiesta errata non cambiano mai agente.",
-              "fallback_agents": "L'ordine conta: il primo agente è quello preferito e le nuove chat iniziano con lui; gli altri subentrano dall'alto in basso. Trascina un agente per cambiare l'ordine. Le attività che richiedono un workspace o una shell vanno solo agli agenti Runtime (Claude SDK, Cursor, Codex).",
+              "fallback_agents": "Usato solo con la riserva attiva; finché non salvi con la riserva attiva, l'elenco è solo un suggerimento. Le attività seguono lo stesso elenco. L'ordine conta: il primo agente è quello preferito e le nuove chat iniziano con lui; gli altri subentrano dall'alto in basso. Trascina un agente per cambiare l'ordine. Le attività che richiedono un workspace o una shell vanno solo agli agenti Runtime (Claude SDK, Cursor, Codex).",
               "fallback_return": "Disattivato: la chat resta sull'agente subentrato. A ogni nuovo messaggio: il messaggio successivo riprova l'agente preferito. Dopo il reset o l'attesa: solo quando il suo limite è stato ripristinato o l'attesa (5, 15, 60 minuti) è passata. Mai a metà di una risposta."
             }
           },
@@ -724,7 +724,7 @@
         },
         "agent": {
           "name": "Agente",
-          "description": "Id, titolo o entità di conversazione dell'agente. Vuoto: l'agente predefinito, poi gli altri come riserva."
+          "description": "Id, titolo o entità di conversazione dell'agente. Vuoto: l'agente predefinito; se è su 'Ultimo usato', il primo agente Runtime (Claude, Cursor, Codex). Passa ad altri agenti solo con la riserva (Fallback) attiva."
         },
         "chat": {
           "name": "Chat",

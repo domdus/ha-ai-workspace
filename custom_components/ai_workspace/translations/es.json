@@ -181,7 +181,7 @@
             },
             "data_description": {
               "fallback_enabled": "Desactivado por defecto. Detener una respuesta, una herramienta que falla, un rechazo o una petición incorrecta nunca cambian de agente.",
-              "fallback_agents": "El orden cuenta: el primer agente es el preferido y los chats nuevos empiezan con él; los demás toman el relevo de arriba abajo. Arrastra un agente para cambiar el orden. Las tareas que necesitan un espacio de trabajo o un shell solo van a agentes Runtime (Claude SDK, Cursor, Codex).",
+              "fallback_agents": "Solo se usa con el respaldo activado; hasta que guardes con el respaldo activado, la lista es solo una sugerencia. Las tareas siguen la misma lista. El orden cuenta: el primer agente es el preferido y los chats nuevos empiezan con él; los demás toman el relevo de arriba abajo. Arrastra un agente para cambiar el orden. Las tareas que necesitan un espacio de trabajo o un shell solo van a agentes Runtime (Claude SDK, Cursor, Codex).",
               "fallback_return": "Desactivado: el chat se queda con el agente que tomó el relevo. Con un mensaje nuevo: el siguiente mensaje vuelve a probar el agente preferido. Tras el restablecimiento o la espera: solo cuando se haya restablecido su límite o haya pasado la espera (5, 15, 60 minutos). Nunca a mitad de una respuesta."
             }
           },
@@ -724,7 +724,7 @@
         },
         "agent": {
           "name": "Agente",
-          "description": "Id, título o entidad de conversación del agente. Vacío: el agente predeterminado y luego los demás como respaldo."
+          "description": "Id, título o entidad de conversación del agente. Vacío: el agente predeterminado; si está en 'Último usado', el primer agente Runtime (Claude, Cursor, Codex). Solo cambia a otros agentes con el respaldo (Fallback) activado."
         },
         "chat": {
           "name": "Chat",

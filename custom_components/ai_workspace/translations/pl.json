@@ -181,7 +181,7 @@
             },
             "data_description": {
               "fallback_enabled": "Domyślnie wyłączone. Zatrzymanie odpowiedzi, błąd narzędzia, odmowa lub błędne żądanie nigdy nie zmieniają agenta.",
-              "fallback_agents": "Kolejność ma znaczenie: pierwszy agent jest preferowany i od niego zaczynają się nowe czaty; pozostali przejmują od góry do dołu. Przeciągnij agenta, aby zmienić kolejność. Zadania wymagające przestrzeni roboczej lub powłoki trafiają tylko do agentów Runtime (Claude SDK, Cursor, Codex).",
+              "fallback_agents": "Używana tylko przy włączonym zapasie; dopóki nie zapiszesz z włączonym zapasem, lista jest tylko propozycją. Zadania korzystają z tej samej listy. Kolejność ma znaczenie: pierwszy agent jest preferowany i od niego zaczynają się nowe czaty; pozostali przejmują od góry do dołu. Przeciągnij agenta, aby zmienić kolejność. Zadania wymagające przestrzeni roboczej lub powłoki trafiają tylko do agentów Runtime (Claude SDK, Cursor, Codex).",
               "fallback_return": "Wyłączone: czat zostaje przy agencie, który przejął. Przy nowej wiadomości: następna wiadomość znów próbuje preferowanego agenta. Po resecie lub czasie oczekiwania: dopiero gdy jego limit się zresetuje lub minie czas oczekiwania (5, 15, 60 minut). Nigdy w trakcie odpowiedzi."
             }
           },
@@ -724,7 +724,7 @@
         },
         "agent": {
           "name": "Agent",
-          "description": "Id, tytuł lub encja konwersacji agenta. Puste: agent domyślny, potem pozostali jako zapas."
+          "description": "Id, tytuł lub encja konwersacji agenta. Puste: agent domyślny; jeśli ustawiono 'Ostatnio używany', pierwszy agent Runtime (Claude, Cursor, Codex). Przełączenie na innych agentów tylko przy włączonym zapasie (Fallback)."
         },
         "chat": {
           "name": "Czat",

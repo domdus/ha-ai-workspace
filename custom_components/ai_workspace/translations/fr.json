@@ -181,7 +181,7 @@
             },
             "data_description": {
               "fallback_enabled": "Désactivé par défaut. Arrêter une réponse, un outil en échec, un refus ou une requête invalide ne change jamais d'agent.",
-              "fallback_agents": "L'ordre compte : le premier agent est le préféré et les nouvelles discussions commencent avec lui ; les autres prennent le relais de haut en bas. Faites glisser un agent pour changer l'ordre. Les tâches qui demandent un espace de travail ou un shell ne vont qu'aux agents Runtime (Claude SDK, Cursor, Codex).",
+              "fallback_agents": "Utilisée uniquement si le secours est activé ; tant que vous n'enregistrez pas avec le secours activé, la liste n'est qu'une suggestion. Les tâches suivent la même liste. L'ordre compte : le premier agent est le préféré et les nouvelles discussions commencent avec lui ; les autres prennent le relais de haut en bas. Faites glisser un agent pour changer l'ordre. Les tâches qui demandent un espace de travail ou un shell ne vont qu'aux agents Runtime (Claude SDK, Cursor, Codex).",
               "fallback_return": "Désactivé : la discussion reste sur l'agent qui a pris le relais. À chaque nouveau message : le message suivant réessaie l'agent préféré. Après réinitialisation ou délai : seulement une fois sa limite réinitialisée ou le délai (5, 15, 60 minutes) écoulé. Jamais au milieu d'une réponse."
             }
           },
@@ -724,7 +724,7 @@
         },
         "agent": {
           "name": "Agent",
-          "description": "Identifiant, titre ou entité de conversation de l'agent. Vide : l'agent par défaut, puis les autres en secours."
+          "description": "Identifiant, titre ou entité de conversation de l'agent. Vide : l'agent par défaut ; s'il est sur « Dernier utilisé », le premier agent Runtime (Claude, Cursor, Codex). Bascule vers d'autres agents uniquement si le secours (Fallback) est activé."
         },
         "chat": {
           "name": "Chat",

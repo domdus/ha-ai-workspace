@@ -442,6 +442,23 @@ def test_fallback_section_and_last_used_choice() -> None:
     assert {CONF_FALLBACK_ENABLED, CONF_FALLBACK_AGENTS, CONF_FALLBACK_RETURN} <= set(config_flow._SHARED_KEYS)
 
 
+def test_unsaved_fallback_list_suggests_runtime_agents_first() -> None:
+    config_flow = pytest.importorskip("custom_components.ai_workspace.config_flow")
+    from custom_components.ai_workspace.agents import agent_from_mapping
+    from custom_components.ai_workspace.const import CONF_FALLBACK_AGENTS
+
+    agents = [
+        agent_from_mapping("o", "OpenAI", {"api_provider": "openai"}),
+        agent_from_mapping("g", "Gemini", {"api_provider": "gemini"}),
+        agent_from_mapping("cu", "Cursor", {"api_provider": "cursor"}),
+        agent_from_mapping("cl", "Claude", {"api_provider": "claude"}),
+    ]
+    assert config_flow._fallback_schema({}, agents)({})[CONF_FALLBACK_AGENTS] == ["cl", "cu", "o", "g"]
+    # A saved list stays exactly as saved.
+    saved = {CONF_FALLBACK_AGENTS: ["o", "g", "cu", "cl"]}
+    assert config_flow._fallback_schema(saved, agents)({})[CONF_FALLBACK_AGENTS] == ["o", "g", "cu", "cl"]
+
+
 def test_fallback_agents_are_reorderable_and_keep_their_order() -> None:
     config_flow = pytest.importorskip("custom_components.ai_workspace.config_flow")
     from custom_components.ai_workspace.agents import agent_from_mapping
