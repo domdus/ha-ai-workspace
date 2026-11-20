@@ -1,5 +1,6 @@
 const CACHE = new URL(import.meta.url).search;
 const { stringsFor } = await import(`./i18n.js${CACHE}`);
+const { taskStrings } = await import(`./tasks_i18n.js${CACHE}`);
 const { takeSpeech, speechPlain, takePendingClip, speechTail, splitSpeechClip, MAX_CHARS, clipWatch, unlockOnSend, releaseAudio } = await import(
   `./speech.js${CACHE}`
 );
@@ -937,7 +938,15 @@ export async function mountAiWorkspace(root, options = {}) {
     .join(" ");
   const themeCss = `<link rel="stylesheet" href="/ai_workspace/static/chat.css${CACHE}">${
     haUi ? `<link rel="stylesheet" href="/ai_workspace/static/chat-ha-composer.css${CACHE}">` : ""
-  }`;
+  }<link rel="stylesheet" href="/ai_workspace/static/tasks.css${CACHE}">`;
+  // The Tasks page (agent tasks as automations) is for administrators on the full page only.
+  const tasksAllowed = routed && Boolean(hassObj()?.user?.is_admin);
+  const tasksButton = (extra = "") =>
+    tasksAllowed
+      ? `<ha-icon-button class="tasks-open${extra}" label="${taskStrings(hassLanguage()).tasks}">
+                <ha-icon icon="mdi:calendar-clock"></ha-icon>
+              </ha-icon-button>`
+      : "";
   const bannerMarkup = `<p class="banner" hidden></p>`;
   const workspaceLinkMarkup =
     compact && hassObj()?.user?.is_admin ? `<a class="workspace-link" href="/ai-workspace">${t("open_workspace")}</a>` : "";
@@ -1008,6 +1017,7 @@ export async function mountAiWorkspace(root, options = {}) {
               <ha-icon-button class="usage-open" label="${t("usage")}">
                 <ha-icon icon="mdi:chart-bar"></ha-icon>
               </ha-icon-button>
+              ${tasksButton()}
             </div>
             <ha-icon-button class="nav-toggle" label="${t("hide_chats")}">
               <ha-icon icon="${collapsedStart ? "mdi:dock-left" : "mdi:chevron-double-left"}"></ha-icon>
@@ -1043,7 +1053,8 @@ export async function mountAiWorkspace(root, options = {}) {
             </ha-icon-button>
             <ha-icon-button class="usage-open header-usage" label="${t("usage")}">
               <ha-icon icon="mdi:chart-bar"></ha-icon>
-            </ha-icon-button>`}
+            </ha-icon-button>
+            ${tasksButton(" header-tasks")}`}
             <h1 class="title">${t("new_chat")}</h1>
             <span class="agent-badge" title="${htmlAttr(t("active_agent"))}" hidden></span>
           </div>
@@ -1103,6 +1114,7 @@ export async function mountAiWorkspace(root, options = {}) {
         </div>
         <div class="usage-list"></div>
       </div>
+      ${tasksAllowed ? `<div class="tasks-page" hidden aria-hidden="true"></div>` : ""}
     </div>
   `;
 
@@ -1257,6 +1269,7 @@ export async function mountAiWorkspace(root, options = {}) {
   function workspaceRoute(pathname = location.pathname) {
     const clean = String(pathname || "").replace(/\/$/, "") || "/";
     if (clean === "/ai-workspace/usage") return { view: "usage", sessionId: "" };
+    if (clean === "/ai-workspace/tasks") return { view: "tasks", sessionId: "" };
     const match = String(pathname || "").match(/^\/ai-workspace(?:\/conversations)?\/([0-9a-fA-F-]{8,})\/?$/);
     return { view: "chat", sessionId: match ? match[1] : "" };
   }
@@ -1299,11 +1312,19 @@ export async function mountAiWorkspace(root, options = {}) {
     const route = workspaceRoute();
     if (route.view === "usage") {
       haltSpeech();
+      closeTasksPage();
       openUsagePage();
       return;
     }
-    const leavingUsage = wrap.classList.contains("page-usage");
+    if (route.view === "tasks" && tasksAllowed) {
+      haltSpeech();
+      closeUsagePage();
+      openTasksPage();
+      return;
+    }
+    const leavingUsage = wrap.classList.contains("page-usage") || wrap.classList.contains("page-tasks");
     closeUsagePage();
+    closeTasksPage();
     const id = route.sessionId;
     if (id === sessionId && !leavingUsage) return;
     if (id) openSession(id, true);
@@ -7406,6 +7427,10 @@ export async function mountAiWorkspace(root, options = {}) {
     if (body.tts?.today?.turns || body.tts?.all?.turns) {
       frag.appendChild(metricCard(t("usage_tts"), body.tts.today, "tts"));
     }
+    if (body.tasks?.month?.turns) {
+      // Agent task runs (ai_workspace.run_task) this month; they also count in the totals.
+      frag.appendChild(metricCard(taskStrings(hassLanguage()).tasks, body.tasks.month, "tokens"));
+    }
     const kpis = body.kpis || {};
     if (kpis.most_spend || kpis.most_used || kpis.most_efficient || kpis.leanest) {
       const heading = document.createElement("p");
@@ -7579,6 +7604,60 @@ export async function mountAiWorkspace(root, options = {}) {
       goToUsage();
     });
   });
+
+  // Tasks page: lives at /ai-workspace/tasks; tasks_page.js loads the first time it opens.
+  const tasksEl = root.querySelector(".tasks-page");
+  let tasksPage = null;
+
+  function syncTasksButtons(open) {
+    root.querySelectorAll(".tasks-open").forEach((btn) => {
+      if (open) btn.setAttribute("aria-current", "page");
+      else btn.removeAttribute("aria-current");
+    });
+  }
+
+  async function openTasksPage() {
+    if (!tasksEl) return;
+    closeHistory();
+    closeNavIfOverlay();
+    wrap.classList.add("page-tasks");
+    tasksEl.hidden = false;
+    tasksEl.setAttribute("aria-hidden", "false");
+    syncTasksButtons(true);
+    if (!tasksPage) {
+      const { mountTasksPage } = await import(`./tasks_page.js${CACHE}`);
+      tasksPage = mountTasksPage(tasksEl, {
+        hass: hassObj,
+        lang: hassLanguage(),
+        apiFetch,
+        openPath: openHaPath,
+        openChat: (id) => goToSession(id),
+      });
+    }
+    await tasksPage.load();
+  }
+
+  function closeTasksPage() {
+    if (!wrap.classList.contains("page-tasks")) return;
+    wrap.classList.remove("page-tasks");
+    syncTasksButtons(false);
+    if (!tasksEl) return;
+    tasksEl.hidden = true;
+    tasksEl.setAttribute("aria-hidden", "true");
+  }
+
+  root.querySelectorAll(".tasks-open").forEach((btn) => {
+    btn.addEventListener("click", (event) => {
+      event.preventDefault();
+      if (wrap.classList.contains("page-tasks")) return;
+      const path = "/ai-workspace/tasks";
+      if (typeof navigate === "function") navigate(path);
+      else {
+        history.pushState(null, "", path);
+        window.dispatchEvent(new CustomEvent("location-changed"));
+      }
+    });
+  });
   root.querySelectorAll(".nav-toggle").forEach((btn) => {
     btn.addEventListener("click", (event) => {
       event.preventDefault();
@@ -7598,6 +7677,10 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     if (wrap.classList.contains("page-usage")) {
       leaveUsage();
+      return;
+    }
+    if (wrap.classList.contains("page-tasks") && !root.querySelector(".tasks-form:not([hidden])")) {
+      goToSession(sessionId || "");
       return;
     }
     if (wrap.classList.contains("usage-open")) {

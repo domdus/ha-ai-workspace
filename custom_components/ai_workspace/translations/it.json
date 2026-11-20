@@ -701,6 +701,48 @@
         "new_message": "A ogni nuovo messaggio",
         "after_reset": "Dopo il reset o l'attesa"
       }
+    },
+    "task_chat": {
+      "options": {
+        "none": "Nessuna chat",
+        "task": "Chat dell'attività"
+      }
+    }
+  },
+  "services": {
+    "run_task": {
+      "name": "Esegui attività dell'agente",
+      "description": "Esegue un prompt con un agente di AI Workspace, ad esempio a orari prestabiliti. Ogni esecuzione riparte da zero: il prompt deve contenere tutto ciò che serve all'agente. Nel prompt sono ammessi i template.",
+      "fields": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "Cosa deve fare l'agente. Autonomo: l'agente non ricorda le esecuzioni precedenti (tranne la chat dell'attività, se mantenuta). Template ammessi."
+        },
+        "task_name": {
+          "name": "Nome attività",
+          "description": "Nome per la chat dell'attività, i log e l'ultima esecuzione. Necessario per una chat dell'attività."
+        },
+        "agent": {
+          "name": "Agente",
+          "description": "Id, titolo o entità di conversazione dell'agente. Vuoto: l'agente predefinito, poi gli altri come riserva."
+        },
+        "chat": {
+          "name": "Chat",
+          "description": "Tenere le esecuzioni in una chat dell'attività, intitolata con il nome dell'attività."
+        },
+        "notify": {
+          "name": "Notifica",
+          "description": "Servizio o entità di notifica per un breve risultato, ad esempio notify.mobile_app_mio_telefono."
+        },
+        "allow_changes": {
+          "name": "Consenti modifiche",
+          "description": "Disattivato: l'agente legge solo Home Assistant. Attivato: può controllare i dispositivi. Automazioni, script e altre attività restano vietati in ogni caso."
+        },
+        "timeout": {
+          "name": "Timeout",
+          "description": "Secondi prima che l'esecuzione si fermi."
+        }
+      }
     }
   }
 }

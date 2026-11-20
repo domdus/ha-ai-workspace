@@ -701,6 +701,48 @@
         "new_message": "Při nové zprávě",
         "after_reset": "Po obnovení nebo čekání"
       }
+    },
+    "task_chat": {
+      "options": {
+        "none": "Bez chatu",
+        "task": "Chat úlohy"
+      }
+    }
+  },
+  "services": {
+    "run_task": {
+      "name": "Spustit úlohu agenta",
+      "description": "Spustí prompt s agentem AI Workspace, například podle plánu. Každé spuštění začíná znovu: prompt musí obsahovat vše, co agent potřebuje. V promptu fungují šablony.",
+      "fields": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "Co má agent udělat. Samostatný: agent si nepamatuje předchozí spuštění (kromě chatu úlohy, pokud se uchovává). Šablony jsou povoleny."
+        },
+        "task_name": {
+          "name": "Název úlohy",
+          "description": "Název pro chat úlohy, logy a poslední spuštění. Nutný pro chat úlohy."
+        },
+        "agent": {
+          "name": "Agent",
+          "description": "Id, název nebo entita konverzace agenta. Prázdné: výchozí agent, potom ostatní jako záloha."
+        },
+        "chat": {
+          "name": "Chat",
+          "description": "Uchovávat spuštění v jednom chatu úlohy pojmenovaném podle úlohy."
+        },
+        "notify": {
+          "name": "Upozornit",
+          "description": "Služba nebo entita oznámení pro krátký výsledek, např. notify.mobile_app_muj_telefon."
+        },
+        "allow_changes": {
+          "name": "Povolit změny",
+          "description": "Vypnuto: agent Home Assistant jen čte. Zapnuto: smí ovládat zařízení. Automatizace, skripty a další úlohy jsou vždy zakázány."
+        },
+        "timeout": {
+          "name": "Časový limit",
+          "description": "Sekundy do zastavení spuštění."
+        }
+      }
     }
   }
 }

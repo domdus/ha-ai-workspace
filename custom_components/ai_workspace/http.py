@@ -384,6 +384,7 @@ async def _runtime_chat(
     token_mode: str = TOKEN_MODE_OFF,
     runtime_provider: str = "cursor",
     title: bool = False,
+    tool_policy: dict | None = None,
 ) -> AsyncIterator[dict]:
     """One SDK runtime turn (Cursor, Claude or Codex). Reduce token usage works as on cloud agents.
 
@@ -460,6 +461,15 @@ async def _runtime_chat(
 
         token = str(await _login_token(hass, user_id) or "").strip()
     payload.update(_runtime_agent_overrides(hass, access_token=token, admin=admin))
+    if tool_policy:
+        # Agent task run: no shell or file tools, only the MCP servers Home Assistant sends (all behind
+        # the Runtime's proxy, which refuses calls by task_guard), and always with tools attached.
+        payload["tool_policy"] = dict(tool_policy)
+        payload["full_tools"] = False
+        payload["allow_internet"] = False
+        payload["fresh"] = True
+        if isinstance(payload.get("mcp"), dict):
+            payload["mcp"] = {**payload["mcp"], "exclusive": True}
     if model:
         payload["model"] = model
     if effort:
@@ -597,8 +607,13 @@ async def async_agent_events(
     tools: bool | None = None,
     admin: bool = True,
     force_tools: bool = False,
+    tool_policy: dict | None = None,
 ) -> AsyncIterator[dict]:
-    """Run one turn for Assist or any caller that is not an HTTP chat request."""
+    """Run one turn for Assist or any caller that is not an HTTP chat request.
+
+    tool_policy: limits of an agent task run (task_guard), enforced by the cloud agent's tool loop or
+    the Runtime's MCP proxy.
+    """
     store: Store = _runtime(hass)["store"]
 
     def on_agent_id(agent_id: str) -> None:
@@ -625,6 +640,7 @@ async def async_agent_events(
             allow_internet=bool(getattr(provider, "allow_internet", False)),
             token_mode=provider_token_mode(provider),
             runtime_provider=str(getattr(provider, "kind", "") or "cursor"),
+            tool_policy=tool_policy,
         ):
             yield event
         return
@@ -641,6 +657,7 @@ async def async_agent_events(
         tools=tools,
         admin=admin,
         force_tools=force_tools,
+        **({"tool_policy": tool_policy} if tool_policy else {}),
         **(await _activity_kwargs(hass, provider, user_id, session.id, access_token)),
     ):
         yield event
@@ -2536,3 +2553,6 @@ def register_views(hass: HomeAssistant) -> None:
     hass.http.register_view(ActivityPrepareView)
     hass.http.register_view(ActivityCommitView)
     register_approval_views(hass)
+    from .tasks_http import register_task_views
+
+    register_task_views(hass)

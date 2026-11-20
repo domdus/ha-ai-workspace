@@ -701,6 +701,48 @@
         "new_message": "Przy nowej wiadomości",
         "after_reset": "Po resecie lub czasie oczekiwania"
       }
+    },
+    "task_chat": {
+      "options": {
+        "none": "Bez czatu",
+        "task": "Czat zadania"
+      }
+    }
+  },
+  "services": {
+    "run_task": {
+      "name": "Uruchom zadanie agenta",
+      "description": "Uruchamia prompt z agentem AI Workspace, np. według harmonogramu. Każde uruchomienie zaczyna się od nowa: prompt musi zawierać wszystko, czego agent potrzebuje. W prompcie działają szablony.",
+      "fields": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "Co ma zrobić agent. Samowystarczalny: agent nie pamięta wcześniejszych uruchomień (poza czatem zadania, jeśli jest zachowany). Szablony są dozwolone."
+        },
+        "task_name": {
+          "name": "Nazwa zadania",
+          "description": "Nazwa czatu zadania, logów i ostatniego uruchomienia. Wymagana dla czatu zadania."
+        },
+        "agent": {
+          "name": "Agent",
+          "description": "Id, tytuł lub encja konwersacji agenta. Puste: agent domyślny, potem pozostali jako zapas."
+        },
+        "chat": {
+          "name": "Czat",
+          "description": "Zachowuj uruchomienia w jednym czacie zadania, nazwanym jak zadanie."
+        },
+        "notify": {
+          "name": "Powiadom",
+          "description": "Usługa lub encja powiadomień dla krótkiego wyniku, np. notify.mobile_app_moj_telefon."
+        },
+        "allow_changes": {
+          "name": "Zezwól na zmiany",
+          "description": "Wyłączone: agent tylko odczytuje Home Assistant. Włączone: może sterować urządzeniami. Automatyzacje, skrypty i inne zadania są zawsze zablokowane."
+        },
+        "timeout": {
+          "name": "Limit czasu",
+          "description": "Sekundy do zatrzymania uruchomienia."
+        }
+      }
     }
   }
 }

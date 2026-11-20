@@ -1,0 +1,221 @@
+/* Tasks page (/ai-workspace/tasks). Shared by both chat themes. */
+.tasks-page[hidden] {
+  display: none !important;
+}
+
+.wrap.page-tasks .chat {
+  display: none;
+}
+
+.wrap.page-tasks .tasks-page {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  grid-column: 2;
+  grid-row: 1;
+  background: var(--primary-background-color);
+  color: var(--primary-text-color);
+}
+
+@media (max-width: 870px) {
+  .wrap.page-tasks:not(.compact) .tasks-page {
+    grid-column: 1;
+  }
+}
+
+.tasks-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  height: var(--header-height, 56px);
+  border-bottom: 1px solid var(--divider-color);
+}
+
+.tasks-bar h1 {
+  margin: 0;
+  font-size: var(--ha-font-size-l, 1.25rem);
+  font-weight: var(--ha-font-weight-heading, 500);
+}
+
+.tasks-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.tasks-intro,
+.task-hint,
+.tasks-body small {
+  margin: 0;
+  color: var(--secondary-text-color);
+  font-size: 0.9em;
+}
+
+.tasks-note {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--secondary-background-color);
+}
+
+.tasks-note.bad,
+.task-status.bad,
+.task-hint.bad {
+  color: var(--error-color, #db4437);
+}
+
+.tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.task-card,
+.tasks-form {
+  border: 1px solid var(--divider-color);
+  border-radius: var(--ha-card-border-radius, 12px);
+  background: var(--card-background-color);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tasks-form[hidden] {
+  display: none;
+}
+
+.task-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.task-name {
+  font-size: 1.05em;
+}
+
+.task-toggle,
+.task-check,
+.sched-days label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9em;
+}
+
+.task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  color: var(--secondary-text-color);
+  font-size: 0.9em;
+}
+
+.task-buttons,
+.tasks-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tasks-btn {
+  font: inherit;
+  font-size: 0.9em;
+  padding: 6px 12px;
+  border-radius: 18px;
+  border: 1px solid var(--divider-color);
+  background: transparent;
+  color: var(--primary-color);
+  cursor: pointer;
+}
+
+.tasks-btn.primary {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: var(--text-primary-color, #fff);
+}
+
+.tasks-btn.danger {
+  color: var(--error-color, #db4437);
+}
+
+.tasks-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.tasks-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9em;
+}
+
+.tasks-form label.task-check,
+.tasks-form .sched-days label {
+  flex-direction: row;
+}
+
+.tasks-form input:not([type="checkbox"]),
+.tasks-form textarea,
+.tasks-form select {
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--divider-color);
+  border-radius: 6px;
+  background: var(--card-background-color);
+  color: var(--primary-text-color);
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.tasks-form textarea {
+  resize: vertical;
+  min-height: 6em;
+}
+
+.task-schedule {
+  border: 1px solid var(--divider-color);
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  margin: 0;
+}
+
+.task-schedule [hidden] {
+  display: none !important;
+}
+
+.sched-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sched-every {
+  flex-direction: row !important;
+  align-items: center;
+}
+
+.sched-every input {
+  width: 5em;
+}
+
+.task-notify[hidden] {
+  display: none !important;
+}

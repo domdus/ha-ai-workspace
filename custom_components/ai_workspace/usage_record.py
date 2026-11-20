@@ -508,6 +508,12 @@ def dashboard_payload(
         "all": store.summarize_usage(origin="tts", **filt),
         "session": store.summarize_usage(origin="tts", **filt) if session_filter else None,
     }
+    # Agent task runs (ai_workspace.run_task) are tagged origin="task"; they also count in the totals above.
+    tasks = {
+        "today": store.summarize_usage(since=today, until=tomorrow, origin="task", **filt),
+        "month": store.summarize_usage(since=month, origin="task", **filt),
+        "all": store.summarize_usage(origin="task", **filt),
+    }
     models = store.usage_by_model(since=compare_since, until=compare_until, **filt)
     days = daily_series(
         store.usage_events(since=chart_start.isoformat(), until=chart_until, **filt),
@@ -554,6 +560,7 @@ def dashboard_payload(
         "plan_links": dict(OFFICIAL_LINKS),
         "totals": totals,
         "tts": tts,
+        "tasks": tasks,
         "last": last,
         "agents": agents,
         "models": models,

@@ -701,6 +701,48 @@
         "new_message": "Con un mensaje nuevo",
         "after_reset": "Tras el restablecimiento o la espera"
       }
+    },
+    "task_chat": {
+      "options": {
+        "none": "Sin chat",
+        "task": "Chat de la tarea"
+      }
+    }
+  },
+  "services": {
+    "run_task": {
+      "name": "Ejecutar tarea de agente",
+      "description": "Ejecuta un prompt con un agente de AI Workspace, por ejemplo según un horario. Cada ejecución empieza de cero: el prompt debe incluir todo lo que el agente necesita. Se admiten plantillas en el prompt.",
+      "fields": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "Lo que debe hacer el agente. Autónomo: el agente no recuerda ejecuciones anteriores (salvo el chat de la tarea, si se conserva). Se admiten plantillas."
+        },
+        "task_name": {
+          "name": "Nombre de la tarea",
+          "description": "Nombre para el chat de la tarea, los registros y la última ejecución. Necesario para un chat de tarea."
+        },
+        "agent": {
+          "name": "Agente",
+          "description": "Id, título o entidad de conversación del agente. Vacío: el agente predeterminado y luego los demás como respaldo."
+        },
+        "chat": {
+          "name": "Chat",
+          "description": "Guardar las ejecuciones en un chat de la tarea, con el nombre de la tarea."
+        },
+        "notify": {
+          "name": "Notificar",
+          "description": "Servicio o entidad de notificación para un resultado breve, por ejemplo notify.mobile_app_mi_movil."
+        },
+        "allow_changes": {
+          "name": "Permitir cambios",
+          "description": "Desactivado: el agente solo lee Home Assistant. Activado: puede controlar dispositivos. Automatizaciones, scripts y otras tareas siguen prohibidos en ambos casos."
+        },
+        "timeout": {
+          "name": "Tiempo límite",
+          "description": "Segundos hasta que se detiene la ejecución."
+        }
+      }
     }
   }
 }

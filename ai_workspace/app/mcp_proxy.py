@@ -37,6 +37,7 @@ from app.tool_result import shorten_mcp_response
 from app.bps_key import note_guide, prepare_write
 from app.worker_usage import worker_usage_from_response
 from app.write_guard import block_message, placeholder_write
+from app.task_guard import task_refusal
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,11 @@ class McpProxy:
         self.worker_usage: OrderedDict[str, list[dict[str, Any]]] = OrderedDict()
         # Questions MCP servers ask the user (elicitation), answered from the Home Assistant chat.
         self.elicitations = ElicitationBroker()
+
+    @property
+    def policies(self) -> OrderedDict[str, dict[str, Any]]:
+        """Tool limits per chat while an agent task runs in it (task_guard)."""
+        return self.__dict__.setdefault("_policies", OrderedDict())
 
     def note_worker_usage(self, actor: str, event: dict[str, Any] | None) -> None:
         actor = str(actor or "").strip()
@@ -140,10 +146,13 @@ class McpProxy:
         agent: str,
         callback_key: str = "",
         approval_timeout: int | None = None,
+        tool_policy: dict[str, Any] | None = None,
     ) -> None:
         """callback_key is the key Home Assistant issued for this chat's callbacks.
 
         approval_timeout: seconds a question to the user (MCP elicitation) waits before it is cancelled.
+        tool_policy: limits of an agent task run (task_guard); every turn sets it again, so a normal
+        chat turn in the same chat clears it.
         """
         session_id = str(session_id or "").strip()
         user_id = str(user_id or "").strip()
@@ -155,6 +164,13 @@ class McpProxy:
             "callback_key": str(callback_key or "").strip(),
             "approval_timeout": str(clamp_timeout(approval_timeout or DEFAULT_TIMEOUT)),
         }
+        if tool_policy:
+            self.policies[session_id] = dict(tool_policy)
+            self.policies.move_to_end(session_id)
+            while len(self.policies) > _MAX_UPSTREAMS:
+                self.policies.popitem(last=False)
+        else:
+            self.policies.pop(session_id, None)
         self.actors.move_to_end(session_id)
         while len(self.actors) > _MAX_UPSTREAMS:
             self.actors.popitem(last=False)
@@ -322,6 +338,17 @@ async def proxy_mcp(request: Request, secret: str, digest: str, actor: str = "")
         logger.warning("mcp proxy refused /api/mcp without Bearer (avoids HA ban noise)")
         raise HTTPException(status_code=502, detail="Built-in MCP needs a Home Assistant login.")
     tool_call = parse_tool_call(body) if request.method.upper() == "POST" else None
+    if tool_call is not None:
+        refused = task_refusal(tool_call[0], tool_call[1], registry.policies.get(str(actor or "")))
+        if refused:
+            logger.warning("task run refused %s", tool_call[0])
+            return JSONResponse(
+                {
+                    "jsonrpc": "2.0",
+                    "id": tool_call_id(body),
+                    "result": {"content": [{"type": "text", "text": refused}], "isError": True},
+                }
+            )
     if tool_call is not None:
         blocked = placeholder_write(*tool_call)
         if blocked:

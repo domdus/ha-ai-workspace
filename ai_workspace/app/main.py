@@ -140,6 +140,8 @@ class ChatRequest(BaseModel):
     callback_key: str = Field(default="", max_length=200)
     # Seconds a question from an MCP server to the user (elicitation) waits before it is cancelled.
     approval_timeout: int | None = Field(default=None, ge=0, le=86400)
+    # Agent task run (ai_workspace.run_task): the MCP proxy refuses tools by app/task_guard.py.
+    tool_policy: dict[str, Any] | None = None
 
     @field_validator("question", mode="before")
     @classmethod
@@ -589,6 +591,7 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
             request.headers.get("x-ai-workspace-agent") or "Cursor",
             body.callback_key,
             approval_timeout=body.approval_timeout,
+            tool_policy=body.tool_policy,
         )
 
     async def generate():

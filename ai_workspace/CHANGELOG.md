@@ -38,6 +38,27 @@
 - The option stays off by default and keeps its setting. If you had it on, you now get the standard messages with the HA message field; nothing to change.
 - Copy, read aloud, the reply row fading in after a reply, drafts, queued prompts and the chat title work the same with both message fields.
 
+## Unreleased (agent tasks)
+
+**Agent tasks: prompts that run on a schedule, as real Home Assistant automations.** A new action **AI Workspace: Run agent task** (`ai_workspace.run_task`) runs a prompt with an agent, and a new **Tasks** page in AI Workspace creates and manages those automations for you.
+
+**The action**
+- `prompt` (templates work), `task_name`, `agent` (empty: the default agent, then the others as fallback), `chat` (none, or one continuing task chat per task, titled after the task), `notify` (short result as a push message), `allow_changes` (off by default) and `timeout` (10 minutes by default). It shows in the automation and script editor with its fields in all 15 languages.
+- With a response variable it returns `status`, `response`, `agent`, `chat_id`, `duration` and `usage`. Without one it runs in the background.
+- Every run starts fresh; only the task chat keeps earlier runs. Write the prompt so it says everything the agent needs.
+- **Read-only by default:** with Allow changes off the agent only gets tools that read Home Assistant; service calls and config writes are refused.
+- **Loop protection, always:** a task cannot start tasks, trigger automations, or create, edit or delete automations or scripts. Runtime agents get no shell or file tools during a task. The same task never runs twice at once, at most three run together.
+- Task runs count on the Usage page, tagged as tasks. A settings reload waits for running tasks like it waits for chat replies.
+
+**The Tasks page** (administrators)
+- Name, prompt, schedule (daily, weekly, every N minutes/hours, or advanced in the automation editor), agent, result (task chat, push, or both) and Allow changes.
+- Saving writes a normal automation through Home Assistant's automation config API (the automation editor's own) and labels it **AI Workspace**; the page lists exactly those. No scheduler of its own.
+- Each task shows on/paused, the last run and its result, and has Run now, Open task chat, Open in automation editor, and Delete.
+- Tasks you change in the automation editor keep working; the page shows what it can and keeps the rest.
+
+- The Runtime App changed: Claude, Cursor and Codex agents need Runtime 1.6.1b6 or newer to run tasks (its MCP proxy enforces read-only and loop protection). Cloud agents work with Home Assistant alone.
+- Examples (morning briefing, weekly report, evening check): [docs/tasks.md](../docs/tasks.md).
+
 ## 1.6.1b5
 
 **Chats get a real title, and the floating chat shows it.** A pasted link or a long first message no longer becomes the chat title, Claude and Cursor on the Runtime now write a short title too, and the floating chat no longer stays on "New chat".

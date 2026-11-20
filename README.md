@@ -269,6 +269,7 @@ The [docs](docs/README.md) go further once you are up and running:
 - [Settings](docs/settings.md) — every option, what it does, and why it matters
 - [Cost and tokens](docs/cost.md) — Usage page, where prices come from, token modes, and prompt cache
 - [AI Workspace Runtime in Docker](docs/cursor-runtime.md) — bridge network, files on disk, and git
+- [Agent tasks](docs/tasks.md) — scheduled prompts (morning briefing, weekly report, evening check) as Home Assistant automations
 - [Privacy](docs/privacy.md) — what leaves the house, who can chat, Assist satellites
 - [MCP and Change History](docs/mcp.md) — connections, large tool results, the change log, and restoring YAML by hand if Home Assistant will not start
 - [Troubleshooting](docs/troubleshooting.md) — common errors and how to remove AI Workspace

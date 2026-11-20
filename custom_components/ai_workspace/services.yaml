@@ -1,0 +1,41 @@
+run_task:
+  fields:
+    prompt:
+      required: true
+      example: "Give me a short morning briefing: weather today, my calendar, and any open windows."
+      selector:
+        text:
+          multiline: true
+    task_name:
+      example: "Morning briefing"
+      selector:
+        text:
+    agent:
+      example: "conversation.openai"
+      selector:
+        text:
+    chat:
+      default: none
+      selector:
+        select:
+          translation_key: task_chat
+          options:
+            - none
+            - task
+    notify:
+      example: "notify.mobile_app_my_phone"
+      selector:
+        text:
+    allow_changes:
+      default: false
+      selector:
+        boolean:
+    timeout:
+      default: 600
+      selector:
+        number:
+          min: 10
+          max: 7200
+          step: 10
+          unit_of_measurement: s
+          mode: box
