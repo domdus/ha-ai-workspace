@@ -720,3 +720,128 @@ def test_tool_or_refusal_errors_do_not_switch(run_env) -> None:
     _turns(run_env, tasks._Turn(error="The MCP tool failed"), tasks._Turn(answer="never"))
     result = asyncio.run(tasks.async_run_task(run_env.hass, RUN_TASK_SCHEMA({"prompt": "x"}))).payload()
     assert result["status"] == "error" and result["agent"] == "Claude" and len(run_env.turns) == 1
+
+
+# --- Result text and push (1.6.1b12) -------------------------------------------------------------
+
+
+def test_final_answer_drops_status_line_before_tools() -> None:
+    report = "**Wetter heute**\n\n- 18 °C, sonnig"
+    # Streamed text only (API providers): the line before the tool call is a status line.
+    assert tasks.final_answer(["Wetterdaten aus Home Assistant einlesen.", report]) == report
+    # Engine result repeats the whole reply (Cursor) or only the last part (Claude, Codex).
+    joined = f"Wetterdaten aus Home Assistant einlesen.\n\n{report}"
+    assert tasks.final_answer(["Wetterdaten aus Home Assistant einlesen.", report], joined) == report
+    assert tasks.final_answer(["Wetterdaten aus Home Assistant einlesen.", report], report) == report
+    # Whitespace differs between the stream and the result.
+    squashed = f"Wetterdaten aus Home Assistant einlesen.{report}"
+    assert tasks.final_answer(["Wetterdaten aus Home Assistant einlesen.\n", report], squashed) == report
+    # No tools: the whole text is the answer; answer written before a last tool call stays.
+    assert tasks.final_answer(["Alles zu."], "Alles zu.") == "Alles zu."
+    assert tasks.final_answer(["Prüfe.", "Alles zu.", ""]) == "Alles zu."
+    assert tasks.final_answer([""], "Nur Ergebnis.") == "Nur Ergebnis."
+    assert tasks.final_answer([""]) == ""
+
+
+def test_one_turn_keeps_only_text_after_last_tool(monkeypatch) -> None:
+    from custom_components.ai_workspace import conversation, http
+
+    events = [
+        {"type": "status", "text": "Thinking..."},
+        {"type": "text", "delta": "Wetterdaten aus Home Assistant einlesen."},
+        {"type": "tool", "name": "GetLiveContext", "phase": "start", "text": "Calling..."},
+        {"type": "tool", "name": "GetLiveContext", "phase": "end", "text": "ok"},
+        {"type": "text", "delta": "Heute **sonnig**, "},
+        {"type": "text", "delta": "18 °C."},
+        {"type": "result", "text": "Wetterdaten aus Home Assistant einlesen.\n\nHeute **sonnig**, 18 °C."},
+    ]
+
+    async def agent_events(*args, **kwargs):
+        for event in events:
+            yield event
+
+    async def token(hass, user_id):
+        return "t"
+
+    monkeypatch.setattr(http, "async_agent_events", agent_events)
+    monkeypatch.setattr(conversation, "_login_token", token)
+    hass = _hass(_Store())
+    data = hass.data["ai_workspace"]
+    session = SimpleNamespace(id="s1")
+    turn = asyncio.run(tasks._one_turn(hass, data, _provider("a1", "Cursor"), session, "u", "x", "x", "", {}, {}))
+    assert turn.answer == "Heute **sonnig**, 18 °C."
+    assert len(turn.tools) == 2
+
+
+def test_task_prompt_forbids_status_lines() -> None:
+    note = tasks.task_preamble("Wetter", False, False)
+    assert "no status or progress sentences" in note and "output only the result" in note
+
+
+def test_markdown_to_plain_for_push() -> None:
+    md = (
+        "## Wetterbericht\n\n\n\n"
+        "**Heute:** sonnig, _18 °C_ und `kein` Regen.\n"
+        "- Wind: [DWD](https://dwd.de/x_(y)) meldet __schwach__\n"
+        "* Morgen: ~~Regen~~ bewölkt\n"
+        "  - Abends klar\n"
+        "1. erst\n"
+        "> Hinweis\n"
+        "---\n"
+        "| Tag | Temp |\n|---|---|\n| Mo | 18 |\n"
+        "```\ncode\n```\n"
+        "snake_case_name bleibt, 2*3*4 bleibt"
+    )
+    plain = tasks.markdown_to_plain(md)
+    for marker in ("**", "__", "`", "##", "](", "~~"):
+        assert marker not in plain
+    lines = plain.split("\n")
+    assert lines[0] == "Wetterbericht" and lines[1] == ""
+    assert "Heute: sonnig, 18 °C und kein Regen." in lines
+    assert "• Wind: DWD meldet schwach" in lines
+    assert "• Morgen: Regen bewölkt" in lines
+    assert "  • Abends klar" in lines
+    assert "1. erst" in lines and "Hinweis" in lines
+    assert "Tag · Temp" in lines and "Mo · 18" in lines and "code" in lines
+    assert "snake_case_name bleibt, 2*3*4 bleibt" in lines
+    assert "\n\n\n" not in plain
+
+
+def test_push_text_cuts_at_line_or_word() -> None:
+    text = "\n".join(f"- Zeile {i} mit etwas **Text**" for i in range(100))
+    push = tasks.push_text(text, 200)
+    assert len(push) <= 200 and push.endswith("…") and "**" not in push
+    assert push[:-1].split("\n")[-1].startswith("• Zeile")  # whole lines only
+    assert tasks.push_text("wort " * 100, 50).endswith("wort…")
+    assert tasks.push_text("**kurz**") == "kurz"
+
+
+def test_push_is_plain_but_response_keeps_markdown(run_env) -> None:
+    sent: list = []
+
+    async def notify(hass, target, title, message):
+        sent.append((target, title, message))
+
+    run_env.monkeypatch.setattr(tasks, "async_notify", notify)
+    run_env.monkeypatch.setattr(tasks, "task_agent_chain", lambda hass, data, wanted: [_provider("a1", "OpenAI")])
+    _turns(run_env, tasks._Turn(answer="**Sonnig**, 18 °C"))
+    params = RUN_TASK_SCHEMA(
+        {"prompt": "Wetter?", "task_name": "Wetterbericht 19 Uhr", "notify": "notify.mobile_app_x"}
+    )
+    result = asyncio.run(tasks.async_run_task(run_env.hass, params)).payload()
+    assert result["response"] == "**Sonnig**, 18 °C"
+    assert sent == [("notify.mobile_app_x", "Wetterbericht 19 Uhr", "Sonnig, 18 °C")]
+    assert run_env.store.messages[-1][2] == "**Sonnig**, 18 °C"
+
+
+def test_fallback_switch_and_finish_are_logged(run_env, caplog) -> None:
+    import logging
+
+    first, second = _provider("a1", "OpenAI"), _provider("a2", "Claude")
+    run_env.monkeypatch.setattr(tasks, "task_agent_chain", lambda hass, data, wanted: [first, second])
+    _turns(run_env, tasks._Turn(error="down", connection=True), tasks._Turn(answer="Sonnig."))
+    with caplog.at_level(logging.WARNING, logger=tasks._LOGGER.name):
+        asyncio.run(tasks.async_run_task(run_env.hass, RUN_TASK_SCHEMA({"prompt": "x", "task_name": "W"})))
+    text = caplog.text
+    assert "fallback switched from OpenAI" in text and "to Claude" in text
+    assert "finished with fallback agent Claude" in text

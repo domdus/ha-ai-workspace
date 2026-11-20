@@ -10,6 +10,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
+from homeassistant.helpers.entity import EntityPlatformState
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
@@ -24,6 +25,22 @@ from .usage_record import day_bounds, provider_label
 from .worker_usage import WORKER_PREFIX
 
 SCAN = timedelta(minutes=15)
+
+
+def _live(entity: SensorEntity) -> bool:
+    """Added to hass and not removed: only then may a hub refresh write its state.
+
+    Entities whose add was aborted (setup cancelled by a reload, add timeout) or that were
+    removed get hass = None; writing their state raises "Attribute hass is None".
+    """
+    if getattr(entity, "hass", None) is None or not getattr(entity, "entity_id", None):
+        return False
+    return getattr(entity, "_platform_state", None) != EntityPlatformState.REMOVED
+
+
+def _write(entity: SensorEntity) -> None:
+    if _live(entity):
+        entity.async_write_ha_state()
 
 
 async def async_setup_entry(
@@ -120,7 +137,8 @@ class PlanQuotaHub:
         self._entities: list["_PlanQuotaBase"] = []
 
     def attach(self, entity: "_PlanQuotaBase") -> None:
-        self._entities.append(entity)
+        if entity not in self._entities:
+            self._entities.append(entity)
 
     async def async_setup(self) -> None:
         if self._unsub:
@@ -134,12 +152,17 @@ class PlanQuotaHub:
 
     async def refresh(self) -> None:
         self.snapshots = public_plan_quota(self.hass)
-        for entity in self._entities:
-            entity.apply_hub()
+        for entity in list(self._entities):
+            if _live(entity):
+                entity.apply_hub()
+            else:
+                self.detach(entity)
 
     def detach(self, entity: "_PlanQuotaBase") -> None:
         if entity in self._entities:
             self._entities.remove(entity)
+        if self._entities:
+            return
         while self._unsub:
             self._unsub.pop()()
 
@@ -162,11 +185,10 @@ class _PlanQuotaBase(SensorEntity):
 
     async def async_added_to_hass(self) -> None:
         self._hub.attach(self)
+        # Runs on removal and also when HA aborts the add (async_will_remove_from_hass does not).
+        self.async_on_remove(lambda: self._hub.detach(self))
         await self._hub.async_setup()
         self.apply_hub()
-
-    async def async_will_remove_from_hass(self) -> None:
-        self._hub.detach(self)
 
     def apply_hub(self) -> None:
         raise NotImplementedError
@@ -217,7 +239,7 @@ class PlanQuotaSensor(_PlanQuotaBase):
         if link:
             attrs["official_url"] = link
         self._attr_extra_state_attributes = attrs
-        self.async_write_ha_state()
+        _write(self)
 
 
 class UsageHub:
@@ -249,7 +271,8 @@ class UsageHub:
         self._again = False
 
     def attach(self, entity: "_UsageBase") -> None:
-        self._entities.append(entity)
+        if entity not in self._entities:
+            self._entities.append(entity)
 
     async def async_setup(self) -> None:
         if self._unsub:
@@ -330,7 +353,10 @@ class UsageHub:
                 self.agent_tts_windows = data["agent_tts_windows"]
                 self.agent_last = data["agent_last"]
                 for entity in list(self._entities):
-                    entity.apply_hub()
+                    if _live(entity):
+                        entity.apply_hub()
+                    else:
+                        self.detach(entity)
                 if not self._again:
                     break
         finally:
@@ -349,11 +375,10 @@ class _UsageBase(SensorEntity):
 
     async def async_added_to_hass(self) -> None:
         self._hub.attach(self)
+        # Runs on removal and also when HA aborts the add (async_will_remove_from_hass does not).
+        self.async_on_remove(lambda: self._hub.detach(self))
         await self._hub.async_setup()
         self.apply_hub()
-
-    async def async_will_remove_from_hass(self) -> None:
-        self._hub.detach(self)
 
     def apply_hub(self) -> None:
         raise NotImplementedError
@@ -478,7 +503,7 @@ class WorkspaceUsageSensor(_UsageBase):
         else:
             extra = {"workers": dict(self._hub.worker_windows.get(self._window) or {})}
         self._attr_extra_state_attributes = _summary_attrs(summary, extra)
-        self.async_write_ha_state()
+        _write(self)
 
 
 class WorkspaceLastSensor(_UsageBase):
@@ -516,7 +541,7 @@ class WorkspaceLastSensor(_UsageBase):
         if not last:
             self._attr_native_value = None if self._kind in {"cost", "tokens"} else ""
             self._attr_extra_state_attributes = {}
-            self.async_write_ha_state()
+            _write(self)
             return
         if self._kind == "cost":
             self._attr_native_value = last.get("cost_usd")
@@ -527,7 +552,7 @@ class WorkspaceLastSensor(_UsageBase):
         else:
             self._attr_native_value = last.get("model") or ""
         self._attr_extra_state_attributes = last
-        self.async_write_ha_state()
+        _write(self)
 
 
 class AgentUsageSensor(_UsageBase):
@@ -579,7 +604,7 @@ class AgentUsageSensor(_UsageBase):
             extra["origin"] = "tts"
         self._attr_native_value = _from_summary(self._kind, summary)
         self._attr_extra_state_attributes = _summary_attrs(summary, extra)
-        self.async_write_ha_state()
+        _write(self)
 
 
 class AgentLastSensor(_UsageBase):
@@ -619,7 +644,7 @@ class AgentLastSensor(_UsageBase):
         if not last:
             self._attr_native_value = None if self._kind in {"cost", "tokens"} else ""
             self._attr_extra_state_attributes = {"agent_id": self._agent.id}
-            self.async_write_ha_state()
+            _write(self)
             return
         if self._kind == "cost":
             self._attr_native_value = last.get("cost_usd")
@@ -628,4 +653,4 @@ class AgentLastSensor(_UsageBase):
         else:
             self._attr_native_value = last.get("model") or ""
         self._attr_extra_state_attributes = last
-        self.async_write_ha_state()
+        _write(self)

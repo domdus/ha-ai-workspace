@@ -23,7 +23,7 @@ data:
     Give me a short morning briefing ...
   agent: ""                     # agent id, title or conversation entity; empty = default agent, then the others
   chat: task                    # none (default) or task: one continuing chat per task
-  notify: notify.mobile_app_my_phone   # optional: short result as a push message
+  notify: notify.mobile_app_my_phone   # optional: the result as a push message (plain text, task_name as title)
   allow_changes: false          # default: read-only
   timeout: 600                  # seconds, 10 to 7200
 response_variable: result       # optional
@@ -33,7 +33,7 @@ With `response_variable` the automation waits and gets:
 
 ```yaml
 status: ok            # ok, error, timeout or busy
-response: "…"         # the agent's answer (or the error)
+response: "…"         # the agent's final answer in Markdown (or the error)
 agent: OpenAI
 chat_id: 3f2c…        # the task chat, or null
 duration: 12.4        # seconds
@@ -41,6 +41,8 @@ usage: {prompt_tokens: 5400, completion_tokens: 310, total_tokens: 5710, cost_us
 ```
 
 Without it the task runs in the background and the automation goes on at once.
+
+**The result is only the final answer.** Status lines an agent writes before or between its tool calls ("Reading the weather data.") are left out of `response`, the push message and the task chat. The push message is plain text: phones do not render Markdown, so `**bold**`, `_italic_`, code marks, `#` headings and link syntax are removed, list items start with "• ", and a long answer is cut at a line or word boundary after about 1000 characters ("…"). The task chat and `response` keep the Markdown.
 
 **Which agent runs it.** A named `agent` runs alone. Without one, a task uses the **Fallback** list when Fallback is on (Settings → AI Workspace → Configure → Fallback): from the top, agents that are waiting out a limit or a backoff last. When an agent fails on the provider side (plan or rate limit, expired sign-in, timeout, connection error, overloaded server), the next one takes over in the same run with the task and a journal of the tool calls already made, so device actions are not repeated; the failed agent waits like it does for chats. With Fallback off it is the default agent, then the other available agents in the same way. A failing tool, a refusal or a bad request never switches the agent. Tasks do not pause: if no agent is left, the run ends with `status: error`.
 

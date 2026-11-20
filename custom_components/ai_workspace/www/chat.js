@@ -2891,6 +2891,30 @@ export async function mountAiWorkspace(root, options = {}) {
     );
   }
 
+  // Rollback/history button for the latest turn. It sits in the newest reply's own action
+  // row (copy, read aloud, history ... time), as it did before replies got their own rows;
+  // only without such a row (e.g. the turn ended without reply text) it falls back to the
+  // chat-level row at the end of the log.
+  let historyBtn = null;
+
+  function historyButton() {
+    if (historyBtn) return historyBtn;
+    historyBtn = document.createElement("ha-icon-button");
+    historyBtn.className = "history-chat";
+    historyBtn.type = "button";
+    historyBtn.label = t("activity");
+    historyBtn.setAttribute("aria-label", t("activity"));
+    const historyIcon = document.createElement("ha-icon");
+    historyIcon.setAttribute("icon", "mdi:history");
+    historyBtn.appendChild(historyIcon);
+    historyBtn.addEventListener("click", async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      await openHistory();
+    });
+    return historyBtn;
+  }
+
   function syncCopyChat() {
     let row = logEl.querySelector(".chat-actions");
     syncReplyRows(replyEntries());
@@ -2899,7 +2923,21 @@ export async function mountAiWorkspace(root, options = {}) {
     // so that reading can still be paused or stopped.
     const showSpeak = Boolean(voice.tts && speechLive() && !speakTarget);
     const showHistory = Boolean(turnHasHistory);
-    if (!showSpeak && !showHistory) {
+    const lastRow = logEl.querySelector(".reply-actions.is-last");
+    if (showHistory) {
+      const btn = historyButton();
+      btn.hidden = false;
+      if (lastRow) {
+        const timeEl = lastRow.querySelector(":scope > .reply-time");
+        if (btn.parentElement !== lastRow || btn.nextElementSibling !== timeEl) {
+          lastRow.insertBefore(btn, timeEl);
+        }
+      }
+    } else if (historyBtn) {
+      historyBtn.hidden = true;
+    }
+    const historyInRow = Boolean(showHistory && lastRow);
+    if (!showSpeak && !(showHistory && !historyInRow)) {
       if (row) row.hidden = true;
       return;
     }
@@ -2928,23 +2966,7 @@ export async function mountAiWorkspace(root, options = {}) {
     } else if (speakBtn) {
       speakBtn.hidden = true;
     }
-    let historyBtn = row.querySelector(".history-chat");
-    if (!historyBtn) {
-      historyBtn = document.createElement("ha-icon-button");
-      historyBtn.className = "history-chat";
-      historyBtn.type = "button";
-      historyBtn.label = t("activity");
-      const historyIcon = document.createElement("ha-icon");
-      historyIcon.setAttribute("icon", "mdi:history");
-      historyBtn.appendChild(historyIcon);
-      historyBtn.addEventListener("click", async (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        await openHistory();
-      });
-      row.appendChild(historyBtn);
-    }
-    historyBtn.hidden = !turnHasHistory;
+    if (showHistory && !historyInRow && historyBtn.parentElement !== row) row.appendChild(historyBtn);
     row.hidden = false;
     if (logEl.lastElementChild !== row) logEl.appendChild(row);
   }

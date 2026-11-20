@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.6.1b12
+
+**Rollback button back in the reply row, and clean task results.**
+
+- **Chat:** the history button (restore the chat to this point) sits again in the action row under the newest reply, next to copy and read aloud, with the time on the right. Since 1.6.1b4 it had dropped to its own line below the row. Same in the full panel and the floating chat, with the Standard and the HA components composer. Only when the last turn has no reply text does it fall back to its own row.
+- **Tasks: only the final answer.** `ai_workspace.run_task` no longer puts the agent's status line from before its tool calls (for example "Wetterdaten aus Home Assistant einlesen.") in front of the result. This applies to `response`, the push message and the task chat, for every agent (API providers and the Claude, Cursor and Codex runtimes). The task instructions also tell the agent to write no status or preamble sentences.
+- **Tasks: push messages as plain text.** Phones do not render Markdown, so the push no longer shows `**` and similar marks: bold, italics, code marks, headings and link syntax are removed, list items start with "• ", line breaks stay, and a long result is cut at a line or word boundary (about 1000 characters, "…"). The task name stays the notification title. The task chat and `response` keep the Markdown.
+- **Tasks: fallback in the log.** When an agent fails and the next one takes over, the Home Assistant log now says which agent took over and that the task finished with it. Failed runs are logged as warnings.
+- **Usage sensors:** fixed `RuntimeError: Attribute hass is None` ("Task exception was never retrieved") from `sensor.py`. A usage or plan sensor whose setup was aborted (for example by a reload) or that was removed stayed in the refresh list; refreshes now only write sensors that are added to Home Assistant.
+- Only the integration changes. The Runtime app version moves to 1.6.1b12 with the release but has no functional change.
+
 ## 1.6.1b11
 
 **No more Tasks icon in front of the chat title.** Since 1.6.1b6 the full panel showed the calendar icon that opens the **Tasks** page in the chat header, directly before the title, in every chat (most visible on phones). It is gone from the header.

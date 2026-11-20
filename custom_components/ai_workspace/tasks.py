@@ -46,7 +46,8 @@ MAX_TIMEOUT = 7200
 MAX_PARALLEL = 3
 # The oldest Runtime whose MCP proxy applies task_guard. Older ones get no tasks.
 TASK_RUNTIME_MIN = "1.6.1b6"
-NOTIFY_CHARS = 600
+# Phones show a few lines and expand to about this much; FCM/APNs allow ~4 KB.
+NOTIFY_CHARS = 1000
 _RUNTIME_KINDS = frozenset({"cursor", "claude", "codex"})
 _STATE_KEY = f"{DOMAIN}_tasks"
 _STORE_KEY = f"{DOMAIN}.tasks"
@@ -102,6 +103,9 @@ def task_preamble(name: str, allow_changes: bool, keeps_chat: bool) -> str:
         f"This is an unattended AI Workspace task{label}, started by a Home Assistant automation or script. "
         "Nobody reads along and nobody can answer questions: do not ask, finish the task yourself and end with "
         "a short, self-contained answer (what you checked, what you found, what needs attention).",
+        "Your reply is delivered as is (push message, chat, automation variable): write no status or progress "
+        "sentences (such as “Reading the weather data.”) before or between tool calls, no preamble; "
+        "output only the result.",
     ]
     if allow_changes:
         lines.append("You may control devices and change things when the task asks for it.")
@@ -117,12 +121,118 @@ def task_preamble(name: str, allow_changes: bool, keeps_chat: bool) -> str:
     return "\n".join(lines)
 
 
+def _squash(text: str) -> str:
+    return "".join(str(text or "").split())
+
+
+def final_answer(segments: list[str], final: str | None = None) -> str:
+    """The task result: only the agent's final answer, never the status lines before tool calls.
+
+    `segments` is the streamed reply text split at tool calls (the last one came after the last
+    tool call); `final` is the engine's own result text, which some engines send as the whole
+    reply including the text from before the tools.
+    """
+    parts = [str(seg or "").strip() for seg in segments or []]
+    parts = [seg for seg in parts if seg]
+    tail = parts[-1] if parts else ""
+    before = parts[:-1]
+    answer = str(final or "").strip()
+    if not answer:
+        return tail
+    # Drop the status lines the final text starts with (whitespace may differ).
+    for seg in before:
+        want = _squash(seg)
+        if not want or not _squash(answer).startswith(want):
+            continue
+        seen, cut = 0, 0
+        for cut, char in enumerate(answer, start=1):
+            if not char.isspace():
+                seen += 1
+            if seen == len(want):
+                break
+        answer = answer[cut:].strip()
+    if not answer:
+        return tail
+    if tail and tail != answer and _squash(answer).endswith(_squash(tail)) and before:
+        # Final text = intro we could not match + the part after the last tool call.
+        return tail
+    return answer
+
+
+# Markdown to plain text for push notifications (they show the markers literally).
+_MD_FENCE = re.compile(r"^\s*(```|~~~).*$", re.MULTILINE)
+_MD_IMAGE = re.compile(r"!\[([^\]]*)\]\([^)]*\)")
+_MD_LINK = re.compile(r"\[([^\]]+)\]\((?:[^()]|\([^)]*\))*\)")
+_MD_REF_LINK = re.compile(r"\[([^\]]+)\]\[[^\]]*\]")
+_MD_AUTOLINK = re.compile(r"<(https?://[^>\s]+)>")
+_MD_HEADING = re.compile(r"^\s{0,3}#{1,6}\s+(.*?)\s*#*\s*$")
+_MD_QUOTE = re.compile(r"^\s{0,3}>\s?")
+_MD_BULLET = re.compile(r"^(\s*)[-*+]\s+(\[[ xX]\]\s+)?")
+_MD_RULE = re.compile(r"^\s{0,3}([-*_])(\s*\1){2,}\s*$")
+_MD_TABLE_RULE = re.compile(r"^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$")
+_MD_STRONG = re.compile(r"(\*\*|__)(?=\S)(.+?)(?<=\S)\1")
+_MD_EM_STAR = re.compile(r"(?<![\w*])\*(?=\S)(.+?)(?<=\S)\*(?![\w*])")
+_MD_EM_UNDER = re.compile(r"(?<![\w_])_(?=\S)(.+?)(?<=\S)_(?![\w_])")
+_MD_STRIKE = re.compile(r"~~(?=\S)(.+?)(?<=\S)~~")
+_MD_CODE = re.compile(r"`+([^`]*)`+")
+
+
+def _plain_inline(text: str) -> str:
+    text = _MD_IMAGE.sub(r"\1", text)
+    text = _MD_LINK.sub(r"\1", text)
+    text = _MD_REF_LINK.sub(r"\1", text)
+    text = _MD_AUTOLINK.sub(r"\1", text)
+    text = _MD_CODE.sub(r"\1", text)
+    for _ in range(2):  # nested **_x_**
+        text = _MD_STRONG.sub(r"\2", text)
+        text = _MD_STRIKE.sub(r"\1", text)
+        text = _MD_EM_STAR.sub(r"\1", text)
+        text = _MD_EM_UNDER.sub(r"\1", text)
+    return text
+
+
+def markdown_to_plain(text: str) -> str:
+    """Readable plain text from the agent's Markdown: no **, _, `, #, link syntax; bullets as "• "."""
+    lines: list[str] = []
+    for raw in str(text or "").replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+        if _MD_FENCE.match(raw) or ("|" in raw and _MD_TABLE_RULE.match(raw)):
+            continue
+        if _MD_RULE.match(raw):
+            lines.append("")
+            continue
+        line = _MD_QUOTE.sub("", raw)
+        heading = _MD_HEADING.match(line)
+        if heading:
+            line = heading.group(1)
+        bullet = _MD_BULLET.match(line)
+        if bullet:
+            indent = "  " if len(bullet.group(1).expandtabs(4)) >= 2 else ""
+            line = f"{indent}• {line[bullet.end():]}"
+        if line.strip().startswith("|") and line.strip().endswith("|"):
+            cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+            line = " · ".join(cell for cell in cells if cell)
+        lines.append(_plain_inline(line).rstrip())
+    out = "\n".join(lines).strip()
+    return re.sub(r"\n{3,}", "\n\n", out)
+
+
 def short_result(text: str, limit: int = NOTIFY_CHARS) -> str:
+    """Cut to `limit` characters at a line break (or else a word) and end with "…"."""
     text = re.sub(r"\n{3,}", "\n\n", str(text or "").strip())
     if len(text) <= limit:
         return text
-    cut = text[: limit - 1].rsplit(" ", 1)[0].rstrip()
-    return f"{cut}…"
+    head = text[: limit - 1]
+    line_cut = head.rfind("\n")
+    if line_cut >= limit // 2:
+        cut = head[:line_cut].rstrip()
+    else:
+        cut = head.rsplit(" ", 1)[0].rstrip() if " " in head else head
+    return f"{cut.rstrip(' ,;:-–')}…"
+
+
+def push_text(text: str, limit: int = NOTIFY_CHARS) -> str:
+    """The task result as a push message: plain text, cut to a length phones show."""
+    return short_result(markdown_to_plain(text), limit)
 
 
 @dataclass
@@ -342,7 +452,6 @@ async def _one_turn(
     policy: dict[str, Any],
     usage: dict[str, Any],
 ) -> _Turn:
-    from .chat_scope import merge_reply_text
     from .conversation import _login_token
     from .error_text import public_error
     from .fallback import classify_failure
@@ -351,7 +460,9 @@ async def _one_turn(
 
     store = data["store"]
     turn = _Turn()
-    parts: list[str] = []
+    # Text split at tool calls: what the agent writes before a tool call is a status line
+    # ("Reading the weather data."), not part of the result.
+    segments: list[str] = [""]
     final: str | None = None
     origin = str(hass.config.external_url or hass.config.internal_url or "").rstrip("/")
     async for event in async_agent_events(
@@ -372,10 +483,12 @@ async def _one_turn(
     ):
         kind = event.get("type")
         if kind == "text":
-            parts.append(str(event.get("delta") or ""))
+            segments[-1] += str(event.get("delta") or "")
         elif kind == "result":
             final = str(event.get("text") or "")
         elif kind == "tool":
+            if segments[-1].strip():
+                segments.append("")
             turn.tools.append({key: event.get(key) for key in ("name", "phase", "text") if key in event})
             turn.events.append(dict(event))
         elif kind == "error":
@@ -408,7 +521,7 @@ async def _one_turn(
                         origin=TASK_ORIGIN,
                     ),
                 )
-    turn.answer = merge_reply_text("".join(parts), final).strip()
+    turn.answer = final_answer(segments, final)
     return turn
 
 
@@ -532,12 +645,18 @@ async def async_run_task(hass: HomeAssistant, params: dict[str, Any], caller: st
         if keeps_chat and result.chat_id:
             values["chat_id"] = result.chat_id
         await state.update(key, **values)
-    _LOGGER.info(
-        "AI Workspace task %s: %s in %.1fs (%s)", name or "(unnamed)", result.status, result.duration, result.agent or "-"
+    _LOGGER.log(
+        logging.INFO if result.status == STATUS_OK else logging.WARNING,
+        "AI Workspace task %s: %s in %.1fs (%s)%s",
+        name or "(unnamed)",
+        result.status,
+        result.duration,
+        result.agent or "-",
+        f": {result.error}" if result.status != STATUS_OK and result.error else "",
     )
     notify = str(params.get("notify") or "").strip()
     if notify:
-        text = short_result(result.response) if result.status == STATUS_OK else f"⚠ {result.error or result.status}"
+        text = push_text(result.response) if result.status == STATUS_OK else f"⚠ {result.error or result.status}"
         await async_notify(hass, notify, name or "AI Workspace", text)
     return result
 
@@ -567,6 +686,8 @@ async def _run_chain(
     book = await async_load_book(hass, data) if fallback_chain(data) else None
     journal = TurnJournal()
     sent = outbound
+    # Agent that failed before this one, and why: the HA log shows who took over.
+    failed: tuple[str, str] | None = None
     for provider in chain:
         reason = _not_ready(data, provider)
         if reason:
@@ -574,6 +695,10 @@ async def _run_chain(
             continue
         result.agent = _agent_label(provider)
         result.agent_id = str(getattr(getattr(provider, "info", None), "id", "") or "")
+        if failed is not None:
+            _LOGGER.warning(
+                "AI Workspace task %s: fallback switched from %s (%s) to %s", title, failed[0], failed[1], result.agent
+            )
         session = await _open_session(hass, data, provider, user_id, chat_id if keeps_chat else "", title)
         if keeps_chat:
             # Kept even when this run times out, so the next run continues the same chat.
@@ -618,6 +743,13 @@ async def _run_chain(
                 book.mark_ok(result.agent_id)
             result.response = turn.answer
             result.error = "" if turn.answer else (turn.error or "The agent returned nothing.")
+            if failed is not None:
+                _LOGGER.warning(
+                    "AI Workspace task %s: finished with fallback agent %s (%s)",
+                    title,
+                    result.agent,
+                    "ok" if turn.answer else "no answer",
+                )
             return
         # Provider-side failure (limit, sign-in, timeout, connection, overloaded): the next agent
         # takes over with the task and a journal of the tool calls already made in this run.
@@ -626,6 +758,7 @@ async def _run_chain(
         for event in turn.events:
             journal.note(event, result.agent)
         reasons.append(f"{result.agent}: {turn.error}")
+        failed = (result.agent, str(getattr(failure, "kind", "") or "error"))
         # No partial reply text: nobody watched it, so the next agent writes the whole result again.
         sent = handoff_prompt(outbound, journal, failed_agent=result.agent, reason=failure.kind)
     result.error = "; ".join(reasons) or "AI Workspace has no agent that can run tasks."
