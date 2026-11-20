@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.6.1b5
+
+**Chats get a real title, and the floating chat shows it.** A pasted link or a long first message no longer becomes the chat title, Claude and Cursor on the Runtime now write a short title too, and the floating chat no longer stays on "New chat".
+
+**Title in the header**
+- The floating chat and the chat header stayed on "Neuer Chat" / "New chat" even after the chat had a title, until you reloaded. The first title now arrives together with the reply.
+- If the header still shows the placeholder when a reply is done, it asks Home Assistant once for the title. A reply you follow from another device or after switching back updates the title too.
+
+**Better first titles**
+- The first title used to be your first message cut at 80 characters, so a pasted link became the chat title. A link now becomes a short "site: topic" title, for example a Heise article turns into something like "Heise: DGX Spark Nvidias Desktop KI Computer". The link itself is never the title.
+- Other text becomes its first sentence, at most about 6 words or 48 characters, cut at a word and without a dangling "und", "im" or "der" at the end.
+
+**Written titles**
+- With **Save tokens** off, Claude and Cursor (on the Runtime and as API agents) then write a short topical title for the new chat, 2 to 6 words in your language, for example "Heise Artikel über Nvidia Spark". On the Runtime it shows while the reply is still being written when it is ready in time. Claude uses one short extra request for it, without tools.
+- Codex and Assist / voice chats keep the improved first title.
+- A title you renamed yourself is never overwritten. Existing chats keep their titles.
+
+- The Runtime App changed: update it to 1.6.1b5 so Claude and Cursor on the Runtime write titles. The better first titles and the header fix work with Home Assistant alone.
+
 ## 1.6.1b4
 
 **Copy and read aloud under every reply, and what you type stays in its chat.** Each finished agent reply gets its own small row with copy, read aloud and the reply time. Text typed but not sent, and prompts queued while a reply runs, now stay with their chat.
