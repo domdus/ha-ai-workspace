@@ -45,7 +45,7 @@
               "keep_chats": "Chats to keep"
             },
             "data_description": {
-              "default_agent": "Agent a new chat starts with. Each chat remembers the agent (and model) it last used. Last used: the agent you picked most recently in this browser.",
+              "default_agent": "Agent a new chat starts with. Each chat remembers the agent (and model) it last used. Last used: the agent you picked most recently in this browser. When Fallback is on, its agent list decides instead.",
               "model_switcher": "Off by default. Adds a model picker next to the agent picker, so one chat can use another model of the same agent. The agent's own model stays the default.",
               "enable_sidebar": "Adds AI Workspace to the Home Assistant sidebar. When off, administrators can still open /ai-workspace directly.",
               "enable_overlay": "A round AI button in the corner of every Home Assistant page, so you can ask without leaving the page. On Settings pages it sits higher so it does not cover other buttons.",
@@ -160,7 +160,7 @@
               "keep_chats": "Chats to keep"
             },
             "data_description": {
-              "default_agent": "Agent a new chat starts with. Each chat remembers the agent (and model) it last used. Last used: the agent you picked most recently in this browser.",
+              "default_agent": "Agent a new chat starts with. Each chat remembers the agent (and model) it last used. Last used: the agent you picked most recently in this browser. When Fallback is on, its agent list decides instead.",
               "model_switcher": "Off by default. Adds a model picker next to the agent picker, so one chat can use another model of the same agent. The agent's own model stays the default.",
               "enable_sidebar": "Adds AI Workspace to the Home Assistant sidebar. When off, administrators can still open /ai-workspace directly.",
               "enable_overlay": "A round AI button in the corner of every Home Assistant page, so you can ask without leaving the page. On Settings pages it sits higher so it does not cover other buttons.",
@@ -169,6 +169,20 @@
               "ui_theme": "Off by default. Builds the chat from Home Assistant's own UI parts. Try it if the chat does not match your theme.",
               "cross_chat": "Off by default. When on, a question can use a short excerpt from another chat whose title shares words with it, without you mentioning that chat. Helps when you already talked about the same room or automation. The other chat is not changed.",
               "keep_chats": "Newest unpinned chats kept per person. Older ones are deleted so the list does not grow forever. Pinned chats are always kept. Default 30."
+            }
+          },
+          "fallback": {
+            "name": "Fallback",
+            "description": "Optional. When an agent's provider fails (plan or token limit, rate limit, expired sign-in, timeout, connection error, overloaded server), the next agent in the list continues the task. When on, this list replaces the Default agent.",
+            "data": {
+              "fallback_enabled": "Enable fallback",
+              "fallback_agents": "Agents in order",
+              "fallback_return": "Back to the preferred agent"
+            },
+            "data_description": {
+              "fallback_enabled": "Off by default. Stopping a reply, a failing tool, a refusal or a wrong request never switches the agent.",
+              "fallback_agents": "Order counts: the first agent is the preferred one and new chats start with it; the others take over from top to bottom. To move an agent down, remove it and add it again. Tasks that need a workspace or shell only go to Runtime agents (Claude SDK, Cursor, Codex).",
+              "fallback_return": "Off: the chat stays on the agent that took over. On new message: the next message tries the preferred agent again. After reset or wait time: only once its limit reset or the wait time (5, 15, 60 minutes) has passed. Never in the middle of a reply."
             }
           },
           "cost": {
@@ -674,6 +688,18 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Custom MCP URL"
+      }
+    },
+    "default_agent": {
+      "options": {
+        "last_used": "Last used"
+      }
+    },
+    "fallback_return": {
+      "options": {
+        "off": "Off",
+        "new_message": "On new message",
+        "after_reset": "After reset or wait time"
       }
     }
   }

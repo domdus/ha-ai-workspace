@@ -279,14 +279,14 @@ def map_claude_message(message: Any, api_error: str = "") -> list[dict[str, Any]
                 events.append({"type": "status", "text": "Thinking..."})
             elif isinstance(block, ToolUseBlock):
                 name = _resolved_tool_name(block.name, block.input)
-                events.append(_tool_event(name, "start", f"Calling {_tool_label(name)}...", block.id))
+                events.append(_tool_event(name, "start", f"Calling {_tool_label(name)}...", block.id, block.input))
         return events
     if isinstance(message, UserMessage):
         blocks = message.content if isinstance(message.content, list) else []
         for block in blocks:
             if isinstance(block, ToolResultBlock):
                 text = "Tool failed" if getattr(block, "is_error", False) else "Finished"
-                events.append(_tool_event("tool", "end", text, block.tool_use_id))
+                events.append(_tool_event("tool", "end", text, block.tool_use_id, getattr(block, "content", None)))
         return events
     if isinstance(message, ResultMessage):
         if message.is_error or str(getattr(message, "subtype", "") or "").startswith("error_"):

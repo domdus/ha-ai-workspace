@@ -45,7 +45,7 @@
               "keep_chats": "Chat da conservare"
             },
             "data_description": {
-              "default_agent": "Agente con cui inizia una nuova chat. Ogni chat ricorda l'agente (e il modello) usato per ultimo. Ultimo usato: l'agente scelto più di recente in questo browser.",
+              "default_agent": "Agente con cui inizia una nuova chat. Ogni chat ricorda l'agente (e il modello) usato per ultimo. Ultimo usato: l'agente scelto più di recente in questo browser. Con la riserva attiva decide invece il suo elenco di agenti.",
               "model_switcher": "Disattivato per impostazione predefinita. Aggiunge un selettore di modello accanto a quello dell'agente, così una chat può usare un altro modello dello stesso agente. Il modello dell'agente resta quello predefinito.",
               "enable_sidebar": "Aggiunge AI Workspace alla barra laterale di Home Assistant. Disattivo: gli amministratori possono comunque aprire /ai-workspace direttamente.",
               "enable_overlay": "Un pulsante IA rotondo nell'angolo di ogni pagina di Home Assistant, così puoi chiedere senza lasciare la pagina. Nelle pagine Impostazioni sta più in alto per non coprire altri pulsanti.",
@@ -160,7 +160,7 @@
               "keep_chats": "Chat da conservare"
             },
             "data_description": {
-              "default_agent": "Agente con cui inizia una nuova chat. Ogni chat ricorda l'agente (e il modello) usato per ultimo. Ultimo usato: l'agente scelto più di recente in questo browser.",
+              "default_agent": "Agente con cui inizia una nuova chat. Ogni chat ricorda l'agente (e il modello) usato per ultimo. Ultimo usato: l'agente scelto più di recente in questo browser. Con la riserva attiva decide invece il suo elenco di agenti.",
               "model_switcher": "Disattivato per impostazione predefinita. Aggiunge un selettore di modello accanto a quello dell'agente, così una chat può usare un altro modello dello stesso agente. Il modello dell'agente resta quello predefinito.",
               "enable_sidebar": "Aggiunge AI Workspace alla barra laterale di Home Assistant. Disattivo: gli amministratori possono comunque aprire /ai-workspace direttamente.",
               "enable_overlay": "Un pulsante IA rotondo nell'angolo di ogni pagina di Home Assistant, così puoi chiedere senza lasciare la pagina. Nelle pagine Impostazioni sta più in alto per non coprire altri pulsanti.",
@@ -169,6 +169,20 @@
               "ui_theme": "Disattivo per impostazione predefinita. Costruisce la chat con gli elementi dell'interfaccia di Home Assistant. Provalo se la chat non si adatta al tuo tema.",
               "cross_chat": "Disattivo per impostazione predefinita. Se attivo, una domanda può usare un breve estratto di un'altra chat il cui titolo ha parole in comune, senza che tu la nomini. Utile se hai già parlato della stessa stanza o automazione. L'altra chat non viene modificata.",
               "keep_chats": "Chat non fissate più recenti conservate per persona. Le più vecchie vengono eliminate così l'elenco non cresce all'infinito. Le chat fissate restano sempre. Predefinito 30."
+            }
+          },
+          "fallback": {
+            "name": "Riserva",
+            "description": "Facoltativo. Quando il fornitore di un agente fallisce (limite del piano o dei token, limite di frequenza, accesso scaduto, timeout, errore di connessione, server sovraccarico), l'agente successivo dell'elenco continua l'attività. Se attiva, questa lista sostituisce l'agente predefinito.",
+            "data": {
+              "fallback_enabled": "Attiva riserva",
+              "fallback_agents": "Agenti in ordine",
+              "fallback_return": "Ritorno all'agente preferito"
+            },
+            "data_description": {
+              "fallback_enabled": "Disattivato per impostazione predefinita. Fermare una risposta, uno strumento che fallisce, un rifiuto o una richiesta errata non cambiano mai agente.",
+              "fallback_agents": "L'ordine conta: il primo agente è quello preferito e le nuove chat iniziano con lui; gli altri subentrano dall'alto in basso. Per spostare un agente in fondo, rimuovilo e aggiungilo di nuovo. Le attività che richiedono un workspace o una shell vanno solo agli agenti Runtime (Claude SDK, Cursor, Codex).",
+              "fallback_return": "Disattivato: la chat resta sull'agente subentrato. A ogni nuovo messaggio: il messaggio successivo riprova l'agente preferito. Dopo il reset o l'attesa: solo quando il suo limite è stato ripristinato o l'attesa (5, 15, 60 minuti) è passata. Mai a metà di una risposta."
             }
           },
           "cost": {
@@ -674,6 +688,18 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "URL MCP personalizzato"
+      }
+    },
+    "default_agent": {
+      "options": {
+        "last_used": "Ultimo usato"
+      }
+    },
+    "fallback_return": {
+      "options": {
+        "off": "Disattivato",
+        "new_message": "A ogni nuovo messaggio",
+        "after_reset": "Dopo il reset o l'attesa"
       }
     }
   }

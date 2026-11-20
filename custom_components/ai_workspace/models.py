@@ -107,6 +107,9 @@ class Settings:
     cross_chat: bool = False
     default_agent: str = ""
     model_switcher: bool = False
+    fallback_enabled: bool = False
+    fallback_agents: tuple[str, ...] = ()
+    fallback_return: str = "new_message"
     token_mode: str = "off"
     prompt_cache: bool = True
     cache_1h: bool = False
