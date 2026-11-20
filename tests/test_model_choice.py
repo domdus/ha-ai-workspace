@@ -44,6 +44,17 @@ def test_dropdowns_list_catalog_models_after_the_picks() -> None:
     assert model_catalog("azure") == []
 
 
+
+def test_cursor_catalog_matches_the_sdk_list() -> None:
+    # Fallback when the Runtime cannot list models; mirrors Cursor SDK ListModels (2026-11-20).
+    cursor = model_catalog("cursor")
+    assert cursor[0] == "composer-2.5"
+    assert len(cursor) == len(set(cursor))
+    for name in ("claude-fable-5-2", "gemini-4-neon", "gemini-4-carbon", "gemini-4-hydrogen", "deepseek-v41-flash-1017"):
+        assert name in cursor
+    for gone in ("gemini-3.7-flash", "gemini-3.6-flash"):
+        assert gone not in cursor
+
 def test_live_list_drops_non_chat_and_dated_ids() -> None:
     rows = [
         {"id": "gpt-5"},
