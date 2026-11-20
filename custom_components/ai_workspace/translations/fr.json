@@ -675,6 +675,48 @@
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "URL MCP personnalisée"
       }
+    },
+    "task_chat": {
+      "options": {
+        "none": "Pas de chat",
+        "task": "Chat de la tâche"
+      }
+    }
+  },
+  "services": {
+    "run_task": {
+      "name": "Exécuter une tâche d'agent",
+      "description": "Exécute un prompt avec un agent AI Workspace, par exemple selon un horaire. Chaque exécution repart de zéro : le prompt doit contenir tout ce dont l'agent a besoin. Les modèles sont acceptés dans le prompt.",
+      "fields": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "Ce que l'agent doit faire. Autonome : l'agent ne se souvient d'aucune exécution précédente (sauf le chat de la tâche, s'il est conservé). Modèles autorisés."
+        },
+        "task_name": {
+          "name": "Nom de la tâche",
+          "description": "Nom du chat de la tâche, des journaux et de la dernière exécution. Requis pour un chat de tâche."
+        },
+        "agent": {
+          "name": "Agent",
+          "description": "Identifiant, titre ou entité de conversation de l'agent. Vide : l'agent par défaut, puis les autres en secours."
+        },
+        "chat": {
+          "name": "Chat",
+          "description": "Garder les exécutions dans un chat de tâche, nommé d'après la tâche."
+        },
+        "notify": {
+          "name": "Notifier",
+          "description": "Service ou entité de notification pour un court résultat, par exemple notify.mobile_app_mon_telephone."
+        },
+        "allow_changes": {
+          "name": "Autoriser les modifications",
+          "description": "Désactivé : l'agent lit seulement Home Assistant. Activé : il peut piloter des appareils. Automatisations, scripts et autres tâches restent interdits dans les deux cas."
+        },
+        "timeout": {
+          "name": "Délai",
+          "description": "Secondes avant l'arrêt de l'exécution."
+        }
+      }
     }
   }
 }

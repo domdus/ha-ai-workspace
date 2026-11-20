@@ -675,6 +675,48 @@
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Benutzerdefinierte MCP-URL"
       }
+    },
+    "task_chat": {
+      "options": {
+        "none": "Kein Chat",
+        "task": "Aufgaben-Chat"
+      }
+    }
+  },
+  "services": {
+    "run_task": {
+      "name": "Agent-Aufgabe ausführen",
+      "description": "Führt einen Prompt mit einem AI-Workspace-Agenten aus, zum Beispiel zeitgesteuert. Jeder Lauf beginnt neu: Der Prompt muss alles enthalten, was der Agent braucht. Templates sind im Prompt erlaubt.",
+      "fields": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "Was der Agent tun soll. In sich vollständig: Der Agent erinnert sich an keine früheren Läufe (außer an den Aufgaben-Chat, falls behalten). Templates sind erlaubt."
+        },
+        "task_name": {
+          "name": "Aufgabenname",
+          "description": "Name für den Aufgaben-Chat, die Logs und den letzten Lauf. Für einen Aufgaben-Chat nötig."
+        },
+        "agent": {
+          "name": "Agent",
+          "description": "Agent-ID, Titel oder Konversations-Entität. Leer: der Standard-Agent, danach die anderen als Ausweich."
+        },
+        "chat": {
+          "name": "Chat",
+          "description": "Die Läufe in einem Aufgaben-Chat behalten, benannt nach der Aufgabe."
+        },
+        "notify": {
+          "name": "Benachrichtigen",
+          "description": "Notify-Dienst oder -Entität für ein kurzes Ergebnis, zum Beispiel notify.mobile_app_mein_handy."
+        },
+        "allow_changes": {
+          "name": "Änderungen erlauben",
+          "description": "Aus: Der Agent liest Home Assistant nur. An: Er darf Geräte steuern. Automationen, Skripte und andere Aufgaben bleiben in beiden Fällen gesperrt."
+        },
+        "timeout": {
+          "name": "Zeitlimit",
+          "description": "Sekunden, bis der Lauf abbricht."
+        }
+      }
     }
   }
 }

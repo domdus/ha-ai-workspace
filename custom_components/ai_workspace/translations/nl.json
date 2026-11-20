@@ -675,6 +675,48 @@
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Aangepaste MCP-URL"
       }
+    },
+    "task_chat": {
+      "options": {
+        "none": "Geen chat",
+        "task": "Taakchat"
+      }
+    }
+  },
+  "services": {
+    "run_task": {
+      "name": "Agenttaak uitvoeren",
+      "description": "Voert een prompt uit met een AI Workspace-agent, bijvoorbeeld volgens een schema. Elke run begint opnieuw: de prompt moet alles bevatten wat de agent nodig heeft. Templates werken in de prompt.",
+      "fields": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "Wat de agent moet doen. Op zichzelf staand: de agent onthoudt niets van eerdere runs (behalve de taakchat, als die bewaard wordt). Templates zijn toegestaan."
+        },
+        "task_name": {
+          "name": "Taaknaam",
+          "description": "Naam voor de taakchat, de logs en de laatste run. Nodig voor een taakchat."
+        },
+        "agent": {
+          "name": "Agent",
+          "description": "Agent-id, titel of conversatie-entiteit. Leeg: de standaardagent, daarna de andere als terugval."
+        },
+        "chat": {
+          "name": "Chat",
+          "description": "De runs in één taakchat bewaren, genoemd naar de taak."
+        },
+        "notify": {
+          "name": "Melden",
+          "description": "Notify-dienst of -entiteit voor een kort resultaat, bijvoorbeeld notify.mobile_app_mijn_telefoon."
+        },
+        "allow_changes": {
+          "name": "Wijzigingen toestaan",
+          "description": "Uit: de agent leest Home Assistant alleen. Aan: hij mag apparaten bedienen. Automatiseringen, scripts en andere taken blijven in beide gevallen verboden."
+        },
+        "timeout": {
+          "name": "Time-out",
+          "description": "Seconden voordat de run stopt."
+        }
+      }
     }
   }
 }

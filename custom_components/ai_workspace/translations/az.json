@@ -675,6 +675,48 @@
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Fərdi MCP URL"
       }
+    },
+    "task_chat": {
+      "options": {
+        "none": "Söhbət yoxdur",
+        "task": "Tapşırıq söhbəti"
+      }
+    }
+  },
+  "services": {
+    "run_task": {
+      "name": "Agent tapşırığını işə sal",
+      "description": "AI Workspace agenti ilə promptu işə salır, məsələn cədvəl üzrə. Hər icra yenidən başlayır: prompt agentə lazım olan hər şeyi deməlidir. Promptda şablonlar işləyir.",
+      "fields": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "Agentin nə etməli olduğu. Müstəqil: agent əvvəlki icraları xatırlamır (saxlanılırsa, tapşırıq söhbəti istisna). Şablonlar icazəlidir."
+        },
+        "task_name": {
+          "name": "Tapşırığın adı",
+          "description": "Tapşırıq söhbəti, jurnallar və son icra üçün ad. Tapşırıq söhbəti üçün lazımdır."
+        },
+        "agent": {
+          "name": "Agent",
+          "description": "Agentin id-si, adı və ya söhbət obyekti. Boş: standart agent, sonra digərləri ehtiyat kimi."
+        },
+        "chat": {
+          "name": "Söhbət",
+          "description": "İcraları tapşırığın adını daşıyan bir tapşırıq söhbətində saxla."
+        },
+        "notify": {
+          "name": "Bildiriş",
+          "description": "Qısa nəticə üçün bildiriş xidməti və ya obyekti, məsələn notify.mobile_app_my_phone."
+        },
+        "allow_changes": {
+          "name": "Dəyişikliklərə icazə ver",
+          "description": "Söndürülü: agent Home Assistant-ı yalnız oxuyur. Yanılı: cihazları idarə edə bilər. Avtomatlaşdırmalar, skriptlər və digər tapşırıqlar hər halda qadağandır."
+        },
+        "timeout": {
+          "name": "Vaxt limiti",
+          "description": "İcra dayanana qədər saniyələr."
+        }
+      }
     }
   }
 }

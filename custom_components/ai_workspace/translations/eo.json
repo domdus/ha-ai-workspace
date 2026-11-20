@@ -675,6 +675,48 @@
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Propra MCP-URL"
       }
+    },
+    "task_chat": {
+      "options": {
+        "none": "Neniu babilejo",
+        "task": "Taska babilejo"
+      }
+    }
+  },
+  "services": {
+    "run_task": {
+      "name": "Ruli agentan taskon",
+      "description": "Rulas promptilon per agento de AI Workspace, ekzemple laŭ horaro. Ĉiu rulo komenciĝas denove: la promptilo diru ĉion, kion la agento bezonas. Ŝablonoj funkcias en la promptilo.",
+      "fields": {
+        "prompt": {
+          "name": "Promptilo",
+          "description": "Kion la agento faru. Memstara: la agento memoras nenion el antaŭaj ruloj (krom la taska babilejo, se ĝi restas). Ŝablonoj estas permesitaj."
+        },
+        "task_name": {
+          "name": "Nomo de la tasko",
+          "description": "Nomo por la taska babilejo, la protokoloj kaj la lasta rulo. Necesa por taska babilejo."
+        },
+        "agent": {
+          "name": "Agento",
+          "description": "Identigilo, titolo aŭ konversacia ento de la agento. Malplena: la defaŭlta agento, poste la aliaj kiel rezervo."
+        },
+        "chat": {
+          "name": "Babilejo",
+          "description": "Konservi la rulojn en unu taska babilejo, nomita laŭ la tasko."
+        },
+        "notify": {
+          "name": "Sciigi",
+          "description": "Sciiga servo aŭ ento por mallonga rezulto, ekzemple notify.mobile_app_my_phone."
+        },
+        "allow_changes": {
+          "name": "Permesi ŝanĝojn",
+          "description": "Malŝaltita: la agento nur legas Home Assistant. Ŝaltita: ĝi rajtas regi aparatojn. Aŭtomatigoj, skriptoj kaj aliaj taskoj ĉiam restas malpermesitaj."
+        },
+        "timeout": {
+          "name": "Tempolimo",
+          "description": "Sekundoj ĝis la rulo ĉesas."
+        }
+      }
     }
   }
 }

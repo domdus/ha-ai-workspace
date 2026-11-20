@@ -675,6 +675,48 @@
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Anpassad MCP-URL"
       }
+    },
+    "task_chat": {
+      "options": {
+        "none": "Ingen chatt",
+        "task": "Uppgiftschatt"
+      }
+    }
+  },
+  "services": {
+    "run_task": {
+      "name": "Kör agentuppgift",
+      "description": "Kör en prompt med en AI Workspace-agent, till exempel enligt ett schema. Varje körning börjar om: prompten måste innehålla allt agenten behöver. Mallar fungerar i prompten.",
+      "fields": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "Vad agenten ska göra. Fristående: agenten minns inget från tidigare körningar (utom uppgiftschatten, om den sparas). Mallar är tillåtna."
+        },
+        "task_name": {
+          "name": "Uppgiftsnamn",
+          "description": "Namn för uppgiftschatten, loggarna och senaste körningen. Krävs för en uppgiftschatt."
+        },
+        "agent": {
+          "name": "Agent",
+          "description": "Agentens id, titel eller konversationsentitet. Tomt: standardagenten, sedan de andra som reserv."
+        },
+        "chat": {
+          "name": "Chatt",
+          "description": "Spara körningarna i en uppgiftschatt, döpt efter uppgiften."
+        },
+        "notify": {
+          "name": "Avisera",
+          "description": "Notify-tjänst eller -entitet för ett kort resultat, till exempel notify.mobile_app_min_telefon."
+        },
+        "allow_changes": {
+          "name": "Tillåt ändringar",
+          "description": "Av: agenten läser bara Home Assistant. På: den får styra enheter. Automationer, skript och andra uppgifter är alltid spärrade."
+        },
+        "timeout": {
+          "name": "Tidsgräns",
+          "description": "Sekunder innan körningen stoppas."
+        }
+      }
     }
   }
 }

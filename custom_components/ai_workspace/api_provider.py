@@ -78,6 +78,7 @@ from .mcp_observe import note_mcp_result
 from .tool_result import shorten_tool_result
 from .usage_cost import TokenUsage, estimate_cost, parse_usage, usage_payload
 from .write_guard import block_message, placeholder_write
+from .task_guard import task_refusal, task_tool_offered
 from .worker_usage import worker_usage_event
 
 logger = logging.getLogger(__name__)
@@ -121,6 +122,8 @@ _LOCAL_TIMEOUT = 600
 SMALL_WINDOW = 32_000
 # Per chat turn: an Ollama model that cannot use tools runs this turn chat only.
 _MODE_OVERRIDE: ContextVar[str] = ContextVar("ai_workspace_mode_override", default="")
+# Tool limits of an agent task run (task_guard). None in a normal chat.
+_TOOL_POLICY: ContextVar[dict | None] = ContextVar("ai_workspace_tool_policy", default=None)
 _MCP_CACHE_MAX = 32
 _MCP_CACHE = f"{DOMAIN}_mcp_cache"
 _LOCAL_TOOLS = {"catalog", "house-map", "web", "notes", "chats"}
@@ -1010,6 +1013,10 @@ class ApiProvider:
     async def _invoke_tool(self, mcp, name: str, args: Any, on_tool: Callable | None):
         payload = args if isinstance(args, dict) else {}
         original = mcp.original_name(name)
+        refused = task_refusal(original, payload, _TOOL_POLICY.get())
+        if refused:
+            logger.warning("Task run refused %s", name)
+            return {"content": [{"type": "text", "text": refused}], "isError": True}
         blocked = placeholder_write(original, payload)
         if blocked:
             logger.warning("Refused %s: placeholder %r the user did not ask for", name, blocked)
@@ -1046,8 +1053,13 @@ class ApiProvider:
         admin: bool = True,
         force_tools: bool = False,
         on_tool: Callable | None = None,
+        tool_policy: dict | None = None,
     ) -> AsyncIterator[dict]:
-        """force_tools makes the first round call a tool, so house answers come from live data."""
+        """force_tools makes the first round call a tool, so house answers come from live data.
+
+        tool_policy: limits of an agent task run (see task_guard); the model never sees refused tools.
+        """
+        _TOOL_POLICY.set(dict(tool_policy) if tool_policy else None)
         origin = str(frontend_origin or "").strip()
         language = str(language or "")
         pictures = list(images or [])
@@ -1095,6 +1107,10 @@ class ApiProvider:
                 return
             if skipped:
                 yield {"type": "status", "text": f"Not reachable, continuing without: {', '.join(skipped)}"}
+            if tool_policy:
+                bundle.tools = [
+                    tool for tool in bundle.tools if task_tool_offered(bundle.original_name(tool["name"]), tool_policy)
+                ]
         logger.info(
             "api chat provider=%s model=%s mcp=%s tools=%s token_mode=%s prompt_cache=%s",
             self.settings.api_provider,

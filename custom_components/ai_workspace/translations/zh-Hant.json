@@ -675,6 +675,48 @@
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "自訂 MCP URL"
       }
+    },
+    "task_chat": {
+      "options": {
+        "none": "不使用聊天",
+        "task": "任務聊天"
+      }
+    }
+  },
+  "services": {
+    "run_task": {
+      "name": "執行代理任務",
+      "description": "使用 AI Workspace 代理執行提示詞，例如依排程執行。每次執行都從頭開始：提示詞必須包含代理所需的全部內容。提示詞中可以使用模板。",
+      "fields": {
+        "prompt": {
+          "name": "提示詞",
+          "description": "代理要做的事。需自成一體：代理不記得先前的執行（保留任務聊天時除外）。可以使用模板。"
+        },
+        "task_name": {
+          "name": "任務名稱",
+          "description": "用於任務聊天、日誌與上次執行的名稱。任務聊天必須填寫。"
+        },
+        "agent": {
+          "name": "代理",
+          "description": "代理 ID、標題或對話實體。留空：使用預設代理，其他代理作為備援。"
+        },
+        "chat": {
+          "name": "聊天",
+          "description": "將執行記錄保存在一個以任務命名的任務聊天中。"
+        },
+        "notify": {
+          "name": "通知",
+          "description": "用於傳送簡短結果的通知服務或實體，例如 notify.mobile_app_my_phone。"
+        },
+        "allow_changes": {
+          "name": "允許變更",
+          "description": "關閉：代理只讀取 Home Assistant。開啟：可以控制裝置。無論如何都禁止修改自動化、腳本或啟動其他任務。"
+        },
+        "timeout": {
+          "name": "逾時",
+          "description": "執行停止前的秒數。"
+        }
+      }
     }
   }
 }

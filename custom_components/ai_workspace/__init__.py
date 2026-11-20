@@ -509,6 +509,10 @@ async def _register_frontend(hass: HomeAssistant, settings: Settings) -> None:
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Import optional configuration.yaml. The UI still works without it."""
+    from .tasks import async_register_services
+
+    # Registered once, without an entry too, so automations that use it stay valid.
+    async_register_services(hass)
     conf = config.get(DOMAIN)
     if conf:
         hass.data[YAML_STORAGE] = conf

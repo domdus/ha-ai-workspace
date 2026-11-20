@@ -675,6 +675,48 @@
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Custom MCP URL"
       }
+    },
+    "task_chat": {
+      "options": {
+        "none": "No chat",
+        "task": "Task chat"
+      }
+    }
+  },
+  "services": {
+    "run_task": {
+      "name": "Run agent task",
+      "description": "Runs a prompt with an AI Workspace agent, for example on a schedule. Every run starts fresh: the prompt must say everything the agent needs. Templates work in the prompt.",
+      "fields": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "What the agent should do. Self-contained: the agent remembers nothing from earlier runs (except the task chat, if kept). Templates are allowed."
+        },
+        "task_name": {
+          "name": "Task name",
+          "description": "Name for the task chat, logs and the last run. Needed for a task chat."
+        },
+        "agent": {
+          "name": "Agent",
+          "description": "Agent id, title or conversation entity. Empty: the default agent, then the others as fallback."
+        },
+        "chat": {
+          "name": "Chat",
+          "description": "Keep the runs in one task chat, titled after the task name."
+        },
+        "notify": {
+          "name": "Notify",
+          "description": "Notify service or entity for a short result, for example notify.mobile_app_my_phone."
+        },
+        "allow_changes": {
+          "name": "Allow changes",
+          "description": "Off: the agent only reads Home Assistant. On: it may control devices. Automations, scripts and other tasks stay off-limits either way."
+        },
+        "timeout": {
+          "name": "Timeout",
+          "description": "Seconds before the run stops."
+        }
+      }
     }
   }
 }
