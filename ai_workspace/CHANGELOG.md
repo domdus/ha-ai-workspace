@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.6.1b9
+
+**The message field stays one line until the text needs more.** After sending, the prompt often stayed two lines tall although it was empty. Now it goes back to one line, in the floating chat and the full panel, with the standard field and with **Use HA Components**.
+
+- It still grows for long text that wraps, pasted text with line breaks, and Shift+Enter; the buttons move below the text only then.
+- Sending, queueing a message, switching chats, taking back a queued message and dictation all reset the height to fit the text.
+- A long placeholder (for example "Next message" while a reply is running, in a narrow chat) stays on one line and no longer makes the empty field two lines tall.
+- Queued messages and attachment chips no longer leave the empty field two lines tall.
+- Only the integration changes. The Runtime app version moves to 1.6.1b9 with the release but has no functional change.
+
 ## 1.6.1b8
 
 **Model prices refreshed from LiteLLM.** The cost display knows a few new models and an updated price tier. Nothing else changes.

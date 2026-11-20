@@ -1377,32 +1377,63 @@ export async function mountAiWorkspace(root, options = {}) {
   let userScrollAt = 0;
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  // The text field inside ha-textarea (the element itself for the Standard textarea).
+  function composerInner() {
+    if (messageEl?.localName !== "ha-textarea") return messageEl;
+    return messageEl.shadowRoot?.querySelector("wa-textarea")?.shadowRoot?.querySelector("textarea") || null;
+  }
+
+  // Height of one text line in `el`, padding and (for border-box) borders included.
+  function oneLineHeight(el) {
+    const style = getComputedStyle(el);
+    const px = (v) => parseFloat(v) || 0;
+    let line = px(style.lineHeight);
+    if (!line) line = px(style.fontSize) * 1.2;
+    let h = line + px(style.paddingTop) + px(style.paddingBottom);
+    if (style.boxSizing === "border-box") h += px(style.borderTopWidth) + px(style.borderBottomWidth);
+    return Math.ceil(h);
+  }
+
+  // The prompt text was set by code (sent, cleared, restored, dictated). ha-textarea passes
+  // a new value to its inner textarea only on its next render; the size is measured from
+  // the inner one, so it gets the text now.
+  function setComposerText(text) {
+    const value = String(text ?? "");
+    messageEl.value = value;
+    const inner = composerInner();
+    if (inner && inner !== messageEl && inner.value !== value) inner.value = value;
+  }
+
   function resizeComposer() {
     syncComposerField();
     if (!messageEl) return;
     const holdTop = chatEl.scrollTop;
+    const inner = composerInner();
+    // Placeholder first: an empty field is measured with it.
+    const prompt = streaming ? t("placeholder_next") : t("placeholder");
+    if ("placeholder" in messageEl) messageEl.placeholder = prompt;
+    if (messageEl.localName !== "ha-textarea") messageEl.setAttribute("placeholder", prompt);
     syncFieldLines();
+    const empty = !String(inner?.value ?? messageEl.value ?? "");
     if (messageEl.localName === "textarea") {
       const minH = 36;
       const maxH = 160;
       messageEl.style.height = "auto";
-      const scrollH = messageEl.scrollHeight;
+      // Empty: one line, whatever the placeholder (a wrapping placeholder counts in scrollHeight).
+      const scrollH = empty ? minH : messageEl.scrollHeight;
       const h = Math.min(Math.max(scrollH, minH), maxH);
       messageEl.style.height = `${h}px`;
       // Avoid a stray in-field scrollbar until content actually exceeds the cap.
       const overflows = scrollH > maxH;
       messageEl.style.overflowY = overflows ? "auto" : "hidden";
       messageEl.classList.toggle("message-overflows", overflows);
+    } else if (inner && messageEl.localName === "ha-textarea") {
+      // ha-textarea only grows on its own input; a cleared or restored text keeps the old height.
+      inner.style.height = "auto";
+      inner.style.height = `${empty ? oneLineHeight(inner) : inner.scrollHeight}px`;
     }
     syncSendButton();
     setComposerDisabled(".attach", pending.length >= MAX_ATTACH);
-    const prompt = streaming ? t("placeholder_next") : t("placeholder");
-    if (messageEl.localName === "ha-textarea") {
-      if ("placeholder" in messageEl) messageEl.placeholder = prompt;
-    } else {
-      if ("placeholder" in messageEl) messageEl.placeholder = prompt;
-      messageEl.setAttribute("placeholder", prompt);
-    }
     chatEl.scrollTop = holdTop;
   }
 
@@ -1415,12 +1446,15 @@ export async function mountAiWorkspace(root, options = {}) {
     const ha = messageEl.localName === "ha-textarea";
     const field = messageEl.closest?.(ha ? ".composer-field" : ".composer-row");
     const actions = field?.querySelector(ha ? ".composer-field-actions" : ".composer-actions");
-    const inner = ha
-      ? messageEl.shadowRoot?.querySelector("wa-textarea")?.shadowRoot?.querySelector("textarea")
-      : messageEl;
-    if (!field || !actions || !inner || !field.clientWidth) return;
-    // The inner textarea is current during the input event; ha-textarea's value catches up later.
-    const value = String(inner.value ?? messageEl.value ?? "");
+    const inner = composerInner();
+    if (!field) return;
+    // setComposerText keeps the inner textarea current; an empty prompt is one row.
+    const value = String(inner?.value ?? messageEl.value ?? "");
+    if (!value) {
+      field.classList.remove("multi");
+      return;
+    }
+    if (!actions || !inner || !field.clientWidth) return;
     let multi = value.includes("\n");
     if (!multi && value) {
       const style = getComputedStyle(inner);
@@ -2418,7 +2452,7 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!anchor?.parentElement) return;
     const restored = Boolean(restore?.text || restore?.pending?.length) && !String(messageEl.value || "").trim() && !pending.length;
     if (restored) {
-      messageEl.value = restore.text || "";
+      setComposerText(restore.text || "");
       pending = restore.pending || [];
       renderThumbs();
     }
@@ -3219,7 +3253,7 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     nextTurns.push({ text, attachments: attachments.slice() });
     pending = [];
-    messageEl.value = "";
+    setComposerText("");
     dropDraft(sessionId);
     // Microphone only — TTS of the current reply keeps going.
     stopSpeech();
@@ -3239,7 +3273,7 @@ export async function mountAiWorkspace(root, options = {}) {
   function restoreQueued() {
     const pulled = pullQueuedDraft(nextTurns, { draftText: messageEl.value, pending });
     if (pulled.pulled) {
-      messageEl.value = pulled.text;
+      setComposerText(pulled.text);
       pending = pulled.attachments;
     }
     renderThumbs();
@@ -3289,7 +3323,7 @@ export async function mountAiWorkspace(root, options = {}) {
     sendQueued = null;
     if (!messageEl) return;
     const key = draftKey();
-    messageEl.value = key ? readDraft(localStorage, key, draftOwner) : draftMemory.get(draftOwner) || "";
+    setComposerText(key ? readDraft(localStorage, key, draftOwner) : draftMemory.get(draftOwner) || "");
     pending = (draftFiles.get(draftOwner) || []).slice();
     paintRowDraft(id, false);
     renderThumbs();
@@ -3721,7 +3755,7 @@ export async function mountAiWorkspace(root, options = {}) {
     note.textContent = t(restored ? "chat_deleted_resend" : "chat_deleted");
     logEl.appendChild(note);
     if (restored && !String(messageEl.value || "").trim() && !pending.length) {
-      messageEl.value = restore.text || "";
+      setComposerText(restore.text || "");
       pending = restore.pending || [];
       renderThumbs();
     }
@@ -5365,8 +5399,8 @@ export async function mountAiWorkspace(root, options = {}) {
           else interim += chunk;
         }
         const parts = [speechBase, finals, interim].filter((part) => String(part).trim());
-        messageEl.value = parts.join(" ").replace(/\s+/g, " ").trim();
-        if (interim) messageEl.value += " ";
+        const spoken = parts.join(" ").replace(/\s+/g, " ").trim();
+        setComposerText(interim ? `${spoken} ` : spoken);
         resizeComposer();
       };
       recognition.onerror = (event) => {
@@ -5565,7 +5599,7 @@ export async function mountAiWorkspace(root, options = {}) {
     const said = String(body.text || "").trim();
     if (!said) return;
     const base = messageEl.value.trim();
-    messageEl.value = [base, said].filter(Boolean).join(" ");
+    setComposerText([base, said].filter(Boolean).join(" "));
     resizeComposer();
   }
 
@@ -6101,7 +6135,7 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!keepComposer) {
       pending = [];
       renderThumbs();
-      messageEl.value = "";
+      setComposerText("");
       dropDraft(sessionId);
     }
     resizeComposer();
@@ -6726,7 +6760,7 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function undoWithAgent(row) {
     closeHistory();
-    messageEl.value = restorePrompt(row);
+    setComposerText(restorePrompt(row));
     form.requestSubmit();
   }
 

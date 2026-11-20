@@ -1698,6 +1698,13 @@ textarea::placeholder {
   line-height: 20px;
 }
 
+/* A long placeholder ("Next message" in a narrow chat) stays on the one line. */
+textarea.message::placeholder {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 textarea:focus {
   outline: none;
 }
