@@ -45,7 +45,7 @@
               "keep_chats": "Chattar att behålla"
             },
             "data_description": {
-              "default_agent": "Agent som en ny chatt startar med. Varje chatt kommer ihåg agenten (och modellen) den senast använde. Senast använd: agenten du valde senast i den här webbläsaren.",
+              "default_agent": "Agent som en ny chatt startar med. Varje chatt kommer ihåg agenten (och modellen) den senast använde. Senast använd: agenten du valde senast i den här webbläsaren. När reserv är på bestämmer dess agentlista i stället.",
               "model_switcher": "Av som standard. Lägger till en modellväljare bredvid agentväljaren, så att en chatt kan använda en annan modell från samma agent. Agentens egen modell är fortfarande standard.",
               "enable_sidebar": "Lägger till AI Workspace i Home Assistants sidofält. Av: administratörer kan fortfarande öppna /ai-workspace direkt.",
               "enable_overlay": "En rund AI-knapp i hörnet av varje Home Assistant-sida, så att du kan fråga utan att lämna sidan. På Inställningar-sidor sitter den högre så att den inte täcker andra knappar.",
@@ -160,7 +160,7 @@
               "keep_chats": "Chattar att behålla"
             },
             "data_description": {
-              "default_agent": "Agent som en ny chatt startar med. Varje chatt kommer ihåg agenten (och modellen) den senast använde. Senast använd: agenten du valde senast i den här webbläsaren.",
+              "default_agent": "Agent som en ny chatt startar med. Varje chatt kommer ihåg agenten (och modellen) den senast använde. Senast använd: agenten du valde senast i den här webbläsaren. När reserv är på bestämmer dess agentlista i stället.",
               "model_switcher": "Av som standard. Lägger till en modellväljare bredvid agentväljaren, så att en chatt kan använda en annan modell från samma agent. Agentens egen modell är fortfarande standard.",
               "enable_sidebar": "Lägger till AI Workspace i Home Assistants sidofält. Av: administratörer kan fortfarande öppna /ai-workspace direkt.",
               "enable_overlay": "En rund AI-knapp i hörnet av varje Home Assistant-sida, så att du kan fråga utan att lämna sidan. På Inställningar-sidor sitter den högre så att den inte täcker andra knappar.",
@@ -169,6 +169,20 @@
               "ui_theme": "Av som standard. Bygger chatten av Home Assistants egna gränssnittsdelar. Prova det om chatten inte passar ditt tema.",
               "cross_chat": "Av som standard. När det är på kan en fråga använda ett kort utdrag ur en annan chatt vars titel delar ord med den, utan att du nämner den chatten. Hjälper när du redan pratat om samma rum eller automation. Den andra chatten ändras inte.",
               "keep_chats": "Nyaste icke-fästa chattar som behålls per person. Äldre tas bort så att listan inte växer i det oändliga. Fästa chattar behålls alltid. Standard 30."
+            }
+          },
+          "fallback": {
+            "name": "Reserv",
+            "description": "Valfritt. När en agents leverantör fallerar (plan- eller tokengräns, hastighetsgräns, utgången inloggning, tidsgräns, anslutningsfel, överbelastad server) fortsätter nästa agent i listan med uppgiften. När det är på ersätter listan standardagenten.",
+            "data": {
+              "fallback_enabled": "Aktivera reserv",
+              "fallback_agents": "Agenter i ordning",
+              "fallback_return": "Tillbaka till föredragen agent"
+            },
+            "data_description": {
+              "fallback_enabled": "Av som standard. Ett stoppat svar, ett verktyg som fallerar, en vägran eller en felaktig begäran byter aldrig agent.",
+              "fallback_agents": "Ordningen räknas: den första agenten är den föredragna och nya chattar börjar med den; de andra tar över uppifrån och ned. Ta bort en agent och lägg till den igen för att flytta den sist. Uppgifter som behöver en arbetsyta eller ett skal går bara till Runtime-agenter (Claude SDK, Cursor, Codex).",
+              "fallback_return": "Av: chatten stannar hos agenten som tog över. Vid nytt meddelande: nästa meddelande provar den föredragna agenten igen. Efter återställning eller väntetid: först när dess gräns har återställts eller väntetiden (5, 15, 60 minuter) har gått. Aldrig mitt i ett svar."
             }
           },
           "cost": {
@@ -674,6 +688,18 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Anpassad MCP-URL"
+      }
+    },
+    "default_agent": {
+      "options": {
+        "last_used": "Senast använd"
+      }
+    },
+    "fallback_return": {
+      "options": {
+        "off": "Av",
+        "new_message": "Vid nytt meddelande",
+        "after_reset": "Efter återställning eller väntetid"
       }
     }
   }

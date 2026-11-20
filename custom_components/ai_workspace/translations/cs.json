@@ -45,7 +45,7 @@
               "keep_chats": "Chaty k uchování"
             },
             "data_description": {
-              "default_agent": "Agent, se kterým začíná nový chat. Každý chat si pamatuje agenta (a model), kterého naposledy použil. Naposledy použitý: agent, kterého jste v tomto prohlížeči vybrali naposledy.",
+              "default_agent": "Agent, se kterým začíná nový chat. Každý chat si pamatuje agenta (a model), kterého naposledy použil. Naposledy použitý: agent, kterého jste v tomto prohlížeči vybrali naposledy. Když je záložní agent zapnutý, rozhoduje jeho seznam agentů.",
               "model_switcher": "Ve výchozím stavu vypnuto. Přidá vedle výběru agenta výběr modelu, aby chat mohl použít jiný model stejného agenta. Model agenta zůstává výchozí.",
               "enable_sidebar": "Přidá AI Workspace do postranního panelu Home Assistant. Vypnuto: správci mohou /ai-workspace stále otevřít přímo.",
               "enable_overlay": "Kulaté tlačítko AI v rohu každé stránky Home Assistant, takže se můžete zeptat bez opuštění stránky. Na stránkách Nastavení je výš, aby nepřekrývalo jiná tlačítka.",
@@ -160,7 +160,7 @@
               "keep_chats": "Chaty k uchování"
             },
             "data_description": {
-              "default_agent": "Agent, se kterým začíná nový chat. Každý chat si pamatuje agenta (a model), kterého naposledy použil. Naposledy použitý: agent, kterého jste v tomto prohlížeči vybrali naposledy.",
+              "default_agent": "Agent, se kterým začíná nový chat. Každý chat si pamatuje agenta (a model), kterého naposledy použil. Naposledy použitý: agent, kterého jste v tomto prohlížeči vybrali naposledy. Když je záložní agent zapnutý, rozhoduje jeho seznam agentů.",
               "model_switcher": "Ve výchozím stavu vypnuto. Přidá vedle výběru agenta výběr modelu, aby chat mohl použít jiný model stejného agenta. Model agenta zůstává výchozí.",
               "enable_sidebar": "Přidá AI Workspace do postranního panelu Home Assistant. Vypnuto: správci mohou /ai-workspace stále otevřít přímo.",
               "enable_overlay": "Kulaté tlačítko AI v rohu každé stránky Home Assistant, takže se můžete zeptat bez opuštění stránky. Na stránkách Nastavení je výš, aby nepřekrývalo jiná tlačítka.",
@@ -169,6 +169,20 @@
               "ui_theme": "Ve výchozím stavu vypnuto. Sestaví chat z vlastních prvků rozhraní Home Assistant. Zkuste to, pokud chat neladí s vaším motivem.",
               "cross_chat": "Ve výchozím stavu vypnuto. Když je zapnuto, otázka může použít krátký výňatek z jiného chatu, jehož název má společná slova, aniž byste ho zmínili. Pomáhá, když jste už o stejné místnosti nebo automatizaci mluvili. Druhý chat se nemění.",
               "keep_chats": "Nejnovější nepřipnuté chaty uchované na osobu. Starší se mažou, aby seznam nerostl donekonečna. Připnuté chaty zůstanou vždy. Výchozí 30."
+            }
+          },
+          "fallback": {
+            "name": "Záložní agent",
+            "description": "Volitelné. Když selže poskytovatel agenta (limit plánu nebo tokenů, limit požadavků, vypršené přihlášení, časový limit, chyba připojení, přetížený server), úlohu převezme další agent ze seznamu. Po zapnutí tento seznam nahrazuje výchozího agenta.",
+            "data": {
+              "fallback_enabled": "Zapnout záložního agenta",
+              "fallback_agents": "Agenti v pořadí",
+              "fallback_return": "Návrat k preferovanému agentovi"
+            },
+            "data_description": {
+              "fallback_enabled": "Ve výchozím stavu vypnuto. Zastavená odpověď, selhání nástroje, odmítnutí nebo chybný požadavek nikdy agenta nemění.",
+              "fallback_agents": "Na pořadí záleží: první agent je preferovaný a nové chaty začínají s ním; ostatní přebírají shora dolů. Chcete-li agenta posunout na konec, odeberte ho a přidejte znovu. Úlohy, které potřebují pracovní prostor nebo shell, jdou jen agentům Runtime (Claude SDK, Cursor, Codex).",
+              "fallback_return": "Vypnuto: chat zůstane u agenta, který převzal. Při nové zprávě: další zpráva znovu zkusí preferovaného agenta. Po obnovení nebo čekání: až po obnovení jeho limitu nebo uplynutí čekací doby (5, 15, 60 minut). Nikdy uprostřed odpovědi."
             }
           },
           "cost": {
@@ -674,6 +688,18 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Vlastní URL MCP"
+      }
+    },
+    "default_agent": {
+      "options": {
+        "last_used": "Naposledy použitý"
+      }
+    },
+    "fallback_return": {
+      "options": {
+        "off": "Vypnuto",
+        "new_message": "Při nové zprávě",
+        "after_reset": "Po obnovení nebo čekání"
       }
     }
   }

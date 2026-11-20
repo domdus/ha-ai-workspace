@@ -1,5 +1,6 @@
 export const I18N = {
   en: {
+    active_agent: "Active agent",
     title: "AI Workspace",
     new_chat: "New Chat",
     chats: "Chats",
@@ -187,6 +188,7 @@ export const I18N = {
     usage_plan_updated: "As of {when}",
   },
   de: {
+    active_agent: "Aktiver Agent",
     title: "AI Workspace",
     new_chat: "Neuer Chat",
     chats: "Chats",
@@ -374,6 +376,7 @@ export const I18N = {
     usage_plan_updated: "Stand {when}",
   },
   fr: {
+    active_agent: "Agent actif",
     title: "AI Workspace",
     new_chat: "Nouveau chat",
     chats: "Discussions",
@@ -517,6 +520,7 @@ export const I18N = {
     usage_back: "Retour au chat",
   },
   es: {
+    active_agent: "Agente activo",
     title: "AI Workspace",
     new_chat: "Nuevo chat",
     chats: "Chats",
@@ -659,6 +663,7 @@ export const I18N = {
     usage_back: "Volver al chat",
   },
   it: {
+    active_agent: "Agente attivo",
     title: "AI Workspace",
     new_chat: "Nuova chat",
     chats: "Chat",
@@ -801,6 +806,7 @@ export const I18N = {
     usage_back: "Torna alla chat",
   },
   nl: {
+    active_agent: "Actieve agent",
     title: "AI Workspace",
     new_chat: "Nieuwe chat",
     chats: "Chats",
@@ -943,6 +949,7 @@ export const I18N = {
     usage_back: "Terug naar chat",
   },
   pl: {
+    active_agent: "Aktywny agent",
     title: "AI Workspace",
     new_chat: "Nowy czat",
     chats: "Czaty",
@@ -1085,6 +1092,7 @@ export const I18N = {
     usage_back: "Wróć do czatu",
   },
   cs: {
+    active_agent: "Aktivní agent",
     title: "AI Workspace",
     new_chat: "Nový chat",
     chats: "Chaty",
@@ -1227,6 +1235,7 @@ export const I18N = {
     usage_back: "Zpět do chatu",
   },
   sv: {
+    active_agent: "Aktiv agent",
     title: "AI Workspace",
     new_chat: "Ny chatt",
     chats: "Chattar",
@@ -1369,6 +1378,7 @@ export const I18N = {
     usage_back: "Tillbaka till chatten",
   },
   ru: {
+    active_agent: "Активный агент",
     title: "AI Workspace",
     new_chat: "Новый чат",
     chats: "Чаты",
@@ -1511,6 +1521,7 @@ export const I18N = {
     usage_back: "Назад к чату",
   },
   ko: {
+    active_agent: "활성 에이전트",
     title: "AI Workspace",
     new_chat: "새 채팅",
     chats: "채팅",
@@ -1653,6 +1664,7 @@ export const I18N = {
     usage_back: "채팅으로 돌아가기",
   },
   "zh-Hans": {
+    active_agent: "当前代理",
     title: "AI Workspace",
     new_chat: "新对话",
     chats: "对话",
@@ -1795,6 +1807,7 @@ export const I18N = {
     usage_back: "返回对话",
   },
   "zh-Hant": {
+    active_agent: "目前代理",
     title: "AI Workspace",
     new_chat: "新對話",
     chats: "對話",
@@ -1937,6 +1950,7 @@ export const I18N = {
     usage_back: "返回對話",
   },
   az: {
+    active_agent: "Aktiv agent",
     title: "AI Workspace",
     new_chat: "Yeni çat",
     chats: "Çatlar",
@@ -2079,6 +2093,7 @@ export const I18N = {
     usage_back: "Çata qayıt",
   },
   eo: {
+    active_agent: "Aktiva agento",
     title: "AI Workspace",
     new_chat: "Nova babilejo",
     chats: "Babilejoj",

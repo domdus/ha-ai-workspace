@@ -219,6 +219,15 @@ def _tool_name(item: dict[str, Any]) -> str:
     return ""
 
 
+def _codex_result(item: dict[str, Any]) -> Any:
+    """A short result for the tool journal: exit code and output of a command, or the tool's answer."""
+    if item.get("type") == "commandExecution":
+        output = str(item.get("aggregatedOutput") or "").strip()
+        code = item.get("exitCode")
+        return f"exit {code}: {output}" if code is not None else output
+    return item.get("result") or item.get("error") or item.get("changes")
+
+
 def _failed(item: dict[str, Any]) -> bool:
     status = str(item.get("status") or "").lower()
     if status in {"failed", "declined", "error"}:
@@ -267,12 +276,12 @@ def map_notification(method: str, payload: Any, state: TurnState) -> list[dict[s
         if kind == "reasoning":
             events.append({"type": "status", "text": "Thinking..."})
         elif kind == "commandExecution":
-            events.append(_tool_event("shell", "start", _short(f"Running {item.get('command') or ''}"), item_id))
+            events.append(_tool_event("shell", "start", _short(f"Running {item.get('command') or ''}"), item_id, item.get("command")))
         elif kind == "webSearch":
             events.append(_tool_event("web_search", "start", _short(f"Searching the web: {item.get('query') or ''}"), item_id))
         elif _tool_name(item):
             name = _tool_name(item)
-            events.append(_tool_event(name, "start", f"Calling {name}...", item_id))
+            events.append(_tool_event(name, "start", f"Calling {name}...", item_id, item.get("arguments") or item.get("changes")))
     elif method == "item/completed":
         kind = item.get("type")
         if kind == "agentMessage":
@@ -287,7 +296,15 @@ def map_notification(method: str, payload: Any, state: TurnState) -> list[dict[s
                 events.append({"type": "text", "delta": text})
         elif _tool_name(item):
             name = _tool_name(item)
-            events.append(_tool_event(name, "end", "Tool failed" if _failed(item) else "Finished", str(item.get("id") or "")))
+            events.append(
+                _tool_event(
+                    name,
+                    "end",
+                    "Tool failed" if _failed(item) else "Finished",
+                    str(item.get("id") or ""),
+                    _codex_result(item),
+                )
+            )
     elif method == "thread/tokenUsage/updated":
         usage = data.get("tokenUsage") or {}
         if isinstance(usage, dict):

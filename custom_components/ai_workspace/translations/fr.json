@@ -45,7 +45,7 @@
               "keep_chats": "Discussions à conserver"
             },
             "data_description": {
-              "default_agent": "Agent utilisé par une nouvelle discussion. Chaque discussion retient l'agent (et le modèle) utilisé en dernier. Dernier utilisé : l'agent choisi le plus récemment dans ce navigateur.",
+              "default_agent": "Agent utilisé par une nouvelle discussion. Chaque discussion retient l'agent (et le modèle) utilisé en dernier. Dernier utilisé : l'agent choisi le plus récemment dans ce navigateur. Quand le secours est activé, c'est sa liste d'agents qui décide.",
               "model_switcher": "Désactivé par défaut. Ajoute un sélecteur de modèle à côté du sélecteur d'agent, pour qu'une discussion utilise un autre modèle du même agent. Le modèle de l'agent reste celui par défaut.",
               "enable_sidebar": "Ajoute AI Workspace à la barre latérale de Home Assistant. Désactivé : les administrateurs peuvent toujours ouvrir /ai-workspace directement.",
               "enable_overlay": "Un bouton IA rond dans le coin de chaque page Home Assistant, pour poser une question sans quitter la page. Sur les pages Paramètres, il est placé plus haut pour ne pas cacher d’autres boutons.",
@@ -160,7 +160,7 @@
               "keep_chats": "Discussions à conserver"
             },
             "data_description": {
-              "default_agent": "Agent utilisé par une nouvelle discussion. Chaque discussion retient l'agent (et le modèle) utilisé en dernier. Dernier utilisé : l'agent choisi le plus récemment dans ce navigateur.",
+              "default_agent": "Agent utilisé par une nouvelle discussion. Chaque discussion retient l'agent (et le modèle) utilisé en dernier. Dernier utilisé : l'agent choisi le plus récemment dans ce navigateur. Quand le secours est activé, c'est sa liste d'agents qui décide.",
               "model_switcher": "Désactivé par défaut. Ajoute un sélecteur de modèle à côté du sélecteur d'agent, pour qu'une discussion utilise un autre modèle du même agent. Le modèle de l'agent reste celui par défaut.",
               "enable_sidebar": "Ajoute AI Workspace à la barre latérale de Home Assistant. Désactivé : les administrateurs peuvent toujours ouvrir /ai-workspace directement.",
               "enable_overlay": "Un bouton IA rond dans le coin de chaque page Home Assistant, pour poser une question sans quitter la page. Sur les pages Paramètres, il est placé plus haut pour ne pas cacher d’autres boutons.",
@@ -169,6 +169,20 @@
               "ui_theme": "Désactivé par défaut. Construit le chat avec les éléments d’interface propres à Home Assistant. Essayez-le si le chat ne s’accorde pas à votre thème.",
               "cross_chat": "Désactivé par défaut. Si activé, une question peut reprendre un court extrait d’une autre discussion dont le titre partage des mots avec elle, sans que vous la mentionniez. Utile si vous avez déjà parlé de la même pièce ou automatisation. L’autre discussion n’est pas modifiée.",
               "keep_chats": "Discussions non épinglées les plus récentes conservées par personne. Les plus anciennes sont supprimées pour que la liste ne grossisse pas sans fin. Les discussions épinglées sont toujours conservées. Par défaut 30."
+            }
+          },
+          "fallback": {
+            "name": "Secours",
+            "description": "Facultatif. Quand le fournisseur d'un agent échoue (limite du forfait ou de jetons, limite de débit, connexion expirée, délai dépassé, erreur de connexion, serveur surchargé), l'agent suivant de la liste poursuit la tâche. Activée, cette liste remplace l'agent par défaut.",
+            "data": {
+              "fallback_enabled": "Activer le secours",
+              "fallback_agents": "Agents dans l'ordre",
+              "fallback_return": "Retour à l'agent préféré"
+            },
+            "data_description": {
+              "fallback_enabled": "Désactivé par défaut. Arrêter une réponse, un outil en échec, un refus ou une requête invalide ne change jamais d'agent.",
+              "fallback_agents": "L'ordre compte : le premier agent est le préféré et les nouvelles discussions commencent avec lui ; les autres prennent le relais de haut en bas. Pour déplacer un agent vers la fin, retirez-le puis ajoutez-le à nouveau. Les tâches qui demandent un espace de travail ou un shell ne vont qu'aux agents Runtime (Claude SDK, Cursor, Codex).",
+              "fallback_return": "Désactivé : la discussion reste sur l'agent qui a pris le relais. À chaque nouveau message : le message suivant réessaie l'agent préféré. Après réinitialisation ou délai : seulement une fois sa limite réinitialisée ou le délai (5, 15, 60 minutes) écoulé. Jamais au milieu d'une réponse."
             }
           },
           "cost": {
@@ -674,6 +688,18 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "URL MCP personnalisée"
+      }
+    },
+    "default_agent": {
+      "options": {
+        "last_used": "Dernier utilisé"
+      }
+    },
+    "fallback_return": {
+      "options": {
+        "off": "Désactivé",
+        "new_message": "À chaque nouveau message",
+        "after_reset": "Après réinitialisation ou délai"
       }
     }
   }

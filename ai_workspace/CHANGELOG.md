@@ -1,5 +1,34 @@
 # Changelog
 
+## Unreleased (agent fallback)
+
+**Agent fallback: when one agent's provider fails, the next one in your list carries on.** Optional and off by default; existing setups do not change.
+
+**Settings → AI Workspace → Configure → Fallback** (collapsed)
+- **Enable fallback** and an ordered list of your agents (the order you pick them in; remove and add one again to move it down). The first agent is the preferred one and new chats start with it. While fallback is on, this list replaces the **Default agent**.
+- **Back to the preferred agent**: *Off* (the chat stays on the agent that took over), *On new message*, or *After reset or wait time*. It never switches in the middle of a reply.
+- The **Last used** choice of **Default agent** is now translated (German "Zuletzt verwendet" and all other languages).
+
+**When it switches**
+- Only for provider-side failures: plan or token limit, HTTP 429, expired or invalid sign-in, timeouts, connection errors, overloaded or failing servers (5xx/529).
+- Never when you stop a reply, a tool fails, the model refuses, or the request itself is wrong.
+
+**In the chat**
+- A short notice says what happened, for example "Claude am Limit (Reset 18:30). Cursor macht weiter." The reset time comes from the plan limits when known.
+- With fallback on, the chat header (full page and floating chat) shows the agent the chat runs on now. Each chat remembers its active agent.
+
+**Mid-task handoff**
+- Sessions do not carry over between engines, so the next agent gets the original task, the chat so far and a journal of the tool calls this turn already made, with their results, plus a clear instruction not to repeat device actions, file writes, commits or pushes. Calls that started but never reported back are marked so the next agent checks first.
+- The list is walked from the top until one agent succeeds. A reply that keeps running in the background (page closed) goes on the same way.
+- Work that already used the Runtime's workspace or shell only goes to Runtime agents (Claude SDK, Cursor, Codex); chat-only cloud agents are skipped. Callers can also ask for this with `"workspace": true`.
+- If no agent is left, the task pauses with a message and continues by itself as soon as one is back (checked at the reset time or after 5, 15, 60 minutes), instead of failing. You can stop it as usual.
+
+**Going back up**
+- Checked only at the start of a turn, from the top of the list. Limits are never checked before their known reset; other failures wait 5, 15, then 60 minutes. The check is cheap (Runtime status and sign-in, or the provider's model list), never a model prompt. After going back, the chat stays put for 10 minutes so two agents do not take turns failing.
+- A chat you moved to another agent yourself stays where you put it.
+
+- The Runtime App changed a little (tool calls carry a short summary of their arguments and results for the journal). The fallback also works with an older Runtime, the journal then only has the tool names.
+
 ## 1.6.1b5
 
 **Chats get a real title, and the floating chat shows it.** A pasted link or a long first message no longer becomes the chat title, Claude and Cursor on the Runtime now write a short title too, and the floating chat no longer stays on "New chat".

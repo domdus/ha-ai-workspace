@@ -137,6 +137,22 @@ class _StreamUnsupported(Exception):
     pass
 
 
+def _failure_hints(exc: BaseException) -> dict:
+    """What failed, for the agent fallback (fallback.py): the provider's HTTP status, or no connection.
+
+    MCP tool errors carry nothing: a failing tool is never a reason to try another agent.
+    """
+    if isinstance(exc, McpError):
+        return {"tool_error": True}
+    if isinstance(exc, ApiError):
+        return {"status": exc.status}
+    if isinstance(exc, TimeoutError):
+        return {"timeout": True}
+    if isinstance(exc, (ClientError, OSError)):
+        return {"connection": True}
+    return {}
+
+
 def _friendly_api_error(status: int, text: str) -> str:
     """The provider's own message, not the response body around it."""
     try:
@@ -1136,7 +1152,7 @@ class ApiProvider:
             unbilled = spent.take()
             if unbilled is not None:
                 yield usage_payload(unbilled)
-            yield {"type": "error", "message": self._public(exc)}
+            yield {"type": "error", "message": self._public(exc), **_failure_hints(exc)}
         finally:
             if note:
                 _MODE_OVERRIDE.set("")

@@ -45,7 +45,7 @@
               "keep_chats": "Chats bewaren"
             },
             "data_description": {
-              "default_agent": "Agent waarmee een nieuwe chat begint. Elke chat onthoudt de agent (en het model) die het laatst is gebruikt. Laatst gebruikt: de agent die je het laatst in deze browser koos.",
+              "default_agent": "Agent waarmee een nieuwe chat begint. Elke chat onthoudt de agent (en het model) die het laatst is gebruikt. Laatst gebruikt: de agent die je het laatst in deze browser koos. Staat Fallback aan, dan beslist de agentlijst daarvan.",
               "model_switcher": "Standaard uit. Voegt naast de agentkeuze een modelkeuze toe, zodat een chat een ander model van dezelfde agent kan gebruiken. Het model van de agent blijft de standaard.",
               "enable_sidebar": "Voegt AI Workspace toe aan de zijbalk van Home Assistant. Uit: beheerders kunnen /ai-workspace nog steeds direct openen.",
               "enable_overlay": "Een ronde AI-knop in de hoek van elke Home Assistant-pagina, zodat je iets kunt vragen zonder de pagina te verlaten. Op Instellingen-pagina's staat hij hoger zodat hij geen andere knoppen bedekt.",
@@ -160,7 +160,7 @@
               "keep_chats": "Chats bewaren"
             },
             "data_description": {
-              "default_agent": "Agent waarmee een nieuwe chat begint. Elke chat onthoudt de agent (en het model) die het laatst is gebruikt. Laatst gebruikt: de agent die je het laatst in deze browser koos.",
+              "default_agent": "Agent waarmee een nieuwe chat begint. Elke chat onthoudt de agent (en het model) die het laatst is gebruikt. Laatst gebruikt: de agent die je het laatst in deze browser koos. Staat Fallback aan, dan beslist de agentlijst daarvan.",
               "model_switcher": "Standaard uit. Voegt naast de agentkeuze een modelkeuze toe, zodat een chat een ander model van dezelfde agent kan gebruiken. Het model van de agent blijft de standaard.",
               "enable_sidebar": "Voegt AI Workspace toe aan de zijbalk van Home Assistant. Uit: beheerders kunnen /ai-workspace nog steeds direct openen.",
               "enable_overlay": "Een ronde AI-knop in de hoek van elke Home Assistant-pagina, zodat je iets kunt vragen zonder de pagina te verlaten. Op Instellingen-pagina's staat hij hoger zodat hij geen andere knoppen bedekt.",
@@ -169,6 +169,20 @@
               "ui_theme": "Standaard uit. Bouwt de chat op met de eigen interface-onderdelen van Home Assistant. Probeer het als de chat niet bij je thema past.",
               "cross_chat": "Standaard uit. Als het aan staat, kan een vraag een kort fragment gebruiken uit een andere chat waarvan de titel woorden deelt, zonder dat je die chat noemt. Handig als je het al over dezelfde ruimte of automatisering hebt gehad. De andere chat wordt niet gewijzigd.",
               "keep_chats": "Nieuwste niet-vastgezette chats die per persoon bewaard blijven. Oudere worden verwijderd zodat de lijst niet eindeloos groeit. Vastgezette chats blijven altijd. Standaard 30."
+            }
+          },
+          "fallback": {
+            "name": "Fallback",
+            "description": "Optioneel. Als de provider van een agent faalt (plan- of tokenlimiet, rate limit, verlopen aanmelding, time-out, verbindingsfout, overbelaste server), gaat de volgende agent in de lijst verder met de taak. Staat het aan, dan vervangt deze lijst de standaardagent.",
+            "data": {
+              "fallback_enabled": "Fallback inschakelen",
+              "fallback_agents": "Agents op volgorde",
+              "fallback_return": "Terug naar de voorkeursagent"
+            },
+            "data_description": {
+              "fallback_enabled": "Standaard uit. Een gestopt antwoord, een falende tool, een weigering of een foute aanvraag wisselen nooit van agent.",
+              "fallback_agents": "De volgorde telt: de eerste agent is de voorkeursagent en nieuwe chats beginnen ermee; de andere nemen van boven naar beneden over. Om een agent naar achteren te zetten, verwijder je hem en voeg je hem opnieuw toe. Taken die een werkruimte of shell nodig hebben gaan alleen naar Runtime-agents (Claude SDK, Cursor, Codex).",
+              "fallback_return": "Uit: de chat blijft bij de agent die overnam. Bij nieuw bericht: het volgende bericht probeert de voorkeursagent opnieuw. Na reset of wachttijd: pas als zijn limiet gereset is of de wachttijd (5, 15, 60 minuten) voorbij is. Nooit midden in een antwoord."
             }
           },
           "cost": {
@@ -674,6 +688,18 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Aangepaste MCP-URL"
+      }
+    },
+    "default_agent": {
+      "options": {
+        "last_used": "Laatst gebruikt"
+      }
+    },
+    "fallback_return": {
+      "options": {
+        "off": "Uit",
+        "new_message": "Bij nieuw bericht",
+        "after_reset": "Na reset of wachttijd"
       }
     }
   }

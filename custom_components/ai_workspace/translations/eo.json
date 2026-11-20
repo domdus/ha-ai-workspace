@@ -45,7 +45,7 @@
               "keep_chats": "Babilejoj konservotaj"
             },
             "data_description": {
-              "default_agent": "Agento, per kiu nova babilo komenciĝas. Ĉiu babilo memoras la agenton (kaj modelon) lastfoje uzitan. Laste uzita: la agento, kiun vi plej lastatempe elektis en ĉi tiu retumilo.",
+              "default_agent": "Agento, per kiu nova babilo komenciĝas. Ĉiu babilo memoras la agenton (kaj modelon) lastfoje uzitan. Laste uzita: la agento, kiun vi plej lastatempe elektis en ĉi tiu retumilo. Kiam la rezerva agento estas ŝaltita, ĝia agentolisto decidas anstataŭe.",
               "model_switcher": "Defaŭlte malŝaltita. Aldonas modelelektilon apud la agentelektilo, por ke babilo povu uzi alian modelon de la sama agento. La propra modelo de la agento restas la defaŭlta.",
               "enable_sidebar": "Aldonas AI Workspace al la flanka strio de Home Assistant. Malŝalte, administrantoj ankoraŭ povas malfermi /ai-workspace rekte.",
               "enable_overlay": "Ronda AI-butono en la angulo de ĉiu paĝo de Home Assistant, por ke vi povu demandi sen forlasi la paĝon. Ĉe paĝoj de Agordoj ĝi sidas pli alte por ne kovri aliajn butonojn.",
@@ -160,7 +160,7 @@
               "keep_chats": "Babilejoj konservotaj"
             },
             "data_description": {
-              "default_agent": "Agento, per kiu nova babilo komenciĝas. Ĉiu babilo memoras la agenton (kaj modelon) lastfoje uzitan. Laste uzita: la agento, kiun vi plej lastatempe elektis en ĉi tiu retumilo.",
+              "default_agent": "Agento, per kiu nova babilo komenciĝas. Ĉiu babilo memoras la agenton (kaj modelon) lastfoje uzitan. Laste uzita: la agento, kiun vi plej lastatempe elektis en ĉi tiu retumilo. Kiam la rezerva agento estas ŝaltita, ĝia agentolisto decidas anstataŭe.",
               "model_switcher": "Defaŭlte malŝaltita. Aldonas modelelektilon apud la agentelektilo, por ke babilo povu uzi alian modelon de la sama agento. La propra modelo de la agento restas la defaŭlta.",
               "enable_sidebar": "Aldonas AI Workspace al la flanka strio de Home Assistant. Malŝalte, administrantoj ankoraŭ povas malfermi /ai-workspace rekte.",
               "enable_overlay": "Ronda AI-butono en la angulo de ĉiu paĝo de Home Assistant, por ke vi povu demandi sen forlasi la paĝon. Ĉe paĝoj de Agordoj ĝi sidas pli alte por ne kovri aliajn butonojn.",
@@ -169,6 +169,20 @@
               "ui_theme": "Defaŭlte malŝalta. Konstruas la babilejon el la propraj interfacaj partoj de Home Assistant. Provu ĝin se la babilejo ne kongruas kun via etoso.",
               "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi mallongan eltiraĵon el alia babilejo, kies titolo kunhavas vortojn kun ĝi, sen ke vi mencias tiun babilejon. Helpas kiam vi jam parolis pri la sama ĉambro aŭ aŭtomatigo. La alia babilejo ne ŝanĝiĝas.",
               "keep_chats": "Plej novaj nealpinglitaj babilejoj konservataj po persono. Pli malnovaj estas forigitaj, por ke la listo ne kresku senfine. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."
+            }
+          },
+          "fallback": {
+            "name": "Rezerva agento",
+            "description": "Laŭvola. Kiam la provizanto de agento fiaskas (plana aŭ ĵetona limo, rapideca limo, eksvalidiĝinta ensaluto, tempolimo, konekta eraro, troŝarĝita servilo), la sekva agento en la listo daŭrigas la taskon. Kiam ŝaltita, ĉi tiu listo anstataŭas la defaŭltan agenton.",
+            "data": {
+              "fallback_enabled": "Ŝalti rezervan agenton",
+              "fallback_agents": "Agentoj laŭ ordo",
+              "fallback_return": "Reen al la preferata agento"
+            },
+            "data_description": {
+              "fallback_enabled": "Defaŭlte malŝaltita. Haltigita respondo, fiaskanta ilo, rifuzo aŭ malĝusta peto neniam ŝanĝas la agenton.",
+              "fallback_agents": "La ordo gravas: la unua agento estas la preferata kaj novaj babiloj komenciĝas per ĝi; la aliaj transprenas de supre malsupren. Por movi agenton al la fino, forigu ĝin kaj aldonu ĝin denove. Taskoj, kiuj bezonas laborspacon aŭ ŝelon, iras nur al Runtime-agentoj (Claude SDK, Cursor, Codex).",
+              "fallback_return": "Malŝaltita: la babilo restas ĉe la agento, kiu transprenis. Ĉe nova mesaĝo: la sekva mesaĝo reprovas la preferatan agenton. Post restarigo aŭ atendo: nur kiam ĝia limo restariĝis aŭ la atendotempo (5, 15, 60 minutoj) pasis. Neniam meze de respondo."
             }
           },
           "cost": {
@@ -674,6 +688,18 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Propra MCP-URL"
+      }
+    },
+    "default_agent": {
+      "options": {
+        "last_used": "Laste uzita"
+      }
+    },
+    "fallback_return": {
+      "options": {
+        "off": "Malŝaltita",
+        "new_message": "Ĉe nova mesaĝo",
+        "after_reset": "Post restarigo aŭ atendo"
       }
     }
   }

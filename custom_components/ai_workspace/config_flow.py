@@ -31,6 +31,9 @@ from .const import (
     CONF_ALLOW_USERS,
     CONF_CROSS_CHAT,
     CONF_DEFAULT_AGENT,
+    CONF_FALLBACK_AGENTS,
+    CONF_FALLBACK_ENABLED,
+    CONF_FALLBACK_RETURN,
     CONF_MODEL_SWITCHER,
     CONF_ENABLE_DICTATE,
     CONF_ENABLE_OVERLAY,
@@ -93,6 +96,9 @@ SECTION_VOICE = "voice"
 SECTION_CHAT = "chat"
 SECTION_COST = "cost"
 SECTION_HOUSE = "house"
+SECTION_FALLBACK = "fallback"
+# The "Last used" choice of the Default agent field. Stored as "", like before 1.6.1.
+LAST_USED = "last_used"
 _SHARED_KEYS = (
     CONF_APPROVAL_TIMEOUT_MINUTES,
     CONF_SYSTEM_PROMPT,
@@ -115,6 +121,9 @@ _SHARED_KEYS = (
     CONF_CROSS_CHAT,
     CONF_DEFAULT_AGENT,
     CONF_MODEL_SWITCHER,
+    CONF_FALLBACK_ENABLED,
+    CONF_FALLBACK_AGENTS,
+    CONF_FALLBACK_RETURN,
     CONF_KEEP_CHATS,
     CONF_SPEAK_REPLIES,
     CONF_STT_ENGINE,
@@ -179,19 +188,53 @@ def _form_placeholders(*, mcp_url: str = "", mcp_auto: bool = False, none_found:
 
 
 def _default_agent_field(current: dict, agents: list) -> dict:
-    """Agent new chats start with. Empty keeps the agent last picked in this browser."""
+    """Agent new chats start with. "Last used" (stored as "") keeps the agent last picked in this browser.
+
+    The translation key translates "Last used"; agent names have no translation and keep their label.
+    """
     if not agents:
         return {}
-    options = [{"value": "", "label": "Last used"}]
+    options = [{"value": LAST_USED, "label": "Last used"}]
     options.extend({"value": agent.id, "label": agent.title} for agent in agents)
     saved = str(current.get(CONF_DEFAULT_AGENT) or "")
     if saved not in {item["value"] for item in options}:
-        saved = ""
+        saved = LAST_USED
     return {
         vol.Optional(CONF_DEFAULT_AGENT, default=saved): SelectSelector(
-            SelectSelectorConfig(options=options, mode="dropdown")
+            SelectSelectorConfig(options=options, mode="dropdown", translation_key="default_agent")
         )
     }
+
+
+def _fallback_schema(current: dict, agents: list) -> vol.Schema:
+    """Fallback: off by default. When on, the ordered list replaces the Default agent (first = preferred)."""
+    from .fallback import DEFAULT_RETURN, RETURN_MODES
+
+    ids = [agent.id for agent in agents]
+    saved = [item for item in (current.get(CONF_FALLBACK_AGENTS) or []) if item in ids]
+    if not saved:
+        # A new list starts with the Default agent on top, then the other agents in their order.
+        first = str(current.get(CONF_DEFAULT_AGENT) or "")
+        saved = ([first] if first in ids else []) + [item for item in ids if item != first]
+    back = str(current.get(CONF_FALLBACK_RETURN) or DEFAULT_RETURN)
+    if back not in RETURN_MODES:
+        back = DEFAULT_RETURN
+    return vol.Schema(
+        {
+            vol.Optional(CONF_FALLBACK_ENABLED, default=bool(current.get(CONF_FALLBACK_ENABLED, False))): cv.boolean,
+            vol.Optional(CONF_FALLBACK_AGENTS, default=saved): SelectSelector(
+                SelectSelectorConfig(
+                    options=[{"value": agent.id, "label": agent.title} for agent in agents],
+                    # Chips in the order picked: removing and adding one again moves it to the end.
+                    multiple=True,
+                    mode="dropdown",
+                )
+            ),
+            vol.Optional(CONF_FALLBACK_RETURN, default=back): SelectSelector(
+                SelectSelectorConfig(options=list(RETURN_MODES), mode="dropdown", translation_key="fallback_return")
+            ),
+        }
+    )
 
 
 def _chat_schema(current: dict, agents: list | None = None) -> vol.Schema:
@@ -299,6 +342,13 @@ def _normalize(user_input: dict, hass: HomeAssistant | None = None) -> dict:
         out[CONF_APPROVAL_TIMEOUT_MINUTES] = approval_timeout_minutes(out[CONF_APPROVAL_TIMEOUT_MINUTES])
     if CONF_UI_THEME in out:
         out[CONF_UI_THEME] = ui_theme_of(out.get(CONF_UI_THEME))
+    if out.get(CONF_DEFAULT_AGENT) == LAST_USED:
+        out[CONF_DEFAULT_AGENT] = ""
+    if CONF_FALLBACK_AGENTS in out:
+        raw = out.get(CONF_FALLBACK_AGENTS) or []
+        if isinstance(raw, str):
+            raw = [raw]
+        out[CONF_FALLBACK_AGENTS] = list(dict.fromkeys(str(item) for item in raw if str(item or "").strip()))
     return out
 
 
@@ -376,7 +426,7 @@ def _flatten(user_input: dict) -> dict:
     if isinstance(prompt, dict) and CONF_NOTES_TEXT not in prompt:
         # The notes field was emptied.
         out[CONF_NOTES_TEXT] = ""
-    for key in (SECTION_MCP, SECTION_CHAT, SECTION_VOICE, SECTION_COST, SECTION_HOUSE, SECTION_PROMPT):
+    for key in (SECTION_MCP, SECTION_CHAT, SECTION_FALLBACK, SECTION_VOICE, SECTION_COST, SECTION_HOUSE, SECTION_PROMPT):
         nested = out.pop(key, None)
         if isinstance(nested, dict):
             out.update(nested)
@@ -468,6 +518,8 @@ async def _shared_form(
     if include_mcp:
         fields[vol.Required(SECTION_MCP)] = section(_mcp_schema(defaults, hass, kinds or []), {"collapsed": False})
     fields[vol.Required(SECTION_CHAT)] = section(_chat_schema(defaults, agents), {"collapsed": False})
+    if agents:
+        fields[vol.Required(SECTION_FALLBACK)] = section(_fallback_schema(defaults, agents), {"collapsed": True})
     fields[vol.Optional(SECTION_VOICE, default=voice)] = _SideBySide(_voice_schema(voice, stt, tts))
     fields[vol.Required(SECTION_COST)] = section(_cost_schema(defaults), {"collapsed": True})
     fields[vol.Required(SECTION_HOUSE)] = section(_house_schema(defaults), {"collapsed": True})

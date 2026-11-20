@@ -45,7 +45,7 @@
               "keep_chats": "Saxlanılacaq söhbətlər"
             },
             "data_description": {
-              "default_agent": "Yeni söhbətin başladığı agent. Hər söhbət sonuncu dəfə istifadə etdiyi agenti (və modeli) yadda saxlayır. Son istifadə olunan: bu brauzerdə ən son seçdiyiniz agent.",
+              "default_agent": "Yeni söhbətin başladığı agent. Hər söhbət sonuncu dəfə istifadə etdiyi agenti (və modeli) yadda saxlayır. Son istifadə olunan: bu brauzerdə ən son seçdiyiniz agent. Ehtiyat agent aktiv olanda onun agent siyahısı qərar verir.",
               "model_switcher": "Standart olaraq söndürülüb. Agent seçicisinin yanına model seçicisi əlavə edir ki, söhbət eyni agentin başqa modelindən istifadə edə bilsin. Agentin öz modeli standart qalır.",
               "enable_sidebar": "AI Workspace-i Home Assistant yan panelinə əlavə edir. Sönülü olanda idarəçilər /ai-workspace-i yenə birbaşa aça bilər.",
               "enable_overlay": "Hər Home Assistant səhifəsinin küncündə dairəvi AI düyməsi: səhifədən çıxmadan sual verə bilərsiniz. Ayarlar səhifələrində digər düymələri örtməmək üçün daha yuxarıda durur.",
@@ -160,7 +160,7 @@
               "keep_chats": "Saxlanılacaq söhbətlər"
             },
             "data_description": {
-              "default_agent": "Yeni söhbətin başladığı agent. Hər söhbət sonuncu dəfə istifadə etdiyi agenti (və modeli) yadda saxlayır. Son istifadə olunan: bu brauzerdə ən son seçdiyiniz agent.",
+              "default_agent": "Yeni söhbətin başladığı agent. Hər söhbət sonuncu dəfə istifadə etdiyi agenti (və modeli) yadda saxlayır. Son istifadə olunan: bu brauzerdə ən son seçdiyiniz agent. Ehtiyat agent aktiv olanda onun agent siyahısı qərar verir.",
               "model_switcher": "Standart olaraq söndürülüb. Agent seçicisinin yanına model seçicisi əlavə edir ki, söhbət eyni agentin başqa modelindən istifadə edə bilsin. Agentin öz modeli standart qalır.",
               "enable_sidebar": "AI Workspace-i Home Assistant yan panelinə əlavə edir. Sönülü olanda idarəçilər /ai-workspace-i yenə birbaşa aça bilər.",
               "enable_overlay": "Hər Home Assistant səhifəsinin küncündə dairəvi AI düyməsi: səhifədən çıxmadan sual verə bilərsiniz. Ayarlar səhifələrində digər düymələri örtməmək üçün daha yuxarıda durur.",
@@ -169,6 +169,20 @@
               "ui_theme": "Defolt olaraq sönülüdür. Söhbəti Home Assistant-ın öz interfeys hissələrindən qurur. Söhbət temanıza uyğun gəlmirsə, sınayın.",
               "cross_chat": "Defolt olaraq sönülüdür. Açıq olanda sual, başlığında ortaq sözlər olan başqa söhbətdən qısa parçanı, siz o söhbəti xatırlatmasanız belə, istifadə edə bilər. Eyni otaq və ya avtomatlaşdırma barədə artıq danışmısınızsa, kömək edir. Digər söhbət dəyişmir.",
               "keep_chats": "Hər şəxs üçün saxlanılan ən yeni sancılmamış söhbətlər. Siyahı sonsuz böyüməsin deyə köhnələri silinir. Sancılmış söhbətlər həmişə saxlanılır. Defolt 30."
+            }
+          },
+          "fallback": {
+            "name": "Ehtiyat agent",
+            "description": "İstəyə bağlı. Agentin provayderi xəta verəndə (plan və ya token limiti, sorğu limiti, girişin müddəti bitib, vaxt aşımı, bağlantı xətası, yüklənmiş server) siyahıdakı növbəti agent tapşırığı davam etdirir. Aktiv olanda bu siyahı defolt agentin yerini tutur.",
+            "data": {
+              "fallback_enabled": "Ehtiyat agenti aktivləşdir",
+              "fallback_agents": "Sıra ilə agentlər",
+              "fallback_return": "Üstün agentə qayıt"
+            },
+            "data_description": {
+              "fallback_enabled": "Defolt olaraq söndürülüb. Cavabı dayandırmaq, alət xətası, imtina və ya səhv sorğu heç vaxt agenti dəyişmir.",
+              "fallback_agents": "Sıra önəmlidir: birinci agent üstün agentdir və yeni söhbətlər onunla başlayır; digərləri yuxarıdan aşağı növbə ilə davam edir. Agenti sona keçirmək üçün onu silin və yenidən əlavə edin. İş sahəsi və ya shell tələb edən tapşırıqlar yalnız Runtime agentlərinə (Claude SDK, Cursor, Codex) gedir.",
+              "fallback_return": "Söndürülüb: söhbət davam edən agentdə qalır. Yeni mesajda: növbəti mesaj üstün agenti yenidən sınayır. Sıfırlanma və ya gözləmədən sonra: yalnız limiti sıfırlananda və ya gözləmə vaxtı (5, 15, 60 dəqiqə) keçəndə. Heç vaxt cavabın ortasında."
             }
           },
           "cost": {
@@ -674,6 +688,18 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Fərdi MCP URL"
+      }
+    },
+    "default_agent": {
+      "options": {
+        "last_used": "Son istifadə olunan"
+      }
+    },
+    "fallback_return": {
+      "options": {
+        "off": "Söndürülüb",
+        "new_message": "Yeni mesajda",
+        "after_reset": "Sıfırlanma və ya gözləmədən sonra"
       }
     }
   }

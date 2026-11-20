@@ -45,7 +45,7 @@
               "keep_chats": "要保留的聊天"
             },
             "data_description": {
-              "default_agent": "新對話使用的智慧體。每個對話都會記住上次使用的智慧體（和模型）。最近使用：你在此瀏覽器中最近選擇的智慧體。",
+              "default_agent": "新對話使用的智慧體。每個對話都會記住上次使用的智慧體（和模型）。最近使用：你在此瀏覽器中最近選擇的智慧體。開啟備用代理時，改由其代理清單決定。",
               "model_switcher": "預設關閉。在智慧體選擇器旁加入模型選擇器，讓一個對話可以使用同一智慧體的其他模型。智慧體本身的模型仍是預設值。",
               "enable_sidebar": "將 AI Workspace 加入 Home Assistant 側邊欄。關閉後，管理員仍可直接開啟 /ai-workspace。",
               "enable_overlay": "每個 Home Assistant 頁面角落的圓形 AI 按鈕，不必離開頁面就能提問。在設定頁面上位置較高，以免擋住其他按鈕。",
@@ -160,7 +160,7 @@
               "keep_chats": "要保留的聊天"
             },
             "data_description": {
-              "default_agent": "新對話使用的智慧體。每個對話都會記住上次使用的智慧體（和模型）。最近使用：你在此瀏覽器中最近選擇的智慧體。",
+              "default_agent": "新對話使用的智慧體。每個對話都會記住上次使用的智慧體（和模型）。最近使用：你在此瀏覽器中最近選擇的智慧體。開啟備用代理時，改由其代理清單決定。",
               "model_switcher": "預設關閉。在智慧體選擇器旁加入模型選擇器，讓一個對話可以使用同一智慧體的其他模型。智慧體本身的模型仍是預設值。",
               "enable_sidebar": "將 AI Workspace 加入 Home Assistant 側邊欄。關閉後，管理員仍可直接開啟 /ai-workspace。",
               "enable_overlay": "每個 Home Assistant 頁面角落的圓形 AI 按鈕，不必離開頁面就能提問。在設定頁面上位置較高，以免擋住其他按鈕。",
@@ -169,6 +169,20 @@
               "ui_theme": "預設關閉。用 Home Assistant 內建的介面元件組成聊天。如果聊天與你的佈景主題不搭，可以試試。",
               "cross_chat": "預設關閉。開啟後，問題可以使用另一段標題有相同詞語的聊天中的簡短摘錄，不必你提到那段聊天。適合已經聊過同一房間或自動化的情況。另一段聊天不會被改動。",
               "keep_chats": "每人保留的最新未釘選聊天數。較舊的會被刪除，以免清單無限增長。釘選聊天一律保留。預設 30。"
+            }
+          },
+          "fallback": {
+            "name": "備用代理",
+            "description": "選用。當某個代理的服務商出錯（方案或權杖上限、速率限制、登入過期、逾時、連線錯誤、伺服器過載）時，清單中的下一個代理會繼續該任務。開啟後，此清單取代預設智慧體。",
+            "data": {
+              "fallback_enabled": "啟用備用代理",
+              "fallback_agents": "代理順序",
+              "fallback_return": "回到首選代理"
+            },
+            "data_description": {
+              "fallback_enabled": "預設關閉。停止回覆、工具失敗、拒絕回答或錯誤請求都不會切換代理。",
+              "fallback_agents": "順序很重要：第一個是首選代理，新對話從它開始；其餘代理依由上而下的順序接手。要把某個代理移到後面，請先移除再重新加入。需要工作區或 shell 的任務只交給 Runtime 代理（Claude SDK、Cursor、Codex）。",
+              "fallback_return": "關閉：對話留在接手的代理上。收到新訊息時：下一則訊息會再次嘗試首選代理。重設或等待之後：僅在其上限重設或等待時間（5、15、60 分鐘）過去之後。絕不在回覆中途切換。"
             }
           },
           "cost": {
@@ -674,6 +688,18 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "自訂 MCP URL"
+      }
+    },
+    "default_agent": {
+      "options": {
+        "last_used": "最近使用"
+      }
+    },
+    "fallback_return": {
+      "options": {
+        "off": "關閉",
+        "new_message": "收到新訊息時",
+        "after_reset": "重設或等待之後"
       }
     }
   }

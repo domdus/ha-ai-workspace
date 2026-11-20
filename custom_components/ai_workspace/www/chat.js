@@ -1059,6 +1059,7 @@ export async function mountAiWorkspace(root, options = {}) {
               <ha-icon icon="mdi:chart-bar"></ha-icon>
             </ha-icon-button>`}
             <h1 class="title">${t("new_chat")}</h1>
+            <span class="agent-badge" title="${htmlAttr(t("active_agent"))}" hidden></span>
           </div>
           <p class="chat-usage" hidden></p>
           ${bannerMarkup}
@@ -1161,6 +1162,8 @@ export async function mountAiWorkspace(root, options = {}) {
   const agentTrigger = root.querySelector(".agent-menu .agent-trigger");
   const agentLabel = root.querySelector(".agent-menu .agent-trigger-label");
   const agentMenu = root.querySelector(".agent-menu");
+  // Fallback on: the header names the agent this chat runs on now.
+  const agentBadge = root.querySelector(".agent-badge");
   const modelMenu = root.querySelector(".model-menu");
   const modelTrigger = root.querySelector(".model-trigger");
   const modelLabel = root.querySelector(".model-trigger-label");
@@ -1912,6 +1915,20 @@ export async function mountAiWorkspace(root, options = {}) {
     if (session != null) return t("plan_notice_session", { engine, percent: session, reset });
     if (week != null) return t("plan_notice_week", { engine, percent: week });
     return "";
+  }
+
+  // The agent fallback: who stopped and who goes on, paused or back. The chat now runs on data.to.
+  function applyFallback(data) {
+    const text = String(data?.message || "").trim();
+    if (text && logEl) {
+      const note = document.createElement("p");
+      note.className = "plan-notice fallback-notice";
+      note.dataset.phase = String(data.phase || "");
+      note.textContent = text;
+      logEl.appendChild(note);
+      if (nearBottom()) followBottom();
+    }
+    if (data?.to && knownAgent(data.to)) setChatChoice(data.to, "");
   }
 
   function appendPlanNotice(data) {
@@ -3775,6 +3792,7 @@ export async function mountAiWorkspace(root, options = {}) {
   let chatModel = "";
   let defaultAgentId = "";
   let modelSwitcher = false;
+  let fallbackOn = false;
   let providerItems = [];
   const modelLists = new Map();
   let voice = { dictate: true, stt: "browser", speak: false, tts: false, ttsHeavy: false, ttsNatural: true };
@@ -3810,10 +3828,18 @@ export async function mountAiWorkspace(root, options = {}) {
     apiFetch(`${API}/sessions/${sessionId}`, { method: "PATCH", body: JSON.stringify(body) });
   }
 
+  function renderAgentBadge(item) {
+    if (!agentBadge) return;
+    const name = item ? item.title || item.label || "" : "";
+    agentBadge.hidden = !fallbackOn || !name;
+    agentBadge.textContent = name;
+  }
+
   function renderAgentPicker() {
-    if (!agentPicker || !agentMenu || !agentLabel) return;
     const current = selectedAgent();
     const item = providerItems.find((row) => row.id === current);
+    renderAgentBadge(item);
+    if (!agentPicker || !agentMenu || !agentLabel) return;
     const ready = agentChoices(providerItems);
     const models = modelSwitcher && item && item.kind !== "assist";
     agentPicker.hidden = ready.length < 2 && !models;
@@ -4938,6 +4964,8 @@ export async function mountAiWorkspace(root, options = {}) {
           setActivity(bubble, data.text);
         } else if (name === "plan_notice") {
           appendPlanNotice(data);
+        } else if (name === "fallback") {
+          applyFallback(data);
         } else if (name === "approval") {
           showApproval(data.approval);
         } else if (name === "title" && data.title) {
@@ -5998,9 +6026,11 @@ export async function mountAiWorkspace(root, options = {}) {
         headerUsageOn = body.show_chat_usage !== false;
         const nextDefault = String(body.default_agent || "");
         const nextSwitcher = body.model_switcher === true;
-        if (nextDefault !== defaultAgentId || nextSwitcher !== modelSwitcher) {
+        const nextFallback = body.fallback === true;
+        if (nextDefault !== defaultAgentId || nextSwitcher !== modelSwitcher || nextFallback !== fallbackOn) {
           defaultAgentId = nextDefault;
           modelSwitcher = nextSwitcher;
+          fallbackOn = nextFallback;
           renderAgentPicker();
         }
         const nextTheme = body.ui_theme === "ha_components" ? "ha_components" : "standard";
@@ -6222,6 +6252,8 @@ export async function mountAiWorkspace(root, options = {}) {
           drainSpeech(false, true);
         } else if (name === "plan_notice") {
           appendPlanNotice(data);
+        } else if (name === "fallback") {
+          applyFallback(data);
         } else if (name === "approval") {
           showApproval(data.approval);
         } else if (name === "error" && data.connection && !streamFull) {
