@@ -1,0 +1,234 @@
+/* "Use HA Components": loaded after chat.css and only swaps the composer — HA's filled
+   message field (label "Message") with the agent and model pickers under it.
+   Messages, header and sidebar keep the Standard look from chat.css. */
+
+@media (hover: hover) and (pointer: fine) {
+  .composer-ha ha-textarea.message {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb-color) transparent;
+  }
+
+  .composer-ha ha-textarea.message::-webkit-scrollbar {
+    width: 0.4rem;
+    height: 0.4rem;
+  }
+
+  .composer-ha ha-textarea.message::-webkit-scrollbar-thumb {
+    border-radius: var(--ha-border-radius-sm);
+    background: var(--scrollbar-thumb-color);
+  }
+}
+
+/* Full-bleed sticky chrome; prompt + picker use the 720px chat column. */
+.composer-ha .composer {
+  padding: 0 0 var(--ha-space-4);
+  width: 100%;
+  max-width: 100%;
+  background: var(--primary-background-color);
+  overflow: visible;
+}
+
+/* No rounded Standard box: the HA field draws its own fill and underline. */
+.composer-ha .composer-box {
+  width: min(calc(var(--ai-chat-width) + 2 * var(--ai-inline-pad)), 100%);
+  max-width: 100%;
+  margin-inline: auto;
+  padding: 0 var(--ha-space-3);
+  box-sizing: border-box;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  transition: none;
+}
+
+.composer-ha .composer .input {
+  padding: var(--ha-space-1) 0 0;
+}
+
+.composer-ha #message-input,
+.composer-ha ha-textarea.message {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Until ha-textarea is defined, the Standard row stands in for it. */
+.composer-ha .composer-fallback {
+  display: none;
+}
+
+.composer-ha .composer .input:has(ha-textarea:not(:defined)) .composer-fallback {
+  display: block;
+}
+
+.composer-ha .composer .input:has(ha-textarea:not(:defined)) > .composer-field {
+  display: none !important;
+}
+
+.composer-ha .composer .input:has(ha-textarea:defined) .composer-fallback {
+  display: none !important;
+}
+
+.composer-ha .composer-fallback .composer-row {
+  align-items: flex-end;
+  box-sizing: border-box;
+  background: var(--ha-color-form-background, var(--input-fill-color));
+  border: 1px solid var(--ha-color-border-neutral-normal, var(--divider-color));
+  border-radius: var(--ha-border-radius-3xl);
+  padding: var(--ha-space-1) var(--ha-space-1) var(--ha-space-1) var(--ha-space-4);
+}
+
+.composer-ha .composer-fallback .composer-row:focus-within {
+  border-color: var(--primary-color);
+}
+
+/* Filled field like HA's own inputs: text on top, icons in a row underneath. */
+.composer-ha .composer-field {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0;
+  background: var(--ha-color-form-background, var(--input-fill-color, rgba(255, 255, 255, 0.06)));
+  border-radius: var(--ha-border-radius-sm, 4px) var(--ha-border-radius-sm, 4px) 0 0;
+  box-shadow: inset 0 -1px 0 var(--ha-color-border-neutral-loud, var(--secondary-text-color));
+  transition: box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.composer-ha .composer-field:hover {
+  background: var(--ha-color-form-background-hover, var(--ha-color-form-background, var(--input-fill-color)));
+}
+
+.composer-ha .composer-field:focus-within {
+  box-shadow: inset 0 -2px 0 var(--primary-color);
+}
+
+.composer-ha .composer-field ha-textarea {
+  --wa-form-control-background-color: transparent;
+  /* The outer box is the field; label strip and text area take its color. */
+  --ha-color-form-background: transparent;
+  --ha-color-form-background-hover: transparent;
+  --wa-form-control-border-width: 0;
+  --wa-focus-ring-width: 0;
+}
+
+/* HA's own field look (label, spacing); the outer box draws the one underline. */
+.composer-ha .composer-field ha-textarea::part(wa-base) {
+  min-height: 0;
+}
+
+.composer-ha .composer-field.multi {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.composer-ha .composer-field.multi ha-textarea::part(wa-base) {
+  padding-bottom: 0;
+}
+
+.composer-ha .composer-field ha-textarea::part(wa-base)::after {
+  display: none;
+}
+
+.composer-ha .composer-field ha-textarea::part(wa-textarea) {
+  max-height: calc(1.5em * 8);
+  overflow-y: auto;
+  line-height: 1.5;
+}
+
+.composer-ha .composer-field ha-textarea::part(wa-hint) {
+  display: none;
+}
+
+.composer-ha .composer-field-actions {
+  display: flex;
+  flex: none;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0;
+  padding: 0 var(--ha-space-1) 0 0;
+}
+
+.composer-ha .composer-field.multi .composer-field-actions {
+  /* Only as wide as its buttons: the one-line check measures this row. */
+  align-self: flex-end;
+  margin-top: calc(var(--ha-space-1) * -1);
+  padding-bottom: var(--ha-space-1);
+}
+
+/* Agent and model pickers sit inside the composer column, under the field. */
+.composer-ha .agent-picker {
+  overflow: visible;
+  z-index: 5;
+  margin: var(--ha-space-1) 0 var(--ha-space-2);
+}
+
+.composer-ha .composer-box .agent-picker {
+  width: 100%;
+  max-width: 100%;
+  padding-inline: 0;
+  box-sizing: border-box;
+}
+
+.composer-ha ha-dropdown.agent-menu,
+.composer-ha ha-dropdown.model-menu {
+  overflow: visible;
+}
+
+.composer-ha ha-dropdown:not(:defined) {
+  display: block;
+}
+
+.composer-ha ha-button.agent-trigger {
+  max-width: min(70vw, 280px);
+}
+
+.composer-ha .agent-trigger-label {
+  min-width: 0;
+}
+
+/* Queued prompts as HA input chips. */
+.composer-ha .next-row {
+  margin: 0;
+}
+
+.composer-ha .next-chips {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--ha-space-1);
+  width: 100%;
+}
+
+.composer-ha .next-chip {
+  padding: var(--ha-space-2) var(--ha-space-2) var(--ha-space-2) var(--ha-space-3);
+  border-radius: var(--ha-border-radius-md, 8px);
+  background: var(--ha-color-fill-neutral-quiet-hover, var(--secondary-background-color));
+}
+
+.composer-ha ha-input-chip.next-chip {
+  display: inline-flex;
+  width: 100%;
+  box-sizing: border-box;
+  gap: unset;
+  padding: unset;
+  border-radius: unset;
+  background: unset;
+  color: unset;
+}
+
+@media (max-width: 870px) {
+  /* Gutter lives on composer-box / picker only — avoid stacking with .composer padding. */
+  .composer-ha .composer {
+    padding-inline: 0;
+  }
+
+  .composer-ha .composer-box {
+    width: 100%;
+    max-width: 100%;
+    padding-inline: max(var(--ha-space-3, 12px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+  }
+}

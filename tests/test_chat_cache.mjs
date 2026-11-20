@@ -161,7 +161,7 @@ assert.match(chatSrc, /if \(outcome === "gone"\) \{/);
 assert.match(chatSrc, /showLoadError\(id\)/);
 assert.match(chatSrc, /t\("retry"\)/);
 assert.match(chatSrc, /openSession\(id, true\);/);
-for (const css of ["chat.css", "chat-layout.css"]) {
+for (const css of ["chat.css"]) {
   const text = read(css);
   assert.match(text, /\.message-skeleton \.bubble-skeleton \{[^}]*animation: session-skeleton/);
   assert.match(text, /prefers-reduced-motion: reduce\) \{\n  \.message-skeleton \.bubble-skeleton \{\n    animation: none;/);

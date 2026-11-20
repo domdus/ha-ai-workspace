@@ -51,7 +51,7 @@
               "enable_overlay": "Ein runder KI-Button in der Ecke jeder Home-Assistant-Seite, damit du fragen kannst, ohne die Seite zu verlassen. Auf Einstellungsseiten sitzt er höher, damit er keine anderen Buttons verdeckt.",
               "enable_dictate": "Mikrofon-Button im Nachrichtenfeld. Ausblenden, wenn du nie diktierst.",
               "allow_users": "Aus: nur Administratoren. An: normale Benutzer bekommen den schwebenden Chat, mit denselben Home-Assistant-Rechten wie ihr eigenes Konto. Die volle AI-Workspace-Seite bleibt nur für Administratoren. Nur einschalten, wenn du allen mit Login vertraust.",
-              "ui_theme": "Standardmäßig aus. Baut den Chat aus den UI-Bausteinen von Home Assistant. Probier es, wenn der Chat nicht zu deinem Theme passt.",
+              "ui_theme": "Standardmäßig aus. Ändert nur das Nachrichtenfeld und die Agent- und Modellauswahl in den Home-Assistant-Stil. Nachrichten nutzen immer das Standard-Aussehen.",
               "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen kurzen Auszug aus einem anderen Chat nutzen, dessen Titel gleiche Wörter enthält, ohne dass du ihn erwähnst. Hilft, wenn du denselben Raum oder dieselbe Automation schon besprochen hast. Der andere Chat bleibt unverändert.",
               "keep_chats": "Neueste nicht angeheftete Chats pro Person. Ältere werden gelöscht, damit die Liste nicht endlos wächst. Angeheftete Chats bleiben immer. Standard 30."
             }
@@ -166,7 +166,7 @@
               "enable_overlay": "Ein runder KI-Button in der Ecke jeder Home-Assistant-Seite, damit du fragen kannst, ohne die Seite zu verlassen. Auf Einstellungsseiten sitzt er höher, damit er keine anderen Buttons verdeckt.",
               "enable_dictate": "Mikrofon-Button im Nachrichtenfeld. Ausblenden, wenn du nie diktierst.",
               "allow_users": "Aus: nur Administratoren. An: normale Benutzer bekommen den schwebenden Chat, mit denselben Home-Assistant-Rechten wie ihr eigenes Konto. Die volle AI-Workspace-Seite bleibt nur für Administratoren. Nur einschalten, wenn du allen mit Login vertraust.",
-              "ui_theme": "Standardmäßig aus. Baut den Chat aus den UI-Bausteinen von Home Assistant. Probier es, wenn der Chat nicht zu deinem Theme passt.",
+              "ui_theme": "Standardmäßig aus. Ändert nur das Nachrichtenfeld und die Agent- und Modellauswahl in den Home-Assistant-Stil. Nachrichten nutzen immer das Standard-Aussehen.",
               "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen kurzen Auszug aus einem anderen Chat nutzen, dessen Titel gleiche Wörter enthält, ohne dass du ihn erwähnst. Hilft, wenn du denselben Raum oder dieselbe Automation schon besprochen hast. Der andere Chat bleibt unverändert.",
               "keep_chats": "Neueste nicht angeheftete Chats pro Person. Ältere werden gelöscht, damit die Liste nicht endlos wächst. Angeheftete Chats bleiben immer. Standard 30."
             }

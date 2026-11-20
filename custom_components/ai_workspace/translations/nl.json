@@ -51,7 +51,7 @@
               "enable_overlay": "Een ronde AI-knop in de hoek van elke Home Assistant-pagina, zodat je iets kunt vragen zonder de pagina te verlaten. Op Instellingen-pagina's staat hij hoger zodat hij geen andere knoppen bedekt.",
               "enable_dictate": "Microfoonknop in het berichtveld. Verberg hem als je nooit dicteert.",
               "allow_users": "Uit: alleen beheerders. Aan: gebruikers zonder beheerdersrechten krijgen de zwevende chat, met dezelfde Home Assistant-toegang als hun eigen account. De volledige AI Workspace-pagina blijft alleen voor beheerders. Zet dit alleen aan als je iedereen met een account vertrouwt.",
-              "ui_theme": "Standaard uit. Bouwt de chat op met de eigen interface-onderdelen van Home Assistant. Probeer het als de chat niet bij je thema past.",
+              "ui_theme": "Standaard uit. Verandert alleen het berichtveld en de agent- en modelkiezer naar de stijl van Home Assistant. Berichten houden altijd het standaarduiterlijk.",
               "cross_chat": "Standaard uit. Als het aan staat, kan een vraag een kort fragment gebruiken uit een andere chat waarvan de titel woorden deelt, zonder dat je die chat noemt. Handig als je het al over dezelfde ruimte of automatisering hebt gehad. De andere chat wordt niet gewijzigd.",
               "keep_chats": "Nieuwste niet-vastgezette chats die per persoon bewaard blijven. Oudere worden verwijderd zodat de lijst niet eindeloos groeit. Vastgezette chats blijven altijd. Standaard 30."
             }
@@ -166,7 +166,7 @@
               "enable_overlay": "Een ronde AI-knop in de hoek van elke Home Assistant-pagina, zodat je iets kunt vragen zonder de pagina te verlaten. Op Instellingen-pagina's staat hij hoger zodat hij geen andere knoppen bedekt.",
               "enable_dictate": "Microfoonknop in het berichtveld. Verberg hem als je nooit dicteert.",
               "allow_users": "Uit: alleen beheerders. Aan: gebruikers zonder beheerdersrechten krijgen de zwevende chat, met dezelfde Home Assistant-toegang als hun eigen account. De volledige AI Workspace-pagina blijft alleen voor beheerders. Zet dit alleen aan als je iedereen met een account vertrouwt.",
-              "ui_theme": "Standaard uit. Bouwt de chat op met de eigen interface-onderdelen van Home Assistant. Probeer het als de chat niet bij je thema past.",
+              "ui_theme": "Standaard uit. Verandert alleen het berichtveld en de agent- en modelkiezer naar de stijl van Home Assistant. Berichten houden altijd het standaarduiterlijk.",
               "cross_chat": "Standaard uit. Als het aan staat, kan een vraag een kort fragment gebruiken uit een andere chat waarvan de titel woorden deelt, zonder dat je die chat noemt. Handig als je het al over dezelfde ruimte of automatisering hebt gehad. De andere chat wordt niet gewijzigd.",
               "keep_chats": "Nieuwste niet-vastgezette chats die per persoon bewaard blijven. Oudere worden verwijderd zodat de lijst niet eindeloos groeit. Vastgezette chats blijven altijd. Standaard 30."
             }

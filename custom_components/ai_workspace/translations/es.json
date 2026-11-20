@@ -51,7 +51,7 @@
               "enable_overlay": "Un botón redondo de IA en la esquina de cada página de Home Assistant, para preguntar sin salir de la página. En las páginas de Ajustes se sitúa más arriba para no tapar otros botones.",
               "enable_dictate": "Botón de micrófono en el cuadro de mensaje. Ocúltalo si nunca dictas.",
               "allow_users": "Desactivado: solo administradores. Activado: los usuarios no administradores tienen el chat flotante, con el mismo acceso a Home Assistant que su propia cuenta. La página completa de AI Workspace sigue siendo solo para administradores. Actívalo solo si confías en todos los que tienen una cuenta.",
-              "ui_theme": "Desactivado por defecto. Construye el chat con los elementos de interfaz propios de Home Assistant. Pruébalo si el chat no encaja con tu tema.",
+              "ui_theme": "Desactivado por defecto. Solo cambia el campo de mensaje y los selectores de agente y modelo al estilo de Home Assistant. Los mensajes siempre usan el aspecto estándar.",
               "cross_chat": "Desactivado por defecto. Si está activado, una pregunta puede usar un extracto breve de otro chat cuyo título comparta palabras con ella, sin que menciones ese chat. Ayuda si ya hablaste de la misma habitación o automatización. El otro chat no se modifica.",
               "keep_chats": "Chats no fijados más recientes que se conservan por persona. Los más antiguos se eliminan para que la lista no crezca sin fin. Los chats fijados se conservan siempre. Por defecto 30."
             }
@@ -166,7 +166,7 @@
               "enable_overlay": "Un botón redondo de IA en la esquina de cada página de Home Assistant, para preguntar sin salir de la página. En las páginas de Ajustes se sitúa más arriba para no tapar otros botones.",
               "enable_dictate": "Botón de micrófono en el cuadro de mensaje. Ocúltalo si nunca dictas.",
               "allow_users": "Desactivado: solo administradores. Activado: los usuarios no administradores tienen el chat flotante, con el mismo acceso a Home Assistant que su propia cuenta. La página completa de AI Workspace sigue siendo solo para administradores. Actívalo solo si confías en todos los que tienen una cuenta.",
-              "ui_theme": "Desactivado por defecto. Construye el chat con los elementos de interfaz propios de Home Assistant. Pruébalo si el chat no encaja con tu tema.",
+              "ui_theme": "Desactivado por defecto. Solo cambia el campo de mensaje y los selectores de agente y modelo al estilo de Home Assistant. Los mensajes siempre usan el aspecto estándar.",
               "cross_chat": "Desactivado por defecto. Si está activado, una pregunta puede usar un extracto breve de otro chat cuyo título comparta palabras con ella, sin que menciones ese chat. Ayuda si ya hablaste de la misma habitación o automatización. El otro chat no se modifica.",
               "keep_chats": "Chats no fijados más recientes que se conservan por persona. Los más antiguos se eliminan para que la lista no crezca sin fin. Los chats fijados se conservan siempre. Por defecto 30."
             }

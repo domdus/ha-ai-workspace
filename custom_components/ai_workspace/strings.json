@@ -51,7 +51,7 @@
               "enable_overlay": "A round AI button in the corner of every Home Assistant page, so you can ask without leaving the page. On Settings pages it sits higher so it does not cover other buttons.",
               "enable_dictate": "Microphone button in the message box. Hide it if you never dictate.",
               "allow_users": "Off: administrators only. On: non-admin users get the floating chat, with the same Home Assistant access as their own login. The full AI Workspace page stays admin-only. Only turn this on if you trust everyone who has a login.",
-              "ui_theme": "Off by default. Builds the chat from Home Assistant's own UI parts. Try it if the chat does not match your theme.",
+              "ui_theme": "Off by default. Only changes the message field and the agent and model pickers to Home Assistant's own style. Messages always use the standard look.",
               "cross_chat": "Off by default. When on, a question can use a short excerpt from another chat whose title shares words with it, without you mentioning that chat. Helps when you already talked about the same room or automation. The other chat is not changed.",
               "keep_chats": "Newest unpinned chats kept per person. Older ones are deleted so the list does not grow forever. Pinned chats are always kept. Default 30."
             }
@@ -166,7 +166,7 @@
               "enable_overlay": "A round AI button in the corner of every Home Assistant page, so you can ask without leaving the page. On Settings pages it sits higher so it does not cover other buttons.",
               "enable_dictate": "Microphone button in the message box. Hide it if you never dictate.",
               "allow_users": "Off: administrators only. On: non-admin users get the floating chat, with the same Home Assistant access as their own login. The full AI Workspace page stays admin-only. Only turn this on if you trust everyone who has a login.",
-              "ui_theme": "Off by default. Builds the chat from Home Assistant's own UI parts. Try it if the chat does not match your theme.",
+              "ui_theme": "Off by default. Only changes the message field and the agent and model pickers to Home Assistant's own style. Messages always use the standard look.",
               "cross_chat": "Off by default. When on, a question can use a short excerpt from another chat whose title shares words with it, without you mentioning that chat. Helps when you already talked about the same room or automation. The other chat is not changed.",
               "keep_chats": "Newest unpinned chats kept per person. Older ones are deleted so the list does not grow forever. Pinned chats are always kept. Default 30."
             }

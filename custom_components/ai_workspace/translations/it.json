@@ -51,7 +51,7 @@
               "enable_overlay": "Un pulsante IA rotondo nell'angolo di ogni pagina di Home Assistant, così puoi chiedere senza lasciare la pagina. Nelle pagine Impostazioni sta più in alto per non coprire altri pulsanti.",
               "enable_dictate": "Pulsante microfono nel campo del messaggio. Nascondilo se non detti mai.",
               "allow_users": "Disattivo: solo amministratori. Attivo: gli utenti non amministratori hanno la chat mobile, con lo stesso accesso a Home Assistant del proprio account. La pagina completa di AI Workspace resta solo per gli amministratori. Attivalo solo se ti fidi di tutti quelli che hanno un account.",
-              "ui_theme": "Disattivo per impostazione predefinita. Costruisce la chat con gli elementi dell'interfaccia di Home Assistant. Provalo se la chat non si adatta al tuo tema.",
+              "ui_theme": "Disattivo per impostazione predefinita. Cambia solo il campo del messaggio e i selettori di agente e modello allo stile di Home Assistant. I messaggi usano sempre l'aspetto standard.",
               "cross_chat": "Disattivo per impostazione predefinita. Se attivo, una domanda può usare un breve estratto di un'altra chat il cui titolo ha parole in comune, senza che tu la nomini. Utile se hai già parlato della stessa stanza o automazione. L'altra chat non viene modificata.",
               "keep_chats": "Chat non fissate più recenti conservate per persona. Le più vecchie vengono eliminate così l'elenco non cresce all'infinito. Le chat fissate restano sempre. Predefinito 30."
             }
@@ -166,7 +166,7 @@
               "enable_overlay": "Un pulsante IA rotondo nell'angolo di ogni pagina di Home Assistant, così puoi chiedere senza lasciare la pagina. Nelle pagine Impostazioni sta più in alto per non coprire altri pulsanti.",
               "enable_dictate": "Pulsante microfono nel campo del messaggio. Nascondilo se non detti mai.",
               "allow_users": "Disattivo: solo amministratori. Attivo: gli utenti non amministratori hanno la chat mobile, con lo stesso accesso a Home Assistant del proprio account. La pagina completa di AI Workspace resta solo per gli amministratori. Attivalo solo se ti fidi di tutti quelli che hanno un account.",
-              "ui_theme": "Disattivo per impostazione predefinita. Costruisce la chat con gli elementi dell'interfaccia di Home Assistant. Provalo se la chat non si adatta al tuo tema.",
+              "ui_theme": "Disattivo per impostazione predefinita. Cambia solo il campo del messaggio e i selettori di agente e modello allo stile di Home Assistant. I messaggi usano sempre l'aspetto standard.",
               "cross_chat": "Disattivo per impostazione predefinita. Se attivo, una domanda può usare un breve estratto di un'altra chat il cui titolo ha parole in comune, senza che tu la nomini. Utile se hai già parlato della stessa stanza o automazione. L'altra chat non viene modificata.",
               "keep_chats": "Chat non fissate più recenti conservate per persona. Le più vecchie vengono eliminate così l'elenco non cresce all'infinito. Le chat fissate restano sempre. Predefinito 30."
             }

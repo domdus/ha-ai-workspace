@@ -20,8 +20,6 @@ const read = (name) => readFileSync(new URL(name, www), "utf8");
 const chatSrc = read("chat.js");
 const i18nSrc = read("i18n.js");
 const cssStandard = read("chat.css");
-const cssLayout = read("chat-layout.css");
-const cssHa = read("chat-ha-components.css");
 
 const de = { locale: "de-DE", timeZone: "Europe/Berlin", hour12: false, yesterday: "gestern, {time}" };
 const now = new Date("2026-11-19T10:00:00Z"); // 11:00 in Berlin
@@ -173,9 +171,10 @@ assert.match(i18nSrc, /copy_reply: "Antwort kopieren"/);
 assert.match(i18nSrc, /stop_reading: "Vorlesen stoppen"/);
 assert.match(i18nSrc, /reply_yesterday: "gestern, \{time\}"/);
 
-// Both themes: subtle row, full on hover/focus, always on touch; time right-aligned, muted,
-// small, no wrap; older replies show it on hover/focus.
-for (const css of [cssStandard, cssLayout]) {
+// One message template (HA components only swap the composer): subtle row, full on
+// hover/focus, always on touch; time right-aligned, muted, small, no wrap; older replies
+// show it on hover/focus.
+for (const css of [cssStandard]) {
   const row = css.match(/\n\.reply-actions \{([^}]*)\}/)?.[1] || "";
   assert.match(row, /display: flex/);
   assert.match(row, /opacity: 0\.6/);
@@ -192,6 +191,8 @@ for (const css of [cssStandard, cssLayout]) {
   assert.match(css, /\.reply-actions:focus-within \.reply-time \{\s*opacity: 1;/);
   assert.doesNotMatch(css, /copy-chat|\.chat-actions \.reply-time/);
 }
-assert.match(cssHa, /\.ui-theme-ha-components \.message-container > \.reply-actions \{/);
+// The row always lives inside the reply bubble: no second (HA) host for it.
+assert.match(chatSrc, /return bubble \? bubble\.querySelector\(":scope > \.reply-actions"\) : null;/);
+assert.doesNotMatch(chatSrc, /message-container|replyRowHost/);
 
 console.log("reply meta ok");

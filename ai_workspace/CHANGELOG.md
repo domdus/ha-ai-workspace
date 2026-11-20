@@ -29,6 +29,15 @@
 
 - The Runtime App changed a little (tool calls carry a short summary of their arguments and results for the journal). The fallback also works with an older Runtime, the journal then only has the tool names.
 
+## Unreleased (HA components)
+
+**"Use HA Components" now only changes the message field.** Messages always look the same, with the option on or off.
+
+- With **Use HA Components** on, only the composer changes: Home Assistant's own message field (label "Message") with the agent and model pickers under it, as before. Your messages, the agent's replies, the "Thinking" line, the row with time, copy and read aloud, notices and tool steps always use the standard look, in the floating chat and in the full panel.
+- The standard look follows your Home Assistant theme as before. The floating chat button is the same in both modes.
+- The option stays off by default and keeps its setting. If you had it on, you now get the standard messages with the HA message field; nothing to change.
+- Copy, read aloud, the reply row fading in after a reply, drafts, queued prompts and the chat title work the same with both message fields.
+
 ## 1.6.1b5
 
 **Chats get a real title, and the floating chat shows it.** A pasted link or a long first message no longer becomes the chat title, Claude and Cursor on the Runtime now write a short title too, and the floating chat no longer stays on "New chat".

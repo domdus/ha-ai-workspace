@@ -51,7 +51,7 @@
               "enable_overlay": "Kulaté tlačítko AI v rohu každé stránky Home Assistant, takže se můžete zeptat bez opuštění stránky. Na stránkách Nastavení je výš, aby nepřekrývalo jiná tlačítka.",
               "enable_dictate": "Tlačítko mikrofonu v poli zprávy. Skryjte ho, pokud nikdy nediktujete.",
               "allow_users": "Vypnuto: jen správci. Zapnuto: uživatelé bez oprávnění správce dostanou plovoucí chat se stejným přístupem k Home Assistant jako jejich vlastní účet. Plná stránka AI Workspace zůstane jen pro správce. Zapněte jen, pokud věříte všem, kdo mají účet.",
-              "ui_theme": "Ve výchozím stavu vypnuto. Sestaví chat z vlastních prvků rozhraní Home Assistant. Zkuste to, pokud chat neladí s vaším motivem.",
+              "ui_theme": "Ve výchozím stavu vypnuto. Změní jen pole zprávy a výběr agenta a modelu na styl Home Assistant. Zprávy mají vždy standardní vzhled.",
               "cross_chat": "Ve výchozím stavu vypnuto. Když je zapnuto, otázka může použít krátký výňatek z jiného chatu, jehož název má společná slova, aniž byste ho zmínili. Pomáhá, když jste už o stejné místnosti nebo automatizaci mluvili. Druhý chat se nemění.",
               "keep_chats": "Nejnovější nepřipnuté chaty uchované na osobu. Starší se mažou, aby seznam nerostl donekonečna. Připnuté chaty zůstanou vždy. Výchozí 30."
             }
@@ -166,7 +166,7 @@
               "enable_overlay": "Kulaté tlačítko AI v rohu každé stránky Home Assistant, takže se můžete zeptat bez opuštění stránky. Na stránkách Nastavení je výš, aby nepřekrývalo jiná tlačítka.",
               "enable_dictate": "Tlačítko mikrofonu v poli zprávy. Skryjte ho, pokud nikdy nediktujete.",
               "allow_users": "Vypnuto: jen správci. Zapnuto: uživatelé bez oprávnění správce dostanou plovoucí chat se stejným přístupem k Home Assistant jako jejich vlastní účet. Plná stránka AI Workspace zůstane jen pro správce. Zapněte jen, pokud věříte všem, kdo mají účet.",
-              "ui_theme": "Ve výchozím stavu vypnuto. Sestaví chat z vlastních prvků rozhraní Home Assistant. Zkuste to, pokud chat neladí s vaším motivem.",
+              "ui_theme": "Ve výchozím stavu vypnuto. Změní jen pole zprávy a výběr agenta a modelu na styl Home Assistant. Zprávy mají vždy standardní vzhled.",
               "cross_chat": "Ve výchozím stavu vypnuto. Když je zapnuto, otázka může použít krátký výňatek z jiného chatu, jehož název má společná slova, aniž byste ho zmínili. Pomáhá, když jste už o stejné místnosti nebo automatizaci mluvili. Druhý chat se nemění.",
               "keep_chats": "Nejnovější nepřipnuté chaty uchované na osobu. Starší se mažou, aby seznam nerostl donekonečna. Připnuté chaty zůstanou vždy. Výchozí 30."
             }

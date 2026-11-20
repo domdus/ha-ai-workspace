@@ -51,7 +51,7 @@
               "enable_overlay": "En rund AI-knapp i hörnet av varje Home Assistant-sida, så att du kan fråga utan att lämna sidan. På Inställningar-sidor sitter den högre så att den inte täcker andra knappar.",
               "enable_dictate": "Mikrofonknapp i meddelanderutan. Dölj den om du aldrig dikterar.",
               "allow_users": "Av: endast administratörer. På: användare utan administratörsrättigheter får den flytande chatten, med samma Home Assistant-åtkomst som sitt eget konto. Hela AI Workspace-sidan förblir endast för administratörer. Slå bara på detta om du litar på alla som har ett konto.",
-              "ui_theme": "Av som standard. Bygger chatten av Home Assistants egna gränssnittsdelar. Prova det om chatten inte passar ditt tema.",
+              "ui_theme": "Av som standard. Ändrar bara meddelandefältet och agent- och modellväljaren till Home Assistants egen stil. Meddelanden har alltid standardutseendet.",
               "cross_chat": "Av som standard. När det är på kan en fråga använda ett kort utdrag ur en annan chatt vars titel delar ord med den, utan att du nämner den chatten. Hjälper när du redan pratat om samma rum eller automation. Den andra chatten ändras inte.",
               "keep_chats": "Nyaste icke-fästa chattar som behålls per person. Äldre tas bort så att listan inte växer i det oändliga. Fästa chattar behålls alltid. Standard 30."
             }
@@ -166,7 +166,7 @@
               "enable_overlay": "En rund AI-knapp i hörnet av varje Home Assistant-sida, så att du kan fråga utan att lämna sidan. På Inställningar-sidor sitter den högre så att den inte täcker andra knappar.",
               "enable_dictate": "Mikrofonknapp i meddelanderutan. Dölj den om du aldrig dikterar.",
               "allow_users": "Av: endast administratörer. På: användare utan administratörsrättigheter får den flytande chatten, med samma Home Assistant-åtkomst som sitt eget konto. Hela AI Workspace-sidan förblir endast för administratörer. Slå bara på detta om du litar på alla som har ett konto.",
-              "ui_theme": "Av som standard. Bygger chatten av Home Assistants egna gränssnittsdelar. Prova det om chatten inte passar ditt tema.",
+              "ui_theme": "Av som standard. Ändrar bara meddelandefältet och agent- och modellväljaren till Home Assistants egen stil. Meddelanden har alltid standardutseendet.",
               "cross_chat": "Av som standard. När det är på kan en fråga använda ett kort utdrag ur en annan chatt vars titel delar ord med den, utan att du nämner den chatten. Hjälper när du redan pratat om samma rum eller automation. Den andra chatten ändras inte.",
               "keep_chats": "Nyaste icke-fästa chattar som behålls per person. Äldre tas bort så att listan inte växer i det oändliga. Fästa chattar behålls alltid. Standard 30."
             }
