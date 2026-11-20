@@ -21,7 +21,8 @@
 
 /* Full-bleed sticky chrome; prompt + picker use the 720px chat column. */
 .composer-ha .composer {
-  padding: 0 0 var(--ha-space-4);
+  /* The picker row below the field carries the one small bottom gap. */
+  padding: 0;
   width: 100%;
   max-width: 100%;
   background: var(--primary-background-color);

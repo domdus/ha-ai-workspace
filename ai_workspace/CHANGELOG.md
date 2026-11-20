@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.1b14
+
+**Less empty space under the composer.** On phones the chat lost almost a full row below the agent and model pickers. It was not new: the extra space dates back to the first composer. The pickers sat 16 px (Standard) or 24 px (HA components) above the bottom edge, on top of the safe-area space that Home Assistant already keeps free for the Android gesture bar and the iOS home indicator.
+
+- **Standard composer:** 8 px below the picker row instead of 16 px, and 4 px instead of 8 px between the message field and the pickers. The picker buttons look the same, but they now react to taps across 32 px of height.
+- **HA components composer:** 8 px below the pickers instead of 24 px.
+- Same in the full panel and the floating chat, on phones and desktops. The safe area is still respected, the composer still stays above the keyboard, and queued prompts, attachments and a growing multi-line message keep their layout.
+- Only the integration changes. The Runtime app version moves to 1.6.1b14 with the release but has no functional change.
+
 ## 1.6.1b13
 
 **Tasks respect "Enable fallback".** A task without an `agent` could switch from one agent to the next (for example OpenAI → Gemini → Cursor) although Fallback was off in the options: with Fallback off, `ai_workspace.run_task` still used every other agent as a fallback, in the order the agents were created.

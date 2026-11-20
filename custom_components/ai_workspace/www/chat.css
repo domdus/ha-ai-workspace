@@ -1260,7 +1260,8 @@ h1 {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  padding: var(--ha-space-4) var(--ai-inline-pad);
+  /* Small bottom gap only: ha-top-app-bar-fixed already pads its content by the safe-area inset. */
+  padding: var(--ha-space-4) var(--ai-inline-pad) var(--ha-space-2);
   width: min(calc(var(--ai-chat-width) + 2 * var(--ai-inline-pad)), 100%);
   margin-inline: auto;
   margin-top: auto;
@@ -1400,7 +1401,7 @@ h1 {
 .agent-picker {
   position: relative;
   align-self: flex-start;
-  margin: var(--ha-space-2) 0 0 var(--ha-space-3);
+  margin: var(--ha-space-1) 0 0 var(--ha-space-3);
 }
 
 .agent-picker[hidden] {
@@ -1436,6 +1437,14 @@ button.agent-trigger {
   font-size: var(--ha-font-size-s, 0.85rem);
   line-height: 1.2;
   cursor: pointer;
+  position: relative;
+}
+
+/* 32px tap target around the compact 24px pill, without making the row taller. */
+button.agent-trigger::before {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
 }
 
 .agent-trigger-label {

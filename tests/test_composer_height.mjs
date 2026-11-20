@@ -63,4 +63,17 @@ assert.equal(oneLine()({}), 38);
 style.lineHeight = "normal";
 assert.equal(oneLine()({}), Math.ceil(16 * 1.2 + 14));
 
+// Bottom gap under the picker row stays small; ha-top-app-bar-fixed already adds the safe area.
+const rule = (css, sel) => {
+  const start = css.indexOf(`${sel} {`);
+  assert.ok(start >= 0, sel);
+  return css.slice(start, css.indexOf("}", start));
+};
+assert.match(rule(standardCss, "\n.composer"), /padding: var\(--ha-space-4\) var\(--ai-inline-pad\) var\(--ha-space-2\);/);
+assert.match(rule(standardCss, "\n.agent-picker"), /margin: var\(--ha-space-1\) 0 0 var\(--ha-space-3\);/);
+assert.match(rule(standardCss, "button.agent-trigger::before"), /inset: -4px 0;/);
+assert.match(rule(composerCss, ".composer-ha .composer"), /padding: 0;/);
+assert.match(rule(composerCss, ".composer-ha .agent-picker"), /margin: var\(--ha-space-1\) 0 var\(--ha-space-2\);/);
+assert.doesNotMatch(standardCss + composerCss, /safe-area-inset-bottom/);
+
 console.log("composer height ok");
