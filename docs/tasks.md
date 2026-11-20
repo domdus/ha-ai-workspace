@@ -8,6 +8,7 @@ Open AI Workspace in the sidebar and choose the calendar icon (**Tasks**) at the
 
 - **New task** asks for a name, the prompt, a schedule (daily, weekly, or every N minutes/hours), the agent, where the result goes (task chat, push message, or both), and **Allow changes**.
 - **Save** creates or updates a real automation through Home Assistant's automation config API, the same one the automation editor uses, and gives it the **AI Workspace** label. The page lists exactly the automations with that label.
+- An agent in chat builds an automation that sends a prompt to an AI Workspace agent as a task, with `ai_workspace.run_task`. Any new automation whose actions run `ai_workspace.run_task` gets the **AI Workspace** label automatically, for example one an agent writes in chat or one you save in the automation editor. If you remove the label from an existing task later, it stays off.
 - **Advanced (automation editor)** saves the task and opens it in the automation editor, where you can add any trigger or condition.
 - Each task shows whether it is on or paused (the automation's on/off switch), the last run and its result, and buttons for **Run now** (triggers the automation), **Open task chat**, **Open in automation editor**, and **Delete** (removes the automation after you confirm).
 

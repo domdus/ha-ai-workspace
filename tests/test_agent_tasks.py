@@ -678,6 +678,46 @@ def test_only_labelled_automations_are_listed(monkeypatch) -> None:
     assert asked == ["ai_workspace"]
 
 
+def test_has_task_step() -> None:
+    assert tasks.has_task_step({"actions": [{"action": "notify.x"}, {"action": "ai_workspace.run_task", "data": {}}]})
+    assert tasks.has_task_step({"action": {"service": "ai_workspace.run_task"}})
+    assert not tasks.has_task_step({"actions": [{"action": "conversation.process"}]})
+    assert not tasks.has_task_step(None)
+
+
+def test_new_task_automation_gets_label(monkeypatch) -> None:
+    from custom_components.ai_workspace import tasks_http
+
+    rows = {
+        "automation.news": SimpleNamespace(labels=set()),
+        "automation.light": SimpleNamespace(labels=set()),
+        "automation.done": SimpleNamespace(labels={"ai_workspace"}),
+    }
+    configs = {
+        "automation.news": {"actions": [{"action": "ai_workspace.run_task", "data": {"prompt": "News?"}}]},
+        "automation.light": {"actions": [{"action": "light.turn_on"}]},
+        "automation.done": {"actions": [{"action": "ai_workspace.run_task", "data": {"prompt": "x"}}]},
+    }
+    updates = []
+
+    class Registry:
+        def async_get(self, entity_id):
+            return rows.get(entity_id)
+
+        def async_update_entity(self, entity_id, labels):
+            updates.append((entity_id, labels))
+
+    monkeypatch.setattr(tasks_http.er, "async_get", lambda hass: Registry())
+    monkeypatch.setattr(tasks_http, "_raw_config", lambda hass, entity_id: configs.get(entity_id))
+    monkeypatch.setattr(tasks_http, "task_label_id", lambda hass, create=False: "ai_workspace")
+    hass = SimpleNamespace()
+    assert tasks_http.label_new_task(hass, "automation.news")
+    assert not tasks_http.label_new_task(hass, "automation.light")
+    assert not tasks_http.label_new_task(hass, "automation.done")
+    assert not tasks_http.label_new_task(hass, "script.news")
+    assert updates == [("automation.news", {"ai_workspace"})]
+
+
 def test_task_rows(monkeypatch) -> None:
     from custom_components.ai_workspace import tasks_http
 

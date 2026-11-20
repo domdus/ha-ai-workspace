@@ -904,6 +904,15 @@ WRITE_RULES = (
     "Never say a change is done before the write result confirms it. "
     "If asked where something in Home Assistant came from and you do not know, say so instead of guessing."
 )
+TASK_RULES = (
+    "AI Workspace tasks: any automation or script that hands a prompt to an AI Workspace agent is an "
+    "AI Workspace task and uses ai_workspace.run_task, not conversation.process or another way to call the agent. "
+    "The prompt must be self-contained; the agent remembers no earlier runs. "
+    "allow_changes defaults to false (read-only); set it true only if the user wants the agent to change things. "
+    "With a response_variable (for example x) the result is {{ x.response }}, and {{ x.status }} is 'ok' on success; "
+    "the optional notify field sends the result as a short text message. "
+    "AI Workspace adds the label ai_workspace to new task automations itself; check it and add it only if missing."
+)
 STATUS_LINE_INSTRUCTIONS = (
     "You may write one short status sentence before the first tool call when the "
     "answer needs tools, or when you start real work (a change or a write). "
@@ -1087,7 +1096,10 @@ def language_instruction(code: str = "") -> str:
 def workspace_system_prompt(settings, *, admin: bool = True) -> str:
     """Built-in or custom system prompt plus the rules every agent gets."""
     base = str(getattr(settings, "system_prompt", "") or "").strip() or DEFAULT_SYSTEM_PROMPT
-    parts = [base, HOUSE_RULES, LOVELACE_DASHBOARD_RULES, BPS_KEY_INSTRUCTIONS, WRITE_RULES, STATUS_LINE_INSTRUCTIONS]
+    parts = [base, HOUSE_RULES, LOVELACE_DASHBOARD_RULES, BPS_KEY_INSTRUCTIONS, WRITE_RULES]
+    if admin:
+        parts.append(TASK_RULES)
+    parts.append(STATUS_LINE_INSTRUCTIONS)
     if admin and getattr(settings, "house_map", False):
         from .house_map import CATALOG_INSTRUCTIONS
 

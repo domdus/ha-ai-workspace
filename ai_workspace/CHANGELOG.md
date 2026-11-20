@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.1b15
+
+**Agents build AI Workspace tasks, and new tasks get the label automatically.**
+
+- **Chat:** when you ask an agent for an automation that sends a prompt to an AI Workspace agent, it builds an AI Workspace task with `ai_workspace.run_task` instead of `conversation.process` or another way of calling the agent. The prompt is self-contained, `allow_changes` stays off unless you want the agent to change things, and the result is available in the response variable or as a push message via `notify`. This applies to administrators' chats and to every agent, including ones with a custom system prompt.
+- **Tasks: automatic label.** Every new automation whose actions run `ai_workspace.run_task` gets the **AI Workspace** label automatically, for example one an agent writes in chat or one you save in the automation editor, so it shows up on the Tasks page. Existing automations are not changed: if you remove the label from a task, it stays off.
+- Only the integration changes. The Runtime app version moves to 1.6.1b15 with the release but has no functional change.
+
 ## 1.6.1b14
 
 **Less empty space under the composer.** On phones the chat lost almost a full row below the agent and model pickers. It was not new: the extra space dates back to the first composer. The pickers sat 16 px (Standard) or 24 px (HA components) above the bottom edge, on top of the safe-area space that Home Assistant already keeps free for the Android gesture bar and the iOS home indicator.

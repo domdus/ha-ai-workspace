@@ -23,6 +23,7 @@ from .tasks import (
     TASK_LABEL_ICON,
     STATUS_RUNNING,
     build_automation,
+    has_task_step,
     new_automation_id,
     parse_automation,
     task_key,
@@ -193,6 +194,49 @@ class TaskLabelView(HomeAssistantView):
         return self.json({"entity_id": entity_id, "label_id": label_id})
 
 
+def label_new_task(hass: HomeAssistant, entity_id: str) -> bool:
+    """Label a newly created automation whose actions run an AI Workspace task.
+
+    Covers automations an agent writes in chat. Only new ones: a user who later takes the label
+    off an existing task keeps it off.
+    """
+    if not entity_id.startswith("automation."):
+        return False
+    if not has_task_step(_raw_config(hass, entity_id)):
+        return False
+    registry = er.async_get(hass)
+    row = registry.async_get(entity_id)
+    if row is None:
+        return False
+    label_id = task_label_id(hass, create=True)
+    if not label_id or label_id in row.labels:
+        return False
+    registry.async_update_entity(entity_id, labels={*row.labels, label_id})
+    return True
+
+
+def track_new_tasks(hass: HomeAssistant) -> None:
+    """Watch the entity registry for new automations and label the ones that are tasks."""
+
+    async def _created(event) -> None:
+        data = event.data or {}
+        entity_id = str(data.get("entity_id") or "")
+        if data.get("action") != "create" or not entity_id.startswith("automation."):
+            return
+        # The registry entry comes a moment before the entity is in the automation component.
+        for _ in range(8):
+            if _raw_config(hass, entity_id) is not None:
+                break
+            await asyncio.sleep(0.25)
+        try:
+            label_new_task(hass, entity_id)
+        except Exception:  # noqa: BLE001 - a label is a nicety, never break the save
+            _LOGGER.debug("Could not label task automation %s", entity_id, exc_info=True)
+
+    hass.bus.async_listen(er.EVENT_ENTITY_REGISTRY_UPDATED, _created)
+
+
 def register_task_views(hass: HomeAssistant) -> None:
     for view in (TasksView, TaskBuildView, TaskLabelView):
         hass.http.register_view(view())
+    track_new_tasks(hass)

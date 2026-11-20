@@ -976,6 +976,15 @@ def _is_task_step(step: Any) -> bool:
     return isinstance(step, dict) and str(step.get("action") or step.get("service") or "") == TASK_ACTION
 
 
+def has_task_step(config: dict[str, Any] | None) -> bool:
+    """True when an automation config runs ai_workspace.run_task among its top-level actions."""
+    if not isinstance(config, dict):
+        return False
+    actions = config.get("actions", config.get("action"))
+    actions = [actions] if isinstance(actions, dict) else list(actions or [])
+    return any(_is_task_step(item) for item in actions)
+
+
 def parse_automation(config: dict[str, Any] | None) -> dict[str, Any]:
     """What the Tasks page shows for an automation. editable=False: open it in the editor."""
     config = config if isinstance(config, dict) else {}
