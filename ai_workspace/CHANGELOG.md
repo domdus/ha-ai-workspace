@@ -1,5 +1,45 @@
 # Changelog
 
+## 1.6.1
+
+Everything from 1.6.1b1 to 1.6.1b18. Nothing needs to be changed in your setup; agent fallback and tasks are off until you use them.
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.6.1`) together with this release.** Tasks on Runtime agents, chat titles from Claude and Cursor, ChatGPT plan limits and plan usage in the chat header need it. The chat shows a hint when the runtime is older than 1.6.1.
+
+**Agent fallback (optional, off by default)**
+- **Settings → AI Workspace → Configure → Fallback:** an ordered list of your agents (drag the chips to reorder). When one agent's provider fails (plan or token limit, 429, expired sign-in, timeouts, server errors), the next one carries on. Never when you stop a reply, a tool fails or the model refuses.
+- A short notice in the chat says who stopped and who goes on, with the reset time when known; the agent picker switches to the active agent.
+- The next agent gets the task, the chat so far and a journal of the tool calls already made, with a clear instruction not to repeat device actions, file writes, commits or pushes. Workspace work only goes to Runtime agents. With no agent left, the chat pauses and continues by itself.
+- **Back to the preferred agent:** off, on a new message, or after the reset or wait time, checked cheaply at the start of a turn.
+
+**Agent tasks**
+- New action **AI Workspace: Run agent task** (`ai_workspace.run_task`): a prompt run by an agent, with an optional task chat, push message (plain text, no Markdown marks), Allow changes (off by default: read-only) and a timeout. With a response variable it returns status, response, agent, chat and usage.
+- New **Tasks** page (administrators): create, schedule, pause, run now and delete tasks. They are normal Home Assistant automations with the **AI Workspace** label; every new automation that runs `ai_workspace.run_task` gets the label automatically, also when an agent builds it in the chat.
+- Loop protection is always on: a task cannot start tasks, trigger or edit automations or scripts, and Runtime agents get no shell or file tools during a task.
+- Tasks respect **Enable fallback**: off, a task runs with exactly one agent (the Default agent, or the first signed-in Runtime agent) and never switches. The result holds only the final answer. Runs are logged and count on the Usage page.
+- Examples: [docs/tasks.md](../docs/tasks.md).
+
+**Plan limits and usage**
+- **Usage page:** each plan (Claude, Cursor, Codex) is its own card with bars for the session and week window, reset times and an overage warning, shown before the cost cards. The $ figures of plan agents are marked as theoretical API prices.
+- **Chat header:** an agent on a subscription plan shows plan usage (for example `5h 12% · W 16%`) instead of $. Agents with an API key keep showing $. The Runtime reports which credential each engine really uses, and plan data is only shown for the credential it was measured on.
+- **ChatGPT plan limits** now really show up for Codex agents.
+- The plan session reset sensor works (it was always unavailable).
+
+**Chat**
+- **Under every reply:** copy, read aloud (one reply at a time, with Stop) and the reply time; the rollback button sits in the same row under the newest reply. While a turn runs, the previous reply's row stays out of the way.
+- **Drafts and queued prompts stay in their chat**, also when you switch chats; queued prompts are sent in their own chat when the reply finishes.
+- **Real chat titles:** a pasted link becomes a short "site: topic" title, long first messages are shortened, and Claude and Cursor write a short title in your language. Titles you renamed are never overwritten. The floating chat shows the title right away.
+- **The agent finds the chat you mean** ("im Bewässerungs-Chat", typos, umlauts), and agents can read your other chats with the new read-only tools `list_chats` and `read_chat`.
+- **Opening a chat:** a loading skeleton in the Standard layout, faster start, **Try again** instead of an empty new chat when Home Assistant does not answer, and unread dots in the chat list.
+- **Fewer unneeded Home Assistant lookups:** general questions get a direct answer; live house data still always comes from a tool. No made-up entity links.
+- **Use HA Components** now only changes the message field; messages always use the standard look.
+- The message field goes back to one line after sending, less empty space under the composer on phones, no agent badge or Tasks icon in the chat header, and Usage and history entries use the same cards as the Tasks page.
+
+**Agents and models**
+- **Sign in with ChatGPT** on a Codex (runtime) agent goes on by itself once OpenAI confirms the code, and an expired or revoked sign-in says so in the chat, in your language.
+- The Cursor model list and the model prices are up to date (new Claude, Gemini and DeepSeek models).
+- Fixed `RuntimeError: Attribute hass is None` from the usage sensors after a reload.
+
 ## 1.6.1b18
 
 **Chat loading skeleton matches the current message layout, and the reply row behaves while a turn runs.**
