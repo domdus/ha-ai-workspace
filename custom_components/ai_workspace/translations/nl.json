@@ -45,13 +45,13 @@
               "keep_chats": "Chats bewaren"
             },
             "data_description": {
-              "default_agent": "Agent waarmee een nieuwe chat begint. Elke chat onthoudt de agent (en het model) die het laatst is gebruikt. Laatst gebruikt: de agent die je het laatst in deze browser koos.",
+              "default_agent": "Agent waarmee een nieuwe chat begint. Elke chat onthoudt de agent (en het model) die het laatst is gebruikt. Laatst gebruikt: de agent die je het laatst in deze browser koos. Staat Fallback aan, dan beslist de agentlijst daarvan.",
               "model_switcher": "Standaard uit. Voegt naast de agentkeuze een modelkeuze toe, zodat een chat een ander model van dezelfde agent kan gebruiken. Het model van de agent blijft de standaard.",
               "enable_sidebar": "Voegt AI Workspace toe aan de zijbalk van Home Assistant. Uit: beheerders kunnen /ai-workspace nog steeds direct openen.",
               "enable_overlay": "Een ronde AI-knop in de hoek van elke Home Assistant-pagina, zodat je iets kunt vragen zonder de pagina te verlaten. Op Instellingen-pagina's staat hij hoger zodat hij geen andere knoppen bedekt.",
               "enable_dictate": "Microfoonknop in het berichtveld. Verberg hem als je nooit dicteert.",
               "allow_users": "Uit: alleen beheerders. Aan: gebruikers zonder beheerdersrechten krijgen de zwevende chat, met dezelfde Home Assistant-toegang als hun eigen account. De volledige AI Workspace-pagina blijft alleen voor beheerders. Zet dit alleen aan als je iedereen met een account vertrouwt.",
-              "ui_theme": "Standaard uit. Bouwt de chat op met de eigen interface-onderdelen van Home Assistant. Probeer het als de chat niet bij je thema past.",
+              "ui_theme": "Standaard uit. Verandert alleen het berichtveld en de agent- en modelkiezer naar de stijl van Home Assistant. Berichten houden altijd het standaarduiterlijk.",
               "cross_chat": "Standaard uit. Als het aan staat, kan een vraag een kort fragment gebruiken uit een andere chat waarvan de titel woorden deelt, zonder dat je die chat noemt. Handig als je het al over dezelfde ruimte of automatisering hebt gehad. De andere chat wordt niet gewijzigd.",
               "keep_chats": "Nieuwste niet-vastgezette chats die per persoon bewaard blijven. Oudere worden verwijderd zodat de lijst niet eindeloos groeit. Vastgezette chats blijven altijd. Standaard 30."
             }
@@ -160,15 +160,29 @@
               "keep_chats": "Chats bewaren"
             },
             "data_description": {
-              "default_agent": "Agent waarmee een nieuwe chat begint. Elke chat onthoudt de agent (en het model) die het laatst is gebruikt. Laatst gebruikt: de agent die je het laatst in deze browser koos.",
+              "default_agent": "Agent waarmee een nieuwe chat begint. Elke chat onthoudt de agent (en het model) die het laatst is gebruikt. Laatst gebruikt: de agent die je het laatst in deze browser koos. Staat Fallback aan, dan beslist de agentlijst daarvan.",
               "model_switcher": "Standaard uit. Voegt naast de agentkeuze een modelkeuze toe, zodat een chat een ander model van dezelfde agent kan gebruiken. Het model van de agent blijft de standaard.",
               "enable_sidebar": "Voegt AI Workspace toe aan de zijbalk van Home Assistant. Uit: beheerders kunnen /ai-workspace nog steeds direct openen.",
               "enable_overlay": "Een ronde AI-knop in de hoek van elke Home Assistant-pagina, zodat je iets kunt vragen zonder de pagina te verlaten. Op Instellingen-pagina's staat hij hoger zodat hij geen andere knoppen bedekt.",
               "enable_dictate": "Microfoonknop in het berichtveld. Verberg hem als je nooit dicteert.",
               "allow_users": "Uit: alleen beheerders. Aan: gebruikers zonder beheerdersrechten krijgen de zwevende chat, met dezelfde Home Assistant-toegang als hun eigen account. De volledige AI Workspace-pagina blijft alleen voor beheerders. Zet dit alleen aan als je iedereen met een account vertrouwt.",
-              "ui_theme": "Standaard uit. Bouwt de chat op met de eigen interface-onderdelen van Home Assistant. Probeer het als de chat niet bij je thema past.",
+              "ui_theme": "Standaard uit. Verandert alleen het berichtveld en de agent- en modelkiezer naar de stijl van Home Assistant. Berichten houden altijd het standaarduiterlijk.",
               "cross_chat": "Standaard uit. Als het aan staat, kan een vraag een kort fragment gebruiken uit een andere chat waarvan de titel woorden deelt, zonder dat je die chat noemt. Handig als je het al over dezelfde ruimte of automatisering hebt gehad. De andere chat wordt niet gewijzigd.",
               "keep_chats": "Nieuwste niet-vastgezette chats die per persoon bewaard blijven. Oudere worden verwijderd zodat de lijst niet eindeloos groeit. Vastgezette chats blijven altijd. Standaard 30."
+            }
+          },
+          "fallback": {
+            "name": "Fallback",
+            "description": "Optioneel. Als de provider van een agent faalt (plan- of tokenlimiet, rate limit, verlopen aanmelding, time-out, verbindingsfout, overbelaste server), gaat de volgende agent in de lijst verder met de taak. Staat het aan, dan vervangt deze lijst de standaardagent.",
+            "data": {
+              "fallback_enabled": "Fallback inschakelen",
+              "fallback_agents": "Agents op volgorde",
+              "fallback_return": "Terug naar de voorkeursagent"
+            },
+            "data_description": {
+              "fallback_enabled": "Standaard uit. Een gestopt antwoord, een falende tool, een weigering of een foute aanvraag wisselen nooit van agent.",
+              "fallback_agents": "Alleen gebruikt als terugval aan staat; tot je opslaat met terugval aan is de lijst slechts een voorstel. Taken volgen dezelfde lijst. De volgorde telt: de eerste agent is de voorkeursagent en nieuwe chats beginnen ermee; de andere nemen van boven naar beneden over. Sleep een agent om de volgorde te wijzigen. Taken die een werkruimte of shell nodig hebben gaan alleen naar Runtime-agents (Claude SDK, Cursor, Codex).",
+              "fallback_return": "Uit: de chat blijft bij de agent die overnam. Bij nieuw bericht: het volgende bericht probeert de voorkeursagent opnieuw. Na reset of wachttijd: pas als zijn limiet gereset is of de wachttijd (5, 15, 60 minuten) voorbij is. Nooit midden in een antwoord."
             }
           },
           "cost": {
@@ -310,8 +324,8 @@
         "runtime_old": "Deze Runtime kan nog niet aanmelden. Werk de AI Workspace Runtime bij, of plak een token in het agentformulier.",
         "codex_runtime_old": "Werk de AI Workspace Runtime bij naar 1.6.0 of nieuwer voor Codex-agents.",
         "codex_key_required": "Voeg een OpenAI API-sleutel toe onder Codex (runtime), of meld je aan met ChatGPT op de AI Workspace Runtime.",
-        "not_signed_in_yet": "OpenAI heeft de aanmelding nog niet bevestigd. Voer de code in op de pagina van OpenAI en verstuur opnieuw.",
-        "no_code": "Codex kreeg geen aanmeldcode van OpenAI. Controleer of de Runtime auth.openai.com bereikt en probeer het opnieuw."
+        "no_code": "Codex kreeg geen aanmeldcode van OpenAI. Controleer of de Runtime auth.openai.com bereikt en probeer het opnieuw.",
+        "codex_login_failed": "OpenAI heeft de aanmelding niet bevestigd. Weigerde het de code, sta dan eenmalig aanmelden met apparaatcode toe in ChatGPT onder Instellingen → Beveiliging (bij een werkruimte-account doet de beheerder dat) en probeer het opnieuw."
       },
       "step": {
         "provider": {
@@ -625,8 +639,7 @@
           }
         },
         "codex_login": {
-          "title": "Aanmelden met ChatGPT",
-          "description": "1. Open deze link en meld je aan met het ChatGPT-account met je abonnement: [Aanmelden met ChatGPT]({url})\n2. Voer daar deze eenmalige code in: **{code}**\n3. Verstuur daarna hier.\n\nDe code is 15 minuten geldig. Je ChatGPT-wachtwoord gaat nooit via Home Assistant. Weigert OpenAI de code, zet dan eenmalig aanmelden met apparaatcode aan in ChatGPT onder **Instellingen → Beveiliging** (bij een werkruimte-account staat de beheerder het toe)."
+          "title": "Aanmelden met ChatGPT"
         },
         "codex_signed_in": {
           "title": "Aangemeld",
@@ -639,6 +652,9 @@
       },
       "abort": {
         "reconfigure_successful": "Agent bijgewerkt."
+      },
+      "progress": {
+        "codex_login": "1. Open deze link en meld je aan met het ChatGPT-account met je abonnement: [Aanmelden met ChatGPT]({url})\n2. Voer daar deze eenmalige code in: **{code}**\n3. Klaar: dit venster gaat vanzelf verder zodra OpenAI de code bevestigt.\n\nDe code is 15 minuten geldig. Je ChatGPT-wachtwoord gaat nooit via Home Assistant. Weigert OpenAI de code, zet dan eenmalig aanmelden met apparaatcode aan in ChatGPT onder **Instellingen → Beveiliging** (bij een werkruimte-account staat de beheerder het toe)."
       }
     }
   },
@@ -672,6 +688,60 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Aangepaste MCP-URL"
+      }
+    },
+    "default_agent": {
+      "options": {
+        "last_used": "Laatst gebruikt"
+      }
+    },
+    "fallback_return": {
+      "options": {
+        "off": "Uit",
+        "new_message": "Bij nieuw bericht",
+        "after_reset": "Na reset of wachttijd"
+      }
+    },
+    "task_chat": {
+      "options": {
+        "none": "Geen chat",
+        "task": "Taakchat"
+      }
+    }
+  },
+  "services": {
+    "run_task": {
+      "name": "Agenttaak uitvoeren",
+      "description": "Voert een prompt uit met een AI Workspace-agent, bijvoorbeeld volgens een schema. Elke run begint opnieuw: de prompt moet alles bevatten wat de agent nodig heeft. Templates werken in de prompt.",
+      "fields": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "Wat de agent moet doen. Op zichzelf staand: de agent onthoudt niets van eerdere runs (behalve de taakchat, als die bewaard wordt). Templates zijn toegestaan."
+        },
+        "task_name": {
+          "name": "Taaknaam",
+          "description": "Naam voor de taakchat, de logs en de laatste run. Nodig voor een taakchat."
+        },
+        "agent": {
+          "name": "Agent",
+          "description": "Agent-id, titel of conversatie-entiteit. Leeg: de standaardagent; staat die op 'Laatst gebruikt', dan de eerste Runtime-agent (Claude, Cursor, Codex). Overschakelen naar andere agents alleen als terugval (Fallback) aan staat."
+        },
+        "chat": {
+          "name": "Chat",
+          "description": "De runs in één taakchat bewaren, genoemd naar de taak."
+        },
+        "notify": {
+          "name": "Melden",
+          "description": "Notify-dienst of -entiteit voor een kort resultaat, bijvoorbeeld notify.mobile_app_mijn_telefoon."
+        },
+        "allow_changes": {
+          "name": "Wijzigingen toestaan",
+          "description": "Uit: de agent leest Home Assistant alleen. Aan: hij mag apparaten bedienen. Automatiseringen, scripts en andere taken blijven in beide gevallen verboden."
+        },
+        "timeout": {
+          "name": "Time-out",
+          "description": "Seconden voordat de run stopt."
+        }
       }
     }
   }

@@ -45,13 +45,13 @@
               "keep_chats": "Chats behalten"
             },
             "data_description": {
-              "default_agent": "Mit diesem Agenten startet ein neuer Chat. Jeder Chat merkt sich den Agenten (und das Modell), den er zuletzt genutzt hat. Zuletzt verwendet: der Agent, den du in diesem Browser zuletzt gewählt hast.",
+              "default_agent": "Mit diesem Agenten startet ein neuer Chat. Jeder Chat merkt sich den Agenten (und das Modell), den er zuletzt genutzt hat. Zuletzt verwendet: der Agent, den du in diesem Browser zuletzt gewählt hast. Ist Fallback aktiv, entscheidet stattdessen dessen Agentenliste.",
               "model_switcher": "Standardmäßig aus. Zeigt neben der Agentenauswahl eine Modellauswahl, damit ein Chat ein anderes Modell desselben Agenten nutzen kann. Das Modell des Agenten bleibt der Standard.",
               "enable_sidebar": "Zeigt AI Workspace in der Seitenleiste. Wenn aus, können Administratoren /ai-workspace weiterhin direkt öffnen.",
               "enable_overlay": "Ein runder KI-Button in der Ecke jeder Home-Assistant-Seite, damit du fragen kannst, ohne die Seite zu verlassen. Auf Einstellungsseiten sitzt er höher, damit er keine anderen Buttons verdeckt.",
               "enable_dictate": "Mikrofon-Button im Nachrichtenfeld. Ausblenden, wenn du nie diktierst.",
               "allow_users": "Aus: nur Administratoren. An: normale Benutzer bekommen den schwebenden Chat, mit denselben Home-Assistant-Rechten wie ihr eigenes Konto. Die volle AI-Workspace-Seite bleibt nur für Administratoren. Nur einschalten, wenn du allen mit Login vertraust.",
-              "ui_theme": "Standardmäßig aus. Baut den Chat aus den UI-Bausteinen von Home Assistant. Probier es, wenn der Chat nicht zu deinem Theme passt.",
+              "ui_theme": "Standardmäßig aus. Ändert nur das Nachrichtenfeld und die Agent- und Modellauswahl in den Home-Assistant-Stil. Nachrichten nutzen immer das Standard-Aussehen.",
               "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen kurzen Auszug aus einem anderen Chat nutzen, dessen Titel gleiche Wörter enthält, ohne dass du ihn erwähnst. Hilft, wenn du denselben Raum oder dieselbe Automation schon besprochen hast. Der andere Chat bleibt unverändert.",
               "keep_chats": "Neueste nicht angeheftete Chats pro Person. Ältere werden gelöscht, damit die Liste nicht endlos wächst. Angeheftete Chats bleiben immer. Standard 30."
             }
@@ -160,15 +160,29 @@
               "keep_chats": "Chats behalten"
             },
             "data_description": {
-              "default_agent": "Mit diesem Agenten startet ein neuer Chat. Jeder Chat merkt sich den Agenten (und das Modell), den er zuletzt genutzt hat. Zuletzt verwendet: der Agent, den du in diesem Browser zuletzt gewählt hast.",
+              "default_agent": "Mit diesem Agenten startet ein neuer Chat. Jeder Chat merkt sich den Agenten (und das Modell), den er zuletzt genutzt hat. Zuletzt verwendet: der Agent, den du in diesem Browser zuletzt gewählt hast. Ist Fallback aktiv, entscheidet stattdessen dessen Agentenliste.",
               "model_switcher": "Standardmäßig aus. Zeigt neben der Agentenauswahl eine Modellauswahl, damit ein Chat ein anderes Modell desselben Agenten nutzen kann. Das Modell des Agenten bleibt der Standard.",
               "enable_sidebar": "Zeigt AI Workspace in der Seitenleiste. Wenn aus, können Administratoren /ai-workspace weiterhin direkt öffnen.",
               "enable_overlay": "Ein runder KI-Button in der Ecke jeder Home-Assistant-Seite, damit du fragen kannst, ohne die Seite zu verlassen. Auf Einstellungsseiten sitzt er höher, damit er keine anderen Buttons verdeckt.",
               "enable_dictate": "Mikrofon-Button im Nachrichtenfeld. Ausblenden, wenn du nie diktierst.",
               "allow_users": "Aus: nur Administratoren. An: normale Benutzer bekommen den schwebenden Chat, mit denselben Home-Assistant-Rechten wie ihr eigenes Konto. Die volle AI-Workspace-Seite bleibt nur für Administratoren. Nur einschalten, wenn du allen mit Login vertraust.",
-              "ui_theme": "Standardmäßig aus. Baut den Chat aus den UI-Bausteinen von Home Assistant. Probier es, wenn der Chat nicht zu deinem Theme passt.",
+              "ui_theme": "Standardmäßig aus. Ändert nur das Nachrichtenfeld und die Agent- und Modellauswahl in den Home-Assistant-Stil. Nachrichten nutzen immer das Standard-Aussehen.",
               "cross_chat": "Standardmäßig aus. Wenn an, kann eine Frage einen kurzen Auszug aus einem anderen Chat nutzen, dessen Titel gleiche Wörter enthält, ohne dass du ihn erwähnst. Hilft, wenn du denselben Raum oder dieselbe Automation schon besprochen hast. Der andere Chat bleibt unverändert.",
               "keep_chats": "Neueste nicht angeheftete Chats pro Person. Ältere werden gelöscht, damit die Liste nicht endlos wächst. Angeheftete Chats bleiben immer. Standard 30."
+            }
+          },
+          "fallback": {
+            "name": "Fallback",
+            "description": "Optional. Fällt der Anbieter eines Agenten aus (Plan- oder Token-Limit, Rate-Limit, abgelaufene Anmeldung, Zeitüberschreitung, Verbindungsfehler, überlasteter Server), macht der nächste Agent der Liste mit der Aufgabe weiter. Ist Fallback aktiv, ersetzt diese Liste den Standard-Agent.",
+            "data": {
+              "fallback_enabled": "Fallback aktivieren",
+              "fallback_agents": "Agenten in Reihenfolge",
+              "fallback_return": "Zurück zum bevorzugten Agent"
+            },
+            "data_description": {
+              "fallback_enabled": "Standardmäßig aus. Eine gestoppte Antwort, ein fehlschlagendes Tool, eine Ablehnung oder eine fehlerhafte Anfrage wechseln nie den Agent.",
+              "fallback_agents": "Gilt nur bei aktivem Fallback; bis du mit aktivem Fallback speicherst, ist die Liste nur ein Vorschlag. Aufgaben folgen derselben Liste. Die Reihenfolge zählt: Der erste Agent ist der bevorzugte, neue Chats starten mit ihm; die anderen übernehmen von oben nach unten. Ziehe einen Agenten, um die Reihenfolge zu ändern. Aufgaben, die einen Workspace oder eine Shell brauchen, gehen nur an Runtime-Agenten (Claude SDK, Cursor, Codex).",
+              "fallback_return": "Aus: Der Chat bleibt beim Agent, der übernommen hat. Bei neuer Nachricht: Die nächste Nachricht versucht wieder den bevorzugten Agent. Nach Reset oder Wartezeit: erst wenn sein Limit zurückgesetzt ist oder die Wartezeit (5, 15, 60 Minuten) vorbei ist. Nie mitten in einer Antwort."
             }
           },
           "cost": {
@@ -310,8 +324,8 @@
         "runtime_old": "Diese Runtime kann sich noch nicht anmelden. Aktualisiere die AI-Workspace-Runtime oder füge im Agent-Formular ein Token ein.",
         "codex_runtime_old": "Aktualisiere die AI-Workspace-Runtime auf 1.6.0 oder neuer für Codex-Agenten.",
         "codex_key_required": "Füge unter Codex (Runtime) einen OpenAI-API-Schlüssel hinzu oder melde dich auf der AI-Workspace-Runtime mit ChatGPT an.",
-        "not_signed_in_yet": "OpenAI hat die Anmeldung noch nicht bestätigt. Gib den Code auf der Seite von OpenAI ein und sende dann erneut ab.",
-        "no_code": "Codex hat von OpenAI keinen Anmeldecode bekommen. Prüfe, ob die Runtime auth.openai.com erreicht, und versuche es erneut."
+        "no_code": "Codex hat von OpenAI keinen Anmeldecode bekommen. Prüfe, ob die Runtime auth.openai.com erreicht, und versuche es erneut.",
+        "codex_login_failed": "OpenAI hat die Anmeldung nicht bestätigt. Wurde der Code abgelehnt, erlaube einmal in ChatGPT unter Einstellungen → Sicherheit die Anmeldung per Gerätecode (bei einem Workspace-Konto erlaubt es der Admin) und versuche es erneut."
       },
       "step": {
         "provider": {
@@ -625,8 +639,7 @@
           }
         },
         "codex_login": {
-          "title": "Mit ChatGPT anmelden",
-          "description": "1. Öffne diesen Link und melde dich mit dem ChatGPT-Konto mit deinem Abo an: [Mit ChatGPT anmelden]({url})\n2. Gib dort diesen Einmal-Code ein: **{code}**\n3. Dann hier absenden.\n\nDer Code gilt 15 Minuten. Dein ChatGPT-Passwort läuft nie über Home Assistant. Lehnt OpenAI den Code ab, schalte einmal in ChatGPT unter **Einstellungen → Sicherheit** die Anmeldung per Gerätecode ein (bei einem Workspace-Konto erlaubt es der Admin)."
+          "title": "Mit ChatGPT anmelden"
         },
         "codex_signed_in": {
           "title": "Angemeldet",
@@ -639,6 +652,9 @@
       },
       "abort": {
         "reconfigure_successful": "Agent aktualisiert."
+      },
+      "progress": {
+        "codex_login": "1. Öffne diesen Link und melde dich mit dem ChatGPT-Konto mit deinem Abo an: [Mit ChatGPT anmelden]({url})\n2. Gib dort diesen Einmal-Code ein: **{code}**\n3. Das war's: Dieses Fenster geht von selbst weiter, sobald OpenAI den Code bestätigt.\n\nDer Code gilt 15 Minuten. Dein ChatGPT-Passwort läuft nie über Home Assistant. Lehnt OpenAI den Code ab, schalte einmal in ChatGPT unter **Einstellungen → Sicherheit** die Anmeldung per Gerätecode ein (bei einem Workspace-Konto erlaubt es der Admin)."
       }
     }
   },
@@ -672,6 +688,60 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Benutzerdefinierte MCP-URL"
+      }
+    },
+    "default_agent": {
+      "options": {
+        "last_used": "Zuletzt verwendet"
+      }
+    },
+    "fallback_return": {
+      "options": {
+        "off": "Aus",
+        "new_message": "Bei neuer Nachricht",
+        "after_reset": "Nach Reset oder Wartezeit"
+      }
+    },
+    "task_chat": {
+      "options": {
+        "none": "Kein Chat",
+        "task": "Aufgaben-Chat"
+      }
+    }
+  },
+  "services": {
+    "run_task": {
+      "name": "Agent-Aufgabe ausführen",
+      "description": "Führt einen Prompt mit einem AI-Workspace-Agenten aus, zum Beispiel zeitgesteuert. Jeder Lauf beginnt neu: Der Prompt muss alles enthalten, was der Agent braucht. Templates sind im Prompt erlaubt.",
+      "fields": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "Was der Agent tun soll. In sich vollständig: Der Agent erinnert sich an keine früheren Läufe (außer an den Aufgaben-Chat, falls behalten). Templates sind erlaubt."
+        },
+        "task_name": {
+          "name": "Aufgabenname",
+          "description": "Name für den Aufgaben-Chat, die Logs und den letzten Lauf. Für einen Aufgaben-Chat nötig."
+        },
+        "agent": {
+          "name": "Agent",
+          "description": "Agent-ID, Titel oder Konversations-Entität. Leer: der Standard-Agent; steht der auf 'Zuletzt verwendet', der erste Runtime-Agent (Claude, Cursor, Codex). Ausweichen auf andere Agents nur bei aktivem Fallback."
+        },
+        "chat": {
+          "name": "Chat",
+          "description": "Die Läufe in einem Aufgaben-Chat behalten, benannt nach der Aufgabe."
+        },
+        "notify": {
+          "name": "Benachrichtigen",
+          "description": "Notify-Dienst oder -Entität für ein kurzes Ergebnis, zum Beispiel notify.mobile_app_mein_handy."
+        },
+        "allow_changes": {
+          "name": "Änderungen erlauben",
+          "description": "Aus: Der Agent liest Home Assistant nur. An: Er darf Geräte steuern. Automationen, Skripte und andere Aufgaben bleiben in beiden Fällen gesperrt."
+        },
+        "timeout": {
+          "name": "Zeitlimit",
+          "description": "Sekunden, bis der Lauf abbricht."
+        }
       }
     }
   }

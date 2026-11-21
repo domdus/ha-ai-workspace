@@ -9,6 +9,7 @@ These pages are the rest of the manual:
 - [AI Workspace Runtime in Docker](cursor-runtime.md) — bridge network, files on disk, and git for the runtime sidecar
 - [Codex agents on the runtime](codex-runtime.md) — OpenAI Codex next to Cursor: Sign in with ChatGPT or an OpenAI API key
 - [Claude SDK agents on the runtime](claude-runtime.md) — Claude Code agent next to Cursor: Sign in with Claude plan, a Plan token, or an Anthropic API key
+- [Agent tasks](tasks.md) — scheduled prompts as Home Assistant automations, the Tasks page, `ai_workspace.run_task`, read-only mode, and examples
 - [Privacy](privacy.md) — what leaves the house, who can chat, and Assist satellites
 - [MCP and Change History](mcp.md) — connections, large Home Assistant answers, the change log, and restoring YAML by hand if Home Assistant will not start
 - [Troubleshooting](troubleshooting.md) — common errors and how to remove AI Workspace

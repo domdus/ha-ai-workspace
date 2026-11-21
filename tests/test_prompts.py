@@ -58,3 +58,50 @@ def test_workspace_system_prompt_includes_lovelace_rules() -> None:
     assert "grep, glob, read, shell" in standing
     for rule in ("small talk", "Do not link the words Home Assistant", "never invent entity ids"):
         assert standing.lower().count(rule.lower()) == 1, rule
+
+
+def test_workspace_prompt_teaches_ai_workspace_tasks() -> None:
+    const = _load()
+
+    class S:
+        system_prompt = "Custom prompt."
+        house_map = False
+        notes = False
+        notes_text = ""
+
+    text = const.workspace_system_prompt(S(), admin=True)
+    # Built-in rule: a custom system prompt does not drop it.
+    assert text.count(const.TASK_RULES) == 1
+    for part in (
+        "any automation or script that hands a prompt to an AI Workspace agent",
+        "ai_workspace.run_task",
+        "not conversation.process",
+        "self-contained",
+        "allow_changes defaults to false",
+        "response_variable",
+        "{{ x.response }}",
+        "'ok'",
+        "notify field",
+        "label ai_workspace",
+        "add it only if missing",
+    ):
+        assert part in const.TASK_RULES, part
+    # Ordinary automation building is not steered here, and no delivery channel is assumed.
+    for steer in (
+        "turn_off",
+        "one-shot",
+        "recurring",
+        "ask before",
+        "the way the user asked",
+        "Plain device logic",
+        "phone",
+        "speaker",
+        "mobile_app",
+        "weather",
+        "news",
+    ):
+        assert steer not in const.TASK_RULES, steer
+    # Before the status line rule, so the rest of the prefix keeps its order.
+    assert text.index(const.TASK_RULES) < text.index(const.STATUS_LINE_INSTRUCTIONS)
+    assert const.TASK_RULES in const.standing_chat_prompt(S(), admin=True)
+    assert const.TASK_RULES not in const.workspace_system_prompt(S(), admin=False)

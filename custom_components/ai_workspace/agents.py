@@ -275,6 +275,25 @@ def borrowed_setups(hass: HomeAssistant) -> list[dict[str, str]]:
     return found
 
 
+def cursor_billing(api_key: str) -> str:
+    """Cursor has no plan sign-in: the agent's key or the Runtime's is always an API key."""
+    del api_key
+    return "api_key"
+
+
+def claude_billing(api_key: str) -> str:
+    """A Claude plan token (sk-ant-oat...) bills the plan; any other key is an Anthropic API key."""
+    key = (api_key or "").strip()
+    if not key:
+        return "runtime"
+    return "plan" if key.startswith("sk-ant-oat") else "api_key"
+
+
+def codex_billing(api_key: str) -> str:
+    """Codex with its own OpenAI API key bills the key; without one the Runtime's sign-in is used."""
+    return "api_key" if (api_key or "").strip() else "runtime"
+
+
 class CursorAgent:
     """Cursor chats go to the SDK runtime with this agent's model and effort."""
 
@@ -295,6 +314,7 @@ class CursorAgent:
             title=agent.title,
             model=agent.model or default_api_model(MODE_CURSOR),
             provider=MODE_CURSOR,
+            billing=cursor_billing(self.api_key),
         )
 
 
@@ -318,6 +338,7 @@ class ClaudeAgent:
             title=agent.title,
             model=agent.model or default_api_model(MODE_CLAUDE),
             provider=MODE_CLAUDE,
+            billing=claude_billing(self.api_key),
         )
 
 
@@ -341,6 +362,7 @@ class CodexAgent:
             title=agent.title,
             model=agent.model,
             provider=MODE_CODEX,
+            billing=codex_billing(self.api_key),
         )
 
 

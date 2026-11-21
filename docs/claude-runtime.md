@@ -88,6 +88,8 @@ Bearer `RUNTIME_TOKEN` as for chats. One shape for every engine, so a later engi
 
 `/api/health` lists engines with a plan sign-in in `"login": ["claude"]`. Cursor answers the status calls and refuses login with `501 not_supported`.
 
+`/api/health` also reports, per engine, which credential the Runtime itself runs on: `"credentials": {"claude": {"kind": "subscription" | "api_key" | null, "source": "signed-in" | "env-plan" | "env-api" | "none", "id": "c..."}, "codex": {...}, "cursor": {...}}` (`GET /api/auth/{engine}` has the same as `runtime_credential`). `id` is a one-way hash, set only for a subscription; no secret is ever sent. Home Assistant shows plan limits for an agent without its own key only when its engine reports `subscription` (see [Cost and tokens](cost.md)).
+
 A chat turn whose credential Anthropic refused ends with `{"type": "error", "code": "claude_auth_failed", "message": "…"}`. The integration shows its own translation for that code.
 
 ## Tools

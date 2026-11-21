@@ -1,0 +1,119 @@
+// Reply meta for the action row under each reply: reply time and the text to copy or read aloud.
+// Pure helpers (no DOM), tested in tests/test_reply_meta.mjs.
+
+function safeFormat(locale, options) {
+  try {
+    return new Intl.DateTimeFormat(locale || undefined, options);
+  } catch (_err) {
+    // Unknown time zone or locale: fall back to the browser's own.
+    const { timeZone: _tz, ...rest } = options;
+    try {
+      return new Intl.DateTimeFormat(locale || undefined, rest);
+    } catch (_err2) {
+      return new Intl.DateTimeFormat(undefined, rest);
+    }
+  }
+}
+
+function dayKey(date, timeZone) {
+  const parts = safeFormat("en-US", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+  const get = (type) => Number(parts.find((p) => p.type === type)?.value);
+  return { y: get("year"), m: get("month"), d: get("day") };
+}
+
+function sameDay(a, b) {
+  return a.y === b.y && a.m === b.m && a.d === b.d;
+}
+
+function dayBefore(day) {
+  const at = new Date(Date.UTC(day.y, day.m - 1, day.d - 1));
+  return { y: at.getUTCFullYear(), m: at.getUTCMonth() + 1, d: at.getUTCDate() };
+}
+
+/** A message time as a Date, or null. Accepts ISO strings, epoch ms and Dates. */
+export function parseReplyTime(value) {
+  if (value == null || value === "") return null;
+  const at = value instanceof Date ? new Date(value.getTime()) : new Date(typeof value === "number" ? value : String(value));
+  return Number.isFinite(at.getTime()) ? at : null;
+}
+
+/**
+ * Short reply time: "21:04" today, "gestern, 21:04" yesterday, "17.11., 21:04" this year,
+ * "17.11.2025, 21:04" in another year. `yesterday` is a template with {time}.
+ */
+export function replyTimeLabel(value, { now = new Date(), locale, timeZone, hour12, yesterday = "yesterday, {time}" } = {}) {
+  const at = parseReplyTime(value);
+  if (!at) return "";
+  const clock = { hour: "2-digit", minute: "2-digit", timeZone };
+  if (hour12 !== undefined) clock.hour12 = hour12;
+  const time = safeFormat(locale, clock).format(at);
+  const day = dayKey(at, timeZone);
+  const today = dayKey(now, timeZone);
+  if (sameDay(day, today)) return time;
+  if (sameDay(day, dayBefore(today))) return String(yesterday).replace("{time}", time);
+  const opts = { ...clock, day: "2-digit", month: "2-digit" };
+  if (day.y !== today.y) opts.year = "numeric";
+  return safeFormat(locale, opts).format(at);
+}
+
+/** Full date and time for the tooltip. */
+export function replyTimeTitle(value, { locale, timeZone, hour12 } = {}) {
+  const at = parseReplyTime(value);
+  if (!at) return "";
+  const opts = {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone,
+  };
+  if (hour12 !== undefined) opts.hour12 = hour12;
+  return safeFormat(locale, opts).format(at);
+}
+
+/** Home Assistant's clock setting ("12", "24", "language", "system") as Intl's hour12. */
+export function haHour12(timeFormat) {
+  if (timeFormat === "12") return true;
+  if (timeFormat === "24") return false;
+  return undefined;
+}
+
+/** Time zone to show: the HA server's, unless the user picked "local" in their profile. */
+export function haTimeZone(hass) {
+  if (hass?.locale?.time_zone === "local") return undefined;
+  return hass?.config?.time_zone || undefined;
+}
+
+/**
+ * The text a reply's own action row copies and reads aloud, or "" when the entry gets no row.
+ * Entries are chat bubbles as { role, text, streaming, error }: only the reply markdown counts —
+ * tool steps, status lines and the "reply cut" note live outside it. User messages, replies
+ * still streaming, errors and replies with only tool steps get no row.
+ */
+export function replyActionText(entry) {
+  if (!entry || entry.role !== "assistant" || entry.streaming || entry.error) return "";
+  return String(entry.text || "").trim();
+}
+
+/**
+ * Which entries get an action row: [{ index, text, last, held }]. `last` marks the newest one;
+ * its time is always shown, older rows show it on hover/focus.
+ *
+ * While a turn is in progress (`busy`, or a reply in the log is still streaming or waiting),
+ * no row is `last`: the newest finished reply's row is `held` (hidden until hovered or
+ * focused), so nothing under the previous reply stays on screen while the next one runs.
+ */
+export function replyRows(entries, { busy = false } = {}) {
+  const list = Array.isArray(entries) ? entries : [];
+  const rows = [];
+  let running = Boolean(busy);
+  list.forEach((entry, index) => {
+    if (entry?.role === "assistant" && entry.streaming) running = true;
+    const text = replyActionText(entry);
+    if (text) rows.push({ index, text, last: false, held: false });
+  });
+  if (rows.length) rows[rows.length - 1][running ? "held" : "last"] = true;
+  return rows;
+}

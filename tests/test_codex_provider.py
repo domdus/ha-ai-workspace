@@ -39,10 +39,27 @@ def _usage(total_in, cached, out, last_in):
     }
 
 
+PLAN = {"rateLimits": {"primary": {"usedPercent": 42, "windowDurationMins": 300, "resetsAt": 1900000000}, "secondary": {"usedPercent": 85, "windowDurationMins": 10080, "resetsAt": 1900500000}}}
+
+
+class FakeClient:
+    """The SDK's JSON-RPC client: only account/rateLimits/read is asked for."""
+
+    def __init__(self, log):
+        self.log = log
+
+    async def request(self, method, params, *, response_model):
+        self.log.setdefault("requests", []).append(method)
+        assert method == "account/rateLimits/read" and params is None
+        return response_model.model_validate(PLAN)
+
+
 class FakeCodex:
-    def __init__(self, script, log):
+    def __init__(self, script, log, fail_start=None):
         self.script = script
         self.log = log
+        self.fail_start = fail_start
+        self._client = FakeClient(log)
 
     async def __aenter__(self):
         return self
@@ -51,6 +68,8 @@ class FakeCodex:
         self.log["key"] = key
 
     async def thread_start(self, **kwargs):
+        if self.fail_start:
+            raise RuntimeError(self.fail_start)
         self.log.setdefault("calls", []).append(("start", None, kwargs))
         return self._thread()
 
@@ -86,12 +105,12 @@ class FakeCodex:
         self.log["closed"] = True
 
 
-def _provider(tmp_path: Path, script, monkeypatch, *, signed_in=True):
+def _provider(tmp_path: Path, script, monkeypatch, *, signed_in=True, fail_start=None):
     settings = _settings(tmp_path)
     runtime = CursorRuntime(settings)
     monkeypatch.setattr(runtime, "wrap_mcp", lambda servers, actor="": {"home": {"type": "http", "url": "http://proxy/x"}})
     log: dict = {}
-    provider = CodexProvider(settings, runtime, factory=lambda config: FakeCodex(script, log))
+    provider = CodexProvider(settings, runtime, factory=lambda config: FakeCodex(script, log, fail_start))
     import app.providers.codex as codex_mod
 
     monkeypatch.setattr(codex_mod, "credential_source", lambda _s: "chatgpt" if signed_in else "none")
@@ -120,7 +139,6 @@ def _happy():
         _note("item/agentMessage/delta", {"itemId": "m1", "delta": "is on."}),
         _note("item/completed", {"item": {"type": "agentMessage", "id": "m1", "text": "The light is on.", "phase": "final_answer"}}),
         _note("thread/tokenUsage/updated", _usage(12000, 8000, 300, 12000)),
-        _note("account/rateLimits/updated", {"rateLimits": {"primary": {"usedPercent": 42, "windowDurationMins": 300, "resetsAt": 1900000000}, "secondary": {"usedPercent": 85, "windowDurationMins": 10080, "resetsAt": 1900500000}}}),
         _note("turn/completed", {"turn": {"status": "completed"}}),
     ]
 
@@ -138,8 +156,11 @@ def test_a_turn_answers_with_tools_usage_and_plan_limits(tmp_path, monkeypatch) 
     assert ids == [THREAD] and log["effort"] == "low" and log["closed"]
     start = log["calls"][0]
     assert start[0] == "start" and start[2]["config"]["mcp_servers"] == {"home": {"url": "http://proxy/x"}}
+    # Codex sends plan usage outside the turn's stream, so the provider reads it once after the turn.
+    assert log["requests"] == ["account/rateLimits/read"]
     snap = runtime.plan_quota.get("codex")
     assert snap["session_percent"] == 42 and snap["week_percent"] == 85 and snap["status"] == "allowed_warning"
+    assert any(e["type"] in {"plan_notice", "plan_usage"} for e in events)
 
 
 def test_the_next_turn_resumes_the_thread(tmp_path, monkeypatch) -> None:
@@ -178,9 +199,28 @@ def test_tool_rules_follow_the_user() -> None:
 
 
 def test_agent_api_key_wins_and_stays_in_memory(tmp_path, monkeypatch) -> None:
-    provider, _runtime, log = _provider(tmp_path, _happy, monkeypatch, signed_in=False)
+    provider, _runtime, log = _provider(tmp_path, _happy, monkeypatch, signed_in=True)
     _turn(provider, _session(), api_key="sk-agent")
     assert log["key"] == "sk-agent"
+    # An API key has no plan windows to read.
+    assert "requests" not in log
+
+
+def test_an_expired_chatgpt_sign_in_asks_to_sign_in_again(tmp_path, monkeypatch) -> None:
+    expired = (
+        "Your access token could not be refreshed because your refresh token has expired. "
+        "Please log out and sign in again."
+    )
+    provider, _runtime, _log = _provider(tmp_path, _happy, monkeypatch, fail_start=expired)
+    events, _ = _turn(provider, _session())
+    assert events[-1]["code"] == AUTH_FAILED_CODE and "sign in with ChatGPT again" in events[-1]["message"]
+
+    def revoked():
+        return [_note("turn/completed", {"turn": {"status": "failed", "error": {"message": "Not logged in: refresh_token invalid_grant"}}})]
+
+    provider, _runtime, _log = _provider(tmp_path, revoked, monkeypatch)
+    events, _ = _turn(provider, _session())
+    assert events[-1]["code"] == AUTH_FAILED_CODE
 
 
 def test_no_credential_says_how_to_sign_in(tmp_path, monkeypatch) -> None:
@@ -217,3 +257,29 @@ def test_rate_limit_windows_by_duration() -> None:
     snap = normalize_codex_rate_limits({"primary": {"usedPercent": 100, "windowDurationMins": 10080}, "rateLimitReachedType": "rateLimitReached"})
     assert snap["week_percent"] == 100 and snap["session_percent"] is None and snap["status"] == "rejected"
     assert normalize_codex_rate_limits({}) is None
+
+
+def test_codex_child_env_blanks_the_runtime_secrets(tmp_path, monkeypatch) -> None:
+    from app.codex_login import child_env
+
+    for name in ("OPENAI_API_KEY", "CURSOR_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN", "RUNTIME_TOKEN", "SUPERVISOR_TOKEN"):
+        monkeypatch.setenv(name, "secret-" + name)
+    settings = _settings(tmp_path)
+    env = child_env(settings)
+    assert env["OPENAI_API_KEY"] == "" and env["SUPERVISOR_TOKEN"] == "" and env["CLAUDE_CODE_OAUTH_TOKEN"] == ""
+    assert env["CODEX_HOME"] == str(settings.data_dir / "codex")
+    assert not any(value.startswith("secret-") for value in env.values())
+
+
+def test_credential_order_agent_key_then_sign_in_then_env(tmp_path) -> None:
+    from dataclasses import replace
+
+    from app.codex_login import write_auth
+    from app.providers.codex import resolve_credential
+
+    settings = replace(_settings(tmp_path), openai_api_key="sk-env")
+    assert resolve_credential(settings) == ("env-api", "sk-env")
+    write_auth(settings.codex_auth_path, '{"tokens": {"refresh_token": "r", "access_token": "a"}}')
+    assert resolve_credential(settings) == ("chatgpt", "")
+    assert resolve_credential(settings, "sk-agent") == ("agent-api", "sk-agent")
+    assert oct(settings.codex_auth_path.stat().st_mode & 0o777) == "0o600"

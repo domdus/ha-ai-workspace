@@ -120,6 +120,7 @@
 .nav-toolbar .search-open,
 .nav-toolbar .history-open,
 .nav-toolbar .usage-open,
+.nav-toolbar .tasks-open,
 .chat-nav-toggle,
 .header-history,
 .header-usage,
@@ -322,6 +323,206 @@
   .skeleton-label::after,
   .session-skeleton::after {
     animation: none;
+  }
+}
+
+/* Placeholder while a chat loads: same layout as Standard messages (user right, plain assistant text). */
+.message-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ha-space-4);
+  width: 100%;
+}
+
+.message-skeleton.is-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.message-skeleton.is-leaving {
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+
+.log.is-revealing {
+  position: relative;
+}
+
+.message-skeleton .skeleton-bubble.user {
+  align-self: flex-end;
+  max-width: 85%;
+  padding: var(--ha-space-2) var(--ha-space-3);
+  border-radius: var(--ha-border-radius-xl);
+}
+
+.message-skeleton .skeleton-bubble.assistant {
+  align-self: stretch;
+  max-width: 100%;
+  padding: var(--ha-space-1) 0 var(--ha-space-2);
+}
+
+.skeleton-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45em;
+}
+
+.skeleton-line {
+  display: block;
+  width: var(--w, 80%);
+  height: 0.95em;
+  border-radius: 4px;
+  background: var(--secondary-text-color);
+  opacity: 0.16;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+  transparent 0%,
+  color-mix(in srgb, var(--primary-text-color) 14%, transparent) 48%,
+  transparent 96%
+  );
+  transform: translateX(-100%);
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-reply-actions {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  min-width: 0;
+  min-height: 32px;
+  margin-top: var(--ha-space-1, 4px);
+  margin-inline-start: -8px;
+}
+
+.skeleton-icon {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--secondary-text-color);
+  opacity: 0.14;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-icon::after,
+.skeleton-time::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+  transparent 0%,
+  color-mix(in srgb, var(--primary-text-color) 12%, transparent) 48%,
+  transparent 96%
+  );
+  transform: translateX(-100%);
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-time {
+  position: relative;
+  flex: none;
+  width: 4.5rem;
+  height: 12px;
+  margin-inline-start: auto;
+  border-radius: 6px;
+  background: var(--secondary-text-color);
+  opacity: 0.14;
+  overflow: hidden;
+}
+
+@keyframes skeleton-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.chat-load-hint {
+  margin: 0;
+  padding: 0 var(--ha-space-2, 8px);
+  color: var(--secondary-text-color);
+  font-size: var(--ha-font-size-s, 0.85rem);
+  text-align: center;
+}
+
+.chat-load-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ha-space-3, 12px);
+  margin: var(--ha-space-6, 24px) auto;
+  padding: var(--ha-space-4, 16px) var(--ha-space-5, 20px);
+  max-width: 420px;
+  border: 1px solid var(--divider-color);
+  border-radius: var(--ha-card-border-radius, 12px);
+  background: var(--card-background-color, var(--primary-background-color));
+  color: var(--primary-text-color);
+  text-align: center;
+}
+
+.chat-load-error p {
+  margin: 0;
+}
+
+/* An agent reply that arrived while the chat was not open. */
+.unread-dot {
+  flex: none;
+  align-self: flex-start;
+  width: 8px;
+  height: 8px;
+  margin-top: 4px;
+  margin-inline-start: 4px;
+  border-radius: 50%;
+  background: var(--primary-color);
+}
+
+.sessions .session-row .item-text + .unread-dot {
+  margin-inline-end: 2px;
+}
+
+/* Typed but not sent in a chat that is not open. */
+.sessions .session-row .draft-mark {
+  flex: none;
+  align-self: center;
+  margin-inline: 6px 2px;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--secondary-text-color);
+}
+
+.chat-nav-toggle {
+  position: relative;
+}
+
+.chat-nav-toggle .unread-dot {
+  position: absolute;
+  top: 8px;
+  inset-inline-end: 8px;
+  margin: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .message-skeleton.is-leaving {
+    transition: none;
+  }
+
+  .skeleton-line::after,
+  .skeleton-icon::after,
+  .skeleton-time::after {
+    animation: none;
+    display: none;
   }
 }
 
@@ -804,13 +1005,15 @@ h1 {
 }
 
 .chat-actions[hidden],
-.chat-actions .copy-chat[hidden],
 .chat-actions .speak-chat[hidden],
 .chat-actions .history-chat[hidden] {
   display: none !important;
 }
 
-.copy-chat,
+.chat-actions > ha-icon-button {
+  flex: 0 0 auto;
+}
+
 .speak-chat,
 .history-chat {
   --mdc-icon-button-size: 32px;
@@ -818,14 +1021,119 @@ h1 {
   color: var(--secondary-text-color);
 }
 
-.copy-chat:hover,
-.copy-chat:focus-visible,
 .speak-chat:hover,
 .speak-chat:focus-visible,
 .speak-chat.speaking,
 .history-chat:hover,
 .history-chat:focus-visible {
   color: var(--primary-text-color);
+}
+
+/* Action row under each finished reply: copy, read aloud, time. Subtle on desktop
+   (full on hover/focus), always visible on touch screens. */
+.reply-actions {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  min-width: 0;
+  margin-top: var(--ha-space-1, 4px);
+  margin-inline-start: -8px;
+  opacity: 0.6;
+  transition: opacity 120ms ease;
+}
+
+/* While the next turn runs, the previous reply's row (and time) is hidden until hovered or
+   focused; when a reply finishes in view, its row fades in softly. */
+.reply-actions.is-held {
+  opacity: 0;
+}
+
+.reply-actions.is-fresh {
+  animation: reply-actions-in 200ms ease-out;
+}
+
+@keyframes reply-actions-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.bubble:hover > .reply-actions,
+.reply-actions:hover,
+.reply-actions:focus-within {
+  opacity: 1;
+}
+
+.reply-actions [hidden] {
+  display: none !important;
+}
+
+.reply-actions > ha-icon-button {
+  flex: 0 0 auto;
+  --mdc-icon-button-size: 32px;
+  --mdc-icon-size: 18px;
+  color: var(--secondary-text-color);
+}
+
+.reply-actions > ha-icon-button:hover,
+.reply-actions > ha-icon-button:focus-visible,
+.reply-actions > ha-icon-button.speaking {
+  color: var(--primary-text-color);
+}
+
+/* Reply time, right-aligned. It shrinks (and finally hides) before the buttons wrap on
+   narrow screens. Older replies show it on hover/focus only; the newest always. */
+.reply-actions .reply-time {
+  margin-inline-start: auto;
+  padding-inline: var(--ha-space-2, 8px) 0;
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: var(--ha-font-size-s, 12px);
+  line-height: 32px;
+  color: var(--secondary-text-color);
+  font-variant-numeric: tabular-nums;
+  cursor: default;
+  transition: opacity 120ms ease;
+}
+
+.reply-actions:not(.is-last) .reply-time {
+  opacity: 0;
+}
+
+.bubble:hover > .reply-actions .reply-time,
+.reply-actions:hover .reply-time,
+.reply-actions:focus-within .reply-time {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .reply-actions {
+    opacity: 1;
+  }
+
+  .reply-actions.is-held:not(:focus-within) {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reply-actions,
+  .reply-actions .reply-time {
+    transition: none;
+  }
+
+  .reply-actions.is-fresh {
+    animation: none;
+  }
+}
+
+@media (max-width: 260px) {
+  .reply-actions .reply-time {
+    display: none;
+  }
 }
 
 .ui-theme-standard .bubble.error { color: var(--error-color); }
@@ -990,8 +1298,7 @@ h1 {
   display: flex !important;
 }
 
-.tools-list span,
-.tools-list ha-assist-chip {
+.tools-list span {
   position: relative;
   overflow: hidden;
   font-size: var(--ha-font-size-s);
@@ -1002,31 +1309,20 @@ h1 {
   animation: chip-in 240ms ease both;
 }
 
-.tools-list ha-assist-chip {
-  --ha-button-height: 28px;
-  --ha-chip-label-size: var(--ha-font-size-s);
-  background: transparent;
-  padding: 0;
-}
-
-.bubble.instant .tools-list span,
-.bubble.instant .tools-list ha-assist-chip {
+.bubble.instant .tools-list span {
   animation: none;
 }
 
-.tools-list span.done,
-.tools-list ha-assist-chip.done {
+.tools-list span.done {
   opacity: 0.72;
 }
 
-.tools-list span.busy,
-.tools-list ha-assist-chip.busy {
+.tools-list span.busy {
   color: var(--primary-text-color);
 }
 
 .tools.busy .tools-summary::after,
-.tools-list span.busy::after,
-.tools-list ha-assist-chip.busy::after {
+.tools-list span.busy::after {
   content: "";
   position: absolute;
   top: 0;
@@ -1091,7 +1387,8 @@ h1 {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  padding: var(--ha-space-4) var(--ai-inline-pad);
+  /* Small bottom gap only: ha-top-app-bar-fixed already pads its content by the safe-area inset. */
+  padding: var(--ha-space-4) var(--ai-inline-pad) var(--ha-space-2);
   width: min(calc(var(--ai-chat-width) + 2 * var(--ai-inline-pad)), 100%);
   margin-inline: auto;
   margin-top: auto;
@@ -1231,7 +1528,7 @@ h1 {
 .agent-picker {
   position: relative;
   align-self: flex-start;
-  margin: var(--ha-space-2) 0 0 var(--ha-space-3);
+  margin: var(--ha-space-1) 0 0 var(--ha-space-3);
 }
 
 .agent-picker[hidden] {
@@ -1251,7 +1548,8 @@ h1 {
   display: none !important;
 }
 
-.agent-trigger {
+/* Standard pickers are plain buttons; the HA composer uses ha-button (chat-ha-composer.css). */
+button.agent-trigger {
   display: inline-flex;
   align-items: center;
   gap: 2px;
@@ -1266,6 +1564,14 @@ h1 {
   font-size: var(--ha-font-size-s, 0.85rem);
   line-height: 1.2;
   cursor: pointer;
+  position: relative;
+}
+
+/* 32px tap target around the compact 24px pill, without making the row taller. */
+button.agent-trigger::before {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
 }
 
 .agent-trigger-label {
@@ -1274,7 +1580,7 @@ h1 {
   white-space: nowrap;
 }
 
-.agent-trigger ha-icon {
+button.agent-trigger ha-icon {
   --mdc-icon-size: 16px;
   width: 16px;
   height: 16px;
@@ -1282,12 +1588,12 @@ h1 {
   transition: transform 160ms ease;
 }
 
-.agent-trigger[aria-expanded="true"] ha-icon {
+button.agent-trigger[aria-expanded="true"] ha-icon {
   transform: rotate(180deg);
 }
 
-.agent-trigger:hover,
-.agent-trigger[aria-expanded="true"] {
+button.agent-trigger:hover,
+button.agent-trigger[aria-expanded="true"] {
   background: var(
     --ha-color-fill-neutral-quiet-hover,
     color-mix(in srgb, var(--primary-text-color) 8%, transparent)
@@ -1383,7 +1689,6 @@ h1 {
 }
 
 .file-chip,
-ha-assist-chip.file-chip,
 ha-input-chip.file-chip {
   position: relative;
   display: inline-flex;
@@ -1397,7 +1702,6 @@ ha-input-chip.file-chip {
   line-height: 1.3;
 }
 
-ha-assist-chip.file-chip,
 ha-input-chip.file-chip {
   --ha-button-height: 28px;
   background: transparent;
@@ -1531,17 +1835,27 @@ textarea::placeholder {
   line-height: 20px;
 }
 
+/* A long placeholder ("Next message" in a narrow chat) stays on the one line. */
+textarea.message::placeholder {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 textarea:focus {
   outline: none;
 }
 
 .send {
   flex: 0 0 auto;
+}
+
+ha-button.send {
   --ha-button-height: 36px;
   --ha-button-border-radius: 999px;
 }
 
-.send::part(base) {
+ha-button.send::part(base) {
   width: 36px;
   min-width: 36px;
   padding: 0;
@@ -1549,12 +1863,12 @@ textarea:focus {
   align-items: center;
 }
 
-.send::part(start),
-.send::part(end) {
+ha-button.send::part(start),
+ha-button.send::part(end) {
   display: none;
 }
 
-.send::part(label) {
+ha-button.send::part(label) {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1562,12 +1876,17 @@ textarea:focus {
   margin: 0;
 }
 
-.send ha-icon {
+ha-button.send ha-icon {
   margin: 0;
 }
 
-.mic {
+.mic,
+.attach {
   flex: 0 0 auto;
+}
+
+/* The HA composer keeps HA's own icon button size. */
+:where(.wrap:not(.composer-ha)) .mic {
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -1576,8 +1895,7 @@ textarea:focus {
   --mdc-icon-button-size: 36px;
 }
 
-.attach {
-  flex: 0 0 auto;
+:where(.wrap:not(.composer-ha)) .attach {
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -1874,10 +2192,36 @@ textarea:focus {
   padding: var(--ha-space-2) 0;
 }
 
+/* Usage cards carry their own inline margin; only the history list insets its cards. */
+.history-list {
+  padding: var(--ha-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ha-space-2);
+}
+
 .chat-usage {
   margin-block: var(--ha-space-1) 0;
   font-size: var(--ha-font-size-s);
   color: var(--secondary-text-color);
+}
+
+/* Panel pages (Aufgaben, Nutzung, Änderungsverlauf): one card surface, task-card reference. */
+.panel-card,
+.task-card,
+.tasks-form,
+.usage-card,
+.usage-agent,
+.usage-chart,
+.usage-kpi,
+.history-row {
+  min-width: 0;
+  padding: var(--ha-space-3);
+  border: var(--ha-card-border-width, 1px) solid var(--ha-card-border-color, var(--divider-color));
+  border-radius: var(--ha-card-border-radius, var(--ha-border-radius-lg, 12px));
+  background: var(--ha-card-background, var(--card-background-color));
+  box-shadow: var(--ha-card-box-shadow, none);
+  color: var(--primary-text-color);
 }
 
 .usage-grid {
@@ -1888,11 +2232,7 @@ textarea:focus {
 
 .usage-card,
 .usage-agent {
-  padding: var(--ha-space-3);
   margin: 0 var(--ha-space-3) var(--ha-space-2);
-  border: 1px solid var(--divider-color);
-  border-radius: var(--ha-border-radius-lg, 12px);
-  background: var(--secondary-background-color, var(--card-background-color));
 }
 
 .usage-card-title,
@@ -1924,6 +2264,132 @@ textarea:focus {
 .usage-hint,
 .usage-empty {
   padding: var(--ha-space-3) var(--ha-space-4);
+}
+
+/* Plan limits: one card per plan, a bar per window. Green, yellow from 60 %, red from 85 %. */
+.usage-plans {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+}
+
+.wrap.page-usage .usage-grid.usage-plans {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+}
+
+.usage-plan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ha-space-2);
+  min-width: 0;
+}
+
+.usage-plan .usage-card-title {
+  margin: 0;
+}
+
+.usage-plan-row {
+  --usage-plan-color: var(--success-color, #43a047);
+  min-width: 0;
+}
+
+.usage-plan-row[data-level="mid"] {
+  --usage-plan-color: var(--warning-color, #ffa600);
+}
+
+.usage-plan-row[data-level="high"] {
+  --usage-plan-color: var(--error-color, #db4437);
+}
+
+.usage-plan-row-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--ha-space-2);
+  font-size: var(--ha-font-size-s);
+}
+
+.usage-plan-pct {
+  font-weight: var(--ha-font-weight-heading);
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-plan-bar {
+  height: 8px;
+  margin-top: 4px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--divider-color);
+}
+
+.usage-plan-fill {
+  display: block;
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+  background: var(--usage-plan-color);
+  transition: width var(--ha-animation-duration-normal, 200ms) ease;
+}
+
+.usage-plan-reset,
+.usage-plan-warn {
+  margin: 4px 0 0;
+  font-size: var(--ha-font-size-s);
+  overflow-wrap: anywhere;
+}
+
+.usage-plan-reset {
+  color: var(--secondary-text-color);
+}
+
+.usage-plan-warn {
+  margin: 0;
+  color: var(--warning-color, #ffa600);
+  font-weight: var(--ha-font-weight-heading);
+}
+
+.usage-plan-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px var(--ha-space-3);
+  padding-top: var(--ha-space-2);
+  border-top: 1px solid var(--divider-color);
+  font-size: var(--ha-font-size-xs, 0.75rem);
+  color: var(--secondary-text-color);
+}
+
+.usage-plan-link {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.usage-plan-link:hover,
+.usage-plan-link:focus-visible {
+  text-decoration: underline;
+}
+
+.usage-plan-cost-note {
+  margin: calc(-1 * var(--ha-space-2)) 0 var(--ha-space-2);
+  padding: 0 var(--ha-space-4);
+}
+
+.wrap.page-usage .usage-plan-cost-note {
+  padding-inline: 0;
+}
+
+/* Chat header: the plan in place of the $ value, colored by the higher window. */
+.chat-plan {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--success-color, #43a047);
+}
+
+.chat-plan[data-level="mid"] {
+  color: var(--warning-color, #ffa600);
+}
+
+.chat-plan[data-level="high"] {
+  color: var(--error-color, #db4437);
 }
 
 .nav-toolbar .usage-open[aria-current="page"],
@@ -2079,10 +2545,7 @@ ha-date-range-picker.usage-filter-dates {
 
 .usage-chart,
 .usage-kpi {
-  padding: var(--ha-space-3);
-  border: 1px solid var(--divider-color);
-  border-radius: var(--ha-border-radius-lg, 12px);
-  background: var(--secondary-background-color, var(--card-background-color));
+  margin: 0;
 }
 
 .usage-chart-title {
@@ -2123,8 +2586,8 @@ ha-date-range-picker.usage-filter-dates {
 .usage-table-wrap {
   overflow-x: auto;
   margin: 0 var(--ha-space-3) var(--ha-space-2);
-  border: 1px solid var(--divider-color);
-  border-radius: var(--ha-border-radius-lg, 12px);
+  border: var(--ha-card-border-width, 1px) solid var(--ha-card-border-color, var(--divider-color));
+  border-radius: var(--ha-card-border-radius, var(--ha-border-radius-lg, 12px));
 }
 
 .usage-table {
@@ -2157,14 +2620,16 @@ ha-date-range-picker.usage-filter-dates {
 }
 
 .history-empty {
-  margin: var(--ha-space-4);
+  margin: 0;
+  padding: var(--ha-space-3);
   color: var(--secondary-text-color);
 }
 
-.ui-theme-standard .history-row {
-  padding: var(--ha-space-3) var(--ha-space-4);
-  border-bottom: 1px solid var(--divider-color);
-  margin: var(--ha-space-2) var(--ha-space-3);
+.history-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ha-space-1);
+  margin: 0;
 }
 
 .history-when,
@@ -2173,6 +2638,8 @@ ha-date-range-picker.usage-filter-dates {
   margin: 0;
   color: var(--secondary-text-color);
   font-size: var(--ha-font-size-s);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .history-chat {
@@ -2185,7 +2652,9 @@ ha-date-range-picker.usage-filter-dates {
 }
 
 .history-summary {
-  margin: var(--ha-space-1) 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .history-rollback {
@@ -2205,7 +2674,6 @@ ha-date-range-picker.usage-filter-dates {
 
   .bubble,
   .tools-list span,
-  .tools-list ha-assist-chip,
   .tools.busy .tools-summary {
     animation: none;
   }
@@ -2218,8 +2686,7 @@ ha-date-range-picker.usage-filter-dates {
   }
 
   .tools.busy .tools-summary::after,
-  .tools-list span.busy::after,
-  .tools-list ha-assist-chip.busy::after {
+  .tools-list span.busy::after {
     display: none;
   }
 }
@@ -2370,4 +2837,15 @@ ha-date-range-picker.usage-filter-dates {
 }
 .approval-timer {
   margin-inline-end: auto;
+}
+
+.fallback-notice {
+  margin: 6px 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--secondary-text-color);
+  background: rgba(var(--rgb-primary-color), 0.06);
+  border: 1px solid rgba(var(--rgb-primary-color), 0.15);
 }

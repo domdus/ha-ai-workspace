@@ -135,6 +135,9 @@ async def async_refresh_runtime_plan_quota(hass: HomeAssistant) -> None:
 
     try:
         health = await async_runtime_health(hass, base)
+        from .billing import store_runtime_credentials
+
+        store_runtime_credentials(hass, health)
         payload = (health or {}).get("plan_quota")
         if isinstance(payload, dict) and payload:
             await async_merge_runtime_plan_quota(hass, payload)

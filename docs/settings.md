@@ -42,7 +42,7 @@ Tappable links to automations, entities, helpers, and devices are always added. 
 | **Show floating AI button** | Bottom-right robot icon on other Home Assistant pages. It slides up when another corner button is already there. | Open the same chat without leaving the page you are on. |
 | **Show dictate button** | Microphone in the message box. On by default. | Hide it if you never dictate. |
 | **Allow normal users** | Off by default. Non-admins get the floating chat only, with the same Home Assistant access as their own login. | [Privacy](privacy.md). Only turn this on if you trust everyone with a login. |
-| **Use HA Components** | Off by default. Builds the chat from Home Assistant’s own UI parts. | Can look better with some themes. |
+| **Use HA Components** | Off by default. Only the message field and the agent and model pickers under it use Home Assistant’s own style. | Messages always use the standard look, which follows your theme. |
 | **Cross chat** | Off by default. A question can use a short excerpt from another chat whose title shares words with it. That other chat is not changed. | Helps when you already discussed a room or automation in a different chat. |
 | **Chats to keep** | Newest unpinned chats per person (default 30). Pinned chats are always kept. | Stops the history list growing forever. |
 
@@ -60,7 +60,7 @@ Tappable links to automations, entities, helpers, and devices are always added. 
 | Option | What it does | Why it matters |
 | --- | --- | --- |
 | **Track usage and costs** | On by default. Records tokens and estimated cost. Sidebar **Usage** opens `/ai-workspace/usage`. | [See what you spend](cost.md). Off stops new records; history stays. Deleting a chat does not remove its usage. |
-| **Show cost in chat header** | On by default. Tokens and cost under the chat title. | Cost at a glance. Off hides only that line. |
+| **Show cost in chat header** | On by default. Tokens and cost under the chat title; for plan agents the plan usage (`5h 12% · W 16%`) instead of $. | Cost at a glance. Off hides only that line. |
 | **Add Home Assistant usage sensors** | Off by default. Creates cost, token, and turn sensors. | [For your own dashboards and automations](cost.md#home-assistant-sensors). The Usage page does not need them. |
 
 ### Home Assistant answers
@@ -109,9 +109,9 @@ On each agent (**Add agent**, or the edit button on an agent row).
 
 A model that is not told otherwise answers from what it guesses. For a house that means invented automations, wrong counts, or “the light is off” while it is on — said with confidence. Asking “use a tool” in the prompt is not enough on its own.
 
-So every agent with tools looks at Home Assistant first: a cloud model must call a Home Assistant tool before it answers a question about the house, so lists, counts, and states come from your instance. After that first call it decides freely. Cursor cannot be forced to call a tool, so a Cursor agent is told to look first on each house question.
+So every agent with tools looks at Home Assistant first when you ask for live house data: a cloud model must call a Home Assistant tool before it answers a question about devices, states, history, counts, lists, or weather, so they come from your instance. After that first call it decides freely. Runtime agents (Cursor, Claude, Codex) cannot be forced to call a tool; their standing instructions tell them to look up live house data and to answer general questions (plant care, gardening, watering math from numbers you gave) directly, without a lookup.
 
-It may write one status line before the first tool call, or when it starts a change — a natural complete sentence in your language that names what it is about to do, not a generic filler. At most one such line per turn; nothing between later tool calls.
+It may write one status line before the first tool call, or when it starts a change — a natural complete sentence in your language that names what it is about to do, not a generic filler. Only when it really calls a tool in that answer, and at most one such line per turn; nothing between later tool calls. Links point only to real Home Assistant items a tool returned; plants, products, and other things without an entity stay plain text.
 
 A wrong answer about the house costs more than one extra tool call, so this is always on and not on the agent form. Greetings, thanks, and messages with images or files are never forced. To turn it off for one agent anyway, set `check_house: false` on that agent in YAML.
 

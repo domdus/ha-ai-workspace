@@ -52,7 +52,8 @@ def test_small_talk_stays_plain() -> None:
     # Kept when the user replaces the built-in prompt.
     full = const.workspace_system_prompt(S())
     assert "small talk" in full
-    assert "call a Home Assistant tool" in full
+    assert "Call a Home Assistant tool only when the user asks for live house data" in full
+    assert "Plant care, gardening" in full
     assert "not a generic filler" in const.STATUS_LINE_INSTRUCTIONS
     # Optional, not required: a quick question may go straight to the tools.
     assert const.STATUS_LINE_INSTRUCTIONS.startswith("You may write")
@@ -60,9 +61,11 @@ def test_small_talk_stays_plain() -> None:
     assert "Do not mention Home Assistant" not in const.STATUS_LINE_INSTRUCTIONS
     assert "I'll check that" not in const.STATUS_LINE_INSTRUCTIONS
     assert "one moment" not in const.STATUS_LINE_INSTRUCTIONS.lower()
-    assert "Do not say that you are checking" not in const.CHECK_HOUSE_NOTE
-    assert "weather" in const.CHECK_HOUSE_NOTE
+    # The per-message house suffix is gone; the standing rules say when to look.
+    assert not hasattr(const, "CHECK_HOUSE_NOTE")
+    assert "only if you are actually calling a tool" in const.STATUS_LINE_INSTRUCTIONS
+    assert "Link only real Home Assistant items returned by a tool" in const.HA_LINK_INSTRUCTIONS
     assert "do not say that you are checking" not in const.HOUSE_RULES
     assert "weather" in const.HOUSE_RULES
     # Said once per prompt part, not repeated in every one.
-    assert "not for any topic" not in const.HOUSE_RULES + const.CHECK_HOUSE_NOTE + const.STATUS_LINE_INSTRUCTIONS
+    assert "not for any topic" not in const.HOUSE_RULES + const.STATUS_LINE_INSTRUCTIONS

@@ -45,13 +45,13 @@
               "keep_chats": "要保留的聊天"
             },
             "data_description": {
-              "default_agent": "新對話使用的智慧體。每個對話都會記住上次使用的智慧體（和模型）。最近使用：你在此瀏覽器中最近選擇的智慧體。",
+              "default_agent": "新對話使用的智慧體。每個對話都會記住上次使用的智慧體（和模型）。最近使用：你在此瀏覽器中最近選擇的智慧體。開啟備用代理時，改由其代理清單決定。",
               "model_switcher": "預設關閉。在智慧體選擇器旁加入模型選擇器，讓一個對話可以使用同一智慧體的其他模型。智慧體本身的模型仍是預設值。",
               "enable_sidebar": "將 AI Workspace 加入 Home Assistant 側邊欄。關閉後，管理員仍可直接開啟 /ai-workspace。",
               "enable_overlay": "每個 Home Assistant 頁面角落的圓形 AI 按鈕，不必離開頁面就能提問。在設定頁面上位置較高，以免擋住其他按鈕。",
               "enable_dictate": "訊息框中的麥克風按鈕。如果從不聽寫，可以隱藏。",
               "allow_users": "關閉：僅限管理員。開啟：非管理員使用者可使用浮動聊天，權限與其自己的 Home Assistant 帳號相同。完整的 AI Workspace 頁面始終僅限管理員。只有在你信任所有擁有帳號的人時才開啟。",
-              "ui_theme": "預設關閉。用 Home Assistant 內建的介面元件組成聊天。如果聊天與你的佈景主題不搭，可以試試。",
+              "ui_theme": "預設關閉。只把訊息輸入框和代理、模型選擇器換成 Home Assistant 內建的樣式。訊息始終使用標準外觀。",
               "cross_chat": "預設關閉。開啟後，問題可以使用另一段標題有相同詞語的聊天中的簡短摘錄，不必你提到那段聊天。適合已經聊過同一房間或自動化的情況。另一段聊天不會被改動。",
               "keep_chats": "每人保留的最新未釘選聊天數。較舊的會被刪除，以免清單無限增長。釘選聊天一律保留。預設 30。"
             }
@@ -160,15 +160,29 @@
               "keep_chats": "要保留的聊天"
             },
             "data_description": {
-              "default_agent": "新對話使用的智慧體。每個對話都會記住上次使用的智慧體（和模型）。最近使用：你在此瀏覽器中最近選擇的智慧體。",
+              "default_agent": "新對話使用的智慧體。每個對話都會記住上次使用的智慧體（和模型）。最近使用：你在此瀏覽器中最近選擇的智慧體。開啟備用代理時，改由其代理清單決定。",
               "model_switcher": "預設關閉。在智慧體選擇器旁加入模型選擇器，讓一個對話可以使用同一智慧體的其他模型。智慧體本身的模型仍是預設值。",
               "enable_sidebar": "將 AI Workspace 加入 Home Assistant 側邊欄。關閉後，管理員仍可直接開啟 /ai-workspace。",
               "enable_overlay": "每個 Home Assistant 頁面角落的圓形 AI 按鈕，不必離開頁面就能提問。在設定頁面上位置較高，以免擋住其他按鈕。",
               "enable_dictate": "訊息框中的麥克風按鈕。如果從不聽寫，可以隱藏。",
               "allow_users": "關閉：僅限管理員。開啟：非管理員使用者可使用浮動聊天，權限與其自己的 Home Assistant 帳號相同。完整的 AI Workspace 頁面始終僅限管理員。只有在你信任所有擁有帳號的人時才開啟。",
-              "ui_theme": "預設關閉。用 Home Assistant 內建的介面元件組成聊天。如果聊天與你的佈景主題不搭，可以試試。",
+              "ui_theme": "預設關閉。只把訊息輸入框和代理、模型選擇器換成 Home Assistant 內建的樣式。訊息始終使用標準外觀。",
               "cross_chat": "預設關閉。開啟後，問題可以使用另一段標題有相同詞語的聊天中的簡短摘錄，不必你提到那段聊天。適合已經聊過同一房間或自動化的情況。另一段聊天不會被改動。",
               "keep_chats": "每人保留的最新未釘選聊天數。較舊的會被刪除，以免清單無限增長。釘選聊天一律保留。預設 30。"
+            }
+          },
+          "fallback": {
+            "name": "備用代理",
+            "description": "選用。當某個代理的服務商出錯（方案或權杖上限、速率限制、登入過期、逾時、連線錯誤、伺服器過載）時，清單中的下一個代理會繼續該任務。開啟後，此清單取代預設智慧體。",
+            "data": {
+              "fallback_enabled": "啟用備用代理",
+              "fallback_agents": "代理順序",
+              "fallback_return": "回到首選代理"
+            },
+            "data_description": {
+              "fallback_enabled": "預設關閉。停止回覆、工具失敗、拒絕回答或錯誤請求都不會切換代理。",
+              "fallback_agents": "僅在啟用備援時使用；在啟用備援並儲存之前，此清單只是建議。任務也遵循同一清單。 順序很重要：第一個是首選代理，新對話從它開始；其餘代理依由上而下的順序接手。拖曳代理即可變更順序。需要工作區或 shell 的任務只交給 Runtime 代理（Claude SDK、Cursor、Codex）。",
+              "fallback_return": "關閉：對話留在接手的代理上。收到新訊息時：下一則訊息會再次嘗試首選代理。重設或等待之後：僅在其上限重設或等待時間（5、15、60 分鐘）過去之後。絕不在回覆中途切換。"
             }
           },
           "cost": {
@@ -310,8 +324,8 @@
         "runtime_old": "此執行環境尚不支援登入。請更新 AI Workspace Runtime，或在代理表單中貼上權杖。",
         "codex_runtime_old": "要使用 Codex 代理，請將 AI Workspace 執行環境更新至 1.6.0 或更新版本。",
         "codex_key_required": "在 Codex（執行環境）下新增 OpenAI API 金鑰，或在 AI Workspace 執行環境上用 ChatGPT 登入。",
-        "not_signed_in_yet": "OpenAI 尚未確認登入。請在 OpenAI 頁面輸入代碼，然後再次送出。",
-        "no_code": "Codex 沒有從 OpenAI 取得登入代碼。請檢查執行環境能否連到 auth.openai.com，然後重試。"
+        "no_code": "Codex 沒有從 OpenAI 取得登入代碼。請檢查執行環境能否連到 auth.openai.com，然後重試。",
+        "codex_login_failed": "OpenAI 未確認此次登入。若代碼被拒絕，請先在 ChatGPT 的 設定 → 安全性 中允許一次裝置代碼登入（工作區帳戶由管理員允許），然後重試。"
       },
       "step": {
         "provider": {
@@ -625,8 +639,7 @@
           }
         },
         "codex_login": {
-          "title": "用 ChatGPT 登入",
-          "description": "1. 開啟此連結，用擁有方案的 ChatGPT 帳戶登入：[用 ChatGPT 登入]({url})\n2. 在那裡輸入此一次性代碼：**{code}**\n3. 然後在這裡送出。\n\n代碼 15 分鐘內有效。你的 ChatGPT 密碼不會經過 Home Assistant。若 OpenAI 拒絕該代碼，請在 ChatGPT 的 **設定 → 安全性** 中啟用一次裝置代碼登入（工作區帳戶由管理員允許）。"
+          "title": "用 ChatGPT 登入"
         },
         "codex_signed_in": {
           "title": "已登入",
@@ -639,6 +652,9 @@
       },
       "abort": {
         "reconfigure_successful": "智慧體已更新。"
+      },
+      "progress": {
+        "codex_login": "1. 開啟此連結，用擁有方案的 ChatGPT 帳戶登入：[用 ChatGPT 登入]({url})\n2. 在那裡輸入此一次性代碼：**{code}**\n3. 就這樣：OpenAI 確認代碼後，此視窗會自動繼續。\n\n代碼 15 分鐘內有效。你的 ChatGPT 密碼不會經過 Home Assistant。若 OpenAI 拒絕該代碼，請在 ChatGPT 的 **設定 → 安全性** 中啟用一次裝置代碼登入（工作區帳戶由管理員允許）。"
       }
     }
   },
@@ -672,6 +688,60 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "自訂 MCP URL"
+      }
+    },
+    "default_agent": {
+      "options": {
+        "last_used": "最近使用"
+      }
+    },
+    "fallback_return": {
+      "options": {
+        "off": "關閉",
+        "new_message": "收到新訊息時",
+        "after_reset": "重設或等待之後"
+      }
+    },
+    "task_chat": {
+      "options": {
+        "none": "不使用聊天",
+        "task": "任務聊天"
+      }
+    }
+  },
+  "services": {
+    "run_task": {
+      "name": "執行代理任務",
+      "description": "使用 AI Workspace 代理執行提示詞，例如依排程執行。每次執行都從頭開始：提示詞必須包含代理所需的全部內容。提示詞中可以使用模板。",
+      "fields": {
+        "prompt": {
+          "name": "提示詞",
+          "description": "代理要做的事。需自成一體：代理不記得先前的執行（保留任務聊天時除外）。可以使用模板。"
+        },
+        "task_name": {
+          "name": "任務名稱",
+          "description": "用於任務聊天、日誌與上次執行的名稱。任務聊天必須填寫。"
+        },
+        "agent": {
+          "name": "代理",
+          "description": "代理 ID、標題或對話實體。留空：使用預設代理；若預設代理為「上次使用」，則使用第一個 Runtime 代理（Claude、Cursor、Codex）。僅在啟用備援（Fallback）時才切換到其他代理。"
+        },
+        "chat": {
+          "name": "聊天",
+          "description": "將執行記錄保存在一個以任務命名的任務聊天中。"
+        },
+        "notify": {
+          "name": "通知",
+          "description": "用於傳送簡短結果的通知服務或實體，例如 notify.mobile_app_my_phone。"
+        },
+        "allow_changes": {
+          "name": "允許變更",
+          "description": "關閉：代理只讀取 Home Assistant。開啟：可以控制裝置。無論如何都禁止修改自動化、腳本或啟動其他任務。"
+        },
+        "timeout": {
+          "name": "逾時",
+          "description": "執行停止前的秒數。"
+        }
       }
     }
   }

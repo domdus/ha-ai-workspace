@@ -5,7 +5,6 @@ from types import MappingProxyType, SimpleNamespace
 from custom_components.ai_workspace import _move_tuning_to_agents
 from custom_components.ai_workspace.agents import CursorAgent, agent_from_mapping
 from custom_components.ai_workspace.const import (
-    CHECK_HOUSE_NOTE,
     CONF_CHECK_HOUSE,
     CONF_LOW_TOKEN,
     LOW_TOKEN_PROMPT,
@@ -36,7 +35,7 @@ def test_cursor_standing_prompt_follows_the_level() -> None:
     assert LOW_TOKEN_PROMPT in standing_chat_prompt(settings, mode=TOKEN_MODE_EXTREME)
     full = standing_chat_prompt(settings, mode=TOKEN_MODE_OFF)
     assert len(full) > len(standing_chat_prompt(settings, mode=TOKEN_MODE_MEDIUM))
-    assert CHECK_HOUSE_NOTE not in full
+    assert "call a Home Assistant tool before you answer" not in full
 
 
 def test_cursor_handoff_follows_the_token_level() -> None:

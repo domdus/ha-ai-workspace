@@ -28,15 +28,14 @@ from .const import (
     format_ui_page,
     parse_ui_page,
     ui_theme_of,
-    CHECK_HOUSE_NOTE,
     TOKEN_MODE_OFF,
     provider_token_mode,
     token_mode_allows_extras,
     token_mode_allows_files,
     token_mode_allows_tools,
-    token_mode_checks_house,
     token_mode_clip_user,
     token_mode_fresh_agent,
+    cross_chat_budget,
 )
 from .mcp_config import with_mcp_auth
 from .mcp_observe import last_mcp_result, note_mcp_result
@@ -47,7 +46,17 @@ from .live_turn import end_turn, live_turn, start_turn
 from .local_time import house_zone, stamped_now, time_rule
 from .callback_keys import caller as callback_caller
 from .callback_keys import issue as issue_callback_key
-from .chat_scope import handoff_note, merge_reply_text, other_chat_note, text_after_pause, text_after_tools
+from .chat_scope import (
+    clip_keeping_excerpt,
+    cross_chat_event,
+    handoff_note,
+    mentions_chat,
+    merge_reply_text,
+    other_chat_context,
+    public_events,
+    text_after_pause,
+    text_after_tools,
+)
 from .error_text import public_error
 from .files import attach_files_to_message, file_events, parse_client_files
 from .images import caption_for, image_events, parse_client_images
@@ -87,6 +96,7 @@ def _session_dict(session: Session) -> dict:
         "created_at": session.created_at,
         "updated_at": session.updated_at,
         "pinned": bool(getattr(session, "pinned", False)),
+        "unread": bool(getattr(session, "unread", False)),
     }
 
 
@@ -99,7 +109,7 @@ def _message_dict(item) -> dict:
         "id": item.id,
         "role": item.role,
         "content": item.content,
-        "events": events,
+        "events": public_events(events) if isinstance(events, list) else [],
         "created_at": item.created_at,
     }
 
@@ -112,7 +122,14 @@ def _hass(request: web.Request) -> HomeAssistant:
 
 
 def _runtime(hass: HomeAssistant) -> dict[str, Any]:
-    return hass.data[DOMAIN]
+    data = hass.data.get(DOMAIN)
+    if data is None:
+        # Still starting or reloading: the page tries again instead of showing a server error.
+        raise web.HTTPServiceUnavailable(
+            text="AI Workspace is starting. Try again in a moment.",
+            headers={"Retry-After": "5"},
+        )
+    return data
 
 
 def _runtime_headers_for(hass: HomeAssistant, user_id: str, accept: str = "application/json") -> dict[str, str]:
@@ -320,6 +337,10 @@ def _runtime_agent_overrides(
         servers = {"mcp": {"type": "http", "url": hass_mcp_server_url(hass)}}
     else:
         servers = {}
+    from .chat_tools import SERVER_NAME as CHATS_SERVER, mcp_server_config as chats_mcp_server_config
+
+    # Read-only list_chats / read_chat for every user: the endpoint only shows the caller's own chats.
+    servers[CHATS_SERVER] = chats_mcp_server_config(hass)
     servers = with_mcp_auth(servers, access_token=str(access_token or ""), ha_hosts=ha_hosts(hass))
     from .discovery import _runtime_hass_url
 
@@ -361,10 +382,15 @@ async def _runtime_chat(
     agent: str = "",
     allow_internet: bool = False,
     token_mode: str = TOKEN_MODE_OFF,
-    check_house: bool = True,
     runtime_provider: str = "cursor",
+    title: bool = False,
+    tool_policy: dict | None = None,
 ) -> AsyncIterator[dict]:
-    """One SDK runtime turn (Cursor, Claude or Codex). Reduce token usage and Check the house work as on cloud agents."""
+    """One SDK runtime turn (Cursor, Claude or Codex). Reduce token usage works as on cloud agents.
+
+    ``title``: the chat's first turn, and its first title had to shorten the message. The Runtime then
+    has the engine write a short title next to the reply and sends it as a "title" event.
+    """
     runtime_kind = runtime_provider if runtime_provider in _RUNTIME_PROVIDER_KINDS else "cursor"
     base = str((_runtime(hass).get("runtime_url") or "")).rstrip("/")
     if not base:
@@ -389,11 +415,10 @@ async def _runtime_chat(
         images, files = [], []
     clip = token_mode_clip_user(token_mode)
     if clip:
-        message = message[:clip]
+        # An excerpt from another chat comes after the message and is never clipped with it.
+        message = clip_keeping_excerpt(message, clip)
     user_text = stamped_now(attach_files_to_message(message, files or []), house_zone(hass))
     asked = (question or message).strip()
-    if token_mode_checks_house(token_mode, check_house) and not images and wants_house_tools(asked):
-        user_text = f"{user_text}\n\n{CHECK_HOUSE_NOTE}"
     from .notes import notes_update, remember_nudge
 
     # Under Save tokens the Runtime keeps the agent for a while (Claude until it grows, Cursor a few turns),
@@ -416,6 +441,9 @@ async def _runtime_chat(
         "no_tools": not token_mode_allows_tools(token_mode),
         "titles": token_mode_allows_extras(token_mode),
     }
+    if title and token_mode_allows_extras(token_mode):
+        # Home Assistant owns the chat's history: only it knows this is the first turn.
+        payload["title_now"] = True
     if standing:
         payload["prompt"] = short_prompt
     if session.agent_id and runtime_kind == "cursor":
@@ -433,6 +461,15 @@ async def _runtime_chat(
 
         token = str(await _login_token(hass, user_id) or "").strip()
     payload.update(_runtime_agent_overrides(hass, access_token=token, admin=admin))
+    if tool_policy:
+        # Agent task run: no shell or file tools, only the MCP servers Home Assistant sends (all behind
+        # the Runtime's proxy, which refuses calls by task_guard), and always with tools attached.
+        payload["tool_policy"] = dict(tool_policy)
+        payload["full_tools"] = False
+        payload["allow_internet"] = False
+        payload["fresh"] = True
+        if isinstance(payload.get("mcp"), dict):
+            payload["mcp"] = {**payload["mcp"], "exclusive": True}
     if model:
         payload["model"] = model
     if effort:
@@ -513,11 +550,19 @@ def _localized_runtime_error(hass, event: dict, language: str = "") -> dict:
     """Runtime errors with a known code read in the chat's language (the Runtime only knows English)."""
     if event.get("type") != "error":
         return event
-    from .local_text import CLAUDE_AUTH_FAILED_CODE, claude_auth_failed_text, claude_plan_rejected_text
+    from .local_text import (
+        CLAUDE_AUTH_FAILED_CODE,
+        CODEX_AUTH_FAILED_CODE,
+        claude_auth_failed_text,
+        claude_plan_rejected_text,
+        codex_auth_failed_text,
+    )
     from .plan_quota import CLAUDE_PLAN_REJECTED_CODE
 
     if event.get("code") == CLAUDE_AUTH_FAILED_CODE:
         return {**event, "message": claude_auth_failed_text(language)}
+    if event.get("code") == CODEX_AUTH_FAILED_CODE:
+        return {**event, "message": codex_auth_failed_text(language)}
     if event.get("code") == CLAUDE_PLAN_REJECTED_CODE:
         return {
             **event,
@@ -562,8 +607,13 @@ async def async_agent_events(
     tools: bool | None = None,
     admin: bool = True,
     force_tools: bool = False,
+    tool_policy: dict | None = None,
 ) -> AsyncIterator[dict]:
-    """Run one turn for Assist or any caller that is not an HTTP chat request."""
+    """Run one turn for Assist or any caller that is not an HTTP chat request.
+
+    tool_policy: limits of an agent task run (task_guard), enforced by the cloud agent's tool loop or
+    the Runtime's MCP proxy.
+    """
     store: Store = _runtime(hass)["store"]
 
     def on_agent_id(agent_id: str) -> None:
@@ -589,8 +639,8 @@ async def async_agent_events(
             agent=_agent_label(provider),
             allow_internet=bool(getattr(provider, "allow_internet", False)),
             token_mode=provider_token_mode(provider),
-            check_house=bool(getattr(provider, "check_house", True)),
             runtime_provider=str(getattr(provider, "kind", "") or "cursor"),
+            tool_policy=tool_policy,
         ):
             yield event
         return
@@ -607,6 +657,7 @@ async def async_agent_events(
         tools=tools,
         admin=admin,
         force_tools=force_tools,
+        **({"tool_policy": tool_policy} if tool_policy else {}),
         **(await _activity_kwargs(hass, provider, user_id, session.id, access_token)),
     ):
         yield event
@@ -651,7 +702,16 @@ async def _offered_model(hass: HomeAssistant, data: dict[str, Any], agent_id: st
 
 
 def _default_agent(hass: HomeAssistant, data: dict[str, Any]) -> str:
-    """Configured default agent id. YAML may name it by title."""
+    """Configured default agent id. YAML may name it by title.
+
+    With Fallback on, its list decides: the preferred agent, or the next one while it is known to wait.
+    """
+    from .fallback import first_ready
+    from .fallback_ha import available_of, book_of, fallback_chain
+
+    chain = fallback_chain(data)
+    if chain:
+        return first_ready(chain, book_of(hass, data), available_of(data))
     wanted = str(getattr(data.get("settings"), "default_agent", "") or "").strip()
     if not wanted:
         return ""
@@ -799,8 +859,16 @@ class UiView(HomeAssistantView):
                 "ui_theme": ui_theme_of(getattr(settings, "ui_theme", "standard")),
                 "default_agent": _default_agent(_hass(request), runtime),
                 "model_switcher": bool(getattr(settings, "model_switcher", False)),
+                # The chat header shows the active agent as a badge while the fallback list is on.
+                "fallback": bool(_fallback_chain_of(runtime)),
             }
         )
+
+
+def _fallback_chain_of(data: dict[str, Any]) -> list[str]:
+    from .fallback_ha import fallback_chain
+
+    return fallback_chain(data)
 
 
 class HealthView(HomeAssistantView):
@@ -840,11 +908,18 @@ class ProvidersView(HomeAssistantView):
             for item in (data.get("providers") or {}).values()
         ):
             await async_bind_runtime(hass, data, force=True)
+        from .billing import async_runtime_credentials, resolve_row
+
+        providers = list(data["providers"].values())
+        # Runtime agents bill whatever the Runtime's own credential is: ask it (cached 30 s). Unknown
+        # (unreachable, older Runtime) resolves to $, never to plan limits.
+        needs_runtime = any(getattr(item.info, "billing", "") == "runtime" for item in providers)
+        credentials = await async_runtime_credentials(hass) if needs_runtime else {}
         rows = []
-        for item in data["providers"].values():
+        for item in providers:
             row = item.info.as_dict()
             row["kind"] = getattr(item, "kind", "api")
-            rows.append(row)
+            rows.append(resolve_row(row, item, credentials))
         rows.extend(list_assist_agents(hass))
         return self.json(rows)
 
@@ -885,7 +960,14 @@ class SessionsView(HomeAssistantView):
         user_id = _user_id(request)
         query = str(request.query.get("q") or "").strip()[:200]
         sessions = await hass.async_add_executor_job(store.list_sessions, user_id, query)
-        return self.json([_session_dict(item) for item in sessions])
+        locks = _runtime(hass).get("locks") or {}
+
+        def row(item: Session) -> dict:
+            lock = locks.get(item.id)
+            # A reply still running in the background: the page looks again until it is done.
+            return {**_session_dict(item), "pending": bool(lock is not None and lock.locked())}
+
+        return self.json([row(item) for item in sessions])
 
     async def post(self, request: web.Request) -> web.Response:
         hass: HomeAssistant = _hass(request)
@@ -978,6 +1060,11 @@ class SessionView(HomeAssistantView):
                 session = await hass.async_add_executor_job(store.get_session, user_id, session_id) or session
         if title:
             session = await hass.async_add_executor_job(store.rename_session, user_id, session_id, title)
+        read = body.get("read")
+        if read is not None and read is not False:
+            # The chat was open and visible: its replies are read, on every device of this user.
+            upto = None if read is True else read
+            session = await hass.async_add_executor_job(store.mark_read, user_id, session_id, upto) or session
         agent = str(body.get("provider") or body.get("agent") or "").strip()
         if agent or "model" in body:
             data = _runtime(hass)
@@ -998,6 +1085,9 @@ class SessionView(HomeAssistantView):
         deleted = await hass.async_add_executor_job(store.delete_session, _user_id(request), session_id)
         if not deleted:
             raise web.HTTPNotFound(text=CHAT_GONE)
+        book = data.get("fallback_book")
+        if book is not None:
+            book.drop_chat(session_id)
         base = str((data.get("runtime_url") or "")).rstrip("/")
         if base:
             try:
@@ -1048,6 +1138,290 @@ async def _json_body(request: web.Request) -> dict[str, Any]:
     if not isinstance(body, dict):
         raise web.HTTPBadRequest(text="Invalid JSON.")
     return body
+
+
+# --- Agent fallback (fallback.py) ------------------------------------------------------------
+
+
+async def _pause_sleep(seconds: float) -> None:
+    await asyncio.sleep(seconds)
+
+
+def _agent_name(provider: Any) -> str:
+    info = getattr(provider, "info", None)
+    return str(getattr(info, "title", "") or getattr(info, "label", "") or "Agent")
+
+
+async def _move_chat(hass: HomeAssistant, store: Store, user_id: str, session: Session, agent_id: str) -> None:
+    """The chat goes on with another agent; it remembers that agent like a pick in the agent menu."""
+    await hass.async_add_executor_job(store.set_provider, user_id, session.id, agent_id)
+    if session.agent_id:
+        # The old agent's id means nothing to the new one; the transcript carries the chat over.
+        await hass.async_add_executor_job(store.set_agent_id, session.id, "")
+        session.agent_id = None
+    if getattr(session, "model", ""):
+        # A model picked for the old agent is not one of the new agent's models.
+        await hass.async_add_executor_job(store.set_choice, user_id, session.id, agent_id, "")
+        session.model = ""
+    session.provider = agent_id
+
+
+def _fallback_event(phase: str, message: str, provider: Any = None, **extra: Any) -> dict:
+    event = {"type": "fallback", "phase": phase, "message": message}
+    if provider is not None:
+        event["to"] = provider.info.id
+        event["to_label"] = _agent_name(provider)
+    event.update({key: value for key, value in extra.items() if value not in (None, "")})
+    return event
+
+
+async def _fallback_turn_start(
+    hass: HomeAssistant,
+    data: dict[str, Any],
+    store: Store,
+    user_id: str,
+    session: Session,
+    provider: Any,
+    needs: set[str],
+    language: str,
+) -> tuple[Any, list[dict]]:
+    """Before a turn: go back up the list when allowed, or skip an agent that is known to wait."""
+    import time
+
+    from .fallback import ChatFallback, next_agent, promotion_target
+    from .fallback_ha import async_load_book, async_probe, available_of, caps_of, fallback_chain, fallback_return
+    from .fallback_text import notice_text, switch_text
+
+    book = await async_load_book(hass, data)
+    chain = fallback_chain(data)
+    providers = data.get("providers") or {}
+    caps = caps_of(data)
+    state = book.chat(session.id)
+    if state is not None and state.active != session.provider:
+        # The user picked another agent in the menu: that choice stands.
+        book.drop_chat(session.id)
+        state = None
+    notices: list[dict] = []
+    target = await promotion_target(
+        chain,
+        state,
+        mode=fallback_return(data),
+        needs=needs,
+        caps_of=caps,
+        book=book,
+        probe=lambda agent: async_probe(hass, data, agent),
+    )
+    now = time.time()
+    if target and target in providers:
+        await _move_chat(hass, store, user_id, session, target)
+        provider = providers[target]
+        book.set_chat(
+            session.id,
+            ChatFallback(
+                active=target,
+                preferred=chain[0],
+                fell_back=target != chain[0],
+                reason=state.reason if state else "",
+                switched_at=now,
+                promoted_at=now,
+            ),
+        )
+        notices.append(_fallback_event("promoted", notice_text(language, "promoted", next_agent=_agent_name(provider)), provider))
+        return provider, notices
+    current = session.provider
+    if current in chain and book.blocked(current):
+        health = book.health[current]
+        nxt = next_agent(chain, tried=[current], needs=needs, caps_of=caps, book=book, available=available_of(data))
+        if nxt and nxt in providers:
+            old = provider
+            reset = _format_plan_reset(hass, int(health.until)) if health.reset_known else ""
+            await _move_chat(hass, store, user_id, session, nxt)
+            provider = providers[nxt]
+            book.set_chat(
+                session.id,
+                ChatFallback(
+                    active=nxt,
+                    preferred=chain[0],
+                    fell_back=True,
+                    reason=health.kind,
+                    switched_at=now,
+                    promoted_at=state.promoted_at if state else 0.0,
+                ),
+            )
+            notices.append(
+                _fallback_event(
+                    "switch",
+                    switch_text(language, health.kind, _agent_name(old), _agent_name(provider), reset),
+                    provider,
+                    reason=health.kind,
+                    reset_at=int(health.until) if health.reset_known else None,
+                    **{"from": current},
+                )
+            )
+    return provider, notices
+
+
+async def _fallback_events(
+    hass: HomeAssistant,
+    data: dict[str, Any],
+    store: Store,
+    user_id: str,
+    session: Session,
+    provider: Any,
+    run_agent,
+    transcript_for,
+    *,
+    outbound: str,
+    prior: str,
+    needs: set[str],
+    language: str,
+    active: list,
+    keepalive=None,
+) -> AsyncIterator[dict]:
+    """The turn on ``provider``; on a provider failure the next agent of the list takes over.
+
+    A journal of this turn's tool calls goes to the next agent, so it does not repeat side effects.
+    With nobody left the turn pauses and goes on by itself once an agent is back.
+    """
+    import time
+
+    from .fallback import (
+        CAP_WORKSPACE,
+        ChatFallback,
+        Failure,
+        TurnJournal,
+        capable,
+        classify_exception,
+        classify_failure,
+        handoff_prompt,
+        next_agent,
+        wait_for_agent,
+    )
+    from .fallback_ha import async_load_book, async_probe, available_of, caps_of, fallback_chain, known_reset
+    from .fallback_text import notice_text, switch_text
+
+    book = await async_load_book(hass, data)
+    chain = fallback_chain(data)
+    providers = data.get("providers") or {}
+    caps = caps_of(data)
+    journal = TurnJournal()
+    tried: list[str] = []
+    shown: list[str] = []
+    prov = provider
+    text, earlier = outbound, prior
+    while True:
+        agent_id = prov.info.id
+        name = _agent_name(prov)
+        failure: Failure | None = None
+        had_error = False
+        try:
+            async for event in run_agent(prov, text, earlier):
+                kind = event.get("type")
+                if failure is not None:
+                    # Read the failed agent's stream to its end (the Runtime frees the chat then);
+                    # only what was billed still counts.
+                    if kind in {"usage", "plan_usage", "plan_notice"}:
+                        yield event
+                    continue
+                if kind == "error":
+                    found = classify_failure(event)
+                    if found is not None:
+                        failure = found
+                        logger.info(
+                            "fallback session=%s agent=%s failed (%s): %s",
+                            session.id,
+                            agent_id,
+                            found.kind,
+                            str(event.get("message") or "")[:200],
+                        )
+                        continue
+                    had_error = True
+                elif kind == "tool":
+                    journal.note(event, name)
+                elif kind == "text":
+                    shown.append(str(event.get("delta") or ""))
+                yield event
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            found = classify_exception(exc)
+            if found is None:
+                raise
+            logger.info("fallback session=%s agent=%s raised (%s): %s", session.id, agent_id, found.kind, exc)
+            failure = found
+        if failure is None:
+            if not had_error:
+                book.mark_ok(agent_id)
+            return
+        failure = known_reset(hass, prov, failure)
+        book.mark_failed(agent_id, failure)
+        tried.append(agent_id)
+        wants = set(needs)
+        if journal.needs_workspace():
+            wants.add(CAP_WORKSPACE)
+        reset = _format_plan_reset(hass, failure.reset_at) if failure.reset_at else ""
+        nxt = next_agent(chain, tried=tried, needs=wants, caps_of=caps, book=book, available=available_of(data))
+        if nxt is not None and nxt in providers:
+            yield _fallback_event(
+                "switch",
+                switch_text(language, failure.kind, name, _agent_name(providers[nxt]), reset),
+                providers[nxt],
+                reason=failure.kind,
+                reset_at=failure.reset_at,
+                **{"from": agent_id},
+            )
+        else:
+            if not capable(chain, wants, caps):
+                yield {"type": "error", "message": notice_text(language, "none")}
+                return
+            wake_at = min(book.until(agent) for agent in capable(chain, wants, caps))
+            paused = notice_text(language, "paused", reset=_format_plan_reset(hass, int(wake_at)))
+            yield _fallback_event("paused", paused, reason=failure.kind, reset_at=int(wake_at), **{"from": agent_id})
+            logger.info("fallback session=%s paused until %s", session.id, int(wake_at))
+
+            async def nap(seconds: float) -> None:
+                # Sleep in slices with a status line, so the open chat and proxies keep the stream.
+                left = float(seconds)
+                while left > 0:
+                    step = min(left, 60.0)
+                    await _pause_sleep(step)
+                    left -= step
+                    if keepalive is not None and left > 0:
+                        await keepalive({"type": "status", "text": paused})
+
+            nxt = await wait_for_agent(
+                chain,
+                needs=wants,
+                caps_of=caps,
+                book=book,
+                probe=lambda agent: async_probe(hass, data, agent),
+                sleep=nap,
+            )
+            providers = data.get("providers") or {}
+            if nxt is None or nxt not in providers:
+                yield {"type": "error", "message": notice_text(language, "gave_up")}
+                return
+            tried = [agent for agent in tried if agent != nxt]
+            yield _fallback_event(
+                "resumed", notice_text(language, "resumed", next_agent=_agent_name(providers[nxt])), providers[nxt]
+            )
+        await _move_chat(hass, store, user_id, session, nxt)
+        state = book.chat(session.id)
+        book.set_chat(
+            session.id,
+            ChatFallback(
+                active=nxt,
+                preferred=chain[0],
+                fell_back=nxt != chain[0],
+                reason=failure.kind,
+                switched_at=time.time(),
+                promoted_at=state.promoted_at if state else 0.0,
+            ),
+        )
+        prov = providers[nxt]
+        active[0] = prov
+        text = handoff_prompt(outbound, journal, failed_agent=name, reason=failure.kind, partial="".join(shown))
+        earlier = await transcript_for(prov) if _is_runtime_provider(prov) else ""
 
 
 class ChatView(HomeAssistantView):
@@ -1128,54 +1502,76 @@ class ChatView(HomeAssistantView):
             await async_bind_runtime(hass, data, force=True)
             providers = data.get("providers") or {}
         provider = None if assist else (providers.get(session.provider) or _send_provider(data, session))
+        chain = [] if assist else _fallback_chain_of(data)
+        fallback_notices: list[dict] = []
+        turn_needs: set[str] = set()
+        if chain and provider is not None:
+            from .fallback import CAP_WORKSPACE
+            from .fallback_ha import base_needs
+
+            turn_needs = base_needs()
+            if body.get("workspace") or body.get("needs_workspace"):
+                # A job that must run in a workspace or shell: chat-only cloud agents are skipped.
+                turn_needs.add(CAP_WORKSPACE)
+            provider, fallback_notices = await _fallback_turn_start(
+                hass, data, store, user_id, session, provider, turn_needs, str(body.get("language") or "")
+            )
         if switcher and provider is not None and provider is providers.get(session.provider):
             provider = _with_model(provider, session.model)
         token_mode = provider_token_mode(provider)
         extras = token_mode_allows_extras(token_mode)
         origin = _frontend_origin(request, body)
         page_note = format_ui_page(parse_ui_page(body.get("page")))
-        events_json = json.dumps(image_events(images) + file_events(files), ensure_ascii=False)
-        sent = await hass.async_add_executor_job(store.add_message, session.id, "user", message, events_json)
-        await hass.async_add_executor_job(store.rename_if_default, session.id, title_from_prompt(message))
-        count = await hass.async_add_executor_job(lambda: len(store.list_messages(session.id)))
-        suggest = (
-            getattr(provider, "suggest_title", None)
-            if extras and count <= 1 and needs_title_summary(message)
-            else None
+        cross = bool(getattr(settings, "cross_chat", False))
+        # In every token mode: the save modes only get a smaller excerpt.
+        note, note_chats = await hass.async_add_executor_job(
+            other_chat_context, store, user_id, session.id, message, cross, cross_chat_budget(token_mode)
         )
+        user_events = image_events(images) + file_events(files)
+        if note:
+            # Kept with the message, so a resumed, restarted or switched agent gets it again.
+            user_events.append(cross_chat_event(note, note_chats))
+        events_json = json.dumps(user_events, ensure_ascii=False)
+        sent = await hass.async_add_executor_job(store.add_message, session.id, "user", message, events_json)
+        first_title = await hass.async_add_executor_job(
+            store.rename_if_default, session.id, title_from_prompt(message)
+        )
+        count = await hass.async_add_executor_job(lambda: len(store.list_messages(session.id)))
+        first_turn_title = bool(extras and count <= 1 and needs_title_summary(message))
+        suggest = getattr(provider, "suggest_title", None) if first_turn_title else None
         outbound = attach_files_to_message(message, files) if token_mode_allows_files(token_mode) else message
         if page_note and extras:
             outbound = f"{page_note}\n\n{outbound}"
         language = str(body.get("language") or "").strip()
-        cross = bool(getattr(settings, "cross_chat", False))
-        note = (
-            ""
-            if not extras
-            else await hass.async_add_executor_job(other_chat_note, store, user_id, session.id, message, cross)
-        )
         if note:
+            # Last, after the message: clipping in the save modes cuts the message, never the excerpt.
             outbound = f"{outbound}\n\n{note}"
-        handoff = ""
-        if assist or _is_runtime_provider(provider):
+        async def transcript_for(prov) -> str:
+            """The earlier chat for an agent that keeps no history of its own (Runtime, Assist)."""
             rows = await hass.async_add_executor_job(store.list_messages, session.id)
-            handoff = handoff_note(
+            text = handoff_note(
                 rows,
                 session.title,
-                mode=token_mode,
-                model=str(getattr(session, "model", "") or getattr(provider, "model", "") or ""),
+                mode=provider_token_mode(prov),
+                model=str(getattr(session, "model", "") or getattr(prov, "model", "") or ""),
                 manual_window=int(getattr(settings, "context_window", 0) or 0),
                 zone=house_zone(hass),
             )
-            if _is_runtime_provider(provider):
+            if _is_runtime_provider(prov):
                 logger.info(
                     "runtime handoff session=%s prior=%s chars=%s kind=%s",
                     session.id,
                     max(0, len(rows) - 1),
-                    len(handoff),
-                    getattr(provider, "kind", ""),
+                    len(text),
+                    getattr(prov, "kind", ""),
                 )
-                if len(rows) > 1 and not handoff:
+                if len(rows) > 1 and not text:
                     logger.warning("runtime handoff empty despite stored turns session=%s", session.id)
+            return text
+
+        handoff = ""
+        if assist or _is_runtime_provider(provider):
+            handoff = await transcript_for(provider)
         access_token = _bearer(request)
         runtime_headers = _runtime_headers(request)
 
@@ -1184,7 +1580,77 @@ class ChatView(HomeAssistantView):
                 hass.async_add_executor_job(store.set_agent_id, session.id, agent_id)
             session.agent_id = agent_id
 
+        async def run_agent(prov, text: str, prior: str):
+            """One agent's part of the turn: ``text`` is the message, ``prior`` the earlier chat."""
+            if _is_runtime_provider(prov):
+                async for event in _runtime_chat(
+                    hass,
+                    user_id,
+                    session,
+                    text,
+                    origin,
+                    images,
+                    files,
+                    language,
+                    runtime_headers,
+                    model=str(getattr(prov, "model", "") or ""),
+                    effort=str(getattr(prov, "effort", "") or ""),
+                    api_key=str(getattr(prov, "api_key", "") or ""),
+                    access_token=access_token,
+                    handoff=prior,
+                    question=message,
+                    admin=admin,
+                    agent=_agent_label(prov),
+                    allow_internet=bool(getattr(prov, "allow_internet", False)),
+                    token_mode=provider_token_mode(prov),
+                    runtime_provider=str(getattr(prov, "kind", "") or "cursor"),
+                    title=first_turn_title and prov is provider,
+                ):
+                    yield event
+                return
+            if prov is None:
+                yield {"type": "error", "message": "Add an agent under AI Workspace in Devices & services."}
+                return
+            async for event in prov.send(
+                session,
+                text,
+                on_agent_id,
+                access_token=access_token,
+                frontend_origin=origin,
+                images=images,
+                language=language,
+                tools=bool(images) or bool(files) or wants_house_tools(message) or mentions_chat(message),
+                admin=admin,
+                force_tools=not images and not files and wants_house_tools(message),
+                **(await _activity_kwargs(hass, prov, user_id, session.id, access_token)),
+            ):
+                yield event
+
+        # The agent answering right now; a fallback moves it down the list during the turn.
+        active = [provider]
+
         async def events():
+            for notice in fallback_notices:
+                yield notice
+            if chain and not assist and provider is not None:
+                async for event in _fallback_events(
+                    hass,
+                    data,
+                    store,
+                    user_id,
+                    session,
+                    provider,
+                    run_agent,
+                    transcript_for,
+                    outbound=outbound,
+                    prior=handoff,
+                    needs=turn_needs,
+                    language=language,
+                    active=active,
+                    keepalive=send,
+                ):
+                    yield event
+                return
             if assist:
                 async for event in async_assist_events(
                     hass,
@@ -1193,52 +1659,11 @@ class ChatView(HomeAssistantView):
                     session.id,
                     attach_files_to_message(message, files),
                     language,
-                    page_note,
+                    "\n\n".join(part for part in (page_note, note) if part),
                 ):
                     yield event
                 return
-            if _is_runtime_provider(provider):
-                async for event in _runtime_chat(
-                    hass,
-                    user_id,
-                    session,
-                    outbound,
-                    origin,
-                    images,
-                    files,
-                    language,
-                    runtime_headers,
-                    model=str(getattr(provider, "model", "") or ""),
-                    effort=str(getattr(provider, "effort", "") or ""),
-                    api_key=str(getattr(provider, "api_key", "") or ""),
-                    access_token=access_token,
-                    handoff=handoff,
-                    question=message,
-                    admin=admin,
-                    agent=_agent_label(provider),
-                    allow_internet=bool(getattr(provider, "allow_internet", False)),
-                    token_mode=token_mode,
-                    check_house=bool(getattr(provider, "check_house", True)),
-                    runtime_provider=str(getattr(provider, "kind", "") or "cursor"),
-                ):
-                    yield event
-                return
-            if provider is None:
-                yield {"type": "error", "message": "Add an agent under AI Workspace in Devices & services."}
-                return
-            async for event in provider.send(
-                session,
-                outbound,
-                on_agent_id,
-                access_token=access_token,
-                frontend_origin=origin,
-                images=images,
-                language=language,
-                tools=bool(images) or bool(files) or wants_house_tools(message),
-                admin=admin,
-                force_tools=not images and not files and wants_house_tools(message),
-                **(await _activity_kwargs(hass, provider, user_id, session.id, access_token)),
-            ):
+            async for event in run_agent(provider, outbound, handoff):
                 yield event
 
         response = web.StreamResponse(
@@ -1308,6 +1733,9 @@ class ChatView(HomeAssistantView):
                     await response.prepare(request)
                 except Exception:
                     client_gone = True
+                if first_title:
+                    # The chat just got its first title: the open header shows it now, not "New chat".
+                    await send({"type": "title", "title": first_title})
                 try:
                     async for event in events():
                         kind = event.get("type")
@@ -1333,6 +1761,9 @@ class ChatView(HomeAssistantView):
                             continue
                         elif kind == "tool":
                             after_tool = True
+                            if "detail" in event:
+                                # Arguments and results are for the fallback journal, not the page.
+                                event = {key: value for key, value in event.items() if key != "detail"}
                             tools.append(
                                 {
                                     "name": event.get("name"),
@@ -1369,7 +1800,7 @@ class ChatView(HomeAssistantView):
                         elif kind == "usage":
                             billed = finalize_usage(
                                 event,
-                                model=str(event.get("model") or getattr(provider, "model", "") or ""),
+                                model=str(event.get("model") or getattr(active[0], "model", "") or ""),
                                 run_id=str(event.get("run_id") or ""),
                             )
                             if billed is None:
@@ -1379,7 +1810,7 @@ class ChatView(HomeAssistantView):
                                 store=store,
                                 user_id=user_id,
                                 session_id=session.id,
-                                provider=provider,
+                                provider=active[0],
                                 usage=billed,
                                 origin="chat",
                             )
@@ -1388,7 +1819,7 @@ class ChatView(HomeAssistantView):
                             applied = None
                             if label:
                                 applied = await hass.async_add_executor_job(
-                                    store.apply_generated_title, user_id, session.id, title_from_prompt(message), label
+                                    store.apply_generated_title, user_id, session.id, message, label
                                 )
                             if not applied:
                                 continue
@@ -1396,7 +1827,7 @@ class ChatView(HomeAssistantView):
                         await send(event)
                 except asyncio.CancelledError:
                     try:
-                        await asyncio.shield(_record_unbilled(hass, store, user_id, session.id, provider))
+                        await asyncio.shield(_record_unbilled(hass, store, user_id, session.id, active[0]))
                     except Exception:
                         logger.debug("stopped turn usage not stored", exc_info=True)
                     answer = merge_reply_text("".join(parts), final)
@@ -1418,7 +1849,7 @@ class ChatView(HomeAssistantView):
                     raise
                 except Exception as exc:
                     logger.exception("chat failed session=%s", session.id)
-                    await _record_unbilled(hass, store, user_id, session.id, provider)
+                    await _record_unbilled(hass, store, user_id, session.id, active[0])
                     error = public_error(redact(str(exc), [settings.cursor_api_key, settings.api_key, settings.mcp_token]))
                     await send({"type": "error", "message": error})
                 answer = merge_reply_text("".join(parts), final)
@@ -1453,7 +1884,7 @@ class ChatView(HomeAssistantView):
                 title = accept_generated_title(message, raw or "")
                 if title:
                     applied = await hass.async_add_executor_job(
-                        store.apply_generated_title, user_id, session.id, title_from_prompt(message), title
+                        store.apply_generated_title, user_id, session.id, message, title
                     )
                     if applied:
                         await send({"type": "title", "title": applied})
@@ -1746,6 +2177,70 @@ class NotesMcpView(HomeAssistantView):
                     "id": req_id,
                     "error": {"code": -32601, "message": f"Method not found: {method}"},
                 },
+                status=200,
+            )
+        if req_id is None:
+            return web.Response(status=202)
+        return web.json_response({"jsonrpc": "2.0", "id": req_id, "result": result})
+
+
+class ChatsMcpView(HomeAssistantView):
+    """Read-only list_chats / read_chat over MCP for agents on the Runtime. Only the caller's own chats."""
+
+    url = "/api/ai_workspace/chats/mcp"
+    name = "api:ai_workspace:chats:mcp"
+    requires_auth = True
+
+    async def post(self, request: web.Request) -> web.Response:
+        hass = _hass(request)
+        user_id = _user_id(request)
+        try:
+            body = await request.json()
+        except json.JSONDecodeError:
+            return web.json_response(
+                {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Parse error"}},
+                status=400,
+            )
+        if not isinstance(body, dict):
+            return web.json_response(
+                {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid request"}},
+                status=400,
+            )
+        req_id = body.get("id")
+        method = str(body.get("method") or "")
+        params = body.get("params") if isinstance(body.get("params"), dict) else {}
+        from .chat_tools import READ_TOOL, ChatsClient
+
+        store: Store = _runtime(hass)["store"]
+        client = ChatsClient(hass, store, user_id, str(request.query.get("session") or ""))
+        if method.startswith("notifications/"):
+            return web.Response(status=202)
+        if method == "initialize":
+            result = {
+                "protocolVersion": "2025-03-26",
+                "capabilities": {"tools": {}},
+                "serverInfo": {"name": "ai-workspace-chats", "version": "1"},
+            }
+        elif method == "tools/list":
+            result = {"tools": await client.list_tools()}
+        elif method == "tools/call":
+            name = str(params.get("name") or "")
+            arguments = params.get("arguments") if isinstance(params.get("arguments"), dict) else {}
+            try:
+                payload = await client.call_tool(name or READ_TOOL, arguments)
+            except Exception as exc:
+                return web.json_response(
+                    {"jsonrpc": "2.0", "id": req_id, "error": {"code": -32000, "message": str(exc)[:300]}},
+                    status=200,
+                )
+            text = payload.get("text") if isinstance(payload, dict) and payload.get("text") else None
+            content = text or json.dumps(payload, ensure_ascii=False)
+            result = {"content": [{"type": "text", "text": content}], "structuredContent": payload}
+        elif method == "ping":
+            result = {}
+        else:
+            return web.json_response(
+                {"jsonrpc": "2.0", "id": req_id, "error": {"code": -32601, "message": f"Method not found: {method}"}},
                 status=200,
             )
         if req_id is None:
@@ -2058,9 +2553,13 @@ def register_views(hass: HomeAssistant) -> None:
     hass.http.register_view(HouseMapMcpView)
     hass.http.register_view(CatalogMcpView)
     hass.http.register_view(NotesMcpView)
+    hass.http.register_view(ChatsMcpView)
     hass.http.register_view(ActivityView)
     hass.http.register_view(ActivityRollbackView)
     hass.http.register_view(McpProxyView)
     hass.http.register_view(ActivityPrepareView)
     hass.http.register_view(ActivityCommitView)
     register_approval_views(hass)
+    from .tasks_http import register_task_views
+
+    register_task_views(hass)

@@ -11,9 +11,9 @@ Ways to get it there:
      `codex login --device-auth` in the terminal.
   3. CODEX_AUTH_JSON: an auth.json from `codex login` on another computer (a mounted file or the JSON
      itself). It is copied into CODEX_HOME once, when CODEX_HOME has none.
-An OpenAI API key (agent field in Home Assistant, App option openai_api_key, or OPENAI_API_KEY /
-CODEX_API_KEY) is the fallback when there is no auth.json; it is handed to Codex per chat in memory
-and never written to disk.
+An OpenAI API key on the agent in Home Assistant wins over auth.json; OPENAI_API_KEY / CODEX_API_KEY (Docker
+only) is the fallback when there is no auth.json. A key is handed to Codex per chat in memory and never
+written to disk.
 
 Device-code sign-in has to be allowed once for the ChatGPT account (ChatGPT Settings > Security) or
 by a workspace admin. Without it OpenAI refuses the code.
@@ -167,6 +167,25 @@ def auth_info(path: Path) -> dict[str, Any]:
     if str(data.get("OPENAI_API_KEY") or "").strip():
         return {"mode": "api-key", "plan": None}
     return {"mode": "", "plan": None}
+
+
+def account_key(path: Path) -> str:
+    """Which ChatGPT account auth.json signs in (account id, else the token subject), or "".
+
+    Tokens rotate while Codex refreshes them; the account does not. Only used, hashed, to tell which
+    credential a plan snapshot came from (app.plan_quota.credential_id). Never sent as is.
+    """
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return ""
+    tokens = data.get("tokens") if isinstance(data, dict) and isinstance(data.get("tokens"), dict) else {}
+    if not (tokens.get("refresh_token") or tokens.get("access_token")):
+        return ""
+    claims = _jwt_claims(str(tokens.get("id_token") or ""))
+    auth = claims.get("https://api.openai.com/auth")
+    account = (auth.get("chatgpt_account_id") if isinstance(auth, dict) else None) or tokens.get("account_id")
+    return str(account or claims.get("sub") or "signed-in")
 
 
 def _seed_text(raw: str) -> str:
@@ -421,7 +440,7 @@ def _describe(settings: Settings) -> str:
     if source == "api-key":
         return "an OpenAI API key is stored in auth.json"
     if source == "env-api":
-        return "not signed in; the OpenAI API key from the options or environment is used"
+        return "not signed in; OPENAI_API_KEY from the environment is used"
     return "not signed in"
 
 

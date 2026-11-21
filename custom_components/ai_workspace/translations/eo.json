@@ -45,13 +45,13 @@
               "keep_chats": "Babilejoj konservotaj"
             },
             "data_description": {
-              "default_agent": "Agento, per kiu nova babilo komenciĝas. Ĉiu babilo memoras la agenton (kaj modelon) lastfoje uzitan. Laste uzita: la agento, kiun vi plej lastatempe elektis en ĉi tiu retumilo.",
+              "default_agent": "Agento, per kiu nova babilo komenciĝas. Ĉiu babilo memoras la agenton (kaj modelon) lastfoje uzitan. Laste uzita: la agento, kiun vi plej lastatempe elektis en ĉi tiu retumilo. Kiam la rezerva agento estas ŝaltita, ĝia agentolisto decidas anstataŭe.",
               "model_switcher": "Defaŭlte malŝaltita. Aldonas modelelektilon apud la agentelektilo, por ke babilo povu uzi alian modelon de la sama agento. La propra modelo de la agento restas la defaŭlta.",
               "enable_sidebar": "Aldonas AI Workspace al la flanka strio de Home Assistant. Malŝalte, administrantoj ankoraŭ povas malfermi /ai-workspace rekte.",
               "enable_overlay": "Ronda AI-butono en la angulo de ĉiu paĝo de Home Assistant, por ke vi povu demandi sen forlasi la paĝon. Ĉe paĝoj de Agordoj ĝi sidas pli alte por ne kovri aliajn butonojn.",
               "enable_dictate": "Mikrofona butono en la mesaĝa kampo. Kaŝu ĝin se vi neniam diktas.",
               "allow_users": "Malŝalte: nur administrantoj. Ŝalte: ne-administrantoj ricevas la ŝveban babilejon, kun la sama aliro al Home Assistant kiel ilia propra konto. La plena paĝo de AI Workspace restas nur por administrantoj. Ŝaltu ĉi tion nur se vi fidas ĉiujn, kiuj havas konton.",
-              "ui_theme": "Defaŭlte malŝalta. Konstruas la babilejon el la propraj interfacaj partoj de Home Assistant. Provu ĝin se la babilejo ne kongruas kun via etoso.",
+              "ui_theme": "Defaŭlte malŝalta. Ŝanĝas nur la mesaĝkampon kaj la elektilojn de agento kaj modelo al la stilo de Home Assistant. Mesaĝoj ĉiam uzas la norman aspekton.",
               "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi mallongan eltiraĵon el alia babilejo, kies titolo kunhavas vortojn kun ĝi, sen ke vi mencias tiun babilejon. Helpas kiam vi jam parolis pri la sama ĉambro aŭ aŭtomatigo. La alia babilejo ne ŝanĝiĝas.",
               "keep_chats": "Plej novaj nealpinglitaj babilejoj konservataj po persono. Pli malnovaj estas forigitaj, por ke la listo ne kresku senfine. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."
             }
@@ -160,15 +160,29 @@
               "keep_chats": "Babilejoj konservotaj"
             },
             "data_description": {
-              "default_agent": "Agento, per kiu nova babilo komenciĝas. Ĉiu babilo memoras la agenton (kaj modelon) lastfoje uzitan. Laste uzita: la agento, kiun vi plej lastatempe elektis en ĉi tiu retumilo.",
+              "default_agent": "Agento, per kiu nova babilo komenciĝas. Ĉiu babilo memoras la agenton (kaj modelon) lastfoje uzitan. Laste uzita: la agento, kiun vi plej lastatempe elektis en ĉi tiu retumilo. Kiam la rezerva agento estas ŝaltita, ĝia agentolisto decidas anstataŭe.",
               "model_switcher": "Defaŭlte malŝaltita. Aldonas modelelektilon apud la agentelektilo, por ke babilo povu uzi alian modelon de la sama agento. La propra modelo de la agento restas la defaŭlta.",
               "enable_sidebar": "Aldonas AI Workspace al la flanka strio de Home Assistant. Malŝalte, administrantoj ankoraŭ povas malfermi /ai-workspace rekte.",
               "enable_overlay": "Ronda AI-butono en la angulo de ĉiu paĝo de Home Assistant, por ke vi povu demandi sen forlasi la paĝon. Ĉe paĝoj de Agordoj ĝi sidas pli alte por ne kovri aliajn butonojn.",
               "enable_dictate": "Mikrofona butono en la mesaĝa kampo. Kaŝu ĝin se vi neniam diktas.",
               "allow_users": "Malŝalte: nur administrantoj. Ŝalte: ne-administrantoj ricevas la ŝveban babilejon, kun la sama aliro al Home Assistant kiel ilia propra konto. La plena paĝo de AI Workspace restas nur por administrantoj. Ŝaltu ĉi tion nur se vi fidas ĉiujn, kiuj havas konton.",
-              "ui_theme": "Defaŭlte malŝalta. Konstruas la babilejon el la propraj interfacaj partoj de Home Assistant. Provu ĝin se la babilejo ne kongruas kun via etoso.",
+              "ui_theme": "Defaŭlte malŝalta. Ŝanĝas nur la mesaĝkampon kaj la elektilojn de agento kaj modelo al la stilo de Home Assistant. Mesaĝoj ĉiam uzas la norman aspekton.",
               "cross_chat": "Defaŭlte malŝalta. Kiam ŝaltita, demando povas uzi mallongan eltiraĵon el alia babilejo, kies titolo kunhavas vortojn kun ĝi, sen ke vi mencias tiun babilejon. Helpas kiam vi jam parolis pri la sama ĉambro aŭ aŭtomatigo. La alia babilejo ne ŝanĝiĝas.",
               "keep_chats": "Plej novaj nealpinglitaj babilejoj konservataj po persono. Pli malnovaj estas forigitaj, por ke la listo ne kresku senfine. Alpinglitaj babilejoj ĉiam restas. Defaŭlte 30."
+            }
+          },
+          "fallback": {
+            "name": "Rezerva agento",
+            "description": "Laŭvola. Kiam la provizanto de agento fiaskas (plana aŭ ĵetona limo, rapideca limo, eksvalidiĝinta ensaluto, tempolimo, konekta eraro, troŝarĝita servilo), la sekva agento en la listo daŭrigas la taskon. Kiam ŝaltita, ĉi tiu listo anstataŭas la defaŭltan agenton.",
+            "data": {
+              "fallback_enabled": "Ŝalti rezervan agenton",
+              "fallback_agents": "Agentoj laŭ ordo",
+              "fallback_return": "Reen al la preferata agento"
+            },
+            "data_description": {
+              "fallback_enabled": "Defaŭlte malŝaltita. Haltigita respondo, fiaskanta ilo, rifuzo aŭ malĝusta peto neniam ŝanĝas la agenton.",
+              "fallback_agents": "Uzata nur kiam rezervo estas ŝaltita; ĝis vi konservas kun ŝaltita rezervo, la listo estas nur propono. Taskoj sekvas la saman liston. La ordo gravas: la unua agento estas la preferata kaj novaj babiloj komenciĝas per ĝi; la aliaj transprenas de supre malsupren. Trenu agenton por ŝanĝi la ordon. Taskoj, kiuj bezonas laborspacon aŭ ŝelon, iras nur al Runtime-agentoj (Claude SDK, Cursor, Codex).",
+              "fallback_return": "Malŝaltita: la babilo restas ĉe la agento, kiu transprenis. Ĉe nova mesaĝo: la sekva mesaĝo reprovas la preferatan agenton. Post restarigo aŭ atendo: nur kiam ĝia limo restariĝis aŭ la atendotempo (5, 15, 60 minutoj) pasis. Neniam meze de respondo."
             }
           },
           "cost": {
@@ -310,8 +324,8 @@
         "runtime_old": "Ĉi tiu rultempo ankoraŭ ne povas ensaluti. Ĝisdatigu AI Workspace Runtime, aŭ algluu ĵetonon en la agenta formularo.",
         "codex_runtime_old": "Ĝisdatigu la AI Workspace Runtime al 1.6.0 aŭ pli nova por Codex-agentoj.",
         "codex_key_required": "Aldonu OpenAI-API-ŝlosilon sub Codex (rultempo), aŭ ensalutu per ChatGPT sur la AI Workspace Runtime.",
-        "not_signed_in_yet": "OpenAI ankoraŭ ne konfirmis la ensaluton. Entajpu la kodon en la paĝo de OpenAI, poste sendu denove.",
-        "no_code": "Codex ne ricevis ensalutan kodon de OpenAI. Kontrolu, ke la Runtime atingas auth.openai.com, kaj reprovu."
+        "no_code": "Codex ne ricevis ensalutan kodon de OpenAI. Kontrolu, ke la Runtime atingas auth.openai.com, kaj reprovu.",
+        "codex_login_failed": "OpenAI ne konfirmis la ensaluton. Se ĝi rifuzis la kodon, permesu unufoje ensaluton per aparata kodo en ChatGPT sub Agordoj → Sekureco (por laborspaca konto, la administranto permesas ĝin), kaj provu denove."
       },
       "step": {
         "provider": {
@@ -625,8 +639,7 @@
           }
         },
         "codex_login": {
-          "title": "Ensaluti per ChatGPT",
-          "description": "1. Malfermu ĉi tiun ligilon kaj ensalutu per la ChatGPT-konto kun via abono: [Ensaluti per ChatGPT]({url})\n2. Tie entajpu ĉi tiun unufojan kodon: **{code}**\n3. Poste sendu ĉi tie.\n\nLa kodo validas 15 minutojn. Via ChatGPT-pasvorto neniam trairas Home Assistant. Se OpenAI rifuzas la kodon, ŝaltu unufoje ensaluton per aparata kodo en ChatGPT sub **Agordoj → Sekureco** (por laborspaca konto, la administranto permesas ĝin)."
+          "title": "Ensaluti per ChatGPT"
         },
         "codex_signed_in": {
           "title": "Ensalutinta",
@@ -639,6 +652,9 @@
       },
       "abort": {
         "reconfigure_successful": "Agent ĝisdatigita."
+      },
+      "progress": {
+        "codex_login": "1. Malfermu ĉi tiun ligilon kaj ensalutu per la ChatGPT-konto kun via abono: [Ensaluti per ChatGPT]({url})\n2. Tie entajpu ĉi tiun unufojan kodon: **{code}**\n3. Jen ĉio: ĉi tiu fenestro daŭrigas per si mem, tuj kiam OpenAI konfirmas la kodon.\n\nLa kodo validas 15 minutojn. Via ChatGPT-pasvorto neniam trairas Home Assistant. Se OpenAI rifuzas la kodon, ŝaltu unufoje ensaluton per aparata kodo en ChatGPT sub **Agordoj → Sekureco** (por laborspaca konto, la administranto permesas ĝin)."
       }
     }
   },
@@ -672,6 +688,60 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Propra MCP-URL"
+      }
+    },
+    "default_agent": {
+      "options": {
+        "last_used": "Laste uzita"
+      }
+    },
+    "fallback_return": {
+      "options": {
+        "off": "Malŝaltita",
+        "new_message": "Ĉe nova mesaĝo",
+        "after_reset": "Post restarigo aŭ atendo"
+      }
+    },
+    "task_chat": {
+      "options": {
+        "none": "Neniu babilejo",
+        "task": "Taska babilejo"
+      }
+    }
+  },
+  "services": {
+    "run_task": {
+      "name": "Ruli agentan taskon",
+      "description": "Rulas promptilon per agento de AI Workspace, ekzemple laŭ horaro. Ĉiu rulo komenciĝas denove: la promptilo diru ĉion, kion la agento bezonas. Ŝablonoj funkcias en la promptilo.",
+      "fields": {
+        "prompt": {
+          "name": "Promptilo",
+          "description": "Kion la agento faru. Memstara: la agento memoras nenion el antaŭaj ruloj (krom la taska babilejo, se ĝi restas). Ŝablonoj estas permesitaj."
+        },
+        "task_name": {
+          "name": "Nomo de la tasko",
+          "description": "Nomo por la taska babilejo, la protokoloj kaj la lasta rulo. Necesa por taska babilejo."
+        },
+        "agent": {
+          "name": "Agento",
+          "description": "Identigilo, titolo aŭ konversacia ento de la agento. Malplena: la defaŭlta agento; se ĝi estas 'Laste uzita', la unua Runtime-agento (Claude, Cursor, Codex). Ŝanĝo al aliaj agentoj nur kiam rezervo (Fallback) estas ŝaltita."
+        },
+        "chat": {
+          "name": "Babilejo",
+          "description": "Konservi la rulojn en unu taska babilejo, nomita laŭ la tasko."
+        },
+        "notify": {
+          "name": "Sciigi",
+          "description": "Sciiga servo aŭ ento por mallonga rezulto, ekzemple notify.mobile_app_my_phone."
+        },
+        "allow_changes": {
+          "name": "Permesi ŝanĝojn",
+          "description": "Malŝaltita: la agento nur legas Home Assistant. Ŝaltita: ĝi rajtas regi aparatojn. Aŭtomatigoj, skriptoj kaj aliaj taskoj ĉiam restas malpermesitaj."
+        },
+        "timeout": {
+          "name": "Tempolimo",
+          "description": "Sekundoj ĝis la rulo ĉesas."
+        }
       }
     }
   }

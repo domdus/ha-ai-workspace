@@ -45,13 +45,13 @@
               "keep_chats": "Chat da conservare"
             },
             "data_description": {
-              "default_agent": "Agente con cui inizia una nuova chat. Ogni chat ricorda l'agente (e il modello) usato per ultimo. Ultimo usato: l'agente scelto più di recente in questo browser.",
+              "default_agent": "Agente con cui inizia una nuova chat. Ogni chat ricorda l'agente (e il modello) usato per ultimo. Ultimo usato: l'agente scelto più di recente in questo browser. Con la riserva attiva decide invece il suo elenco di agenti.",
               "model_switcher": "Disattivato per impostazione predefinita. Aggiunge un selettore di modello accanto a quello dell'agente, così una chat può usare un altro modello dello stesso agente. Il modello dell'agente resta quello predefinito.",
               "enable_sidebar": "Aggiunge AI Workspace alla barra laterale di Home Assistant. Disattivo: gli amministratori possono comunque aprire /ai-workspace direttamente.",
               "enable_overlay": "Un pulsante IA rotondo nell'angolo di ogni pagina di Home Assistant, così puoi chiedere senza lasciare la pagina. Nelle pagine Impostazioni sta più in alto per non coprire altri pulsanti.",
               "enable_dictate": "Pulsante microfono nel campo del messaggio. Nascondilo se non detti mai.",
               "allow_users": "Disattivo: solo amministratori. Attivo: gli utenti non amministratori hanno la chat mobile, con lo stesso accesso a Home Assistant del proprio account. La pagina completa di AI Workspace resta solo per gli amministratori. Attivalo solo se ti fidi di tutti quelli che hanno un account.",
-              "ui_theme": "Disattivo per impostazione predefinita. Costruisce la chat con gli elementi dell'interfaccia di Home Assistant. Provalo se la chat non si adatta al tuo tema.",
+              "ui_theme": "Disattivo per impostazione predefinita. Cambia solo il campo del messaggio e i selettori di agente e modello allo stile di Home Assistant. I messaggi usano sempre l'aspetto standard.",
               "cross_chat": "Disattivo per impostazione predefinita. Se attivo, una domanda può usare un breve estratto di un'altra chat il cui titolo ha parole in comune, senza che tu la nomini. Utile se hai già parlato della stessa stanza o automazione. L'altra chat non viene modificata.",
               "keep_chats": "Chat non fissate più recenti conservate per persona. Le più vecchie vengono eliminate così l'elenco non cresce all'infinito. Le chat fissate restano sempre. Predefinito 30."
             }
@@ -160,15 +160,29 @@
               "keep_chats": "Chat da conservare"
             },
             "data_description": {
-              "default_agent": "Agente con cui inizia una nuova chat. Ogni chat ricorda l'agente (e il modello) usato per ultimo. Ultimo usato: l'agente scelto più di recente in questo browser.",
+              "default_agent": "Agente con cui inizia una nuova chat. Ogni chat ricorda l'agente (e il modello) usato per ultimo. Ultimo usato: l'agente scelto più di recente in questo browser. Con la riserva attiva decide invece il suo elenco di agenti.",
               "model_switcher": "Disattivato per impostazione predefinita. Aggiunge un selettore di modello accanto a quello dell'agente, così una chat può usare un altro modello dello stesso agente. Il modello dell'agente resta quello predefinito.",
               "enable_sidebar": "Aggiunge AI Workspace alla barra laterale di Home Assistant. Disattivo: gli amministratori possono comunque aprire /ai-workspace direttamente.",
               "enable_overlay": "Un pulsante IA rotondo nell'angolo di ogni pagina di Home Assistant, così puoi chiedere senza lasciare la pagina. Nelle pagine Impostazioni sta più in alto per non coprire altri pulsanti.",
               "enable_dictate": "Pulsante microfono nel campo del messaggio. Nascondilo se non detti mai.",
               "allow_users": "Disattivo: solo amministratori. Attivo: gli utenti non amministratori hanno la chat mobile, con lo stesso accesso a Home Assistant del proprio account. La pagina completa di AI Workspace resta solo per gli amministratori. Attivalo solo se ti fidi di tutti quelli che hanno un account.",
-              "ui_theme": "Disattivo per impostazione predefinita. Costruisce la chat con gli elementi dell'interfaccia di Home Assistant. Provalo se la chat non si adatta al tuo tema.",
+              "ui_theme": "Disattivo per impostazione predefinita. Cambia solo il campo del messaggio e i selettori di agente e modello allo stile di Home Assistant. I messaggi usano sempre l'aspetto standard.",
               "cross_chat": "Disattivo per impostazione predefinita. Se attivo, una domanda può usare un breve estratto di un'altra chat il cui titolo ha parole in comune, senza che tu la nomini. Utile se hai già parlato della stessa stanza o automazione. L'altra chat non viene modificata.",
               "keep_chats": "Chat non fissate più recenti conservate per persona. Le più vecchie vengono eliminate così l'elenco non cresce all'infinito. Le chat fissate restano sempre. Predefinito 30."
+            }
+          },
+          "fallback": {
+            "name": "Riserva",
+            "description": "Facoltativo. Quando il fornitore di un agente fallisce (limite del piano o dei token, limite di frequenza, accesso scaduto, timeout, errore di connessione, server sovraccarico), l'agente successivo dell'elenco continua l'attività. Se attiva, questa lista sostituisce l'agente predefinito.",
+            "data": {
+              "fallback_enabled": "Attiva riserva",
+              "fallback_agents": "Agenti in ordine",
+              "fallback_return": "Ritorno all'agente preferito"
+            },
+            "data_description": {
+              "fallback_enabled": "Disattivato per impostazione predefinita. Fermare una risposta, uno strumento che fallisce, un rifiuto o una richiesta errata non cambiano mai agente.",
+              "fallback_agents": "Usato solo con la riserva attiva; finché non salvi con la riserva attiva, l'elenco è solo un suggerimento. Le attività seguono lo stesso elenco. L'ordine conta: il primo agente è quello preferito e le nuove chat iniziano con lui; gli altri subentrano dall'alto in basso. Trascina un agente per cambiare l'ordine. Le attività che richiedono un workspace o una shell vanno solo agli agenti Runtime (Claude SDK, Cursor, Codex).",
+              "fallback_return": "Disattivato: la chat resta sull'agente subentrato. A ogni nuovo messaggio: il messaggio successivo riprova l'agente preferito. Dopo il reset o l'attesa: solo quando il suo limite è stato ripristinato o l'attesa (5, 15, 60 minuti) è passata. Mai a metà di una risposta."
             }
           },
           "cost": {
@@ -310,8 +324,8 @@
         "runtime_old": "Questo Runtime non supporta ancora l'accesso. Aggiorna AI Workspace Runtime, oppure incolla un token nel modulo dell'agente.",
         "codex_runtime_old": "Aggiorna il Runtime di AI Workspace alla 1.6.0 o successiva per gli agenti Codex.",
         "codex_key_required": "Aggiungi una chiave API OpenAI in Codex (runtime), oppure accedi con ChatGPT sul Runtime di AI Workspace.",
-        "not_signed_in_yet": "OpenAI non ha ancora confermato l'accesso. Inserisci il codice sulla pagina di OpenAI, poi invia di nuovo.",
-        "no_code": "Codex non ha ricevuto un codice di accesso da OpenAI. Verifica che il Runtime raggiunga auth.openai.com e riprova."
+        "no_code": "Codex non ha ricevuto un codice di accesso da OpenAI. Verifica che il Runtime raggiunga auth.openai.com e riprova.",
+        "codex_login_failed": "OpenAI non ha confermato l'accesso. Se ha rifiutato il codice, consenti una volta l'accesso con codice dispositivo in ChatGPT in Impostazioni → Sicurezza (per un account workspace lo consente l'amministratore), poi riprova."
       },
       "step": {
         "provider": {
@@ -625,8 +639,7 @@
           }
         },
         "codex_login": {
-          "title": "Accedi con ChatGPT",
-          "description": "1. Apri questo link e accedi con l'account ChatGPT che ha il tuo piano: [Accedi con ChatGPT]({url})\n2. Inserisci lì questo codice monouso: **{code}**\n3. Poi invia qui.\n\nIl codice vale 15 minuti. La tua password ChatGPT non passa mai da Home Assistant. Se OpenAI rifiuta il codice, attiva una volta l'accesso con codice dispositivo in ChatGPT in **Impostazioni → Sicurezza** (per un account workspace lo consente l'amministratore)."
+          "title": "Accedi con ChatGPT"
         },
         "codex_signed_in": {
           "title": "Accesso effettuato",
@@ -639,6 +652,9 @@
       },
       "abort": {
         "reconfigure_successful": "Agente aggiornato."
+      },
+      "progress": {
+        "codex_login": "1. Apri questo link e accedi con l'account ChatGPT che ha il tuo piano: [Accedi con ChatGPT]({url})\n2. Inserisci lì questo codice monouso: **{code}**\n3. Fatto: questa finestra prosegue da sola non appena OpenAI conferma il codice.\n\nIl codice vale 15 minuti. La tua password ChatGPT non passa mai da Home Assistant. Se OpenAI rifiuta il codice, attiva una volta l'accesso con codice dispositivo in ChatGPT in **Impostazioni → Sicurezza** (per un account workspace lo consente l'amministratore)."
       }
     }
   },
@@ -672,6 +688,60 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "URL MCP personalizzato"
+      }
+    },
+    "default_agent": {
+      "options": {
+        "last_used": "Ultimo usato"
+      }
+    },
+    "fallback_return": {
+      "options": {
+        "off": "Disattivato",
+        "new_message": "A ogni nuovo messaggio",
+        "after_reset": "Dopo il reset o l'attesa"
+      }
+    },
+    "task_chat": {
+      "options": {
+        "none": "Nessuna chat",
+        "task": "Chat dell'attività"
+      }
+    }
+  },
+  "services": {
+    "run_task": {
+      "name": "Esegui attività dell'agente",
+      "description": "Esegue un prompt con un agente di AI Workspace, ad esempio a orari prestabiliti. Ogni esecuzione riparte da zero: il prompt deve contenere tutto ciò che serve all'agente. Nel prompt sono ammessi i template.",
+      "fields": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "Cosa deve fare l'agente. Autonomo: l'agente non ricorda le esecuzioni precedenti (tranne la chat dell'attività, se mantenuta). Template ammessi."
+        },
+        "task_name": {
+          "name": "Nome attività",
+          "description": "Nome per la chat dell'attività, i log e l'ultima esecuzione. Necessario per una chat dell'attività."
+        },
+        "agent": {
+          "name": "Agente",
+          "description": "Id, titolo o entità di conversazione dell'agente. Vuoto: l'agente predefinito; se è su 'Ultimo usato', il primo agente Runtime (Claude, Cursor, Codex). Passa ad altri agenti solo con la riserva (Fallback) attiva."
+        },
+        "chat": {
+          "name": "Chat",
+          "description": "Tenere le esecuzioni in una chat dell'attività, intitolata con il nome dell'attività."
+        },
+        "notify": {
+          "name": "Notifica",
+          "description": "Servizio o entità di notifica per un breve risultato, ad esempio notify.mobile_app_mio_telefono."
+        },
+        "allow_changes": {
+          "name": "Consenti modifiche",
+          "description": "Disattivato: l'agente legge solo Home Assistant. Attivato: può controllare i dispositivi. Automazioni, script e altre attività restano vietati in ogni caso."
+        },
+        "timeout": {
+          "name": "Timeout",
+          "description": "Secondi prima che l'esecuzione si fermi."
+        }
       }
     }
   }

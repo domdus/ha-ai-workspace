@@ -74,10 +74,34 @@ def _call_id(message: Any, block: Any = None) -> str:
     return str(_get(message, "call_id") or _get(message, "callId") or "")
 
 
-def _tool_event(name: str, phase: str, text: str, call_id: str = "") -> dict[str, str]:
+# Arguments and results ride along on tool events, shortened, so Home Assistant can keep a journal
+# of the turn's tool calls for the agent fallback (the next agent must not repeat side effects).
+DETAIL_CHARS = 300
+
+
+def tool_detail(value: Any, limit: int = DETAIL_CHARS) -> str:
+    if value is None or value == "" or value == {} or value == []:
+        return ""
+    if isinstance(value, list):
+        texts = [str(_get(item, "text") or "") for item in value if _get(item, "text")]
+        if texts:
+            value = " ".join(texts)
+    if not isinstance(value, str):
+        try:
+            value = json.dumps(value, ensure_ascii=False, sort_keys=True, default=str)
+        except (TypeError, ValueError):
+            value = str(value)
+    text = " ".join(value.split())
+    return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
+
+
+def _tool_event(name: str, phase: str, text: str, call_id: str = "", detail: Any = None) -> dict[str, str]:
     event = {"type": "tool", "name": name, "phase": phase, "text": text}
     if call_id:
         event["id"] = call_id
+    short = tool_detail(detail)
+    if short:
+        event["detail"] = short
     return event
 
 
@@ -99,7 +123,7 @@ def map_sdk_message(message: Any) -> list[dict[str, str]]:
                 )
                 label = _tool_label(name)
                 events.append(
-                    _tool_event(name, "start", f"Calling {label}...", _call_id(message, block))
+                    _tool_event(name, "start", f"Calling {label}...", _call_id(message, block), _get(block, "input"))
                 )
         return events
     if kind == "thinking":
@@ -113,11 +137,12 @@ def map_sdk_message(message: Any) -> list[dict[str, str]]:
         label = _tool_label(name)
         status = str(_get(message, "status") or "")
         call_id = _call_id(message)
+        result = _get(message, "result") or _get(message, "output")
         if status == "completed":
-            return [_tool_event(name, "end", f"Finished {label}", call_id)]
+            return [_tool_event(name, "end", f"Finished {label}", call_id, result)]
         if status == "error":
-            return [_tool_event(name, "end", f"{label} failed", call_id)]
-        return [_tool_event(name, "start", f"Calling {label}...", call_id)]
+            return [_tool_event(name, "end", f"{label} failed", call_id, result or _get(message, "error"))]
+        return [_tool_event(name, "start", f"Calling {label}...", call_id, _get(message, "args") or _get(message, "input"))]
     if kind == "status":
         text = str(_get(message, "message") or _get(message, "status") or "Working...")
         if text.upper() == "ERROR":

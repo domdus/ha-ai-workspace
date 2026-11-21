@@ -31,7 +31,8 @@ from typing import Any, AsyncIterator, Callable
 from app.codex_login import cli_path, credential_source, sdk_config, sdk_installed
 from app.events import _tool_event
 from app.mcp_config import McpConfigError, load_mcp_servers, merge_mcp_servers, servers_from_chat_mcp
-from app.plan_quota import plan_events_from_sdk, plan_rejection_error
+from app.credentials import codex_runtime_id
+from app.plan_quota import credential_id, plan_events_from_sdk, plan_rejection_error
 from app.providers.base import ProviderInfo
 from app.providers.cursor import CursorRuntime, _take_worker_usage, apply_handoff, apply_standing
 from app.redact import redact
@@ -52,6 +53,20 @@ AUTH_FAILED = (
     "or check the OpenAI API key."
 )
 AUTH_FAILED_CODE = "codex_auth_failed"
+# How Codex words a ChatGPT sign-in that no longer works (expired or reused refresh token, revoked).
+_AUTH_MARKS = (
+    "401",
+    "unauthorized",
+    "sign in again",
+    "log in again",
+    "login again",
+    "refresh token",
+    "refresh_token",
+    "token_expired",
+    "invalid_grant",
+    "not logged in",
+)
+RATE_LIMITS_SECONDS = 10
 START_SECONDS = 60
 INTERRUPT_SECONDS = 10
 # Save tokens keeps a Codex thread while a model call's input stays below this (as on Claude).
@@ -205,6 +220,15 @@ def _tool_name(item: dict[str, Any]) -> str:
     return ""
 
 
+def _codex_result(item: dict[str, Any]) -> Any:
+    """A short result for the tool journal: exit code and output of a command, or the tool's answer."""
+    if item.get("type") == "commandExecution":
+        output = str(item.get("aggregatedOutput") or "").strip()
+        code = item.get("exitCode")
+        return f"exit {code}: {output}" if code is not None else output
+    return item.get("result") or item.get("error") or item.get("changes")
+
+
 def _failed(item: dict[str, Any]) -> bool:
     status = str(item.get("status") or "").lower()
     if status in {"failed", "declined", "error"}:
@@ -253,12 +277,12 @@ def map_notification(method: str, payload: Any, state: TurnState) -> list[dict[s
         if kind == "reasoning":
             events.append({"type": "status", "text": "Thinking..."})
         elif kind == "commandExecution":
-            events.append(_tool_event("shell", "start", _short(f"Running {item.get('command') or ''}"), item_id))
+            events.append(_tool_event("shell", "start", _short(f"Running {item.get('command') or ''}"), item_id, item.get("command")))
         elif kind == "webSearch":
             events.append(_tool_event("web_search", "start", _short(f"Searching the web: {item.get('query') or ''}"), item_id))
         elif _tool_name(item):
             name = _tool_name(item)
-            events.append(_tool_event(name, "start", f"Calling {name}...", item_id))
+            events.append(_tool_event(name, "start", f"Calling {name}...", item_id, item.get("arguments") or item.get("changes")))
     elif method == "item/completed":
         kind = item.get("type")
         if kind == "agentMessage":
@@ -273,7 +297,15 @@ def map_notification(method: str, payload: Any, state: TurnState) -> list[dict[s
                 events.append({"type": "text", "delta": text})
         elif _tool_name(item):
             name = _tool_name(item)
-            events.append(_tool_event(name, "end", "Tool failed" if _failed(item) else "Finished", str(item.get("id") or "")))
+            events.append(
+                _tool_event(
+                    name,
+                    "end",
+                    "Tool failed" if _failed(item) else "Finished",
+                    str(item.get("id") or ""),
+                    _codex_result(item),
+                )
+            )
     elif method == "thread/tokenUsage/updated":
         usage = data.get("tokenUsage") or {}
         if isinstance(usage, dict):
@@ -350,11 +382,21 @@ def _error_kind(error: dict[str, Any] | None) -> str:
     return ""
 
 
+def is_auth_failure(text: str) -> bool:
+    low = str(text or "").lower()
+    return any(mark in low for mark in _AUTH_MARKS)
+
+
+def auth_failed_event() -> dict[str, Any]:
+    """The integration shows this in the chat's language: sign in with ChatGPT again (or a new key)."""
+    return {"type": "error", "message": AUTH_FAILED, "code": AUTH_FAILED_CODE}
+
+
 def error_event(error: dict[str, Any] | None, model: str, secrets: list[str], book: Any = None) -> dict[str, Any]:
     kind = _error_kind(error)
     message = redact(str((error or {}).get("message") or ""), secrets).strip()
-    if kind == "unauthorized":
-        return {"type": "error", "message": AUTH_FAILED, "code": AUTH_FAILED_CODE}
+    if kind == "unauthorized" or (kind not in _API_ERRORS and kind != "modelNotFound" and is_auth_failure(message)):
+        return auth_failed_event()
     if kind == "usageLimitExceeded" and book is not None:
         event = plan_rejection_error("codex", book.get("codex"))
         event["message"] = _API_ERRORS[kind]
@@ -442,6 +484,9 @@ class CodexProvider:
             yield {"type": "error", "message": MISSING_KEY}
             return
         secrets = [key] if key else []
+        # Which credential this turn's plan windows belong to (app.credentials): the ChatGPT sign-in,
+        # or the API key. Home Assistant only shows a snapshot for the agent that ran on it.
+        plan_credential = codex_runtime_id(self.settings) if kind == "chatgpt" else credential_id(key)
         try:
             exclusive = bool((mcp or {}).get("exclusive"))
             file_servers = {} if exclusive else load_mcp_servers(self.settings.mcp_config_path)
@@ -500,7 +545,7 @@ class CodexProvider:
             except Exception as exc:
                 text = self._public(exc, secrets)
                 logger.warning("codex turn failed session=%s: %s", session.id, text)
-                yield {"type": "error", "message": text}
+                yield self._error(text)
                 return
             stream = handle.stream()
             try:
@@ -508,7 +553,7 @@ class CodexProvider:
                     method = str(getattr(note, "method", ""))
                     payload = getattr(note, "payload", None)
                     if method == "account/rateLimits/updated":
-                        for notice in plan_events_from_sdk(book, "codex", as_dict(payload)):
+                        for notice in plan_events_from_sdk(book, "codex", as_dict(payload), plan_credential):
                             yield notice
                         continue
                     for event in map_notification(method, payload, state):
@@ -525,7 +570,7 @@ class CodexProvider:
                 if not state.status:
                     text = self._public(exc, secrets)
                     logger.warning("codex stream failed session=%s: %s", session.id, text)
-                    yield {"type": "error", "message": text}
+                    yield self._error(text)
                     return
                 logger.debug("codex stream ended after the turn session=%s", session.id, exc_info=True)
             finally:
@@ -533,6 +578,10 @@ class CodexProvider:
                     await stream.aclose()
                 except Exception:
                     pass
+            if kind == "chatgpt":
+                # Codex sends plan usage as a notification outside the turn; ask for it once instead.
+                for notice in await self._plan_limits(codex, book, plan_credential):
+                    yield notice
         finally:
             try:
                 await asyncio.shield(asyncio.wait_for(codex.close(), 10))
@@ -560,9 +609,34 @@ class CodexProvider:
         if isinstance(exc, FileNotFoundError) and "codex" in str(exc).lower():
             return CLI_MISSING
         text = (redact(str(exc), secrets).strip() or type(exc).__name__)[:400]
-        if "401" in text or "unauthorized" in text.lower():
+        if is_auth_failure(text):
             return AUTH_FAILED
         return text
+
+    @staticmethod
+    def _error(text: str) -> dict[str, Any]:
+        return auth_failed_event() if text == AUTH_FAILED else {"type": "error", "message": text}
+
+    async def _plan_limits(self, codex: Any, book: Any, credential: str = "") -> list[dict[str, Any]]:
+        """ChatGPT plan windows (account/rateLimits/read) -> plan_notice / plan_usage events. Never raises."""
+        if book is None:
+            return []
+        request = getattr(getattr(codex, "_client", None), "request", None)
+        if not callable(request):
+            return []
+        try:
+            from openai_codex.generated.v2_all import GetAccountRateLimitsResponse
+
+            answer = await asyncio.wait_for(
+                request("account/rateLimits/read", None, response_model=GetAccountRateLimitsResponse),
+                RATE_LIMITS_SECONDS,
+            )
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.debug("codex rate limits not read", exc_info=True)
+            return []
+        return plan_events_from_sdk(book, "codex", as_dict(answer), credential)
 
     async def models(self, api_key: str = "") -> list[dict[str, str]]:
         """Models the Codex account offers."""

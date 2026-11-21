@@ -292,6 +292,10 @@ CONF_HA_USAGE_SENSORS = "ha_usage_sensors"
 CONF_CROSS_CHAT = "cross_chat"
 CONF_DEFAULT_AGENT = "default_agent"
 CONF_MODEL_SWITCHER = "model_switcher"
+# Agent fallback chain (fallback.py): off by default, the ordered agent list, when to go back up.
+CONF_FALLBACK_ENABLED = "fallback_enabled"
+CONF_FALLBACK_AGENTS = "fallback_agents"
+CONF_FALLBACK_RETURN = "fallback_return"
 CONF_UI_THEME = "ui_theme"
 UI_THEME_STANDARD = "standard"
 UI_THEME_HA_COMPONENTS = "ha_components"
@@ -864,9 +868,11 @@ Be concise. If a tool fails, say so. Ask before doing something hard to undo, su
 HOUSE_RULES = (
     "A hello, thanks, or other small talk gets a short friendly reply. "
     "Do not list what you can do until the user asks about the house.\n\n"
-    "Home Assistant is reached only through the connected MCP tools. Before you answer any question about "
-    "this house (automations, entities, devices, states, counts, weather), call a Home Assistant tool. "
-    "Never answer those from memory, and never invent entity ids, dashboard ids, states, or history. "
+    "Home Assistant is reached only through the connected MCP tools. Call a Home Assistant tool only when "
+    "the user asks for live house data (a device, state, history, count, list, weather) or wants a change. "
+    "Plant care, gardening, cutting, frost protection, watering math from amounts the user gave, and other "
+    "general reasoning are not house questions: answer directly, with no tool and no status sentence. "
+    "Never answer live house data from memory, and never invent entity ids, states, or history. "
     "Before you say what a saved automation, script, scene, or dashboard contains, read it again with a tool: "
     "earlier messages in this chat may describe an older version or a plan that was never saved."
 )
@@ -898,12 +904,22 @@ WRITE_RULES = (
     "Never say a change is done before the write result confirms it. "
     "If asked where something in Home Assistant came from and you do not know, say so instead of guessing."
 )
+TASK_RULES = (
+    "AI Workspace tasks: any automation or script that hands a prompt to an AI Workspace agent is an "
+    "AI Workspace task and uses ai_workspace.run_task, not conversation.process or another way to call the agent. "
+    "The prompt must be self-contained; the agent remembers no earlier runs. "
+    "allow_changes defaults to false (read-only); set it true only if the user wants the agent to change things. "
+    "With a response_variable (for example x) the result is {{ x.response }}, and {{ x.status }} is 'ok' on success; "
+    "the optional notify field sends the result as a short text message. "
+    "AI Workspace adds the label ai_workspace to new task automations itself; check it and add it only if missing."
+)
 STATUS_LINE_INSTRUCTIONS = (
     "You may write one short status sentence before the first tool call when the "
     "answer needs tools, or when you start real work (a change or a write). "
     "If you do, make it a natural sentence in the user's language about "
     "what you are about to do for this request, not a generic filler. "
-    "Write at most one status sentence per request. Between tool calls write nothing at all; "
+    "Write it only if you are actually calling a tool in this answer, and never more than one per request. "
+    "Between tool calls write nothing at all; "
     "the UI already shows them. Your next text is the answer."
 )
 # Sent with a voice turn: the status sentence would be read aloud before every answer.
@@ -971,6 +987,26 @@ def token_mode_history_limit(mode: str) -> int:
 def token_mode_allows_extras(mode: str) -> bool:
     """Page note, Assist extra prompt, cross-chat, auto title, effort."""
     return mode == TOKEN_MODE_OFF
+
+
+# Excerpts from another chat: total characters, filled from the newest message backwards.
+CROSS_CHAT_BUDGET = 16_000
+_CROSS_CHAT_BUDGETS = {
+    TOKEN_MODE_OFF: CROSS_CHAT_BUDGET,
+    TOKEN_MODE_LIGHT: 8_000,
+    TOKEN_MODE_MEDIUM: 4_000,
+    TOKEN_MODE_EXTREME: 2_000,
+}
+# The newest assistant reply is kept whole up to this many characters, older messages up to the other cap.
+CROSS_CHAT_REPLY_CAP = 10_000
+CROSS_CHAT_MESSAGE_CAP = 4_000
+CROSS_CHAT_SUMMARY_CHARS = 1_500
+CROSS_CHAT_MIN_SCORE = 30
+
+
+def cross_chat_budget(mode: str) -> int:
+    """Excerpts come in every token mode; the save modes only get a smaller one."""
+    return _CROSS_CHAT_BUDGETS.get(mode, CROSS_CHAT_BUDGET)
 
 
 def token_mode_allows_files(mode: str) -> bool:
@@ -1060,7 +1096,10 @@ def language_instruction(code: str = "") -> str:
 def workspace_system_prompt(settings, *, admin: bool = True) -> str:
     """Built-in or custom system prompt plus the rules every agent gets."""
     base = str(getattr(settings, "system_prompt", "") or "").strip() or DEFAULT_SYSTEM_PROMPT
-    parts = [base, HOUSE_RULES, LOVELACE_DASHBOARD_RULES, BPS_KEY_INSTRUCTIONS, WRITE_RULES, STATUS_LINE_INSTRUCTIONS]
+    parts = [base, HOUSE_RULES, LOVELACE_DASHBOARD_RULES, BPS_KEY_INSTRUCTIONS, WRITE_RULES]
+    if admin:
+        parts.append(TASK_RULES)
+    parts.append(STATUS_LINE_INSTRUCTIONS)
     if admin and getattr(settings, "house_map", False):
         from .house_map import CATALOG_INSTRUCTIONS
 
@@ -1077,7 +1116,8 @@ def workspace_system_prompt(settings, *, admin: bool = True) -> str:
 _CHAT_SCOPE = (
     "This chat is separate from the user's other chats. "
     "Do not assume what was said in them. "
-    "Use another chat only when the message includes a read-only excerpt from it. "
+    "Use another chat only when the message includes a read-only excerpt from it, "
+    "or after you read it with the read_chat tool (list_chats finds the user's chats by title). "
     "When the user confirms an action, do it and then answer. Do not ask again. "
     "Do not repeat a tool call you already made in this turn. "
     "If a device is already in the requested state, say so."
@@ -1105,7 +1145,7 @@ TONE_INSTRUCTIONS = (
     "returned. Use it to avoid repeating lookups, but check live state again before you change something, "
     "and never write such a line yourself."
 )
-HA_LINK_INSTRUCTIONS = """Every automation, script, scene, device, helper, entity, or dashboard/view you mention must be a Markdown link. Do not list plain names or bare paths. Do not ask whether the user wants links. Use root-relative paths that start with /. Never use 127.0.0.1, localhost, or an MCP URL in those links — those are only how tools reach Home Assistant from Docker. Do not link the words Home Assistant.
+HA_LINK_INSTRUCTIONS = """Every automation, script, scene, device, helper, entity, or dashboard/view you mention must be a Markdown link. Link only real Home Assistant items returned by a tool in this chat. Plants, products, and other things without an entity are plain text; never attach an unrelated entity link to them. Do not list plain names or bare paths. Do not ask whether the user wants links. Use root-relative paths that start with /. Never use 127.0.0.1, localhost, or an MCP URL in those links — those are only how tools reach Home Assistant from Docker. Do not link the words Home Assistant.
 
 URL rules (wrong ids open a blank editor):
 - Automations: [Name](/config/automation/edit/{id}) where {id} is the automation config id / unique_id from the tool. That may be a yaml id (balcony_irrigation) or a numeric timestamp (1687972788597). NEVER use entity_id. Wrong: /config/automation/edit/automation.balcony_irrigation Right: /config/automation/edit/balcony_irrigation
@@ -1144,11 +1184,6 @@ def ui_link_instructions(origin: str = "") -> str:
 def with_ui_context(message: str, origin: str = "") -> str:
     return f"{ui_link_instructions(origin)}\n\n{message}"
 
-
-# Cursor cannot be forced to call a tool first, so it is asked to.
-CHECK_HOUSE_NOTE = (
-    "If this message is about the house (devices, states, lists, weather), call a Home Assistant tool before you answer."
-)
 
 
 def standing_chat_prompt(

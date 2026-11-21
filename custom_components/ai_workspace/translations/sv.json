@@ -45,13 +45,13 @@
               "keep_chats": "Chattar att behålla"
             },
             "data_description": {
-              "default_agent": "Agent som en ny chatt startar med. Varje chatt kommer ihåg agenten (och modellen) den senast använde. Senast använd: agenten du valde senast i den här webbläsaren.",
+              "default_agent": "Agent som en ny chatt startar med. Varje chatt kommer ihåg agenten (och modellen) den senast använde. Senast använd: agenten du valde senast i den här webbläsaren. När reserv är på bestämmer dess agentlista i stället.",
               "model_switcher": "Av som standard. Lägger till en modellväljare bredvid agentväljaren, så att en chatt kan använda en annan modell från samma agent. Agentens egen modell är fortfarande standard.",
               "enable_sidebar": "Lägger till AI Workspace i Home Assistants sidofält. Av: administratörer kan fortfarande öppna /ai-workspace direkt.",
               "enable_overlay": "En rund AI-knapp i hörnet av varje Home Assistant-sida, så att du kan fråga utan att lämna sidan. På Inställningar-sidor sitter den högre så att den inte täcker andra knappar.",
               "enable_dictate": "Mikrofonknapp i meddelanderutan. Dölj den om du aldrig dikterar.",
               "allow_users": "Av: endast administratörer. På: användare utan administratörsrättigheter får den flytande chatten, med samma Home Assistant-åtkomst som sitt eget konto. Hela AI Workspace-sidan förblir endast för administratörer. Slå bara på detta om du litar på alla som har ett konto.",
-              "ui_theme": "Av som standard. Bygger chatten av Home Assistants egna gränssnittsdelar. Prova det om chatten inte passar ditt tema.",
+              "ui_theme": "Av som standard. Ändrar bara meddelandefältet och agent- och modellväljaren till Home Assistants egen stil. Meddelanden har alltid standardutseendet.",
               "cross_chat": "Av som standard. När det är på kan en fråga använda ett kort utdrag ur en annan chatt vars titel delar ord med den, utan att du nämner den chatten. Hjälper när du redan pratat om samma rum eller automation. Den andra chatten ändras inte.",
               "keep_chats": "Nyaste icke-fästa chattar som behålls per person. Äldre tas bort så att listan inte växer i det oändliga. Fästa chattar behålls alltid. Standard 30."
             }
@@ -160,15 +160,29 @@
               "keep_chats": "Chattar att behålla"
             },
             "data_description": {
-              "default_agent": "Agent som en ny chatt startar med. Varje chatt kommer ihåg agenten (och modellen) den senast använde. Senast använd: agenten du valde senast i den här webbläsaren.",
+              "default_agent": "Agent som en ny chatt startar med. Varje chatt kommer ihåg agenten (och modellen) den senast använde. Senast använd: agenten du valde senast i den här webbläsaren. När reserv är på bestämmer dess agentlista i stället.",
               "model_switcher": "Av som standard. Lägger till en modellväljare bredvid agentväljaren, så att en chatt kan använda en annan modell från samma agent. Agentens egen modell är fortfarande standard.",
               "enable_sidebar": "Lägger till AI Workspace i Home Assistants sidofält. Av: administratörer kan fortfarande öppna /ai-workspace direkt.",
               "enable_overlay": "En rund AI-knapp i hörnet av varje Home Assistant-sida, så att du kan fråga utan att lämna sidan. På Inställningar-sidor sitter den högre så att den inte täcker andra knappar.",
               "enable_dictate": "Mikrofonknapp i meddelanderutan. Dölj den om du aldrig dikterar.",
               "allow_users": "Av: endast administratörer. På: användare utan administratörsrättigheter får den flytande chatten, med samma Home Assistant-åtkomst som sitt eget konto. Hela AI Workspace-sidan förblir endast för administratörer. Slå bara på detta om du litar på alla som har ett konto.",
-              "ui_theme": "Av som standard. Bygger chatten av Home Assistants egna gränssnittsdelar. Prova det om chatten inte passar ditt tema.",
+              "ui_theme": "Av som standard. Ändrar bara meddelandefältet och agent- och modellväljaren till Home Assistants egen stil. Meddelanden har alltid standardutseendet.",
               "cross_chat": "Av som standard. När det är på kan en fråga använda ett kort utdrag ur en annan chatt vars titel delar ord med den, utan att du nämner den chatten. Hjälper när du redan pratat om samma rum eller automation. Den andra chatten ändras inte.",
               "keep_chats": "Nyaste icke-fästa chattar som behålls per person. Äldre tas bort så att listan inte växer i det oändliga. Fästa chattar behålls alltid. Standard 30."
+            }
+          },
+          "fallback": {
+            "name": "Reserv",
+            "description": "Valfritt. När en agents leverantör fallerar (plan- eller tokengräns, hastighetsgräns, utgången inloggning, tidsgräns, anslutningsfel, överbelastad server) fortsätter nästa agent i listan med uppgiften. När det är på ersätter listan standardagenten.",
+            "data": {
+              "fallback_enabled": "Aktivera reserv",
+              "fallback_agents": "Agenter i ordning",
+              "fallback_return": "Tillbaka till föredragen agent"
+            },
+            "data_description": {
+              "fallback_enabled": "Av som standard. Ett stoppat svar, ett verktyg som fallerar, en vägran eller en felaktig begäran byter aldrig agent.",
+              "fallback_agents": "Används bara när reserv är på; tills du sparar med reserv på är listan bara ett förslag. Uppgifter följer samma lista. Ordningen räknas: den första agenten är den föredragna och nya chattar börjar med den; de andra tar över uppifrån och ned. Dra en agent för att ändra ordningen. Uppgifter som behöver en arbetsyta eller ett skal går bara till Runtime-agenter (Claude SDK, Cursor, Codex).",
+              "fallback_return": "Av: chatten stannar hos agenten som tog över. Vid nytt meddelande: nästa meddelande provar den föredragna agenten igen. Efter återställning eller väntetid: först när dess gräns har återställts eller väntetiden (5, 15, 60 minuter) har gått. Aldrig mitt i ett svar."
             }
           },
           "cost": {
@@ -310,8 +324,8 @@
         "runtime_old": "Den här Runtime kan inte logga in än. Uppdatera AI Workspace Runtime, eller klistra in en token i agentformuläret.",
         "codex_runtime_old": "Uppdatera AI Workspace Runtime till 1.6.0 eller senare för Codex-agenter.",
         "codex_key_required": "Lägg till en OpenAI API-nyckel under Codex (runtime), eller logga in med ChatGPT på AI Workspace Runtime.",
-        "not_signed_in_yet": "OpenAI har inte bekräftat inloggningen ännu. Ange koden på OpenAI:s sida och skicka igen.",
-        "no_code": "Codex fick ingen inloggningskod från OpenAI. Kontrollera att Runtime når auth.openai.com och försök igen."
+        "no_code": "Codex fick ingen inloggningskod från OpenAI. Kontrollera att Runtime når auth.openai.com och försök igen.",
+        "codex_login_failed": "OpenAI bekräftade inte inloggningen. Om koden avvisades, tillåt en gång inloggning med enhetskod i ChatGPT under Inställningar → Säkerhet (för ett arbetsytekonto gör administratören det) och försök igen."
       },
       "step": {
         "provider": {
@@ -625,8 +639,7 @@
           }
         },
         "codex_login": {
-          "title": "Logga in med ChatGPT",
-          "description": "1. Öppna länken och logga in med ChatGPT-kontot som har ditt abonnemang: [Logga in med ChatGPT]({url})\n2. Ange den här engångskoden där: **{code}**\n3. Skicka sedan här.\n\nKoden gäller i 15 minuter. Ditt ChatGPT-lösenord går aldrig via Home Assistant. Om OpenAI avvisar koden, slå en gång på inloggning med enhetskod i ChatGPT under **Inställningar → Säkerhet** (för ett arbetsytekonto tillåter administratören det)."
+          "title": "Logga in med ChatGPT"
         },
         "codex_signed_in": {
           "title": "Inloggad",
@@ -639,6 +652,9 @@
       },
       "abort": {
         "reconfigure_successful": "Agenten har uppdaterats."
+      },
+      "progress": {
+        "codex_login": "1. Öppna länken och logga in med ChatGPT-kontot som har ditt abonnemang: [Logga in med ChatGPT]({url})\n2. Ange den här engångskoden där: **{code}**\n3. Klart: det här fönstret går vidare av sig självt så snart OpenAI bekräftar koden.\n\nKoden gäller i 15 minuter. Ditt ChatGPT-lösenord går aldrig via Home Assistant. Om OpenAI avvisar koden, slå en gång på inloggning med enhetskod i ChatGPT under **Inställningar → Säkerhet** (för ett arbetsytekonto tillåter administratören det)."
       }
     }
   },
@@ -672,6 +688,60 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Anpassad MCP-URL"
+      }
+    },
+    "default_agent": {
+      "options": {
+        "last_used": "Senast använd"
+      }
+    },
+    "fallback_return": {
+      "options": {
+        "off": "Av",
+        "new_message": "Vid nytt meddelande",
+        "after_reset": "Efter återställning eller väntetid"
+      }
+    },
+    "task_chat": {
+      "options": {
+        "none": "Ingen chatt",
+        "task": "Uppgiftschatt"
+      }
+    }
+  },
+  "services": {
+    "run_task": {
+      "name": "Kör agentuppgift",
+      "description": "Kör en prompt med en AI Workspace-agent, till exempel enligt ett schema. Varje körning börjar om: prompten måste innehålla allt agenten behöver. Mallar fungerar i prompten.",
+      "fields": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "Vad agenten ska göra. Fristående: agenten minns inget från tidigare körningar (utom uppgiftschatten, om den sparas). Mallar är tillåtna."
+        },
+        "task_name": {
+          "name": "Uppgiftsnamn",
+          "description": "Namn för uppgiftschatten, loggarna och senaste körningen. Krävs för en uppgiftschatt."
+        },
+        "agent": {
+          "name": "Agent",
+          "description": "Agentens id, titel eller konversationsentitet. Tomt: standardagenten; står den på 'Senast använd', den första Runtime-agenten (Claude, Cursor, Codex). Byter till andra agenter bara när reserv (Fallback) är på."
+        },
+        "chat": {
+          "name": "Chatt",
+          "description": "Spara körningarna i en uppgiftschatt, döpt efter uppgiften."
+        },
+        "notify": {
+          "name": "Avisera",
+          "description": "Notify-tjänst eller -entitet för ett kort resultat, till exempel notify.mobile_app_min_telefon."
+        },
+        "allow_changes": {
+          "name": "Tillåt ändringar",
+          "description": "Av: agenten läser bara Home Assistant. På: den får styra enheter. Automationer, skript och andra uppgifter är alltid spärrade."
+        },
+        "timeout": {
+          "name": "Tidsgräns",
+          "description": "Sekunder innan körningen stoppas."
+        }
       }
     }
   }

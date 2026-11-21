@@ -45,13 +45,13 @@
               "keep_chats": "Chats to keep"
             },
             "data_description": {
-              "default_agent": "Agent a new chat starts with. Each chat remembers the agent (and model) it last used. Last used: the agent you picked most recently in this browser.",
+              "default_agent": "Agent a new chat starts with. Each chat remembers the agent (and model) it last used. Last used: the agent you picked most recently in this browser. When Fallback is on, its agent list decides instead.",
               "model_switcher": "Off by default. Adds a model picker next to the agent picker, so one chat can use another model of the same agent. The agent's own model stays the default.",
               "enable_sidebar": "Adds AI Workspace to the Home Assistant sidebar. When off, administrators can still open /ai-workspace directly.",
               "enable_overlay": "A round AI button in the corner of every Home Assistant page, so you can ask without leaving the page. On Settings pages it sits higher so it does not cover other buttons.",
               "enable_dictate": "Microphone button in the message box. Hide it if you never dictate.",
               "allow_users": "Off: administrators only. On: non-admin users get the floating chat, with the same Home Assistant access as their own login. The full AI Workspace page stays admin-only. Only turn this on if you trust everyone who has a login.",
-              "ui_theme": "Off by default. Builds the chat from Home Assistant's own UI parts. Try it if the chat does not match your theme.",
+              "ui_theme": "Off by default. Only changes the message field and the agent and model pickers to Home Assistant's own style. Messages always use the standard look.",
               "cross_chat": "Off by default. When on, a question can use a short excerpt from another chat whose title shares words with it, without you mentioning that chat. Helps when you already talked about the same room or automation. The other chat is not changed.",
               "keep_chats": "Newest unpinned chats kept per person. Older ones are deleted so the list does not grow forever. Pinned chats are always kept. Default 30."
             }
@@ -160,15 +160,29 @@
               "keep_chats": "Chats to keep"
             },
             "data_description": {
-              "default_agent": "Agent a new chat starts with. Each chat remembers the agent (and model) it last used. Last used: the agent you picked most recently in this browser.",
+              "default_agent": "Agent a new chat starts with. Each chat remembers the agent (and model) it last used. Last used: the agent you picked most recently in this browser. When Fallback is on, its agent list decides instead.",
               "model_switcher": "Off by default. Adds a model picker next to the agent picker, so one chat can use another model of the same agent. The agent's own model stays the default.",
               "enable_sidebar": "Adds AI Workspace to the Home Assistant sidebar. When off, administrators can still open /ai-workspace directly.",
               "enable_overlay": "A round AI button in the corner of every Home Assistant page, so you can ask without leaving the page. On Settings pages it sits higher so it does not cover other buttons.",
               "enable_dictate": "Microphone button in the message box. Hide it if you never dictate.",
               "allow_users": "Off: administrators only. On: non-admin users get the floating chat, with the same Home Assistant access as their own login. The full AI Workspace page stays admin-only. Only turn this on if you trust everyone who has a login.",
-              "ui_theme": "Off by default. Builds the chat from Home Assistant's own UI parts. Try it if the chat does not match your theme.",
+              "ui_theme": "Off by default. Only changes the message field and the agent and model pickers to Home Assistant's own style. Messages always use the standard look.",
               "cross_chat": "Off by default. When on, a question can use a short excerpt from another chat whose title shares words with it, without you mentioning that chat. Helps when you already talked about the same room or automation. The other chat is not changed.",
               "keep_chats": "Newest unpinned chats kept per person. Older ones are deleted so the list does not grow forever. Pinned chats are always kept. Default 30."
+            }
+          },
+          "fallback": {
+            "name": "Fallback",
+            "description": "Optional. When an agent's provider fails (plan or token limit, rate limit, expired sign-in, timeout, connection error, overloaded server), the next agent in the list continues the task. When on, this list replaces the Default agent.",
+            "data": {
+              "fallback_enabled": "Enable fallback",
+              "fallback_agents": "Agents in order",
+              "fallback_return": "Back to the preferred agent"
+            },
+            "data_description": {
+              "fallback_enabled": "Off by default. Stopping a reply, a failing tool, a refusal or a wrong request never switches the agent.",
+              "fallback_agents": "Only used while fallback is on; until you save with fallback on, the list is just a suggestion. Tasks follow the same list. Order counts: the first agent is the preferred one and new chats start with it; the others take over from top to bottom. Drag an agent to change the order. Tasks that need a workspace or shell only go to Runtime agents (Claude SDK, Cursor, Codex).",
+              "fallback_return": "Off: the chat stays on the agent that took over. On new message: the next message tries the preferred agent again. After reset or wait time: only once its limit reset or the wait time (5, 15, 60 minutes) has passed. Never in the middle of a reply."
             }
           },
           "cost": {
@@ -310,8 +324,8 @@
         "runtime_old": "This Runtime cannot sign in yet. Update the AI Workspace Runtime, or paste a token on the agent form.",
         "codex_runtime_old": "Update the AI Workspace Runtime to 1.6.0 or newer for Codex agents.",
         "codex_key_required": "Add an OpenAI API key under Codex (runtime), or sign in with ChatGPT on the AI Workspace Runtime.",
-        "not_signed_in_yet": "OpenAI has not confirmed the sign-in yet. Enter the code on OpenAI's page, then submit again.",
-        "no_code": "Codex did not get a sign-in code from OpenAI. Check that the Runtime can reach auth.openai.com, then try again."
+        "no_code": "Codex did not get a sign-in code from OpenAI. Check that the Runtime can reach auth.openai.com, then try again.",
+        "codex_login_failed": "OpenAI did not confirm the sign-in. If it refused the code, allow device code sign-in once in ChatGPT under Settings → Security (for a workspace account, the admin allows it), then try again."
       },
       "step": {
         "provider": {
@@ -625,8 +639,7 @@
           }
         },
         "codex_login": {
-          "title": "Sign in with ChatGPT",
-          "description": "1. Open this link and sign in with the ChatGPT account that has your plan: [Sign in with ChatGPT]({url})\n2. Enter this one-time code there: **{code}**\n3. Then submit here.\n\nThe code works for 15 minutes. Your ChatGPT password never passes through Home Assistant. If OpenAI refuses the code, turn on device code sign-in once in ChatGPT under **Settings → Security** (for a workspace account, the admin allows it)."
+          "title": "Sign in with ChatGPT"
         },
         "codex_signed_in": {
           "title": "Signed in",
@@ -639,6 +652,9 @@
       },
       "abort": {
         "reconfigure_successful": "Agent updated."
+      },
+      "progress": {
+        "codex_login": "1. Open this link and sign in with the ChatGPT account that has your plan: [Sign in with ChatGPT]({url})\n2. Enter this one-time code there: **{code}**\n3. That's it: this window goes on by itself as soon as OpenAI confirms the code.\n\nThe code works for 15 minutes. Your ChatGPT password never passes through Home Assistant. If OpenAI refuses the code, turn on device code sign-in once in ChatGPT under **Settings → Security** (for a workspace account, the admin allows it)."
       }
     }
   },
@@ -672,6 +688,60 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Custom MCP URL"
+      }
+    },
+    "default_agent": {
+      "options": {
+        "last_used": "Last used"
+      }
+    },
+    "fallback_return": {
+      "options": {
+        "off": "Off",
+        "new_message": "On new message",
+        "after_reset": "After reset or wait time"
+      }
+    },
+    "task_chat": {
+      "options": {
+        "none": "No chat",
+        "task": "Task chat"
+      }
+    }
+  },
+  "services": {
+    "run_task": {
+      "name": "Run agent task",
+      "description": "Runs a prompt with an AI Workspace agent, for example on a schedule. Every run starts fresh: the prompt must say everything the agent needs. Templates work in the prompt.",
+      "fields": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "What the agent should do. Self-contained: the agent remembers nothing from earlier runs (except the task chat, if kept). Templates are allowed."
+        },
+        "task_name": {
+          "name": "Task name",
+          "description": "Name for the task chat, logs and the last run. Needed for a task chat."
+        },
+        "agent": {
+          "name": "Agent",
+          "description": "Agent id, title or conversation entity. Empty: the Default agent; if that is set to 'Last used', the first Runtime agent (Claude, Cursor, Codex). Switches to other agents only while Fallback is on."
+        },
+        "chat": {
+          "name": "Chat",
+          "description": "Keep the runs in one task chat, titled after the task name."
+        },
+        "notify": {
+          "name": "Notify",
+          "description": "Notify service or entity for a short result, for example notify.mobile_app_my_phone."
+        },
+        "allow_changes": {
+          "name": "Allow changes",
+          "description": "Off: the agent only reads Home Assistant. On: it may control devices. Automations, scripts and other tasks stay off-limits either way."
+        },
+        "timeout": {
+          "name": "Timeout",
+          "description": "Seconds before the run stops."
+        }
       }
     }
   }

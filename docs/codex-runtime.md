@@ -32,11 +32,13 @@ Speech-to-text and text-to-speech are not offered on a Codex agent: they need an
 
 1. On the **Codex account** step, pick **Sign in with ChatGPT**.
 2. Open the link (`https://auth.openai.com/codex/device`) on any device, sign in with the ChatGPT account that has your plan, and enter the one-time code the form shows.
-3. Submit the form. When OpenAI has confirmed the sign-in, the form says so; submit again to save the agent.
+3. Wait: the form goes on by itself as soon as OpenAI confirms the code and shows **Signed in**. Submit to save the agent.
 
-Device-code sign-in has to be allowed once: in ChatGPT, **Settings → Security**, turn on device code login. For a workspace account, the admin allows it in the workspace permissions. Without it, OpenAI refuses the code.
+Device-code sign-in has to be allowed once: in ChatGPT, **Settings → Security**, turn on device code login. For a workspace account, the admin allows it in the workspace permissions. Without it, OpenAI refuses the code and the form says so.
 
-The code works for 15 minutes. Your ChatGPT password never passes through Home Assistant or the runtime. **Sign out on the Runtime** removes the sign-in.
+The code works for 15 minutes. Your ChatGPT password never passes through Home Assistant or the runtime. **Sign out on the Runtime** removes the sign-in. If the sign-in later expires or is revoked, the chat says so in your language: sign in with ChatGPT again on the agent.
+
+**Docker, in a terminal:** `docker exec -it ai-workspace-runtime python -m app.codex_login` runs OpenAI's own `codex login --device-auth` and stores the sign-in in the same place (`status` and `logout` work too). The sign-in lives in the data volume (`/data/codex`), so it survives restarts and image updates.
 
 **Already signed in on another computer?** On a Docker runtime, `CODEX_AUTH_JSON` takes a copy of `~/.codex/auth.json` (a mounted file or the JSON itself). It is copied into `/data/codex` once, when there is no sign-in yet. Don't keep using the same `auth.json` on two machines: a token refresh on one can sign the other out.
 
@@ -63,7 +65,7 @@ The container is the sandbox: Codex's own Linux sandbox needs user namespaces, w
 - Follow-up messages continue the same Codex thread; it survives runtime restarts (threads are kept in `/data/codex`).
 - With **Save tokens**, the thread continues while a model call's input stays under about 40,000 tokens, then the next turn starts a new thread with the recent history from Home Assistant (as on Claude SDK agents).
 - Tokens of each turn appear on the **Usage** page. Codex reports no price, so the cost stays unknown on a ChatGPT plan.
-- **Plan limits** on the Usage page show the plan's 5-hour and weekly windows when Codex reports them, with a chat hint near the limit and a message when it is reached.
+- **Plan limits** on the Usage page show the ChatGPT plan's 5-hour and weekly windows (read from Codex after each turn), with a chat hint near the limit and a message when it is reached.
 
 ## Runtime options (Docker)
 

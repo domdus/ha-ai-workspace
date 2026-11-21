@@ -45,13 +45,13 @@
               "keep_chats": "Chaty k uchování"
             },
             "data_description": {
-              "default_agent": "Agent, se kterým začíná nový chat. Každý chat si pamatuje agenta (a model), kterého naposledy použil. Naposledy použitý: agent, kterého jste v tomto prohlížeči vybrali naposledy.",
+              "default_agent": "Agent, se kterým začíná nový chat. Každý chat si pamatuje agenta (a model), kterého naposledy použil. Naposledy použitý: agent, kterého jste v tomto prohlížeči vybrali naposledy. Když je záložní agent zapnutý, rozhoduje jeho seznam agentů.",
               "model_switcher": "Ve výchozím stavu vypnuto. Přidá vedle výběru agenta výběr modelu, aby chat mohl použít jiný model stejného agenta. Model agenta zůstává výchozí.",
               "enable_sidebar": "Přidá AI Workspace do postranního panelu Home Assistant. Vypnuto: správci mohou /ai-workspace stále otevřít přímo.",
               "enable_overlay": "Kulaté tlačítko AI v rohu každé stránky Home Assistant, takže se můžete zeptat bez opuštění stránky. Na stránkách Nastavení je výš, aby nepřekrývalo jiná tlačítka.",
               "enable_dictate": "Tlačítko mikrofonu v poli zprávy. Skryjte ho, pokud nikdy nediktujete.",
               "allow_users": "Vypnuto: jen správci. Zapnuto: uživatelé bez oprávnění správce dostanou plovoucí chat se stejným přístupem k Home Assistant jako jejich vlastní účet. Plná stránka AI Workspace zůstane jen pro správce. Zapněte jen, pokud věříte všem, kdo mají účet.",
-              "ui_theme": "Ve výchozím stavu vypnuto. Sestaví chat z vlastních prvků rozhraní Home Assistant. Zkuste to, pokud chat neladí s vaším motivem.",
+              "ui_theme": "Ve výchozím stavu vypnuto. Změní jen pole zprávy a výběr agenta a modelu na styl Home Assistant. Zprávy mají vždy standardní vzhled.",
               "cross_chat": "Ve výchozím stavu vypnuto. Když je zapnuto, otázka může použít krátký výňatek z jiného chatu, jehož název má společná slova, aniž byste ho zmínili. Pomáhá, když jste už o stejné místnosti nebo automatizaci mluvili. Druhý chat se nemění.",
               "keep_chats": "Nejnovější nepřipnuté chaty uchované na osobu. Starší se mažou, aby seznam nerostl donekonečna. Připnuté chaty zůstanou vždy. Výchozí 30."
             }
@@ -160,15 +160,29 @@
               "keep_chats": "Chaty k uchování"
             },
             "data_description": {
-              "default_agent": "Agent, se kterým začíná nový chat. Každý chat si pamatuje agenta (a model), kterého naposledy použil. Naposledy použitý: agent, kterého jste v tomto prohlížeči vybrali naposledy.",
+              "default_agent": "Agent, se kterým začíná nový chat. Každý chat si pamatuje agenta (a model), kterého naposledy použil. Naposledy použitý: agent, kterého jste v tomto prohlížeči vybrali naposledy. Když je záložní agent zapnutý, rozhoduje jeho seznam agentů.",
               "model_switcher": "Ve výchozím stavu vypnuto. Přidá vedle výběru agenta výběr modelu, aby chat mohl použít jiný model stejného agenta. Model agenta zůstává výchozí.",
               "enable_sidebar": "Přidá AI Workspace do postranního panelu Home Assistant. Vypnuto: správci mohou /ai-workspace stále otevřít přímo.",
               "enable_overlay": "Kulaté tlačítko AI v rohu každé stránky Home Assistant, takže se můžete zeptat bez opuštění stránky. Na stránkách Nastavení je výš, aby nepřekrývalo jiná tlačítka.",
               "enable_dictate": "Tlačítko mikrofonu v poli zprávy. Skryjte ho, pokud nikdy nediktujete.",
               "allow_users": "Vypnuto: jen správci. Zapnuto: uživatelé bez oprávnění správce dostanou plovoucí chat se stejným přístupem k Home Assistant jako jejich vlastní účet. Plná stránka AI Workspace zůstane jen pro správce. Zapněte jen, pokud věříte všem, kdo mají účet.",
-              "ui_theme": "Ve výchozím stavu vypnuto. Sestaví chat z vlastních prvků rozhraní Home Assistant. Zkuste to, pokud chat neladí s vaším motivem.",
+              "ui_theme": "Ve výchozím stavu vypnuto. Změní jen pole zprávy a výběr agenta a modelu na styl Home Assistant. Zprávy mají vždy standardní vzhled.",
               "cross_chat": "Ve výchozím stavu vypnuto. Když je zapnuto, otázka může použít krátký výňatek z jiného chatu, jehož název má společná slova, aniž byste ho zmínili. Pomáhá, když jste už o stejné místnosti nebo automatizaci mluvili. Druhý chat se nemění.",
               "keep_chats": "Nejnovější nepřipnuté chaty uchované na osobu. Starší se mažou, aby seznam nerostl donekonečna. Připnuté chaty zůstanou vždy. Výchozí 30."
+            }
+          },
+          "fallback": {
+            "name": "Záložní agent",
+            "description": "Volitelné. Když selže poskytovatel agenta (limit plánu nebo tokenů, limit požadavků, vypršené přihlášení, časový limit, chyba připojení, přetížený server), úlohu převezme další agent ze seznamu. Po zapnutí tento seznam nahrazuje výchozího agenta.",
+            "data": {
+              "fallback_enabled": "Zapnout záložního agenta",
+              "fallback_agents": "Agenti v pořadí",
+              "fallback_return": "Návrat k preferovanému agentovi"
+            },
+            "data_description": {
+              "fallback_enabled": "Ve výchozím stavu vypnuto. Zastavená odpověď, selhání nástroje, odmítnutí nebo chybný požadavek nikdy agenta nemění.",
+              "fallback_agents": "Platí jen při zapnuté záloze; dokud neuložíte se zapnutou zálohou, je seznam jen návrh. Úlohy se řídí stejným seznamem. Na pořadí záleží: první agent je preferovaný a nové chaty začínají s ním; ostatní přebírají shora dolů. Přetažením agenta změníte pořadí. Úlohy, které potřebují pracovní prostor nebo shell, jdou jen agentům Runtime (Claude SDK, Cursor, Codex).",
+              "fallback_return": "Vypnuto: chat zůstane u agenta, který převzal. Při nové zprávě: další zpráva znovu zkusí preferovaného agenta. Po obnovení nebo čekání: až po obnovení jeho limitu nebo uplynutí čekací doby (5, 15, 60 minut). Nikdy uprostřed odpovědi."
             }
           },
           "cost": {
@@ -310,8 +324,8 @@
         "runtime_old": "Tento Runtime se zatím neumí přihlásit. Aktualizujte AI Workspace Runtime, nebo vložte token ve formuláři agenta.",
         "codex_runtime_old": "Aktualizujte AI Workspace Runtime na 1.6.0 nebo novější pro agenty Codex.",
         "codex_key_required": "Přidejte klíč API OpenAI v části Codex (runtime), nebo se na AI Workspace Runtime přihlaste přes ChatGPT.",
-        "not_signed_in_yet": "OpenAI přihlášení ještě nepotvrdilo. Zadejte kód na stránce OpenAI a odešlete znovu.",
-        "no_code": "Codex nedostal od OpenAI přihlašovací kód. Zkontrolujte, že Runtime dosáhne na auth.openai.com, a zkuste to znovu."
+        "no_code": "Codex nedostal od OpenAI přihlašovací kód. Zkontrolujte, že Runtime dosáhne na auth.openai.com, a zkuste to znovu.",
+        "codex_login_failed": "OpenAI přihlášení nepotvrdilo. Pokud kód odmítlo, povolte jednou v ChatGPT přihlášení kódem zařízení v Nastavení → Zabezpečení (u účtu workspace to povolí správce) a zkuste to znovu."
       },
       "step": {
         "provider": {
@@ -625,8 +639,7 @@
           }
         },
         "codex_login": {
-          "title": "Přihlásit se přes ChatGPT",
-          "description": "1. Otevřete tento odkaz a přihlaste se účtem ChatGPT s vaším plánem: [Přihlásit se přes ChatGPT]({url})\n2. Zadejte tam tento jednorázový kód: **{code}**\n3. Pak odešlete zde.\n\nKód platí 15 minut. Vaše heslo k ChatGPT nikdy neprochází přes Home Assistant. Pokud OpenAI kód odmítne, zapněte jednou v ChatGPT přihlášení kódem zařízení v **Nastavení → Zabezpečení** (u účtu workspace to povolí správce)."
+          "title": "Přihlásit se přes ChatGPT"
         },
         "codex_signed_in": {
           "title": "Přihlášeno",
@@ -639,6 +652,9 @@
       },
       "abort": {
         "reconfigure_successful": "Agent aktualizován."
+      },
+      "progress": {
+        "codex_login": "1. Otevřete tento odkaz a přihlaste se účtem ChatGPT s vaším plánem: [Přihlásit se přes ChatGPT]({url})\n2. Zadejte tam tento jednorázový kód: **{code}**\n3. To je vše: toto okno pokračuje samo, jakmile OpenAI kód potvrdí.\n\nKód platí 15 minut. Vaše heslo k ChatGPT nikdy neprochází přes Home Assistant. Pokud OpenAI kód odmítne, zapněte jednou v ChatGPT přihlášení kódem zařízení v **Nastavení → Zabezpečení** (u účtu workspace to povolí správce)."
       }
     }
   },
@@ -672,6 +688,60 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Vlastní URL MCP"
+      }
+    },
+    "default_agent": {
+      "options": {
+        "last_used": "Naposledy použitý"
+      }
+    },
+    "fallback_return": {
+      "options": {
+        "off": "Vypnuto",
+        "new_message": "Při nové zprávě",
+        "after_reset": "Po obnovení nebo čekání"
+      }
+    },
+    "task_chat": {
+      "options": {
+        "none": "Bez chatu",
+        "task": "Chat úlohy"
+      }
+    }
+  },
+  "services": {
+    "run_task": {
+      "name": "Spustit úlohu agenta",
+      "description": "Spustí prompt s agentem AI Workspace, například podle plánu. Každé spuštění začíná znovu: prompt musí obsahovat vše, co agent potřebuje. V promptu fungují šablony.",
+      "fields": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "Co má agent udělat. Samostatný: agent si nepamatuje předchozí spuštění (kromě chatu úlohy, pokud se uchovává). Šablony jsou povoleny."
+        },
+        "task_name": {
+          "name": "Název úlohy",
+          "description": "Název pro chat úlohy, logy a poslední spuštění. Nutný pro chat úlohy."
+        },
+        "agent": {
+          "name": "Agent",
+          "description": "Id, název nebo entita konverzace agenta. Prázdné: výchozí agent; je-li nastaven na 'Naposledy použitý', první agent Runtime (Claude, Cursor, Codex). Přepnutí na jiné agenty jen při zapnuté záloze (Fallback)."
+        },
+        "chat": {
+          "name": "Chat",
+          "description": "Uchovávat spuštění v jednom chatu úlohy pojmenovaném podle úlohy."
+        },
+        "notify": {
+          "name": "Upozornit",
+          "description": "Služba nebo entita oznámení pro krátký výsledek, např. notify.mobile_app_muj_telefon."
+        },
+        "allow_changes": {
+          "name": "Povolit změny",
+          "description": "Vypnuto: agent Home Assistant jen čte. Zapnuto: smí ovládat zařízení. Automatizace, skripty a další úlohy jsou vždy zakázány."
+        },
+        "timeout": {
+          "name": "Časový limit",
+          "description": "Sekundy do zastavení spuštění."
+        }
       }
     }
   }

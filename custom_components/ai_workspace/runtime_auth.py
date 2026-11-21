@@ -29,7 +29,7 @@ KNOWN_ERRORS = frozenset(
         "runtime_rejected",
         "runtime_old",
         "no_code",
-        "not_signed_in_yet",
+        "codex_login_failed",
     }
 )
 

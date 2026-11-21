@@ -351,12 +351,142 @@ CODEX_SIGNIN = {
         "none": "⚠️ Noch nicht angemeldet. Wähle **Mit ChatGPT anmelden** oder geh zurück und füge einen OpenAI-API-Schlüssel ein.",
         "own_key": "Dieser Agent nutzt seinen eigenen OpenAI-API-Schlüssel; er hat Vorrang vor der Anmeldung der Runtime.",
     },
+    "fr": {
+        "old": "⚠️ Ce Runtime est trop ancien pour OpenAI Codex. Mettez à jour l'AI Workspace Runtime (App ou image Docker) vers 1.6.0 ou plus récent.",
+        "unreachable": "⚠️ Le Runtime n'a pas répondu. Vérifiez l'adresse et le mot de passe du Runtime sur la page précédente.",
+        "signed_in": "✅ Connecté avec ChatGPT sur le Runtime{plan} (depuis le {saved}). Chaque agent Codex de ce Runtime sans clé propre l'utilise.",
+        "api_key": "✅ Le Runtime a une clé API OpenAI pour Codex (facturée comme usage API).",
+        "none": "⚠️ Pas encore connecté. Choisissez **Se connecter avec ChatGPT**, ou revenez en arrière et collez une clé API OpenAI.",
+        "own_key": "Cet agent utilise sa propre clé API OpenAI ; elle l'emporte sur la connexion du Runtime.",
+    },
+    "es": {
+        "old": "⚠️ Este Runtime es demasiado antiguo para OpenAI Codex. Actualiza el AI Workspace Runtime (App o imagen Docker) a 1.6.0 o posterior.",
+        "unreachable": "⚠️ El Runtime no respondió. Revisa la dirección y la contraseña del Runtime en la página anterior.",
+        "signed_in": "✅ Sesión iniciada con ChatGPT en el Runtime{plan} (desde {saved}). Todos los agentes Codex de este Runtime sin clave propia la usan.",
+        "api_key": "✅ El Runtime tiene una clave API de OpenAI para Codex (facturada como uso de API).",
+        "none": "⚠️ Aún sin sesión. Elige **Iniciar sesión con ChatGPT**, o vuelve atrás y pega una clave API de OpenAI.",
+        "own_key": "Este agente usa su propia clave API de OpenAI; tiene prioridad sobre la sesión del Runtime.",
+    },
+    "it": {
+        "old": "⚠️ Questo Runtime è troppo vecchio per OpenAI Codex. Aggiorna l'AI Workspace Runtime (App o immagine Docker) alla 1.6.0 o successiva.",
+        "unreachable": "⚠️ Il Runtime non ha risposto. Controlla indirizzo e password del Runtime nella pagina precedente.",
+        "signed_in": "✅ Accesso con ChatGPT effettuato sul Runtime{plan} (dal {saved}). Ogni agente Codex di questo Runtime senza chiave propria lo usa.",
+        "api_key": "✅ Il Runtime ha una chiave API OpenAI per Codex (fatturata come uso API).",
+        "none": "⚠️ Accesso non ancora effettuato. Scegli **Accedi con ChatGPT**, oppure torna indietro e incolla una chiave API OpenAI.",
+        "own_key": "Questo agente usa la propria chiave API OpenAI, che ha la precedenza sull'accesso del Runtime.",
+    },
+    "nl": {
+        "old": "⚠️ Deze Runtime is te oud voor OpenAI Codex. Werk de AI Workspace Runtime (App of Docker-image) bij naar 1.6.0 of nieuwer.",
+        "unreachable": "⚠️ De Runtime antwoordde niet. Controleer het Runtime-adres en wachtwoord op de vorige pagina.",
+        "signed_in": "✅ Aangemeld met ChatGPT op de Runtime{plan} (sinds {saved}). Elke Codex-agent op deze Runtime zonder eigen sleutel gebruikt dit.",
+        "api_key": "✅ De Runtime heeft een OpenAI API-sleutel voor Codex (gefactureerd als API-gebruik).",
+        "none": "⚠️ Nog niet aangemeld. Kies **Aanmelden met ChatGPT**, of ga terug en plak een OpenAI API-sleutel.",
+        "own_key": "Deze agent gebruikt een eigen OpenAI API-sleutel; die gaat voor op de aanmelding van de Runtime.",
+    },
+    "pl": {
+        "old": "⚠️ Ten Runtime jest za stary dla OpenAI Codex. Zaktualizuj AI Workspace Runtime (App lub obraz Docker) do 1.6.0 lub nowszej.",
+        "unreachable": "⚠️ Runtime nie odpowiedział. Sprawdź adres i hasło Runtime na poprzedniej stronie.",
+        "signed_in": "✅ Zalogowano przez ChatGPT w Runtime{plan} (od {saved}). Każdy agent Codex w tym Runtime bez własnego klucza z tego korzysta.",
+        "api_key": "✅ Runtime ma klucz API OpenAI dla Codex (rozliczany jako użycie API).",
+        "none": "⚠️ Jeszcze nie zalogowano. Wybierz **Zaloguj się przez ChatGPT** albo wróć i wklej klucz API OpenAI.",
+        "own_key": "Ten agent używa własnego klucza API OpenAI; ma on pierwszeństwo przed logowaniem Runtime.",
+    },
+    "cs": {
+        "old": "⚠️ Tento Runtime je pro OpenAI Codex příliš starý. Aktualizujte AI Workspace Runtime (App nebo obraz Docker) na 1.6.0 nebo novější.",
+        "unreachable": "⚠️ Runtime neodpověděl. Zkontrolujte adresu a heslo Runtime na předchozí stránce.",
+        "signed_in": "✅ Přihlášeno přes ChatGPT na Runtime{plan} (od {saved}). Každý agent Codex na tomto Runtime bez vlastního klíče to používá.",
+        "api_key": "✅ Runtime má klíč API OpenAI pro Codex (účtováno jako využití API).",
+        "none": "⚠️ Zatím nepřihlášeno. Zvolte **Přihlásit se přes ChatGPT**, nebo se vraťte a vložte klíč API OpenAI.",
+        "own_key": "Tento agent používá vlastní klíč API OpenAI; má přednost před přihlášením Runtime.",
+    },
+    "sv": {
+        "old": "⚠️ Den här Runtime är för gammal för OpenAI Codex. Uppdatera AI Workspace Runtime (App eller Docker-avbild) till 1.6.0 eller nyare.",
+        "unreachable": "⚠️ Runtime svarade inte. Kontrollera Runtime-adressen och lösenordet på föregående sida.",
+        "signed_in": "✅ Inloggad med ChatGPT på Runtime{plan} (sedan {saved}). Varje Codex-agent på denna Runtime utan egen nyckel använder den.",
+        "api_key": "✅ Runtime har en OpenAI API-nyckel för Codex (debiteras som API-användning).",
+        "none": "⚠️ Inte inloggad än. Välj **Logga in med ChatGPT**, eller gå tillbaka och klistra in en OpenAI API-nyckel.",
+        "own_key": "Den här agenten använder en egen OpenAI API-nyckel; den går före Runtimes inloggning.",
+    },
+    "ru": {
+        "old": "⚠️ Этот Runtime слишком старый для OpenAI Codex. Обновите AI Workspace Runtime (App или образ Docker) до 1.6.0 или новее.",
+        "unreachable": "⚠️ Runtime не ответил. Проверьте адрес и пароль Runtime на предыдущей странице.",
+        "signed_in": "✅ Выполнен вход через ChatGPT в Runtime{plan} (с {saved}). Его используют все агенты Codex на этом Runtime без собственного ключа.",
+        "api_key": "✅ У Runtime есть ключ API OpenAI для Codex (оплата как использование API).",
+        "none": "⚠️ Вход ещё не выполнен. Выберите **Войти через ChatGPT** или вернитесь и вставьте ключ API OpenAI.",
+        "own_key": "Этот агент использует собственный ключ API OpenAI; он важнее входа Runtime.",
+    },
+    "ko": {
+        "old": "⚠️ 이 런타임은 OpenAI Codex에 비해 너무 오래되었습니다. AI Workspace Runtime(App 또는 Docker 이미지)을 1.6.0 이상으로 업데이트하세요.",
+        "unreachable": "⚠️ 런타임이 응답하지 않았습니다. 이전 페이지에서 런타임 주소와 비밀번호를 확인하세요.",
+        "signed_in": "✅ 런타임에서 ChatGPT로 로그인했습니다{plan} ({saved}부터). 자체 키가 없는 이 런타임의 모든 Codex 에이전트가 이를 사용합니다.",
+        "api_key": "✅ 런타임에 Codex용 OpenAI API 키가 있습니다(API 사용량으로 청구).",
+        "none": "⚠️ 아직 로그인하지 않았습니다. **ChatGPT로 로그인**을 선택하거나, 돌아가서 OpenAI API 키를 붙여 넣으세요.",
+        "own_key": "이 에이전트는 자체 OpenAI API 키를 사용하며, 런타임의 로그인보다 우선합니다.",
+    },
+    "zh-Hans": {
+        "old": "⚠️ 此运行时版本过旧，无法使用 OpenAI Codex。请将 AI Workspace Runtime（App 或 Docker 镜像）更新到 1.6.0 或更高版本。",
+        "unreachable": "⚠️ 运行时没有响应。请在上一页检查运行时地址和密码。",
+        "signed_in": "✅ 已在运行时上用 ChatGPT 登录{plan}（自 {saved} 起）。此运行时上所有没有自己密钥的 Codex 代理都会使用它。",
+        "api_key": "✅ 运行时有用于 Codex 的 OpenAI API 密钥（按 API 用量计费）。",
+        "none": "⚠️ 尚未登录。请选择 **用 ChatGPT 登录**，或返回并粘贴 OpenAI API 密钥。",
+        "own_key": "此代理使用自己的 OpenAI API 密钥，优先于运行时的登录。",
+    },
+    "zh-Hant": {
+        "old": "⚠️ 此執行環境版本過舊，無法使用 OpenAI Codex。請將 AI Workspace Runtime（App 或 Docker 映像）更新到 1.6.0 或更新版本。",
+        "unreachable": "⚠️ 執行環境沒有回應。請在上一頁檢查執行環境位址和密碼。",
+        "signed_in": "✅ 已在執行環境上用 ChatGPT 登入{plan}（自 {saved} 起）。此執行環境上所有沒有自己金鑰的 Codex 代理都會使用它。",
+        "api_key": "✅ 執行環境有用於 Codex 的 OpenAI API 金鑰（按 API 用量計費）。",
+        "none": "⚠️ 尚未登入。請選擇 **用 ChatGPT 登入**，或返回並貼上 OpenAI API 金鑰。",
+        "own_key": "此代理使用自己的 OpenAI API 金鑰，優先於執行環境的登入。",
+    },
+    "az": {
+        "old": "⚠️ Bu Runtime OpenAI Codex üçün çox köhnədir. AI Workspace Runtime-ı (App və ya Docker şəkli) 1.6.0 və ya daha yeni versiyaya yeniləyin.",
+        "unreachable": "⚠️ Runtime cavab vermədi. Əvvəlki səhifədə Runtime ünvanını və parolunu yoxlayın.",
+        "signed_in": "✅ Runtime-da ChatGPT ilə daxil olunub{plan} ({saved} tarixindən). Bu Runtime-da öz açarı olmayan hər Codex agenti bundan istifadə edir.",
+        "api_key": "✅ Runtime-ın Codex üçün OpenAI API açarı var (API istifadəsi kimi hesablanır).",
+        "none": "⚠️ Hələ daxil olunmayıb. **ChatGPT ilə daxil ol** seçin və ya geri qayıdıb OpenAI API açarı yapışdırın.",
+        "own_key": "Bu agent öz OpenAI API açarından istifadə edir; o, Runtime-ın girişindən üstündür.",
+    },
+    "eo": {
+        "old": "⚠️ Ĉi tiu rultempo estas tro malnova por OpenAI Codex. Ĝisdatigu la AI Workspace Runtime (App aŭ Docker-bildo) al 1.6.0 aŭ pli nova.",
+        "unreachable": "⚠️ La rultempo ne respondis. Kontrolu la adreson kaj pasvorton de la rultempo en la antaŭa paĝo.",
+        "signed_in": "✅ Ensalutinta per ChatGPT ĉe la rultempo{plan} (ekde {saved}). Ĉiu Codex-agento ĉe ĉi tiu rultempo sen propra ŝlosilo uzas ĝin.",
+        "api_key": "✅ La rultempo havas OpenAI-API-ŝlosilon por Codex (fakturata kiel API-uzo).",
+        "none": "⚠️ Ankoraŭ ne ensalutinta. Elektu **Ensaluti per ChatGPT**, aŭ reiru kaj algluu OpenAI-API-ŝlosilon.",
+        "own_key": "Ĉi tiu agento uzas sian propran OpenAI-API-ŝlosilon; ĝi superas la ensaluton de la rultempo.",
+    },
 }
+
+
+# Chat error when OpenAI refuses the Codex credential (Runtime error code codex_auth_failed).
+CODEX_AUTH_FAILED_CODE = "codex_auth_failed"
+CODEX_AUTH_FAILED = {
+    "en": "OpenAI no longer accepts this Codex sign-in or key: it has expired or was revoked. Open this agent's settings (Settings → Devices & services → AI Workspace) and sign in with ChatGPT again, or replace the OpenAI API key.",
+    "de": "OpenAI akzeptiert diese Codex-Anmeldung oder diesen Schlüssel nicht mehr: abgelaufen oder widerrufen. Öffne die Einstellungen dieses Agenten (Einstellungen → Geräte & Dienste → AI Workspace) und melde dich erneut mit ChatGPT an, oder ersetze den OpenAI-API-Schlüssel.",
+    "fr": "OpenAI n'accepte plus cette connexion ou cette clé Codex : elle a expiré ou a été révoquée. Ouvrez les réglages de cet agent (Paramètres → Appareils et services → AI Workspace) et reconnectez-vous avec ChatGPT, ou remplacez la clé API OpenAI.",
+    "es": "OpenAI ya no acepta este inicio de sesión o clave de Codex: ha caducado o fue revocado. Abre los ajustes de este agente (Ajustes → Dispositivos y servicios → AI Workspace) e inicia sesión con ChatGPT de nuevo, o sustituye la clave API de OpenAI.",
+    "it": "OpenAI non accetta più questo accesso o questa chiave Codex: è scaduto o è stato revocato. Apri le impostazioni di questo agente (Impostazioni → Dispositivi e servizi → AI Workspace) e accedi di nuovo con ChatGPT, oppure sostituisci la chiave API OpenAI.",
+    "nl": "OpenAI accepteert deze Codex-aanmelding of -sleutel niet meer: verlopen of ingetrokken. Open de instellingen van deze agent (Instellingen → Apparaten & diensten → AI Workspace) en meld je opnieuw aan met ChatGPT, of vervang de OpenAI API-sleutel.",
+    "pl": "OpenAI nie akceptuje już tego logowania lub klucza Codex: wygasło lub zostało unieważnione. Otwórz ustawienia tego agenta (Ustawienia → Urządzenia i usługi → AI Workspace) i zaloguj się ponownie przez ChatGPT albo zastąp klucz API OpenAI.",
+    "cs": "OpenAI už toto přihlášení nebo klíč Codex nepřijímá: vypršel nebo byl odvolán. Otevřete nastavení tohoto agenta (Nastavení → Zařízení a služby → AI Workspace) a znovu se přihlaste přes ChatGPT, nebo nahraďte klíč API OpenAI.",
+    "sv": "OpenAI godtar inte längre den här Codex-inloggningen eller nyckeln: den har gått ut eller återkallats. Öppna agentens inställningar (Inställningar → Enheter och tjänster → AI Workspace) och logga in med ChatGPT igen, eller byt OpenAI API-nyckel.",
+    "ru": "OpenAI больше не принимает этот вход или ключ Codex: срок действия истёк или он отозван. Откройте настройки этого агента (Настройки → Устройства и службы → AI Workspace) и войдите через ChatGPT снова или замените ключ API OpenAI.",
+    "ko": "OpenAI가 더 이상 이 Codex 로그인 또는 키를 받아들이지 않습니다. 만료되었거나 취소되었습니다. 이 에이전트의 설정(설정 → 기기 및 서비스 → AI Workspace)을 열고 ChatGPT로 다시 로그인하거나 OpenAI API 키를 바꾸세요.",
+    "zh-Hans": "OpenAI 不再接受此 Codex 登录或密钥：已过期或已被撤销。请打开此代理的设置（设置 → 设备与服务 → AI Workspace），重新用 ChatGPT 登录，或更换 OpenAI API 密钥。",
+    "zh-Hant": "OpenAI 不再接受此 Codex 登入或金鑰：已過期或已被撤銷。請開啟此代理的設定（設定 → 裝置與服務 → AI Workspace），重新用 ChatGPT 登入，或更換 OpenAI API 金鑰。",
+    "az": "OpenAI artıq bu Codex girişini və ya açarını qəbul etmir: vaxtı bitib və ya ləğv edilib. Bu agentin ayarlarını açın (Ayarlar → Cihazlar və xidmətlər → AI Workspace) və ChatGPT ilə yenidən daxil olun, ya da OpenAI API açarını dəyişin.",
+    "eo": "OpenAI ne plu akceptas ĉi tiun Codex-ensaluton aŭ ŝlosilon: ĝi eksvalidiĝis aŭ estis revokita. Malfermu la agordojn de ĉi tiu agento (Agordoj → Aparatoj kaj servoj → AI Workspace) kaj ensalutu per ChatGPT denove, aŭ anstataŭigu la OpenAI-API-ŝlosilon.",
+}
+
+
+def codex_auth_failed_text(language: str = "") -> str:
+    """Sign in with ChatGPT again: the expired or revoked Codex sign-in / key, in the chat's language."""
+    return str(pick(CODEX_AUTH_FAILED, language))
 
 
 def codex_signin_text(status: dict | None, own_key: bool, language: str = "", problem: str = "") -> str:
     """For the Codex account step: is the Runtime signed in with ChatGPT, and what wins."""
-    words = CODEX_SIGNIN.get((language or "en").split("-")[0], CODEX_SIGNIN["en"])
+    words = pick(CODEX_SIGNIN, language)
     lines: list[str] = []
     if problem == "runtime_old":
         lines.append(words["old"])

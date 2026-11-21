@@ -122,6 +122,8 @@ class ChatRequest(BaseModel):
     fresh: bool = False
     no_tools: bool = False
     titles: bool = True
+    # Home Assistant owns the history and says this is the chat's first turn: write a title for it.
+    title_now: bool = False
     model: str = ""
     effort: str = ""
     api_key: str = ""
@@ -138,6 +140,8 @@ class ChatRequest(BaseModel):
     callback_key: str = Field(default="", max_length=200)
     # Seconds a question from an MCP server to the user (elicitation) waits before it is cancelled.
     approval_timeout: int | None = Field(default=None, ge=0, le=86400)
+    # Agent task run (ai_workspace.run_task): the MCP proxy refuses tools by app/task_guard.py.
+    tool_policy: dict[str, Any] | None = None
 
     @field_validator("question", mode="before")
     @classmethod
@@ -338,12 +342,26 @@ def health(request: Request) -> dict:
         "claude": _provider_flag(providers, "claude"),
         "codex": _provider_flag(providers, "codex"),
         "plan_quota": plan_quota,
+        # 1.6.1b16: per engine, what the Runtime's own credential is (subscription | api_key | None),
+        # where it comes from and a non-secret ID. Home Assistant shows plan limits for a runtime
+        # agent only when its engine reports "subscription" here (app.credentials).
+        "credentials": _credentials(settings),
         # 1.6.0b7/b8 agent forms offer "Sign in with Claude" only when the runtime can run it.
         "claude_login": _login_manager(request.app).available(),
         # Engines with a plan sign-in at /api/auth/{engine}/login (details need the runtime token).
         "login": _login_engines(request),
         "token_required": bool(settings.runtime_token) or not settings.open_without_token(),
     }
+
+
+def _credentials(settings: Settings) -> dict:
+    from app.credentials import engine_credentials
+
+    try:
+        return engine_credentials(settings)
+    except Exception:  # noqa: BLE001 - health must answer
+        logger.debug("runtime credentials not read", exc_info=True)
+        return {}
 
 
 def _login_manager(app: FastAPI):
@@ -552,13 +570,8 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
         store.rename_if_default(session.id, title_from_prompt(question))
     outbound = _with_ui_context(attach_files_to_message(message, files), body.origin)
     suggest = getattr(provider, "suggest_title", None)
-    want_title = (
-        not ha_owned
-        and len(store.list_messages(session.id)) <= 1
-        and callable(suggest)
-        and body.titles
-        and needs_title_summary(question)
-    )
+    first_turn = body.title_now if ha_owned else len(store.list_messages(session.id)) <= 1
+    want_title = first_turn and callable(suggest) and body.titles and needs_title_summary(question)
     # An agent id sent with an engine switch belongs to the old engine.
     sync_id = "" if switched else body.sync_agent_id.strip()
     if sync_id and session.agent_id != sync_id:
@@ -592,6 +605,7 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
             request.headers.get("x-ai-workspace-agent") or "Cursor",
             body.callback_key,
             approval_timeout=body.approval_timeout,
+            tool_policy=body.tool_policy,
         )
 
     async def generate():
@@ -600,6 +614,27 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
         error: str | None = None
         final: str | None = None
         disconnected = False
+        title_asked = False
+
+        async def written_title(wait: bool) -> str | None:
+            """The engine's title once it is there (``wait``: also wait for it), sent once."""
+            nonlocal title_asked
+            if title_task is None or title_asked or (not wait and not title_task.done()):
+                return None
+            title_asked = True
+            try:
+                raw = await title_task
+            except Exception:
+                logger.debug("title generation failed", exc_info=True)
+                return None
+            label = accept_generated_title(question, raw or "")
+            if not label:
+                return None
+            if ha_owned:
+                # Home Assistant checks it is still the automatic title and stores it.
+                return label
+            return store.apply_generated_title(_user_id(request), session.id, question, label)
+
         try:
             try:
                 async for event in provider.send(
@@ -641,6 +676,10 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
                         disconnected = True
                         continue
                     yield _sse(str(event["type"]), event)
+                    # The title is ready while the reply still runs: show it now, not after the reply.
+                    early = await written_title(False)
+                    if early:
+                        yield _sse("title", {"type": "title", "title": early})
             except Exception as exc:
                 logger.exception("chat failed session=%s", session.id)
                 error = _public(settings, exc)
@@ -655,16 +694,8 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
             if error is None and not disconnected:
                 yield _sse("done", {"type": "done", "answer": answer})
                 yield _sse("status", {"type": "status", "text": "Done."})
-            if error is None and title_task is not None and not disconnected:
-                try:
-                    raw = await title_task
-                except Exception:
-                    logger.debug("title generation failed", exc_info=True)
-                    raw = None
-                label = accept_generated_title(question, raw or "")
-                applied = store.apply_generated_title(
-                    _user_id(request), session.id, title_from_prompt(question), label
-                )
+            if error is None and not disconnected:
+                applied = await written_title(True)
                 if applied:
                     yield _sse("title", {"type": "title", "title": applied})
         finally:

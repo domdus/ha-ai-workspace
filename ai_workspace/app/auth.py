@@ -102,6 +102,7 @@ class CursorAuth(EngineAuth):
             "ready": has_key,
             "credential": "settings" if has_key else "none",
             "kind": "api" if has_key else None,
+            "runtime_credential": _runtime_credential("cursor", self.settings),
             "signed_in": None,
             "overridden": False,
             "login": {"supported": False, "reason": "api_key_only"},
@@ -139,6 +140,8 @@ class ClaudeAuth(EngineAuth):
             "credential": source,
             # plan | api: how the runtime bills Claude with its own credential.
             "kind": auth_mode(credential) if credential else None,
+            # subscription | api_key with its source: what Home Assistant bills a runtime agent by.
+            "runtime_credential": _runtime_credential("claude", self.settings),
             "signed_in": signed_in,
             # Up to 1.6.0b11 a Plan token in the App options won over a sign-in. Now a sign-in always
             # wins over the runtime's environment, so nothing overrides it. Kept for older integrations.
@@ -237,6 +240,7 @@ class CodexAuth(EngineAuth):
             # signed-in: auth.json in the runtime's data folder; settings: an OpenAI API key option.
             "credential": {"chatgpt": "signed-in", "api-key": "signed-in", "env-api": "settings"}.get(source, "none"),
             "kind": {"chatgpt": "plan", "api-key": "api", "env-api": "api"}.get(source),
+            "runtime_credential": _runtime_credential("codex", self.settings),
             "plan": (signed or {}).get("plan"),
             "signed_in": signed,
             # auth.json always wins over an API key option, so nothing in the options hides a sign-in.
@@ -290,6 +294,12 @@ class CodexAuth(EngineAuth):
 
     async def aclose(self) -> None:
         await self.manager.aclose()
+
+
+def _runtime_credential(engine: str, settings: Settings) -> dict[str, Any] | None:
+    from app.credentials import engine_credentials
+
+    return engine_credentials(settings).get(engine)
 
 
 def _error(key: str) -> HTTPException:

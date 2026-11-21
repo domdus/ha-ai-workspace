@@ -5,6 +5,7 @@ Pure Python: the integration and the Runtime ship separate copies of this file.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -25,6 +26,19 @@ _STATUS_REJECTED = "rejected"
 
 _SESSION_TYPES = frozenset({"five_hour", "5h", "session", "five-hour"})
 _WEEK_TYPES = frozenset({"seven_day", "7d", "week", "seven-day"})
+
+
+def credential_id(secret: str) -> str:
+    """A short, non-secret ID for one credential: which sign-in or key a plan snapshot belongs to.
+
+    Runtime and integration compute it the same way, so Home Assistant can match an agent's own Plan
+    token to the snapshot its turns produced, and a runtime agent to the Runtime's own credential.
+    One-way (SHA-256, domain-separated, 16 hex digits); "" for no credential.
+    """
+    value = str(secret or "").strip()
+    if not value:
+        return ""
+    return "c" + hashlib.sha256(f"ai-workspace-credential:{value}".encode()).hexdigest()[:16]
 
 
 def _utc_now() -> str:
@@ -283,8 +297,14 @@ _RESET_FOR = {"session_percent": "session_reset_at", "week_percent": "week_reset
 
 
 def merge_snapshots(old: dict[str, Any] | None, new: dict[str, Any]) -> dict[str, Any]:
-    """Newest known values win; a value the new snapshot does not carry (None) keeps the old one."""
+    """Newest known values win; a value the new snapshot does not carry (None) keeps the old one.
+
+    A snapshot from another credential (``credential`` differs) replaces the old one completely:
+    two sign-ins never mix into one reading.
+    """
     base = dict(old or {})
+    if new.get("credential") and base.get("credential") != new.get("credential"):
+        base = {}
     for key, value in new.items():
         if key == "updated_at":
             base[key] = value
@@ -323,6 +343,7 @@ _USAGE_FIELDS = (
     "rate_limit_type",
     "overage",
     "source",
+    "credential",
     "updated_at",
 )
 
@@ -437,8 +458,15 @@ class PlanQuotaBook:
         row = self._engines.get(engine)
         return dict(row) if isinstance(row, dict) else None
 
-    def apply(self, engine: str, snapshot: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-        """Store the newest values; events: plan_usage (always) and plan_notice (on crossing the warning)."""
+    def apply(
+        self, engine: str, snapshot: dict[str, Any], credential: str = ""
+    ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+        """Store the newest values; events: plan_usage (always) and plan_notice (on crossing the warning).
+
+        ``credential`` (see credential_id) tags the snapshot with the credential the turn ran on.
+        """
+        if credential:
+            snapshot = {**snapshot, "credential": credential}
         old = self.get(engine)
         merged = merge_snapshots(old, snapshot)
         self._engines[engine] = merged
@@ -452,7 +480,9 @@ class PlanQuotaBook:
         return merged, events
 
 
-def plan_events_from_sdk(book: PlanQuotaBook, engine: str, message: Any) -> list[dict[str, Any]]:
+def plan_events_from_sdk(
+    book: PlanQuotaBook, engine: str, message: Any, credential: str = ""
+) -> list[dict[str, Any]]:
     parsers = {
         "claude": parse_claude_sdk_message,
         "cursor": parse_cursor_sdk_message,
@@ -467,5 +497,5 @@ def plan_events_from_sdk(book: PlanQuotaBook, engine: str, message: Any) -> list
         return []
     if not snapshot:
         return []
-    _, events = book.apply(engine, snapshot)
+    _, events = book.apply(engine, snapshot, credential)
     return events

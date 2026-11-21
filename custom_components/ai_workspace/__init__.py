@@ -23,6 +23,9 @@ from .const import (
     CONF_CROSS_CHAT,
     CONF_DEFAULT_AGENT,
     CONF_MODEL_SWITCHER,
+    CONF_FALLBACK_AGENTS,
+    CONF_FALLBACK_ENABLED,
+    CONF_FALLBACK_RETURN,
     CONF_ENABLE_DICTATE,
     CONF_ENABLE_OVERLAY,
     CONF_ENABLE_SIDEBAR,
@@ -226,6 +229,9 @@ async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
         cross_chat=bool(data.get(CONF_CROSS_CHAT, False)),
         default_agent=str(data.get(CONF_DEFAULT_AGENT) or "").strip(),
         model_switcher=bool(data.get(CONF_MODEL_SWITCHER, False)),
+        fallback_enabled=bool(data.get(CONF_FALLBACK_ENABLED, False)),
+        fallback_agents=_fallback_agents(data.get(CONF_FALLBACK_AGENTS)),
+        fallback_return=_fallback_return(data.get(CONF_FALLBACK_RETURN)),
         keep_chats=_keep_chats(data),
         mode=MODE_API,
         system_prompt=str(data.get(CONF_SYSTEM_PROMPT) or "").strip(),
@@ -234,6 +240,26 @@ async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
         speak_replies=bool(data.get(CONF_SPEAK_REPLIES, False)) and tts != TTS_OFF,
         tts_natural=bool(data.get(CONF_TTS_NATURAL, True)),
     )
+
+
+def _fallback_agents(value) -> tuple[str, ...]:
+    if isinstance(value, str):
+        value = [part for part in value.split(",")]
+    if not isinstance(value, (list, tuple)):
+        return ()
+    out: list[str] = []
+    for item in value:
+        key = str(item or "").strip()
+        if key and key not in out:
+            out.append(key)
+    return tuple(out)
+
+
+def _fallback_return(value) -> str:
+    from .fallback import DEFAULT_RETURN, RETURN_MODES
+
+    key = str(value or "").strip()
+    return key if key in RETURN_MODES else DEFAULT_RETURN
 
 
 def _one_provider(hass: HomeAssistant, settings: Settings, agent, store):
@@ -509,6 +535,10 @@ async def _register_frontend(hass: HomeAssistant, settings: Settings) -> None:
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Import optional configuration.yaml. The UI still works without it."""
+    from .tasks import async_register_services
+
+    # Registered once, without an entry too, so automations that use it stay valid.
+    async_register_services(hass)
     conf = config.get(DOMAIN)
     if conf:
         hass.data[YAML_STORAGE] = conf

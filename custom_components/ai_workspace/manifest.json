@@ -3,8 +3,10 @@
   "name": "AI Workspace",
   "after_dependencies": [
     "assist_pipeline",
+    "automation",
     "hassio",
     "mcp_server",
+    "notify",
     "stt",
     "tts"
   ],
@@ -24,5 +26,5 @@
   "issue_tracker": "https://github.com/domdus/ha-ai-workspace/issues",
   "requirements": [],
   "single_config_entry": true,
-  "version": "1.6.0"
+  "version": "1.6.1"
 }

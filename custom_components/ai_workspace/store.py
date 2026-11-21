@@ -98,6 +98,9 @@ class Session:
     updated_at: str
     pinned: bool = False
     model: str = ""
+    # Newest message id the user has seen in this chat; an agent reply after it is unread.
+    read_id: int = 0
+    unread: bool = False
 
 
 ACTIVITY_CAP = 30
@@ -228,6 +231,12 @@ class Store:
             self._conn.execute("ALTER TABLE sessions ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0")
         if "model" not in cols:
             self._conn.execute("ALTER TABLE sessions ADD COLUMN model TEXT NOT NULL DEFAULT ''")
+        if "read_id" not in cols:
+            self._conn.execute("ALTER TABLE sessions ADD COLUMN read_id INTEGER NOT NULL DEFAULT 0")
+            # Chats from before the update count as read: no dot on every old chat.
+            self._conn.execute(
+                "UPDATE sessions SET read_id = COALESCE((SELECT MAX(m.id) FROM messages m WHERE m.session_id = sessions.id), 0)"
+            )
         activity_cols = {row[1] for row in self._conn.execute("PRAGMA table_info(activity)")}
         if "session_id" not in activity_cols:
             self._conn.execute("ALTER TABLE activity ADD COLUMN session_id TEXT NOT NULL DEFAULT ''")
@@ -288,12 +297,12 @@ class Store:
         with self._lock:
             if words:
                 rows = self._conn.execute(
-                    """
+                    f"""
                     SELECT s.*, (
                         SELECT m.content FROM messages m
                         WHERE m.session_id = s.id AND m.role = 'user'
                         ORDER BY m.id LIMIT 1
-                    ) AS first_prompt
+                    ) AS first_prompt, {_LAST_REPLY}
                     FROM sessions s WHERE s.user_id = ? ORDER BY s.pinned DESC, s.updated_at DESC
                     """,
                     (user_id,),
@@ -301,9 +310,9 @@ class Store:
             else:
                 # Listing the sidebar must not scan every first prompt.
                 rows = self._conn.execute(
-                    """
-                    SELECT * FROM sessions WHERE user_id = ?
-                    ORDER BY pinned DESC, updated_at DESC
+                    f"""
+                    SELECT s.*, {_LAST_REPLY} FROM sessions s WHERE s.user_id = ?
+                    ORDER BY s.pinned DESC, s.updated_at DESC
                     """,
                     (user_id,),
                 ).fetchall()
@@ -341,7 +350,7 @@ class Store:
             return None
         with self._lock:
             row = self._conn.execute(
-                "SELECT * FROM sessions WHERE id = ? AND user_id = ?",
+                f"SELECT s.*, {_LAST_REPLY} FROM sessions s WHERE s.id = ? AND s.user_id = ?",
                 (session_id, user_id),
             ).fetchone()
         return _session(row) if row else None
@@ -395,6 +404,31 @@ class Store:
             self._conn.commit()
         return self.get_session(user_id, session_id)
 
+    def mark_read(self, user_id: str, session_id: str, upto: int | None = None) -> Session | None:
+        """The user saw this chat up to message ``upto`` (default: everything in it). Never moves back."""
+        session = self.get_session(user_id, session_id)
+        if session is None:
+            return None
+        with self._lock:
+            newest = self._conn.execute(
+                "SELECT COALESCE(MAX(id), 0) FROM messages WHERE session_id = ?", (_text(session_id),)
+            ).fetchone()[0]
+            seen = int(newest or 0)
+            if upto is not None:
+                try:
+                    seen = max(0, min(seen, int(upto)))
+                except (TypeError, ValueError):
+                    pass
+            self._conn.execute(
+                "UPDATE sessions SET read_id = MAX(read_id, ?) WHERE id = ? AND user_id = ?",
+                (seen, _text(session_id), _text(user_id)),
+            )
+            self._conn.commit()
+        return self.get_session(user_id, session_id)
+
+    def unread_ids(self, user_id: str) -> list[str]:
+        return [item.id for item in self.list_sessions(user_id) if item.unread]
+
     def set_pinned(self, user_id: str, session_id: str, pinned: bool) -> Session | None:
         session = self.get_session(user_id, session_id)
         if session is None:
@@ -442,20 +476,23 @@ class Store:
             self._conn.commit()
         return True
 
-    def rename_if_default(self, session_id: str, title: str) -> None:
+    def rename_if_default(self, session_id: str, title: str) -> str:
+        """The title it set, or "" when the chat already had a real one."""
         session_id = _text(session_id)
-        if not session_id:
-            return
+        label = (title or "").strip()[:80]
+        if not session_id or not label:
+            return ""
         with self._lock:
-            self._conn.execute(
+            cursor = self._conn.execute(
                 """
                 UPDATE sessions
                 SET title = ?, updated_at = ?
                 WHERE id = ? AND title IN ('New Chat', 'New chat', 'Neuer Chat')
                 """,
-                (title[:80], _now(), session_id),
+                (label, _now(), session_id),
             )
             self._conn.commit()
+        return label if cursor.rowcount else ""
 
     def apply_generated_title(self, user_id: str, session_id: str, first_user: str, title: str) -> str | None:
         from .titles import is_placeholder_title
@@ -1274,7 +1311,16 @@ def _activity(row: sqlite3.Row) -> Activity:
     )
 
 
+# Newest agent reply in the chat, for the unread dot.
+_LAST_REPLY = (
+    "(SELECT MAX(m.id) FROM messages m WHERE m.session_id = s.id AND m.role = 'assistant') AS last_reply_id"
+)
+
+
 def _session(row: sqlite3.Row) -> Session:
+    keys = row.keys()
+    read_id = int(row["read_id"] or 0) if "read_id" in keys else 0
+    last_reply = int(row["last_reply_id"] or 0) if "last_reply_id" in keys else 0
     return Session(
         id=row["id"],
         user_id=row["user_id"],
@@ -1285,4 +1331,6 @@ def _session(row: sqlite3.Row) -> Session:
         updated_at=row["updated_at"],
         pinned=bool(row["pinned"]) if "pinned" in row.keys() else False,
         model=str(row["model"] or "") if "model" in row.keys() else "",
+        read_id=read_id,
+        unread=last_reply > read_id,
     )

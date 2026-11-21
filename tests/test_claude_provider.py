@@ -754,3 +754,37 @@ def test_api_key_turn_never_reads_plan_usage(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(provider.usage_reader, "refresh_in_background", lambda book, token: reads.append(token))
     _run(provider, _session())
     assert reads == []
+
+
+@needs_sdk
+def test_suggest_title_is_one_small_call_without_tools(tmp_path, monkeypatch) -> None:
+    from claude_agent_sdk import AssistantMessage, TextBlock
+
+    settings = _settings(tmp_path, anthropic=API_KEY)
+    captured: dict = {}
+    reply = AssistantMessage(content=[TextBlock(text="Heise Artikel über Nvidia Spark")], model="claude-haiku")
+    monkeypatch.setattr(
+        "claude_agent_sdk.query",
+        _fake_query(captured, lambda: [reply, _result(result="Heise Artikel über Nvidia Spark")]),
+    )
+    provider = ClaudeProvider(settings, CursorRuntime(settings))
+    title = asyncio.run(provider.suggest_title("https://www.heise.de/tests/DGX-Spark-Test-1.html\n\nWas taugt das?"))
+    assert title == "Heise Artikel über Nvidia Spark"
+    options = captured["options"]
+    assert options.model == claude_mod.TITLE_MODEL
+    assert options.max_turns == 1
+    assert options.tools == [] and options.allowed_tools == []
+    assert not options.mcp_servers and options.resume is None
+    assert "Same language" in captured["prompt"] and "heise.de" in captured["prompt"]
+
+
+@needs_sdk
+def test_suggest_title_failure_is_no_title(tmp_path, monkeypatch) -> None:
+    settings = _settings(tmp_path, anthropic=API_KEY)
+    monkeypatch.setattr("claude_agent_sdk.query", _fake_query({}, lambda: [RuntimeError("down")]))
+    assert asyncio.run(ClaudeProvider(settings, CursorRuntime(settings)).suggest_title("hi there")) is None
+    monkeypatch.setattr(
+        "claude_agent_sdk.query", _fake_query({}, lambda: [_result(is_error=True, result="Overloaded")])
+    )
+    assert asyncio.run(ClaudeProvider(settings, CursorRuntime(settings)).suggest_title("hi there")) is None
+    assert asyncio.run(ClaudeProvider(_settings(tmp_path), CursorRuntime(settings)).suggest_title("hi")) is None

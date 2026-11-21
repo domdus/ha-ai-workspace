@@ -1,5 +1,6 @@
 const CACHE = new URL(import.meta.url).search;
 const { stringsFor } = await import(`./i18n.js${CACHE}`);
+const { taskStrings } = await import(`./tasks_i18n.js${CACHE}`);
 const { takeSpeech, speechPlain, takePendingClip, speechTail, splitSpeechClip, MAX_CHARS, clipWatch, unlockOnSend, releaseAudio } = await import(
   `./speech.js${CACHE}`
 );
@@ -17,7 +18,38 @@ const {
   `./send_guard.js${CACHE}`
 );
 
+const {
+  chatCacheKey,
+  readChatCache,
+  writeChatCache,
+  clearChatCache,
+  sameChat,
+  olderCount,
+  loadOutcome,
+  anyUnread,
+  timeoutSignal,
+  SKELETON_DELAY_MS,
+  SLOW_HINT_MS,
+  LOAD_TIMEOUT_MS,
+} = await import(`./chat_cache.js${CACHE}`);
+const {
+  draftStoreKey,
+  draftSlot,
+  readDraft,
+  writeDraft,
+  clearDraft,
+  draftSlots,
+  createChatQueues,
+  drainQueue,
+  NEW_CHAT_DRAFT,
+} = await import(`./chat_drafts.js${CACHE}`);
+const { replyTimeLabel, replyTimeTitle, haHour12, haTimeZone, replyRows } = await import(
+  `./reply_meta.js${CACHE}`
+);
+const { isPlaceholderTitle, headerTitle, realTitle } = await import(`./chat_title.js${CACHE}`);
+
 const API = "/api/ai_workspace";
+const UI_THEME_KEY = "ai_workspace_ui_theme";
 const SESSION_CACHE_KEY = "ai_workspace_sessions";
 const PAINT_TAIL = 24;
 
@@ -49,6 +81,7 @@ function writeSessionCache(sessions) {
           id: session.id,
           title: session.title || "",
           pinned: Boolean(session.pinned),
+          unread: Boolean(session.unread),
         })),
       ),
     );
@@ -57,6 +90,63 @@ function writeSessionCache(sessions) {
   }
 }
 
+function userId() {
+  return document.querySelector("home-assistant")?.hass?.user?.id || "";
+}
+
+function chatCacheSlot() {
+  return chatCacheKey(userId());
+}
+
+/** The chat id in /ai-workspace/<id>, also before the page is mounted. */
+export function routeSessionId(pathname = location.pathname) {
+  const match = String(pathname || "").match(/^\/ai-workspace(?:\/conversations)?\/([0-9a-fA-F-]{8,})\/?$/);
+  return match ? match[1] : "";
+}
+
+// Signed-in fetch for code that runs before mountAiWorkspace (panel open), with a time limit.
+async function authFetch(url, init = {}, getToken = null, timeoutMs = 0) {
+  const hass = hassObj();
+  const limit = timeoutMs ? timeoutSignal(timeoutMs, init.signal) : null;
+  const options = limit ? { ...init, signal: limit.signal } : init;
+  try {
+    if (typeof hass?.fetchWithAuth === "function") return await hass.fetchWithAuth(url, options);
+    const token = (typeof getToken === "function" ? getToken() : "") || hass?.auth?.data?.access_token || "";
+    if (!token) return null;
+    return await fetch(url, { ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` } });
+  } finally {
+    limit?.done();
+  }
+}
+
+// The open chat's messages, asked for the moment the panel opens, in parallel with everything else.
+let sessionPrefetch = null;
+const PREFETCH_FRESH_MS = 10000;
+
+export function prefetchSession(id = routeSessionId(), getToken = null) {
+  if (!id) return null;
+  if (sessionPrefetch && sessionPrefetch.id === id && Date.now() - sessionPrefetch.at < PREFETCH_FRESH_MS) {
+    return sessionPrefetch.promise;
+  }
+  const promise = authFetch(
+    `${API}/sessions/${id}`,
+    { headers: { Accept: "application/json" }, priority: "high" },
+    getToken,
+    LOAD_TIMEOUT_MS,
+  ).then(
+    async (response) => ({ response, body: response?.ok ? await response.json() : null }),
+    (error) => ({ response: null, body: null, timedOut: error?.name === "TimeoutError" || error?.name === "AbortError", error }),
+  );
+  sessionPrefetch = { id, at: Date.now(), promise };
+  return promise;
+}
+
+function takeSessionPrefetch(id) {
+  const hit = sessionPrefetch;
+  if (!hit || hit.id !== id || Date.now() - hit.at >= PREFETCH_FRESH_MS) return null;
+  sessionPrefetch = null;
+  return hit.promise;
+}
 
 export { takeSpeech };
 
@@ -259,24 +349,15 @@ async function ensureHaComponents(names) {
 
 let uiRemountInFlight = false;
 
-const HA_COMPONENT_PRELOAD = [
-  "ha-card",
-  "ha-alert",
-  "ha-empty-state",
-  "ha-assist-chip",
-  "ha-chip-set",
-  "ha-input",
+// What the HA composer is built from: text field, queued-prompt and file chips, pickers.
+const HA_COMPOSER_PRELOAD = [
   "ha-textarea",
+  "ha-chip-set",
   "ha-input-chip",
-  "ha-list-item-button",
-  "ha-markdown",
-  "ha-dialog",
-  "ha-dialog-footer",
   "ha-button",
   "ha-icon-button",
   "ha-dropdown",
   "ha-dropdown-item",
-  "ha-select",
 ];
 
 let uiTheme = "standard";
@@ -286,31 +367,53 @@ export function haComponentsUi() {
   return uiTheme === "ha_components";
 }
 
-function uiCreate(...names) {
+/** Composer parts (queued prompts, file chips): HA widgets with HA components on, plain elements otherwise. */
+function composerCreate(...names) {
   if (!haComponentsUi()) {
     return document.createElement(names[names.length - 1] || "div");
   }
   return haCreate(...names);
 }
 
-async function fetchUiTheme(getToken) {
-  const hass = hassObj();
-  const token = (typeof getToken === "function" ? getToken() : "") || hass?.auth?.data?.access_token || "";
-  if (typeof hass?.fetchWithAuth !== "function" && !token) return uiTheme;
-  const headers = { Accept: "application/json" };
+// One /ui answer serves the panel, the theme check and the mic/usage settings: they ask within moments.
+let uiBodyCache = null;
+const UI_BODY_FRESH_MS = 5000;
+
+function storedUiTheme() {
   try {
-    const response =
-      typeof hass?.fetchWithAuth === "function"
-        ? await hass.fetchWithAuth(`${API}/ui`, { headers })
-        : await fetch(`${API}/ui`, { headers: { ...headers, Authorization: `Bearer ${token}` } });
-    if (response?.status === 401 || response?.status === 403) return uiTheme;
-    if (response?.ok) {
-      const body = await response.json();
-      uiTheme = body.ui_theme === "ha_components" ? "ha_components" : "standard";
-      uiThemeLoaded = true;
-    }
+    const saved = localStorage.getItem(UI_THEME_KEY);
+    return saved === "ha_components" || saved === "standard" ? saved : "";
   } catch (_err) {
-    return uiTheme;
+    return "";
+  }
+}
+
+function fetchUiBody(getToken, { fresh = false } = {}) {
+  if (!fresh && uiBodyCache && Date.now() - uiBodyCache.at < UI_BODY_FRESH_MS) return uiBodyCache.promise;
+  const promise = (async () => {
+    try {
+      const response = await authFetch(`${API}/ui`, { headers: { Accept: "application/json" } }, getToken, LOAD_TIMEOUT_MS);
+      if (!response?.ok) return null;
+      const body = await response.json();
+      try {
+        localStorage.setItem(UI_THEME_KEY, body.ui_theme === "ha_components" ? "ha_components" : "standard");
+      } catch (_err) {
+        /* private mode */
+      }
+      return body;
+    } catch (_err) {
+      return null;
+    }
+  })();
+  uiBodyCache = { at: Date.now(), promise };
+  return promise;
+}
+
+async function fetchUiTheme(getToken) {
+  const body = await fetchUiBody(getToken);
+  if (body) {
+    uiTheme = body.ui_theme === "ha_components" ? "ha_components" : "standard";
+    uiThemeLoaded = true;
   }
   return uiTheme;
 }
@@ -319,10 +422,18 @@ export function invalidateUiThemeCache() {
   uiThemeLoaded = false;
 }
 
+/** The theme to mount with. The last one seen in this browser goes at once; /ui is checked in the background. */
 export async function prefetchUiTheme(getToken, { force = false } = {}) {
   if (force) invalidateUiThemeCache();
   if (uiThemeLoaded && !force) {
     void fetchUiTheme(getToken);
+    return uiTheme;
+  }
+  const saved = force ? "" : storedUiTheme();
+  if (saved) {
+    uiTheme = saved;
+    uiThemeLoaded = true;
+    void fetchUiBody(getToken);
     return uiTheme;
   }
   return fetchUiTheme(getToken);
@@ -777,10 +888,18 @@ function releaseMountHold(root) {
 export async function mountAiWorkspace(root, options = {}) {
   // Read at mount, not at import: the user is known by then, and it may have changed.
   let cachedSessions = readSessionCache();
+  // The open chat's messages are asked for first, in parallel with the theme and everything else.
+  const earlyId =
+    options.restoreSessionId ||
+    (options.compact ? localStorage.getItem("ai_workspace_session") || "" : options.routed ? routeSessionId() : "");
+  if (earlyId) prefetchSession(earlyId, options.getToken);
+  // A different user on this device must not see the last user's cached chat.
+  const ownChatCache = chatCacheSlot();
+  if (ownChatCache) clearChatCache(localStorage, "", { keepKey: ownChatCache });
   await prefetchUiTheme(options.getToken, { force: Boolean(options.forceUiTheme) });
+  // HA components only swap the composer (HA text field, agent and model pickers); messages stay Standard.
   const haUi = haComponentsUi();
   let activeUiTheme = haUi ? "ha_components" : "standard";
-  if (haUi) void ensureHaComponents(HA_COMPONENT_PRELOAD);
   const compact = Boolean(options.compact);
   const strings = stringsFor(hassLanguage());
   const t = (key, vars = {}) => {
@@ -808,7 +927,8 @@ export async function mountAiWorkspace(root, options = {}) {
   const collapsedStart = !compact && !overlayStart && localStorage.getItem(NAV_KEY) === "1";
   const wrapClass = [
     "wrap",
-    haUi ? "ui-theme-ha-components" : "ui-theme-standard",
+    "ui-theme-standard",
+    haUi ? "composer-ha" : "",
     compact ? "compact" : "",
     options.chrome === "panel" ? "has-app-bar" : "",
     overlayStart ? "narrow" : "",
@@ -816,21 +936,23 @@ export async function mountAiWorkspace(root, options = {}) {
   ]
     .filter(Boolean)
     .join(" ");
-  const themeCss = haUi
-    ? `<link rel="stylesheet" href="/ai_workspace/static/chat-layout.css${CACHE}"><link rel="stylesheet" href="/ai_workspace/static/chat-ha-components.css${CACHE}">`
-    : `<link rel="stylesheet" href="/ai_workspace/static/chat.css${CACHE}">`;
-  const bannerMarkup = haUi
-    ? `<ha-alert class="banner" alert-type="error" hidden></ha-alert>`
-    : `<p class="banner" hidden></p>`;
-  const workspaceLinkMarkup =
-    compact && hassObj()?.user?.is_admin
-      ? haUi
-        ? `<ha-button class="workspace-link" appearance="plain" size="s" href="/ai-workspace">${t("open_workspace")}</ha-button>`
-        : `<a class="workspace-link" href="/ai-workspace">${t("open_workspace")}</a>`
+  const themeCss = `<link rel="stylesheet" href="/ai_workspace/static/chat.css${CACHE}">${
+    haUi ? `<link rel="stylesheet" href="/ai_workspace/static/chat-ha-composer.css${CACHE}">` : ""
+  }`;
+  const tasksCss = `<link rel="stylesheet" href="/ai_workspace/static/tasks.css${CACHE}">`;
+  // The Tasks page (agent tasks as automations) is for administrators on the full page only.
+  const tasksAllowed = routed && Boolean(hassObj()?.user?.is_admin);
+  // The Tasks entry lives in the chat list toolbar only, next to Activity and Usage.
+  const tasksButton = () =>
+    tasksAllowed
+      ? `<ha-icon-button class="tasks-open" label="${taskStrings(hassLanguage()).tasks}">
+                <ha-icon icon="mdi:calendar-clock"></ha-icon>
+              </ha-icon-button>`
       : "";
-  const scrollBottomMarkup = haUi
-    ? `<ha-icon-button class="scroll-bottom" tabindex="-1" label="${t("scroll_to_bottom")}"><ha-icon icon="mdi:arrow-down"></ha-icon></ha-icon-button>`
-    : `<button type="button" class="scroll-bottom" tabindex="-1" aria-label="${t("scroll_to_bottom")}"><ha-icon icon="mdi:arrow-down"></ha-icon></button>`;
+  const bannerMarkup = `<p class="banner" hidden></p>`;
+  const workspaceLinkMarkup =
+    compact && hassObj()?.user?.is_admin ? `<a class="workspace-link" href="/ai-workspace">${t("open_workspace")}</a>` : "";
+  const scrollBottomMarkup = `<button type="button" class="scroll-bottom" tabindex="-1" aria-label="${t("scroll_to_bottom")}"><ha-icon icon="mdi:arrow-down"></ha-icon></button>`;
   const htmlAttr = (value) =>
     String(value)
       .replace(/&/g, "&amp;")
@@ -877,7 +999,7 @@ export async function mountAiWorkspace(root, options = {}) {
   // Inline, so it applies before the theme sheets that define the transitions.
   root.innerHTML = `
     <style class="mount-hold">.wrap, .wrap * { transition: none !important; }</style>
-    ${themeCss}
+    ${themeCss}${tasksCss}
     <div class="${wrapClass}">
       <button type="button" class="nav-scrim" hidden aria-label="${t("close")}"></button>
       <div class="notice-pop" role="dialog" aria-label="${t("notice")}" hidden></div>
@@ -897,6 +1019,7 @@ export async function mountAiWorkspace(root, options = {}) {
               <ha-icon-button class="usage-open" label="${t("usage")}">
                 <ha-icon icon="mdi:chart-bar"></ha-icon>
               </ha-icon-button>
+              ${tasksButton()}
             </div>
             <ha-icon-button class="nav-toggle" label="${t("hide_chats")}">
               <ha-icon icon="${collapsedStart ? "mdi:dock-left" : "mdi:chevron-double-left"}"></ha-icon>
@@ -940,7 +1063,7 @@ export async function mountAiWorkspace(root, options = {}) {
         </header>
         ${workspaceLinkMarkup}
         <div class="stage">
-          <div class="${haUi ? "log messages ha-scrollbar" : "log"}"><p class="empty">${t("empty")}</p></div>
+          <div class="log"><p class="empty">${t("empty")}</p></div>
           <form class="composer">
             ${scrollBottomMarkup}
             <div class="approvals" hidden aria-live="polite"></div>
@@ -991,6 +1114,7 @@ export async function mountAiWorkspace(root, options = {}) {
         </div>
         <div class="usage-list"></div>
       </div>
+      ${tasksAllowed ? `<div class="tasks-page" hidden aria-hidden="true"></div>` : ""}
     </div>
   `;
 
@@ -1056,7 +1180,7 @@ export async function mountAiWorkspace(root, options = {}) {
     visit(node);
     node.querySelectorAll?.("*")?.forEach(visit);
   }
-  bindHaTree(root);
+  bindHaTree(form);
   if (haUi) {
     customElements.whenDefined("ha-textarea").then(() => {
       syncComposerField();
@@ -1143,6 +1267,7 @@ export async function mountAiWorkspace(root, options = {}) {
   function workspaceRoute(pathname = location.pathname) {
     const clean = String(pathname || "").replace(/\/$/, "") || "/";
     if (clean === "/ai-workspace/usage") return { view: "usage", sessionId: "" };
+    if (clean === "/ai-workspace/tasks") return { view: "tasks", sessionId: "" };
     const match = String(pathname || "").match(/^\/ai-workspace(?:\/conversations)?\/([0-9a-fA-F-]{8,})\/?$/);
     return { view: "chat", sessionId: match ? match[1] : "" };
   }
@@ -1185,18 +1310,26 @@ export async function mountAiWorkspace(root, options = {}) {
     const route = workspaceRoute();
     if (route.view === "usage") {
       haltSpeech();
+      closeTasksPage();
       openUsagePage();
       return;
     }
-    const leavingUsage = wrap.classList.contains("page-usage");
+    if (route.view === "tasks" && tasksAllowed) {
+      haltSpeech();
+      closeUsagePage();
+      openTasksPage();
+      return;
+    }
+    const leavingUsage = wrap.classList.contains("page-usage") || wrap.classList.contains("page-tasks");
     closeUsagePage();
+    closeTasksPage();
     const id = route.sessionId;
     if (id === sessionId && !leavingUsage) return;
     if (id) openSession(id, true);
     else {
-      restoreQueued();
-      leaveChatStream();
+      leaveChat();
       sessionId = "";
+      switchComposer("");
       freshChat = true;
       titleEl.textContent = t("new_chat");
       showEmpty();
@@ -1207,8 +1340,19 @@ export async function mountAiWorkspace(root, options = {}) {
   let watchGen = 0;
   let turnStopping = false;
   let turnStopDone = null;
-  let nextTurns = [];
+  // Queued prompts belong to their chat; nextTurns is the open chat's own list.
+  const chatQueues = createChatQueues();
+  let nextTurns = chatQueues.of("");
   let sendQueued = null;
+  // Chat ids whose queued prompts are being sent while another chat is open.
+  const backgroundRuns = new Map();
+  let destroyed = false;
+  // The chat the composer text belongs to (NEW_CHAT_DRAFT for the new chat screen).
+  let draftOwner = null;
+  // Picked files and images of a draft stay in memory only (too big for localStorage).
+  const draftFiles = new Map();
+  const draftMemory = new Map();
+  let draftSaveTimer = 0;
   const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
   const MAX_FILE_BYTES = 256 * 1024;
   const IMAGE_EDGE = 1280;
@@ -1230,32 +1374,63 @@ export async function mountAiWorkspace(root, options = {}) {
   let userScrollAt = 0;
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  // The text field inside ha-textarea (the element itself for the Standard textarea).
+  function composerInner() {
+    if (messageEl?.localName !== "ha-textarea") return messageEl;
+    return messageEl.shadowRoot?.querySelector("wa-textarea")?.shadowRoot?.querySelector("textarea") || null;
+  }
+
+  // Height of one text line in `el`, padding and (for border-box) borders included.
+  function oneLineHeight(el) {
+    const style = getComputedStyle(el);
+    const px = (v) => parseFloat(v) || 0;
+    let line = px(style.lineHeight);
+    if (!line) line = px(style.fontSize) * 1.2;
+    let h = line + px(style.paddingTop) + px(style.paddingBottom);
+    if (style.boxSizing === "border-box") h += px(style.borderTopWidth) + px(style.borderBottomWidth);
+    return Math.ceil(h);
+  }
+
+  // The prompt text was set by code (sent, cleared, restored, dictated). ha-textarea passes
+  // a new value to its inner textarea only on its next render; the size is measured from
+  // the inner one, so it gets the text now.
+  function setComposerText(text) {
+    const value = String(text ?? "");
+    messageEl.value = value;
+    const inner = composerInner();
+    if (inner && inner !== messageEl && inner.value !== value) inner.value = value;
+  }
+
   function resizeComposer() {
     syncComposerField();
     if (!messageEl) return;
     const holdTop = chatEl.scrollTop;
+    const inner = composerInner();
+    // Placeholder first: an empty field is measured with it.
+    const prompt = streaming ? t("placeholder_next") : t("placeholder");
+    if ("placeholder" in messageEl) messageEl.placeholder = prompt;
+    if (messageEl.localName !== "ha-textarea") messageEl.setAttribute("placeholder", prompt);
     syncFieldLines();
+    const empty = !String(inner?.value ?? messageEl.value ?? "");
     if (messageEl.localName === "textarea") {
       const minH = 36;
       const maxH = 160;
       messageEl.style.height = "auto";
-      const scrollH = messageEl.scrollHeight;
+      // Empty: one line, whatever the placeholder (a wrapping placeholder counts in scrollHeight).
+      const scrollH = empty ? minH : messageEl.scrollHeight;
       const h = Math.min(Math.max(scrollH, minH), maxH);
       messageEl.style.height = `${h}px`;
       // Avoid a stray in-field scrollbar until content actually exceeds the cap.
       const overflows = scrollH > maxH;
       messageEl.style.overflowY = overflows ? "auto" : "hidden";
       messageEl.classList.toggle("message-overflows", overflows);
+    } else if (inner && messageEl.localName === "ha-textarea") {
+      // ha-textarea only grows on its own input; a cleared or restored text keeps the old height.
+      inner.style.height = "auto";
+      inner.style.height = `${empty ? oneLineHeight(inner) : inner.scrollHeight}px`;
     }
     syncSendButton();
     setComposerDisabled(".attach", pending.length >= MAX_ATTACH);
-    const prompt = streaming ? t("placeholder_next") : t("placeholder");
-    if (messageEl.localName === "ha-textarea") {
-      if ("placeholder" in messageEl) messageEl.placeholder = prompt;
-    } else {
-      if ("placeholder" in messageEl) messageEl.placeholder = prompt;
-      messageEl.setAttribute("placeholder", prompt);
-    }
     chatEl.scrollTop = holdTop;
   }
 
@@ -1268,12 +1443,15 @@ export async function mountAiWorkspace(root, options = {}) {
     const ha = messageEl.localName === "ha-textarea";
     const field = messageEl.closest?.(ha ? ".composer-field" : ".composer-row");
     const actions = field?.querySelector(ha ? ".composer-field-actions" : ".composer-actions");
-    const inner = ha
-      ? messageEl.shadowRoot?.querySelector("wa-textarea")?.shadowRoot?.querySelector("textarea")
-      : messageEl;
-    if (!field || !actions || !inner || !field.clientWidth) return;
-    // The inner textarea is current during the input event; ha-textarea's value catches up later.
-    const value = String(inner.value ?? messageEl.value ?? "");
+    const inner = composerInner();
+    if (!field) return;
+    // setComposerText keeps the inner textarea current; an empty prompt is one row.
+    const value = String(inner?.value ?? messageEl.value ?? "");
+    if (!value) {
+      field.classList.remove("multi");
+      return;
+    }
+    if (!actions || !inner || !field.clientWidth) return;
     let multi = value.includes("\n");
     if (!multi && value) {
       const style = getComputedStyle(inner);
@@ -1453,7 +1631,18 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   // Resolves to null when nobody is signed in. Network errors reject only with { raise: true }.
-  async function apiFetch(url, options = {}, { raise = false } = {}) {
+  // With { timeout }, the request is aborted after that many ms (a TimeoutError with raise).
+  async function apiFetch(url, options = {}, { raise = false, timeout = 0 } = {}) {
+    const limit = timeout ? timeoutSignal(timeout, options.signal) : null;
+    if (limit) options = { ...options, signal: limit.signal };
+    try {
+      return await apiFetchNow(url, options, raise);
+    } finally {
+      limit?.done();
+    }
+  }
+
+  async function apiFetchNow(url, options, raise) {
     const hass = hassObj();
     const auth = hass?.auth;
     try {
@@ -1568,7 +1757,7 @@ export async function mountAiWorkspace(root, options = {}) {
     const busy = [...(bubble?.querySelectorAll(".tools .busy") || [])];
     const last = busy[busy.length - 1];
     if (last) {
-      return toolGlyphKind(last.dataset.tool && last.dataset.tool.toLowerCase() !== "mcp" ? last.dataset.tool : haChipLabel(last));
+      return toolGlyphKind(last.dataset.tool && last.dataset.tool.toLowerCase() !== "mcp" ? last.dataset.tool : last.textContent);
     }
     const label = String(bubble?.querySelector(".activity .label")?.textContent || "").trim();
     if (label && label === t("thinking")) return "think";
@@ -1577,7 +1766,6 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function activityGlyph(kind = "work") {
-    if (haUi) return null;
     const glyph = document.createElement("span");
     glyph.className = "glyph";
     glyph.dataset.kind = kind;
@@ -1586,16 +1774,13 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function fillActivitySlot(el, label) {
-    const glyph = activityGlyph();
-    if (glyph) el.replaceChildren(glyph, label);
-    else el.replaceChildren(label);
+    el.replaceChildren(activityGlyph(), label);
   }
 
   // A tool icon stays at least this long, so quick tool calls in a row do not flicker.
   const GLYPH_HOLD_MS = 700;
 
   function syncActivityGlyph(bubble) {
-    if (haUi) return;
     const glyph = bubble?.querySelector(".activity .glyph");
     if (!glyph) return;
     const kind = activityGlyphKind(bubble);
@@ -1626,8 +1811,12 @@ export async function mountAiWorkspace(root, options = {}) {
       fillActivitySlot(el, label);
       bubble.appendChild(el);
     }
-    // Keep the status chip under tools and text so it never shifts the answer.
-    if (el.parentElement !== bubble || bubble.lastElementChild !== el) {
+    // Keep the status chip under tools and text so it never shifts the answer
+    // (but above the reply's own action row, which stays last).
+    const row = bubble.querySelector(":scope > .reply-actions");
+    if (row) {
+      if (el.nextElementSibling !== row) bubble.insertBefore(el, row);
+    } else if (el.parentElement !== bubble || bubble.lastElementChild !== el) {
       bubble.appendChild(el);
     }
     return el;
@@ -1642,11 +1831,8 @@ export async function mountAiWorkspace(root, options = {}) {
       label = document.createElement("span");
       label.className = "label";
       fillActivitySlot(el, label);
-    } else if (!haUi && !el.querySelector(".glyph")) {
-      const glyph = activityGlyph();
-      if (glyph) el.prepend(glyph);
-    } else if (haUi) {
-      el.querySelector(".glyph")?.remove();
+    } else if (!el.querySelector(".glyph")) {
+      el.prepend(activityGlyph());
     }
     if (!pretty) {
       // Keep the line height while streaming so show/hide does not jump the scroll.
@@ -1702,11 +1888,224 @@ export async function mountAiWorkspace(root, options = {}) {
     }
   }
 
+  // Session reset: only the time when it is today (in HA's time zone), else weekday, date and time.
+  function planResetSmartLabel(epoch) {
+    const ts = Number(epoch);
+    if (!Number.isFinite(ts) || ts <= 0) return "?";
+    const tz = hassObj()?.config?.time_zone;
+    const day = (when) => {
+      try {
+        return new Date(when).toLocaleDateString("en-CA", { timeZone: tz || undefined });
+      } catch (_err) {
+        return new Date(when).toLocaleDateString("en-CA");
+      }
+    };
+    return day(ts * 1000) === day(Date.now()) ? planResetLabel(ts) : planResetDayLabel(ts);
+  }
+
   function planHasData(snap) {
     if (!snap) return false;
     return ["status", "session_percent", "week_percent", "session_reset_at", "week_reset_at"].some(
       (key) => snap[key] != null && snap[key] !== "",
     );
+  }
+
+  function planHasPercent(snap) {
+    return Boolean(snap) && (snap.session_percent != null || snap.week_percent != null);
+  }
+
+  // One window of a snapshot: percent (0 once the window has rolled over), reset, rolled over.
+  function planWindow(snap, name) {
+    const raw = snap?.[`${name}_percent`];
+    const reset = snap?.[`${name}_reset_at`];
+    const gone = reset != null && Number(reset) > 0 && Number(reset) <= Date.now() / 1000;
+    let percent = raw == null || raw === "" ? null : Math.max(0, Math.min(100, Math.round(Number(raw))));
+    if (!Number.isFinite(percent)) percent = null;
+    if (gone && percent != null) percent = 0;
+    return { percent, reset: reset == null || gone ? null : reset, gone };
+  }
+
+  // Same thresholds for the Usage cards and the chat header: yellow from 60 %, red from 85 %.
+  function planLevel(percent) {
+    const n = Number(percent);
+    if (percent == null || !Number.isFinite(n)) return "ok";
+    if (n >= 85) return "high";
+    if (n >= 60) return "mid";
+    return "ok";
+  }
+
+  // Plan data for an agent that bills a subscription. The backend resolves "billing" ("plan": its own
+  // Plan token, or the Runtime's own credential when the Runtime reports a subscription for that
+  // engine; "api_key" / "unknown" / "api": $) and names the credential in "plan_credential". Only a
+  // snapshot of that engine from exactly that credential counts: never another agent's sign-in.
+  function planSnapForAgent(item, quota) {
+    if (!item || String(item.billing || "") !== "plan") return null;
+    const credential = String(item.plan_credential || "");
+    if (!credential) return null;
+    const snap = quota?.[String(item.provider || "")];
+    if (!snap || String(snap.credential || "") !== credential) return null;
+    return planHasPercent(snap) ? snap : null;
+  }
+
+  let lastPlanQuota = {};
+
+  function planAgentIds(quota) {
+    return new Set(providerItems.filter((item) => planSnapForAgent(item, quota)).map((item) => item.id));
+  }
+
+  // Header text where the chat's $ used to be: "5h 12% · W 16%", colored by the higher window.
+  function planChip(snap, costText) {
+    const session = planWindow(snap, "session");
+    const week = planWindow(snap, "week");
+    const fmt = (value) => (value.percent == null ? t("usage_plan_unknown") : `${value.percent}%`);
+    const chip = document.createElement("span");
+    chip.className = "chat-plan";
+    chip.dataset.level = planLevel(Math.max(session.percent ?? -1, week.percent ?? -1));
+    chip.textContent = t("chat_plan_short", { session: fmt(session), week: fmt(week) });
+    const resetText = (value, label) =>
+      value.gone ? t("usage_plan_rolled_over") : value.reset != null ? `${t("usage_plan_reset")} ${label(value.reset)}` : "";
+    const line = (name, value, label) => {
+      const reset = resetText(value, label);
+      const pct = value.percent == null ? t("usage_plan_unknown") : `${value.percent}%`;
+      return `${name}: ${pct}${reset ? ` (${reset})` : ""}`;
+    };
+    const lines = [
+      line(t("usage_plan_session"), session, planResetSmartLabel),
+      line(t("usage_plan_week"), week, planResetDayLabel),
+    ];
+    if (snap.overage) lines.push(t("usage_plan_overage"));
+    if (costText) lines.push(t("chat_plan_cost", { cost: costText }));
+    chip.title = lines.join("\n");
+    chip.setAttribute("aria-label", lines.join(". "));
+    return chip;
+  }
+
+  // The chat's usage line; for a plan agent the $ part becomes the plan chip (same place, no new row).
+  let chatUsageShown = null;
+
+  function setChatUsageLine(prefix, bits, costText, snap) {
+    if (!chatUsageEl) return;
+    chatUsageShown = { prefix, bits, costText };
+    const nodes = [];
+    const text = (value) => document.createTextNode(value);
+    if (prefix) nodes.push(text(`${prefix}: `));
+    const before = bits.before.join(" · ");
+    const after = bits.after.join(" · ");
+    if (snap) {
+      if (before) nodes.push(text(`${before} · `));
+      nodes.push(planChip(snap, costText));
+      if (after) nodes.push(text(` · ${after}`));
+    } else {
+      nodes.push(text([...bits.before, ...(costText ? [costText] : []), ...bits.after].join(" · ")));
+    }
+    chatUsageEl.replaceChildren(...nodes);
+    chatUsageEl.hidden = false;
+  }
+
+  function chatPlanSnap() {
+    return planSnapForAgent(providerItems.find((item) => item.id === selectedAgent()), lastPlanQuota);
+  }
+
+  // The agent list arrived or the chat's agent changed: $ or plan for the line already shown.
+  function rerenderChatUsage() {
+    if (!chatUsageShown || !chatUsageEl || chatUsageEl.hidden) return;
+    const { prefix, bits, costText } = chatUsageShown;
+    setChatUsageLine(prefix, bits, costText, chatPlanSnap());
+  }
+
+  function planBar(label, value, resetLabel) {
+    const row = document.createElement("div");
+    row.className = "usage-plan-row";
+    row.dataset.level = planLevel(value.percent);
+    const head = document.createElement("div");
+    head.className = "usage-plan-row-head";
+    const name = document.createElement("span");
+    name.className = "usage-plan-label";
+    name.textContent = label;
+    const pct = document.createElement("span");
+    pct.className = "usage-plan-pct";
+    pct.textContent = value.percent == null ? t("usage_plan_unknown") : `${value.percent}%`;
+    head.append(name, pct);
+    const bar = document.createElement("div");
+    bar.className = "usage-plan-bar";
+    bar.setAttribute("role", "progressbar");
+    bar.setAttribute("aria-label", label);
+    bar.setAttribute("aria-valuemin", "0");
+    bar.setAttribute("aria-valuemax", "100");
+    if (value.percent != null) bar.setAttribute("aria-valuenow", String(value.percent));
+    const fill = document.createElement("span");
+    fill.className = "usage-plan-fill";
+    fill.style.width = `${value.percent ?? 0}%`;
+    bar.appendChild(fill);
+    row.append(head, bar);
+    const resetText = value.gone
+      ? t("usage_plan_rolled_over")
+      : value.reset != null
+        ? `${t("usage_plan_reset")} ${resetLabel(value.reset)}`
+        : "";
+    if (resetText) {
+      const reset = document.createElement("p");
+      reset.className = "usage-plan-reset";
+      reset.textContent = resetText;
+      row.appendChild(reset);
+    }
+    return row;
+  }
+
+  // One plan as a usage card: two bars (session, week) with their resets, warnings, as-of and link.
+  function planCard(engine, snap, link) {
+    const card = document.createElement("article");
+    card.className = "usage-card usage-plan";
+    const title = document.createElement("p");
+    title.className = "usage-card-title";
+    title.textContent = t(`usage_plan_${engine}`);
+    card.appendChild(title);
+    if (planHasPercent(snap)) {
+      card.append(
+        planBar(t("usage_plan_session"), planWindow(snap, "session"), planResetSmartLabel),
+        planBar(t("usage_plan_week"), planWindow(snap, "week"), planResetDayLabel),
+      );
+    } else {
+      const line = document.createElement("p");
+      line.className = "usage-card-meta";
+      line.textContent = planUsageLine(snap);
+      card.appendChild(line);
+    }
+    const warnings = [];
+    if (planHasPercent(snap)) {
+      if (snap.status === "rejected") warnings.push(t("usage_plan_status_rejected"));
+      else if (snap.status === "allowed_warning") warnings.push(t("usage_plan_status_warning"));
+    }
+    if (snap.overage) warnings.push(t("usage_plan_overage"));
+    for (const text of warnings) {
+      const warn = document.createElement("p");
+      warn.className = "usage-plan-warn";
+      warn.setAttribute("role", "status");
+      warn.textContent = text;
+      card.appendChild(warn);
+    }
+    const when = Date.parse(snap.updated_at || "");
+    if (Number.isFinite(when) || link) {
+      const foot = document.createElement("div");
+      foot.className = "usage-plan-foot";
+      if (Number.isFinite(when)) {
+        const asOf = document.createElement("span");
+        asOf.className = "usage-plan-asof";
+        asOf.textContent = t("usage_plan_updated", { when: planResetDayLabel(Math.floor(when / 1000)) });
+        foot.appendChild(asOf);
+      }
+      if (link) {
+        const a = document.createElement("a");
+        a.className = "usage-plan-link";
+        a.href = link;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.textContent = t("usage_plan_official");
+        foot.appendChild(a);
+      }
+      card.appendChild(foot);
+    }
+    return card;
   }
 
   // One line per plan: session % (reset), week % (reset). Status only (the SDK sent no percent): say so.
@@ -1732,19 +2131,6 @@ export async function mountAiWorkspace(root, options = {}) {
     return parts.join(" · ");
   }
 
-  function planUsageMeta(snap) {
-    const bits = [];
-    if (snap.session_percent != null || snap.week_percent != null) {
-      if (snap.status === "rejected") bits.push(t("usage_plan_status_rejected"));
-      else if (snap.status === "allowed_warning") bits.push(t("usage_plan_status_warning"));
-    }
-    const when = Date.parse(snap.updated_at || "");
-    if (Number.isFinite(when)) {
-      bits.push(t("usage_plan_updated", { when: planResetDayLabel(Math.floor(when / 1000)) }));
-    }
-    return bits.join(" · ");
-  }
-
   function planEngineTitle(engine) {
     const key = `usage_plan_${String(engine || "claude")}`;
     return t(key);
@@ -1761,6 +2147,20 @@ export async function mountAiWorkspace(root, options = {}) {
     if (session != null) return t("plan_notice_session", { engine, percent: session, reset });
     if (week != null) return t("plan_notice_week", { engine, percent: week });
     return "";
+  }
+
+  // The agent fallback: who stopped and who goes on, paused or back. The chat now runs on data.to.
+  function applyFallback(data) {
+    const text = String(data?.message || "").trim();
+    if (text && logEl) {
+      const note = document.createElement("p");
+      note.className = "plan-notice fallback-notice";
+      note.dataset.phase = String(data.phase || "");
+      note.textContent = text;
+      logEl.appendChild(note);
+      if (nearBottom()) followBottom();
+    }
+    if (data?.to && knownAgent(data.to)) setChatChoice(data.to, "");
   }
 
   function appendPlanNotice(data) {
@@ -2159,12 +2559,9 @@ export async function mountAiWorkspace(root, options = {}) {
 
   let noticeTimer = 0;
 
-  function setBanner(text, { alertType = "error" } = {}) {
+  function setBanner(text) {
     if (!bannerEl) return;
     const msg = String(text || "");
-    if (bannerEl.localName === "ha-alert") {
-      bannerEl.setAttribute("alert-type", alertType);
-    }
     bannerEl.textContent = msg;
     bannerEl.hidden = !msg;
   }
@@ -2224,7 +2621,7 @@ export async function mountAiWorkspace(root, options = {}) {
   function showNotice(text) {
     if (!text) return;
     clearMicHelp();
-    setBanner(text, { alertType: "error" });
+    setBanner(text);
     if (noticeTimer) clearTimeout(noticeTimer);
     noticeTimer = window.setTimeout(() => {
       if (bannerEl && bannerEl.textContent === text) setBanner("");
@@ -2237,7 +2634,7 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!bannerEl || !text) return;
     clearMicHelp();
     if (noticeTimer) clearTimeout(noticeTimer);
-    setBanner(text, { alertType: "error" });
+    setBanner(text);
     bannerEl.classList.add("hold", "connection");
   }
 
@@ -2248,11 +2645,11 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function markNotSent(userBubble, restore) {
-    const anchor = userBubble?.closest(".message-container") || userBubble;
+    const anchor = userBubble;
     if (!anchor?.parentElement) return;
     const restored = Boolean(restore?.text || restore?.pending?.length) && !String(messageEl.value || "").trim() && !pending.length;
     if (restored) {
-      messageEl.value = restore.text || "";
+      setComposerText(restore.text || "");
       pending = restore.pending || [];
       renderThumbs();
     }
@@ -2295,13 +2692,12 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!chip) return;
     chip.className = "done";
     chip.style.animation = "none";
-    if (chip.active !== undefined) chip.active = false;
   }
 
   function ensureToolsChrome(tools) {
     let list = tools.querySelector(".tools-list");
     if (list) return list;
-    const summary = uiCreate("ha-assist-chip", "button");
+    const summary = document.createElement("button");
     summary.type = "button";
     summary.className = "tools-summary";
     summary.hidden = true;
@@ -2309,14 +2705,9 @@ export async function mountAiWorkspace(root, options = {}) {
     const chevron = document.createElement("ha-icon");
     chevron.className = "tools-chevron";
     chevron.setAttribute("icon", "mdi:chevron-right");
-    if (summary.localName === "ha-assist-chip") {
-      chevron.slot = "icon";
-      summary.append(chevron);
-    } else {
-      const label = document.createElement("span");
-      label.className = "tools-summary-label";
-      summary.append(chevron, label);
-    }
+    const label = document.createElement("span");
+    label.className = "tools-summary-label";
+    summary.append(chevron, label);
     summary.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -2324,7 +2715,7 @@ export async function mountAiWorkspace(root, options = {}) {
       tools.dataset.userToggle = "1";
       syncToolsSummary(tools);
     });
-    list = uiCreate("ha-chip-set", "div");
+    list = document.createElement("div");
     list.className = "tools-list";
     tools.append(summary, list);
     return list;
@@ -2346,10 +2737,7 @@ export async function mountAiWorkspace(root, options = {}) {
     tools.classList.toggle("busy", busy);
     summary.hidden = n === 0;
     if (!n) return;
-    const labelText = toolsSummaryLabel(chips, busy);
-    const labelEl = summary.querySelector(".tools-summary-label");
-    if (labelEl) labelEl.textContent = labelText;
-    else haChipLabel(summary, labelText);
+    summary.querySelector(".tools-summary-label").textContent = toolsSummaryLabel(chips, busy);
     if (!tools.dataset.userToggle) {
       tools.classList.remove("expanded");
     }
@@ -2358,7 +2746,7 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function isPendingChip(el) {
-    return el.classList.contains("busy") || Boolean(el.active) || /^calling\b/i.test(haChipLabel(el));
+    return el.classList.contains("busy") || /^calling\b/i.test(el.textContent);
   }
 
   function addChip(tools, event, animate) {
@@ -2377,20 +2765,19 @@ export async function mountAiWorkspace(root, options = {}) {
       if (pending) {
         if (name) pending.dataset.tool = name;
         if (callId) pending.dataset.callId = callId;
-        if (label) haChipLabel(pending, label);
+        if (label) pending.textContent = label;
         settleChip(pending);
         syncToolsSummary(tools);
         syncActivityGlyph(tools.closest?.(".bubble"));
         return;
       }
     }
-    const chip = uiCreate("ha-assist-chip", "span");
+    const chip = document.createElement("span");
     chip.className = kind;
     if (name) chip.dataset.tool = name;
     if (callId) chip.dataset.callId = callId;
-    if (chip.active !== undefined) chip.active = kind === "busy";
     if (!animate || reduceMotion || kind !== "busy") chip.style.animation = "none";
-    haChipLabel(chip, label);
+    chip.textContent = label;
     list.appendChild(chip);
     syncToolsSummary(tools);
     syncActivityGlyph(tools.closest?.(".bubble"));
@@ -2431,12 +2818,12 @@ export async function mountAiWorkspace(root, options = {}) {
   function addBubbleFiles(bubble, events) {
     const files = (events || []).filter((event) => event && event.type === "file" && event.name);
     if (!files.length) return files;
-    const row = uiCreate("ha-chip-set", "div");
+    const row = document.createElement("div");
     row.className = "bubble-files";
     for (const file of files) {
-      const chip = uiCreate("ha-assist-chip", "span");
+      const chip = document.createElement("span");
       chip.className = "file-chip";
-      haChipLabel(chip, file.name);
+      chip.textContent = file.name;
       row.appendChild(chip);
     }
     bubble.appendChild(row);
@@ -2458,26 +2845,9 @@ export async function mountAiWorkspace(root, options = {}) {
     setWelcome(false, opts.animate !== false);
     const isError = (events || []).some((event) => event && event.type === "error");
     if (isError && role === "assistant") content = shownError(content);
-    const assistWho = role === "user" ? "user" : "hass";
-    let bubble;
-    let mount;
-    if (haUi) {
-      const container = document.createElement("div");
-      container.className = `message-container ${assistWho}`;
-      bubble = document.createElement("div");
-      bubble.className = `bubble message ${assistWho} ${role}`;
-      if (isError) bubble.classList.add("error");
-      container.appendChild(bubble);
-      mount = container;
-    } else {
-      bubble = isError ? uiCreate("ha-alert", "ha-card", "div") : uiCreate("ha-card", "div");
-      bubble.className = `bubble ${role}`;
-      if (isError) {
-        if (bubble.localName === "ha-alert") bubble.setAttribute("alert-type", "error");
-        else bubble.classList.add("error");
-      }
-      mount = bubble;
-    }
+    const bubble = document.createElement("div");
+    bubble.className = `bubble ${role}`;
+    if (isError) bubble.classList.add("error");
     if (opts.createdAt) bubble.dataset.createdAt = String(opts.createdAt);
     if (opts.animate === false || reduceMotion) bubble.classList.add("instant");
     const pics = addBubbleImages(bubble, events);
@@ -2505,22 +2875,14 @@ export async function mountAiWorkspace(root, options = {}) {
       if (content) bubble.classList.add("has-text");
       if ((events || []).some((event) => event && event.type === "interrupted")) markReplyCut(bubble);
     } else if (content && !((pics.length || files.length) && isDefaultImageCaption(content))) {
-      const text = uiCreate("ha-markdown", "div");
+      const text = document.createElement("div");
       text.className = "text";
-      if (text.localName === "ha-markdown") {
-        text.setAttribute("breaks", "");
-        text.setAttribute("cache", "");
-        text.breaks = true;
-        text.cache = true;
-        fillHaMarkdown(text, content);
-      } else {
-        text.textContent = content;
-      }
+      text.textContent = content;
       bubble.appendChild(text);
       bubble.classList.add("has-text");
     }
     const parent = opts.parent || logEl;
-    parent.appendChild(mount);
+    parent.appendChild(bubble);
     retargetHaLinks(bubble);
     if (!opts.parent) {
       syncCopyChat();
@@ -2529,26 +2891,182 @@ export async function mountAiWorkspace(root, options = {}) {
     return bubble;
   }
 
-  function transcriptText() {
-    const parts = [];
-    for (const bubble of logEl.querySelectorAll(".bubble")) {
-      const role = bubble.classList.contains("user") ? t("you") : t("assistant");
+  function replyEntries() {
+    return [...logEl.querySelectorAll(".bubble")].map((bubble) => {
       const md = bubble.querySelector("ha-markdown.text");
-      const textEl = bubble.querySelector("div.text");
-      const body = md
-        ? String(md.content || "").trim()
-        : String(textEl?.textContent || "").trim();
-      const attachments = [
-        ...[...bubble.querySelectorAll(".bubble-images img")].map((img) => img.alt || "image"),
-        ...[...bubble.querySelectorAll(".bubble-files .file-chip")].map((el) => haChipLabel(el).trim()),
-      ].filter(Boolean);
-      if (!body && !attachments.length) continue;
-      const lines = [];
-      if (attachments.length) lines.push(attachments.map((name) => `[${name}]`).join(" "));
-      if (body) lines.push(body);
-      parts.push(`${role}:\n${lines.join("\n")}`);
+      return {
+        bubble,
+        role: bubble.classList.contains("assistant") ? "assistant" : "user",
+        // The reply markdown only: tool chips, status and "reply cut" notes live outside it.
+        text: String(md?.content || md?.textContent || ""),
+        streaming: bubble.classList.contains("streaming"),
+        error: bubble.classList.contains("error"),
+        createdAt: bubble.dataset.createdAt || "",
+      };
+    });
+  }
+
+  // The row sits inside the reply bubble, after its text.
+  function replyRowOf(bubble) {
+    return bubble ? bubble.querySelector(":scope > .reply-actions") : null;
+  }
+
+  function replyActionButton(action, icon, label) {
+    const btn = document.createElement("ha-icon-button");
+    btn.className = `reply-action reply-${action}`;
+    btn.type = "button";
+    btn.dataset.action = action;
+    btn.label = label;
+    btn.setAttribute("aria-label", label);
+    const glyph = document.createElement("ha-icon");
+    glyph.setAttribute("icon", icon);
+    btn.appendChild(glyph);
+    return btn;
+  }
+
+  function setActionLabel(btn, label) {
+    btn.label = label;
+    btn.setAttribute("aria-label", label);
+  }
+
+  // One row per finished reply: copy, read aloud, time. Clicks go through one listener on
+  // the log (see onReplyAction), so long chats add no listener per message.
+  function syncReplyRows(entries) {
+    // A turn runs from send (incl. a waiting or queued reply) until its text has drained.
+    const rows = replyRows(entries, { busy: streaming || liveStream });
+    const keep = new Set();
+    const opts = replyTimeOptions();
+    const today = new Date().toDateString();
+    for (const info of rows) {
+      const bubble = entries[info.index].bubble;
+      let row = replyRowOf(bubble);
+      if (!row) {
+        row = document.createElement("div");
+        row.className = "reply-actions";
+        row.setAttribute("role", "group");
+        row.setAttribute("aria-label", t("reply_actions"));
+        row.appendChild(replyActionButton("copy", "mdi:content-copy", t("copy_reply")));
+        row.appendChild(replyActionButton("speak", "mdi:volume-high", t("speak_reply")));
+        const timeEl = document.createElement("time");
+        timeEl.className = "reply-time";
+        row.appendChild(timeEl);
+      }
+      if (bubble.lastElementChild !== row) bubble.appendChild(row);
+      keep.add(row);
+      row.classList.toggle("is-last", info.last);
+      row.classList.toggle("is-held", info.held);
+      // Fade in only for a reply that just finished in this view, never on open or re-render.
+      if (info.last && bubble._replyFresh) {
+        bubble._replyFresh = false;
+        row.classList.remove("is-fresh");
+        void row.offsetWidth;
+        row.classList.add("is-fresh");
+      }
+      const speakBtn = row.querySelector(".reply-speak");
+      if (speakBtn) speakBtn.hidden = !voice.tts;
+      // Time labels are cached per day: "today"/"yesterday" only change at midnight.
+      const at = bubble.dataset.createdAt || "";
+      const timeEl = row.querySelector(".reply-time");
+      if (timeEl && (timeEl.dataset.at !== at || timeEl.dataset.day !== today)) {
+        timeEl.dataset.at = at;
+        timeEl.dataset.day = today;
+        const label = at ? replyTimeLabel(at, opts) : "";
+        timeEl.textContent = label;
+        timeEl.hidden = !label;
+        if (label) {
+          timeEl.dateTime = String(at);
+          timeEl.title = replyTimeTitle(at, opts);
+        } else {
+          timeEl.removeAttribute("datetime");
+          timeEl.removeAttribute("title");
+        }
+      }
     }
-    return parts.join("\n\n");
+    for (const row of logEl.querySelectorAll(".reply-actions")) {
+      if (!keep.has(row)) row.remove();
+    }
+    if (speakTarget && !keep.has(replyRowOf(speakTarget))) speakTarget = null;
+    syncReplySpeakUi();
+  }
+
+  function syncReplySpeakUi() {
+    const live = speechLive();
+    for (const btn of logEl.querySelectorAll(".reply-actions .reply-speak")) {
+      const row = btn.closest(".reply-actions");
+      const mine = Boolean(speakTarget && live && replyRowOf(speakTarget) === row);
+      if (btn.classList.contains("speaking") === mine && btn.dataset.ready) continue;
+      btn.dataset.ready = "1";
+      btn.classList.toggle("speaking", mine);
+      btn.setAttribute("aria-pressed", mine ? "true" : "false");
+      btn.querySelector("ha-icon")?.setAttribute("icon", mine ? "mdi:stop" : "mdi:volume-high");
+      setActionLabel(btn, t(mine ? "stop_reading" : "speak_reply"));
+    }
+  }
+
+  function replyBubbleOfRow(row) {
+    const host = row?.parentElement;
+    if (!host) return null;
+    return host.classList.contains("bubble") ? host : host.querySelector(":scope > .bubble");
+  }
+
+  function replyTextOf(bubble) {
+    const md = bubble?.querySelector("ha-markdown.text");
+    return String(md?.content || md?.textContent || "").trim();
+  }
+
+  async function onReplyAction(event) {
+    const btn = event.target?.closest?.(".reply-actions .reply-action");
+    if (!btn || !logEl.contains(btn) || btn.disabled) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const bubble = replyBubbleOfRow(btn.closest(".reply-actions"));
+    const text = replyTextOf(bubble);
+    if (!bubble || !text) return;
+    if (btn.dataset.action === "copy") {
+      await copyText(text);
+      const icon = btn.querySelector("ha-icon");
+      icon?.setAttribute("icon", "mdi:check");
+      setActionLabel(btn, t("copied"));
+      window.clearTimeout(btn._copiedTimer);
+      btn._copiedTimer = window.setTimeout(() => {
+        icon?.setAttribute("icon", "mdi:content-copy");
+        setActionLabel(btn, t("copy_reply"));
+      }, 1600);
+      return;
+    }
+    if (btn.dataset.action === "speak") {
+      // Same reply playing: stop. Another reply: stop that one and read this one.
+      if (speakTarget === bubble && speechLive()) {
+        haltSpeech();
+        return;
+      }
+      await speakReply(text, true, bubble);
+    }
+  }
+
+  let replyRowsQueued = false;
+
+  function stampReply(bubble) {
+    if (bubble && !bubble.dataset.createdAt) bubble.dataset.createdAt = new Date().toISOString();
+    // Finished live in this view: its row fades in once the turn is over (see syncReplyRows).
+    if (bubble) bubble._replyFresh = true;
+    // The reply is finished: its own action row appears (once per frame, however many finish).
+    if (replyRowsQueued) return;
+    replyRowsQueued = true;
+    requestAnimationFrame(() => {
+      replyRowsQueued = false;
+      syncCopyChat();
+    });
+  }
+
+  function replyTimeOptions() {
+    const hass = hassObj();
+    return {
+      locale: hassLanguage(),
+      timeZone: haTimeZone(hass),
+      hour12: haHour12(hass?.locale?.time_format),
+      yesterday: t("reply_yesterday"),
+    };
   }
 
   async function copyText(text) {
@@ -2581,45 +3099,60 @@ export async function mountAiWorkspace(root, options = {}) {
     );
   }
 
+  // Rollback/history button for the latest turn. It sits in the newest reply's own action
+  // row (copy, read aloud, history ... time), as it did before replies got their own rows;
+  // only without such a row (e.g. the turn ended without reply text) it falls back to the
+  // chat-level row at the end of the log.
+  let historyBtn = null;
+
+  function historyButton() {
+    if (historyBtn) return historyBtn;
+    historyBtn = document.createElement("ha-icon-button");
+    historyBtn.className = "history-chat";
+    historyBtn.type = "button";
+    historyBtn.label = t("activity");
+    historyBtn.setAttribute("aria-label", t("activity"));
+    const historyIcon = document.createElement("ha-icon");
+    historyIcon.setAttribute("icon", "mdi:history");
+    historyBtn.appendChild(historyIcon);
+    historyBtn.addEventListener("click", async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      await openHistory();
+    });
+    return historyBtn;
+  }
+
   function syncCopyChat() {
     let row = logEl.querySelector(".chat-actions");
-    const hasChat = Boolean(logEl.querySelector(".bubble.has-text, .bubble .bubble-files, .bubble .bubble-images"));
-    const busy = streaming || Boolean(logEl.querySelector(".bubble.streaming"));
-    const live = speechLive();
-    const showSpeak = Boolean(voice.tts && (live || (Boolean(lastAssistantText()) && !busy)));
-    const showCopy = hasChat && !busy;
+    syncReplyRows(replyEntries());
+    // Copy, read aloud and the time live in each reply's own row. The bottom row keeps the
+    // chat-level actions, plus a speaker while a reply is read on its own (auto read-aloud),
+    // so that reading can still be paused or stopped.
+    const showSpeak = Boolean(voice.tts && speechLive() && !speakTarget);
     const showHistory = Boolean(turnHasHistory);
-    if (!showCopy && !showSpeak && !showHistory) {
+    const lastRow = logEl.querySelector(".reply-actions.is-last");
+    if (showHistory) {
+      const btn = historyButton();
+      btn.hidden = false;
+      if (lastRow) {
+        const timeEl = lastRow.querySelector(":scope > .reply-time");
+        if (btn.parentElement !== lastRow || btn.nextElementSibling !== timeEl) {
+          lastRow.insertBefore(btn, timeEl);
+        }
+      }
+    } else if (historyBtn) {
+      historyBtn.hidden = true;
+    }
+    const historyInRow = Boolean(showHistory && lastRow);
+    if (!showSpeak && !(showHistory && !historyInRow)) {
       if (row) row.hidden = true;
       return;
     }
     if (!row) {
       row = document.createElement("div");
       row.className = "chat-actions";
-      const btn = document.createElement("ha-icon-button");
-      btn.className = "copy-chat";
-      btn.type = "button";
-      btn.label = t("copy_chat");
-      const icon = document.createElement("ha-icon");
-      icon.setAttribute("icon", "mdi:content-copy");
-      btn.appendChild(icon);
-      btn.addEventListener("click", async (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        const text = transcriptText();
-        if (!text) return;
-        await copyText(text);
-        icon.setAttribute("icon", "mdi:check");
-        btn.label = t("copied");
-        window.setTimeout(() => {
-          icon.setAttribute("icon", "mdi:content-copy");
-          btn.label = t("copy_chat");
-        }, 1600);
-      });
-      row.appendChild(btn);
     }
-    const copyBtn = row.querySelector(".copy-chat");
-    if (copyBtn) copyBtn.hidden = !showCopy;
     let speakBtn = row.querySelector(".speak-chat");
     if (voice.tts) {
       if (!speakBtn) {
@@ -2635,31 +3168,15 @@ export async function mountAiWorkspace(root, options = {}) {
           event.stopPropagation();
           await toggleSpeak();
         });
-        row.appendChild(speakBtn);
+        row.prepend(speakBtn);
       }
       speakBtn.hidden = !showSpeak;
     } else if (speakBtn) {
       speakBtn.hidden = true;
     }
-    let historyBtn = row.querySelector(".history-chat");
-    if (!historyBtn) {
-      historyBtn = document.createElement("ha-icon-button");
-      historyBtn.className = "history-chat";
-      historyBtn.type = "button";
-      historyBtn.label = t("activity");
-      const historyIcon = document.createElement("ha-icon");
-      historyIcon.setAttribute("icon", "mdi:history");
-      historyBtn.appendChild(historyIcon);
-      historyBtn.addEventListener("click", async (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        await openHistory();
-      });
-      row.appendChild(historyBtn);
-    }
-    historyBtn.hidden = !turnHasHistory;
+    if (showHistory && !historyInRow && historyBtn.parentElement !== row) row.appendChild(historyBtn);
     row.hidden = false;
-    logEl.appendChild(row);
+    if (logEl.lastElementChild !== row) logEl.appendChild(row);
   }
 
   function haLinkPath(href) {
@@ -2889,10 +3406,10 @@ export async function mountAiWorkspace(root, options = {}) {
       return;
     }
     if (haUi) {
-      const set = uiCreate("ha-chip-set", "div");
+      const set = composerCreate("ha-chip-set", "div");
       set.className = "next-chips";
       nextTurns.forEach((turn, index) => {
-        const chip = uiCreate("ha-input-chip", "div");
+        const chip = composerCreate("ha-input-chip", "div");
         chip.className = "next-chip";
         const label = turnLabel(turn);
         const hint = index === 0 ? t("queued_hint") : t("queued_later");
@@ -2923,7 +3440,6 @@ export async function mountAiWorkspace(root, options = {}) {
         const label = turnLabel(turn);
         const hint = index === 0 ? t("queued_hint") : t("queued_later");
         chip.append(queuedChipCopy(label, hint), queuedChipRemove(index));
-        bindHaTree(chip);
         return chip;
       }),
     );
@@ -2967,7 +3483,8 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     nextTurns.push({ text, attachments: attachments.slice() });
     pending = [];
-    messageEl.value = "";
+    setComposerText("");
+    dropDraft(sessionId);
     // Microphone only — TTS of the current reply keeps going.
     stopSpeech();
     renderThumbs();
@@ -2986,12 +3503,218 @@ export async function mountAiWorkspace(root, options = {}) {
   function restoreQueued() {
     const pulled = pullQueuedDraft(nextTurns, { draftText: messageEl.value, pending });
     if (pulled.pulled) {
-      messageEl.value = pulled.text;
+      setComposerText(pulled.text);
       pending = pulled.attachments;
     }
     renderThumbs();
     renderNext();
     resizeComposer();
+  }
+
+  // --- Drafts: what was typed (and attached) but not sent stays with its chat. ---
+
+  function draftKey() {
+    return draftStoreKey(userId());
+  }
+
+  function saveDraft() {
+    window.clearTimeout(draftSaveTimer);
+    draftSaveTimer = 0;
+    if (draftOwner == null || !messageEl) return;
+    const key = draftKey();
+    // Without a known user nothing is stored; the draft still lives while the page is open.
+    if (key) writeDraft(localStorage, key, draftOwner, messageEl.value);
+    else if (messageEl.value.trim()) draftMemory.set(draftOwner, messageEl.value);
+    else draftMemory.delete(draftOwner);
+    if (pending.length) draftFiles.set(draftOwner, pending.slice());
+    else draftFiles.delete(draftOwner);
+  }
+
+  function saveDraftSoon() {
+    window.clearTimeout(draftSaveTimer);
+    draftSaveTimer = window.setTimeout(saveDraft, 400);
+  }
+
+  function dropDraft(id) {
+    const slot = draftSlot(id);
+    clearDraft(localStorage, draftKey(), slot);
+    draftMemory.delete(slot);
+    draftFiles.delete(slot);
+    paintRowDraft(id, false);
+  }
+
+  /** The composer now shows chat `id` (or the new chat): keep the old text, bring back the new one's. */
+  function switchComposer(id) {
+    const from = draftOwner;
+    saveDraft();
+    if (from && from !== NEW_CHAT_DRAFT) paintRowDraft(from, Boolean(messageEl?.value.trim() || draftFiles.has(from)));
+    draftOwner = draftSlot(id);
+    nextTurns = chatQueues.of(id);
+    sendQueued = null;
+    if (!messageEl) return;
+    const key = draftKey();
+    setComposerText(key ? readDraft(localStorage, key, draftOwner) : draftMemory.get(draftOwner) || "");
+    pending = (draftFiles.get(draftOwner) || []).slice();
+    paintRowDraft(id, false);
+    renderThumbs();
+    renderNext();
+    resizeComposer();
+    syncSendButton();
+    const end = String(messageEl.value || "").length;
+    try {
+      messageEl.setSelectionRange?.(end, end);
+    } catch (_err) {
+      /* ha-textarea before it is upgraded */
+    }
+  }
+
+  /** The new chat just got its id: its draft slot and queue move along. */
+  function adoptNewChat(id) {
+    chatQueues.rename("", id);
+    nextTurns = chatQueues.of(id);
+    if (draftOwner === NEW_CHAT_DRAFT) {
+      clearDraft(localStorage, draftKey(), NEW_CHAT_DRAFT);
+      draftMemory.delete(NEW_CHAT_DRAFT);
+      const files = draftFiles.get(NEW_CHAT_DRAFT);
+      draftFiles.delete(NEW_CHAT_DRAFT);
+      if (files) draftFiles.set(id, files);
+      draftOwner = draftSlot(id);
+      if (messageEl?.value.trim()) saveDraft();
+    }
+  }
+
+  // Read once per list paint, not once per row.
+  let draftCache = null;
+  function rowDrafts() {
+    if (!draftCache) {
+      draftCache = draftSlots(localStorage, draftKey());
+      for (const slot of [...draftFiles.keys(), ...draftMemory.keys()]) draftCache.add(slot);
+      queueMicrotask(() => {
+        draftCache = null;
+      });
+    }
+    return draftCache;
+  }
+
+  function paintRowDraft(id, on) {
+    if (!id || id === NEW_CHAT_DRAFT) return;
+    const row = sessionsEl?.querySelector(`.session-row[data-session-id="${id}"]`);
+    const label = row?.querySelector(".item-text");
+    if (!label) return;
+    let mark = row.querySelector(".draft-mark");
+    if (!on) {
+      mark?.remove();
+      return;
+    }
+    if (mark) return;
+    mark = document.createElement("span");
+    mark.className = "draft-mark";
+    mark.textContent = t("draft");
+    label.after(mark);
+  }
+
+  // --- Queued prompts of a chat that is not open: they still go out in their own chat. ---
+
+  async function backgroundStatus(id) {
+    const response = await apiFetch(`${API}/sessions`, {}, { timeout: LOAD_TIMEOUT_MS });
+    if (!response?.ok) return "pending";
+    const rows = await response.json().catch(() => null);
+    if (!Array.isArray(rows)) return "pending";
+    const row = rows.find((item) => item?.id === id);
+    if (!row) return "gone";
+    return row.pending ? "pending" : "idle";
+  }
+
+  async function backgroundSend(id, turn) {
+    const attachments = turn.attachments || [];
+    const images = attachments.filter((item) => item.kind === "image");
+    const files = attachments.filter((item) => item.kind === "file");
+    let response;
+    try {
+      // No agent or model: the chat keeps its own (the picker shows the open chat's).
+      response = await apiFetch(
+        `${API}/sessions/${id}/chat`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            message: turn.text,
+            origin: window.location.origin,
+            language: speechLanguage(),
+            images: images.map((img) => ({ name: img.name, mime: img.mime, data: img.data })),
+            files: files.map((file) => ({ name: file.name, mime: file.mime, text: file.text })),
+          }),
+        },
+        { raise: true },
+      );
+    } catch (_err) {
+      return "error";
+    }
+    if (response?.status === 409) return "busy";
+    if (response?.status === 404) return "gone";
+    if (!response?.ok || !response.body) return "error";
+    try {
+      // The reply runs on the server either way; reading it to the end tells us when it is done.
+      await readSSE(response, (name, data) => {
+        if (destroyed) return;
+        if (name === "title" && data.title) applySessionTitle(id, data.title);
+      });
+    } catch (_err) {
+      /* connection dropped: the server finishes the reply, the next send waits for it */
+    }
+    return "ok";
+  }
+
+  /** Leaving chat `id` with prompts still queued: send them there once its reply is done. */
+  function sendQueueInBackground(id) {
+    if (!id || !chatQueues.has(id) || backgroundRuns.has(id)) return;
+    const run = drainQueue(id, chatQueues, {
+      isActive: (chat) => !destroyed && chat === sessionId,
+      status: backgroundStatus,
+      send: backgroundSend,
+      wait: (ms) => new Promise((resolve) => window.setTimeout(resolve, ms)),
+      onSent: (chat) => {
+        if (!destroyed) bumpSession(chat);
+      },
+    })
+      .catch(() => "error")
+      .then((reason) => {
+        backgroundRuns.delete(id);
+        if (destroyed) return reason;
+        // The reply's unread dot comes with the list.
+        refreshSessions();
+        if (id === sessionId) resumeQueue(id);
+        return reason;
+      });
+    backgroundRuns.set(id, run);
+  }
+
+  /** The open chat has queued prompts: send the next one once nothing runs there any more. */
+  function resumeQueue(id) {
+    if (!id || id !== sessionId || streaming || liveStream || sendQueued || !nextTurns.length) return;
+    if (backgroundRuns.has(id)) {
+      // It stops on its own now that the chat is open and then calls back here.
+      // Until then the reply it sent is followed live.
+      watchPending(id);
+      return;
+    }
+    watchPending(id).then((found) => {
+      if (found && id === sessionId && !streaming) flushNext();
+    });
+  }
+
+  /** Before the screen shows another chat: the old chat keeps its draft and its queue. */
+  function leaveChat() {
+    const from = sessionId;
+    if (sendQueued) {
+      // Picked for sending but not out yet: it goes back to its own chat.
+      chatQueues.of(from).unshift(sendQueued);
+      sendQueued = null;
+    }
+    leaveChatStream();
+    // After the caller has switched sessionId, so the old chat no longer counts as open.
+    if (from) window.setTimeout(() => sendQueueInBackground(from), 0);
+    // A new chat that never got an id has nowhere to send them.
+    else chatQueues.drop("");
   }
 
   function haltStream({ keepQueue = true, keepSpeech = false } = {}) {
@@ -3027,11 +3750,12 @@ export async function mountAiWorkspace(root, options = {}) {
     const live = logEl.querySelector(".bubble.assistant.streaming");
     if (live) {
       live.classList.remove("streaming");
+      stampReply(live);
       settleTools(live);
       setActivity(live, "");
       const text = String(live.querySelector(".text")?.content || live.querySelector(".text")?.textContent || "").trim();
       const tools = live.querySelector(".tools");
-      if (!text && !tools?.children?.length) (live.closest(".message-container") || live).remove();
+      if (!text && !tools?.children?.length) live.remove();
     }
     resizeComposer();
   }
@@ -3041,7 +3765,7 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   // Leaving a chat: its queued prompts were written for it and must not go out in the next one.
-  // restoreQueued() has already moved the first one into an empty composer.
+  // They stay on that chat's own list (see leaveChat) and never move into the composer.
   function leaveChatStream() {
     haltStream({ keepQueue: keepQueueOnHalt("switch") });
   }
@@ -3242,20 +3966,26 @@ export async function mountAiWorkspace(root, options = {}) {
   function chatGone(restore = null) {
     if (!sessionId) return;
     watchGen += 1;
+    const goneId = sessionId;
+    chatQueues.drop(goneId);
+    // What was typed stays on screen and now belongs to the new chat.
+    dropDraft(goneId);
+    draftOwner = NEW_CHAT_DRAFT;
+    nextTurns = chatQueues.of("");
+    renderNext();
     sessionId = "";
     freshChat = true;
     goToSession("", true);
     selectSessionRow("");
     titleEl.textContent = t("new_chat");
     logEl.querySelector(".chat-gone")?.remove();
-    const note = uiCreate("ha-alert", "p");
+    const note = document.createElement("p");
     note.classList.add("chat-gone");
-    if (note.localName === "ha-alert") note.setAttribute("alert-type", "info");
     const restored = Boolean(restore?.text || restore?.pending?.length);
     note.textContent = t(restored ? "chat_deleted_resend" : "chat_deleted");
     logEl.appendChild(note);
     if (restored && !String(messageEl.value || "").trim() && !pending.length) {
-      messageEl.value = restore.text || "";
+      setComposerText(restore.text || "");
       pending = restore.pending || [];
       renderThumbs();
     }
@@ -3316,9 +4046,11 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function renderAgentPicker() {
-    if (!agentPicker || !agentMenu || !agentLabel) return;
     const current = selectedAgent();
     const item = providerItems.find((row) => row.id === current);
+    // Checks chatUsageShown first: safe before the header's usage line exists.
+    rerenderChatUsage();
+    if (!agentPicker || !agentMenu || !agentLabel) return;
     const ready = agentChoices(providerItems);
     const models = modelSwitcher && item && item.kind !== "assist";
     agentPicker.hidden = ready.length < 2 && !models;
@@ -3429,10 +4161,9 @@ export async function mountAiWorkspace(root, options = {}) {
       }
       const noticeText = chosen.notice_key ? t(chosen.notice_key, noticeParams) : chosen.notice;
       if (compact) {
-        setBanner(noticeText, { alertType: "warning" });
+        setBanner(noticeText);
       } else {
         setHint(noticeText);
-        if (bannerEl.getAttribute("alert-type") === "warning" && !bannerEl.classList.contains("hold")) setBanner("");
       }
     } else if (bannerEl && !bannerEl.classList.contains("hold") && !bannerEl.classList.contains("mic-help")) {
       setHint("");
@@ -3498,13 +4229,11 @@ export async function mountAiWorkspace(root, options = {}) {
       const dialog = document.createElement("ha-dialog");
       dialog.setAttribute("header-title", title);
       dialog.setAttribute("width", "small");
-      const input = uiCreate("ha-input", "ha-textfield", "input");
+      const input = document.createElement("input");
       input.className = "dialog-field";
-      if (input.localName === "input") input.type = "text";
-      else input.setAttribute("type", "text");
+      input.type = "text";
       input.value = value || "";
       input.maxLength = 80;
-      if (input.label !== undefined) input.label = title;
       const footer = document.createElement("ha-dialog-footer");
       footer.slot = "footer";
       const cancel = document.createElement("ha-button");
@@ -3649,13 +4378,29 @@ export async function mountAiWorkspace(root, options = {}) {
       showNotice(await errorText(response));
       return;
     }
+    clearChatCache(localStorage, chatCacheSlot(), { id: session.id });
     if (session.id === sessionId) startNewChat();
+    chatQueues.drop(session.id);
+    dropDraft(session.id);
     await loadSessions();
   }
 
   function displayTitle(title) {
-    if (!title || ["New Chat", "New chat", "Neuer Chat"].includes(title)) return t("new_chat");
-    return title;
+    return headerTitle(title, t("new_chat"));
+  }
+
+  /** The header still says "New chat" while the server may already have the title: ask it. */
+  async function syncHeaderTitle(id) {
+    if (!id || sessionId !== id || !isPlaceholderTitle(titleEl.textContent, t("new_chat"))) return;
+    let session = null;
+    try {
+      const response = await apiFetch(`${API}/sessions/${id}`, {}, { timeout: LOAD_TIMEOUT_MS });
+      if (response?.ok) session = await response.json();
+    } catch (_error) {
+      return;
+    }
+    const title = realTitle(session?.title, t("new_chat"));
+    if (title) applySessionTitle(id, title);
   }
 
   function promptTitle(text) {
@@ -3728,6 +4473,126 @@ export async function mountAiWorkspace(root, options = {}) {
     syncSearchIcon();
   }
 
+  // Unread agent replies: a dot on the chat's row and on the buttons that open the chat list.
+  const readSent = new Map();
+
+  function paintRowUnread(row, on) {
+    if (!row) return;
+    row.dataset.unread = on ? "1" : "0";
+    const item = row.querySelector(".session");
+    let dot = row.querySelector(".unread-dot");
+    if (!on) {
+      dot?.remove();
+      return;
+    }
+    if (dot || !item) return;
+    dot = document.createElement("span");
+    dot.className = "unread-dot";
+    dot.setAttribute("role", "img");
+    dot.setAttribute("aria-label", t("unread_reply"));
+    dot.title = t("unread_reply");
+    const label = item.querySelector(".item-text");
+    if (label) label.after(dot);
+    else item.prepend(dot);
+  }
+
+  function setRowUnread(id, on) {
+    const row = sessionsEl?.querySelector(`.session-row[data-session-id="${id}"]`);
+    if (on && id === sessionId && chatVisible()) {
+      // The open chat on this screen: the reply is being read right now.
+      markRead(id);
+      return;
+    }
+    paintRowUnread(row, on);
+  }
+
+  function syncUnreadBadge() {
+    const rows = [...(sessionsEl?.querySelectorAll(".session-row[data-unread='1']") || [])];
+    const unread = anyUnread(
+      rows.map((row) => ({ id: row.dataset.sessionId, unread: true })),
+      sessionId,
+      chatVisible(),
+    );
+    root.querySelectorAll(".chat-nav-toggle").forEach((btn) => {
+      let dot = btn.querySelector(".unread-dot");
+      if (!unread) {
+        dot?.remove();
+        btn.removeAttribute("data-unread");
+        return;
+      }
+      btn.setAttribute("data-unread", "1");
+      if (!dot) {
+        dot = document.createElement("span");
+        dot.className = "unread-dot";
+        dot.setAttribute("aria-hidden", "true");
+        btn.appendChild(dot);
+      }
+    });
+    options.onUnread?.(unread);
+  }
+
+  /** The open, visible chat was seen up to its newest message: on the server, so on every device. */
+  function markRead(id, messages = null) {
+    if (!id || id !== sessionId || !chatVisible()) return;
+    const last = Array.isArray(messages) && messages.length ? messages[messages.length - 1]?.id : null;
+    const row = sessionsEl?.querySelector(`.session-row[data-session-id="${id}"]`);
+    const wasUnread = row?.dataset.unread === "1";
+    paintRowUnread(row, false);
+    syncUnreadBadge();
+    const key = last == null ? `*${Date.now()}` : String(last);
+    if (!wasUnread && readSent.get(id) === key) return;
+    readSent.set(id, key);
+    void apiFetch(`${API}/sessions/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ read: typeof last === "number" ? last : true }),
+    });
+  }
+
+  // While a reply runs in the background the list is asked again soon; otherwise now and then,
+  // so a reply finished on another device or in another chat gets its dot.
+  let sessionsPoll = 0;
+  const SESSIONS_POLL_BUSY_MS = 4000;
+  const SESSIONS_POLL_IDLE_MS = 60000;
+
+  function scheduleSessionsPoll(sessions) {
+    window.clearTimeout(sessionsPoll);
+    if (compact || !sessionsEl) return;
+    const busy = (sessions || []).some((session) => session?.pending);
+    sessionsPoll = window.setTimeout(refreshSessions, busy ? SESSIONS_POLL_BUSY_MS : SESSIONS_POLL_IDLE_MS);
+  }
+  teardown.push(() => window.clearTimeout(sessionsPoll));
+
+  function listShape(sessions) {
+    return sessions.map((session) => `${session.id}|${session.title || ""}|${session.pinned ? 1 : 0}`).join(",");
+  }
+
+  async function refreshSessions() {
+    if (compact || !sessionsEl) return;
+    if (document.visibilityState === "hidden" || searchInput?.value.trim()) {
+      scheduleSessionsPoll(cachedSessions);
+      return;
+    }
+    const response = await apiFetch(`${API}/sessions`, {}, { timeout: LOAD_TIMEOUT_MS });
+    if (!response?.ok) {
+      scheduleSessionsPoll([]);
+      return;
+    }
+    const sessions = await response.json();
+    if (searchInput?.value.trim()) return;
+    const shown = [...sessionsEl.querySelectorAll(".session-row")].map((row) => ({
+      id: row.dataset.sessionId,
+      title: row.dataset.title,
+      pinned: row.dataset.pinned === "1",
+    }));
+    cachedSessions = sessions;
+    writeSessionCache(sessions);
+    const menuOpen = sessionsEl.querySelector(".session-more[aria-expanded='true']");
+    if (listShape(shown) !== listShape(sessions) && !menuOpen) paintSessionList(sessions);
+    else for (const session of sessions) setRowUnread(session.id, Boolean(session.unread));
+    syncUnreadBadge();
+    scheduleSessionsPoll(sessions);
+  }
+
   // Placeholder rows until the first list arrives; a busy system can take a few seconds.
   function sessionSkeleton() {
     const widths = [72, 58, 84, 64, 76, 52, 68];
@@ -3763,6 +4628,15 @@ export async function mountAiWorkspace(root, options = {}) {
     label.className = "item-text";
     label.textContent = displayTitle(session.title);
     item.appendChild(label);
+    row.dataset.unread = "0";
+    if (session.id !== sessionId && rowDrafts().has(session.id)) {
+      const mark = document.createElement("span");
+      mark.className = "draft-mark";
+      mark.textContent = t("draft");
+      label.after(mark);
+    }
+    const openHere = session.id === sessionId && chatVisible();
+    if (session.unread && !openHere) paintRowUnread(row, true);
     if (session.id === sessionId) {
       markSessionSelected(item, true);
       markSessionSelected(row, true);
@@ -3772,6 +4646,7 @@ export async function mountAiWorkspace(root, options = {}) {
       closeNavIfOverlay();
       openSession(session.id);
     });
+    if (session.unread && openHere) queueMicrotask(() => markRead(session.id));
     const host = document.createElement("div");
     host.className = "session-menu";
     const more = document.createElement("ha-icon-button");
@@ -3856,6 +4731,8 @@ export async function mountAiWorkspace(root, options = {}) {
       writeSessionCache(sessions);
     }
     paintSessionList(sessions, query);
+    syncUnreadBadge();
+    scheduleSessionsPoll(sessions);
   }
 
   // Rows only count all chats while nothing filters them, and an active search keeps its way out.
@@ -3930,6 +4807,7 @@ export async function mountAiWorkspace(root, options = {}) {
       return null;
     }
     sessionId = session.id;
+    adoptNewChat(session.id);
     freshChat = false;
     chatAgent = session.provider || chatAgent;
     bumpSession(session.id, session.title, session.pinned);
@@ -3951,6 +4829,125 @@ export async function mountAiWorkspace(root, options = {}) {
     return work;
   }
 
+  // Placeholder while a chat loads: Standard layout (user right, plain assistant text and reply row).
+  function skeletonLines(lines) {
+    return lines.map((w) => `<span class="skeleton-line" style="--w:${w}%"></span>`).join("");
+  }
+
+  function messageSkeleton() {
+    const turns = [
+      ["user", [[58]]],
+      ["assistant", [[94], [82], [48]], true],
+      ["user", [[42]]],
+      ["assistant", [[88], [62]], true],
+      ["user", [[50]]],
+      ["assistant", [[72], [54]], true],
+    ];
+    const blocks = turns
+      .map(([role, lines, actions]) => {
+        const text = `<div class="skeleton-text">${skeletonLines(lines)}</div>`;
+        const row = actions
+          ? '<div class="skeleton-reply-actions" aria-hidden="true"><span class="skeleton-icon"></span><span class="skeleton-icon"></span><span class="skeleton-time"></span></div>'
+          : "";
+        return `<div class="skeleton-bubble ${role}">${text}${row}</div>`;
+      })
+      .join("");
+    return `<div class="message-skeleton" aria-hidden="true">${blocks}</div><p class="sr" role="status">${htmlAttr(t("chat_loading"))}</p>`;
+  }
+
+  let skeletonTimer = 0;
+  let slowTimer = 0;
+
+  function clearLoadTimers() {
+    window.clearTimeout(skeletonTimer);
+    window.clearTimeout(slowTimer);
+    skeletonTimer = 0;
+    slowTimer = 0;
+  }
+
+  function clearLoadState() {
+    clearLoadTimers();
+    logEl.removeAttribute("aria-busy");
+    logEl.querySelector(".message-skeleton")?.remove();
+    logEl.querySelector(".chat-load-hint")?.remove();
+    logEl.querySelector(".sr[role='status']")?.remove();
+    logEl.classList.remove("is-revealing");
+    logEl.style.minHeight = "";
+  }
+
+  function dismissLoadSkeleton() {
+    const skeleton = logEl.querySelector(".message-skeleton");
+    logEl.removeAttribute("aria-busy");
+    logEl.querySelector(".chat-load-hint")?.remove();
+    if (!skeleton) {
+      logEl.querySelector(".sr[role='status']")?.remove();
+      logEl.classList.remove("is-revealing");
+      logEl.style.minHeight = "";
+      return;
+    }
+    const done = () => {
+      skeleton.remove();
+      logEl.querySelector(".sr[role='status']")?.remove();
+      logEl.classList.remove("is-revealing");
+      logEl.style.minHeight = "";
+    };
+    if (reduceMotion) {
+      done();
+      return;
+    }
+    skeleton.classList.add("is-leaving");
+    skeleton.addEventListener(
+      "transitionend",
+      (event) => {
+        if (event.target === skeleton) done();
+      },
+      { once: true },
+    );
+    window.setTimeout(done, 320);
+  }
+
+  function showMessageSkeleton() {
+    setWelcome(false, false);
+    logEl.setAttribute("aria-busy", "true");
+    logEl.innerHTML = messageSkeleton();
+  }
+
+  // Loading the chat failed (timeout, 5xx, network). Keep the chat and its address, offer a retry.
+  function showLoadError(id) {
+    clearLoadState();
+    setWelcome(false, false);
+    const card = document.createElement("div");
+    card.className = "chat-load-error";
+    card.setAttribute("role", "alert");
+    const text = document.createElement("p");
+    text.textContent = t("chat_load_failed");
+    const retry = document.createElement("ha-button");
+    retry.setAttribute("appearance", "accent");
+    retry.setAttribute("size", "s");
+    retry.className = "chat-load-retry";
+    retry.textContent = t("retry");
+    retry.addEventListener("click", () => {
+      card.remove();
+      sessionId = "";
+      openSession(id, true);
+    });
+    card.append(text, retry);
+    logEl.replaceChildren(card);
+  }
+
+  let firstLoad = true;
+
+  async function fetchSession(id) {
+    const early = takeSessionPrefetch(id);
+    if (early) return early;
+    try {
+      const response = await apiFetch(`${API}/sessions/${id}`, { priority: "high" }, { raise: true, timeout: LOAD_TIMEOUT_MS });
+      return { response, body: response?.ok ? await response.json() : null };
+    } catch (error) {
+      return { response: null, body: null, timedOut: error?.name === "TimeoutError" || error?.name === "AbortError" };
+    }
+  }
+
   async function loadSession(id, fromUrl = false) {
     if (id && id === sessionId && (streaming || liveStream)) {
       selectSessionRow(id);
@@ -3958,14 +4955,15 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     const switching = id !== sessionId;
     if (switching) {
-      restoreQueued();
-      leaveChatStream();
+      leaveChat();
       clearApprovals();
     }
     watchGen += 1;
+    clearLoadState();
     if (!id) {
       routeGen += 1;
       sessionId = "";
+      if (switching || draftOwner == null) switchComposer("");
       freshChat = true;
       setChatChoice("", "");
       titleEl.textContent = t("new_chat");
@@ -3977,39 +4975,116 @@ export async function mountAiWorkspace(root, options = {}) {
     }
     if (fromUrl && id === sessionId) return;
     const gen = ++routeGen;
+    const initial = firstLoad;
+    firstLoad = false;
     sessionId = id;
+    if (switching || draftOwner == null) switchComposer(id);
     freshChat = false;
     const listed = sessionsEl?.querySelector(`.session-row[data-session-id="${id}"]`);
     if (listed?.dataset.title) titleEl.textContent = displayTitle(listed.dataset.title);
     selectSessionRow(id);
-    if (switching) logEl.replaceChildren();
     if (compact) localStorage.setItem("ai_workspace_session", id);
     if (!fromUrl) goToSession(id);
-    const response = await apiFetch(`${API}/sessions/${id}`);
+    // The last chat seen in this browser paints at once; the server's answer replaces it if it differs.
+    const cached = readChatCache(localStorage, chatCacheSlot(), id);
+    if (cached) {
+      setChatChoice(cached.provider, cached.model);
+      paintSession(cached, gen);
+    } else if (initial) {
+      showMessageSkeleton();
+    } else if (switching) {
+      logEl.replaceChildren();
+      // A quick switch never flashes placeholders.
+      skeletonTimer = window.setTimeout(() => {
+        if (gen === routeGen) showMessageSkeleton();
+      }, SKELETON_DELAY_MS);
+    }
+    slowTimer = window.setTimeout(() => {
+      if (gen !== routeGen || cached || (!logEl.querySelector(".message-skeleton") && !switching && !initial)) return;
+      const hint = document.createElement("p");
+      hint.className = "chat-load-hint";
+      hint.textContent = t("chat_slow");
+      if (!logEl.querySelector(".message-skeleton")) showMessageSkeleton();
+      logEl.appendChild(hint);
+    }, SLOW_HINT_MS);
+    const { response, body, timedOut } = await fetchSession(id);
     if (gen !== routeGen) return;
-    if (!response?.ok) {
+    clearLoadTimers();
+    const outcome = loadOutcome(response, timedOut);
+    if (outcome === "gone") {
+      clearLoadState();
+      // Only a chat that is really gone falls back to a new chat.
+      clearChatCache(localStorage, chatCacheSlot(), { id });
+      chatQueues.drop(id);
+      dropDraft(id);
       sessionId = "";
+      switchComposer("");
       titleEl.textContent = t("new_chat");
       showEmpty();
       goToSession("", true);
       return;
     }
-    const session = await response.json();
+    if (outcome !== "ok" || !body) {
+      if (!cached) showLoadError(id);
+      return;
+    }
+    const session = body;
     setChatChoice(session.provider, session.model);
-    paintSession(session, gen);
+    if (!cached || !sameChat(cached, session)) paintSession(session, gen);
+    else {
+      // Same newest messages: only the older ones, which the cache leaves out, are added above.
+      turnHasHistory = Boolean(session.has_activity);
+      prependOlder(session.messages, olderCount(cached, session));
+    }
+    writeChatCache(localStorage, chatCacheSlot(), session);
     if (Array.isArray(session.approvals)) syncApprovals(session.approvals, id);
     selectSessionRow(id);
-    if (session.pending) watchPending(id);
+    // Queued prompts of this chat (written before switching away) go on from here.
+    if (nextTurns.length) resumeQueue(id);
+    else if (session.pending) watchPending(id);
+    else markRead(id, session.messages);
     refreshChatUsage();
+  }
+
+  function prependOlder(messages, count) {
+    if (!count) return;
+    const head = document.createDocumentFragment();
+    for (let i = 0; i < count; i += 1) {
+      const message = messages[i];
+      addBubble(message.role, message.content, message.events, {
+        animate: false,
+        follow: false,
+        createdAt: message.created_at,
+        parent: head,
+      });
+    }
+    holdChatScroll(() => {
+      const first = logEl.querySelector(".bubble");
+      if (first) logEl.insertBefore(head, first);
+      else logEl.prepend(head);
+    });
+    settleTools(logEl);
+    syncCopyChat();
+    stickToBottom();
   }
 
   function paintSession(session, gen = routeGen) {
     clearMicHelp();
     titleEl.textContent = displayTitle(session.title);
-    logEl.replaceChildren();
+    const skeleton = logEl.querySelector(".message-skeleton");
+    const revealing = Boolean(skeleton);
+    if (revealing) {
+      logEl.classList.add("is-revealing");
+      logEl.style.minHeight = `${skeleton.offsetHeight}px`;
+      skeleton.classList.add("is-overlay");
+    } else {
+      logEl.replaceChildren();
+    }
     const messages = session.messages || [];
     turnHasHistory = Boolean(session.has_activity);
     if (!messages.length) {
+      if (revealing) clearLoadState();
+      else logEl.replaceChildren();
       showEmpty();
       turnHasHistory = Boolean(session.has_activity);
       syncCopyChat();
@@ -4043,17 +5118,21 @@ export async function mountAiWorkspace(root, options = {}) {
     const tailAt = Math.max(0, messages.length - PAINT_TAIL);
     const frag = document.createDocumentFragment();
     paintRange(tailAt, messages.length, frag);
-    logEl.appendChild(frag);
+    if (revealing) logEl.insertBefore(frag, skeleton);
+    else logEl.appendChild(frag);
     finish();
+    if (revealing) dismissLoadSkeleton();
     if (!tailAt) return;
     requestAnimationFrame(() => {
       if (gen !== routeGen) return;
       const head = document.createDocumentFragment();
       paintRange(0, tailAt, head);
-      const first = logEl.querySelector(".message-container, .bubble");
+      const first = logEl.querySelector(".bubble");
       if (first) logEl.insertBefore(head, first);
       else logEl.prepend(head);
       settleTools(logEl);
+      // Older replies get their own action row too.
+      syncCopyChat();
       stickToBottom();
     });
   }
@@ -4153,8 +5232,12 @@ export async function mountAiWorkspace(root, options = {}) {
           setActivity(bubble, data.text);
         } else if (name === "plan_notice") {
           appendPlanNotice(data);
+        } else if (name === "fallback") {
+          applyFallback(data);
         } else if (name === "approval") {
           showApproval(data.approval);
+        } else if (name === "title" && data.title) {
+          applySessionTitle(id, data.title);
         } else if (name === "done" || name === "error") {
           settleTools(bubble);
         }
@@ -4209,6 +5292,7 @@ export async function mountAiWorkspace(root, options = {}) {
         const live = logEl.querySelector(".bubble.assistant.streaming");
         if (live) {
           live.classList.remove("streaming");
+          stampReply(live);
           setActivity(live, "");
         }
         // Nothing runs any more, so no tool chip can still be busy. Without this a reply
@@ -4218,7 +5302,10 @@ export async function mountAiWorkspace(root, options = {}) {
       streaming = false;
       resizeComposer();
       syncCopyChat();
+      applySessionTitle(id, session.title);
       bumpSession(id, session.title, session.pinned);
+      writeChatCache(localStorage, chatCacheSlot(), session);
+      markRead(id, session.messages);
       if (sawPending && voice.speak && voice.tts) {
         const leftover = speechTail(speakRaw, lastAssistantText());
         if (leftover) {
@@ -4406,7 +5493,7 @@ export async function mountAiWorkspace(root, options = {}) {
     attachRow.replaceChildren();
     pending.forEach((item, index) => {
       if (item.kind === "file") {
-        const chip = uiCreate("ha-input-chip", "div");
+        const chip = composerCreate("ha-input-chip", "div");
         chip.className = "file-chip pending";
         haChipLabel(chip, item.name);
         const drop = () => {
@@ -4595,8 +5682,8 @@ export async function mountAiWorkspace(root, options = {}) {
           else interim += chunk;
         }
         const parts = [speechBase, finals, interim].filter((part) => String(part).trim());
-        messageEl.value = parts.join(" ").replace(/\s+/g, " ").trim();
-        if (interim) messageEl.value += " ";
+        const spoken = parts.join(" ").replace(/\s+/g, " ").trim();
+        setComposerText(interim ? `${spoken} ` : spoken);
         resizeComposer();
       };
       recognition.onerror = (event) => {
@@ -4668,6 +5755,7 @@ export async function mountAiWorkspace(root, options = {}) {
   let speakFlush = false;
   let speakFresh = false;
   let speakRelease = null;
+  let speakTarget = null;
   const speakPending = [];
   const speakInflight = [];
   const SILENCE =
@@ -4794,7 +5882,7 @@ export async function mountAiWorkspace(root, options = {}) {
     const said = String(body.text || "").trim();
     if (!said) return;
     const base = messageEl.value.trim();
-    messageEl.value = [base, said].filter(Boolean).join(" ");
+    setComposerText([base, said].filter(Boolean).join(" "));
     resizeComposer();
   }
 
@@ -4810,9 +5898,9 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function setSpeakUi(state) {
+    syncCopyChat();
     const btn = logEl.querySelector(".speak-chat");
     if (!btn) return;
-    syncCopyChat();
     const icon = btn.querySelector("ha-icon");
     if (state === "playing") {
       icon?.setAttribute("icon", "mdi:pause");
@@ -4848,6 +5936,7 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function haltSpeech() {
     speakGen += 1;
+    speakTarget = null;
     speakHeld = "";
     speakRaw = "";
     speakStarted = false;
@@ -4893,7 +5982,8 @@ export async function mountAiWorkspace(root, options = {}) {
   }
 
   function feedSpeech(delta) {
-    if (!voice.speak || !delta) return;
+    // A reply picked by hand is being read: the live reply does not cut in.
+    if (!voice.speak || !delta || speakTarget) return;
     speakRaw += delta;
     speakHeld += delta;
     drainSpeech(false);
@@ -5071,6 +6161,11 @@ export async function mountAiWorkspace(root, options = {}) {
             replyObjectUrl = "";
           }
           releaseAudio(replyAudio);
+          speakTarget = null;
+          setSpeakUi("idle");
+        } else if (gen === speakGen && speakTarget) {
+          // Nothing could be played for this reply: its button goes back to "read aloud".
+          speakTarget = null;
           setSpeakUi("idle");
         }
       });
@@ -5100,14 +6195,21 @@ export async function mountAiWorkspace(root, options = {}) {
     await speakReply(text, true);
   }
 
-  async function speakReply(text, fromUser = false) {
+  async function speakReply(text, fromUser = false, target = null) {
     if (!voice.tts || !String(text || "").trim()) return;
     haltSpeech();
+    // The reply whose own button started this; its button shows "stop" while it plays.
+    speakTarget = target;
     speakFromUser = fromUser;
+    const gen = speakGen;
     if (fromUser) await unlockOutput();
+    // Another reply was started (or this one stopped) while the output unlocked.
+    if (gen !== speakGen) return;
     speakFlush = true;
     const taken = takeSpeech(String(text), false, true, { heavy: voice.ttsHeavy });
     for (const piece of taken.pieces) queueSpeech(piece);
+    // Show "stop" at once, not only when the first clip starts playing.
+    if (target) syncCopyChat();
   }
 
   function lastAssistantText() {
@@ -5184,9 +6286,8 @@ export async function mountAiWorkspace(root, options = {}) {
     let usageOn = true;
     let headerUsageOn = true;
     try {
-      const response = await apiFetch(`${API}/ui`);
-      if (response?.ok) {
-        const body = await response.json();
+      const body = await fetchUiBody(getToken);
+      if (body) {
         show = body.dictate === true;
         historyOn = body.change_history !== false;
         usageOn = body.track_usage !== false;
@@ -5234,13 +6335,18 @@ export async function mountAiWorkspace(root, options = {}) {
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     typingAt = 0;
+    // Taken before any wait: the chat a queued prompt was written in; it must not go out anywhere else.
+    const picked = sendQueued;
+    sendQueued = null;
+    let queuedFrom = picked ? sessionId : null;
+    let queuedTurn = null;
     if (turnStopDone) await turnStopDone;
     let keepComposer = false;
     let text;
     let attachments;
-    if (sendQueued) {
-      const turn = sendQueued;
-      sendQueued = null;
+    if (picked) {
+      const turn = picked;
+      queuedTurn = turn;
       text = turn.text;
       attachments = turn.attachments.slice();
       keepComposer = true;
@@ -5257,12 +6363,22 @@ export async function mountAiWorkspace(root, options = {}) {
       if (!text && !attachments.length) {
         if (!nextTurns.length) return;
         const turn = nextTurns.shift();
+        queuedFrom = sessionId;
+        queuedTurn = turn;
         text = turn.text;
         attachments = turn.attachments.slice();
         renderNext();
         keepComposer = true;
       }
     }
+    const handBack = () => {
+      // Back on its own chat's list, first in line; sent there when that chat is free.
+      if (!queuedTurn) return;
+      chatQueues.of(queuedFrom).unshift(queuedTurn);
+      queuedTurn = null;
+      if (queuedFrom === sessionId) renderNext();
+      else if (queuedFrom) sendQueueInBackground(queuedFrom);
+    };
     const images = attachments.filter((item) => item.kind === "image");
     const files = attachments.filter((item) => item.kind === "file");
     if (!text && !attachments.length) return;
@@ -5270,6 +6386,11 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!sessionId) {
       const known = knownSessionId();
       if (known) await openSession(known, true);
+    }
+    if (queuedTurn && sessionId !== queuedFrom) {
+      // The user switched chats while it was being picked up.
+      handBack();
+      return;
     }
     abandonStream({ keepSpeech: keepComposer });
     const token = streamToken;
@@ -5295,7 +6416,8 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!keepComposer) {
       pending = [];
       renderThumbs();
-      messageEl.value = "";
+      setComposerText("");
+      dropDraft(sessionId);
     }
     resizeComposer();
     syncSendButton();
@@ -5318,6 +6440,7 @@ export async function mountAiWorkspace(root, options = {}) {
     setActivity(assistant, t("thinking"));
     let recover = false;
     let sawDone = false;
+    let busyRetry = false;
     let chatId = "";
     liveStream = true;
     try {
@@ -5326,7 +6449,7 @@ export async function mountAiWorkspace(root, options = {}) {
         const created = await createSession();
         if (token !== streamToken || !created) return;
         titleEl.textContent = promptTitle(text) || attachments[0]?.name || t("new_chat");
-        bumpSession(sessionId, titleEl.textContent);
+        bumpSession(sessionId, realTitle(titleEl.textContent, t("new_chat")));
       }
       if (token !== streamToken) return;
       chatId = sessionId;
@@ -5347,9 +6470,20 @@ export async function mountAiWorkspace(root, options = {}) {
         { raise: true },
       );
       if (token !== streamToken) return;
+      if (response?.status === 409) {
+        // A reply still runs in this chat (sent from the background or another device): wait in line.
+        for (const bubble of [userBubble, assistant]) bubble?.remove();
+        if (queuedTurn) handBack();
+        else {
+          nextTurns.push({ text, attachments: sentPending.length ? sentPending : attachments.slice() });
+          renderNext();
+        }
+        busyRetry = true;
+        return;
+      }
       if (response?.status === 404) {
         // Deleted, most likely on another device. Hand the message back for a new chat.
-        for (const bubble of [userBubble, assistant]) (bubble?.closest(".message-container") || bubble)?.remove();
+        for (const bubble of [userBubble, assistant]) bubble?.remove();
         chatGone({ text, pending: sentPending });
         return;
       }
@@ -5384,6 +6518,8 @@ export async function mountAiWorkspace(root, options = {}) {
           drainSpeech(false, true);
         } else if (name === "plan_notice") {
           appendPlanNotice(data);
+        } else if (name === "fallback") {
+          applyFallback(data);
         } else if (name === "approval") {
           showApproval(data.approval);
         } else if (name === "error" && data.connection && !streamFull) {
@@ -5393,7 +6529,7 @@ export async function mountAiWorkspace(root, options = {}) {
           sawDone = true;
           streaming = false;
           showConnectionError(shownError(data.message) || t("error"));
-          (assistant.closest(".message-container") || assistant).remove();
+          assistant.remove();
           markNotSent(userBubble, { text, pending: sentPending });
           resizeComposer();
         } else if (name === "error") {
@@ -5409,6 +6545,7 @@ export async function mountAiWorkspace(root, options = {}) {
           }
           settleTools(assistant);
           setActivity(assistant, "");
+          if (sessionId === chatId) markRead(chatId);
         } else if (name === "done") {
           sawDone = true;
           streamFinal = true;
@@ -5423,9 +6560,13 @@ export async function mountAiWorkspace(root, options = {}) {
           settleTools(assistant);
           streaming = false;
           assistant.classList.remove("streaming");
+          stampReply(assistant);
           setActivity(assistant, "");
           resizeComposer();
-          bumpSession(chatId, titleEl.textContent);
+          // The header belongs to the open chat; "New chat" there is no title for this row.
+          bumpSession(chatId, sessionId === chatId ? realTitle(titleEl.textContent, t("new_chat")) : undefined);
+          // Seen as it arrived: no unread dot here or on the user's other devices.
+          if (sessionId === chatId) markRead(chatId);
           waitForStream().then(() => {
             if (token === streamToken && sessionId === chatId) {
               syncCopyChat();
@@ -5444,6 +6585,8 @@ export async function mountAiWorkspace(root, options = {}) {
       await waitForStream();
       streamNode = null;
       if (!sawDone) recover = true;
+      // The floating chat has no chat list that would bring the title in later.
+      else void syncHeaderTitle(chatId);
     } catch (error) {
       if (token !== streamToken) return;
       if (chatId && (isDisconnect(error) || document.visibilityState === "hidden") && sessionId === chatId) {
@@ -5473,6 +6616,7 @@ export async function mountAiWorkspace(root, options = {}) {
         if (!found) {
           streaming = false;
           assistant.classList.remove("streaming");
+          stampReply(assistant);
           settleTools(assistant);
           setActivity(assistant, "");
           if (!streamFull) {
@@ -5494,6 +6638,7 @@ export async function mountAiWorkspace(root, options = {}) {
         streaming = false;
         settleTools(assistant);
         assistant.classList.remove("streaming");
+        stampReply(assistant);
         setActivity(assistant, "");
       }
       syncCopyChat();
@@ -5501,6 +6646,12 @@ export async function mountAiWorkspace(root, options = {}) {
       window.setTimeout(() => {
         if (token === streamToken && sessionId === chatId) refreshTurnHistory(turnSince);
       }, 500);
+      if (busyRetry) {
+        streaming = false;
+        resizeComposer();
+        window.setTimeout(() => resumeQueue(chatId), 1500);
+        return;
+      }
       if (followUp && sessionId === chatId && nextTurns.length) {
         flushNext();
         return;
@@ -5616,6 +6767,7 @@ export async function mountAiWorkspace(root, options = {}) {
   form.addEventListener("input", (event) => {
     if (!fromComposerField(event)) return;
     typingAt = performance.now();
+    saveDraftSoon();
     if (!nearBottom()) releaseFollow();
     holdChatScroll(resizeComposer);
   });
@@ -5680,12 +6832,13 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function startNewChat() {
     setSearchOpen(false);
-    restoreQueued();
-    leaveChatStream();
+    const wasNew = !sessionId && draftOwner === NEW_CHAT_DRAFT;
+    leaveChat();
     clearMicHelp();
     routeGen += 1;
     watchGen += 1;
     sessionId = "";
+    if (!wasNew) switchComposer("");
     freshChat = true;
     setChatChoice("", "");
     renderThumbs();
@@ -5797,7 +6950,7 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function historyRow(row) {
     const item = document.createElement("article");
-    item.className = "history-row";
+    item.className = "history-row panel-card";
     const when = document.createElement("p");
     when.className = "history-when";
     when.textContent = activityWhen(row.created_at);
@@ -5888,7 +7041,7 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function undoWithAgent(row) {
     closeHistory();
-    messageEl.value = restorePrompt(row);
+    setComposerText(restorePrompt(row));
     form.requestSubmit();
   }
 
@@ -5965,15 +7118,22 @@ export async function mountAiWorkspace(root, options = {}) {
     return Number(summary?.cache_read_tokens || 0) + Number(summary?.cache_write_tokens || 0);
   }
 
+  // A summary's line in parts: before the cost, the cost, after it (the chat header swaps the cost).
+  function usageParts(summary) {
+    const before = [`${tokenLabel(summary.total_tokens || 0)} ${t("usage_tokens")}`];
+    const cached = cachedTokens(summary);
+    if (cached) before.push(`${tokenLabel(cached)} ${t("usage_cached")}`);
+    let cost = "";
+    if (summary.cost_usd != null) cost = money(summary.cost_usd);
+    else if (summary.missing_cost) cost = t("usage_unknown_cost");
+    const after = summary.turns ? [`${summary.turns} ${turnWord(summary.turns)}`] : [];
+    return { before, cost, after };
+  }
+
   function usageLine(summary) {
     if (!summary) return "";
-    const bits = [`${tokenLabel(summary.total_tokens || 0)} ${t("usage_tokens")}`];
-    const cached = cachedTokens(summary);
-    if (cached) bits.push(`${tokenLabel(cached)} ${t("usage_cached")}`);
-    if (summary.cost_usd != null) bits.push(money(summary.cost_usd));
-    else if (summary.missing_cost) bits.push(t("usage_unknown_cost"));
-    if (summary.turns) bits.push(`${summary.turns} ${turnWord(summary.turns)}`);
-    return bits.join(" · ");
+    const { before, cost, after } = usageParts(summary);
+    return [...before, ...(cost ? [cost] : []), ...after].join(" · ");
   }
 
   function applyTurnUsage(data) {
@@ -5981,8 +7141,12 @@ export async function mountAiWorkspace(root, options = {}) {
     // A worker job's usage is stored on its own; the "last" line stays this turn's.
     if (chatUsageEl && showChatUsage && !data.worker) {
       const cost = data.cost_usd == null ? t("usage_unknown_cost") : money(data.cost_usd);
-      chatUsageEl.hidden = false;
-      chatUsageEl.textContent = `${t("usage_last")}: ${tokenLabel(data.total_tokens || 0)} · ${cost}`;
+      setChatUsageLine(
+        t("usage_last"),
+        { before: [tokenLabel(data.total_tokens || 0)], after: [] },
+        cost,
+        chatPlanSnap(),
+      );
     }
     refreshChatUsage();
     if (usageIsVisible()) loadUsage();
@@ -6005,13 +7169,14 @@ export async function mountAiWorkspace(root, options = {}) {
       const resp = await apiFetch(`${API}/usage?session_id=${encodeURIComponent(sessionId)}`);
       if (!resp?.ok) return;
       const body = await resp.json();
+      if (body.plan_quota && typeof body.plan_quota === "object") lastPlanQuota = body.plan_quota;
       const summary = body.session;
       if (!summary || !summary.turns) {
         chatUsageEl.hidden = true;
         return;
       }
-      chatUsageEl.hidden = false;
-      chatUsageEl.textContent = usageLine(summary);
+      const { before, cost, after } = usageParts(summary);
+      setChatUsageLine("", { before, after }, cost, chatPlanSnap());
     } catch (_err) {
       /* keep last */
     }
@@ -6531,6 +7696,31 @@ export async function mountAiWorkspace(root, options = {}) {
       usageList.replaceChildren(frag);
       return;
     }
+    const plan = body.plan_quota || {};
+    if (plan && typeof plan === "object") lastPlanQuota = plan;
+    const planLinks = body.plan_links || {};
+    const engineOrder = ["claude", "cursor", "codex"];
+    const planRows = engineOrder
+      .map((engine) => [engine, plan[engine]])
+      .filter(([, snap]) => planHasData(snap));
+    const planSection = document.createDocumentFragment();
+    const planHeading = document.createElement("p");
+    planHeading.className = "usage-heading";
+    planHeading.textContent = t("usage_plan_heading");
+    planSection.appendChild(planHeading);
+    if (planRows.length) {
+      const planGrid = document.createElement("div");
+      planGrid.className = "usage-grid usage-plans";
+      for (const [engine, snap] of planRows) planGrid.appendChild(planCard(engine, snap, planLinks[engine]));
+      planSection.appendChild(planGrid);
+    } else {
+      const note = document.createElement("p");
+      note.className = "usage-empty";
+      note.textContent = t("usage_plan_empty");
+      planSection.appendChild(note);
+    }
+    // On a subscription the limits are what counts: plan cards first, the $ estimates below.
+    if (planRows.length) frag.appendChild(planSection);
     const grid = document.createElement("div");
     grid.className = "usage-grid";
     if (body.range === "custom" && body.totals?.selected) {
@@ -6542,53 +7732,20 @@ export async function mountAiWorkspace(root, options = {}) {
       metricCard(t("usage_all"), body.totals?.all),
     );
     frag.appendChild(grid);
-    const plan = body.plan_quota || {};
-    const planLinks = body.plan_links || {};
-    const engineOrder = ["claude", "cursor", "codex"];
-    const planRows = engineOrder
-      .map((engine) => [engine, plan[engine]])
-      .filter(([, snap]) => planHasData(snap));
-    const heading = document.createElement("p");
-    heading.className = "usage-heading";
-    heading.textContent = t("usage_plan_heading");
-    frag.appendChild(heading);
-    if (!planRows.length) {
+    const planAgents = planAgentIds(plan);
+    if (planAgents.size) {
       const note = document.createElement("p");
-      note.className = "usage-empty";
-      note.textContent = t("usage_plan_empty");
+      note.className = "usage-card-meta usage-plan-cost-note";
+      note.textContent = t("usage_plan_cost_note");
       frag.appendChild(note);
     }
-    for (const [engine, snap] of planRows) {
-        const card = document.createElement("article");
-        card.className = "usage-plan";
-        const title = document.createElement("p");
-        title.className = "usage-plan-title";
-        title.textContent = t(`usage_plan_${engine}`);
-        const line = document.createElement("p");
-        line.className = "usage-plan-line";
-        line.textContent = planUsageLine(snap);
-        card.append(title, line);
-        const meta = planUsageMeta(snap);
-        if (meta) {
-          const note = document.createElement("p");
-          note.className = "usage-plan-line usage-plan-meta";
-          note.textContent = meta;
-          card.appendChild(note);
-        }
-        const link = planLinks[engine];
-        if (link) {
-          const a = document.createElement("a");
-          a.className = "usage-plan-link";
-          a.href = link;
-          a.target = "_blank";
-          a.rel = "noopener noreferrer";
-          a.textContent = t("usage_plan_official");
-          card.appendChild(a);
-        }
-        frag.appendChild(card);
-    }
+    if (!planRows.length) frag.appendChild(planSection);
     if (body.tts?.today?.turns || body.tts?.all?.turns) {
       frag.appendChild(metricCard(t("usage_tts"), body.tts.today, "tts"));
+    }
+    if (body.tasks?.month?.turns) {
+      // Agent task runs (ai_workspace.run_task) this month; they also count in the totals.
+      frag.appendChild(metricCard(taskStrings(hassLanguage()).tasks, body.tasks.month, "tokens"));
     }
     const kpis = body.kpis || {};
     if (kpis.most_spend || kpis.most_used || kpis.most_efficient || kpis.leanest) {
@@ -6650,6 +7807,12 @@ export async function mountAiWorkspace(root, options = {}) {
         all.className = "usage-agent-all";
         all.textContent = `${t("usage_all")}: ${usageLine(agent.all)}`;
         row.append(name, today, all);
+        if (planAgents.has(agent.id)) {
+          const note = document.createElement("p");
+          note.className = "usage-agent-all";
+          note.textContent = t("usage_plan_theoretical");
+          row.appendChild(note);
+        }
         frag.appendChild(row);
       }
     }
@@ -6763,6 +7926,60 @@ export async function mountAiWorkspace(root, options = {}) {
       goToUsage();
     });
   });
+
+  // Tasks page: lives at /ai-workspace/tasks; tasks_page.js loads the first time it opens.
+  const tasksEl = root.querySelector(".tasks-page");
+  let tasksPage = null;
+
+  function syncTasksButtons(open) {
+    root.querySelectorAll(".tasks-open").forEach((btn) => {
+      if (open) btn.setAttribute("aria-current", "page");
+      else btn.removeAttribute("aria-current");
+    });
+  }
+
+  async function openTasksPage() {
+    if (!tasksEl) return;
+    closeHistory();
+    closeNavIfOverlay();
+    wrap.classList.add("page-tasks");
+    tasksEl.hidden = false;
+    tasksEl.setAttribute("aria-hidden", "false");
+    syncTasksButtons(true);
+    if (!tasksPage) {
+      const { mountTasksPage } = await import(`./tasks_page.js${CACHE}`);
+      tasksPage = mountTasksPage(tasksEl, {
+        hass: hassObj,
+        lang: hassLanguage(),
+        apiFetch,
+        openPath: openHaPath,
+        openChat: (id) => goToSession(id),
+      });
+    }
+    await tasksPage.load();
+  }
+
+  function closeTasksPage() {
+    if (!wrap.classList.contains("page-tasks")) return;
+    wrap.classList.remove("page-tasks");
+    syncTasksButtons(false);
+    if (!tasksEl) return;
+    tasksEl.hidden = true;
+    tasksEl.setAttribute("aria-hidden", "true");
+  }
+
+  root.querySelectorAll(".tasks-open").forEach((btn) => {
+    btn.addEventListener("click", (event) => {
+      event.preventDefault();
+      if (wrap.classList.contains("page-tasks")) return;
+      const path = "/ai-workspace/tasks";
+      if (typeof navigate === "function") navigate(path);
+      else {
+        history.pushState(null, "", path);
+        window.dispatchEvent(new CustomEvent("location-changed"));
+      }
+    });
+  });
   root.querySelectorAll(".nav-toggle").forEach((btn) => {
     btn.addEventListener("click", (event) => {
       event.preventDefault();
@@ -6784,6 +8001,10 @@ export async function mountAiWorkspace(root, options = {}) {
       leaveUsage();
       return;
     }
+    if (wrap.classList.contains("page-tasks") && !root.querySelector(".tasks-form:not([hidden])")) {
+      goToSession(sessionId || "");
+      return;
+    }
     if (wrap.classList.contains("usage-open")) {
       closeUsageOverlay();
       return;
@@ -6793,6 +8014,11 @@ export async function mountAiWorkspace(root, options = {}) {
     if (wrap.classList.contains("nav-open")) setNavOpen(false);
   });
   listen(mqNarrow, "change", () => setNarrow(options.narrow));
+
+  logEl.addEventListener("click", onReplyAction);
+  logEl.addEventListener("animationend", (event) => {
+    if (event.target?.classList?.contains("reply-actions")) event.target.classList.remove("is-fresh");
+  });
 
   logEl.addEventListener("click", (event) => {
     const link = event.composedPath().find((node) => node && node.tagName === "A");
@@ -6829,6 +8055,8 @@ export async function mountAiWorkspace(root, options = {}) {
   listen(window, "focus", loadDictate);
   listen(document, "visibilitychange", () => {
     loadDictate();
+    // Back on the page: a reply that finished meanwhile gets its dot, or is read when its chat is open.
+    if (!document.hidden) void refreshSessions();
     if (sessionId && chatVisible()) watchPending(sessionId);
     if (sessionId && chatVisible() && !document.hidden) refreshApprovals(sessionId);
     if (bannerEl && !bannerEl.hidden) loadProviders();
@@ -6841,8 +8069,6 @@ export async function mountAiWorkspace(root, options = {}) {
     if (sessionId && chatVisible()) refreshApprovals(sessionId);
   });
 
-  loadProviders();
-  loadDictate();
   const startRoute = compact || !routed ? { view: "chat", sessionId: "" } : workspaceRoute();
   const startId =
     options.restoreSessionId ||
@@ -6856,17 +8082,47 @@ export async function mountAiWorkspace(root, options = {}) {
     openUsagePage();
   } else if (startId) openSession(startId, true);
   else showEmpty();
+  if (draftOwner == null && !startId) switchComposer("");
   resizeComposer();
+  // Agents, mic and usage settings and the HA component chunks are not needed to read the chat:
+  // they load once it is on screen, or when the browser is idle.
+  let deferredStarted = false;
+  const startDeferred = () => {
+    if (deferredStarted) return;
+    deferredStarted = true;
+    loadProviders();
+    loadDictate();
+    if (haUi) void ensureHaComponents(HA_COMPOSER_PRELOAD);
+  };
+  const whenIdle = (fn) =>
+    typeof window.requestIdleCallback === "function" ? window.requestIdleCallback(fn, { timeout: 800 }) : window.setTimeout(fn, 0);
+  sessionLoad.then(() => whenIdle(startDeferred));
+  const deferredTimer = window.setTimeout(startDeferred, 2500);
+  teardown.push(() => window.clearTimeout(deferredTimer));
+  // Mounted with the theme last seen in this browser; switch when /ui says otherwise.
+  fetchUiBody(getToken).then((body) => {
+    if (!body || !root.isConnected) return;
+    const next = body.ui_theme === "ha_components" ? "ha_components" : "standard";
+    if (next !== activeUiTheme) void remountForUiTheme(next);
+  });
   const linkWatch = new MutationObserver(() => retargetHaLinks(logEl));
   linkWatch.observe(logEl, { subtree: true, childList: true, attributes: true, attributeFilter: ["href", "target"] });
   teardown.push(() => linkWatch.disconnect());
   function resume() {
     loadDictate();
-    if (sessionId) watchPending(sessionId);
+    if (sessionId && nextTurns.length) resumeQueue(sessionId);
+    else if (sessionId) watchPending(sessionId);
   }
 
   function destroy() {
+    saveDraft();
+    const openChat = sessionId;
+    if (sendQueued) chatQueues.of(openChat).unshift(sendQueued);
+    sendQueued = null;
     haltStream({ keepQueue: keepQueueOnHalt("destroy") });
+    destroyed = true;
+    // Queued prompts of the open chat still go out there, also with the panel closed.
+    if (openChat) sendQueueInBackground(openChat);
     stopSpeech();
     watchGen += 1;
     routeGen += 1;

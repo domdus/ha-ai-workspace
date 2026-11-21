@@ -18,6 +18,7 @@ from app.mcp_config import McpConfigError, load_mcp_servers, merge_mcp_servers, 
 from app.providers.base import ProviderInfo
 from app.plan_quota import (
     CLAUDE_PLAN_REJECTED_CODE,
+    credential_id,
     is_plan_rejection,
     plan_events_from_sdk,
     plan_rejection_error,
@@ -27,10 +28,14 @@ from app.redact import redact
 from app.settings import Settings
 from app.small_talk import wants_house_tools
 from app.store import Session
+from app.titles import clean_title, title_prompt
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL = "claude-sonnet-5-5"
+# Chat titles: a few words, so the smallest model (Claude Code resolves the alias).
+TITLE_MODEL = "haiku"
+TITLE_SYSTEM = "You write short chat titles. Reply with the title only."
 API_KEY_URL = "https://console.anthropic.com/settings/keys"
 
 MISSING_KEY = (
@@ -275,14 +280,14 @@ def map_claude_message(message: Any, api_error: str = "") -> list[dict[str, Any]
                 events.append({"type": "status", "text": "Thinking..."})
             elif isinstance(block, ToolUseBlock):
                 name = _resolved_tool_name(block.name, block.input)
-                events.append(_tool_event(name, "start", f"Calling {_tool_label(name)}...", block.id))
+                events.append(_tool_event(name, "start", f"Calling {_tool_label(name)}...", block.id, block.input))
         return events
     if isinstance(message, UserMessage):
         blocks = message.content if isinstance(message.content, list) else []
         for block in blocks:
             if isinstance(block, ToolResultBlock):
                 text = "Tool failed" if getattr(block, "is_error", False) else "Finished"
-                events.append(_tool_event("tool", "end", text, block.tool_use_id))
+                events.append(_tool_event("tool", "end", text, block.tool_use_id, getattr(block, "content", None)))
         return events
     if isinstance(message, ResultMessage):
         if message.is_error or str(getattr(message, "subtype", "") or "").startswith("error_"):
@@ -510,7 +515,7 @@ class ClaudeProvider:
             async for sdk_message in stream:
                 if finished:
                     continue
-                for notice in plan_events_from_sdk(book, "claude", sdk_message):
+                for notice in plan_events_from_sdk(book, "claude", sdk_message, credential_id(credential)):
                     plan_seen = True
                     yield notice
                 if isinstance(sdk_message, AssistantMessage):
@@ -552,6 +557,55 @@ class ClaudeProvider:
             yield worker
         if is_plan_token(credential):
             self._refresh_plan_usage(credential, plan_seen)
+
+    async def suggest_title(
+        self,
+        user: str,
+        assistant: str = "",
+        *,
+        api_key: str = "",
+        model: str = "",
+    ) -> str | None:
+        """A short chat title from the first message: one small Haiku call, no tools, no session."""
+        del model  # the chat's model is far more than a few words need
+        credential = resolve_credential(self.settings, api_key)
+        if not credential:
+            return None
+        try:
+            from claude_agent_sdk import AssistantMessage, ClaudeAgentOptions, ResultMessage, TextBlock, query
+        except ImportError:
+            return None
+        options = ClaudeAgentOptions(
+            cwd=str(self.settings.workspace_dir),
+            setting_sources=[],
+            strict_mcp_config=True,
+            model=TITLE_MODEL,
+            system_prompt=TITLE_SYSTEM,
+            max_turns=1,
+            env=claude_subprocess_env(self.settings, credential),
+            mcp_servers={},
+            stderr=lambda line: logger.debug("claude title cli: %s", redact(line, [credential])),
+            **tool_policy(no_tools=True, full_tools=False, allow_internet=False, mcp_servers={}),
+        )
+        parts: list[str] = []
+        result = ""
+        failed = False
+        try:
+            self.settings.workspace_dir.mkdir(parents=True, exist_ok=True)
+            # Read to the end: leaving the SDK's stream early closes it from the wrong task.
+            async for message in query(prompt=title_prompt(user, assistant), options=options):
+                if isinstance(message, AssistantMessage):
+                    parts.extend(b.text for b in message.content if isinstance(b, TextBlock))
+                elif isinstance(message, ResultMessage):
+                    failed = bool(message.is_error)
+                    result = str(message.result or "")
+        except Exception as exc:
+            if not (result or parts):
+                logger.debug("claude title failed: %s", redact(str(exc), [credential]))
+                return None
+        if failed:
+            return None
+        return clean_title(result or "".join(parts)) or None
 
     def _refresh_plan_usage(self, credential: str, plan_seen: bool) -> None:
         """Read the plan's utilization (no tokens) when this turn's stream brought no percent."""

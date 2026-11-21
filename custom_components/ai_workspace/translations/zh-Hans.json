@@ -45,13 +45,13 @@
               "keep_chats": "要保留的聊天"
             },
             "data_description": {
-              "default_agent": "新对话使用的智能体。每个对话都会记住上次使用的智能体（和模型）。最近使用：你在此浏览器中最近选择的智能体。",
+              "default_agent": "新对话使用的智能体。每个对话都会记住上次使用的智能体（和模型）。最近使用：你在此浏览器中最近选择的智能体。开启备用代理时，改由其代理列表决定。",
               "model_switcher": "默认关闭。在智能体选择器旁添加模型选择器，让一个对话可以使用同一智能体的其他模型。智能体自己的模型仍是默认值。",
               "enable_sidebar": "将 AI Workspace 添加到 Home Assistant 侧边栏。关闭后，管理员仍可直接打开 /ai-workspace。",
               "enable_overlay": "每个 Home Assistant 页面角落的圆形 AI 按钮，无需离开页面即可提问。在设置页面上位置更高，以免挡住其他按钮。",
               "enable_dictate": "消息框中的麦克风按钮。如果从不听写，可以隐藏。",
               "allow_users": "关闭：仅限管理员。开启：非管理员用户可使用浮动聊天，权限与其自己的 Home Assistant 账号相同。完整的 AI Workspace 页面始终仅限管理员。只有在你信任所有有账号的人时才开启。",
-              "ui_theme": "默认关闭。用 Home Assistant 自带的界面元素构建聊天。如果聊天与你的主题不协调，可以试试。",
+              "ui_theme": "默认关闭。只把消息输入框和代理、模型选择器换成 Home Assistant 自带的样式。消息始终使用标准外观。",
               "cross_chat": "默认关闭。开启后，问题可以使用另一段标题有相同词语的聊天中的简短摘录，无需你提到那段聊天。适合已经聊过同一房间或自动化的情况。另一段聊天不会被改动。",
               "keep_chats": "每人保留的最新未置顶聊天数。更早的会被删除，以免列表无限增长。置顶聊天始终保留。默认 30。"
             }
@@ -160,15 +160,29 @@
               "keep_chats": "要保留的聊天"
             },
             "data_description": {
-              "default_agent": "新对话使用的智能体。每个对话都会记住上次使用的智能体（和模型）。最近使用：你在此浏览器中最近选择的智能体。",
+              "default_agent": "新对话使用的智能体。每个对话都会记住上次使用的智能体（和模型）。最近使用：你在此浏览器中最近选择的智能体。开启备用代理时，改由其代理列表决定。",
               "model_switcher": "默认关闭。在智能体选择器旁添加模型选择器，让一个对话可以使用同一智能体的其他模型。智能体自己的模型仍是默认值。",
               "enable_sidebar": "将 AI Workspace 添加到 Home Assistant 侧边栏。关闭后，管理员仍可直接打开 /ai-workspace。",
               "enable_overlay": "每个 Home Assistant 页面角落的圆形 AI 按钮，无需离开页面即可提问。在设置页面上位置更高，以免挡住其他按钮。",
               "enable_dictate": "消息框中的麦克风按钮。如果从不听写，可以隐藏。",
               "allow_users": "关闭：仅限管理员。开启：非管理员用户可使用浮动聊天，权限与其自己的 Home Assistant 账号相同。完整的 AI Workspace 页面始终仅限管理员。只有在你信任所有有账号的人时才开启。",
-              "ui_theme": "默认关闭。用 Home Assistant 自带的界面元素构建聊天。如果聊天与你的主题不协调，可以试试。",
+              "ui_theme": "默认关闭。只把消息输入框和代理、模型选择器换成 Home Assistant 自带的样式。消息始终使用标准外观。",
               "cross_chat": "默认关闭。开启后，问题可以使用另一段标题有相同词语的聊天中的简短摘录，无需你提到那段聊天。适合已经聊过同一房间或自动化的情况。另一段聊天不会被改动。",
               "keep_chats": "每人保留的最新未置顶聊天数。更早的会被删除，以免列表无限增长。置顶聊天始终保留。默认 30。"
+            }
+          },
+          "fallback": {
+            "name": "备用代理",
+            "description": "可选。当某个代理的服务商出错（套餐或令牌上限、速率限制、登录过期、超时、连接错误、服务器过载）时，列表中的下一个代理会继续该任务。开启后，此列表取代默认智能体。",
+            "data": {
+              "fallback_enabled": "启用备用代理",
+              "fallback_agents": "代理顺序",
+              "fallback_return": "回到首选代理"
+            },
+            "data_description": {
+              "fallback_enabled": "默认关闭。停止回复、工具失败、拒绝回答或错误请求都不会切换代理。",
+              "fallback_agents": "仅在启用备用时使用；在启用备用并保存之前，此列表只是建议。任务也遵循同一列表。 顺序很重要：第一个是首选代理，新对话从它开始；其余代理按从上到下的顺序接手。拖动代理即可更改顺序。需要工作区或 shell 的任务只交给 Runtime 代理（Claude SDK、Cursor、Codex）。",
+              "fallback_return": "关闭：对话留在接手的代理上。收到新消息时：下一条消息会再次尝试首选代理。重置或等待之后：仅在其上限重置或等待时间（5、15、60 分钟）过去之后。绝不在回复中途切换。"
             }
           },
           "cost": {
@@ -310,8 +324,8 @@
         "runtime_old": "此运行时尚不支持登录。请更新 AI Workspace Runtime，或在代理表单中粘贴令牌。",
         "codex_runtime_old": "要使用 Codex 代理，请将 AI Workspace 运行时更新到 1.6.0 或更高版本。",
         "codex_key_required": "在 Codex（运行时）下添加 OpenAI API 密钥，或在 AI Workspace 运行时上用 ChatGPT 登录。",
-        "not_signed_in_yet": "OpenAI 尚未确认登录。请在 OpenAI 页面输入代码，然后再次提交。",
-        "no_code": "Codex 没有从 OpenAI 获得登录代码。请检查运行时能否访问 auth.openai.com，然后重试。"
+        "no_code": "Codex 没有从 OpenAI 获得登录代码。请检查运行时能否访问 auth.openai.com，然后重试。",
+        "codex_login_failed": "OpenAI 未确认此次登录。如果代码被拒绝，请先在 ChatGPT 的 设置 → 安全 中允许一次设备代码登录（工作区账户由管理员允许），然后重试。"
       },
       "step": {
         "provider": {
@@ -625,8 +639,7 @@
           }
         },
         "codex_login": {
-          "title": "用 ChatGPT 登录",
-          "description": "1. 打开此链接，用拥有订阅的 ChatGPT 账户登录：[用 ChatGPT 登录]({url})\n2. 在那里输入此一次性代码：**{code}**\n3. 然后在这里提交。\n\n代码 15 分钟内有效。你的 ChatGPT 密码不会经过 Home Assistant。如果 OpenAI 拒绝该代码，请在 ChatGPT 的 **设置 → 安全** 中启用一次设备代码登录（工作区账户由管理员允许）。"
+          "title": "用 ChatGPT 登录"
         },
         "codex_signed_in": {
           "title": "已登录",
@@ -639,6 +652,9 @@
       },
       "abort": {
         "reconfigure_successful": "智能体已更新。"
+      },
+      "progress": {
+        "codex_login": "1. 打开此链接，用拥有订阅的 ChatGPT 账户登录：[用 ChatGPT 登录]({url})\n2. 在那里输入此一次性代码：**{code}**\n3. 就这样：OpenAI 确认代码后，此窗口会自动继续。\n\n代码 15 分钟内有效。你的 ChatGPT 密码不会经过 Home Assistant。如果 OpenAI 拒绝该代码，请在 ChatGPT 的 **设置 → 安全** 中启用一次设备代码登录（工作区账户由管理员允许）。"
       }
     }
   },
@@ -672,6 +688,60 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "自定义 MCP URL"
+      }
+    },
+    "default_agent": {
+      "options": {
+        "last_used": "最近使用"
+      }
+    },
+    "fallback_return": {
+      "options": {
+        "off": "关闭",
+        "new_message": "收到新消息时",
+        "after_reset": "重置或等待之后"
+      }
+    },
+    "task_chat": {
+      "options": {
+        "none": "无聊天",
+        "task": "任务聊天"
+      }
+    }
+  },
+  "services": {
+    "run_task": {
+      "name": "运行代理任务",
+      "description": "使用 AI Workspace 代理运行提示词，例如按计划运行。每次运行都从头开始：提示词必须包含代理所需的全部内容。提示词中可以使用模板。",
+      "fields": {
+        "prompt": {
+          "name": "提示词",
+          "description": "代理要做的事。需自成一体：代理不记得以前的运行（保留任务聊天时除外）。可以使用模板。"
+        },
+        "task_name": {
+          "name": "任务名称",
+          "description": "用于任务聊天、日志和上次运行的名称。任务聊天必须填写。"
+        },
+        "agent": {
+          "name": "代理",
+          "description": "代理 ID、标题或对话实体。留空：使用默认代理；若默认代理为“上次使用”，则使用第一个 Runtime 代理（Claude、Cursor、Codex）。仅在启用备用（Fallback）时才切换到其他代理。"
+        },
+        "chat": {
+          "name": "聊天",
+          "description": "将运行记录保存在一个以任务命名的任务聊天中。"
+        },
+        "notify": {
+          "name": "通知",
+          "description": "用于发送简短结果的通知服务或实体，例如 notify.mobile_app_my_phone。"
+        },
+        "allow_changes": {
+          "name": "允许更改",
+          "description": "关闭：代理只读取 Home Assistant。开启：可以控制设备。无论如何都禁止修改自动化、脚本或启动其他任务。"
+        },
+        "timeout": {
+          "name": "超时",
+          "description": "运行停止前的秒数。"
+        }
       }
     }
   }

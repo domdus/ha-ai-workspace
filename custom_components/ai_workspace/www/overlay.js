@@ -202,9 +202,7 @@ async function ensureHost() {
     applyHostLayout(host);
     return host;
   }
-  const [{ mountAiWorkspace, prefetchUiTheme, haComponentsUi }, { stringsFor }] = await loadChat();
-  await prefetchUiTheme(() => hassObj()?.auth?.data?.access_token || "");
-  const haUi = haComponentsUi();
+  const [{ mountAiWorkspace }, { stringsFor }] = await loadChat();
   await customElements.whenDefined("ha-top-app-bar-fixed");
   host = document.getElementById(HOST_ID);
   if (host) {
@@ -229,32 +227,10 @@ async function ensureHost() {
         pointer-events: auto;
         transition: bottom 280ms cubic-bezier(0.16, 1, 0.3, 1);
       }
-      ha-button.fab {
-        --ha-space-1: 0px;
-        --ha-space-2: 0px;
-      }
       .fab ha-icon {
         --mdc-icon-size: 26px;
         margin: 0;
       }
-      ha-button.fab::part(base) {
-        width: 48px;
-        height: 48px;
-        min-width: 48px;
-        padding: 0;
-        border-radius: 999px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-      }
-      ha-button.fab::part(start) {
-        margin: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      ha-button.fab::part(label),
-      ha-button.fab::part(end) { display: none; }
       button.fab {
         box-sizing: border-box;
         width: 48px;
@@ -408,11 +384,7 @@ async function ensureHost() {
         }
       }
     </style>
-    ${
-      haUi
-        ? `<ha-button class="fab" size="l" variant="brand" appearance="accent" title="${ui.title}"><ha-icon slot="start" icon="mdi:robot"></ha-icon></ha-button>`
-        : `<button type="button" class="fab" title="${ui.title}"><ha-icon icon="mdi:robot"></ha-icon></button>`
-    }
+    <button type="button" class="fab" title="${ui.title}"><ha-icon icon="mdi:robot"></ha-icon></button>
     <div class="drawer-host"></div>
   `;
   const fab = shadow.querySelector(".fab");

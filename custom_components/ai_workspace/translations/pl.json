@@ -45,13 +45,13 @@
               "keep_chats": "Czaty do zachowania"
             },
             "data_description": {
-              "default_agent": "Agent, od którego zaczyna się nowy czat. Każdy czat pamięta agenta (i model), którego użył ostatnio. Ostatnio używany: agent wybrany ostatnio w tej przeglądarce.",
+              "default_agent": "Agent, od którego zaczyna się nowy czat. Każdy czat pamięta agenta (i model), którego użył ostatnio. Ostatnio używany: agent wybrany ostatnio w tej przeglądarce. Gdy agent zapasowy jest włączony, decyduje jego lista agentów.",
               "model_switcher": "Domyślnie wyłączone. Dodaje wybór modelu obok wyboru agenta, aby czat mógł użyć innego modelu tego samego agenta. Model agenta pozostaje domyślny.",
               "enable_sidebar": "Dodaje AI Workspace do paska bocznego Home Assistant. Wyłączone: administratorzy nadal mogą otworzyć /ai-workspace bezpośrednio.",
               "enable_overlay": "Okrągły przycisk AI w rogu każdej strony Home Assistant, żeby pytać bez opuszczania strony. Na stronach Ustawień jest wyżej, żeby nie zasłaniał innych przycisków.",
               "enable_dictate": "Przycisk mikrofonu w polu wiadomości. Ukryj go, jeśli nigdy nie dyktujesz.",
               "allow_users": "Wyłączone: tylko administratorzy. Włączone: użytkownicy bez uprawnień administratora dostają pływający czat z takim samym dostępem do Home Assistant jak ich własne konto. Pełna strona AI Workspace zostaje tylko dla administratorów. Włącz tylko, jeśli ufasz wszystkim, którzy mają konto.",
-              "ui_theme": "Domyślnie wyłączone. Buduje czat z własnych elementów interfejsu Home Assistant. Wypróbuj, jeśli czat nie pasuje do twojego motywu.",
+              "ui_theme": "Domyślnie wyłączone. Zmienia tylko pole wiadomości oraz wybór agenta i modelu na styl Home Assistant. Wiadomości zawsze mają standardowy wygląd.",
               "cross_chat": "Domyślnie wyłączone. Gdy włączone, pytanie może użyć krótkiego fragmentu innego czatu, którego tytuł ma wspólne słowa, nawet jeśli o nim nie wspomnisz. Pomaga, gdy już rozmawiałeś o tym samym pomieszczeniu lub automatyzacji. Tamten czat nie jest zmieniany.",
               "keep_chats": "Najnowsze nieprzypięte czaty zachowywane na osobę. Starsze są usuwane, żeby lista nie rosła bez końca. Przypięte czaty zostają zawsze. Domyślnie 30."
             }
@@ -160,15 +160,29 @@
               "keep_chats": "Czaty do zachowania"
             },
             "data_description": {
-              "default_agent": "Agent, od którego zaczyna się nowy czat. Każdy czat pamięta agenta (i model), którego użył ostatnio. Ostatnio używany: agent wybrany ostatnio w tej przeglądarce.",
+              "default_agent": "Agent, od którego zaczyna się nowy czat. Każdy czat pamięta agenta (i model), którego użył ostatnio. Ostatnio używany: agent wybrany ostatnio w tej przeglądarce. Gdy agent zapasowy jest włączony, decyduje jego lista agentów.",
               "model_switcher": "Domyślnie wyłączone. Dodaje wybór modelu obok wyboru agenta, aby czat mógł użyć innego modelu tego samego agenta. Model agenta pozostaje domyślny.",
               "enable_sidebar": "Dodaje AI Workspace do paska bocznego Home Assistant. Wyłączone: administratorzy nadal mogą otworzyć /ai-workspace bezpośrednio.",
               "enable_overlay": "Okrągły przycisk AI w rogu każdej strony Home Assistant, żeby pytać bez opuszczania strony. Na stronach Ustawień jest wyżej, żeby nie zasłaniał innych przycisków.",
               "enable_dictate": "Przycisk mikrofonu w polu wiadomości. Ukryj go, jeśli nigdy nie dyktujesz.",
               "allow_users": "Wyłączone: tylko administratorzy. Włączone: użytkownicy bez uprawnień administratora dostają pływający czat z takim samym dostępem do Home Assistant jak ich własne konto. Pełna strona AI Workspace zostaje tylko dla administratorów. Włącz tylko, jeśli ufasz wszystkim, którzy mają konto.",
-              "ui_theme": "Domyślnie wyłączone. Buduje czat z własnych elementów interfejsu Home Assistant. Wypróbuj, jeśli czat nie pasuje do twojego motywu.",
+              "ui_theme": "Domyślnie wyłączone. Zmienia tylko pole wiadomości oraz wybór agenta i modelu na styl Home Assistant. Wiadomości zawsze mają standardowy wygląd.",
               "cross_chat": "Domyślnie wyłączone. Gdy włączone, pytanie może użyć krótkiego fragmentu innego czatu, którego tytuł ma wspólne słowa, nawet jeśli o nim nie wspomnisz. Pomaga, gdy już rozmawiałeś o tym samym pomieszczeniu lub automatyzacji. Tamten czat nie jest zmieniany.",
               "keep_chats": "Najnowsze nieprzypięte czaty zachowywane na osobę. Starsze są usuwane, żeby lista nie rosła bez końca. Przypięte czaty zostają zawsze. Domyślnie 30."
+            }
+          },
+          "fallback": {
+            "name": "Zapasowy agent",
+            "description": "Opcjonalne. Gdy dostawca agenta zawiedzie (limit planu lub tokenów, limit zapytań, wygasłe logowanie, przekroczony czas, błąd połączenia, przeciążony serwer), następny agent z listy kontynuuje zadanie. Po włączeniu ta lista zastępuje domyślnego agenta.",
+            "data": {
+              "fallback_enabled": "Włącz agenta zapasowego",
+              "fallback_agents": "Agenci w kolejności",
+              "fallback_return": "Powrót do preferowanego agenta"
+            },
+            "data_description": {
+              "fallback_enabled": "Domyślnie wyłączone. Zatrzymanie odpowiedzi, błąd narzędzia, odmowa lub błędne żądanie nigdy nie zmieniają agenta.",
+              "fallback_agents": "Używana tylko przy włączonym zapasie; dopóki nie zapiszesz z włączonym zapasem, lista jest tylko propozycją. Zadania korzystają z tej samej listy. Kolejność ma znaczenie: pierwszy agent jest preferowany i od niego zaczynają się nowe czaty; pozostali przejmują od góry do dołu. Przeciągnij agenta, aby zmienić kolejność. Zadania wymagające przestrzeni roboczej lub powłoki trafiają tylko do agentów Runtime (Claude SDK, Cursor, Codex).",
+              "fallback_return": "Wyłączone: czat zostaje przy agencie, który przejął. Przy nowej wiadomości: następna wiadomość znów próbuje preferowanego agenta. Po resecie lub czasie oczekiwania: dopiero gdy jego limit się zresetuje lub minie czas oczekiwania (5, 15, 60 minut). Nigdy w trakcie odpowiedzi."
             }
           },
           "cost": {
@@ -310,8 +324,8 @@
         "runtime_old": "Ten Runtime nie obsługuje jeszcze logowania. Zaktualizuj AI Workspace Runtime albo wklej token w formularzu agenta.",
         "codex_runtime_old": "Zaktualizuj AI Workspace Runtime do 1.6.0 lub nowszej dla agentów Codex.",
         "codex_key_required": "Dodaj klucz API OpenAI w sekcji Codex (runtime) lub zaloguj się przez ChatGPT w AI Workspace Runtime.",
-        "not_signed_in_yet": "OpenAI jeszcze nie potwierdziło logowania. Wpisz kod na stronie OpenAI i wyślij ponownie.",
-        "no_code": "Codex nie dostał kodu logowania od OpenAI. Sprawdź, czy Runtime łączy się z auth.openai.com, i spróbuj ponownie."
+        "no_code": "Codex nie dostał kodu logowania od OpenAI. Sprawdź, czy Runtime łączy się z auth.openai.com, i spróbuj ponownie.",
+        "codex_login_failed": "OpenAI nie potwierdziło logowania. Jeśli odrzuciło kod, zezwól raz na logowanie kodem urządzenia w ChatGPT w Ustawienia → Bezpieczeństwo (dla konta workspace robi to administrator) i spróbuj ponownie."
       },
       "step": {
         "provider": {
@@ -625,8 +639,7 @@
           }
         },
         "codex_login": {
-          "title": "Zaloguj się przez ChatGPT",
-          "description": "1. Otwórz ten link i zaloguj się kontem ChatGPT z Twoim planem: [Zaloguj się przez ChatGPT]({url})\n2. Wpisz tam ten jednorazowy kod: **{code}**\n3. Potem wyślij tutaj.\n\nKod jest ważny 15 minut. Twoje hasło ChatGPT nigdy nie przechodzi przez Home Assistant. Jeśli OpenAI odrzuci kod, włącz raz logowanie kodem urządzenia w ChatGPT w **Ustawienia → Bezpieczeństwo** (dla konta workspace zezwala na to administrator)."
+          "title": "Zaloguj się przez ChatGPT"
         },
         "codex_signed_in": {
           "title": "Zalogowano",
@@ -639,6 +652,9 @@
       },
       "abort": {
         "reconfigure_successful": "Agent zaktualizowany."
+      },
+      "progress": {
+        "codex_login": "1. Otwórz ten link i zaloguj się kontem ChatGPT z Twoim planem: [Zaloguj się przez ChatGPT]({url})\n2. Wpisz tam ten jednorazowy kod: **{code}**\n3. To wszystko: to okno przejdzie dalej samo, gdy OpenAI potwierdzi kod.\n\nKod jest ważny 15 minut. Twoje hasło ChatGPT nigdy nie przechodzi przez Home Assistant. Jeśli OpenAI odrzuci kod, włącz raz logowanie kodem urządzenia w ChatGPT w **Ustawienia → Bezpieczeństwo** (dla konta workspace zezwala na to administrator)."
       }
     }
   },
@@ -672,6 +688,60 @@
         "ha_mcp": "HA-MCP",
         "coolver": "HA Vibecode Agent (Coolver)",
         "custom": "Własny URL MCP"
+      }
+    },
+    "default_agent": {
+      "options": {
+        "last_used": "Ostatnio używany"
+      }
+    },
+    "fallback_return": {
+      "options": {
+        "off": "Wyłączone",
+        "new_message": "Przy nowej wiadomości",
+        "after_reset": "Po resecie lub czasie oczekiwania"
+      }
+    },
+    "task_chat": {
+      "options": {
+        "none": "Bez czatu",
+        "task": "Czat zadania"
+      }
+    }
+  },
+  "services": {
+    "run_task": {
+      "name": "Uruchom zadanie agenta",
+      "description": "Uruchamia prompt z agentem AI Workspace, np. według harmonogramu. Każde uruchomienie zaczyna się od nowa: prompt musi zawierać wszystko, czego agent potrzebuje. W prompcie działają szablony.",
+      "fields": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "Co ma zrobić agent. Samowystarczalny: agent nie pamięta wcześniejszych uruchomień (poza czatem zadania, jeśli jest zachowany). Szablony są dozwolone."
+        },
+        "task_name": {
+          "name": "Nazwa zadania",
+          "description": "Nazwa czatu zadania, logów i ostatniego uruchomienia. Wymagana dla czatu zadania."
+        },
+        "agent": {
+          "name": "Agent",
+          "description": "Id, tytuł lub encja konwersacji agenta. Puste: agent domyślny; jeśli ustawiono 'Ostatnio używany', pierwszy agent Runtime (Claude, Cursor, Codex). Przełączenie na innych agentów tylko przy włączonym zapasie (Fallback)."
+        },
+        "chat": {
+          "name": "Czat",
+          "description": "Zachowuj uruchomienia w jednym czacie zadania, nazwanym jak zadanie."
+        },
+        "notify": {
+          "name": "Powiadom",
+          "description": "Usługa lub encja powiadomień dla krótkiego wyniku, np. notify.mobile_app_moj_telefon."
+        },
+        "allow_changes": {
+          "name": "Zezwól na zmiany",
+          "description": "Wyłączone: agent tylko odczytuje Home Assistant. Włączone: może sterować urządzeniami. Automatyzacje, skrypty i inne zadania są zawsze zablokowane."
+        },
+        "timeout": {
+          "name": "Limit czasu",
+          "description": "Sekundy do zatrzymania uruchomienia."
+        }
       }
     }
   }
