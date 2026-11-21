@@ -1057,7 +1057,6 @@ export async function mountAiWorkspace(root, options = {}) {
               <ha-icon icon="mdi:chart-bar"></ha-icon>
             </ha-icon-button>`}
             <h1 class="title">${t("new_chat")}</h1>
-            <span class="agent-badge" title="${htmlAttr(t("active_agent"))}" hidden></span>
           </div>
           <p class="chat-usage" hidden></p>
           ${bannerMarkup}
@@ -1161,8 +1160,6 @@ export async function mountAiWorkspace(root, options = {}) {
   const agentTrigger = root.querySelector(".agent-menu .agent-trigger");
   const agentLabel = root.querySelector(".agent-menu .agent-trigger-label");
   const agentMenu = root.querySelector(".agent-menu");
-  // Fallback on: the header names the agent this chat runs on now.
-  const agentBadge = root.querySelector(".agent-badge");
   const modelMenu = root.querySelector(".model-menu");
   const modelTrigger = root.querySelector(".model-trigger");
   const modelLabel = root.querySelector(".model-trigger-label");
@@ -4002,7 +3999,6 @@ export async function mountAiWorkspace(root, options = {}) {
   let chatModel = "";
   let defaultAgentId = "";
   let modelSwitcher = false;
-  let fallbackOn = false;
   let providerItems = [];
   const modelLists = new Map();
   let voice = { dictate: true, stt: "browser", speak: false, tts: false, ttsHeavy: false, ttsNatural: true };
@@ -4038,17 +4034,9 @@ export async function mountAiWorkspace(root, options = {}) {
     apiFetch(`${API}/sessions/${sessionId}`, { method: "PATCH", body: JSON.stringify(body) });
   }
 
-  function renderAgentBadge(item) {
-    if (!agentBadge) return;
-    const name = item ? item.title || item.label || "" : "";
-    agentBadge.hidden = !fallbackOn || !name;
-    agentBadge.textContent = name;
-  }
-
   function renderAgentPicker() {
     const current = selectedAgent();
     const item = providerItems.find((row) => row.id === current);
-    renderAgentBadge(item);
     // Checks chatUsageShown first: safe before the header's usage line exists.
     rerenderChatUsage();
     if (!agentPicker || !agentMenu || !agentLabel) return;
@@ -6235,11 +6223,9 @@ export async function mountAiWorkspace(root, options = {}) {
         headerUsageOn = body.show_chat_usage !== false;
         const nextDefault = String(body.default_agent || "");
         const nextSwitcher = body.model_switcher === true;
-        const nextFallback = body.fallback === true;
-        if (nextDefault !== defaultAgentId || nextSwitcher !== modelSwitcher || nextFallback !== fallbackOn) {
+        if (nextDefault !== defaultAgentId || nextSwitcher !== modelSwitcher) {
           defaultAgentId = nextDefault;
           modelSwitcher = nextSwitcher;
-          fallbackOn = nextFallback;
           renderAgentPicker();
         }
         const nextTheme = body.ui_theme === "ha_components" ? "ha_components" : "standard";
@@ -6893,7 +6879,7 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function historyRow(row) {
     const item = document.createElement("article");
-    item.className = "history-row";
+    item.className = "history-row panel-card";
     const when = document.createElement("p");
     when.className = "history-when";
     when.textContent = activityWhen(row.created_at);

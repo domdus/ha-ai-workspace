@@ -2065,10 +2065,36 @@ ha-button.send ha-icon {
   padding: var(--ha-space-2) 0;
 }
 
+/* Usage cards carry their own inline margin; only the history list insets its cards. */
+.history-list {
+  padding: var(--ha-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ha-space-2);
+}
+
 .chat-usage {
   margin-block: var(--ha-space-1) 0;
   font-size: var(--ha-font-size-s);
   color: var(--secondary-text-color);
+}
+
+/* Panel pages (Aufgaben, Nutzung, Änderungsverlauf): one card surface, task-card reference. */
+.panel-card,
+.task-card,
+.tasks-form,
+.usage-card,
+.usage-agent,
+.usage-chart,
+.usage-kpi,
+.history-row {
+  min-width: 0;
+  padding: var(--ha-space-3);
+  border: var(--ha-card-border-width, 1px) solid var(--ha-card-border-color, var(--divider-color));
+  border-radius: var(--ha-card-border-radius, var(--ha-border-radius-lg, 12px));
+  background: var(--ha-card-background, var(--card-background-color));
+  box-shadow: var(--ha-card-box-shadow, none);
+  color: var(--primary-text-color);
 }
 
 .usage-grid {
@@ -2079,11 +2105,7 @@ ha-button.send ha-icon {
 
 .usage-card,
 .usage-agent {
-  padding: var(--ha-space-3);
   margin: 0 var(--ha-space-3) var(--ha-space-2);
-  border: 1px solid var(--divider-color);
-  border-radius: var(--ha-border-radius-lg, 12px);
-  background: var(--secondary-background-color, var(--card-background-color));
 }
 
 .usage-card-title,
@@ -2396,10 +2418,7 @@ ha-date-range-picker.usage-filter-dates {
 
 .usage-chart,
 .usage-kpi {
-  padding: var(--ha-space-3);
-  border: 1px solid var(--divider-color);
-  border-radius: var(--ha-border-radius-lg, 12px);
-  background: var(--secondary-background-color, var(--card-background-color));
+  margin: 0;
 }
 
 .usage-chart-title {
@@ -2440,8 +2459,8 @@ ha-date-range-picker.usage-filter-dates {
 .usage-table-wrap {
   overflow-x: auto;
   margin: 0 var(--ha-space-3) var(--ha-space-2);
-  border: 1px solid var(--divider-color);
-  border-radius: var(--ha-border-radius-lg, 12px);
+  border: var(--ha-card-border-width, 1px) solid var(--ha-card-border-color, var(--divider-color));
+  border-radius: var(--ha-card-border-radius, var(--ha-border-radius-lg, 12px));
 }
 
 .usage-table {
@@ -2474,14 +2493,16 @@ ha-date-range-picker.usage-filter-dates {
 }
 
 .history-empty {
-  margin: var(--ha-space-4);
+  margin: 0;
+  padding: var(--ha-space-3);
   color: var(--secondary-text-color);
 }
 
-.ui-theme-standard .history-row {
-  padding: var(--ha-space-3) var(--ha-space-4);
-  border-bottom: 1px solid var(--divider-color);
-  margin: var(--ha-space-2) var(--ha-space-3);
+.history-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ha-space-1);
+  margin: 0;
 }
 
 .history-when,
@@ -2490,6 +2511,8 @@ ha-date-range-picker.usage-filter-dates {
   margin: 0;
   color: var(--secondary-text-color);
   font-size: var(--ha-font-size-s);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .history-chat {
@@ -2502,7 +2525,9 @@ ha-date-range-picker.usage-filter-dates {
 }
 
 .history-summary {
-  margin: var(--ha-space-1) 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .history-rollback {
@@ -2685,27 +2710,6 @@ ha-date-range-picker.usage-filter-dates {
 }
 .approval-timer {
   margin-inline-end: auto;
-}
-
-/* Fallback on: the agent the open chat runs on now. */
-.agent-badge {
-  flex: none;
-  max-width: 40%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  margin-inline-start: 6px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 11px;
-  line-height: 16px;
-  color: var(--primary-color);
-  background: rgba(var(--rgb-primary-color), 0.1);
-  border: 1px solid rgba(var(--rgb-primary-color), 0.25);
-}
-
-.agent-badge[hidden] {
-  display: none;
 }
 
 .fallback-notice {

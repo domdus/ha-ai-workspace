@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.1b17
+
+**No agent badge in the chat header.** With Fallback on, the chat header showed the active agent as a badge next to the chat title. The active agent is already shown in the agent and model picker next to the message field, so the badge is gone; the header shows the title and the usage line as before.
+
+- The fallback chain itself is unchanged: the next agent still carries on, the inline notice in the chat still says who stopped and who goes on, and the picker switches to the active agent.
+- Only the integration changes. The Runtime app version moves to 1.6.1b17 with the release but has no functional change.
+- **Panel cards:** Usage and change-history entries use the same Home Assistant card tokens as the Tasks page (shared `.panel-card` rule in `chat.css`; no grey fill on light theme). History rows are cards with spacing like the task list; long summaries and entity ids wrap on narrow screens.
+
 ## 1.6.1b16
 
 **Plan limits as cards, first on the Usage page, and in the chat header.**
