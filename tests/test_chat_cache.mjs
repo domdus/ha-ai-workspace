@@ -150,9 +150,13 @@ linked.done();
 
 // Skeleton: alternating bubbles, busy and announced, shown at once on open and late on a switch.
 assert.match(chatSrc, /function messageSkeleton\(\)/);
-assert.match(chatSrc, /bubble-skeleton \$\{role\}/);
+assert.match(chatSrc, /skeleton-bubble \$\{role\}/);
+assert.match(chatSrc, /skeleton-reply-actions/);
 assert.match(chatSrc, /role="status">\$\{htmlAttr\(t\("chat_loading"\)\)\}/);
 assert.match(chatSrc, /logEl\.setAttribute\("aria-busy", "true"\)/);
+assert.match(chatSrc, /function dismissLoadSkeleton\(\)/);
+assert.match(chatSrc, /dismissLoadSkeleton\(\)/);
+assert.doesNotMatch(chatSrc, /bubble-skeleton/);
 assert.match(chatSrc, /\} else if \(initial\) \{\n\s+showMessageSkeleton\(\);/);
 assert.match(chatSrc, /SKELETON_DELAY_MS\);/);
 assert.match(chatSrc, /t\("chat_slow"\)/);
@@ -163,8 +167,11 @@ assert.match(chatSrc, /t\("retry"\)/);
 assert.match(chatSrc, /openSession\(id, true\);/);
 for (const css of ["chat.css"]) {
   const text = read(css);
-  assert.match(text, /\.message-skeleton \.bubble-skeleton \{[^}]*animation: session-skeleton/);
-  assert.match(text, /prefers-reduced-motion: reduce\) \{\n  \.message-skeleton \.bubble-skeleton \{\n    animation: none;/);
+  assert.match(text, /\.message-skeleton \.skeleton-bubble\.user \{/);
+  assert.match(text, /\.skeleton-line::after \{[^}]*animation: skeleton-shimmer/);
+  assert.match(text, /\.skeleton-reply-actions \{/);
+  assert.match(text, /prefers-reduced-motion: reduce\) \{[\s\S]*?\.skeleton-line::after,[\s\S]*?animation: none;/);
+  assert.match(text, /\.message-skeleton\.is-leaving/);
   assert.match(text, /\.unread-dot \{/);
   assert.match(text, /\.chat-load-error \{/);
 }

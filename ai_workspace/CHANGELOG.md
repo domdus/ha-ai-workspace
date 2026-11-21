@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.1b18
+
+**Chat loading skeleton matches the current message layout, and the reply row behaves while a turn runs.**
+
+- **Loading skeleton:** placeholders no longer use grey chat-card bubbles. They follow the Standard design: user prompts on the right, assistant replies as plain text lines, including space for the reply action row, with a subtle theme-aware shimmer (`prefers-reduced-motion`: static). Real messages crossfade in without a layout jump.
+- **Reply row:** while a turn is pending or streaming, the previous reply's action row stays hidden until hover or focus; a reply that finishes in view fades its row in (200 ms, none with reduced motion). Opening a chat, switching chats and history load stay without that animation.
+- Only the integration changes. The Runtime app version moves to 1.6.1b18 with the release but has no functional change.
+
 ## 1.6.1b17
 
 **No agent badge in the chat header.** With Fallback on, the chat header showed the active agent as a badge next to the chat title. The active agent is already shown in the agent and model picker next to the message field, so the badge is gone; the header shows the title and the usage line as before.

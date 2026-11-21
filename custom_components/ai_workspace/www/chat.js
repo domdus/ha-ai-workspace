@@ -2932,7 +2932,8 @@ export async function mountAiWorkspace(root, options = {}) {
   // One row per finished reply: copy, read aloud, time. Clicks go through one listener on
   // the log (see onReplyAction), so long chats add no listener per message.
   function syncReplyRows(entries) {
-    const rows = replyRows(entries);
+    // A turn runs from send (incl. a waiting or queued reply) until its text has drained.
+    const rows = replyRows(entries, { busy: streaming || liveStream });
     const keep = new Set();
     const opts = replyTimeOptions();
     const today = new Date().toDateString();
@@ -2953,6 +2954,14 @@ export async function mountAiWorkspace(root, options = {}) {
       if (bubble.lastElementChild !== row) bubble.appendChild(row);
       keep.add(row);
       row.classList.toggle("is-last", info.last);
+      row.classList.toggle("is-held", info.held);
+      // Fade in only for a reply that just finished in this view, never on open or re-render.
+      if (info.last && bubble._replyFresh) {
+        bubble._replyFresh = false;
+        row.classList.remove("is-fresh");
+        void row.offsetWidth;
+        row.classList.add("is-fresh");
+      }
       const speakBtn = row.querySelector(".reply-speak");
       if (speakBtn) speakBtn.hidden = !voice.tts;
       // Time labels are cached per day: "today"/"yesterday" only change at midnight.
@@ -3039,6 +3048,8 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function stampReply(bubble) {
     if (bubble && !bubble.dataset.createdAt) bubble.dataset.createdAt = new Date().toISOString();
+    // Finished live in this view: its row fades in once the turn is over (see syncReplyRows).
+    if (bubble) bubble._replyFresh = true;
     // The reply is finished: its own action row appears (once per frame, however many finish).
     if (replyRowsQueued) return;
     replyRowsQueued = true;
@@ -4818,34 +4829,81 @@ export async function mountAiWorkspace(root, options = {}) {
     return work;
   }
 
-  // Placeholder bubbles while a chat loads, user right and agent left, like the chat list's rows.
+  // Placeholder while a chat loads: Standard layout (user right, plain assistant text and reply row).
+  function skeletonLines(lines) {
+    return lines.map((w) => `<span class="skeleton-line" style="--w:${w}%"></span>`).join("");
+  }
+
   function messageSkeleton() {
-    const rows = [
-      ["user", 46, 44],
-      ["assistant", 72, 96],
-      ["user", 38, 44],
-      ["assistant", 64, 128],
-      ["user", 52, 44],
-      ["assistant", 58, 72],
+    const turns = [
+      ["user", [[58]]],
+      ["assistant", [[94], [82], [48]], true],
+      ["user", [[42]]],
+      ["assistant", [[88], [62]], true],
+      ["user", [[50]]],
+      ["assistant", [[72], [54]], true],
     ];
-    const bubbles = rows
-      .map(([role, w, h]) => `<div class="bubble-skeleton ${role}" style="--w:${w}%;--h:${h}px"></div>`)
+    const blocks = turns
+      .map(([role, lines, actions]) => {
+        const text = `<div class="skeleton-text">${skeletonLines(lines)}</div>`;
+        const row = actions
+          ? '<div class="skeleton-reply-actions" aria-hidden="true"><span class="skeleton-icon"></span><span class="skeleton-icon"></span><span class="skeleton-time"></span></div>'
+          : "";
+        return `<div class="skeleton-bubble ${role}">${text}${row}</div>`;
+      })
       .join("");
-    return `<div class="message-skeleton" aria-hidden="true">${bubbles}</div><p class="sr" role="status">${htmlAttr(t("chat_loading"))}</p>`;
+    return `<div class="message-skeleton" aria-hidden="true">${blocks}</div><p class="sr" role="status">${htmlAttr(t("chat_loading"))}</p>`;
   }
 
   let skeletonTimer = 0;
   let slowTimer = 0;
 
-  function clearLoadState() {
+  function clearLoadTimers() {
     window.clearTimeout(skeletonTimer);
     window.clearTimeout(slowTimer);
     skeletonTimer = 0;
     slowTimer = 0;
+  }
+
+  function clearLoadState() {
+    clearLoadTimers();
     logEl.removeAttribute("aria-busy");
     logEl.querySelector(".message-skeleton")?.remove();
     logEl.querySelector(".chat-load-hint")?.remove();
     logEl.querySelector(".sr[role='status']")?.remove();
+    logEl.classList.remove("is-revealing");
+    logEl.style.minHeight = "";
+  }
+
+  function dismissLoadSkeleton() {
+    const skeleton = logEl.querySelector(".message-skeleton");
+    logEl.removeAttribute("aria-busy");
+    logEl.querySelector(".chat-load-hint")?.remove();
+    if (!skeleton) {
+      logEl.querySelector(".sr[role='status']")?.remove();
+      logEl.classList.remove("is-revealing");
+      logEl.style.minHeight = "";
+      return;
+    }
+    const done = () => {
+      skeleton.remove();
+      logEl.querySelector(".sr[role='status']")?.remove();
+      logEl.classList.remove("is-revealing");
+      logEl.style.minHeight = "";
+    };
+    if (reduceMotion) {
+      done();
+      return;
+    }
+    skeleton.classList.add("is-leaving");
+    skeleton.addEventListener(
+      "transitionend",
+      (event) => {
+        if (event.target === skeleton) done();
+      },
+      { once: true },
+    );
+    window.setTimeout(done, 320);
   }
 
   function showMessageSkeleton() {
@@ -4951,9 +5009,10 @@ export async function mountAiWorkspace(root, options = {}) {
     }, SLOW_HINT_MS);
     const { response, body, timedOut } = await fetchSession(id);
     if (gen !== routeGen) return;
-    clearLoadState();
+    clearLoadTimers();
     const outcome = loadOutcome(response, timedOut);
     if (outcome === "gone") {
+      clearLoadState();
       // Only a chat that is really gone falls back to a new chat.
       clearChatCache(localStorage, chatCacheSlot(), { id });
       chatQueues.drop(id);
@@ -5012,10 +5071,20 @@ export async function mountAiWorkspace(root, options = {}) {
   function paintSession(session, gen = routeGen) {
     clearMicHelp();
     titleEl.textContent = displayTitle(session.title);
-    logEl.replaceChildren();
+    const skeleton = logEl.querySelector(".message-skeleton");
+    const revealing = Boolean(skeleton);
+    if (revealing) {
+      logEl.classList.add("is-revealing");
+      logEl.style.minHeight = `${skeleton.offsetHeight}px`;
+      skeleton.classList.add("is-overlay");
+    } else {
+      logEl.replaceChildren();
+    }
     const messages = session.messages || [];
     turnHasHistory = Boolean(session.has_activity);
     if (!messages.length) {
+      if (revealing) clearLoadState();
+      else logEl.replaceChildren();
       showEmpty();
       turnHasHistory = Boolean(session.has_activity);
       syncCopyChat();
@@ -5049,8 +5118,10 @@ export async function mountAiWorkspace(root, options = {}) {
     const tailAt = Math.max(0, messages.length - PAINT_TAIL);
     const frag = document.createDocumentFragment();
     paintRange(tailAt, messages.length, frag);
-    logEl.appendChild(frag);
+    if (revealing) logEl.insertBefore(frag, skeleton);
+    else logEl.appendChild(frag);
     finish();
+    if (revealing) dismissLoadSkeleton();
     if (!tailAt) return;
     requestAnimationFrame(() => {
       if (gen !== routeGen) return;
@@ -7945,6 +8016,9 @@ export async function mountAiWorkspace(root, options = {}) {
   listen(mqNarrow, "change", () => setNarrow(options.narrow));
 
   logEl.addEventListener("click", onReplyAction);
+  logEl.addEventListener("animationend", (event) => {
+    if (event.target?.classList?.contains("reply-actions")) event.target.classList.remove("is-fresh");
+  });
 
   logEl.addEventListener("click", (event) => {
     const link = event.composedPath().find((node) => node && node.tagName === "A");

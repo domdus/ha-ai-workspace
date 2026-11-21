@@ -101,9 +101,23 @@ const chat = [
   { role: "assistant", text: "third, still going", streaming: true },
 ];
 assert.deepEqual(replyRows(chat), [
-  { index: 1, text: "**first**", last: false },
-  { index: 4, text: "## second\n\n- x", last: true },
-], "every finished reply, newest one marked last");
+  { index: 1, text: "**first**", last: false, held: false },
+  { index: 4, text: "## second\n\n- x", last: false, held: true },
+], "every finished reply; streaming holds the newest row");
+const idleChat = [
+  { role: "user", text: "a" },
+  { role: "assistant", text: "  **first**  " },
+  { role: "user", text: "b" },
+  { role: "assistant", text: "## second\n\n- x" },
+];
+assert.deepEqual(replyRows(idleChat), [
+  { index: 1, text: "**first**", last: false, held: false },
+  { index: 3, text: "## second\n\n- x", last: true, held: false },
+], "idle: newest finished reply is last");
+assert.deepEqual(replyRows(chat, { busy: true }), [
+  { index: 1, text: "**first**", last: false, held: false },
+  { index: 4, text: "## second\n\n- x", last: false, held: true },
+], "busy: newest row held while the turn runs");
 assert.deepEqual(
   replyRows([{ role: "assistant", text: "only" }]).map((row) => row.last),
   [true],
@@ -114,7 +128,9 @@ assert.match(chatSrc, /await import\(\s*`\.\/reply_meta\.js\$\{CACHE\}`/);
 assert.doesNotMatch(chatSrc, /transcriptText/, "whole-chat copy is gone");
 assert.doesNotMatch(chatSrc, /copy_chat/);
 assert.doesNotMatch(chatSrc, /copy_last_reply|copy-chat/, "the bottom row no longer copies: each reply has its own button");
-assert.match(chatSrc, /const rows = replyRows\(entries\)/);
+assert.match(chatSrc, /const rows = replyRows\(entries, \{ busy: streaming \|\| liveStream \}\)/);
+assert.match(chatSrc, /row\.classList\.toggle\("is-held", info\.held\)/);
+assert.match(chatSrc, /bubble\._replyFresh/);
 assert.match(chatSrc, /replyActionButton\("copy", "mdi:content-copy", t\("copy_reply"\)\)/);
 assert.match(chatSrc, /replyActionButton\("speak", "mdi:volume-high", t\("speak_reply"\)\)/);
 assert.match(chatSrc, /btn\.setAttribute\("aria-label", label\)/, "buttons carry an aria-label");
@@ -189,6 +205,9 @@ for (const css of [cssStandard]) {
   assert.match(rule, /font-size: var\(--ha-font-size-s/);
   assert.match(css, /\.reply-actions:not\(\.is-last\) \.reply-time \{\s*opacity: 0;/);
   assert.match(css, /\.reply-actions:focus-within \.reply-time \{\s*opacity: 1;/);
+  assert.match(css, /\.reply-actions\.is-held \{/);
+  assert.match(css, /\.reply-actions\.is-fresh \{/);
+  assert.match(css, /@keyframes reply-actions-in/);
   assert.doesNotMatch(css, /copy-chat|\.chat-actions \.reply-time/);
 }
 // The row always lives inside the reply bubble: no second (HA) host for it.
