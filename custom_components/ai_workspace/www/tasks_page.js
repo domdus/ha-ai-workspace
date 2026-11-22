@@ -33,6 +33,28 @@ export function scheduleText(schedule, s, days) {
   return s.sched_custom;
 }
 
+/** Heading of the task form: editing an existing task or creating a new one. */
+export function formHeading(row, s) {
+  return row ? s.task_edit_title : s.tasks_new;
+}
+
+/** Index of the task with this automation id in the list, or -1. */
+export function taskIndexById(tasks, id) {
+  if (!id) return -1;
+  return (tasks || []).findIndex((row) => row?.id === id);
+}
+
+/**
+ * Where the one task form goes: "top" for a new task, "card" inside the edited task's card,
+ * or "closed" when the edited task is gone (deleted elsewhere, or no longer editable here).
+ */
+export function formPlace(editing, tasks) {
+  if (editing === undefined || editing === false) return "closed";
+  if (!editing) return "top";
+  const row = (tasks || [])[taskIndexById(tasks, editing.id)];
+  return row?.editable ? "card" : "closed";
+}
+
 /**
  * mountTasksPage(el, { hass, lang, apiFetch, openPath, openChat })
  * Returns { load, el }.
@@ -42,7 +64,9 @@ export function mountTasksPage(el, options) {
   const days = weekdayNames(options.lang);
   const hass = () => options.hass();
   let state = { tasks: [], agents: [], notify: [] };
-  let editing = null;
+  // undefined: no form open; null: the "new task" form at the top; a row: that task's card is the form.
+  let editing = undefined;
+  let highlightTimer = 0;
 
   el.innerHTML = `
     <div class="tasks-bar"><h1>${esc(s.tasks)}</h1></div>
@@ -50,12 +74,25 @@ export function mountTasksPage(el, options) {
       <p class="tasks-intro">${esc(s.tasks_intro)}</p>
       <div class="tasks-actions"><button type="button" class="tasks-btn primary tasks-new">${esc(s.tasks_new)}</button></div>
       <p class="tasks-note" role="status" hidden></p>
-      <form class="tasks-form" hidden></form>
+      <div class="tasks-form-slot"></div>
       <div class="tasks-list" role="list"></div>
     </div>`;
   const listEl = el.querySelector(".tasks-list");
-  const formEl = el.querySelector(".tasks-form");
+  const slotEl = el.querySelector(".tasks-form-slot");
+  const newBtn = el.querySelector(".tasks-new");
+  const actionsEl = el.querySelector(".tasks-actions");
   const noteEl = el.querySelector(".tasks-note");
+  // One form for the whole page; it moves to the top (new task) or into the edited task's card.
+  const formEl = document.createElement("form");
+  formEl.className = "tasks-form";
+  formEl.hidden = true;
+  formEl.setAttribute("aria-labelledby", "ai-task-form-title");
+  const reducedMotion = () => Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
+  const isOpen = () => editing !== undefined;
+  const cardById = (id) => {
+    const i = taskIndexById(state.tasks, id);
+    return i < 0 ? null : listEl.querySelector(`.task-card[data-i="${i}"]`);
+  };
 
   function note(text, bad = false) {
     noteEl.hidden = !text;
@@ -81,15 +118,23 @@ export function mountTasksPage(el, options) {
   }
 
   function renderList() {
+    // Re-rendering replaces the cards; the form node survives and goes back where it was.
+    if (formEl.parentNode && formEl.parentNode !== slotEl) formEl.remove();
     if (!state.tasks.length) {
       listEl.innerHTML = `<p class="tasks-empty">${esc(s.tasks_empty)}</p>`;
-      return;
+    } else {
+      listEl.innerHTML = renderCards();
     }
-    listEl.innerHTML = state.tasks
+    placeForm();
+  }
+
+  function renderCards() {
+    return state.tasks
       .map((row, i) => {
         const bad = row.last_status && row.last_status !== "ok" && row.last_status !== "running";
         return `
         <div class="task-card" role="listitem" data-i="${i}">
+          <div class="task-view">
           <div class="task-head">
             <label class="task-toggle" title="${esc(row.enabled ? s.enabled : s.paused)}">
               <input type="checkbox" class="task-enabled" ${row.enabled ? "checked" : ""} ${row.available ? "" : "disabled"}>
@@ -110,9 +155,35 @@ export function mountTasksPage(el, options) {
             <button type="button" class="tasks-btn task-editor">${esc(s.open_editor)}</button>
             <button type="button" class="tasks-btn danger task-delete">${esc(s.delete)}</button>
           </div>
+          </div>
         </div>`;
       })
       .join("");
+  }
+
+  // Puts the form where `editing` says: top slot, inside the edited card (its view hidden), or closed.
+  function placeForm() {
+    const place = formPlace(editing, state.tasks);
+    listEl.querySelectorAll(".task-card.editing").forEach((card) => {
+      card.classList.remove("editing");
+      card.querySelector(".task-view").hidden = false;
+    });
+    if (place === "closed") {
+      editing = undefined;
+      formEl.hidden = true;
+      formEl.remove();
+    } else if (place === "top") {
+      slotEl.append(formEl);
+      formEl.hidden = false;
+    } else {
+      editing = state.tasks[taskIndexById(state.tasks, editing.id)];
+      const card = cardById(editing.id);
+      card.classList.add("editing");
+      card.querySelector(".task-view").hidden = true;
+      card.append(formEl);
+      formEl.hidden = false;
+    }
+    actionsEl.hidden = isOpen();
   }
 
   function option(value, label, current) {
@@ -120,11 +191,15 @@ export function mountTasksPage(el, options) {
   }
 
   function openForm(row = null) {
+    // Only one form: opening another edit (or a new task) drops the one that is open.
+    note("");
     editing = row;
     const sched = row?.schedule?.kind ? row.schedule : { kind: "daily", time: "07:00" };
     const target = row?.target || "chat";
     const kind = sched.kind;
     formEl.innerHTML = `
+      <h2 class="tasks-form-title" id="ai-task-form-title">${esc(formHeading(row, s))}</h2>
+      <p class="tasks-form-note bad" role="alert" hidden></p>
       <label>${esc(s.task_name)}<input name="name" required maxlength="120" value="${esc(row?.task_name || row?.name || "")}"></label>
       <label>${esc(s.task_prompt)}<textarea name="prompt" rows="6" required>${esc(row?.prompt || "")}</textarea>
         <small>${esc(s.task_prompt_hint)}</small></label>
@@ -144,13 +219,42 @@ export function mountTasksPage(el, options) {
       <label class="task-check"><input type="checkbox" name="allow_changes" ${row?.allow_changes ? "checked" : ""}>${esc(s.task_allow_changes)}</label>
       <small>${esc(s.task_allow_changes_hint)}</small>
       <div class="task-buttons">
-        <button type="submit" class="tasks-btn primary">${esc(s.save)}</button>
+        <button type="submit" class="tasks-btn primary task-save">${esc(s.save)}</button>
         <button type="button" class="tasks-btn task-save-editor">${esc(s.save_open_editor)}</button>
         <button type="button" class="tasks-btn task-cancel">${esc(s.cancel)}</button>
       </div>`;
-    formEl.hidden = false;
+    placeForm();
     syncForm();
-    formEl.querySelector("input[name=name]")?.focus();
+    formEl.scrollIntoView?.({ block: "nearest", behavior: reducedMotion() ? "auto" : "smooth" });
+    formEl.querySelector("input[name=name]")?.focus({ preventScroll: true });
+  }
+
+  // Closes the form and restores the card. With refocus, focus goes back to where the form came from.
+  function closeForm(refocus = false) {
+    const id = editing?.id;
+    editing = undefined;
+    placeForm();
+    if (!refocus) return;
+    const target = id ? cardById(id)?.querySelector(".task-edit") : newBtn;
+    target?.focus();
+  }
+
+  function formError(text) {
+    const box = formEl.querySelector(".tasks-form-note");
+    if (!box) return note(text, true);
+    box.hidden = !text;
+    box.textContent = text || "";
+  }
+
+  function highlight(id) {
+    const card = cardById(id);
+    if (!card) return;
+    card.scrollIntoView?.({ block: "nearest", behavior: reducedMotion() ? "auto" : "smooth" });
+    listEl.querySelectorAll(".task-card.task-saved").forEach((other) => other.classList.remove("task-saved"));
+    card.classList.add("task-saved");
+    window.clearTimeout(highlightTimer);
+    highlightTimer = window.setTimeout(() => card.classList.remove("task-saved"), 2000);
+    card.querySelector(".task-edit, .task-run")?.focus({ preventScroll: true });
   }
 
   function syncForm() {
@@ -180,8 +284,23 @@ export function mountTasksPage(el, options) {
     };
   }
 
+  let saving = false;
+
   async function save(openEditor = false) {
+    if (saving) return;
+    saving = true;
+    formEl.querySelectorAll(".task-buttons button").forEach((btn) => (btn.disabled = true));
+    try {
+      await saveNow(openEditor);
+    } finally {
+      saving = false;
+      formEl.querySelectorAll(".task-buttons button").forEach((btn) => (btn.disabled = false));
+    }
+  }
+
+  async function saveNow(openEditor) {
     note("");
+    formError("");
     const form = readForm();
     // "Advanced": save what the page can, then the automation editor takes over.
     const wantsEditor = openEditor || formEl.querySelector("select[name=kind]")?.value === "custom";
@@ -193,25 +312,25 @@ export function mountTasksPage(el, options) {
     });
     const body = built ? await built.json().catch(() => ({})) : {};
     if (!built?.ok) {
-      note(body.error || s.load_failed, true);
+      formError(body.error || s.load_failed);
       return;
     }
     try {
       // The automation editor's own save: validates, writes automations.yaml, reloads this automation.
       await hass().callApi("POST", `config/automation/config/${encodeURIComponent(body.id)}`, body.config);
     } catch (err) {
-      note(err?.body?.message || err?.message || String(err), true);
+      formError(err?.body?.message || err?.message || String(err));
       return;
     }
     await options.apiFetch(`${API}/${encodeURIComponent(body.id)}/label`, { method: "POST" });
-    formEl.hidden = true;
-    editing = null;
+    closeForm();
     note(s.saved);
     if (wantsEditor) {
       options.openPath(`/config/automation/edit/${encodeURIComponent(body.id)}`);
       return;
     }
     await load();
+    highlight(body.id);
   }
 
   formEl.addEventListener("change", syncForm);
@@ -221,15 +340,21 @@ export function mountTasksPage(el, options) {
   });
   formEl.addEventListener("click", (event) => {
     if (event.target.closest(".task-cancel")) {
-      formEl.hidden = true;
-      editing = null;
+      closeForm(true);
     } else if (event.target.closest(".task-save-editor")) {
       if (formEl.reportValidity()) save(true);
     }
   });
-  el.querySelector(".tasks-new").addEventListener("click", () => openForm(null));
+  formEl.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !event.defaultPrevented) {
+      event.preventDefault();
+      closeForm(true);
+    }
+  });
+  newBtn.addEventListener("click", () => openForm(null));
 
   listEl.addEventListener("change", async (event) => {
+    if (event.target.closest(".tasks-form")) return;
     const box = event.target.closest(".task-enabled");
     if (!box) return;
     const row = state.tasks[Number(box.closest(".task-card")?.dataset.i)];
@@ -239,6 +364,7 @@ export function mountTasksPage(el, options) {
   });
 
   listEl.addEventListener("click", async (event) => {
+    if (event.target.closest(".tasks-form")) return;
     const card = event.target.closest(".task-card");
     const row = card ? state.tasks[Number(card.dataset.i)] : null;
     if (!row) return;

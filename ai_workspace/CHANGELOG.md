@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.6.2b1
+
+**Tasks page: edit a task in its own card.**
+
+- **Edit** now turns the task's card into the form, with the heading **Edit task**; Cancel or Save brings the card back. **New task** opens its form at the top with the heading **New task**.
+- Only one form is open at a time; opening another one closes the current one, and the **New task** button is hidden while a form is open.
+- After saving, the task scrolls into view and is highlighted briefly (no animation with `prefers-reduced-motion`). Save errors show inside the form.
+- The name field gets focus when the form opens; Cancel (or Escape) returns focus to the task's **Edit** button.
+- Only the integration changes. The Runtime app version moves to 1.6.2b1 with the release but has no functional change.
+
 ## 1.6.1
 
 Everything from 1.6.1b1 to 1.6.1b18. Nothing needs to be changed in your setup; agent fallback and tasks are off until you use them.
