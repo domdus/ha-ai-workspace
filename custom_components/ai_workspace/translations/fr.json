@@ -746,5 +746,84 @@
         }
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "cost_today": {
+        "name": "Coût aujourd’hui"
+      },
+      "cost_month": {
+        "name": "Coût ce mois-ci"
+      },
+      "cost_total": {
+        "name": "Coût total"
+      },
+      "tokens_today": {
+        "name": "Jetons aujourd’hui"
+      },
+      "tokens_month": {
+        "name": "Jetons ce mois-ci"
+      },
+      "tokens_total": {
+        "name": "Jetons au total"
+      },
+      "turns_today": {
+        "name": "Tours aujourd’hui"
+      },
+      "turns_month": {
+        "name": "Tours ce mois-ci"
+      },
+      "turns_total": {
+        "name": "Tours au total"
+      },
+      "last_cost": {
+        "name": "Coût du dernier tour"
+      },
+      "last_tokens": {
+        "name": "Jetons du dernier tour"
+      },
+      "last_model": {
+        "name": "Dernier modèle"
+      },
+      "last_agent": {
+        "name": "Dernier agent"
+      },
+      "cost_tts_today": {
+        "name": "Coût vocal aujourd’hui"
+      },
+      "cost_tts_total": {
+        "name": "Coût vocal total"
+      },
+      "plan_session_percent": {
+        "name": "Forfait {engine} session %"
+      },
+      "plan_week_percent": {
+        "name": "Forfait {engine} semaine %"
+      },
+      "plan_session_reset_at": {
+        "name": "Forfait {engine} réinitialisation de session"
+      }
+    },
+    "stt": {
+      "speech_to_text": {
+        "name": "Reconnaissance vocale"
+      }
+    },
+    "tts": {
+      "text_to_speech": {
+        "name": "Synthèse vocale"
+      }
+    }
+  },
+  "exceptions": {
+    "unknown_agent": {
+      "message": "AI Workspace n’a pas d’agent nommé {agent}."
+    },
+    "tasks_need_admin": {
+      "message": "Les tâches AI Workspace nécessitent un compte administrateur dans Home Assistant."
+    },
+    "not_set_up": {
+      "message": "AI Workspace n’est pas configuré."
+    }
   }
 }

@@ -62,7 +62,7 @@ from .const import (
     with_time_rule,
 )
 from .coolver import CoolverClient
-from .mcp_client import McpError, McpHttpClient, ha_mcp_trouble
+from .mcp_client import McpError, McpHttpClient, ha_mcp_trouble, with_accept_language
 from .mcp_config import (
     OPENAI_TOOL_NAME_MAX,
     is_local_hass_mcp_url,
@@ -468,6 +468,8 @@ class McpServer:
 async def async_mcp_server(
     hass: HomeAssistant, http: ClientSession, kind: str, url: str, headers: dict[str, str]
 ) -> McpServer:
+    # Server-made texts (approval prompts, elicitation fields) in Home Assistant's language.
+    headers = with_accept_language(headers, str(getattr(hass.config, "language", "") or ""))
     cache: OrderedDict = hass.data.setdefault(_MCP_CACHE, OrderedDict())
     key = (kind, url.rstrip("/"), tuple(sorted(headers.items())))
     found = cache.get(key)

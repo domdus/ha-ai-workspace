@@ -746,5 +746,84 @@
         }
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "cost_today": {
+        "name": "Koszt dzisiaj"
+      },
+      "cost_month": {
+        "name": "Koszt w tym miesiącu"
+      },
+      "cost_total": {
+        "name": "Koszt łącznie"
+      },
+      "tokens_today": {
+        "name": "Tokeny dzisiaj"
+      },
+      "tokens_month": {
+        "name": "Tokeny w tym miesiącu"
+      },
+      "tokens_total": {
+        "name": "Tokeny łącznie"
+      },
+      "turns_today": {
+        "name": "Tury dzisiaj"
+      },
+      "turns_month": {
+        "name": "Tury w tym miesiącu"
+      },
+      "turns_total": {
+        "name": "Tury łącznie"
+      },
+      "last_cost": {
+        "name": "Koszt ostatniej tury"
+      },
+      "last_tokens": {
+        "name": "Tokeny ostatniej tury"
+      },
+      "last_model": {
+        "name": "Ostatni model"
+      },
+      "last_agent": {
+        "name": "Ostatni agent"
+      },
+      "cost_tts_today": {
+        "name": "Koszt mowy dzisiaj"
+      },
+      "cost_tts_total": {
+        "name": "Koszt mowy łącznie"
+      },
+      "plan_session_percent": {
+        "name": "Plan {engine} sesja %"
+      },
+      "plan_week_percent": {
+        "name": "Plan {engine} tydzień %"
+      },
+      "plan_session_reset_at": {
+        "name": "Plan {engine} reset sesji"
+      }
+    },
+    "stt": {
+      "speech_to_text": {
+        "name": "Mowa na tekst"
+      }
+    },
+    "tts": {
+      "text_to_speech": {
+        "name": "Tekst na mowę"
+      }
+    }
+  },
+  "exceptions": {
+    "unknown_agent": {
+      "message": "AI Workspace nie ma agenta o nazwie {agent}."
+    },
+    "tasks_need_admin": {
+      "message": "Zadania AI Workspace wymagają konta administratora w Home Assistant."
+    },
+    "not_set_up": {
+      "message": "AI Workspace nie jest skonfigurowany."
+    }
   }
 }

@@ -48,6 +48,7 @@ Some MCP servers ask you something in the middle of a tool call. An example is t
 
 - An `elicitation/create` request never reaches the model. It shows up in the chat as a card with the server's message, the exact command and target for worker approvals, and **Allow** / **Deny**. Closing the card (×) answers *cancel*.
 - **Only your click answers it.** Chat text, the model's output and tool calls cannot. The Runtime drops any answer that does not come from Home Assistant with the card's own key.
+- **Language:** the card's buttons and headings follow your Home Assistant language. The server's own text (the question, field titles) comes from the server: every MCP request carries `Accept-Language` with Home Assistant's language (for example `de, en;q=0.5`), from cloud agents and from the Runtime's MCP proxy alike, so a server can answer in that language.
 - Open cards stay when you close and reopen the chat or the app. Several can be open at once.
 - A card waits for **Approval wait** (AI Workspace → Configure, default 10 minutes, 1 to 60). Then the server gets *cancel*. Stopping the turn cancels its open questions too.
 - **Fallback for agent-worker jobs:** when a job result says `input_required` (or `needs_approval`) with an approval that has no open MCP request, the same card appears. Allow or Deny goes straight to the worker (`POST /jobs/<id>/approve` with `{"approve": true|false}`). Closing that card only hides it; the job keeps waiting until the worker's own timeout.

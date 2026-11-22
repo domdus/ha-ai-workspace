@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 import secrets
 from collections.abc import Callable
 from typing import Any
@@ -21,6 +22,30 @@ _SHORT_TIMEOUT = 60.0
 _MAX_TOOL_PAGES = 50
 # Background notifications/cancelled sends; kept so they are not garbage collected mid-flight.
 _CANCELS: set[asyncio.Task] = set()
+
+
+_LANGUAGE_TAG = re.compile(r"^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$")
+
+
+def accept_language(language: str) -> str:
+    """Accept-Language for MCP servers: Home Assistant's language first, English as fallback.
+
+    Server-made texts (approval prompts, elicitation field titles) can only be translated by the server.
+    "de" -> "de, en;q=0.5"; English alone stays "en"; anything that is not a language tag -> "".
+    """
+    tag = str(language or "").strip().replace("_", "-")
+    if not tag or not _LANGUAGE_TAG.match(tag):
+        return ""
+    return tag if tag.lower() == "en" else f"{tag}, en;q=0.5"
+
+
+def with_accept_language(headers: dict[str, str] | None, language: str) -> dict[str, str]:
+    """headers plus Accept-Language, unless the connection already sets its own."""
+    out = dict(headers or {})
+    value = accept_language(language)
+    if value and not any(str(key).lower() == "accept-language" for key in out):
+        out["Accept-Language"] = value
+    return out
 
 
 class McpError(RuntimeError):

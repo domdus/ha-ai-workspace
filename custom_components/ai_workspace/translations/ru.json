@@ -746,5 +746,84 @@
         }
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "cost_today": {
+        "name": "Стоимость сегодня"
+      },
+      "cost_month": {
+        "name": "Стоимость за месяц"
+      },
+      "cost_total": {
+        "name": "Стоимость всего"
+      },
+      "tokens_today": {
+        "name": "Токены сегодня"
+      },
+      "tokens_month": {
+        "name": "Токены за месяц"
+      },
+      "tokens_total": {
+        "name": "Токены всего"
+      },
+      "turns_today": {
+        "name": "Ходы сегодня"
+      },
+      "turns_month": {
+        "name": "Ходы за месяц"
+      },
+      "turns_total": {
+        "name": "Ходы всего"
+      },
+      "last_cost": {
+        "name": "Стоимость последнего хода"
+      },
+      "last_tokens": {
+        "name": "Токены последнего хода"
+      },
+      "last_model": {
+        "name": "Последняя модель"
+      },
+      "last_agent": {
+        "name": "Последний агент"
+      },
+      "cost_tts_today": {
+        "name": "Стоимость речи сегодня"
+      },
+      "cost_tts_total": {
+        "name": "Стоимость речи всего"
+      },
+      "plan_session_percent": {
+        "name": "Тариф {engine}: сессия %"
+      },
+      "plan_week_percent": {
+        "name": "Тариф {engine}: неделя %"
+      },
+      "plan_session_reset_at": {
+        "name": "Тариф {engine}: сброс сессии"
+      }
+    },
+    "stt": {
+      "speech_to_text": {
+        "name": "Речь в текст"
+      }
+    },
+    "tts": {
+      "text_to_speech": {
+        "name": "Текст в речь"
+      }
+    }
+  },
+  "exceptions": {
+    "unknown_agent": {
+      "message": "В AI Workspace нет агента с именем {agent}."
+    },
+    "tasks_need_admin": {
+      "message": "Для задач AI Workspace нужна учётная запись администратора в Home Assistant."
+    },
+    "not_set_up": {
+      "message": "AI Workspace не настроен."
+    }
   }
 }

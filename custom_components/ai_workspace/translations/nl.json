@@ -746,5 +746,84 @@
         }
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "cost_today": {
+        "name": "Kosten vandaag"
+      },
+      "cost_month": {
+        "name": "Kosten deze maand"
+      },
+      "cost_total": {
+        "name": "Kosten totaal"
+      },
+      "tokens_today": {
+        "name": "Tokens vandaag"
+      },
+      "tokens_month": {
+        "name": "Tokens deze maand"
+      },
+      "tokens_total": {
+        "name": "Tokens totaal"
+      },
+      "turns_today": {
+        "name": "Beurten vandaag"
+      },
+      "turns_month": {
+        "name": "Beurten deze maand"
+      },
+      "turns_total": {
+        "name": "Beurten totaal"
+      },
+      "last_cost": {
+        "name": "Kosten laatste beurt"
+      },
+      "last_tokens": {
+        "name": "Tokens laatste beurt"
+      },
+      "last_model": {
+        "name": "Laatste model"
+      },
+      "last_agent": {
+        "name": "Laatste agent"
+      },
+      "cost_tts_today": {
+        "name": "Spraakkosten vandaag"
+      },
+      "cost_tts_total": {
+        "name": "Spraakkosten totaal"
+      },
+      "plan_session_percent": {
+        "name": "{engine}-abonnement sessie %"
+      },
+      "plan_week_percent": {
+        "name": "{engine}-abonnement week %"
+      },
+      "plan_session_reset_at": {
+        "name": "{engine}-abonnement sessiereset"
+      }
+    },
+    "stt": {
+      "speech_to_text": {
+        "name": "Spraak naar tekst"
+      }
+    },
+    "tts": {
+      "text_to_speech": {
+        "name": "Tekst naar spraak"
+      }
+    }
+  },
+  "exceptions": {
+    "unknown_agent": {
+      "message": "AI Workspace heeft geen agent met de naam {agent}."
+    },
+    "tasks_need_admin": {
+      "message": "AI Workspace-taken hebben een beheerdersaccount in Home Assistant nodig."
+    },
+    "not_set_up": {
+      "message": "AI Workspace is niet ingesteld."
+    }
   }
 }

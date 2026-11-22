@@ -161,6 +161,131 @@ RUNTIME_FORM = {
 }
 
 
+# Server address on the setup form: (hint, none found, found HA-MCP, found built-in, found other, mark).
+MCP_FORM = {
+    "en": (
+        "Leave empty to detect the server automatically. Change this only if you use a different connection than the built-in one.",
+        "No MCP server found yet. Add Home Assistant's built-in **Model Context Protocol Server** integration (Settings → Devices & services → Add integration) or install HA-MCP, then open this form again. Or enter the address of another MCP server here.",
+        "We found HA-MCP automatically. Keep this unless you use a different server.",
+        "We found the built-in Home Assistant server. Keep this unless you use a different one.",
+        "We found a server automatically. Keep this unless you use a different one.",
+        " · auto-detected",
+    ),
+    "de": (
+        "Leer lassen, um den Server automatisch zu finden. Nur ändern, wenn du eine andere Verbindung als die eingebaute nutzt.",
+        "Noch kein MCP-Server gefunden. Füge die eingebaute Home-Assistant-Integration **Model Context Protocol Server** hinzu (Einstellungen → Geräte & Dienste → Integration hinzufügen) oder installiere HA-MCP und öffne dieses Formular dann erneut. Oder gib hier die Adresse eines anderen MCP-Servers ein.",
+        "HA-MCP wurde automatisch gefunden. Behalte das, außer du nutzt einen anderen Server.",
+        "Der eingebaute Home-Assistant-Server wurde gefunden. Behalte das, außer du nutzt einen anderen.",
+        "Ein Server wurde automatisch gefunden. Behalte das, außer du nutzt einen anderen.",
+        " · automatisch erkannt",
+    ),
+    "fr": (
+        "Laissez vide pour détecter le serveur automatiquement. Ne modifiez ceci que si vous utilisez une autre connexion que celle intégrée.",
+        "Aucun serveur MCP trouvé pour l’instant. Ajoutez l’intégration intégrée **Model Context Protocol Server** de Home Assistant (Paramètres → Appareils et services → Ajouter une intégration) ou installez HA-MCP, puis rouvrez ce formulaire. Ou saisissez ici l’adresse d’un autre serveur MCP.",
+        "HA-MCP a été trouvé automatiquement. Gardez-le, sauf si vous utilisez un autre serveur.",
+        "Le serveur intégré de Home Assistant a été trouvé. Gardez-le, sauf si vous en utilisez un autre.",
+        "Un serveur a été trouvé automatiquement. Gardez-le, sauf si vous en utilisez un autre.",
+        " · détecté automatiquement",
+    ),
+    "es": (
+        "Déjalo vacío para detectar el servidor automáticamente. Cámbialo solo si usas una conexión distinta de la integrada.",
+        "Aún no se encontró ningún servidor MCP. Añade la integración integrada **Model Context Protocol Server** de Home Assistant (Ajustes → Dispositivos y servicios → Añadir integración) o instala HA-MCP y vuelve a abrir este formulario. O escribe aquí la dirección de otro servidor MCP.",
+        "Encontramos HA-MCP automáticamente. Déjalo así salvo que uses otro servidor.",
+        "Encontramos el servidor integrado de Home Assistant. Déjalo así salvo que uses otro.",
+        "Encontramos un servidor automáticamente. Déjalo así salvo que uses otro.",
+        " · detectado automáticamente",
+    ),
+    "it": (
+        "Lascia vuoto per rilevare il server automaticamente. Modificalo solo se usi una connessione diversa da quella integrata.",
+        "Nessun server MCP trovato finora. Aggiungi l’integrazione integrata **Model Context Protocol Server** di Home Assistant (Impostazioni → Dispositivi e servizi → Aggiungi integrazione) oppure installa HA-MCP, poi riapri questo modulo. Oppure inserisci qui l’indirizzo di un altro server MCP.",
+        "Abbiamo trovato HA-MCP automaticamente. Lascialo così, a meno che tu non usi un altro server.",
+        "Abbiamo trovato il server integrato di Home Assistant. Lascialo così, a meno che tu non ne usi un altro.",
+        "Abbiamo trovato un server automaticamente. Lascialo così, a meno che tu non ne usi un altro.",
+        " · rilevato automaticamente",
+    ),
+    "nl": (
+        "Laat leeg om de server automatisch te vinden. Wijzig dit alleen als je een andere verbinding dan de ingebouwde gebruikt.",
+        "Nog geen MCP-server gevonden. Voeg de ingebouwde Home Assistant-integratie **Model Context Protocol Server** toe (Instellingen → Apparaten & diensten → Integratie toevoegen) of installeer HA-MCP en open dit formulier opnieuw. Of vul hier het adres van een andere MCP-server in.",
+        "HA-MCP is automatisch gevonden. Laat dit staan, tenzij je een andere server gebruikt.",
+        "De ingebouwde Home Assistant-server is gevonden. Laat dit staan, tenzij je een andere gebruikt.",
+        "Er is automatisch een server gevonden. Laat dit staan, tenzij je een andere gebruikt.",
+        " · automatisch gevonden",
+    ),
+    "pl": (
+        "Zostaw puste, aby wykryć serwer automatycznie. Zmień tylko, jeśli używasz innego połączenia niż wbudowane.",
+        "Nie znaleziono jeszcze serwera MCP. Dodaj wbudowaną integrację Home Assistant **Model Context Protocol Server** (Ustawienia → Urządzenia oraz usługi → Dodaj integrację) lub zainstaluj HA-MCP, a potem otwórz ten formularz ponownie. Możesz też wpisać tu adres innego serwera MCP.",
+        "Automatycznie znaleziono HA-MCP. Zostaw to, chyba że używasz innego serwera.",
+        "Znaleziono wbudowany serwer Home Assistant. Zostaw to, chyba że używasz innego.",
+        "Automatycznie znaleziono serwer. Zostaw to, chyba że używasz innego.",
+        " · wykryto automatycznie",
+    ),
+    "cs": (
+        "Nechte prázdné pro automatické zjištění serveru. Měňte jen tehdy, když používáte jiné připojení než vestavěné.",
+        "Zatím nebyl nalezen žádný MCP server. Přidejte vestavěnou integraci Home Assistantu **Model Context Protocol Server** (Nastavení → Zařízení a služby → Přidat integraci) nebo nainstalujte HA-MCP a pak tento formulář otevřete znovu. Nebo sem zadejte adresu jiného MCP serveru.",
+        "HA-MCP byl nalezen automaticky. Ponechte to, pokud nepoužíváte jiný server.",
+        "Byl nalezen vestavěný server Home Assistantu. Ponechte to, pokud nepoužíváte jiný.",
+        "Server byl nalezen automaticky. Ponechte to, pokud nepoužíváte jiný.",
+        " · zjištěno automaticky",
+    ),
+    "sv": (
+        "Lämna tomt för att hitta servern automatiskt. Ändra bara om du använder en annan anslutning än den inbyggda.",
+        "Ingen MCP-server hittades än. Lägg till Home Assistants inbyggda integration **Model Context Protocol Server** (Inställningar → Enheter och tjänster → Lägg till integration) eller installera HA-MCP och öppna sedan formuläret igen. Eller ange adressen till en annan MCP-server här.",
+        "Vi hittade HA-MCP automatiskt. Behåll detta om du inte använder en annan server.",
+        "Vi hittade Home Assistants inbyggda server. Behåll detta om du inte använder en annan.",
+        "Vi hittade en server automatiskt. Behåll detta om du inte använder en annan.",
+        " · hittades automatiskt",
+    ),
+    "ru": (
+        "Оставьте пустым, чтобы найти сервер автоматически. Меняйте, только если используете другое подключение, а не встроенное.",
+        "MCP-сервер пока не найден. Добавьте встроенную интеграцию Home Assistant **Model Context Protocol Server** (Настройки → Устройства и службы → Добавить интеграцию) или установите HA-MCP, затем откройте эту форму снова. Или введите здесь адрес другого MCP-сервера.",
+        "HA-MCP найден автоматически. Оставьте так, если не используете другой сервер.",
+        "Найден встроенный сервер Home Assistant. Оставьте так, если не используете другой.",
+        "Сервер найден автоматически. Оставьте так, если не используете другой.",
+        " · найдено автоматически",
+    ),
+    "ko": (
+        "서버를 자동으로 찾으려면 비워 두세요. 기본 제공 연결이 아닌 다른 연결을 쓸 때만 바꾸세요.",
+        "아직 MCP 서버를 찾지 못했습니다. Home Assistant 기본 제공 **Model Context Protocol Server** 통합을 추가하거나(설정 → 기기 및 서비스 → 통합 추가) HA-MCP를 설치한 뒤 이 양식을 다시 여세요. 또는 여기에 다른 MCP 서버 주소를 입력하세요.",
+        "HA-MCP를 자동으로 찾았습니다. 다른 서버를 쓰지 않는다면 그대로 두세요.",
+        "Home Assistant 기본 제공 서버를 찾았습니다. 다른 서버를 쓰지 않는다면 그대로 두세요.",
+        "서버를 자동으로 찾았습니다. 다른 서버를 쓰지 않는다면 그대로 두세요.",
+        " · 자동 감지됨",
+    ),
+    "zh-Hans": (
+        "留空即可自动检测服务器。仅当你使用内置连接以外的连接时才需更改。",
+        "尚未找到 MCP 服务器。请添加 Home Assistant 内置的 **Model Context Protocol Server** 集成（设置 → 设备与服务 → 添加集成）或安装 HA-MCP，然后重新打开此表单。也可以在此输入其他 MCP 服务器的地址。",
+        "已自动找到 HA-MCP。除非你使用其他服务器，否则保持不变。",
+        "已找到 Home Assistant 内置服务器。除非你使用其他服务器，否则保持不变。",
+        "已自动找到服务器。除非你使用其他服务器，否则保持不变。",
+        " · 自动检测",
+    ),
+    "zh-Hant": (
+        "留空即可自動偵測伺服器。僅當你使用內建連線以外的連線時才需變更。",
+        "尚未找到 MCP 伺服器。請新增 Home Assistant 內建的 **Model Context Protocol Server** 整合（設定 → 裝置與服務 → 新增整合）或安裝 HA-MCP，然後重新開啟此表單。也可以在此輸入其他 MCP 伺服器的位址。",
+        "已自動找到 HA-MCP。除非你使用其他伺服器，否則保持不變。",
+        "已找到 Home Assistant 內建伺服器。除非你使用其他伺服器，否則保持不變。",
+        "已自動找到伺服器。除非你使用其他伺服器，否則保持不變。",
+        " · 自動偵測",
+    ),
+    "az": (
+        "Serveri avtomatik tapmaq üçün boş saxlayın. Yalnız daxili bağlantıdan fərqli bağlantı istifadə edirsinizsə dəyişin.",
+        "Hələ MCP serveri tapılmadı. Home Assistant-ın daxili **Model Context Protocol Server** inteqrasiyasını əlavə edin (Parametrlər → Cihazlar və xidmətlər → İnteqrasiya əlavə et) və ya HA-MCP quraşdırın, sonra bu formu yenidən açın. Və ya burada başqa MCP serverinin ünvanını daxil edin.",
+        "HA-MCP avtomatik tapıldı. Başqa server istifadə etmirsinizsə, belə saxlayın.",
+        "Daxili Home Assistant serveri tapıldı. Başqasını istifadə etmirsinizsə, belə saxlayın.",
+        "Server avtomatik tapıldı. Başqasını istifadə etmirsinizsə, belə saxlayın.",
+        " · avtomatik tapıldı",
+    ),
+    "eo": (
+        "Lasu malplena por aŭtomate trovi la servilon. Ŝanĝu nur se vi uzas alian konekton ol la enkonstruitan.",
+        "Ankoraŭ neniu MCP-servilo trovita. Aldonu la enkonstruitan integriĝon **Model Context Protocol Server** de Home Assistant (Agordoj → Aparatoj kaj servoj → Aldoni integriĝon) aŭ instalu HA-MCP, poste remalfermu ĉi tiun formularon. Aŭ enigu ĉi tie la adreson de alia MCP-servilo.",
+        "Ni aŭtomate trovis HA-MCP. Konservu tion, krom se vi uzas alian servilon.",
+        "Ni trovis la enkonstruitan servilon de Home Assistant. Konservu tion, krom se vi uzas alian.",
+        "Ni aŭtomate trovis servilon. Konservu tion, krom se vi uzas alian.",
+        " · aŭtomate trovita",
+    ),
+}
+
+
 # Claude sign-in state on the agent form (Claude SDK on the Runtime). {saved}, {expires}, {kind}
 # "overridden" only comes from Runtimes before 1.6.0b12: since then a sign-in wins over the Runtime's own token.
 CLAUDE_SIGNIN = {
@@ -536,23 +661,52 @@ def claude_auth_failed_text(language: str = "") -> str:
     return str(pick(CLAUDE_AUTH_FAILED, language))
 
 
-CLAUDE_PLAN_REJECTED_SESSION = {
-    "en": "Claude session is full. Continue from {reset}.",
-    "de": "Claude-Sitzung ist voll. Weiter ab {reset}.",
-    "fr": "La session Claude est pleine. Reprenez à partir de {reset}.",
-    "es": "La sesión de Claude está llena. Continúe a partir de las {reset}.",
+# A plan (Claude, Codex, Cursor) refused the turn because its session or weekly window is full. {engine}, {reset}
+PLAN_REJECTED_SESSION = {
+    "en": "{engine} session is full. Continue from {reset}.",
+    "de": "{engine}-Sitzung ist voll. Weiter ab {reset}.",
+    "fr": "La session {engine} est pleine. Reprenez à partir de {reset}.",
+    "es": "La sesión de {engine} está llena. Continúe a partir de las {reset}.",
+    "it": "La sessione {engine} è piena. Continua dalle {reset}.",
+    "nl": "De {engine}-sessie is vol. Ga verder vanaf {reset}.",
+    "pl": "Sesja {engine} jest pełna. Kontynuuj od {reset}.",
+    "cs": "Relace {engine} je plná. Pokračujte od {reset}.",
+    "sv": "{engine}-sessionen är full. Fortsätt från {reset}.",
+    "ru": "Сессия {engine} исчерпана. Продолжить можно с {reset}.",
+    "ko": "{engine} 세션 한도가 찼습니다. {reset}부터 계속할 수 있습니다.",
+    "zh-Hans": "{engine} 会话额度已用完。可从 {reset} 起继续。",
+    "zh-Hant": "{engine} 工作階段額度已用完。可從 {reset} 起繼續。",
+    "az": "{engine} sessiyası doludur. {reset}-dan davam edin.",
+    "eo": "La {engine}-seanco estas plena. Daŭrigu ekde {reset}.",
 }
-CLAUDE_PLAN_REJECTED_WEEK = {
-    "en": "Claude weekly limit is full. Continue from {reset}.",
-    "de": "Claude-Wochenlimit ist voll. Weiter ab {reset}.",
-    "fr": "La limite hebdomadaire Claude est atteinte. Reprenez à partir de {reset}.",
-    "es": "El límite semanal de Claude está lleno. Continúe a partir de las {reset}.",
+PLAN_REJECTED_WEEK = {
+    "en": "{engine} weekly limit is full. Continue from {reset}.",
+    "de": "{engine}-Wochenlimit ist voll. Weiter ab {reset}.",
+    "fr": "La limite hebdomadaire {engine} est atteinte. Reprenez à partir de {reset}.",
+    "es": "El límite semanal de {engine} está lleno. Continúe a partir de las {reset}.",
+    "it": "Il limite settimanale di {engine} è esaurito. Continua dalle {reset}.",
+    "nl": "De weeklimiet van {engine} is vol. Ga verder vanaf {reset}.",
+    "pl": "Tygodniowy limit {engine} jest wyczerpany. Kontynuuj od {reset}.",
+    "cs": "Týdenní limit {engine} je vyčerpán. Pokračujte od {reset}.",
+    "sv": "{engine}-veckogränsen är nådd. Fortsätt från {reset}.",
+    "ru": "Недельный лимит {engine} исчерпан. Продолжить можно с {reset}.",
+    "ko": "{engine} 주간 한도가 찼습니다. {reset}부터 계속할 수 있습니다.",
+    "zh-Hans": "{engine} 每周额度已用完。可从 {reset} 起继续。",
+    "zh-Hant": "{engine} 每週額度已用完。可從 {reset} 起繼續。",
+    "az": "{engine} həftəlik limiti doludur. {reset}-dan davam edin.",
+    "eo": "La semajna limo de {engine} estas plena. Daŭrigu ekde {reset}.",
 }
+_PLAN_ENGINE = {"claude": "Claude", "codex": "Codex", "cursor": "Cursor"}
+
+
+def plan_rejected_text(language: str = "", *, engine: str = "claude", window: str = "session", reset: str = "?") -> str:
+    table = PLAN_REJECTED_WEEK if str(window or "") == "week" else PLAN_REJECTED_SESSION
+    name = _PLAN_ENGINE.get(str(engine or "").strip().lower(), str(engine or "").strip() or "Claude")
+    return str(pick(table, language)).format(engine=name, reset=reset or "?")
 
 
 def claude_plan_rejected_text(language: str = "", *, window: str = "session", reset: str = "?") -> str:
-    table = CLAUDE_PLAN_REJECTED_WEEK if str(window or "") == "week" else CLAUDE_PLAN_REJECTED_SESSION
-    return str(pick(table, language)).format(reset=reset or "?")
+    return plan_rejected_text(language, engine="claude", window=window, reset=reset)
 
 
 # Under the Cursor key field when the Runtime already has its own Cursor key.

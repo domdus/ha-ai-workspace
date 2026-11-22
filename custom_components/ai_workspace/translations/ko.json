@@ -746,5 +746,84 @@
         }
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "cost_today": {
+        "name": "오늘 비용"
+      },
+      "cost_month": {
+        "name": "이번 달 비용"
+      },
+      "cost_total": {
+        "name": "총 비용"
+      },
+      "tokens_today": {
+        "name": "오늘 토큰"
+      },
+      "tokens_month": {
+        "name": "이번 달 토큰"
+      },
+      "tokens_total": {
+        "name": "총 토큰"
+      },
+      "turns_today": {
+        "name": "오늘 턴"
+      },
+      "turns_month": {
+        "name": "이번 달 턴"
+      },
+      "turns_total": {
+        "name": "총 턴"
+      },
+      "last_cost": {
+        "name": "마지막 턴 비용"
+      },
+      "last_tokens": {
+        "name": "마지막 턴 토큰"
+      },
+      "last_model": {
+        "name": "마지막 모델"
+      },
+      "last_agent": {
+        "name": "마지막 에이전트"
+      },
+      "cost_tts_today": {
+        "name": "오늘 음성 비용"
+      },
+      "cost_tts_total": {
+        "name": "총 음성 비용"
+      },
+      "plan_session_percent": {
+        "name": "{engine} 요금제 세션 %"
+      },
+      "plan_week_percent": {
+        "name": "{engine} 요금제 주간 %"
+      },
+      "plan_session_reset_at": {
+        "name": "{engine} 요금제 세션 초기화"
+      }
+    },
+    "stt": {
+      "speech_to_text": {
+        "name": "음성-텍스트 변환"
+      }
+    },
+    "tts": {
+      "text_to_speech": {
+        "name": "텍스트-음성 변환"
+      }
+    }
+  },
+  "exceptions": {
+    "unknown_agent": {
+      "message": "AI Workspace에 {agent}(이)라는 에이전트가 없습니다."
+    },
+    "tasks_need_admin": {
+      "message": "AI Workspace 작업에는 Home Assistant 관리자 계정이 필요합니다."
+    },
+    "not_set_up": {
+      "message": "AI Workspace가 설정되지 않았습니다."
+    }
   }
 }

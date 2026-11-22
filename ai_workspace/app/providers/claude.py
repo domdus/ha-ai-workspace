@@ -15,7 +15,13 @@ import uuid
 from typing import Any, AsyncIterator, Callable
 
 from app.events import _resolved_tool_name, _tool_event, _tool_label
-from app.mcp_config import McpConfigError, load_mcp_servers, merge_mcp_servers, servers_from_chat_mcp
+from app.mcp_config import (
+    McpConfigError,
+    load_mcp_servers,
+    merge_mcp_servers,
+    servers_from_chat_mcp,
+    servers_with_language,
+)
 from app.mcp_proxy import ENGINE_TOOL_CEILING
 from app.providers.base import ProviderInfo
 from app.plan_quota import (
@@ -460,6 +466,8 @@ class ClaudeProvider:
             exclusive = bool((mcp or {}).get("exclusive"))
             file_servers = {} if exclusive else load_mcp_servers(self.settings.mcp_config_path)
             mcp_servers = merge_mcp_servers(file_servers, servers_from_chat_mcp(mcp))
+            # Server-made texts (approval prompts, form titles) in Home Assistant's language.
+            mcp_servers = servers_with_language(mcp_servers, str((mcp or {}).get("language") or ""))
         except McpConfigError as exc:
             yield {"type": "error", "message": str(exc)}
             return

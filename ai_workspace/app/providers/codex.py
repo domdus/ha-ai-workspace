@@ -30,7 +30,13 @@ from typing import Any, AsyncIterator, Callable
 
 from app.codex_login import cli_path, credential_source, sdk_config, sdk_installed
 from app.events import _tool_event
-from app.mcp_config import McpConfigError, load_mcp_servers, merge_mcp_servers, servers_from_chat_mcp
+from app.mcp_config import (
+    McpConfigError,
+    load_mcp_servers,
+    merge_mcp_servers,
+    servers_from_chat_mcp,
+    servers_with_language,
+)
 from app.mcp_proxy import ENGINE_TOOL_CEILING
 from app.credentials import codex_runtime_id
 from app.plan_quota import credential_id, plan_events_from_sdk, plan_rejection_error
@@ -496,6 +502,8 @@ class CodexProvider:
             exclusive = bool((mcp or {}).get("exclusive"))
             file_servers = {} if exclusive else load_mcp_servers(self.settings.mcp_config_path)
             mcp_servers = merge_mcp_servers(file_servers, servers_from_chat_mcp(mcp))
+            # Server-made texts (approval prompts, form titles) in Home Assistant's language.
+            mcp_servers = servers_with_language(mcp_servers, str((mcp or {}).get("language") or ""))
         except McpConfigError as exc:
             yield {"type": "error", "message": str(exc)}
             return

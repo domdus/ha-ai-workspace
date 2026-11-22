@@ -11,6 +11,42 @@ _ENV = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
 _LOOPBACK = {"127.0.0.1", "localhost", "::1"}
 
 
+_LANGUAGE_TAG = re.compile(r"^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$")
+
+
+def accept_language(language: str) -> str:
+    """Accept-Language for MCP servers: Home Assistant's language first, English as fallback.
+
+    Server-made texts (approval prompts, elicitation field titles) can only be translated by the server.
+    "de" -> "de, en;q=0.5"; English alone stays "en"; anything that is not a language tag -> "".
+    """
+    tag = str(language or "").strip().replace("_", "-")
+    if not tag or not _LANGUAGE_TAG.match(tag):
+        return ""
+    return tag if tag.lower() == "en" else f"{tag}, en;q=0.5"
+
+
+def with_accept_language(headers: dict[str, str] | None, language: str) -> dict[str, str]:
+    """headers plus Accept-Language, unless the connection already sets its own."""
+    out = dict(headers or {})
+    value = accept_language(language)
+    if value and not any(str(key).lower() == "accept-language" for key in out):
+        out["Accept-Language"] = value
+    return out
+
+
+def servers_with_language(servers: dict[str, dict[str, Any]], language: str) -> dict[str, dict[str, Any]]:
+    """Every HTTP MCP server gets Accept-Language (the MCP proxy forwards upstream headers as they are)."""
+    if not accept_language(language):
+        return servers
+    out: dict[str, dict[str, Any]] = {}
+    for name, cfg in servers.items():
+        if isinstance(cfg, dict) and cfg.get("url") and str(cfg.get("type") or "") != "stdio":
+            cfg = {**cfg, "headers": with_accept_language(cfg.get("headers"), language)}
+        out[name] = cfg
+    return out
+
+
 def rewrite_loopback_url(url: str, host: str | None = None) -> str:
     """Map 127.0.0.1 MCP URLs to the Docker host when the runtime is not on host network."""
     target = (host if host is not None else os.environ.get("REWRITE_LOOPBACK_HOST") or "").strip()

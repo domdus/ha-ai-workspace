@@ -746,5 +746,84 @@
         }
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "cost_today": {
+        "name": "Kosto hodiaŭ"
+      },
+      "cost_month": {
+        "name": "Kosto ĉi-monate"
+      },
+      "cost_total": {
+        "name": "Kosto entute"
+      },
+      "tokens_today": {
+        "name": "Ĵetonoj hodiaŭ"
+      },
+      "tokens_month": {
+        "name": "Ĵetonoj ĉi-monate"
+      },
+      "tokens_total": {
+        "name": "Ĵetonoj entute"
+      },
+      "turns_today": {
+        "name": "Rondoj hodiaŭ"
+      },
+      "turns_month": {
+        "name": "Rondoj ĉi-monate"
+      },
+      "turns_total": {
+        "name": "Rondoj entute"
+      },
+      "last_cost": {
+        "name": "Kosto de la lasta rondo"
+      },
+      "last_tokens": {
+        "name": "Ĵetonoj de la lasta rondo"
+      },
+      "last_model": {
+        "name": "Lasta modelo"
+      },
+      "last_agent": {
+        "name": "Lasta agento"
+      },
+      "cost_tts_today": {
+        "name": "Parolkosto hodiaŭ"
+      },
+      "cost_tts_total": {
+        "name": "Parolkosto entute"
+      },
+      "plan_session_percent": {
+        "name": "{engine}-abono seanco %"
+      },
+      "plan_week_percent": {
+        "name": "{engine}-abono semajno %"
+      },
+      "plan_session_reset_at": {
+        "name": "{engine}-abono seanca rekomenco"
+      }
+    },
+    "stt": {
+      "speech_to_text": {
+        "name": "Parolo al teksto"
+      }
+    },
+    "tts": {
+      "text_to_speech": {
+        "name": "Teksto al parolo"
+      }
+    }
+  },
+  "exceptions": {
+    "unknown_agent": {
+      "message": "AI Workspace ne havas agenton nomatan {agent}."
+    },
+    "tasks_need_admin": {
+      "message": "Taskoj de AI Workspace bezonas administrantan konton en Home Assistant."
+    },
+    "not_set_up": {
+      "message": "AI Workspace ne estas agordita."
+    }
   }
 }

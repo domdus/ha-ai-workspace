@@ -98,6 +98,8 @@ class ChatMcp(BaseModel):
     url: str = ""
     token: str = ""
     exclusive: bool = False
+    # Home Assistant's language: MCP servers get it as Accept-Language (e.g. "de, en;q=0.5").
+    language: str = Field(default="", max_length=35)
 
 
 # Helper fields are shortened, never a reason to refuse the turn: a long paste once made the whole

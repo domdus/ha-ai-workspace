@@ -746,5 +746,84 @@
         }
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "cost_today": {
+        "name": "Costo oggi"
+      },
+      "cost_month": {
+        "name": "Costo questo mese"
+      },
+      "cost_total": {
+        "name": "Costo totale"
+      },
+      "tokens_today": {
+        "name": "Token oggi"
+      },
+      "tokens_month": {
+        "name": "Token questo mese"
+      },
+      "tokens_total": {
+        "name": "Token totali"
+      },
+      "turns_today": {
+        "name": "Turni oggi"
+      },
+      "turns_month": {
+        "name": "Turni questo mese"
+      },
+      "turns_total": {
+        "name": "Turni totali"
+      },
+      "last_cost": {
+        "name": "Costo ultimo turno"
+      },
+      "last_tokens": {
+        "name": "Token ultimo turno"
+      },
+      "last_model": {
+        "name": "Ultimo modello"
+      },
+      "last_agent": {
+        "name": "Ultimo agente"
+      },
+      "cost_tts_today": {
+        "name": "Costo voce oggi"
+      },
+      "cost_tts_total": {
+        "name": "Costo voce totale"
+      },
+      "plan_session_percent": {
+        "name": "Piano {engine} sessione %"
+      },
+      "plan_week_percent": {
+        "name": "Piano {engine} settimana %"
+      },
+      "plan_session_reset_at": {
+        "name": "Piano {engine} reset sessione"
+      }
+    },
+    "stt": {
+      "speech_to_text": {
+        "name": "Riconoscimento vocale"
+      }
+    },
+    "tts": {
+      "text_to_speech": {
+        "name": "Sintesi vocale"
+      }
+    }
+  },
+  "exceptions": {
+    "unknown_agent": {
+      "message": "AI Workspace non ha nessun agente chiamato {agent}."
+    },
+    "tasks_need_admin": {
+      "message": "Le attività di AI Workspace richiedono un account amministratore in Home Assistant."
+    },
+    "not_set_up": {
+      "message": "AI Workspace non è configurato."
+    }
   }
 }

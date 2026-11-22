@@ -87,7 +87,7 @@ class AiWorkspaceTTSEntity(tts.TextToSpeechEntity):
     _attr_icon = "mdi:speaker"
     _attr_should_poll = False
     _attr_has_entity_name = True
-    _attr_name = "Text-to-speech"
+    _attr_translation_key = "text_to_speech"
     _attr_supported_options = [getattr(tts, "ATTR_VOICE", "voice")]
 
     @property

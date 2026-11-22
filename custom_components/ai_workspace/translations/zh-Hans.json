@@ -746,5 +746,84 @@
         }
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "cost_today": {
+        "name": "今日费用"
+      },
+      "cost_month": {
+        "name": "本月费用"
+      },
+      "cost_total": {
+        "name": "总费用"
+      },
+      "tokens_today": {
+        "name": "今日令牌"
+      },
+      "tokens_month": {
+        "name": "本月令牌"
+      },
+      "tokens_total": {
+        "name": "总令牌"
+      },
+      "turns_today": {
+        "name": "今日轮次"
+      },
+      "turns_month": {
+        "name": "本月轮次"
+      },
+      "turns_total": {
+        "name": "总轮次"
+      },
+      "last_cost": {
+        "name": "上一轮费用"
+      },
+      "last_tokens": {
+        "name": "上一轮令牌"
+      },
+      "last_model": {
+        "name": "上次模型"
+      },
+      "last_agent": {
+        "name": "上次智能体"
+      },
+      "cost_tts_today": {
+        "name": "今日语音费用"
+      },
+      "cost_tts_total": {
+        "name": "语音总费用"
+      },
+      "plan_session_percent": {
+        "name": "{engine} 套餐会话 %"
+      },
+      "plan_week_percent": {
+        "name": "{engine} 套餐本周 %"
+      },
+      "plan_session_reset_at": {
+        "name": "{engine} 套餐会话重置"
+      }
+    },
+    "stt": {
+      "speech_to_text": {
+        "name": "语音转文字"
+      }
+    },
+    "tts": {
+      "text_to_speech": {
+        "name": "文字转语音"
+      }
+    }
+  },
+  "exceptions": {
+    "unknown_agent": {
+      "message": "AI Workspace 没有名为 {agent} 的智能体。"
+    },
+    "tasks_need_admin": {
+      "message": "AI Workspace 任务需要 Home Assistant 中的管理员账户。"
+    },
+    "not_set_up": {
+      "message": "AI Workspace 尚未设置。"
+    }
   }
 }

@@ -137,7 +137,7 @@ class AiWorkspaceSTTEntity(stt.SpeechToTextEntity):
     _attr_icon = "mdi:microphone"
     _attr_should_poll = False
     _attr_has_entity_name = True
-    _attr_name = "Speech-to-text"
+    _attr_translation_key = "speech_to_text"
 
     def __init__(self, entry: ConfigEntry, agent: Agent) -> None:
         self._entry = entry

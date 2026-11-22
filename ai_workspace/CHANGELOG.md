@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.6.2b3
+
+**Translations complete in all 15 languages; MCP servers hear your language.**
+
+- Chat: the approval card (Allow / Deny, headings, status texts), plan limits and the usage page's plan section were English outside English and German. They are translated now, and so is the "Undo with agent" prompt.
+- Usage sensors and the speech-to-text / text-to-speech entities have translated names. Entity IDs do not change.
+- The MCP server notes on the setup form, the tasks service errors, and the "plan limit reached" message for Codex and Cursor now read in your language.
+- Every MCP request sends `Accept-Language` with Home Assistant's language (for example `de, en;q=0.5`): from cloud agents directly, and from Cursor, Claude and Codex through the Runtime's MCP proxy. Servers such as the agent-worker can then word their approval prompts and form fields in your language.
+- Tests now fail when any language misses a key or a placeholder from English (translations, chat and tasks strings, built-in texts).
+- Update the Runtime (`ghcr.io/domdus/ha-ai-workspace-runtime:1.6.2b3`) for `Accept-Language` on Runtime agents; everything else comes with the integration.
+
 ## 1.6.2b2
 
 **Long MCP tool calls follow the MCP standard: live progress, a timeout per connection, Stop cancels.**
