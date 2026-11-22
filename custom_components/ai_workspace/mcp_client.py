@@ -5,7 +5,7 @@ import json
 import logging
 import re
 import secrets
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from aiohttp import ClientError, ClientSession, ClientTimeout
@@ -14,7 +14,11 @@ from .const import DEFAULT_TOOL_TIMEOUT_SECONDS, VERSION
 
 logger = logging.getLogger(__name__)
 
-_PROTOCOL = "2025-03-26"
+_PROTOCOL = "2025-11-25"
+ELICIT_METHOD = "elicitation/create"
+ELICIT_MODES = ("form", "url")
+# What the user is asked through: form fields, or a link to open (MCP 2025-11-25 elicitation modes).
+ELICITATION_CAPABILITY: dict[str, Any] = {"form": {}, "url": {}}
 # MCP _meta key for the chat a tools/call belongs to (namespaced, MCP 2025-06-18 _meta rules).
 CONVERSATION_META = "io.github.domdus/conversation_id"
 # initialize, tools/list and other short requests.
@@ -103,6 +107,10 @@ class McpHttpClient:
     tools/call sends ``_meta.progressToken``; every ``notifications/progress`` for it starts the
     call's timeout again and goes to ``on_progress``. A call that is stopped (task cancelled) or
     times out gets ``notifications/cancelled``.
+
+    ``elicitation/create`` on a call's stream goes to that call's ``on_elicit`` (the user answers in
+    the chat); its result is the JSON-RPC answer. While the user is asked, the call's timeout waits.
+    A call that is stopped meanwhile answers the open question with ``decline``.
     """
 
     def __init__(self, http: ClientSession, url: str, headers: dict[str, str] | None = None) -> None:
@@ -110,6 +118,10 @@ class McpHttpClient:
         self._url = url.rstrip("/")
         self._id = 0
         self._session_id: str | None = None
+        # The version the server chose in initialize; sent as MCP-Protocol-Version afterwards.
+        self.protocol_version = ""
+        # Questions the server withdrew (notifications/cancelled): no answer goes back for them.
+        self._withdrawn: set[asyncio.Task] = set()
         self._headers = {key: value for key, value in (headers or {}).items() if value}
         # Set when the server says its tool list changed (notifications/tools/list_changed).
         self.tools_changed = False
@@ -119,10 +131,12 @@ class McpHttpClient:
             "initialize",
             {
                 "protocolVersion": _PROTOCOL,
-                "capabilities": {},
+                "capabilities": {"elicitation": dict(ELICITATION_CAPABILITY)},
                 "clientInfo": {"name": "ai-workspace", "version": VERSION},
             },
         )
+        version = result.get("protocolVersion") if isinstance(result, dict) else None
+        self.protocol_version = str(version) if isinstance(version, str) and version else ""
         await self.call("notifications/initialized", notify=True)
         return result
 
@@ -151,8 +165,12 @@ class McpHttpClient:
         timeout: float | None = None,
         on_progress: Callable[[dict[str, Any]], Any] | None = None,
         conversation_id: str = "",
+        on_elicit: Callable[[dict[str, Any]], Awaitable[dict[str, Any]]] | None = None,
     ) -> Any:
-        """tools/call. timeout: seconds without an answer or progress (default 120)."""
+        """tools/call. timeout: seconds without an answer or progress (default 120).
+
+        on_elicit asks the user an ``elicitation/create`` of this call; without it the server gets cancel.
+        """
         token = f"aiw-{secrets.token_hex(8)}"
         meta: dict[str, Any] = {"progressToken": token}
         if conversation_id:
@@ -164,6 +182,7 @@ class McpHttpClient:
             timeout=float(timeout or DEFAULT_TOOL_TIMEOUT_SECONDS),
             progress_token=token,
             on_progress=on_progress,
+            on_elicit=on_elicit,
         )
 
     def _request_headers(self) -> dict[str, str]:
@@ -174,6 +193,8 @@ class McpHttpClient:
         }
         if self._session_id:
             headers["Mcp-Session-Id"] = self._session_id
+        if self.protocol_version:
+            headers["MCP-Protocol-Version"] = self.protocol_version
         return headers
 
     async def call(
@@ -185,6 +206,7 @@ class McpHttpClient:
         timeout: float = _SHORT_TIMEOUT,
         progress_token: str = "",
         on_progress: Callable[[dict[str, Any]], Any] | None = None,
+        on_elicit: Callable[[dict[str, Any]], Awaitable[dict[str, Any]]] | None = None,
     ) -> Any:
         self._id += 1
         request_id = self._id
@@ -222,7 +244,9 @@ class McpHttpClient:
             if notify:
                 return {}
             if "text/event-stream" in content_type:
-                body = await self._read_stream(resp, request_id, deadline, timeout, progress_token, on_progress)
+                body = await self._read_stream(
+                    resp, request_id, deadline, timeout, progress_token, on_progress, on_elicit
+                )
             else:
                 remaining = max(0.1, deadline[0] - loop.time())
                 try:
@@ -258,59 +282,140 @@ class McpHttpClient:
         timeout: float,
         progress_token: str,
         on_progress: Callable[[dict[str, Any]], Any] | None,
+        on_elicit: Callable[[dict[str, Any]], Awaitable[dict[str, Any]]] | None = None,
     ) -> dict[str, Any]:
-        """Read server-sent events until the answer to request_id comes."""
+        """Read server-sent events until the answer to request_id comes.
+
+        While a question to the user (elicitation) is open the timeout waits; it starts again
+        once the last one is answered.
+        """
         loop = asyncio.get_running_loop()
         data: list[str] = []
         last: dict[str, Any] | None = None
         buffer = b""
         ended = False
-        while True:
-            # One line at a time; a result can be one very long data line, so no readline limit.
-            while b"\n" not in buffer and not ended:
-                remaining = deadline[0] - loop.time()
-                if remaining <= 0:
-                    raise McpTimeout(f"MCP server at {self._url} did not answer within {timeout:.0f} s.")
-                try:
-                    chunk = await asyncio.wait_for(resp.content.readany(), remaining)
-                except TimeoutError as exc:
-                    raise McpTimeout(
-                        f"MCP server at {self._url} did not answer within {timeout:.0f} s."
-                    ) from exc
-                if chunk:
-                    buffer += chunk
-                else:
-                    ended = True
-            if b"\n" in buffer:
-                raw, buffer = buffer.split(b"\n", 1)
-                raw += b"\n"
-            else:
-                raw, buffer = buffer, b""
-            line = raw.decode("utf-8", "replace").rstrip("\r\n") if raw else ""
-            if raw and line.startswith("data:"):
-                data.append(line[5:].lstrip())
-                continue
-            if raw and line:
-                continue
-            if data:
-                chunk = "\n".join(data).strip()
-                data = []
-                if chunk and chunk != "[DONE]":
-                    try:
-                        payload = json.loads(chunk)
-                    except json.JSONDecodeError:
-                        payload = None
-                    for message in _messages(payload):
-                        if message.get("id") == request_id and ("result" in message or "error" in message):
-                            return message
-                        if self._on_message(message, progress_token, on_progress):
+        asking: set[asyncio.Task] = set()
+        # Open questions by their JSON-RPC id, so the server can withdraw one (notifications/cancelled).
+        asked: dict[str, asyncio.Task] = {}
+        reader: asyncio.Future | None = None
+        try:
+            while True:
+                # One line at a time; a result can be one very long data line, so no readline limit.
+                while b"\n" not in buffer and not ended:
+                    if reader is None:
+                        reader = asyncio.ensure_future(resp.content.readany())
+                    if asking:
+                        await asyncio.wait({reader, *asking}, return_when=asyncio.FIRST_COMPLETED)
+                        answered = {task for task in asking if task.done()}
+                        asking -= answered
+                        if answered and not asking:
                             deadline[0] = loop.time() + timeout
-                        if "result" in message or "error" in message:
-                            last = message
-            if not raw:
-                if last is not None:
-                    return last
-                raise McpError("MCP SSE response was empty.")
+                        if not reader.done():
+                            continue
+                    else:
+                        remaining = deadline[0] - loop.time()
+                        if remaining <= 0:
+                            raise McpTimeout(f"MCP server at {self._url} did not answer within {timeout:.0f} s.")
+                        done, _pending = await asyncio.wait({reader}, timeout=remaining)
+                        if reader not in done:
+                            raise McpTimeout(
+                                f"MCP server at {self._url} did not answer within {timeout:.0f} s."
+                            )
+                    chunk = reader.result()
+                    reader = None
+                    if chunk:
+                        buffer += chunk
+                    else:
+                        ended = True
+                if b"\n" in buffer:
+                    raw, buffer = buffer.split(b"\n", 1)
+                    raw += b"\n"
+                else:
+                    raw, buffer = buffer, b""
+                line = raw.decode("utf-8", "replace").rstrip("\r\n") if raw else ""
+                if raw and line.startswith("data:"):
+                    data.append(line[5:].lstrip())
+                    continue
+                if raw and line:
+                    continue
+                if data:
+                    chunk = "\n".join(data).strip()
+                    data = []
+                    if chunk and chunk != "[DONE]":
+                        try:
+                            payload = json.loads(chunk)
+                        except json.JSONDecodeError:
+                            payload = None
+                        for message in _messages(payload):
+                            if message.get("id") == request_id and ("result" in message or "error" in message):
+                                return message
+                            if message.get("method") == ELICIT_METHOD and "id" in message:
+                                task = loop.create_task(self._elicit(message, on_elicit))
+                                asking.add(task)
+                                asked[json.dumps(message.get("id"))] = task
+                                continue
+                            if message.get("method") == "notifications/cancelled":
+                                params = message.get("params") if isinstance(message.get("params"), dict) else {}
+                                withdrawn = asked.pop(json.dumps(params.get("requestId")), None)
+                                if withdrawn is not None and not withdrawn.done():
+                                    # The server no longer waits: close the card, send no answer.
+                                    self._withdrawn.add(withdrawn)
+                                    withdrawn.cancel()
+                                continue
+                            if self._on_message(message, progress_token, on_progress):
+                                deadline[0] = loop.time() + timeout
+                            if "result" in message or "error" in message:
+                                last = message
+                if not raw:
+                    if last is not None:
+                        return last
+                    raise McpError("MCP SSE response was empty.")
+        finally:
+            if reader is not None and not reader.done():
+                reader.cancel()
+            # The call is over (answered, stopped, failed): its open questions are declined.
+            for task in asking:
+                task.cancel()
+
+    async def _elicit(
+        self,
+        message: dict[str, Any],
+        on_elicit: Callable[[dict[str, Any]], Awaitable[dict[str, Any]]] | None,
+    ) -> None:
+        """Ask the user an elicitation/create and send the JSON-RPC answer to the server."""
+        request_id = message.get("id")
+        params = message.get("params") if isinstance(message.get("params"), dict) else {}
+        mode = str(params.get("mode") or "form")
+        answer: dict[str, Any] = {"jsonrpc": "2.0", "id": request_id}
+        if mode not in ELICIT_MODES:
+            answer["error"] = {"code": -32602, "message": f"Elicitation mode {mode!r} is not supported."}
+            self._send_later(answer)
+            return
+        if on_elicit is None:
+            # No one to ask (a task run, a check): the user did not answer.
+            answer["result"] = {"action": "cancel"}
+            self._send_later(answer)
+            return
+        try:
+            result = await on_elicit(dict(params))
+        except asyncio.CancelledError:
+            # Stopped while the user was asked: the server must not wait for an answer that never comes.
+            current = asyncio.current_task()
+            if current in self._withdrawn:
+                self._withdrawn.discard(current)
+            else:
+                self._send_later({**answer, "result": {"action": "decline"}})
+            raise
+        except Exception:  # noqa: BLE001 - a broken card must not leave the server waiting
+            logger.warning("MCP elicitation from %s could not be shown", self._url, exc_info=True)
+            result = {"action": "cancel"}
+        if not isinstance(result, dict) or result.get("action") not in {"accept", "decline", "cancel"}:
+            result = {"action": "cancel"}
+        out: dict[str, Any] = {"action": result["action"]}
+        if result["action"] == "accept" and mode == "form":
+            out["content"] = dict(result.get("content") or {})
+        answer["result"] = out
+        self._send_later(answer)
 
     def _on_message(
         self,
@@ -324,7 +429,8 @@ class McpHttpClient:
             return False
         params = message.get("params") if isinstance(message.get("params"), dict) else {}
         if "id" in message:
-            # A server request: ping is answered, everything else this client does not offer.
+            # A server request: ping is answered (elicitation/create is read by _read_stream),
+            # everything else this client does not offer.
             if method == "ping":
                 answer: dict[str, Any] = {"jsonrpc": "2.0", "id": message["id"], "result": {}}
             else:

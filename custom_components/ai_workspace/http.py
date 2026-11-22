@@ -1779,6 +1779,7 @@ class ChatView(HomeAssistantView):
                                     "text": event.get("text"),
                                     **({"id": event["id"]} if event.get("id") else {}),
                                     **({"note": event["note"]} if event.get("note") else {}),
+                                    **({"failed": True} if event.get("failed") is True else {}),
                                 }
                             )
                         elif kind == "plan_notice":

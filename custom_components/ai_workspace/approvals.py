@@ -1,11 +1,14 @@
 """Questions to the user from MCP tools, shown in the chat as cards: Allow / Deny.
 
-Two sources, both through the AI Workspace Runtime:
+Sources:
 
-- MCP elicitation (``elicitation/create``): a server asks the user while a tool call is open.
-  The Runtime's MCP proxy keeps the request away from the agent and sends it here.
+- MCP elicitation (``elicitation/create``) through the AI Workspace Runtime: a server asks the
+  user while a tool call is open. The Runtime's MCP proxy keeps the request away from the agent
+  and sends it here.
 - agent-worker jobs that wait for an approval (status ``input_required``) with no open request.
   The Runtime sees them in job results; the answer goes to the worker's ``/jobs/<id>/approve``.
+- MCP elicitation of cloud agents (OpenAI, Claude API, Gemini, Ollama, ...), whose MCP client is
+  this integration's own (mcp_client.py): ``ask`` opens the card and waits here for the click.
 
 Cards are stored per chat, so a closed panel or the companion app shows them again. Only a click
 by the chat's own user answers one; the agent cannot, and chat text never does. The Runtime only
@@ -14,8 +17,10 @@ takes an answer with the card's key, which it gave to Home Assistant alone.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
+import secrets
 import time
 from typing import Any
 
@@ -45,6 +50,10 @@ _CLOSED = {
 }
 _MAX_SECONDS = 24 * 3600
 _WORKER_KEYS = ("job_id", "tool", "host", "hostname", "user", "command", "workspace")
+# Answer key of a card that a cloud agent's call waits for here, not in the Runtime.
+LOCAL_KEY = "local:"
+_LOCAL = f"{DOMAIN}_local_elicitations"
+_URL_CHARS = 2000
 
 
 def _data(hass: HomeAssistant) -> dict[str, Any]:
@@ -154,6 +163,119 @@ async def _body(request: web.Request) -> dict[str, Any]:
     return body
 
 
+async def _announce(hass: HomeAssistant, store, item_id: str, user_id: str, session_id: str) -> dict[str, Any]:
+    """Show a newly stored card in the chat and tell automations (event ai_workspace_approval)."""
+    row = await hass.async_add_executor_job(store.get_approval, item_id)
+    shown = public(row)
+    publish(hass, session_id, shown)
+    hass.bus.async_fire(
+        BUS_EVENT,
+        {
+            "id": item_id,
+            "user_id": user_id,
+            "session_id": session_id,
+            "kind": shown["kind"],
+            "server": shown.get("server") or "",
+            "message": str(shown.get("message") or "")[:300],
+        },
+    )
+    logger.info("approval card %s (%s) for chat %s", item_id, shown["kind"], session_id)
+    return shown
+
+
+def link_of(value: Any) -> str:
+    """An http(s) link of a URL-mode elicitation, or "" for anything else."""
+    url = str(value or "").strip()
+    if len(url) > _URL_CHARS or any(ch.isspace() for ch in url):
+        return ""
+    return url if url.lower().startswith(("https://", "http://")) else ""
+
+
+def local_card(params: Any, server: str, timeout: int) -> dict[str, Any] | None:
+    """The card for an elicitation/create of a cloud agent's call; None when it cannot be shown."""
+    params = params if isinstance(params, dict) else {}
+    if str(params.get("mode") or "form") == "url":
+        url = link_of(params.get("url"))
+        if not url:
+            return None
+        card = card_of({"message": params.get("message")})
+        # Allow means: the user agrees to open the link (MCP 2025-11-25 URL mode).
+        card.update({"fields": [], "schema": {}, "confirmation": True, "approval_field": "", "mode": "url", "url": url})
+    else:
+        card = card_of(params)
+    card["server"] = _short(server or "MCP", 120)
+    card["timeout"] = max(0, min(int(timeout), _MAX_SECONDS))
+    return card
+
+
+async def ask(
+    hass: HomeAssistant,
+    *,
+    session_id: str,
+    user_id: str,
+    server: str,
+    params: dict[str, Any],
+    timeout: int,
+) -> dict[str, Any]:
+    """Ask the chat's user an elicitation of a cloud agent's MCP call; the result for the server.
+
+    Waits for the click on the card. No answer within timeout: cancel. The call is stopped
+    meanwhile: the card closes as ended and the cancellation goes on to the MCP client.
+    """
+    store = _data(hass).get("store")
+    if store is None or not session_id or not user_id:
+        return {"action": "cancel"}
+    seconds = max(1, min(int(timeout or 600), _MAX_SECONDS))
+    card = local_card(params, server, seconds)
+    if card is None:
+        logger.warning("MCP elicitation from %s refused: not a form and no http(s) link", server)
+        return {"action": "decline"}
+    item_id = f"c{secrets.token_hex(10)}"
+    waiting: dict[str, asyncio.Future] = hass.data.setdefault(_LOCAL, {})
+    future: asyncio.Future = asyncio.get_running_loop().create_future()
+    waiting[item_id] = future
+    status = "cancel"
+    try:
+        await hass.async_add_executor_job(
+            store.save_approval,
+            item_id,
+            session_id,
+            user_id,
+            "elicitation",
+            json.dumps(card, ensure_ascii=False),
+            f"{LOCAL_KEY}{secrets.token_hex(16)}",
+            time.time() + seconds,
+        )
+        await _announce(hass, store, item_id, user_id, session_id)
+        try:
+            result = await asyncio.wait_for(future, seconds)
+        except TimeoutError:
+            status = "timeout"
+            logger.info("approval %s: no answer within %s s", item_id, seconds)
+            return {"action": "cancel"}
+        except asyncio.CancelledError:
+            status = "ended"
+            raise
+        status = ""
+        return result
+    finally:
+        waiting.pop(item_id, None)
+        if status and await hass.async_add_executor_job(store.close_approval, item_id, status):
+            publish(hass, session_id, {"id": item_id, "status": status, "session_id": session_id})
+
+
+def answer_local(hass: HomeAssistant, item_id: str, card: dict[str, Any], result: dict[str, Any]) -> str:
+    """Hand a click to the call that waits for it: "answered", or "gone" when none waits any more."""
+    future = hass.data.get(_LOCAL, {}).get(item_id)
+    if future is None or future.done():
+        return "gone"
+    answer = {"action": result["action"]}
+    if result["action"] == "accept" and card.get("mode") != "url":
+        answer["content"] = dict(result.get("content") or {})
+    future.set_result(answer)
+    return "answered"
+
+
 class ApprovalCallbackView(HomeAssistantView):
     """Runtime callback: a card opens (a server asks the user) or closes (answered, timed out)."""
 
@@ -188,21 +310,7 @@ class ApprovalCallbackView(HomeAssistantView):
                 expires,
             )
             if fresh:
-                row = await hass.async_add_executor_job(store.get_approval, item_id)
-                shown = public(row)
-                publish(hass, who.session_id, shown)
-                hass.bus.async_fire(
-                    BUS_EVENT,
-                    {
-                        "id": item_id,
-                        "user_id": who.user_id,
-                        "session_id": who.session_id,
-                        "kind": shown["kind"],
-                        "server": shown.get("server") or "",
-                        "message": str(shown.get("message") or "")[:300],
-                    },
-                )
-                logger.info("approval card %s (%s) for chat %s", item_id, shown["kind"], who.session_id)
+                await _announce(hass, store, item_id, who.user_id, who.session_id)
             return self.json({"ok": True, "new": fresh})
         if event == "close":
             row = await hass.async_add_executor_job(store.get_approval, item_id)
@@ -303,12 +411,17 @@ class ApprovalAnswerView(HomeAssistantView):
         result, errors = check_answer(card.get("schema"), action, body.get("content"))
         if result is None:
             return self.json({"status": "invalid", "errors": errors}, status_code=400)
-        answer = await answer_runtime(
-            hass,
-            user_id,
-            item_id,
-            {"key": row.get("answer_key") or "", "action": result["action"], "content": result.get("content")},
-        )
+        key = str(row.get("answer_key") or "")
+        if key.startswith(LOCAL_KEY):
+            # A cloud agent's MCP call waits for this answer in Home Assistant itself.
+            answer: dict[str, Any] = {"status": answer_local(hass, item_id, card, result)}
+        else:
+            answer = await answer_runtime(
+                hass,
+                user_id,
+                item_id,
+                {"key": key, "action": result["action"], "content": result.get("content")},
+            )
         status = str(answer.get("status") or "failed")
         if status == "invalid":
             return self.json({"status": "invalid", "errors": answer.get("errors") or {}}, status_code=400)

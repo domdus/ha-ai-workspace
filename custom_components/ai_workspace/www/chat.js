@@ -2312,6 +2312,17 @@ export async function mountAiWorkspace(root, options = {}) {
       message.textContent = data.message;
       card.append(message);
     }
+    // MCP URL mode: the full link, opened only by the user's own click.
+    const link = !worker && /^https?:\/\/\S+$/i.test(String(data.url || "")) ? String(data.url) : "";
+    if (link) {
+      const anchor = document.createElement("a");
+      anchor.className = "approval-link";
+      anchor.href = link;
+      anchor.target = "_blank";
+      anchor.rel = "noopener noreferrer";
+      anchor.textContent = link;
+      card.append(anchor);
+    }
     const flag = data.approval_field || "";
     const inputs = (data.fields || []).filter((field) => field.name !== flag).map(approvalField);
     if (inputs.length) {
@@ -2789,6 +2800,7 @@ export async function mountAiWorkspace(root, options = {}) {
         if (callId) pending.dataset.callId = callId;
         if (label) pending.textContent = label;
         settleChip(pending);
+        markChipFailed(pending, event);
         syncToolsSummary(tools);
         syncActivityGlyph(tools.closest?.(".bubble"));
         return;
@@ -2800,9 +2812,17 @@ export async function mountAiWorkspace(root, options = {}) {
     if (callId) chip.dataset.callId = callId;
     if (!animate || reduceMotion || kind !== "busy") chip.style.animation = "none";
     chip.textContent = label;
+    markChipFailed(chip, event);
     list.appendChild(chip);
     syncToolsSummary(tools);
     syncActivityGlyph(tools.closest?.(".bubble"));
+  }
+
+  // A tool step that ended with an error (MCP isError, refused, not reachable).
+  function markChipFailed(chip, event) {
+    if (!chip || !event?.failed) return;
+    chip.classList.add("failed");
+    chip.title = t("error");
   }
 
   function settleTools(root) {

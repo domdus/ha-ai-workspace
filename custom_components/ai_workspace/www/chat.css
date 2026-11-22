@@ -1317,6 +1317,12 @@ h1 {
   opacity: 0.72;
 }
 
+/* A tool step that ended with an error (MCP isError). */
+.tools-list span.done.failed {
+  opacity: 1;
+  color: var(--error-color, #db4437);
+}
+
 .tools-list span.busy {
   color: var(--primary-text-color);
 }
@@ -2801,6 +2807,11 @@ ha-date-range-picker.usage-filter-dates {
   overflow-wrap: anywhere;
   max-height: 30vh;
   overflow-y: auto;
+}
+.approval-link {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--primary-color);
 }
 .approval-form {
   display: flex;

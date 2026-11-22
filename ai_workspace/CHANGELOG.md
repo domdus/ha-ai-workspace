@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.6.2b5
+
+**Cloud agents can ask you through MCP: approval and form cards now work for OpenAI, Claude API, Gemini, Ollama and other API agents.**
+
+- MCP elicitation for cloud agents: AI Workspace's own MCP client declares `elicitation` (form and URL mode, MCP 2025-11-25). When a server asks during a tool call (for example an agent-worker approval), the chat shows the same card as for Runtime agents; your Allow / Deny / Dismiss and form values go back to the server. URL mode shows the link; it opens only when you click it.
+- Waiting for your answer does not count against the connection's tool timeout. No answer within the approval timeout: the server gets cancel. Stop declines an open question and cancels the call; a question the server withdraws closes.
+- Tool annotations from `tools/list`: in read-only agent tasks, `readOnlyHint` tools count as reading and `readOnlyHint: false` / `destructiveHint` tools as writing, whatever their name says. `readOnlyHint` tools take no Change History snapshot.
+- A tool call that returns `isError` (or is refused or fails) now shows its step as failed in the chat.
+- MCP requests send `MCP-Protocol-Version` after initialize.
+- No Runtime update needed.
+
 ## 1.6.2b4
 
 **The message field is back on phones; composer buttons line up.**
