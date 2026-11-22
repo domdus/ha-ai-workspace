@@ -283,12 +283,14 @@
           "data": {
             "name": "Nazwa",
             "url": "Adres",
-            "token": "Token"
+            "token": "Token",
+            "tool_timeout_sec": "Limit czasu wywołania narzędzia"
           },
           "data_description": {
             "name": "Krótka nazwa, na przykład Directus. Asystent rozróżnia po niej to połączenie od innych.",
             "url": "Adres internetowy (https://…). Znalezione serwery są uzupełniane automatycznie.",
-            "token": "Tylko gdy ten serwer wymaga klucza. Przy edycji zostaw puste, aby zachować zapisany klucz."
+            "token": "Tylko gdy ten serwer wymaga klucza. Przy edycji zostaw puste, aby zachować zapisany klucz.",
+            "tool_timeout_sec": "Liczba sekund, przez które wywołanie narzędzia może trwać bez odpowiedzi lub komunikatu o postępie, zanim zostanie anulowane (10–3600). Każdy komunikat o postępie z serwera uruchamia czas od nowa."
           }
         }
       }

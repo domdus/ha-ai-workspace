@@ -47,6 +47,7 @@ const { replyTimeLabel, replyTimeTitle, haHour12, haTimeZone, replyRows } = awai
   `./reply_meta.js${CACHE}`
 );
 const { isPlaceholderTitle, headerTitle, realTitle } = await import(`./chat_title.js${CACHE}`);
+const { toolProgressText, progressChip } = await import(`./tool_progress.js${CACHE}`);
 
 const API = "/api/ai_workspace";
 const UI_THEME_KEY = "ai_workspace_ui_theme";
@@ -2692,6 +2693,27 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!chip) return;
     chip.className = "done";
     chip.style.animation = "none";
+    chip.querySelector(".chip-progress")?.remove();
+    delete chip.dataset.progress;
+  }
+
+  // MCP progress of a running tool: on its chip and as the reply's status line.
+  function showToolProgress(bubble, tools, event) {
+    const text = toolProgressText(event);
+    if (!text || !bubble) return;
+    const list = tools?.querySelector?.(".tools-list");
+    const chip = list ? progressChip([...list.children].filter(isPendingChip), event) : null;
+    if (chip) {
+      let note = chip.querySelector(".chip-progress");
+      if (!note) {
+        note = document.createElement("small");
+        note.className = "chip-progress";
+        chip.appendChild(note);
+      }
+      note.textContent = text;
+      chip.dataset.progress = text;
+    }
+    setActivity(bubble, text);
   }
 
   function ensureToolsChrome(tools) {
@@ -5228,6 +5250,8 @@ export async function mountAiWorkspace(root, options = {}) {
           textPaintedAt = 0;
           addChip(tools, data, caughtUp);
           setActivity(bubble, "");
+        } else if (name === "tool_progress") {
+          showToolProgress(bubble, tools, data);
         } else if (name === "status") {
           setActivity(bubble, data.text);
         } else if (name === "plan_notice") {
@@ -6513,6 +6537,8 @@ export async function mountAiWorkspace(root, options = {}) {
           addChip(tools, data, true);
           setActivity(assistant, "");
           drainSpeech(false, true);
+        } else if (name === "tool_progress") {
+          showToolProgress(assistant, tools, data);
         } else if (name === "status") {
           setStatus(data.text);
           drainSpeech(false, true);

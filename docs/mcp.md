@@ -54,6 +54,17 @@ Some MCP servers ask you something in the middle of a tool call. An example is t
 
 Cloud agents call MCP from inside Home Assistant and do not offer elicitation yet. Servers then fall back to their own way, for example the worker's `agent_approve` tool.
 
+## Long tool calls: progress, timeout, stop
+
+This follows the MCP specification (2025-11-25) for every MCP connection, for cloud agents (Home Assistant calls the server) and Runtime agents (the Runtime's MCP proxy calls it for Cursor, Claude and Codex).
+
+- **Progress:** every `tools/call` carries `_meta.progressToken`. Each `notifications/progress` the server sends shows live as the tool step's status in the chat (its `message`, else the share done).
+- **Tool call timeout:** per connection (Settings → AI Workspace → the connection → Reconfigure), 120 seconds by default, 10 to 3600. It counts from the last progress notification, so a call that keeps reporting progress can run longer. When it runs out, the server gets `notifications/cancelled` and the agent gets an error.
+- **Stop:** stopping the reply sends `notifications/cancelled` for every call still open.
+- **Conversation id:** `tools/call` carries the chat's id in `_meta` as `io.github.domdus/conversation_id`, so a server (for example the agent-worker) can link its jobs to the chat.
+- An elicitation question during a long call still reaches the chat (Runtime agents); the time you take to answer does not count against the timeout.
+- Engine limits: Codex and Claude Code do not see progress through the proxy, so the Runtime gives them a limit just above the longest timeout (3660 s: Codex `tool_timeout_sec`, Claude Code `CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT`, unless you set it yourself) and the proxy enforces each connection's own. Cursor has no setting for it.
+
 ## Change History
 
 On by default, for cloud agents and Cursor.

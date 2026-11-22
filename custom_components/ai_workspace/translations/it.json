@@ -283,12 +283,14 @@
           "data": {
             "name": "Nome",
             "url": "Indirizzo",
-            "token": "Token"
+            "token": "Token",
+            "tool_timeout_sec": "Timeout chiamata strumento"
           },
           "data_description": {
             "name": "Un nome breve, ad esempio Directus. L'assistente lo usa per distinguere questa connessione dalle altre.",
             "url": "Indirizzo web (https://…). I server trovati vengono compilati automaticamente.",
-            "token": "Solo se quel server richiede una chiave. Lascia vuoto in modifica per conservare la chiave salvata."
+            "token": "Solo se quel server richiede una chiave. Lascia vuoto in modifica per conservare la chiave salvata.",
+            "tool_timeout_sec": "Secondi in cui una chiamata a uno strumento può durare senza risposta o messaggio di avanzamento prima di essere annullata (10–3600). Ogni messaggio di avanzamento del server fa ripartire il tempo."
           }
         }
       }

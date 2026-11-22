@@ -22,6 +22,8 @@ from .ollama_info import MIN_TOOL_WINDOW, OllamaModel, async_ollama_model
 from .local_time import house_zone, stamped_now, time_rule, with_local_offset
 from .tool_loading import LOAD_TOOLS, pick_tools, used_tool_names
 from .const import (
+    CONF_TOOL_TIMEOUT,
+    tool_timeout_seconds,
     MCP_HA_MCP,
     API_ANTHROPIC,
     API_AZURE,
@@ -124,6 +126,19 @@ SMALL_WINDOW = 32_000
 _MODE_OVERRIDE: ContextVar[str] = ContextVar("ai_workspace_mode_override", default="")
 # Tool limits of an agent task run (task_guard). None in a normal chat.
 _TOOL_POLICY: ContextVar[dict | None] = ContextVar("ai_workspace_tool_policy", default=None)
+# The chat this turn belongs to, sent with every MCP tools/call in _meta.
+_CONVERSATION: ContextVar[str] = ContextVar("ai_workspace_conversation", default="")
+
+
+def progress_text(params: dict[str, Any]) -> str:
+    """What the chat shows for an MCP notifications/progress: its message, else n/total."""
+    message = str(params.get("message") or "").strip()
+    if message:
+        return message[:200]
+    progress, total = params.get("progress"), params.get("total")
+    if isinstance(progress, (int, float)) and isinstance(total, (int, float)) and total > 0:
+        return f"{progress:g}/{total:g}"
+    return ""
 _MCP_CACHE_MAX = 32
 _MCP_CACHE = f"{DOMAIN}_mcp_cache"
 _LOCAL_TOOLS = {"catalog", "house-map", "web", "notes", "chats"}
@@ -390,12 +405,16 @@ class McpBundle:
     def names(self) -> list[str]:
         return list(self._clients)
 
-    async def call_tool(self, name: str, arguments: dict[str, Any] | None = None) -> Any:
+    async def call_tool(self, name: str, arguments: dict[str, Any] | None = None, **extra: Any) -> Any:
+        """extra (timeout, on_progress, conversation_id) only reaches real MCP connections."""
         route = self._routes.get(name)
         if route is None:
             raise McpError(f"No connection has a tool named {name}.")
         server, raw = route
-        return await self._clients[server].call_tool(raw, arguments or {})
+        client = self._clients[server]
+        if extra and isinstance(client, McpServer):
+            return await client.call_tool(raw, arguments or {}, **extra)
+        return await client.call_tool(raw, arguments or {})
 
 
 class McpServer:
@@ -409,6 +428,8 @@ class McpServer:
         self._client: Any = None
         self.tools: list[dict] = []
         self.expires = 0.0
+        # Seconds a tool call may stay silent (no answer, no progress); set per connection.
+        self.tool_timeout: int | None = None
 
     async def open(self) -> None:
         if self._kind == MCP_COOLVER:
@@ -420,15 +441,28 @@ class McpServer:
         self._client = client
         self.expires = time.monotonic() + _MCP_TTL
 
-    async def call_tool(self, name: str, arguments: dict[str, Any] | None = None) -> Any:
+    async def _call(self, name: str, arguments: dict[str, Any], extra: dict[str, Any]) -> Any:
+        client = self._client
+        if isinstance(client, McpHttpClient):
+            options = {key: value for key, value in extra.items() if key in {"on_progress", "conversation_id"}}
+            options["timeout"] = extra.get("timeout") or self.tool_timeout
+            try:
+                return await client.call_tool(name, arguments, **options)
+            finally:
+                if client.tools_changed:
+                    # notifications/tools/list_changed: list the tools again on the next turn.
+                    self.expires = 0.0
+        return await client.call_tool(name, arguments)
+
+    async def call_tool(self, name: str, arguments: dict[str, Any] | None = None, **extra: Any) -> Any:
         try:
-            return await self._client.call_tool(name, arguments or {})
+            return await self._call(name, arguments or {}, extra)
         except McpError as exc:
             # Streamable HTTP answers 404 (or 400) once the server forgot our session.
             if exc.status not in {400, 404}:
                 raise
         await self.open()
-        return await self._client.call_tool(name, arguments or {})
+        return await self._call(name, arguments or {}, extra)
 
 
 async def async_mcp_server(
@@ -994,6 +1028,7 @@ class ApiProvider:
             kind = self._server_kind(name, admin)
             try:
                 server = await async_mcp_server(self.hass, http, kind, url, dict(cfg.get("headers") or {}))
+                server.tool_timeout = tool_timeout_seconds(cfg.get(CONF_TOOL_TIMEOUT))
             except _ERRORS as exc:
                 reason = self._public(exc)
                 if kind == MCP_HA_MCP:
@@ -1026,8 +1061,10 @@ class ApiProvider:
         bundle.finish()
         return bundle, skipped, first_error
 
-    async def _invoke_tool(self, mcp, name: str, args: Any, on_tool: Callable | None):
+    async def _invoke_tool(self, mcp, name: str, args: Any, on_tool: Callable | None, extra: dict | None = None):
         payload = args if isinstance(args, dict) else {}
+        # Progress, timeout and conversation id are for real MCP connections (through McpBundle).
+        extra = dict(extra or {}) if isinstance(mcp, McpBundle) else {}
         original = mcp.original_name(name)
         refused = task_refusal(original, payload, _TOOL_POLICY.get())
         if refused:
@@ -1046,15 +1083,47 @@ class ApiProvider:
             logger.debug("Added the house's UTC offset to the times in %s", name)
             payload = timed
         if on_tool is None:
-            result = await mcp.call_tool(name, payload)
+            result = await (mcp.call_tool(name, payload, **extra) if extra else mcp.call_tool(name, payload))
         else:
 
             async def call(_tool_name: str, tool_args: dict) -> Any:
-                return await mcp.call_tool(name, tool_args)
+                return await (mcp.call_tool(name, tool_args, **extra) if extra else mcp.call_tool(name, tool_args))
 
             result = await on_tool(original, payload, call)
         note_guide(original, result if isinstance(result, str) else json.dumps(result, ensure_ascii=False, default=str))
         return result
+
+    async def _tool_steps(
+        self, mcp, name: str, args: Any, on_tool: Callable | None, outcome: dict[str, Any]
+    ) -> AsyncIterator[dict]:
+        """Run one tool call and yield its MCP progress for the chat; the result lands in outcome.
+
+        Stopping the chat cancels the call, and the MCP client tells the server (notifications/cancelled).
+        """
+        queue: asyncio.Queue = asyncio.Queue()
+
+        def on_progress(params: dict[str, Any]) -> None:
+            text = progress_text(params)
+            if text:
+                queue.put_nowait({"text": text, "progress": params.get("progress"), "total": params.get("total")})
+
+        extra = {"on_progress": on_progress, "conversation_id": _CONVERSATION.get()}
+        task = asyncio.ensure_future(self._invoke_tool(mcp, name, args, on_tool, extra))
+        try:
+            while True:
+                getter = asyncio.ensure_future(queue.get())
+                done, _pending = await asyncio.wait({task, getter}, return_when=asyncio.FIRST_COMPLETED)
+                if getter in done:
+                    step = getter.result()
+                    yield {"type": "tool_progress", "name": name, **step}
+                else:
+                    getter.cancel()
+                if task in done:
+                    break
+        finally:
+            if not task.done():
+                task.cancel()
+        outcome["result"] = task.result()
 
     async def send(
         self,
@@ -1076,6 +1145,7 @@ class ApiProvider:
         tool_policy: limits of an agent task run (see task_guard); the model never sees refused tools.
         """
         _TOOL_POLICY.set(dict(tool_policy) if tool_policy else None)
+        _CONVERSATION.set(str(getattr(session, "id", "") or ""))
         origin = str(frontend_origin or "").strip()
         language = str(language or "")
         pictures = list(images or [])
@@ -1312,7 +1382,10 @@ class ApiProvider:
                     yield {"type": "tool", "name": name, "phase": "start", "text": f"Calling {label}..."}
                     worker = None
                     try:
-                        result = await self._invoke_tool(mcp, name, args, on_tool)
+                        outcome: dict[str, Any] = {}
+                        async for step in self._tool_steps(mcp, name, args, on_tool, outcome):
+                            yield step
+                        result = outcome["result"]
                         # Read before shortening: the worker's usage sits in the full result.
                         worker = worker_usage_event(mcp.original_name(name), args, result)
                         body = self._tool_body(result, name)
@@ -1503,7 +1576,10 @@ class ApiProvider:
                     yield {"type": "tool", "name": name, "phase": "start", "text": f"Calling {label}..."}
                     worker = None
                     try:
-                        result = await self._invoke_tool(mcp, name, args, on_tool)
+                        outcome: dict[str, Any] = {}
+                        async for step in self._tool_steps(mcp, name, args, on_tool, outcome):
+                            yield step
+                        result = outcome["result"]
                         # Read before shortening: the worker's usage sits in the full result.
                         worker = worker_usage_event(mcp.original_name(name), args, result)
                         body = self._tool_body(result, name)

@@ -13,6 +13,10 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
 from .const import (
+    CONF_TOOL_TIMEOUT,
+    TOOL_TIMEOUT_MAX_SECONDS,
+    TOOL_TIMEOUT_MIN_SECONDS,
+    tool_timeout_seconds,
     APPROVAL_TIMEOUT_MAX_MINUTES,
     APPROVAL_TIMEOUT_MIN_MINUTES,
     CONF_APPROVAL_TIMEOUT_MINUTES,
@@ -243,6 +247,10 @@ CONNECTION_SCHEMA = vol.Schema(
         vol.Optional("url", default=""): cv.string,
         vol.Optional("token", default=""): cv.string,
         vol.Optional("primary", default=False): cv.boolean,
+        # Seconds one tool call may stay silent; MCP progress notifications start it again.
+        vol.Optional(CONF_TOOL_TIMEOUT): vol.All(
+            vol.Coerce(int), vol.Range(min=TOOL_TIMEOUT_MIN_SECONDS, max=TOOL_TIMEOUT_MAX_SECONDS)
+        ),
     }
 )
 
@@ -342,6 +350,7 @@ def connection_payload(row: dict[str, Any], *, primary: bool) -> dict[str, Any]:
             "token": str(row.get("token") or "").strip(),
             CONF_MCP_KIND: kind,
             "primary": primary,
+            CONF_TOOL_TIMEOUT: tool_timeout_seconds(row.get(CONF_TOOL_TIMEOUT)),
         },
     }
 

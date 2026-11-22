@@ -283,12 +283,14 @@
           "data": {
             "name": "Název",
             "url": "Adresa",
-            "token": "Token"
+            "token": "Token",
+            "tool_timeout_sec": "Časový limit volání nástroje"
           },
           "data_description": {
             "name": "Krátký název, například Directus. Asistent podle něj odliší toto připojení od ostatních.",
             "url": "Webová adresa (https://…). Nalezené servery se vyplní automaticky.",
-            "token": "Jen když ten server chce klíč. Při úpravě nechte prázdné, aby se zachoval uložený klíč."
+            "token": "Jen když ten server chce klíč. Při úpravě nechte prázdné, aby se zachoval uložený klíč.",
+            "tool_timeout_sec": "Počet sekund, po které může volání nástroje běžet bez odpovědi nebo zprávy o průběhu, než se zruší (10–3600). Každá zpráva o průběhu od serveru spustí čas znovu."
           }
         }
       }

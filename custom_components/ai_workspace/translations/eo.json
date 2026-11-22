@@ -283,12 +283,14 @@
           "data": {
             "name": "Nomo",
             "url": "Adreso",
-            "token": "Ĵetono"
+            "token": "Ĵetono",
+            "tool_timeout_sec": "Templimo por ilo-vokoj"
           },
           "data_description": {
             "name": "Mallonga nomo, ekzemple Directus. La asistanto uzas ĝin por distingi ĉi tiun konekton de la aliaj.",
             "url": "Retadreso (https://…). Malkovritaj serviloj estas aŭtomate plenigitaj.",
-            "token": "Nur se tiu servilo petas ŝlosilon. Lasu malplena dum redaktado por teni la konservitan ŝlosilon."
+            "token": "Nur se tiu servilo petas ŝlosilon. Lasu malplena dum redaktado por teni la konservitan ŝlosilon.",
+            "tool_timeout_sec": "Sekundoj, dum kiuj ilo-voko rajtas daŭri sen respondo aŭ progres-mesaĝo antaŭ ol ĝi estas nuligita (10–3600). Ĉiu progres-mesaĝo de la servilo rekomencigas la tempon."
           }
         }
       }

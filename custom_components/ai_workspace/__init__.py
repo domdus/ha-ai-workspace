@@ -47,6 +47,8 @@ from .const import (
     CONF_UI_THEME,
     CONF_KEEP_CHATS,
     CONF_MCP_KIND,
+    CONF_TOOL_TIMEOUT,
+    tool_timeout_seconds,
     CONF_SPEAK_REPLIES,
     CONF_TTS_NATURAL,
     CONF_STT_ENGINE,
@@ -142,6 +144,7 @@ def mcp_rows(hass: HomeAssistant, entry: ConfigEntry) -> list[dict]:
                 "token": str(raw.get("token") or "").strip(),
                 "kind": kind,
                 "primary": bool(raw.get("primary")),
+                "timeout": tool_timeout_seconds(raw.get(CONF_TOOL_TIMEOUT)),
             }
         )
     if found and not any(row["primary"] for row in found):
@@ -175,6 +178,7 @@ async def _build_settings(hass: HomeAssistant, entry: ConfigEntry) -> Settings:
         primary["url"] if primary else "",
         primary["token"] if primary else "",
         extras,
+        primary["timeout"] if primary else None,
     )
     house_map = bool(data.get(CONF_HOUSE_MAP, False))
     notes = bool(data.get(CONF_NOTES, False))

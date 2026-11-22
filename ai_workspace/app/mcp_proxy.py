@@ -11,6 +11,8 @@ import json
 import logging
 import os
 import secrets
+import socket
+import threading
 import urllib.error
 import urllib.request
 from collections import OrderedDict
@@ -61,9 +63,206 @@ _MAX_UPSTREAMS = 64
 # fill it, so every later MCP call queued until the App restarted.
 _FORWARD_POOL = ThreadPoolExecutor(max_workers=32, thread_name_prefix="mcp-forward")
 # An answer streamed as server-sent events ends with the JSON-RPC response. Some
-# servers keep the stream open after it (pings), so stop there, and never wait
-# longer than this in total.
+# servers keep the stream open after it (pings), so stop there. A call may stay
+# silent (no answer, no notifications/progress) this long; progress starts it again.
 _ANSWER_DEADLINE = 300.0
+# Per connection "Tool call timeout" from Home Assistant (tool_timeout_sec), like Codex's.
+TOOL_TIMEOUT_KEY = "tool_timeout_sec"
+DEFAULT_TOOL_TIMEOUT = 120
+TOOL_TIMEOUT_MIN = 10
+TOOL_TIMEOUT_MAX = 3600
+# What engines (Codex tool_timeout_sec, Claude Code idle timeout) get as their own limit for
+# proxied servers: above the longest per-connection timeout, so the proxy's timer decides.
+ENGINE_TOOL_CEILING = TOOL_TIMEOUT_MAX + 60
+# MCP _meta key for the chat a tools/call belongs to (namespaced, MCP 2025-06-18 _meta rules).
+CONVERSATION_META = "io.github.domdus/conversation_id"
+# JSON-RPC error code for a request the client gave up on (as in the MCP SDKs).
+_TIMEOUT_CODE = -32001
+
+
+def clamp_tool_timeout(value: Any) -> int:
+    try:
+        seconds = int(float(value if value not in (None, "") else DEFAULT_TOOL_TIMEOUT))
+    except (TypeError, ValueError):
+        seconds = DEFAULT_TOOL_TIMEOUT
+    return max(TOOL_TIMEOUT_MIN, min(seconds, TOOL_TIMEOUT_MAX))
+
+
+def progress_text(params: dict[str, Any]) -> str:
+    """What the chat shows for an MCP notifications/progress: its message, else n/total."""
+    message = str(params.get("message") or "").strip()
+    if message:
+        return message[:200]
+    progress, total = params.get("progress"), params.get("total")
+    if isinstance(progress, (int, float)) and isinstance(total, (int, float)) and total > 0:
+        return f"{progress:g}/{total:g}"
+    return ""
+
+
+class Progress:
+    """Progress tokens of one forwarded tools/call and where their notifications go.
+
+    tokens: token -> True when the proxy added it (the agent never asked, so it never sees them).
+    """
+
+    def __init__(self, tokens: dict[str, bool], notify: Any = None) -> None:
+        self.tokens = {str(key): bool(value) for key, value in tokens.items()}
+        self.notify = notify
+
+    def seen(self, data: bytes) -> tuple[bool, bool]:
+        """(progress for this call, the event holds only progress the proxy asked for)."""
+        try:
+            payload = json.loads(data)
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return False, False
+        messages = payload if isinstance(payload, list) else [payload]
+        matched = False
+        own_only = bool(messages)
+        for message in messages:
+            params = message.get("params") if isinstance(message, dict) else None
+            token = str(params.get("progressToken")) if isinstance(params, dict) else ""
+            if (
+                not isinstance(message, dict)
+                or message.get("method") != "notifications/progress"
+                or token not in self.tokens
+            ):
+                own_only = False
+                continue
+            matched = True
+            if not self.tokens[token]:
+                own_only = False
+            if self.notify is not None:
+                try:
+                    self.notify(dict(params))
+                except Exception:  # noqa: BLE001 - showing progress must never break the call
+                    logger.debug("mcp proxy progress note failed", exc_info=True)
+        return matched, matched and own_only
+
+
+class Flight:
+    """One forwarded request that is still open, so a stopped chat can cancel it upstream."""
+
+    def __init__(self, actor: str, body: bytes) -> None:
+        self.actor = actor
+        self.cancellable = _cancellable(body)
+        self.pending: set[str] = set()
+        self.reply: Any = None
+        self.resp: Any = None
+        self.cancelled = ""
+        self._lock = threading.Lock()
+
+    def attach(self, reply: Any, pending: set[str]) -> None:
+        self.reply = reply
+        self.pending = pending
+
+    def cancel(self, reason: str) -> bool:
+        """Send notifications/cancelled for every open request in it (once). True when sent."""
+        with self._lock:
+            if self.cancelled or not self.cancellable or self.reply is None:
+                return False
+            self.cancelled = reason
+            ids = list(self.pending)
+        for raw in ids:
+            try:
+                request_id = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
+            self.reply(cancel_message(request_id, reason))
+            logger.info("mcp proxy cancelled request %s upstream: %s", raw, reason)
+        _wake(self.resp)
+        return bool(ids)
+
+
+def cancel_message(request_id: Any, reason: str) -> dict[str, Any]:
+    return {
+        "jsonrpc": "2.0",
+        "method": "notifications/cancelled",
+        "params": {"requestId": request_id, "reason": reason},
+    }
+
+
+def _cancellable(body: bytes) -> bool:
+    """initialize must never be cancelled (MCP); everything else with an id may be."""
+    try:
+        payload = json.loads(body or b"null")
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return False
+    messages = payload if isinstance(payload, list) else [payload]
+    return any(
+        isinstance(message, dict) and message.get("id") is not None and message.get("method") not in {None, "initialize"}
+        for message in messages
+    )
+
+
+def _wake(resp: Any) -> None:
+    """Unblock a forward thread that waits on this response's socket."""
+    if resp is None:
+        return
+    raw = getattr(getattr(resp, "fp", None), "raw", None)
+    sock = getattr(raw, "_sock", None)
+    try:
+        if sock is not None:
+            sock.shutdown(socket.SHUT_RDWR)
+    except OSError:
+        pass
+
+
+STOPPED = "The chat was stopped; the call was cancelled."
+
+
+def timeout_answer(body: bytes, seconds: float, ids: set[str] | None = None, message: str = "") -> bytes:
+    """JSON-RPC errors for the requests in body the proxy stopped waiting for."""
+    wanted = set(ids) if ids is not None else _request_ids(body)
+    errors = []
+    for raw in sorted(wanted):
+        try:
+            request_id = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        errors.append(
+            {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "error": {
+                    "code": _TIMEOUT_CODE,
+                    "message": message
+                    or (
+                        f"The MCP server sent no answer and no progress for {seconds:g} s; "
+                        "the call was cancelled."
+                    ),
+                },
+            }
+        )
+    payload: Any = errors[0] if len(errors) == 1 else errors
+    return json.dumps(payload, ensure_ascii=False).encode()
+
+
+def with_call_meta(body: bytes, conversation_id: str = "") -> tuple[bytes, Progress | None]:
+    """A tools/call with a progressToken (added when the agent sent none) and the chat's id in _meta.
+
+    Returns the body to send and its progress tokens; the body is unchanged when it is not one
+    JSON tools/call.
+    """
+    try:
+        message = json.loads((body or b"").strip() or b"null")
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return body, None
+    if not isinstance(message, dict) or message.get("method") != "tools/call":
+        return body, None
+    params = dict(message.get("params")) if isinstance(message.get("params"), dict) else {}
+    meta = dict(params.get("_meta")) if isinstance(params.get("_meta"), dict) else {}
+    token = meta.get("progressToken")
+    if isinstance(token, (str, int)) and not isinstance(token, bool) and str(token):
+        tokens = {str(token): False}
+    else:
+        token = f"aiw-{secrets.token_hex(8)}"
+        meta["progressToken"] = token
+        tokens = {token: True}
+    if conversation_id and CONVERSATION_META not in meta:
+        meta[CONVERSATION_META] = str(conversation_id)
+    params["_meta"] = meta
+    message["params"] = params
+    return json.dumps(message, ensure_ascii=False).encode(), Progress(tokens)
 
 
 class McpProxy:
@@ -82,6 +281,54 @@ class McpProxy:
     def policies(self) -> OrderedDict[str, dict[str, Any]]:
         """Tool limits per chat while an agent task runs in it (task_guard)."""
         return self.__dict__.setdefault("_policies", OrderedDict())
+
+    @property
+    def flights(self) -> dict[str, set[Flight]]:
+        """Requests each chat's agent has open upstream right now."""
+        return self.__dict__.setdefault("_flights", {})
+
+    @property
+    def listeners(self) -> dict[str, Any]:
+        """Per chat: where MCP progress of its tool calls goes (the running chat stream)."""
+        return self.__dict__.setdefault("_listeners", {})
+
+    def watch_progress(self, actor: str, notify: Any) -> None:
+        actor = str(actor or "").strip()
+        if actor:
+            self.listeners[actor] = notify
+
+    def unwatch_progress(self, actor: str, notify: Any = None) -> None:
+        actor = str(actor or "").strip()
+        if notify is None or self.listeners.get(actor) is notify:
+            self.listeners.pop(actor, None)
+
+    def note_progress(self, actor: str, event: dict[str, Any]) -> None:
+        notify = self.listeners.get(str(actor or ""))
+        if notify is not None:
+            notify(event)
+
+    def take_off(self, flight: Flight) -> None:
+        found = self.flights.get(flight.actor)
+        if found is not None:
+            found.discard(flight)
+            if not found:
+                self.flights.pop(flight.actor, None)
+
+    def board(self, flight: Flight) -> None:
+        if flight.actor:
+            self.flights.setdefault(flight.actor, set()).add(flight)
+
+    def cancel_session(self, actor: str, reason: str = "The user stopped the chat.") -> int:
+        """notifications/cancelled for every request this chat still has open upstream."""
+        sent = 0
+        for flight in list(self.flights.get(str(actor or ""), ())):
+            if flight.cancel(reason):
+                sent += 1
+        return sent
+
+    def tool_timeout(self, digest: str) -> int:
+        upstream = self.upstreams.get(digest) or {}
+        return clamp_tool_timeout(upstream.get("timeout"))
 
     def note_worker_usage(self, actor: str, event: dict[str, Any] | None) -> None:
         actor = str(actor or "").strip()
@@ -122,12 +369,17 @@ class McpProxy:
             url = str(cfg.get("url") or "")
             kind = str(cfg.get("type") or "")
             if not url or kind == "stdio" or "/api/mcp-proxy/" in url or "/api/mcp-fit/" in url:
-                wrapped[name] = cfg
+                wrapped[name] = {key: value for key, value in cfg.items() if key != TOOL_TIMEOUT_KEY}
                 continue
             digest = hashlib.sha256(
                 json.dumps({"url": url, "headers": cfg.get("headers") or {}}, sort_keys=True).encode()
             ).hexdigest()[:20]
-            self.upstreams[digest] = {"url": url, "headers": dict(cfg.get("headers") or {}), "name": str(name)}
+            self.upstreams[digest] = {
+                "url": url,
+                "headers": dict(cfg.get("headers") or {}),
+                "name": str(name),
+                "timeout": clamp_tool_timeout(cfg.get(TOOL_TIMEOUT_KEY)),
+            }
             self.upstreams.move_to_end(digest)
             while len(self.upstreams) > _MAX_UPSTREAMS:
                 self.upstreams.popitem(last=False)
@@ -136,6 +388,8 @@ class McpProxy:
             if actor:
                 forwarded["url"] += f"/{actor}"
             forwarded.pop("headers", None)
+            # The proxy keeps the timeout (from the last progress); engines only get a generous ceiling.
+            forwarded.pop(TOOL_TIMEOUT_KEY, None)
             wrapped[name] = forwarded
         return wrapped
 
@@ -392,6 +646,33 @@ async def proxy_mcp(request: Request, secret: str, digest: str, actor: str = "")
     cards = Target(callback_base, callback_key)
     server_name = str(upstream.get("name") or "MCP")
 
+    progress: Progress | None = None
+    silence = registry.tool_timeout(digest)
+    if tool_call is not None:
+        # Standard MCP: ask for progress (notifications/progress) and say which chat the call is for.
+        body, progress = with_call_meta(body, actor)
+        if progress is not None:
+            tool_name = tool_call[0]
+
+            def on_progress(params: dict[str, Any]) -> None:
+                text = progress_text(params)
+                if text:
+                    registry.note_progress(
+                        actor,
+                        {
+                            "type": "tool_progress",
+                            "name": tool_name,
+                            "text": text,
+                            "progress": params.get("progress"),
+                            "total": params.get("total"),
+                        },
+                    )
+
+            progress.notify = on_progress
+    flight = Flight(actor, body) if request.method.upper() == "POST" else None
+    if flight is not None:
+        registry.board(flight)
+
     def on_request(message: dict[str, Any]) -> dict[str, Any] | None:
         """Answer server requests the agent must not see. Runs in the forward thread."""
         if message.get("method") != ELICIT_METHOD:
@@ -410,14 +691,32 @@ async def proxy_mcp(request: Request, secret: str, digest: str, actor: str = "")
         status, response_headers, raw = await loop.run_in_executor(
             _FORWARD_POOL,
             functools.partial(
-                _forward, target, headers, body, request.method, label=digest[:8], on_request=on_request
+                _forward,
+                target,
+                headers,
+                body,
+                request.method,
+                silence,
+                deadline=float(silence),
+                label=digest[:8],
+                on_request=on_request,
+                progress=progress,
+                flight=flight,
             ),
         )
+    except asyncio.CancelledError:
+        # The agent dropped its request (stopped turn): the server hears it too.
+        if flight is not None:
+            _FORWARD_POOL.submit(flight.cancel, "The client stopped waiting.")
+        raise
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         if activity_token:
             await _activity_commit(request, activity_token, ok=False, who=registry.actor(actor))
         logger.warning("mcp proxy failed: %s", exc)
         raise HTTPException(status_code=502, detail="The MCP server did not answer.") from exc
+    finally:
+        if flight is not None:
+            registry.take_off(flight)
     content_type = response_headers.get("Content-Type") or response_headers.get("content-type") or ""
     if activity_token:
         await _activity_commit(request, activity_token, ok=tool_response_ok(status, raw), who=registry.actor(actor))
@@ -650,30 +949,61 @@ def _forward(
     deadline: float = _ANSWER_DEADLINE,
     label: str = "",
     on_request: Any = None,
+    progress: Progress | None = None,
+    flight: Flight | None = None,
 ) -> tuple[int, dict[str, str], bytes]:
+    """Forward one MCP POST. deadline: seconds the server may stay silent (progress starts it again).
+
+    With a flight, a request that times out (or that a stopped chat cancels) gets
+    notifications/cancelled upstream, and the agent gets a JSON-RPC error for it.
+    """
     data = body if method.upper() not in {"GET", "HEAD"} else None
     req = urllib.request.Request(url, data=data, headers=headers, method=method.upper())
+    ids = _request_ids(body)
+    pending = set(ids)
+    session = [_header(headers, "mcp-session-id")]
+
+    def reply(message: dict[str, Any]) -> None:
+        _reply_upstream(url, headers, message, session[0])
+
+    if flight is not None:
+        flight.attach(reply, pending)
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
+            if flight is not None:
+                flight.resp = resp
             content_type = str(resp.headers.get("Content-Type") or "").lower()
+            session[0] = str(resp.headers.get("Mcp-Session-Id") or "") or session[0]
             if "text/event-stream" in content_type:
-                session = str(resp.headers.get("Mcp-Session-Id") or "")
-
-                def reply(message: dict[str, Any]) -> None:
-                    _reply_upstream(url, headers, message, session)
-
                 raw = _read_answer_events(
                     resp,
-                    _request_ids(body),
+                    ids,
                     time.monotonic() + deadline,
                     label,
                     on_request=on_request,
                     reply=reply,
+                    silence=deadline,
+                    progress=progress,
+                    pending=pending,
+                    flight=flight,
                 )
                 return resp.status, dict(resp.headers), raw
             return resp.status, dict(resp.headers), resp.read()
     except urllib.error.HTTPError as exc:
         return exc.code, dict(exc.headers), exc.read()
+    except (TimeoutError, OSError, ValueError, AttributeError) as exc:
+        # TimeoutError: the server stayed silent for the whole timeout. The others: a stopped
+        # chat closed the socket under us.
+        if flight is None or not flight.cancellable or not pending:
+            raise
+        if flight.cancelled and flight.cancelled != "timeout":
+            logger.info("mcp proxy %s: request cancelled (%s)", label or "?", flight.cancelled)
+            return 200, {"Content-Type": "application/json"}, timeout_answer(body, 0, pending, STOPPED)
+        if not isinstance(exc, TimeoutError) and not flight.cancelled:
+            raise
+        logger.warning("mcp proxy %s: no answer or progress in %.0fs, cancelling", label or "?", deadline)
+        flight.cancel("timeout")
+        return 200, {"Content-Type": "application/json"}, timeout_answer(body, deadline, pending)
 
 
 def _request_ids(body: bytes) -> set[str]:
@@ -755,19 +1085,41 @@ def _read_answer_events(
     *,
     on_request: Any = None,
     reply: Any = None,
+    silence: float | None = None,
+    progress: Progress | None = None,
+    pending: set[str] | None = None,
+    flight: Flight | None = None,
 ) -> bytes:
     """Read an event stream until every request in it has its answer, the stream ends, or the deadline.
 
     on_request answers server requests (elicitation) in the stream; those events never reach the
-    agent, and the time the user takes does not count against the deadline.
+    agent, and the time the user takes does not count against the deadline. Each
+    notifications/progress for the call starts the deadline again (``silence`` seconds); progress
+    the proxy asked for itself is not passed on. At the deadline the open requests are cancelled
+    upstream (notifications/cancelled) and the agent gets a JSON-RPC error for them.
     """
     out = bytearray()
-    pending = set(ids)
+    if pending is None:
+        pending = set(ids)
+    else:
+        pending.clear()
+        pending.update(ids)
     lines: list[bytes] = []
     event: list[bytes] = []
+    # The agent's error for requests the proxy gave up on, after everything read so far.
+    closing = b""
     while True:
+        if flight is not None and flight.cancelled:
+            if pending:
+                closing = timeout_answer(b"", 0, pending, STOPPED)
+            break
         if time.monotonic() >= deadline:
-            logger.warning("mcp proxy stopped waiting for MCP server %s: no answer in %.0fs", label or "?", _ANSWER_DEADLINE)
+            waited = silence if silence is not None else _ANSWER_DEADLINE
+            logger.warning("mcp proxy stopped waiting for MCP server %s: no answer or progress in %.0fs", label or "?", waited)
+            if pending:
+                if flight is not None:
+                    flight.cancel("timeout")
+                closing = timeout_answer(b"", waited, pending)
             break
         line = resp.readline()
         if not line:
@@ -784,6 +1136,12 @@ def _read_answer_events(
                     started = time.monotonic()
                     kept = _serve_requests(joined, on_request, reply)
                     deadline += time.monotonic() - started
+                if progress is not None:
+                    moved, own_only = progress.seen(joined)
+                    if moved:
+                        deadline = max(deadline, time.monotonic() + (silence if silence is not None else _ANSWER_DEADLINE))
+                    if own_only and kept is None:
+                        kept = b""
                 out += b"".join(lines) if kept is None else kept
                 _answered(joined, pending)
                 event = []
@@ -795,4 +1153,6 @@ def _read_answer_events(
     out += b"".join(lines)
     if event and ids and pending:
         _answered(b"\n".join(event), pending)
+    if closing:
+        out += b"\n\ndata: " + closing + b"\n\n"
     return bytes(out)

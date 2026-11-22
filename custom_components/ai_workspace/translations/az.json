@@ -283,12 +283,14 @@
           "data": {
             "name": "Ad",
             "url": "Ünvan",
-            "token": "Token"
+            "token": "Token",
+            "tool_timeout_sec": "Alət çağırışı üçün vaxt limiti"
           },
           "data_description": {
             "name": "Qısa ad, məsələn Directus. Köməkçi bu bağlantını digərlərindən ayırmaq üçün ondan istifadə edir.",
             "url": "Veb ünvanı (https://…). Tapılan serverlər avtomatik doldurulur.",
-            "token": "Yalnız o server açar istəyəndə. Redaktə edərkən saxlanmış açarı saxlamaq üçün boş buraxın."
+            "token": "Yalnız o server açar istəyəndə. Redaktə edərkən saxlanmış açarı saxlamaq üçün boş buraxın.",
+            "tool_timeout_sec": "Alət çağırışının cavab və ya irəliləyiş mesajı olmadan ləğv edilənədək işləyə biləcəyi saniyələr (10–3600). Serverdən gələn hər irəliləyiş mesajı vaxtı yenidən başladır."
           }
         }
       }

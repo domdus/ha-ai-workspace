@@ -1321,6 +1321,13 @@ h1 {
   color: var(--primary-text-color);
 }
 
+/* MCP progress of a running tool (notifications/progress). */
+.tools-list span .chip-progress {
+  margin-inline-start: var(--ha-space-1);
+  color: var(--secondary-text-color);
+  font-size: inherit;
+}
+
 .tools.busy .tools-summary::after,
 .tools-list span.busy::after {
   content: "";

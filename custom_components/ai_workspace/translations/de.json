@@ -283,12 +283,14 @@
           "data": {
             "name": "Name",
             "url": "Adresse",
-            "token": "Token"
+            "token": "Token",
+            "tool_timeout_sec": "Zeitlimit für Tool-Aufrufe"
           },
           "data_description": {
             "name": "Ein kurzer Name, zum Beispiel Directus. Der Assistent unterscheidet daran diese Verbindung von den anderen.",
             "url": "Webadresse (https://…). Gefundene Server werden automatisch eingetragen.",
-            "token": "Nur wenn dieser Server einen Schlüssel verlangt. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten."
+            "token": "Nur wenn dieser Server einen Schlüssel verlangt. Beim Bearbeiten leer lassen, um den gespeicherten Schlüssel zu behalten.",
+            "tool_timeout_sec": "Sekunden, die ein Tool-Aufruf ohne Antwort oder Fortschrittsmeldung laufen darf, bevor er abgebrochen wird (10–3600). Jede Fortschrittsmeldung des Servers startet die Zeit neu."
           }
         }
       }

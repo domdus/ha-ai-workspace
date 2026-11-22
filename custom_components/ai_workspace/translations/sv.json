@@ -283,12 +283,14 @@
           "data": {
             "name": "Namn",
             "url": "Adress",
-            "token": "Token"
+            "token": "Token",
+            "tool_timeout_sec": "Tidsgräns för verktygsanrop"
           },
           "data_description": {
             "name": "Ett kort namn, till exempel Directus. Assistenten använder det för att skilja den här anslutningen från de andra.",
             "url": "Webbadress (https://…). Upptäckta servrar fylls i automatiskt.",
-            "token": "Bara om den servern ber om en nyckel. Lämna tomt vid redigering för att behålla den sparade nyckeln."
+            "token": "Bara om den servern ber om en nyckel. Lämna tomt vid redigering för att behålla den sparade nyckeln.",
+            "tool_timeout_sec": "Sekunder ett verktygsanrop får pågå utan svar eller förloppsmeddelande innan det avbryts (10–3600). Varje förloppsmeddelande från servern startar tiden om."
           }
         }
       }

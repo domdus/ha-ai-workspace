@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.2b2
+
+**Long MCP tool calls follow the MCP standard: live progress, a timeout per connection, Stop cancels.**
+
+- **Progress:** every MCP `tools/call` asks for progress (`_meta.progressToken`). The server's `notifications/progress` messages show live as the tool step's status in the chat, for cloud agents and for Cursor, Claude and Codex through the Runtime.
+- **Tool call timeout** per MCP connection (the connection's Reconfigure form, all 15 languages): 120 s by default, 10 to 3600. It counts from the last progress message. When it runs out the server gets `notifications/cancelled` and the agent an error.
+- **Stop** sends `notifications/cancelled` for every MCP call still open.
+- **Conversation id:** `tools/call` carries the chat's id in `_meta` (`io.github.domdus/conversation_id`); the agent-worker links its jobs to the chat with it.
+- Codex no longer gives up on MCP calls after its own 60 s, and Claude Code not after 5 silent minutes: the Runtime's proxy enforces the connection's timeout instead.
+- Cloud agents read every page of a server's tool list (`nextCursor`) and answer the server's `ping`.
+- Update the Runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.6.2b2`) for progress, timeout and Stop on Runtime agents; cloud agents get them with the integration alone. See [docs/mcp.md](../docs/mcp.md#long-tool-calls-progress-timeout-stop).
+
 ## 1.6.2b1
 
 **Tasks page: edit a task in its own card.**

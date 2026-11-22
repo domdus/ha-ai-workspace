@@ -6,6 +6,9 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.selector import (
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
     TextSelector,
     TextSelectorConfig,
     TextSelectorType,
@@ -13,6 +16,10 @@ from homeassistant.helpers.selector import (
 
 from .const import (
     CONF_MCP_KIND,
+    CONF_TOOL_TIMEOUT,
+    DEFAULT_TOOL_TIMEOUT_SECONDS,
+    TOOL_TIMEOUT_MAX_SECONDS,
+    TOOL_TIMEOUT_MIN_SECONDS,
     MCP_CONNECTION_TITLES,
     MCP_COOLVER,
     MCP_CUSTOM,
@@ -20,12 +27,22 @@ from .const import (
     MCP_HA_MCP,
     SUBENTRY_MCP,
     mcp_connection_menu,
+    tool_timeout_seconds,
 )
 from .mcp_config import server_slug
 from .mcp_resolve import async_detect_mcp_kinds, async_resolve_mcp_url, default_mcp_url, infer_mcp_kind
 
 _URL = TextSelector(TextSelectorConfig(type=TextSelectorType.URL))
 _TOKEN = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
+_TIMEOUT = NumberSelector(
+    NumberSelectorConfig(
+        min=TOOL_TIMEOUT_MIN_SECONDS,
+        max=TOOL_TIMEOUT_MAX_SECONDS,
+        step=1,
+        mode=NumberSelectorMode.BOX,
+        unit_of_measurement="s",
+    )
+)
 
 
 class McpConnectionFlow(config_entries.ConfigSubentryFlow):
@@ -75,6 +92,8 @@ class McpConnectionFlow(config_entries.ConfigSubentryFlow):
         }
         if kind in {MCP_CUSTOM, MCP_COOLVER} or str(current.get("token") or "").strip():
             fields[vol.Optional("token", default="")] = _TOKEN
+        timeout = tool_timeout_seconds(current.get(CONF_TOOL_TIMEOUT))
+        fields[vol.Optional(CONF_TOOL_TIMEOUT, default=timeout)] = _TIMEOUT
         return vol.Schema(fields)
 
     async def _defaults(self) -> dict:
@@ -83,6 +102,7 @@ class McpConnectionFlow(config_entries.ConfigSubentryFlow):
             return {
                 "name": current.title,
                 "url": data.get("url") or "",
+                CONF_TOOL_TIMEOUT: tool_timeout_seconds(data.get(CONF_TOOL_TIMEOUT)),
             }
         kind = self._kind or MCP_CUSTOM
         url = ""
@@ -92,6 +112,7 @@ class McpConnectionFlow(config_entries.ConfigSubentryFlow):
         return {
             "name": MCP_CONNECTION_TITLES.get(kind, ""),
             "url": url,
+            CONF_TOOL_TIMEOUT: DEFAULT_TOOL_TIMEOUT_SECONDS,
         }
 
     async def async_step_user(self, user_input=None):
@@ -154,7 +175,13 @@ class McpConnectionFlow(config_entries.ConfigSubentryFlow):
             if not errors:
                 if self._editing and not token:
                     token = previous_token
-                payload = {"name": slug, "url": url, "token": token, CONF_MCP_KIND: self._kind}
+                payload = {
+                    "name": slug,
+                    "url": url,
+                    "token": token,
+                    CONF_MCP_KIND: self._kind,
+                    CONF_TOOL_TIMEOUT: tool_timeout_seconds(user_input.get(CONF_TOOL_TIMEOUT)),
+                }
                 if self._editing:
                     current, data = self._saved()
                     if data.get("primary"):

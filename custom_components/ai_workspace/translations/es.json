@@ -283,12 +283,14 @@
           "data": {
             "name": "Nombre",
             "url": "Dirección",
-            "token": "Token"
+            "token": "Token",
+            "tool_timeout_sec": "Tiempo límite de llamada a herramienta"
           },
           "data_description": {
             "name": "Un nombre corto, por ejemplo Directus. El asistente lo usa para distinguir esta conexión de las demás.",
             "url": "Dirección web (https://…). Los servidores encontrados se rellenan solos.",
-            "token": "Solo si ese servidor pide una clave. Déjalo vacío al editar para conservar la guardada."
+            "token": "Solo si ese servidor pide una clave. Déjalo vacío al editar para conservar la guardada.",
+            "tool_timeout_sec": "Segundos que una llamada a herramienta puede durar sin respuesta ni mensaje de progreso antes de cancelarse (10–3600). Cada mensaje de progreso del servidor reinicia el tiempo."
           }
         }
       }

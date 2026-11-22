@@ -283,12 +283,14 @@
           "data": {
             "name": "Name",
             "url": "Address",
-            "token": "Token"
+            "token": "Token",
+            "tool_timeout_sec": "Tool call timeout"
           },
           "data_description": {
             "name": "A short name, such as Directus. The assistant uses it to tell this connection from the others.",
             "url": "Web address (https://…). Discovered servers are filled in automatically.",
-            "token": "Only if that server asks for a key. Leave empty when editing to keep the saved key."
+            "token": "Only if that server asks for a key. Leave empty when editing to keep the saved key.",
+            "tool_timeout_sec": "Seconds a tool call may run without an answer or a progress message before it is cancelled (10–3600). Each progress message from the server starts the time again."
           }
         }
       }

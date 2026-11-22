@@ -39,6 +39,21 @@ def approval_timeout_minutes(value) -> int:
     return max(APPROVAL_TIMEOUT_MIN_MINUTES, min(minutes, APPROVAL_TIMEOUT_MAX_MINUTES))
 
 
+# How long one MCP tool call may stay silent, per connection (MCP notifications/progress start it again).
+CONF_TOOL_TIMEOUT = "tool_timeout_sec"
+DEFAULT_TOOL_TIMEOUT_SECONDS = 120
+TOOL_TIMEOUT_MIN_SECONDS = 10
+TOOL_TIMEOUT_MAX_SECONDS = 3600
+
+
+def tool_timeout_seconds(value) -> int:
+    try:
+        seconds = int(float(value if value not in (None, "") else DEFAULT_TOOL_TIMEOUT_SECONDS))
+    except (TypeError, ValueError):
+        seconds = DEFAULT_TOOL_TIMEOUT_SECONDS
+    return max(TOOL_TIMEOUT_MIN_SECONDS, min(seconds, TOOL_TIMEOUT_MAX_SECONDS))
+
+
 def activity_restore_expired(created_at: str, *, days: int, now=None) -> bool:
     """True when Rollback for this row has passed the configured TTL."""
     from datetime import datetime, timedelta, timezone

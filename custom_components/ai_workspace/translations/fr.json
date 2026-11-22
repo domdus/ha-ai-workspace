@@ -283,12 +283,14 @@
           "data": {
             "name": "Nom",
             "url": "Adresse",
-            "token": "Jeton"
+            "token": "Jeton",
+            "tool_timeout_sec": "Délai d'appel d'outil"
           },
           "data_description": {
             "name": "Un nom court, par exemple Directus. L'assistant s'en sert pour distinguer cette connexion des autres.",
             "url": "Adresse web (https://…). Les serveurs trouvés sont remplis automatiquement.",
-            "token": "Seulement si ce serveur demande une clé. Laissez vide à la modification pour garder la clé enregistrée."
+            "token": "Seulement si ce serveur demande une clé. Laissez vide à la modification pour garder la clé enregistrée.",
+            "tool_timeout_sec": "Secondes pendant lesquelles un appel d'outil peut s'exécuter sans réponse ni message de progression avant d'être annulé (10–3600). Chaque message de progression du serveur relance le délai."
           }
         }
       }

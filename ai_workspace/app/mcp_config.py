@@ -113,6 +113,10 @@ def server_from_request(name: str, raw: Any) -> dict[str, Any]:
         if not isinstance(headers, dict) or not all(isinstance(val, str) for val in headers.values()):
             raise McpConfigError(f"{name}.headers must be an object of strings")
         server["headers"] = {str(key): val for key, val in headers.items()}
+    timeout = raw.get("tool_timeout_sec")
+    if isinstance(timeout, (int, float)) and not isinstance(timeout, bool) and timeout > 0:
+        # Home Assistant's per-connection "Tool call timeout"; the MCP proxy enforces it.
+        server["tool_timeout_sec"] = int(timeout)
     return server
 
 

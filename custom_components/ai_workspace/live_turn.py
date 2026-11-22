@@ -35,6 +35,14 @@ class LiveTurn:
         if event.get("type") == "text" and last is not None and last.get("type") == "text":
             # One growing text event instead of thousands of small ones.
             self.events[-1] = {"type": "text", "delta": f"{last.get('delta') or ''}{event.get('delta') or ''}"}
+        elif (
+            event.get("type") == "tool_progress"
+            and last is not None
+            and last.get("type") == "tool_progress"
+            and last.get("name") == event.get("name")
+        ):
+            # Only the newest progress of a running tool matters to a page that comes back.
+            self.events[-1] = dict(event)
         else:
             self.events.append(dict(event))
         for queue in list(self._followers):
