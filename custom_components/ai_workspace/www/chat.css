@@ -1495,8 +1495,10 @@ h1 {
   background: var(--ha-color-form-background, var(--input-fill-color));
   border: 1px solid var(--ha-color-border-neutral-normal, var(--divider-color));
   border-radius: var(--ha-border-radius-3xl);
-  padding: var(--ha-space-1) var(--ha-space-1) var(--ha-space-1) var(--ha-space-4);
+  /* Buttons keep the same inset to the top, right and bottom edge of the pill. */
+  padding: var(--ai-composer-inset) var(--ai-composer-inset) var(--ai-composer-inset) var(--ha-space-4);
   transition: border-color 160ms ease, box-shadow 160ms ease;
+  --ai-composer-inset: calc(var(--ha-space-1, 4px) * 1.5);
 }
 
 .ui-theme-standard .composer-box:focus-within,
@@ -1516,6 +1518,7 @@ h1 {
   align-items: center;
   gap: var(--ha-space-1);
   flex: 0 0 auto;
+  min-width: 0;
 }
 
 /* Longer prompts: the text takes the full width, the buttons sit below it on the right. */
@@ -1858,13 +1861,14 @@ textarea:focus {
 }
 
 ha-button.send {
-  --ha-button-height: 36px;
+  --ha-button-height: var(--ai-composer-button, 36px);
   --ha-button-border-radius: 999px;
 }
 
 ha-button.send::part(base) {
-  width: 36px;
-  min-width: 36px;
+  width: var(--ai-composer-button, 36px);
+  min-width: var(--ai-composer-button, 36px);
+  height: var(--ai-composer-button, 36px);
   padding: 0;
   justify-content: center;
   align-items: center;
@@ -1892,23 +1896,32 @@ ha-button.send ha-icon {
   flex: 0 0 auto;
 }
 
-/* The HA composer keeps HA's own icon button size. */
-:where(.wrap:not(.composer-ha)) .mic {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  color: var(--secondary-text-color);
-  --ha-icon-button-size: 36px;
-  --mdc-icon-button-size: 36px;
+/* Attach, dictate and send: one size, centered, same gap. Specific enough to win over
+   page-wide icon button sizes (the floating chat's app bar sizes every ha-icon-button 40px). */
+.composer {
+  --ai-composer-button: 36px;
 }
 
-:where(.wrap:not(.composer-ha)) .attach {
-  width: 36px;
-  height: 36px;
+.composer .composer-actions > .attach,
+.composer .composer-actions > .mic,
+.composer .composer-actions > .send {
+  flex: 0 0 var(--ai-composer-button);
+  width: var(--ai-composer-button);
+  min-width: var(--ai-composer-button);
+  height: var(--ai-composer-button);
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 50%;
+  --ha-icon-button-size: var(--ai-composer-button);
+  --mdc-icon-button-size: var(--ai-composer-button);
+  --ha-button-height: var(--ai-composer-button);
+}
+
+.composer .composer-actions > .attach,
+.composer .composer-actions > .mic:not(.listening) {
   color: var(--secondary-text-color);
-  --ha-icon-button-size: 36px;
-  --mdc-icon-button-size: 36px;
 }
 
 .attach[disabled],

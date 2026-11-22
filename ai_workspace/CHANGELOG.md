@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.2b4
+
+**The message field is back on phones; composer buttons line up.**
+
+- Panel in a mobile browser: the message field could sit below the screen while the address bar was showing (Home Assistant sizes the page by `100vh`, which on mobile Chrome is the height with the bar hidden). The panel now fits the visible screen (`100dvh`, `100vh` as the fallback).
+- Composer buttons: attach, dictate and send have the same size, are centered and evenly spaced, with the same inset on the top, right and bottom of the field. In the floating chat the dictate button was larger than the send button and pushed it to the edge. Applies to the Standard composer and the HA components composer.
+- No Runtime update needed.
+
 ## 1.6.2b3
 
 **Translations complete in all 15 languages; MCP servers hear your language.**
