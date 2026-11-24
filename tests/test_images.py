@@ -13,6 +13,7 @@ def test_caption_for_images_only() -> None:
     assert caption_for("", 0, 1) == "Look at this file."
     assert caption_for("", 0, 3) == "Look at these 3 files."
     assert caption_for("", 1, 1) == "Look at these attachments."
+    assert caption_for("", 1, 0, "de") == "Sieh dir dieses Bild an."
 
 
 def test_parse_client_images_strips_data_url_and_rejects_junk() -> None:

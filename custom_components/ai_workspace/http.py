@@ -1450,7 +1450,9 @@ class ChatView(HomeAssistantView):
         body = await _json_body(request)
         images = parse_client_images(body.get("images"))
         files = parse_client_files(body.get("files"))
-        message = caption_for(str(body.get("message") or ""), len(images), len(files))
+        message = caption_for(
+            str(body.get("message") or ""), len(images), len(files), str(body.get("language") or "")
+        )
         if not message:
             raise web.HTTPBadRequest(text="Message is empty.")
         lock: asyncio.Lock = data["locks"].setdefault(session.id, asyncio.Lock())

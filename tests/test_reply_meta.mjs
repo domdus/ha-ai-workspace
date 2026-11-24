@@ -101,9 +101,9 @@ const chat = [
   { role: "assistant", text: "third, still going", streaming: true },
 ];
 assert.deepEqual(replyRows(chat), [
-  { index: 1, text: "**first**", last: false, held: false },
-  { index: 4, text: "## second\n\n- x", last: false, held: true },
-], "every finished reply; streaming holds the newest row");
+  { index: 1, text: "**first**", last: false, pending: false },
+  { index: 4, text: "## second\n\n- x", last: false, pending: false },
+], "streaming: the previous reply keeps its row (buttons), only its time goes (not last)");
 const idleChat = [
   { role: "user", text: "a" },
   { role: "assistant", text: "  **first**  " },
@@ -111,13 +111,26 @@ const idleChat = [
   { role: "assistant", text: "## second\n\n- x" },
 ];
 assert.deepEqual(replyRows(idleChat), [
-  { index: 1, text: "**first**", last: false, held: false },
-  { index: 3, text: "## second\n\n- x", last: true, held: false },
+  { index: 1, text: "**first**", last: false, pending: false },
+  { index: 3, text: "## second\n\n- x", last: true, pending: false },
 ], "idle: newest finished reply is last");
-assert.deepEqual(replyRows(chat, { busy: true }), [
-  { index: 1, text: "**first**", last: false, held: false },
-  { index: 4, text: "## second\n\n- x", last: false, held: true },
-], "busy: newest row held while the turn runs");
+assert.deepEqual(replyRows(idleChat, { busy: true }), [
+  { index: 1, text: "**first**", last: false, pending: false },
+  { index: 3, text: "## second\n\n- x", last: false, pending: false },
+], "busy: previous reply keeps copy/read aloud, no row is last (its time goes)");
+// The new reply finished live but its text still drains: its row waits, the old one stays.
+const draining = [...idleChat, { role: "user", text: "c" }, { role: "assistant", text: "third", fresh: true }];
+assert.deepEqual(replyRows(draining, { busy: true }), [
+  { index: 1, text: "**first**", last: false, pending: false },
+  { index: 3, text: "## second\n\n- x", last: false, pending: false },
+  { index: 5, text: "third", last: false, pending: true },
+], "the running turn's row is pending until the turn is complete");
+assert.deepEqual(replyRows(draining).at(-1), { index: 5, text: "third", last: true, pending: false }, "complete: last");
+// A streaming reply makes the turn run even without `busy`.
+assert.deepEqual(
+  replyRows([...draining, { role: "assistant", text: "more", streaming: true }]).map((row) => [row.last, row.pending]),
+  [[false, false], [false, false], [false, true]],
+);
 assert.deepEqual(
   replyRows([{ role: "assistant", text: "only" }]).map((row) => row.last),
   [true],
@@ -129,8 +142,14 @@ assert.doesNotMatch(chatSrc, /transcriptText/, "whole-chat copy is gone");
 assert.doesNotMatch(chatSrc, /copy_chat/);
 assert.doesNotMatch(chatSrc, /copy_last_reply|copy-chat/, "the bottom row no longer copies: each reply has its own button");
 assert.match(chatSrc, /const rows = replyRows\(entries, \{ busy: streaming \|\| liveStream \}\)/);
-assert.match(chatSrc, /row\.classList\.toggle\("is-held", info\.held\)/);
+assert.match(chatSrc, /row\.classList\.toggle\("is-pending", info\.pending\)/);
+assert.doesNotMatch(chatSrc, /is-held/, "the previous reply's row is no longer hidden while a turn runs");
+// History stays in the previous reply's row while the next turn runs.
+assert.match(chatSrc, /logEl\.querySelector\("\.reply-actions\.is-last"\) \|\| \(turnRunning \? settled\.at\(-1\) \|\| null : null\)/);
+assert.match(chatSrc, /streaming = true;\s*\/\/[^\n]*\n\s*syncCopyChat\(\);\s*const turnSince/, "send keeps the previous history button");
 assert.match(chatSrc, /bubble\._replyFresh/);
+assert.match(chatSrc, /fresh: Boolean\(bubble\._replyFresh\)/);
+assert.match(chatSrc, /if \(!info\.pending\) bubble\._replyFresh = false;/, "fresh ends with the turn");
 assert.match(chatSrc, /replyActionButton\("copy", "mdi:content-copy", t\("copy_reply"\)\)/);
 assert.match(chatSrc, /replyActionButton\("speak", "mdi:volume-high", t\("speak_reply"\)\)/);
 assert.match(chatSrc, /btn\.setAttribute\("aria-label", label\)/, "buttons carry an aria-label");
@@ -219,7 +238,10 @@ for (const css of [cssStandard]) {
   assert.match(rule, /font-size: var\(--ha-font-size-s/);
   assert.match(css, /\.reply-actions:not\(\.is-last\) \.reply-time \{\s*opacity: 0;/);
   assert.match(css, /\.reply-actions:focus-within \.reply-time \{\s*opacity: 1;/);
-  assert.match(css, /\.reply-actions\.is-held \{/);
+  assert.doesNotMatch(css, /is-held/);
+  assert.match(css, /\.reply-actions\.is-pending \{\s*visibility: hidden;\s*opacity: 0;/);
+  assert.match(css, /@media \(hover: none\) \{\s*\.reply-actions \{\s*opacity: 1;\s*\}\s*\.reply-actions\.is-pending \{\s*opacity: 0;/);
+  assert.match(css, /prefers-reduced-motion: reduce\) \{[\s\S]{0,200}\.reply-actions\.is-fresh \{\s*animation: none;/);
   assert.match(css, /\.reply-actions\.is-fresh \{/);
   assert.match(css, /@keyframes reply-actions-in/);
   assert.doesNotMatch(css, /copy-chat|\.chat-actions \.reply-time/);

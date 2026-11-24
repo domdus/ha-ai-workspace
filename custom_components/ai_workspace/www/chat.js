@@ -1,5 +1,5 @@
 const CACHE = new URL(import.meta.url).search;
-const { stringsFor } = await import(`./i18n.js${CACHE}`);
+const { I18N, stringsFor } = await import(`./i18n.js${CACHE}`);
 const { taskStrings } = await import(`./tasks_i18n.js${CACHE}`);
 const { takeSpeech, speechPlain, takePendingClip, speechTail, splitSpeechClip, MAX_CHARS, clipWatch, unlockOnSend, releaseAudio, speakUiState } = await import(
   `./speech.js${CACHE}`
@@ -2831,15 +2831,32 @@ export async function mountAiWorkspace(root, options = {}) {
     if (root?.classList?.contains("bubble")) syncActivityGlyph(root);
   }
 
+  // The prompt sent for attachments without text, in the UI language (the agent answers in
+  // the language of the latest message, so an English default made it answer in English).
+  function attachmentPrompt(imageCount, fileCount) {
+    if (imageCount > 0 && fileCount > 0) return t("attach_prompt_mixed");
+    if (imageCount === 1) return t("attach_prompt_image");
+    if (imageCount > 1) return t("attach_prompt_images", { count: imageCount });
+    if (fileCount === 1) return t("attach_prompt_file");
+    if (fileCount > 1) return t("attach_prompt_files", { count: fileCount });
+    return "";
+  }
+
+  // Default attachment prompts of every language (older chats may hold another one).
+  const DEFAULT_CAPTIONS = Object.values(I18N).flatMap((strings) =>
+    ["attach_prompt_image", "attach_prompt_images", "attach_prompt_file", "attach_prompt_files", "attach_prompt_mixed"]
+      .map((key) => String(strings[key] || ""))
+      .filter(Boolean)
+      .map((item) => {
+        const [head, tail = ""] = item.split("{count}");
+        const esc = (part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(`^${esc(head)}${item.includes("{count}") ? "\\d+" : ""}${esc(tail)}$`);
+      }),
+  );
+
   function isDefaultImageCaption(text) {
     const value = String(text || "").trim();
-    return (
-      value === "Look at this image." ||
-      /^Look at these \d+ images\.$/.test(value) ||
-      value === "Look at this file." ||
-      /^Look at these \d+ files\.$/.test(value) ||
-      value === "Look at these attachments."
-    );
+    return Boolean(value) && DEFAULT_CAPTIONS.some((re) => re.test(value));
   }
 
   function addBubbleImages(bubble, events) {
@@ -2944,6 +2961,8 @@ export async function mountAiWorkspace(root, options = {}) {
         streaming: bubble.classList.contains("streaming"),
         error: bubble.classList.contains("error"),
         createdAt: bubble.dataset.createdAt || "",
+        // Finished live in this view: its row waits for the end of the turn, then fades in.
+        fresh: Boolean(bubble._replyFresh),
       };
     });
   }
@@ -2996,14 +3015,16 @@ export async function mountAiWorkspace(root, options = {}) {
       if (bubble.lastElementChild !== row) bubble.appendChild(row);
       keep.add(row);
       row.classList.toggle("is-last", info.last);
-      row.classList.toggle("is-held", info.held);
+      // Rows of the running turn wait until it is complete; earlier rows stay usable.
+      row.classList.toggle("is-pending", info.pending);
       // Fade in only for a reply that just finished in this view, never on open or re-render.
       if (info.last && bubble._replyFresh) {
-        bubble._replyFresh = false;
         row.classList.remove("is-fresh");
         void row.offsetWidth;
         row.classList.add("is-fresh");
       }
+      // Once the turn is over, no reply is "fresh" any more (also earlier parts of the turn).
+      if (!info.pending) bubble._replyFresh = false;
       const speakBtn = row.querySelector(".reply-speak");
       if (speakBtn) speakBtn.hidden = !voice.tts;
       // Time labels are cached per day: "today"/"yesterday" only change at midnight.
@@ -3194,8 +3215,11 @@ export async function mountAiWorkspace(root, options = {}) {
     // Copy, read aloud and the time live in each reply's own row (also the stop/play control
     // of auto read-aloud). The bottom row only holds the history button when the turn has
     // no reply row.
-    const showHistory = Boolean(turnHasHistory);
-    const lastRow = logEl.querySelector(".reply-actions.is-last");
+    // While a turn runs, the previous reply's row keeps its history button (if it had one).
+    const turnRunning = Boolean(streaming || liveStream);
+    const settled = [...logEl.querySelectorAll(".reply-actions:not(.is-pending)")];
+    const lastRow = logEl.querySelector(".reply-actions.is-last") || (turnRunning ? settled.at(-1) || null : null);
+    const showHistory = Boolean(turnHasHistory) && (!turnRunning || Boolean(lastRow));
     if (showHistory) {
       const btn = historyButton();
       btn.hidden = false;
@@ -3680,7 +3704,7 @@ export async function mountAiWorkspace(root, options = {}) {
         {
           method: "POST",
           body: JSON.stringify({
-            message: turn.text,
+            message: turn.text || attachmentPrompt(images.length, files.length),
             origin: window.location.origin,
             language: speechLanguage(),
             images: images.map((img) => ({ name: img.name, mime: img.mime, data: img.data })),
@@ -6516,8 +6540,8 @@ export async function mountAiWorkspace(root, options = {}) {
     if (keepComposerFocus()) messageEl.focus();
     else hideKeyboard();
     streaming = true;
+    // The previous reply keeps its buttons (and history) while this turn runs.
     syncCopyChat();
-    turnHasHistory = false;
     const turnSince = new Date().toISOString();
     watchGen += 1;
     clearKeyboardLock();
@@ -6565,7 +6589,7 @@ export async function mountAiWorkspace(root, options = {}) {
       chatId = sessionId;
       setStatus(t("thinking"));
       const payload = JSON.stringify({
-          message: text,
+          message: text || attachmentPrompt(images.length, files.length),
           origin: window.location.origin,
           language: speechLanguage(),
           page: haPageContext(),

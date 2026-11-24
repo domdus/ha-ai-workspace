@@ -1090,6 +1090,13 @@ _LANGUAGE_NAMES = {
 }
 
 
+# Images or files sent without text arrive with a short prompt AI Workspace added
+# ("Look at this image.", localized). It is not the user's own words.
+ATTACHMENT_LANGUAGE_NOTE = (
+    'An auto-added attachment prompt like "Look at this image." does not set the language; then answer in {name}.'
+)
+
+
 def language_name(code: str) -> str:
     primary = str(code or "").replace("_", "-").split("-")[0].strip().lower()
     return _LANGUAGE_NAMES.get(primary, "")
@@ -1105,7 +1112,7 @@ def language_instruction(code: str = "") -> str:
     )
     if name != "English":
         fallback += " Do not assume English."
-    return f"{LANGUAGE_INSTRUCTION} {fallback}"
+    return f"{LANGUAGE_INSTRUCTION} {fallback} {ATTACHMENT_LANGUAGE_NOTE.format(name=name)}"
 
 
 def workspace_system_prompt(settings, *, admin: bool = True) -> str:

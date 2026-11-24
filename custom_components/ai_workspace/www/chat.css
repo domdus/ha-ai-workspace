@@ -1037,9 +1037,11 @@ h1 {
   transition: opacity 120ms ease;
 }
 
-/* While the next turn runs, the previous reply's row (and time) is hidden until hovered or
-   focused; when a reply finishes in view, its row fades in softly. */
-.reply-actions.is-held {
+/* While a turn runs, the previous reply keeps its buttons (only its time label goes, see
+   below); the running turn's own row waits until the reply is complete, then fades in once
+   (never on chat open or switch). */
+.reply-actions.is-pending {
+  visibility: hidden;
   opacity: 0;
 }
 
@@ -1107,9 +1109,7 @@ h1 {
 
 /* The reply being read keeps its stop/play control visible, also while the next turn runs. */
 .reply-actions:has(> .reply-speak.speaking),
-.reply-actions:has(> .reply-speak.paused),
-.reply-actions.is-held:has(> .reply-speak.speaking),
-.reply-actions.is-held:has(> .reply-speak.paused) {
+.reply-actions:has(> .reply-speak.paused) {
   opacity: 1;
 }
 
@@ -1118,7 +1118,7 @@ h1 {
     opacity: 1;
   }
 
-  .reply-actions.is-held:not(:focus-within) {
+  .reply-actions.is-pending {
     opacity: 0;
   }
 }

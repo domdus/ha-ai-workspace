@@ -113,6 +113,8 @@ MESSAGE_CHARS = 1_200_000
 
 class ChatRequest(BaseModel):
     message: str = Field(default="", max_length=MESSAGE_CHARS)
+    # UI language, only for the default prompt of attachments sent without text.
+    language: str = Field(default="", max_length=35)
     origin: str = ""
     images: list[ChatImage] = Field(default_factory=list, max_length=4)
     files: list[ChatFile] = Field(default_factory=list, max_length=4)
@@ -546,7 +548,7 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
         raise HTTPException(status_code=400, detail="Unknown provider.")
     images = parse_client_images([item.model_dump() for item in body.images])
     files = parse_client_files([item.model_dump() for item in body.files])
-    message = caption_for(body.message, len(images), len(files))
+    message = caption_for(body.message, len(images), len(files), body.language)
     question = (body.question or "").strip() or message
     if not message:
         raise HTTPException(status_code=400, detail="Message is empty.")

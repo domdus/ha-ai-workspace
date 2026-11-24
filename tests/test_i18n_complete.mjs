@@ -50,6 +50,14 @@ assert.equal(stringsFor("fr").approval_title, "Autorisation requise");
 assert.equal(stringsFor("zh-TW").approval_deny, "拒絕");
 assert.notEqual(stringsFor("pl").usage_plan_heading, I18N.en.usage_plan_heading);
 
+// Attachments sent without text: the default prompt is in the UI language, not English.
+assert.equal(de.attach_prompt_image, "Sieh dir dieses Bild an.");
+assert.equal(de.attach_prompt_images, "Sieh dir diese {count} Bilder an.");
+const chatSrc = readFileSync(new URL("www/chat.js", base), "utf8");
+assert.match(chatSrc, /message: text \|\| attachmentPrompt\(images\.length, files\.length\)/);
+assert.match(chatSrc, /message: turn\.text \|\| attachmentPrompt\(images\.length, files\.length\)/);
+assert.doesNotMatch(chatSrc, /"Look at this/, "no English default prompt in the chat code");
+
 // Chat code takes its words from t()/strings, not from English literals in the DOM.
 const www = new URL("www/", base);
 const literal = /\.(textContent|placeholder|title|ariaLabel|label)\s*=\s*["'`][A-Za-z]/;

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.2b7
+
+**Buttons under the previous reply stay put while the next one runs; image-only messages get answered in your language.**
+
+- While a new reply runs, the previous reply keeps its copy, read-aloud and history buttons; only its time label goes. The new reply's row appears when it is complete and fades in (no animation on chat open or switch, none with reduced motion).
+- Images or files sent without text now go with a short prompt in your UI language (all 15 languages) instead of the English "Look at this image.". The language rule tells agents that such a prompt does not show your language, so they answer in the Home Assistant language.
+- Runtime update optional: it only localizes the prompt for direct Runtime calls.
+
 ## 1.6.2b6
 
 **No more stray speaker icon under the last reply.**
