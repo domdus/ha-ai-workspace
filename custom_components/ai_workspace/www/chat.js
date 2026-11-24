@@ -1,7 +1,7 @@
 const CACHE = new URL(import.meta.url).search;
 const { I18N, stringsFor } = await import(`./i18n.js${CACHE}`);
 const { taskStrings } = await import(`./tasks_i18n.js${CACHE}`);
-const { takeSpeech, speechPlain, takePendingClip, speechTail, splitSpeechClip, MAX_CHARS, clipWatch, unlockOnSend, releaseAudio, speakUiState } = await import(
+const { takeSpeech, speechPlain, takePendingClip, speechTail, splitSpeechClip, MAX_CHARS, clipWatch, unlockOnSend, releaseAudio, speakUiState, speakControlView, speakTapAction } = await import(
   `./speech.js${CACHE}`
 );
 const { stripRemoteMedia, watchRenderedMedia } = await import(`./media_guard.js${CACHE}`);
@@ -3008,6 +3008,10 @@ export async function mountAiWorkspace(root, options = {}) {
         row.setAttribute("aria-label", t("reply_actions"));
         row.appendChild(replyActionButton("copy", "mdi:content-copy", t("copy_reply")));
         row.appendChild(replyActionButton("speak", "mdi:volume-high", t("speak_reply")));
+        // Shows next to the speak button only while its reply plays or is paused.
+        const stopBtn = replyActionButton("stop", "mdi:stop", t("stop_reading"));
+        stopBtn.hidden = true;
+        row.appendChild(stopBtn);
         const timeEl = document.createElement("time");
         timeEl.className = "reply-time";
         row.appendChild(timeEl);
@@ -3057,20 +3061,36 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function syncReplySpeakUi() {
     // The one read-aloud control: the speak button of the reply being read (by hand or
-    // automatically) shows stop while it plays and play while the user paused it.
+    // automatically) shows pause while it plays and resume while it is paused; a stop
+    // button sits next to it in both states.
     const state = speechState();
     for (const btn of logEl.querySelectorAll(".reply-actions .reply-speak")) {
       const row = btn.closest(".reply-actions");
       const mine = Boolean(speakTarget && state !== "idle" && replyRowOf(speakTarget) === row);
       const next = mine ? state : "idle";
+      const view = speakControlView(next);
+      const stopBtn = row?.querySelector(":scope > .reply-stop");
+      if (stopBtn && stopBtn.hidden === view.stop) {
+        // Focus on the vanishing stop button goes back to the speak button.
+        const focused = !view.stop && isFocused(stopBtn);
+        stopBtn.hidden = !view.stop;
+        if (focused && !btn.hidden) btn.focus?.();
+      }
       if (btn.dataset.state === next) continue;
       btn.dataset.state = next;
       btn.classList.toggle("speaking", next === "playing");
       btn.classList.toggle("paused", next === "paused");
-      btn.setAttribute("aria-pressed", mine ? "true" : "false");
-      const icon = next === "playing" ? "mdi:stop" : next === "paused" ? "mdi:play" : "mdi:volume-high";
-      btn.querySelector("ha-icon")?.setAttribute("icon", icon);
-      setActionLabel(btn, t(next === "playing" ? "stop_reading" : "speak_reply"));
+      btn.setAttribute("aria-pressed", view.pressed ? "true" : "false");
+      btn.querySelector("ha-icon")?.setAttribute("icon", view.icon);
+      setActionLabel(btn, t(view.label));
+    }
+  }
+
+  function isFocused(el) {
+    try {
+      return Boolean(el?.matches?.(":focus") || el?.matches?.(":focus-within"));
+    } catch (_err) {
+      return false;
     }
   }
 
@@ -3105,19 +3125,24 @@ export async function mountAiWorkspace(root, options = {}) {
       }, 1600);
       return;
     }
+    if (btn.dataset.action === "stop") {
+      // Stop completely; focus goes back to the speak button (the stop button hides).
+      const speakBtn = btn.closest(".reply-actions")?.querySelector(":scope > .reply-speak");
+      haltSpeech();
+      if (speakBtn && !speakBtn.hidden) speakBtn.focus?.();
+      return;
+    }
     if (btn.dataset.action === "speak") {
-      // Same reply: paused by the user resumes, playing stops. Another reply: stop that
-      // one and read this one.
-      if (speakTarget === bubble) {
-        const state = speechState();
-        if (state === "paused") {
-          await resumeSpeech();
-          return;
-        }
-        if (state === "playing") {
-          haltSpeech();
-          return;
-        }
+      // Same reply: playing pauses, paused resumes where it stopped. Another reply: stop
+      // that one and read this one.
+      const action = speakTapAction(speechState(), speakTarget === bubble);
+      if (action === "pause") {
+        pauseSpeech();
+        return;
+      }
+      if (action === "resume") {
+        await resumeSpeech();
+        return;
       }
       await speakReply(text, true, bubble);
     }
@@ -3178,6 +3203,7 @@ export async function mountAiWorkspace(root, options = {}) {
       paused: Boolean(hasClip && audio.paused),
       error: Boolean(hasClip && audio.error),
       userPaused: speakUserPaused,
+      held: speakHold,
     });
   }
 
@@ -5830,6 +5856,8 @@ export async function mountAiWorkspace(root, options = {}) {
   // The current clip was paused by the user (not by the browser); keeps the play control.
   let speakUserPaused = false;
   let speakPausedAt = 0;
+  // The user paused the read-aloud: the current clip stays paused and the next one waits.
+  let speakHold = false;
   let speakHideTimer = 0;
   const speakPending = [];
   const speakInflight = [];
@@ -5985,7 +6013,10 @@ export async function mountAiWorkspace(root, options = {}) {
     replyAudio._speakBound = true;
     replyAudio.addEventListener("play", () => {
       if (!ownClip()) return;
+      // Also a resume via media session / headset.
       speakUserPaused = false;
+      speakHold = false;
+      claimMediaSession();
       setSpeakUi();
     });
     replyAudio.addEventListener("pause", () => {
@@ -5993,13 +6024,16 @@ export async function mountAiWorkspace(root, options = {}) {
         setSpeakUi();
         return;
       }
-      if (document.hidden) {
+      if (document.hidden && !speakHold) {
         // The browser stopped the audio (screen off, app switch): nothing plays any more.
         haltSpeech();
         return;
       }
+      // Paused by the user (button, media session, headset): keep the position and hold
+      // the queue. Our own button needs no grace period against a page that goes away.
+      speakPausedAt = speakHold ? 0 : Date.now();
       speakUserPaused = true;
-      speakPausedAt = Date.now();
+      speakHold = true;
       setSpeakUi();
     });
     replyAudio.addEventListener("ended", () => setSpeakUi());
@@ -6015,6 +6049,7 @@ export async function mountAiWorkspace(root, options = {}) {
           replyObjectUrl = "";
         }
         speakUserPaused = false;
+        speakHold = false;
       }
       setSpeakUi();
     });
@@ -6046,11 +6081,64 @@ export async function mountAiWorkspace(root, options = {}) {
     else setSpeakUi();
   }
 
+  // Headset / lock-screen controls pause, resume and stop the read-aloud like the row's
+  // buttons (also with the screen off, where a plain pause would count as the browser's).
+  const mediaOwner = {};
+
+  function claimMediaSession() {
+    const session = navigator.mediaSession;
+    if (!session?.setActionHandler) return;
+    globalThis.__aiWorkspaceSpeechOwner = mediaOwner;
+    const handlers = {
+      pause: () => pauseSpeech(),
+      play: () => resumeSpeech(),
+      stop: () => haltSpeech(),
+    };
+    for (const [action, handler] of Object.entries(handlers)) {
+      try {
+        session.setActionHandler(action, handler);
+      } catch (_err) {
+        /* action not supported */
+      }
+    }
+  }
+
+  function releaseMediaSession() {
+    const session = navigator.mediaSession;
+    if (!session?.setActionHandler || globalThis.__aiWorkspaceSpeechOwner !== mediaOwner) return;
+    globalThis.__aiWorkspaceSpeechOwner = null;
+    for (const action of ["pause", "play", "stop"]) {
+      try {
+        session.setActionHandler(action, null);
+      } catch (_err) {
+        /* action not supported */
+      }
+    }
+  }
+
+  function pauseSpeech() {
+    // Pause at the current position; between two clips the next one waits (see playSpeechBlob).
+    speakHold = true;
+    speakPausedAt = 0;
+    if (ownClip() && !replyAudio.paused && !replyAudio.ended) {
+      speakUserPaused = true;
+      replyAudio.pause();
+    }
+    setSpeakUi();
+  }
+
   async function resumeSpeech() {
-    if (!ownClip()) {
-      haltSpeech();
+    const clipWaits = ownClip() && replyAudio.paused && !replyAudio.ended && !replyAudio.error;
+    if (!clipWaits) {
+      // Paused between clips: the queue goes on with the next clip once it is ready.
+      const queued = Boolean(speakBusy || speakPending.length || speakInflight.length);
+      speakHold = false;
+      speakUserPaused = false;
+      if (queued) setSpeakUi();
+      else haltSpeech();
       return;
     }
+    speakHold = false;
     try {
       await replyAudio.play();
     } catch (_err) {
@@ -6065,6 +6153,7 @@ export async function mountAiWorkspace(root, options = {}) {
     speakAuto = false;
     speakUserPaused = false;
     speakPausedAt = 0;
+    speakHold = false;
     speakHeld = "";
     speakRaw = "";
     speakStarted = false;
@@ -6075,6 +6164,7 @@ export async function mountAiWorkspace(root, options = {}) {
     speakPending.length = 0;
     speakInflight.length = 0;
     if (speakRelease) speakRelease();
+    releaseMediaSession();
     if (replyObjectUrl) {
       URL.revokeObjectURL(replyObjectUrl);
       replyObjectUrl = "";
@@ -6219,7 +6309,7 @@ export async function mountAiWorkspace(root, options = {}) {
       let settled = false;
       let watchdog = 0;
       let started = false;
-      const startedAt = Date.now();
+      let startedAt = Date.now();
       let lastProgress = startedAt;
       let lastTime = 0;
       const onPlaying = () => {
@@ -6242,6 +6332,8 @@ export async function mountAiWorkspace(root, options = {}) {
         const now = Date.now();
         const time = Number(replyAudio.currentTime) || 0;
         if ((replyAudio.paused && speakUserPaused) || time !== lastTime) lastProgress = now;
+        // A clip held before it ever started does not time out while the user pauses.
+        if (!started && replyAudio.paused && speakUserPaused) startedAt = now;
         lastTime = time;
         const verdict = clipWatch({
           now,
@@ -6264,6 +6356,12 @@ export async function mountAiWorkspace(root, options = {}) {
       replyAudio.pause();
       speakUserPaused = false;
       replyAudio.src = replyObjectUrl;
+      if (speakHold) {
+        // Paused between clips: load the next clip but wait for resume (it starts from 0).
+        speakUserPaused = true;
+        setSpeakUi();
+        return;
+      }
       replyAudio.play().catch((err) => {
         if (gen !== speakGen) {
           done();
@@ -6313,6 +6411,8 @@ export async function mountAiWorkspace(root, options = {}) {
           speakTarget = null;
           speakAuto = false;
           speakUserPaused = false;
+          speakHold = false;
+          releaseMediaSession();
           setSpeakUi();
         } else if (gen === speakGen && speakTarget) {
           // Nothing could be played for this reply: its button goes back to "read aloud".

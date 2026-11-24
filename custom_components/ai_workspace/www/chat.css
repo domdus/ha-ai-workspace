@@ -1075,7 +1075,8 @@ h1 {
 .reply-actions > ha-icon-button:hover,
 .reply-actions > ha-icon-button:focus-visible,
 .reply-actions > ha-icon-button.speaking,
-.reply-actions > ha-icon-button.paused {
+.reply-actions > ha-icon-button.paused,
+.reply-actions > ha-icon-button.reply-stop {
   color: var(--primary-text-color);
 }
 
@@ -1107,7 +1108,8 @@ h1 {
   opacity: 1;
 }
 
-/* The reply being read keeps its stop/play control visible, also while the next turn runs. */
+/* The reply being read keeps its pause/resume and stop controls visible, also while the
+   next turn runs. */
 .reply-actions:has(> .reply-speak.speaking),
 .reply-actions:has(> .reply-speak.paused) {
   opacity: 1;

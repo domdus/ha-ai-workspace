@@ -164,9 +164,10 @@ assert.ok(rowFn, "syncReplyRows found");
 assert.doesNotMatch(rowFn, /addEventListener/, "no listener per reply row");
 const onAction = chatSrc.match(/async function onReplyAction\(event\) \{([\s\S]*?)\n  \}\n/)?.[1] || "";
 assert.match(onAction, /await copyText\(text\)/);
-assert.match(onAction, /if \(speakTarget === bubble\) \{\s*const state = speechState\(\);/, "same reply: its state decides");
-assert.match(onAction, /state === "paused"\) \{\s*await resumeSpeech\(\);/, "same reply paused by the user: play");
-assert.match(onAction, /state === "playing"\) \{\s*haltSpeech\(\);/, "same reply playing: stop");
+assert.match(onAction, /const action = speakTapAction\(speechState\(\), speakTarget === bubble\);/, "same reply: its state decides");
+assert.match(onAction, /action === "pause"\) \{\s*pauseSpeech\(\);/, "same reply playing: pause");
+assert.match(onAction, /action === "resume"\) \{\s*await resumeSpeech\(\);/, "same reply paused: resume");
+assert.match(onAction, /btn\.dataset\.action === "stop"\) \{[\s\S]{0,240}haltSpeech\(\);\s*if \(speakBtn && !speakBtn\.hidden\) speakBtn\.focus\?\.\(\);/, "stop: reset, focus back on speak");
 assert.match(onAction, /await speakReply\(text, true, bubble\)/, "other reply: read that one");
 // The copied/read text is the reply markdown only (no tool chips, status, "reply cut" note).
 assert.match(chatSrc, /function replyTextOf\(bubble\) \{\s*const md = bubble\?\.querySelector\("ha-markdown\.text"\);/);
@@ -175,9 +176,21 @@ assert.match(chatSrc, /function speakReply\(text, fromUser = false, target = nul
 assert.match(chatSrc, /const gen = speakGen;\s*if \(fromUser\) await unlockOutput\(\);\s*\/\/[^\n]*\n\s*if \(gen !== speakGen\) return;/, "a newer click wins");
 assert.match(chatSrc, /if \(target\) syncCopyChat\(\);/, "stop state shows at once");
 assert.match(chatSrc, /function haltSpeech\(\) \{\s*speakGen \+= 1;\s*speakTarget = null;\s*speakAuto = false;\s*speakUserPaused = false;/);
-assert.match(chatSrc, /next === "playing" \? "mdi:stop" : next === "paused" \? "mdi:play" : "mdi:volume-high"/);
-assert.match(chatSrc, /t\(next === "playing" \? "stop_reading" : "speak_reply"\)/);
-assert.match(chatSrc, /btn\.setAttribute\("aria-pressed", mine \? "true" : "false"\)/);
+// Speak button: read aloud / pause / resume; a stop button next to it while active.
+assert.match(chatSrc, /const view = speakControlView\(next\);/);
+assert.match(chatSrc, /btn\.querySelector\("ha-icon"\)\?\.setAttribute\("icon", view\.icon\);\s*setActionLabel\(btn, t\(view\.label\)\);/);
+assert.match(chatSrc, /btn\.setAttribute\("aria-pressed", view\.pressed \? "true" : "false"\)/);
+assert.match(chatSrc, /const stopBtn = replyActionButton\("stop", "mdi:stop", t\("stop_reading"\)\);\s*stopBtn\.hidden = true;/);
+assert.match(chatSrc, /stopBtn\.hidden = !view\.stop;\s*if \(focused && !btn\.hidden\) btn\.focus\?\.\(\);/, "focus leaves a hiding stop button");
+// Pause holds the queue: the next clip loads but does not start; resume continues.
+assert.match(chatSrc, /replyAudio\.src = replyObjectUrl;\s*if \(speakHold\) \{[\s\S]{0,200}speakUserPaused = true;\s*setSpeakUi\(\);\s*return;/);
+assert.match(chatSrc, /function pauseSpeech\(\) \{[\s\S]{0,200}speakHold = true;[\s\S]{0,200}replyAudio\.pause\(\);/);
+assert.match(chatSrc, /function haltSpeech\(\) \{[\s\S]{0,200}speakHold = false;/);
+assert.match(chatSrc, /if \(!started && replyAudio\.paused && speakUserPaused\) startedAt = now;/, "held clip does not time out");
+assert.match(chatSrc, /held: speakHold,/);
+// Headset / lock screen: media session pause keeps the paused state, also with the screen off.
+assert.match(chatSrc, /pause: \(\) => pauseSpeech\(\),\s*play: \(\) => resumeSpeech\(\),\s*stop: \(\) => haltSpeech\(\),/);
+assert.match(chatSrc, /if \(document\.hidden && !speakHold\) \{/);
 assert.match(chatSrc, /if \(!voice\.speak \|\| !delta \|\| \(speakTarget && !speakAuto\)\) return;/, "auto read-aloud does not cut in");
 // One control: no chat-level speaker any more; auto read-aloud targets the live reply's row.
 assert.doesNotMatch(chatSrc, /speak-chat/, "no stray chat-level speaker");
@@ -188,7 +201,7 @@ assert.match(chatSrc, /!speakAuto && !keep\.has\(replyRowOf\(speakTarget\)\)/, "
 // The state resets when nothing plays: error, blocked play(), browser pause, page left.
 assert.match(chatSrc, /addEventListener\("error", \(\) => \{[\s\S]{0,160}if \(ownClip\(\)\) haltSpeech\(\);/);
 assert.match(chatSrc, /replyAudio\.play\(\)\.catch\(\(err\) => \{[\s\S]{0,500}done\(\);\s*haltSpeech\(\);/);
-assert.match(chatSrc, /if \(document\.hidden\) \{\s*\/\/[^\n]*\n\s*haltSpeech\(\);/, "pause while hidden is the browser's");
+assert.match(chatSrc, /if \(document\.hidden && !speakHold\) \{\s*\/\/[^\n]*\n\s*haltSpeech\(\);/, "pause while hidden is the browser's");
 assert.match(chatSrc, /listen\(document, "visibilitychange", onSpeakVisibility\);/);
 assert.match(chatSrc, /listen\(window, "pagehide", \(\) => \{\s*if \(speechLive\(\)\) haltSpeech\(\);/);
 assert.match(chatSrc, /addEventListener\("emptied"/);
@@ -211,13 +224,14 @@ assert.match(chatSrc, /if \(el\.nextElementSibling !== row\) bubble\.insertBefor
 // Every language has the strings, German as asked.
 const langs = (i18nSrc.match(/^ {2}(?:"[\w-]+"|\w+): \{$/gm) || []).length;
 assert.ok(langs >= 10);
-for (const key of ["copy_reply", "stop_reading", "reply_actions", "speak_reply", "copied"]) {
+for (const key of ["copy_reply", "stop_reading", "reply_actions", "speak_reply", "pause_reply", "resume_reply", "copied"]) {
   assert.equal((i18nSrc.match(new RegExp(`^ {4}${key}: "[^"]+"`, "gm")) || []).length, langs, key);
 }
 assert.equal((i18nSrc.match(/^ {4}copy_last_reply: "/gm) || []).length, 0, "old key gone");
 assert.equal((i18nSrc.match(/^ {4}reply_yesterday: "[^"]*\{time\}[^"]*"/gm) || []).length, langs);
 assert.match(i18nSrc, /copy_reply: "Antwort kopieren"/);
 assert.match(i18nSrc, /stop_reading: "Vorlesen stoppen"/);
+assert.match(i18nSrc, /resume_reply: "Fortsetzen"/);
 assert.match(i18nSrc, /reply_yesterday: "gestern, \{time\}"/);
 
 // One message template (HA components only swap the composer): subtle row, full on

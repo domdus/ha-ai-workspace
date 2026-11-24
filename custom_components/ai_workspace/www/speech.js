@@ -322,16 +322,36 @@ export function clipWatch({ now, startedAt, lastProgress, started, paused, ended
 }
 
 /**
- * State of the read-aloud control on the reply being read: "playing" (shows stop),
- * "paused" (paused by the user, shows play) or "idle". A clip the browser stopped on its
+ * State of the read-aloud control on the reply being read: "playing" (shows pause),
+ * "paused" (paused by the user, shows resume) or "idle". A clip the browser stopped on its
  * own (autoplay blocked, error, screen off) is idle, so no control sticks around.
+ * `held`: the user paused between two clips of a chunked queue (the next clip waits).
  */
-export function speakUiState({ queued = false, hasClip = false, ended = false, paused = false, error = false, userPaused = false } = {}) {
+export function speakUiState({ queued = false, hasClip = false, ended = false, paused = false, error = false, userPaused = false, held = false } = {}) {
   const clip = Boolean(hasClip && !ended && !error);
   if (clip && paused && userPaused) return "paused";
+  if (held && (queued || clip)) return "paused";
   if (queued) return "playing";
   if (clip && !paused) return "playing";
   return "idle";
+}
+
+/**
+ * How a reply's speak button looks in a read-aloud state, and whether the stop button
+ * next to it shows: idle reads aloud, playing pauses, paused resumes.
+ */
+export function speakControlView(state) {
+  if (state === "playing") return { icon: "mdi:pause", label: "pause_reply", pressed: true, stop: true };
+  if (state === "paused") return { icon: "mdi:play", label: "resume_reply", pressed: true, stop: true };
+  return { icon: "mdi:volume-high", label: "speak_reply", pressed: false, stop: false };
+}
+
+/** What a tap on the speak button does in that state: "pause", "resume" or "speak". */
+export function speakTapAction(state, sameReply) {
+  if (!sameReply) return "speak";
+  if (state === "playing") return "pause";
+  if (state === "paused") return "resume";
+  return "speak";
 }
 
 /**

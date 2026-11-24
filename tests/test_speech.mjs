@@ -2,6 +2,8 @@ import {
   clipWatch,
   CLIP_STALL_MS,
   speakUiState,
+  speakControlView,
+  speakTapAction,
   takeSpeech,
   speechPlain,
   takePendingClip,
@@ -251,6 +253,25 @@ console.log("ok");
   eq(speakUiState({ hasClip: true, ended: true, paused: true }), "idle", "clip ended");
   eq(speakUiState({ hasClip: true, error: true }), "idle", "clip failed");
   eq(speakUiState({ hasClip: true, error: true, paused: true, userPaused: true }), "idle", "failed clip shows no play control");
+}
+
+{
+  // Pause between clips of a chunked queue: the next clip waits, the control shows resume.
+  eq(speakUiState({ queued: true, held: true }), "paused", "held between clips");
+  eq(speakUiState({ hasClip: true, paused: true, userPaused: true, held: true }), "paused", "held clip");
+  eq(speakUiState({ held: true }), "idle", "nothing left to resume");
+  eq(speakUiState({ hasClip: true, error: true, held: true }), "idle", "failed clip while held");
+  // Button look per state and the stop button next to it.
+  eq(JSON.stringify(speakControlView("idle")), JSON.stringify({ icon: "mdi:volume-high", label: "speak_reply", pressed: false, stop: false }), "idle view");
+  eq(JSON.stringify(speakControlView("playing")), JSON.stringify({ icon: "mdi:pause", label: "pause_reply", pressed: true, stop: true }), "playing view");
+  eq(JSON.stringify(speakControlView("paused")), JSON.stringify({ icon: "mdi:play", label: "resume_reply", pressed: true, stop: true }), "paused view");
+  // Taps: same reply pauses / resumes, another reply starts reading.
+  eq(speakTapAction("playing", true), "pause", "tap while playing");
+  eq(speakTapAction("paused", true), "resume", "tap while paused");
+  eq(speakTapAction("idle", true), "speak", "tap when idle");
+  eq(speakTapAction("playing", false), "speak", "other reply");
+  // A held clip that never started does not time out (the watchdog keeps waiting).
+  eq(clipWatch({ now: 60000, startedAt: 59000, lastProgress: 59000, started: false, paused: true, ended: false, currentTime: 0, duration: 3, userPaused: true }), "wait", "held clip waits");
 }
 
 console.log("speak control ok");

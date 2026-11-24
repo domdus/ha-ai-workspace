@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.2b8
+
+**Read-aloud can be paused again.**
+
+- The speak button under a reply now pauses while that reply is read (by hand or automatically) and resumes from the same spot; with long replies the next part waits while paused.
+- A small stop button appears next to it while reading or paused and ends read-aloud completely.
+- Headset and lock-screen pause/play/stop work the same way, also with the screen off. Panel and floating chat.
+- No Runtime update needed.
+
 ## 1.6.2b7
 
 **Buttons under the previous reply stay put while the next one runs; image-only messages get answered in your language.**
