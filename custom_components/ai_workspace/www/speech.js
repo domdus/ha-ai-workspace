@@ -311,13 +311,27 @@ export function takePendingClip(pending, { flush = false, target = TARGET_CHARS,
 export const CLIP_STALL_MS = 8000;
 export const CLIP_START_MS = 15000;
 
-export function clipWatch({ now, startedAt, lastProgress, started, paused, ended, currentTime, duration }) {
+export function clipWatch({ now, startedAt, lastProgress, started, paused, ended, currentTime, duration, userPaused = true }) {
   if (ended) return "done";
   const known = Number.isFinite(duration) && duration > 0;
   if (known && currentTime >= duration - 0.25) return "done";
   if (!started) return now - startedAt > CLIP_START_MS ? "done" : "wait";
-  if (paused) return "wait";
+  // Paused by the browser (screen off, app switch, audio focus lost) counts as a stall.
+  if (paused && userPaused) return "wait";
   return now - lastProgress > CLIP_STALL_MS ? "done" : "wait";
+}
+
+/**
+ * State of the read-aloud control on the reply being read: "playing" (shows stop),
+ * "paused" (paused by the user, shows play) or "idle". A clip the browser stopped on its
+ * own (autoplay blocked, error, screen off) is idle, so no control sticks around.
+ */
+export function speakUiState({ queued = false, hasClip = false, ended = false, paused = false, error = false, userPaused = false } = {}) {
+  const clip = Boolean(hasClip && !ended && !error);
+  if (clip && paused && userPaused) return "paused";
+  if (queued) return "playing";
+  if (clip && !paused) return "playing";
+  return "idle";
 }
 
 /**

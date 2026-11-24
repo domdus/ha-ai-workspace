@@ -110,7 +110,8 @@ class McpHttpClient:
 
     ``elicitation/create`` on a call's stream goes to that call's ``on_elicit`` (the user answers in
     the chat); its result is the JSON-RPC answer. While the user is asked, the call's timeout waits.
-    A call that is stopped meanwhile answers the open question with ``decline``.
+    A call that is stopped meanwhile answers the open question with ``cancel`` (the user
+    dismissed it without choosing, MCP 2025-11-25), like the runtime does.
     """
 
     def __init__(self, http: ClientSession, url: str, headers: dict[str, str] | None = None) -> None:
@@ -373,7 +374,7 @@ class McpHttpClient:
         finally:
             if reader is not None and not reader.done():
                 reader.cancel()
-            # The call is over (answered, stopped, failed): its open questions are declined.
+            # The call is over (answered, stopped, failed): its open questions are cancelled.
             for task in asking:
                 task.cancel()
 
@@ -404,7 +405,7 @@ class McpHttpClient:
             if current in self._withdrawn:
                 self._withdrawn.discard(current)
             else:
-                self._send_later({**answer, "result": {"action": "decline"}})
+                self._send_later({**answer, "result": {"action": "cancel"}})
             raise
         except Exception:  # noqa: BLE001 - a broken card must not leave the server waiting
             logger.warning("MCP elicitation from %s could not be shown", self._url, exc_info=True)

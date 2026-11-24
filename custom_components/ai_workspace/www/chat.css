@@ -1005,7 +1005,6 @@ h1 {
 }
 
 .chat-actions[hidden],
-.chat-actions .speak-chat[hidden],
 .chat-actions .history-chat[hidden] {
   display: none !important;
 }
@@ -1014,16 +1013,12 @@ h1 {
   flex: 0 0 auto;
 }
 
-.speak-chat,
 .history-chat {
   --mdc-icon-button-size: 32px;
   --mdc-icon-size: 18px;
   color: var(--secondary-text-color);
 }
 
-.speak-chat:hover,
-.speak-chat:focus-visible,
-.speak-chat.speaking,
 .history-chat:hover,
 .history-chat:focus-visible {
   color: var(--primary-text-color);
@@ -1077,7 +1072,8 @@ h1 {
 
 .reply-actions > ha-icon-button:hover,
 .reply-actions > ha-icon-button:focus-visible,
-.reply-actions > ha-icon-button.speaking {
+.reply-actions > ha-icon-button.speaking,
+.reply-actions > ha-icon-button.paused {
   color: var(--primary-text-color);
 }
 
@@ -1106,6 +1102,14 @@ h1 {
 .bubble:hover > .reply-actions .reply-time,
 .reply-actions:hover .reply-time,
 .reply-actions:focus-within .reply-time {
+  opacity: 1;
+}
+
+/* The reply being read keeps its stop/play control visible, also while the next turn runs. */
+.reply-actions:has(> .reply-speak.speaking),
+.reply-actions:has(> .reply-speak.paused),
+.reply-actions.is-held:has(> .reply-speak.speaking),
+.reply-actions.is-held:has(> .reply-speak.paused) {
   opacity: 1;
 }
 

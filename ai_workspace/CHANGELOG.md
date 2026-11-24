@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.2b6
+
+**No more stray speaker icon under the last reply.**
+
+- Read-aloud has one control: the speak button in the row of the reply being read shows stop (or play while you paused it), also for automatic read-aloud. The separate speaker button below the chat is gone.
+- The read-aloud state resets when nothing plays: blocked autoplay, audio errors, stalled clips, or the browser stopping audio on screen off, app switch or leaving the page.
+- Cloud agents: Stop answers an open MCP question with cancel (not decline), like Runtime agents.
+- No Runtime update needed.
+
 ## 1.6.2b5
 
 **Cloud agents can ask you through MCP: approval and form cards now work for OpenAI, Claude API, Gemini, Ollama and other API agents.**

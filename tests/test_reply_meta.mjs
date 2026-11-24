@@ -145,21 +145,35 @@ assert.ok(rowFn, "syncReplyRows found");
 assert.doesNotMatch(rowFn, /addEventListener/, "no listener per reply row");
 const onAction = chatSrc.match(/async function onReplyAction\(event\) \{([\s\S]*?)\n  \}\n/)?.[1] || "";
 assert.match(onAction, /await copyText\(text\)/);
-assert.match(onAction, /speakTarget === bubble && speechLive\(\)\) \{\s*haltSpeech\(\);/, "same reply: stop");
+assert.match(onAction, /if \(speakTarget === bubble\) \{\s*const state = speechState\(\);/, "same reply: its state decides");
+assert.match(onAction, /state === "paused"\) \{\s*await resumeSpeech\(\);/, "same reply paused by the user: play");
+assert.match(onAction, /state === "playing"\) \{\s*haltSpeech\(\);/, "same reply playing: stop");
 assert.match(onAction, /await speakReply\(text, true, bubble\)/, "other reply: read that one");
 // The copied/read text is the reply markdown only (no tool chips, status, "reply cut" note).
 assert.match(chatSrc, /function replyTextOf\(bubble\) \{\s*const md = bubble\?\.querySelector\("ha-markdown\.text"\);/);
 // Read-aloud: one reply at a time, the button shows stop while its reply plays.
-assert.match(chatSrc, /function speakReply\(text, fromUser = false, target = null\) \{[\s\S]{0,200}haltSpeech\(\);\s*\/\/[^\n]*\n\s*speakTarget = target;/);
+assert.match(chatSrc, /function speakReply\(text, fromUser = false, target = null\) \{[\s\S]{0,200}haltSpeech\(\);\s*\/\/[^\n]*\n\s*speakTarget = target \|\| lastAssistantBubble\(\);\s*speakAuto = false;/);
 assert.match(chatSrc, /const gen = speakGen;\s*if \(fromUser\) await unlockOutput\(\);\s*\/\/[^\n]*\n\s*if \(gen !== speakGen\) return;/, "a newer click wins");
 assert.match(chatSrc, /if \(target\) syncCopyChat\(\);/, "stop state shows at once");
-assert.match(chatSrc, /function haltSpeech\(\) \{\s*speakGen \+= 1;\s*speakTarget = null;/);
-assert.match(chatSrc, /mine \? "mdi:stop" : "mdi:volume-high"/);
-assert.match(chatSrc, /t\(mine \? "stop_reading" : "speak_reply"\)/);
+assert.match(chatSrc, /function haltSpeech\(\) \{\s*speakGen \+= 1;\s*speakTarget = null;\s*speakAuto = false;\s*speakUserPaused = false;/);
+assert.match(chatSrc, /next === "playing" \? "mdi:stop" : next === "paused" \? "mdi:play" : "mdi:volume-high"/);
+assert.match(chatSrc, /t\(next === "playing" \? "stop_reading" : "speak_reply"\)/);
 assert.match(chatSrc, /btn\.setAttribute\("aria-pressed", mine \? "true" : "false"\)/);
-assert.match(chatSrc, /if \(!voice\.speak \|\| !delta \|\| speakTarget\) return;/, "auto read-aloud does not cut in");
-// The bottom speaker only shows for auto read-aloud (no reply button owns it).
-assert.match(chatSrc, /const showSpeak = Boolean\(voice\.tts && speechLive\(\) && !speakTarget\);/);
+assert.match(chatSrc, /if \(!voice\.speak \|\| !delta \|\| \(speakTarget && !speakAuto\)\) return;/, "auto read-aloud does not cut in");
+// One control: no chat-level speaker any more; auto read-aloud targets the live reply's row.
+assert.doesNotMatch(chatSrc, /speak-chat/, "no stray chat-level speaker");
+assert.doesNotMatch(cssStandard, /speak-chat/);
+assert.doesNotMatch(chatSrc, /const showSpeak\b/);
+assert.match(chatSrc, /if \(taken\.pieces\.length && \(!speakTarget \|\| speakAuto\)\) \{[\s\S]{0,200}speakTarget = live;\s*speakAuto = true;/);
+assert.match(chatSrc, /!speakAuto && !keep\.has\(replyRowOf\(speakTarget\)\)/, "auto target survives while streaming");
+// The state resets when nothing plays: error, blocked play(), browser pause, page left.
+assert.match(chatSrc, /addEventListener\("error", \(\) => \{[\s\S]{0,160}if \(ownClip\(\)\) haltSpeech\(\);/);
+assert.match(chatSrc, /replyAudio\.play\(\)\.catch\(\(err\) => \{[\s\S]{0,500}done\(\);\s*haltSpeech\(\);/);
+assert.match(chatSrc, /if \(document\.hidden\) \{\s*\/\/[^\n]*\n\s*haltSpeech\(\);/, "pause while hidden is the browser's");
+assert.match(chatSrc, /listen\(document, "visibilitychange", onSpeakVisibility\);/);
+assert.match(chatSrc, /listen\(window, "pagehide", \(\) => \{\s*if \(speechLive\(\)\) haltSpeech\(\);/);
+assert.match(chatSrc, /addEventListener\("emptied"/);
+assert.match(chatSrc, /userPaused: speakUserPaused,\s*\}\);/, "watchdog: browser pause is a stall");
 assert.match(chatSrc, /timeEl\.className = "reply-time"/);
 assert.match(chatSrc, /timeEl\.title = replyTimeTitle\(/);
 assert.match(chatSrc, /createdAt: bubble\.dataset\.createdAt/);

@@ -173,7 +173,7 @@ def test_unknown_mode_is_an_invalid_params_error() -> None:
     assert answer["error"]["code"] == -32602
 
 
-def test_stop_declines_the_open_question_and_cancels_the_call() -> None:
+def test_stop_cancels_the_open_question_and_the_call() -> None:
     async def run():
         async with _Server() as server, ClientSession() as http:
             client = McpHttpClient(http, server.url)
@@ -199,7 +199,8 @@ def test_stop_declines_the_open_question_and_cancels_the_call() -> None:
     server, stopped = asyncio.run(run())
     assert stopped
     answers = [m for m in server.seen if m.get("id") == "el-1"]
-    assert answers and answers[0]["result"] == {"action": "decline"}
+    # Stop is no explicit "no": the open question gets cancel, as on the runtime path.
+    assert answers and answers[0]["result"] == {"action": "cancel"}
     assert any(m.get("method") == "notifications/cancelled" for m in server.seen)
 
 
