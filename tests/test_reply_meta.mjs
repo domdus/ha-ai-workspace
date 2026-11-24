@@ -167,7 +167,7 @@ assert.match(onAction, /await copyText\(text\)/);
 assert.match(onAction, /const action = speakTapAction\(speechState\(\), speakTarget === bubble\);/, "same reply: its state decides");
 assert.match(onAction, /action === "pause"\) \{\s*pauseSpeech\(\);/, "same reply playing: pause");
 assert.match(onAction, /action === "resume"\) \{\s*await resumeSpeech\(\);/, "same reply paused: resume");
-assert.match(onAction, /btn\.dataset\.action === "stop"\) \{[\s\S]{0,240}haltSpeech\(\);\s*if \(speakBtn && !speakBtn\.hidden\) speakBtn\.focus\?\.\(\);/, "stop: reset, focus back on speak");
+assert.doesNotMatch(onAction, /dataset\.action === "stop"/, "no separate stop action");
 assert.match(onAction, /await speakReply\(text, true, bubble\)/, "other reply: read that one");
 // The copied/read text is the reply markdown only (no tool chips, status, "reply cut" note).
 assert.match(chatSrc, /function replyTextOf\(bubble\) \{\s*const md = bubble\?\.querySelector\("ha-markdown\.text"\);/);
@@ -176,12 +176,13 @@ assert.match(chatSrc, /function speakReply\(text, fromUser = false, target = nul
 assert.match(chatSrc, /const gen = speakGen;\s*if \(fromUser\) await unlockOutput\(\);\s*\/\/[^\n]*\n\s*if \(gen !== speakGen\) return;/, "a newer click wins");
 assert.match(chatSrc, /if \(target\) syncCopyChat\(\);/, "stop state shows at once");
 assert.match(chatSrc, /function haltSpeech\(\) \{\s*speakGen \+= 1;\s*speakTarget = null;\s*speakAuto = false;\s*speakUserPaused = false;/);
-// Speak button: read aloud / pause / resume; a stop button next to it while active.
+// One button: read aloud / pause / resume; no separate stop button.
 assert.match(chatSrc, /const view = speakControlView\(next\);/);
 assert.match(chatSrc, /btn\.querySelector\("ha-icon"\)\?\.setAttribute\("icon", view\.icon\);\s*setActionLabel\(btn, t\(view\.label\)\);/);
 assert.match(chatSrc, /btn\.setAttribute\("aria-pressed", view\.pressed \? "true" : "false"\)/);
-assert.match(chatSrc, /const stopBtn = replyActionButton\("stop", "mdi:stop", t\("stop_reading"\)\);\s*stopBtn\.hidden = true;/);
-assert.match(chatSrc, /stopBtn\.hidden = !view\.stop;\s*if \(focused && !btn\.hidden\) btn\.focus\?\.\(\);/, "focus leaves a hiding stop button");
+assert.doesNotMatch(chatSrc, /replyActionButton\("stop"/, "no stop button in the reply row");
+assert.doesNotMatch(chatSrc, /reply-stop|stopBtn|stop_reading/, "stop button code gone");
+assert.doesNotMatch(cssStandard, /reply-stop/, "stop button CSS gone");
 // Pause holds the queue: the next clip loads but does not start; resume continues.
 assert.match(chatSrc, /replyAudio\.src = replyObjectUrl;\s*if \(speakHold\) \{[\s\S]{0,200}speakUserPaused = true;\s*setSpeakUi\(\);\s*return;/);
 assert.match(chatSrc, /function pauseSpeech\(\) \{[\s\S]{0,200}speakHold = true;[\s\S]{0,200}replyAudio\.pause\(\);/);
@@ -224,13 +225,13 @@ assert.match(chatSrc, /if \(el\.nextElementSibling !== row\) bubble\.insertBefor
 // Every language has the strings, German as asked.
 const langs = (i18nSrc.match(/^ {2}(?:"[\w-]+"|\w+): \{$/gm) || []).length;
 assert.ok(langs >= 10);
-for (const key of ["copy_reply", "stop_reading", "reply_actions", "speak_reply", "pause_reply", "resume_reply", "copied"]) {
+for (const key of ["copy_reply", "reply_actions", "speak_reply", "pause_reply", "resume_reply", "copied"]) {
   assert.equal((i18nSrc.match(new RegExp(`^ {4}${key}: "[^"]+"`, "gm")) || []).length, langs, key);
 }
 assert.equal((i18nSrc.match(/^ {4}copy_last_reply: "/gm) || []).length, 0, "old key gone");
 assert.equal((i18nSrc.match(/^ {4}reply_yesterday: "[^"]*\{time\}[^"]*"/gm) || []).length, langs);
 assert.match(i18nSrc, /copy_reply: "Antwort kopieren"/);
-assert.match(i18nSrc, /stop_reading: "Vorlesen stoppen"/);
+assert.equal((i18nSrc.match(/^ {4}stop_reading: "/gm) || []).length, 0, "unused stop_reading gone");
 assert.match(i18nSrc, /resume_reply: "Fortsetzen"/);
 assert.match(i18nSrc, /reply_yesterday: "gestern, \{time\}"/);
 

@@ -3008,10 +3008,6 @@ export async function mountAiWorkspace(root, options = {}) {
         row.setAttribute("aria-label", t("reply_actions"));
         row.appendChild(replyActionButton("copy", "mdi:content-copy", t("copy_reply")));
         row.appendChild(replyActionButton("speak", "mdi:volume-high", t("speak_reply")));
-        // Shows next to the speak button only while its reply plays or is paused.
-        const stopBtn = replyActionButton("stop", "mdi:stop", t("stop_reading"));
-        stopBtn.hidden = true;
-        row.appendChild(stopBtn);
         const timeEl = document.createElement("time");
         timeEl.className = "reply-time";
         row.appendChild(timeEl);
@@ -3061,21 +3057,14 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function syncReplySpeakUi() {
     // The one read-aloud control: the speak button of the reply being read (by hand or
-    // automatically) shows pause while it plays and resume while it is paused; a stop
-    // button sits next to it in both states.
+    // automatically) shows pause while it plays and resume while it is paused; no
+    // separate stop button.
     const state = speechState();
     for (const btn of logEl.querySelectorAll(".reply-actions .reply-speak")) {
       const row = btn.closest(".reply-actions");
       const mine = Boolean(speakTarget && state !== "idle" && replyRowOf(speakTarget) === row);
       const next = mine ? state : "idle";
       const view = speakControlView(next);
-      const stopBtn = row?.querySelector(":scope > .reply-stop");
-      if (stopBtn && stopBtn.hidden === view.stop) {
-        // Focus on the vanishing stop button goes back to the speak button.
-        const focused = !view.stop && isFocused(stopBtn);
-        stopBtn.hidden = !view.stop;
-        if (focused && !btn.hidden) btn.focus?.();
-      }
       if (btn.dataset.state === next) continue;
       btn.dataset.state = next;
       btn.classList.toggle("speaking", next === "playing");
@@ -3083,14 +3072,6 @@ export async function mountAiWorkspace(root, options = {}) {
       btn.setAttribute("aria-pressed", view.pressed ? "true" : "false");
       btn.querySelector("ha-icon")?.setAttribute("icon", view.icon);
       setActionLabel(btn, t(view.label));
-    }
-  }
-
-  function isFocused(el) {
-    try {
-      return Boolean(el?.matches?.(":focus") || el?.matches?.(":focus-within"));
-    } catch (_err) {
-      return false;
     }
   }
 
@@ -3123,13 +3104,6 @@ export async function mountAiWorkspace(root, options = {}) {
         icon?.setAttribute("icon", "mdi:content-copy");
         setActionLabel(btn, t("copy_reply"));
       }, 1600);
-      return;
-    }
-    if (btn.dataset.action === "stop") {
-      // Stop completely; focus goes back to the speak button (the stop button hides).
-      const speakBtn = btn.closest(".reply-actions")?.querySelector(":scope > .reply-speak");
-      haltSpeech();
-      if (speakBtn && !speakBtn.hidden) speakBtn.focus?.();
       return;
     }
     if (btn.dataset.action === "speak") {
@@ -6190,7 +6164,7 @@ export async function mountAiWorkspace(root, options = {}) {
     });
     speakHeld = taken.rest;
     if (taken.pieces.length && (!speakTarget || speakAuto)) {
-      // Auto read-aloud: the live reply's own speak button is the control (stop / play).
+      // Auto read-aloud: the live reply's own speak button is the control (pause / resume).
       const live = lastAssistantBubble();
       if (live) {
         speakTarget = live;
@@ -6426,7 +6400,7 @@ export async function mountAiWorkspace(root, options = {}) {
   async function speakReply(text, fromUser = false, target = null) {
     if (!voice.tts || !String(text || "").trim()) return;
     haltSpeech();
-    // The reply whose own button started this; its button shows "stop" while it plays.
+    // The reply whose own button started this; its button shows pause while it plays.
     speakTarget = target || lastAssistantBubble();
     speakAuto = false;
     speakFromUser = fromUser;
@@ -6437,7 +6411,7 @@ export async function mountAiWorkspace(root, options = {}) {
     speakFlush = true;
     const taken = takeSpeech(String(text), false, true, { heavy: voice.ttsHeavy });
     for (const piece of taken.pieces) queueSpeech(piece);
-    // Show "stop" at once, not only when the first clip starts playing.
+    // Show pause at once, not only when the first clip starts playing.
     if (target) syncCopyChat();
   }
 

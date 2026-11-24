@@ -337,13 +337,13 @@ export function speakUiState({ queued = false, hasClip = false, ended = false, p
 }
 
 /**
- * How a reply's speak button looks in a read-aloud state, and whether the stop button
- * next to it shows: idle reads aloud, playing pauses, paused resumes.
+ * How a reply's single read-aloud button looks in a read-aloud state: idle reads aloud,
+ * playing pauses, paused resumes.
  */
 export function speakControlView(state) {
-  if (state === "playing") return { icon: "mdi:pause", label: "pause_reply", pressed: true, stop: true };
-  if (state === "paused") return { icon: "mdi:play", label: "resume_reply", pressed: true, stop: true };
-  return { icon: "mdi:volume-high", label: "speak_reply", pressed: false, stop: false };
+  if (state === "playing") return { icon: "mdi:pause", label: "pause_reply", pressed: true };
+  if (state === "paused") return { icon: "mdi:play", label: "resume_reply", pressed: true };
+  return { icon: "mdi:volume-high", label: "speak_reply", pressed: false };
 }
 
 /** What a tap on the speak button does in that state: "pause", "resume" or "speak". */

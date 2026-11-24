@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.2b9
+
+**One read-aloud button again, no separate stop button.**
+
+- Each reply has a single button: speaker starts reading, pause pauses at the current spot, play resumes from there.
+- It goes back to the speaker when the reply is done, when reading is reset (error, blocked audio, page left) or when you start another reply.
+- The stop button next to it is gone. Panel and floating chat.
+- No Runtime update needed.
+
 ## 1.6.2b8
 
 **Read-aloud can be paused again.**

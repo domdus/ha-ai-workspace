@@ -261,10 +261,10 @@ console.log("ok");
   eq(speakUiState({ hasClip: true, paused: true, userPaused: true, held: true }), "paused", "held clip");
   eq(speakUiState({ held: true }), "idle", "nothing left to resume");
   eq(speakUiState({ hasClip: true, error: true, held: true }), "idle", "failed clip while held");
-  // Button look per state and the stop button next to it.
-  eq(JSON.stringify(speakControlView("idle")), JSON.stringify({ icon: "mdi:volume-high", label: "speak_reply", pressed: false, stop: false }), "idle view");
-  eq(JSON.stringify(speakControlView("playing")), JSON.stringify({ icon: "mdi:pause", label: "pause_reply", pressed: true, stop: true }), "playing view");
-  eq(JSON.stringify(speakControlView("paused")), JSON.stringify({ icon: "mdi:play", label: "resume_reply", pressed: true, stop: true }), "paused view");
+  // Single button look per state (no stop button).
+  eq(JSON.stringify(speakControlView("idle")), JSON.stringify({ icon: "mdi:volume-high", label: "speak_reply", pressed: false }), "idle view");
+  eq(JSON.stringify(speakControlView("playing")), JSON.stringify({ icon: "mdi:pause", label: "pause_reply", pressed: true }), "playing view");
+  eq(JSON.stringify(speakControlView("paused")), JSON.stringify({ icon: "mdi:play", label: "resume_reply", pressed: true }), "paused view");
   // Taps: same reply pauses / resumes, another reply starts reading.
   eq(speakTapAction("playing", true), "pause", "tap while playing");
   eq(speakTapAction("paused", true), "resume", "tap while paused");
