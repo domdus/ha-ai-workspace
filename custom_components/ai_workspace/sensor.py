@@ -48,6 +48,9 @@ def reset_datetime(value: object) -> datetime | None:
         return None
 
 
+_PLAN_TITLES = {"claude": "Claude", "cursor": "Cursor", "codex": "Codex"}
+
+
 def _write(entity: SensorEntity) -> None:
     if _live(entity):
         entity.async_write_ha_state()
@@ -90,7 +93,7 @@ async def async_setup_entry(
     )
     plan_entities = []
     for engine in ENGINES:
-        title = {"claude": "Claude", "cursor": "Cursor", "codex": "Codex"}[engine]
+        title = _PLAN_TITLES[engine]
         plan_entities.extend(
             [
                 PlanQuotaSensor(hass, entry, plan_hub, engine, f"{engine}_session_percent", f"{title} plan session %", "session_percent"),
@@ -217,7 +220,9 @@ class PlanQuotaSensor(_PlanQuotaBase):
     ) -> None:
         super().__init__(hass, entry, hub, engine)
         self._field = field
-        self._attr_name = name
+        # Name from translations (entity.sensor.plan_*), e.g. "Claude plan session %".
+        self._attr_translation_key = f"plan_{field}"
+        self._attr_translation_placeholders = {"engine": _PLAN_TITLES.get(engine, engine)}
         self._attr_unique_id = f"{entry.entry_id}_{unique}"
         if field.endswith("percent"):
             self._attr_native_unit_of_measurement = "%"
@@ -478,7 +483,8 @@ class WorkspaceUsageSensor(_UsageBase):
         self._kind = kind
         self._window = window
         self._source = source
-        self._attr_name = name
+        # Name from translations (entity.sensor.<unique>.name), in the user's language.
+        self._attr_translation_key = unique
         self._attr_unique_id = f"{entry.entry_id}_usage_{unique}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, usage_device_ident(entry.entry_id))},
@@ -522,7 +528,8 @@ class WorkspaceLastSensor(_UsageBase):
     ) -> None:
         super().__init__(hass, entry, hub)
         self._kind = kind
-        self._attr_name = name
+        # Name from translations (entity.sensor.<unique>.name), in the user's language.
+        self._attr_translation_key = unique
         self._attr_unique_id = f"{entry.entry_id}_usage_{unique}"
         self._attr_entity_category = EntityCategory.DIAGNOSTIC
         self._attr_device_info = DeviceInfo(
@@ -579,7 +586,8 @@ class AgentUsageSensor(_UsageBase):
         self._kind = kind
         self._window = window
         self._source = source
-        self._attr_name = name
+        # Name from translations (entity.sensor.<unique>.name), in the user's language.
+        self._attr_translation_key = unique
         self._attr_unique_id = f"{entry.entry_id}_{agent.id}_usage_{unique}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"agent:{agent.id}")},
@@ -625,7 +633,8 @@ class AgentLastSensor(_UsageBase):
         super().__init__(hass, entry, hub)
         self._agent = agent
         self._kind = kind
-        self._attr_name = name
+        # Name from translations (entity.sensor.<unique>.name), in the user's language.
+        self._attr_translation_key = unique
         self._attr_unique_id = f"{entry.entry_id}_{agent.id}_usage_{unique}"
         self._attr_entity_category = EntityCategory.DIAGNOSTIC
         self._attr_device_info = DeviceInfo(

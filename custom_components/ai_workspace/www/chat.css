@@ -1005,7 +1005,6 @@ h1 {
 }
 
 .chat-actions[hidden],
-.chat-actions .speak-chat[hidden],
 .chat-actions .history-chat[hidden] {
   display: none !important;
 }
@@ -1014,16 +1013,12 @@ h1 {
   flex: 0 0 auto;
 }
 
-.speak-chat,
 .history-chat {
   --mdc-icon-button-size: 32px;
   --mdc-icon-size: 18px;
   color: var(--secondary-text-color);
 }
 
-.speak-chat:hover,
-.speak-chat:focus-visible,
-.speak-chat.speaking,
 .history-chat:hover,
 .history-chat:focus-visible {
   color: var(--primary-text-color);
@@ -1042,9 +1037,11 @@ h1 {
   transition: opacity 120ms ease;
 }
 
-/* While the next turn runs, the previous reply's row (and time) is hidden until hovered or
-   focused; when a reply finishes in view, its row fades in softly. */
-.reply-actions.is-held {
+/* While a turn runs, the previous reply keeps its buttons (only its time label goes, see
+   below); the running turn's own row waits until the reply is complete, then fades in once
+   (never on chat open or switch). */
+.reply-actions.is-pending {
+  visibility: hidden;
   opacity: 0;
 }
 
@@ -1077,7 +1074,8 @@ h1 {
 
 .reply-actions > ha-icon-button:hover,
 .reply-actions > ha-icon-button:focus-visible,
-.reply-actions > ha-icon-button.speaking {
+.reply-actions > ha-icon-button.speaking,
+.reply-actions > ha-icon-button.paused {
   color: var(--primary-text-color);
 }
 
@@ -1109,12 +1107,18 @@ h1 {
   opacity: 1;
 }
 
+/* The reply being read keeps its play/pause control visible, also while the next turn runs. */
+.reply-actions:has(> .reply-speak.speaking),
+.reply-actions:has(> .reply-speak.paused) {
+  opacity: 1;
+}
+
 @media (hover: none) {
   .reply-actions {
     opacity: 1;
   }
 
-  .reply-actions.is-held:not(:focus-within) {
+  .reply-actions.is-pending {
     opacity: 0;
   }
 }
@@ -1317,8 +1321,21 @@ h1 {
   opacity: 0.72;
 }
 
+/* A tool step that ended with an error (MCP isError). */
+.tools-list span.done.failed {
+  opacity: 1;
+  color: var(--error-color, #db4437);
+}
+
 .tools-list span.busy {
   color: var(--primary-text-color);
+}
+
+/* MCP progress of a running tool (notifications/progress). */
+.tools-list span .chip-progress {
+  margin-inline-start: var(--ha-space-1);
+  color: var(--secondary-text-color);
+  font-size: inherit;
 }
 
 .tools.busy .tools-summary::after,
@@ -1488,8 +1505,10 @@ h1 {
   background: var(--ha-color-form-background, var(--input-fill-color));
   border: 1px solid var(--ha-color-border-neutral-normal, var(--divider-color));
   border-radius: var(--ha-border-radius-3xl);
-  padding: var(--ha-space-1) var(--ha-space-1) var(--ha-space-1) var(--ha-space-4);
+  /* Buttons keep the same inset to the top, right and bottom edge of the pill. */
+  padding: var(--ai-composer-inset) var(--ai-composer-inset) var(--ai-composer-inset) var(--ha-space-4);
   transition: border-color 160ms ease, box-shadow 160ms ease;
+  --ai-composer-inset: calc(var(--ha-space-1, 4px) * 1.5);
 }
 
 .ui-theme-standard .composer-box:focus-within,
@@ -1509,6 +1528,7 @@ h1 {
   align-items: center;
   gap: var(--ha-space-1);
   flex: 0 0 auto;
+  min-width: 0;
 }
 
 /* Longer prompts: the text takes the full width, the buttons sit below it on the right. */
@@ -1851,13 +1871,14 @@ textarea:focus {
 }
 
 ha-button.send {
-  --ha-button-height: 36px;
+  --ha-button-height: var(--ai-composer-button, 36px);
   --ha-button-border-radius: 999px;
 }
 
 ha-button.send::part(base) {
-  width: 36px;
-  min-width: 36px;
+  width: var(--ai-composer-button, 36px);
+  min-width: var(--ai-composer-button, 36px);
+  height: var(--ai-composer-button, 36px);
   padding: 0;
   justify-content: center;
   align-items: center;
@@ -1885,23 +1906,32 @@ ha-button.send ha-icon {
   flex: 0 0 auto;
 }
 
-/* The HA composer keeps HA's own icon button size. */
-:where(.wrap:not(.composer-ha)) .mic {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  color: var(--secondary-text-color);
-  --ha-icon-button-size: 36px;
-  --mdc-icon-button-size: 36px;
+/* Attach, dictate and send: one size, centered, same gap. Specific enough to win over
+   page-wide icon button sizes (the floating chat's app bar sizes every ha-icon-button 40px). */
+.composer {
+  --ai-composer-button: 36px;
 }
 
-:where(.wrap:not(.composer-ha)) .attach {
-  width: 36px;
-  height: 36px;
+.composer .composer-actions > .attach,
+.composer .composer-actions > .mic,
+.composer .composer-actions > .send {
+  flex: 0 0 var(--ai-composer-button);
+  width: var(--ai-composer-button);
+  min-width: var(--ai-composer-button);
+  height: var(--ai-composer-button);
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 50%;
+  --ha-icon-button-size: var(--ai-composer-button);
+  --mdc-icon-button-size: var(--ai-composer-button);
+  --ha-button-height: var(--ai-composer-button);
+}
+
+.composer .composer-actions > .attach,
+.composer .composer-actions > .mic:not(.listening) {
   color: var(--secondary-text-color);
-  --ha-icon-button-size: 36px;
-  --mdc-icon-button-size: 36px;
 }
 
 .attach[disabled],
@@ -2781,6 +2811,11 @@ ha-date-range-picker.usage-filter-dates {
   overflow-wrap: anywhere;
   max-height: 30vh;
   overflow-y: auto;
+}
+.approval-link {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--primary-color);
 }
 .approval-form {
   display: flex;

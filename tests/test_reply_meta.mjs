@@ -101,9 +101,9 @@ const chat = [
   { role: "assistant", text: "third, still going", streaming: true },
 ];
 assert.deepEqual(replyRows(chat), [
-  { index: 1, text: "**first**", last: false, held: false },
-  { index: 4, text: "## second\n\n- x", last: false, held: true },
-], "every finished reply; streaming holds the newest row");
+  { index: 1, text: "**first**", last: false, pending: false },
+  { index: 4, text: "## second\n\n- x", last: false, pending: false },
+], "streaming: the previous reply keeps its row (buttons), only its time goes (not last)");
 const idleChat = [
   { role: "user", text: "a" },
   { role: "assistant", text: "  **first**  " },
@@ -111,13 +111,26 @@ const idleChat = [
   { role: "assistant", text: "## second\n\n- x" },
 ];
 assert.deepEqual(replyRows(idleChat), [
-  { index: 1, text: "**first**", last: false, held: false },
-  { index: 3, text: "## second\n\n- x", last: true, held: false },
+  { index: 1, text: "**first**", last: false, pending: false },
+  { index: 3, text: "## second\n\n- x", last: true, pending: false },
 ], "idle: newest finished reply is last");
-assert.deepEqual(replyRows(chat, { busy: true }), [
-  { index: 1, text: "**first**", last: false, held: false },
-  { index: 4, text: "## second\n\n- x", last: false, held: true },
-], "busy: newest row held while the turn runs");
+assert.deepEqual(replyRows(idleChat, { busy: true }), [
+  { index: 1, text: "**first**", last: false, pending: false },
+  { index: 3, text: "## second\n\n- x", last: false, pending: false },
+], "busy: previous reply keeps copy/read aloud, no row is last (its time goes)");
+// The new reply finished live but its text still drains: its row waits, the old one stays.
+const draining = [...idleChat, { role: "user", text: "c" }, { role: "assistant", text: "third", fresh: true }];
+assert.deepEqual(replyRows(draining, { busy: true }), [
+  { index: 1, text: "**first**", last: false, pending: false },
+  { index: 3, text: "## second\n\n- x", last: false, pending: false },
+  { index: 5, text: "third", last: false, pending: true },
+], "the running turn's row is pending until the turn is complete");
+assert.deepEqual(replyRows(draining).at(-1), { index: 5, text: "third", last: true, pending: false }, "complete: last");
+// A streaming reply makes the turn run even without `busy`.
+assert.deepEqual(
+  replyRows([...draining, { role: "assistant", text: "more", streaming: true }]).map((row) => [row.last, row.pending]),
+  [[false, false], [false, false], [false, true]],
+);
 assert.deepEqual(
   replyRows([{ role: "assistant", text: "only" }]).map((row) => row.last),
   [true],
@@ -129,8 +142,14 @@ assert.doesNotMatch(chatSrc, /transcriptText/, "whole-chat copy is gone");
 assert.doesNotMatch(chatSrc, /copy_chat/);
 assert.doesNotMatch(chatSrc, /copy_last_reply|copy-chat/, "the bottom row no longer copies: each reply has its own button");
 assert.match(chatSrc, /const rows = replyRows\(entries, \{ busy: streaming \|\| liveStream \}\)/);
-assert.match(chatSrc, /row\.classList\.toggle\("is-held", info\.held\)/);
+assert.match(chatSrc, /row\.classList\.toggle\("is-pending", info\.pending\)/);
+assert.doesNotMatch(chatSrc, /is-held/, "the previous reply's row is no longer hidden while a turn runs");
+// History stays in the previous reply's row while the next turn runs.
+assert.match(chatSrc, /logEl\.querySelector\("\.reply-actions\.is-last"\) \|\| \(turnRunning \? settled\.at\(-1\) \|\| null : null\)/);
+assert.match(chatSrc, /streaming = true;\s*\/\/[^\n]*\n\s*syncCopyChat\(\);\s*const turnSince/, "send keeps the previous history button");
 assert.match(chatSrc, /bubble\._replyFresh/);
+assert.match(chatSrc, /fresh: Boolean\(bubble\._replyFresh\)/);
+assert.match(chatSrc, /if \(!info\.pending\) bubble\._replyFresh = false;/, "fresh ends with the turn");
 assert.match(chatSrc, /replyActionButton\("copy", "mdi:content-copy", t\("copy_reply"\)\)/);
 assert.match(chatSrc, /replyActionButton\("speak", "mdi:volume-high", t\("speak_reply"\)\)/);
 assert.match(chatSrc, /btn\.setAttribute\("aria-label", label\)/, "buttons carry an aria-label");
@@ -145,21 +164,49 @@ assert.ok(rowFn, "syncReplyRows found");
 assert.doesNotMatch(rowFn, /addEventListener/, "no listener per reply row");
 const onAction = chatSrc.match(/async function onReplyAction\(event\) \{([\s\S]*?)\n  \}\n/)?.[1] || "";
 assert.match(onAction, /await copyText\(text\)/);
-assert.match(onAction, /speakTarget === bubble && speechLive\(\)\) \{\s*haltSpeech\(\);/, "same reply: stop");
+assert.match(onAction, /const action = speakTapAction\(speechState\(\), speakTarget === bubble\);/, "same reply: its state decides");
+assert.match(onAction, /action === "pause"\) \{\s*pauseSpeech\(\);/, "same reply playing: pause");
+assert.match(onAction, /action === "resume"\) \{\s*await resumeSpeech\(\);/, "same reply paused: resume");
+assert.doesNotMatch(onAction, /dataset\.action === "stop"/, "no separate stop action");
 assert.match(onAction, /await speakReply\(text, true, bubble\)/, "other reply: read that one");
 // The copied/read text is the reply markdown only (no tool chips, status, "reply cut" note).
 assert.match(chatSrc, /function replyTextOf\(bubble\) \{\s*const md = bubble\?\.querySelector\("ha-markdown\.text"\);/);
 // Read-aloud: one reply at a time, the button shows stop while its reply plays.
-assert.match(chatSrc, /function speakReply\(text, fromUser = false, target = null\) \{[\s\S]{0,200}haltSpeech\(\);\s*\/\/[^\n]*\n\s*speakTarget = target;/);
+assert.match(chatSrc, /function speakReply\(text, fromUser = false, target = null\) \{[\s\S]{0,200}haltSpeech\(\);\s*\/\/[^\n]*\n\s*speakTarget = target \|\| lastAssistantBubble\(\);\s*speakAuto = false;/);
 assert.match(chatSrc, /const gen = speakGen;\s*if \(fromUser\) await unlockOutput\(\);\s*\/\/[^\n]*\n\s*if \(gen !== speakGen\) return;/, "a newer click wins");
 assert.match(chatSrc, /if \(target\) syncCopyChat\(\);/, "stop state shows at once");
-assert.match(chatSrc, /function haltSpeech\(\) \{\s*speakGen \+= 1;\s*speakTarget = null;/);
-assert.match(chatSrc, /mine \? "mdi:stop" : "mdi:volume-high"/);
-assert.match(chatSrc, /t\(mine \? "stop_reading" : "speak_reply"\)/);
-assert.match(chatSrc, /btn\.setAttribute\("aria-pressed", mine \? "true" : "false"\)/);
-assert.match(chatSrc, /if \(!voice\.speak \|\| !delta \|\| speakTarget\) return;/, "auto read-aloud does not cut in");
-// The bottom speaker only shows for auto read-aloud (no reply button owns it).
-assert.match(chatSrc, /const showSpeak = Boolean\(voice\.tts && speechLive\(\) && !speakTarget\);/);
+assert.match(chatSrc, /function haltSpeech\(\) \{\s*speakGen \+= 1;\s*speakTarget = null;\s*speakAuto = false;\s*speakUserPaused = false;/);
+// One button: read aloud / pause / resume; no separate stop button.
+assert.match(chatSrc, /const view = speakControlView\(next\);/);
+assert.match(chatSrc, /btn\.querySelector\("ha-icon"\)\?\.setAttribute\("icon", view\.icon\);\s*setActionLabel\(btn, t\(view\.label\)\);/);
+assert.match(chatSrc, /btn\.setAttribute\("aria-pressed", view\.pressed \? "true" : "false"\)/);
+assert.doesNotMatch(chatSrc, /replyActionButton\("stop"/, "no stop button in the reply row");
+assert.doesNotMatch(chatSrc, /reply-stop|stopBtn|stop_reading/, "stop button code gone");
+assert.doesNotMatch(cssStandard, /reply-stop/, "stop button CSS gone");
+// Pause holds the queue: the next clip loads but does not start; resume continues.
+assert.match(chatSrc, /replyAudio\.src = replyObjectUrl;\s*if \(speakHold\) \{[\s\S]{0,200}speakUserPaused = true;\s*setSpeakUi\(\);\s*return;/);
+assert.match(chatSrc, /function pauseSpeech\(\) \{[\s\S]{0,200}speakHold = true;[\s\S]{0,200}replyAudio\.pause\(\);/);
+assert.match(chatSrc, /function haltSpeech\(\) \{[\s\S]{0,200}speakHold = false;/);
+assert.match(chatSrc, /if \(!started && replyAudio\.paused && speakUserPaused\) startedAt = now;/, "held clip does not time out");
+assert.match(chatSrc, /held: speakHold,/);
+// Headset / lock screen: media session pause keeps the paused state, also with the screen off.
+assert.match(chatSrc, /pause: \(\) => pauseSpeech\(\),\s*play: \(\) => resumeSpeech\(\),\s*stop: \(\) => haltSpeech\(\),/);
+assert.match(chatSrc, /if \(document\.hidden && !speakHold\) \{/);
+assert.match(chatSrc, /if \(!voice\.speak \|\| !delta \|\| \(speakTarget && !speakAuto\)\) return;/, "auto read-aloud does not cut in");
+// One control: no chat-level speaker any more; auto read-aloud targets the live reply's row.
+assert.doesNotMatch(chatSrc, /speak-chat/, "no stray chat-level speaker");
+assert.doesNotMatch(cssStandard, /speak-chat/);
+assert.doesNotMatch(chatSrc, /const showSpeak\b/);
+assert.match(chatSrc, /if \(taken\.pieces\.length && \(!speakTarget \|\| speakAuto\)\) \{[\s\S]{0,200}speakTarget = live;\s*speakAuto = true;/);
+assert.match(chatSrc, /!speakAuto && !keep\.has\(replyRowOf\(speakTarget\)\)/, "auto target survives while streaming");
+// The state resets when nothing plays: error, blocked play(), browser pause, page left.
+assert.match(chatSrc, /addEventListener\("error", \(\) => \{[\s\S]{0,160}if \(ownClip\(\)\) haltSpeech\(\);/);
+assert.match(chatSrc, /replyAudio\.play\(\)\.catch\(\(err\) => \{[\s\S]{0,500}done\(\);\s*haltSpeech\(\);/);
+assert.match(chatSrc, /if \(document\.hidden && !speakHold\) \{\s*\/\/[^\n]*\n\s*haltSpeech\(\);/, "pause while hidden is the browser's");
+assert.match(chatSrc, /listen\(document, "visibilitychange", onSpeakVisibility\);/);
+assert.match(chatSrc, /listen\(window, "pagehide", \(\) => \{\s*if \(speechLive\(\)\) haltSpeech\(\);/);
+assert.match(chatSrc, /addEventListener\("emptied"/);
+assert.match(chatSrc, /userPaused: speakUserPaused,\s*\}\);/, "watchdog: browser pause is a stall");
 assert.match(chatSrc, /timeEl\.className = "reply-time"/);
 assert.match(chatSrc, /timeEl\.title = replyTimeTitle\(/);
 assert.match(chatSrc, /createdAt: bubble\.dataset\.createdAt/);
@@ -178,13 +225,14 @@ assert.match(chatSrc, /if \(el\.nextElementSibling !== row\) bubble\.insertBefor
 // Every language has the strings, German as asked.
 const langs = (i18nSrc.match(/^ {2}(?:"[\w-]+"|\w+): \{$/gm) || []).length;
 assert.ok(langs >= 10);
-for (const key of ["copy_reply", "stop_reading", "reply_actions", "speak_reply", "copied"]) {
+for (const key of ["copy_reply", "reply_actions", "speak_reply", "pause_reply", "resume_reply", "copied"]) {
   assert.equal((i18nSrc.match(new RegExp(`^ {4}${key}: "[^"]+"`, "gm")) || []).length, langs, key);
 }
 assert.equal((i18nSrc.match(/^ {4}copy_last_reply: "/gm) || []).length, 0, "old key gone");
 assert.equal((i18nSrc.match(/^ {4}reply_yesterday: "[^"]*\{time\}[^"]*"/gm) || []).length, langs);
 assert.match(i18nSrc, /copy_reply: "Antwort kopieren"/);
-assert.match(i18nSrc, /stop_reading: "Vorlesen stoppen"/);
+assert.equal((i18nSrc.match(/^ {4}stop_reading: "/gm) || []).length, 0, "unused stop_reading gone");
+assert.match(i18nSrc, /resume_reply: "Fortsetzen"/);
 assert.match(i18nSrc, /reply_yesterday: "gestern, \{time\}"/);
 
 // One message template (HA components only swap the composer): subtle row, full on
@@ -205,7 +253,10 @@ for (const css of [cssStandard]) {
   assert.match(rule, /font-size: var\(--ha-font-size-s/);
   assert.match(css, /\.reply-actions:not\(\.is-last\) \.reply-time \{\s*opacity: 0;/);
   assert.match(css, /\.reply-actions:focus-within \.reply-time \{\s*opacity: 1;/);
-  assert.match(css, /\.reply-actions\.is-held \{/);
+  assert.doesNotMatch(css, /is-held/);
+  assert.match(css, /\.reply-actions\.is-pending \{\s*visibility: hidden;\s*opacity: 0;/);
+  assert.match(css, /@media \(hover: none\) \{\s*\.reply-actions \{\s*opacity: 1;\s*\}\s*\.reply-actions\.is-pending \{\s*opacity: 0;/);
+  assert.match(css, /prefers-reduced-motion: reduce\) \{[\s\S]{0,200}\.reply-actions\.is-fresh \{\s*animation: none;/);
   assert.match(css, /\.reply-actions\.is-fresh \{/);
   assert.match(css, /@keyframes reply-actions-in/);
   assert.doesNotMatch(css, /copy-chat|\.chat-actions \.reply-time/);

@@ -10,6 +10,7 @@ const KEYS = [
   "save_open_editor", "run_now", "open_editor", "open_chat", "edit", "delete", "delete_confirm", "enabled", "paused",
   "last_run", "never_run", "status_ok", "status_error", "status_timeout", "status_busy", "status_running",
   "not_parsable", "run_started", "saved", "every_min", "every_h", "daily_at", "days_at", "load_failed",
+  "task_edit_title",
 ];
 
 const VALUES = {
@@ -26,6 +27,7 @@ const VALUES = {
     "Last run", "Not run yet", "OK", "Failed", "Timed out", "Busy", "Running",
     "Edited in the automation editor; this page cannot show all of it.", "Task started", "Saved",
     "Every {n} min", "Every {n} h", "Daily at {time}", "{days} at {time}", "Could not load the tasks.",
+    "Edit task",
   ],
   de: [
     "Aufgaben", "Prompts, die Agenten nach Zeitplan ausführen. Jede Aufgabe ist eine Home-Assistant-Automation mit dem Label AI Workspace.",
@@ -40,6 +42,7 @@ const VALUES = {
     "Letzter Lauf", "Noch nicht gelaufen", "OK", "Fehlgeschlagen", "Zeit abgelaufen", "Beschäftigt", "Läuft",
     "Im Automations-Editor bearbeitet; diese Seite kann nicht alles anzeigen.", "Aufgabe gestartet", "Gespeichert",
     "Alle {n} Min.", "Alle {n} Std.", "Täglich um {time}", "{days} um {time}", "Aufgaben konnten nicht geladen werden.",
+    "Aufgabe bearbeiten",
   ],
   fr: [
     "Tâches", "Des prompts que les agents exécutent selon un horaire. Chaque tâche est une automatisation Home Assistant avec l'étiquette AI Workspace.",
@@ -54,6 +57,7 @@ const VALUES = {
     "Dernière exécution", "Pas encore exécutée", "OK", "Échec", "Délai dépassé", "Occupée", "En cours",
     "Modifiée dans l'éditeur d'automatisations ; cette page ne peut pas tout afficher.", "Tâche lancée", "Enregistrée",
     "Toutes les {n} min", "Toutes les {n} h", "Chaque jour à {time}", "{days} à {time}", "Impossible de charger les tâches.",
+    "Modifier la tâche",
   ],
   es: [
     "Tareas", "Prompts que los agentes ejecutan según un horario. Cada tarea es una automatización de Home Assistant con la etiqueta AI Workspace.",
@@ -68,6 +72,7 @@ const VALUES = {
     "Última ejecución", "Aún no se ha ejecutado", "OK", "Falló", "Tiempo agotado", "Ocupada", "En curso",
     "Editada en el editor de automatizaciones; esta página no puede mostrarlo todo.", "Tarea iniciada", "Guardada",
     "Cada {n} min", "Cada {n} h", "Cada día a las {time}", "{days} a las {time}", "No se pudieron cargar las tareas.",
+    "Editar tarea",
   ],
   it: [
     "Attività", "Prompt che gli agenti eseguono a orari prestabiliti. Ogni attività è un'automazione di Home Assistant con l'etichetta AI Workspace.",
@@ -82,6 +87,7 @@ const VALUES = {
     "Ultima esecuzione", "Mai eseguita", "OK", "Non riuscita", "Tempo scaduto", "Occupata", "In corso",
     "Modificata nell'editor automazioni; questa pagina non può mostrarla tutta.", "Attività avviata", "Salvata",
     "Ogni {n} min", "Ogni {n} h", "Ogni giorno alle {time}", "{days} alle {time}", "Impossibile caricare le attività.",
+    "Modifica attività",
   ],
   nl: [
     "Taken", "Prompts die agents volgens schema uitvoeren. Elke taak is een Home Assistant-automatisering met het label AI Workspace.",
@@ -96,6 +102,7 @@ const VALUES = {
     "Laatste run", "Nog niet uitgevoerd", "OK", "Mislukt", "Time-out", "Bezig", "Loopt",
     "Bewerkt in de automatiseringseditor; deze pagina kan niet alles tonen.", "Taak gestart", "Opgeslagen",
     "Elke {n} min", "Elke {n} u", "Dagelijks om {time}", "{days} om {time}", "Taken konden niet worden geladen.",
+    "Taak bewerken",
   ],
   pl: [
     "Zadania", "Prompty, które agenci wykonują według harmonogramu. Każde zadanie to automatyzacja Home Assistant z etykietą AI Workspace.",
@@ -110,6 +117,7 @@ const VALUES = {
     "Ostatnie uruchomienie", "Jeszcze nie uruchomiono", "OK", "Błąd", "Przekroczono czas", "Zajęte", "Trwa",
     "Edytowane w edytorze automatyzacji; ta strona nie pokaże wszystkiego.", "Zadanie uruchomione", "Zapisano",
     "Co {n} min", "Co {n} godz.", "Codziennie o {time}", "{days} o {time}", "Nie udało się wczytać zadań.",
+    "Edytuj zadanie",
   ],
   cs: [
     "Úlohy", "Prompty, které agenti spouštějí podle plánu. Každá úloha je automatizace Home Assistant se štítkem AI Workspace.",
@@ -124,6 +132,7 @@ const VALUES = {
     "Poslední spuštění", "Zatím nespuštěno", "OK", "Selhalo", "Vypršel čas", "Zaneprázdněno", "Běží",
     "Upraveno v editoru automatizací; tato stránka nezobrazí vše.", "Úloha spuštěna", "Uloženo",
     "Každých {n} min", "Každých {n} h", "Denně v {time}", "{days} v {time}", "Úlohy se nepodařilo načíst.",
+    "Upravit úlohu",
   ],
   sv: [
     "Uppgifter", "Prompter som agenter kör enligt schema. Varje uppgift är en Home Assistant-automation med etiketten AI Workspace.",
@@ -138,6 +147,7 @@ const VALUES = {
     "Senaste körning", "Inte körd än", "OK", "Misslyckades", "Tiden tog slut", "Upptagen", "Körs",
     "Redigerad i automationsredigeraren; den här sidan kan inte visa allt.", "Uppgiften startad", "Sparad",
     "Var {n}:e min", "Var {n}:e tim", "Dagligen kl. {time}", "{days} kl. {time}", "Kunde inte läsa in uppgifterna.",
+    "Redigera uppgift",
   ],
   ru: [
     "Задачи", "Промпты, которые агенты выполняют по расписанию. Каждая задача — автоматизация Home Assistant с меткой AI Workspace.",
@@ -152,6 +162,7 @@ const VALUES = {
     "Последний запуск", "Ещё не запускалась", "ОК", "Ошибка", "Время вышло", "Занята", "Выполняется",
     "Изменена в редакторе автоматизаций; эта страница не может показать всё.", "Задача запущена", "Сохранено",
     "Каждые {n} мин", "Каждые {n} ч", "Ежедневно в {time}", "{days} в {time}", "Не удалось загрузить задачи.",
+    "Изменить задачу",
   ],
   ko: [
     "작업", "에이전트가 일정에 따라 실행하는 프롬프트입니다. 각 작업은 AI Workspace 라벨이 붙은 Home Assistant 자동화입니다.",
@@ -166,6 +177,7 @@ const VALUES = {
     "마지막 실행", "아직 실행 안 됨", "확인", "실패", "시간 초과", "사용 중", "실행 중",
     "자동화 편집기에서 수정됨; 이 페이지에서 모두 표시할 수 없습니다.", "작업 시작됨", "저장됨",
     "{n}분마다", "{n}시간마다", "매일 {time}", "{days} {time}", "작업을 불러오지 못했습니다.",
+    "작업 편집",
   ],
   "zh-Hans": [
     "任务", "代理按计划运行的提示词。每个任务都是带有 AI Workspace 标签的 Home Assistant 自动化。",
@@ -180,6 +192,7 @@ const VALUES = {
     "上次运行", "尚未运行", "成功", "失败", "超时", "忙碌", "运行中",
     "已在自动化编辑器中修改；此页面无法显示全部内容。", "任务已开始", "已保存",
     "每 {n} 分钟", "每 {n} 小时", "每天 {time}", "{days} {time}", "无法加载任务。",
+    "编辑任务",
   ],
   "zh-Hant": [
     "任務", "代理依排程執行的提示詞。每個任務都是帶有 AI Workspace 標籤的 Home Assistant 自動化。",
@@ -194,6 +207,7 @@ const VALUES = {
     "上次執行", "尚未執行", "成功", "失敗", "逾時", "忙碌", "執行中",
     "已在自動化編輯器中修改；此頁面無法顯示全部內容。", "任務已開始", "已儲存",
     "每 {n} 分鐘", "每 {n} 小時", "每天 {time}", "{days} {time}", "無法載入任務。",
+    "編輯任務",
   ],
   az: [
     "Tapşırıqlar", "Agentlərin cədvəl üzrə icra etdiyi promptlar. Hər tapşırıq AI Workspace etiketli Home Assistant avtomatlaşdırmasıdır.",
@@ -208,6 +222,7 @@ const VALUES = {
     "Son icra", "Hələ icra olunmayıb", "OK", "Uğursuz", "Vaxt bitdi", "Məşğul", "İcra olunur",
     "Avtomatlaşdırma redaktorunda dəyişdirilib; bu səhifə hamısını göstərə bilmir.", "Tapşırıq başladı", "Yadda saxlanıldı",
     "Hər {n} dəq", "Hər {n} saat", "Hər gün {time}", "{days} {time}", "Tapşırıqları yükləmək olmadı.",
+    "Tapşırığı redaktə et",
   ],
   eo: [
     "Taskoj", "Promptiloj, kiujn agentoj rulas laŭ horaro. Ĉiu tasko estas aŭtomatigo de Home Assistant kun la etikedo AI Workspace.",
@@ -222,6 +237,7 @@ const VALUES = {
     "Lasta rulo", "Ankoraŭ ne rulita", "Bone", "Malsukcesis", "Tempo elĉerpita", "Okupata", "Rulanta",
     "Redaktita en la aŭtomatiga redaktilo; ĉi tiu paĝo ne povas montri ĉion.", "Tasko startis", "Konservita",
     "Ĉiujn {n} min", "Ĉiujn {n} h", "Ĉiutage je {time}", "{days} je {time}", "Ne eblis ŝargi la taskojn.",
+    "Redakti taskon",
   ],
 };
 

@@ -216,3 +216,66 @@
 .task-notify[hidden] {
   display: none !important;
 }
+
+/* One form at a time: at the top for a new task, inside the task's own card while editing. */
+.task-view {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.task-view[hidden],
+.tasks-actions[hidden],
+.tasks-form-note[hidden] {
+  display: none;
+}
+
+.task-card,
+.tasks-form {
+  scroll-margin: 12px;
+}
+
+.task-card.editing {
+  border-color: var(--primary-color);
+}
+
+.task-card > .tasks-form {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.tasks-form-title {
+  margin: 0;
+  font-size: 1.05em;
+  font-weight: var(--ha-font-weight-heading, 500);
+}
+
+.tasks-form-note {
+  margin: 0;
+  color: var(--error-color, #db4437);
+  font-size: 0.9em;
+}
+
+/* Saved task: a short, subtle highlight (static with reduced motion). */
+@keyframes task-saved {
+  from {
+    box-shadow: 0 0 0 2px var(--primary-color);
+    background-color: rgba(var(--rgb-primary-color, 3, 169, 244), 0.1);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .task-card.task-saved {
+    animation: task-saved 1.8s ease-out;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-card.task-saved {
+    border-color: var(--primary-color);
+  }
+}

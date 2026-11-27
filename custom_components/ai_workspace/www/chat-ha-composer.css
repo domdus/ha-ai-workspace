@@ -78,7 +78,8 @@
   background: var(--ha-color-form-background, var(--input-fill-color));
   border: 1px solid var(--ha-color-border-neutral-normal, var(--divider-color));
   border-radius: var(--ha-border-radius-3xl);
-  padding: var(--ha-space-1) var(--ha-space-1) var(--ha-space-1) var(--ha-space-4);
+  padding: var(--ai-composer-inset) var(--ai-composer-inset) var(--ai-composer-inset) var(--ha-space-4);
+  --ai-composer-inset: calc(var(--ha-space-1, 4px) * 1.5);
 }
 
 .composer-ha .composer-fallback .composer-row:focus-within {
@@ -156,7 +157,26 @@
   justify-content: flex-end;
   align-items: center;
   gap: 0;
-  padding: 0 var(--ha-space-1) 0 0;
+  padding: 0 var(--ha-space-1);
+  /* One size for all three, in the panel and in the floating chat. */
+  --ai-composer-button: 40px;
+}
+
+.composer-ha .composer-field-actions > .attach,
+.composer-ha .composer-field-actions > .mic,
+.composer-ha .composer-field-actions > .send {
+  flex: 0 0 var(--ai-composer-button);
+  width: var(--ai-composer-button);
+  min-width: var(--ai-composer-button);
+  height: var(--ai-composer-button);
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  --ha-icon-button-size: var(--ai-composer-button);
+  --mdc-icon-button-size: var(--ai-composer-button);
+  --ha-button-height: var(--ai-composer-button);
 }
 
 .composer-ha .composer-field.multi .composer-field-actions {

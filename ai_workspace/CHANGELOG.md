@@ -1,5 +1,120 @@
 # Changelog
 
+## 1.6.2
+
+Everything from 1.6.2b1 to 1.6.2b9, plus a Stop fix in the Runtime's MCP proxy. Nothing needs to be changed in your setup.
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.6.2`) together with this release.** MCP progress, the tool call timeout, Stop and `Accept-Language` on Cursor, Claude and Codex agents need it. The chat shows a hint when the runtime is older than 1.6.2.
+
+**Long MCP tool calls (MCP standard)**
+- **Live progress:** every `tools/call` asks for progress; the server's `notifications/progress` messages show as the tool step's status in the chat, for cloud agents and for Cursor, Claude and Codex through the Runtime.
+- **Tool call timeout per MCP connection** (Reconfigure form): 120 s by default, 10 to 3600, counted from the last progress message. When it runs out, the server gets `notifications/cancelled` and the agent an error. Codex and Claude Code no longer give up on their own earlier limits.
+- **Stop** cancels every MCP call still open. Fixed: a stopped call on a Runtime agent could end without its "cancelled" answer for the agent.
+- `tools/call` carries the chat's id in `_meta` (`io.github.domdus/conversation_id`), so the agent-worker links its jobs to the chat. Cloud agents read every page of a tool list and answer the server's `ping`.
+
+**MCP questions and tools for cloud agents**
+- **Approval and form cards (MCP elicitation) now work for OpenAI, Claude API, Gemini, Ollama and other API agents**, as for Runtime agents. Waiting for your answer does not count against the timeout; Stop cancels an open question.
+- Tool annotations: in read-only agent tasks, `readOnlyHint` tools count as reading and `readOnlyHint: false` / `destructiveHint` tools as writing. `readOnlyHint` tools take no Change History snapshot.
+- A tool call that returns `isError` (or is refused or fails) shows its step as failed.
+- MCP requests send `MCP-Protocol-Version` after initialize and `Accept-Language` with Home Assistant's language, so servers word their prompts in your language.
+
+**Chat**
+- **Read-aloud:** one button per reply: speaker starts, pause pauses at the current spot, play resumes. Headset and lock-screen controls work the same way, also with the screen off. The state resets when nothing plays (blocked autoplay, audio errors, screen off, page left), and the stray speaker icon below the chat is gone.
+- The previous reply keeps its copy, read-aloud and history buttons while the next one runs; the new reply's row fades in when it is complete.
+- Images or files sent without text go with a short prompt in your UI language, and agents answer in the Home Assistant language.
+- **Phones:** the message field no longer sits below the screen while the address bar shows. Attach, dictate and send buttons have the same size and spacing.
+
+**Tasks and translations**
+- **Tasks page:** Edit turns the task's card into the form; one form at a time, the saved task is highlighted.
+- **All 15 languages complete:** approval card, plan limits, usage page, sensor and speech entity names, setup notes and task errors. Entity IDs do not change.
+
+## 1.6.2b9
+
+**One read-aloud button again, no separate stop button.**
+
+- Each reply has a single button: speaker starts reading, pause pauses at the current spot, play resumes from there.
+- It goes back to the speaker when the reply is done, when reading is reset (error, blocked audio, page left) or when you start another reply.
+- The stop button next to it is gone. Panel and floating chat.
+- No Runtime update needed.
+
+## 1.6.2b8
+
+**Read-aloud can be paused again.**
+
+- The speak button under a reply now pauses while that reply is read (by hand or automatically) and resumes from the same spot; with long replies the next part waits while paused.
+- A small stop button appears next to it while reading or paused and ends read-aloud completely.
+- Headset and lock-screen pause/play/stop work the same way, also with the screen off. Panel and floating chat.
+- No Runtime update needed.
+
+## 1.6.2b7
+
+**Buttons under the previous reply stay put while the next one runs; image-only messages get answered in your language.**
+
+- While a new reply runs, the previous reply keeps its copy, read-aloud and history buttons; only its time label goes. The new reply's row appears when it is complete and fades in (no animation on chat open or switch, none with reduced motion).
+- Images or files sent without text now go with a short prompt in your UI language (all 15 languages) instead of the English "Look at this image.". The language rule tells agents that such a prompt does not show your language, so they answer in the Home Assistant language.
+- Runtime update optional: it only localizes the prompt for direct Runtime calls.
+
+## 1.6.2b6
+
+**No more stray speaker icon under the last reply.**
+
+- Read-aloud has one control: the speak button in the row of the reply being read shows stop (or play while you paused it), also for automatic read-aloud. The separate speaker button below the chat is gone.
+- The read-aloud state resets when nothing plays: blocked autoplay, audio errors, stalled clips, or the browser stopping audio on screen off, app switch or leaving the page.
+- Cloud agents: Stop answers an open MCP question with cancel (not decline), like Runtime agents.
+- No Runtime update needed.
+
+## 1.6.2b5
+
+**Cloud agents can ask you through MCP: approval and form cards now work for OpenAI, Claude API, Gemini, Ollama and other API agents.**
+
+- MCP elicitation for cloud agents: AI Workspace's own MCP client declares `elicitation` (form and URL mode, MCP 2025-11-25). When a server asks during a tool call (for example an agent-worker approval), the chat shows the same card as for Runtime agents; your Allow / Deny / Dismiss and form values go back to the server. URL mode shows the link; it opens only when you click it.
+- Waiting for your answer does not count against the connection's tool timeout. No answer within the approval timeout: the server gets cancel. Stop declines an open question and cancels the call; a question the server withdraws closes.
+- Tool annotations from `tools/list`: in read-only agent tasks, `readOnlyHint` tools count as reading and `readOnlyHint: false` / `destructiveHint` tools as writing, whatever their name says. `readOnlyHint` tools take no Change History snapshot.
+- A tool call that returns `isError` (or is refused or fails) now shows its step as failed in the chat.
+- MCP requests send `MCP-Protocol-Version` after initialize.
+- No Runtime update needed.
+
+## 1.6.2b4
+
+**The message field is back on phones; composer buttons line up.**
+
+- Panel in a mobile browser: the message field could sit below the screen while the address bar was showing (Home Assistant sizes the page by `100vh`, which on mobile Chrome is the height with the bar hidden). The panel now fits the visible screen (`100dvh`, `100vh` as the fallback).
+- Composer buttons: attach, dictate and send have the same size, are centered and evenly spaced, with the same inset on the top, right and bottom of the field. In the floating chat the dictate button was larger than the send button and pushed it to the edge. Applies to the Standard composer and the HA components composer.
+- No Runtime update needed.
+
+## 1.6.2b3
+
+**Translations complete in all 15 languages; MCP servers hear your language.**
+
+- Chat: the approval card (Allow / Deny, headings, status texts), plan limits and the usage page's plan section were English outside English and German. They are translated now, and so is the "Undo with agent" prompt.
+- Usage sensors and the speech-to-text / text-to-speech entities have translated names. Entity IDs do not change.
+- The MCP server notes on the setup form, the tasks service errors, and the "plan limit reached" message for Codex and Cursor now read in your language.
+- Every MCP request sends `Accept-Language` with Home Assistant's language (for example `de, en;q=0.5`): from cloud agents directly, and from Cursor, Claude and Codex through the Runtime's MCP proxy. Servers such as the agent-worker can then word their approval prompts and form fields in your language.
+- Tests now fail when any language misses a key or a placeholder from English (translations, chat and tasks strings, built-in texts).
+- Update the Runtime (`ghcr.io/domdus/ha-ai-workspace-runtime:1.6.2b3`) for `Accept-Language` on Runtime agents; everything else comes with the integration.
+
+## 1.6.2b2
+
+**Long MCP tool calls follow the MCP standard: live progress, a timeout per connection, Stop cancels.**
+
+- **Progress:** every MCP `tools/call` asks for progress (`_meta.progressToken`). The server's `notifications/progress` messages show live as the tool step's status in the chat, for cloud agents and for Cursor, Claude and Codex through the Runtime.
+- **Tool call timeout** per MCP connection (the connection's Reconfigure form, all 15 languages): 120 s by default, 10 to 3600. It counts from the last progress message. When it runs out the server gets `notifications/cancelled` and the agent an error.
+- **Stop** sends `notifications/cancelled` for every MCP call still open.
+- **Conversation id:** `tools/call` carries the chat's id in `_meta` (`io.github.domdus/conversation_id`); the agent-worker links its jobs to the chat with it.
+- Codex no longer gives up on MCP calls after its own 60 s, and Claude Code not after 5 silent minutes: the Runtime's proxy enforces the connection's timeout instead.
+- Cloud agents read every page of a server's tool list (`nextCursor`) and answer the server's `ping`.
+- Update the Runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.6.2b2`) for progress, timeout and Stop on Runtime agents; cloud agents get them with the integration alone. See [docs/mcp.md](../docs/mcp.md#long-tool-calls-progress-timeout-stop).
+
+## 1.6.2b1
+
+**Tasks page: edit a task in its own card.**
+
+- **Edit** now turns the task's card into the form, with the heading **Edit task**; Cancel or Save brings the card back. **New task** opens its form at the top with the heading **New task**.
+- Only one form is open at a time; opening another one closes the current one, and the **New task** button is hidden while a form is open.
+- After saving, the task scrolls into view and is highlighted briefly (no animation with `prefers-reduced-motion`). Save errors show inside the form.
+- The name field gets focus when the form opens; Cancel (or Escape) returns focus to the task's **Edit** button.
+- Only the integration changes. The Runtime app version moves to 1.6.2b1 with the release but has no functional change.
+
 ## 1.6.1
 
 Everything from 1.6.1b1 to 1.6.1b18. Nothing needs to be changed in your setup; agent fallback and tasks are off until you use them.

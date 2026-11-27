@@ -22,6 +22,9 @@ from .ollama_info import MIN_TOOL_WINDOW, OllamaModel, async_ollama_model
 from .local_time import house_zone, stamped_now, time_rule, with_local_offset
 from .tool_loading import LOAD_TOOLS, pick_tools, used_tool_names
 from .const import (
+    CONF_TOOL_TIMEOUT,
+    approval_timeout_minutes,
+    tool_timeout_seconds,
     MCP_HA_MCP,
     API_ANTHROPIC,
     API_AZURE,
@@ -60,7 +63,7 @@ from .const import (
     with_time_rule,
 )
 from .coolver import CoolverClient
-from .mcp_client import McpError, McpHttpClient, ha_mcp_trouble
+from .mcp_client import McpError, McpHttpClient, ha_mcp_trouble, with_accept_language
 from .mcp_config import (
     OPENAI_TOOL_NAME_MAX,
     is_local_hass_mcp_url,
@@ -124,6 +127,33 @@ SMALL_WINDOW = 32_000
 _MODE_OVERRIDE: ContextVar[str] = ContextVar("ai_workspace_mode_override", default="")
 # Tool limits of an agent task run (task_guard). None in a normal chat.
 _TOOL_POLICY: ContextVar[dict | None] = ContextVar("ai_workspace_tool_policy", default=None)
+# The chat this turn belongs to, sent with every MCP tools/call in _meta.
+_CONVERSATION: ContextVar[str] = ContextVar("ai_workspace_conversation", default="")
+# The chat's user, who answers questions of MCP servers (elicitation) in the chat.
+_CHAT_USER: ContextVar[str] = ContextVar("ai_workspace_chat_user", default="")
+
+
+def tool_failed(result: Any) -> bool:
+    """True for an MCP tool result that reports an error (isError), the same as a refused call."""
+    return isinstance(result, dict) and result.get("isError") is True
+
+
+def read_only_hint(annotations: Any) -> bool:
+    """The server marks the tool as only reading (MCP readOnlyHint, and not destructiveHint)."""
+    if not isinstance(annotations, dict):
+        return False
+    return annotations.get("readOnlyHint") is True and annotations.get("destructiveHint") is not True
+
+
+def progress_text(params: dict[str, Any]) -> str:
+    """What the chat shows for an MCP notifications/progress: its message, else n/total."""
+    message = str(params.get("message") or "").strip()
+    if message:
+        return message[:200]
+    progress, total = params.get("progress"), params.get("total")
+    if isinstance(progress, (int, float)) and isinstance(total, (int, float)) and total > 0:
+        return f"{progress:g}/{total:g}"
+    return ""
 _MCP_CACHE_MAX = 32
 _MCP_CACHE = f"{DOMAIN}_mcp_cache"
 _LOCAL_TOOLS = {"catalog", "house-map", "web", "notes", "chats"}
@@ -344,6 +374,14 @@ class _ReplyText:
         return out
 
 
+def tool_end_event(name: str, label: str, note: Any, failed: bool) -> dict[str, Any]:
+    """The chat step for a finished tool call; failed (isError, refused, unreachable) marks it red."""
+    event: dict[str, Any] = {"type": "tool", "name": name, "phase": "end", "text": f"Finished {label}", "note": note}
+    if failed:
+        event["failed"] = True
+    return event
+
+
 class McpBundle:
     """One call_tool for every connected MCP server."""
 
@@ -352,6 +390,7 @@ class McpBundle:
         self._routes: dict[str, tuple[str, str]] = {}
         self._groups: list[tuple[str, list[str]]] = []
         self._pending: list[tuple[str, list[dict]]] = []
+        self._hints: dict[str, dict] = {}
         self.tools: list[dict] = []
         self.picker = None
 
@@ -372,6 +411,8 @@ class McpBundle:
                 public = lookup.get((server, raw), raw)
                 copied = dict(tool)
                 copied["name"] = public
+                if isinstance(tool.get("annotations"), dict):
+                    self._hints[public] = dict(tool["annotations"])
                 if public != raw:
                     note = f"From {server}. "
                     copied["description"] = note + str(copied.get("description") or "")
@@ -386,16 +427,35 @@ class McpBundle:
         route = self._routes.get(name)
         return route[1] if route else name
 
+    def hints(self, name: str) -> dict:
+        """The tool's MCP annotations from tools/list (readOnlyHint, destructiveHint, ...)."""
+        return dict(self._hints.get(name) or {})
+
     @property
     def names(self) -> list[str]:
         return list(self._clients)
 
-    async def call_tool(self, name: str, arguments: dict[str, Any] | None = None) -> Any:
+    async def call_tool(self, name: str, arguments: dict[str, Any] | None = None, **extra: Any) -> Any:
+        """extra (timeout, on_progress, conversation_id, elicit) only reaches real MCP connections.
+
+        elicit(server, params) asks the user an elicitation/create of this call.
+        """
         route = self._routes.get(name)
         if route is None:
             raise McpError(f"No connection has a tool named {name}.")
         server, raw = route
-        return await self._clients[server].call_tool(raw, arguments or {})
+        client = self._clients[server]
+        if extra and isinstance(client, McpServer):
+            options = dict(extra)
+            elicit = options.pop("elicit", None)
+            if callable(elicit):
+
+                async def on_elicit(params: dict[str, Any]) -> dict[str, Any]:
+                    return await elicit(server, params)
+
+                options["on_elicit"] = on_elicit
+            return await client.call_tool(raw, arguments or {}, **options)
+        return await client.call_tool(raw, arguments or {})
 
 
 class McpServer:
@@ -409,6 +469,8 @@ class McpServer:
         self._client: Any = None
         self.tools: list[dict] = []
         self.expires = 0.0
+        # Seconds a tool call may stay silent (no answer, no progress); set per connection.
+        self.tool_timeout: int | None = None
 
     async def open(self) -> None:
         if self._kind == MCP_COOLVER:
@@ -420,20 +482,37 @@ class McpServer:
         self._client = client
         self.expires = time.monotonic() + _MCP_TTL
 
-    async def call_tool(self, name: str, arguments: dict[str, Any] | None = None) -> Any:
+    async def _call(self, name: str, arguments: dict[str, Any], extra: dict[str, Any]) -> Any:
+        client = self._client
+        if isinstance(client, McpHttpClient):
+            options = {
+                key: value for key, value in extra.items() if key in {"on_progress", "conversation_id", "on_elicit"}
+            }
+            options["timeout"] = extra.get("timeout") or self.tool_timeout
+            try:
+                return await client.call_tool(name, arguments, **options)
+            finally:
+                if client.tools_changed:
+                    # notifications/tools/list_changed: list the tools again on the next turn.
+                    self.expires = 0.0
+        return await client.call_tool(name, arguments)
+
+    async def call_tool(self, name: str, arguments: dict[str, Any] | None = None, **extra: Any) -> Any:
         try:
-            return await self._client.call_tool(name, arguments or {})
+            return await self._call(name, arguments or {}, extra)
         except McpError as exc:
             # Streamable HTTP answers 404 (or 400) once the server forgot our session.
             if exc.status not in {400, 404}:
                 raise
         await self.open()
-        return await self._client.call_tool(name, arguments or {})
+        return await self._call(name, arguments or {}, extra)
 
 
 async def async_mcp_server(
     hass: HomeAssistant, http: ClientSession, kind: str, url: str, headers: dict[str, str]
 ) -> McpServer:
+    # Server-made texts (approval prompts, elicitation fields) in Home Assistant's language.
+    headers = with_accept_language(headers, str(getattr(hass.config, "language", "") or ""))
     cache: OrderedDict = hass.data.setdefault(_MCP_CACHE, OrderedDict())
     key = (kind, url.rstrip("/"), tuple(sorted(headers.items())))
     found = cache.get(key)
@@ -994,6 +1073,7 @@ class ApiProvider:
             kind = self._server_kind(name, admin)
             try:
                 server = await async_mcp_server(self.hass, http, kind, url, dict(cfg.get("headers") or {}))
+                server.tool_timeout = tool_timeout_seconds(cfg.get(CONF_TOOL_TIMEOUT))
             except _ERRORS as exc:
                 reason = self._public(exc)
                 if kind == MCP_HA_MCP:
@@ -1026,10 +1106,13 @@ class ApiProvider:
         bundle.finish()
         return bundle, skipped, first_error
 
-    async def _invoke_tool(self, mcp, name: str, args: Any, on_tool: Callable | None):
+    async def _invoke_tool(self, mcp, name: str, args: Any, on_tool: Callable | None, extra: dict | None = None):
         payload = args if isinstance(args, dict) else {}
+        # Progress, timeout and conversation id are for real MCP connections (through McpBundle).
+        extra = dict(extra or {}) if isinstance(mcp, McpBundle) else {}
         original = mcp.original_name(name)
-        refused = task_refusal(original, payload, _TOOL_POLICY.get())
+        hints = mcp.hints(name) if isinstance(mcp, McpBundle) else {}
+        refused = task_refusal(original, payload, _TOOL_POLICY.get(), hints)
         if refused:
             logger.warning("Task run refused %s", name)
             return {"content": [{"type": "text", "text": refused}], "isError": True}
@@ -1045,16 +1128,73 @@ class ApiProvider:
         if timed is not payload:
             logger.debug("Added the house's UTC offset to the times in %s", name)
             payload = timed
-        if on_tool is None:
-            result = await mcp.call_tool(name, payload)
+        if on_tool is None or read_only_hint(hints):
+            # readOnlyHint: the server says the tool changes nothing, so no Change History snapshot.
+            result = await (mcp.call_tool(name, payload, **extra) if extra else mcp.call_tool(name, payload))
         else:
 
             async def call(_tool_name: str, tool_args: dict) -> Any:
-                return await mcp.call_tool(name, tool_args)
+                return await (mcp.call_tool(name, tool_args, **extra) if extra else mcp.call_tool(name, tool_args))
 
             result = await on_tool(original, payload, call)
         note_guide(original, result if isinstance(result, str) else json.dumps(result, ensure_ascii=False, default=str))
         return result
+
+    def _elicitor(self) -> Callable | None:
+        """Ask the chat's user what an MCP server wants to know (elicitation), with a chat card.
+
+        None for agent task runs (nobody watches them; the server gets cancel) and without a chat.
+        """
+        session_id = _CONVERSATION.get()
+        user_id = _CHAT_USER.get()
+        if self.hass is None or self.store is None or not session_id or not user_id or _TOOL_POLICY.get():
+            return None
+        hass = self.hass
+        timeout = approval_timeout_minutes(getattr(self.settings, "approval_timeout_minutes", None)) * 60
+
+        async def elicit(server: str, params: dict[str, Any]) -> dict[str, Any]:
+            from .approvals import ask
+
+            return await ask(
+                hass, session_id=session_id, user_id=user_id, server=server, params=params, timeout=timeout
+            )
+
+        return elicit
+
+    async def _tool_steps(
+        self, mcp, name: str, args: Any, on_tool: Callable | None, outcome: dict[str, Any]
+    ) -> AsyncIterator[dict]:
+        """Run one tool call and yield its MCP progress for the chat; the result lands in outcome.
+
+        Stopping the chat cancels the call, and the MCP client tells the server (notifications/cancelled).
+        """
+        queue: asyncio.Queue = asyncio.Queue()
+
+        def on_progress(params: dict[str, Any]) -> None:
+            text = progress_text(params)
+            if text:
+                queue.put_nowait({"text": text, "progress": params.get("progress"), "total": params.get("total")})
+
+        extra: dict[str, Any] = {"on_progress": on_progress, "conversation_id": _CONVERSATION.get()}
+        elicit = self._elicitor()
+        if elicit is not None:
+            extra["elicit"] = elicit
+        task = asyncio.ensure_future(self._invoke_tool(mcp, name, args, on_tool, extra))
+        try:
+            while True:
+                getter = asyncio.ensure_future(queue.get())
+                done, _pending = await asyncio.wait({task, getter}, return_when=asyncio.FIRST_COMPLETED)
+                if getter in done:
+                    step = getter.result()
+                    yield {"type": "tool_progress", "name": name, **step}
+                else:
+                    getter.cancel()
+                if task in done:
+                    break
+        finally:
+            if not task.done():
+                task.cancel()
+        outcome["result"] = task.result()
 
     async def send(
         self,
@@ -1076,6 +1216,8 @@ class ApiProvider:
         tool_policy: limits of an agent task run (see task_guard); the model never sees refused tools.
         """
         _TOOL_POLICY.set(dict(tool_policy) if tool_policy else None)
+        _CONVERSATION.set(str(getattr(session, "id", "") or ""))
+        _CHAT_USER.set(str(getattr(session, "user_id", "") or ""))
         origin = str(frontend_origin or "").strip()
         language = str(language or "")
         pictures = list(images or [])
@@ -1125,7 +1267,9 @@ class ApiProvider:
                 yield {"type": "status", "text": f"Not reachable, continuing without: {', '.join(skipped)}"}
             if tool_policy:
                 bundle.tools = [
-                    tool for tool in bundle.tools if task_tool_offered(bundle.original_name(tool["name"]), tool_policy)
+                    tool for tool in bundle.tools if task_tool_offered(
+                        bundle.original_name(tool["name"]), tool_policy, tool.get("annotations")
+                    )
                 ]
         logger.info(
             "api chat provider=%s model=%s mcp=%s tools=%s token_mode=%s prompt_cache=%s",
@@ -1311,20 +1455,20 @@ class ApiProvider:
                     label = _tool_label(mcp.original_name(name))
                     yield {"type": "tool", "name": name, "phase": "start", "text": f"Calling {label}..."}
                     worker = None
+                    failed = False
                     try:
-                        result = await self._invoke_tool(mcp, name, args, on_tool)
+                        outcome: dict[str, Any] = {}
+                        async for step in self._tool_steps(mcp, name, args, on_tool, outcome):
+                            yield step
+                        result = outcome["result"]
+                        failed = tool_failed(result)
                         # Read before shortening: the worker's usage sits in the full result.
                         worker = worker_usage_event(mcp.original_name(name), args, result)
                         body = self._tool_body(result, name)
                     except _ERRORS as exc:
+                        failed = True
                         body = self._public(exc)
-                    yield {
-                        "type": "tool",
-                        "name": name,
-                        "phase": "end",
-                        "text": f"Finished {label}",
-                        "note": tool_call_note(mcp.original_name(name), args, body),
-                    }
+                    yield tool_end_event(name, label, tool_call_note(mcp.original_name(name), args, body), failed)
                     if worker is not None:
                         yield worker
                     messages.append({"role": "tool", "tool_call_id": call.get("id"), "content": body})
@@ -1502,20 +1646,20 @@ class ApiProvider:
                     label = _tool_label(mcp.original_name(name))
                     yield {"type": "tool", "name": name, "phase": "start", "text": f"Calling {label}..."}
                     worker = None
+                    failed = False
                     try:
-                        result = await self._invoke_tool(mcp, name, args, on_tool)
+                        outcome: dict[str, Any] = {}
+                        async for step in self._tool_steps(mcp, name, args, on_tool, outcome):
+                            yield step
+                        result = outcome["result"]
+                        failed = tool_failed(result)
                         # Read before shortening: the worker's usage sits in the full result.
                         worker = worker_usage_event(mcp.original_name(name), args, result)
                         body = self._tool_body(result, name)
                     except _ERRORS as exc:
+                        failed = True
                         body = self._public(exc)
-                    yield {
-                        "type": "tool",
-                        "name": name,
-                        "phase": "end",
-                        "text": f"Finished {label}",
-                        "note": tool_call_note(mcp.original_name(name), args, body),
-                    }
+                    yield tool_end_event(name, label, tool_call_note(mcp.original_name(name), args, body), failed)
                     if worker is not None:
                         yield worker
                     results.append({"type": "tool_result", "tool_use_id": block.get("id"), "content": body})

@@ -98,6 +98,8 @@ class ChatMcp(BaseModel):
     url: str = ""
     token: str = ""
     exclusive: bool = False
+    # Home Assistant's language: MCP servers get it as Accept-Language (e.g. "de, en;q=0.5").
+    language: str = Field(default="", max_length=35)
 
 
 # Helper fields are shortened, never a reason to refuse the turn: a long paste once made the whole
@@ -111,6 +113,8 @@ MESSAGE_CHARS = 1_200_000
 
 class ChatRequest(BaseModel):
     message: str = Field(default="", max_length=MESSAGE_CHARS)
+    # UI language, only for the default prompt of attachments sent without text.
+    language: str = Field(default="", max_length=35)
     origin: str = ""
     images: list[ChatImage] = Field(default_factory=list, max_length=4)
     files: list[ChatFile] = Field(default_factory=list, max_length=4)
@@ -544,7 +548,7 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
         raise HTTPException(status_code=400, detail="Unknown provider.")
     images = parse_client_images([item.model_dump() for item in body.images])
     files = parse_client_files([item.model_dump() for item in body.files])
-    message = caption_for(body.message, len(images), len(files))
+    message = caption_for(body.message, len(images), len(files), body.language)
     question = (body.question or "").strip() or message
     if not message:
         raise HTTPException(status_code=400, detail="Message is empty.")
@@ -607,6 +611,16 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
             approval_timeout=body.approval_timeout,
             tool_policy=body.tool_policy,
         )
+    # MCP progress of this chat's tool calls (notifications/progress through the proxy), shown live.
+    side: asyncio.Queue = asyncio.Queue()
+    loop = asyncio.get_running_loop()
+
+    def on_progress(event: dict) -> None:
+        # Called from the proxy's forward threads.
+        loop.call_soon_threadsafe(side.put_nowait, _sse("tool_progress", event))
+
+    if proxy is not None:
+        proxy.watch_progress(session.id, on_progress)
 
     async def generate():
         parts: list[str] = []
@@ -703,11 +717,14 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
             if title_task is not None and not title_task.done():
                 title_task.cancel()
             if proxy is not None:
+                proxy.unwatch_progress(session.id, on_progress)
+                # A stopped turn: tell MCP servers about calls still open (notifications/cancelled).
+                await asyncio.to_thread(proxy.cancel_session, session.id)
                 # A stopped or failed turn leaves no MCP call to answer: its questions are cancelled.
                 await asyncio.to_thread(proxy.elicitations.end_session, session.id)
 
     return StreamingResponse(
-        with_pings(generate()),
+        with_pings(generate(), queue=side),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
@@ -718,13 +735,14 @@ async def chat(request: Request, session_id: str, body: ChatRequest) -> Streamin
 PING_SECONDS = 15.0
 
 
-async def with_pings(stream, every: float | None = None):
+async def with_pings(stream, every: float | None = None, queue: asyncio.Queue | None = None):
     """The chat stream with an SSE comment whenever nothing was sent for a while.
 
     The turn runs in one task of its own, so the SDK generators inside are always resumed from
-    the task that started them; closing this generator cancels that task.
+    the task that started them; closing this generator cancels that task. queue: also carries
+    events from outside the turn (MCP tool progress), sent between the turn's own.
     """
-    queue: asyncio.Queue = asyncio.Queue()
+    queue = asyncio.Queue() if queue is None else queue
     done = object()
 
     async def pump() -> None:

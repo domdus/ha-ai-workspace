@@ -39,6 +39,21 @@ def approval_timeout_minutes(value) -> int:
     return max(APPROVAL_TIMEOUT_MIN_MINUTES, min(minutes, APPROVAL_TIMEOUT_MAX_MINUTES))
 
 
+# How long one MCP tool call may stay silent, per connection (MCP notifications/progress start it again).
+CONF_TOOL_TIMEOUT = "tool_timeout_sec"
+DEFAULT_TOOL_TIMEOUT_SECONDS = 120
+TOOL_TIMEOUT_MIN_SECONDS = 10
+TOOL_TIMEOUT_MAX_SECONDS = 3600
+
+
+def tool_timeout_seconds(value) -> int:
+    try:
+        seconds = int(float(value if value not in (None, "") else DEFAULT_TOOL_TIMEOUT_SECONDS))
+    except (TypeError, ValueError):
+        seconds = DEFAULT_TOOL_TIMEOUT_SECONDS
+    return max(TOOL_TIMEOUT_MIN_SECONDS, min(seconds, TOOL_TIMEOUT_MAX_SECONDS))
+
+
 def activity_restore_expired(created_at: str, *, days: int, now=None) -> bool:
     """True when Rollback for this row has passed the configured TTL."""
     from datetime import datetime, timedelta, timezone
@@ -1075,6 +1090,13 @@ _LANGUAGE_NAMES = {
 }
 
 
+# Images or files sent without text arrive with a short prompt AI Workspace added
+# ("Look at this image.", localized). It is not the user's own words.
+ATTACHMENT_LANGUAGE_NOTE = (
+    'An auto-added attachment prompt like "Look at this image." does not set the language; then answer in {name}.'
+)
+
+
 def language_name(code: str) -> str:
     primary = str(code or "").replace("_", "-").split("-")[0].strip().lower()
     return _LANGUAGE_NAMES.get(primary, "")
@@ -1090,7 +1112,7 @@ def language_instruction(code: str = "") -> str:
     )
     if name != "English":
         fallback += " Do not assume English."
-    return f"{LANGUAGE_INSTRUCTION} {fallback}"
+    return f"{LANGUAGE_INSTRUCTION} {fallback} {ATTACHMENT_LANGUAGE_NOTE.format(name=name)}"
 
 
 def workspace_system_prompt(settings, *, admin: bool = True) -> str:

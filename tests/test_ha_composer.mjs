@@ -100,7 +100,9 @@ assert.match(composerCss, /\.composer-ha ha-button\.agent-trigger \{/);
 assert.match(standardCss, /\nbutton\.agent-trigger \{/);
 assert.doesNotMatch(standardCss, /\n\.agent-trigger \{|\n\.agent-trigger:hover/);
 assert.match(standardCss, /\nha-button\.send::part\(base\) \{/);
-assert.match(standardCss, /:where\(\.wrap:not\(\.composer-ha\)\) \.mic \{/);
+// Standard button sizes apply to the Standard row only; the HA field has its own (test_composer_layout.mjs).
+assert.match(standardCss, /\n\.composer \.composer-actions > \.mic,/);
+assert.match(composerCss, /\n\.composer-ha \.composer-field-actions > \.mic,/);
 // Standard messages keep following the HA theme variables.
 assert.match(standardCss, /\.ui-theme-standard \.bubble\.user \{/);
 assert.match(standardCss, /var\(--primary-text-color\)/);

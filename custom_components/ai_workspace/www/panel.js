@@ -1,5 +1,11 @@
 const CACHE = new URL(import.meta.url).search;
 
+// HA sizes the page with html { height: 100vh }. Mobile Chrome's 100vh is the viewport with the
+// address bar hidden, so while the bar shows the bottom of the panel (the composer) sits below
+// the screen. Cap the panel at the visible (dynamic) viewport; vh stays the fallback.
+const VIEWPORT_CAP = `max-height: calc(100vh - var(--safe-area-inset-top, 0px) - var(--safe-area-inset-bottom, 0px));
+          max-height: calc(100dvh - var(--safe-area-inset-top, 0px) - var(--safe-area-inset-bottom, 0px));`;
+
 function resetHaShellScroll(startEl) {
   window.scrollTo(0, 0);
   document.documentElement.scrollTop = 0;
@@ -28,6 +34,7 @@ class HaAiWorkspacePanel extends HTMLElement {
           display: block;
           height: 100%;
           min-height: 0;
+          ${VIEWPORT_CAP}
           background: var(--primary-background-color);
         }
       </style>
@@ -167,6 +174,7 @@ class HaAiWorkspacePanel extends HTMLElement {
           display: block;
           height: 100%;
           min-height: 0;
+          ${VIEWPORT_CAP}
         }
         ha-top-app-bar-fixed {
           display: block;

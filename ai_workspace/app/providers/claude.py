@@ -9,12 +9,20 @@ how Claude Code signs in.
 from __future__ import annotations
 
 import logging
+import os
 import re
 import uuid
 from typing import Any, AsyncIterator, Callable
 
 from app.events import _resolved_tool_name, _tool_event, _tool_label
-from app.mcp_config import McpConfigError, load_mcp_servers, merge_mcp_servers, servers_from_chat_mcp
+from app.mcp_config import (
+    McpConfigError,
+    load_mcp_servers,
+    merge_mcp_servers,
+    servers_from_chat_mcp,
+    servers_with_language,
+)
+from app.mcp_proxy import ENGINE_TOOL_CEILING
 from app.providers.base import ProviderInfo
 from app.plan_quota import (
     CLAUDE_PLAN_REJECTED_CODE,
@@ -172,13 +180,18 @@ def claude_subprocess_env(settings: Settings, credential: str) -> dict[str, str]
     # Exactly one credential reaches Claude Code. The others are blanked: ANTHROPIC_AUTH_TOKEN and
     # ANTHROPIC_API_KEY outrank CLAUDE_CODE_OAUTH_TOKEN, so a stray container variable would
     # otherwise switch a Plan chat to API billing, or the other way round.
-    return {
+    env = {
         "CLAUDE_AGENT_SDK_CLIENT_APP": "ha-ai-workspace",
         "CLAUDE_CONFIG_DIR": str(config_dir),
         "CLAUDE_CODE_OAUTH_TOKEN": cred if plan else "",
         "ANTHROPIC_API_KEY": "" if plan else cred,
         "ANTHROPIC_AUTH_TOKEN": "",
     }
+    if not os.environ.get("CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT"):
+        # Claude Code gives up on an HTTP MCP call after 5 silent minutes. Through the proxy it sees
+        # no MCP progress; the proxy enforces each connection's timeout from the last progress instead.
+        env["CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT"] = str(ENGINE_TOOL_CEILING * 1000)
+    return env
 
 
 def resolve_model(settings: Settings, model: str = "") -> str:
@@ -453,6 +466,8 @@ class ClaudeProvider:
             exclusive = bool((mcp or {}).get("exclusive"))
             file_servers = {} if exclusive else load_mcp_servers(self.settings.mcp_config_path)
             mcp_servers = merge_mcp_servers(file_servers, servers_from_chat_mcp(mcp))
+            # Server-made texts (approval prompts, form titles) in Home Assistant's language.
+            mcp_servers = servers_with_language(mcp_servers, str((mcp or {}).get("language") or ""))
         except McpConfigError as exc:
             yield {"type": "error", "message": str(exc)}
             return

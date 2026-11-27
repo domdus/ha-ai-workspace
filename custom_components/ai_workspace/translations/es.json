@@ -283,12 +283,14 @@
           "data": {
             "name": "Nombre",
             "url": "Dirección",
-            "token": "Token"
+            "token": "Token",
+            "tool_timeout_sec": "Tiempo límite de llamada a herramienta"
           },
           "data_description": {
             "name": "Un nombre corto, por ejemplo Directus. El asistente lo usa para distinguir esta conexión de las demás.",
             "url": "Dirección web (https://…). Los servidores encontrados se rellenan solos.",
-            "token": "Solo si ese servidor pide una clave. Déjalo vacío al editar para conservar la guardada."
+            "token": "Solo si ese servidor pide una clave. Déjalo vacío al editar para conservar la guardada.",
+            "tool_timeout_sec": "Segundos que una llamada a herramienta puede durar sin respuesta ni mensaje de progreso antes de cancelarse (10–3600). Cada mensaje de progreso del servidor reinicia el tiempo."
           }
         }
       }
@@ -743,6 +745,85 @@
           "description": "Segundos hasta que se detiene la ejecución."
         }
       }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "cost_today": {
+        "name": "Coste hoy"
+      },
+      "cost_month": {
+        "name": "Coste este mes"
+      },
+      "cost_total": {
+        "name": "Coste total"
+      },
+      "tokens_today": {
+        "name": "Tokens hoy"
+      },
+      "tokens_month": {
+        "name": "Tokens este mes"
+      },
+      "tokens_total": {
+        "name": "Tokens en total"
+      },
+      "turns_today": {
+        "name": "Turnos hoy"
+      },
+      "turns_month": {
+        "name": "Turnos este mes"
+      },
+      "turns_total": {
+        "name": "Turnos en total"
+      },
+      "last_cost": {
+        "name": "Coste del último turno"
+      },
+      "last_tokens": {
+        "name": "Tokens del último turno"
+      },
+      "last_model": {
+        "name": "Último modelo"
+      },
+      "last_agent": {
+        "name": "Último agente"
+      },
+      "cost_tts_today": {
+        "name": "Coste de voz hoy"
+      },
+      "cost_tts_total": {
+        "name": "Coste de voz total"
+      },
+      "plan_session_percent": {
+        "name": "Plan {engine} sesión %"
+      },
+      "plan_week_percent": {
+        "name": "Plan {engine} semana %"
+      },
+      "plan_session_reset_at": {
+        "name": "Plan {engine} reinicio de sesión"
+      }
+    },
+    "stt": {
+      "speech_to_text": {
+        "name": "Voz a texto"
+      }
+    },
+    "tts": {
+      "text_to_speech": {
+        "name": "Texto a voz"
+      }
+    }
+  },
+  "exceptions": {
+    "unknown_agent": {
+      "message": "AI Workspace no tiene ningún agente llamado {agent}."
+    },
+    "tasks_need_admin": {
+      "message": "Las tareas de AI Workspace necesitan una cuenta de administrador en Home Assistant."
+    },
+    "not_set_up": {
+      "message": "AI Workspace no está configurado."
     }
   }
 }

@@ -98,12 +98,13 @@ export function replyActionText(entry) {
 }
 
 /**
- * Which entries get an action row: [{ index, text, last, held }]. `last` marks the newest one;
- * its time is always shown, older rows show it on hover/focus.
+ * Which entries get an action row: [{ index, text, last, pending }]. `last` marks the newest
+ * one; its time is always shown, older rows show it on hover/focus.
  *
  * While a turn is in progress (`busy`, or a reply in the log is still streaming or waiting),
- * no row is `last`: the newest finished reply's row is `held` (hidden until hovered or
- * focused), so nothing under the previous reply stays on screen while the next one runs.
+ * no row is `last`: the previous reply keeps its copy/read-aloud buttons (only its time label
+ * goes, like any older reply). Replies that finished live in this turn (`fresh`) are `pending`:
+ * their row waits until the turn is complete, then fades in.
  */
 export function replyRows(entries, { busy = false } = {}) {
   const list = Array.isArray(entries) ? entries : [];
@@ -111,9 +112,11 @@ export function replyRows(entries, { busy = false } = {}) {
   let running = Boolean(busy);
   list.forEach((entry, index) => {
     if (entry?.role === "assistant" && entry.streaming) running = true;
-    const text = replyActionText(entry);
-    if (text) rows.push({ index, text, last: false, held: false });
   });
-  if (rows.length) rows[rows.length - 1][running ? "held" : "last"] = true;
+  list.forEach((entry, index) => {
+    const text = replyActionText(entry);
+    if (text) rows.push({ index, text, last: false, pending: Boolean(running && entry.fresh) });
+  });
+  if (rows.length && !running) rows[rows.length - 1].last = true;
   return rows;
 }

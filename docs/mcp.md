@@ -48,11 +48,23 @@ Some MCP servers ask you something in the middle of a tool call. An example is t
 
 - An `elicitation/create` request never reaches the model. It shows up in the chat as a card with the server's message, the exact command and target for worker approvals, and **Allow** / **Deny**. Closing the card (×) answers *cancel*.
 - **Only your click answers it.** Chat text, the model's output and tool calls cannot. The Runtime drops any answer that does not come from Home Assistant with the card's own key.
+- **Language:** the card's buttons and headings follow your Home Assistant language. The server's own text (the question, field titles) comes from the server: every MCP request carries `Accept-Language` with Home Assistant's language (for example `de, en;q=0.5`), from cloud agents and from the Runtime's MCP proxy alike, so a server can answer in that language.
 - Open cards stay when you close and reopen the chat or the app. Several can be open at once.
 - A card waits for **Approval wait** (AI Workspace → Configure, default 10 minutes, 1 to 60). Then the server gets *cancel*. Stopping the turn cancels its open questions too.
 - **Fallback for agent-worker jobs:** when a job result says `input_required` (or `needs_approval`) with an approval that has no open MCP request, the same card appears. Allow or Deny goes straight to the worker (`POST /jobs/<id>/approve` with `{"approve": true|false}`). Closing that card only hides it; the job keeps waiting until the worker's own timeout.
 
 Cloud agents call MCP from inside Home Assistant and do not offer elicitation yet. Servers then fall back to their own way, for example the worker's `agent_approve` tool.
+
+## Long tool calls: progress, timeout, stop
+
+This follows the MCP specification (2025-11-25) for every MCP connection, for cloud agents (Home Assistant calls the server) and Runtime agents (the Runtime's MCP proxy calls it for Cursor, Claude and Codex).
+
+- **Progress:** every `tools/call` carries `_meta.progressToken`. Each `notifications/progress` the server sends shows live as the tool step's status in the chat (its `message`, else the share done).
+- **Tool call timeout:** per connection (Settings → AI Workspace → the connection → Reconfigure), 120 seconds by default, 10 to 3600. It counts from the last progress notification, so a call that keeps reporting progress can run longer. When it runs out, the server gets `notifications/cancelled` and the agent gets an error.
+- **Stop:** stopping the reply sends `notifications/cancelled` for every call still open.
+- **Conversation id:** `tools/call` carries the chat's id in `_meta` as `io.github.domdus/conversation_id`, so a server (for example the agent-worker) can link its jobs to the chat.
+- An elicitation question during a long call still reaches the chat (Runtime agents); the time you take to answer does not count against the timeout.
+- Engine limits: Codex and Claude Code do not see progress through the proxy, so the Runtime gives them a limit just above the longest timeout (3660 s: Codex `tool_timeout_sec`, Claude Code `CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT`, unless you set it yourself) and the proxy enforces each connection's own. Cursor has no setting for it.
 
 ## Change History
 

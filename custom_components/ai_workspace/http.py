@@ -346,7 +346,13 @@ def _runtime_agent_overrides(
 
     servers = for_runtime(servers, hass, str(_runtime(hass).get("runtime_url") or ""), _runtime_hass_url(hass))
     if servers or not admin:
-        extra["mcp"] = {"servers": servers, "exclusive": not admin}
+        # The Runtime sends Accept-Language to every MCP server: server-made texts (approval prompts,
+        # elicitation fields) can only be translated there.
+        extra["mcp"] = {
+            "servers": servers,
+            "exclusive": not admin,
+            "language": str(getattr(hass.config, "language", "") or ""),
+        }
     model = str(getattr(settings, "model", "") or "").strip()
     if model in CLOUD_ONLY_MODELS:
         model = ""
@@ -554,20 +560,22 @@ def _localized_runtime_error(hass, event: dict, language: str = "") -> dict:
         CLAUDE_AUTH_FAILED_CODE,
         CODEX_AUTH_FAILED_CODE,
         claude_auth_failed_text,
-        claude_plan_rejected_text,
         codex_auth_failed_text,
+        plan_rejected_text,
     )
-    from .plan_quota import CLAUDE_PLAN_REJECTED_CODE
 
-    if event.get("code") == CLAUDE_AUTH_FAILED_CODE:
+    code = str(event.get("code") or "")
+    if code == CLAUDE_AUTH_FAILED_CODE:
         return {**event, "message": claude_auth_failed_text(language)}
-    if event.get("code") == CODEX_AUTH_FAILED_CODE:
+    if code == CODEX_AUTH_FAILED_CODE:
         return {**event, "message": codex_auth_failed_text(language)}
-    if event.get("code") == CLAUDE_PLAN_REJECTED_CODE:
+    # Claude always; Codex and Cursor only with a reset time, else their own message says more.
+    if code.endswith("_plan_rejected") and (code == "claude_plan_rejected" or event.get("reset_at")):
         return {
             **event,
-            "message": claude_plan_rejected_text(
+            "message": plan_rejected_text(
                 language,
+                engine=str(event.get("engine") or code.split("_", 1)[0]),
                 window=str(event.get("window") or "session"),
                 reset=_format_plan_reset(hass, event.get("reset_at")),
             ),
@@ -1442,7 +1450,9 @@ class ChatView(HomeAssistantView):
         body = await _json_body(request)
         images = parse_client_images(body.get("images"))
         files = parse_client_files(body.get("files"))
-        message = caption_for(str(body.get("message") or ""), len(images), len(files))
+        message = caption_for(
+            str(body.get("message") or ""), len(images), len(files), str(body.get("language") or "")
+        )
         if not message:
             raise web.HTTPBadRequest(text="Message is empty.")
         lock: asyncio.Lock = data["locks"].setdefault(session.id, asyncio.Lock())
@@ -1771,6 +1781,7 @@ class ChatView(HomeAssistantView):
                                     "text": event.get("text"),
                                     **({"id": event["id"]} if event.get("id") else {}),
                                     **({"note": event["note"]} if event.get("note") else {}),
+                                    **({"failed": True} if event.get("failed") is True else {}),
                                 }
                             )
                         elif kind == "plan_notice":

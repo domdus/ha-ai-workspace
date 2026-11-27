@@ -311,13 +311,47 @@ export function takePendingClip(pending, { flush = false, target = TARGET_CHARS,
 export const CLIP_STALL_MS = 8000;
 export const CLIP_START_MS = 15000;
 
-export function clipWatch({ now, startedAt, lastProgress, started, paused, ended, currentTime, duration }) {
+export function clipWatch({ now, startedAt, lastProgress, started, paused, ended, currentTime, duration, userPaused = true }) {
   if (ended) return "done";
   const known = Number.isFinite(duration) && duration > 0;
   if (known && currentTime >= duration - 0.25) return "done";
   if (!started) return now - startedAt > CLIP_START_MS ? "done" : "wait";
-  if (paused) return "wait";
+  // Paused by the browser (screen off, app switch, audio focus lost) counts as a stall.
+  if (paused && userPaused) return "wait";
   return now - lastProgress > CLIP_STALL_MS ? "done" : "wait";
+}
+
+/**
+ * State of the read-aloud control on the reply being read: "playing" (shows pause),
+ * "paused" (paused by the user, shows resume) or "idle". A clip the browser stopped on its
+ * own (autoplay blocked, error, screen off) is idle, so no control sticks around.
+ * `held`: the user paused between two clips of a chunked queue (the next clip waits).
+ */
+export function speakUiState({ queued = false, hasClip = false, ended = false, paused = false, error = false, userPaused = false, held = false } = {}) {
+  const clip = Boolean(hasClip && !ended && !error);
+  if (clip && paused && userPaused) return "paused";
+  if (held && (queued || clip)) return "paused";
+  if (queued) return "playing";
+  if (clip && !paused) return "playing";
+  return "idle";
+}
+
+/**
+ * How a reply's single read-aloud button looks in a read-aloud state: idle reads aloud,
+ * playing pauses, paused resumes.
+ */
+export function speakControlView(state) {
+  if (state === "playing") return { icon: "mdi:pause", label: "pause_reply", pressed: true };
+  if (state === "paused") return { icon: "mdi:play", label: "resume_reply", pressed: true };
+  return { icon: "mdi:volume-high", label: "speak_reply", pressed: false };
+}
+
+/** What a tap on the speak button does in that state: "pause", "resume" or "speak". */
+export function speakTapAction(state, sameReply) {
+  if (!sameReply) return "speak";
+  if (state === "playing") return "pause";
+  if (state === "paused") return "resume";
+  return "speak";
 }
 
 /**

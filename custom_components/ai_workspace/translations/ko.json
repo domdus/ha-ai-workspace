@@ -283,12 +283,14 @@
           "data": {
             "name": "이름",
             "url": "주소",
-            "token": "토큰"
+            "token": "토큰",
+            "tool_timeout_sec": "도구 호출 제한 시간"
           },
           "data_description": {
             "name": "Directus처럼 짧은 이름입니다. 어시스턴트가 이 연결과 다른 연결을 구분하는 데 사용합니다.",
             "url": "웹 주소(https://…). 발견된 서버는 자동으로 채워집니다.",
-            "token": "해당 서버가 키를 요청할 때만 입력하세요. 수정 시 비워 두면 저장된 키를 유지합니다."
+            "token": "해당 서버가 키를 요청할 때만 입력하세요. 수정 시 비워 두면 저장된 키를 유지합니다.",
+            "tool_timeout_sec": "도구 호출이 응답이나 진행 메시지 없이 실행될 수 있는 시간(초)으로, 지나면 취소됩니다(10–3600). 서버의 진행 메시지가 올 때마다 시간이 다시 시작됩니다."
           }
         }
       }
@@ -743,6 +745,85 @@
           "description": "실행이 중지되기까지의 초."
         }
       }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "cost_today": {
+        "name": "오늘 비용"
+      },
+      "cost_month": {
+        "name": "이번 달 비용"
+      },
+      "cost_total": {
+        "name": "총 비용"
+      },
+      "tokens_today": {
+        "name": "오늘 토큰"
+      },
+      "tokens_month": {
+        "name": "이번 달 토큰"
+      },
+      "tokens_total": {
+        "name": "총 토큰"
+      },
+      "turns_today": {
+        "name": "오늘 턴"
+      },
+      "turns_month": {
+        "name": "이번 달 턴"
+      },
+      "turns_total": {
+        "name": "총 턴"
+      },
+      "last_cost": {
+        "name": "마지막 턴 비용"
+      },
+      "last_tokens": {
+        "name": "마지막 턴 토큰"
+      },
+      "last_model": {
+        "name": "마지막 모델"
+      },
+      "last_agent": {
+        "name": "마지막 에이전트"
+      },
+      "cost_tts_today": {
+        "name": "오늘 음성 비용"
+      },
+      "cost_tts_total": {
+        "name": "총 음성 비용"
+      },
+      "plan_session_percent": {
+        "name": "{engine} 요금제 세션 %"
+      },
+      "plan_week_percent": {
+        "name": "{engine} 요금제 주간 %"
+      },
+      "plan_session_reset_at": {
+        "name": "{engine} 요금제 세션 초기화"
+      }
+    },
+    "stt": {
+      "speech_to_text": {
+        "name": "음성-텍스트 변환"
+      }
+    },
+    "tts": {
+      "text_to_speech": {
+        "name": "텍스트-음성 변환"
+      }
+    }
+  },
+  "exceptions": {
+    "unknown_agent": {
+      "message": "AI Workspace에 {agent}(이)라는 에이전트가 없습니다."
+    },
+    "tasks_need_admin": {
+      "message": "AI Workspace 작업에는 Home Assistant 관리자 계정이 필요합니다."
+    },
+    "not_set_up": {
+      "message": "AI Workspace가 설정되지 않았습니다."
     }
   }
 }

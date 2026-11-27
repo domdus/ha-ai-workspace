@@ -30,7 +30,14 @@ from typing import Any, AsyncIterator, Callable
 
 from app.codex_login import cli_path, credential_source, sdk_config, sdk_installed
 from app.events import _tool_event
-from app.mcp_config import McpConfigError, load_mcp_servers, merge_mcp_servers, servers_from_chat_mcp
+from app.mcp_config import (
+    McpConfigError,
+    load_mcp_servers,
+    merge_mcp_servers,
+    servers_from_chat_mcp,
+    servers_with_language,
+)
+from app.mcp_proxy import ENGINE_TOOL_CEILING
 from app.credentials import codex_runtime_id
 from app.plan_quota import credential_id, plan_events_from_sdk, plan_rejection_error
 from app.providers.base import ProviderInfo
@@ -132,6 +139,10 @@ def mcp_config(servers: dict[str, dict[str, Any]]) -> tuple[dict[str, Any], list
             skipped.append(str(name))
             continue
         item: dict[str, Any] = {"url": str(cfg["url"])}
+        if "/api/mcp-proxy/" in item["url"]:
+            # Codex stops a call after tool_timeout_sec (60 s by default) and does not see MCP progress
+            # through the proxy. The proxy enforces each connection's timeout from the last progress.
+            item["tool_timeout_sec"] = ENGINE_TOOL_CEILING
         if cfg.get("headers"):
             item["http_headers"] = {str(k): str(v) for k, v in cfg["headers"].items()}
         out[key] = item
@@ -491,6 +502,8 @@ class CodexProvider:
             exclusive = bool((mcp or {}).get("exclusive"))
             file_servers = {} if exclusive else load_mcp_servers(self.settings.mcp_config_path)
             mcp_servers = merge_mcp_servers(file_servers, servers_from_chat_mcp(mcp))
+            # Server-made texts (approval prompts, form titles) in Home Assistant's language.
+            mcp_servers = servers_with_language(mcp_servers, str((mcp or {}).get("language") or ""))
         except McpConfigError as exc:
             yield {"type": "error", "message": str(exc)}
             return

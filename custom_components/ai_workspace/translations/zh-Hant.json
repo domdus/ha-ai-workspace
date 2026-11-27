@@ -283,12 +283,14 @@
           "data": {
             "name": "名稱",
             "url": "位址",
-            "token": "權杖"
+            "token": "權杖",
+            "tool_timeout_sec": "工具呼叫逾時"
           },
           "data_description": {
             "name": "簡短名稱，例如 Directus。助手用它把此連線與其他連線區分開。",
             "url": "網址（https://…）。已發現的伺服器會自動填入。",
-            "token": "僅當該伺服器要求金鑰時填寫。編輯時留空可保留已儲存的金鑰。"
+            "token": "僅當該伺服器要求金鑰時填寫。編輯時留空可保留已儲存的金鑰。",
+            "tool_timeout_sec": "工具呼叫在沒有回覆或進度訊息的情況下可執行的秒數，逾時即取消（10–3600）。伺服器每傳送一則進度訊息，計時就重新開始。"
           }
         }
       }
@@ -743,6 +745,85 @@
           "description": "執行停止前的秒數。"
         }
       }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "cost_today": {
+        "name": "今日費用"
+      },
+      "cost_month": {
+        "name": "本月費用"
+      },
+      "cost_total": {
+        "name": "總費用"
+      },
+      "tokens_today": {
+        "name": "今日權杖"
+      },
+      "tokens_month": {
+        "name": "本月權杖"
+      },
+      "tokens_total": {
+        "name": "總權杖"
+      },
+      "turns_today": {
+        "name": "今日輪次"
+      },
+      "turns_month": {
+        "name": "本月輪次"
+      },
+      "turns_total": {
+        "name": "總輪次"
+      },
+      "last_cost": {
+        "name": "上一輪費用"
+      },
+      "last_tokens": {
+        "name": "上一輪權杖"
+      },
+      "last_model": {
+        "name": "上次模型"
+      },
+      "last_agent": {
+        "name": "上次代理"
+      },
+      "cost_tts_today": {
+        "name": "今日語音費用"
+      },
+      "cost_tts_total": {
+        "name": "語音總費用"
+      },
+      "plan_session_percent": {
+        "name": "{engine} 方案工作階段 %"
+      },
+      "plan_week_percent": {
+        "name": "{engine} 方案本週 %"
+      },
+      "plan_session_reset_at": {
+        "name": "{engine} 方案工作階段重設"
+      }
+    },
+    "stt": {
+      "speech_to_text": {
+        "name": "語音轉文字"
+      }
+    },
+    "tts": {
+      "text_to_speech": {
+        "name": "文字轉語音"
+      }
+    }
+  },
+  "exceptions": {
+    "unknown_agent": {
+      "message": "AI Workspace 沒有名為 {agent} 的代理。"
+    },
+    "tasks_need_admin": {
+      "message": "AI Workspace 工作需要 Home Assistant 中的管理員帳戶。"
+    },
+    "not_set_up": {
+      "message": "AI Workspace 尚未設定。"
     }
   }
 }

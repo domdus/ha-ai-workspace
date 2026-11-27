@@ -283,12 +283,14 @@
           "data": {
             "name": "Namn",
             "url": "Adress",
-            "token": "Token"
+            "token": "Token",
+            "tool_timeout_sec": "Tidsgräns för verktygsanrop"
           },
           "data_description": {
             "name": "Ett kort namn, till exempel Directus. Assistenten använder det för att skilja den här anslutningen från de andra.",
             "url": "Webbadress (https://…). Upptäckta servrar fylls i automatiskt.",
-            "token": "Bara om den servern ber om en nyckel. Lämna tomt vid redigering för att behålla den sparade nyckeln."
+            "token": "Bara om den servern ber om en nyckel. Lämna tomt vid redigering för att behålla den sparade nyckeln.",
+            "tool_timeout_sec": "Sekunder ett verktygsanrop får pågå utan svar eller förloppsmeddelande innan det avbryts (10–3600). Varje förloppsmeddelande från servern startar tiden om."
           }
         }
       }
@@ -743,6 +745,85 @@
           "description": "Sekunder innan körningen stoppas."
         }
       }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "cost_today": {
+        "name": "Kostnad i dag"
+      },
+      "cost_month": {
+        "name": "Kostnad denna månad"
+      },
+      "cost_total": {
+        "name": "Kostnad totalt"
+      },
+      "tokens_today": {
+        "name": "Tokens i dag"
+      },
+      "tokens_month": {
+        "name": "Tokens denna månad"
+      },
+      "tokens_total": {
+        "name": "Tokens totalt"
+      },
+      "turns_today": {
+        "name": "Rundor i dag"
+      },
+      "turns_month": {
+        "name": "Rundor denna månad"
+      },
+      "turns_total": {
+        "name": "Rundor totalt"
+      },
+      "last_cost": {
+        "name": "Kostnad senaste rundan"
+      },
+      "last_tokens": {
+        "name": "Tokens senaste rundan"
+      },
+      "last_model": {
+        "name": "Senaste modell"
+      },
+      "last_agent": {
+        "name": "Senaste agent"
+      },
+      "cost_tts_today": {
+        "name": "Talkostnad i dag"
+      },
+      "cost_tts_total": {
+        "name": "Talkostnad totalt"
+      },
+      "plan_session_percent": {
+        "name": "{engine}-abonnemang session %"
+      },
+      "plan_week_percent": {
+        "name": "{engine}-abonnemang vecka %"
+      },
+      "plan_session_reset_at": {
+        "name": "{engine}-abonnemang sessionsåterställning"
+      }
+    },
+    "stt": {
+      "speech_to_text": {
+        "name": "Tal till text"
+      }
+    },
+    "tts": {
+      "text_to_speech": {
+        "name": "Text till tal"
+      }
+    }
+  },
+  "exceptions": {
+    "unknown_agent": {
+      "message": "AI Workspace har ingen agent som heter {agent}."
+    },
+    "tasks_need_admin": {
+      "message": "AI Workspace-uppgifter behöver ett administratörskonto i Home Assistant."
+    },
+    "not_set_up": {
+      "message": "AI Workspace är inte konfigurerat."
     }
   }
 }

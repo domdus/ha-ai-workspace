@@ -283,12 +283,14 @@
           "data": {
             "name": "Název",
             "url": "Adresa",
-            "token": "Token"
+            "token": "Token",
+            "tool_timeout_sec": "Časový limit volání nástroje"
           },
           "data_description": {
             "name": "Krátký název, například Directus. Asistent podle něj odliší toto připojení od ostatních.",
             "url": "Webová adresa (https://…). Nalezené servery se vyplní automaticky.",
-            "token": "Jen když ten server chce klíč. Při úpravě nechte prázdné, aby se zachoval uložený klíč."
+            "token": "Jen když ten server chce klíč. Při úpravě nechte prázdné, aby se zachoval uložený klíč.",
+            "tool_timeout_sec": "Počet sekund, po které může volání nástroje běžet bez odpovědi nebo zprávy o průběhu, než se zruší (10–3600). Každá zpráva o průběhu od serveru spustí čas znovu."
           }
         }
       }
@@ -743,6 +745,85 @@
           "description": "Sekundy do zastavení spuštění."
         }
       }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "cost_today": {
+        "name": "Náklady dnes"
+      },
+      "cost_month": {
+        "name": "Náklady tento měsíc"
+      },
+      "cost_total": {
+        "name": "Náklady celkem"
+      },
+      "tokens_today": {
+        "name": "Tokeny dnes"
+      },
+      "tokens_month": {
+        "name": "Tokeny tento měsíc"
+      },
+      "tokens_total": {
+        "name": "Tokeny celkem"
+      },
+      "turns_today": {
+        "name": "Kola dnes"
+      },
+      "turns_month": {
+        "name": "Kola tento měsíc"
+      },
+      "turns_total": {
+        "name": "Kola celkem"
+      },
+      "last_cost": {
+        "name": "Náklady posledního kola"
+      },
+      "last_tokens": {
+        "name": "Tokeny posledního kola"
+      },
+      "last_model": {
+        "name": "Poslední model"
+      },
+      "last_agent": {
+        "name": "Poslední agent"
+      },
+      "cost_tts_today": {
+        "name": "Náklady na řeč dnes"
+      },
+      "cost_tts_total": {
+        "name": "Náklady na řeč celkem"
+      },
+      "plan_session_percent": {
+        "name": "Plán {engine} relace %"
+      },
+      "plan_week_percent": {
+        "name": "Plán {engine} týden %"
+      },
+      "plan_session_reset_at": {
+        "name": "Plán {engine} reset relace"
+      }
+    },
+    "stt": {
+      "speech_to_text": {
+        "name": "Řeč na text"
+      }
+    },
+    "tts": {
+      "text_to_speech": {
+        "name": "Text na řeč"
+      }
+    }
+  },
+  "exceptions": {
+    "unknown_agent": {
+      "message": "AI Workspace nemá agenta s názvem {agent}."
+    },
+    "tasks_need_admin": {
+      "message": "Úlohy AI Workspace potřebují účet správce v Home Assistantu."
+    },
+    "not_set_up": {
+      "message": "AI Workspace není nastaven."
     }
   }
 }

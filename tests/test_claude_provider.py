@@ -343,7 +343,7 @@ def test_map_messages() -> None:
     results = map_claude_message(
         UserMessage(content=[ToolResultBlock(tool_use_id="t1", content="boom", is_error=True)])
     )
-    assert results == [{"type": "tool", "name": "tool", "phase": "end", "text": "Tool failed", "id": "t1"}]
+    assert results == [{"type": "tool", "name": "tool", "phase": "end", "text": "Tool failed", "id": "t1", "detail": "boom"}]
 
     done = map_claude_message(_result())
     assert done[0] == {"type": "result", "text": "ok", "run_id": "new-sess", "status": "finished"}

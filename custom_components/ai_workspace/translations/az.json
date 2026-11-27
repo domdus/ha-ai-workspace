@@ -283,12 +283,14 @@
           "data": {
             "name": "Ad",
             "url": "Ünvan",
-            "token": "Token"
+            "token": "Token",
+            "tool_timeout_sec": "Alət çağırışı üçün vaxt limiti"
           },
           "data_description": {
             "name": "Qısa ad, məsələn Directus. Köməkçi bu bağlantını digərlərindən ayırmaq üçün ondan istifadə edir.",
             "url": "Veb ünvanı (https://…). Tapılan serverlər avtomatik doldurulur.",
-            "token": "Yalnız o server açar istəyəndə. Redaktə edərkən saxlanmış açarı saxlamaq üçün boş buraxın."
+            "token": "Yalnız o server açar istəyəndə. Redaktə edərkən saxlanmış açarı saxlamaq üçün boş buraxın.",
+            "tool_timeout_sec": "Alət çağırışının cavab və ya irəliləyiş mesajı olmadan ləğv edilənədək işləyə biləcəyi saniyələr (10–3600). Serverdən gələn hər irəliləyiş mesajı vaxtı yenidən başladır."
           }
         }
       }
@@ -743,6 +745,85 @@
           "description": "İcra dayanana qədər saniyələr."
         }
       }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "cost_today": {
+        "name": "Bu günkü xərc"
+      },
+      "cost_month": {
+        "name": "Bu ayın xərci"
+      },
+      "cost_total": {
+        "name": "Ümumi xərc"
+      },
+      "tokens_today": {
+        "name": "Bu günkü tokenlər"
+      },
+      "tokens_month": {
+        "name": "Bu ayın tokenləri"
+      },
+      "tokens_total": {
+        "name": "Ümumi tokenlər"
+      },
+      "turns_today": {
+        "name": "Bu günkü raundlar"
+      },
+      "turns_month": {
+        "name": "Bu ayın raundları"
+      },
+      "turns_total": {
+        "name": "Ümumi raundlar"
+      },
+      "last_cost": {
+        "name": "Son raundun xərci"
+      },
+      "last_tokens": {
+        "name": "Son raundun tokenləri"
+      },
+      "last_model": {
+        "name": "Son model"
+      },
+      "last_agent": {
+        "name": "Son agent"
+      },
+      "cost_tts_today": {
+        "name": "Bu günkü nitq xərci"
+      },
+      "cost_tts_total": {
+        "name": "Ümumi nitq xərci"
+      },
+      "plan_session_percent": {
+        "name": "{engine} planı sessiya %"
+      },
+      "plan_week_percent": {
+        "name": "{engine} planı həftə %"
+      },
+      "plan_session_reset_at": {
+        "name": "{engine} planı sessiya sıfırlanması"
+      }
+    },
+    "stt": {
+      "speech_to_text": {
+        "name": "Nitqdən mətnə"
+      }
+    },
+    "tts": {
+      "text_to_speech": {
+        "name": "Mətndən nitqə"
+      }
+    }
+  },
+  "exceptions": {
+    "unknown_agent": {
+      "message": "AI Workspace-də {agent} adlı agent yoxdur."
+    },
+    "tasks_need_admin": {
+      "message": "AI Workspace tapşırıqları üçün Home Assistant-da administrator hesabı lazımdır."
+    },
+    "not_set_up": {
+      "message": "AI Workspace qurulmayıb."
     }
   }
 }

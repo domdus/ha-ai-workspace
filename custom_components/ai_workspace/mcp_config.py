@@ -68,6 +68,9 @@ def server_to_sdk(name: str, raw: Any) -> dict[str, Any]:
             if not isinstance(headers, dict):
                 raise McpConfigError(f"{name}.headers must be an object")
             server["headers"] = {str(key): _stringify(val, f"{name}.headers.{key}") for key, val in headers.items()}
+        timeout = _tool_timeout(raw)
+        if timeout:
+            server[TOOL_TIMEOUT_KEY] = timeout
         return server
     if command:
         server = {"type": "stdio", "command": _stringify(command, f"{name}.command")}
@@ -86,13 +89,28 @@ def server_to_sdk(name: str, raw: Any) -> dict[str, Any]:
     raise McpConfigError(f"MCP server {name} needs a url or a command")
 
 
-def mcp_servers_from_url(url: str, token: str = "") -> dict[str, dict[str, Any]]:
+# Seconds one tool call may stay silent (no answer, no notifications/progress); like Codex's tool_timeout_sec.
+TOOL_TIMEOUT_KEY = "tool_timeout_sec"
+
+
+def _tool_timeout(raw: dict[str, Any]) -> int:
+    value = raw.get(TOOL_TIMEOUT_KEY)
+    if value in (None, ""):
+        return 0
+    from .const import tool_timeout_seconds
+
+    return tool_timeout_seconds(value)
+
+
+def mcp_servers_from_url(url: str, token: str = "", timeout: Any = None) -> dict[str, dict[str, Any]]:
     if not url:
         return {}
     raw: dict[str, Any] = {"url": url}
     secret = str(token or "").strip()
     if secret:
         raw["headers"] = {"Authorization": f"Bearer {secret}"}
+    if timeout not in (None, ""):
+        raw[TOOL_TIMEOUT_KEY] = timeout
     return {"mcp": server_to_sdk("mcp", raw)}
 
 
@@ -128,7 +146,10 @@ def clean_mcp_extra(raw: Any) -> list[dict[str, str]]:
         if not name or not url or name in seen:
             continue
         seen.add(name)
-        found.append({"name": name, "url": url, "token": str(item.get("token") or "").strip()})
+        row = {"name": name, "url": url, "token": str(item.get("token") or "").strip()}
+        if item.get("timeout") not in (None, ""):
+            row["timeout"] = item.get("timeout")
+        found.append(row)
     return found
 
 
@@ -142,8 +163,8 @@ def server_slug(name: str, url: str) -> str:
     return slug
 
 
-def mcp_servers_from_saved(url: str, token: str, extra: Any) -> dict[str, dict[str, Any]]:
-    servers = mcp_servers_from_url(url, token)
+def mcp_servers_from_saved(url: str, token: str, extra: Any, timeout: Any = None) -> dict[str, dict[str, Any]]:
+    servers = mcp_servers_from_url(url, token, timeout)
     for item in clean_mcp_extra(extra):
         name = item["name"]
         if name in servers:
@@ -151,6 +172,8 @@ def mcp_servers_from_saved(url: str, token: str, extra: Any) -> dict[str, dict[s
         raw: dict[str, Any] = {"url": item["url"]}
         if item["token"]:
             raw["headers"] = {"Authorization": f"Bearer {item['token']}"}
+        if item.get("timeout") not in (None, ""):
+            raw[TOOL_TIMEOUT_KEY] = item["timeout"]
         servers[name] = server_to_sdk(name, raw)
     return servers
 

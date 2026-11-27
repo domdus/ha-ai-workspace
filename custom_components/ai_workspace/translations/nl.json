@@ -283,12 +283,14 @@
           "data": {
             "name": "Naam",
             "url": "Adres",
-            "token": "Token"
+            "token": "Token",
+            "tool_timeout_sec": "Time-out voor toolaanroepen"
           },
           "data_description": {
             "name": "Een korte naam, bijvoorbeeld Directus. De assistent onderscheidt hiermee deze verbinding van de andere.",
             "url": "Webadres (https://…). Gevonden servers worden automatisch ingevuld.",
-            "token": "Alleen als die server om een sleutel vraagt. Leeg laten bij bewerken om de opgeslagen sleutel te houden."
+            "token": "Alleen als die server om een sleutel vraagt. Leeg laten bij bewerken om de opgeslagen sleutel te houden.",
+            "tool_timeout_sec": "Seconden dat een toolaanroep zonder antwoord of voortgangsbericht mag lopen voordat hij wordt geannuleerd (10–3600). Elk voortgangsbericht van de server start de tijd opnieuw."
           }
         }
       }
@@ -743,6 +745,85 @@
           "description": "Seconden voordat de run stopt."
         }
       }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "cost_today": {
+        "name": "Kosten vandaag"
+      },
+      "cost_month": {
+        "name": "Kosten deze maand"
+      },
+      "cost_total": {
+        "name": "Kosten totaal"
+      },
+      "tokens_today": {
+        "name": "Tokens vandaag"
+      },
+      "tokens_month": {
+        "name": "Tokens deze maand"
+      },
+      "tokens_total": {
+        "name": "Tokens totaal"
+      },
+      "turns_today": {
+        "name": "Beurten vandaag"
+      },
+      "turns_month": {
+        "name": "Beurten deze maand"
+      },
+      "turns_total": {
+        "name": "Beurten totaal"
+      },
+      "last_cost": {
+        "name": "Kosten laatste beurt"
+      },
+      "last_tokens": {
+        "name": "Tokens laatste beurt"
+      },
+      "last_model": {
+        "name": "Laatste model"
+      },
+      "last_agent": {
+        "name": "Laatste agent"
+      },
+      "cost_tts_today": {
+        "name": "Spraakkosten vandaag"
+      },
+      "cost_tts_total": {
+        "name": "Spraakkosten totaal"
+      },
+      "plan_session_percent": {
+        "name": "{engine}-abonnement sessie %"
+      },
+      "plan_week_percent": {
+        "name": "{engine}-abonnement week %"
+      },
+      "plan_session_reset_at": {
+        "name": "{engine}-abonnement sessiereset"
+      }
+    },
+    "stt": {
+      "speech_to_text": {
+        "name": "Spraak naar tekst"
+      }
+    },
+    "tts": {
+      "text_to_speech": {
+        "name": "Tekst naar spraak"
+      }
+    }
+  },
+  "exceptions": {
+    "unknown_agent": {
+      "message": "AI Workspace heeft geen agent met de naam {agent}."
+    },
+    "tasks_need_admin": {
+      "message": "AI Workspace-taken hebben een beheerdersaccount in Home Assistant nodig."
+    },
+    "not_set_up": {
+      "message": "AI Workspace is niet ingesteld."
     }
   }
 }

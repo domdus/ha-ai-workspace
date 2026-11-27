@@ -367,7 +367,12 @@ def task_agent_chain(hass: HomeAssistant, data: dict[str, Any], wanted: str = ""
     if wanted:
         named = _find_provider(providers, wanted)
         if named is None:
-            raise ServiceValidationError(f"AI Workspace has no agent named {wanted!r}.")
+            raise ServiceValidationError(
+                f"AI Workspace has no agent named {wanted!r}.",
+                translation_domain=DOMAIN,
+                translation_key="unknown_agent",
+                translation_placeholders={"agent": repr(wanted)},
+            )
     from .fallback_ha import book_of, fallback_chain
 
     ordered = fallback_chain(data)
@@ -457,7 +462,11 @@ async def _task_user(hass: HomeAssistant, user_id: str | None) -> str:
     for user in await hass.auth.async_get_users():
         if user.is_admin and not user.system_generated and user.is_active:
             return user.id
-    raise HomeAssistantError("AI Workspace tasks need an administrator account in Home Assistant.")
+    raise HomeAssistantError(
+        "AI Workspace tasks need an administrator account in Home Assistant.",
+        translation_domain=DOMAIN,
+        translation_key="tasks_need_admin",
+    )
 
 
 # --- One run -----------------------------------------------------------------------------------
@@ -624,7 +633,7 @@ async def async_run_task(hass: HomeAssistant, params: dict[str, Any], caller: st
     """Run one task turn and return its result. Never raises for agent failures."""
     data = hass.data.get(DOMAIN)
     if not isinstance(data, dict) or "store" not in data:
-        raise HomeAssistantError("AI Workspace is not set up.")
+        raise HomeAssistantError("AI Workspace is not set up.", translation_domain=DOMAIN, translation_key="not_set_up")
     state = task_state(hass)
     await state.load()
     name = str(params.get("task_name") or "").strip()
@@ -821,7 +830,7 @@ async def _handle_run_task(hass: HomeAssistant, call: ServiceCall) -> ServiceRes
             _LOGGER.exception("AI Workspace task failed")
 
     if not isinstance(hass.data.get(DOMAIN), dict):
-        raise HomeAssistantError("AI Workspace is not set up.")
+        raise HomeAssistantError("AI Workspace is not set up.", translation_domain=DOMAIN, translation_key="not_set_up")
     hass.async_create_background_task(_background(), f"ai_workspace_task_{task_key(params.get('task_name') or '')}")
     return None
 

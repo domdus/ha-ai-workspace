@@ -1,7 +1,7 @@
 const CACHE = new URL(import.meta.url).search;
-const { stringsFor } = await import(`./i18n.js${CACHE}`);
+const { I18N, stringsFor } = await import(`./i18n.js${CACHE}`);
 const { taskStrings } = await import(`./tasks_i18n.js${CACHE}`);
-const { takeSpeech, speechPlain, takePendingClip, speechTail, splitSpeechClip, MAX_CHARS, clipWatch, unlockOnSend, releaseAudio } = await import(
+const { takeSpeech, speechPlain, takePendingClip, speechTail, splitSpeechClip, MAX_CHARS, clipWatch, unlockOnSend, releaseAudio, speakUiState, speakControlView, speakTapAction } = await import(
   `./speech.js${CACHE}`
 );
 const { stripRemoteMedia, watchRenderedMedia } = await import(`./media_guard.js${CACHE}`);
@@ -47,6 +47,7 @@ const { replyTimeLabel, replyTimeTitle, haHour12, haTimeZone, replyRows } = awai
   `./reply_meta.js${CACHE}`
 );
 const { isPlaceholderTitle, headerTitle, realTitle } = await import(`./chat_title.js${CACHE}`);
+const { toolProgressText, progressChip } = await import(`./tool_progress.js${CACHE}`);
 
 const API = "/api/ai_workspace";
 const UI_THEME_KEY = "ai_workspace_ui_theme";
@@ -2311,6 +2312,17 @@ export async function mountAiWorkspace(root, options = {}) {
       message.textContent = data.message;
       card.append(message);
     }
+    // MCP URL mode: the full link, opened only by the user's own click.
+    const link = !worker && /^https?:\/\/\S+$/i.test(String(data.url || "")) ? String(data.url) : "";
+    if (link) {
+      const anchor = document.createElement("a");
+      anchor.className = "approval-link";
+      anchor.href = link;
+      anchor.target = "_blank";
+      anchor.rel = "noopener noreferrer";
+      anchor.textContent = link;
+      card.append(anchor);
+    }
     const flag = data.approval_field || "";
     const inputs = (data.fields || []).filter((field) => field.name !== flag).map(approvalField);
     if (inputs.length) {
@@ -2692,6 +2704,27 @@ export async function mountAiWorkspace(root, options = {}) {
     if (!chip) return;
     chip.className = "done";
     chip.style.animation = "none";
+    chip.querySelector(".chip-progress")?.remove();
+    delete chip.dataset.progress;
+  }
+
+  // MCP progress of a running tool: on its chip and as the reply's status line.
+  function showToolProgress(bubble, tools, event) {
+    const text = toolProgressText(event);
+    if (!text || !bubble) return;
+    const list = tools?.querySelector?.(".tools-list");
+    const chip = list ? progressChip([...list.children].filter(isPendingChip), event) : null;
+    if (chip) {
+      let note = chip.querySelector(".chip-progress");
+      if (!note) {
+        note = document.createElement("small");
+        note.className = "chip-progress";
+        chip.appendChild(note);
+      }
+      note.textContent = text;
+      chip.dataset.progress = text;
+    }
+    setActivity(bubble, text);
   }
 
   function ensureToolsChrome(tools) {
@@ -2767,6 +2800,7 @@ export async function mountAiWorkspace(root, options = {}) {
         if (callId) pending.dataset.callId = callId;
         if (label) pending.textContent = label;
         settleChip(pending);
+        markChipFailed(pending, event);
         syncToolsSummary(tools);
         syncActivityGlyph(tools.closest?.(".bubble"));
         return;
@@ -2778,9 +2812,17 @@ export async function mountAiWorkspace(root, options = {}) {
     if (callId) chip.dataset.callId = callId;
     if (!animate || reduceMotion || kind !== "busy") chip.style.animation = "none";
     chip.textContent = label;
+    markChipFailed(chip, event);
     list.appendChild(chip);
     syncToolsSummary(tools);
     syncActivityGlyph(tools.closest?.(".bubble"));
+  }
+
+  // A tool step that ended with an error (MCP isError, refused, not reachable).
+  function markChipFailed(chip, event) {
+    if (!chip || !event?.failed) return;
+    chip.classList.add("failed");
+    chip.title = t("error");
   }
 
   function settleTools(root) {
@@ -2789,15 +2831,32 @@ export async function mountAiWorkspace(root, options = {}) {
     if (root?.classList?.contains("bubble")) syncActivityGlyph(root);
   }
 
+  // The prompt sent for attachments without text, in the UI language (the agent answers in
+  // the language of the latest message, so an English default made it answer in English).
+  function attachmentPrompt(imageCount, fileCount) {
+    if (imageCount > 0 && fileCount > 0) return t("attach_prompt_mixed");
+    if (imageCount === 1) return t("attach_prompt_image");
+    if (imageCount > 1) return t("attach_prompt_images", { count: imageCount });
+    if (fileCount === 1) return t("attach_prompt_file");
+    if (fileCount > 1) return t("attach_prompt_files", { count: fileCount });
+    return "";
+  }
+
+  // Default attachment prompts of every language (older chats may hold another one).
+  const DEFAULT_CAPTIONS = Object.values(I18N).flatMap((strings) =>
+    ["attach_prompt_image", "attach_prompt_images", "attach_prompt_file", "attach_prompt_files", "attach_prompt_mixed"]
+      .map((key) => String(strings[key] || ""))
+      .filter(Boolean)
+      .map((item) => {
+        const [head, tail = ""] = item.split("{count}");
+        const esc = (part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(`^${esc(head)}${item.includes("{count}") ? "\\d+" : ""}${esc(tail)}$`);
+      }),
+  );
+
   function isDefaultImageCaption(text) {
     const value = String(text || "").trim();
-    return (
-      value === "Look at this image." ||
-      /^Look at these \d+ images\.$/.test(value) ||
-      value === "Look at this file." ||
-      /^Look at these \d+ files\.$/.test(value) ||
-      value === "Look at these attachments."
-    );
+    return Boolean(value) && DEFAULT_CAPTIONS.some((re) => re.test(value));
   }
 
   function addBubbleImages(bubble, events) {
@@ -2902,6 +2961,8 @@ export async function mountAiWorkspace(root, options = {}) {
         streaming: bubble.classList.contains("streaming"),
         error: bubble.classList.contains("error"),
         createdAt: bubble.dataset.createdAt || "",
+        // Finished live in this view: its row waits for the end of the turn, then fades in.
+        fresh: Boolean(bubble._replyFresh),
       };
     });
   }
@@ -2954,14 +3015,16 @@ export async function mountAiWorkspace(root, options = {}) {
       if (bubble.lastElementChild !== row) bubble.appendChild(row);
       keep.add(row);
       row.classList.toggle("is-last", info.last);
-      row.classList.toggle("is-held", info.held);
+      // Rows of the running turn wait until it is complete; earlier rows stay usable.
+      row.classList.toggle("is-pending", info.pending);
       // Fade in only for a reply that just finished in this view, never on open or re-render.
       if (info.last && bubble._replyFresh) {
-        bubble._replyFresh = false;
         row.classList.remove("is-fresh");
         void row.offsetWidth;
         row.classList.add("is-fresh");
       }
+      // Once the turn is over, no reply is "fresh" any more (also earlier parts of the turn).
+      if (!info.pending) bubble._replyFresh = false;
       const speakBtn = row.querySelector(".reply-speak");
       if (speakBtn) speakBtn.hidden = !voice.tts;
       // Time labels are cached per day: "today"/"yesterday" only change at midnight.
@@ -2985,21 +3048,30 @@ export async function mountAiWorkspace(root, options = {}) {
     for (const row of logEl.querySelectorAll(".reply-actions")) {
       if (!keep.has(row)) row.remove();
     }
-    if (speakTarget && !keep.has(replyRowOf(speakTarget))) speakTarget = null;
+    // A reply read by hand always has its row; an auto-read reply may still be streaming.
+    if (speakTarget && (!speakTarget.isConnected || (!speakAuto && !keep.has(replyRowOf(speakTarget))))) {
+      speakTarget = null;
+    }
     syncReplySpeakUi();
   }
 
   function syncReplySpeakUi() {
-    const live = speechLive();
+    // The one read-aloud control: the speak button of the reply being read (by hand or
+    // automatically) shows pause while it plays and resume while it is paused; no
+    // separate stop button.
+    const state = speechState();
     for (const btn of logEl.querySelectorAll(".reply-actions .reply-speak")) {
       const row = btn.closest(".reply-actions");
-      const mine = Boolean(speakTarget && live && replyRowOf(speakTarget) === row);
-      if (btn.classList.contains("speaking") === mine && btn.dataset.ready) continue;
-      btn.dataset.ready = "1";
-      btn.classList.toggle("speaking", mine);
-      btn.setAttribute("aria-pressed", mine ? "true" : "false");
-      btn.querySelector("ha-icon")?.setAttribute("icon", mine ? "mdi:stop" : "mdi:volume-high");
-      setActionLabel(btn, t(mine ? "stop_reading" : "speak_reply"));
+      const mine = Boolean(speakTarget && state !== "idle" && replyRowOf(speakTarget) === row);
+      const next = mine ? state : "idle";
+      const view = speakControlView(next);
+      if (btn.dataset.state === next) continue;
+      btn.dataset.state = next;
+      btn.classList.toggle("speaking", next === "playing");
+      btn.classList.toggle("paused", next === "paused");
+      btn.setAttribute("aria-pressed", view.pressed ? "true" : "false");
+      btn.querySelector("ha-icon")?.setAttribute("icon", view.icon);
+      setActionLabel(btn, t(view.label));
     }
   }
 
@@ -3035,9 +3107,15 @@ export async function mountAiWorkspace(root, options = {}) {
       return;
     }
     if (btn.dataset.action === "speak") {
-      // Same reply playing: stop. Another reply: stop that one and read this one.
-      if (speakTarget === bubble && speechLive()) {
-        haltSpeech();
+      // Same reply: playing pauses, paused resumes where it stopped. Another reply: stop
+      // that one and read this one.
+      const action = speakTapAction(speechState(), speakTarget === bubble);
+      if (action === "pause") {
+        pauseSpeech();
+        return;
+      }
+      if (action === "resume") {
+        await resumeSpeech();
         return;
       }
       await speakReply(text, true, bubble);
@@ -3089,14 +3167,22 @@ export async function mountAiWorkspace(root, options = {}) {
     }
   }
 
+  function speechState() {
+    const audio = replyAudio;
+    const hasClip = Boolean(replyObjectUrl && audio && audio.src === replyObjectUrl);
+    return speakUiState({
+      queued: Boolean(speakStarted || speakBusy || speakPending.length > 0 || speakInflight.length > 0),
+      hasClip,
+      ended: Boolean(hasClip && audio.ended),
+      paused: Boolean(hasClip && audio.paused),
+      error: Boolean(hasClip && audio.error),
+      userPaused: speakUserPaused,
+      held: speakHold,
+    });
+  }
+
   function speechLive() {
-    return Boolean(
-      speakStarted ||
-        speakBusy ||
-        speakPending.length > 0 ||
-        speakInflight.length > 0 ||
-        (replyObjectUrl && replyAudio && !replyAudio.ended),
-    );
+    return speechState() !== "idle";
   }
 
   // Rollback/history button for the latest turn. It sits in the newest reply's own action
@@ -3126,12 +3212,14 @@ export async function mountAiWorkspace(root, options = {}) {
   function syncCopyChat() {
     let row = logEl.querySelector(".chat-actions");
     syncReplyRows(replyEntries());
-    // Copy, read aloud and the time live in each reply's own row. The bottom row keeps the
-    // chat-level actions, plus a speaker while a reply is read on its own (auto read-aloud),
-    // so that reading can still be paused or stopped.
-    const showSpeak = Boolean(voice.tts && speechLive() && !speakTarget);
-    const showHistory = Boolean(turnHasHistory);
-    const lastRow = logEl.querySelector(".reply-actions.is-last");
+    // Copy, read aloud and the time live in each reply's own row (also the stop/play control
+    // of auto read-aloud). The bottom row only holds the history button when the turn has
+    // no reply row.
+    // While a turn runs, the previous reply's row keeps its history button (if it had one).
+    const turnRunning = Boolean(streaming || liveStream);
+    const settled = [...logEl.querySelectorAll(".reply-actions:not(.is-pending)")];
+    const lastRow = logEl.querySelector(".reply-actions.is-last") || (turnRunning ? settled.at(-1) || null : null);
+    const showHistory = Boolean(turnHasHistory) && (!turnRunning || Boolean(lastRow));
     if (showHistory) {
       const btn = historyButton();
       btn.hidden = false;
@@ -3145,34 +3233,13 @@ export async function mountAiWorkspace(root, options = {}) {
       historyBtn.hidden = true;
     }
     const historyInRow = Boolean(showHistory && lastRow);
-    if (!showSpeak && !(showHistory && !historyInRow)) {
+    if (!(showHistory && !historyInRow)) {
       if (row) row.hidden = true;
       return;
     }
     if (!row) {
       row = document.createElement("div");
       row.className = "chat-actions";
-    }
-    let speakBtn = row.querySelector(".speak-chat");
-    if (voice.tts) {
-      if (!speakBtn) {
-        speakBtn = document.createElement("ha-icon-button");
-        speakBtn.className = "speak-chat";
-        speakBtn.type = "button";
-        speakBtn.label = t("speak_reply");
-        const speakIcon = document.createElement("ha-icon");
-        speakIcon.setAttribute("icon", "mdi:volume-high");
-        speakBtn.appendChild(speakIcon);
-        speakBtn.addEventListener("click", async (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          await toggleSpeak();
-        });
-        row.prepend(speakBtn);
-      }
-      speakBtn.hidden = !showSpeak;
-    } else if (speakBtn) {
-      speakBtn.hidden = true;
     }
     if (showHistory && !historyInRow && historyBtn.parentElement !== row) row.appendChild(historyBtn);
     row.hidden = false;
@@ -3637,7 +3704,7 @@ export async function mountAiWorkspace(root, options = {}) {
         {
           method: "POST",
           body: JSON.stringify({
-            message: turn.text,
+            message: turn.text || attachmentPrompt(images.length, files.length),
             origin: window.location.origin,
             language: speechLanguage(),
             images: images.map((img) => ({ name: img.name, mime: img.mime, data: img.data })),
@@ -5228,6 +5295,8 @@ export async function mountAiWorkspace(root, options = {}) {
           textPaintedAt = 0;
           addChip(tools, data, caughtUp);
           setActivity(bubble, "");
+        } else if (name === "tool_progress") {
+          showToolProgress(bubble, tools, data);
         } else if (name === "status") {
           setActivity(bubble, data.text);
         } else if (name === "plan_notice") {
@@ -5756,6 +5825,14 @@ export async function mountAiWorkspace(root, options = {}) {
   let speakFresh = false;
   let speakRelease = null;
   let speakTarget = null;
+  // speakTarget was set by auto read-aloud (the live reply), not by its own button.
+  let speakAuto = false;
+  // The current clip was paused by the user (not by the browser); keeps the play control.
+  let speakUserPaused = false;
+  let speakPausedAt = 0;
+  // The user paused the read-aloud: the current clip stays paused and the next one waits.
+  let speakHold = false;
+  let speakHideTimer = 0;
   const speakPending = [];
   const speakInflight = [];
   const SILENCE =
@@ -5897,46 +5974,160 @@ export async function mountAiWorkspace(root, options = {}) {
     }, 6000);
   }
 
-  function setSpeakUi(state) {
+  function setSpeakUi() {
     syncCopyChat();
-    const btn = logEl.querySelector(".speak-chat");
-    if (!btn) return;
-    const icon = btn.querySelector("ha-icon");
-    if (state === "playing") {
-      icon?.setAttribute("icon", "mdi:pause");
-      btn.label = t("pause_reply");
-      btn.classList.add("speaking");
-    } else if (state === "paused") {
-      icon?.setAttribute("icon", "mdi:play");
-      btn.label = t("speak_reply");
-      btn.classList.remove("speaking");
-    } else {
-      icon?.setAttribute("icon", "mdi:volume-high");
-      btn.label = t("speak_reply");
-      btn.classList.remove("speaking");
-    }
+  }
+
+  function ownClip() {
+    return Boolean(replyAudio && replyObjectUrl && replyAudio.src === replyObjectUrl);
   }
 
   function bindReplyAudio() {
     if (!replyAudio || replyAudio._speakBound) return;
     replyAudio._speakBound = true;
     replyAudio.addEventListener("play", () => {
-      if (String(replyAudio.src || "").startsWith("data:")) return;
-      setSpeakUi("playing");
+      if (!ownClip()) return;
+      // Also a resume via media session / headset.
+      speakUserPaused = false;
+      speakHold = false;
+      claimMediaSession();
+      setSpeakUi();
     });
     replyAudio.addEventListener("pause", () => {
-      if (!replyAudio || replyAudio.ended || !replyObjectUrl || String(replyAudio.src || "").startsWith("data:")) {
-        if (replyAudio?.ended) setSpeakUi("idle");
+      if (!ownClip() || replyAudio.ended) {
+        setSpeakUi();
         return;
       }
-      setSpeakUi("paused");
+      if (document.hidden && !speakHold) {
+        // The browser stopped the audio (screen off, app switch): nothing plays any more.
+        haltSpeech();
+        return;
+      }
+      // Paused by the user (button, media session, headset): keep the position and hold
+      // the queue. Our own button needs no grace period against a page that goes away.
+      speakPausedAt = speakHold ? 0 : Date.now();
+      speakUserPaused = true;
+      speakHold = true;
+      setSpeakUi();
     });
-    replyAudio.addEventListener("ended", () => setSpeakUi("idle"));
+    replyAudio.addEventListener("ended", () => setSpeakUi());
+    replyAudio.addEventListener("error", () => {
+      // A broken clip (decode/network error) must not leave a control without playback.
+      if (ownClip()) haltSpeech();
+    });
+    replyAudio.addEventListener("emptied", () => {
+      // Media dropped outside a running read-aloud: forget the clip.
+      if (!replyAudio.getAttribute("src") && !speakBusy && !speakPending.length && !speakInflight.length) {
+        if (replyObjectUrl) {
+          URL.revokeObjectURL(replyObjectUrl);
+          replyObjectUrl = "";
+        }
+        speakUserPaused = false;
+        speakHold = false;
+      }
+      setSpeakUi();
+    });
+  }
+
+  function stoppedByBrowser() {
+    if (!ownClip() || replyAudio.ended || !replyAudio.paused) return false;
+    // Paused right before the page went away counts as the browser's pause, not the user's.
+    return !speakUserPaused || Date.now() - speakPausedAt < 1500;
+  }
+
+  function onSpeakVisibility() {
+    if (speakHideTimer) {
+      window.clearTimeout(speakHideTimer);
+      speakHideTimer = 0;
+    }
+    if (!speechLive()) return;
+    if (document.hidden) {
+      // Some browsers pause audio a moment after the page is hidden.
+      speakHideTimer = window.setTimeout(() => {
+        speakHideTimer = 0;
+        if (document.hidden && stoppedByBrowser()) haltSpeech();
+      }, 1200);
+      if (stoppedByBrowser()) haltSpeech();
+      return;
+    }
+    // Back on the page: a clip the browser paused meanwhile does not resume by itself.
+    if (ownClip() && replyAudio.paused && !replyAudio.ended && !speakUserPaused) haltSpeech();
+    else setSpeakUi();
+  }
+
+  // Headset / lock-screen controls pause, resume and stop the read-aloud like the row's
+  // buttons (also with the screen off, where a plain pause would count as the browser's).
+  const mediaOwner = {};
+
+  function claimMediaSession() {
+    const session = navigator.mediaSession;
+    if (!session?.setActionHandler) return;
+    globalThis.__aiWorkspaceSpeechOwner = mediaOwner;
+    const handlers = {
+      pause: () => pauseSpeech(),
+      play: () => resumeSpeech(),
+      stop: () => haltSpeech(),
+    };
+    for (const [action, handler] of Object.entries(handlers)) {
+      try {
+        session.setActionHandler(action, handler);
+      } catch (_err) {
+        /* action not supported */
+      }
+    }
+  }
+
+  function releaseMediaSession() {
+    const session = navigator.mediaSession;
+    if (!session?.setActionHandler || globalThis.__aiWorkspaceSpeechOwner !== mediaOwner) return;
+    globalThis.__aiWorkspaceSpeechOwner = null;
+    for (const action of ["pause", "play", "stop"]) {
+      try {
+        session.setActionHandler(action, null);
+      } catch (_err) {
+        /* action not supported */
+      }
+    }
+  }
+
+  function pauseSpeech() {
+    // Pause at the current position; between two clips the next one waits (see playSpeechBlob).
+    speakHold = true;
+    speakPausedAt = 0;
+    if (ownClip() && !replyAudio.paused && !replyAudio.ended) {
+      speakUserPaused = true;
+      replyAudio.pause();
+    }
+    setSpeakUi();
+  }
+
+  async function resumeSpeech() {
+    const clipWaits = ownClip() && replyAudio.paused && !replyAudio.ended && !replyAudio.error;
+    if (!clipWaits) {
+      // Paused between clips: the queue goes on with the next clip once it is ready.
+      const queued = Boolean(speakBusy || speakPending.length || speakInflight.length);
+      speakHold = false;
+      speakUserPaused = false;
+      if (queued) setSpeakUi();
+      else haltSpeech();
+      return;
+    }
+    speakHold = false;
+    try {
+      await replyAudio.play();
+    } catch (_err) {
+      haltSpeech();
+      showSpeakHelp();
+    }
   }
 
   function haltSpeech() {
     speakGen += 1;
     speakTarget = null;
+    speakAuto = false;
+    speakUserPaused = false;
+    speakPausedAt = 0;
+    speakHold = false;
     speakHeld = "";
     speakRaw = "";
     speakStarted = false;
@@ -5947,6 +6138,7 @@ export async function mountAiWorkspace(root, options = {}) {
     speakPending.length = 0;
     speakInflight.length = 0;
     if (speakRelease) speakRelease();
+    releaseMediaSession();
     if (replyObjectUrl) {
       URL.revokeObjectURL(replyObjectUrl);
       replyObjectUrl = "";
@@ -5971,6 +6163,14 @@ export async function mountAiWorkspace(root, options = {}) {
       fresh: speakFresh,
     });
     speakHeld = taken.rest;
+    if (taken.pieces.length && (!speakTarget || speakAuto)) {
+      // Auto read-aloud: the live reply's own speak button is the control (pause / resume).
+      const live = lastAssistantBubble();
+      if (live) {
+        speakTarget = live;
+        speakAuto = true;
+      }
+    }
     for (const piece of taken.pieces) {
       speakStarted = true;
       speakFresh = false;
@@ -5983,7 +6183,7 @@ export async function mountAiWorkspace(root, options = {}) {
 
   function feedSpeech(delta) {
     // A reply picked by hand is being read: the live reply does not cut in.
-    if (!voice.speak || !delta || speakTarget) return;
+    if (!voice.speak || !delta || (speakTarget && !speakAuto)) return;
     speakRaw += delta;
     speakHeld += delta;
     drainSpeech(false);
@@ -6083,7 +6283,7 @@ export async function mountAiWorkspace(root, options = {}) {
       let settled = false;
       let watchdog = 0;
       let started = false;
-      const startedAt = Date.now();
+      let startedAt = Date.now();
       let lastProgress = startedAt;
       let lastTime = 0;
       const onPlaying = () => {
@@ -6105,7 +6305,9 @@ export async function mountAiWorkspace(root, options = {}) {
         if (settled) return;
         const now = Date.now();
         const time = Number(replyAudio.currentTime) || 0;
-        if (replyAudio.paused || time !== lastTime) lastProgress = now;
+        if ((replyAudio.paused && speakUserPaused) || time !== lastTime) lastProgress = now;
+        // A clip held before it ever started does not time out while the user pauses.
+        if (!started && replyAudio.paused && speakUserPaused) startedAt = now;
         lastTime = time;
         const verdict = clipWatch({
           now,
@@ -6116,6 +6318,7 @@ export async function mountAiWorkspace(root, options = {}) {
           ended: replyAudio.ended,
           currentTime: time,
           duration: Number(replyAudio.duration),
+          userPaused: speakUserPaused,
         });
         if (verdict === "done") done();
       };
@@ -6125,10 +6328,28 @@ export async function mountAiWorkspace(root, options = {}) {
       replyAudio.addEventListener("playing", onPlaying);
       watchdog = window.setInterval(check, 1000);
       replyAudio.pause();
+      speakUserPaused = false;
       replyAudio.src = replyObjectUrl;
-      replyAudio.play().catch(() => {
+      if (speakHold) {
+        // Paused between clips: load the next clip but wait for resume (it starts from 0).
+        speakUserPaused = true;
+        setSpeakUi();
+        return;
+      }
+      replyAudio.play().catch((err) => {
+        if (gen !== speakGen) {
+          done();
+          return;
+        }
+        if (err?.name === "AbortError") {
+          // Interrupted by the next load; the watchdog/next clip takes over.
+          done();
+          return;
+        }
+        // Autoplay blocked (NotAllowedError) or unplayable: nothing will play, reset.
         if (speakFromUser) showSpeakHelp();
         done();
+        haltSpeech();
       });
     });
   }
@@ -6162,44 +6383,26 @@ export async function mountAiWorkspace(root, options = {}) {
           }
           releaseAudio(replyAudio);
           speakTarget = null;
-          setSpeakUi("idle");
+          speakAuto = false;
+          speakUserPaused = false;
+          speakHold = false;
+          releaseMediaSession();
+          setSpeakUi();
         } else if (gen === speakGen && speakTarget) {
           // Nothing could be played for this reply: its button goes back to "read aloud".
           speakTarget = null;
-          setSpeakUi("idle");
+          speakAuto = false;
+          setSpeakUi();
         }
       });
-  }
-
-  function speechPaused() {
-    const btn = logEl.querySelector(".speak-chat");
-    return Boolean(btn?.classList.contains("speaking") && replyAudio?.paused && !replyAudio.ended);
-  }
-
-  async function toggleSpeak() {
-    if (replyAudio && !replyAudio.paused && !replyAudio.ended) {
-      if (streaming || speakPending.length || speakInflight.length) haltSpeech();
-      else replyAudio.pause();
-      return;
-    }
-    if (speechPaused()) {
-      try {
-        await replyAudio.play();
-      } catch (_err) {
-        showSpeakHelp();
-      }
-      return;
-    }
-    const text = lastAssistantText();
-    if (!text) return;
-    await speakReply(text, true);
   }
 
   async function speakReply(text, fromUser = false, target = null) {
     if (!voice.tts || !String(text || "").trim()) return;
     haltSpeech();
-    // The reply whose own button started this; its button shows "stop" while it plays.
-    speakTarget = target;
+    // The reply whose own button started this; its button shows pause while it plays.
+    speakTarget = target || lastAssistantBubble();
+    speakAuto = false;
     speakFromUser = fromUser;
     const gen = speakGen;
     if (fromUser) await unlockOutput();
@@ -6208,8 +6411,13 @@ export async function mountAiWorkspace(root, options = {}) {
     speakFlush = true;
     const taken = takeSpeech(String(text), false, true, { heavy: voice.ttsHeavy });
     for (const piece of taken.pieces) queueSpeech(piece);
-    // Show "stop" at once, not only when the first clip starts playing.
+    // Show pause at once, not only when the first clip starts playing.
     if (target) syncCopyChat();
+  }
+
+  function lastAssistantBubble() {
+    const bubbles = logEl.querySelectorAll(".bubble.assistant");
+    return bubbles.length ? bubbles[bubbles.length - 1] : null;
   }
 
   function lastAssistantText() {
@@ -6406,8 +6614,8 @@ export async function mountAiWorkspace(root, options = {}) {
     if (keepComposerFocus()) messageEl.focus();
     else hideKeyboard();
     streaming = true;
+    // The previous reply keeps its buttons (and history) while this turn runs.
     syncCopyChat();
-    turnHasHistory = false;
     const turnSince = new Date().toISOString();
     watchGen += 1;
     clearKeyboardLock();
@@ -6455,7 +6663,7 @@ export async function mountAiWorkspace(root, options = {}) {
       chatId = sessionId;
       setStatus(t("thinking"));
       const payload = JSON.stringify({
-          message: text,
+          message: text || attachmentPrompt(images.length, files.length),
           origin: window.location.origin,
           language: speechLanguage(),
           page: haPageContext(),
@@ -6513,6 +6721,8 @@ export async function mountAiWorkspace(root, options = {}) {
           addChip(tools, data, true);
           setActivity(assistant, "");
           drainSpeech(false, true);
+        } else if (name === "tool_progress") {
+          showToolProgress(assistant, tools, data);
         } else if (name === "status") {
           setStatus(data.text);
           drainSpeech(false, true);
@@ -8063,6 +8273,11 @@ export async function mountAiWorkspace(root, options = {}) {
   });
   listen(window, "resize", () => {
     if (messageEl) resizeComposer();
+  });
+  listen(document, "visibilitychange", onSpeakVisibility);
+  // Page left (navigation, bfcache, app killed): the browser stops the audio.
+  listen(window, "pagehide", () => {
+    if (speechLive()) haltSpeech();
   });
   listen(window, "pageshow", () => {
     if (sessionId && chatVisible()) watchPending(sessionId);

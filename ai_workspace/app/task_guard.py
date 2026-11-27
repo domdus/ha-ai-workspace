@@ -5,7 +5,9 @@ A task runs unattended, usually from an automation. Two rules apply on every too
 * Loop protection, always: no ``ai_workspace.run_task`` (or anything else of AI Workspace),
   no ``automation.trigger``, and no tool that creates, edits or deletes automations or scripts.
 * Read-only (``allow_changes`` off): only tools whose name says they read. Anything else,
-  including every service call, is refused. Unknown tools count as writes.
+  including every service call, is refused. Unknown tools count as writes. A server's MCP tool
+  annotations count first: ``readOnlyHint`` true reads, ``readOnlyHint`` false or
+  ``destructiveHint`` true writes, whatever the name says.
 
 The same file ships in the runtime (``ai_workspace/app/task_guard.py``) for Claude, Cursor and
 Codex agents, whose tool calls go through the runtime's MCP proxy. Keep both copies identical;
@@ -181,7 +183,21 @@ def loop_refusal(tool: Any, arguments: Any = None) -> bool:
     return False
 
 
-def is_read_tool(tool: Any) -> bool:
+def _hinted(hints: Any) -> bool | None:
+    """What the tool's MCP annotations say: True reads, False writes, None says nothing."""
+    if not isinstance(hints, dict):
+        return None
+    if hints.get("destructiveHint") is True or hints.get("readOnlyHint") is False:
+        return False
+    if hints.get("readOnlyHint") is True:
+        return True
+    return None
+
+
+def is_read_tool(tool: Any, hints: Any = None) -> bool:
+    hinted = _hinted(hints)
+    if hinted is not None:
+        return hinted
     raw = tool_name(tool).lower()
     if raw in _READ_NAMES:
         return True
@@ -189,22 +205,25 @@ def is_read_tool(tool: Any) -> bool:
     return bool(tokens & _READ) and not tokens & _WRITE
 
 
-def task_refusal(tool: Any, arguments: Any, policy: dict[str, Any] | None) -> str:
-    """The message for a refused call, or an empty string when the task may make it."""
+def task_refusal(tool: Any, arguments: Any, policy: dict[str, Any] | None, hints: Any = None) -> str:
+    """The message for a refused call, or an empty string when the task may make it.
+
+    hints: the tool's MCP annotations (tools/list), when known.
+    """
     if not policy:
         return ""
     name = tool_name(tool)
     if loop_refusal(tool, arguments):
         return LOOP_MESSAGE.format(tool=name)
-    if policy.get("read_only", True) and not is_read_tool(tool):
+    if policy.get("read_only", True) and not is_read_tool(tool, hints):
         return READ_ONLY_MESSAGE.format(tool=name)
     return ""
 
 
-def task_tool_offered(tool: Any, policy: dict[str, Any] | None) -> bool:
+def task_tool_offered(tool: Any, policy: dict[str, Any] | None, hints: Any = None) -> bool:
     """Whether to show the tool to the model at all. Calls are still checked one by one."""
     if not policy:
         return True
     if loop_refusal(tool):
         return False
-    return is_read_tool(tool) if policy.get("read_only", True) else True
+    return is_read_tool(tool, hints) if policy.get("read_only", True) else True
