@@ -24,8 +24,13 @@ Everything from 1.6.2b1 to 1.6.2b9, plus a Stop fix in the Runtime's MCP proxy. 
 - Images or files sent without text go with a short prompt in your UI language, and agents answer in the Home Assistant language.
 - **Phones:** the message field no longer sits below the screen while the address bar shows. Attach, dictate and send buttons have the same size and spacing.
 
+**Claude plan sign-in**
+- **Reminder before it runs out:** the Runtime's Claude plan sign-in lasts one year. From 30 days before that date, Home Assistant shows a repair notice (Settings → Repairs, all 15 languages) with the date and how to sign in again; it goes away by itself after the new sign-in.
+- README and [docs/claude-runtime.md](../docs/claude-runtime.md): a plain note on how the plan is used (official Agent SDK and `claude setup-token`, nothing pretends to be Claude Code) and what Anthropic says about it, instead of the long warning.
+
 **Tasks and translations**
 - **Tasks page:** Edit turns the task's card into the form; one form at a time, the saved task is highlighted.
+- Brand: the dark icons that were copies of the light ones are gone (Home Assistant uses the light icon then).
 - **All 15 languages complete:** approval card, plan limits, usage page, sensor and speech entity names, setup notes and task errors. Entity IDs do not change.
 
 ## 1.6.2b9

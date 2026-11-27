@@ -825,5 +825,11 @@
     "not_set_up": {
       "message": "AI Workspace가 설정되지 않았습니다."
     }
+  },
+  "issues": {
+    "claude_signin_expiring": {
+      "title": "Runtime의 Claude 로그인이 곧 만료됩니다",
+      "description": "AI Workspace Runtime의 Claude 플랜 로그인이 {date}에 만료됩니다({days}일 남음). 그 후에는 Claude(runtime) 에이전트가 응답하지 않습니다.\n\n다시 로그인하세요: 설정 → 기기 및 서비스 → AI Workspace → Claude 에이전트 → 에이전트 수정 → **Claude 요금제로 로그인**. 그러면 이 알림은 자동으로 사라집니다."
+    }
   }
 }

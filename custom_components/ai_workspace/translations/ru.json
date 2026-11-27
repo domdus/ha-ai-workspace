@@ -825,5 +825,11 @@
     "not_set_up": {
       "message": "AI Workspace не настроен."
     }
+  },
+  "issues": {
+    "claude_signin_expiring": {
+      "title": "Вход в Claude на Runtime скоро истечёт",
+      "description": "Вход с подпиской Claude на AI Workspace Runtime истекает {date} (через {days} дн.). После этого агенты Claude (runtime) перестанут отвечать.\n\nВойдите снова: Настройки → Устройства и службы → AI Workspace → ваш агент Claude → Изменить агента → **Войти с подпиской Claude**. После этого уведомление исчезнет само."
+    }
   }
 }

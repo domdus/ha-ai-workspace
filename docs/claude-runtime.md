@@ -21,7 +21,7 @@ Where it goes:
 
 The prefix decides how Claude Code signs in, and only that one credential reaches it, so a Plan chat never falls back to API billing or the other way round. Saving the agent form checks an API key with Anthropic; a Plan token is checked on the first chat.
 
-⚠️ **It is not clear whether Anthropic allows the Plan token here.** Anthropic says: *"Anthropic does not permit third-party developers to offer Claude.ai login into their own applications, or to route requests through Free, Pro, Max, or Ultra plan credentials on behalf of their users"*, and products built on the Agent SDK should use API keys ([Agent SDK overview](https://code.claude.com/docs/en/agent-sdk/overview), [Legal and compliance](https://code.claude.com/docs/en/legal-and-compliance)). It *may* still count as private use, because the runtime runs on your own hardware with your own account and only you chat with it, but Anthropic has not confirmed that. Whether you use it is your decision; an Anthropic API key is the safe choice.
+**How it uses your plan:** the runtime runs Anthropic's official Agent SDK and its Claude Code CLI, and the sign-in is Anthropic's own `claude setup-token`; nothing pretends to be Claude Code. Anthropic says Agent SDK and third-party app usage draws from your plan's limits ([Use the Claude Agent SDK with your Claude plan](https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan)); the [Agent SDK docs](https://code.claude.com/docs/en/agent-sdk/overview) also say that, unless previously approved, third-party developers may not offer claude.ai login for their products, and AI Workspace has no such approval. Anthropic may change the rules for plans, so an Anthropic API key is the choice that does not depend on them.
 
 ### Which credential wins
 
@@ -67,7 +67,7 @@ Good to know:
 - The token is stored on the runtime only, in `/data/auth/claude-oauth-token` (owner-only file in the App's or container's data volume). It never goes to Home Assistant or its config entries, and is never logged. The CLI runs without the runtime's own credentials in a temporary folder that is deleted afterwards.
 - The sign-in belongs to the runtime, so every Claude SDK agent on that runtime without its own credential uses it.
 - Signing in clears an older token saved on that agent, because the agent's own token would win.
-- Setup tokens last about one year. When chats say the sign-in has expired or was revoked, sign in again (see [When the sign-in or key runs out](#when-the-sign-in-or-key-runs-out)).
+- Setup tokens last about one year. From 30 days before the date, Home Assistant shows a repair notice (Settings → Repairs) until you sign in again. When chats say the sign-in has expired or was revoked, sign in again (see [When the sign-in or key runs out](#when-the-sign-in-or-key-runs-out)).
 - Anthropic does not tell a setup token which account or plan it belongs to, so the form shows when you signed in, not the account name.
 - Without Home Assistant: `docker exec -it ai-workspace-runtime python -m app.claude_login` prints the link and asks for the code.
 - 1.6.0b7 and b8 had **Sign in with Claude (experimental)** as a tick box that saved the token on the agent. That box is gone; agents that got their token that way keep it. The runtime still answers those integrations (`/api/claude/login`).

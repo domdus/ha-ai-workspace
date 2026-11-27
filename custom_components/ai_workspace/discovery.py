@@ -449,9 +449,25 @@ async def async_bind_runtime(hass: HomeAssistant, bucket: dict | None = None, *,
         )
     data["runtime_notice"] = notice
     apply_runtime_to_providers(data, url, reason, notice, claude_reason=claude_reason, codex_reason=codex_reason)
+    if reason is None and claude_reason is None:
+        _start_claude_signin_check(hass, data, url, token)
     if url != previous:
         _LOGGER.info("AI Workspace Runtime at %s", url)
     return url
+
+
+def _start_claude_signin_check(hass: HomeAssistant, data: dict, url: str, token: str) -> None:
+    """Repair notice before the Runtime's Claude sign-in runs out (signin_reminder), in the background."""
+    if not any(getattr(item, "kind", "") == "claude" for item in (data.get("providers") or {}).values()):
+        return
+    from .signin_reminder import async_check_claude_signin
+
+    try:
+        hass.async_create_background_task(
+            async_check_claude_signin(hass, data, url, token), "ai_workspace_claude_signin_check"
+        )
+    except Exception:  # noqa: BLE001 - a reminder must never break binding the Runtime.
+        _LOGGER.debug("Claude sign-in check not started", exc_info=True)
 
 
 async def _async_finish_pairing(hass: HomeAssistant, data: dict, slug: str, url: str, wanted: str = "") -> None:

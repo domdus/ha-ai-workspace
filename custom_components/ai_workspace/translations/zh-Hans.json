@@ -825,5 +825,11 @@
     "not_set_up": {
       "message": "AI Workspace 尚未设置。"
     }
+  },
+  "issues": {
+    "claude_signin_expiring": {
+      "title": "运行环境上的 Claude 登录即将过期",
+      "description": "AI Workspace Runtime 上的 Claude 订阅登录将于 {date} 过期（还剩 {days} 天）。之后 Claude（runtime）智能体将不再回复。\n\n请重新登录：设置 → 设备与服务 → AI Workspace → 你的 Claude 智能体 → 编辑智能体 → **使用 Claude 订阅登录**。之后此提示会自动消失。"
+    }
   }
 }

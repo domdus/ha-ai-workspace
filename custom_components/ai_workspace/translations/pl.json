@@ -825,5 +825,11 @@
     "not_set_up": {
       "message": "AI Workspace nie jest skonfigurowany."
     }
+  },
+  "issues": {
+    "claude_signin_expiring": {
+      "title": "Logowanie do Claude w Runtime wkrótce wygaśnie",
+      "description": "Logowanie planem Claude w AI Workspace Runtime wygasa {date} (za {days} dni). Potem agenci Claude (runtime) przestaną odpowiadać.\n\nZaloguj się ponownie: Ustawienia → Urządzenia i usługi → AI Workspace → Twój agent Claude → Edytuj agenta → **Zaloguj się planem Claude**. To powiadomienie zniknie potem samo."
+    }
   }
 }
