@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.6.2
+
+Everything from 1.6.2b1 to 1.6.2b9, plus a Stop fix in the Runtime's MCP proxy. Nothing needs to be changed in your setup.
+
+- **Update the runtime (App or Docker image `ghcr.io/domdus/ha-ai-workspace-runtime:1.6.2`) together with this release.** MCP progress, the tool call timeout, Stop and `Accept-Language` on Cursor, Claude and Codex agents need it. The chat shows a hint when the runtime is older than 1.6.2.
+
+**Long MCP tool calls (MCP standard)**
+- **Live progress:** every `tools/call` asks for progress; the server's `notifications/progress` messages show as the tool step's status in the chat, for cloud agents and for Cursor, Claude and Codex through the Runtime.
+- **Tool call timeout per MCP connection** (Reconfigure form): 120 s by default, 10 to 3600, counted from the last progress message. When it runs out, the server gets `notifications/cancelled` and the agent an error. Codex and Claude Code no longer give up on their own earlier limits.
+- **Stop** cancels every MCP call still open. Fixed: a stopped call on a Runtime agent could end without its "cancelled" answer for the agent.
+- `tools/call` carries the chat's id in `_meta` (`io.github.domdus/conversation_id`), so the agent-worker links its jobs to the chat. Cloud agents read every page of a tool list and answer the server's `ping`.
+
+**MCP questions and tools for cloud agents**
+- **Approval and form cards (MCP elicitation) now work for OpenAI, Claude API, Gemini, Ollama and other API agents**, as for Runtime agents. Waiting for your answer does not count against the timeout; Stop cancels an open question.
+- Tool annotations: in read-only agent tasks, `readOnlyHint` tools count as reading and `readOnlyHint: false` / `destructiveHint` tools as writing. `readOnlyHint` tools take no Change History snapshot.
+- A tool call that returns `isError` (or is refused or fails) shows its step as failed.
+- MCP requests send `MCP-Protocol-Version` after initialize and `Accept-Language` with Home Assistant's language, so servers word their prompts in your language.
+
+**Chat**
+- **Read-aloud:** one button per reply: speaker starts, pause pauses at the current spot, play resumes. Headset and lock-screen controls work the same way, also with the screen off. The state resets when nothing plays (blocked autoplay, audio errors, screen off, page left), and the stray speaker icon below the chat is gone.
+- The previous reply keeps its copy, read-aloud and history buttons while the next one runs; the new reply's row fades in when it is complete.
+- Images or files sent without text go with a short prompt in your UI language, and agents answer in the Home Assistant language.
+- **Phones:** the message field no longer sits below the screen while the address bar shows. Attach, dictate and send buttons have the same size and spacing.
+
+**Tasks and translations**
+- **Tasks page:** Edit turns the task's card into the form; one form at a time, the saved task is highlighted.
+- **All 15 languages complete:** approval card, plan limits, usage page, sensor and speech entity names, setup notes and task errors. Entity IDs do not change.
+
 ## 1.6.2b9
 
 **One read-aloud button again, no separate stop button.**

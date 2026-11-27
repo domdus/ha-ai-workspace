@@ -1123,6 +1123,9 @@ def _read_answer_events(
             break
         line = resp.readline()
         if not line:
+            # A stopped chat shuts the socket down: that can read as a plain end of stream.
+            if flight is not None and flight.cancelled and pending:
+                closing = timeout_answer(b"", 0, pending, STOPPED)
             break
         lines.append(line)
         text = line.strip()
