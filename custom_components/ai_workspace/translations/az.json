@@ -825,5 +825,11 @@
     "not_set_up": {
       "message": "AI Workspace qurulmayıb."
     }
+  },
+  "issues": {
+    "claude_signin_expiring": {
+      "title": "Runtime-da Claude girişinin müddəti tezliklə bitir",
+      "description": "AI Workspace Runtime-da Claude planı ilə girişin müddəti {date} tarixində bitir ({days} gün qalıb). Bundan sonra Claude (runtime) agentləri cavab verməyəcək.\n\nYenidən daxil olun: Ayarlar → Cihazlar və xidmətlər → AI Workspace → Claude agentiniz → Agenti redaktə et → **Claude planı ilə daxil ol**. Bu bildiriş sonra özü yox olacaq."
+    }
   }
 }

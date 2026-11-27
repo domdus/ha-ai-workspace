@@ -1012,6 +1012,9 @@ class AgentSubentryFlow(config_entries.ConfigSubentryFlow):
             return await self.async_step_provider()
         if user_input is not None:
             return self._finish(*self._pending)
+        from .signin_reminder import signed_in_again
+
+        signed_in_again(self.hass)
         return self.async_show_form(
             step_id="claude_signed_in",
             data_schema=vol.Schema({}),

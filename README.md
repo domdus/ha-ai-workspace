@@ -227,10 +227,12 @@ A **Claude (Anthropic)** agent can run Claude Code on the AI Workspace Runtime, 
 
 The **Usage** page then shows the plan's session and week limits. Details: [Claude SDK agents](docs/claude-runtime.md).
 
-> [!WARNING]
-> **It is not clear whether Anthropic allows this.** Anthropic's [Agent SDK overview](https://code.claude.com/docs/en/agent-sdk/overview) and [Legal and compliance](https://code.claude.com/docs/en/legal-and-compliance) page say: *"Anthropic does not permit third-party developers to offer Claude.ai login into their own applications, or to route requests through Free, Pro, Max, or Ultra plan credentials on behalf of their users."* Products built on the Agent SDK should use API keys.
+The sign-in lasts one year. A Home Assistant repair notice reminds you 30 days before it runs out; sign in again on the agent form.
+
+> [!NOTE]
+> **How it uses your plan.** The Runtime runs Anthropic's official [Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk/overview) and the Claude Code CLI that comes with it. The sign-in is Anthropic's own `claude setup-token`, run by that CLI: no copied tokens, no faked headers, nothing that pretends to be Claude Code. It runs on your hardware, with your own account, for you alone.
 >
-> Our reading, and it is only that: it *may* still count as private use. The Runtime runs on your own hardware, signs in with your own account, and only you chat with it, much like running Claude Code yourself. It is not a commercial service, and no one else signs in to your plan through it. Anthropic has not confirmed this. It may limit or block plan sign-ins used this way. Whether you use it is your decision. To be on the safe side, use an **Anthropic API key** on the same agent instead: same switch, paste the key (`sk-ant-api…`) into the key field.
+> Anthropic says that Agent SDK and third-party app usage draws from your plan's usage limits ([Use the Claude Agent SDK with your Claude plan](https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan)). The Agent SDK docs also say: *"Unless previously approved, Anthropic does not allow third party developers to offer claude.ai login or rate limits for their products."* AI Workspace has no such approval. Anthropic has announced changes to Agent SDK usage on plans before and paused them, so check that page now and then. If you prefer to be independent of this, use an **Anthropic API key** on the same agent: same switch, paste the key (`sk-ant-api…`) into the key field.
 
 ### ChatGPT plan: Codex on the Runtime
 

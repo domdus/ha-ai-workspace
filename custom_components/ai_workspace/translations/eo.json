@@ -825,5 +825,11 @@
     "not_set_up": {
       "message": "AI Workspace ne estas agordita."
     }
+  },
+  "issues": {
+    "claude_signin_expiring": {
+      "title": "La Claude-ensaluto ĉe la rultempo baldaŭ eksvalidiĝos",
+      "description": "La ensaluto per la Claude-abono ĉe la AI Workspace Runtime eksvalidiĝos je {date} (post {days} tagoj). Poste Claude-agentoj (runtime) ne plu respondos.\n\nEnsalutu denove: Agordoj → Aparatoj kaj servoj → AI Workspace → via Claude-agento → Redakti agenton → **Ensaluti per Claude-abono**. Ĉi tiu avizo poste malaperos per si mem."
+    }
   }
 }

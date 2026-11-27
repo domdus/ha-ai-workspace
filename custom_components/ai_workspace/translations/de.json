@@ -825,5 +825,11 @@
     "not_set_up": {
       "message": "AI Workspace ist nicht eingerichtet."
     }
+  },
+  "issues": {
+    "claude_signin_expiring": {
+      "title": "Claude-Anmeldung auf der Runtime läuft bald ab",
+      "description": "Die Anmeldung mit dem Claude-Abo auf der AI Workspace Runtime läuft am {date} ab (in {days} Tagen). Danach antworten Claude-Agenten (Runtime) nicht mehr.\n\nErneut anmelden: Einstellungen → Geräte & Dienste → AI Workspace → dein Claude-Agent → Agent bearbeiten → **Mit Claude-Abo anmelden**. Dieser Hinweis verschwindet danach von selbst."
+    }
   }
 }

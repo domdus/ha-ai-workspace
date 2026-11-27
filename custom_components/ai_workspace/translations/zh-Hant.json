@@ -825,5 +825,11 @@
     "not_set_up": {
       "message": "AI Workspace 尚未設定。"
     }
+  },
+  "issues": {
+    "claude_signin_expiring": {
+      "title": "執行環境上的 Claude 登入即將過期",
+      "description": "AI Workspace Runtime 上的 Claude 訂閱登入將於 {date} 過期（還剩 {days} 天）。之後 Claude（runtime）智慧體將不再回覆。\n\n請重新登入：設定 → 裝置與服務 → AI Workspace → 你的 Claude 智慧體 → 編輯智慧體 → **使用 Claude 訂閱登入**。之後此提示會自動消失。"
+    }
   }
 }

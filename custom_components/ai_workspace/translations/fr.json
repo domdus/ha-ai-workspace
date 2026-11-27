@@ -825,5 +825,11 @@
     "not_set_up": {
       "message": "AI Workspace n’est pas configuré."
     }
+  },
+  "issues": {
+    "claude_signin_expiring": {
+      "title": "La connexion Claude sur le Runtime expire bientôt",
+      "description": "La connexion avec l'abonnement Claude sur l'AI Workspace Runtime expire le {date} (dans {days} jours). Ensuite, les agents Claude (runtime) ne répondent plus.\n\nReconnectez-vous : Paramètres → Appareils et services → AI Workspace → votre agent Claude → Modifier l'agent → **Se connecter avec l'abonnement Claude**. Cet avis disparaît ensuite de lui-même."
+    }
   }
 }

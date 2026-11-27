@@ -825,5 +825,11 @@
     "not_set_up": {
       "message": "AI Workspace není nastaven."
     }
+  },
+  "issues": {
+    "claude_signin_expiring": {
+      "title": "Přihlášení ke Claude v Runtime brzy vyprší",
+      "description": "Přihlášení s plánem Claude v AI Workspace Runtime vyprší {date} (za {days} dní). Poté agenti Claude (runtime) přestanou odpovídat.\n\nPřihlaste se znovu: Nastavení → Zařízení a služby → AI Workspace → váš agent Claude → Upravit agenta → **Přihlásit se předplatným Claude**. Toto upozornění pak samo zmizí."
+    }
   }
 }

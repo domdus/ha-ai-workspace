@@ -825,5 +825,11 @@
     "not_set_up": {
       "message": "AI Workspace är inte konfigurerat."
     }
+  },
+  "issues": {
+    "claude_signin_expiring": {
+      "title": "Claude-inloggningen på Runtime går snart ut",
+      "description": "Inloggningen med Claude-abonnemanget på AI Workspace Runtime går ut {date} (om {days} dagar). Därefter slutar Claude-agenter (runtime) att svara.\n\nLogga in igen: Inställningar → Enheter och tjänster → AI Workspace → din Claude-agent → Redigera agent → **Logga in med Claude-plan**. Meddelandet försvinner sedan av sig självt."
+    }
   }
 }

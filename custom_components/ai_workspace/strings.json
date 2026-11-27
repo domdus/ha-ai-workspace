@@ -825,5 +825,11 @@
     "not_set_up": {
       "message": "AI Workspace is not set up."
     }
+  },
+  "issues": {
+    "claude_signin_expiring": {
+      "title": "Claude sign-in on the Runtime runs out soon",
+      "description": "The Claude plan sign-in on the AI Workspace Runtime runs out on {date} (in {days} days). After that, Claude (runtime) agents stop answering.\n\nSign in again: Settings → Devices & services → AI Workspace → your Claude agent → Edit agent → **Sign in with Claude plan**. This notice goes away by itself afterwards."
+    }
   }
 }
